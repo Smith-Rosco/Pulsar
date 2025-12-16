@@ -1,0 +1,9 @@
+namespace Pulsar.Services.Interfaces
+{
+    public interface IWindowService
+    {
+        Task<bool> SwitchToProcessAsync(string processName);
+        Task<bool> LaunchApplicationAsync(string command, string? arguments);
+        // List<WindowInfo> EnumerateWindows(); // 暂时注释，等待 Model 定义
+    }
+}

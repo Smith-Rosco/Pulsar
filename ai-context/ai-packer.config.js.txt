@@ -1,0 +1,39 @@
+// [Path]: ai-packer.config.js
+
+/**
+ * @type {import('./src/core/config').UserConfig}
+ */
+export default {
+  // 扫描入口，默认为当前目录
+  entry: "./",
+  
+  // 输出目录，默认为 "./ai-context"
+  output: "./ai-context",
+  
+  // 忽略规则配置
+  ignore: {
+    // 是否继承 .gitignore，默认 true
+    useGitIgnore: true,
+    // 自定义忽略规则 (glob patterns)
+    patterns: [
+      "node_modules",
+      ".git",
+      "dist",
+      "yarn.lock",
+      "package-lock.json",
+      "ai-context", // 强制忽略输出目录，防止递归
+      "obj",
+      ".vs",
+      "bin",
+      "项目文档",
+    ]
+  },
+  
+  // 文件处理策略
+  files: {
+    // 白名单后缀，仅处理这些文件
+    include: [".js", ".ts", ".jsx", ".tsx", ".vue", ".json", ".md", ".css", ".html", ".cs", ".xaml",],
+    // 输出文件后缀，默认 ".txt" 以便 AI 读取
+    suffix: ".txt"
+  }
+};

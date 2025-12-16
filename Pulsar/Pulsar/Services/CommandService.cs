@@ -1,0 +1,62 @@
+using System.Diagnostics;
+using System.IO;
+using Pulsar.Services.Interfaces;
+
+namespace Pulsar.Services
+{
+    public class CommandService : ICommandService
+    {
+        private readonly IWindowService _windowService;
+
+        public CommandService(IWindowService windowService)
+        {
+            _windowService = windowService;
+        }
+
+        public async Task ExecuteAsync(string command)
+        {
+            if (string.IsNullOrWhiteSpace(command)) return;
+
+            var (fileName, args) = ParseCommand(command);
+
+            bool looksLikePath = fileName.Contains("\\") || fileName.Contains("/") || fileName.ToLower().EndsWith(".exe");
+
+            if (looksLikePath || File.Exists(fileName))
+            {
+                await _windowService.LaunchApplicationAsync(fileName, args);
+            }
+            else
+            {
+                // SendKeys 需要在 UI 线程或特定配置下运行，但在 WPF 中 SendKeys 是 WinForms 的残留。
+                // 推荐方式：使用 InputSimulator (库) 或保持 System.Windows.Forms.SendKeys
+                // 为了兼容旧代码，我们暂时保留 SendKeys，但要注意它可能阻塞。
+                await Task.Run(() =>
+                {
+                    Thread.Sleep(100);
+                    System.Windows.Forms.SendKeys.Flush();
+                    System.Windows.Forms.SendKeys.SendWait(command);
+                });
+            }
+        }
+
+        public (string fileName, string arguments) ParseCommand(string raw)
+        {
+            raw = raw.Trim().Trim('"');
+            string lowerCmd = raw.ToLower();
+            int exeIndex = lowerCmd.IndexOf(".exe");
+
+            if (exeIndex > 0 && lowerCmd.Length > exeIndex + 4)
+            {
+                return (raw.Substring(0, exeIndex + 4), raw.Substring(exeIndex + 4).Trim());
+            }
+            
+            if (!File.Exists(raw) && raw.Contains(" "))
+            {
+                int firstSpace = raw.IndexOf(' ');
+                return (raw.Substring(0, firstSpace), raw.Substring(firstSpace + 1));
+            }
+
+            return (raw, string.Empty);
+        }
+    }
+}

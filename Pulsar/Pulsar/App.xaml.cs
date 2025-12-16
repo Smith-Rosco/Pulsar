@@ -1,13 +1,45 @@
-﻿using System.Configuration;
-using System.Data;
-using System.Windows;
+﻿// [Path]: Pulsar/App.xaml.cs
+using Microsoft.Extensions.DependencyInjection; // 必须有这一行，才能用 GetRequiredService
+using Pulsar.Native;
+using Pulsar.Services;
+using Pulsar.Services.Interfaces;
+using Pulsar.ViewModels;
+using Pulsar.Views;
 
-namespace Pulsar;
-
-/// <summary>
-/// Interaction logic for App.xaml
-/// </summary>
-public partial class App : Application
+namespace Pulsar
 {
-}
+    public partial class App : WpfApplication
+    {
+        public new static App Current => (App)WpfApplication.Current;
 
+        // 这是一个属性 (Property)，首字母大写
+        // [修复] 添加 = null!;
+        public IServiceProvider Services { get; private set; } = null!;
+
+        protected override void OnStartup(StartupEventArgs e)
+        {
+            base.OnStartup(e);
+
+            // 1. 创建容器构建器 (局部变量，首字母小写)
+            var serviceCollection = new ServiceCollection(); // 改个名字避免混淆
+
+            // 2. 注册服务
+            serviceCollection.AddSingleton<IConfigService, ConfigService>();
+            serviceCollection.AddSingleton<IWindowService, WindowService>();
+            serviceCollection.AddSingleton<ICommandService, CommandService>();
+            serviceCollection.AddSingleton<GlobalKeyboardHook>();
+
+            serviceCollection.AddSingleton<RadialMenuViewModel>();
+            serviceCollection.AddSingleton<RadialMenuWindow>();
+
+            // 3. 构建并赋值给属性
+            Services = serviceCollection.BuildServiceProvider();
+
+            // 4. 从属性中获取主窗口
+            // 确保上面引用了 using Microsoft.Extensions.DependencyInjection;
+            var mainWindow = Services.GetRequiredService<RadialMenuWindow>();
+
+            // mainWindow.Show(); // 暂时注释，等待热键唤醒
+        }
+    }
+}

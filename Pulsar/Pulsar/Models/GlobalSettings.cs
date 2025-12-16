@@ -1,0 +1,11 @@
+namespace Pulsar.Models
+{
+    public class GlobalSettings
+    {
+        public double TriggerDistance { get; set; } = 60.0;
+        public string Theme { get; set; } = "Dark";
+        public double HoverScale { get; set; } = 1.35;
+        public double Springiness { get; set; } = 4.0;
+        public double MaxDisplacement { get; set; } = 20.0;
+    }
+}
