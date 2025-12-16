@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "avTr4ttYEjw=",
+  "success": true,
+  "projectFilePath": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Pulsar.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\milo\\.nuget\\packages\\microsoft.extensions.dependencyinjection\\10.0.1\\microsoft.extensions.dependencyinjection.10.0.1.nupkg.sha512",
+    "C:\\Users\\milo\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\10.0.1\\microsoft.extensions.dependencyinjection.abstractions.10.0.1.nupkg.sha512",
+    "C:\\Users\\milo\\.nuget\\packages\\tomlyn\\0.17.0\\tomlyn.0.17.0.nupkg.sha512"
+  ],
+  "logs": []
+}
