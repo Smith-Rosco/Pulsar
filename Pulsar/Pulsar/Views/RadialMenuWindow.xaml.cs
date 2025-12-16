@@ -1,8 +1,9 @@
-using System.Runtime.InteropServices;
+using System;
 using System.Windows;
-using System.Windows.Interop;
-using System.Windows.Threading;
+using System.Windows.Media; // 用于 VisualTreeHelper
+using System.Windows.Threading; // 用于 Timer
 using Pulsar.ViewModels;
+using Forms = System.Windows.Forms; // 使用别名简化鼠标获取
 
 namespace Pulsar.Views
 {
@@ -10,9 +11,10 @@ namespace Pulsar.Views
     {
         private readonly RadialMenuViewModel _viewModel;
         private readonly DispatcherTimer _updateTimer;
-        
-        // DPI & 坐标缓存
-        private double _cachedDpiScale = 1.0;
+
+        // 缓存 DPI 缩放倍率
+        private double _dpiScaleX = 1.0;
+        private double _dpiScaleY = 1.0;
 
         public RadialMenuWindow(RadialMenuViewModel viewModel)
         {
@@ -20,7 +22,7 @@ namespace Pulsar.Views
             _viewModel = viewModel;
             this.DataContext = _viewModel;
 
-            // 监听 ViewModel 的显隐变化来控制窗口显示
+            // 1. 监听 ViewModel 的显隐变化 (MVVM 驱动 View)
             _viewModel.PropertyChanged += (s, e) =>
             {
                 if (e.PropertyName == nameof(RadialMenuViewModel.IsVisible))
@@ -30,7 +32,7 @@ namespace Pulsar.Views
                 }
             };
 
-            // 初始化渲染循环 (60FPS)
+            // 2. 初始化高频渲染/检测循环 (约 60FPS)
             _updateTimer = new DispatcherTimer(DispatcherPriority.Render)
             {
                 Interval = TimeSpan.FromMilliseconds(16)
@@ -40,18 +42,14 @@ namespace Pulsar.Views
 
         private void Summon()
         {
-            // 1. 获取鼠标位置
-            GetCursorPos(out POINT p);
-            
-            // 2. 计算 DPI 和逻辑坐标
-            UpdateDpiAndPosition(p.X, p.Y);
+            // 每次显示前，刷新 DPI 和位置 (解决多屏/缩放变化问题)
+            UpdateDpiAndPosition();
 
-            // 3. 显示窗口
             this.Show();
             this.Activate();
             this.Focus();
-            
-            // 4. 开启循环
+
+            // 开启鼠标追踪循环
             _updateTimer.Start();
         }
 
@@ -65,57 +63,48 @@ namespace Pulsar.Views
         {
             if (this.Visibility != Visibility.Visible) return;
 
-            GetCursorPos(out POINT p);
-            
-            // 转换为相对于窗口中心的坐标
-            double mouseLogX = p.X / _cachedDpiScale;
-            double mouseLogY = p.Y / _cachedDpiScale;
+            // 1. 获取物理屏幕坐标 (Pixels)
+            var point = Forms.Cursor.Position;
+            double physicalX = point.X;
+            double physicalY = point.Y;
 
-            // 将绝对鼠标位置传给 ViewModel (ViewModel 内部会减去 CenterX/Y 计算相对偏移)
-            // 注意：这里我们传的是“相对于窗口左上角”的逻辑坐标
-            // ViewModel 的 HandleMouseMove 需要的是相对于 Canvas 的坐标？
-            // RadialMenuViewModel 中定义 CenterX = 200, CenterY = 200。
-            // 我们的窗口是 400x400。
-            // 所以我们应该传入相对于窗口左上角的坐标。
-            
-            // 修正：UpdateDpiAndPosition 已经把窗口移到了鼠标中心。
-            // 所以此时鼠标在窗口内的坐标应该是 (Width/2, Height/2) 附近。
-            
-            // 计算鼠标在窗口内的相对坐标
-            double localX = mouseLogX - this.Left;
-            double localY = mouseLogY - this.Top;
+            // 2. 转换为逻辑坐标 (WPF Units)
+            // 逻辑 = 物理 / DPI缩放
+            double logicalMouseX = physicalX / _dpiScaleX;
+            double logicalMouseY = physicalY / _dpiScaleY;
+
+            // 3. 计算相对于窗口左上角的坐标
+            // 这一步至关重要：ViewModel 需要知道鼠标相对于 "画布中心" 的位置
+            // 但 ViewModel 里通常处理的是相对于 (0,0) 的偏移，或者相对于 Canvas 左上角的坐标
+            // 这里我们传给 ViewModel "相对于窗口左上角" 的坐标
+            double localX = logicalMouseX - this.Left;
+            double localY = logicalMouseY - this.Top;
 
             _viewModel.HandleMouseMove(localX, localY);
         }
 
-        private void UpdateDpiAndPosition(int physicalX, int physicalY)
+        private void UpdateDpiAndPosition()
         {
-            // 简单的 DPI 获取逻辑 (生产环境建议更严谨的 MonitorAware)
-            var source = PresentationSource.FromVisual(this);
-            if (source?.CompositionTarget != null)
-            {
-                _cachedDpiScale = source.CompositionTarget.TransformToDevice.M11;
-            }
-            else
-            {
-                // Fallback (通常 96 DPI = 1.0)
-                _cachedDpiScale = 1.0; 
-            }
+            // 1. 获取当前 DPI (兼容 .NET 8 / Per-Monitor DPI)
+            var dpi = VisualTreeHelper.GetDpi(this);
+            _dpiScaleX = dpi.DpiScaleX;
+            _dpiScaleY = dpi.DpiScaleY;
 
-            double logicalX = physicalX / _cachedDpiScale;
-            double logicalY = physicalY / _cachedDpiScale;
+            // 2. 获取鼠标物理位置
+            var point = Forms.Cursor.Position;
 
-            // 将窗口中心对准鼠标
-            this.Left = logicalX - (this.Width / 2);
-            this.Top = logicalY - (this.Height / 2);
+            // 3. 计算鼠标的 WPF 逻辑坐标
+            double wpfMouseX = point.X / _dpiScaleX;
+            double wpfMouseY = point.Y / _dpiScaleY;
+
+            // 4. 计算窗口尺寸 (防止首次加载时 ActualWidth 为 0)
+            // 如果 ActualWidth 还是 0，使用 DesignWidth (400) 作为兜底
+            double width = this.ActualWidth > 0 ? this.ActualWidth : 400;
+            double height = this.ActualHeight > 0 ? this.ActualHeight : 400;
+
+            // 5. 设置窗口位置 (使其中心对准鼠标)
+            this.Left = wpfMouseX - (width / 2);
+            this.Top = wpfMouseY - (height / 2);
         }
-
-        // --- Win32 Helpers ---
-        [StructLayout(LayoutKind.Sequential)]
-        public struct POINT { public int X; public int Y; }
-
-        [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool GetCursorPos(out POINT lpPoint);
     }
 }
