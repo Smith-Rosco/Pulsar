@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.Input;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 using Pulsar.Native;
+using Pulsar.Helpers; // [New]
 
 namespace Pulsar.ViewModels
 {
@@ -176,14 +177,27 @@ namespace Pulsar.ViewModels
             {
                 // 查找当前 SlotIndex 对应的 Item
                 var item = _currentItems.FirstOrDefault(x => x.Slot == slot.SlotIndex);
+
                 if (item != null)
                 {
                     slot.Label = item.Label;
-                    // 未来支持 Icon: slot.Icon = item.IconKey;
+
+                    // [New] 图标解析逻辑
+                    // 优先使用 Config 中的 IconKey
+                    if (!string.IsNullOrEmpty(item.IconKey))
+                    {
+                        slot.IconGlyph = IconHelper.GetGlyph(item.IconKey);
+                    }
+                    else
+                    {
+                        // TODO: 如果没有 Key，未来可在此处尝试根据 ProcessName 自动匹配
+                        slot.IconGlyph = string.Empty;
+                    }
                 }
                 else
                 {
-                    slot.Label = ""; // 空槽位
+                    slot.Label = "";
+                    slot.IconGlyph = string.Empty;
                 }
             }
         }

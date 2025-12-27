@@ -1,10 +1,8 @@
 // [File]: Pulsar/ViewModels/SlotViewModel.cs
-
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Pulsar.ViewModels
 {
-    // 确保没有 duplicate 错误，且继承 ObservableObject
     public class SlotViewModel : ObservableObject
     {
         private int _slotIndex;
@@ -14,6 +12,10 @@ namespace Pulsar.ViewModels
         private string _label = string.Empty;
         private bool _isActive;
 
+        // [New] 图标系统属性
+        private string _iconGlyph = string.Empty;
+        private bool _hasIcon;
+
         public SlotViewModel(int index, double x, double y, double size)
         {
             SlotIndex = index;
@@ -22,7 +24,6 @@ namespace Pulsar.ViewModels
             Size = size;
         }
 
-        // 手动实现属性，确保 WPF Binding 绝对能找到它们
         public double X
         {
             get => _x;
@@ -45,6 +46,26 @@ namespace Pulsar.ViewModels
         {
             get => _label;
             set => SetProperty(ref _label, value);
+        }
+
+        // [New] 图标字符 (Segoe Fluent Icons)
+        public string IconGlyph
+        {
+            get => _iconGlyph;
+            set
+            {
+                if (SetProperty(ref _iconGlyph, value))
+                {
+                    HasIcon = !string.IsNullOrEmpty(value);
+                }
+            }
+        }
+
+        // [New] 状态位：用于 UI 触发器切换 Label/Icon
+        public bool HasIcon
+        {
+            get => _hasIcon;
+            set => SetProperty(ref _hasIcon, value);
         }
 
         public bool IsActive

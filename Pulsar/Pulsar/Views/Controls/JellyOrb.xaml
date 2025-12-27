@@ -4,7 +4,12 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
-             d:DesignHeight="50" d:DesignWidth="50">
+             d:DesignHeight="50" d:DesignWidth="50"
+             RenderTransformOrigin="0.5,0.5">
+
+    <UserControl.RenderTransform>
+        <ScaleTransform x:Name="OrbScale" ScaleX="1.0" ScaleY="1.0"/>
+    </UserControl.RenderTransform>
 
     <Grid Width="{Binding Size}" Height="{Binding Size}">
         <Ellipse Fill="#22FFFFFF" Stroke="#44FFFFFF" StrokeThickness="1.5"/>
@@ -15,29 +20,100 @@
             </Ellipse.Effect>
         </Ellipse>
 
-        <TextBlock Text="{Binding Label}" 
-                   HorizontalAlignment="Center" 
-                   VerticalAlignment="Center"
-                   Foreground="White"
-                   FontSize="11"
-                   FontWeight="SemiBold"
-                   TextAlignment="Center"
-                   IsHitTestVisible="False"/>
+        <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+
+            <TextBlock Text="{Binding IconGlyph}" 
+                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                       FontSize="24"
+                       Foreground="White"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       TextAlignment="Center"
+                       IsHitTestVisible="False">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HasIcon}" Value="True">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
+            <TextBlock Text="{Binding Label}" 
+                       FontSize="11"
+                       FontWeight="SemiBold"
+                       Foreground="White"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       TextAlignment="Center"
+                       IsHitTestVisible="False">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HasIcon}" Value="False">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </Grid>
     </Grid>
 
     <UserControl.Style>
         <Style TargetType="UserControl">
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsActive}" Value="True">
-                    <Setter Property="Opacity" Value="1.0"/>
-                    <Setter Property="RenderTransform">
-                        <Setter.Value>
-                            <ScaleTransform ScaleX="1.15" ScaleY="1.15" CenterX="25" CenterY="25"/>
-                        </Setter.Value>
-                    </Setter>
+                    <Setter Property="Panel.ZIndex" Value="99"/>
+
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                 To="1.2" Duration="0:0:0.5">
+                                    <DoubleAnimation.EasingFunction>
+                                        <ElasticEase Oscillations="1" Springiness="6" EasingMode="EaseOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                 To="1.2" Duration="0:0:0.5">
+                                    <DoubleAnimation.EasingFunction>
+                                        <ElasticEase Oscillations="1" Springiness="6" EasingMode="EaseOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1.0" Duration="0:0:0.1"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+
+                    <DataTrigger.ExitActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                 To="1.0" Duration="0:0:0.2">
+                                    <DoubleAnimation.EasingFunction>
+                                        <QuadraticEase EasingMode="EaseOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                 To="1.0" Duration="0:0:0.2">
+                                    <DoubleAnimation.EasingFunction>
+                                        <QuadraticEase EasingMode="EaseOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0.8" Duration="0:0:0.2"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.ExitActions>
                 </DataTrigger>
+
                 <DataTrigger Binding="{Binding IsActive}" Value="False">
                     <Setter Property="Opacity" Value="0.8"/>
+                    <Setter Property="Panel.ZIndex" Value="0"/>
                 </DataTrigger>
             </Style.Triggers>
         </Style>
