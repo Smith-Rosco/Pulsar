@@ -1,0 +1,18 @@
+// [Path]: Pulsar/Pulsar/Models/GridItemBase.cs
+
+﻿using System.Text.Json.Serialization;
+
+namespace Pulsar.Models
+{
+    // 配置 JSON 多态识别器
+    [JsonDerivedType(typeof(LauncherItem), typeDiscriminator: "launcher")]
+    [JsonDerivedType(typeof(CommandItem), typeDiscriminator: "command")]
+    public abstract class GridItemBase
+    {
+        public int Slot { get; set; }
+        public string Label { get; set; } = string.Empty;
+
+        // 图标系统预留字段 (PRD Phase 5.3)
+        public string IconKey { get; set; } = string.Empty;
+    }
+}

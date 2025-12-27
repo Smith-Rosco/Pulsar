@@ -1,0 +1,63 @@
+{
+  "Settings": {
+    "TriggerDistance": 60,
+    "Theme": "Dark",
+    "HoverScale": 1.35,
+    "Springiness": 4,
+    "MaxDisplacement": 20
+  },
+  "SwitcherSlots": [
+    {
+      "ProcessName": "chrome",
+      "MatchTitle": false,
+      "Slot": 1,
+      "Label": "Chrome",
+      "IconKey": ""
+    },
+    {
+      "ProcessName": "code",
+      "MatchTitle": false,
+      "Slot": 2,
+      "Label": "Code",
+      "IconKey": ""
+    },
+    {
+      "ProcessName": "explorer",
+      "MatchTitle": false,
+      "Slot": 8,
+      "Label": "Explorer",
+      "IconKey": ""
+    }
+  ],
+  "CommandLayer": {
+    "GlobalSlots": [
+      {
+        "ExePath": "taskmgr.exe",
+        "Arguments": "",
+        "Slot": 1,
+        "Label": "Task Mgr",
+        "IconKey": ""
+      },
+      {
+        "ExePath": "wt.exe",
+        "Arguments": "",
+        "Slot": 3,
+        "Label": "Terminal",
+        "IconKey": ""
+      }
+    ],
+    "Profiles": {
+      "chrome": {
+        "Slots": [
+          {
+            "ExePath": "sendkeys",
+            "Arguments": "^t",
+            "Slot": 1,
+            "Label": "New Tab",
+            "IconKey": ""
+          }
+        ]
+      }
+    }
+  }
+}

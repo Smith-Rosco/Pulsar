@@ -1,19 +1,30 @@
 // [Path]: Pulsar/Pulsar/Services/ConfigService.cs
 
 using System.IO;
-using System.Text;
-using Tomlyn;
-using Tomlyn.Model;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Pulsar.Models;
-// using Pulsar.Models.Enums; // 这一行也可以删掉，因为 GlobalUsings 已经处理了 GridItemType
 using Pulsar.Services.Interfaces;
 
 namespace Pulsar.Services
 {
     public class ConfigService : IConfigService
     {
-        private const string ConfigFileName = "config.toml";
+        private const string ConfigFileName = "config.json"; // 变更扩展名
         private string ConfigPath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ConfigFileName);
+
+        private readonly JsonSerializerOptions _jsonOptions;
+
+        public ConfigService()
+        {
+            _jsonOptions = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                PropertyNameCaseInsensitive = true,
+                // 这一点至关重要：忽略 null 值以保持配置文件整洁
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            };
+        }
 
         public async Task<AppConfig> LoadAsync()
         {
@@ -27,125 +38,44 @@ namespace Pulsar.Services
             try
             {
                 string content = await File.ReadAllTextAsync(ConfigPath);
-                // 忽略大小写映射 (snake_case -> PascalCase) 需要配置吗？
-                // Tomlyn 默认区分大小写。为了兼容旧 config.toml 的 snake_case 命名
-                // 我们通常需要配置映射，或者在 Model 属性上加 Attribute。
-                // *简单起见*，我们这里手动映射一下，或者让 Tomlyn 自动处理 (如果属性名匹配)。
-                // 由于我们把 Model 改成了 PascalCase (Settings, TriggerDistance)，
-                // 但 TOML 里是 snake_case (trigger_distance)。
-                // 为了避免复杂性，这里使用 Tomlyn 的 Model 转换功能需谨慎。
-                
-                // 策略：为了确保稳健，我们使用 TomlModelOptions 让其宽容，
-                // 但最佳实践是让 C# 属性名上使用 [TomlProperty("name")]，
-                // 不过 Tomlyn 比较轻量。
-                // 考虑到这是重构，我们先尝试直接读取。如果大小写不匹配失败，
-                // 我们可能需要调整 Model 属性名为小写，或者配置 Tomlyn 的命名策略。
-                
-                // 这里我们采用一种更稳健的方式：手动解析 Model 以确保兼容旧配置
-                // 或者，我们修改 Model 属性为小写 (不符合 C# 规范)。
-                // *决定*：为了代码整洁，保持 PascalCase。
-                // 并在下面使用 Tomlyn 自带的各种 Helper 或者简单地重写 Load 逻辑来适配。
-                
-                // 修正：Tomlyn 不会自动把 snake_case 转 PascalCase。
-                // 我们可以配置 Tomlyn options。
-                var options = new TomlModelOptions 
-                { 
-                    IgnoreMissingProperties = true,
-                    ConvertPropertyName = name => name // 默认不转换，需确保 TOML 和 C# 一致
-                };
-                
-                // 实际上，为了兼容旧的 TOML (snake_case)，
-                // 最简单的方法是暂时让 C# Model 里的属性名匹配 TOML (小写)，
-                // 或者使用 [DataMember] (Tomlyn 支持吗？需检查)。
-                // 鉴于 Tomlyn 主要是强类型映射，我们可以用一个 DTO 或者配置 ConvertPropertyName。
-                
-                // 让我们尝试使用 PascalCase -> snake_case 的转换器逻辑：
-                options.ConvertPropertyName = prop => 
-                {
-                     // 简单转换：C# "TriggerDistance" -> TOML "trigger_distance"
-                     // 这里为了简化，我们先直接加载，假设用户会重新生成配置或我们接受 PascalCase TOML。
-                     // *为了完全兼容旧配置*，我们需要编写转换逻辑。
-                     return string.Concat(prop.Select((x, i) => i > 0 && char.IsUpper(x) ? "_" + x.ToString() : x.ToString())).ToLower();
-                };
-
-                return Toml.ToModel<AppConfig>(content, null, options);
+                var config = JsonSerializer.Deserialize<AppConfig>(content, _jsonOptions);
+                return config ?? CreateDefault();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Log error
+                System.Diagnostics.Debug.WriteLine($"Config Load Error: {ex.Message}");
+                // 出错时备份旧配置并重置，防止应用崩溃
+                File.Move(ConfigPath, ConfigPath + ".bak", true);
                 return CreateDefault();
             }
         }
 
         public async Task SaveAsync(AppConfig config)
         {
-            var sb = new StringBuilder();
-
-            // 1. Settings
-            sb.AppendLine("# Pulsar Configuration File");
-            sb.AppendLine("[settings]");
-            sb.AppendLine($"trigger_distance = {config.Settings.TriggerDistance}");
-            sb.AppendLine($"theme = \"{config.Settings.Theme}\"");
-            sb.AppendLine($"hover_scale = {config.Settings.HoverScale}");
-            sb.AppendLine($"springiness = {config.Settings.Springiness}");
-            sb.AppendLine($"max_displacement = {config.Settings.MaxDisplacement}");
-            sb.AppendLine();
-
-            // 2. Switcher
-            sb.AppendLine("# Global Switcher");
-            foreach (var item in config.Switcher)
-            {
-                sb.AppendLine("[[switcher]]");
-                sb.AppendLine($"slot = {item.Slot}");
-                sb.AppendLine($"label = \"{Escape(item.Label)}\"");
-                sb.AppendLine($"cmd = \"{Escape(item.Cmd)}\"");
-                if (!string.IsNullOrEmpty(item.Process))
-                    sb.AppendLine($"process = \"{Escape(item.Process)}\"");
-                sb.AppendLine();
-            }
-
-            // 3. Profiles
-            sb.AppendLine("# App Specific Profiles");
-            foreach (var kvp in config.Profiles)
-            {
-                foreach (var item in kvp.Value)
-                {
-                    sb.AppendLine($"[[profiles.{kvp.Key}]]");
-                    sb.AppendLine($"slot = {item.Slot}");
-                    sb.AppendLine($"label = \"{Escape(item.Label)}\"");
-                    sb.AppendLine($"cmd = \"{Escape(item.Cmd)}\"");
-                    sb.AppendLine();
-                }
-            }
-
-            await File.WriteAllTextAsync(ConfigPath, sb.ToString());
+            // 使用 FileStream 异步写入，更安全
+            using var stream = File.Create(ConfigPath);
+            await JsonSerializer.SerializeAsync(stream, config, _jsonOptions);
         }
 
         private AppConfig CreateDefault()
         {
             var config = new AppConfig();
-            
-            // 默认 Switcher
-            config.Switcher.Add(new GridItem { Type = GridItemType.Launcher, Slot = 1, Label = "Chrome", Cmd = "chrome.exe", Process = "chrome" });
-            config.Switcher.Add(new GridItem { Type = GridItemType.Launcher, Slot = 2, Label = "Notepad", Cmd = "notepad.exe", Process = "notepad" });
-            config.Switcher.Add(new GridItem { Type = GridItemType.Launcher, Slot = 8, Label = "Explorer", Cmd = "explorer.exe", Process = "explorer" });
 
-            // 默认 Profile
-            var chromeItems = new List<GridItem>
-            {
-                new GridItem { Type = GridItemType.Action, Slot = 1, Label = "New Tab", Cmd = "^t" },
-                new GridItem { Type = GridItemType.Action, Slot = 2, Label = "Close Tab", Cmd = "^w" },
-                new GridItem { Type = GridItemType.Action, Slot = 4, Label = "Reopen", Cmd = "^+t" }
-            };
-            config.Profiles.Add("chrome", chromeItems);
+            // 1. 默认 Switcher (LauncherItem)
+            config.SwitcherSlots.Add(new LauncherItem { Slot = 1, Label = "Chrome", ProcessName = "chrome" });
+            config.SwitcherSlots.Add(new LauncherItem { Slot = 2, Label = "Code", ProcessName = "code" });
+            config.SwitcherSlots.Add(new LauncherItem { Slot = 8, Label = "Explorer", ProcessName = "explorer" });
+
+            // 2. 默认 Global Commands (CommandItem)
+            config.CommandLayer.GlobalSlots.Add(new CommandItem { Slot = 1, Label = "Task Mgr", ExePath = "taskmgr.exe" });
+            config.CommandLayer.GlobalSlots.Add(new CommandItem { Slot = 3, Label = "Terminal", ExePath = "wt.exe" });
+
+            // 3. 默认 Profile (Chrome)
+            var chromeProfile = new AppProfile();
+            chromeProfile.Slots.Add(new CommandItem { Slot = 1, Label = "New Tab", ExePath = "sendkeys", Arguments = "^t" }); // 暂用 sendkeys 占位
+            config.CommandLayer.Profiles.Add("chrome", chromeProfile);
 
             return config;
-        }
-
-        private static string Escape(string input)
-        {
-            if (string.IsNullOrEmpty(input)) return "";
-            return input.Replace("\\", "\\\\").Replace("\"", "\\\"");
         }
     }
 }

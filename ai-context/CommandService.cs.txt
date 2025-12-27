@@ -1,13 +1,8 @@
 // [Path]: Pulsar/Pulsar/Services/CommandService.cs
 
-// [Path]: Pulsar/Services/CommandService.cs
-
-using System;
 using System.Diagnostics;
-using System.IO;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using Pulsar.Models.Enums;
+using System.Windows.Forms; // for SendKeys
+using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 
 namespace Pulsar.Services
@@ -21,91 +16,73 @@ namespace Pulsar.Services
             _windowService = windowService;
         }
 
-        public async Task ExecuteAsync(Pulsar.Models.GridItem item)
+        // 修改接口签名：接受 GridItemBase
+        public async Task ExecuteAsync(GridItemBase item)
         {
             if (item == null) return;
 
-            // 切回主线程执行
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
             {
                 try
                 {
-                    if (item.Type == GridItemType.Launcher)
+                    // C# 模式匹配 switch (Polymorphism handling)
+                    switch (item)
                     {
-                        // 1. 尝试切换到已有窗口
-                        bool switched = false;
-                        if (!string.IsNullOrEmpty(item.Process))
-                        {
-                            switched = await _windowService.SwitchToProcessAsync(item.Process);
-                        }
+                        case LauncherItem launcher:
+                            await HandleLauncherAsync(launcher);
+                            break;
 
-                        // 2. 如果切换失败，则启动新实例
-                        if (!switched && !string.IsNullOrWhiteSpace(item.Cmd))
-                        {
-                            // [核心修复] 恢复参数智能解析逻辑
-                            // 不能直接传 item.Cmd，必须拆分 Exe 和 Args
-                            var (exe, args) = ParseCommand(item.Cmd);
-                            await _windowService.LaunchApplicationAsync(exe, args);
-                        }
-                    }
-                    else if (item.Type == GridItemType.Action)
-                    {
-                        // Action 模式：发送按键
-                        if (string.IsNullOrWhiteSpace(item.Cmd)) return;
-
-                        await Task.Delay(50); // 等待 UI 消失
-                        SendKeys.SendWait(item.Cmd);
+                        case CommandItem command:
+                            await HandleCommandAsync(command);
+                            break;
                     }
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"[CommandService] Error: {ex.Message}");
+                    Debug.WriteLine($"[CommandService] Execution Failed: {ex.Message}");
                 }
             });
         }
 
-        // [新增] 从旧版 CommandRunner 移植的解析逻辑
-        private (string exe, string? args) ParseCommand(string cmd)
+        private async Task HandleLauncherAsync(LauncherItem item)
         {
-            if (string.IsNullOrWhiteSpace(cmd)) return (cmd, null);
+            if (string.IsNullOrWhiteSpace(item.ProcessName)) return;
 
-            cmd = cmd.Trim();
+            // 1. 尝试切换
+            bool switched = await _windowService.SwitchToProcessAsync(item.ProcessName);
 
-            // 简单情况：如果不包含空格，直接返回
-            if (!cmd.Contains(" ")) return (cmd, null);
-
-            string lowerCmd = cmd.ToLower();
-
-            // 策略 A: 显式 .exe 分割 (最准确)
-            // 例如: "C:\Path\App.exe /s" -> "C:\Path\App.exe", "/s"
-            int exeIndex = lowerCmd.IndexOf(".exe");
-            if (exeIndex > 0)
+            // 2. 切换失败则无需操作 (根据 PRD: Launcher 主要是 "Switch", 
+            //    如果用户想 "Start", 应该配置 CommandItem。但为了便利，这里可以保留启动逻辑)
+            if (!switched)
             {
-                // 确保 .exe 后面是结束或者空格
-                int splitPoint = exeIndex + 4;
-                if (splitPoint == cmd.Length || cmd[splitPoint] == ' ')
-                {
-                    string filePath = cmd.Substring(0, splitPoint);
-                    string args = (splitPoint < cmd.Length) ? cmd.Substring(splitPoint + 1).Trim() : null;
-                    return (filePath, args);
-                }
+                // 可选：如果没找到窗口，是否尝试直接运行 ProcessName? 
+                // 暂时保留简单逻辑，仅作为切换器。
+                Debug.WriteLine($"Window {item.ProcessName} not found.");
+            }
+        }
+
+        private async Task HandleCommandAsync(CommandItem item)
+        {
+            // 特殊处理：如果是模拟按键 (这里是一个临时约定，或者后续加一个 ActionItem 类型)
+            if (item.ExePath.Equals("sendkeys", StringComparison.OrdinalIgnoreCase))
+            {
+                await Task.Delay(50);
+                SendKeys.SendWait(item.Arguments);
+                return;
             }
 
-            // 策略 B: 如果文件实际存在 (处理带空格的路径但没写引号的情况)
-            // 这是一个简单的贪婪匹配，但在不确定参数的情况下很难完美
-            // 这里我们回退到最简单的策略：如果找不到 .exe，且有空格，且作为一个整体文件不存在
-            // 则假设第一个空格是分隔符 (处理 "notepad file.txt")
-            if (!File.Exists(cmd))
-            {
-                int firstSpace = cmd.IndexOf(' ');
-                if (firstSpace > 0)
-                {
-                    return (cmd.Substring(0, firstSpace), cmd.Substring(firstSpace + 1));
-                }
-            }
+            if (string.IsNullOrWhiteSpace(item.ExePath)) return;
 
-            // 默认：当作整体
-            return (cmd, null);
+            // [PRD 核心]: 禁止 Split，直接传递
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = item.ExePath,
+                Arguments = item.Arguments,
+                UseShellExecute = true // 允许运行 url, documents 等
+            };
+
+            Process.Start(startInfo);
+            await Task.CompletedTask;
         }
     }
 }

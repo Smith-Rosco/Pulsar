@@ -1,13 +1,12 @@
 // [Path]: Pulsar/Pulsar/Services/Interfaces/ICommandService.cs
 
-// [Path]: Pulsar/Services/Interfaces/ICommandService.cs
-using System.Threading.Tasks;
+using Pulsar.Models;
 
 namespace Pulsar.Services.Interfaces
 {
     public interface ICommandService
     {
-        // ʹ����ȫ�޶��� Pulsar.Models.GridItem����ֹ�κ�����
-        Task ExecuteAsync(Pulsar.Models.GridItem item);
+        // �ӿڷ���ǩ�����
+        Task ExecuteAsync(GridItemBase item);
     }
 }

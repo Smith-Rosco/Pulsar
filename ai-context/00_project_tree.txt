@@ -4,20 +4,19 @@ Pulsar_Project/
 │   │   ├── Core/
 │   │   │   ├── Converters/
 │   │   │   │   └── ScaleConverter.cs
-│   │   │   ├── Extensions/
 │   │   │   └── MathHelper.cs
 │   │   ├── Models/
 │   │   │   ├── Enums/
 │   │   │   │   ├── GridItem.cs
 │   │   │   │   └── GridItemType.cs
 │   │   │   ├── AppConfig.cs
-│   │   │   └── GlobalSettings.cs
+│   │   │   ├── CommandItem.cs
+│   │   │   ├── GlobalSettings.cs
+│   │   │   ├── GridItemBase.cs
+│   │   │   └── LauncherItem.cs
 │   │   ├── Native/
 │   │   │   ├── GlobalKeyboardHook.cs
 │   │   │   └── WindowHelper.cs
-│   │   ├── Resources/
-│   │   │   ├── Styles/
-│   │   │   └── Themes/
 │   │   ├── Services/
 │   │   │   ├── Interfaces/
 │   │   │   │   ├── ICommandService.cs
@@ -39,7 +38,6 @@ Pulsar_Project/
 │   │   │   ├── Controls/
 │   │   │   │   ├── JellyOrb.xaml
 │   │   │   │   └── JellyOrb.xaml.cs
-│   │   │   ├── Dialogs/
 │   │   │   ├── TemplateSelectors/
 │   │   │   │   └── SlotTemplateSelector.cs
 │   │   │   ├── RadialMenuWindow.xaml
@@ -57,3 +55,10 @@ Pulsar_Project/
 │   │   ├── Pulsar.csproj
 │   │   └── Pulsar.csproj.user
 │   └── Pulsar.sln
+├── 项目文档 _v3.md
+├── 项目文档_v2.md
+├── 项目文档_V4.md
+├── 项目文档.md
+├── 重构指南.md
+├── ai-packer.config.js
+└── Pulsar 重构版产品需求文档 (PRD v2.0).md

@@ -1,11 +1,10 @@
-// [Path]: Pulsar/Services/Interfaces/ICommandService.cs
-using System.Threading.Tasks;
+using Pulsar.Models;
 
 namespace Pulsar.Services.Interfaces
 {
     public interface ICommandService
     {
-        // 使用完全限定名 Pulsar.Models.GridItem，防止任何歧义
-        Task ExecuteAsync(Pulsar.Models.GridItem item);
+        // 接口方法签名变更
+        Task ExecuteAsync(GridItemBase item);
     }
 }

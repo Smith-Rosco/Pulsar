@@ -1,57 +1,62 @@
-using Pulsar.ViewModels.Base;
-using Pulsar.Models.Enums;
+// [File]: Pulsar/ViewModels/SlotViewModel.cs
+
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Pulsar.ViewModels
 {
-    public class SlotViewModel : ViewModelBase
+    // 确保没有 duplicate 错误，且继承 ObservableObject
+    public class SlotViewModel : ObservableObject
     {
-        public int SlotIndex { get; }
-        
-        // 静态位置参数 (构造时计算，之后不变)
-        public double CenterX { get; }
-        public double CenterY { get; }
-        public double Size { get; }
-
-        // 动态状态
+        private int _slotIndex;
+        private double _x;
+        private double _y;
+        private double _size;
         private string _label = string.Empty;
+        private bool _isActive;
+
+        public SlotViewModel(int index, double x, double y, double size)
+        {
+            SlotIndex = index;
+            X = x;
+            Y = y;
+            Size = size;
+        }
+
+        // 手动实现属性，确保 WPF Binding 绝对能找到它们
+        public double X
+        {
+            get => _x;
+            set => SetProperty(ref _x, value);
+        }
+
+        public double Y
+        {
+            get => _y;
+            set => SetProperty(ref _y, value);
+        }
+
+        public double Size
+        {
+            get => _size;
+            set => SetProperty(ref _size, value);
+        }
+
         public string Label
         {
             get => _label;
             set => SetProperty(ref _label, value);
         }
 
-        private bool _isActive;
         public bool IsActive
         {
             get => _isActive;
             set => SetProperty(ref _isActive, value);
         }
 
-        // 动画驱动属性 (Scale, Offset)
-        // View 层将绑定这些属性，或者使用 Trigger 响应 IsActive 变化
-        // 这里我们主要存储业务数据，具体动画值由 View 的 Style 决定，
-        // 但如果需要复杂的物理效果 (如拖拽偏移)，可以在这里暴露 OffsetX/Y
-        
-        private double _offsetX;
-        public double OffsetX
+        public int SlotIndex
         {
-            get => _offsetX;
-            set => SetProperty(ref _offsetX, value);
-        }
-
-        private double _offsetY;
-        public double OffsetY
-        {
-            get => _offsetY;
-            set => SetProperty(ref _offsetY, value);
-        }
-
-        public SlotViewModel(int index, double x, double y, double size)
-        {
-            SlotIndex = index;
-            CenterX = x;
-            CenterY = y;
-            Size = size;
+            get => _slotIndex;
+            set => SetProperty(ref _slotIndex, value);
         }
     }
 }

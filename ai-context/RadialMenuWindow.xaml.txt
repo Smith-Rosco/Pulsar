@@ -33,10 +33,8 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemContainerStyle>
                     <Style TargetType="ContentPresenter">
-                        <Setter Property="Canvas.Left"
-                                Value="{Binding CenterX}"/>
-                        <Setter Property="Canvas.Top"
-                                Value="{Binding CenterY}"/>
+                        <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                        <Setter Property="Canvas.Top" Value="{Binding Y}"/>
                     </Style>
                 </ItemsControl.ItemContainerStyle>
                 <ItemsControl.ItemTemplate>
@@ -47,22 +45,23 @@
             </ItemsControl>
 
             <controls:JellyOrb DataContext="{Binding CenterSlot}"
-                               Canvas.Left="{Binding CenterX}"
-                               Canvas.Top="{Binding CenterY}"/>
+                               Canvas.Left="{Binding X}"
+                               Canvas.Top="{Binding Y}"/>
 
             <TextBlock Text="{Binding CenterText}"
                        Canvas.Left="0"
-                    Canvas.Top="350"
-                    Width="400"
+                       Canvas.Top="350"
+                       Width="400"
                        TextAlignment="Center"
-                       Foreground="{DynamicResource Theme.Text.Secondary}"
-                       FontSize="14"
+                       Foreground="#DDFFFFFF"
+                       FontSize="16"
+                       FontWeight="SemiBold"
                        IsHitTestVisible="False">
                 <TextBlock.Effect>
                     <DropShadowEffect Color="Black"
-                            BlurRadius="4"
-                            ShadowDepth="1"
-                            Opacity="0.5"/>
+                                      BlurRadius="4"
+                                      ShadowDepth="2"
+                                      Opacity="0.8"/>
                 </TextBlock.Effect>
             </TextBlock>
         </Canvas>
