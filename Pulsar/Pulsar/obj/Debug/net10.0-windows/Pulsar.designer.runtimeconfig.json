@@ -16,6 +16,7 @@
       "C:\\Users\\milo\\.nuget\\packages"
     ],
     "configProperties": {
+      "MVVMTOOLKIT_ENABLE_INOTIFYPROPERTYCHANGING_SUPPORT": true,
       "System.Runtime.Serialization.EnableUnsafeBinaryFormatterSerialization": false,
       "CSWINRT_USE_WINDOWS_UI_XAML_PROJECTIONS": false,
       "Microsoft.NETCore.DotNetHostPolicy.SetAppPaths": true

@@ -29,16 +29,23 @@ namespace Pulsar
             serviceCollection.AddSingleton<ITrayService, TrayIconService>();
 
             serviceCollection.AddSingleton<GlobalKeyboardHook>();
+
+            // 2. 注册主窗口及其 ViewModel (Singleton: 全局唯一)
             serviceCollection.AddSingleton<RadialMenuViewModel>();
             serviceCollection.AddSingleton<RadialMenuWindow>();
 
+            // [新增] 注册设置窗口及其 ViewModel (Transient: 每次打开创建新实例)
+            // 这确保了每次打开设置窗口时，ViewModel 状态是新的
+            serviceCollection.AddTransient<SettingsViewModel>();
+            serviceCollection.AddTransient<SettingsWindow>();
+
             Services = serviceCollection.BuildServiceProvider();
 
-            // 2. 获取并初始化托盘
+            // 3. 获取并初始化托盘
             var trayService = Services.GetRequiredService<ITrayService>();
             trayService.Initialize();
 
-            // 3. 获取主窗口 (这将触发 ViewModel 的初始化和 Config 加载)
+            // 4. 获取主窗口 (这将触发 ViewModel 的初始化和 Config 加载)
             // 注意：我们不再调用 Show()，窗口默认隐藏，等待热键唤醒
             var mainWindow = Services.GetRequiredService<RadialMenuWindow>();
         }

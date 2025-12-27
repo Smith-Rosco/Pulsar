@@ -22,28 +22,38 @@ Pulsar_Project/
 │   │   │   ├── Interfaces/
 │   │   │   │   ├── ICommandService.cs
 │   │   │   │   ├── IConfigService.cs
+│   │   │   │   ├── ITrayService.cs
 │   │   │   │   └── IWindowService.cs
 │   │   │   ├── CommandService.cs
 │   │   │   ├── ConfigService.cs
+│   │   │   ├── TrayIconService.cs
 │   │   │   └── WindowService.cs
 │   │   ├── ViewModels/
 │   │   │   ├── Base/
 │   │   │   │   ├── RelayCommand.cs
 │   │   │   │   └── ViewModelBase.cs
 │   │   │   ├── RadialMenuViewModel.cs
+│   │   │   ├── SettingsViewModel.cs
 │   │   │   └── SlotViewModel.cs
 │   │   ├── Views/
 │   │   │   ├── Controls/
 │   │   │   │   ├── JellyOrb.xaml
 │   │   │   │   └── JellyOrb.xaml.cs
 │   │   │   ├── Dialogs/
+│   │   │   ├── TemplateSelectors/
+│   │   │   │   └── SlotTemplateSelector.cs
 │   │   │   ├── RadialMenuWindow.xaml
-│   │   │   └── RadialMenuWindow.xaml.cs
+│   │   │   ├── RadialMenuWindow.xaml.cs
+│   │   │   ├── SettingsWindow.xaml
+│   │   │   ├── SettingsWindow.xaml.cs
+│   │   │   ├── SimpleInputDialog.xaml
+│   │   │   └── SimpleInputDialog.xaml.cs
 │   │   ├── App.xaml
 │   │   ├── App.xaml.cs
 │   │   ├── AssemblyInfo.cs
 │   │   ├── GlobalUsings.cs
 │   │   ├── MainWindow.xaml
 │   │   ├── MainWindow.xaml.cs
-│   │   └── Pulsar.csproj
+│   │   ├── Pulsar.csproj
+│   │   └── Pulsar.csproj.user
 │   └── Pulsar.sln

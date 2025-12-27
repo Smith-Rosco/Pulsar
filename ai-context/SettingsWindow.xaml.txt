@@ -1,0 +1,198 @@
+// [Path]: Pulsar/Pulsar/Views/SettingsWindow.xaml
+
+﻿<Window x:Class="Pulsar.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:Pulsar.ViewModels"
+        xmlns:models="clr-namespace:Pulsar.Models"
+        xmlns:ts="clr-namespace:Pulsar.Views.TemplateSelectors"
+        mc:Ignorable="d"
+        Title="Pulsar Settings" Height="700" Width="1000"
+        WindowStartupLocation="CenterScreen"
+        Background="#F5F5F7" Foreground="#1C1C1E"
+        FontFamily="Segoe UI Variable Display, Segoe UI">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+        <Style x:Key="DestructiveButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#FF453A"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <DataTemplate x:Key="LauncherTemplate" DataType="{x:Type models:GridItem}">
+            <Border Background="White" Margin="0,0,10,10" Padding="15" CornerRadius="8">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="5" ShadowDepth="1" Opacity="0.1" Color="Black"/>
+                </Border.Effect>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="40"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Background="#E5E5EA" CornerRadius="6" Height="30" Width="30" VerticalAlignment="Top">
+                        <TextBlock Text="{Binding Slot}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" Foreground="#8E8E93"/>
+                    </Border>
+
+                    <StackPanel Grid.Column="1" Margin="15,0">
+                        <TextBox Text="{Binding Label}" FontWeight="SemiBold" Margin="0,0,0,5" Padding="5"/>
+                        <TextBox Text="{Binding Process}" FontFamily="Consolas" ToolTip="Process Name" Margin="0,0,0,5" Padding="5"/>
+                        <TextBox Text="{Binding Cmd}" FontFamily="Consolas" ToolTip="Command Path" Padding="5"/>
+                    </StackPanel>
+
+                    <Button Command="{Binding DataContext.DeleteSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                            CommandParameter="{Binding}"
+                            Content="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="16"
+                            Style="{StaticResource DestructiveButtonStyle}" Width="30" Height="30"/>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate x:Key="ActionTemplate" DataType="{x:Type models:GridItem}">
+            <Border Background="White" Margin="0,0,10,10" Padding="15" CornerRadius="8">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="5" ShadowDepth="1" Opacity="0.1" Color="Black"/>
+                </Border.Effect>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="40"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Background="#E5E5EA" CornerRadius="6" Height="30" Width="30" VerticalAlignment="Top">
+                        <TextBlock Text="{Binding Slot}" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" Foreground="#8E8E93"/>
+                    </Border>
+
+                    <StackPanel Grid.Column="1" Margin="15,0">
+                        <TextBox Text="{Binding Label}" FontWeight="SemiBold" Margin="0,0,0,5" Padding="5"/>
+                        <TextBox Text="{Binding Cmd}" FontFamily="Consolas" ToolTip="Key Sequence" Padding="5"/>
+                    </StackPanel>
+
+                    <Button Command="{Binding DataContext.DeleteSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                            CommandParameter="{Binding}"
+                            Content="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="16"
+                            Style="{StaticResource DestructiveButtonStyle}" Width="30" Height="30"/>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <ts:SlotTemplateSelector x:Key="SlotSelector"
+                                 LauncherTemplate="{StaticResource LauncherTemplate}"
+                                 ActionTemplate="{StaticResource ActionTemplate}"/>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="260"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <Border Background="#F2F2F7" BorderBrush="#E5E5EA" BorderThickness="0,0,1,0">
+            <Grid Margin="10,20">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="PULSAR" FontSize="18" FontWeight="Heavy" Foreground="#1C1C1E" Margin="10,0,0,20"/>
+
+                <ListBox Grid.Row="1" ItemsSource="{Binding NavigationItems}" SelectedItem="{Binding SelectedNavItem}"
+                         Background="Transparent" BorderThickness="0">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Padding" Value="10,8"/>
+                            <Setter Property="Margin" Value="0,2"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <Border Name="Bd" Background="Transparent" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="Bd" Property="Background" Value="#E5E5EA"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding Icon}" FontFamily="Segoe MDL2 Assets" Width="24" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding Title}" FontWeight="Medium" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <StackPanel Grid.Row="2">
+                    <Button Content="New Profile" Command="{Binding AddProfileCommand}" Margin="0,5" Padding="10,5"/>
+                    <Button Content="Delete Profile" Command="{Binding DeleteProfileCommand}" Margin="0,5" Padding="10,5" Foreground="Red"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Column="1" Margin="40">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Margin="0,0,0,30">
+                <TextBlock Text="{Binding HeaderTitle}" FontSize="28" FontWeight="Light"/>
+                <TextBlock Text="{Binding HeaderSubtitle}" FontSize="14" Foreground="#8E8E93"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="1" Visibility="{Binding IsGlobalSettingsVisible, Converter={StaticResource BoolToVis}}">
+                <Border Background="White" Padding="20" CornerRadius="8">
+                    <StackPanel>
+                        <TextBlock Text="Trigger Distance (px)" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                        <Slider Value="{Binding Config.Settings.TriggerDistance}" Minimum="50" Maximum="500" TickFrequency="10" IsSnapToTickEnabled="True"/>
+                        <TextBlock Text="{Binding Config.Settings.TriggerDistance}" HorizontalAlignment="Right"/>
+
+                        <Separator Margin="0,20"/>
+
+                        <TextBlock Text="Hover Scale" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                        <Slider Value="{Binding Config.Settings.HoverScale}" Minimum="1.0" Maximum="2.0" TickFrequency="0.1"/>
+                        <TextBlock Text="{Binding Config.Settings.HoverScale, StringFormat=N2}" HorizontalAlignment="Right"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <ScrollViewer Grid.Row="1" Visibility="{Binding IsSlotsEditorVisible, Converter={StaticResource BoolToVis}}">
+                <ItemsControl ItemsSource="{Binding CurrentSlotCollection}" ItemTemplateSelector="{StaticResource SlotSelector}"/>
+            </ScrollViewer>
+
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                <Button Command="{Binding AddSlotCommand}" Content="+ Add Slot" Margin="0,0,15,0" Padding="15,8"
+                        Visibility="{Binding IsSlotsEditorVisible, Converter={StaticResource BoolToVis}}"/>
+
+                <Button Command="{Binding SaveAndCloseCommand}" Content="Save &amp; Close" 
+                        Background="#007AFF" Foreground="White" Padding="20,8" FontWeight="Bold"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

@@ -1,0 +1,27 @@
+// [Path]: Pulsar/Pulsar/Views/TemplateSelectors/SlotTemplateSelector.cs
+
+﻿// [Path]: Pulsar/Views/TemplateSelectors/SlotTemplateSelector.cs
+using System.Windows;
+using System.Windows.Controls;
+// 自动使用 GlobalUsings 中的 GridItem
+
+namespace Pulsar.Views.TemplateSelectors
+{
+    public class SlotTemplateSelector : DataTemplateSelector
+    {
+        public DataTemplate LauncherTemplate { get; set; }
+        public DataTemplate ActionTemplate { get; set; }
+
+        public override DataTemplate SelectTemplate(object item, DependencyObject container)
+        {
+            if (item is GridItem gridItem)
+            {
+                // 根据 Type 枚举切换模板
+                return gridItem.Type == Pulsar.Models.Enums.GridItemType.Launcher
+                    ? LauncherTemplate
+                    : ActionTemplate;
+            }
+            return base.SelectTemplate(item, container);
+        }
+    }
+}

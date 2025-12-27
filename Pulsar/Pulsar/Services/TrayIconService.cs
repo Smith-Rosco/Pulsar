@@ -1,7 +1,12 @@
-﻿using System;
-using System.Drawing; // 用于 Icon
+﻿// [Path]: Pulsar/Services/TrayIconService.cs
+
+using System;
+using System.Drawing; // System.Drawing.Primitives 或 System.Drawing.Common
+using System.Linq;
+using Microsoft.Extensions.DependencyInjection; // 用于 IServiceProvider
 using Pulsar.Services.Interfaces;
-using Forms = System.Windows.Forms; // [关键] 为 WinForms 建立别名，避免与 WPF 冲突
+using Pulsar.Views;
+using Forms = System.Windows.Forms; // 别名
 
 namespace Pulsar.Services
 {
@@ -9,10 +14,12 @@ namespace Pulsar.Services
     {
         private Forms.NotifyIcon? _notifyIcon;
         private readonly IConfigService _configService;
+        private readonly IServiceProvider _serviceProvider; // 新增：用于解析 Window
 
-        public TrayIconService(IConfigService configService)
+        public TrayIconService(IConfigService configService, IServiceProvider serviceProvider)
         {
             _configService = configService;
+            _serviceProvider = serviceProvider;
         }
 
         public void Initialize()
@@ -20,16 +27,16 @@ namespace Pulsar.Services
             // 1. 创建 NotifyIcon
             _notifyIcon = new Forms.NotifyIcon
             {
-                // 使用系统托盘图标，避免找不到图标文件导致崩溃
-                Icon = SystemIcons.Application,
+                Icon = SystemIcons.Application, // 后续可替换为 Properties.Resources.Icon
                 Text = "Pulsar (Ctrl+Q)",
                 Visible = true
             };
 
-            // 2. 构建右键菜单 (使用 Forms 别名)
+            // 2. 构建右键菜单
             var contextMenu = new Forms.ContextMenuStrip();
 
-            // 菜单项: 重载配置
+            var settingsItem = new Forms.ToolStripMenuItem("Settings", null, OnSettingsClicked);
+
             var reloadItem = new Forms.ToolStripMenuItem("Reload Config");
             reloadItem.Click += async (s, e) =>
             {
@@ -37,25 +44,44 @@ namespace Pulsar.Services
                 ShowNotification("Configuration Reloaded", "Your settings have been updated.");
             };
 
-            // 菜单项: 退出
             var exitItem = new Forms.ToolStripMenuItem("Exit Pulsar");
             exitItem.Click += (s, e) =>
             {
-                // [修复] 显式使用 System.Windows.Application 来消除歧义
+                Dispose();
                 System.Windows.Application.Current.Shutdown();
             };
 
+            contextMenu.Items.Add(settingsItem);
             contextMenu.Items.Add(reloadItem);
             contextMenu.Items.Add(new Forms.ToolStripSeparator());
             contextMenu.Items.Add(exitItem);
 
             _notifyIcon.ContextMenuStrip = contextMenu;
 
-            // 3. 双击事件
-            _notifyIcon.DoubleClick += (s, e) =>
+            // 3. 双击打开设置
+            _notifyIcon.DoubleClick += OnSettingsClicked;
+        }
+
+        private void OnSettingsClicked(object? sender, EventArgs e)
+        {
+            // 切换到 WPF UI 线程
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
-                ShowNotification("Pulsar", "Settings Window coming in Phase 7!");
-            };
+                // 防止重复打开
+                var existing = System.Windows.Application.Current.Windows.OfType<SettingsWindow>().FirstOrDefault();
+                if (existing != null)
+                {
+                    existing.Activate();
+                    if (existing.WindowState == System.Windows.WindowState.Minimized)
+                        existing.WindowState = System.Windows.WindowState.Normal;
+                }
+                else
+                {
+                    // 使用 DI 创建新实例 (Transient)
+                    var window = _serviceProvider.GetRequiredService<SettingsWindow>();
+                    window.Show();
+                }
+            });
         }
 
         private void ShowNotification(string title, string message)

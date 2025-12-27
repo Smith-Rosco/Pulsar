@@ -1,13 +1,58 @@
 // [Path]: Pulsar/Pulsar/Services/WindowService.cs
 
+// [Path]: Pulsar/Services/WindowService.cs
+
+using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices; // DllImport 需要
+using System.Threading.Tasks;
 using Pulsar.Services.Interfaces;
-using Pulsar.Native;
+using Pulsar.Native; // 引用你原有的 WindowHelper (如果存在)，或者直接使用下面的 Native 实现
 
 namespace Pulsar.Services
 {
     public class WindowService : IWindowService
     {
+        // --- Native API 定义 (使用 EntryPoint 避免方法名冲突) ---
+
+        [DllImport("user32.dll", EntryPoint = "GetForegroundWindow")]
+        private static extern IntPtr GetForegroundWindow_Native();
+
+        [DllImport("user32.dll")]
+        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+        // --- 1. 获取当前活动窗口 (新增) ---
+
+        public WindowInfo GetForegroundWindow()
+        {
+            try
+            {
+                // 1. 获取前台窗口句柄
+                IntPtr hWnd = GetForegroundWindow_Native();
+                if (hWnd == IntPtr.Zero) return new WindowInfo("Global", "", "Desktop");
+
+                // 2. 获取进程 ID
+                GetWindowThreadProcessId(hWnd, out uint processId);
+
+                // 3. 获取进程详细信息
+                using (var process = Process.GetProcessById((int)processId))
+                {
+                    string path = "";
+                    try { path = process.MainModule?.FileName ?? ""; } catch { }
+
+                    // 返回标准化的小写进程名，方便 Key 匹配 (如 "chrome")
+                    return new WindowInfo(process.ProcessName.ToLower(), path, process.MainWindowTitle);
+                }
+            }
+            catch (Exception)
+            {
+                // 容错处理：无法读取时视为全局
+                return new WindowInfo("Global", "", "Unknown");
+            }
+        }
+
+        // --- 2. 切换窗口 (复刻旧版逻辑) ---
+
         public Task<bool> SwitchToProcessAsync(string processName)
         {
             return Task.Run(() =>
@@ -21,6 +66,8 @@ namespace Pulsar.Services
                 return false;
             });
         }
+
+        // --- 3. 启动程序 ---
 
         public Task<bool> LaunchApplicationAsync(string command, string? arguments)
         {
@@ -45,30 +92,34 @@ namespace Pulsar.Services
             });
         }
 
+        // --- 私有辅助方法 ---
+
         private IntPtr FindWindowByProcess(string processName)
         {
+            processName = processName.ToLower().Replace(".exe", "");
             IntPtr foundWindow = IntPtr.Zero;
             Process[] processes = Process.GetProcessesByName(processName);
 
             if (processes.Length == 0) return IntPtr.Zero;
 
+            // 使用 WindowHelper (确保 Native/WindowHelper.cs 存在)
             WindowHelper.EnumWindows((hWnd, lParam) =>
             {
                 if (!WindowHelper.IsWindowVisible(hWnd)) return true;
 
                 WindowHelper.GetWindowThreadProcessId(hWnd, out uint pid);
+                bool isTarget = false;
+                foreach (var p in processes) { if (p.Id == pid) { isTarget = true; break; } }
 
-                foreach (var p in processes)
+                if (isTarget)
                 {
-                    if (p.Id == pid)
-                    {
-                        if (WindowHelper.GetWindowTextLength(hWnd) == 0) return true;
-                        long style = WindowHelper.GetWindowLong(hWnd, WindowHelper.GWL_EXSTYLE);
-                        if ((style & WindowHelper.WS_EX_TOOLWINDOW) != 0) return true;
+                    // 过滤无标题窗口和工具窗口
+                    if (WindowHelper.GetWindowTextLength(hWnd) == 0) return true;
+                    long style = WindowHelper.GetWindowLong(hWnd, WindowHelper.GWL_EXSTYLE);
+                    if ((style & WindowHelper.WS_EX_TOOLWINDOW) != 0) return true;
 
-                        foundWindow = hWnd;
-                        return false; // Stop enumeration
-                    }
+                    foundWindow = hWnd;
+                    return false; // 找到目标，停止枚举
                 }
                 return true;
             }, IntPtr.Zero);
@@ -81,27 +132,16 @@ namespace Pulsar.Services
             if (WindowHelper.IsIconic(hWnd))
             {
                 WindowHelper.ShowWindow(hWnd, WindowHelper.SW_RESTORE);
-                Thread.Sleep(50);
+                System.Threading.Thread.Sleep(50);
             }
 
-            // 模拟 Alt 键绕过 Windows 焦点保护
-            WindowHelper.keybd_event(WindowHelper.VK_MENU, 0, 0, 0);
-
-            uint currentThreadId = WindowHelper.GetCurrentThreadId();
-            WindowHelper.GetWindowThreadProcessId(hWnd, out _);
-            // 简化：暂时不处理 AttachThreadInput 的复杂判断，直接尝试置顶
-            // [cite_start]// 如果旧代码的 AttachThreadInput 逻辑很关键，可以在此还原 [cite: 196-202]
-
-            WindowHelper.SetWindowPos(hWnd, WindowHelper.HWND_TOPMOST, 0, 0, 0, 0,
-                WindowHelper.SWP_NOMOVE | WindowHelper.SWP_NOSIZE | WindowHelper.SWP_SHOWWINDOW);
-            WindowHelper.SetWindowPos(hWnd, WindowHelper.HWND_NOTOPMOST, 0, 0, 0, 0,
-                WindowHelper.SWP_NOMOVE | WindowHelper.SWP_NOSIZE | WindowHelper.SWP_SHOWWINDOW);
-
+            WindowHelper.keybd_event(WindowHelper.VK_MENU, 0, 0, 0); // Alt Down
+            WindowHelper.SetWindowPos(hWnd, WindowHelper.HWND_TOPMOST, 0, 0, 0, 0, WindowHelper.SWP_NOMOVE | WindowHelper.SWP_NOSIZE | WindowHelper.SWP_SHOWWINDOW);
+            WindowHelper.SetWindowPos(hWnd, WindowHelper.HWND_NOTOPMOST, 0, 0, 0, 0, WindowHelper.SWP_NOMOVE | WindowHelper.SWP_NOSIZE | WindowHelper.SWP_SHOWWINDOW);
             WindowHelper.SetForegroundWindow(hWnd);
             WindowHelper.BringWindowToTop(hWnd);
             WindowHelper.SetFocus(hWnd);
-
-            WindowHelper.keybd_event(WindowHelper.VK_MENU, 0, WindowHelper.KEYEVENTF_KEYUP, 0);
+            WindowHelper.keybd_event(WindowHelper.VK_MENU, 0, WindowHelper.KEYEVENTF_KEYUP, 0); // Alt Up
         }
     }
 }

@@ -16,10 +16,6 @@
         ShowInTaskbar="False"
         ResizeMode="NoResize">
 
-    <d:Window.DataContext>
-        <vm:RadialMenuViewModel/>
-    </d:Window.DataContext>
-
     <Grid>
         <Canvas x:Name="MenuCanvas"
                 Width="400"

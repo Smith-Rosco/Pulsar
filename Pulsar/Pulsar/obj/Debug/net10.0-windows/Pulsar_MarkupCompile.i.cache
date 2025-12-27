@@ -10,11 +10,11 @@ none
 false
 TRACE;DEBUG;NET;NET10_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NET9_0_OR_GREATER;NET10_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER
 G:\0_Playground\Pulsar_Project\Pulsar\Pulsar\App.xaml
-3-1252943891
+5358053532
 
-29-1671701365
-217-1972913603
-MainWindow.xaml;Views\Controls\JellyOrb.xaml;Views\RadialMenuWindow.xaml;
+33-1539227445
+2181913338073
+MainWindow.xaml;Views\Controls\JellyOrb.xaml;Views\RadialMenuWindow.xaml;Views\SettingsWindow.xaml;Views\SimpleInputDialog.xaml;
 
-False
+True
 

@@ -41,3 +41,8 @@ slot = 4
 label = "Reopen"
 cmd = "^+t"
 
+[[profiles.et]]
+slot = 1
+label = ""
+cmd = "E:\\8_Project\\10_C#\\VBA-Runner\\bin\\CellCaster.exe E:\\8_Project\\10_C#\\VBA-Runner\\scripts\\hello.txt"
+
