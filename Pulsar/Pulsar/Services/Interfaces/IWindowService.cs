@@ -5,14 +5,18 @@ namespace Pulsar.Services.Interfaces
 {
     public interface IWindowService
     {
-        // 原有的功能
-        Task<bool> SwitchToProcessAsync(string processName);
-        Task<bool> LaunchApplicationAsync(string command, string? arguments);
-
-        // [新增] 获取当前前台窗口的信息（用于识别当前所在的软件）
+        // 获取当前前台窗口信息
         WindowInfo GetForegroundWindow();
+
+        // [Fix] 之前缺失的定义
+        bool FocusWindow(string processName);
+
+        // 启动应用
+        Task<bool> LaunchApplicationAsync(string command, string? arguments);
+        
+        // 兼容旧接口
+        Task<bool> SwitchToProcessAsync(string processName);
     }
 
-    // [新增] 简单的窗口信息记录
     public record WindowInfo(string ProcessName, string ExePath, string Title);
 }

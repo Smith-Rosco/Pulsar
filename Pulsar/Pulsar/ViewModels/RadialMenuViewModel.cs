@@ -1,77 +1,62 @@
+// [Path]: Pulsar/ViewModels/RadialMenuViewModel.cs
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Collections.Generic;
-using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using Pulsar.Models;
+using Pulsar.Models.Enums;
 using Pulsar.Services.Interfaces;
 using Pulsar.Native;
-using Pulsar.Helpers; // [New]
+using Pulsar.Helpers; // 如果有 IconHelper
 
 namespace Pulsar.ViewModels
 {
-    // 定义内部枚举用于区分当前模式
-    public enum PulsarMode
-    {
-        Launcher,       // 模式一: 窗口切换 (Ctrl + Shift + Q)
-        SmartCommand    // 模式二: 智能命令 (Ctrl + Q)
-    }
-
     public partial class RadialMenuViewModel : ObservableObject
     {
-        // ---------------------------------------------------------
-        // Services & Config
-        // ---------------------------------------------------------
         private readonly IConfigService _configService;
         private readonly ICommandService _commandService;
         private readonly IWindowService _windowService;
 
         private AppConfig? _config;
-        private List<GridItemBase> _currentItems = new(); // 多态列表
 
-        // ---------------------------------------------------------
-        // UI Properties
-        // ---------------------------------------------------------
+        // [Fix] 类型升级为 GridItemBase
+        private List<GridItemBase> _currentItems = new();
+        private GridItemType _currentType;
+
         public ObservableCollection<SlotViewModel> Slots { get; } = new();
         public SlotViewModel CenterSlot { get; private set; } = null!;
 
-        [ObservableProperty]
+        // [Fix] 移除 [ObservableProperty] 以避免与下方手写属性冲突 (CS0102/Ambiguity)
         private bool _isVisible;
+        public bool IsVisible
+        {
+            get => _isVisible;
+            set => SetProperty(ref _isVisible, value);
+        }
 
-        [ObservableProperty]
         private string _centerText = "Pulsar";
+        public string CenterText
+        {
+            get => _centerText;
+            set => SetProperty(ref _centerText, value);
+        }
 
-        // 可选：绑定中心图标 (PRD 2.2 中心圆反馈)
-        [ObservableProperty]
-        private string _centerIcon = "";
+        private int _activeSlotIndex = -1;
 
-        // ---------------------------------------------------------
-        // Internal State
-        // ---------------------------------------------------------
-        private int _activeSlotIndex = -1; // -1: None, 1-8: Slots
-        private PulsarMode _currentMode;
-
-        // 布局常量 (与 View 大小匹配)
+        // 布局常量
         private const double CanvasSize = 400;
         private const double CenterX = CanvasSize / 2;
         private const double CenterY = CanvasSize / 2;
-        private const double SatelliteRadius = 100; // 卫星球分布半径
+        private const double SatelliteRadius = 90;
         private const double ItemSize = 50;
         private const double CenterSize = 70;
-
-        // [PRD 1.1] 盲区半径
-        private const double DeadZoneRadius = 50.0;
 
         // 按键常量
         private const int VK_LCONTROL = 0xA2;
         private const int VK_RCONTROL = 0xA3;
         private const int VK_CONTROL = 0x11;
 
-        // ---------------------------------------------------------
-        // Constructor
-        // ---------------------------------------------------------
         public RadialMenuViewModel(
             IConfigService configService,
             ICommandService commandService,
@@ -84,35 +69,22 @@ namespace Pulsar.ViewModels
 
             InitializeSlots();
 
-            // 绑定全局快捷键事件
-            // Mode 2: Smart Command (Ctrl + Q)
-            hook.OnGridTrigger += (s, e) => Show(PulsarMode.SmartCommand);
-
-            // Mode 1: Launcher (Ctrl + Shift + Q)
-            hook.OnSwitcherTrigger += (s, e) => Show(PulsarMode.Launcher);
-
-            // 监听按键抬起以执行命令
+            hook.OnGridTrigger += (s, e) => Show(GridItemType.Action);
+            hook.OnSwitcherTrigger += (s, e) => Show(GridItemType.Launcher);
             hook.OnKeyUp += HandleKeyUp;
 
-            // 异步加载配置
             LoadConfigAsync();
         }
 
         private void InitializeSlots()
         {
-            // 初始化中心球
             CenterSlot = new SlotViewModel(0, CenterX - CenterSize / 2, CenterY - CenterSize / 2, CenterSize);
-
-            // 初始化 8 个卫星球
             for (int i = 1; i <= 8; i++)
             {
-                // -90度为起点 (12点钟方向)，顺时针排列
                 double angleDeg = -90 + (i - 1) * 45;
                 double angleRad = angleDeg * (Math.PI / 180.0);
-
                 double x = CenterX + SatelliteRadius * Math.Cos(angleRad);
                 double y = CenterY + SatelliteRadius * Math.Sin(angleRad);
-
                 Slots.Add(new SlotViewModel(i, x - ItemSize / 2, y - ItemSize / 2, ItemSize));
             }
         }
@@ -122,150 +94,90 @@ namespace Pulsar.ViewModels
             _config = await _configService.LoadAsync();
         }
 
-        // ---------------------------------------------------------
-        // Core Logic: Show & Context Awareness
-        // ---------------------------------------------------------
-        private void Show(PulsarMode mode)
+        private void Show(GridItemType type)
         {
             if (IsVisible) return;
-            _currentMode = mode;
-
-            // 重置选中状态
             ResetSelection();
+            _currentType = type;
 
-            // 加载数据
-            if (_config == null) return; // 防御性编程
-
-            if (mode == PulsarMode.Launcher)
+            // 1. 确定数据源
+            if (type == GridItemType.Launcher)
             {
-                // [模式一] 窗口切换器
-                // 数据源: SwitcherSlots (LauncherItem)
-                _currentItems = _config.SwitcherSlots.Cast<GridItemBase>().ToList();
+                // [Fix] 这里现在是 List<GridItemBase>
+                _currentItems = _config?.Switcher ?? new List<GridItemBase>();
                 CenterText = "Switch";
-                // CenterIcon = "IsIconSwitcher"; // 预留
             }
             else
             {
-                // [模式二] 智能命令
-                // 上下文感知: 获取前台窗口
                 var windowInfo = _windowService.GetForegroundWindow();
-                string processName = windowInfo.ProcessName.ToLower();
+                string processName = windowInfo.ProcessName;
 
-                // 查找 Profile
-                if (_config.CommandLayer.Profiles.TryGetValue(processName, out var profile))
+                if (_config != null && _config.Profiles.TryGetValue(processName, out var items))
                 {
-                    _currentItems = profile.Slots.Cast<GridItemBase>().ToList();
-                    CenterText = processName; // 显示: chrome, code 等
+                    _currentItems = items;
+                    CenterText = processName;
                 }
                 else
                 {
-                    // 未命中 -> 加载全局默认
-                    _currentItems = _config.CommandLayer.GlobalSlots.Cast<GridItemBase>().ToList();
+                    _currentItems = _config?.Global ?? new List<GridItemBase>();
                     CenterText = "Global";
                 }
             }
 
-            // 绑定数据到 UI SlotViewModel
-            RefreshSlotsUI();
-
-            IsVisible = true;
-        }
-
-        private void RefreshSlotsUI()
-        {
+            // 2. 绑定 UI
             foreach (var slot in Slots)
             {
-                // 查找当前 SlotIndex 对应的 Item
                 var item = _currentItems.FirstOrDefault(x => x.Slot == slot.SlotIndex);
-
                 if (item != null)
                 {
                     slot.Label = item.Label;
-
-                    // [New] 图标解析逻辑
-                    // 优先使用 Config 中的 IconKey
-                    if (!string.IsNullOrEmpty(item.IconKey))
-                    {
-                        slot.IconGlyph = IconHelper.GetGlyph(item.IconKey);
-                    }
-                    else
-                    {
-                        // TODO: 如果没有 Key，未来可在此处尝试根据 ProcessName 自动匹配
-                        slot.IconGlyph = string.Empty;
-                    }
+                    // 如果 GridItemBase 有 IconKey，这里可以绑定
+                    if (!string.IsNullOrEmpty(item.IconKey)) slot.IconGlyph = Pulsar.Helpers.IconHelper.GetGlyph(item.IconKey);
+                    else slot.IconGlyph = "";
                 }
                 else
                 {
                     slot.Label = "";
-                    slot.IconGlyph = string.Empty;
+                    slot.IconGlyph = "";
                 }
             }
+
+            IsVisible = true;
         }
 
         private void ResetSelection()
         {
             _activeSlotIndex = -1;
-            CenterSlot.IsActive = false;
+            if (CenterSlot != null) CenterSlot.IsActive = false;
             foreach (var slot in Slots) slot.IsActive = false;
         }
 
-        // ---------------------------------------------------------
-        // Core Logic: Infinite Sector Selection (PRD 1.1)
-        // ---------------------------------------------------------
         public void HandleMouseMove(double mouseX, double mouseY)
         {
             if (!IsVisible) return;
 
-            // 1. 计算相对于中心的偏移
             double dx = mouseX - CenterX;
             double dy = mouseY - CenterY;
             double dist = Math.Sqrt(dx * dx + dy * dy);
 
+            double deadZone = 40.0;
+            double maxDist = 300.0;
+
             int newSlotIndex = -1;
 
-            // 2. 盲区判定 (Dead Zone)
-            if (dist < DeadZoneRadius)
+            if (dist < deadZone)
             {
-                // 在中心盲区内 -> 取消选中
-                newSlotIndex = -1;
-                // 可选: 如果中心有功能(如返回)，可设为 0
+                newSlotIndex = 0;
             }
-            else
+            else if (dist < maxDist)
             {
-                // 3. 极坐标判定 (Infinite Sector)
-                // 无论距离多远，只看角度
-                // Atan2 返回 (-PI, PI]，转换为角度 (-180, 180]
-                double angle = Math.Atan2(dy, dx) * (180.0 / Math.PI);
-
-                // 坐标系修正:
-                // Atan2 的 0度 是 3点钟方向(X轴正向)。
-                // 我们的 Slot 1 是 12点钟方向 (-90度)。
-                // 将角度旋转 +90度，使 12点钟变为 0度。
+                double angle = Math.Atan2(dy, dx) * 180 / Math.PI;
                 angle += 90;
-
-                // 规范化到 [0, 360)
                 if (angle < 0) angle += 360;
-
-                // 计算扇区:
-                // 360 / 8 = 45度/扇区。
-                // 为了让 Slot 1 (0度) 居中响应，需要偏移半个扇区 (22.5度)。
-                // 比如: Slot 1 响应范围是 [-22.5, 22.5] (在 +90 修正后即 [337.5, 360] U [0, 22.5])
-
-                // 算法: Floor((Angle + 22.5) / 45) + 1
-                int sector = (int)((angle + 22.5) / 45.0);
-
-                // 修正: 如果 sector = 0 (即 -22.5 到 0 度部分)，对应 Slot 1
-                // 如果 sector = 8 (即 337.5 到 360 部分)，对应 Slot 1 (实际上公式算出来是 8, +1 -> 9 -> wrap to 1)
-
-                // 简化映射:
-                // sector 0 -> Slot 1
-                // sector 1 -> Slot 2 ...
-                newSlotIndex = sector + 1;
-
+                newSlotIndex = (int)((angle + 22.5) / 45) + 1;
                 if (newSlotIndex > 8) newSlotIndex = 1;
             }
 
-            // 4. 更新高亮状态 (仅当索引变化时)
             if (_activeSlotIndex != newSlotIndex)
             {
                 UpdateActiveSlot(newSlotIndex);
@@ -274,65 +186,59 @@ namespace Pulsar.ViewModels
 
         private void UpdateActiveSlot(int index)
         {
-            // 1. 取消旧的高亮
-            if (_activeSlotIndex > 0)
-            {
-                var oldSlot = Slots.FirstOrDefault(s => s.SlotIndex == _activeSlotIndex);
-                if (oldSlot != null)
-                {
-                    // [修复 CS0122]: 直接赋值 public 属性，而不是在外部调用 protected SetProperty
-                    oldSlot.IsActive = false;
-                }
-            }
+            if (_activeSlotIndex == 0) CenterSlot.IsActive = false;
+            else if (_activeSlotIndex > 0) Slots.FirstOrDefault(s => s.SlotIndex == _activeSlotIndex)!.IsActive = false;
 
             _activeSlotIndex = index;
 
-            // 2. 设置新的高亮
-            if (_activeSlotIndex > 0)
+            if (_activeSlotIndex == 0) CenterSlot.IsActive = true;
+            else if (_activeSlotIndex > 0)
             {
-                var newSlot = Slots.FirstOrDefault(s => s.SlotIndex == _activeSlotIndex);
-                if (newSlot != null)
-                {
-                    newSlot.IsActive = true;
-                }
-            }
-
-            // 中心球反馈
-            if (CenterSlot != null)
-            {
-                CenterSlot.IsActive = (_activeSlotIndex == -1);
+                var slot = Slots.FirstOrDefault(s => s.SlotIndex == _activeSlotIndex);
+                if (slot != null) slot.IsActive = true;
             }
         }
 
-        // ---------------------------------------------------------
-        // Core Logic: Execution
-        // ---------------------------------------------------------
         private void HandleKeyUp(object? sender, GlobalKeyEventArgs e)
         {
             if (!IsVisible) return;
-
-            // 监听 Ctrl 键抬起
             if (e.VkCode == VK_LCONTROL || e.VkCode == VK_RCONTROL || e.VkCode == VK_CONTROL)
             {
                 ExecuteSelection();
-                IsVisible = false; // 立即关闭窗口
+                IsVisible = false;
             }
         }
 
         private async void ExecuteSelection()
         {
-            // 如果在盲区 (-1)，则不执行任何操作 (取消)
             if (_activeSlotIndex <= 0) return;
 
-            // 查找对应的数据项
-            var targetItem = _currentItems.FirstOrDefault(x => x.Slot == _activeSlotIndex);
+            // [Fix] 这里获取的是 GridItemBase
+            GridItemBase? targetItem = _currentItems.FirstOrDefault(x => x.Slot == _activeSlotIndex);
+            if (targetItem == null) return;
 
-            if (targetItem != null)
+            if (_currentType == GridItemType.Launcher)
             {
-                Debug.WriteLine($"[RadialVM] Executing Slot {_activeSlotIndex}");
-
-                // [PRD 1.2] 数据源差异处理已在 Show() 完成，这里只需传递多态对象
-                // CommandService 会根据 item 是 LauncherItem 还是 CommandItem 自动分发
+                // [Launcher 模式]
+                // 尝试强制转换 (如果需要访问 ProcessName)，或者直接利用 CommandService 解析
+                if (targetItem is LauncherItem launcherItem)
+                {
+                    bool switched = _windowService.FocusWindow(launcherItem.ProcessName);
+                    if (!switched)
+                    {
+                        // 切换失败，作为普通命令启动
+                        await _commandService.ExecuteAsync(targetItem);
+                    }
+                }
+                else
+                {
+                    // 数据类型不对，直接执行
+                    await _commandService.ExecuteAsync(targetItem);
+                }
+            }
+            else
+            {
+                // [Action 模式] 直接执行
                 await _commandService.ExecuteAsync(targetItem);
             }
         }

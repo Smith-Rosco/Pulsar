@@ -1,4 +1,5 @@
-﻿namespace Pulsar.Models
+﻿using System.Text.Json.Serialization;
+namespace Pulsar.Models
 {
     public class CommandItem : GridItemBase
     {

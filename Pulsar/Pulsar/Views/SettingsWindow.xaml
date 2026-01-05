@@ -5,7 +5,6 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:Pulsar.ViewModels"
         xmlns:models="clr-namespace:Pulsar.Models"
-        xmlns:selectors="clr-namespace:Pulsar.Views.TemplateSelectors"
         mc:Ignorable="d"
         Title="Pulsar Settings" Height="500" Width="800"
         Background="#1E1E1E" Foreground="White">
@@ -16,42 +15,103 @@
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="5"/>
-            <Setter Property="Margin" Value="0,0,5,0"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+        </Style>
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#AAA"/>
+            <Setter Property="Margin" Value="0,0,0,2"/>
         </Style>
 
-        <DataTemplate x:Key="LauncherItemTemplate" DataType="{x:Type models:LauncherItem}">
-            <Grid Margin="0,5">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="30"/>
-                    <ColumnDefinition Width="100"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
+        <DataTemplate DataType="{x:Type models:LauncherItem}">
+            <Border Background="#2D2D2D" CornerRadius="4" Padding="10" Margin="0,0,0,10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="50"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                <TextBlock Text="{Binding Slot}" VerticalAlignment="Center" Foreground="Gray"/>
-                <TextBox Grid.Column="1" Text="{Binding Label}"/>
-                <TextBox Grid.Column="2" Text="{Binding ProcessName}" ToolTip="Target Process Name (e.g. chrome)"/>
-            </Grid>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Slot" FontSize="10" HorizontalAlignment="Center"/>
+                        <TextBox Text="{Binding Slot}" TextAlignment="Center" Width="30"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Margin="10,0">
+                        <UniformGrid Columns="2">
+                            <StackPanel Margin="0,0,5,0">
+                                <TextBlock Text="Label"/>
+                                <TextBox Text="{Binding Label}"/>
+                            </StackPanel>
+                            <StackPanel Margin="5,0,0,0">
+                                <TextBlock Text="Process Name (.exe)"/>
+                                <TextBox Text="{Binding ProcessName}"/>
+                            </StackPanel>
+                        </UniformGrid>
+
+                        <StackPanel Margin="0,5,0,0">
+                            <TextBlock Text="Icon Key (e.g. E710)"/>
+                            <TextBox Text="{Binding IconKey}"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Button Grid.Column="2" Content="❌" 
+                            Command="{Binding DataContext.RemoveSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                            CommandParameter="{Binding}"
+                            Background="Transparent" BorderThickness="0" Foreground="#FF5555" FontWeight="Bold"/>
+                </Grid>
+            </Border>
         </DataTemplate>
 
-        <DataTemplate x:Key="CommandItemTemplate" DataType="{x:Type models:CommandItem}">
-            <Grid Margin="0,5">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="30"/>
-                    <ColumnDefinition Width="100"/>
-                    <ColumnDefinition Width="2*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
+        <DataTemplate DataType="{x:Type models:CommandItem}">
+            <Border Background="#2D2D2D" CornerRadius="4" Padding="10" Margin="0,0,0,10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="50"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                <TextBlock Text="{Binding Slot}" VerticalAlignment="Center" Foreground="Gray"/>
-                <TextBox Grid.Column="1" Text="{Binding Label}"/>
-                <TextBox Grid.Column="2" Text="{Binding ExePath}" ToolTip="Executable Path"/>
-                <TextBox Grid.Column="3" Text="{Binding Arguments}" ToolTip="Arguments"/>
-            </Grid>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Slot" FontSize="10" HorizontalAlignment="Center"/>
+                        <TextBox Text="{Binding Slot}" TextAlignment="Center" Width="30"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Margin="10,0">
+                        <UniformGrid Columns="2">
+                            <StackPanel Margin="0,0,5,0">
+                                <TextBlock Text="Label"/>
+                                <TextBox Text="{Binding Label}"/>
+                            </StackPanel>
+                            <StackPanel Margin="5,0,0,0">
+                                <TextBlock Text="Icon Key"/>
+                                <TextBox Text="{Binding IconKey}"/>
+                            </StackPanel>
+                        </UniformGrid>
+
+                        <Grid Margin="0,5,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Margin="0,0,5,0">
+                                <TextBlock Text="Exe Path / Command"/>
+                                <TextBox Text="{Binding ExePath}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="5,0,0,0">
+                                <TextBlock Text="Arguments"/>
+                                <TextBox Text="{Binding Arguments}"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+
+                    <Button Grid.Column="2" Content="❌" 
+                            Command="{Binding DataContext.RemoveSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                            CommandParameter="{Binding}"
+                            Background="Transparent" BorderThickness="0" Foreground="#FF5555" FontWeight="Bold"/>
+                </Grid>
+            </Border>
         </DataTemplate>
 
-        <selectors:SlotTemplateSelector x:Key="SlotSelector"
-                                        LauncherTemplate="{StaticResource LauncherItemTemplate}"
-                                        CommandTemplate="{StaticResource CommandItemTemplate}"/>
     </Window.Resources>
 
     <Grid>
@@ -60,27 +120,53 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <Border Background="#252526" Padding="10">
-            <StackPanel>
-                <TextBlock Text="PULSAR" FontSize="20" FontWeight="Bold" Margin="0,0,0,20" Foreground="#007ACC"/>
+        <Border Background="#252526" BorderBrush="#3F3F46" BorderThickness="0,0,1,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
-                <TextBlock Text="MODES" Foreground="Gray" Margin="0,10,0,5"/>
-                <Button Content="🔀 Window Switcher" 
-                        Command="{Binding SwitchToLauncherModeCommand}"
-                        HorizontalContentAlignment="Left" Padding="10,5" Background="Transparent" Foreground="White" BorderThickness="0"/>
+                <TextBlock Text="PULSAR" FontSize="20" FontWeight="Bold" Foreground="#007ACC" Margin="20,20,0,20"/>
 
-                <TextBlock Text="PROFILES" Foreground="Gray" Margin="0,20,0,5"/>
-                <ItemsControl ItemsSource="{Binding Profiles}">
-                    <ItemsControl.ItemTemplate>
+                <ListBox Grid.Row="1" 
+                         ItemsSource="{Binding NavItems}" 
+                         SelectedItem="{Binding SelectedNavItem}"
+                         Background="Transparent" 
+                         BorderThickness="0"
+                         Foreground="#DDD">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Padding" Value="10,8"/>
+                            <Setter Property="Cursor" Value="Hand"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <Border Name="Border" Padding="{TemplateBinding Padding}" Background="Transparent">
+                                            <ContentPresenter />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="Border" Property="Background" Value="#37373D"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Border" Property="Background" Value="#2A2D2E"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Button Content="{Binding}" 
-                                    Command="{Binding DataContext.LoadProfileCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    CommandParameter="{Binding}"
-                                    HorizontalContentAlignment="Left" Padding="10,5" Background="Transparent" Foreground="White" BorderThickness="0"/>
+                            <TextBlock Text="{Binding Name}"/>
                         </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </StackPanel>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
         </Border>
 
         <Grid Grid.Column="1" Margin="20">
@@ -91,18 +177,32 @@
             </Grid.RowDefinitions>
 
             <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
-                <TextBlock Text="{Binding SelectedProfileKey}" FontSize="24"/>
-                <TextBlock Text="{Binding IsLauncherMode, StringFormat=' (Mode: {0})'}" Foreground="Gray" VerticalAlignment="Bottom" Margin="10,0,0,4"/>
+                <TextBlock Text="{Binding SelectedNavItem.Name}" FontSize="24" FontWeight="Light"/>
+                <TextBlock Text="{Binding StatusMessage}" Margin="20,0,0,0" VerticalAlignment="Bottom" Foreground="#00CC6A" FontSize="12"/>
             </StackPanel>
 
-            <ScrollViewer Grid.Row="1">
-                <ItemsControl ItemsSource="{Binding EditableItems}" 
-                              ItemTemplateSelector="{StaticResource SlotSelector}"/>
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding CurrentSlots}"/>
             </ScrollViewer>
 
             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-                <Button Content="+ Add Slot" Command="{Binding AddNewItemCommand}" Padding="15,5" Margin="0,0,10,0"/>
-                <Button Content="Save Changes" Command="{Binding SaveConfigCommand}" Padding="15,5" Background="#007ACC" Foreground="White"/>
+                <Button Command="{Binding AddSlotCommand}" Content="+ Add Slot" 
+                        Padding="15,8" Background="#333" Foreground="White" BorderThickness="0" Margin="0,0,10,0">
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="4"/>
+                        </Style>
+                    </Button.Resources>
+                </Button>
+
+                <Button Command="{Binding SaveCommand}" Content="Save Changes" 
+                        Padding="15,8" Background="#007ACC" Foreground="White" BorderThickness="0" FontWeight="Bold">
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="4"/>
+                        </Style>
+                    </Button.Resources>
+                </Button>
             </StackPanel>
         </Grid>
     </Grid>

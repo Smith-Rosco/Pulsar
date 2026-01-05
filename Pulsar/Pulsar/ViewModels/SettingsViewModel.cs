@@ -1,7 +1,9 @@
-﻿// [File]: Pulsar/ViewModels/SettingsViewModel.cs
-
+﻿// [Path]: Pulsar/ViewModels/SettingsViewModel.cs
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Windows.Input;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Pulsar.Models;
@@ -14,115 +16,156 @@ namespace Pulsar.ViewModels
         private readonly IConfigService _configService;
         private AppConfig _config;
 
-        // 绑定到 UI 的列表
-        public ObservableCollection<GridItemBase> EditableItems { get; } = new();
+        // [New] 侧边栏导航项
+        public ObservableCollection<NavMenuItem> NavItems { get; } = new();
 
-        // 侧边栏 Profile 列表
-        public ObservableCollection<string> Profiles { get; } = new();
+        // [New] 当前选中的导航项
+        [ObservableProperty]
+        private NavMenuItem _selectedNavItem;
+
+        // [New] 右侧正在编辑的插槽列表
+        [ObservableProperty]
+        private ObservableCollection<GridItemBase> _currentSlots;
 
         [ObservableProperty]
-        private string _selectedProfileKey;
-
-        [ObservableProperty]
-        private bool _isLauncherMode; // True=Switcher配置, False=Profile配置
+        private string _statusMessage = "Ready";
 
         public SettingsViewModel(IConfigService configService)
         {
             _configService = configService;
-            _config = new AppConfig(); // 避免空引用，稍后加载
-            LoadConfigCommand.Execute(null);
+            _config = new AppConfig();
+            LoadSettings();
         }
 
-        [RelayCommand]
-        private async Task LoadConfigAsync()
+        private async void LoadSettings()
         {
             _config = await _configService.LoadAsync();
+            RefreshNavItems();
+        }
 
-            // 初始化 Profiles 列表
-            Profiles.Clear();
-            Profiles.Add("Global Default");
-            // [修复 CS1061]: 使用新的 CommandLayer.Profiles
-            foreach (var key in _config.CommandLayer.Profiles.Keys)
+        private void RefreshNavItems()
+        {
+            NavItems.Clear();
+
+            // 1. 固定入口
+            NavItems.Add(new NavMenuItem("Window Switcher", "Switcher"));
+            NavItems.Add(new NavMenuItem("Global Commands", "Global"));
+
+            // 2. 动态 Profile 入口
+            if (_config.Profiles != null)
             {
-                Profiles.Add(key);
+                foreach (var profileKey in _config.Profiles.Keys)
+                {
+                    NavItems.Add(new NavMenuItem(profileKey, "Profile"));
+                }
             }
 
-            // 默认加载 Switcher
-            SwitchToLauncherMode();
+            // 默认选中第一项
+            SelectedNavItem = NavItems.FirstOrDefault();
         }
 
-        [RelayCommand]
-        private async Task SaveConfigAsync()
+        // 当用户点击侧边栏时触发
+        partial void OnSelectedNavItemChanged(NavMenuItem value)
         {
-            await _configService.SaveAsync(_config);
-        }
+            if (value == null || _config == null) return;
 
-        // 切换到 "窗口切换器" 配置模式
-        [RelayCommand]
-        public void SwitchToLauncherMode()
-        {
-            IsLauncherMode = true;
-            SelectedProfileKey = "Switcher Mode"; // UI 显示用
+            List<GridItemBase> sourceList = null;
 
-            EditableItems.Clear();
-            // [修复 CS1061]: 使用 SwitcherSlots
-            foreach (var item in _config.SwitcherSlots)
+            switch (value.Type)
             {
-                EditableItems.Add(item);
+                case "Switcher":
+                    sourceList = _config.Switcher;
+                    break;
+                case "Global":
+                    sourceList = _config.Global;
+                    break;
+                case "Profile":
+                    if (_config.Profiles.ContainsKey(value.Name))
+                    {
+                        sourceList = _config.Profiles[value.Name];
+                    }
+                    break;
             }
-        }
 
-        // 切换到 "智能命令" 配置模式
-        [RelayCommand]
-        public void LoadProfile(string profileKey)
-        {
-            IsLauncherMode = false;
-            SelectedProfileKey = profileKey;
-            EditableItems.Clear();
-
-            List<CommandItem> sourceList;
-
-            if (profileKey == "Global Default")
+            if (sourceList != null)
             {
-                sourceList = _config.CommandLayer.GlobalSlots;
+                // 将 List 包装为 ObservableCollection 以便 UI 实时响应
+                CurrentSlots = new ObservableCollection<GridItemBase>(sourceList);
             }
             else
             {
-                // [修复 CS1061]: 使用 CommandLayer.Profiles
-                if (_config.CommandLayer.Profiles.TryGetValue(profileKey, out var profile))
-                {
-                    sourceList = profile.Slots;
-                }
-                else
-                {
-                    sourceList = new List<CommandItem>();
-                }
-            }
-
-            foreach (var item in sourceList)
-            {
-                EditableItems.Add(item);
+                CurrentSlots = new ObservableCollection<GridItemBase>();
             }
         }
 
-        // 用于添加新条目的逻辑 (简化版)
         [RelayCommand]
-        public void AddNewItem()
+        public async Task Save()
         {
+            if (_config != null && SelectedNavItem != null)
+            {
+                // [Sync] 将 UI 的 ObservableCollection 变更回写到 Config 对象中
+                // 注意：这里是简化处理，正式版可能需要更严谨的同步逻辑
+                var updatedList = CurrentSlots.ToList();
+
+                if (SelectedNavItem.Type == "Switcher") _config.Switcher = updatedList;
+                else if (SelectedNavItem.Type == "Global") _config.Global = updatedList;
+                else if (SelectedNavItem.Type == "Profile") _config.Profiles[SelectedNavItem.Name] = updatedList;
+
+                await _configService.SaveAsync(_config);
+                StatusMessage = "Settings Saved!";
+
+                // 3秒后清除提示
+                await Task.Delay(3000);
+                StatusMessage = "Ready";
+            }
+        }
+
+        // [New] 添加插槽逻辑
+        [RelayCommand]
+        public void AddSlot()
+        {
+            if (CurrentSlots == null) return;
+
+            // 自动计算下一个 Slot Index
+            int nextSlot = CurrentSlots.Count > 0 ? CurrentSlots.Max(x => x.Slot) + 1 : 1;
+            if (nextSlot > 8) nextSlot = 8; // 限制最大8个
+
+            GridItemBase newItem;
+
             // 根据当前模式创建不同类型的 Item
-            if (IsLauncherMode)
+            if (SelectedNavItem?.Type == "Switcher")
             {
-                var newItem = new LauncherItem { Slot = 1, Label = "New App" };
-                _config.SwitcherSlots.Add(newItem);
-                EditableItems.Add(newItem);
+                newItem = new LauncherItem { Slot = nextSlot, Label = "New App", ProcessName = "app.exe" };
             }
             else
             {
-                // 简化处理：默认加到当前选中的 Profile 实际上需要更复杂的逻辑更新 Config 对象
-                // 这里仅做演示，确保编译通过
-                var newItem = new CommandItem { Slot = 1, Label = "New Cmd" };
-                EditableItems.Add(newItem);
+                newItem = new CommandItem { Slot = nextSlot, Label = "New Cmd", ExePath = "cmd.exe" };
             }
+
+            CurrentSlots.Add(newItem);
+        }
+
+        // [New] 删除插槽
+        [RelayCommand]
+        public void RemoveSlot(GridItemBase item)
+        {
+            if (CurrentSlots.Contains(item))
+            {
+                CurrentSlots.Remove(item);
+            }
+        }
+    }
+
+    // 简单的导航项模型
+    public class NavMenuItem
+    {
+        public string Name { get; }
+        public string Type { get; } // "Switcher", "Global", "Profile"
+
+        public NavMenuItem(string name, string type)
+        {
+            Name = name;
+            Type = type;
         }
     }
 }

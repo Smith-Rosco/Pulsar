@@ -20,48 +20,14 @@
             </Ellipse.Effect>
         </Ellipse>
 
-        <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
-
-            <TextBlock Text="{Binding IconGlyph}" 
-                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                       FontSize="24"
-                       Foreground="White"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center"
-                       TextAlignment="Center"
-                       IsHitTestVisible="False">
-                <TextBlock.Style>
-                    <Style TargetType="TextBlock">
-                        <Setter Property="Visibility" Value="Collapsed"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding HasIcon}" Value="True">
-                                <Setter Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </TextBlock.Style>
-            </TextBlock>
-
-            <TextBlock Text="{Binding Label}" 
-                       FontSize="11"
-                       FontWeight="SemiBold"
-                       Foreground="White"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center"
-                       TextAlignment="Center"
-                       IsHitTestVisible="False">
-                <TextBlock.Style>
-                    <Style TargetType="TextBlock">
-                        <Setter Property="Visibility" Value="Collapsed"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding HasIcon}" Value="False">
-                                <Setter Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </TextBlock.Style>
-            </TextBlock>
-        </Grid>
+        <TextBlock Text="{Binding Label}" 
+                   HorizontalAlignment="Center" 
+                   VerticalAlignment="Center"
+                   Foreground="White"
+                   FontSize="11"
+                   FontWeight="SemiBold"
+                   TextAlignment="Center"
+                   IsHitTestVisible="False"/>
     </Grid>
 
     <UserControl.Style>
@@ -74,15 +40,15 @@
                         <BeginStoryboard>
                             <Storyboard>
                                 <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                 To="1.2" Duration="0:0:0.5">
+                                                 To="1.2" Duration="0:0:0.6">
                                     <DoubleAnimation.EasingFunction>
-                                        <ElasticEase Oscillations="1" Springiness="6" EasingMode="EaseOut"/>
+                                        <ElasticEase EasingMode="EaseOut" Springiness="5" Oscillations="1"/>
                                     </DoubleAnimation.EasingFunction>
                                 </DoubleAnimation>
                                 <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                 To="1.2" Duration="0:0:0.5">
+                                                 To="1.2" Duration="0:0:0.6">
                                     <DoubleAnimation.EasingFunction>
-                                        <ElasticEase Oscillations="1" Springiness="6" EasingMode="EaseOut"/>
+                                        <ElasticEase EasingMode="EaseOut" Springiness="5" Oscillations="1"/>
                                     </DoubleAnimation.EasingFunction>
                                 </DoubleAnimation>
                                 <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1.0" Duration="0:0:0.1"/>

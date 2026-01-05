@@ -1,71 +1,60 @@
 // [Path]: Pulsar/Services/WindowService.cs
-
 using System;
 using System.Diagnostics;
-using System.Runtime.InteropServices; // DllImport 需要
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Pulsar.Services.Interfaces;
-using Pulsar.Native; // 引用你原有的 WindowHelper (如果存在)，或者直接使用下面的 Native 实现
 
 namespace Pulsar.Services
 {
     public class WindowService : IWindowService
     {
-        // --- Native API 定义 (使用 EntryPoint 避免方法名冲突) ---
-
+        // --- Native Import ---
         [DllImport("user32.dll", EntryPoint = "GetForegroundWindow")]
         private static extern IntPtr GetForegroundWindow_Native();
 
         [DllImport("user32.dll")]
         private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
-        // --- 1. 获取当前活动窗口 (新增) ---
+        // --- Interface Implementations ---
 
         public WindowInfo GetForegroundWindow()
         {
             try
             {
-                // 1. 获取前台窗口句柄
                 IntPtr hWnd = GetForegroundWindow_Native();
                 if (hWnd == IntPtr.Zero) return new WindowInfo("Global", "", "Desktop");
 
-                // 2. 获取进程 ID
                 GetWindowThreadProcessId(hWnd, out uint processId);
-
-                // 3. 获取进程详细信息
                 using (var process = Process.GetProcessById((int)processId))
                 {
                     string path = "";
                     try { path = process.MainModule?.FileName ?? ""; } catch { }
-
-                    // 返回标准化的小写进程名，方便 Key 匹配 (如 "chrome")
                     return new WindowInfo(process.ProcessName.ToLower(), path, process.MainWindowTitle);
                 }
             }
-            catch (Exception)
+            catch
             {
-                // 容错处理：无法读取时视为全局
                 return new WindowInfo("Global", "", "Unknown");
             }
         }
 
-        // --- 2. 切换窗口 (复刻旧版逻辑) ---
-
-        public Task<bool> SwitchToProcessAsync(string processName)
+        // [Fix] 必须明确实现 FocusWindow
+        public bool FocusWindow(string processName)
         {
-            return Task.Run(() =>
+            string targetName = processName.ToLower().Replace(".exe", "");
+            var processes = Process.GetProcessesByName(targetName);
+
+            foreach (var proc in processes)
             {
-                IntPtr hWnd = FindWindowByProcess(processName);
-                if (hWnd != IntPtr.Zero)
+                if (proc.MainWindowHandle != IntPtr.Zero)
                 {
-                    ForceForegroundWindow(hWnd);
+                    ForceForegroundWindow(proc.MainWindowHandle);
                     return true;
                 }
-                return false;
-            });
+            }
+            return false;
         }
-
-        // --- 3. 启动程序 ---
 
         public Task<bool> LaunchApplicationAsync(string command, string? arguments)
         {
@@ -73,73 +62,43 @@ namespace Pulsar.Services
             {
                 try
                 {
-                    var psi = new ProcessStartInfo
+                    Process.Start(new ProcessStartInfo
                     {
                         FileName = command,
                         Arguments = arguments,
                         UseShellExecute = true
-                    };
-                    Process.Start(psi);
+                    });
                     return true;
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"[WindowService] Launch failed: {ex.Message}");
+                    Debug.WriteLine($"Launch Error: {ex.Message}");
                     return false;
                 }
             });
         }
 
-        // --- 私有辅助方法 ---
-
-        private IntPtr FindWindowByProcess(string processName)
+        public Task<bool> SwitchToProcessAsync(string processName)
         {
-            processName = processName.ToLower().Replace(".exe", "");
-            IntPtr foundWindow = IntPtr.Zero;
-            Process[] processes = Process.GetProcessesByName(processName);
-
-            if (processes.Length == 0) return IntPtr.Zero;
-
-            // 使用 WindowHelper (确保 Native/WindowHelper.cs 存在)
-            WindowHelper.EnumWindows((hWnd, lParam) =>
-            {
-                if (!WindowHelper.IsWindowVisible(hWnd)) return true;
-
-                WindowHelper.GetWindowThreadProcessId(hWnd, out uint pid);
-                bool isTarget = false;
-                foreach (var p in processes) { if (p.Id == pid) { isTarget = true; break; } }
-
-                if (isTarget)
-                {
-                    // 过滤无标题窗口和工具窗口
-                    if (WindowHelper.GetWindowTextLength(hWnd) == 0) return true;
-                    long style = WindowHelper.GetWindowLong(hWnd, WindowHelper.GWL_EXSTYLE);
-                    if ((style & WindowHelper.WS_EX_TOOLWINDOW) != 0) return true;
-
-                    foundWindow = hWnd;
-                    return false; // 找到目标，停止枚举
-                }
-                return true;
-            }, IntPtr.Zero);
-
-            return foundWindow;
+            return Task.Run(() => FocusWindow(processName));
         }
+
+        // --- Native Helpers ---
 
         private void ForceForegroundWindow(IntPtr hWnd)
         {
-            if (WindowHelper.IsIconic(hWnd))
-            {
-                WindowHelper.ShowWindow(hWnd, WindowHelper.SW_RESTORE);
-                System.Threading.Thread.Sleep(50);
-            }
-
-            WindowHelper.keybd_event(WindowHelper.VK_MENU, 0, 0, 0); // Alt Down
-            WindowHelper.SetWindowPos(hWnd, WindowHelper.HWND_TOPMOST, 0, 0, 0, 0, WindowHelper.SWP_NOMOVE | WindowHelper.SWP_NOSIZE | WindowHelper.SWP_SHOWWINDOW);
-            WindowHelper.SetWindowPos(hWnd, WindowHelper.HWND_NOTOPMOST, 0, 0, 0, 0, WindowHelper.SWP_NOMOVE | WindowHelper.SWP_NOSIZE | WindowHelper.SWP_SHOWWINDOW);
-            WindowHelper.SetForegroundWindow(hWnd);
-            WindowHelper.BringWindowToTop(hWnd);
-            WindowHelper.SetFocus(hWnd);
-            WindowHelper.keybd_event(WindowHelper.VK_MENU, 0, WindowHelper.KEYEVENTF_KEYUP, 0); // Alt Up
+            if (NativeMethods.IsIconic(hWnd)) NativeMethods.ShowWindow(hWnd, 9);
+            NativeMethods.keybd_event(0x12, 0, 0, 0); // Alt Down
+            NativeMethods.SetForegroundWindow(hWnd);
+            NativeMethods.keybd_event(0x12, 0, 2, 0); // Alt Up
         }
+    }
+
+    internal static class NativeMethods
+    {
+        [DllImport("user32.dll")] internal static extern bool SetForegroundWindow(IntPtr hWnd);
+        [DllImport("user32.dll")] internal static extern bool IsIconic(IntPtr hWnd);
+        [DllImport("user32.dll")] internal static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        [DllImport("user32.dll")] internal static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, uint dwExtraInfo);
     }
 }
