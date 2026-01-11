@@ -482,3 +482,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# AI Packer
+ai-context/
+ai-packer.config.mjs
