@@ -8,11 +8,16 @@
              d:DesignHeight="60" d:DesignWidth="60"
              x:Name="OrbRoot"
              RenderTransformOrigin="0.5,0.5">
+
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </UserControl.Resources>
+
     <UserControl.RenderTransform>
-        <ScaleTransform x:Name="OrbScale" ScaleX="1.0" ScaleY="1.0"/>
+        <TransformGroup>
+            <ScaleTransform x:Name="OrbScale" ScaleX="1.0" ScaleY="1.0"/>
+            <TranslateTransform x:Name="OrbTranslate" X="0" Y="0"/>
+        </TransformGroup>
     </UserControl.RenderTransform>
 
     <Grid Width="{Binding Size, ElementName=OrbRoot}" 
@@ -20,10 +25,35 @@
 
         <Ellipse Fill="#22FFFFFF" Stroke="#44FFFFFF" StrokeThickness="1.5"/>
 
-        <Ellipse x:Name="ActiveShape" Fill="#CC00BFFF" Opacity="0">
+        <Ellipse x:Name="ActiveShape" Fill="#CC00BFFF">
             <Ellipse.Effect>
                 <BlurEffect Radius="15"/>
             </Ellipse.Effect>
+            <Ellipse.Style>
+                <Style TargetType="Ellipse">
+                    <Setter Property="Opacity" Value="0"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsActive, ElementName=OrbRoot}" Value="True">
+                            <DataTrigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" 
+                                                         To="1.0" Duration="0:0:0.2"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.EnterActions>
+                            <DataTrigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" 
+                                                         To="0.0" Duration="0:0:0.4"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.ExitActions>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Ellipse.Style>
         </Ellipse>
 
         <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -72,55 +102,54 @@
         </Grid>
     </Grid>
 
-
-
     <UserControl.Style>
         <Style TargetType="UserControl">
+            <Setter Property="Opacity" Value="0.8"/>
+            <Setter Property="Panel.ZIndex" Value="0"/>
+
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsActive, RelativeSource={RelativeSource Self}}" Value="True">
                     <Setter Property="Panel.ZIndex" Value="99"/>
+                    <Setter Property="Opacity" Value="1.0"/>
+
                     <DataTrigger.EnterActions>
                         <BeginStoryboard>
                             <Storyboard>
-                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                 To="1.2" Duration="0:0:0.6">
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)"
+                                                 To="1.15" Duration="0:0:0.4">
                                     <DoubleAnimation.EasingFunction>
-                                        <ElasticEase EasingMode="EaseOut" Springiness="5" Oscillations="1"/>
+                                        <ElasticEase EasingMode="EaseOut" Springiness="4" Oscillations="1"/>
                                     </DoubleAnimation.EasingFunction>
                                 </DoubleAnimation>
-                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                 To="1.2" Duration="0:0:0.6">
+
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)"
+                                                 To="1.15" Duration="0:0:0.4">
                                     <DoubleAnimation.EasingFunction>
-                                        <ElasticEase EasingMode="EaseOut" Springiness="5" Oscillations="1"/>
+                                        <ElasticEase EasingMode="EaseOut" Springiness="4" Oscillations="1"/>
                                     </DoubleAnimation.EasingFunction>
                                 </DoubleAnimation>
-                                <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1.0" Duration="0:0:0.1"/>
                             </Storyboard>
                         </BeginStoryboard>
                     </DataTrigger.EnterActions>
+
                     <DataTrigger.ExitActions>
                         <BeginStoryboard>
                             <Storyboard>
-                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                 To="1.0" Duration="0:0:0.2">
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)"
+                                                 To="1.0" Duration="0:0:0.25">
                                     <DoubleAnimation.EasingFunction>
-                                        <QuadraticEase EasingMode="EaseOut"/>
+                                        <BackEase EasingMode="EaseOut" Amplitude="0.3"/>
                                     </DoubleAnimation.EasingFunction>
                                 </DoubleAnimation>
-                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                 To="1.0" Duration="0:0:0.2">
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)"
+                                                 To="1.0" Duration="0:0:0.25">
                                     <DoubleAnimation.EasingFunction>
-                                        <QuadraticEase EasingMode="EaseOut"/>
+                                        <BackEase EasingMode="EaseOut" Amplitude="0.3"/>
                                     </DoubleAnimation.EasingFunction>
                                 </DoubleAnimation>
-                                <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0.8" Duration="0:0:0.2"/>
                             </Storyboard>
                         </BeginStoryboard>
                     </DataTrigger.ExitActions>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding IsActive, RelativeSource={RelativeSource Self}}" Value="False">
-                    <Setter Property="Opacity" Value="0.8"/>
-                    <Setter Property="Panel.ZIndex" Value="0"/>
                 </DataTrigger>
             </Style.Triggers>
         </Style>

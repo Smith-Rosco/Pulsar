@@ -13,7 +13,8 @@
         Background="Transparent"
         Topmost="True"
         ShowInTaskbar="False"
-        ResizeMode="NoResize">
+        ResizeMode="NoResize"
+        x:Name="RootWindow">
 
     <Grid>
         <Canvas x:Name="MenuCanvas"
