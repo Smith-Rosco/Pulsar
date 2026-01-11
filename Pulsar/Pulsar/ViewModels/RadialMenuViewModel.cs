@@ -131,14 +131,17 @@ namespace Pulsar.ViewModels
                 if (item != null)
                 {
                     slot.Label = item.Label;
-                    // 如果 GridItemBase 有 IconKey，这里可以绑定
-                    if (!string.IsNullOrEmpty(item.IconKey)) slot.IconGlyph = Pulsar.Helpers.IconHelper.GetGlyph(item.IconKey);
-                    else slot.IconGlyph = "";
+
+                    // [Fix] 核心修复：使用 LoadIconData 方法替代直接属性赋值
+                    // 这将自动处理 字体图标(Font) vs 图片图标(Image) 的逻辑
+                    slot.LoadIconData(item.IconKey);
                 }
                 else
                 {
                     slot.Label = "";
-                    slot.IconGlyph = "";
+
+                    // [Fix] 传入 null 或空字符串以重置图标状态
+                    slot.LoadIconData(string.Empty);
                 }
             }
 
