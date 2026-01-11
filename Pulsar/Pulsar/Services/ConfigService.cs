@@ -95,7 +95,11 @@ namespace Pulsar.Services
                 Settings = new AppSettings
                 {
                     TriggerDistance = 100,
-                    Theme = "Dark",
+
+                    // [Fix] 修复：使用新的枚举属性替代旧的 string Theme
+                    LauncherTheme = AppTheme.Dark,
+                    SettingsTheme = AppTheme.Dark,
+
                     HoverScale = 1.2,
                     Springiness = 6.0
                 }

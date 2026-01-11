@@ -1,12 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Pulsar.Helpers;
+using Pulsar.Models;
+using Pulsar.Services.Interfaces;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using Pulsar.Models;
-using Pulsar.Services.Interfaces;
 
 namespace Pulsar.ViewModels
 {
@@ -82,6 +83,10 @@ namespace Pulsar.ViewModels
             _config = await _configService.LoadAsync();
             GeneralSettings = _config.Settings;
             RefreshNavItems();
+
+            // [New] 确保 ViewModel 加载时通知 View 设置正确的主题 (防止初始不一致)
+            OnPropertyChanged(nameof(LauncherTheme));
+            OnPropertyChanged(nameof(SettingsTheme));
         }
 
         private void RefreshNavItems()
@@ -293,6 +298,46 @@ namespace Pulsar.ViewModels
             if (dialog.ShowDialog() == true)
             {
                 item.IconKey = dialog.SelectedKey;
+            }
+        }
+        // [New] 为两个主题提供属性，并添加 OnChanged 钩子
+        public AppTheme LauncherTheme
+        {
+            get => _config.Settings.LauncherTheme;
+            set
+            {
+                if (_config.Settings.LauncherTheme != value)
+                {
+                    _config.Settings.LauncherTheme = value;
+                    OnPropertyChanged();
+                    // 通知 Launcher 窗口刷新 (这里可以通过 Messenger，或者简单的静态事件，或者因为 Launcher 每次激活都会重绘，也许不需要立即刷新？
+                    // 为了保险，我们可以让 LauncherWindow 监听配置变化。
+                    // 但对于 SettingsTheme，我们需要立即刷新当前窗口：
+                }
+            }
+        }
+
+        public AppTheme SettingsTheme
+        {
+            get => _config.Settings.SettingsTheme;
+            set
+            {
+                if (_config.Settings.SettingsTheme != value)
+                {
+                    _config.Settings.SettingsTheme = value;
+                    OnPropertyChanged();
+                    // [New] 立即应用新主题到当前激活的 SettingsWindow
+                    ApplySettingsTheme();
+                }
+            }
+        }
+
+        private void ApplySettingsTheme()
+        {
+            var window = System.Windows.Application.Current.Windows.OfType<Views.SettingsWindow>().FirstOrDefault();
+            if (window != null)
+            {
+                ThemeManager.ApplyTheme(window, SettingsTheme);
             }
         }
     }

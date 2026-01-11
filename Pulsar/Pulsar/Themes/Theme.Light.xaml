@@ -1,0 +1,32 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <SolidColorBrush x:Key="Theme.Window.Background" Color="#F3F3F3"/>
+    <SolidColorBrush x:Key="Theme.Window.Foreground" Color="#1A1A1A"/>
+    <SolidColorBrush x:Key="Theme.Panel.Background" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="Theme.Border.Brush" Color="#E0E0E0"/>
+
+    <SolidColorBrush x:Key="Theme.Control.Background" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="Theme.Control.Hover" Color="#EAEAEA"/>
+    <SolidColorBrush x:Key="Theme.Control.Pressed" Color="#DADADA"/>
+
+    <SolidColorBrush x:Key="Theme.Input.Background" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="Theme.Input.Foreground" Color="#1A1A1A"/>
+
+    <SolidColorBrush x:Key="Theme.Text.Primary" Color="#000000"/>
+    <SolidColorBrush x:Key="Theme.Text.Secondary" Color="#666666"/>
+
+    <SolidColorBrush x:Key="Theme.Accent" Color="#0067C0"/>
+    <SolidColorBrush x:Key="Theme.Accent.Hover" Color="#197CCB"/>
+    <SolidColorBrush x:Key="Theme.Accent.Foreground" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="Theme.Destructive" Color="#C42B1C"/>
+
+    <SolidColorBrush x:Key="Theme.Orb.Fill" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="Theme.Orb.Stroke" Color="#D1D1D1"/>
+    <SolidColorBrush x:Key="Theme.Orb.Active.Glow" Color="#00FFFFFF"/>
+    <SolidColorBrush x:Key="Theme.Orb.Text" Color="#1A1A1A"/>
+
+    <sys:Double x:Key="Theme.Orb.BlurOpacity">0.0</sys:Double>
+
+</ResourceDictionary>

@@ -8,54 +8,32 @@
         xmlns:controls="clr-namespace:Pulsar.Views.Controls"
         mc:Ignorable="d"
         Title="Pulsar Configuration Center" Height="650" Width="1000"
-        Background="#1E1E1E" Foreground="#E0E0E0"
+        Background="{DynamicResource Theme.Window.Background}" 
+        Foreground="{DynamicResource Theme.Window.Foreground}"
         WindowStartupLocation="CenterScreen">
 
     <Window.Resources>
-        <Style x:Key="IconButtonStyle" TargetType="Button">
-        <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="Foreground" Value="#CCCCCC"/>
-        <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Padding" Value="5"/>
-        <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="Button">
-                    <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="4">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="#33FFFFFF"/> <Setter Property="Foreground" Value="White"/>
-                        </Trigger>
-                        <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="#11FFFFFF"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-        
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
         <Style TargetType="TextBox">
-            <Setter Property="Background" Value="#2D2D30"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#3F3F46"/>
+            <Setter Property="Background" Value="{DynamicResource Theme.Input.Background}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Theme.Input.Foreground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Theme.Border.Brush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="5"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
 
         <Style TargetType="TextBlock" x:Key="LabelStyle">
-            <Setter Property="Foreground" Value="#AAAAAA"/>
+            <Setter Property="Foreground" Value="{DynamicResource Theme.Text.Secondary}"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Margin" Value="0,0,0,4"/>
         </Style>
 
         <DataTemplate DataType="{x:Type models:LauncherItem}">
-            <Border Background="#252526" BorderBrush="#3F3F46" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,8">
+            <Border Background="{DynamicResource Theme.Panel.Background}" 
+                    BorderBrush="{DynamicResource Theme.Border.Brush}" 
+                    BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,8">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="60"/>
@@ -65,7 +43,7 @@
 
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                         <controls:JellyOrb IconKey="{Binding IconKey}" Width="40" Height="40" Margin="0,0,0,5"/>
-                        <TextBlock Text="{Binding Slot, StringFormat='Slot {0}'}" FontSize="10" HorizontalAlignment="Center" Foreground="#666"/>
+                        <TextBlock Text="{Binding Slot, StringFormat='Slot {0}'}" FontSize="10" HorizontalAlignment="Center" Foreground="{DynamicResource Theme.Text.Secondary}"/>
                     </StackPanel>
 
                     <Grid Grid.Column="1" Margin="15,0">
@@ -92,14 +70,12 @@
                                 <TextBox Text="{Binding IconKey}" VerticalAlignment="Center" ToolTip="Enter code or path"/>
 
                                 <Button Grid.Column="1" 
-            Command="{Binding DataContext.PickIconCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
-            CommandParameter="{Binding}"
-            Style="{StaticResource IconButtonStyle}"
-            Margin="5,0,0,0" Width="30" Height="30"
-            ToolTip="Open Icon Picker">
-                                    <TextBlock Text="&#xE721;" 
-                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" 
-                   FontSize="16"/>
+                                        Command="{Binding DataContext.PickIconCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                        CommandParameter="{Binding}"
+                                        Style="{DynamicResource IconButtonStyle}"
+                                        Margin="5,0,0,0" Width="30" Height="30"
+                                        ToolTip="Open Icon Picker">
+                                    <TextBlock Text="&#xE721;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16"/>
                                 </Button>
                             </Grid>
                         </StackPanel>
@@ -113,14 +89,17 @@
                     <Button Grid.Column="2" Content="❌" 
                             Command="{Binding DataContext.RemoveSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
                             CommandParameter="{Binding}"
-                            Background="Transparent" BorderThickness="0" Foreground="#FF5555" 
+                            Background="Transparent" BorderThickness="0" 
+                            Foreground="{DynamicResource Theme.Destructive}" 
                             VerticalAlignment="Top" Padding="5"/>
                 </Grid>
             </Border>
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type models:CommandItem}">
-            <Border Background="#252526" BorderBrush="#3F3F46" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,8">
+            <Border Background="{DynamicResource Theme.Panel.Background}" 
+                    BorderBrush="{DynamicResource Theme.Border.Brush}" 
+                    BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,8">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="60"/>
@@ -130,7 +109,7 @@
 
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                         <controls:JellyOrb IconKey="{Binding IconKey}" Width="40" Height="40" Margin="0,0,0,5"/>
-                        <TextBlock Text="{Binding Slot, StringFormat='Slot {0}'}" FontSize="10" HorizontalAlignment="Center" Foreground="#666"/>
+                        <TextBlock Text="{Binding Slot, StringFormat='Slot {0}'}" FontSize="10" HorizontalAlignment="Center" Foreground="{DynamicResource Theme.Text.Secondary}"/>
                     </StackPanel>
 
                     <Grid Grid.Column="1" Margin="15,0">
@@ -157,14 +136,12 @@
                                 <TextBox Text="{Binding IconKey}" VerticalAlignment="Center" ToolTip="Enter code or path"/>
 
                                 <Button Grid.Column="1" 
-            Command="{Binding DataContext.PickIconCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
-            CommandParameter="{Binding}"
-            Style="{StaticResource IconButtonStyle}"
-            Margin="5,0,0,0" Width="30" Height="30"
-            ToolTip="Open Icon Picker">
-                                    <TextBlock Text="&#xE721;" 
-                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" 
-                   FontSize="16"/>
+                                        Command="{Binding DataContext.PickIconCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                        CommandParameter="{Binding}"
+                                        Style="{DynamicResource IconButtonStyle}"
+                                        Margin="5,0,0,0" Width="30" Height="30"
+                                        ToolTip="Open Icon Picker">
+                                    <TextBlock Text="&#xE721;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16"/>
                                 </Button>
                             </Grid>
                         </StackPanel>
@@ -182,7 +159,8 @@
                     <Button Grid.Column="2" Content="❌" 
                             Command="{Binding DataContext.RemoveSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
                             CommandParameter="{Binding}"
-                            Background="Transparent" BorderThickness="0" Foreground="#FF5555" 
+                            Background="Transparent" BorderThickness="0" 
+                            Foreground="{DynamicResource Theme.Destructive}" 
                             VerticalAlignment="Top" Padding="5"/>
                 </Grid>
             </Border>
@@ -195,7 +173,9 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <Border Background="#252526" BorderBrush="#3F3F46" BorderThickness="0,0,1,0">
+        <Border Background="{DynamicResource Theme.Panel.Background}" 
+                BorderBrush="{DynamicResource Theme.Border.Brush}" 
+                BorderThickness="0,0,1,0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -204,14 +184,15 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel Margin="20,25,20,10">
-                    <TextBlock Text="PULSAR" FontSize="20" FontWeight="Bold" Foreground="#007ACC"/>
-                    <TextBlock Text="REDUX v2.0" FontSize="10" Foreground="#666" Margin="2,0,0,0"/>
+                    <TextBlock Text="PULSAR" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource Theme.Accent}"/>
+                    <TextBlock Text="REDUX v2.0" FontSize="10" Foreground="{DynamicResource Theme.Text.Secondary}" Margin="2,0,0,0"/>
                 </StackPanel>
 
                 <ListBox Grid.Row="1" 
                          ItemsSource="{Binding NavItems}" 
                          SelectedItem="{Binding SelectedNavItem}"
-                         Background="Transparent" BorderThickness="0" Foreground="#DDD">
+                         Background="Transparent" BorderThickness="0" 
+                         Foreground="{DynamicResource Theme.Text.Secondary}">
                     <ListBox.ItemContainerStyle>
                         <Style TargetType="ListBoxItem">
                             <Setter Property="Padding" Value="15,10"/>
@@ -224,12 +205,12 @@
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsSelected" Value="True">
-                                                <Setter TargetName="Border" Property="Background" Value="#37373D"/>
-                                                <Setter Property="Foreground" Value="White"/>
+                                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource Theme.Control.Hover}"/>
+                                                <Setter Property="Foreground" Value="{DynamicResource Theme.Window.Foreground}"/>
                                                 <Setter Property="FontWeight" Value="SemiBold"/>
                                             </Trigger>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Border" Property="Background" Value="#2A2D2E"/>
+                                                <Setter TargetName="Border" Property="Background" Value="#11FFFFFF"/>
                                             </Trigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>
@@ -247,9 +228,9 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
 
-                <Border Grid.Row="2" BorderBrush="#3F3F46" BorderThickness="0,1,0,0" Padding="15" Background="#2D2D30">
+                <Border Grid.Row="2" BorderBrush="{DynamicResource Theme.Border.Brush}" BorderThickness="0,1,0,0" Padding="15" Background="{DynamicResource Theme.Panel.Background}">
                     <StackPanel>
-                        <TextBlock Text="ADD NEW PROFILE" FontSize="10" FontWeight="Bold" Foreground="#666" Margin="0,0,0,5"/>
+                        <TextBlock Text="ADD NEW PROFILE" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource Theme.Text.Secondary}" Margin="0,0,0,5"/>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -259,14 +240,12 @@
                             <TextBox x:Name="NewProfileInput" ToolTip="e.g. chrome.exe" Padding="5"/>
 
                             <Button Grid.Column="1" 
-            Command="{Binding AddProfileCommand}"
-            CommandParameter="{Binding Text, ElementName=NewProfileInput}"
-            Style="{StaticResource IconButtonStyle}"
-            Margin="5,0,0,0" Width="30" Height="30"
-            ToolTip="Create Profile">
-                                <TextBlock Text="&#xE710;" 
-                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" 
-                   FontSize="16" FontWeight="Bold"/>
+                                    Command="{Binding AddProfileCommand}"
+                                    CommandParameter="{Binding Text, ElementName=NewProfileInput}"
+                                    Style="{DynamicResource IconButtonStyle}"
+                                    Margin="5,0,0,0" Width="30" Height="30"
+                                    ToolTip="Create Profile">
+                                <TextBlock Text="&#xE710;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16" FontWeight="Bold"/>
                             </Button>
                         </Grid>
                     </StackPanel>
@@ -284,26 +263,28 @@
             <StackPanel Margin="0,0,0,20">
                 <Grid>
                     <StackPanel>
-                        <TextBlock Text="{Binding EditorTitle}" FontSize="28" FontWeight="Light"/>
-                        <TextBlock Text="{Binding EditorDescription}" Foreground="#888" Margin="2,5,0,0" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding EditorTitle}" FontSize="28" FontWeight="Light" Foreground="{DynamicResource Theme.Window.Foreground}"/>
+                        <TextBlock Text="{Binding EditorDescription}" Foreground="{DynamicResource Theme.Text.Secondary}" Margin="2,5,0,0" TextWrapping="Wrap"/>
                     </StackPanel>
 
                     <Button HorizontalAlignment="Right" VerticalAlignment="Top"
                             Command="{Binding DeleteProfileCommand}"
                             Visibility="{Binding CanDeleteProfile, Converter={StaticResource BoolToVis}}"
-                            Content="Delete Profile" Background="Transparent" Foreground="#FF5555" BorderThickness="0" Cursor="Hand"/>
+                            Content="Delete Profile" Background="Transparent" 
+                            Foreground="{DynamicResource Theme.Destructive}" 
+                            BorderThickness="0" Cursor="Hand"/>
                 </Grid>
-                <Separator Background="#3F3F46" Margin="0,20,0,0"/>
+                <Separator Background="{DynamicResource Theme.Border.Brush}" Margin="0,20,0,0"/>
             </StackPanel>
 
             <ScrollViewer Grid.Row="1" Visibility="{Binding IsGeneralView, Converter={StaticResource BoolToVis}}">
                 <StackPanel DataContext="{Binding GeneralSettings}">
-                    <TextBlock Text="Physics &amp; Animation" FontSize="16" Foreground="White" Margin="0,0,0,15"/>
+                    <TextBlock Text="Physics &amp; Animation" FontSize="16" Foreground="{DynamicResource Theme.Window.Foreground}" Margin="0,0,0,15"/>
 
                     <StackPanel Margin="0,0,0,15">
                         <TextBlock Text="Trigger Distance" Style="{StaticResource LabelStyle}"/>
                         <Slider Minimum="50" Maximum="300" Value="{Binding TriggerDistance}" AutoToolTipPlacement="TopLeft"/>
-                        <TextBlock Text="{Binding TriggerDistance, StringFormat={}{0:0} px}" HorizontalAlignment="Right" Foreground="#888"/>
+                        <TextBlock Text="{Binding TriggerDistance, StringFormat={}{0:0} px}" HorizontalAlignment="Right" Foreground="{DynamicResource Theme.Text.Secondary}"/>
                     </StackPanel>
 
                     <StackPanel Margin="0,0,0,15">
@@ -316,13 +297,26 @@
                         <Slider Minimum="1.0" Maximum="2.0" TickFrequency="0.1" IsSnapToTickEnabled="True" Value="{Binding HoverScale}" AutoToolTipPlacement="TopLeft"/>
                     </StackPanel>
 
-                    <TextBlock Text="Appearance" FontSize="16" Foreground="White" Margin="0,15,0,15"/>
-                    <StackPanel>
-                        <TextBlock Text="Theme" Style="{StaticResource LabelStyle}"/>
-                        <ComboBox SelectedValue="{Binding Theme}" SelectedValuePath="Content">
-                            <ComboBoxItem Content="Dark"/>
-                            <ComboBoxItem Content="Light"/>
-                        </ComboBox>
+                    <TextBlock Text="Appearance" FontSize="16" Foreground="{DynamicResource Theme.Window.Foreground}" Margin="0,15,0,15"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                        <StackPanel Margin="0,0,20,0" Width="150">
+                            <TextBlock Text="Launcher Theme" Style="{StaticResource LabelStyle}"/>
+                            <ComboBox SelectedValue="{Binding DataContext.LauncherTheme, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                      SelectedValuePath="Content">
+                                <ComboBoxItem Content="Dark"/>
+                                <ComboBoxItem Content="Light"/>
+                            </ComboBox>
+                        </StackPanel>
+
+                        <StackPanel Width="150">
+                            <TextBlock Text="Settings Theme" Style="{StaticResource LabelStyle}"/>
+                            <ComboBox SelectedValue="{Binding DataContext.SettingsTheme, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                      SelectedValuePath="Content">
+                                <ComboBoxItem Content="Dark"/>
+                                <ComboBoxItem Content="Light"/>
+                            </ComboBox>
+                        </StackPanel>
                     </StackPanel>
                 </StackPanel>
             </ScrollViewer>
@@ -339,27 +333,17 @@
 
                 <Button Grid.Row="1" Command="{Binding AddSlotCommand}" 
                         Content="+ Add New Slot" Height="35" Margin="0,10,0,0"
-                        Background="#333" Foreground="White" BorderBrush="#3F3F46" BorderThickness="1">
-                    <Button.Template>
-                        <ControlTemplate TargetType="Button">
-                            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#444"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Button.Template>
-                </Button>
+                        Background="{DynamicResource Theme.Panel.Background}" 
+                        Foreground="{DynamicResource Theme.Window.Foreground}"
+                        BorderBrush="{DynamicResource Theme.Border.Brush}" BorderThickness="1"/>
             </Grid>
 
             <Grid Grid.Row="2" Margin="0,20,0,0">
                 <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" Foreground="#00CC6A"/>
                 <Button Command="{Binding SaveCommand}" Content="Save Changes" 
                         HorizontalAlignment="Right" Padding="20,10" 
-                        Background="#007ACC" Foreground="White" FontWeight="Bold" BorderThickness="0">
+                        Background="{DynamicResource Theme.Accent}" 
+                        Foreground="White" FontWeight="Bold" BorderThickness="0">
                     <Button.Resources>
                         <Style TargetType="Border">
                             <Setter Property="CornerRadius" Value="4"/>

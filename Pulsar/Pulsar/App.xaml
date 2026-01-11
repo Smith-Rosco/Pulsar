@@ -4,74 +4,68 @@
              xmlns:converters="clr-namespace:Pulsar.Core.Converters"
              ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
-        <converters:ScaleConverter x:Key="ScaleConverter"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Themes/Theme.Dark.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
 
-        <SolidColorBrush x:Key="Theme.Window.Background" Color="#181818"/>
-        <SolidColorBrush x:Key="Theme.Window.Foreground" Color="#EAEAEA"/>
-        <SolidColorBrush x:Key="Theme.Panel.Background" Color="#202020"/>
-        <SolidColorBrush x:Key="Theme.Control.Background" Color="#2D2D2D"/>
-        <SolidColorBrush x:Key="Theme.Control.Hover" Color="#383838"/>
-        <SolidColorBrush x:Key="Theme.Control.Pressed" Color="#1F1F1F"/>
-        <SolidColorBrush x:Key="Theme.Control.Border" Color="#3E3E3E"/>
-        <SolidColorBrush x:Key="Theme.Accent" Color="#0078D7"/>
-        <SolidColorBrush x:Key="Theme.Accent.Foreground" Color="#FFFFFF"/>
-        <SolidColorBrush x:Key="Theme.Destructive" Color="#E81123"/>
+            <converters:ScaleConverter x:Key="ScaleConverter"/>
 
-        <SolidColorBrush x:Key="Theme.Slot.Fill" Color="#2D2D2D"/>
-        <SolidColorBrush x:Key="Theme.Slot.Stroke" Color="#404040"/>
-        <SolidColorBrush x:Key="Theme.Slot.Active.Fill" Color="#0078D7"/>
-        <SolidColorBrush x:Key="Theme.Slot.Active.Stroke" Color="#50A6F0"/>
-        <SolidColorBrush x:Key="Theme.Text.Primary" Color="#FFFFFF"/>
-        <SolidColorBrush x:Key="Theme.Text.Secondary" Color="#AAAAAA"/>
+            <Style TargetType="Button">
+                <Setter Property="Background" Value="{DynamicResource Theme.Control.Background}"/>
+                <Setter Property="Foreground" Value="{DynamicResource Theme.Window.Foreground}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource Theme.Border.Brush}"/>
+                <Setter Property="Padding" Value="16,8"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="border" Background="{TemplateBinding Background}" 
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="6" UseLayoutRounding="True">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="{DynamicResource Theme.Control.Hover}"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="{DynamicResource Theme.Control.Pressed}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
 
-        <Style x:Key="JellyOrbStyle" TargetType="Border">
-            <Setter Property="CornerRadius" Value="100"/>
-            <Setter Property="BorderThickness" Value="1.5"/>
-            <Setter Property="Background" Value="{DynamicResource Theme.Slot.Fill}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource Theme.Slot.Stroke}"/>
-            <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
-            <Setter Property="SnapsToDevicePixels" Value="True"/>
-            <Setter Property="UseLayoutRounding" Value="True"/>
-        </Style>
+            <Style x:Key="IconButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Foreground" Value="{DynamicResource Theme.Window.Foreground}"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Padding" Value="5"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="4">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="{DynamicResource Theme.Control.Hover}"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="{DynamicResource Theme.Control.Pressed}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
 
-        <Style x:Key="JellyTextStyle" TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="Segoe UI Variable Display, Segoe UI, Microsoft YaHei UI"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Foreground" Value="{DynamicResource Theme.Text.Primary}"/>
-            <Setter Property="UseLayoutRounding" Value="True"/>
-            <Setter Property="SnapsToDevicePixels" Value="True"/>
-            <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
-            <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
-            <Setter Property="TextAlignment" Value="Center"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="HorizontalAlignment" Value="Center"/>
-        </Style>
-
-        <Style TargetType="Button">
-            <Setter Property="Background" Value="{DynamicResource Theme.Control.Background}"/>
-            <Setter Property="Foreground" Value="{DynamicResource Theme.Window.Foreground}"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="16,8"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="6" UseLayoutRounding="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="{DynamicResource Theme.Control.Hover}"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="{DynamicResource Theme.Control.Pressed}"/>
-                                <Setter TargetName="border" Property="Opacity" Value="0.8"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

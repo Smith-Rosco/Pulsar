@@ -23,9 +23,11 @@
     <Grid Width="{Binding Size, ElementName=OrbRoot}" 
           Height="{Binding Size, ElementName=OrbRoot}">
 
-        <Ellipse Fill="#22FFFFFF" Stroke="#44FFFFFF" StrokeThickness="1.5"/>
+        <Ellipse Fill="{DynamicResource Theme.Orb.Fill}" 
+                 Stroke="{DynamicResource Theme.Orb.Stroke}" 
+                 StrokeThickness="1.5"/>
 
-        <Ellipse x:Name="ActiveShape" Fill="#CC00BFFF">
+        <Ellipse x:Name="ActiveShape" Fill="{DynamicResource Theme.Orb.Active.Glow}">
             <Ellipse.Effect>
                 <BlurEffect Radius="15"/>
             </Ellipse.Effect>
@@ -66,7 +68,7 @@
             <TextBlock Text="{Binding RenderGlyph, ElementName=OrbRoot}"
                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                        FontSize="20"
-                       Foreground="White"
+                       Foreground="{DynamicResource Theme.Orb.Text}"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center">
                 <TextBlock.Style>
@@ -82,7 +84,8 @@
             </TextBlock>
 
             <TextBlock Text="{Binding Label, ElementName=OrbRoot}" 
-                       FontSize="11" FontWeight="SemiBold" Foreground="White"
+                       FontSize="11" FontWeight="SemiBold" 
+                       Foreground="{DynamicResource Theme.Orb.Text}"
                        HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock.Style>
                     <Style TargetType="TextBlock">

@@ -6,11 +6,17 @@ namespace Pulsar.Views
 {
     public partial class SettingsWindow : Window
     {
-        // 使用构造函数注入 ViewModel
-        public SettingsWindow(SettingsViewModel viewModel)
+        public SettingsWindow(SettingsViewModel vm)
         {
             InitializeComponent();
-            this.DataContext = viewModel; // 绑定数据上下文
+            DataContext = vm;
+
+            // [New] 初始化时加载主题
+            this.Loaded += (s, e) =>
+            {
+                // 注意：这里需要从 VM 或 Config 获取当前设置
+                Pulsar.Helpers.ThemeManager.ApplyTheme(this, vm.SettingsTheme);
+            };
         }
     }
 }

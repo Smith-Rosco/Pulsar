@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Pulsar")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+eca57ab87af5a51edb73752ab756d3ae5b64b823")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+92e573a549d9682faa101f5148fe69e977187a8f")]
 [assembly: System.Reflection.AssemblyProductAttribute("Pulsar")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Pulsar")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
