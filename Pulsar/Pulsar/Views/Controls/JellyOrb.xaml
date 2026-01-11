@@ -3,15 +3,21 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Pulsar.Views.Controls"
              mc:Ignorable="d" 
-             d:DesignHeight="50" d:DesignWidth="50"
+             d:DesignHeight="60" d:DesignWidth="60"
+             x:Name="OrbRoot"
              RenderTransformOrigin="0.5,0.5">
-
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </UserControl.Resources>
     <UserControl.RenderTransform>
         <ScaleTransform x:Name="OrbScale" ScaleX="1.0" ScaleY="1.0"/>
     </UserControl.RenderTransform>
 
-    <Grid Width="{Binding Size}" Height="{Binding Size}">
+    <Grid Width="{Binding Size, ElementName=OrbRoot}" 
+          Height="{Binding Size, ElementName=OrbRoot}">
+
         <Ellipse Fill="#22FFFFFF" Stroke="#44FFFFFF" StrokeThickness="1.5"/>
 
         <Ellipse x:Name="ActiveShape" Fill="#CC00BFFF" Opacity="0">
@@ -22,37 +28,40 @@
 
         <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
 
-            <Image Source="{Binding IconImage}"
+            <Image Source="{Binding RenderImage, ElementName=OrbRoot}"
                    Width="24" Height="24"
                    RenderOptions.BitmapScalingMode="HighQuality"
-                   x:Name="ImgIcon">
-                <Image.Style>
-                    <Style TargetType="Image">
-                        <Setter Property="Visibility" Value="Collapsed"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsImageMode}" Value="True">
-                                <Setter Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Image.Style>
-            </Image>
+                   Visibility="{Binding ShowImage, ElementName=OrbRoot, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
-            <TextBlock Text="{Binding IconGlyph}"
+            <TextBlock Text="{Binding RenderGlyph, ElementName=OrbRoot}"
                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                        FontSize="20"
                        Foreground="White"
                        HorizontalAlignment="Center"
-                       VerticalAlignment="Center"
-                       x:Name="FontIcon">
+                       VerticalAlignment="Center">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ShowImage, ElementName=OrbRoot}" Value="False">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
+            <TextBlock Text="{Binding Label, ElementName=OrbRoot}" 
+                       FontSize="11" FontWeight="SemiBold" Foreground="White"
+                       HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock.Style>
                     <Style TargetType="TextBlock">
                         <Setter Property="Visibility" Value="Collapsed"/>
                         <Style.Triggers>
                             <MultiDataTrigger>
                                 <MultiDataTrigger.Conditions>
-                                    <Condition Binding="{Binding IsImageMode}" Value="False"/>
-                                    <Condition Binding="{Binding HasIcon}" Value="True"/>
+                                    <Condition Binding="{Binding RenderGlyph, ElementName=OrbRoot}" Value=""/>
+                                    <Condition Binding="{Binding ShowImage, ElementName=OrbRoot}" Value="False"/>
                                 </MultiDataTrigger.Conditions>
                                 <Setter Property="Visibility" Value="Visible"/>
                             </MultiDataTrigger>
@@ -60,33 +69,15 @@
                     </Style>
                 </TextBlock.Style>
             </TextBlock>
-
-            <TextBlock Text="{Binding Label}" 
-                       FontSize="11"
-                       FontWeight="SemiBold"
-                       Foreground="White"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center"
-                       x:Name="TxtLabel">
-                <TextBlock.Style>
-                    <Style TargetType="TextBlock">
-                        <Setter Property="Visibility" Value="Visible"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding HasIcon}" Value="True">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </TextBlock.Style>
-            </TextBlock>
         </Grid>
     </Grid>
+
+
 
     <UserControl.Style>
         <Style TargetType="UserControl">
             <Style.Triggers>
-
-                <DataTrigger Binding="{Binding IsActive}" Value="True">
+                <DataTrigger Binding="{Binding IsActive, RelativeSource={RelativeSource Self}}" Value="True">
                     <Setter Property="Panel.ZIndex" Value="99"/>
                     <DataTrigger.EnterActions>
                         <BeginStoryboard>
@@ -127,12 +118,10 @@
                         </BeginStoryboard>
                     </DataTrigger.ExitActions>
                 </DataTrigger>
-
-                <DataTrigger Binding="{Binding IsActive}" Value="False">
+                <DataTrigger Binding="{Binding IsActive, RelativeSource={RelativeSource Self}}" Value="False">
                     <Setter Property="Opacity" Value="0.8"/>
                     <Setter Property="Panel.ZIndex" Value="0"/>
                 </DataTrigger>
-
             </Style.Triggers>
         </Style>
     </UserControl.Style>

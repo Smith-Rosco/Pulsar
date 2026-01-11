@@ -5,118 +5,193 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:Pulsar.ViewModels"
         xmlns:models="clr-namespace:Pulsar.Models"
+        xmlns:controls="clr-namespace:Pulsar.Views.Controls"
         mc:Ignorable="d"
-        Title="Pulsar Settings" Height="500" Width="800"
-        Background="#1E1E1E" Foreground="White">
+        Title="Pulsar Configuration Center" Height="650" Width="1000"
+        Background="#1E1E1E" Foreground="#E0E0E0"
+        WindowStartupLocation="CenterScreen">
 
     <Window.Resources>
+        <Style x:Key="IconButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="#CCCCCC"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="5"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="4">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="#33FFFFFF"/> <Setter Property="Foreground" Value="White"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="#11FFFFFF"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+        
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
         <Style TargetType="TextBox">
-            <Setter Property="Background" Value="#333"/>
+            <Setter Property="Background" Value="#2D2D30"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="BorderBrush" Value="#3F3F46"/>
+            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="5"/>
-            <Setter Property="Margin" Value="0,0,0,5"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
-        <Style TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#AAA"/>
-            <Setter Property="Margin" Value="0,0,0,2"/>
+
+        <Style TargetType="TextBlock" x:Key="LabelStyle">
+            <Setter Property="Foreground" Value="#AAAAAA"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
         </Style>
 
         <DataTemplate DataType="{x:Type models:LauncherItem}">
-            <Border Background="#2D2D2D" CornerRadius="4" Padding="10" Margin="0,0,0,10">
+            <Border Background="#252526" BorderBrush="#3F3F46" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,8">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="50"/>
+                        <ColumnDefinition Width="60"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="Slot" FontSize="10" HorizontalAlignment="Center"/>
-                        <TextBox Text="{Binding Slot}" TextAlignment="Center" Width="30"/>
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <controls:JellyOrb IconKey="{Binding IconKey}" Width="40" Height="40" Margin="0,0,0,5"/>
+                        <TextBlock Text="{Binding Slot, StringFormat='Slot {0}'}" FontSize="10" HorizontalAlignment="Center" Foreground="#666"/>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="1" Margin="10,0">
-                        <UniformGrid Columns="2">
-                            <StackPanel Margin="0,0,5,0">
-                                <TextBlock Text="Label"/>
-                                <TextBox Text="{Binding Label}"/>
-                            </StackPanel>
-                            <StackPanel Margin="5,0,0,0">
-                                <TextBlock Text="Process Name (.exe)"/>
-                                <TextBox Text="{Binding ProcessName}"/>
-                            </StackPanel>
-                        </UniformGrid>
+                    <Grid Grid.Column="1" Margin="15,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
 
-                        <StackPanel Margin="0,5,0,0">
-                            <TextBlock Text="Icon Key (e.g. E710)"/>
-                            <TextBox Text="{Binding IconKey}"/>
+                        <StackPanel Margin="0,0,5,5">
+                            <TextBlock Text="Label" Style="{StaticResource LabelStyle}"/>
+                            <TextBox Text="{Binding Label}"/>
                         </StackPanel>
-                    </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="5,0,0,5">
+                            <TextBlock Text="Icon Key (Path or Font)" Style="{StaticResource LabelStyle}"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding IconKey}" VerticalAlignment="Center" ToolTip="Enter code or path"/>
+
+                                <Button Grid.Column="1" 
+            Command="{Binding DataContext.PickIconCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+            CommandParameter="{Binding}"
+            Style="{StaticResource IconButtonStyle}"
+            Margin="5,0,0,0" Width="30" Height="30"
+            ToolTip="Open Icon Picker">
+                                    <TextBlock Text="&#xE721;" 
+                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" 
+                   FontSize="16"/>
+                                </Button>
+                            </Grid>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Grid.ColumnSpan="2">
+                            <TextBlock Text="Process Name (e.g. chrome.exe)" Style="{StaticResource LabelStyle}"/>
+                            <TextBox Text="{Binding ProcessName}"/>
+                        </StackPanel>
+                    </Grid>
 
                     <Button Grid.Column="2" Content="❌" 
                             Command="{Binding DataContext.RemoveSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
                             CommandParameter="{Binding}"
-                            Background="Transparent" BorderThickness="0" Foreground="#FF5555" FontWeight="Bold"/>
+                            Background="Transparent" BorderThickness="0" Foreground="#FF5555" 
+                            VerticalAlignment="Top" Padding="5"/>
                 </Grid>
             </Border>
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type models:CommandItem}">
-            <Border Background="#2D2D2D" CornerRadius="4" Padding="10" Margin="0,0,0,10">
+            <Border Background="#252526" BorderBrush="#3F3F46" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,8">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="50"/>
+                        <ColumnDefinition Width="60"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="Slot" FontSize="10" HorizontalAlignment="Center"/>
-                        <TextBox Text="{Binding Slot}" TextAlignment="Center" Width="30"/>
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <controls:JellyOrb IconKey="{Binding IconKey}" Width="40" Height="40" Margin="0,0,0,5"/>
+                        <TextBlock Text="{Binding Slot, StringFormat='Slot {0}'}" FontSize="10" HorizontalAlignment="Center" Foreground="#666"/>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="1" Margin="10,0">
-                        <UniformGrid Columns="2">
-                            <StackPanel Margin="0,0,5,0">
-                                <TextBlock Text="Label"/>
-                                <TextBox Text="{Binding Label}"/>
-                            </StackPanel>
-                            <StackPanel Margin="5,0,0,0">
-                                <TextBlock Text="Icon Key"/>
-                                <TextBox Text="{Binding IconKey}"/>
-                            </StackPanel>
-                        </UniformGrid>
+                    <Grid Grid.Column="1" Margin="15,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
 
-                        <Grid Margin="0,5,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Margin="0,0,5,0">
-                                <TextBlock Text="Exe Path / Command"/>
-                                <TextBox Text="{Binding ExePath}"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="1" Margin="5,0,0,0">
-                                <TextBlock Text="Arguments"/>
-                                <TextBox Text="{Binding Arguments}"/>
-                            </StackPanel>
-                        </Grid>
-                    </StackPanel>
+                        <StackPanel Margin="0,0,5,5">
+                            <TextBlock Text="Label" Style="{StaticResource LabelStyle}"/>
+                            <TextBox Text="{Binding Label}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="5,0,0,5">
+                            <TextBlock Text="Icon Key (Path or Font)" Style="{StaticResource LabelStyle}"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding IconKey}" VerticalAlignment="Center" ToolTip="Enter code or path"/>
+
+                                <Button Grid.Column="1" 
+            Command="{Binding DataContext.PickIconCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+            CommandParameter="{Binding}"
+            Style="{StaticResource IconButtonStyle}"
+            Margin="5,0,0,0" Width="30" Height="30"
+            ToolTip="Open Icon Picker">
+                                    <TextBlock Text="&#xE721;" 
+                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" 
+                   FontSize="16"/>
+                                </Button>
+                            </Grid>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Margin="0,0,5,0">
+                            <TextBlock Text="Executable Path" Style="{StaticResource LabelStyle}"/>
+                            <TextBox Text="{Binding ExePath}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="1" Margin="5,0,0,0">
+                            <TextBlock Text="Arguments" Style="{StaticResource LabelStyle}"/>
+                            <TextBox Text="{Binding Arguments}"/>
+                        </StackPanel>
+                    </Grid>
 
                     <Button Grid.Column="2" Content="❌" 
                             Command="{Binding DataContext.RemoveSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
                             CommandParameter="{Binding}"
-                            Background="Transparent" BorderThickness="0" Foreground="#FF5555" FontWeight="Bold"/>
+                            Background="Transparent" BorderThickness="0" Foreground="#FF5555" 
+                            VerticalAlignment="Top" Padding="5"/>
                 </Grid>
             </Border>
         </DataTemplate>
-
     </Window.Resources>
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="250"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
@@ -125,24 +200,26 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Text="PULSAR" FontSize="20" FontWeight="Bold" Foreground="#007ACC" Margin="20,20,0,20"/>
+                <StackPanel Margin="20,25,20,10">
+                    <TextBlock Text="PULSAR" FontSize="20" FontWeight="Bold" Foreground="#007ACC"/>
+                    <TextBlock Text="REDUX v2.0" FontSize="10" Foreground="#666" Margin="2,0,0,0"/>
+                </StackPanel>
 
                 <ListBox Grid.Row="1" 
                          ItemsSource="{Binding NavItems}" 
                          SelectedItem="{Binding SelectedNavItem}"
-                         Background="Transparent" 
-                         BorderThickness="0"
-                         Foreground="#DDD">
+                         Background="Transparent" BorderThickness="0" Foreground="#DDD">
                     <ListBox.ItemContainerStyle>
                         <Style TargetType="ListBoxItem">
-                            <Setter Property="Padding" Value="10,8"/>
+                            <Setter Property="Padding" Value="15,10"/>
                             <Setter Property="Cursor" Value="Hand"/>
                             <Setter Property="Template">
                                 <Setter.Value>
                                     <ControlTemplate TargetType="ListBoxItem">
-                                        <Border Name="Border" Padding="{TemplateBinding Padding}" Background="Transparent">
+                                        <Border Name="Border" Padding="{TemplateBinding Padding}" Background="Transparent" CornerRadius="2" Margin="5,0">
                                             <ContentPresenter />
                                         </Border>
                                         <ControlTemplate.Triggers>
@@ -162,48 +239,134 @@
                     </ListBox.ItemContainerStyle>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding Name}"/>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding Icon}" Margin="0,0,10,0" Width="20" TextAlignment="Center"/>
+                                <TextBlock Text="{Binding Name}"/>
+                            </StackPanel>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
+
+                <Border Grid.Row="2" BorderBrush="#3F3F46" BorderThickness="0,1,0,0" Padding="15" Background="#2D2D30">
+                    <StackPanel>
+                        <TextBlock Text="ADD NEW PROFILE" FontSize="10" FontWeight="Bold" Foreground="#666" Margin="0,0,0,5"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBox x:Name="NewProfileInput" ToolTip="e.g. chrome.exe" Padding="5"/>
+
+                            <Button Grid.Column="1" 
+            Command="{Binding AddProfileCommand}"
+            CommandParameter="{Binding Text, ElementName=NewProfileInput}"
+            Style="{StaticResource IconButtonStyle}"
+            Margin="5,0,0,0" Width="30" Height="30"
+            ToolTip="Create Profile">
+                                <TextBlock Text="&#xE710;" 
+                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" 
+                   FontSize="16" FontWeight="Bold"/>
+                            </Button>
+                        </Grid>
+                    </StackPanel>
+                </Border>
             </Grid>
         </Border>
 
-        <Grid Grid.Column="1" Margin="20">
+        <Grid Grid.Column="1" Margin="30">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
-                <TextBlock Text="{Binding SelectedNavItem.Name}" FontSize="24" FontWeight="Light"/>
-                <TextBlock Text="{Binding StatusMessage}" Margin="20,0,0,0" VerticalAlignment="Bottom" Foreground="#00CC6A" FontSize="12"/>
+            <StackPanel Margin="0,0,0,20">
+                <Grid>
+                    <StackPanel>
+                        <TextBlock Text="{Binding EditorTitle}" FontSize="28" FontWeight="Light"/>
+                        <TextBlock Text="{Binding EditorDescription}" Foreground="#888" Margin="2,5,0,0" TextWrapping="Wrap"/>
+                    </StackPanel>
+
+                    <Button HorizontalAlignment="Right" VerticalAlignment="Top"
+                            Command="{Binding DeleteProfileCommand}"
+                            Visibility="{Binding CanDeleteProfile, Converter={StaticResource BoolToVis}}"
+                            Content="Delete Profile" Background="Transparent" Foreground="#FF5555" BorderThickness="0" Cursor="Hand"/>
+                </Grid>
+                <Separator Background="#3F3F46" Margin="0,20,0,0"/>
             </StackPanel>
 
-            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                <ItemsControl ItemsSource="{Binding CurrentSlots}"/>
+            <ScrollViewer Grid.Row="1" Visibility="{Binding IsGeneralView, Converter={StaticResource BoolToVis}}">
+                <StackPanel DataContext="{Binding GeneralSettings}">
+                    <TextBlock Text="Physics &amp; Animation" FontSize="16" Foreground="White" Margin="0,0,0,15"/>
+
+                    <StackPanel Margin="0,0,0,15">
+                        <TextBlock Text="Trigger Distance" Style="{StaticResource LabelStyle}"/>
+                        <Slider Minimum="50" Maximum="300" Value="{Binding TriggerDistance}" AutoToolTipPlacement="TopLeft"/>
+                        <TextBlock Text="{Binding TriggerDistance, StringFormat={}{0:0} px}" HorizontalAlignment="Right" Foreground="#888"/>
+                    </StackPanel>
+
+                    <StackPanel Margin="0,0,0,15">
+                        <TextBlock Text="Springiness (Elasticity)" Style="{StaticResource LabelStyle}"/>
+                        <Slider Minimum="1" Maximum="20" Value="{Binding Springiness}" AutoToolTipPlacement="TopLeft"/>
+                    </StackPanel>
+
+                    <StackPanel Margin="0,0,0,15">
+                        <TextBlock Text="Hover Scale Effect" Style="{StaticResource LabelStyle}"/>
+                        <Slider Minimum="1.0" Maximum="2.0" TickFrequency="0.1" IsSnapToTickEnabled="True" Value="{Binding HoverScale}" AutoToolTipPlacement="TopLeft"/>
+                    </StackPanel>
+
+                    <TextBlock Text="Appearance" FontSize="16" Foreground="White" Margin="0,15,0,15"/>
+                    <StackPanel>
+                        <TextBlock Text="Theme" Style="{StaticResource LabelStyle}"/>
+                        <ComboBox SelectedValue="{Binding Theme}" SelectedValuePath="Content">
+                            <ComboBoxItem Content="Dark"/>
+                            <ComboBoxItem Content="Light"/>
+                        </ComboBox>
+                    </StackPanel>
+                </StackPanel>
             </ScrollViewer>
 
-            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-                <Button Command="{Binding AddSlotCommand}" Content="+ Add Slot" 
-                        Padding="15,8" Background="#333" Foreground="White" BorderThickness="0" Margin="0,0,10,0">
-                    <Button.Resources>
-                        <Style TargetType="Border">
-                            <Setter Property="CornerRadius" Value="4"/>
-                        </Style>
-                    </Button.Resources>
-                </Button>
+            <Grid Grid.Row="1" Visibility="{Binding IsEditorView, Converter={StaticResource BoolToVis}}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding CurrentSlots}" AlternationCount="2"/>
+                </ScrollViewer>
+
+                <Button Grid.Row="1" Command="{Binding AddSlotCommand}" 
+                        Content="+ Add New Slot" Height="35" Margin="0,10,0,0"
+                        Background="#333" Foreground="White" BorderBrush="#3F3F46" BorderThickness="1">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#444"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </Grid>
+
+            <Grid Grid.Row="2" Margin="0,20,0,0">
+                <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" Foreground="#00CC6A"/>
                 <Button Command="{Binding SaveCommand}" Content="Save Changes" 
-                        Padding="15,8" Background="#007ACC" Foreground="White" BorderThickness="0" FontWeight="Bold">
+                        HorizontalAlignment="Right" Padding="20,10" 
+                        Background="#007ACC" Foreground="White" FontWeight="Bold" BorderThickness="0">
                     <Button.Resources>
                         <Style TargetType="Border">
                             <Setter Property="CornerRadius" Value="4"/>
                         </Style>
                     </Button.Resources>
                 </Button>
-            </StackPanel>
+            </Grid>
         </Grid>
     </Grid>
 </Window>

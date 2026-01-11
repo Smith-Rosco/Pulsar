@@ -7,8 +7,7 @@
         xmlns:vm="clr-namespace:Pulsar.ViewModels"
         mc:Ignorable="d"
         Title="Pulsar Overlay"
-        Height="400"
-        Width="400"
+        Height="400" Width="400"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
@@ -18,10 +17,8 @@
 
     <Grid>
         <Canvas x:Name="MenuCanvas"
-                Width="400"
-                Height="400"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center">
+                Width="400" Height="400"
+                HorizontalAlignment="Center" VerticalAlignment="Center">
 
             <ItemsControl ItemsSource="{Binding Slots}">
                 <ItemsControl.ItemsPanel>
@@ -37,29 +34,31 @@
                 </ItemsControl.ItemContainerStyle>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <controls:JellyOrb DataContext="{Binding}"/>
+                        <controls:JellyOrb 
+                            IconKey="{Binding IconKey}"
+                            Label="{Binding Label}"
+                            IsActive="{Binding IsActive}"
+                            Size="{Binding Size}"/>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <controls:JellyOrb DataContext="{Binding CenterSlot}"
-                               Canvas.Left="{Binding X}"
-                               Canvas.Top="{Binding Y}"/>
+            <controls:JellyOrb 
+                Canvas.Left="{Binding CenterSlot.X}"
+                Canvas.Top="{Binding CenterSlot.Y}"
+                Size="{Binding CenterSlot.Size}"
+                IsActive="{Binding CenterSlot.IsActive}"
+                Label="{Binding CenterSlot.Label}"
+                IconKey="{Binding CenterSlot.IconKey}"/>
 
             <TextBlock Text="{Binding CenterText}"
-                       Canvas.Left="0"
-                       Canvas.Top="350"
-                       Width="400"
+                       Canvas.Left="0" Canvas.Top="350" Width="400"
                        TextAlignment="Center"
                        Foreground="#DDFFFFFF"
-                       FontSize="16"
-                       FontWeight="SemiBold"
+                       FontSize="16" FontWeight="SemiBold"
                        IsHitTestVisible="False">
                 <TextBlock.Effect>
-                    <DropShadowEffect Color="Black"
-                                      BlurRadius="4"
-                                      ShadowDepth="2"
-                                      Opacity="0.8"/>
+                    <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="2" Opacity="0.8"/>
                 </TextBlock.Effect>
             </TextBlock>
         </Canvas>
