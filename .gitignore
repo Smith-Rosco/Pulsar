@@ -486,3 +486,6 @@ $RECYCLE.BIN/
 # AI Packer
 ai-context/
 ai-packer.config.mjs
+
+bin
+obj
