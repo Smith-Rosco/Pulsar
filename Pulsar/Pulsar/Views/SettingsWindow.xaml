@@ -81,8 +81,22 @@
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.ColumnSpan="2">
-                            <TextBlock Text="Process Name (e.g. chrome.exe)" Style="{StaticResource LabelStyle}"/>
-                            <TextBox Text="{Binding ProcessName}"/>
+                            <TextBlock Text="Process Name (e.g. chrome)" Style="{StaticResource LabelStyle}"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding ProcessName}" ToolTip="This name is used for switching to the window."/>
+                                <Button Grid.Column="1" 
+                                        Command="{Binding DataContext.PickProcessCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                        CommandParameter="{Binding}"
+                                        Style="{DynamicResource IconButtonStyle}"
+                                        Margin="5,0,0,0" Width="30" Height="30"
+                                        ToolTip="Pick Running Process">
+                                    <TextBlock Text="🔍" FontSize="14"/>
+                                </Button>
+                            </Grid>
                         </StackPanel>
                     </Grid>
 
@@ -148,8 +162,23 @@
 
                         <StackPanel Grid.Row="1" Margin="0,0,5,0">
                             <TextBlock Text="Executable Path" Style="{StaticResource LabelStyle}"/>
-                            <TextBox Text="{Binding ExePath}"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding ExePath}"/>
+                                <Button Grid.Column="1" 
+                                        Command="{Binding DataContext.PickProcessCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                        CommandParameter="{Binding}"
+                                        Style="{DynamicResource IconButtonStyle}"
+                                        Margin="5,0,0,0" Width="30" Height="30"
+                                        ToolTip="Pick Executable from Running App">
+                                    <TextBlock Text="🔍" FontSize="14"/>
+                                </Button>
+                            </Grid>
                         </StackPanel>
+
                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="5,0,0,0">
                             <TextBlock Text="Arguments" Style="{StaticResource LabelStyle}"/>
                             <TextBox Text="{Binding Arguments}"/>
@@ -235,13 +264,24 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
-                            <TextBox x:Name="NewProfileInput" ToolTip="e.g. chrome.exe" Padding="5"/>
+                            <TextBox x:Name="NewProfileInput" 
+                                     Text="{Binding NewProfileName, UpdateSourceTrigger=PropertyChanged}" 
+                                     ToolTip="e.g. chrome.exe" Padding="5"/>
 
                             <Button Grid.Column="1" 
+                                    Command="{Binding PickProcessCommand}"
+                                    CommandParameter="NewProfile"
+                                    Style="{DynamicResource IconButtonStyle}"
+                                    Margin="5,0,0,0" Width="30" Height="30"
+                                    ToolTip="Pick Running App">
+                                <TextBlock Text="🔍" FontSize="14"/>
+                            </Button>
+
+                            <Button Grid.Column="2" 
                                     Command="{Binding AddProfileCommand}"
-                                    CommandParameter="{Binding Text, ElementName=NewProfileInput}"
                                     Style="{DynamicResource IconButtonStyle}"
                                     Margin="5,0,0,0" Width="30" Height="30"
                                     ToolTip="Create Profile">

@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using Pulsar.Helpers;
 using Pulsar.Models;
+using Pulsar.Services; // for ProcessWindowInfo
 using Pulsar.Services.Interfaces;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -14,6 +15,8 @@ namespace Pulsar.ViewModels
     public partial class SettingsViewModel : ObservableObject
     {
         private readonly IConfigService _configService;
+        // [New] 注入 WindowService 用于获取进程列表
+        private readonly IWindowService _windowService;
         private AppConfig _config;
 
         // ==========================================
@@ -48,6 +51,10 @@ namespace Pulsar.ViewModels
         [ObservableProperty]
         private string _statusMessage = "Ready";
 
+        // [New] 用于绑定 "Add New Profile" 的输入框
+        [ObservableProperty]
+        private string _newProfileName = string.Empty;
+
         // ==========================================
         // 📝 数据编辑对象 (Editing Objects)
         // ==========================================
@@ -71,9 +78,11 @@ namespace Pulsar.ViewModels
         // ⚙️ 构造与初始化 (Init)
         // ==========================================
 
-        public SettingsViewModel(IConfigService configService)
+        // [Mod] 构造函数注入 WindowService
+        public SettingsViewModel(IConfigService configService, IWindowService windowService)
         {
             _configService = configService;
+            _windowService = windowService; // [New]
             _config = new AppConfig();
             LoadSettings();
         }
@@ -211,19 +220,56 @@ namespace Pulsar.ViewModels
             }
         }
 
+        // [New] 通用的选取进程命令
+        [RelayCommand]
+        public void PickProcess(object parameter)
+        {
+            var dialog = new Views.Dialogs.ProcessPickerDialog(_windowService);
+
+            // [Fix] 核心修复：在显示对话框前，应用当前的主题
+            // 确保对话框拥有和 SettingsWindow 一样的颜色资源
+            ThemeManager.ApplyTheme(dialog, SettingsTheme);
+
+            dialog.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
+
+            if (dialog.ShowDialog() == true && dialog.SelectedProcess != null)
+            {
+                var selected = dialog.SelectedProcess;
+
+                if (parameter is LauncherItem launcher)
+                {
+                    launcher.ProcessName = selected.ProcessName;
+                    launcher.ExePath = selected.ExePath;
+                    if (string.IsNullOrWhiteSpace(launcher.Label) || launcher.Label == "New App")
+                        launcher.Label = selected.Title;
+                }
+                else if (parameter is CommandItem command)
+                {
+                    command.ExePath = selected.ExePath;
+                    if (string.IsNullOrWhiteSpace(command.Label) || command.Label == "Action")
+                        command.Label = selected.Title;
+                }
+                else if (parameter is string str && str == "NewProfile")
+                {
+                    NewProfileName = selected.ProcessName;
+                }
+            }
+        }
+
         // ==========================================
         // 📂 Profile 管理 (Profile Management)
         // ==========================================
 
+        // [Fix] 修复 int 转换错误。之前报错是因为 AddProfile 可能被错误定义成了接收 int 参数，或者 NewProfileName 未定义
         [RelayCommand]
-        public void AddProfile(string processName)
+        public void AddProfile()
         {
-            if (string.IsNullOrWhiteSpace(processName)) return;
-            processName = processName.Trim().ToLower();
+            // 使用绑定的属性，而不是参数
+            if (string.IsNullOrWhiteSpace(NewProfileName)) return;
 
-            // [Fix] 核心修复：
-            // WindowService 返回的 ProcessName 不包含 .exe 后缀。
-            // 因此这里的 Key 必须移除 .exe 才能正确匹配。
+            var processName = NewProfileName.Trim().ToLower();
+
+            // [Fix] 只有 processName 是 string 时，EndsWith 才能工作
             if (processName.EndsWith(".exe"))
             {
                 processName = processName.Substring(0, processName.Length - 4);
@@ -236,11 +282,10 @@ namespace Pulsar.ViewModels
             }
 
             _config.Profiles[processName] = new List<GridItemBase>();
-
             RefreshNavItems();
 
-            // 跳转到新 Profile
             SelectedNavItem = NavItems.FirstOrDefault(n => n.Name == processName && n.Type == NavType.Profile);
+            NewProfileName = string.Empty;
             StatusMessage = $"Profile '{processName}' created.";
         }
 

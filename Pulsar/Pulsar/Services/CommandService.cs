@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using System.Windows.Forms; // for SendKeys
+using System.Windows.Forms;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 
@@ -14,16 +14,15 @@ namespace Pulsar.Services
             _windowService = windowService;
         }
 
-        // 修改接口签名：接受 GridItemBase
         public async Task ExecuteAsync(GridItemBase item)
         {
             if (item == null) return;
 
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            // 保持在后台线程执行，避免阻塞 UI
+            await Task.Run(async () =>
             {
                 try
                 {
-                    // C# 模式匹配 switch (Polymorphism handling)
                     switch (item)
                     {
                         case LauncherItem launcher:
@@ -49,13 +48,35 @@ namespace Pulsar.Services
             // 1. 尝试切换
             bool switched = await _windowService.SwitchToProcessAsync(item.ProcessName);
 
-            // 2. 切换失败则无需操作 (根据 PRD: Launcher 主要是 "Switch", 
-            //    如果用户想 "Start", 应该配置 CommandItem。但为了便利，这里可以保留启动逻辑)
-            if (!switched)
+            // 2. 如果切换成功，直接返回
+            if (switched) return;
+
+            // 3. 切换失败（程序未运行），尝试智能启动
+            if (!string.IsNullOrWhiteSpace(item.ExePath))
             {
-                // 可选：如果没找到窗口，是否尝试直接运行 ProcessName? 
-                // 暂时保留简单逻辑，仅作为切换器。
-                Debug.WriteLine($"Window {item.ProcessName} not found.");
+                Debug.WriteLine($"[CommandService] Process {item.ProcessName} not found. Launching: {item.ExePath}");
+
+                try
+                {
+                    var startInfo = new ProcessStartInfo
+                    {
+                        FileName = item.ExePath,
+                        Arguments = item.Arguments,
+                        UseShellExecute = true,
+                        // 确保新程序获取焦点
+                        WindowStyle = ProcessWindowStyle.Normal
+                    };
+                    Process.Start(startInfo);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[CommandService] Smart Launch failed: {ex.Message}");
+                    // 这里可以考虑触发一个简单的 Toast 通知告诉用户路径无效
+                }
+            }
+            else
+            {
+                Debug.WriteLine($"[CommandService] Cannot switch to {item.ProcessName}: Not running and no ExePath configured.");
             }
         }
 
