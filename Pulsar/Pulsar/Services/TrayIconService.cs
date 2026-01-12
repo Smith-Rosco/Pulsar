@@ -1,6 +1,4 @@
-﻿// [Path]: Pulsar/Services/TrayIconService.cs
-
-using System;
+﻿using System;
 using System.Drawing; // System.Drawing.Primitives 或 System.Drawing.Common
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection; // 用于 IServiceProvider
@@ -14,7 +12,7 @@ namespace Pulsar.Services
     {
         private Forms.NotifyIcon? _notifyIcon;
         private readonly IConfigService _configService;
-        private readonly IServiceProvider _serviceProvider; // 新增：用于解析 Window
+        private readonly IServiceProvider _serviceProvider;
 
         public TrayIconService(IConfigService configService, IServiceProvider serviceProvider)
         {
@@ -27,14 +25,16 @@ namespace Pulsar.Services
             // 1. 创建 NotifyIcon
             _notifyIcon = new Forms.NotifyIcon
             {
-                Icon = SystemIcons.Application, // 后续可替换为 Properties.Resources.Icon
+                // 先不设置图标，稍后尝试加载自定义图标
                 Text = "Pulsar (Ctrl+Q)",
-                Visible = true
+                Visible = false // 加载完图标再显示，避免闪烁
             };
+
+            // [Fix] 加载自定义图标逻辑
+            TryLoadCustomIcon();
 
             // 2. 构建右键菜单
             var contextMenu = new Forms.ContextMenuStrip();
-
             var settingsItem = new Forms.ToolStripMenuItem("Settings", null, OnSettingsClicked);
 
             var reloadItem = new Forms.ToolStripMenuItem("Reload Config");
@@ -60,6 +60,40 @@ namespace Pulsar.Services
 
             // 3. 双击打开设置
             _notifyIcon.DoubleClick += OnSettingsClicked;
+
+            // 最后显示图标
+            _notifyIcon.Visible = true;
+        }
+
+        private void TryLoadCustomIcon()
+        {
+            if (_notifyIcon == null) return;
+
+            try
+            {
+                // 使用 WPF Pack URI 定位根目录下的资源
+                // 格式: pack://application:,,,/程序集名称;component/路径 (如果是同一程序集，可以省略组件部分)
+                var iconUri = new Uri("pack://application:,,,/Pulsar.ico");
+
+                // 获取资源流
+                var streamInfo = System.Windows.Application.GetResourceStream(iconUri);
+
+                if (streamInfo != null)
+                {
+                    // 将流转换为 System.Drawing.Icon
+                    _notifyIcon.Icon = new Icon(streamInfo.Stream);
+                }
+                else
+                {
+                    // 加载失败，使用默认图标
+                    _notifyIcon.Icon = SystemIcons.Application;
+                }
+            }
+            catch
+            {
+                // 如果发生任何异常（如文件未找到、属性未设置为Resource），回退到系统图标
+                _notifyIcon.Icon = SystemIcons.Application;
+            }
         }
 
         private void OnSettingsClicked(object? sender, EventArgs e)

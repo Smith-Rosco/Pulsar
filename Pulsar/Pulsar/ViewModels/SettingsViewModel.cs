@@ -219,9 +219,15 @@ namespace Pulsar.ViewModels
         public void AddProfile(string processName)
         {
             if (string.IsNullOrWhiteSpace(processName)) return;
-
             processName = processName.Trim().ToLower();
-            if (!processName.EndsWith(".exe")) processName += ".exe";
+
+            // [Fix] 核心修复：
+            // WindowService 返回的 ProcessName 不包含 .exe 后缀。
+            // 因此这里的 Key 必须移除 .exe 才能正确匹配。
+            if (processName.EndsWith(".exe"))
+            {
+                processName = processName.Substring(0, processName.Length - 4);
+            }
 
             if (_config.Profiles.ContainsKey(processName))
             {

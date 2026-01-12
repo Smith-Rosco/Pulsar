@@ -1,4 +1,3 @@
-// [Path]: Pulsar/ViewModels/RadialMenuViewModel.cs
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -8,7 +7,7 @@ using Pulsar.Models;
 using Pulsar.Models.Enums;
 using Pulsar.Services.Interfaces;
 using Pulsar.Native;
-using Pulsar.Helpers; // 如果有 IconHelper
+using Pulsar.Helpers;
 
 namespace Pulsar.ViewModels
 {
@@ -19,15 +18,12 @@ namespace Pulsar.ViewModels
         private readonly IWindowService _windowService;
 
         private AppConfig? _config;
-
-        // [Fix] 类型升级为 GridItemBase
         private List<GridItemBase> _currentItems = new();
         private GridItemType _currentType;
 
         public ObservableCollection<SlotViewModel> Slots { get; } = new();
         public SlotViewModel CenterSlot { get; private set; } = null!;
 
-        // [Fix] 移除 [ObservableProperty] 以避免与下方手写属性冲突 (CS0102/Ambiguity)
         private bool _isVisible;
         public bool IsVisible
         {
@@ -73,6 +69,9 @@ namespace Pulsar.ViewModels
             hook.OnSwitcherTrigger += (s, e) => Show(GridItemType.Launcher);
             hook.OnKeyUp += HandleKeyUp;
 
+            // [New] 订阅配置变更通知
+            _configService.ConfigUpdated += OnConfigUpdated;
+
             LoadConfigAsync();
         }
 
@@ -92,6 +91,19 @@ namespace Pulsar.ViewModels
         private async void LoadConfigAsync()
         {
             _config = await _configService.LoadAsync();
+            // [New] 加载完配置后，如果需要可以立即刷新主题或其他全局设置
+            // UpdateGlobalSettings(); 
+        }
+
+        // [New] 处理配置更新事件
+        private async void OnConfigUpdated()
+        {
+            // 重新获取最新的配置对象
+            _config = await _configService.LoadAsync();
+
+            // 可选：如果当前菜单正显示着，可以立即刷新当前视图
+            // 但为了安全起见（避免修改正在交互的数据），通常下次 Show() 时会自动生效
+            // 因为 Show() 方法每次都会读取 _config?.Switcher
         }
 
         private void Show(GridItemType type)
@@ -103,7 +115,6 @@ namespace Pulsar.ViewModels
             // 1. 确定数据源
             if (type == GridItemType.Launcher)
             {
-                // [Fix] 这里现在是 List<GridItemBase>
                 _currentItems = _config?.Switcher ?? new List<GridItemBase>();
                 CenterText = "Switch";
             }
@@ -131,16 +142,11 @@ namespace Pulsar.ViewModels
                 if (item != null)
                 {
                     slot.Label = item.Label;
-
-                    // [Fix] 核心修复：使用 LoadIconData 方法替代直接属性赋值
-                    // 这将自动处理 字体图标(Font) vs 图片图标(Image) 的逻辑
                     slot.LoadIconData(item.IconKey);
                 }
                 else
                 {
                     slot.Label = "";
-
-                    // [Fix] 传入 null 或空字符串以重置图标状态
                     slot.LoadIconData(string.Empty);
                 }
             }
@@ -158,14 +164,12 @@ namespace Pulsar.ViewModels
         public void HandleMouseMove(double mouseX, double mouseY)
         {
             if (!IsVisible) return;
-
             double dx = mouseX - CenterX;
             double dy = mouseY - CenterY;
             double dist = Math.Sqrt(dx * dx + dy * dy);
 
             double deadZone = 40.0;
             double maxDist = 300.0;
-
             int newSlotIndex = -1;
 
             if (dist < deadZone)
@@ -205,6 +209,7 @@ namespace Pulsar.ViewModels
         private void HandleKeyUp(object? sender, GlobalKeyEventArgs e)
         {
             if (!IsVisible) return;
+
             if (e.VkCode == VK_LCONTROL || e.VkCode == VK_RCONTROL || e.VkCode == VK_CONTROL)
             {
                 ExecuteSelection();
@@ -216,32 +221,26 @@ namespace Pulsar.ViewModels
         {
             if (_activeSlotIndex <= 0) return;
 
-            // [Fix] 这里获取的是 GridItemBase
             GridItemBase? targetItem = _currentItems.FirstOrDefault(x => x.Slot == _activeSlotIndex);
             if (targetItem == null) return;
 
             if (_currentType == GridItemType.Launcher)
             {
-                // [Launcher 模式]
-                // 尝试强制转换 (如果需要访问 ProcessName)，或者直接利用 CommandService 解析
                 if (targetItem is LauncherItem launcherItem)
                 {
                     bool switched = _windowService.FocusWindow(launcherItem.ProcessName);
                     if (!switched)
                     {
-                        // 切换失败，作为普通命令启动
                         await _commandService.ExecuteAsync(targetItem);
                     }
                 }
                 else
                 {
-                    // 数据类型不对，直接执行
                     await _commandService.ExecuteAsync(targetItem);
                 }
             }
             else
             {
-                // [Action 模式] 直接执行
                 await _commandService.ExecuteAsync(targetItem);
             }
         }

@@ -1,5 +1,6 @@
-// Pulsar/Services/Interfaces/IConfigService.cs
 using Pulsar.Models;
+using System;
+using System.Threading.Tasks;
 
 namespace Pulsar.Services.Interfaces
 {
@@ -7,6 +8,8 @@ namespace Pulsar.Services.Interfaces
     {
         Task<AppConfig> LoadAsync();
         Task SaveAsync(AppConfig config);
-        // event EventHandler<AppConfig> ConfigReloaded; // 暂时保留，Phase 3 再实现热重载
+
+        // [New] 添加配置变更通知事件
+        event Action ConfigUpdated;
     }
 }
