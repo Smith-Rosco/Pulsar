@@ -35,6 +35,24 @@ namespace Pulsar.Views.Controls
             InitializeComponent();
             this.Loaded += (s, e) => CompositionTarget.Rendering += OnRenderFrame;
             this.Unloaded += (s, e) => CompositionTarget.Rendering -= OnRenderFrame;
+
+            // [Fix 3.1] 监听可见性变化，当隐藏时重置物理位置
+            this.IsVisibleChanged += OnIsVisibleChanged;
+        }
+
+        private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (!(bool)e.NewValue)
+            {
+                // [Fix 3.2] 当控件不可见时，立即重置偏移量
+                // 防止下次显示时出现从旧位置"飞"过来的情况
+                _currentOffset = new Vector(0, 0);
+                if (OrbTranslate != null)
+                {
+                    OrbTranslate.X = 0;
+                    OrbTranslate.Y = 0;
+                }
+            }
         }
 
         // ============================

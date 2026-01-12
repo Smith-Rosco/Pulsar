@@ -3,16 +3,28 @@
   "WorkspaceRootPath": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|g:\\0_playground\\pulsar_project\\pulsar\\pulsar\\views\\radialmenuwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|solutionrelative:pulsar\\views\\radialmenuwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|g:\\0_playground\\pulsar_project\\pulsar\\pulsar\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|solutionrelative:pulsar\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|g:\\0_playground\\pulsar_project\\pulsar\\pulsar\\viewmodels\\radialmenuviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|solutionrelative:pulsar\\viewmodels\\radialmenuviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|g:\\0_playground\\pulsar_project\\pulsar\\pulsar\\views\\controls\\jellyorb.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|solutionrelative:pulsar\\views\\controls\\jellyorb.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|g:\\0_playground\\pulsar_project\\pulsar\\pulsar\\services\\trayiconservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|solutionrelative:pulsar\\services\\trayiconservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|g:\\0_playground\\pulsar_project\\pulsar\\pulsar\\viewmodels\\settingsviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|solutionrelative:pulsar\\viewmodels\\settingsviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|g:\\0_playground\\pulsar_project\\pulsar\\pulsar\\viewmodels\\radialmenuviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|solutionrelative:pulsar\\viewmodels\\radialmenuviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|g:\\0_playground\\pulsar_project\\pulsar\\pulsar\\views\\radialmenuwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
@@ -29,14 +41,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|g:\\0_playground\\pulsar_project\\pulsar\\pulsar\\services\\interfaces\\iconfigservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|solutionrelative:pulsar\\services\\interfaces\\iconfigservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|g:\\0_playground\\pulsar_project\\pulsar\\pulsar\\views\\radialmenuwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|solutionrelative:pulsar\\views\\radialmenuwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|g:\\0_playground\\pulsar_project\\pulsar\\pulsar\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|solutionrelative:pulsar\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|g:\\0_playground\\pulsar_project\\pulsar\\pulsar\\themes\\theme.light.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
@@ -75,10 +79,6 @@
       "RelativeMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|solutionrelative:pulsar\\views\\settingswindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|g:\\0_playground\\pulsar_project\\pulsar\\pulsar\\views\\controls\\jellyorb.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|solutionrelative:pulsar\\views\\controls\\jellyorb.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|g:\\0_playground\\pulsar_project\\pulsar\\pulsar\\views\\dialogs\\iconpickerdialog.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|solutionrelative:pulsar\\views\\dialogs\\iconpickerdialog.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -110,32 +110,45 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 3,
+              "Title": "JellyOrb.xaml.cs",
+              "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Views\\Controls\\JellyOrb.xaml.cs",
+              "RelativeDocumentMoniker": "Pulsar\\Views\\Controls\\JellyOrb.xaml.cs",
+              "ToolTip": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Views\\Controls\\JellyOrb.xaml.cs",
+              "RelativeToolTip": "Pulsar\\Views\\Controls\\JellyOrb.xaml.cs",
+              "ViewState": "AgIAAB0AAAAAAAAAAAAcwDAAAAAyAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-11T11:18:47.105Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
               "Title": "TrayIconService.cs",
               "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Services\\TrayIconService.cs",
               "RelativeDocumentMoniker": "Pulsar\\Services\\TrayIconService.cs",
               "ToolTip": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Services\\TrayIconService.cs",
               "RelativeToolTip": "Pulsar\\Services\\TrayIconService.cs",
-              "ViewState": "AgIAAHgAAAAAAAAAAAAgwIcAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAHgAAAAAAAAAAAA3wIcAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-01-12T04:18:25.338Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "ConfigService.cs",
-              "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Services\\ConfigService.cs",
-              "RelativeDocumentMoniker": "Pulsar\\Services\\ConfigService.cs",
-              "ToolTip": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Services\\ConfigService.cs",
-              "RelativeToolTip": "Pulsar\\Services\\ConfigService.cs",
-              "ViewState": "AgIAAFMAAAAAAAAAAAAgwGUAAAABAAAAAAAAAA==",
+              "DocumentIndex": 0,
+              "Title": "RadialMenuWindow.xaml.cs",
+              "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Views\\RadialMenuWindow.xaml.cs",
+              "RelativeDocumentMoniker": "Pulsar\\Views\\RadialMenuWindow.xaml.cs",
+              "ToolTip": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Views\\RadialMenuWindow.xaml.cs",
+              "RelativeToolTip": "Pulsar\\Views\\RadialMenuWindow.xaml.cs",
+              "ViewState": "AgIAAJEAAAAAAAAAAAAgwJkAAAAiAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-11T14:05:47.801Z",
+              "WhenOpened": "2026-01-11T13:10:11.191Z",
               "EditorCaption": ""
             },
             {
@@ -146,7 +159,7 @@
               "RelativeDocumentMoniker": "Pulsar\\ViewModels\\RadialMenuViewModel.cs",
               "ToolTip": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\ViewModels\\RadialMenuViewModel.cs",
               "RelativeToolTip": "Pulsar\\ViewModels\\RadialMenuViewModel.cs",
-              "ViewState": "AgIAANYAAAAAAAAAAAAgwOkAAABHAAAAAAAAAA==",
+              "ViewState": "AgIAALsAAAAAAAAAAAAgwNYAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-01-11T11:26:53.394Z",
               "EditorCaption": ""
@@ -154,19 +167,6 @@
             {
               "$type": "Document",
               "DocumentIndex": 5,
-              "Title": "CommandService.cs",
-              "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Services\\CommandService.cs",
-              "RelativeDocumentMoniker": "Pulsar\\Services\\CommandService.cs",
-              "ToolTip": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Services\\CommandService.cs",
-              "RelativeToolTip": "Pulsar\\Services\\CommandService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-12T03:50:05.299Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
               "Title": "SettingsViewModel.cs",
               "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\ViewModels\\SettingsViewModel.cs",
               "RelativeDocumentMoniker": "Pulsar\\ViewModels\\SettingsViewModel.cs",
@@ -174,25 +174,48 @@
               "RelativeToolTip": "Pulsar\\ViewModels\\SettingsViewModel.cs",
               "ViewState": "AgIAANAAAAAAAAAAAAAqwOoAAAAXAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-11T11:50:39.663Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-11T11:50:39.663Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 7,
-              "Title": "RadialMenuWindow.xaml.cs",
-              "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Views\\RadialMenuWindow.xaml.cs",
-              "RelativeDocumentMoniker": "Pulsar\\Views\\RadialMenuWindow.xaml.cs",
-              "ToolTip": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Views\\RadialMenuWindow.xaml.cs",
-              "RelativeToolTip": "Pulsar\\Views\\RadialMenuWindow.xaml.cs",
-              "ViewState": "AgIAAHgAAAAAAAAAAAAgwJkAAAABAAAAAAAAAA==",
+              "Title": "ConfigService.cs",
+              "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Services\\ConfigService.cs",
+              "RelativeDocumentMoniker": "Pulsar\\Services\\ConfigService.cs",
+              "ToolTip": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Services\\ConfigService.cs",
+              "RelativeToolTip": "Pulsar\\Services\\ConfigService.cs",
+              "ViewState": "AgIAAFMAAAAAAAAAAAAgwGUAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-11T13:10:11.191Z",
+              "WhenOpened": "2026-01-11T14:05:47.801Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "App.xaml.cs",
+              "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\App.xaml.cs",
+              "RelativeDocumentMoniker": "Pulsar\\App.xaml.cs",
+              "ToolTip": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\App.xaml.cs",
+              "RelativeToolTip": "Pulsar\\App.xaml.cs",
+              "ViewState": "AgIAADAAAAAAAAAAAAAgwD8AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-11T13:59:31.218Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 8,
+              "Title": "CommandService.cs",
+              "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Services\\CommandService.cs",
+              "RelativeDocumentMoniker": "Pulsar\\Services\\CommandService.cs",
+              "ToolTip": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Services\\CommandService.cs",
+              "RelativeToolTip": "Pulsar\\Services\\CommandService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-12T03:50:05.299Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
               "Title": "RadialMenuWindow.xaml",
               "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Views\\RadialMenuWindow.xaml",
               "RelativeDocumentMoniker": "Pulsar\\Views\\RadialMenuWindow.xaml",
@@ -204,7 +227,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 9,
               "Title": "IConfigService.cs",
               "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Services\\Interfaces\\IConfigService.cs",
               "RelativeDocumentMoniker": "Pulsar\\Services\\Interfaces\\IConfigService.cs",
@@ -212,12 +235,11 @@
               "RelativeToolTip": "Pulsar\\Services\\Interfaces\\IConfigService.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-12T03:49:56.333Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-12T03:49:56.333Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 14,
+              "DocumentIndex": 15,
               "Title": "AssemblyInfo.cs",
               "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\AssemblyInfo.cs",
               "RelativeDocumentMoniker": "Pulsar\\AssemblyInfo.cs",
@@ -229,7 +251,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 10,
               "Title": "Theme.Light.xaml",
               "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Themes\\Theme.Light.xaml",
               "RelativeDocumentMoniker": "Pulsar\\Themes\\Theme.Light.xaml",
@@ -240,31 +262,18 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "App.xaml.cs",
-              "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\App.xaml.cs",
-              "RelativeDocumentMoniker": "Pulsar\\App.xaml.cs",
-              "ToolTip": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\App.xaml.cs",
-              "RelativeToolTip": "Pulsar\\App.xaml.cs",
-              "ViewState": "AgIAACsAAAAAAAAAAAAgwDEAAAAMAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-11T13:59:31.218Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 13,
+              "DocumentIndex": 14,
               "Title": "App.xaml",
               "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\App.xaml",
               "RelativeDocumentMoniker": "Pulsar\\App.xaml",
               "ToolTip": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\App.xaml",
               "RelativeToolTip": "Pulsar\\App.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2026-01-11T13:49:30.34Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-11T13:49:30.34Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 12,
               "Title": "ThemeManager.cs",
               "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Helpers\\ThemeManager.cs",
               "RelativeDocumentMoniker": "Pulsar\\Helpers\\ThemeManager.cs",
@@ -276,7 +285,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
+              "DocumentIndex": 13,
               "Title": "AppConfig.cs",
               "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Models\\AppConfig.cs",
               "RelativeDocumentMoniker": "Pulsar\\Models\\AppConfig.cs",
@@ -288,31 +297,29 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 16,
+              "DocumentIndex": 17,
               "Title": "JellyOrb.xaml",
               "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Views\\Controls\\JellyOrb.xaml",
               "RelativeDocumentMoniker": "Pulsar\\Views\\Controls\\JellyOrb.xaml",
               "ToolTip": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Views\\Controls\\JellyOrb.xaml",
               "RelativeToolTip": "Pulsar\\Views\\Controls\\JellyOrb.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2026-01-11T11:18:55.769Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-11T11:18:55.769Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 11,
               "Title": "Theme.Dark.xaml",
               "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Themes\\Theme.Dark.xaml",
               "RelativeDocumentMoniker": "Pulsar\\Themes\\Theme.Dark.xaml",
               "ToolTip": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Themes\\Theme.Dark.xaml",
               "RelativeToolTip": "Pulsar\\Themes\\Theme.Dark.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2026-01-11T13:48:40.418Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-11T13:48:40.418Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 17,
+              "DocumentIndex": 18,
               "Title": "SettingsWindow.xaml.cs",
               "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Views\\SettingsWindow.xaml.cs",
               "RelativeDocumentMoniker": "Pulsar\\Views\\SettingsWindow.xaml.cs",
@@ -324,7 +331,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 15,
+              "DocumentIndex": 16,
               "Title": "SettingsWindow.xaml",
               "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Views\\SettingsWindow.xaml",
               "RelativeDocumentMoniker": "Pulsar\\Views\\SettingsWindow.xaml",
@@ -332,18 +339,6 @@
               "RelativeToolTip": "Pulsar\\Views\\SettingsWindow.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
               "WhenOpened": "2026-01-11T11:53:03.936Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 18,
-              "Title": "JellyOrb.xaml.cs",
-              "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Views\\Controls\\JellyOrb.xaml.cs",
-              "RelativeDocumentMoniker": "Pulsar\\Views\\Controls\\JellyOrb.xaml.cs",
-              "ToolTip": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Views\\Controls\\JellyOrb.xaml.cs",
-              "RelativeToolTip": "Pulsar\\Views\\Controls\\JellyOrb.xaml.cs",
-              "ViewState": "AgIAAGUAAAAAAAAAAAAgwIYAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-11T11:18:47.105Z"
             },
             {
               "$type": "Document",

@@ -106,6 +106,23 @@ namespace Pulsar.ViewModels
             // 因为 Show() 方法每次都会读取 _config?.Switcher
         }
 
+        // [New] 强力清空视觉状态：用于防止残影
+        // 将所有 Slot 重置为空白，这样即使 UI 渲染慢了一帧，用户也只能看到空轮盘，而不是旧图标
+        public void ClearVisuals()
+        {
+            CenterText = "";
+            CenterSlot.Label = "";
+            CenterSlot.LoadIconData(string.Empty);
+            CenterSlot.IsActive = false;
+
+            foreach (var slot in Slots)
+            {
+                slot.Label = "";
+                slot.LoadIconData(string.Empty);
+                slot.IsActive = false;
+            }
+        }
+
         private void Show(GridItemType type)
         {
             if (IsVisible) return;
@@ -164,24 +181,30 @@ namespace Pulsar.ViewModels
         public void HandleMouseMove(double mouseX, double mouseY)
         {
             if (!IsVisible) return;
+
             double dx = mouseX - CenterX;
             double dy = mouseY - CenterY;
             double dist = Math.Sqrt(dx * dx + dy * dy);
 
             double deadZone = 40.0;
-            double maxDist = 300.0;
+            // [Fix 1] 移除 maxDist 限制，实现全屏无限扇区
+            // double maxDist = 300.0; 
             int newSlotIndex = -1;
 
             if (dist < deadZone)
             {
+                // 死区内：激活中心
                 newSlotIndex = 0;
             }
-            else if (dist < maxDist)
+            else
             {
+                // [Fix 1] 只要在死区外，无论多远都计算角度
+                // 这样用户即使把鼠标甩到屏幕边缘，依然能保持扇区选中状态
                 double angle = Math.Atan2(dy, dx) * 180 / Math.PI;
                 angle += 90;
                 if (angle < 0) angle += 360;
                 newSlotIndex = (int)((angle + 22.5) / 45) + 1;
+
                 if (newSlotIndex > 8) newSlotIndex = 1;
             }
 
