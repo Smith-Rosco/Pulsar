@@ -55,6 +55,12 @@ namespace Pulsar.Native
         [DllImport("kernel32.dll")]
         public static extern uint GetCurrentThreadId();
 
+        [DllImport("user32.dll", EntryPoint = "SetWindowLongPtr")]
+        public static extern IntPtr SetWindowLong(IntPtr hWnd, int nIndex, long dwNewLong);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetForegroundWindow();
+
         // --- Constants ---
         public const int SW_RESTORE = 9;
         public const int GWL_EXSTYLE = -20;
