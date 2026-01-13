@@ -1,21 +1,40 @@
 ﻿// [Path]: Pulsar/Pulsar/Models/LauncherItem.cs
-
 using System.Text.Json.Serialization;
+using CommunityToolkit.Mvvm.ComponentModel; // 确保引用了 MVVM Toolkit
 
 namespace Pulsar.Models
 {
+    // 假设 GridItemBase 继承自 ObservableObject
     public class LauncherItem : GridItemBase
     {
-        // 用于 FindWindow 或 Process.GetProcessesByName
-        public string ProcessName { get; set; } = string.Empty;
+        private string _processName = string.Empty;
+        public string ProcessName
+        {
+            get => _processName;
+            set => SetProperty(ref _processName, value);
+        }
 
+        private string _exePath = string.Empty;
         // [New] 智能启动：当找不到窗口时，使用此路径启动程序
-        public string ExePath { get; set; } = string.Empty;
+        public string ExePath
+        {
+            get => _exePath;
+            set => SetProperty(ref _exePath, value);
+        }
 
+        private string _arguments = string.Empty;
         // [New] 启动参数
-        public string Arguments { get; set; } = string.Empty;
+        public string Arguments
+        {
+            get => _arguments;
+            set => SetProperty(ref _arguments, value);
+        }
 
-        // 允许用户自定义匹配模式 (可选)
-        public bool MatchTitle { get; set; } = false;
+        private bool _matchTitle = false;
+        public bool MatchTitle
+        {
+            get => _matchTitle;
+            set => SetProperty(ref _matchTitle, value);
+        }
     }
 }

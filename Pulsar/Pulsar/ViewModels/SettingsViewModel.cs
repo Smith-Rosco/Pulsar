@@ -9,6 +9,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.IO; // 需要引用 IO
 
 namespace Pulsar.ViewModels
 {
@@ -226,28 +227,50 @@ namespace Pulsar.ViewModels
         {
             var dialog = new Views.Dialogs.ProcessPickerDialog(_windowService);
 
-            // [Fix] 核心修复：在显示对话框前，应用当前的主题
-            // 确保对话框拥有和 SettingsWindow 一样的颜色资源
+            // 应用主题
             ThemeManager.ApplyTheme(dialog, SettingsTheme);
-
             dialog.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
 
             if (dialog.ShowDialog() == true && dialog.SelectedProcess != null)
             {
                 var selected = dialog.SelectedProcess;
 
+                // [New] 尝试保存图标
+                string cachedIconPath = null;
+                if (selected.AppIcon != null)
+                {
+                    // 使用进程名作为文件名基础
+                    cachedIconPath = IconHelper.SaveIconToCache(selected.AppIcon, selected.ProcessName);
+                }
+
                 if (parameter is LauncherItem launcher)
                 {
+                    // 1. 更新基础信息 (由于 Step 1 的修改，这里现在会触发 UI 刷新)
                     launcher.ProcessName = selected.ProcessName;
                     launcher.ExePath = selected.ExePath;
+
+                    // 2. 智能更新 Label (如果用户没改过)
                     if (string.IsNullOrWhiteSpace(launcher.Label) || launcher.Label == "New App")
                         launcher.Label = selected.Title;
+
+                    // 3. [New] 更新图标路径
+                    if (!string.IsNullOrEmpty(cachedIconPath))
+                    {
+                        launcher.IconKey = cachedIconPath;
+                    }
                 }
                 else if (parameter is CommandItem command)
                 {
                     command.ExePath = selected.ExePath;
+
                     if (string.IsNullOrWhiteSpace(command.Label) || command.Label == "Action")
                         command.Label = selected.Title;
+
+                    // 对 CommandItem 也做同样的处理
+                    if (!string.IsNullOrEmpty(cachedIconPath))
+                    {
+                        command.IconKey = cachedIconPath;
+                    }
                 }
                 else if (parameter is string str && str == "NewProfile")
                 {

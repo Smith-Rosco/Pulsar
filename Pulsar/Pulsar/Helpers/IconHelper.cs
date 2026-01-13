@@ -1,4 +1,7 @@
-﻿using System.Drawing; // 需要引用 System.Drawing.Common 或 System.Drawing
+﻿// [Path]: Pulsar/Pulsar/Helpers/IconHelper.cs
+
+using System;
+using System.Drawing; // System.Drawing.Common
 using System.IO;
 using System.Windows;
 using System.Windows.Interop;
@@ -10,7 +13,7 @@ namespace Pulsar.Helpers
     public static class IconHelper
     {
         /// <summary>
-        /// 尝试从路径提取图标并转换为 WPF ImageSource
+        /// 智能获取图标：如果是图片文件则直接加载，如果是程序则提取图标
         /// </summary>
         public static ImageSource? GetIconFromPath(string path)
         {
@@ -18,23 +21,81 @@ namespace Pulsar.Helpers
 
             try
             {
-                // 使用 System.Drawing 提取图标
+                // [Fix] 1. 先判断是否为图片格式 (PNG, ICO, JPG, BMP)
+                string ext = Path.GetExtension(path).ToLower();
+                if (ext == ".png" || ext == ".ico" || ext == ".jpg" || ext == ".bmp")
+                {
+                    return LoadImageDirectly(path);
+                }
+
+                // [Fix] 2. 如果不是图片，再尝试作为程序提取图标 (EXE, LNK)
+                return ExtractExeIcon(path);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        // 新增：直接加载图片文件的方法
+        private static ImageSource LoadImageDirectly(string path)
+        {
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.CacheOption = BitmapCacheOption.OnLoad; // 加载后释放文件锁
+            bitmap.UriSource = new Uri(path, UriKind.Absolute);
+            bitmap.EndInit();
+            bitmap.Freeze(); // 必须冻结以跨线程使用
+            return bitmap;
+        }
+
+        // 原有的逻辑，改名为 ExtractExeIcon 专门处理程序
+        private static ImageSource? ExtractExeIcon(string path)
+        {
+            try
+            {
                 using var icon = System.Drawing.Icon.ExtractAssociatedIcon(path);
                 if (icon == null) return null;
 
-                // 转换为 WPF BitmapSource
                 var imageSource = Imaging.CreateBitmapSourceFromHIcon(
                     icon.Handle,
                     Int32Rect.Empty,
                     BitmapSizeOptions.FromEmptyOptions());
 
-                // 冻结对象以跨线程使用
                 imageSource.Freeze();
                 return imageSource;
             }
             catch
             {
-                // 忽略提取失败（如权限不足或非标准格式），返回 null 以便 UI 回退
+                return null;
+            }
+        }
+
+        // [New] 之前提供的保存方法 (为了完整性再次列出，你不需要修改这部分如果已经添加了)
+        public static string SaveIconToCache(ImageSource image, string processName)
+        {
+            if (image is not BitmapSource bitmapSource) return null;
+
+            try
+            {
+                string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                string folder = Path.Combine(appData, "Pulsar", "Cache", "Icons");
+                if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+
+                string safeName = string.Join("_", processName.Split(Path.GetInvalidFileNameChars()));
+                string filePath = Path.Combine(folder, $"{safeName}.png");
+
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    var encoder = new PngBitmapEncoder();
+                    encoder.Frames.Add(BitmapFrame.Create(bitmapSource));
+                    encoder.Save(fileStream);
+                }
+
+                return filePath;
+            }
+            catch
+            {
                 return null;
             }
         }
