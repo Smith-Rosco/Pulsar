@@ -133,16 +133,15 @@ namespace Pulsar.Views
             // 3. [穿透] 关闭交互
             this.IsHitTestVisible = false;
 
-            // [新增] 4. 显式归还焦点
-            // 如果这是一个取消操作（用户没选任何东西），必须把焦点还给之前的窗口
-            // 这样 Alt+Tab 的历史堆栈才会保持 "Pulsar 不存在" 的状态
-            if (_previousForegroundWindow != IntPtr.Zero)
+            // [修改] 4. 显式归还焦点 (条件性)
+            // 只有在 "未执行任何动作" (即取消操作) 且有前置窗口时，才归还焦点
+            if (!_viewModel.ActionExecuted && _previousForegroundWindow != IntPtr.Zero)
             {
                 WindowHelper.SetForegroundWindow(_previousForegroundWindow);
-                // 归还后清空，避免逻辑污染
-                // 注意：这里不清空也可以，视具体需求而定，但清空更安全
-                _previousForegroundWindow = IntPtr.Zero;
             }
+
+            // 无论是否归还，都清空记录，防止逻辑污染
+            _previousForegroundWindow = IntPtr.Zero;
 
             // 5. [清理] 调用 ViewModel 清理逻辑
             _viewModel.ClearVisuals();

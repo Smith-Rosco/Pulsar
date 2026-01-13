@@ -24,6 +24,9 @@ namespace Pulsar.ViewModels
         public ObservableCollection<SlotViewModel> Slots { get; } = new();
         public SlotViewModel CenterSlot { get; private set; } = null!;
 
+        // [新增] 标志位：指示当前会话是否执行了动作
+        public bool ActionExecuted { get; private set; }
+
         private bool _isVisible;
         public bool IsVisible
         {
@@ -126,6 +129,8 @@ namespace Pulsar.ViewModels
         private void Show(GridItemType type)
         {
             if (IsVisible) return;
+            // [新增] 每次打开菜单时，重置执行状态
+            ActionExecuted = false;
             ResetSelection();
             _currentType = type;
 
@@ -246,6 +251,10 @@ namespace Pulsar.ViewModels
 
             GridItemBase? targetItem = _currentItems.FirstOrDefault(x => x.Slot == _activeSlotIndex);
             if (targetItem == null) return;
+
+            // [新增] 标记为已执行
+            // 这告诉 Window 在 Dismiss 时不要归还焦点，因为我们要去新窗口了
+            ActionExecuted = true;
 
             if (_currentType == GridItemType.Launcher)
             {
