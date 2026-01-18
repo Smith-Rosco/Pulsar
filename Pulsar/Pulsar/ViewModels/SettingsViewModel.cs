@@ -6,8 +6,8 @@ using Pulsar.Helpers;
 using Pulsar.Models;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
-using Pulsar.Features.Pki.Models;     // [New] Phase 7
-using Pulsar.Features.Pki.Services;   // [New] Phase 7
+using Pulsar.Features.Pki.Models;
+using Pulsar.Features.Pki.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -22,15 +22,8 @@ namespace Pulsar.ViewModels
     {
         private readonly IConfigService _configService;
         private readonly IWindowService _windowService;
-
-        // [New] Phase 7: 独立的凭据存储库
         private readonly SecretRepository _secretRepo = new SecretRepository();
-
         private AppConfig _config;
-
-        // ==========================================
-        // 🏗️ 导航与状态 (Navigation & State)
-        // ==========================================
 
         public ObservableCollection<NavMenuItem> NavItems { get; } = new();
 
@@ -40,11 +33,15 @@ namespace Pulsar.ViewModels
         [NotifyPropertyChangedFor(nameof(EditorTitle))]
         [NotifyPropertyChangedFor(nameof(EditorDescription))]
         [NotifyPropertyChangedFor(nameof(CanDeleteProfile))]
+        [NotifyPropertyChangedFor(nameof(CanAddSecrets))] // [New] 关联更新
         private NavMenuItem _selectedNavItem;
 
         public bool IsGeneralView => SelectedNavItem?.Type == NavType.General;
         public bool IsEditorView => SelectedNavItem != null && SelectedNavItem.Type != NavType.General;
         public bool CanDeleteProfile => SelectedNavItem?.Type == NavType.Profile;
+
+        // [New] 限制添加 Secret 的入口：仅 Global Command 或 Profile 页面允许
+        public bool CanAddSecrets => SelectedNavItem?.Type == NavType.Global || SelectedNavItem?.Type == NavType.Profile;
 
         public string EditorTitle => SelectedNavItem?.Name ?? "Settings";
         public string EditorDescription => SelectedNavItem?.Type switch
@@ -61,10 +58,6 @@ namespace Pulsar.ViewModels
         [ObservableProperty]
         private string _newProfileName = string.Empty;
 
-        // ==========================================
-        // 📝 数据编辑对象 (Editing Objects)
-        // ==========================================
-
         private AppSettings _generalSettings;
         public AppSettings GeneralSettings
         {
@@ -74,10 +67,6 @@ namespace Pulsar.ViewModels
 
         [ObservableProperty]
         private ObservableCollection<GridItemBase> _currentSlots;
-
-        // ==========================================
-        // ⚙️ 构造与初始化 (Init)
-        // ==========================================
 
         public SettingsViewModel(IConfigService configService, IWindowService windowService)
         {
@@ -104,12 +93,10 @@ namespace Pulsar.ViewModels
 
             NavItems.Clear();
 
-            // 1. 静态入口
             NavItems.Add(new NavMenuItem("General Settings", NavType.General, "⚙️"));
             NavItems.Add(new NavMenuItem("Window Switcher", NavType.Launcher, "🚀"));
             NavItems.Add(new NavMenuItem("Global Commands", NavType.Global, "🌐"));
 
-            // 2. 动态 Profile 入口
             if (_config.Profiles != null)
             {
                 foreach (var profileKey in _config.Profiles.Keys.OrderBy(k => k))
@@ -123,13 +110,13 @@ namespace Pulsar.ViewModels
             SelectedNavItem = target;
         }
 
-        // ==========================================
-        // 🔄 核心交互逻辑 (Interaction Logic)
-        // ==========================================
-
         partial void OnSelectedNavItemChanged(NavMenuItem value)
         {
             if (value == null || _config == null) return;
+
+            // [New] 通知 Command 状态变化
+            AddSecretCommand.NotifyCanExecuteChanged();
+
             if (value.Type == NavType.General)
             {
                 CurrentSlots = null;
@@ -170,41 +157,24 @@ namespace Pulsar.ViewModels
             int nextSlot = 1;
             var existingSlots = CurrentSlots.Select(s => s.Slot).ToHashSet();
             while (existingSlots.Contains(nextSlot)) nextSlot++;
-
-            if (nextSlot > 8)
-            {
-                StatusMessage = "No slots available.";
-                return;
-            }
+            if (nextSlot > 8) { StatusMessage = "No slots available."; return; }
 
             GridItemBase newItem;
             if (SelectedNavItem.Type == NavType.Launcher)
             {
-                newItem = new LauncherItem
-                {
-                    Slot = nextSlot,
-                    Label = "New App",
-                    ProcessName = "app.exe"
-                };
+                newItem = new LauncherItem { Slot = nextSlot, Label = "New App", ProcessName = "app.exe" };
             }
             else
             {
-                // 默认为 CommandItem，但在 Global/Profile 模式下也可以添加 Secret
-                newItem = new CommandItem
-                {
-                    Slot = nextSlot,
-                    Label = "Action",
-                    ExePath = "cmd.exe",
-                    Arguments = ""
-                };
+                newItem = new CommandItem { Slot = nextSlot, Label = "Action", ExePath = "cmd.exe", Arguments = "" };
             }
 
             CurrentSlots.Add(newItem);
             StatusMessage = "Slot added.";
         }
 
-        // [New] Phase 7: 添加加密凭据
-        [RelayCommand]
+        // [Updated] 添加加密凭据 (受 CanAddSecrets 限制)
+        [RelayCommand(CanExecute = nameof(CanAddSecrets))]
         public void AddSecret()
         {
             if (CurrentSlots == null || CurrentSlots.Count >= 8)
@@ -213,33 +183,56 @@ namespace Pulsar.ViewModels
                 return;
             }
 
-            // 弹出凭据录入窗口
             var dialog = new Views.Dialogs.QuickSecretsDialog(_windowService);
             ThemeManager.ApplyTheme(dialog, SettingsTheme);
             dialog.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
 
             if (dialog.ShowDialog() == true)
             {
-                // 查找空位
                 int nextSlot = 1;
                 var existingSlots = CurrentSlots.Select(s => s.Slot).ToHashSet();
                 while (existingSlots.Contains(nextSlot)) nextSlot++;
                 if (nextSlot > 8) return;
 
-                // 创建 SecretItem
                 var newItem = new SecretItem
                 {
                     Slot = nextSlot,
                     Label = dialog.ResultLabel,
-                    TargetProcessName = dialog.ResultProcess, // 上下文
+                    TargetProcessName = dialog.ResultProcess,
                     Account = dialog.ResultAccount,
                     EncryptedData = dialog.ResultEncryptedData,
                     AutoEnter = dialog.ResultAutoEnter,
-                    IconKey = "🔒" // 默认锁图标
+                    IconKey = "🔒"
                 };
 
                 CurrentSlots.Add(newItem);
                 StatusMessage = "Secret added to vault.";
+            }
+        }
+
+        // [New] 编辑加密凭据
+        [RelayCommand]
+        public void EditSecret(SecretItem secret)
+        {
+            if (secret == null) return;
+
+            var dialog = new Views.Dialogs.QuickSecretsDialog(_windowService);
+            ThemeManager.ApplyTheme(dialog, SettingsTheme);
+            dialog.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
+
+            // [Key] 加载现有数据进入编辑模式
+            dialog.LoadForEdit(secret);
+
+            if (dialog.ShowDialog() == true)
+            {
+                // 更新现有对象 (UI 会自动刷新)
+                secret.Label = dialog.ResultLabel;
+                secret.TargetProcessName = dialog.ResultProcess;
+                secret.Account = dialog.ResultAccount;
+                secret.EncryptedData = dialog.ResultEncryptedData; // 可能是新的，也可能是旧的
+                secret.AutoEnter = dialog.ResultAutoEnter;
+
+                StatusMessage = "Secret updated.";
             }
         }
 
@@ -291,10 +284,6 @@ namespace Pulsar.ViewModels
             }
         }
 
-        // ==========================================
-        // 📂 Profile 管理 (Profile Management)
-        // ==========================================
-
         [RelayCommand]
         public void AddProfile()
         {
@@ -332,10 +321,6 @@ namespace Pulsar.ViewModels
             }
         }
 
-        // ==========================================
-        // 💾 持久化 (Persistence)
-        // ==========================================
-
         [RelayCommand]
         public async Task Save()
         {
@@ -356,10 +341,8 @@ namespace Pulsar.ViewModels
                 }
             }
 
-            // 2. [New] Phase 7: 分离存储敏感数据
-            // 遍历所有配置项，提取 SecretItem 的 Payloads
+            // 2. 分离存储敏感数据
             var allSecrets = new Dictionary<Guid, SecretPayload>();
-
             void ExtractSecrets(IEnumerable<GridItemBase> items)
             {
                 if (items == null) return;
@@ -367,9 +350,7 @@ namespace Pulsar.ViewModels
                 {
                     if (item is SecretItem secret)
                     {
-                        // 确保 ID 存在
                         if (secret.Id == Guid.Empty) secret.Id = Guid.NewGuid();
-
                         allSecrets[secret.Id] = new SecretPayload
                         {
                             Account = secret.Account,
@@ -383,16 +364,9 @@ namespace Pulsar.ViewModels
             ExtractSecrets(_config.Global);
             foreach (var list in _config.Profiles.Values) ExtractSecrets(list);
 
-            // 3. 并行写入磁盘
-            // 1. 先保存 Secrets (确保文件写完并释放锁)
+            // 3. 并行写入磁盘 (Safe Order)
             await _secretRepo.SaveAsync(allSecrets);
-
-            // 2. 再保存 Config (这会触发 RadialMenu 的重载事件，此时 secrets.json 已可读)
             await _configService.SaveAsync(_config);
-
-            StatusMessage = "Config & Vault Saved!";
-            await Task.Delay(2000);
-            StatusMessage = "Ready";
 
             StatusMessage = "Config & Vault Saved!";
             await Task.Delay(2000);

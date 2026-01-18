@@ -3,7 +3,7 @@
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using System.Windows.Forms;
+using System.Windows.Forms; // 确保引用了 WinForms
 using Pulsar.Core.Interfaces;
 using Pulsar.Features.Pki.Models;
 using Pulsar.Features.Pki.Services;
@@ -27,7 +27,6 @@ namespace Pulsar.Features.Pki
         public async Task ExecuteAsync(GridItemBase item)
         {
             if (item is not SecretItem secret) return;
-
             Debug.WriteLine($"[PKI] Starting injection for: {secret.Label} (ID: {secret.Id})");
 
             // [Diagnostic] 检查数据完整性
@@ -47,22 +46,21 @@ namespace Pulsar.Features.Pki
                 return;
             }
 
-            // ... (后续的 Focus Boomerang 逻辑保持不变) ...
-
             // 2. 隐藏 Pulsar 窗口
             _windowService.HideMainWindow();
 
-            // 3. 归还焦点
+            // 3. 归还焦点 (Focus Boomerang)
             var targetHwnd = _windowService.GetPreviousWindow();
             if (targetHwnd != IntPtr.Zero)
             {
                 WindowHelper.SetForegroundWindow(targetHwnd);
             }
 
-            // 4. 等待
+            // 4. 等待窗口切换缓冲
             await Task.Delay(100);
 
-            // 5. 注入
+            // 5. 注入序列 (动态构建)
+            // 如果有账号，发送 账号 + TAB
             if (!string.IsNullOrEmpty(secret.Account))
             {
                 SendKeys.SendWait(EscapeSendKeys(secret.Account));
@@ -71,8 +69,10 @@ namespace Pulsar.Features.Pki
                 await Task.Delay(10);
             }
 
+            // 始终发送密码
             SendKeys.SendWait(EscapeSendKeys(password));
 
+            // 6. 自动回车
             if (secret.AutoEnter)
             {
                 await Task.Delay(10);
@@ -85,6 +85,7 @@ namespace Pulsar.Features.Pki
         private string EscapeSendKeys(string input)
         {
             if (string.IsNullOrEmpty(input)) return input;
+            // SendKeys 特殊字符转义
             return input
                .Replace("{", "{{}")
                .Replace("}", "{}}")

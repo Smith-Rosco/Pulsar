@@ -234,18 +234,29 @@
 
                         <StackPanel Grid.Row="1" Orientation="Horizontal">
                             <TextBlock Text="User: " Foreground="#888" FontSize="12"/>
-                            <TextBlock Text="{Binding Account}" Foreground="#CCC" FontSize="12"/>
+                            <TextBlock Text="{Binding Account, TargetNullValue='(None)'}" Foreground="#CCC" FontSize="12"/>
                             <TextBlock Text=" • Password: " Foreground="#888" FontSize="12" Margin="10,0,0,0"/>
                             <TextBlock Text="********" Foreground="#888" FontSize="12"/>
                         </StackPanel>
                     </Grid>
 
-                    <Button Grid.Column="2" Content="❌" 
-                            Command="{Binding DataContext.RemoveSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
-                            CommandParameter="{Binding}"
-                            Background="Transparent" BorderThickness="0" 
-                            Foreground="{DynamicResource Theme.Destructive}" 
-                            VerticalAlignment="Top" Padding="5"/>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top">
+                        <Button Content="✏️" 
+                                Command="{Binding DataContext.EditSecretCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                CommandParameter="{Binding}"
+                                Background="Transparent" BorderThickness="0" 
+                                Foreground="#FFD700" FontSize="14"
+                                Padding="5" Margin="0,0,5,0"
+                                ToolTip="Edit Secret"/>
+
+                        <Button Content="❌" 
+                                Command="{Binding DataContext.RemoveSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                CommandParameter="{Binding}"
+                                Background="Transparent" BorderThickness="0" 
+                                Foreground="{DynamicResource Theme.Destructive}" 
+                                Padding="5"
+                                ToolTip="Remove Slot"/>
+                    </StackPanel>
                 </Grid>
             </Border>
         </DataTemplate>
@@ -441,6 +452,7 @@
                             BorderBrush="{DynamicResource Theme.Border.Brush}" BorderThickness="1"/>
 
                     <Button Grid.Column="2" Command="{Binding AddSecretCommand}" 
+                            Visibility="{Binding CanAddSecrets, Converter={StaticResource BoolToVis}}"
                             Content="+ Add Secret (PKI)" Height="35"
                             Background="#333333" 
                             Foreground="#FFD700"
