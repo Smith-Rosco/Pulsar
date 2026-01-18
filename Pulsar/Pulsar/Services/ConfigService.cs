@@ -1,10 +1,11 @@
+using Pulsar.Features.Pki.Models;
+using Pulsar.Models;
+using Pulsar.Services.Interfaces;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
-using System.Collections.Generic;
-using Pulsar.Models;
-using Pulsar.Services.Interfaces;
 
 namespace Pulsar.Services
 {
@@ -78,7 +79,18 @@ namespace Pulsar.Services
                 Global = new List<GridItemBase>
                 {
                     new CommandItem { Slot = 1, Label = "Copy", ExePath = "cmd.exe", Arguments = "/c echo Copy", IconKey = "E8C8" },
-                    new CommandItem { Slot = 4, Label = "Paste", ExePath = "cmd.exe", Arguments = "/c echo Paste", IconKey = "E77F" }
+                    new CommandItem { Slot = 4, Label = "Paste", ExePath = "cmd.exe", Arguments = "/c echo Paste", IconKey = "E77F" },
+                    // 添加这个测试项
+                    new SecretItem
+                    {
+                        Slot = 5,
+                        Label = "Test PKI",
+                        IconKey = "E72E", // 锁图标
+                        Account = "admin", 
+                        // 粘贴你刚才生成的加密字符串 ↓
+                        EncryptedData = "AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAzW7p2i3JdUKJwHSJk+0mrwAAAAACAAAAAAAQZgAAAAEAACAAAACUqNjX3q5j7SFNh0Xx0FwK/rfPLu1fKKKDGovUDgReBwAAAAAOgAAAAAIAACAAAABzxl1lge8PWT1vrjOVgEsIgXAjcxoFklSbg8mBpDQi0SAAAACuJCHSH6bnWN6eNLcsLL44bKdZdwkLcolEMPwpTIxxu0AAAAAcAOylpu/eyme/MConT0tDYvAGAmxoPFQzVDd7Ti/d7BG+4EqGS7NVGDM7VjFqlvuECUFbpWlcdff8bJ5xM6vP",
+                        AutoEnter = true
+                    },
                 },
                 Profiles = new Dictionary<string, List<GridItemBase>>
                 {

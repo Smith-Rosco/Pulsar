@@ -1,4 +1,10 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Pulsar.Core.Handlers;
+using Pulsar.Core.Interfaces;
+using Pulsar.Features.Pki;
+using Pulsar.Features.Pki.Models;
+using Pulsar.Features.Pki.Services;
+using Pulsar.Models;
 using Pulsar.Native;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
@@ -19,32 +25,46 @@ namespace Pulsar
             base.OnStartup(e);
             var serviceCollection = new ServiceCollection();
 
-            // 1. 注册核心服务
+            serviceCollection.AddSingleton<CredentialsManager>(); // [New]
+
+            // 1. 注册核心基础服务
             serviceCollection.AddSingleton<IConfigService, ConfigService>();
             serviceCollection.AddSingleton<IWindowService, WindowService>();
-            serviceCollection.AddSingleton<ICommandService, CommandService>();
-            // 注册托盘服务
             serviceCollection.AddSingleton<ITrayService, TrayIconService>();
             serviceCollection.AddSingleton<GlobalKeyboardHook>();
 
-            // 2. 注册主窗口及其 ViewModel (Singleton: 全局唯一)
+            // 2. [New] 注册动作处理系统
+            serviceCollection.AddSingleton<ActionRegistry>();       // 注册中心
+            serviceCollection.AddSingleton<LauncherHandler>();      // 启动器逻辑
+            serviceCollection.AddSingleton<SimpleCommandHandler>(); // 简单命令逻辑
+            serviceCollection.AddSingleton<PkiHandler>();           // PKI 逻辑
+
+            // 3. 注册 CommandService (依赖 ActionRegistry)
+            serviceCollection.AddSingleton<ICommandService, CommandService>();
+
+            // 4. 注册 UI (ViewModel & Window)
             serviceCollection.AddSingleton<RadialMenuViewModel>();
             serviceCollection.AddSingleton<RadialMenuWindow>();
-
-            // 注册设置窗口及其 ViewModel (Transient: 每次打开创建新实例)
             serviceCollection.AddTransient<SettingsViewModel>();
             serviceCollection.AddTransient<SettingsWindow>();
 
             Services = serviceCollection.BuildServiceProvider();
 
-            // 3. 获取并初始化托盘
+            // ================================================
+            // 5. [Crucial] 配置注册中心 (Wiring up the Registry)
+            // ================================================
+            var registry = Services.GetRequiredService<ActionRegistry>();
+
+            // 建立 Type -> Handler 的映射关系
+            registry.Register<LauncherItem>(Services.GetRequiredService<LauncherHandler>());
+            registry.Register<CommandItem>(Services.GetRequiredService<SimpleCommandHandler>());
+            registry.Register<SecretItem>(Services.GetRequiredService<PkiHandler>());
+
+            // 6. 启动服务
             var trayService = Services.GetRequiredService<ITrayService>();
             trayService.Initialize();
 
-            // 4. [Resident Mode 核心步骤]
-            // 获取主窗口实例并立即调用 Show()
-            // 此时窗口构造函数已将其 Opacity 设为 0 且不可交互
-            // 这一步是为了强制创建 Window Handle 并驻留显存，消除后续的冷启动延迟
+            // 7. 预热主窗口 (Resident Ghost Mode)
             var mainWindow = Services.GetRequiredService<RadialMenuWindow>();
             mainWindow.Show();
         }

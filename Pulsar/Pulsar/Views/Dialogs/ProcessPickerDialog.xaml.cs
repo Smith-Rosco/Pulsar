@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using Pulsar.Services; // 引用包含 ProcessWindowInfo 的命名空间
 using Pulsar.Services.Interfaces;
+using Pulsar.Models;
 
 namespace Pulsar.Views.Dialogs
 {

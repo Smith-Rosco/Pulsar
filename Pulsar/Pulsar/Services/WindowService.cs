@@ -6,20 +6,24 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows; // for Int32Rect
-using System.Windows.Interop; // for Imaging
-using System.Windows.Media; // for ImageSource
-using System.Windows.Media.Imaging; // for BitmapSizeOptions
+using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using Pulsar.Services.Interfaces;
+using Pulsar.Models; // 确保引用了 WindowInfo 等模型
 
 namespace Pulsar.Services
 {
     public class WindowService : IWindowService
     {
+        // [New] 状态管理字段
+        private IntPtr _previousWindowHandle = IntPtr.Zero;
+        private Action? _hideMainWindowAction;
+
         // --- Native Import for Constructor/Focus ---
         [DllImport("user32.dll", EntryPoint = "GetForegroundWindow")]
         private static extern IntPtr GetForegroundWindow_Native();
-
         [DllImport("user32.dll")]
         private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
@@ -44,7 +48,34 @@ namespace Pulsar.Services
         private const uint SHGFI_SMALLICON = 0x1; // 16x16
         private const uint SHGFI_USEFILEATTRIBUTES = 0x10;
 
-        // --- Interface Implementations ---
+        // ==========================================
+        // 1. [New] 状态管理与上下文感知实现
+        // ==========================================
+
+        public void SetPreviousWindow(IntPtr handle)
+        {
+            _previousWindowHandle = handle;
+        }
+
+        public IntPtr GetPreviousWindow()
+        {
+            return _previousWindowHandle;
+        }
+
+        public void RegisterHideAction(Action hideAction)
+        {
+            _hideMainWindowAction = hideAction;
+        }
+
+        public void HideMainWindow()
+        {
+            // 通过委托调用 MainWindow 的 Dismiss 逻辑
+            _hideMainWindowAction?.Invoke();
+        }
+
+        // ==========================================
+        // 2. [Existing] 原有功能实现
+        // ==========================================
 
         public WindowInfo GetForegroundWindow()
         {
@@ -110,7 +141,6 @@ namespace Pulsar.Services
             return Task.Run(() => FocusWindow(processName));
         }
 
-        // [New] 实现获取活跃窗口列表 (包含图标提取)
         public Task<List<ProcessWindowInfo>> GetActiveWindowsAsync()
         {
             return Task.Run(() =>
@@ -119,7 +149,7 @@ namespace Pulsar.Services
 
                 NativeMethods.EnumWindows((hWnd, lParam) =>
                 {
-                    // 1. 基础过滤：必须可见
+                    // 1. 基础过滤
                     if (!NativeMethods.IsWindowVisible(hWnd)) return true;
 
                     // 2. 标题过滤
@@ -143,7 +173,7 @@ namespace Pulsar.Services
                             string fullPath = "";
                             try { fullPath = proc.MainModule?.FileName ?? ""; } catch { }
 
-                            // [New] 提取图标
+                            // 提取图标
                             ImageSource? iconSource = null;
                             if (!string.IsNullOrEmpty(fullPath))
                             {
@@ -156,22 +186,18 @@ namespace Pulsar.Services
                                 ProcessName = proc.ProcessName,
                                 ExePath = fullPath,
                                 Handle = hWnd,
-                                AppIcon = iconSource // 赋值图标
+                                AppIcon = iconSource
                             });
                         }
                     }
-                    catch
-                    {
-                        // 忽略系统进程访问拒绝
-                    }
+                    catch { /* 忽略系统进程 */ }
 
                     return true;
                 }, IntPtr.Zero);
 
-                // 去重逻辑：优先保留有路径的，按 ProcessName 去重
+                // 去重
                 var distinctResults = new List<ProcessWindowInfo>();
                 var seen = new HashSet<string>();
-
                 foreach (var item in results)
                 {
                     if (!seen.Contains(item.ProcessName))
@@ -180,41 +206,28 @@ namespace Pulsar.Services
                         seen.Add(item.ProcessName);
                     }
                 }
-
                 return distinctResults;
             });
         }
 
-        // [Helper] 提取图标并转换为 WPF ImageSource
         private ImageSource? ExtractIcon(string path)
         {
             try
             {
                 var shinfo = new SHFILEINFO();
-                // 获取大图标 (32x32)
                 IntPtr hIcon = SHGetFileInfo(path, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_ICON | SHGFI_LARGEICON);
-
                 if (shinfo.hIcon != IntPtr.Zero)
                 {
-                    // 转换 HICON 为 WPF BitmapSource
                     var image = Imaging.CreateBitmapSourceFromHIcon(
                         shinfo.hIcon,
                         Int32Rect.Empty,
                         BitmapSizeOptions.FromEmptyOptions());
-
-                    // [Crucial] 冻结对象以允许跨线程访问 (后台线程 -> UI 线程)
                     image.Freeze();
-
-                    // 释放原生句柄
                     NativeMethods.DestroyIcon(shinfo.hIcon);
-
                     return image;
                 }
             }
-            catch
-            {
-                // 忽略错误，返回 null 显示默认图标
-            }
+            catch { }
             return null;
         }
 
@@ -229,6 +242,7 @@ namespace Pulsar.Services
         }
     }
 
+    // 保持 NativeMethods 类不变
     internal static class NativeMethods
     {
         [DllImport("user32.dll")] internal static extern bool SetForegroundWindow(IntPtr hWnd);
@@ -236,26 +250,12 @@ namespace Pulsar.Services
         [DllImport("user32.dll")] internal static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
         [DllImport("user32.dll")] internal static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, uint dwExtraInfo);
 
-        // [New] Methods for Selector
         public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
-
-        [DllImport("user32.dll")]
-        internal static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
-
-        [DllImport("user32.dll")]
-        internal static extern bool IsWindowVisible(IntPtr hWnd);
-
-        [DllImport("user32.dll", CharSet = CharSet.Auto)]
-        internal static extern int GetWindowTextLength(IntPtr hWnd);
-
-        [DllImport("user32.dll", CharSet = CharSet.Auto)]
-        internal static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
-
-        [DllImport("user32.dll")]
-        internal static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool DestroyIcon(IntPtr hIcon);
+        [DllImport("user32.dll")] internal static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+        [DllImport("user32.dll")] internal static extern bool IsWindowVisible(IntPtr hWnd);
+        [DllImport("user32.dll", CharSet = CharSet.Auto)] internal static extern int GetWindowTextLength(IntPtr hWnd);
+        [DllImport("user32.dll", CharSet = CharSet.Auto)] internal static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+        [DllImport("user32.dll")] internal static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+        [DllImport("user32.dll", SetLastError = true)][return: MarshalAs(UnmanagedType.Bool)] internal static extern bool DestroyIcon(IntPtr hIcon);
     }
 }
