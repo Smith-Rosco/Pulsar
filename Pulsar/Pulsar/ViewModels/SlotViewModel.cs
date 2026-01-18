@@ -3,7 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Pulsar.ViewModels
 {
-    public class SlotViewModel : ObservableObject
+    public partial class SlotViewModel : ObservableObject
     {
         private int _slotIndex;
         private double _x;
@@ -69,5 +69,10 @@ namespace Pulsar.ViewModels
         {
             IconKey = iconKey;
         }
+
+        // [New] 是否为上下文推荐项
+        [ObservableProperty]
+        private bool _isRecommended;
+
     }
 }

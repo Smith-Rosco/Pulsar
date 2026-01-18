@@ -240,6 +240,12 @@ namespace Pulsar.Services
             NativeMethods.SetForegroundWindow(hWnd);
             NativeMethods.keybd_event(0x12, 0, 2, 0); // Alt Up
         }
+
+        // 补充实现 IWindowService.RecordPreviousWindow()
+        public void RecordPreviousWindow()
+        {
+            _previousWindowHandle = GetForegroundWindow_Native();
+        }
     }
 
     // 保持 NativeMethods 类不变

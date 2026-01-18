@@ -1,13 +1,18 @@
+// [Path]: Pulsar/Pulsar/ViewModels/RadialMenuViewModel.cs
+
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Collections.Generic;
+using System.Threading.Tasks; // 需要 Task
 using CommunityToolkit.Mvvm.ComponentModel;
 using Pulsar.Models;
 using Pulsar.Models.Enums;
 using Pulsar.Services.Interfaces;
 using Pulsar.Native;
 using Pulsar.Helpers;
+using Pulsar.Features.Pki.Models;     // [New]
+using Pulsar.Features.Pki.Services;   // [New]
 
 namespace Pulsar.ViewModels
 {
@@ -17,14 +22,15 @@ namespace Pulsar.ViewModels
         private readonly ICommandService _commandService;
         private readonly IWindowService _windowService;
 
+        // [New] Phase 7
+        private readonly SecretRepository _secretRepo = new SecretRepository();
+
         private AppConfig? _config;
         private List<GridItemBase> _currentItems = new();
         private GridItemType _currentType;
 
         public ObservableCollection<SlotViewModel> Slots { get; } = new();
         public SlotViewModel CenterSlot { get; private set; } = null!;
-
-        // [新增] 标志位：指示当前会话是否执行了动作
         public bool ActionExecuted { get; private set; }
 
         private bool _isVisible;
@@ -72,9 +78,7 @@ namespace Pulsar.ViewModels
             hook.OnSwitcherTrigger += (s, e) => Show(GridItemType.Launcher);
             hook.OnKeyUp += HandleKeyUp;
 
-            // [New] 订阅配置变更通知
             _configService.ConfigUpdated += OnConfigUpdated;
-
             LoadConfigAsync();
         }
 
@@ -93,24 +97,40 @@ namespace Pulsar.ViewModels
 
         private async void LoadConfigAsync()
         {
-            _config = await _configService.LoadAsync();
-            // [New] 加载完配置后，如果需要可以立即刷新主题或其他全局设置
-            // UpdateGlobalSettings(); 
+            // 初始加载复用 OnConfigUpdated 的逻辑
+            OnConfigUpdated();
         }
 
-        // [New] 处理配置更新事件
+        // [New] 更新配置加载逻辑，支持 Secret 填充
         private async void OnConfigUpdated()
         {
-            // 重新获取最新的配置对象
-            _config = await _configService.LoadAsync();
+            var configTask = _configService.LoadAsync();
+            var secretsTask = _secretRepo.LoadAsync();
 
-            // 可选：如果当前菜单正显示着，可以立即刷新当前视图
-            // 但为了安全起见（避免修改正在交互的数据），通常下次 Show() 时会自动生效
-            // 因为 Show() 方法每次都会读取 _config?.Switcher
+            await Task.WhenAll(configTask, secretsTask);
+
+            _config = configTask.Result;
+            var secretMap = secretsTask.Result;
+
+            // 填充函数 (Hydration)
+            void Hydrate(IEnumerable<GridItemBase> items)
+            {
+                if (items == null) return;
+                foreach (var item in items)
+                {
+                    if (item is SecretItem secretItem && secretMap.TryGetValue(secretItem.Id, out var payload))
+                    {
+                        secretItem.Account = payload.Account;
+                        secretItem.EncryptedData = payload.EncryptedData;
+                    }
+                }
+            }
+
+            Hydrate(_config.Switcher);
+            Hydrate(_config.Global);
+            foreach (var list in _config.Profiles.Values) Hydrate(list);
         }
 
-        // [New] 强力清空视觉状态：用于防止残影
-        // 将所有 Slot 重置为空白，这样即使 UI 渲染慢了一帧，用户也只能看到空轮盘，而不是旧图标
         public void ClearVisuals()
         {
             CenterText = "";
@@ -123,16 +143,25 @@ namespace Pulsar.ViewModels
                 slot.Label = "";
                 slot.LoadIconData(string.Empty);
                 slot.IsActive = false;
+                // [New] 清除推荐状态
+                slot.IsRecommended = false;
             }
         }
 
         private void Show(GridItemType type)
         {
             if (IsVisible) return;
-            // [新增] 每次打开菜单时，重置执行状态
+
+            // [Fix: 关键!] 捕获当前的上下文窗口句柄
+            // 在 Pulsar 显示之前，记录下当前正在操作的窗口 (例如 VS Code)
+            IntPtr foregroundHandle = WindowHelper.GetForegroundWindow();
+            _windowService.SetPreviousWindow(foregroundHandle);
+
             ActionExecuted = false;
             ResetSelection();
             _currentType = type;
+
+            string? activeProcess = null;
 
             // 1. 确定数据源
             if (type == GridItemType.Launcher)
@@ -142,13 +171,16 @@ namespace Pulsar.ViewModels
             }
             else
             {
+                // 获取进程名用于匹配 Profile
+                // 注意：GetForegroundWindow 返回的是 WindowInfo 对象
                 var windowInfo = _windowService.GetForegroundWindow();
-                string processName = windowInfo.ProcessName;
+                activeProcess = windowInfo.ProcessName;
+                string lookupKey = activeProcess?.ToLower() ?? "";
 
-                if (_config != null && _config.Profiles.TryGetValue(processName, out var items))
+                if (_config != null && _config.Profiles.TryGetValue(lookupKey, out var items))
                 {
                     _currentItems = items;
-                    CenterText = processName;
+                    CenterText = activeProcess ?? "Context";
                 }
                 else
                 {
@@ -157,14 +189,29 @@ namespace Pulsar.ViewModels
                 }
             }
 
-            // 2. 绑定 UI
+            // 2. 绑定 UI & 上下文感知
             foreach (var slot in Slots)
             {
                 var item = _currentItems.FirstOrDefault(x => x.Slot == slot.SlotIndex);
+
+                // 重置推荐状态
+                slot.IsRecommended = false;
+
                 if (item != null)
                 {
                     slot.Label = item.Label;
                     slot.LoadIconData(item.IconKey);
+
+                    // 检查是否为当前上下文推荐的凭据
+                    if (item is SecretItem secret
+                        && !string.IsNullOrEmpty(secret.TargetProcessName)
+                        && !string.IsNullOrEmpty(activeProcess))
+                    {
+                        if (activeProcess.IndexOf(secret.TargetProcessName, StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            slot.IsRecommended = true;
+                        }
+                    }
                 }
                 else
                 {
@@ -186,30 +233,23 @@ namespace Pulsar.ViewModels
         public void HandleMouseMove(double mouseX, double mouseY)
         {
             if (!IsVisible) return;
-
             double dx = mouseX - CenterX;
             double dy = mouseY - CenterY;
             double dist = Math.Sqrt(dx * dx + dy * dy);
 
             double deadZone = 40.0;
-            // [Fix 1] 移除 maxDist 限制，实现全屏无限扇区
-            // double maxDist = 300.0; 
             int newSlotIndex = -1;
 
             if (dist < deadZone)
             {
-                // 死区内：激活中心
                 newSlotIndex = 0;
             }
             else
             {
-                // [Fix 1] 只要在死区外，无论多远都计算角度
-                // 这样用户即使把鼠标甩到屏幕边缘，依然能保持扇区选中状态
                 double angle = Math.Atan2(dy, dx) * 180 / Math.PI;
                 angle += 90;
                 if (angle < 0) angle += 360;
                 newSlotIndex = (int)((angle + 22.5) / 45) + 1;
-
                 if (newSlotIndex > 8) newSlotIndex = 1;
             }
 
@@ -225,7 +265,6 @@ namespace Pulsar.ViewModels
             else if (_activeSlotIndex > 0) Slots.FirstOrDefault(s => s.SlotIndex == _activeSlotIndex)!.IsActive = false;
 
             _activeSlotIndex = index;
-
             if (_activeSlotIndex == 0) CenterSlot.IsActive = true;
             else if (_activeSlotIndex > 0)
             {
@@ -237,7 +276,6 @@ namespace Pulsar.ViewModels
         private void HandleKeyUp(object? sender, GlobalKeyEventArgs e)
         {
             if (!IsVisible) return;
-
             if (e.VkCode == VK_LCONTROL || e.VkCode == VK_RCONTROL || e.VkCode == VK_CONTROL)
             {
                 ExecuteSelection();
@@ -248,14 +286,10 @@ namespace Pulsar.ViewModels
         private async void ExecuteSelection()
         {
             if (_activeSlotIndex <= 0) return;
-
             GridItemBase? targetItem = _currentItems.FirstOrDefault(x => x.Slot == _activeSlotIndex);
             if (targetItem == null) return;
 
-            // [新增] 标记为已执行
-            // 这告诉 Window 在 Dismiss 时不要归还焦点，因为我们要去新窗口了
             ActionExecuted = true;
-
             if (_currentType == GridItemType.Launcher)
             {
                 if (targetItem is LauncherItem launcherItem)

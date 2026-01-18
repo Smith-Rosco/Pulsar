@@ -1,7 +1,8 @@
 ﻿// [File]: Pulsar/Views/TemplateSelectors/SlotTemplateSelector.cs
+using Pulsar.Features.Pki.Models;
+using Pulsar.Models;
 using System.Windows;
 using System.Windows.Controls;
-using Pulsar.Models;
 
 namespace Pulsar.Views.TemplateSelectors
 {
@@ -13,6 +14,9 @@ namespace Pulsar.Views.TemplateSelectors
         // 对应 XAML 中的 CommandTemplate (旧代码可能叫 ActionTemplate，导致报错)
         public DataTemplate CommandTemplate { get; set; }
 
+        // [New] 新增 Secret 模板属性
+        public DataTemplate SecretTemplate { get; set; }
+
         public override DataTemplate SelectTemplate(object item, DependencyObject container)
         {
             if (item is LauncherItem)
@@ -20,8 +24,12 @@ namespace Pulsar.Views.TemplateSelectors
 
             if (item is CommandItem)
                 return CommandTemplate;
+            // [New] 识别 SecretItem
+            if (item is SecretItem)
+                return SecretTemplate;
 
             return base.SelectTemplate(item, container);
         }
+
     }
 }

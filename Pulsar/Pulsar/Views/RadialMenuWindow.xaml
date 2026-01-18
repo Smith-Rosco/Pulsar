@@ -43,14 +43,15 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-
+            
             <controls:JellyOrb 
-                Canvas.Left="{Binding CenterSlot.X}"
-                Canvas.Top="{Binding CenterSlot.Y}"
-                Size="{Binding CenterSlot.Size}"
-                IsActive="{Binding CenterSlot.IsActive}"
-                Label="{Binding CenterSlot.Label}"
-                IconKey="{Binding CenterSlot.IconKey}"/>
+                DataContext="{Binding CenterSlot}"
+                Canvas.Left="{Binding X}"
+                Canvas.Top="{Binding Y}"
+                Size="{Binding Size}"
+                IsActive="{Binding IsActive}"
+                Label="{Binding Label}"
+                IconKey="{Binding IconKey}"/>
 
             <TextBlock Text="{Binding CenterText}"
                        Canvas.Left="0" Canvas.Top="350" Width="400"

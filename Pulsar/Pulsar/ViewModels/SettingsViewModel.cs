@@ -1,23 +1,31 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿// [Path]: Pulsar/Pulsar/ViewModels/SettingsViewModel.cs
+
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Pulsar.Helpers;
 using Pulsar.Models;
-using Pulsar.Services; // for ProcessWindowInfo
+using Pulsar.Services;
 using Pulsar.Services.Interfaces;
+using Pulsar.Features.Pki.Models;     // [New] Phase 7
+using Pulsar.Features.Pki.Services;   // [New] Phase 7
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
-using System.IO; // 需要引用 IO
+using System.IO;
 
 namespace Pulsar.ViewModels
 {
     public partial class SettingsViewModel : ObservableObject
     {
         private readonly IConfigService _configService;
-        // [New] 注入 WindowService 用于获取进程列表
         private readonly IWindowService _windowService;
+
+        // [New] Phase 7: 独立的凭据存储库
+        private readonly SecretRepository _secretRepo = new SecretRepository();
+
         private AppConfig _config;
 
         // ==========================================
@@ -34,12 +42,10 @@ namespace Pulsar.ViewModels
         [NotifyPropertyChangedFor(nameof(CanDeleteProfile))]
         private NavMenuItem _selectedNavItem;
 
-        // 视图状态开关
         public bool IsGeneralView => SelectedNavItem?.Type == NavType.General;
         public bool IsEditorView => SelectedNavItem != null && SelectedNavItem.Type != NavType.General;
         public bool CanDeleteProfile => SelectedNavItem?.Type == NavType.Profile;
 
-        // 界面动态文案
         public string EditorTitle => SelectedNavItem?.Name ?? "Settings";
         public string EditorDescription => SelectedNavItem?.Type switch
         {
@@ -52,7 +58,6 @@ namespace Pulsar.ViewModels
         [ObservableProperty]
         private string _statusMessage = "Ready";
 
-        // [New] 用于绑定 "Add New Profile" 的输入框
         [ObservableProperty]
         private string _newProfileName = string.Empty;
 
@@ -60,10 +65,6 @@ namespace Pulsar.ViewModels
         // 📝 数据编辑对象 (Editing Objects)
         // ==========================================
 
-        // 常规设置绑定对象
-        // [删除] [ObservableProperty] private AppSettings _generalSettings;
-
-        // [新增] 手动实现属性
         private AppSettings _generalSettings;
         public AppSettings GeneralSettings
         {
@@ -71,7 +72,6 @@ namespace Pulsar.ViewModels
             set => SetProperty(ref _generalSettings, value);
         }
 
-        // 插槽列表绑定对象 (用于 Launcher/Command 模式)
         [ObservableProperty]
         private ObservableCollection<GridItemBase> _currentSlots;
 
@@ -79,11 +79,10 @@ namespace Pulsar.ViewModels
         // ⚙️ 构造与初始化 (Init)
         // ==========================================
 
-        // [Mod] 构造函数注入 WindowService
         public SettingsViewModel(IConfigService configService, IWindowService windowService)
         {
             _configService = configService;
-            _windowService = windowService; // [New]
+            _windowService = windowService;
             _config = new AppConfig();
             LoadSettings();
         }
@@ -94,7 +93,6 @@ namespace Pulsar.ViewModels
             GeneralSettings = _config.Settings;
             RefreshNavItems();
 
-            // [New] 确保 ViewModel 加载时通知 View 设置正确的主题 (防止初始不一致)
             OnPropertyChanged(nameof(LauncherTheme));
             OnPropertyChanged(nameof(SettingsTheme));
         }
@@ -120,7 +118,6 @@ namespace Pulsar.ViewModels
                 }
             }
 
-            // 恢复选中项
             var target = NavItems.FirstOrDefault(n => n.Name == previousSelection && n.Type == previousType)
                          ?? NavItems.FirstOrDefault();
             SelectedNavItem = target;
@@ -133,7 +130,6 @@ namespace Pulsar.ViewModels
         partial void OnSelectedNavItemChanged(NavMenuItem value)
         {
             if (value == null || _config == null) return;
-
             if (value.Type == NavType.General)
             {
                 CurrentSlots = null;
@@ -141,7 +137,6 @@ namespace Pulsar.ViewModels
             }
 
             List<GridItemBase> sourceList = null;
-
             switch (value.Type)
             {
                 case NavType.Launcher:
@@ -158,7 +153,6 @@ namespace Pulsar.ViewModels
                     break;
             }
 
-            // 包装为 ObservableCollection 以支持 UI 实时增删
             CurrentSlots = sourceList != null
                 ? new ObservableCollection<GridItemBase>(sourceList)
                 : new ObservableCollection<GridItemBase>();
@@ -173,7 +167,6 @@ namespace Pulsar.ViewModels
                 return;
             }
 
-            // 查找第一个空缺的 Slot ID
             int nextSlot = 1;
             var existingSlots = CurrentSlots.Select(s => s.Slot).ToHashSet();
             while (existingSlots.Contains(nextSlot)) nextSlot++;
@@ -185,8 +178,6 @@ namespace Pulsar.ViewModels
             }
 
             GridItemBase newItem;
-
-            // 根据当前模式创建正确的多态类型
             if (SelectedNavItem.Type == NavType.Launcher)
             {
                 newItem = new LauncherItem
@@ -198,6 +189,7 @@ namespace Pulsar.ViewModels
             }
             else
             {
+                // 默认为 CommandItem，但在 Global/Profile 模式下也可以添加 Secret
                 newItem = new CommandItem
                 {
                     Slot = nextSlot,
@@ -211,6 +203,46 @@ namespace Pulsar.ViewModels
             StatusMessage = "Slot added.";
         }
 
+        // [New] Phase 7: 添加加密凭据
+        [RelayCommand]
+        public void AddSecret()
+        {
+            if (CurrentSlots == null || CurrentSlots.Count >= 8)
+            {
+                StatusMessage = "Max 8 slots allowed.";
+                return;
+            }
+
+            // 弹出凭据录入窗口
+            var dialog = new Views.Dialogs.QuickSecretsDialog(_windowService);
+            ThemeManager.ApplyTheme(dialog, SettingsTheme);
+            dialog.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
+
+            if (dialog.ShowDialog() == true)
+            {
+                // 查找空位
+                int nextSlot = 1;
+                var existingSlots = CurrentSlots.Select(s => s.Slot).ToHashSet();
+                while (existingSlots.Contains(nextSlot)) nextSlot++;
+                if (nextSlot > 8) return;
+
+                // 创建 SecretItem
+                var newItem = new SecretItem
+                {
+                    Slot = nextSlot,
+                    Label = dialog.ResultLabel,
+                    TargetProcessName = dialog.ResultProcess, // 上下文
+                    Account = dialog.ResultAccount,
+                    EncryptedData = dialog.ResultEncryptedData,
+                    AutoEnter = dialog.ResultAutoEnter,
+                    IconKey = "🔒" // 默认锁图标
+                };
+
+                CurrentSlots.Add(newItem);
+                StatusMessage = "Secret added to vault.";
+            }
+        }
+
         [RelayCommand]
         public void RemoveSlot(GridItemBase item)
         {
@@ -221,56 +253,36 @@ namespace Pulsar.ViewModels
             }
         }
 
-        // [New] 通用的选取进程命令
         [RelayCommand]
         public void PickProcess(object parameter)
         {
             var dialog = new Views.Dialogs.ProcessPickerDialog(_windowService);
-
-            // 应用主题
             ThemeManager.ApplyTheme(dialog, SettingsTheme);
             dialog.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
 
             if (dialog.ShowDialog() == true && dialog.SelectedProcess != null)
             {
                 var selected = dialog.SelectedProcess;
-
-                // [New] 尝试保存图标
                 string cachedIconPath = null;
                 if (selected.AppIcon != null)
                 {
-                    // 使用进程名作为文件名基础
                     cachedIconPath = IconHelper.SaveIconToCache(selected.AppIcon, selected.ProcessName);
                 }
 
                 if (parameter is LauncherItem launcher)
                 {
-                    // 1. 更新基础信息 (由于 Step 1 的修改，这里现在会触发 UI 刷新)
                     launcher.ProcessName = selected.ProcessName;
                     launcher.ExePath = selected.ExePath;
-
-                    // 2. 智能更新 Label (如果用户没改过)
                     if (string.IsNullOrWhiteSpace(launcher.Label) || launcher.Label == "New App")
                         launcher.Label = selected.Title;
-
-                    // 3. [New] 更新图标路径
-                    if (!string.IsNullOrEmpty(cachedIconPath))
-                    {
-                        launcher.IconKey = cachedIconPath;
-                    }
+                    if (!string.IsNullOrEmpty(cachedIconPath)) launcher.IconKey = cachedIconPath;
                 }
                 else if (parameter is CommandItem command)
                 {
                     command.ExePath = selected.ExePath;
-
                     if (string.IsNullOrWhiteSpace(command.Label) || command.Label == "Action")
                         command.Label = selected.Title;
-
-                    // 对 CommandItem 也做同样的处理
-                    if (!string.IsNullOrEmpty(cachedIconPath))
-                    {
-                        command.IconKey = cachedIconPath;
-                    }
+                    if (!string.IsNullOrEmpty(cachedIconPath)) command.IconKey = cachedIconPath;
                 }
                 else if (parameter is string str && str == "NewProfile")
                 {
@@ -283,16 +295,12 @@ namespace Pulsar.ViewModels
         // 📂 Profile 管理 (Profile Management)
         // ==========================================
 
-        // [Fix] 修复 int 转换错误。之前报错是因为 AddProfile 可能被错误定义成了接收 int 参数，或者 NewProfileName 未定义
         [RelayCommand]
         public void AddProfile()
         {
-            // 使用绑定的属性，而不是参数
             if (string.IsNullOrWhiteSpace(NewProfileName)) return;
-
             var processName = NewProfileName.Trim().ToLower();
 
-            // [Fix] 只有 processName 是 string 时，EndsWith 才能工作
             if (processName.EndsWith(".exe"))
             {
                 processName = processName.Substring(0, processName.Length - 4);
@@ -306,7 +314,6 @@ namespace Pulsar.ViewModels
 
             _config.Profiles[processName] = new List<GridItemBase>();
             RefreshNavItems();
-
             SelectedNavItem = NavItems.FirstOrDefault(n => n.Name == processName && n.Type == NavType.Profile);
             NewProfileName = string.Empty;
             StatusMessage = $"Profile '{processName}' created.";
@@ -316,10 +323,8 @@ namespace Pulsar.ViewModels
         public void DeleteProfile()
         {
             if (SelectedNavItem?.Type != NavType.Profile) return;
-
             var profileName = SelectedNavItem.Name;
 
-            // 简单确认机制可以后续在 UI 层通过 Dialog 实现，这里直接删除
             if (_config.Profiles.Remove(profileName))
             {
                 StatusMessage = $"Profile '{profileName}' deleted.";
@@ -336,7 +341,7 @@ namespace Pulsar.ViewModels
         {
             if (_config == null) return;
 
-            // 1. 同步当前列表 (如果是 Editor 模式)
+            // 1. 同步当前列表到 Config 对象
             if (IsEditorView && CurrentSlots != null)
             {
                 var updatedList = CurrentSlots.ToList();
@@ -351,10 +356,45 @@ namespace Pulsar.ViewModels
                 }
             }
 
-            // 2. 写入磁盘
+            // 2. [New] Phase 7: 分离存储敏感数据
+            // 遍历所有配置项，提取 SecretItem 的 Payloads
+            var allSecrets = new Dictionary<Guid, SecretPayload>();
+
+            void ExtractSecrets(IEnumerable<GridItemBase> items)
+            {
+                if (items == null) return;
+                foreach (var item in items)
+                {
+                    if (item is SecretItem secret)
+                    {
+                        // 确保 ID 存在
+                        if (secret.Id == Guid.Empty) secret.Id = Guid.NewGuid();
+
+                        allSecrets[secret.Id] = new SecretPayload
+                        {
+                            Account = secret.Account,
+                            EncryptedData = secret.EncryptedData
+                        };
+                    }
+                }
+            }
+
+            ExtractSecrets(_config.Switcher);
+            ExtractSecrets(_config.Global);
+            foreach (var list in _config.Profiles.Values) ExtractSecrets(list);
+
+            // 3. 并行写入磁盘
+            // 1. 先保存 Secrets (确保文件写完并释放锁)
+            await _secretRepo.SaveAsync(allSecrets);
+
+            // 2. 再保存 Config (这会触发 RadialMenu 的重载事件，此时 secrets.json 已可读)
             await _configService.SaveAsync(_config);
 
-            StatusMessage = "Configuration Saved Successfully!";
+            StatusMessage = "Config & Vault Saved!";
+            await Task.Delay(2000);
+            StatusMessage = "Ready";
+
+            StatusMessage = "Config & Vault Saved!";
             await Task.Delay(2000);
             StatusMessage = "Ready";
         }
@@ -363,18 +403,14 @@ namespace Pulsar.ViewModels
         public void PickIcon(GridItemBase item)
         {
             if (item == null) return;
-
             var dialog = new Views.Dialogs.IconPickerDialog(item.IconKey);
-
-            // [修复 3] 强制指定为 WPF 的 Application，解决 CS0104 错误
             dialog.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
-
             if (dialog.ShowDialog() == true)
             {
                 item.IconKey = dialog.SelectedKey;
             }
         }
-        // [New] 为两个主题提供属性，并添加 OnChanged 钩子
+
         public AppTheme LauncherTheme
         {
             get => _config.Settings.LauncherTheme;
@@ -384,9 +420,6 @@ namespace Pulsar.ViewModels
                 {
                     _config.Settings.LauncherTheme = value;
                     OnPropertyChanged();
-                    // 通知 Launcher 窗口刷新 (这里可以通过 Messenger，或者简单的静态事件，或者因为 Launcher 每次激活都会重绘，也许不需要立即刷新？
-                    // 为了保险，我们可以让 LauncherWindow 监听配置变化。
-                    // 但对于 SettingsTheme，我们需要立即刷新当前窗口：
                 }
             }
         }
@@ -400,7 +433,6 @@ namespace Pulsar.ViewModels
                 {
                     _config.Settings.SettingsTheme = value;
                     OnPropertyChanged();
-                    // [New] 立即应用新主题到当前激活的 SettingsWindow
                     ApplySettingsTheme();
                 }
             }

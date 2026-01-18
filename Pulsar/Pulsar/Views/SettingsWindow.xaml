@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:Pulsar.ViewModels"
         xmlns:models="clr-namespace:Pulsar.Models"
+        xmlns:pki="clr-namespace:Pulsar.Features.Pki.Models"
         xmlns:controls="clr-namespace:Pulsar.Views.Controls"
         mc:Ignorable="d"
         Title="Pulsar Configuration Center" Height="650" Width="1000"
@@ -194,6 +195,61 @@
                 </Grid>
             </Border>
         </DataTemplate>
+
+        <DataTemplate DataType="{x:Type pki:SecretItem}">
+            <Border Background="#252526" 
+                    BorderBrush="#FFD700" 
+                    BorderThickness="1,1,1,1" CornerRadius="4" Padding="10" Margin="0,0,0,8">
+                <Border.Effect>
+                    <DropShadowEffect Color="Black" BlurRadius="5" Opacity="0.3" ShadowDepth="1"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="60"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <TextBlock Text="🔒" FontSize="24" Foreground="#FFD700" Margin="0,0,0,5"/>
+                        <TextBlock Text="{Binding Slot, StringFormat='Slot {0}'}" FontSize="10" HorizontalAlignment="Center" Foreground="#AAFFD700"/>
+                    </StackPanel>
+
+                    <Grid Grid.Column="1" Margin="15,0" VerticalAlignment="Center">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                            <TextBlock Text="{Binding Label}" FontWeight="Bold" FontSize="14" Foreground="White" VerticalAlignment="Center"/>
+
+                            <Border Background="#333333" CornerRadius="3" Margin="10,0,0,0" Padding="6,2" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Context: " Foreground="#888" FontSize="10"/>
+                                    <TextBlock Text="{Binding TargetProcessName, TargetNullValue='Global'}" Foreground="#FFD700" FontSize="10" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Orientation="Horizontal">
+                            <TextBlock Text="User: " Foreground="#888" FontSize="12"/>
+                            <TextBlock Text="{Binding Account}" Foreground="#CCC" FontSize="12"/>
+                            <TextBlock Text=" • Password: " Foreground="#888" FontSize="12" Margin="10,0,0,0"/>
+                            <TextBlock Text="********" Foreground="#888" FontSize="12"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Button Grid.Column="2" Content="❌" 
+                            Command="{Binding DataContext.RemoveSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                            CommandParameter="{Binding}"
+                            Background="Transparent" BorderThickness="0" 
+                            Foreground="{DynamicResource Theme.Destructive}" 
+                            VerticalAlignment="Top" Padding="5"/>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
     </Window.Resources>
 
     <Grid>
@@ -371,11 +427,27 @@
                     <ItemsControl ItemsSource="{Binding CurrentSlots}" AlternationCount="2"/>
                 </ScrollViewer>
 
-                <Button Grid.Row="1" Command="{Binding AddSlotCommand}" 
-                        Content="+ Add New Slot" Height="35" Margin="0,10,0,0"
-                        Background="{DynamicResource Theme.Panel.Background}" 
-                        Foreground="{DynamicResource Theme.Window.Foreground}"
-                        BorderBrush="{DynamicResource Theme.Border.Brush}" BorderThickness="1"/>
+                <Grid Grid.Row="1" Margin="0,10,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Column="0" Command="{Binding AddSlotCommand}" 
+                            Content="+ Standard Slot" Height="35"
+                            Background="{DynamicResource Theme.Panel.Background}" 
+                            Foreground="{DynamicResource Theme.Window.Foreground}"
+                            BorderBrush="{DynamicResource Theme.Border.Brush}" BorderThickness="1"/>
+
+                    <Button Grid.Column="2" Command="{Binding AddSecretCommand}" 
+                            Content="+ Add Secret (PKI)" Height="35"
+                            Background="#333333" 
+                            Foreground="#FFD700"
+                            BorderBrush="#FFD700" BorderThickness="1"
+                            FontWeight="SemiBold"
+                            ToolTip="Add an encrypted credential injection slot"/>
+                </Grid>
             </Grid>
 
             <Grid Grid.Row="2" Margin="0,20,0,0">

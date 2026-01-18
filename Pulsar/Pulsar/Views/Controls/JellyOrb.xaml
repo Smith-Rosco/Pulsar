@@ -23,6 +23,36 @@
     <Grid Width="{Binding Size, ElementName=OrbRoot}" 
           Height="{Binding Size, ElementName=OrbRoot}">
 
+        <Ellipse x:Name="RecommendedShape" Fill="#FFFFD700" Opacity="0">
+            <Ellipse.Effect>
+                <BlurEffect Radius="20"/>
+            </Ellipse.Effect>
+            <Ellipse.Style>
+                <Style TargetType="Ellipse">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsRecommended}" Value="True">
+                            <DataTrigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" 
+                                                         To="0.6" Duration="0:0:0.5" AutoReverse="True" RepeatBehavior="Forever"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.EnterActions>
+                            <DataTrigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" 
+                                                         To="0.0" Duration="0:0:0.3"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.ExitActions>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Ellipse.Style>
+        </Ellipse>
+
         <Ellipse Fill="{DynamicResource Theme.Orb.Fill}" 
                  Stroke="{DynamicResource Theme.Orb.Stroke}" 
                  StrokeThickness="1.5"/>

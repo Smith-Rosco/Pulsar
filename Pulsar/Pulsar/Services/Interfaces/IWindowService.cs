@@ -44,12 +44,15 @@ namespace Pulsar.Services.Interfaces
         /// <summary>
         /// 获取之前记录的窗口句柄
         /// </summary>
+        /// // [New] 状态管理方法
+        void RecordPreviousWindow(); // 记录当前活动窗口
         IntPtr GetPreviousWindow();
 
         /// <summary>
         /// 注册隐藏主窗口的操作委托
         /// </summary>
         void RegisterHideAction(Action hideAction);
+
 
         /// <summary>
         /// 强制隐藏主窗口 (用于 PKI 注入前的清场)
