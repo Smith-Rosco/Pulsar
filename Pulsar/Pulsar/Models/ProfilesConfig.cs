@@ -13,7 +13,7 @@ namespace Pulsar.Models
     public class ProfilesConfig
     {
         public ProfileSettings Settings { get; set; } = new();
-        public Dictionary<string, ProcessProfile> Profiles { get; set; } = new();
+        public Dictionary<string, ProcessProfile> Profiles { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -46,6 +46,7 @@ namespace Pulsar.Models
     /// </summary>
     public class ProcessProfile
     {
+        public string? Icon { get; set; }
         public Dictionary<string, PluginSlot>? CommandMode { get; set; }
         public Dictionary<string, PluginSlot>? SwitchMode { get; set; }
 

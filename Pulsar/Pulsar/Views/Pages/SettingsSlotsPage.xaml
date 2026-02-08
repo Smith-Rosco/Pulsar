@@ -17,6 +17,7 @@
     <Page.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVis"/>
+        <converters:IsImagePathConverter x:Key="IsImagePath"/>
 
         <!-- Templates for different Plugin Types -->
         
@@ -248,12 +249,19 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     
                     <ComboBox ItemsSource="{Binding AvailableContexts}" 
                               SelectedItem="{Binding CurrentContext}"
                               Width="300"
                               HorizontalAlignment="Left">
+                        <ComboBox.ItemContainerStyle>
+                            <Style TargetType="ComboBoxItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                            </Style>
+                        </ComboBox.ItemContainerStyle>
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
                                 <Grid>
@@ -263,11 +271,42 @@
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     
+                                    <!-- Unicode Icon (for built-in glyphs) -->
                                     <TextBlock Grid.Column="0" 
                                                Text="{Binding Icon}" 
                                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, Segoe UI Emoji"
                                                Margin="0,0,8,0" 
-                                               VerticalAlignment="Center"/>
+                                               VerticalAlignment="Center">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Icon, Converter={StaticResource IsImagePath}}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    
+                                    <!-- Image Icon (for file paths) -->
+                                    <Image Grid.Column="0" 
+                                           Width="16" Height="16"
+                                           Margin="0,0,8,0" 
+                                           VerticalAlignment="Center"
+                                           RenderOptions.BitmapScalingMode="HighQuality">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Icon, Converter={StaticResource IsImagePath}}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                        <Setter Property="Source" Value="{Binding Icon}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
                                     
                                     <TextBlock Grid.Column="1" 
                                                Text="{Binding DisplayText}" 
@@ -303,7 +342,16 @@
                         </ComboBox.ItemTemplate>
                     </ComboBox>
 
+                    <!-- Add Profile Button -->
                     <ui:Button Grid.Column="1" 
+                               Icon="{ui:SymbolIcon Add24}"
+                               Appearance="Secondary"
+                               ToolTip="Add New Profile"
+                               Command="{Binding AddProfileDialogCommand}"
+                               Margin="10,0,0,0"/>
+
+                    <!-- Delete Button -->
+                    <ui:Button Grid.Column="2" 
                                Appearance="Danger"
                                Icon="{ui:SymbolIcon Delete24}"
                                Content="Delete"
@@ -312,33 +360,6 @@
                                Margin="10,0,0,0"/>
                 </Grid>
             </ui:CardControl>
-            
-            <!-- Create Profile Section -->
-            <ui:CardExpander Icon="AddCircle24" Header="Add New Profile" Margin="0,8,0,0" IsExpanded="False">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <ui:TextBox Text="{Binding NewProfileName, UpdateSourceTrigger=PropertyChanged}" 
-                                PlaceholderText="Process Name (e.g. code)"
-                                Icon="{ui:SymbolIcon Apps24}"/>
-                    
-                    <ui:Button Grid.Column="1" Margin="8,0,0,0"
-                               Icon="{ui:SymbolIcon TargetEdit20}"
-                               Command="{Binding PickProcessCommand}"
-                               CommandParameter="NewProfile"
-                               ToolTip="Pick from running process"/>
-
-                    <ui:Button Grid.Column="2" Margin="8,0,0,0"
-                               Content="Add Profile" 
-                               Appearance="Secondary" 
-                               Command="{Binding AddProfileCommand}"
-                               IsEnabled="{Binding IsProfileNameValid}"/>
-                </Grid>
-            </ui:CardExpander>
         </StackPanel>
 
         <!-- Slots List -->

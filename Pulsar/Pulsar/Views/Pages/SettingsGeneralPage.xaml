@@ -24,52 +24,8 @@
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel DataContext="{Binding GeneralSettings}" Margin="0,0,20,0">
                 
-                <!-- Physics Section -->
-                <ui:CardControl Icon="SlideSize24" Header="Physics &amp; Animation" Margin="0,0,0,12">
-                    <StackPanel>
-                        <Grid Margin="0,0,0,16">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="Trigger Distance" FontWeight="Medium"/>
-                                <TextBlock Text="Distance from center to trigger action" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"/>
-                            </StackPanel>
-                            <TextBlock Grid.Column="1" Text="{Binding TriggerDistance, StringFormat={}{0:0} px}" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                        </Grid>
-                        <Slider Minimum="50" Maximum="300" Value="{Binding TriggerDistance}" 
-                                TickFrequency="10" IsSnapToTickEnabled="True"
-                                AutoToolTipPlacement="TopLeft"/>
-                        
-                        <Separator Margin="0,16"/>
-
-                        <Grid Margin="0,0,0,16">
-                            <StackPanel>
-                                <TextBlock Text="Springiness (Elasticity)" FontWeight="Medium"/>
-                                <TextBlock Text="Bounciness of the jelly effect" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"/>
-                            </StackPanel>
-                        </Grid>
-                        <Slider Minimum="1" Maximum="20" Value="{Binding Springiness}" 
-                                TickFrequency="1" IsSnapToTickEnabled="True"
-                                AutoToolTipPlacement="TopLeft"/>
-
-                        <Separator Margin="0,16"/>
-
-                        <Grid Margin="0,0,0,16">
-                            <StackPanel>
-                                <TextBlock Text="Hover Scale Effect" FontWeight="Medium"/>
-                                <TextBlock Text="Size magnification on hover" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"/>
-                            </StackPanel>
-                        </Grid>
-                        <Slider Minimum="1.0" Maximum="2.0" Value="{Binding HoverScale}" 
-                                TickFrequency="0.1" IsSnapToTickEnabled="True"
-                                AutoToolTipPlacement="TopLeft"/>
-                    </StackPanel>
-                </ui:CardControl>
-
                 <!-- Appearance Section -->
-                <ui:CardControl Icon="Color24" Header="Appearance" Margin="0,0,0,12">
+                <ui:CardExpander Icon="Color24" Header="Appearance" Margin="0,0,0,12" IsExpanded="False">
                     <StackPanel>
                         <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
@@ -107,7 +63,7 @@
                             </ComboBox>
                         </Grid>
                     </StackPanel>
-                </ui:CardControl>
+                </ui:CardExpander>
 
             </StackPanel>
         </ScrollViewer>

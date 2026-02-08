@@ -1,0 +1,118 @@
+<ui:FluentWindow x:Class="Pulsar.Views.Dialogs.InputProfileDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:controls="clr-namespace:Pulsar.Views.Controls"
+        mc:Ignorable="d"
+        Title="New Profile" Height="380" Width="400"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ExtendsContentIntoTitleBar="True"
+        WindowBackdropType="Mica">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- TitleBar -->
+            <RowDefinition Height="Auto"/> <!-- Input -->
+            <RowDefinition Height="Auto"/> <!-- Icon -->
+            <RowDefinition Height="*"/>    <!-- Spacer -->
+            <RowDefinition Height="Auto"/> <!-- Buttons -->
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Title="New Profile" Grid.Row="0"/>
+        
+        <!-- Profile Name Input -->
+        <StackPanel Grid.Row="1" Margin="0,0,0,20">
+            <TextBlock Text="Application Process" FontWeight="Medium" Margin="0,0,0,8"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <ui:TextBox x:Name="InputBox" 
+                            PlaceholderText="e.g., chrome, notepad, code"
+                            Icon="{ui:SymbolIcon Apps24}"
+                            TextChanged="InputBox_TextChanged"/>
+                
+                <ui:Button Grid.Column="1" Margin="8,0,0,0"
+                           Icon="{ui:SymbolIcon TargetEdit20}"
+                           Click="PickProcess_Click"
+                           ToolTip="Pick from running process"
+                           Style="{StaticResource PulsarSecondaryButtonStyle}"/>
+            </Grid>
+            
+            <TextBlock x:Name="ErrorText" 
+                       Text="Profile already exists" 
+                       Foreground="{DynamicResource PaletteRedBrush}" 
+                       FontSize="12" 
+                       Margin="0,6,0,0"
+                       Visibility="Collapsed"/>
+        </StackPanel>
+
+        <!-- Icon Selection -->
+        <StackPanel Grid.Row="2" Margin="0,0,0,10">
+            <TextBlock Text="Profile Icon" FontWeight="Medium" Margin="0,0,0,8"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Preview -->
+                <Border Background="{DynamicResource ControlFillColorDefaultBrush}" 
+                        BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}" 
+                        BorderThickness="1" CornerRadius="8"
+                        Width="64" Height="64" Margin="0,0,16,0">
+                    <controls:JellyOrb x:Name="IconPreview" Size="48" IsActive="False" IsHitTestVisible="False"/>
+                </Border>
+
+                <!-- Info -->
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="Selected Icon" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                    <TextBlock x:Name="IconPathText" Text="Default" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+
+                <!-- Change Button -->
+                <ui:Button Grid.Column="2" Content="Change" 
+                           Style="{StaticResource PulsarSecondaryButtonStyle}" 
+                           Click="ChangeIcon_Click"
+                           VerticalAlignment="Center"/>
+            </Grid>
+        </StackPanel>
+
+        <!-- Action Buttons -->
+        <Grid Grid.Row="4" Margin="0,16,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <ui:Button Content="Cancel" 
+                       Style="{StaticResource PulsarSecondaryButtonStyle}" 
+                       HorizontalAlignment="Stretch" 
+                       Margin="0,0,6,0"
+                       Click="Cancel_Click"/>
+            
+            <ui:Button x:Name="OkButton"
+                       Grid.Column="1"
+                       Content="Create" 
+                       Style="{StaticResource PulsarPrimaryButtonStyle}" 
+                       HorizontalAlignment="Stretch" 
+                       Margin="6,0,0,0"
+                       Click="Ok_Click"
+                       IsEnabled="False"/>
+        </Grid>
+    </Grid>
+</ui:FluentWindow>

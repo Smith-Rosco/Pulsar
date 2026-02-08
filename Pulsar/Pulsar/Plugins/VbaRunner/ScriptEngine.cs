@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
+using System.Text;
 
 namespace Pulsar.Plugins.VbaRunner
 {
@@ -21,97 +22,197 @@ namespace Pulsar.Plugins.VbaRunner
         [DllImport("user32.dll")]
         static extern bool SetForegroundWindow(IntPtr hWnd);
 
-        [DllImport("oleaut32.dll", PreserveSig = false)]
-        private static extern void GetActiveObject(ref Guid rclsid, IntPtr pvReserved, [MarshalAs(UnmanagedType.IUnknown)] out object ppunk);
+        [DllImport("oleaut32.dll", PreserveSig = true)]
+        private static extern int GetActiveObject(ref Guid rclsid, IntPtr pvReserved, [MarshalAs(UnmanagedType.IUnknown)] out object? ppunk);
 
         /// <summary>
-        /// 获取运行中的 COM 对象 (替代 Marshal.GetActiveObject)
+        /// 获取运行中的 COM 对象
         /// </summary>
-        private static object? GetActiveObject(Type type)
+        private static object? GetActiveObjectByType(Type type)
         {
             try
             {
                 Guid clsid = type.GUID;
-                GetActiveObject(ref clsid, IntPtr.Zero, out object obj);
-                return obj;
+                int hr = GetActiveObject(ref clsid, IntPtr.Zero, out object? obj);
+                if (hr == 0 && obj != null)
+                {
+                    return obj;
+                }
             }
             catch
             {
-                return null;
+                // Ignore exceptions
             }
+            return null;
         }
 
         /// <summary>
         /// 连接到当前活动的 Excel 或 WPS 实例
         /// </summary>
+        /// <param name="targetProcessId">可选的目标进程ID，用于多实例场景</param>
         /// <returns>成功连接返回 true，否则返回 false</returns>
-        public bool Connect()
+        public bool Connect(int targetProcessId = 0)
         {
             _app = null;
+            _workbook = null;
 
-            // 1. 尝试连接 WPS 表格 (KET.Application)
-            try
-            {
-                Type? ketType = Type.GetTypeFromProgID("KET.Application");
-                if (ketType != null)
-                {
-                    _app = GetActiveObject(ketType);
-                    if (_app != null)
-                    {
-                        Debug.WriteLine("[ScriptEngine] Connected to WPS (KET.Application)");
-                    }
-                }
-            }
-            catch
-            {
-                Debug.WriteLine("[ScriptEngine] WPS not found, trying Excel...");
-            }
+            Debug.WriteLine("[ScriptEngine] === Starting Connect() ===");
+            Debug.WriteLine($"[ScriptEngine] Target process ID: {(targetProcessId != 0 ? targetProcessId.ToString() : "not specified")}");
 
-            // 2. 降级尝试连接 Microsoft Excel
-            if (_app == null)
+            // 0. 尝试根据 PID 获取进程名，以决定连接策略
+            string targetProcessName = "";
+            if (targetProcessId != 0)
             {
                 try
                 {
-                    Type? excelType = Type.GetTypeFromProgID("Excel.Application");
-                    if (excelType != null)
+                    using (var proc = Process.GetProcessById(targetProcessId))
                     {
-                        _app = GetActiveObject(excelType);
-                        if (_app != null)
-                        {
-                            Debug.WriteLine("[ScriptEngine] Connected to Excel (Excel.Application)");
-                        }
-                    }
-                }
-                catch
-                {
-                    Debug.WriteLine("[ScriptEngine] ❌ Neither WPS nor Excel found");
-                }
-            }
-
-            // 3. 验证是否有活动工作簿
-            if (_app != null)
-            {
-                try
-                {
-                    _workbook = _app.ActiveWorkbook;
-                    if (_workbook != null)
-                    {
-                        Debug.WriteLine($"[ScriptEngine] ✓ Active workbook: {_workbook.Name}");
-                        return true;
-                    }
-                    else
-                    {
-                        Debug.WriteLine("[ScriptEngine] ❌ No active workbook found");
-                        return false;
+                        targetProcessName = proc.ProcessName.ToLower();
+                        Debug.WriteLine($"[ScriptEngine] Target process name: {targetProcessName}");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"[ScriptEngine] ❌ Error accessing workbook: {ex.Message}");
-                    return false;
+                    Debug.WriteLine($"[ScriptEngine] Could not get process info for ID {targetProcessId}: {ex.Message}");
                 }
             }
 
+            bool isWps = targetProcessName == "et" || targetProcessName == "wps";
+            bool isExcel = targetProcessName == "excel";
+            
+            // 如果没有指定进程，默认先试 WPS 再试 Excel
+            if (!isWps && !isExcel)
+            {
+                // 尝试检测系统进程来猜测
+                var etProcesses = Process.GetProcessesByName("et");
+                if (etProcesses.Length > 0) isWps = true;
+                else isExcel = true; 
+            }
+
+            // ==========================================
+            // 阶段 1: 尝试通过 COM (GetActiveObject) 连接
+            // ==========================================
+            
+            if (isWps || !isExcel) // 优先尝试 WPS
+            {
+                Debug.WriteLine("[ScriptEngine] Trying KET.Application...");
+                if (TryGetActiveObject("KET.Application", out _app))
+                {
+                    Debug.WriteLine("[ScriptEngine] ✓ Connected to WPS (KET.Application)");
+                    if (ValidateConnection(targetProcessId)) goto Success;
+                    _app = null; // 验证失败，重置
+                }
+            }
+
+            if (isExcel || _app == null) // 尝试 Excel
+            {
+                Debug.WriteLine("[ScriptEngine] Trying Excel.Application...");
+                if (TryGetActiveObject("Excel.Application", out _app))
+                {
+                    Debug.WriteLine("[ScriptEngine] ✓ Connected to Excel (Excel.Application)");
+                    if (ValidateConnection(targetProcessId)) goto Success;
+                    _app = null; // 验证失败，重置
+                }
+            }
+
+            // ==========================================
+            // 阶段 2: 降级尝试 - 通过窗口句柄/PID 暴力查找
+            // ==========================================
+            
+            if (targetProcessId != 0)
+            {
+                Debug.WriteLine($"[ScriptEngine] ⚠️ standard COM connection failed or mismatch. Trying to find specific instance for PID {targetProcessId}...");
+                if (TryConnectToInstanceByProcessId(targetProcessId, targetProcessName))
+                {
+                    goto Success;
+                }
+            }
+
+            Debug.WriteLine("[ScriptEngine] === Connect() failed ===");
+            return false;
+
+        Success:
+            // 最终检查 ActiveWorkbook
+            return GetActiveWorkbook();
+        }
+
+        private bool TryGetActiveObject(string progId, out dynamic? app)
+        {
+            app = null;
+            try
+            {
+                Type? type = Type.GetTypeFromProgID(progId);
+                if (type != null)
+                {
+                    app = GetActiveObjectByType(type);
+                    return app != null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ScriptEngine] Error getting {progId}: {ex.Message}");
+            }
+            return false;
+        }
+
+        private bool ValidateConnection(int targetProcessId)
+        {
+            if (targetProcessId == 0) return true; // 没指定 PID，假设成功
+            if (_app == null) return false;
+
+            try
+            {
+                // 获取 COM 对象的 PID
+                IntPtr hwnd = (IntPtr)_app.Hwnd;
+                uint processId;
+                GetWindowThreadProcessId(hwnd, out processId);
+
+                Debug.WriteLine($"[ScriptEngine] Validating connection - Target PID: {targetProcessId}, App PID: {processId}");
+
+                if (processId == targetProcessId)
+                {
+                    return true;
+                }
+                
+                Debug.WriteLine("[ScriptEngine] ❌ PID mismatch.");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ScriptEngine] ⚠️ Error validating PID: {ex.Message}");
+                // 如果无法获取 PID，但能获取对象，暂时认为失败，让其进入暴力查找模式，那个模式更准
+                return false;
+            }
+        }
+
+        private bool GetActiveWorkbook()
+        {
+            if (_app == null) return false;
+
+            try
+            {
+                // 1. 尝试将窗口置前，激活 ActiveWorkbook
+                try
+                {
+                    IntPtr hwnd = (IntPtr)_app.Hwnd;
+                    SetForegroundWindow(hwnd);
+                }
+                catch { }
+
+                // 2. 获取 Workbook
+                _workbook = _app.ActiveWorkbook;
+                if (_workbook != null)
+                {
+                    Debug.WriteLine($"[ScriptEngine] ✓ Active workbook: {_workbook.Name}");
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ScriptEngine] ⚠️ Failed to get ActiveWorkbook: {ex.Message}");
+            }
+
+            Debug.WriteLine("[ScriptEngine] ❌ ActiveWorkbook is null");
             return false;
         }
 
@@ -171,11 +272,6 @@ namespace Pulsar.Plugins.VbaRunner
         /// <summary>
         /// 执行 VBA 脚本
         /// </summary>
-        /// <param name="filePath">脚本文件路径</param>
-        /// <param name="macroName">宏名称 (默认 "Main")</param>
-        /// <param name="argument">传递给宏的可选参数</param>
-        /// <exception cref="FileNotFoundException">脚本文件不存在</exception>
-        /// <exception cref="InvalidOperationException">未连接到 Excel 或 VBA 权限被拒绝</exception>
         public void ExecuteScript(string filePath, string macroName, object? argument = null)
         {
             if (!File.Exists(filePath))
@@ -275,6 +371,269 @@ namespace Pulsar.Plugins.VbaRunner
             }
 
             Debug.WriteLine("[ScriptEngine] COM objects released");
+        }
+
+        /// <summary>
+        /// 尝试通过进程ID连接到特定的 Excel/WPS 实例
+        /// </summary>
+        private bool TryConnectToInstanceByProcessId(int targetProcessId, string processName)
+        {
+            Debug.WriteLine($"[ScriptEngine] Searching for process {processName} (ID: {targetProcessId})");
+
+            try
+            {
+                // 枚举所有窗口
+                var windowHandles = new List<IntPtr>();
+                EnumWindows((hwnd, lParam) =>
+                {
+                    uint processId;
+                    GetWindowThreadProcessId(hwnd, out processId);
+                    if (processId == targetProcessId && IsWindowVisible(hwnd))
+                    {
+                        windowHandles.Add(hwnd);
+                    }
+                    return true;
+                }, IntPtr.Zero);
+
+                Debug.WriteLine($"[ScriptEngine] Found {windowHandles.Count} visible windows for process");
+
+                // 1. 尝试直接从主窗口获取
+                foreach (var hwnd in windowHandles)
+                {
+                    if (TryGetExcelFromWindow(hwnd, out _app))
+                    {
+                        Debug.WriteLine($"[ScriptEngine] ✓ Retrieved object from window {hwnd}");
+                        return true;
+                    }
+                }
+
+                // 2. 深度子窗口遍历
+                Debug.WriteLine("[ScriptEngine] Trying deep child window enumeration...");
+                
+                bool foundInChild = false;
+                foreach (var parentHwnd in windowHandles)
+                {
+                    if (foundInChild) break;
+
+                    EnumChildWindows(parentHwnd, (childHwnd, lParam) =>
+                    {
+                        // 获取类名用于调试和过滤
+                        var className = new StringBuilder(256);
+                        GetClassName(childHwnd, className, className.Capacity);
+                        string cls = className.ToString();
+
+                        // 过滤掉明显无关的控件
+                        if (cls.StartsWith("Button") || cls.StartsWith("Static") || cls.StartsWith("Edit") || cls.Contains("Scroll"))
+                        {
+                            return true;
+                        }
+
+                        if (TryGetExcelFromWindow(childHwnd, out _app))
+                        {
+                            Debug.WriteLine($"[ScriptEngine] ✓ Retrieved object from child window {childHwnd} ({cls})");
+                            foundInChild = true;
+                            return false; // Stop enumeration
+                        }
+
+                        return true;
+                    }, IntPtr.Zero);
+                }
+
+                if (foundInChild) return true;
+
+                // 3. 尝试 ROT (Running Object Table)
+                if (TryConnectViaROT(targetProcessId))
+                {
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ScriptEngine] Error in TryConnectToInstanceByProcessId: {ex.Message}");
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 尝试通过 Running Object Table (ROT) 连接到特定进程的实例
+        /// </summary>
+        private bool TryConnectViaROT(int targetProcessId)
+        {
+            Debug.WriteLine("[ScriptEngine] Enumerating Running Object Table...");
+            
+            IRunningObjectTable? rot = null;
+            IEnumMoniker? enumMoniker = null;
+            IBindCtx? bindCtx = null;
+
+            try
+            {
+                // 获取 ROT
+                int hr = GetRunningObjectTable(0, out rot);
+                if (hr != 0 || rot == null)
+                {
+                    Debug.WriteLine($"[ScriptEngine] GetRunningObjectTable failed: {hr}");
+                    return false;
+                }
+
+                rot.EnumRunning(out enumMoniker);
+                if (enumMoniker == null)
+                {
+                    Debug.WriteLine("[ScriptEngine] EnumRunning returned null");
+                    return false;
+                }
+
+                hr = CreateBindCtx(0, out bindCtx);
+                if (hr != 0 || bindCtx == null)
+                {
+                    Debug.WriteLine($"[ScriptEngine] CreateBindCtx failed: {hr}");
+                    return false;
+                }
+
+                IMoniker[] moniker = new IMoniker[1];
+                IntPtr numFetched = IntPtr.Zero;
+                int count = 0;
+
+                while (enumMoniker.Next(1, moniker, numFetched) == 0)
+                {
+                    count++;
+                    try
+                    {
+                        string displayName = "";
+                        try
+                        {
+                            moniker[0].GetDisplayName(bindCtx, null, out displayName);
+                        }
+                        catch { }
+
+                        if (displayName.Contains("Excel") || displayName.Contains("KET") || 
+                            displayName.Contains("ET") || displayName.Contains("Spreadsheet") ||
+                            displayName.EndsWith(".xlsx") || displayName.EndsWith(".xls") || displayName.EndsWith(".et"))
+                        {
+                            object? obj = null;
+                            try
+                            {
+                                rot.GetObject(moniker[0], out obj);
+                                if (obj != null)
+                                {
+                                    dynamic? tempApp = null;
+                                    try 
+                                    {
+                                        dynamic dynObj = obj;
+                                        tempApp = dynObj.Application;
+                                    }
+                                    catch { continue; }
+
+                                    if (tempApp != null)
+                                    {
+                                        try
+                                        {
+                                            IntPtr hwnd = (IntPtr)tempApp.Hwnd;
+                                            uint processId;
+                                            GetWindowThreadProcessId(hwnd, out processId);
+                                            
+                                            if ((int)processId == targetProcessId)
+                                            {
+                                                _app = tempApp;
+                                                Debug.WriteLine($"[ScriptEngine] ✓ Connected to app in ROT from target process: {displayName}");
+                                                return true;
+                                            }
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            Debug.WriteLine($"[ScriptEngine] Error checking ROT object properties: {ex.Message}");
+                                        }
+                                    }
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"[ScriptEngine] Error processing ROT item: {ex.Message}");
+                    }
+                    finally
+                    {
+                        if (moniker[0] != null) Marshal.ReleaseComObject(moniker[0]);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ScriptEngine] Error in TryConnectViaROT: {ex.Message}");
+            }
+            finally
+            {
+                if (enumMoniker != null) Marshal.ReleaseComObject(enumMoniker);
+                if (rot != null) Marshal.ReleaseComObject(rot);
+                if (bindCtx != null) Marshal.ReleaseComObject(bindCtx);
+            }
+
+            return false;
+        }
+
+        // --- Native Methods ---
+
+        [DllImport("ole32.dll")]
+        private static extern int GetRunningObjectTable(uint reserved, out IRunningObjectTable pprot);
+
+        [DllImport("ole32.dll")]
+        private static extern int CreateBindCtx(uint reserved, out IBindCtx ppbc);
+
+        [DllImport("user32.dll")]
+        private static extern bool EnumWindows(EnumWindowsProc enumProc, IntPtr lParam);
+
+        private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+        [DllImport("user32.dll")]
+        private static extern bool IsWindowVisible(IntPtr hWnd);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        private static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern IntPtr FindWindowEx(IntPtr parentHandle, IntPtr childAfter, string? className, string? windowName);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool EnumChildWindows(IntPtr hwndParent, EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+        [DllImport("oleacc.dll")]
+        private static extern int AccessibleObjectFromWindow(IntPtr hwnd, uint dwObjectID, ref Guid riid, [MarshalAs(UnmanagedType.IUnknown)] out object? ppvObject);
+
+        private const uint OBJID_NATIVEOM = 0xFFFFFFF0;
+
+        /// <summary>
+        /// 通过窗口句柄获取 Excel/WPS Application 对象
+        /// </summary>
+        private bool TryGetExcelFromWindow(IntPtr hwnd, out dynamic? app)
+        {
+            app = null;
+            
+            try
+            {
+                Guid IID_IDispatch = new Guid("{00020400-0000-0000-C000-000000000046}");
+                object? result = null;
+                int hr = AccessibleObjectFromWindow(hwnd, OBJID_NATIVEOM, ref IID_IDispatch, out result);
+                
+                if (hr == 0 && result != null)
+                {
+                    dynamic workbook = result;
+                    app = workbook.Application;
+                    Debug.WriteLine($"[ScriptEngine] Got Application from window, Workbooks count: {app.Workbooks?.Count}");
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ScriptEngine] Error in TryGetExcelFromWindow: {ex.Message}");
+            }
+            
+            return false;
         }
     }
 }

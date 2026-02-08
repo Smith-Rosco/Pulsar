@@ -86,7 +86,9 @@ namespace Pulsar.Views.Dialogs
             // 验证 Label (Account 允许为空)
             if (string.IsNullOrWhiteSpace(TxtLabel.Text))
             {
-                System.Windows.MessageBox.Show("Please enter a label.", "Validation", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                var alertDialog = new ConfirmationDialog("Validation", "Please enter a label.", true);
+                alertDialog.Owner = this;
+                alertDialog.ShowDialog();
                 return;
             }
 

@@ -126,6 +126,33 @@ Adhere strictly to these conventions to maintain codebase consistency.
    - **Context Menus**: Do not inherit Window resources. Manually inject `ui:ControlsDictionary` into `ContextMenu.Resources`.
    - **Animations**: When switching themes, avoid clearing resources (`MergedDictionaries.Remove`) if animations are running (common in `Wpf.Ui`). Instead, update the existing `ThemesDictionary.Theme` property in place.
 
+5. **Button Styling - CRITICAL**: Do NOT use `Appearance="Primary"` on WPF-UI buttons!
+   
+   **Root Cause**: Wpf.Ui's `Appearance="Primary"` relies on dynamic resource inheritance that breaks when themes are injected at window-level (Multi-Headed UI architecture). This causes the foreground color to fallback to unexpected values (white/transparent) on hover, making text invisible.
+   
+   **Solution**: Always use explicit Pulsar button styles from `Styles/ButtonStyles.xaml`:
+   
+   ```xml
+   <Window.Resources>
+       <ResourceDictionary>
+           <ResourceDictionary.MergedDictionaries>
+               <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+           </ResourceDictionary.MergedDictionaries>
+       </ResourceDictionary>
+   </Window.Resources>
+   
+   <!-- Primary action -->
+   <ui:Button Content="Save" Style="{StaticResource PulsarPrimaryButtonStyle}"/>
+   
+   <!-- Secondary action -->
+   <ui:Button Content="Cancel" Style="{StaticResource PulsarSecondaryButtonStyle}"/>
+   
+   <!-- Danger action -->
+   <ui:Button Content="Delete" Style="{StaticResource PulsarDangerButtonStyle}"/>
+   ```
+   
+   **Why This Works**: The Pulsar styles use explicit `ControlTemplate` with hardcoded `Trigger` definitions for each state (Normal/Hover/Pressed/Disabled), ensuring 100% predictable colors regardless of dynamic theme injection timing.
+
 ### Adding a New Service
 1. Define the interface in `Services/Interfaces/`.
 2. Implement the class in `Services/`.

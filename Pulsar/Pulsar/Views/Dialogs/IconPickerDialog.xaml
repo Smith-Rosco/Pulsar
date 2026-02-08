@@ -6,23 +6,32 @@
         xmlns:controls="clr-namespace:Pulsar.Views.Controls"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         mc:Ignorable="d"
-        Title="Select Icon" Height="550" Width="720"
+        Title="Select Icon" Height="600" Width="800"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         ExtendsContentIntoTitleBar="True"
         WindowBackdropType="Mica">
 
-    <Grid Margin="20,0,20,20">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid Margin="24">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/> <!-- TitleBar -->
+            <RowDefinition Height="Auto"/> <!-- Search & Browse -->
+            <RowDefinition Height="*"/>    <!-- Icons List -->
+            <RowDefinition Height="Auto"/> <!-- Footer -->
         </Grid.RowDefinitions>
 
         <ui:TitleBar Title="Select Icon" Grid.Row="0"/>
 
-        <Grid Grid.Row="1" Margin="0,0,0,15">
+        <!-- Search and Browse Section -->
+        <Grid Grid.Row="1" Margin="0,0,0,16">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
@@ -30,35 +39,42 @@
 
             <ui:TextBox x:Name="SearchBox" 
                         TextChanged="SearchBox_TextChanged"
-                        PlaceholderText="Filter system icons..." 
+                        PlaceholderText="Filter system icons (e.g. 'settings', 'user')..." 
                         Icon="{ui:SymbolIcon Search24}"/>
 
-            <ui:Button Grid.Column="1" Click="BrowseFile_Click" Margin="10,0,0,0"
+            <ui:Button Grid.Column="1" Click="BrowseFile_Click" Margin="12,0,0,0"
                        Icon="{ui:SymbolIcon FolderOpen24}"
-                       Content="Browse .exe/.lnk" 
-                       Appearance="Secondary"/>
+                       Content="Browse File" 
+                       Style="{StaticResource PulsarSecondaryButtonStyle}"/>
         </Grid>
 
-        <Border Grid.Row="2" Background="{DynamicResource ControlFillColorDefaultBrush}" 
-                BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1"
-                CornerRadius="4" Padding="10">
+        <!-- Icons Grid -->
+        <Border Grid.Row="2" 
+                Background="{DynamicResource ControlFillColorDefaultBrush}" 
+                BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}" 
+                BorderThickness="1"
+                CornerRadius="8" 
+                Padding="12">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <ItemsControl x:Name="IconList" ItemsSource="{Binding FilteredIcons}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <UniformGrid Columns="8"/>
+                            <UniformGrid Columns="10"/>
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <ui:Button Click="Icon_Click" Tag="{Binding Code}"
-                                       Appearance="Transparent" Padding="5" Margin="2"
+                                       Appearance="Transparent" 
+                                       Padding="4" Margin="2"
                                        ToolTip="{Binding Name}"
-                                       Height="48" Width="48">
-                                <StackPanel>
+                                       Height="56" Width="56"
+                                       CornerRadius="4">
+                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                                     <TextBlock Text="{Binding Character}" 
                                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" 
-                                               FontSize="24" HorizontalAlignment="Center"
+                                               FontSize="24" 
+                                               HorizontalAlignment="Center"
                                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                                 </StackPanel>
                             </ui:Button>
@@ -68,18 +84,24 @@
             </ScrollViewer>
         </Border>
 
-        <Grid Grid.Row="3" Margin="0,15,0,0">
+        <!-- Footer Section -->
+        <Grid Grid.Row="3" Margin="0,20,0,0">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="Selected:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,10,0"/>
-                <controls:JellyOrb x:Name="PreviewOrb" Size="30" IsActive="False" Margin="0,0,10,0"/>
-                <TextBlock x:Name="ResultText" Text="{Binding SelectedKey}" FontWeight="Bold" VerticalAlignment="Center"/>
+                <TextBlock Text="Preview:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                <controls:JellyOrb x:Name="PreviewOrb" Size="42" IsActive="False" Margin="0,0,12,0"/>
+                <StackPanel VerticalAlignment="Center">
+                     <TextBlock Text="Selected Icon" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                     <TextBlock x:Name="ResultText" Text="{Binding SelectedKey}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxWidth="300"/>
+                </StackPanel>
             </StackPanel>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <ui:Button Content="Cancel" IsCancel="True" Click="Cancel_Click"
-                           Width="80" Appearance="Secondary" Margin="0,0,10,0"/>
+                           Width="90" Style="{StaticResource PulsarSecondaryButtonStyle}" Margin="0,0,12,0"/>
+                
                 <ui:Button Content="Select" IsDefault="True" Click="Select_Click"
-                           Width="80" Appearance="Primary"/>
+                           Width="90" Style="{StaticResource PulsarPrimaryButtonStyle}"
+                           Icon="{ui:SymbolIcon Checkmark24}"/>
             </StackPanel>
         </Grid>
     </Grid>

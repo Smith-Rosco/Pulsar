@@ -11,6 +11,16 @@
         ExtendsContentIntoTitleBar="True"
         WindowBackdropType="Mica">
 
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        </ResourceDictionary>
+    </Window.Resources>
+
     <Grid Margin="20,0,20,20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -41,7 +51,19 @@
                             <Border Background="{DynamicResource ControlFillColorDefaultBrush}" CornerRadius="4">
                                 <ui:SymbolIcon Symbol="AppGeneric24" FontSize="16" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                             </Border>
-                            <Image Source="{Binding AppIcon}" RenderOptions.BitmapScalingMode="HighQuality"/>
+                            <Image RenderOptions.BitmapScalingMode="HighQuality">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Source" Value="{Binding AppIcon}"/>
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding AppIcon}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
                         </Grid>
 
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
@@ -66,8 +88,8 @@
         </ListBox>
 
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
-            <ui:Button Content="Cancel" Click="Cancel_Click" Appearance="Secondary" Margin="0,0,10,0"/>
-            <ui:Button Content="Select" Click="Select_Click" Appearance="Secondary" Icon="{ui:SymbolIcon Checkmark24}"/>
+            <ui:Button Content="Cancel" Click="Cancel_Click" Style="{StaticResource PulsarSecondaryButtonStyle}" Margin="0,0,10,0"/>
+            <ui:Button Content="Select" Click="Select_Click" Style="{StaticResource PulsarPrimaryButtonStyle}" Icon="{ui:SymbolIcon Checkmark24}" />
         </StackPanel>
     </Grid>
 </ui:FluentWindow>

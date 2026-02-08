@@ -1,4 +1,4 @@
-﻿// [Path]: Pulsar/Pulsar/Helpers/GlyphData.cs
+// [Path]: Pulsar/Pulsar/Helpers/GlyphData.cs
 using System.Collections.Generic;
 using System.Linq;
 
@@ -17,6 +17,7 @@ namespace Pulsar.Helpers
         public static readonly List<IconItem> CommonIcons = new()
         {
             // --- 通用 ---
+            new() { Name = "Apps", Code = "E945" },
             new() { Name = "Settings", Code = "E713" },
             new() { Name = "Home", Code = "E80F" },
             new() { Name = "Add / Plus", Code = "E710" },

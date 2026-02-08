@@ -15,6 +15,7 @@ using Pulsar.Models;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Wpf.Ui.Controls;
+using Pulsar.Views.Dialogs;
 
 namespace Pulsar.ViewModels
 {
@@ -105,18 +106,6 @@ namespace Pulsar.ViewModels
         public bool CanDeleteProfile => CurrentContext?.IsProfile == true;
         public bool CanAddSecrets => CurrentContext?.Key != "Launcher";
 
-        [ObservableProperty]
-        private string _newProfileName = string.Empty;
-
-        [ObservableProperty]
-        private string _processedProfileName = string.Empty;
-
-        [ObservableProperty]
-        private bool _isProfileNameValid = true;
-
-        [ObservableProperty]
-        private string _profileNameValidationMessage = string.Empty;
-
         private ProfileSettings _generalSettings;
         public ProfileSettings GeneralSettings
         {
@@ -193,7 +182,10 @@ namespace Pulsar.ViewModels
             {
                 foreach (var profileKey in _config.Profiles.Keys.Where(k => k != "Global").OrderBy(k => k))
                 {
-                    var profileCtx = new ContextInfo(profileKey, profileKey, "\uE945", true);
+                    _config.Profiles.TryGetValue(profileKey, out var profileData);
+                    string iconKey = !string.IsNullOrEmpty(profileData?.Icon) ? profileData.Icon : "\uE945"; // Default if null
+
+                    var profileCtx = new ContextInfo(profileKey, profileKey, iconKey, true);
                     UpdateContextStats(profileCtx);
                     AvailableContexts.Add(profileCtx);
                 }
@@ -473,13 +465,12 @@ namespace Pulsar.ViewModels
             if (CurrentSlots == null || !CurrentSlots.Contains(item)) return;
             
             // Show confirmation dialog
-            var result = System.Windows.MessageBox.Show(
-                $"Are you sure you want to remove '{item.Label}' from Slot {item.Slot}?",
-                "Confirm Deletion",
-                System.Windows.MessageBoxButton.YesNo,
-                System.Windows.MessageBoxImage.Question);
+            var dialog = new Views.Dialogs.ConfirmationDialog("Confirm Deletion", 
+                $"Are you sure you want to remove '{item.Label}' from Slot {item.Slot}?");
+            _themeService.ApplyTheme(dialog, SettingsTheme, WindowBackdropType.None, updateGlobal: false);
+            dialog.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
             
-            if (result == System.Windows.MessageBoxResult.Yes)
+            if (dialog.ShowDialog() == true)
             {
                 CurrentSlots.Remove(item);
                 
@@ -533,69 +524,41 @@ namespace Pulsar.ViewModels
                      
                      if (!string.IsNullOrEmpty(cachedIconPath)) slot.IconKey = cachedIconPath;
                  }
-                 else if (parameter is string str && str == "NewProfile")
-                 {
-                     NewProfileName = selected.ProcessName;
-                 }
               }
          }
         
-        // 监听 NewProfileName 变化，实时验证和预览
-        partial void OnNewProfileNameChanged(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                ProcessedProfileName = string.Empty;
-                IsProfileNameValid = true;
-                ProfileNameValidationMessage = string.Empty;
-                return;
-            }
-            
-            // 预览处理结果
-            var processed = value.Trim().ToUpperInvariant();
-            if (processed.EndsWith(".EXE"))
-                processed = processed.Substring(0, processed.Length - 4);
-            
-            ProcessedProfileName = processed;
-            
-            // 验证重复
-            if (_config.Profiles.ContainsKey(processed))
-            {
-                IsProfileNameValid = false;
-                ProfileNameValidationMessage = $"Profile '{processed}' already exists";
-            }
-            else
-            {
-                IsProfileNameValid = true;
-                ProfileNameValidationMessage = string.Empty;
-            }
-        }
-        
         [RelayCommand]
-        public void AddProfile()
+        public void AddProfileDialog()
         {
-            if (string.IsNullOrWhiteSpace(NewProfileName)) return;
-            var processName = NewProfileName.Trim().ToUpperInvariant();
+            var existingKeys = _config.Profiles.Keys.ToList();
             
-            if (processName.EndsWith(".EXE"))
+            var dialog = new InputProfileDialog(_windowService, existingKeys);
+            _themeService.ApplyTheme(dialog, SettingsTheme, WindowBackdropType.None, updateGlobal: false);
+            dialog.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
+            
+            if (dialog.ShowDialog() == true)
             {
-                processName = processName.Substring(0, processName.Length - 4);
-            }
+                var processName = dialog.ResultName;
+                var iconKey = dialog.ResultIcon;
 
-            if (_config.Profiles.ContainsKey(processName))
-            {
-                SendNotification("Error", $"Profile '{processName}' already exists.", ControlAppearance.Danger);
-                return;
-            }
+                if (string.IsNullOrWhiteSpace(processName)) return;
 
-            _config.Profiles[processName] = new ProcessProfile 
-            { 
-                CommandMode = new Dictionary<string, PluginSlot>() 
-            };
-            RefreshContexts();
-            CurrentContext = AvailableContexts.FirstOrDefault(c => c.Key == processName);
-            NewProfileName = string.Empty;
-            SendNotification("Success", $"Profile '{processName}' created.", ControlAppearance.Success);
+                if (_config.Profiles.ContainsKey(processName))
+                {
+                    SendNotification("Error", $"Profile '{processName}' already exists.", ControlAppearance.Danger);
+                    return;
+                }
+
+                _config.Profiles[processName] = new ProcessProfile 
+                { 
+                    Icon = iconKey,
+                    CommandMode = new Dictionary<string, PluginSlot>() 
+                };
+                RefreshContexts();
+                CurrentContext = AvailableContexts.FirstOrDefault(c => c.Key == processName);
+                
+                SendNotification("Success", $"Profile '{processName}' created.", ControlAppearance.Success);
+            }
         }
 
         [RelayCommand]
@@ -662,6 +625,7 @@ namespace Pulsar.ViewModels
         {
             if (item == null) return;
             var dialog = new Views.Dialogs.IconPickerDialog(item.IconKey);
+            _themeService.ApplyTheme(dialog, SettingsTheme, WindowBackdropType.None, updateGlobal: false);
             dialog.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
             if (dialog.ShowDialog() == true)
             {

@@ -30,13 +30,10 @@ namespace Pulsar.Services
             else
             {
                  // Standard (Settings, Dialogs)
-                 // If we are switching FROM Radial style (unlikely for same window), clear first
-                 bool hasRadial = element.Resources.MergedDictionaries.OfType<ResourceDictionary>().Any(d => d.Source != null && d.Source.ToString().Contains("/Themes/Theme."));
-                 if (hasRadial)
-                 {
-                     ClearThemeResources(element);
-                 }
-
+                 // Logic refined: Do NOT blindly clear resources if we are just switching Light/Dark.
+                 // ClearThemeResources is destructive and causes "NaN" animation crashes if Wpf.Ui dictionaries are removed.
+                 
+                 // ApplyStandardTheme now smartly updates existing dictionaries in place.
                  ApplyStandardTheme(element, theme, backdrop);
             }
 
@@ -85,6 +82,23 @@ namespace Pulsar.Services
             {
                 element.Resources.MergedDictionaries.Add(new ControlsDictionary());
             }
+
+            // 3. Inject Pulsar Theme Resources (Theme.Dark/Light.xaml)
+            // This ensures our custom keys (Theme.Orb.*, Theme.Accent.*) are available in Standard windows too.
+            string pulsarThemePath = theme == AppTheme.Light
+                ? "pack://application:,,,/Pulsar;component/Themes/Theme.Light.xaml"
+                : "pack://application:,,,/Pulsar;component/Themes/Theme.Dark.xaml";
+
+            // Remove existing Pulsar theme if present to avoid duplicates/conflicts
+            var existingPulsarTheme = element.Resources.MergedDictionaries.FirstOrDefault(d => 
+                d.Source != null && d.Source.ToString().Contains("/Themes/Theme."));
+            
+            if (existingPulsarTheme != null)
+            {
+                element.Resources.MergedDictionaries.Remove(existingPulsarTheme);
+            }
+
+            element.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri(pulsarThemePath, UriKind.Absolute) });
 
             if (element is FluentWindow fw)
             {

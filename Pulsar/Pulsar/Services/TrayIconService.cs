@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing; // System.Drawing.Primitives 或 System.Drawing.Common
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection; // 用于 IServiceProvider
@@ -11,12 +11,10 @@ namespace Pulsar.Services
     public class TrayIconService : ITrayService
     {
         private Forms.NotifyIcon? _notifyIcon;
-        private readonly IConfigService _configService;
         private readonly IServiceProvider _serviceProvider;
 
-        public TrayIconService(IConfigService configService, IServiceProvider serviceProvider)
+        public TrayIconService(IServiceProvider serviceProvider)
         {
-            _configService = configService;
             _serviceProvider = serviceProvider;
         }
 
@@ -37,13 +35,6 @@ namespace Pulsar.Services
             var contextMenu = new Forms.ContextMenuStrip();
             var settingsItem = new Forms.ToolStripMenuItem("Settings", null, OnSettingsClicked);
 
-            var reloadItem = new Forms.ToolStripMenuItem("Reload Config");
-            reloadItem.Click += async (s, e) =>
-            {
-                await _configService.LoadAsync();
-                ShowNotification("Configuration Reloaded", "Your settings have been updated.");
-            };
-
             var exitItem = new Forms.ToolStripMenuItem("Exit Pulsar");
             exitItem.Click += (s, e) =>
             {
@@ -52,7 +43,6 @@ namespace Pulsar.Services
             };
 
             contextMenu.Items.Add(settingsItem);
-            contextMenu.Items.Add(reloadItem);
             contextMenu.Items.Add(new Forms.ToolStripSeparator());
             contextMenu.Items.Add(exitItem);
 
@@ -116,11 +106,6 @@ namespace Pulsar.Services
                     window.Show();
                 }
             });
-        }
-
-        private void ShowNotification(string title, string message)
-        {
-            _notifyIcon?.ShowBalloonTip(3000, title, message, Forms.ToolTipIcon.Info);
         }
 
         public void Dispose()

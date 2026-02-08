@@ -47,7 +47,18 @@ namespace Pulsar.Services
                     WriteIndented = true,
                     PropertyNameCaseInsensitive = true
                 };
-                _cachedConfig = await JsonSerializer.DeserializeAsync<ProfilesConfig>(stream, options);
+                var loaded = await JsonSerializer.DeserializeAsync<ProfilesConfig>(stream, options);
+                
+                // [Architectural Fix] Ensure Profiles dictionary is case-insensitive
+                // System.Text.Json always creates case-sensitive dictionaries by default.
+                // We must rebuild it with OrdinalIgnoreCase to match PulsarContext's uppercase logic
+                // against raw process names (e.g. "msedge" vs "MSEDGE").
+                if (loaded?.Profiles != null)
+                {
+                    loaded.Profiles = new Dictionary<string, ProcessProfile>(loaded.Profiles, StringComparer.OrdinalIgnoreCase);
+                }
+
+                _cachedConfig = loaded;
             }
             catch (Exception ex)
             {
@@ -89,7 +100,7 @@ namespace Pulsar.Services
                     Springiness = 6.0,
                     MaxDisplacement = 20.0
                 },
-                Profiles = new Dictionary<string, ProcessProfile>
+                Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
                 {
                     // Global 配置 - 窗口切换模式
                     ["Global"] = new ProcessProfile

@@ -14,13 +14,13 @@ namespace Pulsar.Views
         {
             InitializeComponent();
             
-            // [Theme Isolation] Apply Theme manually for dialogs
-            if (System.Windows.Application.Current is App app && app.Services != null)
-            {
-                var themeService = app.Services.GetService<IThemeService>();
-                // Defaulting to Dark/Mica
-                themeService?.ApplyTheme(this, AppTheme.Dark, WindowBackdropType.Mica, updateGlobal: false);
-            }
+            // [Theme Isolation]
+            // Theme is now applied by the caller (SettingsViewModel/etc)
+            // if (System.Windows.Application.Current is App app && app.Services != null)
+            // {
+            //     var themeService = app.Services.GetService<IThemeService>();
+            //     themeService?.ApplyTheme(this, AppTheme.Dark, WindowBackdropType.Mica, updateGlobal: false);
+            // }
 
             MessageText.Text = prompt;
             Loaded += (s, e) => InputTextBox.Focus();

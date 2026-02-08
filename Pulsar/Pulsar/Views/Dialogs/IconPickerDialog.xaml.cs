@@ -20,11 +20,12 @@ namespace Pulsar.Views.Dialogs
             InitializeComponent();
             
             // [Theme Isolation]
-            if (System.Windows.Application.Current is App app && app.Services != null)
-            {
-                var themeService = app.Services.GetService<IThemeService>();
-                themeService?.ApplyTheme(this, AppTheme.Dark, WindowBackdropType.Mica, updateGlobal: false);
-            }
+            // Theme is now applied by the caller (SettingsViewModel) to match user preference
+            // if (System.Windows.Application.Current is App app && app.Services != null)
+            // {
+            //     var themeService = app.Services.GetService<IThemeService>();
+            //     themeService?.ApplyTheme(this, AppTheme.Dark, WindowBackdropType.Mica, updateGlobal: false);
+            // }
 
             FilteredIcons = new ObservableCollection<IconItem>(GlyphData.CommonIcons);
             SelectedKey = initialKey;

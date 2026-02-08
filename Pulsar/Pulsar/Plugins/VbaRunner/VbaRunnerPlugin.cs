@@ -53,9 +53,15 @@ namespace Pulsar.Plugins.VbaRunner
             IReadOnlyDictionary<string, string> args,
             PulsarContext context)
         {
+            Debug.WriteLine("[VbaRunnerPlugin] === RunScriptAsync started ===");
+            Debug.WriteLine($"[VbaRunnerPlugin] Context - TargetWindowHandle: {context.TargetWindowHandle}");
+            Debug.WriteLine($"[VbaRunnerPlugin] Context - TargetProcessName: {context.TargetProcessName}");
+            Debug.WriteLine($"[VbaRunnerPlugin] Context - TargetProcessId: {context.TargetProcessId}");
+
             // 1. 获取并验证脚本路径
             if (!args.TryGetValue("scriptPath", out var scriptPath) || string.IsNullOrEmpty(scriptPath))
             {
+                Debug.WriteLine("[VbaRunnerPlugin] ❌ Missing scriptPath parameter");
                 return PluginResult.Error("Missing required parameter: scriptPath");
             }
 
@@ -64,6 +70,7 @@ namespace Pulsar.Plugins.VbaRunner
 
             if (!File.Exists(scriptPath))
             {
+                Debug.WriteLine($"[VbaRunnerPlugin] ❌ Script file not found: {scriptPath}");
                 return PluginResult.Error($"Script file not found: {scriptPath}");
             }
 
@@ -74,13 +81,20 @@ namespace Pulsar.Plugins.VbaRunner
             Debug.WriteLine($"[VbaRunnerPlugin] Directive: {directive}");
 
             // 3. 隐藏 Pulsar 主窗口
+            Debug.WriteLine("[VbaRunnerPlugin] Hiding main window...");
             _windowService?.HideMainWindow();
 
             // 4. 尝试恢复目标窗口焦点 (如果已知)
             if (context.TargetWindowHandle != IntPtr.Zero)
             {
-                WindowHelper.SetForegroundWindow(context.TargetWindowHandle);
+                Debug.WriteLine($"[VbaRunnerPlugin] Setting foreground window to: {context.TargetWindowHandle}");
+                bool success = WindowHelper.SetForegroundWindow(context.TargetWindowHandle);
+                Debug.WriteLine($"[VbaRunnerPlugin] SetForegroundWindow result: {success}");
                 await Task.Delay(100); // 等待窗口切换
+            }
+            else
+            {
+                Debug.WriteLine("[VbaRunnerPlugin] ⚠️ No target window handle in context");
             }
 
             // 注意：COM 操作和 UI 必须在 STA 线程执行
@@ -93,16 +107,25 @@ namespace Pulsar.Plugins.VbaRunner
             string? errorMessage = null;
             string? successMessage = null;
 
+            Debug.WriteLine("[VbaRunnerPlugin] Dispatching to UI thread...");
+
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
             {
+                Debug.WriteLine("[VbaRunnerPlugin] Inside UI thread dispatcher");
                 try
                 {
-                    // 5. 连接 Excel/WPS
-                    if (!_scriptEngine!.Connect())
+                    // 5. 连接 Excel/WPS，传递目标进程ID以处理多实例场景
+                    Debug.WriteLine("[VbaRunnerPlugin] Calling ScriptEngine.Connect()...");
+                    bool connected = _scriptEngine!.Connect(context.TargetProcessId);
+                    Debug.WriteLine($"[VbaRunnerPlugin] ScriptEngine.Connect() returned: {connected}");
+                    
+                    if (!connected)
                     {
                         errorMessage = "No active Excel/WPS instance found. Please open a workbook first.";
+                        Debug.WriteLine($"[VbaRunnerPlugin] ❌ Connection failed: {errorMessage}");
                         return;
                     }
+                    Debug.WriteLine("[VbaRunnerPlugin] ✓ Successfully connected to Excel/WPS");
 
                     object? scriptArg = null;
 
@@ -146,16 +169,21 @@ namespace Pulsar.Plugins.VbaRunner
                 }
             });
 
+            Debug.WriteLine($"[VbaRunnerPlugin] Dispatcher completed - errorMessage: {errorMessage ?? "null"}, successMessage: {successMessage ?? "null"}");
+
             if (errorMessage != null)
             {
                 // 如果是用户取消，不算错误，但也没有成功消息
                 if (errorMessage.Contains("cancelled"))
                 {
+                    Debug.WriteLine("[VbaRunnerPlugin] Operation cancelled by user");
                     return PluginResult.Ok(); // 或者返回特定状态
                 }
+                Debug.WriteLine($"[VbaRunnerPlugin] ❌ Returning error: {errorMessage}");
                 return PluginResult.Error(errorMessage);
             }
 
+            Debug.WriteLine("[VbaRunnerPlugin] ✓ Returning success");
             return PluginResult.Ok(successMessage);
         }
     }

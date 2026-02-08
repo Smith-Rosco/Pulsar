@@ -14,6 +14,7 @@
 
     <Window.Resources>
         <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVis"/>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <DropShadowEffect x:Key="DropShadowEffect" BlurRadius="20" ShadowDepth="4" Direction="270" Color="Black" Opacity="0.3"/>
     </Window.Resources>
 
@@ -55,17 +56,27 @@
                                            Tag="Slots"/>
                 </ui:NavigationView.MenuItems>
 
-                <ui:NavigationView.FooterMenuItems>
-                    <ui:NavigationViewItem Content="Save Changes" 
-                                           Icon="{ui:SymbolIcon Save24}"
-                                           Click="SaveButton_Click"
-                                           Foreground="{DynamicResource SystemAccentColorBrush}"/>
-                </ui:NavigationView.FooterMenuItems>
+                    <ui:NavigationView.FooterMenuItems>
+                        <ui:NavigationViewItem Content="Save Changes" 
+                                               Icon="{ui:SymbolIcon Save24}"
+                                               Click="SaveButton_Click"
+                                               Foreground="{DynamicResource SystemAccentColorBrush}"/>
+                    </ui:NavigationView.FooterMenuItems>
 
                 </ui:NavigationView>
+
+                <!-- Overlay Title for Navigation Pane -->
+                <TextBlock Text="Pulsar Configuration" 
+                           FontSize="16" 
+                           FontWeight="SemiBold" 
+                           Margin="48,8,0,0"
+                           VerticalAlignment="Top"
+                           HorizontalAlignment="Left"
+                           IsHitTestVisible="False"
+                           Visibility="{Binding ElementName=RootNavigation, Path=IsPaneOpen, Converter={StaticResource BoolToVis}}"/>
             </Grid>
 
-            <Frame x:Name="RootFrame" 
+            <Frame x:Name="RootFrame"
                    Grid.Column="1" 
                    Margin="24"
                    NavigationUIVisibility="Hidden"/>

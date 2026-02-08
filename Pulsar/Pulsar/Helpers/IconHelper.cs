@@ -1,4 +1,4 @@
-﻿// [Path]: Pulsar/Pulsar/Helpers/IconHelper.cs
+// [Path]: Pulsar/Pulsar/Helpers/IconHelper.cs
 
 using System;
 using System.Drawing; // System.Drawing.Common
@@ -85,18 +85,50 @@ namespace Pulsar.Helpers
                 string safeName = string.Join("_", processName.Split(Path.GetInvalidFileNameChars()));
                 string filePath = Path.Combine(folder, $"{safeName}.png");
 
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                // [Optimization] 如果文件已存在且有效，直接返回，避免重复写入导致的 IO 冲突
+                if (File.Exists(filePath))
                 {
-                    var encoder = new PngBitmapEncoder();
-                    encoder.Frames.Add(BitmapFrame.Create(bitmapSource));
-                    encoder.Save(fileStream);
+                    try
+                    {
+                        using (var fs = File.OpenRead(filePath))
+                        {
+                            if (fs.Length > 0) return filePath;
+                        }
+                    }
+                    catch
+                    {
+                        // 如果读取失败，说明文件可能有问题或被锁，尝试覆盖或生成新名
+                    }
                 }
 
-                return filePath;
+                try
+                {
+                    SaveBitmap(bitmapSource, filePath);
+                    return filePath;
+                }
+                catch (IOException)
+                {
+                    // [Fallback] 如果主文件被占用，生成带时间戳的副本
+                    string timestamp = DateTime.Now.Ticks.ToString();
+                    string altPath = Path.Combine(folder, $"{safeName}_{timestamp}.png");
+                    SaveBitmap(bitmapSource, altPath);
+                    return altPath;
+                }
             }
-            catch
+            catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"[IconHelper] Save failed: {ex.Message}");
                 return null;
+            }
+        }
+
+        private static void SaveBitmap(BitmapSource bitmapSource, string path)
+        {
+            using (var fileStream = new FileStream(path, FileMode.Create))
+            {
+                var encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(bitmapSource));
+                encoder.Save(fileStream);
             }
         }
 
