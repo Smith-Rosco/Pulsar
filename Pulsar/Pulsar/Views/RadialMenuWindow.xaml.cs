@@ -1,14 +1,15 @@
 // [Path]: Pulsar/Pulsar/Views/RadialMenuWindow.xaml.cs
 
-using Pulsar.Helpers;       // ThemeManager
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels;
 using Pulsar.Native;        // WindowHelper
+using Pulsar.Models;        // AppTheme
 using System;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Interop;
+using Wpf.Ui.Controls;
 // 引用 WinForms 获取全局鼠标坐标
 using Forms = System.Windows.Forms;
 
@@ -18,6 +19,7 @@ namespace Pulsar.Views
     {
         private readonly RadialMenuViewModel _viewModel;
         private readonly IConfigService _configService;
+        private readonly IThemeService _themeService;
 
         // [Fix] 添加 WindowService 字段以解决报错
         private readonly IWindowService _windowService;
@@ -28,19 +30,35 @@ namespace Pulsar.Views
 
         // [注意] _previousForegroundWindow 本地字段已移除，状态提升至 WindowService 管理
 
-        public RadialMenuWindow(RadialMenuViewModel vm, IConfigService configService, IWindowService windowService)
+        public RadialMenuWindow(RadialMenuViewModel vm, IConfigService configService, IWindowService windowService, IThemeService themeService)
         {
-            InitializeComponent();
-            DataContext = vm;
+            // Initialize Fields First
             _viewModel = vm;
             _configService = configService;
-            _windowService = windowService; // [Fix] 赋值字段
+            _windowService = windowService;
+            _themeService = themeService;
+
+            // [Theme Isolation] Apply Default Theme immediately before InitializeComponent
+            // This ensures resources are available for XAML parsing and initial layout.
+            // We use Dark as safe default until config loads.
+            _themeService.ApplyTheme(this, AppTheme.Dark, WindowBackdropType.None, updateGlobal: false);
+
+            InitializeComponent();
+            DataContext = vm;
 
             // 1. 监听 ViewModel 的属性变化 (Show/Hide 信号)
             _viewModel.PropertyChanged += OnViewModelPropertyChanged;
 
-            // 2. 窗口加载时初始化主题
+            // 2. 窗口加载时初始化主题 (Loads user config)
             InitializeTheme();
+            
+            // Listen for theme changes from other windows (e.g., Settings)
+            _themeService.ThemeChanged += (s, theme) =>
+            {
+                // Re-apply local resources but DO NOT trigger global update again (infinite loop risk)
+                _themeService.ApplyTheme(this, theme, WindowBackdropType.None, updateGlobal: false);
+                _themeService.EnforceTransparency(this);
+            };
 
             // 3. [Fix] 注册隐藏自身的能力 (使用 Dispatcher 调度回 UI 线程)
             _windowService.RegisterHideAction(() =>
@@ -71,6 +89,9 @@ namespace Pulsar.Views
             long currentStyle = WindowHelper.GetWindowLong(hwnd, WindowHelper.GWL_EXSTYLE);
             // 3. 注入 ToolWindow 样式 (使其在 Alt+Tab 中不可见)
             WindowHelper.SetWindowLong(hwnd, WindowHelper.GWL_EXSTYLE, currentStyle | WindowHelper.WS_EX_TOOLWINDOW);
+
+            // 4. [New] Activate "Self-Healing" Transparency
+            _themeService.EnforceTransparency(this);
         }
 
         private async void InitializeTheme()
@@ -78,13 +99,15 @@ namespace Pulsar.Views
             try
             {
                 var config = await _configService.LoadAsync();
-                ThemeManager.ApplyTheme(this, config.Settings.LauncherTheme);
+                // [Fix] Do not apply global theme, only local resources
+                _themeService.ApplyTheme(this, config.Settings.LauncherThemeEnum, WindowBackdropType.None, updateGlobal: false);
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Theme Init Failed: {ex.Message}");
             }
         }
+
 
         private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
@@ -122,6 +145,7 @@ namespace Pulsar.Views
             RefreshThemeOnShow();
 
             // ... 后续逻辑保持不变 (Activate, Focus, Opacity=1) ...
+            this.Show(); // [Fix] 确保窗口显示
             this.IsHitTestVisible = true;
             this.Activate(); // 抢占焦点
             this.Focus();
@@ -136,6 +160,7 @@ namespace Pulsar.Views
             CompositionTarget.Rendering -= UpdateLoop;
             // 2. [隐身] 瞬间隐形
             this.Opacity = 0;
+            this.Hide(); // [Fix] 彻底隐藏窗口，防止留下白框 (Ghost Window)
             // 3. [穿透] 关闭交互
             this.IsHitTestVisible = false;
 
@@ -161,8 +186,15 @@ namespace Pulsar.Views
 
         private async void RefreshThemeOnShow()
         {
+            System.Diagnostics.Debug.WriteLine($"[RadialMenuWindow] RefreshThemeOnShow: Before ApplyTheme, Background={this.Background}, Style={this.Style}");
             var config = await _configService.LoadAsync();
-            ThemeManager.ApplyTheme(this, config.Settings.LauncherTheme);
+            // [Fix] Do not trigger global update when showing, just refresh local
+            _themeService.ApplyTheme(this, config.Settings.LauncherThemeEnum, WindowBackdropType.None, updateGlobal: false);
+            
+            // [Fix] Enforce transparency and remove any potential style overrides
+            _themeService.EnforceTransparency(this);
+            
+            System.Diagnostics.Debug.WriteLine($"[RadialMenuWindow] RefreshThemeOnShow: After ApplyTheme, Background={this.Background}, Style={this.Style}");
         }
 
         // ==========================================

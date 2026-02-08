@@ -30,7 +30,7 @@
             <Ellipse.Style>
                 <Style TargetType="Ellipse">
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding IsRecommended}" Value="True">
+                        <DataTrigger Binding="{Binding IsRecommended, ElementName=OrbRoot}" Value="True">
                             <DataTrigger.EnterActions>
                                 <BeginStoryboard>
                                     <Storyboard>
@@ -53,9 +53,21 @@
             </Ellipse.Style>
         </Ellipse>
 
-        <Ellipse Fill="{DynamicResource Theme.Orb.Fill}" 
+        <Ellipse x:Name="OrbFill" 
+                 Fill="{DynamicResource Theme.Orb.Fill}" 
                  Stroke="{DynamicResource Theme.Orb.Stroke}" 
-                 StrokeThickness="1.5"/>
+                 StrokeThickness="1.5">
+            <Ellipse.Style>
+                <Style TargetType="Ellipse">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsTransparent, ElementName=OrbRoot}" Value="True">
+                            <Setter Property="Fill" Value="Transparent"/>
+                            <Setter Property="Stroke" Value="Transparent"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Ellipse.Style>
+        </Ellipse>
 
         <Ellipse x:Name="ActiveShape" Fill="{DynamicResource Theme.Orb.Active.Glow}">
             <Ellipse.Effect>
@@ -65,24 +77,29 @@
                 <Style TargetType="Ellipse">
                     <Setter Property="Opacity" Value="0"/>
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding IsActive, ElementName=OrbRoot}" Value="True">
-                            <DataTrigger.EnterActions>
+                        <!-- Only show if IsActive is True AND ShowActiveGlow is True -->
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding IsActive, ElementName=OrbRoot}" Value="True"/>
+                                <Condition Binding="{Binding ShowActiveGlow, ElementName=OrbRoot}" Value="True"/>
+                            </MultiDataTrigger.Conditions>
+                            <MultiDataTrigger.EnterActions>
                                 <BeginStoryboard>
                                     <Storyboard>
                                         <DoubleAnimation Storyboard.TargetProperty="Opacity" 
                                                          To="1.0" Duration="0:0:0.2"/>
                                     </Storyboard>
                                 </BeginStoryboard>
-                            </DataTrigger.EnterActions>
-                            <DataTrigger.ExitActions>
+                            </MultiDataTrigger.EnterActions>
+                            <MultiDataTrigger.ExitActions>
                                 <BeginStoryboard>
                                     <Storyboard>
                                         <DoubleAnimation Storyboard.TargetProperty="Opacity" 
                                                          To="0.0" Duration="0:0:0.4"/>
                                     </Storyboard>
                                 </BeginStoryboard>
-                            </DataTrigger.ExitActions>
-                        </DataTrigger>
+                            </MultiDataTrigger.ExitActions>
+                        </MultiDataTrigger>
                     </Style.Triggers>
                 </Style>
             </Ellipse.Style>

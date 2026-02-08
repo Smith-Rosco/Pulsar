@@ -1,4 +1,3 @@
-// [Path]: Pulsar/Pulsar/ViewModels/SlotViewModel.cs
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Pulsar.ViewModels
@@ -11,7 +10,7 @@ namespace Pulsar.ViewModels
         private double _size;
         private string _label = string.Empty;
         private bool _isActive;
-        private string _iconKey = string.Empty; // [新增] 直接透传 Key
+        private string _iconKey = string.Empty;
 
         public SlotViewModel(int index, double x, double y, double size)
         {
@@ -57,22 +56,18 @@ namespace Pulsar.ViewModels
             set => SetProperty(ref _slotIndex, value);
         }
 
-        // [New] 仅仅是数据持有者，不再负责解析逻辑
         public string IconKey
         {
             get => _iconKey;
             set => SetProperty(ref _iconKey, value);
         }
 
-        // 兼容旧代码调用，但逻辑已清空，改为直接赋值
         public void LoadIconData(string iconKey)
         {
             IconKey = iconKey;
         }
 
-        // [New] 是否为上下文推荐项
         [ObservableProperty]
         private bool _isRecommended;
-
     }
 }

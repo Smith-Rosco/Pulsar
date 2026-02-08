@@ -1,0 +1,455 @@
+<Page x:Class="Pulsar.Views.Pages.SettingsSlotsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:models="clr-namespace:Pulsar.Models"
+      xmlns:selectors="clr-namespace:Pulsar.Views.Selectors"
+      xmlns:converters="clr-namespace:Pulsar.Core.Converters"
+      xmlns:controls="clr-namespace:Pulsar.Views.Controls"
+      xmlns:sys="clr-namespace:System;assembly=mscorlib"
+      mc:Ignorable="d" 
+      d:DesignHeight="800" d:DesignWidth="800"
+      Title="Slots Manager"
+      Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+
+    <Page.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVis"/>
+
+        <!-- Templates for different Plugin Types -->
+        
+        <!-- 1. WinSwitcher / Launcher -->
+        <DataTemplate x:Key="LauncherFieldsTemplate">
+            <StackPanel>
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <ui:TextBox Text="{Binding [app]}" 
+                                Icon="{ui:SymbolIcon Search24}"
+                                PlaceholderText="Process Name (e.g. chrome)"
+                                ToolTip="This name is used for switching to the window."/>
+                    
+                                <ui:Button Grid.Column="1" Margin="8,0,0,0"
+                                           Icon="{ui:SymbolIcon TargetEdit20}"
+                                           Command="{Binding DataContext.PickProcessCommand, RelativeSource={RelativeSource AncestorType=Page}}" 
+                                           CommandParameter="{Binding}"
+                                           ToolTip="Pick Executable from Running App"/>
+                </Grid>
+
+                <ui:TextBox Text="{Binding [arguments]}" 
+                            Icon="{ui:SymbolIcon Code24}"
+                            PlaceholderText="Arguments (Optional)"
+                            Margin="0,0,0,10"/>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <ui:TextBox Text="{Binding IconKey}" 
+                                Icon="{ui:SymbolIcon Image24}"
+                                PlaceholderText="Icon Key (Path or Font)"/>
+                    
+                    <ui:Button Grid.Column="1" Margin="8,0,0,0"
+                               Icon="{ui:SymbolIcon Folder24}"
+                               Command="{Binding DataContext.PickIconCommand, RelativeSource={RelativeSource AncestorType=Page}}" 
+                               CommandParameter="{Binding}"
+                               ToolTip="Open Icon Picker"/>
+                </Grid>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- 2. Command Runner -->
+        <DataTemplate x:Key="CommandFieldsTemplate">
+            <StackPanel>
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <ui:TextBox Text="{Binding [path]}" 
+                                Icon="{ui:SymbolIcon AppGeneric24}"
+                                PlaceholderText="Executable Path"/>
+                    
+                    <ui:Button Grid.Column="1" Margin="8,0,0,0"
+                               Icon="{ui:SymbolIcon TargetEdit20}"
+                               Command="{Binding DataContext.PickProcessCommand, RelativeSource={RelativeSource AncestorType=Page}}" 
+                               CommandParameter="{Binding}"
+                               ToolTip="Pick Executable from Running App"/>
+                </Grid>
+
+                <ui:TextBox Text="{Binding [arguments]}" 
+                            Icon="{ui:SymbolIcon Code24}"
+                            PlaceholderText="Arguments (Optional)"
+                            Margin="0,0,0,10"/>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <ui:TextBox Text="{Binding IconKey}" 
+                                Icon="{ui:SymbolIcon Image24}"
+                                PlaceholderText="Icon Key (Path or Font)"/>
+                    
+                    <ui:Button Grid.Column="1" Margin="8,0,0,0"
+                               Icon="{ui:SymbolIcon Folder24}"
+                               Command="{Binding DataContext.PickIconCommand, RelativeSource={RelativeSource AncestorType=Page}}" 
+                               CommandParameter="{Binding}"
+                               ToolTip="Open Icon Picker"/>
+                </Grid>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- 3. Secret (PKI) -->
+        <DataTemplate x:Key="SecretFieldsTemplate">
+            <StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <ui:TextBox Text="••••••••••••••••" 
+                                Icon="{ui:SymbolIcon LockClosed24}"
+                                IsEnabled="False"
+                                ToolTip="Encrypted Credential"/>
+
+                                <ui:Button Grid.Column="1" Margin="8,0,0,0"
+                                           Icon="{ui:SymbolIcon Edit24}"
+                                           Content="Edit Secret"
+                                           Command="{Binding DataContext.EditSecretCommand, RelativeSource={RelativeSource AncestorType=Page}}" 
+                                           CommandParameter="{Binding}"/>
+                </Grid>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- 4. Bookmarklet -->
+        <DataTemplate x:Key="BookmarkletFieldsTemplate">
+            <StackPanel>
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <ui:TextBox Text="{Binding [scriptPath]}" 
+                                Icon="{ui:SymbolIcon DocumentJavascript24}"
+                                PlaceholderText="Script Path (.js)"
+                                ToolTip="Path to .js file"/>
+
+                                <ui:Button Grid.Column="1" Margin="8,0,0,0"
+                                           Icon="{ui:SymbolIcon FolderOpen24}"
+                                           Command="{Binding DataContext.PickScriptFileCommand, RelativeSource={RelativeSource AncestorType=Page}}" 
+                                           CommandParameter="{Binding}"
+                                           ToolTip="Browse Script File"/>
+                </Grid>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <ui:TextBox Text="{Binding IconKey}" 
+                                Icon="{ui:SymbolIcon Image24}"
+                                PlaceholderText="Icon Key"/>
+
+                    <ui:Button Grid.Column="1" Margin="8,0,0,0"
+                               Icon="{ui:SymbolIcon Folder24}"
+                               Command="{Binding DataContext.PickIconCommand, RelativeSource={RelativeSource AncestorType=Page}}" 
+                               CommandParameter="{Binding}"/>
+                </Grid>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- 5. VBA Runner -->
+        <DataTemplate x:Key="VbaRunnerFieldsTemplate">
+            <StackPanel>
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <ui:TextBox Text="{Binding [scriptPath]}" 
+                                Icon="{ui:SymbolIcon DocumentData24}"
+                                PlaceholderText="VBA Script Path (.txt/.vbs)"
+                                ToolTip="Path to .txt/.vbs file"/>
+
+                                <ui:Button Grid.Column="1" Margin="8,0,0,0"
+                                           Icon="{ui:SymbolIcon FolderOpen24}"
+                                           Command="{Binding DataContext.PickVbaScriptFileCommand, RelativeSource={RelativeSource AncestorType=Page}}" 
+                                           CommandParameter="{Binding}"
+                                           ToolTip="Browse VBA Script"/>
+                </Grid>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <ui:TextBox Text="{Binding IconKey}" 
+                                Icon="{ui:SymbolIcon Image24}"
+                                PlaceholderText="Icon Key"/>
+
+                    <ui:Button Grid.Column="1" Margin="8,0,0,0"
+                               Icon="{ui:SymbolIcon Folder24}"
+                               Command="{Binding DataContext.PickIconCommand, RelativeSource={RelativeSource AncestorType=Page}}" 
+                               CommandParameter="{Binding}"/>
+                </Grid>
+            </StackPanel>
+        </DataTemplate>
+
+        <selectors:SlotItemFieldSelector x:Key="SlotItemFieldSelector"
+                                         LauncherFieldsTemplate="{StaticResource LauncherFieldsTemplate}"
+                                         CommandFieldsTemplate="{StaticResource CommandFieldsTemplate}"
+                                         BookmarkletFieldsTemplate="{StaticResource BookmarkletFieldsTemplate}"
+                                         VbaRunnerFieldsTemplate="{StaticResource VbaRunnerFieldsTemplate}"
+                                         SecretFieldsTemplate="{StaticResource SecretFieldsTemplate}"/>
+
+        <!-- Context Menu Style -->
+        <ContextMenu x:Key="AddSlotContextMenu"
+                     ItemsSource="{Binding AvailablePluginTypes}">
+            <ContextMenu.Resources>
+                <ResourceDictionary>
+                    <ResourceDictionary.MergedDictionaries>
+                        <ui:ControlsDictionary />
+                    </ResourceDictionary.MergedDictionaries>
+                </ResourceDictionary>
+            </ContextMenu.Resources>
+            <ContextMenu.ItemContainerStyle>
+                <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+                    <Setter Property="Header" Value="{Binding DisplayName}"/>
+                    <Setter Property="Command" Value="{Binding PlacementTarget.DataContext.AddSlotOfTypeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                    <Setter Property="CommandParameter" Value="{Binding PluginId}"/>
+                    <Setter Property="ToolTip" Value="{Binding Description}"/>
+                </Style>
+            </ContextMenu.ItemContainerStyle>
+        </ContextMenu>
+
+    </Page.Resources>
+
+    <Grid Margin="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header Section -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="Menu Layout" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,8"/>
+            <TextBlock Text="Configure radial menu slots for different contexts." Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,16"/>
+            
+            <!-- Context Selector Card -->
+            <ui:CardControl Icon="SlideMultiple24" Header="Active Menu">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <ComboBox ItemsSource="{Binding AvailableContexts}" 
+                              SelectedItem="{Binding CurrentContext}"
+                              Width="300"
+                              HorizontalAlignment="Left">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <TextBlock Grid.Column="0" 
+                                               Text="{Binding Icon}" 
+                                               FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, Segoe UI Emoji"
+                                               Margin="0,0,8,0" 
+                                               VerticalAlignment="Center"/>
+                                    
+                                    <TextBlock Grid.Column="1" 
+                                               Text="{Binding DisplayText}" 
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,16,0"/>
+                                               
+                                    <!-- Visual Slots -->
+                                    <ItemsControl Grid.Column="2" ItemsSource="{Binding VisualSlots}" VerticalAlignment="Center">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Ellipse Width="6" Height="6" Margin="2,0">
+                                                    <Ellipse.Style>
+                                                        <Style TargetType="Ellipse">
+                                                            <Setter Property="Fill" Value="{DynamicResource ControlStrongFillColorDisabledBrush}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding}" Value="True">
+                                                                    <Setter Property="Fill" Value="{DynamicResource SystemAccentColorBrush}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Ellipse.Style>
+                                                </Ellipse>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Grid>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <ui:Button Grid.Column="1" 
+                               Appearance="Danger"
+                               Icon="{ui:SymbolIcon Delete24}"
+                               Content="Delete"
+                               Command="{Binding DeleteProfileCommand}"
+                               Visibility="{Binding CanDeleteProfile, Converter={StaticResource BoolToVis}}"
+                               Margin="10,0,0,0"/>
+                </Grid>
+            </ui:CardControl>
+            
+            <!-- Create Profile Section -->
+            <ui:CardExpander Icon="AddCircle24" Header="Add New Profile" Margin="0,8,0,0" IsExpanded="False">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <ui:TextBox Text="{Binding NewProfileName, UpdateSourceTrigger=PropertyChanged}" 
+                                PlaceholderText="Process Name (e.g. code)"
+                                Icon="{ui:SymbolIcon Apps24}"/>
+                    
+                    <ui:Button Grid.Column="1" Margin="8,0,0,0"
+                               Icon="{ui:SymbolIcon TargetEdit20}"
+                               Command="{Binding PickProcessCommand}"
+                               CommandParameter="NewProfile"
+                               ToolTip="Pick from running process"/>
+
+                    <ui:Button Grid.Column="2" Margin="8,0,0,0"
+                               Content="Add Profile" 
+                               Appearance="Secondary" 
+                               Command="{Binding AddProfileCommand}"
+                               IsEnabled="{Binding IsProfileNameValid}"/>
+                </Grid>
+            </ui:CardExpander>
+        </StackPanel>
+
+        <!-- Slots List -->
+        <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Empty State -->
+            <StackPanel Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,32">
+                <StackPanel.Style>
+                    <Style TargetType="StackPanel">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding CurrentSlots.Count}" Value="0">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding CurrentSlots}" Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </StackPanel.Style>
+                <ui:SymbolIcon Symbol="DialPadOff24" FontSize="64" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Margin="0,0,0,16"/>
+                <TextBlock Text="No Slots Configured" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                <TextBlock Text="Add a slot below to start customizing this menu." Foreground="{DynamicResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center"/>
+            </StackPanel>
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,16,0">
+                <ScrollViewer.Style>
+                    <Style TargetType="ScrollViewer">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding CurrentSlots.Count}" Value="0">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding CurrentSlots}" Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ScrollViewer.Style>
+                <ItemsControl ItemsSource="{Binding CurrentSlots}" AlternationCount="2">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type models:PluginSlot}">
+                            <ui:CardExpander Margin="0,0,0,8" IsExpanded="False">
+                                <ui:CardExpander.Header>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Icon -->
+                                        <controls:JellyOrb IconKey="{Binding IconKey}" 
+                                                           Size="32" Width="32" Height="32" 
+                                                           IsTransparent="True"
+                                                           ShowActiveGlow="False"
+                                                           Margin="0,0,12,0"/>
+
+                                        <!-- Text Info -->
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Label}" FontWeight="SemiBold" FontSize="14"/>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding Slot, StringFormat='Slot {0}'}" 
+                                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
+                                                           FontSize="12" Margin="0,0,8,0"/>
+                                                <Border Background="{DynamicResource ControlFillColorSecondaryBrush}" CornerRadius="4" Padding="4,1">
+                                                    <TextBlock Text="{Binding TypeBadge}" FontSize="10" Foreground="{Binding TypeColor}"/>
+                                                </Border>
+                                            </StackPanel>
+                                        </StackPanel>
+                                        
+                                        <!-- Remove Button (Visible in Header) -->
+                                        <ui:Button Grid.Column="2"
+                                                   Appearance="Transparent"
+                                                   Icon="{ui:SymbolIcon Dismiss24}"
+                                                   Foreground="{DynamicResource PaletteRedBrush}"
+                                                   Command="{Binding DataContext.RemoveSlotCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                   CommandParameter="{Binding}"
+                                                   ToolTip="Remove Slot"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,8,0"/>
+                                    </Grid>
+                                </ui:CardExpander.Header>
+
+                                <!-- Expanded Content (Form) -->
+                                <StackPanel Margin="0,8,0,0">
+                                    <TextBlock Text="Label" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                    <ui:TextBox Text="{Binding Label}" PlaceholderText="Display Label" Margin="0,0,0,10"/>
+                                    
+                                    <!-- Dynamic Fields based on Type -->
+                                    <ContentPresenter Content="{Binding}" ContentTemplateSelector="{StaticResource SlotItemFieldSelector}"/>
+                                </StackPanel>
+                            </ui:CardExpander>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <!-- Footer: Add Slot Button -->
+            <Grid Grid.Row="1" Margin="0,16,0,0">
+                <ui:Button Content="Add Slot" 
+                           Appearance="Secondary"
+                           Icon="{ui:SymbolIcon Add24}"
+                           HorizontalAlignment="Stretch"
+                           Height="40"
+                           Click="AddSlotButton_Click"
+                           ContextMenu="{StaticResource AddSlotContextMenu}"/>
+            </Grid>
+        </Grid>
+    </Grid>
+</Page>

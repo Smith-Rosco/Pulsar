@@ -1,13 +1,16 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-// using System.Windows.Forms; // 不要引用这个！
 using Pulsar.Helpers;
+using Pulsar.Services.Interfaces;
+using Pulsar.Models;
+using Wpf.Ui.Controls;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Pulsar.Views.Dialogs
 {
-    public partial class IconPickerDialog : Window
+    public partial class IconPickerDialog : FluentWindow
     {
         public ObservableCollection<IconItem> FilteredIcons { get; set; }
         public string SelectedKey { get; private set; } = string.Empty;
@@ -15,6 +18,13 @@ namespace Pulsar.Views.Dialogs
         public IconPickerDialog(string initialKey = "")
         {
             InitializeComponent();
+            
+            // [Theme Isolation]
+            if (System.Windows.Application.Current is App app && app.Services != null)
+            {
+                var themeService = app.Services.GetService<IThemeService>();
+                themeService?.ApplyTheme(this, AppTheme.Dark, WindowBackdropType.Mica, updateGlobal: false);
+            }
 
             FilteredIcons = new ObservableCollection<IconItem>(GlyphData.CommonIcons);
             SelectedKey = initialKey;
@@ -26,7 +36,8 @@ namespace Pulsar.Views.Dialogs
 
         private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            var query = SearchBox.Text.ToLower().Trim();
+            if (sender is not System.Windows.Controls.TextBox textBox) return;
+            var query = textBox.Text.ToLower().Trim();
 
             FilteredIcons.Clear();
             var matches = string.IsNullOrEmpty(query)
@@ -41,7 +52,6 @@ namespace Pulsar.Views.Dialogs
 
         private void Icon_Click(object sender, RoutedEventArgs e)
         {
-            // [修复 1] 强制指定为 WPF 的 Button
             if (sender is System.Windows.Controls.Button btn && btn.Tag is string code)
             {
                 SelectedKey = code;
@@ -52,7 +62,6 @@ namespace Pulsar.Views.Dialogs
 
         private void BrowseFile_Click(object sender, RoutedEventArgs e)
         {
-            // [修复 2] 强制指定为 WPF (Microsoft.Win32) 的 OpenFileDialog
             var dialog = new Microsoft.Win32.OpenFileDialog
             {
                 Filter = "Executables (*.exe)|*.exe|Shortcuts (*.lnk)|*.lnk|All Files (*.*)|*.*",

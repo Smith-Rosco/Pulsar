@@ -1,0 +1,62 @@
+{
+  "$schema": "./profiles-schema.json",
+  "Settings": {
+    "CenterSlotBehavior": "MRU_Window",
+    "TriggerDistance": 100.0,
+    "LauncherTheme": "Dark",
+    "HoverScale": 1.2,
+    "Springiness": 6.0,
+    "MaxDisplacement": 20.0
+  },
+  "Profiles": {
+    "CHROME": {
+      "CommandMode": {
+        "Slot_1": {
+          "plugin": "com.pulsar.bookmarklet",
+          "action": "run",
+          "args": {
+            "scriptPath": "G:\\0_Playground\\Pulsar_Project\\Reference\\BookmarkletRunner\\test.js"
+          },
+          "label": "Test Bookmarklet",
+          "icon": "Browser"
+        },
+        "Slot_2": {
+          "plugin": "com.pulsar.winswitcher",
+          "action": "switch",
+          "args": {
+            "app": "EXCEL",
+            "path": "C:\\Program Files\\Microsoft Office\\root\\Office16\\EXCEL.EXE"
+          },
+          "label": "Excel",
+          "icon": "Excel"
+        }
+      }
+    },
+    "MSEDGE": {
+      "CommandMode": {
+        "Slot_1": {
+          "plugin": "com.pulsar.bookmarklet",
+          "action": "run",
+          "args": {
+            "scriptPath": "G:\\0_Playground\\Pulsar_Project\\Reference\\BookmarkletRunner\\test.js"
+          },
+          "label": "Run Script",
+          "icon": "Code"
+        }
+      }
+    },
+    "Global": {
+      "CommandMode": {
+        "Slot_5": {
+          "plugin": "com.pulsar.bookmarklet",
+          "action": "run",
+          "args": {
+            "scriptPath": "G:\\0_Playground\\Pulsar_Project\\Reference\\BookmarkletRunner\\test.js"
+          },
+          "label": "Universal Script",
+          "icon": "Star"
+        }
+      }
+    }
+  }
+}

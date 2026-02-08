@@ -1,190 +1,389 @@
-﻿// [Path]: Pulsar/Pulsar/ViewModels/SettingsViewModel.cs
-
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using Pulsar.Helpers;
-using Pulsar.Models;
-using Pulsar.Services;
-using Pulsar.Services.Interfaces;
-using Pulsar.Features.Pki.Models;
-using Pulsar.Features.Pki.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.IO;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
+using Pulsar.Core.Messages;
+using Pulsar.Features.Pki.Services;
+using Pulsar.Helpers;
+using Pulsar.Models;
+using Pulsar.Services;
+using Pulsar.Services.Interfaces;
+using Wpf.Ui.Controls;
 
 namespace Pulsar.ViewModels
 {
+    /// <summary>
+    /// Helper class for plugin type information in UI
+    /// </summary>
+    public class PluginTypeInfo
+    {
+        public string PluginId { get; }
+        public string DisplayName { get; }
+        public string Description { get; }
+        
+        public PluginTypeInfo(string id, string name, string desc)
+        {
+            PluginId = id;
+            DisplayName = name;
+            Description = desc;
+        }
+    }
+
+    /// <summary>
+    /// Enhanced ContextInfo with slot count display
+    /// </summary>
+    public partial class ContextInfo : ObservableObject
+    {
+        public string Key { get; }
+        public string DisplayName { get; }
+        public string Icon { get; }
+        public bool IsProfile { get; }
+
+        [ObservableProperty]
+        private int _slotCount;
+
+        public int TotalSlots { get; } = 8;
+        
+        // Return a list of booleans: true = occupied, false = empty
+        [ObservableProperty]
+        private ObservableCollection<bool> _visualSlots = new ObservableCollection<bool>();
+        
+        public string DisplayText => DisplayName; // Simplification as requested
+        
+        public ContextInfo(string key, string displayName, string icon, bool isProfile)
+        {
+            Key = key;
+            DisplayName = displayName;
+            Icon = icon;
+            IsProfile = isProfile;
+            SlotCount = 0;
+            // Initialize visual slots as all empty
+            for(int i=0; i<TotalSlots; i++) VisualSlots.Add(false);
+        }
+    }
+
     public partial class SettingsViewModel : ObservableObject
     {
         private readonly IConfigService _configService;
         private readonly IWindowService _windowService;
+        private readonly IThemeService _themeService;
         private readonly SecretRepository _secretRepo = new SecretRepository();
-        private AppConfig _config;
-
-        public ObservableCollection<NavMenuItem> NavItems { get; } = new();
+        private ProfilesConfig _config;
 
         [ObservableProperty]
-        [NotifyPropertyChangedFor(nameof(IsGeneralView))]
-        [NotifyPropertyChangedFor(nameof(IsEditorView))]
-        [NotifyPropertyChangedFor(nameof(EditorTitle))]
-        [NotifyPropertyChangedFor(nameof(EditorDescription))]
-        [NotifyPropertyChangedFor(nameof(CanDeleteProfile))]
-        [NotifyPropertyChangedFor(nameof(CanAddSecrets))] // [New] 关联更新
-        private NavMenuItem _selectedNavItem;
+        [NotifyPropertyChangedFor(nameof(IsSettingsView))]
+        [NotifyPropertyChangedFor(nameof(IsSlotsView))]
+        private string _currentView = "Settings";
 
-        public bool IsGeneralView => SelectedNavItem?.Type == NavType.General;
-        public bool IsEditorView => SelectedNavItem != null && SelectedNavItem.Type != NavType.General;
-        public bool CanDeleteProfile => SelectedNavItem?.Type == NavType.Profile;
+        public bool IsSettingsView => CurrentView == "Settings";
+        public bool IsSlotsView => CurrentView == "Slots";
 
-        // [New] 限制添加 Secret 的入口：仅 Global Command 或 Profile 页面允许
-        public bool CanAddSecrets => SelectedNavItem?.Type == NavType.Global || SelectedNavItem?.Type == NavType.Profile;
-
-        public string EditorTitle => SelectedNavItem?.Name ?? "Settings";
-        public string EditorDescription => SelectedNavItem?.Type switch
+        [RelayCommand]
+        public void SwitchView(string viewName)
         {
-            NavType.Launcher => "Global Window Switcher (Fixed 8 Slots). Defines what happens when you press Ctrl+Shift+Q.",
-            NavType.Global => "Fallback Commands. Executed when no specific profile matches the active window.",
-            NavType.Profile => $"Context Layer for '{SelectedNavItem.Name}'. Active when this program is in focus.",
-            _ => "General Application Settings"
-        };
+            if (CurrentView != viewName)
+            {
+                CurrentView = viewName;
+            }
+        }
+
+        public ObservableCollection<ContextInfo> AvailableContexts { get; } = new();
+
+        public ObservableCollection<PluginTypeInfo> AvailablePluginTypes { get; } = new();
 
         [ObservableProperty]
-        private string _statusMessage = "Ready";
+        [NotifyPropertyChangedFor(nameof(CanDeleteProfile))]
+        [NotifyPropertyChangedFor(nameof(CanAddSecrets))]
+        private ContextInfo? _currentContext;
+
+        public bool CanDeleteProfile => CurrentContext?.IsProfile == true;
+        public bool CanAddSecrets => CurrentContext?.Key != "Launcher";
 
         [ObservableProperty]
         private string _newProfileName = string.Empty;
 
-        private AppSettings _generalSettings;
-        public AppSettings GeneralSettings
+        [ObservableProperty]
+        private string _processedProfileName = string.Empty;
+
+        [ObservableProperty]
+        private bool _isProfileNameValid = true;
+
+        [ObservableProperty]
+        private string _profileNameValidationMessage = string.Empty;
+
+        private ProfileSettings _generalSettings;
+        public ProfileSettings GeneralSettings
         {
             get => _generalSettings;
             set => SetProperty(ref _generalSettings, value);
         }
 
         [ObservableProperty]
-        private ObservableCollection<GridItemBase> _currentSlots;
+        private ObservableCollection<PluginSlot> _currentSlots;
 
-        public SettingsViewModel(IConfigService configService, IWindowService windowService)
+        public SettingsViewModel(IConfigService configService, IWindowService windowService, IThemeService themeService)
         {
             _configService = configService;
             _windowService = windowService;
-            _config = new AppConfig();
+            _themeService = themeService;
+            _config = new ProfilesConfig();
             LoadSettings();
+        }
+
+        public async Task<ProfilesConfig> GetConfigAsync()
+        {
+             if (_config == null) _config = await _configService.LoadAsync();
+             return _config;
         }
 
         private async void LoadSettings()
         {
             _config = await _configService.LoadAsync();
             GeneralSettings = _config.Settings;
-            RefreshNavItems();
+            InitializePluginTypes();
+            RefreshContexts();
 
+            // Notify properties to trigger bindings/theme updates
             OnPropertyChanged(nameof(LauncherTheme));
             OnPropertyChanged(nameof(SettingsTheme));
+            OnPropertyChanged(nameof(SettingsThemeString));
+            
+            // [Cleanup] Theme application is now handled by the View (SettingsWindow.xaml.cs)
+            // System.Windows.Application.Current.Dispatcher.Invoke(() => 
+            // {
+            //      var win = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.DataContext == this);
+            //      if (win != null)
+            //      {
+            //          ThemeManager.ApplyTheme(win, SettingsTheme);
+            //      }
+            // });
         }
 
-        private void RefreshNavItems()
+        private void InitializePluginTypes()
         {
-            var previousSelection = SelectedNavItem?.Name;
-            var previousType = SelectedNavItem?.Type;
+            AvailablePluginTypes.Clear();
+            AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.winswitcher", "🚀 Window Switcher", "Switch to or launch applications"));
+            AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.command", "⚡ Command", "Run executable or script"));
+            AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.bookmarklet", "🔖 Bookmarklet", "Run JavaScript in browser"));
+            AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.vbarunner", "📊 VBA Runner", "Run VBA scripts in Excel/WPS"));
+            AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.pki", "🔒 Secret (PKI)", "Auto-fill encrypted credentials"));
+        }
 
-            NavItems.Clear();
+        private void RefreshContexts()
+        {
+            var previousKey = CurrentContext?.Key;
 
-            NavItems.Add(new NavMenuItem("General Settings", NavType.General, "⚙️"));
-            NavItems.Add(new NavMenuItem("Window Switcher", NavType.Launcher, "🚀"));
-            NavItems.Add(new NavMenuItem("Global Commands", NavType.Global, "🌐"));
+            AvailableContexts.Clear();
+            
+            var launcherCtx = new ContextInfo("Launcher", "Launcher", "\uE768", false);
+            UpdateContextStats(launcherCtx);
+            AvailableContexts.Add(launcherCtx);
+            
+            var globalCtx = new ContextInfo("Global", "Global", "\uE774", false);
+            UpdateContextStats(globalCtx);
+            AvailableContexts.Add(globalCtx);
 
             if (_config.Profiles != null)
             {
-                foreach (var profileKey in _config.Profiles.Keys.OrderBy(k => k))
+                foreach (var profileKey in _config.Profiles.Keys.Where(k => k != "Global").OrderBy(k => k))
                 {
-                    NavItems.Add(new NavMenuItem(profileKey, NavType.Profile, "⚡"));
+                    var profileCtx = new ContextInfo(profileKey, profileKey, "\uE945", true);
+                    UpdateContextStats(profileCtx);
+                    AvailableContexts.Add(profileCtx);
                 }
             }
 
-            var target = NavItems.FirstOrDefault(n => n.Name == previousSelection && n.Type == previousType)
-                         ?? NavItems.FirstOrDefault();
-            SelectedNavItem = target;
+            var target = AvailableContexts.FirstOrDefault(c => c.Key == previousKey)
+                         ?? AvailableContexts.FirstOrDefault();
+            CurrentContext = target;
         }
 
-        partial void OnSelectedNavItemChanged(NavMenuItem value)
+        private void UpdateContextStats(ContextInfo ctx)
+        {
+            if (_config?.Profiles == null) return;
+            
+            Dictionary<string, PluginSlot>? slots = null;
+
+            if (ctx.Key == "Launcher")
+            {
+                if (_config.Profiles.TryGetValue("Global", out var p)) slots = p.SwitchMode;
+            }
+            else if (ctx.Key == "Global")
+            {
+                if (_config.Profiles.TryGetValue("Global", out var p)) slots = p.CommandMode;
+            }
+            else
+            {
+                if (_config.Profiles.TryGetValue(ctx.Key, out var p)) slots = p.CommandMode;
+            }
+
+            if (slots != null)
+            {
+                ctx.SlotCount = slots.Count;
+                ctx.VisualSlots.Clear();
+                System.Diagnostics.Debug.WriteLine($"[UpdateContextStats] Context={ctx.Key}, SlotCount={slots.Count}");
+                // Check slots 1 to 8
+                for (int i = 1; i <= 8; i++)
+                {
+                    bool isOccupied = slots.ContainsKey($"Slot_{i}");
+                    ctx.VisualSlots.Add(isOccupied);
+                    System.Diagnostics.Debug.WriteLine($"[UpdateContextStats] Slot {i} occupied={isOccupied}");
+                }
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"[UpdateContextStats] Context={ctx.Key}, No Slots Found");
+                ctx.SlotCount = 0;
+                ctx.VisualSlots.Clear();
+                for(int i=0; i<8; i++) ctx.VisualSlots.Add(false);
+            }
+        }
+
+        partial void OnCurrentContextChanged(ContextInfo? value)
         {
             if (value == null || _config == null) return;
-
-            // [New] 通知 Command 状态变化
             AddSecretCommand.NotifyCanExecuteChanged();
 
-            if (value.Type == NavType.General)
+            List<PluginSlot> sourceList = new List<PluginSlot>();
+
+            if (value.Key == "Launcher")
             {
-                CurrentSlots = null;
-                return;
+                if (_config.Profiles.TryGetValue("Global", out var globalProfile) && globalProfile.SwitchMode != null)
+                {
+                    sourceList = globalProfile.GetSlots(false);
+                }
+            }
+            else if (value.Key == "Global")
+            {
+                 if (_config.Profiles.TryGetValue("Global", out var globalProfile) && globalProfile.CommandMode != null)
+                {
+                    sourceList = globalProfile.GetSlots(true);
+                }
+            }
+            else
+            {
+                if (_config.Profiles.TryGetValue(value.Key, out var profile) && profile.CommandMode != null)
+                {
+                    sourceList = profile.GetSlots(true);
+                }
             }
 
-            List<GridItemBase> sourceList = null;
-            switch (value.Type)
-            {
-                case NavType.Launcher:
-                    sourceList = _config.Switcher;
-                    break;
-                case NavType.Global:
-                    sourceList = _config.Global;
-                    break;
-                case NavType.Profile:
-                    if (_config.Profiles.ContainsKey(value.Name))
-                    {
-                        sourceList = _config.Profiles[value.Name];
-                    }
-                    break;
-            }
-
-            CurrentSlots = sourceList != null
-                ? new ObservableCollection<GridItemBase>(sourceList)
-                : new ObservableCollection<GridItemBase>();
+            CurrentSlots = new ObservableCollection<PluginSlot>(sourceList.OrderBy(s => s.Slot));
         }
 
         [RelayCommand]
-        public void AddSlot()
+        public void AddSlotOfType(string pluginId)
         {
             if (CurrentSlots == null || CurrentSlots.Count >= 8)
             {
-                StatusMessage = "Max 8 slots allowed.";
+                SendNotification("Limit Reached", "Max 8 slots allowed.", ControlAppearance.Caution);
                 return;
             }
 
             int nextSlot = 1;
             var existingSlots = CurrentSlots.Select(s => s.Slot).ToHashSet();
             while (existingSlots.Contains(nextSlot)) nextSlot++;
-            if (nextSlot > 8) { StatusMessage = "No slots available."; return; }
+            if (nextSlot > 8) { SendNotification("Limit Reached", "No slots available.", ControlAppearance.Caution); return; }
 
-            GridItemBase newItem;
-            if (SelectedNavItem.Type == NavType.Launcher)
+            var newItem = new PluginSlot { Slot = nextSlot };
+
+            switch (pluginId)
             {
-                newItem = new LauncherItem { Slot = nextSlot, Label = "New App", ProcessName = "app.exe" };
-            }
-            else
-            {
-                newItem = new CommandItem { Slot = nextSlot, Label = "Action", ExePath = "cmd.exe", Arguments = "" };
+                case "com.pulsar.winswitcher":
+                    newItem.PluginId = "com.pulsar.winswitcher";
+                    newItem.Action = "activate";
+                    newItem.Args["app"] = "chrome";
+                    newItem.Label = "New App";
+                    newItem.IconKey = "E710";
+                    break;
+
+                case "com.pulsar.command":
+                    newItem.PluginId = "com.pulsar.command";
+                    newItem.Action = "run";
+                    newItem.Args["path"] = "cmd.exe";
+                    newItem.Label = "New Command";
+                    newItem.IconKey = "E756";
+                    break;
+
+                case "com.pulsar.bookmarklet":
+                    newItem.PluginId = "com.pulsar.bookmarklet";
+                    newItem.Action = "run";
+                    newItem.Args["scriptPath"] = "%APPDATA%\\Pulsar\\Scripts\\example.js";
+                    newItem.Label = "New Script";
+                    newItem.IconKey = "🔖";
+                    break;
+
+                case "com.pulsar.vbarunner":
+                    newItem.PluginId = "com.pulsar.vbarunner";
+                    newItem.Action = "run";
+                    newItem.Args["scriptPath"] = "%USERPROFILE%\\Documents\\Pulsar\\Scripts\\example.txt";
+                    newItem.Label = "New VBA Script";
+                    newItem.IconKey = "📊";
+                    break;
+
+                case "com.pulsar.pki":
+                    // Call existing AddSecret logic
+                    AddSecret();
+                    return;
+
+                default:
+                    SendNotification("Error", $"Unknown plugin type: {pluginId}", ControlAppearance.Danger);
+                    return;
             }
 
             CurrentSlots.Add(newItem);
-            StatusMessage = "Slot added.";
+            
+            // [Fix] Update UI stats
+            // We need to persist changes to _config temporarily so stats update works, 
+            // OR update stats manually. Since UpdateContextStats reads from _config, we must sync properly.
+            // But CurrentSlots IS disconnected from _config until Save() is called.
+            // So we should manually update the visual stats for the CURRENT context.
+            if (CurrentContext != null)
+            {
+                CurrentContext.SlotCount = CurrentSlots.Count;
+                CurrentContext.VisualSlots.Clear();
+                for (int i = 1; i <= 8; i++)
+                {
+                    bool isOccupied = CurrentSlots.Any(s => s.Slot == i);
+                    CurrentContext.VisualSlots.Add(isOccupied);
+                }
+            }
+
+            SendNotification("Success", "Slot added.", ControlAppearance.Success);
         }
 
-        // [Updated] 添加加密凭据 (受 CanAddSecrets 限制)
+        [RelayCommand]
+        public void AddSlot()
+        {
+            // Keep legacy AddSlot for backwards compatibility
+            // Defaults to WinSwitcher or Command based on context
+            if (CurrentContext?.Key == "Launcher")
+            {
+                AddSlotOfType("com.pulsar.winswitcher");
+            }
+            else
+            {
+                AddSlotOfType("com.pulsar.command");
+            }
+        }
+
         [RelayCommand(CanExecute = nameof(CanAddSecrets))]
         public void AddSecret()
         {
             if (CurrentSlots == null || CurrentSlots.Count >= 8)
             {
-                StatusMessage = "Max 8 slots allowed.";
+                SendNotification("Limit Reached", "Max 8 slots allowed.", ControlAppearance.Caution);
                 return;
             }
 
             var dialog = new Views.Dialogs.QuickSecretsDialog(_windowService);
-            ThemeManager.ApplyTheme(dialog, SettingsTheme);
+            _themeService.ApplyTheme(dialog, SettingsTheme, WindowBackdropType.None, updateGlobal: false);
             dialog.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
 
             if (dialog.ShowDialog() == true)
@@ -194,187 +393,272 @@ namespace Pulsar.ViewModels
                 while (existingSlots.Contains(nextSlot)) nextSlot++;
                 if (nextSlot > 8) return;
 
-                var newItem = new SecretItem
+                var secretId = Guid.NewGuid();
+                var payload = new Features.Pki.Models.SecretPayload 
+                { 
+                    Account = dialog.ResultAccount, 
+                    EncryptedData = dialog.ResultEncryptedData 
+                };
+                _pendingSecrets[secretId] = payload;
+
+                var newItem = new PluginSlot
                 {
                     Slot = nextSlot,
+                    PluginId = "com.pulsar.pki",
+                    Action = "fill",
                     Label = dialog.ResultLabel,
-                    TargetProcessName = dialog.ResultProcess,
-                    Account = dialog.ResultAccount,
-                    EncryptedData = dialog.ResultEncryptedData,
-                    AutoEnter = dialog.ResultAutoEnter,
-                    IconKey = "🔒"
+                    IconKey = "🔒",
+                    Args = new Dictionary<string, string>
+                    {
+                        ["secretId"] = secretId.ToString(),
+                        ["autoEnter"] = dialog.ResultAutoEnter.ToString()
+                    }
                 };
 
                 CurrentSlots.Add(newItem);
-                StatusMessage = "Secret added to vault.";
+                SendNotification("Success", "Secret added (pending save).", ControlAppearance.Success);
             }
         }
 
-        // [New] 编辑加密凭据
+        private Dictionary<Guid, Features.Pki.Models.SecretPayload> _pendingSecrets = new();
+
         [RelayCommand]
-        public void EditSecret(SecretItem secret)
+        public async Task EditSecret(PluginSlot slot)
         {
-            if (secret == null) return;
+            if (slot == null || slot.PluginId != "com.pulsar.pki") return;
+
+            if (!slot.Args.TryGetValue("secretId", out var secretIdStr) || !Guid.TryParse(secretIdStr, out var secretId))
+            {
+                SendNotification("Error", "Invalid secret ID.", ControlAppearance.Danger);
+                return;
+            }
+
+            if (!_pendingSecrets.TryGetValue(secretId, out var payload))
+            {
+                var existingSecrets = await _secretRepo.LoadAsync();
+                existingSecrets.TryGetValue(secretId, out payload);
+            }
+
+            if (payload == null) 
+            {
+                SendNotification("Error", "Secret data not found.", ControlAppearance.Danger);
+                return;
+            }
 
             var dialog = new Views.Dialogs.QuickSecretsDialog(_windowService);
-            ThemeManager.ApplyTheme(dialog, SettingsTheme);
+            _themeService.ApplyTheme(dialog, SettingsTheme, WindowBackdropType.None, updateGlobal: false);
             dialog.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
 
-            // [Key] 加载现有数据进入编辑模式
-            dialog.LoadForEdit(secret);
+            bool autoEnter = slot.Args.TryGetValue("autoEnter", out var ae) && bool.Parse(ae);
+            string processName = CurrentContext?.Key == "Global" ? "" : CurrentContext?.Key ?? "";
+            
+            dialog.LoadForEdit(slot.Label, processName, payload.Account, payload.EncryptedData, autoEnter);
 
             if (dialog.ShowDialog() == true)
             {
-                // 更新现有对象 (UI 会自动刷新)
-                secret.Label = dialog.ResultLabel;
-                secret.TargetProcessName = dialog.ResultProcess;
-                secret.Account = dialog.ResultAccount;
-                secret.EncryptedData = dialog.ResultEncryptedData; // 可能是新的，也可能是旧的
-                secret.AutoEnter = dialog.ResultAutoEnter;
+                slot.Label = dialog.ResultLabel;
+                slot.Args["autoEnter"] = dialog.ResultAutoEnter.ToString();
+                
+                payload.Account = dialog.ResultAccount;
+                payload.EncryptedData = dialog.ResultEncryptedData;
+                _pendingSecrets[secretId] = payload;
 
-                StatusMessage = "Secret updated.";
+                SendNotification("Success", "Secret updated.", ControlAppearance.Success);
             }
         }
 
         [RelayCommand]
-        public void RemoveSlot(GridItemBase item)
+        public void RemoveSlot(PluginSlot item)
         {
-            if (CurrentSlots != null && CurrentSlots.Contains(item))
+            if (CurrentSlots == null || !CurrentSlots.Contains(item)) return;
+            
+            // Show confirmation dialog
+            var result = System.Windows.MessageBox.Show(
+                $"Are you sure you want to remove '{item.Label}' from Slot {item.Slot}?",
+                "Confirm Deletion",
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Question);
+            
+            if (result == System.Windows.MessageBoxResult.Yes)
             {
                 CurrentSlots.Remove(item);
-                StatusMessage = "Slot removed.";
+                
+                // [Fix] Update visual stats
+                if (CurrentContext != null)
+                {
+                    CurrentContext.SlotCount = CurrentSlots.Count;
+                    CurrentContext.VisualSlots.Clear();
+                    for (int i = 1; i <= 8; i++)
+                    {
+                        bool isOccupied = CurrentSlots.Any(s => s.Slot == i);
+                        CurrentContext.VisualSlots.Add(isOccupied);
+                    }
+                }
+
+                SendNotification("Deleted", "Slot removed.", ControlAppearance.Info);
             }
         }
-
+        
         [RelayCommand]
         public void PickProcess(object parameter)
         {
-            var dialog = new Views.Dialogs.ProcessPickerDialog(_windowService);
-            ThemeManager.ApplyTheme(dialog, SettingsTheme);
-            dialog.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
+             var dialog = new Views.Dialogs.ProcessPickerDialog(_windowService);
+             _themeService.ApplyTheme(dialog, SettingsTheme, WindowBackdropType.None, updateGlobal: false);
+             dialog.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
 
-            if (dialog.ShowDialog() == true && dialog.SelectedProcess != null)
+             if (dialog.ShowDialog() == true && dialog.SelectedProcess != null)
+             {
+                 var selected = dialog.SelectedProcess;
+                 string cachedIconPath = null;
+                 if (selected.AppIcon != null)
+                 {
+                     cachedIconPath = IconHelper.SaveIconToCache(selected.AppIcon, selected.ProcessName);
+                 }
+                 
+                 if (parameter is PluginSlot slot)
+                 {
+                     if (slot.PluginId == "com.pulsar.winswitcher")
+                     {
+                         slot.Args["app"] = selected.ProcessName;
+                         slot.Args["path"] = selected.ExePath;
+                         if (string.IsNullOrWhiteSpace(slot.Label) || slot.Label == "New App")
+                             slot.Label = selected.Title;
+                     }
+                     else if (slot.PluginId == "com.pulsar.command")
+                     {
+                         slot.Args["path"] = selected.ExePath;
+                         if (string.IsNullOrWhiteSpace(slot.Label) || slot.Label == "New Cmd")
+                             slot.Label = selected.Title;
+                     }
+                     
+                     if (!string.IsNullOrEmpty(cachedIconPath)) slot.IconKey = cachedIconPath;
+                 }
+                 else if (parameter is string str && str == "NewProfile")
+                 {
+                     NewProfileName = selected.ProcessName;
+                 }
+              }
+         }
+        
+        // 监听 NewProfileName 变化，实时验证和预览
+        partial void OnNewProfileNameChanged(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
             {
-                var selected = dialog.SelectedProcess;
-                string cachedIconPath = null;
-                if (selected.AppIcon != null)
-                {
-                    cachedIconPath = IconHelper.SaveIconToCache(selected.AppIcon, selected.ProcessName);
-                }
-
-                if (parameter is LauncherItem launcher)
-                {
-                    launcher.ProcessName = selected.ProcessName;
-                    launcher.ExePath = selected.ExePath;
-                    if (string.IsNullOrWhiteSpace(launcher.Label) || launcher.Label == "New App")
-                        launcher.Label = selected.Title;
-                    if (!string.IsNullOrEmpty(cachedIconPath)) launcher.IconKey = cachedIconPath;
-                }
-                else if (parameter is CommandItem command)
-                {
-                    command.ExePath = selected.ExePath;
-                    if (string.IsNullOrWhiteSpace(command.Label) || command.Label == "Action")
-                        command.Label = selected.Title;
-                    if (!string.IsNullOrEmpty(cachedIconPath)) command.IconKey = cachedIconPath;
-                }
-                else if (parameter is string str && str == "NewProfile")
-                {
-                    NewProfileName = selected.ProcessName;
-                }
+                ProcessedProfileName = string.Empty;
+                IsProfileNameValid = true;
+                ProfileNameValidationMessage = string.Empty;
+                return;
+            }
+            
+            // 预览处理结果
+            var processed = value.Trim().ToUpperInvariant();
+            if (processed.EndsWith(".EXE"))
+                processed = processed.Substring(0, processed.Length - 4);
+            
+            ProcessedProfileName = processed;
+            
+            // 验证重复
+            if (_config.Profiles.ContainsKey(processed))
+            {
+                IsProfileNameValid = false;
+                ProfileNameValidationMessage = $"Profile '{processed}' already exists";
+            }
+            else
+            {
+                IsProfileNameValid = true;
+                ProfileNameValidationMessage = string.Empty;
             }
         }
-
+        
         [RelayCommand]
         public void AddProfile()
         {
             if (string.IsNullOrWhiteSpace(NewProfileName)) return;
-            var processName = NewProfileName.Trim().ToLower();
-
-            if (processName.EndsWith(".exe"))
+            var processName = NewProfileName.Trim().ToUpperInvariant();
+            
+            if (processName.EndsWith(".EXE"))
             {
                 processName = processName.Substring(0, processName.Length - 4);
             }
 
             if (_config.Profiles.ContainsKey(processName))
             {
-                StatusMessage = $"Profile '{processName}' already exists.";
+                SendNotification("Error", $"Profile '{processName}' already exists.", ControlAppearance.Danger);
                 return;
             }
 
-            _config.Profiles[processName] = new List<GridItemBase>();
-            RefreshNavItems();
-            SelectedNavItem = NavItems.FirstOrDefault(n => n.Name == processName && n.Type == NavType.Profile);
+            _config.Profiles[processName] = new ProcessProfile 
+            { 
+                CommandMode = new Dictionary<string, PluginSlot>() 
+            };
+            RefreshContexts();
+            CurrentContext = AvailableContexts.FirstOrDefault(c => c.Key == processName);
             NewProfileName = string.Empty;
-            StatusMessage = $"Profile '{processName}' created.";
+            SendNotification("Success", $"Profile '{processName}' created.", ControlAppearance.Success);
         }
 
         [RelayCommand]
         public void DeleteProfile()
         {
-            if (SelectedNavItem?.Type != NavType.Profile) return;
-            var profileName = SelectedNavItem.Name;
+            if (CurrentContext?.IsProfile != true) return;
+            var profileName = CurrentContext.Key;
 
             if (_config.Profiles.Remove(profileName))
             {
-                StatusMessage = $"Profile '{profileName}' deleted.";
-                RefreshNavItems();
+                SendNotification("Deleted", $"Profile '{profileName}' deleted.", ControlAppearance.Info);
+                RefreshContexts();
             }
         }
-
+        
         [RelayCommand]
         public async Task Save()
         {
             if (_config == null) return;
-
-            // 1. 同步当前列表到 Config 对象
-            if (IsEditorView && CurrentSlots != null)
+            
+            if (IsSlotsView && CurrentSlots != null && CurrentContext != null)
             {
-                var updatedList = CurrentSlots.ToList();
-                switch (SelectedNavItem.Type)
+                var dict = new Dictionary<string, PluginSlot>();
+                foreach (var slot in CurrentSlots)
                 {
-                    case NavType.Launcher: _config.Switcher = updatedList; break;
-                    case NavType.Global: _config.Global = updatedList; break;
-                    case NavType.Profile:
-                        if (_config.Profiles.ContainsKey(SelectedNavItem.Name))
-                            _config.Profiles[SelectedNavItem.Name] = updatedList;
-                        break;
+                    dict[$"Slot_{slot.Slot}"] = slot;
+                }
+                
+                if (CurrentContext.Key == "Launcher")
+                {
+                     if (!_config.Profiles.ContainsKey("Global")) _config.Profiles["Global"] = new ProcessProfile();
+                     _config.Profiles["Global"].SwitchMode = dict;
+                }
+                else if (CurrentContext.Key == "Global")
+                {
+                     if (!_config.Profiles.ContainsKey("Global")) _config.Profiles["Global"] = new ProcessProfile();
+                     _config.Profiles["Global"].CommandMode = dict;
+                }
+                else
+                {
+                     if (_config.Profiles.TryGetValue(CurrentContext.Key, out var profile))
+                     {
+                         profile.CommandMode = dict;
+                     }
                 }
             }
-
-            // 2. 分离存储敏感数据
-            var allSecrets = new Dictionary<Guid, SecretPayload>();
-            void ExtractSecrets(IEnumerable<GridItemBase> items)
+            
+            var allSecrets = await _secretRepo.LoadAsync();
+            foreach (var kvp in _pendingSecrets)
             {
-                if (items == null) return;
-                foreach (var item in items)
-                {
-                    if (item is SecretItem secret)
-                    {
-                        if (secret.Id == Guid.Empty) secret.Id = Guid.NewGuid();
-                        allSecrets[secret.Id] = new SecretPayload
-                        {
-                            Account = secret.Account,
-                            EncryptedData = secret.EncryptedData
-                        };
-                    }
-                }
+                allSecrets[kvp.Key] = kvp.Value;
             }
-
-            ExtractSecrets(_config.Switcher);
-            ExtractSecrets(_config.Global);
-            foreach (var list in _config.Profiles.Values) ExtractSecrets(list);
-
-            // 3. 并行写入磁盘 (Safe Order)
+            
             await _secretRepo.SaveAsync(allSecrets);
+            _pendingSecrets.Clear();
+            
             await _configService.SaveAsync(_config);
-
-            StatusMessage = "Config & Vault Saved!";
-            await Task.Delay(2000);
-            StatusMessage = "Ready";
+            
+            SendNotification("Saved", "Configuration saved successfully.", ControlAppearance.Success);
         }
-
+        
         [RelayCommand]
-        public void PickIcon(GridItemBase item)
+        public void PickIcon(PluginSlot item)
         {
             if (item == null) return;
             var dialog = new Views.Dialogs.IconPickerDialog(item.IconKey);
@@ -385,20 +669,92 @@ namespace Pulsar.ViewModels
             }
         }
 
+        [RelayCommand]
+        public void PickVbaScriptFile(PluginSlot item)
+        {
+            if (item == null) return;
+            
+            var dialog = new Microsoft.Win32.OpenFileDialog();
+            dialog.Filter = "VBA Scripts (*.txt;*.vbs;*.bas)|*.txt;*.vbs;*.bas|All Files (*.*)|*.*";
+            dialog.Title = "Select VBA Script";
+            
+            if (item.Args.TryGetValue("scriptPath", out var currentPath) && !string.IsNullOrEmpty(currentPath))
+            {
+                var expandedPath = Environment.ExpandEnvironmentVariables(currentPath);
+                try 
+                {
+                    var dir = System.IO.Path.GetDirectoryName(expandedPath);
+                    if (!string.IsNullOrEmpty(dir) && System.IO.Directory.Exists(dir))
+                        dialog.InitialDirectory = dir;
+                }
+                catch {}
+            }
+
+            if (dialog.ShowDialog() == true)
+            {
+                item.Args["scriptPath"] = dialog.FileName;
+                item["scriptPath"] = dialog.FileName; // Trigger update
+            }
+        }
+
+        [RelayCommand]
+        public void PickScriptFile(PluginSlot item)
+        {
+            if (item == null) return;
+            
+            var dialog = new Microsoft.Win32.OpenFileDialog();
+            dialog.Filter = "JavaScript Files (*.js)|*.js|All Files (*.*)|*.*";
+            dialog.Title = "Select Bookmarklet Script";
+            
+            // Try to set initial directory if current path is valid
+            if (item.Args.TryGetValue("scriptPath", out var currentPath) && !string.IsNullOrEmpty(currentPath))
+            {
+                var expandedPath = Environment.ExpandEnvironmentVariables(currentPath);
+                try 
+                {
+                    var dir = System.IO.Path.GetDirectoryName(expandedPath);
+                    if (!string.IsNullOrEmpty(dir) && System.IO.Directory.Exists(dir))
+                        dialog.InitialDirectory = dir;
+                }
+                catch {}
+            }
+
+            if (dialog.ShowDialog() == true)
+            {
+                item.Args["scriptPath"] = dialog.FileName;
+                // Force UI update if needed, though Dictionary binding might handle it or require notification
+                // Since Args is a Dictionary, direct binding to [key] works but UI might not update if we just set the value.
+                // The indexer in PluginSlot raises property change, so:
+                item["scriptPath"] = dialog.FileName; 
+            }
+        }
+
         public AppTheme LauncherTheme
         {
-            get => _config.Settings.LauncherTheme;
+            get => _config.Settings.LauncherThemeEnum;
             set
             {
-                if (_config.Settings.LauncherTheme != value)
-                {
-                    _config.Settings.LauncherTheme = value;
-                    OnPropertyChanged();
-                }
+                _config.Settings.LauncherTheme = value.ToString();
+                OnPropertyChanged();
             }
         }
 
         public AppTheme SettingsTheme
+        {
+            get => _config.Settings.SettingsThemeEnum;
+            set
+            {
+                if (_config.Settings.SettingsThemeEnum != value)
+                {
+                    _config.Settings.SettingsTheme = value.ToString();
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(SettingsThemeString));
+                    ApplySettingsTheme(value);
+                }
+            }
+        }
+
+        public string SettingsThemeString
         {
             get => _config.Settings.SettingsTheme;
             set
@@ -407,34 +763,34 @@ namespace Pulsar.ViewModels
                 {
                     _config.Settings.SettingsTheme = value;
                     OnPropertyChanged();
-                    ApplySettingsTheme();
+                    OnPropertyChanged(nameof(SettingsTheme));
+                    
+                    if (Enum.TryParse<AppTheme>(value, true, out var themeEnum))
+                    {
+                        ApplySettingsTheme(themeEnum);
+                    }
                 }
             }
         }
 
-        private void ApplySettingsTheme()
+        private void ApplySettingsTheme(AppTheme theme)
         {
-            var window = System.Windows.Application.Current.Windows.OfType<Views.SettingsWindow>().FirstOrDefault();
-            if (window != null)
+            // Apply theme immediately to the active window (SettingsWindow)
+            System.Windows.Application.Current.Dispatcher.Invoke(() => 
             {
-                ThemeManager.ApplyTheme(window, SettingsTheme);
-            }
+                var win = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.DataContext == this);
+                if (win != null)
+                {
+                    // [Fix] Settings window triggers global update
+                    _themeService.ApplyTheme(win, theme, WindowBackdropType.Mica, updateGlobal: true);
+                }
+            });
         }
-    }
 
-    public enum NavType { General, Launcher, Global, Profile }
 
-    public class NavMenuItem
-    {
-        public string Name { get; }
-        public NavType Type { get; }
-        public string Icon { get; }
-
-        public NavMenuItem(string name, NavType type, string icon)
+        private void SendNotification(string title, string message, ControlAppearance appearance = ControlAppearance.Secondary)
         {
-            Name = name;
-            Type = type;
-            Icon = icon;
+            WeakReferenceMessenger.Default.Send(new SnackbarMessage(title, message, appearance));
         }
     }
 }

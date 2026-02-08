@@ -14,7 +14,8 @@
         Topmost="True"
         ShowInTaskbar="False"
         ResizeMode="NoResize"
-        x:Name="RootWindow">
+        x:Name="RootWindow"
+        Style="{x:Null}">
 
     <Grid>
         <Canvas x:Name="MenuCanvas"
@@ -39,6 +40,7 @@
                             IconKey="{Binding IconKey}"
                             Label="{Binding Label}"
                             IsActive="{Binding IsActive}"
+                            IsRecommended="{Binding IsRecommended}"
                             Size="{Binding Size}"/>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
@@ -50,6 +52,7 @@
                 Canvas.Top="{Binding Y}"
                 Size="{Binding Size}"
                 IsActive="{Binding IsActive}"
+                IsRecommended="{Binding IsRecommended}"
                 Label="{Binding Label}"
                 IconKey="{Binding IconKey}"/>
 

@@ -1,17 +1,18 @@
-﻿<Window x:Class="Pulsar.Views.Dialogs.IconPickerDialog"
+<ui:FluentWindow x:Class="Pulsar.Views.Dialogs.IconPickerDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="clr-namespace:Pulsar.Views.Controls"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         mc:Ignorable="d"
-        Title="Select Icon" Height="500" Width="700"
+        Title="Select Icon" Height="550" Width="720"
         WindowStartupLocation="CenterOwner"
-        Background="#1E1E1E" Foreground="White"
-        WindowStyle="None" ResizeMode="NoResize"
-        BorderBrush="#007ACC" BorderThickness="1">
+        ResizeMode="NoResize"
+        ExtendsContentIntoTitleBar="True"
+        WindowBackdropType="Mica">
 
-    <Grid Margin="20">
+    <Grid Margin="20,0,20,20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -19,7 +20,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="Select Icon" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,15"/>
+        <ui:TitleBar Title="Select Icon" Grid.Row="0"/>
 
         <Grid Grid.Row="1" Margin="0,0,0,15">
             <Grid.ColumnDefinitions>
@@ -27,17 +28,20 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <TextBox x:Name="SearchBox" 
-                     TextChanged="SearchBox_TextChanged"
-                     ToolTip="Filter system icons..." 
-                     Padding="8,5" Background="#2D2D30" BorderThickness="0" Foreground="White"/>
+            <ui:TextBox x:Name="SearchBox" 
+                        TextChanged="SearchBox_TextChanged"
+                        PlaceholderText="Filter system icons..." 
+                        Icon="{ui:SymbolIcon Search24}"/>
 
-            <Button Grid.Column="1" Click="BrowseFile_Click" Margin="10,0,0,0"
-                    Content="📂 Browse .exe/.lnk" 
-                    Padding="10,5" Background="#333" Foreground="White" BorderThickness="0"/>
+            <ui:Button Grid.Column="1" Click="BrowseFile_Click" Margin="10,0,0,0"
+                       Icon="{ui:SymbolIcon FolderOpen24}"
+                       Content="Browse .exe/.lnk" 
+                       Appearance="Secondary"/>
         </Grid>
 
-        <Border Grid.Row="2" Background="#252526" CornerRadius="4" Padding="10">
+        <Border Grid.Row="2" Background="{DynamicResource ControlFillColorDefaultBrush}" 
+                BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1"
+                CornerRadius="4" Padding="10">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <ItemsControl x:Name="IconList" ItemsSource="{Binding FilteredIcons}">
                     <ItemsControl.ItemsPanel>
@@ -47,28 +51,17 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Button Click="Icon_Click" Tag="{Binding Code}"
-                                    Background="Transparent" BorderThickness="0" Margin="2" Padding="5"
-                                    ToolTip="{Binding Name}">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" CornerRadius="4">
-                                            <StackPanel>
-                                                <TextBlock Text="{Binding Character}" 
-                                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" 
-                                                           FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,5"
-                                                           Foreground="White"/>
-                                            </StackPanel>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="BtnBorder" Property="Background" Value="#007ACC"/>
-                                                <Setter Property="Cursor" Value="Hand"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
+                            <ui:Button Click="Icon_Click" Tag="{Binding Code}"
+                                       Appearance="Transparent" Padding="5" Margin="2"
+                                       ToolTip="{Binding Name}"
+                                       Height="48" Width="48">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Character}" 
+                                               FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" 
+                                               FontSize="24" HorizontalAlignment="Center"
+                                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                                </StackPanel>
+                            </ui:Button>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
@@ -77,17 +70,17 @@
 
         <Grid Grid.Row="3" Margin="0,15,0,0">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="Selected:" Foreground="#888" Margin="0,0,10,0"/>
+                <TextBlock Text="Selected:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,10,0"/>
                 <controls:JellyOrb x:Name="PreviewOrb" Size="30" IsActive="False" Margin="0,0,10,0"/>
                 <TextBlock x:Name="ResultText" Text="{Binding SelectedKey}" FontWeight="Bold" VerticalAlignment="Center"/>
             </StackPanel>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Cancel" IsCancel="True" Click="Cancel_Click"
-                        Width="80" Padding="5" Margin="0,0,10,0" Background="#333" Foreground="White" BorderThickness="0"/>
-                <Button Content="Select" IsDefault="True" Click="Select_Click"
-                        Width="80" Padding="5" Background="#007ACC" Foreground="White" BorderThickness="0"/>
+                <ui:Button Content="Cancel" IsCancel="True" Click="Cancel_Click"
+                           Width="80" Appearance="Secondary" Margin="0,0,10,0"/>
+                <ui:Button Content="Select" IsDefault="True" Click="Select_Click"
+                           Width="80" Appearance="Primary"/>
             </StackPanel>
         </Grid>
     </Grid>
-</Window>
+</ui:FluentWindow>

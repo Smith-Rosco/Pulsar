@@ -1,10 +1,6 @@
-﻿// [Path]: Pulsar/Pulsar/App.xaml.cs
-
 using Microsoft.Extensions.DependencyInjection;
-using Pulsar.Core.Handlers;
-using Pulsar.Core.Interfaces;
+using Pulsar.Core.Plugin;
 using Pulsar.Features.Pki;
-using Pulsar.Features.Pki.Models;
 using Pulsar.Features.Pki.Services;
 using Pulsar.Models;
 using Pulsar.Native;
@@ -13,17 +9,14 @@ using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels;
 using Pulsar.Views;
 using System;
-using System.Windows; // 确保引用 WPF 基础库
+using System.Windows;
 
 namespace Pulsar
 {
-    // [Fix] 显式指定继承自 System.Windows.Application，解决与 Forms.Application 的冲突
     public partial class App : System.Windows.Application
     {
-        // [Fix] 同样显式指定类型转换
         public new static App Current => (App)System.Windows.Application.Current;
 
-        // 使用 = null! 消除警告，因为我们在 OnStartup 里一定会赋值
         public IServiceProvider Services { get; private set; } = null!;
 
         protected override void OnStartup(StartupEventArgs e)
@@ -32,48 +25,39 @@ namespace Pulsar
 
             var serviceCollection = new ServiceCollection();
 
-            // 1. 注册核心基础服务
+            // 1. Core Services
             serviceCollection.AddSingleton<IConfigService, ConfigService>();
             serviceCollection.AddSingleton<IWindowService, WindowService>();
             serviceCollection.AddSingleton<ITrayService, TrayIconService>();
+            serviceCollection.AddSingleton<IThemeService, ThemeService>();
             serviceCollection.AddSingleton<GlobalKeyboardHook>();
-            serviceCollection.AddSingleton<ActionRegistry>();
+            
+            // 2. Plugin System (New Architecture)
+            serviceCollection.AddSingleton<PluginRegistry>();
 
-            // 2. 注册 PKI 服务
+            // 3. PKI Service
             serviceCollection.AddSingleton<CredentialsManager>();
 
-            // 3. 注册动作处理器 (Handlers)
-            serviceCollection.AddSingleton<LauncherHandler>();
-            serviceCollection.AddSingleton<SimpleCommandHandler>();
-            serviceCollection.AddSingleton<PkiHandler>();
-
-            // 4. 注册 CommandService
-            serviceCollection.AddSingleton<ICommandService, CommandService>();
-
-            // 5. 注册 UI
+            // 4. UI Services
             serviceCollection.AddSingleton<RadialMenuViewModel>();
             serviceCollection.AddSingleton<RadialMenuWindow>();
             serviceCollection.AddTransient<SettingsViewModel>();
             serviceCollection.AddTransient<SettingsWindow>();
 
-            // 构建容器
+            // Build Container
             Services = serviceCollection.BuildServiceProvider();
 
             // ================================================
-            // 6. 连接注册中心 (Wiring)
+            // 5. Initialize Plugin System
             // ================================================
-            var registry = Services.GetRequiredService<ActionRegistry>();
+            var pluginRegistry = Services.GetRequiredService<PluginRegistry>();
+            pluginRegistry.LoadAll();
 
-            registry.Register<LauncherItem>(Services.GetRequiredService<LauncherHandler>());
-            registry.Register<CommandItem>(Services.GetRequiredService<SimpleCommandHandler>());
-            // [PKI] 注册 SecretItem 由 PkiHandler 处理
-            registry.Register<SecretItem>(Services.GetRequiredService<PkiHandler>());
-
-            // 7. 启动服务
+            // 6. Start Services
             var trayService = Services.GetRequiredService<ITrayService>();
             trayService.Initialize();
 
-            // 8. 预热主窗口
+            // 7. Warm up Main Window
             var mainWindow = Services.GetRequiredService<RadialMenuWindow>();
             mainWindow.Show();
         }

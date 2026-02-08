@@ -1,4 +1,4 @@
-﻿// [Path]: Pulsar/Pulsar/Views/Dialogs/ProcessPickerDialog.xaml.cs
+// [Path]: Pulsar/Pulsar/Views/Dialogs/ProcessPickerDialog.xaml.cs
 
 using System;
 using System.Collections.Generic;
@@ -9,10 +9,12 @@ using System.Windows.Input;
 using Pulsar.Services; // 引用包含 ProcessWindowInfo 的命名空间
 using Pulsar.Services.Interfaces;
 using Pulsar.Models;
+using Wpf.Ui.Controls;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Pulsar.Views.Dialogs
 {
-    public partial class ProcessPickerDialog : Window
+    public partial class ProcessPickerDialog : FluentWindow
     {
         private readonly IWindowService _windowService;
         private List<ProcessWindowInfo> _allWindows;
@@ -24,6 +26,27 @@ namespace Pulsar.Views.Dialogs
         {
             InitializeComponent();
             _windowService = windowService;
+            
+            // [Theme Injection]
+            if (System.Windows.Application.Current is App app && app.Services != null)
+            {
+                var themeService = app.Services.GetService<IThemeService>();
+                var configService = app.Services.GetService<IConfigService>();
+                
+                var themeToUse = AppTheme.Dark; // Default
+                if (configService != null)
+                {
+                    // Use the configured theme for settings/dialogs
+                    var settingsTheme = configService.Current.Settings.SettingsTheme;
+                    if (Enum.TryParse<AppTheme>(settingsTheme, out var parsedTheme))
+                    {
+                        themeToUse = parsedTheme;
+                    }
+                }
+
+                themeService?.ApplyTheme(this, themeToUse, WindowBackdropType.Mica, updateGlobal: false);
+            }
+            
             Loaded += OnLoaded;
         }
 

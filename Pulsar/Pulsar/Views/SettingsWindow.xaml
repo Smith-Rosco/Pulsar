@@ -1,480 +1,76 @@
-﻿<Window x:Class="Pulsar.Views.SettingsWindow"
+<ui:FluentWindow x:Class="Pulsar.Views.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:vm="clr-namespace:Pulsar.ViewModels"
-        xmlns:models="clr-namespace:Pulsar.Models"
-        xmlns:pki="clr-namespace:Pulsar.Features.Pki.Models"
-        xmlns:controls="clr-namespace:Pulsar.Views.Controls"
+        xmlns:converters="clr-namespace:Pulsar.Core.Converters"
         mc:Ignorable="d"
-        Title="Pulsar Configuration Center" Height="650" Width="1000"
-        Background="{DynamicResource Theme.Window.Background}" 
-        Foreground="{DynamicResource Theme.Window.Foreground}"
-        WindowStartupLocation="CenterScreen">
+        Title="Pulsar Configuration" Height="700" Width="1000"
+        WindowStartupLocation="CenterScreen"
+        ExtendsContentIntoTitleBar="True"
+        WindowBackdropType="Mica">
 
     <Window.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-
-        <Style TargetType="TextBox">
-            <Setter Property="Background" Value="{DynamicResource Theme.Input.Background}"/>
-            <Setter Property="Foreground" Value="{DynamicResource Theme.Input.Foreground}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource Theme.Border.Brush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="5"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-        </Style>
-
-        <Style TargetType="TextBlock" x:Key="LabelStyle">
-            <Setter Property="Foreground" Value="{DynamicResource Theme.Text.Secondary}"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Margin" Value="0,0,0,4"/>
-        </Style>
-
-        <DataTemplate DataType="{x:Type models:LauncherItem}">
-            <Border Background="{DynamicResource Theme.Panel.Background}" 
-                    BorderBrush="{DynamicResource Theme.Border.Brush}" 
-                    BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,8">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="60"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <controls:JellyOrb IconKey="{Binding IconKey}" Width="40" Height="40" Margin="0,0,0,5"/>
-                        <TextBlock Text="{Binding Slot, StringFormat='Slot {0}'}" FontSize="10" HorizontalAlignment="Center" Foreground="{DynamicResource Theme.Text.Secondary}"/>
-                    </StackPanel>
-
-                    <Grid Grid.Column="1" Margin="15,0">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <StackPanel Margin="0,0,5,5">
-                            <TextBlock Text="Label" Style="{StaticResource LabelStyle}"/>
-                            <TextBox Text="{Binding Label}"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Margin="5,0,0,5">
-                            <TextBlock Text="Icon Key (Path or Font)" Style="{StaticResource LabelStyle}"/>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBox Text="{Binding IconKey}" VerticalAlignment="Center" ToolTip="Enter code or path"/>
-
-                                <Button Grid.Column="1" 
-                                        Command="{Binding DataContext.PickIconCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
-                                        CommandParameter="{Binding}"
-                                        Style="{DynamicResource IconButtonStyle}"
-                                        Margin="5,0,0,0" Width="30" Height="30"
-                                        ToolTip="Open Icon Picker">
-                                    <TextBlock Text="&#xE721;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16"/>
-                                </Button>
-                            </Grid>
-                        </StackPanel>
-
-                        <StackPanel Grid.Row="1" Grid.ColumnSpan="2">
-                            <TextBlock Text="Process Name (e.g. chrome)" Style="{StaticResource LabelStyle}"/>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBox Text="{Binding ProcessName}" ToolTip="This name is used for switching to the window."/>
-                                <Button Grid.Column="1" 
-                                        Command="{Binding DataContext.PickProcessCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
-                                        CommandParameter="{Binding}"
-                                        Style="{DynamicResource IconButtonStyle}"
-                                        Margin="5,0,0,0" Width="30" Height="30"
-                                        ToolTip="Pick Running Process">
-                                    <TextBlock Text="🔍" FontSize="14"/>
-                                </Button>
-                            </Grid>
-                        </StackPanel>
-                    </Grid>
-
-                    <Button Grid.Column="2" Content="❌" 
-                            Command="{Binding DataContext.RemoveSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
-                            CommandParameter="{Binding}"
-                            Background="Transparent" BorderThickness="0" 
-                            Foreground="{DynamicResource Theme.Destructive}" 
-                            VerticalAlignment="Top" Padding="5"/>
-                </Grid>
-            </Border>
-        </DataTemplate>
-
-        <DataTemplate DataType="{x:Type models:CommandItem}">
-            <Border Background="{DynamicResource Theme.Panel.Background}" 
-                    BorderBrush="{DynamicResource Theme.Border.Brush}" 
-                    BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,8">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="60"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <controls:JellyOrb IconKey="{Binding IconKey}" Width="40" Height="40" Margin="0,0,0,5"/>
-                        <TextBlock Text="{Binding Slot, StringFormat='Slot {0}'}" FontSize="10" HorizontalAlignment="Center" Foreground="{DynamicResource Theme.Text.Secondary}"/>
-                    </StackPanel>
-
-                    <Grid Grid.Column="1" Margin="15,0">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <StackPanel Margin="0,0,5,5">
-                            <TextBlock Text="Label" Style="{StaticResource LabelStyle}"/>
-                            <TextBox Text="{Binding Label}"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Margin="5,0,0,5">
-                            <TextBlock Text="Icon Key (Path or Font)" Style="{StaticResource LabelStyle}"/>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBox Text="{Binding IconKey}" VerticalAlignment="Center" ToolTip="Enter code or path"/>
-
-                                <Button Grid.Column="1" 
-                                        Command="{Binding DataContext.PickIconCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
-                                        CommandParameter="{Binding}"
-                                        Style="{DynamicResource IconButtonStyle}"
-                                        Margin="5,0,0,0" Width="30" Height="30"
-                                        ToolTip="Open Icon Picker">
-                                    <TextBlock Text="&#xE721;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16"/>
-                                </Button>
-                            </Grid>
-                        </StackPanel>
-
-                        <StackPanel Grid.Row="1" Margin="0,0,5,0">
-                            <TextBlock Text="Executable Path" Style="{StaticResource LabelStyle}"/>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBox Text="{Binding ExePath}"/>
-                                <Button Grid.Column="1" 
-                                        Command="{Binding DataContext.PickProcessCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
-                                        CommandParameter="{Binding}"
-                                        Style="{DynamicResource IconButtonStyle}"
-                                        Margin="5,0,0,0" Width="30" Height="30"
-                                        ToolTip="Pick Executable from Running App">
-                                    <TextBlock Text="🔍" FontSize="14"/>
-                                </Button>
-                            </Grid>
-                        </StackPanel>
-
-                        <StackPanel Grid.Row="1" Grid.Column="1" Margin="5,0,0,0">
-                            <TextBlock Text="Arguments" Style="{StaticResource LabelStyle}"/>
-                            <TextBox Text="{Binding Arguments}"/>
-                        </StackPanel>
-                    </Grid>
-
-                    <Button Grid.Column="2" Content="❌" 
-                            Command="{Binding DataContext.RemoveSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
-                            CommandParameter="{Binding}"
-                            Background="Transparent" BorderThickness="0" 
-                            Foreground="{DynamicResource Theme.Destructive}" 
-                            VerticalAlignment="Top" Padding="5"/>
-                </Grid>
-            </Border>
-        </DataTemplate>
-
-        <DataTemplate DataType="{x:Type pki:SecretItem}">
-            <Border Background="#252526" 
-                    BorderBrush="#FFD700" 
-                    BorderThickness="1,1,1,1" CornerRadius="4" Padding="10" Margin="0,0,0,8">
-                <Border.Effect>
-                    <DropShadowEffect Color="Black" BlurRadius="5" Opacity="0.3" ShadowDepth="1"/>
-                </Border.Effect>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="60"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <TextBlock Text="🔒" FontSize="24" Foreground="#FFD700" Margin="0,0,0,5"/>
-                        <TextBlock Text="{Binding Slot, StringFormat='Slot {0}'}" FontSize="10" HorizontalAlignment="Center" Foreground="#AAFFD700"/>
-                    </StackPanel>
-
-                    <Grid Grid.Column="1" Margin="15,0" VerticalAlignment="Center">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                            <TextBlock Text="{Binding Label}" FontWeight="Bold" FontSize="14" Foreground="White" VerticalAlignment="Center"/>
-
-                            <Border Background="#333333" CornerRadius="3" Margin="10,0,0,0" Padding="6,2" VerticalAlignment="Center">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="Context: " Foreground="#888" FontSize="10"/>
-                                    <TextBlock Text="{Binding TargetProcessName, TargetNullValue='Global'}" Foreground="#FFD700" FontSize="10" FontWeight="SemiBold"/>
-                                </StackPanel>
-                            </Border>
-                        </StackPanel>
-
-                        <StackPanel Grid.Row="1" Orientation="Horizontal">
-                            <TextBlock Text="User: " Foreground="#888" FontSize="12"/>
-                            <TextBlock Text="{Binding Account, TargetNullValue='(None)'}" Foreground="#CCC" FontSize="12"/>
-                            <TextBlock Text=" • Password: " Foreground="#888" FontSize="12" Margin="10,0,0,0"/>
-                            <TextBlock Text="********" Foreground="#888" FontSize="12"/>
-                        </StackPanel>
-                    </Grid>
-
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top">
-                        <Button Content="✏️" 
-                                Command="{Binding DataContext.EditSecretCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
-                                CommandParameter="{Binding}"
-                                Background="Transparent" BorderThickness="0" 
-                                Foreground="#FFD700" FontSize="14"
-                                Padding="5" Margin="0,0,5,0"
-                                ToolTip="Edit Secret"/>
-
-                        <Button Content="❌" 
-                                Command="{Binding DataContext.RemoveSlotCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
-                                CommandParameter="{Binding}"
-                                Background="Transparent" BorderThickness="0" 
-                                Foreground="{DynamicResource Theme.Destructive}" 
-                                Padding="5"
-                                ToolTip="Remove Slot"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
-        </DataTemplate>
-
+        <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVis"/>
+        <DropShadowEffect x:Key="DropShadowEffect" BlurRadius="20" ShadowDepth="4" Direction="270" Color="Black" Opacity="0.3"/>
     </Window.Resources>
 
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="250"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-        <Border Background="{DynamicResource Theme.Panel.Background}" 
-                BorderBrush="{DynamicResource Theme.Border.Brush}" 
-                BorderThickness="0,0,1,0">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+        <!-- Title Bar -->
+        <ui:TitleBar Title="Pulsar Configuration" Grid.Row="0"/>
 
-                <StackPanel Margin="20,25,20,10">
-                    <TextBlock Text="PULSAR" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource Theme.Accent}"/>
-                    <TextBlock Text="REDUX v2.0" FontSize="10" Foreground="{DynamicResource Theme.Text.Secondary}" Margin="2,0,0,0"/>
-                </StackPanel>
+        <!-- Main Navigation -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
-                <ListBox Grid.Row="1" 
-                         ItemsSource="{Binding NavItems}" 
-                         SelectedItem="{Binding SelectedNavItem}"
-                         Background="Transparent" BorderThickness="0" 
-                         Foreground="{DynamicResource Theme.Text.Secondary}">
-                    <ListBox.ItemContainerStyle>
-                        <Style TargetType="ListBoxItem">
-                            <Setter Property="Padding" Value="15,10"/>
-                            <Setter Property="Cursor" Value="Hand"/>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="ListBoxItem">
-                                        <Border Name="Border" Padding="{TemplateBinding Padding}" Background="Transparent" CornerRadius="2" Margin="5,0">
-                                            <ContentPresenter />
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsSelected" Value="True">
-                                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource Theme.Control.Hover}"/>
-                                                <Setter Property="Foreground" Value="{DynamicResource Theme.Window.Foreground}"/>
-                                                <Setter Property="FontWeight" Value="SemiBold"/>
-                                            </Trigger>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Border" Property="Background" Value="#11FFFFFF"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </ListBox.ItemContainerStyle>
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="{Binding Icon}" Margin="0,0,10,0" Width="20" TextAlignment="Center"/>
-                                <TextBlock Text="{Binding Name}"/>
-                            </StackPanel>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+            <!-- Wrapper Grid for Clipping -->
+            <Grid Grid.Column="0" ClipToBounds="True">
+                <ui:NavigationView x:Name="RootNavigation" 
+                                   Margin="0,0,-24,0"
+                                   PaneDisplayMode="Left"
+                                   IsPaneOpen="True"
+                                   OpenPaneLength="250"
+                                   IsBackButtonVisible="Collapsed"
+                                   ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                    
+                    <ui:NavigationView.MenuItems>
+                    <ui:NavigationViewItem Content="General Settings" 
+                                           Icon="{ui:SymbolIcon Settings24}" 
+                                           TargetPageType="{x:Type TypeName=Page}" 
+                                           Tag="General"/>
+                    
+                    <ui:NavigationViewItem Content="Slots Manager" 
+                                           Icon="{ui:SymbolIcon DialPad24}" 
+                                           TargetPageType="{x:Type TypeName=Page}" 
+                                           Tag="Slots"/>
+                </ui:NavigationView.MenuItems>
 
-                <Border Grid.Row="2" BorderBrush="{DynamicResource Theme.Border.Brush}" BorderThickness="0,1,0,0" Padding="15" Background="{DynamicResource Theme.Panel.Background}">
-                    <StackPanel>
-                        <TextBlock Text="ADD NEW PROFILE" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource Theme.Text.Secondary}" Margin="0,0,0,5"/>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
+                <ui:NavigationView.FooterMenuItems>
+                    <ui:NavigationViewItem Content="Save Changes" 
+                                           Icon="{ui:SymbolIcon Save24}"
+                                           Click="SaveButton_Click"
+                                           Foreground="{DynamicResource SystemAccentColorBrush}"/>
+                </ui:NavigationView.FooterMenuItems>
 
-                            <TextBox x:Name="NewProfileInput" 
-                                     Text="{Binding NewProfileName, UpdateSourceTrigger=PropertyChanged}" 
-                                     ToolTip="e.g. chrome.exe" Padding="5"/>
-
-                            <Button Grid.Column="1" 
-                                    Command="{Binding PickProcessCommand}"
-                                    CommandParameter="NewProfile"
-                                    Style="{DynamicResource IconButtonStyle}"
-                                    Margin="5,0,0,0" Width="30" Height="30"
-                                    ToolTip="Pick Running App">
-                                <TextBlock Text="🔍" FontSize="14"/>
-                            </Button>
-
-                            <Button Grid.Column="2" 
-                                    Command="{Binding AddProfileCommand}"
-                                    Style="{DynamicResource IconButtonStyle}"
-                                    Margin="5,0,0,0" Width="30" Height="30"
-                                    ToolTip="Create Profile">
-                                <TextBlock Text="&#xE710;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16" FontWeight="Bold"/>
-                            </Button>
-                        </Grid>
-                    </StackPanel>
-                </Border>
-            </Grid>
-        </Border>
-
-        <Grid Grid.Column="1" Margin="30">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-
-            <StackPanel Margin="0,0,0,20">
-                <Grid>
-                    <StackPanel>
-                        <TextBlock Text="{Binding EditorTitle}" FontSize="28" FontWeight="Light" Foreground="{DynamicResource Theme.Window.Foreground}"/>
-                        <TextBlock Text="{Binding EditorDescription}" Foreground="{DynamicResource Theme.Text.Secondary}" Margin="2,5,0,0" TextWrapping="Wrap"/>
-                    </StackPanel>
-
-                    <Button HorizontalAlignment="Right" VerticalAlignment="Top"
-                            Command="{Binding DeleteProfileCommand}"
-                            Visibility="{Binding CanDeleteProfile, Converter={StaticResource BoolToVis}}"
-                            Content="Delete Profile" Background="Transparent" 
-                            Foreground="{DynamicResource Theme.Destructive}" 
-                            BorderThickness="0" Cursor="Hand"/>
-                </Grid>
-                <Separator Background="{DynamicResource Theme.Border.Brush}" Margin="0,20,0,0"/>
-            </StackPanel>
-
-            <ScrollViewer Grid.Row="1" Visibility="{Binding IsGeneralView, Converter={StaticResource BoolToVis}}">
-                <StackPanel DataContext="{Binding GeneralSettings}">
-                    <TextBlock Text="Physics &amp; Animation" FontSize="16" Foreground="{DynamicResource Theme.Window.Foreground}" Margin="0,0,0,15"/>
-
-                    <StackPanel Margin="0,0,0,15">
-                        <TextBlock Text="Trigger Distance" Style="{StaticResource LabelStyle}"/>
-                        <Slider Minimum="50" Maximum="300" Value="{Binding TriggerDistance}" AutoToolTipPlacement="TopLeft"/>
-                        <TextBlock Text="{Binding TriggerDistance, StringFormat={}{0:0} px}" HorizontalAlignment="Right" Foreground="{DynamicResource Theme.Text.Secondary}"/>
-                    </StackPanel>
-
-                    <StackPanel Margin="0,0,0,15">
-                        <TextBlock Text="Springiness (Elasticity)" Style="{StaticResource LabelStyle}"/>
-                        <Slider Minimum="1" Maximum="20" Value="{Binding Springiness}" AutoToolTipPlacement="TopLeft"/>
-                    </StackPanel>
-
-                    <StackPanel Margin="0,0,0,15">
-                        <TextBlock Text="Hover Scale Effect" Style="{StaticResource LabelStyle}"/>
-                        <Slider Minimum="1.0" Maximum="2.0" TickFrequency="0.1" IsSnapToTickEnabled="True" Value="{Binding HoverScale}" AutoToolTipPlacement="TopLeft"/>
-                    </StackPanel>
-
-                    <TextBlock Text="Appearance" FontSize="16" Foreground="{DynamicResource Theme.Window.Foreground}" Margin="0,15,0,15"/>
-
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                        <StackPanel Margin="0,0,20,0" Width="150">
-                            <TextBlock Text="Launcher Theme" Style="{StaticResource LabelStyle}"/>
-                            <ComboBox SelectedValue="{Binding DataContext.LauncherTheme, RelativeSource={RelativeSource AncestorType=Window}}" 
-                                      SelectedValuePath="Content">
-                                <ComboBoxItem Content="Dark"/>
-                                <ComboBoxItem Content="Light"/>
-                            </ComboBox>
-                        </StackPanel>
-
-                        <StackPanel Width="150">
-                            <TextBlock Text="Settings Theme" Style="{StaticResource LabelStyle}"/>
-                            <ComboBox SelectedValue="{Binding DataContext.SettingsTheme, RelativeSource={RelativeSource AncestorType=Window}}" 
-                                      SelectedValuePath="Content">
-                                <ComboBoxItem Content="Dark"/>
-                                <ComboBoxItem Content="Light"/>
-                            </ComboBox>
-                        </StackPanel>
-                    </StackPanel>
-                </StackPanel>
-            </ScrollViewer>
-
-            <Grid Grid.Row="1" Visibility="{Binding IsEditorView, Converter={StaticResource BoolToVis}}">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding CurrentSlots}" AlternationCount="2"/>
-                </ScrollViewer>
-
-                <Grid Grid.Row="1" Margin="0,10,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="10"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-
-                    <Button Grid.Column="0" Command="{Binding AddSlotCommand}" 
-                            Content="+ Standard Slot" Height="35"
-                            Background="{DynamicResource Theme.Panel.Background}" 
-                            Foreground="{DynamicResource Theme.Window.Foreground}"
-                            BorderBrush="{DynamicResource Theme.Border.Brush}" BorderThickness="1"/>
-
-                    <Button Grid.Column="2" Command="{Binding AddSecretCommand}" 
-                            Visibility="{Binding CanAddSecrets, Converter={StaticResource BoolToVis}}"
-                            Content="+ Add Secret (PKI)" Height="35"
-                            Background="#333333" 
-                            Foreground="#FFD700"
-                            BorderBrush="#FFD700" BorderThickness="1"
-                            FontWeight="SemiBold"
-                            ToolTip="Add an encrypted credential injection slot"/>
-                </Grid>
+                </ui:NavigationView>
             </Grid>
 
-            <Grid Grid.Row="2" Margin="0,20,0,0">
-                <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" Foreground="#00CC6A"/>
-                <Button Command="{Binding SaveCommand}" Content="Save Changes" 
-                        HorizontalAlignment="Right" Padding="20,10" 
-                        Background="{DynamicResource Theme.Accent}" 
-                        Foreground="White" FontWeight="Bold" BorderThickness="0">
-                    <Button.Resources>
-                        <Style TargetType="Border">
-                            <Setter Property="CornerRadius" Value="4"/>
-                        </Style>
-                    </Button.Resources>
-                </Button>
-            </Grid>
+            <Frame x:Name="RootFrame" 
+                   Grid.Column="1" 
+                   Margin="24"
+                   NavigationUIVisibility="Hidden"/>
+
+            <ui:SnackbarPresenter x:Name="MainSnackbarPresenter" Grid.Column="1" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,20,20"/>
         </Grid>
     </Grid>
-</Window>
+</ui:FluentWindow>

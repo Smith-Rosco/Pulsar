@@ -1,22 +1,25 @@
-using Pulsar.Features.Pki.Models;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace Pulsar.Services
 {
+    /// <summary>
+    /// 配置服务 - 读写 Profiles.json
+    /// </summary>
     public class ConfigService : IConfigService
     {
-        private const string ConfigFileName = "pulsar_config.json";
+        private const string ConfigFileName = "Profiles.json";
         private readonly string _configPath;
-        private AppConfig? _cachedConfig;
+        private ProfilesConfig? _cachedConfig;
 
-        // [New] 实现接口事件
         public event Action? ConfigUpdated;
+
+        public ProfilesConfig Current => _cachedConfig ?? CreateDefaultConfig();
 
         public ConfigService()
         {
@@ -25,7 +28,7 @@ namespace Pulsar.Services
             _configPath = Path.Combine(folder, ConfigFileName);
         }
 
-        public async Task<AppConfig> LoadAsync()
+        public async Task<ProfilesConfig> LoadAsync()
         {
             if (_cachedConfig != null) return _cachedConfig;
 
@@ -44,60 +47,104 @@ namespace Pulsar.Services
                     WriteIndented = true,
                     PropertyNameCaseInsensitive = true
                 };
-                _cachedConfig = await JsonSerializer.DeserializeAsync<AppConfig>(stream, options);
+                _cachedConfig = await JsonSerializer.DeserializeAsync<ProfilesConfig>(stream, options);
             }
-            catch
+            catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"[ConfigService] Failed to load config: {ex.Message}");
                 _cachedConfig = CreateDefaultConfig();
             }
 
             return _cachedConfig ?? CreateDefaultConfig();
         }
 
-        public async Task SaveAsync(AppConfig config)
+        public async Task SaveAsync(ProfilesConfig config)
         {
             _cachedConfig = config;
-            var options = new JsonSerializerOptions { WriteIndented = true };
+            var options = new JsonSerializerOptions 
+            { 
+                WriteIndented = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
 
             using var stream = File.Create(_configPath);
             await JsonSerializer.SerializeAsync(stream, config, options);
 
-            // [New] 保存成功后，触发事件通知订阅者
             ConfigUpdated?.Invoke();
         }
 
-        private AppConfig CreateDefaultConfig()
+        /// <summary>
+        /// 创建默认配置
+        /// </summary>
+        private ProfilesConfig CreateDefaultConfig()
         {
-            return new AppConfig
+            var config = new ProfilesConfig
             {
-                Switcher = new List<GridItemBase>
+                Settings = new ProfileSettings
                 {
-                    new LauncherItem { Slot = 1, Label = "Chrome", ProcessName = "chrome.exe", IconKey = "E710" },
-                    new LauncherItem { Slot = 2, Label = "Code", ProcessName = "code.exe", IconKey = "E70F" },
-                    new LauncherItem { Slot = 3, Label = "Term", ProcessName = "WindowsTerminal.exe", IconKey = "E756" }
-                },
-                Global = new List<GridItemBase>
-                {
-                    new CommandItem { Slot = 1, Label = "Copy", ExePath = "cmd.exe", Arguments = "/c echo Copy", IconKey = "E8C8" },
-                    new CommandItem { Slot = 4, Label = "Paste", ExePath = "cmd.exe", Arguments = "/c echo Paste", IconKey = "E77F" },
-                },
-                Profiles = new Dictionary<string, List<GridItemBase>>
-                {
-                    ["chrome"] = new List<GridItemBase>
-                    {
-                        new CommandItem { Slot = 1, Label = "New Tab", ExePath = "chrome.exe", Arguments = "--new-tab", IconKey = "E710" },
-                        new CommandItem { Slot = 2, Label = "Incognito", ExePath = "chrome.exe", Arguments = "--incognito", IconKey = "E727" }
-                    }
-                },
-                Settings = new AppSettings
-                {
-                    TriggerDistance = 100,
-                    LauncherTheme = AppTheme.Dark,
-                    SettingsTheme = AppTheme.Dark,
+                    CenterSlotBehavior = "MRU_Window",
+                    TriggerDistance = 100.0,
+                    LauncherTheme = "Dark",
                     HoverScale = 1.2,
-                    Springiness = 6.0
+                    Springiness = 6.0,
+                    MaxDisplacement = 20.0
+                },
+                Profiles = new Dictionary<string, ProcessProfile>
+                {
+                    // Global 配置 - 窗口切换模式
+                    ["Global"] = new ProcessProfile
+                    {
+                        SwitchMode = new Dictionary<string, PluginSlot>
+                        {
+                            ["Slot_1"] = new PluginSlot
+                            {
+                                Slot = 1,
+                                PluginId = "com.pulsar.winswitcher",
+                                Action = "activate",
+                                Args = new Dictionary<string, string>
+                                {
+                                    ["app"] = "chrome",
+                                }
+                            },
+                            ["Slot_2"] = new PluginSlot
+                            {
+                                Slot = 2,
+                                PluginId = "com.pulsar.winswitcher",
+                                Action = "activate",
+                                Args = new Dictionary<string, string>
+                                {
+                                    ["app"] = "code",
+                                }
+                            },
+                            ["Slot_3"] = new PluginSlot
+                            {
+                                Slot = 3,
+                                PluginId = "com.pulsar.winswitcher",
+                                Action = "activate",
+                                Args = new Dictionary<string, string>
+                                {
+                                    ["app"] = "WindowsTerminal",
+                                }
+                            }
+                        },
+                         CommandMode = new Dictionary<string, PluginSlot>
+                        {
+                            ["Slot_1"] = new PluginSlot
+                            {
+                                Slot = 1,
+                                PluginId = "com.pulsar.command",
+                                Action = "run",
+                                Args = new Dictionary<string, string>
+                                {
+                                    ["path"] = "cmd.exe",
+                                }
+                            }
+                        }
+                    }
                 }
             };
+
+            return config;
         }
     }
 }

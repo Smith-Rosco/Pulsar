@@ -1,13 +1,14 @@
-﻿// [Path]: Pulsar/Pulsar/Views/Dialogs/QuickSecretsDialog.xaml.cs
-
 using System.Windows;
 using Pulsar.Services.Interfaces;
 using Pulsar.Features.Pki.Services;
 using Pulsar.Features.Pki.Models;
+using Wpf.Ui.Controls;
+using Microsoft.Extensions.DependencyInjection;
+using Pulsar.Models;
 
 namespace Pulsar.Views.Dialogs
 {
-    public partial class QuickSecretsDialog : Window
+    public partial class QuickSecretsDialog : FluentWindow
     {
         private readonly IWindowService _windowService;
         private readonly CredentialsManager _credManager;
@@ -27,25 +28,37 @@ namespace Pulsar.Views.Dialogs
         {
             InitializeComponent();
             _windowService = windowService;
+            
+            // [Theme Isolation]
+            if (System.Windows.Application.Current is App app && app.Services != null)
+            {
+                var themeService = app.Services.GetService<IThemeService>();
+                themeService?.ApplyTheme(this, AppTheme.Dark, WindowBackdropType.Mica, updateGlobal: false);
+            }
+
             _credManager = new CredentialsManager();
-            TxtLabel.Focus();
+            _originalEncryptedData = string.Empty;
+            ResultLabel = string.Empty;
+            ResultProcess = string.Empty;
+            ResultAccount = string.Empty;
+            ResultEncryptedData = string.Empty;
+            
+            Loaded += (s, e) => TxtLabel.Focus();
         }
 
         /// <summary>
         /// 加载现有 Item 进行编辑
         /// </summary>
-        public void LoadForEdit(SecretItem item)
+        public void LoadForEdit(string label, string processName, string account, string encryptedData, bool autoEnter)
         {
-            if (item == null) return;
-
             _isEditMode = true;
-            _originalEncryptedData = item.EncryptedData;
+            _originalEncryptedData = encryptedData;
 
             Title = "Edit Secret";
-            TxtLabel.Text = item.Label;
-            TxtProcess.Text = item.TargetProcessName;
-            TxtAccount.Text = item.Account;
-            ChkAutoEnter.IsChecked = item.AutoEnter;
+            TxtLabel.Text = label;
+            TxtProcess.Text = processName;
+            TxtAccount.Text = account;
+            ChkAutoEnter.IsChecked = autoEnter;
 
             // 显示“留空保持不变”的提示
             TxtPasswordHint.Visibility = Visibility.Visible;
@@ -55,8 +68,6 @@ namespace Pulsar.Views.Dialogs
         private void BtnPick_Click(object sender, RoutedEventArgs e)
         {
             var picker = new ProcessPickerDialog(_windowService);
-            // 简单复用资源
-            picker.Resources = this.Resources;
             picker.Owner = this;
 
             if (picker.ShowDialog() == true && picker.SelectedProcess != null)
@@ -75,7 +86,7 @@ namespace Pulsar.Views.Dialogs
             // 验证 Label (Account 允许为空)
             if (string.IsNullOrWhiteSpace(TxtLabel.Text))
             {
-                System.Windows.MessageBox.Show("Please enter a label.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+                System.Windows.MessageBox.Show("Please enter a label.", "Validation", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
                 return;
             }
 

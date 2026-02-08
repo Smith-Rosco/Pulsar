@@ -1,33 +1,29 @@
-// [Path]: Pulsar/Pulsar/ViewModels/RadialMenuViewModel.cs
-
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Collections.Generic;
-using System.Threading.Tasks; // 需要 Task
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Pulsar.Core.Plugin;
 using Pulsar.Models;
 using Pulsar.Models.Enums;
+using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.Native;
 using Pulsar.Helpers;
-using Pulsar.Features.Pki.Models;     // [New]
-using Pulsar.Features.Pki.Services;   // [New]
 
 namespace Pulsar.ViewModels
 {
     public partial class RadialMenuViewModel : ObservableObject
     {
         private readonly IConfigService _configService;
-        private readonly ICommandService _commandService;
         private readonly IWindowService _windowService;
+        private readonly PluginRegistry _pluginRegistry;
 
-        // [New] Phase 7
-        private readonly SecretRepository _secretRepo = new SecretRepository();
-
-        private AppConfig? _config;
-        private List<GridItemBase> _currentItems = new();
+        private ProfilesConfig? _config;
+        private List<PluginSlot> _currentSlots = new();
         private GridItemType _currentType;
+        private PulsarContext _lastContext;
 
         public ObservableCollection<SlotViewModel> Slots { get; } = new();
         public SlotViewModel CenterSlot { get; private set; } = null!;
@@ -64,13 +60,13 @@ namespace Pulsar.ViewModels
 
         public RadialMenuViewModel(
             IConfigService configService,
-            ICommandService commandService,
             IWindowService windowService,
+            PluginRegistry pluginRegistry,
             GlobalKeyboardHook hook)
         {
             _configService = configService;
-            _commandService = commandService;
             _windowService = windowService;
+            _pluginRegistry = pluginRegistry;
 
             InitializeSlots();
 
@@ -97,38 +93,12 @@ namespace Pulsar.ViewModels
 
         private async void LoadConfigAsync()
         {
-            // 初始加载复用 OnConfigUpdated 的逻辑
             OnConfigUpdated();
         }
 
-        // [New] 更新配置加载逻辑，支持 Secret 填充
         private async void OnConfigUpdated()
         {
-            var configTask = _configService.LoadAsync();
-            var secretsTask = _secretRepo.LoadAsync();
-
-            await Task.WhenAll(configTask, secretsTask);
-
-            _config = configTask.Result;
-            var secretMap = secretsTask.Result;
-
-            // 填充函数 (Hydration)
-            void Hydrate(IEnumerable<GridItemBase> items)
-            {
-                if (items == null) return;
-                foreach (var item in items)
-                {
-                    if (item is SecretItem secretItem && secretMap.TryGetValue(secretItem.Id, out var payload))
-                    {
-                        secretItem.Account = payload.Account;
-                        secretItem.EncryptedData = payload.EncryptedData;
-                    }
-                }
-            }
-
-            Hydrate(_config.Switcher);
-            Hydrate(_config.Global);
-            foreach (var list in _config.Profiles.Values) Hydrate(list);
+            _config = await _configService.LoadAsync();
         }
 
         public void ClearVisuals()
@@ -143,7 +113,6 @@ namespace Pulsar.ViewModels
                 slot.Label = "";
                 slot.LoadIconData(string.Empty);
                 slot.IsActive = false;
-                // [New] 清除推荐状态
                 slot.IsRecommended = false;
             }
         }
@@ -152,71 +121,73 @@ namespace Pulsar.ViewModels
         {
             if (IsVisible) return;
 
-            // [Fix: 关键!] 捕获当前的上下文窗口句柄
-            // 在 Pulsar 显示之前，记录下当前正在操作的窗口 (例如 VS Code)
+            // 1. 捕获上下文
+            // 确保 WindowService 知道上一个窗口是谁（用于上下文捕获）
             IntPtr foregroundHandle = WindowHelper.GetForegroundWindow();
             _windowService.SetPreviousWindow(foregroundHandle);
+            
+            _lastContext = PulsarContext.Capture(_windowService);
 
             ActionExecuted = false;
             ResetSelection();
             _currentType = type;
 
-            string? activeProcess = null;
+            string activeProcess = _lastContext.TargetProcessName; // e.g., "EXCEL"
 
-            // 1. 确定数据源
+            // 2. 确定数据源
+            _currentSlots.Clear();
+
+            if (_config == null) return;
+
             if (type == GridItemType.Launcher)
             {
-                _currentItems = _config?.Switcher ?? new List<GridItemBase>();
+                // Launcher 模式通常使用 Global 的 SwitchMode
+                if (_config.Profiles.TryGetValue("Global", out var globalProfile))
+                {
+                    _currentSlots.AddRange(globalProfile.GetSlots(false)); // false = SwitchMode
+                }
                 CenterText = "Switch";
             }
-            else
+            else // Action Mode
             {
-                // 获取进程名用于匹配 Profile
-                // 注意：GetForegroundWindow 返回的是 WindowInfo 对象
-                var windowInfo = _windowService.GetForegroundWindow();
-                activeProcess = windowInfo.ProcessName;
-                string lookupKey = activeProcess?.ToLower() ?? "";
+                bool foundProfile = false;
 
-                if (_config != null && _config.Profiles.TryGetValue(lookupKey, out var items))
+                // 尝试查找特定进程的 Profile
+                if (!string.IsNullOrEmpty(activeProcess) && _config.Profiles.TryGetValue(activeProcess, out var profile))
                 {
-                    _currentItems = items;
-                    CenterText = activeProcess ?? "Context";
+                    var profileSlots = profile.GetSlots(true); // true = CommandMode
+                    if (profileSlots.Count > 0)
+                    {
+                        _currentSlots.AddRange(profileSlots);
+                        foundProfile = true;
+                    }
                 }
-                else
+
+                // 如果没找到或特定 Profile 为空，回退到 Global
+                if (!foundProfile && _config.Profiles.TryGetValue("Global", out var globalProfile))
                 {
-                    _currentItems = _config?.Global ?? new List<GridItemBase>();
-                    CenterText = "Global";
+                    _currentSlots.AddRange(globalProfile.GetSlots(true));
                 }
+
+                CenterText = foundProfile ? activeProcess : "Global";
             }
 
-            // 2. 绑定 UI & 上下文感知
-            foreach (var slot in Slots)
+            // 3. 绑定 UI
+            foreach (var slotViewModel in Slots)
             {
-                var item = _currentItems.FirstOrDefault(x => x.Slot == slot.SlotIndex);
+                var item = _currentSlots.FirstOrDefault(x => x.Slot == slotViewModel.SlotIndex);
 
-                // 重置推荐状态
-                slot.IsRecommended = false;
+                slotViewModel.IsRecommended = false; // Reset
 
                 if (item != null)
                 {
-                    slot.Label = item.Label;
-                    slot.LoadIconData(item.IconKey);
-
-                    // 检查是否为当前上下文推荐的凭据
-                    if (item is SecretItem secret
-                        && !string.IsNullOrEmpty(secret.TargetProcessName)
-                        && !string.IsNullOrEmpty(activeProcess))
-                    {
-                        if (activeProcess.IndexOf(secret.TargetProcessName, StringComparison.OrdinalIgnoreCase) >= 0)
-                        {
-                            slot.IsRecommended = true;
-                        }
-                    }
+                    slotViewModel.Label = item.Label;
+                    slotViewModel.LoadIconData(item.IconKey);
                 }
                 else
                 {
-                    slot.Label = "";
-                    slot.LoadIconData(string.Empty);
+                    slotViewModel.Label = "";
+                    slotViewModel.LoadIconData(string.Empty);
                 }
             }
 
@@ -286,29 +257,14 @@ namespace Pulsar.ViewModels
         private async void ExecuteSelection()
         {
             if (_activeSlotIndex <= 0) return;
-            GridItemBase? targetItem = _currentItems.FirstOrDefault(x => x.Slot == _activeSlotIndex);
-            if (targetItem == null) return;
+
+            var slot = _currentSlots.FirstOrDefault(x => x.Slot == _activeSlotIndex);
+            if (slot == null) return;
 
             ActionExecuted = true;
-            if (_currentType == GridItemType.Launcher)
-            {
-                if (targetItem is LauncherItem launcherItem)
-                {
-                    bool switched = _windowService.FocusWindow(launcherItem.ProcessName);
-                    if (!switched)
-                    {
-                        await _commandService.ExecuteAsync(targetItem);
-                    }
-                }
-                else
-                {
-                    await _commandService.ExecuteAsync(targetItem);
-                }
-            }
-            else
-            {
-                await _commandService.ExecuteAsync(targetItem);
-            }
+
+            // 执行插件动作
+            await _pluginRegistry.ExecuteAsync(slot.PluginId, slot.Action, slot.Args, _lastContext);
         }
     }
 }

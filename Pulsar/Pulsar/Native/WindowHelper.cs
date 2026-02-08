@@ -58,6 +58,9 @@ namespace Pulsar.Native
         [DllImport("user32.dll", EntryPoint = "SetWindowLongPtr")]
         public static extern IntPtr SetWindowLong(IntPtr hWnd, int nIndex, long dwNewLong);
 
+        [DllImport("dwmapi.dll")]
+        public static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
+
         [DllImport("user32.dll")]
         public static extern IntPtr GetForegroundWindow();
 
@@ -72,5 +75,8 @@ namespace Pulsar.Native
         public const uint SWP_SHOWWINDOW = 0x0040;
         public const byte VK_MENU = 0x12; // Alt key
         public const uint KEYEVENTF_KEYUP = 0x0002;
+
+        public const int DWMWA_SYSTEMBACKDROP_TYPE = 38;
+        public const int DWMSBT_NONE = 1;
     }
 }
