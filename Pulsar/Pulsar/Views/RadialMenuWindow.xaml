@@ -32,12 +32,6 @@
                     <Style TargetType="ContentPresenter">
                         <Setter Property="Canvas.Left" Value="{Binding X}"/>
                         <Setter Property="Canvas.Top" Value="{Binding Y}"/>
-                        <!-- [New] Magnetic Animation Transform -->
-                        <Setter Property="RenderTransform">
-                            <Setter.Value>
-                                <TranslateTransform X="{Binding OffsetX}" Y="{Binding OffsetY}"/>
-                            </Setter.Value>
-                        </Setter>
                     </Style>
                 </ItemsControl.ItemContainerStyle>
                 <ItemsControl.ItemTemplate>
