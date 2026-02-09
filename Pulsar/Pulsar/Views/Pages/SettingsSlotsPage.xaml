@@ -243,19 +243,30 @@
             <TextBlock Text="Menu Layout" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,8"/>
             <TextBlock Text="Configure radial menu slots for different contexts." Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,16"/>
             
-            <!-- Context Selector Card -->
-            <ui:CardControl Icon="SlideMultiple24" Header="Active Menu">
+            <!-- Context Selector Header -->
+            <Border Grid.Row="0" Margin="0,0,0,16" 
+                    Background="{DynamicResource ControlFillColorDefaultBrush}" 
+                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1" 
+                    CornerRadius="8" 
+                    Padding="16">
                 <Grid>
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    
-                    <ComboBox ItemsSource="{Binding AvailableContexts}" 
+
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                        <ui:SymbolIcon Symbol="SlideMultiple24" FontSize="20" Margin="0,0,12,0"/>
+                        <TextBlock Text="Active Menu Context" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <ComboBox Grid.Column="1"
+                              ItemsSource="{Binding AvailableContexts}" 
                               SelectedItem="{Binding CurrentContext}"
-                              Width="300"
-                              HorizontalAlignment="Left">
+                              HorizontalAlignment="Stretch"
+                              Margin="0,0,16,0">
                         <ComboBox.ItemContainerStyle>
                             <Style TargetType="ComboBoxItem">
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -342,24 +353,23 @@
                         </ComboBox.ItemTemplate>
                     </ComboBox>
 
-                    <!-- Add Profile Button -->
-                    <ui:Button Grid.Column="1" 
-                               Icon="{ui:SymbolIcon Add24}"
-                               Appearance="Secondary"
-                               ToolTip="Add New Profile"
-                               Command="{Binding AddProfileDialogCommand}"
-                               Margin="10,0,0,0"/>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+                        <!-- Add Profile Button -->
+                        <ui:Button Icon="{ui:SymbolIcon Add24}"
+                                   Appearance="Secondary"
+                                   ToolTip="Add New Profile"
+                                   Command="{Binding AddProfileDialogCommand}"
+                                   Margin="0,0,8,0"/>
 
-                    <!-- Delete Button -->
-                    <ui:Button Grid.Column="2" 
-                               Appearance="Danger"
-                               Icon="{ui:SymbolIcon Delete24}"
-                               Content="Delete"
-                               Command="{Binding DeleteProfileCommand}"
-                               Visibility="{Binding CanDeleteProfile, Converter={StaticResource BoolToVis}}"
-                               Margin="10,0,0,0"/>
+                        <!-- Delete Button -->
+                        <ui:Button Appearance="Danger"
+                                   Icon="{ui:SymbolIcon Delete24}"
+                                   Content="Delete"
+                                   Command="{Binding DeleteProfileCommand}"
+                                   Visibility="{Binding CanDeleteProfile, Converter={StaticResource BoolToVis}}"/>
+                    </StackPanel>
                 </Grid>
-            </ui:CardControl>
+            </Border>
         </StackPanel>
 
         <!-- Slots List -->
@@ -449,7 +459,6 @@
 
                                 <!-- Expanded Content (Form) -->
                                 <StackPanel Margin="0,8,0,0">
-                                    <TextBlock Text="Label" FontWeight="SemiBold" Margin="0,0,0,4"/>
                                     <ui:TextBox Text="{Binding Label}" PlaceholderText="Display Label" Margin="0,0,0,10"/>
                                     
                                     <!-- Dynamic Fields based on Type -->

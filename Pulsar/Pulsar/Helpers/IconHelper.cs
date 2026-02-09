@@ -137,10 +137,19 @@ namespace Pulsar.Helpers
             if (string.IsNullOrWhiteSpace(key)) return string.Empty;
             string cleanKey = key.Trim().Replace("0x", "").Replace("u+", "").Replace("\\u", "");
 
+            // Strategy 1: Hex Code (Standard)
             if (int.TryParse(cleanKey, System.Globalization.NumberStyles.HexNumber, null, out int codePoint))
             {
                 return char.ConvertFromUtf32(codePoint);
             }
+            
+            // Strategy 2: Direct Character (Robustness)
+            // If the user pasted a single glyph, use it directly
+            if (cleanKey.Length == 1 || (cleanKey.Length == 2 && char.IsSurrogatePair(cleanKey, 0)))
+            {
+                return cleanKey;
+            }
+
             return string.Empty;
         }
     }

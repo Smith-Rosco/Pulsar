@@ -121,11 +121,12 @@ namespace Pulsar.Models
         {
             get
             {
-                if (PluginId == "com.pulsar.pki") return "🔒 Secret";
-                if (PluginId == "com.pulsar.winswitcher") return "🚀 App";
-                if (PluginId == "com.pulsar.command") return "⚡ Cmd";
-                if (PluginId == "com.pulsar.bookmarklet") return "🔖 Script";
-                return "🧩 Plugin";
+                if (PluginId == "com.pulsar.pki") return "Secret";
+                if (PluginId == "com.pulsar.winswitcher") return "App";
+                if (PluginId == "com.pulsar.command") return "Cmd";
+                if (PluginId == "com.pulsar.bookmarklet") return "JS Script";
+                if (PluginId == "com.pulsar.vbarunner") return "VBA Script";
+                return "Plugin";
             }
         }
 
@@ -138,6 +139,7 @@ namespace Pulsar.Models
                 if (PluginId == "com.pulsar.winswitcher") return "#00BFFF"; // DeepSkyBlue
                 if (PluginId == "com.pulsar.command") return "#32CD32"; // LimeGreen
                 if (PluginId == "com.pulsar.bookmarklet") return "#FF6B6B"; // Coral Red
+                if (PluginId == "com.pulsar.vbarunner") return "#FF8C00"; // DarkOrange
                 return "#FFFFFF";
             }
         }

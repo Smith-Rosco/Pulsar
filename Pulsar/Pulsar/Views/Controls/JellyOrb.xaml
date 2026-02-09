@@ -113,7 +113,7 @@
                    Visibility="{Binding ShowImage, ElementName=OrbRoot, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
             <TextBlock Text="{Binding RenderGlyph, ElementName=OrbRoot}"
-                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, Segoe UI Emoji"
                        FontSize="20"
                        Foreground="{DynamicResource Theme.Orb.Text}"
                        HorizontalAlignment="Center"

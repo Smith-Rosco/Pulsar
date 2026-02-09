@@ -198,10 +198,13 @@ namespace Pulsar.Plugins.BookmarkletRunner
                 await Task.Delay(150);
                 Debug.WriteLine("[BookmarkletRunner] Address bar focused (Ctrl+L)");
 
-                // 步骤 2: 输入 'j' (绕过浏览器安全限制的技巧)
-                WinFormsSendKeys.SendWait("j");
+                // [Fix] 步骤 2: 粘贴 'j' (绕过浏览器安全限制，同时避免 IME 问题)
+                // 替换原有的输入 'j'
+                WinFormsClipboard.SetText("j");
                 await Task.Delay(50);
-                Debug.WriteLine("[BookmarkletRunner] Typed 'j'");
+                WinFormsSendKeys.SendWait("^v");
+                await Task.Delay(50);
+                Debug.WriteLine("[BookmarkletRunner] Pasted 'j'");
 
                 // 步骤 3: 构造并粘贴 "avascript:[脚本内容]"
                 string pasteContent = "avascript:" + scriptContent;

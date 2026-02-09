@@ -308,7 +308,7 @@ namespace Pulsar.ViewModels
                     newItem.Action = "run";
                     newItem.Args["scriptPath"] = "%APPDATA%\\Pulsar\\Scripts\\example.js";
                     newItem.Label = "New Script";
-                    newItem.IconKey = "🔖";
+                    newItem.IconKey = "E943"; // Code
                     break;
 
                 case "com.pulsar.vbarunner":
@@ -316,7 +316,7 @@ namespace Pulsar.ViewModels
                     newItem.Action = "run";
                     newItem.Args["scriptPath"] = "%USERPROFILE%\\Documents\\Pulsar\\Scripts\\example.txt";
                     newItem.Label = "New VBA Script";
-                    newItem.IconKey = "📊";
+                    newItem.IconKey = "E8C4"; // DocumentData
                     break;
 
                 case "com.pulsar.pki":
@@ -510,14 +510,16 @@ namespace Pulsar.ViewModels
                  {
                      if (slot.PluginId == "com.pulsar.winswitcher")
                      {
-                         slot.Args["app"] = selected.ProcessName;
-                         slot.Args["path"] = selected.ExePath;
+                         // [Fix] Use indexer to ensure PropertyChanged notification updates the UI
+                         slot["app"] = selected.ProcessName;
+                         slot["path"] = selected.ExePath;
                          if (string.IsNullOrWhiteSpace(slot.Label) || slot.Label == "New App")
                              slot.Label = selected.Title;
                      }
                      else if (slot.PluginId == "com.pulsar.command")
                      {
-                         slot.Args["path"] = selected.ExePath;
+                         // [Fix] Use indexer here too
+                         slot["path"] = selected.ExePath;
                          if (string.IsNullOrWhiteSpace(slot.Label) || slot.Label == "New Cmd")
                              slot.Label = selected.Title;
                      }
@@ -656,8 +658,8 @@ namespace Pulsar.ViewModels
 
             if (dialog.ShowDialog() == true)
             {
-                item.Args["scriptPath"] = dialog.FileName;
-                item["scriptPath"] = dialog.FileName; // Trigger update
+                // [Fix] Use indexer to ensure PropertyChanged notification
+                item["scriptPath"] = dialog.FileName; 
             }
         }
 
@@ -667,7 +669,8 @@ namespace Pulsar.ViewModels
             if (item == null) return;
             
             var dialog = new Microsoft.Win32.OpenFileDialog();
-            dialog.Filter = "JavaScript Files (*.js)|*.js|All Files (*.*)|*.*";
+            // [Fix] Added *.txt support
+            dialog.Filter = "JavaScript Files (*.js;*.txt)|*.js;*.txt|All Files (*.*)|*.*"; 
             dialog.Title = "Select Bookmarklet Script";
             
             // Try to set initial directory if current path is valid
@@ -685,10 +688,7 @@ namespace Pulsar.ViewModels
 
             if (dialog.ShowDialog() == true)
             {
-                item.Args["scriptPath"] = dialog.FileName;
-                // Force UI update if needed, though Dictionary binding might handle it or require notification
-                // Since Args is a Dictionary, direct binding to [key] works but UI might not update if we just set the value.
-                // The indexer in PluginSlot raises property change, so:
+                // [Fix] Use indexer to ensure PropertyChanged notification
                 item["scriptPath"] = dialog.FileName; 
             }
         }

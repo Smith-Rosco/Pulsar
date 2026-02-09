@@ -7,6 +7,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
+using Pulsar.Native;
 
 namespace Pulsar.Plugins.VbaRunner
 {
@@ -18,9 +19,6 @@ namespace Pulsar.Plugins.VbaRunner
         private dynamic? _app;
         private dynamic? _workbook;
         private const int vbext_ct_StdModule = 1;
-
-        [DllImport("user32.dll")]
-        static extern bool SetForegroundWindow(IntPtr hWnd);
 
         [DllImport("oleaut32.dll", PreserveSig = true)]
         private static extern int GetActiveObject(ref Guid rclsid, IntPtr pvReserved, [MarshalAs(UnmanagedType.IUnknown)] out object? ppunk);
@@ -165,7 +163,7 @@ namespace Pulsar.Plugins.VbaRunner
                 // 获取 COM 对象的 PID
                 IntPtr hwnd = (IntPtr)_app.Hwnd;
                 uint processId;
-                GetWindowThreadProcessId(hwnd, out processId);
+                WindowHelper.GetWindowThreadProcessId(hwnd, out processId);
 
                 Debug.WriteLine($"[ScriptEngine] Validating connection - Target PID: {targetProcessId}, App PID: {processId}");
 
@@ -195,7 +193,7 @@ namespace Pulsar.Plugins.VbaRunner
                 try
                 {
                     IntPtr hwnd = (IntPtr)_app.Hwnd;
-                    SetForegroundWindow(hwnd);
+                    WindowHelper.SetForegroundWindow(hwnd);
                 }
                 catch { }
 
@@ -260,7 +258,7 @@ namespace Pulsar.Plugins.VbaRunner
             try
             {
                 IntPtr hwnd = (IntPtr)_app.Hwnd;
-                SetForegroundWindow(hwnd);
+                WindowHelper.SetForegroundWindow(hwnd);
                 Debug.WriteLine("[ScriptEngine] Excel window brought to foreground");
             }
             catch (Exception ex)
@@ -384,11 +382,11 @@ namespace Pulsar.Plugins.VbaRunner
             {
                 // 枚举所有窗口
                 var windowHandles = new List<IntPtr>();
-                EnumWindows((hwnd, lParam) =>
+                WindowHelper.EnumWindows((hwnd, lParam) =>
                 {
                     uint processId;
-                    GetWindowThreadProcessId(hwnd, out processId);
-                    if (processId == targetProcessId && IsWindowVisible(hwnd))
+                    WindowHelper.GetWindowThreadProcessId(hwnd, out processId);
+                    if (processId == targetProcessId && WindowHelper.IsWindowVisible(hwnd))
                     {
                         windowHandles.Add(hwnd);
                     }
@@ -438,6 +436,7 @@ namespace Pulsar.Plugins.VbaRunner
                         return true;
                     }, IntPtr.Zero);
                 }
+
 
                 if (foundInChild) return true;
 
@@ -530,7 +529,7 @@ namespace Pulsar.Plugins.VbaRunner
                                         {
                                             IntPtr hwnd = (IntPtr)tempApp.Hwnd;
                                             uint processId;
-                                            GetWindowThreadProcessId(hwnd, out processId);
+                                            WindowHelper.GetWindowThreadProcessId(hwnd, out processId);
                                             
                                             if ((int)processId == targetProcessId)
                                             {
@@ -581,17 +580,6 @@ namespace Pulsar.Plugins.VbaRunner
         [DllImport("ole32.dll")]
         private static extern int CreateBindCtx(uint reserved, out IBindCtx ppbc);
 
-        [DllImport("user32.dll")]
-        private static extern bool EnumWindows(EnumWindowsProc enumProc, IntPtr lParam);
-
-        private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
-
-        [DllImport("user32.dll")]
-        private static extern bool IsWindowVisible(IntPtr hWnd);
-
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         private static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
 
@@ -600,7 +588,7 @@ namespace Pulsar.Plugins.VbaRunner
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool EnumChildWindows(IntPtr hwndParent, EnumWindowsProc lpEnumFunc, IntPtr lParam);
+        private static extern bool EnumChildWindows(IntPtr hwndParent, WindowHelper.EnumWindowsProc lpEnumFunc, IntPtr lParam);
 
         [DllImport("oleacc.dll")]
         private static extern int AccessibleObjectFromWindow(IntPtr hwnd, uint dwObjectID, ref Guid riid, [MarshalAs(UnmanagedType.IUnknown)] out object? ppvObject);
