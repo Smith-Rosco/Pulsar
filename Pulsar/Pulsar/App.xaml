@@ -16,6 +16,7 @@
             </ResourceDictionary.MergedDictionaries>
 
             <converters:ScaleConverter x:Key="ScaleConverter"/>
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             
             <!-- IconButtonStyle preserved as it's used in data templates that we might migrate or reference -->
             <Style x:Key="IconButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">

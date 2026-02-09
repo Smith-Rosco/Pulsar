@@ -72,6 +72,18 @@ namespace Pulsar.Views.Controls
             DependencyProperty.Register(nameof(IsTransparent), typeof(bool), typeof(JellyOrb), new PropertyMetadata(false));
         public static readonly DependencyProperty ShowActiveGlowProperty =
             DependencyProperty.Register(nameof(ShowActiveGlow), typeof(bool), typeof(JellyOrb), new PropertyMetadata(true));
+        
+        // [New] Controls visibility of the inner content (Image/Text) without affecting the Orb shape/glow
+        public static readonly DependencyProperty IsContentVisibleProperty =
+            DependencyProperty.Register(nameof(IsContentVisible), typeof(bool), typeof(JellyOrb), new PropertyMetadata(true));
+
+        // [New] Badge Count
+        public static readonly DependencyProperty BadgeCountProperty =
+            DependencyProperty.Register(nameof(BadgeCount), typeof(int), typeof(JellyOrb), new PropertyMetadata(0));
+            
+        // [New] Allow external binding of ImageSource (e.g. from ProcessWindowInfo)
+        public static readonly DependencyProperty OrbImageProperty =
+            DependencyProperty.Register(nameof(OrbImage), typeof(ImageSource), typeof(JellyOrb), new PropertyMetadata(null, OnOrbImageChanged));
 
         public string IconKey { get => (string)GetValue(IconKeyProperty); set => SetValue(IconKeyProperty, value); }
         public string Label { get => (string)GetValue(LabelProperty); set => SetValue(LabelProperty, value); }
@@ -80,7 +92,12 @@ namespace Pulsar.Views.Controls
         public bool IsRecommended { get => (bool)GetValue(IsRecommendedProperty); set => SetValue(IsRecommendedProperty, value); }
         public bool IsTransparent { get => (bool)GetValue(IsTransparentProperty); set => SetValue(IsTransparentProperty, value); }
         public bool ShowActiveGlow { get => (bool)GetValue(ShowActiveGlowProperty); set => SetValue(ShowActiveGlowProperty, value); }
+        public bool IsContentVisible { get => (bool)GetValue(IsContentVisibleProperty); set => SetValue(IsContentVisibleProperty, value); }
+        public int BadgeCount { get => (int)GetValue(BadgeCountProperty); set => SetValue(BadgeCountProperty, value); }
+        public ImageSource OrbImage { get => (ImageSource)GetValue(OrbImageProperty); set => SetValue(OrbImageProperty, value); }
 
+        // ============================
+        // Ⱦѭ (Lerp )
         // ============================
         // ��Ⱦѭ�� (Lerp ����)
         // ============================
@@ -146,17 +163,33 @@ namespace Pulsar.Views.Controls
             if (d is JellyOrb orb) orb.RefreshIcon(e.NewValue as string);
         }
 
+        private static void OnOrbImageChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is JellyOrb orb) orb.RefreshIcon(orb.IconKey); // Re-run logic to check priority
+        }
+
         private void RefreshIcon(string key)
         {
             RenderImage = null; RenderGlyph = string.Empty; ShowImage = false;
-            if (string.IsNullOrWhiteSpace(key)) return;
-            if (key.Contains("\\") || key.Contains("."))
+
+            // 1. Priority: IconKey (Glyph or Path)
+            if (!string.IsNullOrWhiteSpace(key))
             {
-                var img = IconHelper.GetIconFromPath(key);
-                if (img != null) { RenderImage = img; ShowImage = true; return; }
+                if (key.Contains("\\") || key.Contains("."))
+                {
+                    var img = IconHelper.GetIconFromPath(key);
+                    if (img != null) { RenderImage = img; ShowImage = true; return; }
+                }
+                var glyph = IconHelper.GetGlyph(key);
+                if (!string.IsNullOrEmpty(glyph)) { RenderGlyph = glyph; ShowImage = false; return; }
             }
-            var glyph = IconHelper.GetGlyph(key);
-            if (!string.IsNullOrEmpty(glyph)) { RenderGlyph = glyph; ShowImage = false; }
+
+            // 2. Fallback: OrbImage (Bound ImageSource)
+            if (OrbImage != null)
+            {
+                RenderImage = OrbImage;
+                ShowImage = true;
+            }
         }
     }
 }

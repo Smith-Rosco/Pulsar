@@ -149,8 +149,18 @@ namespace Pulsar.Services
 
                 NativeMethods.EnumWindows((hWnd, lParam) =>
                 {
-                    // 1. 基础过滤
+                        // 1. 基础过滤
                     if (!NativeMethods.IsWindowVisible(hWnd)) return true;
+
+                    // [Fix] 增强过滤：排除 Cloaked 窗口 (如 UWP 挂起、虚拟桌面)
+                    if (NativeMethods.DwmGetWindowAttribute(hWnd, NativeMethods.DWMWA_CLOAKED, out bool isCloaked, sizeof(bool)) == 0)
+                    {
+                        if (isCloaked) return true;
+                    }
+
+                    // [Fix] 增强过滤：排除工具窗口 (ToolWindow)
+                    long exStyle = NativeMethods.GetWindowLong(hWnd, NativeMethods.GWL_EXSTYLE);
+                    if ((exStyle & NativeMethods.WS_EX_TOOLWINDOW) != 0) return true;
 
                     // 2. 标题过滤
                     int length = NativeMethods.GetWindowTextLength(hWnd);
@@ -180,13 +190,17 @@ namespace Pulsar.Services
                                 iconSource = ExtractIcon(fullPath);
                             }
 
+                            DateTime startTime = DateTime.MinValue;
+                            try { startTime = proc.StartTime; } catch { }
+
                             results.Add(new ProcessWindowInfo
                             {
                                 Title = title,
                                 ProcessName = proc.ProcessName,
                                 ExePath = fullPath,
                                 Handle = hWnd,
-                                AppIcon = iconSource
+                                AppIcon = iconSource,
+                                StartTime = startTime
                             });
                         }
                     }
@@ -195,18 +209,73 @@ namespace Pulsar.Services
                     return true;
                 }, IntPtr.Zero);
 
-                // 去重
-                var distinctResults = new List<ProcessWindowInfo>();
-                var seen = new HashSet<string>();
-                foreach (var item in results)
+                // [Fix] 移除强制去重逻辑，直接返回所有有效窗口
+                // 这允许 ViewModel 识别同一进程的多个窗口并进行分组
+                return results;
+            });
+        }
+
+        public Task<List<ProcessWindowInfo>> GetProcessWindowsAsync(int targetProcessId)
+        {
+            return Task.Run(() =>
+            {
+                var results = new List<ProcessWindowInfo>();
+
+                NativeMethods.EnumWindows((hWnd, lParam) =>
                 {
-                    if (!seen.Contains(item.ProcessName))
+                    // 1. 基础过滤
+                    if (!NativeMethods.IsWindowVisible(hWnd)) return true;
+
+                    // 2. 进程过滤
+                    NativeMethods.GetWindowThreadProcessId(hWnd, out uint processId);
+                    if (processId != targetProcessId) return true;
+
+                    // 3. 标题过滤 (可选，如果不想要无标题窗口)
+                    int length = NativeMethods.GetWindowTextLength(hWnd);
+                    StringBuilder sb = new StringBuilder(length + 1);
+                    if (length > 0)
                     {
-                        distinctResults.Add(item);
-                        seen.Add(item.ProcessName);
+                        NativeMethods.GetWindowText(hWnd, sb, sb.Capacity);
                     }
-                }
-                return distinctResults;
+                    string title = sb.ToString();
+
+                    // 4. 获取进程信息
+                    try
+                    {
+                        using (var proc = Process.GetProcessById((int)processId))
+                        {
+                            if (proc.HasExited) return true;
+
+                            string fullPath = "";
+                            try { fullPath = proc.MainModule?.FileName ?? ""; } catch { }
+
+                            // 提取图标
+                            ImageSource? iconSource = null;
+                            if (!string.IsNullOrEmpty(fullPath))
+                            {
+                                iconSource = ExtractIcon(fullPath);
+                            }
+
+                            DateTime startTime = DateTime.MinValue;
+                            try { startTime = proc.StartTime; } catch { }
+
+                            results.Add(new ProcessWindowInfo
+                            {
+                                Title = string.IsNullOrEmpty(title) ? "Window" : title,
+                                ProcessName = proc.ProcessName,
+                                ExePath = fullPath,
+                                Handle = hWnd,
+                                AppIcon = iconSource,
+                                StartTime = startTime
+                            });
+                        }
+                    }
+                    catch { /* 忽略系统进程 */ }
+
+                    return true;
+                }, IntPtr.Zero);
+
+                return results;
             });
         }
 
@@ -246,6 +315,74 @@ namespace Pulsar.Services
         {
             _previousWindowHandle = GetForegroundWindow_Native();
         }
+
+        public async Task<ImageSource?> CaptureWindowAsync(IntPtr hWnd)
+        {
+            return await Task.Run(() =>
+            {
+                if (hWnd == IntPtr.Zero || !NativeMethods.IsWindow(hWnd)) return null;
+
+                try
+                {
+                    // 1. Get Dimensions
+                    if (!NativeMethods.GetWindowRect(hWnd, out var rect)) return null;
+                    int width = rect.Right - rect.Left;
+                    int height = rect.Bottom - rect.Top;
+
+                    if (width <= 0 || height <= 0) return null;
+
+                    // 2. Create Bitmap
+                    using (var bitmap = new System.Drawing.Bitmap(width, height))
+                    {
+                        using (var g = System.Drawing.Graphics.FromImage(bitmap))
+                        {
+                            // 3. Print Window Content
+                            IntPtr hdc = g.GetHdc();
+                            try
+                            {
+                                // PW_CLIENTONLY = 1
+                                // PW_RENDERFULLCONTENT = 0x00000002 (Windows 8.1+) - Captures layered windows/Chrome/WPF
+                                // Try RenderFullContent first
+                                bool success = NativeMethods.PrintWindow(hWnd, hdc, 0x00000002);
+                                if (!success)
+                                {
+                                    // Fallback to default
+                                    success = NativeMethods.PrintWindow(hWnd, hdc, 0);
+                                }
+                                if (!success) return null;
+                            }
+                            finally
+                            {
+                                g.ReleaseHdc(hdc);
+                            }
+                        }
+
+                        // 4. Convert to WPF ImageSource
+                        IntPtr hBitmap = bitmap.GetHbitmap();
+                        try
+                        {
+                            var wpfBitmap = Imaging.CreateBitmapSourceFromHBitmap(
+                                hBitmap,
+                                IntPtr.Zero,
+                                Int32Rect.Empty,
+                                BitmapSizeOptions.FromEmptyOptions());
+                            
+                            wpfBitmap.Freeze(); // Make cross-thread accessible
+                            return (ImageSource)wpfBitmap;
+                        }
+                        finally
+                        {
+                            NativeMethods.DeleteObject(hBitmap);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Capture Failed: {ex.Message}");
+                    return null;
+                }
+            });
+        }
     }
 
     // 保持 NativeMethods 类不变
@@ -255,6 +392,18 @@ namespace Pulsar.Services
         [DllImport("user32.dll")] internal static extern bool IsIconic(IntPtr hWnd);
         [DllImport("user32.dll")] internal static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
         [DllImport("user32.dll")] internal static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, uint dwExtraInfo);
+        
+        // [New] Capture Helpers
+        [DllImport("user32.dll")] internal static extern bool IsWindow(IntPtr hWnd);
+        [DllImport("user32.dll")] internal static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+        [DllImport("user32.dll")] internal static extern bool PrintWindow(IntPtr hwnd, IntPtr hDC, uint nFlags);
+        [DllImport("gdi32.dll")] internal static extern bool DeleteObject(IntPtr hObject);
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct RECT
+        {
+            public int Left, Top, Right, Bottom;
+        }
 
         public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
         [DllImport("user32.dll")] internal static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
@@ -263,5 +412,13 @@ namespace Pulsar.Services
         [DllImport("user32.dll", CharSet = CharSet.Auto)] internal static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
         [DllImport("user32.dll")] internal static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
         [DllImport("user32.dll", SetLastError = true)][return: MarshalAs(UnmanagedType.Bool)] internal static extern bool DestroyIcon(IntPtr hIcon);
+        
+        // [New] DWM & Window Style API
+        [DllImport("dwmapi.dll")] internal static extern int DwmGetWindowAttribute(IntPtr hwnd, int dwAttribute, out bool pvAttribute, int cbAttribute);
+        [DllImport("user32.dll")] internal static extern long GetWindowLong(IntPtr hWnd, int nIndex);
+        
+        internal const int DWMWA_CLOAKED = 14;
+        internal const int GWL_EXSTYLE = -20;
+        internal const long WS_EX_TOOLWINDOW = 0x00000080;
     }
 }

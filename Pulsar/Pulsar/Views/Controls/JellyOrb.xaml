@@ -54,11 +54,11 @@
         </Ellipse>
 
         <Ellipse x:Name="OrbFill" 
-                 Fill="{DynamicResource Theme.Orb.Fill}" 
-                 Stroke="{DynamicResource Theme.Orb.Stroke}" 
                  StrokeThickness="1.5">
             <Ellipse.Style>
                 <Style TargetType="Ellipse">
+                    <Setter Property="Fill" Value="{DynamicResource Theme.Orb.Fill}"/>
+                    <Setter Property="Stroke" Value="{DynamicResource Theme.Orb.Stroke}"/>
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding IsTransparent, ElementName=OrbRoot}" Value="True">
                             <Setter Property="Fill" Value="Transparent"/>
@@ -106,18 +106,62 @@
         </Ellipse>
 
         <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+            
+            <!-- [New] Opacity Binding for IsContentVisible -->
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Style.Triggers>
+                         <DataTrigger Binding="{Binding IsContentVisible, ElementName=OrbRoot}" Value="False">
+                             <Setter Property="Opacity" Value="0"/>
+                             <Setter Property="Visibility" Value="Collapsed"/> <!-- Collapsed to remove hit test? No, keep layout -->
+                         </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
 
-            <Image Source="{Binding RenderImage, ElementName=OrbRoot}"
+            <Image Source="{Binding RenderImage, ElementName=OrbRoot, NotifyOnTargetUpdated=True}"
                    Width="24" Height="24"
                    RenderOptions.BitmapScalingMode="HighQuality"
-                   Visibility="{Binding ShowImage, ElementName=OrbRoot, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                   Visibility="{Binding ShowImage, ElementName=OrbRoot, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Image.Triggers>
+                    <EventTrigger RoutedEvent="Binding.TargetUpdated">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.25"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" From="0.5" To="1" Duration="0:0:0.25">
+                                    <DoubleAnimation.EasingFunction>
+                                        <BackEase EasingMode="EaseOut" Amplitude="0.3"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" From="0.5" To="1" Duration="0:0:0.25">
+                                    <DoubleAnimation.EasingFunction>
+                                        <BackEase EasingMode="EaseOut" Amplitude="0.3"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                </Image.Triggers>
+                <Image.RenderTransform>
+                    <ScaleTransform ScaleX="1" ScaleY="1" CenterX="12" CenterY="12"/>
+                </Image.RenderTransform>
+            </Image>
 
-            <TextBlock Text="{Binding RenderGlyph, ElementName=OrbRoot}"
+            <TextBlock Text="{Binding RenderGlyph, ElementName=OrbRoot, NotifyOnTargetUpdated=True}"
                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, Segoe UI Emoji"
                        FontSize="20"
                        Foreground="{DynamicResource Theme.Orb.Text}"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center">
+                <TextBlock.Triggers>
+                    <EventTrigger RoutedEvent="Binding.TargetUpdated">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.2"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                </TextBlock.Triggers>
                 <TextBlock.Style>
                     <Style TargetType="TextBlock">
                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -130,7 +174,42 @@
                 </TextBlock.Style>
             </TextBlock>
 
-            <TextBlock Text="{Binding Label, ElementName=OrbRoot}" 
+            <!-- [New] Badge for Multi-Window Count -->
+            <Border Background="#FF0078D7" 
+                    CornerRadius="10" 
+                    MinWidth="18" Height="18"
+                    HorizontalAlignment="Right" VerticalAlignment="Top"
+                    Margin="0,-10,-10,0"
+                    Padding="4,0"
+                    Panel.ZIndex="100">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <!-- Only show if BadgeCount > 1 -->
+                            <DataTrigger Binding="{Binding BadgeCount}" Value="0">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding BadgeCount}" Value="1">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                            <!-- Use a converter or multiple triggers for > 1 check. 
+                                 Simpler: VM ensures BadgeCount is 0 if <= 1. -->
+                            <DataTrigger Binding="{Binding HasBadge}" Value="True">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <TextBlock Text="{Binding BadgeCount}" 
+                           Foreground="White" 
+                           FontSize="10" 
+                           FontWeight="Bold"
+                           HorizontalAlignment="Center" 
+                           VerticalAlignment="Center"/>
+            </Border>
+
+            <TextBlock Text="{Binding Label, ElementName=OrbRoot}"
                        FontSize="11" FontWeight="SemiBold" 
                        Foreground="{DynamicResource Theme.Orb.Text}"
                        HorizontalAlignment="Center" VerticalAlignment="Center">

@@ -9,6 +9,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Interop;
+using System.Windows.Media.Animation;
 using Wpf.Ui.Controls;
 // 引用 WinForms 获取全局鼠标坐标
 using Forms = System.Windows.Forms;
@@ -48,6 +49,15 @@ namespace Pulsar.Views
 
             // 1. 监听 ViewModel 的属性变化 (Show/Hide 信号)
             _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+            
+            // [New] Listen for CenterPreviewImage changes for smooth transition
+            _viewModel.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(RadialMenuViewModel.CenterPreviewImage))
+                {
+                    UpdatePreviewTransition(_viewModel.CenterPreviewImage);
+                }
+            };
 
             // 2. 窗口加载时初始化主题 (Loads user config)
             InitializeTheme();
@@ -70,11 +80,21 @@ namespace Pulsar.Views
                 });
             });
 
+            // 4. [New] Handle Mouse Clicks for Drill-Down
+            this.MouseLeftButtonUp += (s, e) => _viewModel.HandleLeftClick();
+            
+            // 5. [New] Handle Mouse Wheel for Paging
+            this.PreviewMouseWheel += (s, e) => _viewModel.HandleMouseWheelMixed(e.Delta);
+
+            // 6. [Optimized] Global Polling for "Infinite" Radial Trigger
+            // this.MouseMove += OnWindowMouseMove; // Removed local event handler
+
+
             // ====================================================
             // 👻 [驻留模式初始化] (Resident Mode Init)
             // ====================================================
             this.Opacity = 0;
-            this.Visibility = Visibility.Visible;
+            this.Visibility = Visibility.Visible; // [Fix] Start Visible but Transparent
             this.IsHitTestVisible = false;
             this.ShowInTaskbar = false;
         }
@@ -109,6 +129,44 @@ namespace Pulsar.Views
         }
 
 
+        private bool _usePreviewA = true;
+
+        private void UpdatePreviewTransition(ImageSource? newImage)
+        {
+             // Identify active and inactive layers
+             var active = _usePreviewA ? PreviewEllipseA : PreviewEllipseB;
+             var inactive = _usePreviewA ? PreviewEllipseB : PreviewEllipseA;
+             
+             // If new image is null, fade out current active layer
+             if (newImage == null)
+             {
+                 var fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(200));
+                 active.BeginAnimation(UIElement.OpacityProperty, fadeOut);
+                 return;
+             }
+             
+             // Set new image to inactive layer
+             if (inactive.Fill is ImageBrush brush)
+             {
+                 brush.ImageSource = newImage;
+             }
+             else
+             {
+                 // Should not happen if XAML is correct, but safe guard
+                 inactive.Fill = new ImageBrush(newImage) { Stretch = Stretch.UniformToFill };
+             }
+             
+             // Cross-fade
+             var fadeIn = new DoubleAnimation(1, TimeSpan.FromMilliseconds(250));
+             var fadeOutActive = new DoubleAnimation(0, TimeSpan.FromMilliseconds(250));
+             
+             inactive.BeginAnimation(UIElement.OpacityProperty, fadeIn);
+             active.BeginAnimation(UIElement.OpacityProperty, fadeOutActive);
+             
+             // Swap active flag
+             _usePreviewA = !_usePreviewA;
+        }
+
         private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(RadialMenuViewModel.IsVisible))
@@ -140,27 +198,66 @@ namespace Pulsar.Views
                 _windowService.SetPreviousWindow(current);
             }
 
-            // 2. [定位] 瞬间移动位置 & 刷新主题
+            // 1. [定位] 瞬间移动位置 & 刷新主题
             UpdateDpiAndPosition();
-            RefreshThemeOnShow();
+            
+            // [New] Animation (Pop-in)
+            // Ensure initial state is ready for animation
+            this.IsHitTestVisible = true; // [Fix] Enable interaction immediately before animation
+            
+            // Clear any HoldEnd animations from Dismiss
+            this.BeginAnimation(UIElement.OpacityProperty, null);
+            this.Opacity = 0;
+
+            var scaleAnim = new DoubleAnimation(0.8, 1.0, TimeSpan.FromMilliseconds(150));
+            scaleAnim.EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut };
+            
+            var fadeAnim = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(100));
+
+            var trans = new ScaleTransform(1, 1);
+            MenuCanvas.RenderTransform = trans;
+            MenuCanvas.RenderTransformOrigin = new System.Windows.Point(0.5, 0.5);
+            
+            trans.BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnim);
+            trans.BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnim);
+            this.BeginAnimation(UIElement.OpacityProperty, fadeAnim);
 
             // ... 后续逻辑保持不变 (Activate, Focus, Opacity=1) ...
-            this.Show(); // [Fix] 确保窗口显示
-            this.IsHitTestVisible = true;
+            // this.Show(); // [Fix] 移除 Show()，因为窗口一直 Visible，避免 Trigger 重绘闪烁
             this.Activate(); // 抢占焦点
             this.Focus();
             this.UpdateLayout();
-            this.Opacity = 1.0;
+            
+            // CompositionTarget.Rendering += UpdateLoop; // [Optimized] Removed polling
+            
+            // [Fix] Resume Global Polling (Requirement: Full Screen Trigger)
             CompositionTarget.Rendering += UpdateLoop;
         }
 
         private void Dismiss()
         {
             // 1. [冻结] 停止计算循环
+            // CompositionTarget.Rendering -= UpdateLoop; // [Optimized] Removed polling
+            
+            // [Fix] Pause Global Polling
             CompositionTarget.Rendering -= UpdateLoop;
-            // 2. [隐身] 瞬间隐形
-            this.Opacity = 0;
-            this.Hide(); // [Fix] 彻底隐藏窗口，防止留下白框 (Ghost Window)
+            
+            // 2. [隐身] 优雅退出 (Resident Mode)
+            // [Fix] Immediately hide Preview to prevent residue
+            _viewModel.CenterPreviewImage = null;
+
+            // 显式停止之前的动画并播放淡出动画，确保 Opacity 归零
+            var fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(100));
+            fadeOut.FillBehavior = FillBehavior.HoldEnd;
+            
+            // [Fix 1] Wait for animation to complete before clearing visuals
+            fadeOut.Completed += (s, e) =>
+            {
+                _viewModel.ClearVisuals();
+            };
+            
+            this.BeginAnimation(UIElement.OpacityProperty, fadeOut);
+            
             // 3. [穿透] 关闭交互
             this.IsHitTestVisible = false;
 
@@ -179,9 +276,9 @@ namespace Pulsar.Views
             // 无论是否归还，都清空记录，防止逻辑污染
             // 注意：这里不清除 Service 里的记录，因为 PKI 可能稍后还需要读取它
             // _windowService.SetPreviousWindow(IntPtr.Zero); 
-
-            // 5. [清理] 调用 ViewModel 清理逻辑
-            _viewModel.ClearVisuals();
+            
+            // 5. [清理] ViewModel 清理逻辑已移至动画完成回调中
+            // _viewModel.ClearVisuals();
         }
 
         private async void RefreshThemeOnShow()
@@ -204,15 +301,38 @@ namespace Pulsar.Views
         private void UpdateLoop(object? sender, EventArgs e)
         {
             if (this.Opacity < 0.1) return;
-            // 1. 获取全局物理坐标
-            var screenPoint = Forms.Cursor.Position;
-            // 2. 转换为相对于 Window 左上角的 WPF 逻辑坐标
-            double logicalX = (screenPoint.X / _dpiScaleX) - this.Left;
-            double logicalY = (screenPoint.Y / _dpiScaleY) - this.Top;
 
-            // 3. 发送给 ViewModel
-            _viewModel.HandleMouseMove(logicalX, logicalY);
+            // 1. Get Global Cursor Position (Physical Pixels)
+            var screenPoint = Forms.Cursor.Position;
+
+            // 2. Convert to WPF Coordinates (DPI Aware)
+            double wpfMouseX = screenPoint.X / _dpiScaleX;
+            double wpfMouseY = screenPoint.Y / _dpiScaleY;
+
+            // 3. Convert to Window-Relative Coordinates
+            // Even if the mouse is outside the window, this calculation is valid.
+            // Center of window is at (250, 250) locally.
+            // We need: MouseX - WindowLeft, MouseY - WindowTop
+            
+            double relX = wpfMouseX - this.Left;
+            double relY = wpfMouseY - this.Top;
+
+            // 4. Send to ViewModel for Polar Calculation
+            _viewModel.HandleMouseMove(relX, relY);
         }
+
+        /* [Removed] Local Event Handler
+        private void OnWindowMouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            if (this.Opacity < 0.1) return;
+
+            // Get position relative to this window (DPI aware)
+            var p = e.GetPosition(this);
+            
+            // 3. 发送给 ViewModel
+            _viewModel.HandleMouseMove(p.X, p.Y);
+        }
+        */
 
         private void UpdateDpiAndPosition()
         {
@@ -224,16 +344,24 @@ namespace Pulsar.Views
             double wpfMouseX = screenPoint.X / _dpiScaleX;
             double wpfMouseY = screenPoint.Y / _dpiScaleY;
 
-            double width = this.ActualWidth > 0 ? this.ActualWidth : 400;
-            double height = this.ActualHeight > 0 ? this.ActualHeight : 400;
+            double width = this.ActualWidth > 0 ? this.ActualWidth : 500;
+            double height = this.ActualHeight > 0 ? this.ActualHeight : 500;
 
-            this.Left = wpfMouseX - (width / 2);
-            this.Top = wpfMouseY - (height / 2);
+            // [Enhanced] Smart Layout - Removed as per user request (Requirement 1: Cancel Smart Layout)
+            // The menu should appear exactly where summoned (centered on cursor usually), without shifting.
+            // If we still want to center on cursor:
+            double left = wpfMouseX - (width / 2);
+            double top = wpfMouseY - (height / 2);
+
+            this.Left = left;
+            this.Top = top;
         }
 
         protected override void OnClosed(EventArgs e)
         {
-            CompositionTarget.Rendering -= UpdateLoop;
+            CompositionTarget.Rendering -= UpdateLoop; // [Fix] Ensure loop stops
+            // this.MouseMove -= OnWindowMouseMove; // Removed
+            
             if (_viewModel != null)
             {
                 _viewModel.PropertyChanged -= OnViewModelPropertyChanged;

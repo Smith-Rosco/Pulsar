@@ -3,6 +3,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading.Tasks;
+using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 
 namespace Pulsar.Core.Plugin
@@ -16,6 +18,7 @@ namespace Pulsar.Core.Plugin
         public IntPtr TargetWindowHandle { get; init; }
         public string TargetProcessName { get; init; }  // 大写，如 "EXCEL"
         public int TargetProcessId { get; init; }
+        public IReadOnlyList<ProcessWindowInfo> TargetProcessWindows { get; init; }
 
         // === 用户输入 ===
         public string? SelectedText { get; init; }      // 预读取的选中文本
@@ -27,7 +30,7 @@ namespace Pulsar.Core.Plugin
         /// <summary>
         /// 工厂方法 - 捕获当前上下文
         /// </summary>
-        public static PulsarContext Capture(IWindowService windowService)
+        public static async Task<PulsarContext> CaptureAsync(IWindowService windowService)
         {
             var hwnd = windowService.GetPreviousWindow();
             
@@ -54,6 +57,13 @@ namespace Pulsar.Core.Plugin
                 Debug.WriteLine($"[PulsarContext] Failed to get process info: {ex.Message}");
             }
 
+            // 获取该进程的所有窗口
+            List<ProcessWindowInfo> processWindows = new List<ProcessWindowInfo>();
+            if (pid > 0)
+            {
+                processWindows = await windowService.GetProcessWindowsAsync(pid);
+            }
+
             // 获取剪贴板文本
             string? clipboardText = null;
             try
@@ -70,6 +80,7 @@ namespace Pulsar.Core.Plugin
                 TargetWindowHandle = hwnd,
                 TargetProcessName = processName,
                 TargetProcessId = pid,
+                TargetProcessWindows = processWindows,
                 ClipboardText = clipboardText,
                 SelectedText = null // TODO: 实现异步预热读取选中文本
             };

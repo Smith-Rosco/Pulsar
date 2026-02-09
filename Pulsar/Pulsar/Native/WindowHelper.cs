@@ -63,6 +63,10 @@ namespace Pulsar.Native
 
         [DllImport("user32.dll")]
         public static extern IntPtr GetForegroundWindow();
+        
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool IsWindow(IntPtr hWnd);
 
         // --- Constants ---
         public const int SW_RESTORE = 9;

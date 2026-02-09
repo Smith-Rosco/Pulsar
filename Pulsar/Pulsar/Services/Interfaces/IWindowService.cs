@@ -34,6 +34,11 @@ namespace Pulsar.Services.Interfaces
         /// </summary>
         Task<List<ProcessWindowInfo>> GetActiveWindowsAsync();
 
+        /// <summary>
+        /// 获取指定进程ID的所有可见窗口
+        /// </summary>
+        Task<List<ProcessWindowInfo>> GetProcessWindowsAsync(int processId);
+
         // --- 上下文感知与焦点回旋 (Focus Boomerang) ---
 
         /// <summary>
@@ -58,5 +63,10 @@ namespace Pulsar.Services.Interfaces
         /// 强制隐藏主窗口 (用于 PKI 注入前的清场)
         /// </summary>
         void HideMainWindow();
+
+        /// <summary>
+        /// 捕获指定窗口的静态快照
+        /// </summary>
+        Task<System.Windows.Media.ImageSource?> CaptureWindowAsync(IntPtr hWnd);
     }
 }

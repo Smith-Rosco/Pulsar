@@ -11,9 +11,16 @@ using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.Native;
 using Pulsar.Helpers;
+using Pulsar.ViewModels.Strategies; // [New]
 
 namespace Pulsar.ViewModels
 {
+    public enum MenuState
+    {
+        Root,
+        SubMenu
+    }
+
     public partial class RadialMenuViewModel : ObservableObject
     {
         private readonly IConfigService _configService;
@@ -24,10 +31,21 @@ namespace Pulsar.ViewModels
         private List<PluginSlot> _currentSlots = new();
         private GridItemType _currentType;
         private PulsarContext _lastContext;
+        private MenuState _menuState = MenuState.Root;
+        private List<SlotViewModel> _rootSlotBackup = new(); // Backup of root slots for restoration
+        private List<ProcessWindowInfo>? _subWindows; // Windows currently displayed in SubMenu
 
         public ObservableCollection<SlotViewModel> Slots { get; } = new();
         public SlotViewModel CenterSlot { get; private set; } = null!;
         public bool ActionExecuted { get; private set; }
+
+        // [New] Public properties for Strategies
+        public bool IsInSubMenu => _menuState == MenuState.SubMenu;
+        
+        public void SetActionExecuted(bool value)
+        {
+            ActionExecuted = value;
+        }
 
         private bool _isVisible;
         public bool IsVisible
@@ -46,10 +64,49 @@ namespace Pulsar.ViewModels
         private int _activeSlotIndex = -1;
 
         // 布局常量
-        private const double CanvasSize = 400;
+        private const double CanvasSize = 500;
         private const double CenterX = CanvasSize / 2;
         private const double CenterY = CanvasSize / 2;
-        private const double SatelliteRadius = 90;
+        
+        // [New] Dynamic Layout
+        // Default Radius: 90. Expanded Radius: 125 (Reduced from 150)
+        private const double RadiusNormal = 90;
+        private const double RadiusExpanded = 125; 
+        private double _currentRadius = RadiusNormal;
+
+        private const double CenterSizeNormal = 70;
+        private const double CenterSizeExpanded = 110;
+        private double _currentCenterSize = CenterSizeNormal;
+        
+        // [New] Dynamic Title Position
+        private double _titleTopOffset = 350;
+        public double TitleTopOffset
+        {
+            get => _titleTopOffset;
+            set => SetProperty(ref _titleTopOffset, value);
+        }
+        
+        // [New] Center Preview Image
+        private System.Windows.Media.ImageSource? _centerPreviewImage;
+        public System.Windows.Media.ImageSource? CenterPreviewImage
+        {
+            get => _centerPreviewImage;
+            set => SetProperty(ref _centerPreviewImage, value);
+        }
+
+        // Animation Timer
+        private System.Windows.Threading.DispatcherTimer? _animTimer;
+        private double _animTargetRadius;
+        private double _animTargetCenterSize;
+        
+        // [New] Dynamic Title & Thumbnail
+        private string _dynamicTitle = "";
+        public string DynamicTitle
+        {
+            get => _dynamicTitle;
+            set => SetProperty(ref _dynamicTitle, value);
+        }
+
         private const double ItemSize = 50;
         private const double CenterSize = 70;
 
@@ -70,6 +127,11 @@ namespace Pulsar.ViewModels
 
             InitializeSlots();
 
+            // [New] Initialize Animation Timer
+            _animTimer = new System.Windows.Threading.DispatcherTimer();
+            _animTimer.Interval = TimeSpan.FromMilliseconds(16); // ~60 FPS
+            _animTimer.Tick += (s, e) => UpdateLayoutAnimation();
+
             hook.OnGridTrigger += (s, e) => Show(GridItemType.Action);
             hook.OnSwitcherTrigger += (s, e) => Show(GridItemType.Launcher);
             hook.OnKeyUp += HandleKeyUp;
@@ -80,14 +142,55 @@ namespace Pulsar.ViewModels
 
         private void InitializeSlots()
         {
-            CenterSlot = new SlotViewModel(0, CenterX - CenterSize / 2, CenterY - CenterSize / 2, CenterSize);
+            CenterSlot = new SlotViewModel(0, CenterX - CenterSizeNormal / 2, CenterY - CenterSizeNormal / 2, CenterSizeNormal);
             for (int i = 1; i <= 8; i++)
             {
-                double angleDeg = -90 + (i - 1) * 45;
-                double angleRad = angleDeg * (Math.PI / 180.0);
-                double x = CenterX + SatelliteRadius * Math.Cos(angleRad);
-                double y = CenterY + SatelliteRadius * Math.Sin(angleRad);
-                Slots.Add(new SlotViewModel(i, x - ItemSize / 2, y - ItemSize / 2, ItemSize));
+                var pos = RadialLayoutHelper.GetSlotPosition(i, 8, _currentRadius, CenterX, CenterY, ItemSize);
+                Slots.Add(new SlotViewModel(i, pos.X, pos.Y, ItemSize));
+            }
+        }
+
+        // [New] Layout Animation Logic
+        private void AnimateToRadius(double targetRadius, double targetCenterSize)
+        {
+            _animTargetRadius = targetRadius;
+            _animTargetCenterSize = targetCenterSize;
+            if (!_animTimer!.IsEnabled) _animTimer.Start();
+        }
+
+        private void UpdateLayoutAnimation()
+        {
+            bool radiusDone = Math.Abs(_currentRadius - _animTargetRadius) < 1.0;
+            bool centerDone = Math.Abs(_currentCenterSize - _animTargetCenterSize) < 1.0;
+
+            if (radiusDone && centerDone)
+            {
+                _currentRadius = _animTargetRadius;
+                _currentCenterSize = _animTargetCenterSize;
+                _animTimer?.Stop();
+            }
+            else
+            {
+                // Simple Lerp: current = current + (target - current) * 0.2
+                _currentRadius += (_animTargetRadius - _currentRadius) * 0.2;
+                _currentCenterSize += (_animTargetCenterSize - _currentCenterSize) * 0.2;
+            }
+
+            // 1. Update Center Slot
+            CenterSlot.Size = _currentCenterSize;
+            CenterSlot.X = CenterX - _currentCenterSize / 2;
+            CenterSlot.Y = CenterY - _currentCenterSize / 2;
+            
+            // 2. Update Title Position (Dynamic based on radius to avoid overlap)
+            // CenterY (250) + Radius + HalfItem (25) + Padding (20)
+            TitleTopOffset = CenterY + _currentRadius + 45;
+
+            // 3. Update Satellite Slots
+            for (int i = 0; i < Slots.Count; i++)
+            {
+                var pos = RadialLayoutHelper.GetSlotPosition(i + 1, 8, _currentRadius, CenterX, CenterY, ItemSize);
+                Slots[i].X = pos.X;
+                Slots[i].Y = pos.Y;
             }
         }
 
@@ -114,84 +217,393 @@ namespace Pulsar.ViewModels
                 slot.LoadIconData(string.Empty);
                 slot.IsActive = false;
                 slot.IsRecommended = false;
+                slot.BadgeCount = 0; // [Fix] Clear badge state
             }
         }
 
-        private void Show(GridItemType type)
+        private bool _isLoading; // [New] Prevent double-trigger flickering
+
+        private async void Show(GridItemType type)
         {
-            if (IsVisible) return;
+            if (IsVisible || _isLoading) return;
+            _isLoading = true;
 
-            // 1. 捕获上下文
-            // 确保 WindowService 知道上一个窗口是谁（用于上下文捕获）
-            IntPtr foregroundHandle = WindowHelper.GetForegroundWindow();
-            _windowService.SetPreviousWindow(foregroundHandle);
-            
-            _lastContext = PulsarContext.Capture(_windowService);
-
-            ActionExecuted = false;
-            ResetSelection();
-            _currentType = type;
-
-            string activeProcess = _lastContext.TargetProcessName; // e.g., "EXCEL"
-
-            // 2. 确定数据源
-            _currentSlots.Clear();
-
-            if (_config == null) return;
-
-            if (type == GridItemType.Launcher)
+            try
             {
-                // Launcher 模式通常使用 Global 的 SwitchMode
-                if (_config.Profiles.TryGetValue("Global", out var globalProfile))
+                // 1. 捕获上下文
+                // 确保 WindowService 知道上一个窗口是谁（用于上下文捕获）
+                IntPtr foregroundHandle = WindowHelper.GetForegroundWindow();
+                _windowService.SetPreviousWindow(foregroundHandle);
+                
+                _lastContext = await PulsarContext.CaptureAsync(_windowService);
+
+                ActionExecuted = false;
+                ResetSelection();
+                _currentType = type;
+                
+                // [New] Reset Layout to Normal
+                _currentRadius = RadiusNormal;
+                _currentCenterSize = CenterSizeNormal;
+                // Force update center slot position immediately
+                CenterSlot.Size = _currentCenterSize;
+                CenterSlot.X = CenterX - _currentCenterSize / 2;
+                CenterSlot.Y = CenterY - _currentCenterSize / 2;
+                
+                AnimateToRadius(RadiusNormal, CenterSizeNormal); // Ensure visual state matches
+                
+                string activeProcess = _lastContext.TargetProcessName; // e.g., "EXCEL"
+
+                // 2. 确定数据源
+                _currentSlots.Clear();
+                _menuState = MenuState.Root;
+
+                if (_config == null) return;
+
+                if (type == GridItemType.Launcher)
                 {
-                    _currentSlots.AddRange(globalProfile.GetSlots(false)); // false = SwitchMode
+                    // Launcher Mode (Switcher) - Load running processes
+                    await LoadRunningProcessesAsync();
                 }
-                CenterText = "Switch";
-            }
-            else // Action Mode
-            {
-                bool foundProfile = false;
-
-                // 尝试查找特定进程的 Profile
-                if (!string.IsNullOrEmpty(activeProcess) && _config.Profiles.TryGetValue(activeProcess, out var profile))
+                else // Action Mode
                 {
-                    var profileSlots = profile.GetSlots(true); // true = CommandMode
-                    if (profileSlots.Count > 0)
+                    bool foundProfile = false;
+
+                    // 尝试查找特定进程的 Profile
+                    if (!string.IsNullOrEmpty(activeProcess) && _config.Profiles.TryGetValue(activeProcess, out var profile))
                     {
-                        _currentSlots.AddRange(profileSlots);
-                        foundProfile = true;
+                        var profileSlots = profile.GetSlots(true); // true = CommandMode
+                        if (profileSlots.Count > 0)
+                        {
+                            _currentSlots.AddRange(profileSlots);
+                            foundProfile = true;
+                        }
+                    }
+
+                    // 如果没找到或特定 Profile 为空，回退到 Global
+                    if (!foundProfile && _config.Profiles.TryGetValue("Global", out var globalProfile))
+                    {
+                        _currentSlots.AddRange(globalProfile.GetSlots(true));
+                    }
+
+                    CenterText = foundProfile ? activeProcess : "Global";
+                    BindSlots(_currentSlots);
+                }
+
+                IsVisible = true;
+            }
+            finally
+            {
+                _isLoading = false;
+            }
+        }
+
+        // [New] Paging
+        private int _currentPage = 0;
+        private List<List<ProcessWindowInfo>> _allProcessGroups = new();
+
+        public void HandleMouseWheel(int delta)
+        {
+            if (_menuState != MenuState.Root || _currentType != GridItemType.Launcher) return;
+            if (_allProcessGroups.Count <= 8) return; // No need to page
+
+            int direction = delta > 0 ? -1 : 1; // Wheel Up -> Prev Page, Down -> Next Page
+            int totalPages = (int)Math.Ceiling((double)_allProcessGroups.Count / 8.0);
+            
+            _currentPage += direction;
+            if (_currentPage < 0) _currentPage = totalPages - 1;
+            if (_currentPage >= totalPages) _currentPage = 0;
+
+            RefreshPage();
+        }
+
+        private void RefreshPage()
+        {
+             // Determine which groups to show based on _currentPage
+             // Page 0: Pinned + First batch of others
+             // Page 1+: Remaining others
+             
+             // Wait, logic is slightly complex. Let's simplify:
+             // We have _allProcessGroups (ordered list).
+             // We just take Skip(page * 8).Take(8).
+             
+             // Re-Binding
+             ClearVisuals();
+             CenterText = $"Page {_currentPage + 1}";
+             CenterSlot.Label = "Cancel";
+             
+             var pageGroups = _allProcessGroups.Skip(_currentPage * 8).Take(8).ToList();
+             
+             int index = 1;
+             foreach (var group in pageGroups)
+             {
+                 var slot = Slots.FirstOrDefault(s => s.SlotIndex == index);
+                 if (slot != null)
+                 {
+                     var firstWindow = group.First();
+                     slot.Label = firstWindow.ProcessName;
+                     slot.IconImage = firstWindow.AppIcon;
+                     slot.Type = SlotType.Process;
+                     slot.DataContext = group.ToList();
+                 }
+                 index++;
+             }
+        }
+        
+        private async Task LoadRunningProcessesAsync()
+        {
+            _currentPage = 0;
+            var windows = await _windowService.GetActiveWindowsAsync();
+
+            // 1. Group by Process
+            var groups = windows
+                .GroupBy(w => w.ProcessName)
+                .ToList();
+                
+            // 2. Sort by Pinned (Fixed Slots) vs Others
+            // Load "Global" profile to check for pinned slots
+            var pinnedMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase); // ProcessName -> SlotIndex (1-8)
+            if (_config != null && _config.Profiles.TryGetValue("Global", out var globalProfile))
+            {
+                // Fix: Load SwitchMode slots (false) instead of CommandMode slots (true) for Launcher/Switcher
+                var slots = globalProfile.GetSlots(false);
+                foreach(var item in slots)
+                {
+                     // If it's a WinSwitcher plugin action, the process name might be in Args["app"]
+                     if (item.PluginId == "com.pulsar.winswitcher" && item.Args.TryGetValue("app", out var appName))
+                     {
+                         pinnedMap[appName] = item.Slot;
+                     }
+                     // Fallback to label if no specific arg found
+                     else if (!string.IsNullOrEmpty(item.Label))
+                     {
+                        pinnedMap[item.Label] = item.Slot;
+                     }
+                }
+            }
+            
+            // Separate Pinned and Unpinned
+            var pinnedGroups = new List<IGrouping<string, ProcessWindowInfo>>();
+            var otherGroups = new List<IGrouping<string, ProcessWindowInfo>>();
+            
+            foreach(var g in groups)
+            {
+                // Is this process pinned?
+                if (pinnedMap.ContainsKey(g.Key))
+                {
+                    pinnedGroups.Add(g);
+                }
+                else
+                {
+                    otherGroups.Add(g);
+                }
+            }
+            
+            // 3. Construct the Master List for Paging
+            // The requirement says: "First page slots determined by settings... remaining fill others"
+            // We need a list of 8 slots for Page 0, then Page 1, etc.
+            
+            var page0 = new List<ProcessWindowInfo>[8];
+            Array.Clear(_page0Config, 0, 8); // Clear old config
+
+            // Fill Pinned
+            foreach(var pg in pinnedGroups)
+            {
+                // Find slot index
+                int slotIdx = pinnedMap[pg.Key]; // 1-8
+                if (slotIdx >= 1 && slotIdx <= 8)
+                {
+                    page0[slotIdx - 1] = pg.ToList();
+                    
+                    // [New] Find the PluginSlot config that mapped this
+                    if (_config != null && _config.Profiles.TryGetValue("Global", out var pinnedProfile))
+                    {
+                         var slots = pinnedProfile.GetSlots(false); // SwitchMode
+                         var configItem = slots.FirstOrDefault(s => s.Slot == slotIdx);
+                         _page0Config[slotIdx - 1] = configItem;
                     }
                 }
-
-                // 如果没找到或特定 Profile 为空，回退到 Global
-                if (!foundProfile && _config.Profiles.TryGetValue("Global", out var globalProfile))
-                {
-                    _currentSlots.AddRange(globalProfile.GetSlots(true));
-                }
-
-                CenterText = foundProfile ? activeProcess : "Global";
             }
+            
+            // Fill Empty Spots in Page 0 with Others
+            int otherIdx = 0;
+            for(int i=0; i<8; i++)
+            {
+                if (page0[i] == null && otherIdx < otherGroups.Count)
+                {
+                    page0[i] = otherGroups[otherIdx].ToList();
+                    otherIdx++;
+                }
+            }
+            
+            // Remaining others form subsequent pages
+            var remainingOthers = new List<List<ProcessWindowInfo>>();
+            for(int i=otherIdx; i<otherGroups.Count; i++)
+            {
+                remainingOthers.Add(otherGroups[i].ToList());
+            }
+            
+            // Reconstruct _allProcessGroups as a flat list for Paging logic to consume?
+            // Wait, if Page 0 has gaps (e.g. Slot 1, 3 are pinned, 2 is empty but we filled it),
+            // The logic "Skip(page*8).Take(8)" assumes a dense list.
+            // But Pinned slots might leave gaps if we don't have enough running apps to fill.
+            // AND we want Pinned slots to stay at their specific index (e.g. Slot 3).
+            
+            // Refined Strategy:
+            // _allProcessGroups will be a List<List<ProcessWindowInfo>> where null represents an empty slot?
+            // No, standard paging logic is simpler.
+            // Let's stick to: Page 0 is SPECIAL. Page 1+ are FLOW.
+            
+            // Store Page 0 specifically
+            _page0Slots = page0;
+            _overflowGroups = remainingOthers;
+            
+            RefreshMixedPage();
+        }
 
-            // 3. 绑定 UI
+        private List<ProcessWindowInfo>[] _page0Slots = new List<ProcessWindowInfo>[8];
+        private PluginSlot?[] _page0Config = new PluginSlot?[8]; // [New] Store config for Page 0 slots
+        private List<List<ProcessWindowInfo>> _overflowGroups = new List<List<ProcessWindowInfo>>();
+        
+        private void RefreshMixedPage()
+        {
+             ClearVisuals();
+             
+             // [UX] Center Text defaults to Page Info or App Name
+             // But UpdateDynamicVisuals will override this on hover.
+             _centerText = _currentPage == 0 ? "Switch" : $"Page {_currentPage + 1}";
+             CenterText = _centerText;
+             
+             // [Fix 2] Remove "Cancel" text for Root Menu
+             CenterSlot.Label = _centerText; 
+             
+             if (_currentPage == 0)
+             {
+                 for(int i=0; i<8; i++)
+                 {
+                     var group = _page0Slots[i];
+                     if (group != null)
+                     {
+                         var slot = Slots[i]; // SlotIndex i+1 maps to Slots[i]
+                         var first = group.First();
+                         
+                         // [Fix] Priority: Configured Icon > Process Icon
+                         var config = _page0Config[i];
+                         if (config != null && !string.IsNullOrEmpty(config.IconKey))
+                         {
+                             slot.LoadIconData(config.IconKey);
+                             // If LoadIconData sets IconImage to null internally (e.g. font icon), 
+                             // we need to ensure AppIcon doesn't override it if we want the font icon.
+                             // SlotViewModel logic usually handles this.
+                         }
+                         else
+                         {
+                             slot.IconImage = first.AppIcon;
+                         }
+
+                         string baseLabel = !string.IsNullOrEmpty(config?.Label) ? config.Label : first.ProcessName;
+                         // [Fix 4] Add identifier for multi-window slots
+                         if (group.Count > 1)
+                         {
+                             slot.Label = $"{baseLabel} ({group.Count})";
+                             slot.BadgeCount = group.Count; // [New] Set Badge
+                         }
+                         else
+                         {
+                             slot.Label = baseLabel;
+                             slot.BadgeCount = 0;
+                         }
+
+                         slot.Type = SlotType.Process;
+                         slot.DataContext = group;
+                         // [New] Set Strategy
+                         slot.ActionStrategy = new ProcessGroupStrategy(group);
+                     }
+                 }
+             }
+             else
+             {
+                 // Page 1 starts from _overflowGroups index 0
+                 // Page 2 starts from _overflowGroups index 8...
+                 int offset = (_currentPage - 1) * 8;
+                 var pageItems = _overflowGroups.Skip(offset).Take(8).ToList();
+                 
+                 for(int i=0; i<pageItems.Count; i++)
+                 {
+                     var group = pageItems[i];
+                     var slot = Slots[i];
+                     var first = group.First();
+                     
+                     string baseLabel = first.ProcessName;
+                     // [Fix 4] Add identifier for multi-window slots
+                     if (group.Count > 1)
+                     {
+                         slot.Label = $"{baseLabel} ({group.Count})";
+                         slot.BadgeCount = group.Count; // [New] Set Badge
+                     }
+                     else
+                     {
+                         slot.Label = baseLabel;
+                         slot.BadgeCount = 0;
+                     }
+                     
+                     slot.IconImage = first.AppIcon;
+                     slot.Type = SlotType.Process;
+                     slot.DataContext = group;
+                     // [New] Set Strategy
+                     slot.ActionStrategy = new ProcessGroupStrategy(group);
+                 }
+             }
+        }
+
+        // [New] Modified HandleMouseWheel to use Mixed Page logic
+        public void HandleMouseWheelMixed(int delta)
+        {
+            if (_menuState != MenuState.Root || _currentType != GridItemType.Launcher) return;
+            
+            // Calculate total pages
+            int overflowPages = (int)Math.Ceiling((double)_overflowGroups.Count / 8.0);
+            int totalPages = 1 + overflowPages;
+            
+            if (totalPages <= 1) return;
+
+            int direction = delta > 0 ? -1 : 1; 
+            _currentPage += direction;
+            
+            if (_currentPage < 0) _currentPage = totalPages - 1;
+            if (_currentPage >= totalPages) _currentPage = 0;
+
+            RefreshMixedPage();
+        }
+
+        private void BindSlots(List<PluginSlot> pluginSlots)
+        {
             foreach (var slotViewModel in Slots)
             {
-                var item = _currentSlots.FirstOrDefault(x => x.Slot == slotViewModel.SlotIndex);
+                var item = pluginSlots.FirstOrDefault(x => x.Slot == slotViewModel.SlotIndex);
 
                 slotViewModel.IsRecommended = false; // Reset
+                slotViewModel.IconImage = null;
+                slotViewModel.DataContext = null;
+                slotViewModel.BadgeCount = 0; // [Fix] Reset Badge
 
                 if (item != null)
                 {
                     slotViewModel.Label = item.Label;
                     slotViewModel.LoadIconData(item.IconKey);
+                    slotViewModel.Type = SlotType.Action;
+                    slotViewModel.DataContext = item;
+                    // [New] Set Strategy
+                    slotViewModel.ActionStrategy = new PluginActionStrategy(item, _pluginRegistry, _lastContext);
                 }
                 else
                 {
                     slotViewModel.Label = "";
                     slotViewModel.LoadIconData(string.Empty);
+                    slotViewModel.Type = SlotType.None;
+                    // [New] Set Strategy
+                    slotViewModel.ActionStrategy = new NoOpStrategy();
                 }
             }
-
-            IsVisible = true;
         }
 
         private void ResetSelection()
@@ -204,33 +616,121 @@ namespace Pulsar.ViewModels
         public void HandleMouseMove(double mouseX, double mouseY)
         {
             if (!IsVisible) return;
-            double dx = mouseX - CenterX;
-            double dy = mouseY - CenterY;
-            double dist = Math.Sqrt(dx * dx + dy * dy);
 
-            double deadZone = 40.0;
-            int newSlotIndex = -1;
-
-            if (dist < deadZone)
-            {
-                newSlotIndex = 0;
-            }
-            else
-            {
-                double angle = Math.Atan2(dy, dx) * 180 / Math.PI;
-                angle += 90;
-                if (angle < 0) angle += 360;
-                newSlotIndex = (int)((angle + 22.5) / 45) + 1;
-                if (newSlotIndex > 8) newSlotIndex = 1;
-            }
+            // [Fix] Dynamic DeadZone based on current radius
+            // If expanded, center is larger.
+            // Normal: 90 -> DeadZone 40
+            // Expanded: 150 -> DeadZone 80?
+            double deadZone = (_currentRadius > 120) ? 80.0 : 40.0;
+            
+            int newSlotIndex = RadialLayoutHelper.GetSlotIndexFromPoint(mouseX, mouseY, CenterX, CenterY, deadZone, 8);
 
             if (_activeSlotIndex != newSlotIndex)
             {
                 UpdateActiveSlot(newSlotIndex);
             }
+
+            // [New] Update Magnetic Animation
+            UpdateMagnetism(mouseX, mouseY);
+        }
+
+        private void UpdateMagnetism(double mouseX, double mouseY)
+        {
+            // Center Deadzone (Magnetism shouldn't apply if we are in center deadzone)
+            double distFromCenter = RadialLayoutHelper.GetDistance(mouseX, mouseY, CenterX, CenterY);
+            if (distFromCenter < 40) // Small inner circle where magnetism is disabled
+            {
+                ResetMagnetism();
+                return;
+            }
+
+            // Spring Physics Parameters
+            // [Jelly Feel] Low stiffness + Moderate damping = Bouncy but controlled
+            const double Stiffness = 0.15; // 刚度 (0.1 - 0.3 recommended)
+            const double Damping = 0.70;   // 阻尼 (0.6 - 0.8 recommended for "viscous" feel)
+            const double MaxPull = 20.0;   // 最大拉伸距离 (px)
+
+            foreach (var slot in Slots)
+            {
+                // Slot Center Position
+                double slotCenterX = slot.X + slot.Size / 2;
+                double slotCenterY = slot.Y + slot.Size / 2;
+
+                double targetOffsetX = 0;
+                double targetOffsetY = 0;
+
+                // Only the ACTIVE slot is pulled towards the mouse
+                if (slot.SlotIndex == _activeSlotIndex && slot.Type != SlotType.None)
+                {
+                    // Vector from Slot Center to Mouse
+                    double dx = mouseX - slotCenterX;
+                    double dy = mouseY - slotCenterY;
+                    double length = Math.Sqrt(dx * dx + dy * dy);
+
+                    // Normalize direction & clamp magnitude
+                    if (length > 0.001)
+                    {
+                        double dirX = dx / length;
+                        double dirY = dy / length;
+                        
+                        // [New Logic] Even at full screen (far distance), pull is capped at MaxPull.
+                        // But direction is always accurate.
+                        targetOffsetX = dirX * MaxPull;
+                        targetOffsetY = dirY * MaxPull;
+                    }
+                }
+
+                // --- Physics Simulation (Spring-Mass-Damper) ---
+                
+                // 1. Calculate Force (Hooke's Law: F = -k * x)
+                // Force pulls current position towards target position
+                double forceX = (targetOffsetX - slot.OffsetX) * Stiffness;
+                double forceY = (targetOffsetY - slot.OffsetY) * Stiffness;
+
+                // 2. Apply Force to Velocity (Acceleration = Force / Mass, assuming Mass=1)
+                slot.VelocityX += forceX;
+                slot.VelocityY += forceY;
+
+                // 3. Apply Damping (Resistance proportional to velocity)
+                // This prevents infinite oscillation and adds "drag" or "viscosity"
+                slot.VelocityX *= Damping;
+                slot.VelocityY *= Damping;
+
+                // 4. Update Position
+                // [Optimization] If velocity is very low and near target, snap to avoid micro-jitter
+                if (Math.Abs(slot.VelocityX) < 0.01 && Math.Abs(slot.VelocityY) < 0.01 &&
+                    Math.Abs(targetOffsetX - slot.OffsetX) < 0.1 && Math.Abs(targetOffsetY - slot.OffsetY) < 0.1)
+                {
+                    slot.OffsetX = targetOffsetX;
+                    slot.OffsetY = targetOffsetY;
+                    slot.VelocityX = 0;
+                    slot.VelocityY = 0;
+                }
+                else
+                {
+                    slot.OffsetX += slot.VelocityX;
+                    slot.OffsetY += slot.VelocityY;
+                }
+            }
+        }
+
+        private void ResetMagnetism()
+        {
+            foreach (var slot in Slots)
+            {
+                // [Optimization] Only update if not already zero
+                if (slot.OffsetX != 0 || slot.OffsetY != 0)
+                {
+                    slot.OffsetX = 0;
+                    slot.OffsetY = 0;
+                }
+                slot.VelocityX = 0;
+                slot.VelocityY = 0;
+            }
         }
 
         private void UpdateActiveSlot(int index)
+
         {
             if (_activeSlotIndex == 0) CenterSlot.IsActive = false;
             else if (_activeSlotIndex > 0) Slots.FirstOrDefault(s => s.SlotIndex == _activeSlotIndex)!.IsActive = false;
@@ -242,7 +742,157 @@ namespace Pulsar.ViewModels
                 var slot = Slots.FirstOrDefault(s => s.SlotIndex == _activeSlotIndex);
                 if (slot != null) slot.IsActive = true;
             }
+
+            UpdateDynamicVisuals();
         }
+
+
+        // [New] Preview Task Management
+        private System.Threading.CancellationTokenSource? _previewCts;
+
+        private void UpdateDynamicVisuals()
+        {
+            // Cancel any pending preview capture
+            _previewCts?.Cancel();
+            _previewCts = new System.Threading.CancellationTokenSource();
+            var token = _previewCts.Token;
+
+            // 1. Center Hover (Back/Cancel)
+            if (_activeSlotIndex == 0)
+            {
+                CenterPreviewImage = null; // [Fix] Ensure preview is cleared
+                DynamicTitle = _menuState == MenuState.SubMenu ? "Back" : "Cancel";
+                
+                // [Fix] Reset Center Slot Visuals when hovering center
+                CenterSlot.Label = _menuState == MenuState.SubMenu ? "Back" : "Cancel";
+                CenterSlot.LoadIconData(string.Empty);
+                CenterSlot.IconImage = null;
+                CenterSlot.BadgeCount = 0;
+                
+                return;
+            }
+
+            // 2. Idle State (Hovering Nothing)
+            if (_activeSlotIndex == -1)
+            {
+                 CenterPreviewImage = null; // [Fix] Ensure preview is cleared
+                 // [UX] Default Center Content
+                 DynamicTitle = "Pulsar"; 
+                 
+                 // Restore Center Icon to Default
+                 CenterSlot.Label = _centerText; 
+                 CenterSlot.LoadIconData(string.Empty); 
+                 CenterSlot.IconImage = null; 
+                 CenterSlot.BadgeCount = 0; 
+                 return;
+            }
+
+            // 3. Hovering a Slot
+            var slot = Slots.FirstOrDefault(s => s.SlotIndex == _activeSlotIndex);
+            if (slot == null || slot.Type == SlotType.None)
+            {
+                CenterPreviewImage = null;
+                DynamicTitle = "";
+                return;
+            }
+
+            // [UX] Mirror Slot Content to Center
+            CenterSlot.Label = slot.Label;
+            
+            // [Fix 2] Set IconKey first (which clears Image), THEN set Image if available.
+            CenterSlot.LoadIconData(slot.IconKey);
+            
+            if (slot.IconImage != null)
+            {
+                CenterSlot.IconImage = slot.IconImage;
+            }
+             
+            CenterSlot.BadgeCount = slot.BadgeCount;
+
+            // [New] Dynamic Preview Logic
+            // Requirement 1: Only show preview in SubMenu
+            if (_menuState != MenuState.SubMenu)
+            {
+                CenterPreviewImage = null;
+                return;
+            }
+
+            // Only show preview for Window slots or Single-Window Process slots
+            IntPtr targetHwnd = IntPtr.Zero;
+
+            if (slot.Type == SlotType.Window && slot.DataContext is ProcessWindowInfo win)
+            {
+                DynamicTitle = win.Title;
+                targetHwnd = win.Handle;
+            }
+            else if (slot.Type == SlotType.Process && slot.DataContext is List<ProcessWindowInfo> wins && wins.Count == 1)
+            {
+                // Single window process -> Treat as window
+                var singleWin = wins.First();
+                DynamicTitle = singleWin.Title;
+                targetHwnd = singleWin.Handle;
+            }
+            else
+            {
+                DynamicTitle = slot.Label;
+                // Multi-window or Action -> No preview, clear it
+                CenterPreviewImage = null;
+            }
+
+            // Execute Async Preview Capture if we have a target window
+            if (targetHwnd != IntPtr.Zero)
+            {
+                // Verify window validity
+                if (WindowHelper.IsWindow(targetHwnd) && !WindowHelper.IsIconic(targetHwnd))
+                {
+                    // Don't await here, let it run in background
+                    _ = CapturePreviewAsync(targetHwnd, token);
+                }
+                else
+                {
+                     CenterPreviewImage = null; // Minimized or invalid -> No preview
+                }
+            }
+            else
+            {
+                CenterPreviewImage = null;
+            }
+        }
+
+        private async Task CapturePreviewAsync(IntPtr hwnd, System.Threading.CancellationToken token)
+        {
+            try
+            {
+                // Small delay to prevent thrashing during fast mouse movement
+                await Task.Delay(50, token);
+                
+                if (token.IsCancellationRequested) return;
+
+                // Capture
+                var snapshot = await _windowService.CaptureWindowAsync(hwnd);
+                
+                if (token.IsCancellationRequested) return;
+
+                if (snapshot != null)
+                {
+                    CenterPreviewImage = snapshot;
+                }
+                else
+                {
+                    CenterPreviewImage = null;
+                }
+            }
+            catch (TaskCanceledException)
+            {
+                // Ignore
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Preview Capture Failed: {ex.Message}");
+                CenterPreviewImage = null;
+            }
+        }
+
 
         private void HandleKeyUp(object? sender, GlobalKeyEventArgs e)
         {
@@ -256,15 +906,169 @@ namespace Pulsar.ViewModels
 
         private async void ExecuteSelection()
         {
-            if (_activeSlotIndex <= 0) return;
+            if (_activeSlotIndex < 0) return;
 
-            var slot = _currentSlots.FirstOrDefault(x => x.Slot == _activeSlotIndex);
+            // Handle Center Click (Back/Cancel)
+            if (_activeSlotIndex == 0)
+            {
+                 // Center Slot Strategy handles this now? 
+                 // Wait, I didn't assign strategy to CenterSlot in InitializeSlots or UpdateDynamicVisuals explicitly for Root.
+                 // In EnterSubMenuAsync, I assigned BackActionStrategy.
+                 // In BindSlots/RefreshMixedPage, I assigned Center Text/Label but maybe not Strategy?
+                 
+                 // Let's check CenterSlot strategy assignment.
+                 // CenterSlot is initialized in InitializeSlots. Default strategy is NoOp.
+                 // In Show(), CenterText is set. Strategy? 
+                 // In RefreshMixedPage, CenterSlot.Label = "Cancel". Strategy? Not set.
+                 
+                 // So for Center Slot in Root, we still need manual handling OR assign BackActionStrategy there too.
+                 // "Cancel" is effectively "BackActionStrategy" (IsVisible = false).
+                 
+                 if (CenterSlot.ActionStrategy is NoOpStrategy)
+                 {
+                     // Fallback for Root Cancel
+                     if (_menuState == MenuState.SubMenu) RestoreRootMenu();
+                     else IsVisible = false;
+                     return;
+                 }
+                 
+                 await CenterSlot.ExecuteAsync(this);
+                 return;
+            }
+
+            var slot = Slots.FirstOrDefault(s => s.SlotIndex == _activeSlotIndex);
             if (slot == null) return;
 
-            ActionExecuted = true;
+            await slot.ExecuteAsync(this);
+        }
 
-            // 执行插件动作
-            await _pluginRegistry.ExecuteAsync(slot.PluginId, slot.Action, slot.Args, _lastContext);
+        public async void HandleLeftClick()
+        {
+            if (!IsVisible) return;
+            
+            // Center Click -> Back/Cancel
+            if (_activeSlotIndex == 0)
+            {
+                if (_menuState == MenuState.SubMenu)
+                {
+                    RestoreRootMenu();
+                }
+                else
+                {
+                    // [Fix 2] In root menu, clicking center does nothing (invalid)
+                    // IsVisible = false;
+                }
+                return;
+            }
+
+            // Slot Click -> Drill Down if Process
+            var slot = Slots.FirstOrDefault(s => s.SlotIndex == _activeSlotIndex);
+            if (slot == null) return;
+
+            // [New] Strategy-based Drill Down Check
+            if (slot.ActionStrategy is ProcessGroupStrategy pgStrategy)
+            {
+                // We need to know if we should drill down (count > 1).
+                // Ideally Strategy should handle this decision or expose property.
+                // Since we still have DataContext, we can check it quickly.
+                if (slot.DataContext is List<ProcessWindowInfo> windows && windows.Count > 1)
+                {
+                     await pgStrategy.EnterSubMenuAsync(this, slot.Label);
+                }
+            }
+        }
+
+        private void SwitchToWindow(ProcessWindowInfo winInfo)
+        {
+            ActionExecuted = true;
+                
+            // Safety Check: Is window still valid?
+            if (!WindowHelper.IsWindow(winInfo.Handle))
+            {
+                // Window is gone.
+                System.Media.SystemSounds.Exclamation.Play();
+                IsVisible = false;
+                return;
+            }
+
+            // Use WindowHelper instead of ambiguous NativeMethods
+            WindowHelper.SetForegroundWindow(winInfo.Handle);
+            if (WindowHelper.IsIconic(winInfo.Handle))
+                    WindowHelper.ShowWindow(winInfo.Handle, 9); // SW_RESTORE
+
+            IsVisible = false;
+        }
+
+        public async Task EnterSubMenuAsync(List<ProcessWindowInfo> windows, string processName)
+        {
+            _menuState = MenuState.SubMenu;
+            _subWindows = windows;
+            
+            // [New] Trigger Expansion Animation (Radius 150, CenterSize 110)
+            AnimateToRadius(RadiusExpanded, CenterSizeExpanded);
+
+            ClearVisuals();
+            CenterText = "Back";
+            CenterSlot.Label = processName; // Show App Name
+            CenterSlot.Type = SlotType.Action; 
+            CenterSlot.ActionStrategy = new BackActionStrategy(); // [New] Set Strategy
+            
+            // [New] Capture Center Preview if multiple windows
+            // Requirement 2: Center assumes preview function for the most recently active window
+            // 'windows' list is typically Z-Order sorted (Active first), so FirstOrDefault() is correct.
+            var targetWin = windows.FirstOrDefault();
+            if (targetWin != null)
+            {
+                // Ensure UI updates immediately with placeholder before async capture
+                CenterPreviewImage = targetWin.AppIcon; 
+                
+                // Try capture actual window
+                // Use a dedicated token for this initial capture to allow cancellation if user moves mouse quickly
+                _previewCts?.Cancel();
+                _previewCts = new System.Threading.CancellationTokenSource();
+                var token = _previewCts.Token;
+
+                // Fire and forget
+                _ = CapturePreviewAsync(targetWin.Handle, token);
+            }
+
+            // Sort by StartTime (Oldest @ 12:00 -> Index 1)
+            var sortedWindows = windows.OrderBy(w => w.StartTime).ToList();
+
+            for (int i = 0; i < 8; i++)
+            {
+                var slot = Slots.FirstOrDefault(s => s.SlotIndex == i + 1);
+                if (slot == null) continue;
+
+                if (i < sortedWindows.Count)
+                {
+                    var win = sortedWindows[i];
+                    slot.Label = win.Title.Length > 15 ? win.Title.Substring(0, 12) + "..." : win.Title;
+                    slot.IconImage = win.AppIcon;
+                    slot.Type = SlotType.Window;
+                    slot.DataContext = win;
+                    slot.BadgeCount = 0; // [Fix] Ensure no badges in sub-menu
+                    slot.ActionStrategy = new WindowSwitchStrategy(win); // [New] Set Strategy
+                }
+                else
+                {
+                    slot.Label = "";
+                    slot.LoadIconData(string.Empty);
+                    slot.Type = SlotType.None;
+                    slot.ActionStrategy = new NoOpStrategy(); // [New] Clear Strategy
+                }
+            }
+        }
+
+        public void RestoreRootMenu()
+        {
+             // [New] Trigger Contraction Animation
+             AnimateToRadius(RadiusNormal, CenterSizeNormal);
+             
+             // Clear Preview
+             CenterPreviewImage = null;
+             
+             _ = LoadRunningProcessesAsync();
         }
     }
 }

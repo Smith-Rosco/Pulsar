@@ -7,7 +7,7 @@
         xmlns:vm="clr-namespace:Pulsar.ViewModels"
         mc:Ignorable="d"
         Title="Pulsar Overlay"
-        Height="400" Width="400"
+        Height="500" Width="500"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
@@ -19,7 +19,7 @@
 
     <Grid>
         <Canvas x:Name="MenuCanvas"
-                Width="400" Height="400"
+                Width="500" Height="500"
                 HorizontalAlignment="Center" VerticalAlignment="Center">
 
             <ItemsControl ItemsSource="{Binding Slots}">
@@ -32,36 +32,106 @@
                     <Style TargetType="ContentPresenter">
                         <Setter Property="Canvas.Left" Value="{Binding X}"/>
                         <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                        <!-- [New] Magnetic Animation Transform -->
+                        <Setter Property="RenderTransform">
+                            <Setter.Value>
+                                <TranslateTransform X="{Binding OffsetX}" Y="{Binding OffsetY}"/>
+                            </Setter.Value>
+                        </Setter>
                     </Style>
                 </ItemsControl.ItemContainerStyle>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <controls:JellyOrb 
                             IconKey="{Binding IconKey}"
+                            OrbImage="{Binding IconImage}"
                             Label="{Binding Label}"
                             IsActive="{Binding IsActive}"
                             IsRecommended="{Binding IsRecommended}"
-                            Size="{Binding Size}"/>
+                            Size="{Binding Size}"
+                            BadgeCount="{Binding BadgeCount}"/>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-            
-            <controls:JellyOrb 
-                DataContext="{Binding CenterSlot}"
-                Canvas.Left="{Binding X}"
-                Canvas.Top="{Binding Y}"
-                Size="{Binding Size}"
-                IsActive="{Binding IsActive}"
-                IsRecommended="{Binding IsRecommended}"
-                Label="{Binding Label}"
-                IconKey="{Binding IconKey}"/>
 
-            <TextBlock Text="{Binding CenterText}"
-                       Canvas.Left="0" Canvas.Top="350" Width="400"
+            <!-- [New] Center Container for Morphing Effect (Simplified) -->
+            <Grid Width="500" Height="500" Canvas.Left="0" Canvas.Top="0">
+                
+                <!-- Shared Background Container -->
+                <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                    
+                    <!-- 1. Center Orb Wrapper (Normal State) -->
+                    <Grid HorizontalAlignment="Center" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                        <Grid.RenderTransform>
+                            <ScaleTransform ScaleX="1" ScaleY="1"/>
+                        </Grid.RenderTransform>
+                        
+                        <!-- Normal JellyOrb (Overlay/Fallback) -->
+                        <controls:JellyOrb 
+                            DataContext="{Binding CenterSlot}"
+                            Size="{Binding Size}"
+                            IsActive="{Binding IsActive}"
+                            IsRecommended="{Binding IsRecommended}"
+                            Label="{Binding Label}"
+                            IconKey="{Binding IconKey}"
+                            OrbImage="{Binding IconImage}"
+                            BadgeCount="{Binding BadgeCount}">
+                             <controls:JellyOrb.Style>
+                                <Style TargetType="controls:JellyOrb">
+                                    <!-- Default: Transparent (Preview Visible) -->
+                                    <Setter Property="IsTransparent" Value="True"/>
+                                    <!-- [New] Hide Content if Preview is Visible -->
+                                    <Setter Property="IsContentVisible" Value="False"/>
+                                    
+                                    <Style.Triggers>
+                                        <!-- Revert to Opaque & Visible Content if Preview is Hidden (Both Ellipses Opacity 0?) 
+                                             Actually, simpler to bind to VM property directly since View knows about VM -->
+                                        <DataTrigger Binding="{Binding DataContext.CenterPreviewImage, RelativeSource={RelativeSource AncestorType=Window}}" Value="{x:Null}">
+                                            <Setter Property="IsTransparent" Value="False"/>
+                                            <Setter Property="IsContentVisible" Value="True"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                             </controls:JellyOrb.Style>
+                        </controls:JellyOrb>
+
+                        <!-- [New] Center Preview Layers (Double Buffered for Cross-fade) -->
+                        <Grid IsHitTestVisible="False">
+                            <Ellipse x:Name="PreviewEllipseA" Width="{Binding Size}" Height="{Binding Size}"
+                                     Stroke="#40FFFFFF" StrokeThickness="1" Opacity="0">
+                                <Ellipse.Fill>
+                                    <ImageBrush Stretch="UniformToFill"/>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <Ellipse x:Name="PreviewEllipseB" Width="{Binding Size}" Height="{Binding Size}"
+                                     Stroke="#40FFFFFF" StrokeThickness="1" Opacity="0">
+                                <Ellipse.Fill>
+                                    <ImageBrush Stretch="UniformToFill"/>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                        </Grid>
+
+                    </Grid>
+                </Grid>
+            </Grid>
+
+            <TextBlock Text="{Binding DynamicTitle, NotifyOnTargetUpdated=True}"
+                       Canvas.Left="0" 
+                       Canvas.Top="{Binding TitleTopOffset}" 
+                       Width="500"
                        TextAlignment="Center"
                        Foreground="#DDFFFFFF"
                        FontSize="16" FontWeight="SemiBold"
                        IsHitTestVisible="False">
+                <TextBlock.Triggers>
+                    <EventTrigger RoutedEvent="Binding.TargetUpdated">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.4" To="1" Duration="0:0:0.25" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                </TextBlock.Triggers>
                 <TextBlock.Effect>
                     <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="2" Opacity="0.8"/>
                 </TextBlock.Effect>
