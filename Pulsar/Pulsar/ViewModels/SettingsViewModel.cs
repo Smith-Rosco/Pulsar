@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized; // Added for INotifyCollectionChanged
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -113,8 +114,51 @@ namespace Pulsar.ViewModels
             set => SetProperty(ref _generalSettings, value);
         }
 
-        [ObservableProperty]
         private ObservableCollection<PluginSlot> _currentSlots;
+        public ObservableCollection<PluginSlot> CurrentSlots
+        {
+            get => _currentSlots;
+            set
+            {
+                if (_currentSlots != null)
+                {
+                    _currentSlots.CollectionChanged -= OnCurrentSlotsCollectionChanged;
+                }
+
+                if (SetProperty(ref _currentSlots, value))
+                {
+                    if (_currentSlots != null)
+                    {
+                        _currentSlots.CollectionChanged += OnCurrentSlotsCollectionChanged;
+                        UpdateCurrentContextVisuals();
+                    }
+                }
+            }
+        }
+
+        private void OnCurrentSlotsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            UpdateCurrentContextVisuals();
+        }
+
+        private void UpdateCurrentContextVisuals()
+        {
+            if (CurrentContext == null || CurrentSlots == null) return;
+            
+            CurrentContext.SlotCount = CurrentSlots.Count;
+            
+            // Rebuild visual slots
+            CurrentContext.VisualSlots.Clear();
+            for (int i = 1; i <= 8; i++)
+            {
+                bool isOccupied = CurrentSlots.Any(s => s.Slot == i);
+                CurrentContext.VisualSlots.Add(isOccupied);
+            }
+        }
+
+        // Removed partial method call as we handle it directly
+        // private void OnCurrentSlotsChanged() { } 
+
 
         public SettingsViewModel(IConfigService configService, IWindowService windowService, IThemeService themeService)
         {
@@ -331,22 +375,6 @@ namespace Pulsar.ViewModels
 
             CurrentSlots.Add(newItem);
             
-            // [Fix] Update UI stats
-            // We need to persist changes to _config temporarily so stats update works, 
-            // OR update stats manually. Since UpdateContextStats reads from _config, we must sync properly.
-            // But CurrentSlots IS disconnected from _config until Save() is called.
-            // So we should manually update the visual stats for the CURRENT context.
-            if (CurrentContext != null)
-            {
-                CurrentContext.SlotCount = CurrentSlots.Count;
-                CurrentContext.VisualSlots.Clear();
-                for (int i = 1; i <= 8; i++)
-                {
-                    bool isOccupied = CurrentSlots.Any(s => s.Slot == i);
-                    CurrentContext.VisualSlots.Add(isOccupied);
-                }
-            }
-
             SendNotification("Success", "Slot added.", ControlAppearance.Success);
         }
 
@@ -399,7 +427,7 @@ namespace Pulsar.ViewModels
                     PluginId = "com.pulsar.pki",
                     Action = "fill",
                     Label = dialog.ResultLabel,
-                    IconKey = "🔒",
+                    IconKey = "E72E", // Lock Icon
                     Args = new Dictionary<string, string>
                     {
                         ["secretId"] = secretId.ToString(),
@@ -442,9 +470,8 @@ namespace Pulsar.ViewModels
             dialog.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
 
             bool autoEnter = slot.Args.TryGetValue("autoEnter", out var ae) && bool.Parse(ae);
-            string processName = CurrentContext?.Key == "Global" ? "" : CurrentContext?.Key ?? "";
             
-            dialog.LoadForEdit(slot.Label, processName, payload.Account, payload.EncryptedData, autoEnter);
+            dialog.LoadForEdit(slot.Label, payload.Account, payload.EncryptedData, autoEnter);
 
             if (dialog.ShowDialog() == true)
             {
@@ -474,18 +501,6 @@ namespace Pulsar.ViewModels
             {
                 CurrentSlots.Remove(item);
                 
-                // [Fix] Update visual stats
-                if (CurrentContext != null)
-                {
-                    CurrentContext.SlotCount = CurrentSlots.Count;
-                    CurrentContext.VisualSlots.Clear();
-                    for (int i = 1; i <= 8; i++)
-                    {
-                        bool isOccupied = CurrentSlots.Any(s => s.Slot == i);
-                        CurrentContext.VisualSlots.Add(isOccupied);
-                    }
-                }
-
                 SendNotification("Deleted", "Slot removed.", ControlAppearance.Info);
             }
         }

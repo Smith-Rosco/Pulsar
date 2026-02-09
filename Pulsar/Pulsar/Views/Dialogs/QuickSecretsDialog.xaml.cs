@@ -19,7 +19,6 @@ namespace Pulsar.Views.Dialogs
 
         // 输出结果
         public string ResultLabel { get; private set; }
-        public string ResultProcess { get; private set; }
         public string ResultAccount { get; private set; }
         public string ResultEncryptedData { get; private set; }
         public bool ResultAutoEnter { get; private set; }
@@ -39,7 +38,6 @@ namespace Pulsar.Views.Dialogs
             _credManager = new CredentialsManager();
             _originalEncryptedData = string.Empty;
             ResultLabel = string.Empty;
-            ResultProcess = string.Empty;
             ResultAccount = string.Empty;
             ResultEncryptedData = string.Empty;
             
@@ -49,36 +47,19 @@ namespace Pulsar.Views.Dialogs
         /// <summary>
         /// 加载现有 Item 进行编辑
         /// </summary>
-        public void LoadForEdit(string label, string processName, string account, string encryptedData, bool autoEnter)
+        public void LoadForEdit(string label, string account, string encryptedData, bool autoEnter)
         {
             _isEditMode = true;
             _originalEncryptedData = encryptedData;
 
             Title = "Edit Secret";
             TxtLabel.Text = label;
-            TxtProcess.Text = processName;
             TxtAccount.Text = account;
             ChkAutoEnter.IsChecked = autoEnter;
 
             // 显示“留空保持不变”的提示
             TxtPasswordHint.Visibility = Visibility.Visible;
             TxtPassword.Password = "";
-        }
-
-        private void BtnPick_Click(object sender, RoutedEventArgs e)
-        {
-            var picker = new ProcessPickerDialog(_windowService);
-            picker.Owner = this;
-
-            if (picker.ShowDialog() == true && picker.SelectedProcess != null)
-            {
-                TxtProcess.Text = picker.SelectedProcess.ProcessName;
-                // 仅当 Label 为空时自动填充，避免覆盖用户已输入的内容
-                if (string.IsNullOrEmpty(TxtLabel.Text))
-                {
-                    TxtLabel.Text = picker.SelectedProcess.Title;
-                }
-            }
         }
 
         private void BtnSave_Click(object sender, RoutedEventArgs e)
@@ -107,7 +88,6 @@ namespace Pulsar.Views.Dialogs
             }
 
             ResultLabel = TxtLabel.Text;
-            ResultProcess = TxtProcess.Text;
             ResultAccount = TxtAccount.Text; // 允许为空
             ResultAutoEnter = ChkAutoEnter.IsChecked == true;
 

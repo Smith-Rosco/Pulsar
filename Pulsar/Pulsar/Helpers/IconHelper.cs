@@ -147,6 +147,9 @@ namespace Pulsar.Helpers
             // If the user pasted a single glyph, use it directly
             if (cleanKey.Length == 1 || (cleanKey.Length == 2 && char.IsSurrogatePair(cleanKey, 0)))
             {
+                // [Fix] Map "🔒" emoji to Segoe Fluent Icon "Lock" (E72E) to prevent rendering issues
+                if (cleanKey == "🔒") return "\uE72E";
+                
                 return cleanKey;
             }
 
