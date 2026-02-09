@@ -63,9 +63,28 @@ namespace Pulsar.Views
                 // Navigate to the first page by default
                 RootFrame.Navigate(_generalPage);
                 _viewModel.CurrentView = "Settings";
+
+                // [Fix] Force hide scrollbars in NavigationView using VisualTreeHelper
+                DisableScrollViewers(RootNavigation);
             };
             
             RootNavigation.SelectionChanged += RootNavigation_SelectionChanged;
+        }
+
+        private void DisableScrollViewers(DependencyObject depObj)
+        {
+            if (depObj == null) return;
+
+            for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(depObj); i++)
+            {
+                var child = System.Windows.Media.VisualTreeHelper.GetChild(depObj, i);
+                if (child is ScrollViewer scrollViewer)
+                {
+                    scrollViewer.VerticalScrollBarVisibility = ScrollBarVisibility.Hidden;
+                    scrollViewer.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
+                }
+                DisableScrollViewers(child);
+            }
         }
 
         private void OnThemeChanged(object? sender, AppTheme theme)

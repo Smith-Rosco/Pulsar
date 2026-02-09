@@ -153,6 +153,36 @@ Adhere strictly to these conventions to maintain codebase consistency.
    
    **Why This Works**: The Pulsar styles use explicit `ControlTemplate` with hardcoded `Trigger` definitions for each state (Normal/Hover/Pressed/Disabled), ensuring 100% predictable colors regardless of dynamic theme injection timing.
 
+6. **Hidden Scrollbars**: If standard `ScrollViewer.VerticalScrollBarVisibility="Hidden"` fails to work (common in complex controls like `NavigationView` or `ListView`), use the **Code-Behind Visual Tree Helper** approach.
+   
+   **Pattern**:
+   ```csharp
+   // In Window/Control Code-Behind (e.g. SettingsWindow.xaml.cs)
+   
+   this.Loaded += (s, e) =>
+   {
+       // Force hide scrollbars after the control is loaded
+       DisableScrollViewers(MyTargetControl);
+   };
+   
+   private void DisableScrollViewers(DependencyObject depObj)
+   {
+       if (depObj == null) return;
+   
+       for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(depObj); i++)
+       {
+           var child = System.Windows.Media.VisualTreeHelper.GetChild(depObj, i);
+           if (child is ScrollViewer scrollViewer)
+           {
+               scrollViewer.VerticalScrollBarVisibility = ScrollBarVisibility.Hidden;
+               scrollViewer.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
+           }
+           DisableScrollViewers(child); // Recursive
+       }
+   }
+   ```
+   **Why**: Internal control templates often override implicit styles or set properties locally. Direct manipulation of the visual tree at runtime is the only 100% reliable way to force visibility.
+
 ### Adding a New Service
 1. Define the interface in `Services/Interfaces/`.
 2. Implement the class in `Services/`.

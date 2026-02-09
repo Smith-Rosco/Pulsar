@@ -34,17 +34,15 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Wrapper Grid for Clipping -->
-            <Grid Grid.Column="0" ClipToBounds="True">
-                <ui:NavigationView x:Name="RootNavigation" 
-                                   Margin="0,0,-24,0"
-                                   PaneDisplayMode="Left"
-                                   IsPaneOpen="True"
-                                   OpenPaneLength="250"
-                                   IsBackButtonVisible="Collapsed"
-                                   ScrollViewer.VerticalScrollBarVisibility="Disabled">
-                    
-                    <ui:NavigationView.MenuItems>
+            <!-- Navigation Pane -->
+            <ui:NavigationView x:Name="RootNavigation" 
+                               Grid.Column="0"
+                               PaneDisplayMode="Left"
+                               IsPaneOpen="True"
+                               OpenPaneLength="250"
+                               IsBackButtonVisible="Collapsed">
+
+                <ui:NavigationView.MenuItems>
                     <ui:NavigationViewItem Content="General Settings" 
                                            Icon="{ui:SymbolIcon Settings24}" 
                                            TargetPageType="{x:Type TypeName=Page}" 
@@ -56,32 +54,25 @@
                                            Tag="Slots"/>
                 </ui:NavigationView.MenuItems>
 
-                    <ui:NavigationView.FooterMenuItems>
-                        <ui:NavigationViewItem Content="Save Changes" 
-                                               Icon="{ui:SymbolIcon Save24}"
-                                               Click="SaveButton_Click"
-                                               Foreground="{DynamicResource SystemAccentColorBrush}"/>
-                    </ui:NavigationView.FooterMenuItems>
+            <ui:NavigationView.FooterMenuItems>
+                <ui:NavigationViewItem Content="Save Changes" 
+                                       Icon="{ui:SymbolIcon Save24}"
+                                       Click="SaveButton_Click"
+                                       Foreground="{DynamicResource SystemAccentColorBrush}"/>
+            </ui:NavigationView.FooterMenuItems>
+        </ui:NavigationView>
 
-                </ui:NavigationView>
+        <!-- Content Frame -->
+        <Frame x:Name="RootFrame"
+               Grid.Column="1" 
+               Margin="24"
+               NavigationUIVisibility="Hidden"/>
 
-                <!-- Overlay Title for Navigation Pane -->
-                <TextBlock Text="Pulsar Configuration" 
-                           FontSize="16" 
-                           FontWeight="SemiBold" 
-                           Margin="48,8,0,0"
-                           VerticalAlignment="Top"
-                           HorizontalAlignment="Left"
-                           IsHitTestVisible="False"
-                           Visibility="{Binding ElementName=RootNavigation, Path=IsPaneOpen, Converter={StaticResource BoolToVis}}"/>
-            </Grid>
-
-            <Frame x:Name="RootFrame"
-                   Grid.Column="1" 
-                   Margin="24"
-                   NavigationUIVisibility="Hidden"/>
-
-            <ui:SnackbarPresenter x:Name="MainSnackbarPresenter" Grid.Column="1" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,20,20"/>
-        </Grid>
+        <ui:SnackbarPresenter x:Name="MainSnackbarPresenter" 
+                              Grid.Column="1" 
+                              VerticalAlignment="Bottom" 
+                              HorizontalAlignment="Right" 
+                              Margin="0,0,20,20"/>
+    </Grid>
     </Grid>
 </ui:FluentWindow>
