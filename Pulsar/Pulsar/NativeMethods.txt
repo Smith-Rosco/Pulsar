@@ -1,0 +1,13 @@
+// UIA Interfaces
+IUIAutomation
+IUIAutomationElement
+IUIAutomationValuePattern
+CUIAutomation
+
+// Helper for CoCreateInstance
+CoCreateInstance
+CLSCTX
+
+// BSTR Management
+SysAllocString
+SysFreeString

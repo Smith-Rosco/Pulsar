@@ -13,6 +13,7 @@ using System.Windows.Media.Animation;
 using Wpf.Ui.Controls;
 // 引用 WinForms 获取全局鼠标坐标
 using Forms = System.Windows.Forms;
+using System.Windows.Input; // For Mouse.Capture
 
 namespace Pulsar.Views
 {
@@ -29,8 +30,6 @@ namespace Pulsar.Views
         private double _dpiScaleX = 1.0;
         private double _dpiScaleY = 1.0;
 
-        // [注意] _previousForegroundWindow 本地字段已移除，状态提升至 WindowService 管理
-
         public RadialMenuWindow(RadialMenuViewModel vm, IConfigService configService, IWindowService windowService, IThemeService themeService)
         {
             // Initialize Fields First
@@ -40,8 +39,6 @@ namespace Pulsar.Views
             _themeService = themeService;
 
             // [Theme Isolation] Apply Default Theme immediately before InitializeComponent
-            // This ensures resources are available for XAML parsing and initial layout.
-            // We use Dark as safe default until config loads.
             _themeService.ApplyTheme(this, AppTheme.Dark, WindowBackdropType.None, updateGlobal: false);
 
             InitializeComponent();
@@ -62,18 +59,16 @@ namespace Pulsar.Views
             // 2. 窗口加载时初始化主题 (Loads user config)
             InitializeTheme();
             
-            // Listen for theme changes from other windows (e.g., Settings)
+            // Listen for theme changes from other windows
             _themeService.ThemeChanged += (s, theme) =>
             {
-                // Re-apply local resources but DO NOT trigger global update again (infinite loop risk)
                 _themeService.ApplyTheme(this, theme, WindowBackdropType.None, updateGlobal: false);
                 _themeService.EnforceTransparency(this);
             };
 
-            // 3. [Fix] 注册隐藏自身的能力 (使用 Dispatcher 调度回 UI 线程)
+            // 3. [Fix] 注册隐藏自身的能力
             _windowService.RegisterHideAction(() =>
             {
-                // 检查是否在 UI 线程，如果不是，则调度过去
                 this.Dispatcher.Invoke(() =>
                 {
                     Dismiss();
@@ -86,15 +81,11 @@ namespace Pulsar.Views
             // 5. [New] Handle Mouse Wheel for Paging
             this.PreviewMouseWheel += (s, e) => _viewModel.HandleMouseWheelMixed(e.Delta);
 
-            // 6. [Optimized] Global Polling for "Infinite" Radial Trigger
-            // this.MouseMove += OnWindowMouseMove; // Removed local event handler
-
-
             // ====================================================
             // 👻 [驻留模式初始化] (Resident Mode Init)
             // ====================================================
             this.Opacity = 0;
-            this.Visibility = Visibility.Visible; // [Fix] Start Visible but Transparent
+            this.Visibility = Visibility.Visible;
             this.IsHitTestVisible = false;
             this.ShowInTaskbar = false;
         }
@@ -119,7 +110,6 @@ namespace Pulsar.Views
             try
             {
                 var config = await _configService.LoadAsync();
-                // [Fix] Do not apply global theme, only local resources
                 _themeService.ApplyTheme(this, config.Settings.LauncherThemeEnum, WindowBackdropType.None, updateGlobal: false);
             }
             catch (Exception ex)
@@ -133,11 +123,9 @@ namespace Pulsar.Views
 
         private void UpdatePreviewTransition(ImageSource? newImage)
         {
-             // Identify active and inactive layers
              var active = _usePreviewA ? PreviewEllipseA : PreviewEllipseB;
              var inactive = _usePreviewA ? PreviewEllipseB : PreviewEllipseA;
              
-             // If new image is null, fade out current active layer
              if (newImage == null)
              {
                  var fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(200));
@@ -145,25 +133,21 @@ namespace Pulsar.Views
                  return;
              }
              
-             // Set new image to inactive layer
              if (inactive.Fill is ImageBrush brush)
              {
                  brush.ImageSource = newImage;
              }
              else
              {
-                 // Should not happen if XAML is correct, but safe guard
                  inactive.Fill = new ImageBrush(newImage) { Stretch = Stretch.UniformToFill };
              }
              
-             // Cross-fade
              var fadeIn = new DoubleAnimation(1, TimeSpan.FromMilliseconds(250));
              var fadeOutActive = new DoubleAnimation(0, TimeSpan.FromMilliseconds(250));
              
              inactive.BeginAnimation(UIElement.OpacityProperty, fadeIn);
              active.BeginAnimation(UIElement.OpacityProperty, fadeOutActive);
              
-             // Swap active flag
              _usePreviewA = !_usePreviewA;
         }
 
@@ -194,16 +178,22 @@ namespace Pulsar.Views
 
             if (current != IntPtr.Zero && current != selfHandle)
             {
-                // 这一步至关重要，PKI 全靠它找回家的路
                 _windowService.SetPreviousWindow(current);
             }
 
-            // 1. [定位] 瞬间移动位置 & 刷新主题
-            UpdateDpiAndPosition();
+            // 1. [定位] 瞬间移动位置 (紧凑模式)
+            UpdateWindowPosition();
             
+            // [Refactor] Compact Mode: Show window and CAPTURE MOUSE
+            this.Show();
+            this.Activate();
+            
+            // Critical: Capture mouse to track gestures outside the 500x500 bounds
+            bool captured = MenuCanvas.CaptureMouse();
+            System.Diagnostics.Debug.WriteLine($"[RadialMenuWindow] Summon - CaptureMouse: {captured}");
+
             // [New] Animation (Pop-in)
-            // Ensure initial state is ready for animation
-            this.IsHitTestVisible = true; // [Fix] Enable interaction immediately before animation
+            this.IsHitTestVisible = true; 
             
             // Clear any HoldEnd animations from Dismiss
             this.BeginAnimation(UIElement.OpacityProperty, null);
@@ -222,38 +212,32 @@ namespace Pulsar.Views
             trans.BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnim);
             this.BeginAnimation(UIElement.OpacityProperty, fadeAnim);
 
-            // ... 后续逻辑保持不变 (Activate, Focus, Opacity=1) ...
-            // this.Show(); // [Fix] 移除 Show()，因为窗口一直 Visible，避免 Trigger 重绘闪烁
-            this.Activate(); // 抢占焦点
             this.Focus();
             this.UpdateLayout();
             
-            // CompositionTarget.Rendering += UpdateLoop; // [Optimized] Removed polling
-            
-            // [Fix] Resume Global Polling (Requirement: Full Screen Trigger)
+            // [Fix] Resume Global Polling
             CompositionTarget.Rendering += UpdateLoop;
         }
 
         private void Dismiss()
         {
             // 1. [冻结] 停止计算循环
-            // CompositionTarget.Rendering -= UpdateLoop; // [Optimized] Removed polling
-            
-            // [Fix] Pause Global Polling
             CompositionTarget.Rendering -= UpdateLoop;
             
-            // 2. [隐身] 优雅退出 (Resident Mode)
-            // [Fix] Immediately hide Preview to prevent residue
+            // [Refactor] Release Capture
+            MenuCanvas.ReleaseMouseCapture();
+            
+            // 2. [隐身] 优雅退出
             _viewModel.CenterPreviewImage = null;
 
-            // 显式停止之前的动画并播放淡出动画，确保 Opacity 归零
+            // 显式停止之前的动画并播放淡出动画
             var fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(100));
             fadeOut.FillBehavior = FillBehavior.HoldEnd;
             
-            // [Fix 1] Wait for animation to complete before clearing visuals
             fadeOut.Completed += (s, e) =>
             {
                 _viewModel.ClearVisuals();
+                this.Hide(); // [Refactor] Hide window completely
             };
             
             this.BeginAnimation(UIElement.OpacityProperty, fadeOut);
@@ -262,8 +246,6 @@ namespace Pulsar.Views
             this.IsHitTestVisible = false;
 
             // [修改] 4. 显式归还焦点 (条件性)
-            // 只有在 "未执行任何动作" (即取消操作) 时，才由 UI 层负责归还焦点。
-            // 如果 ActionExecuted 为 TRUE，说明 Handler (如 PKI) 接管了控制权，UI 不要插手。
             if (!_viewModel.ActionExecuted)
             {
                 var prev = _windowService.GetPreviousWindow();
@@ -272,26 +254,13 @@ namespace Pulsar.Views
                     WindowHelper.SetForegroundWindow(prev);
                 }
             }
-
-            // 无论是否归还，都清空记录，防止逻辑污染
-            // 注意：这里不清除 Service 里的记录，因为 PKI 可能稍后还需要读取它
-            // _windowService.SetPreviousWindow(IntPtr.Zero); 
-            
-            // 5. [清理] ViewModel 清理逻辑已移至动画完成回调中
-            // _viewModel.ClearVisuals();
         }
 
         private async void RefreshThemeOnShow()
         {
-            System.Diagnostics.Debug.WriteLine($"[RadialMenuWindow] RefreshThemeOnShow: Before ApplyTheme, Background={this.Background}, Style={this.Style}");
             var config = await _configService.LoadAsync();
-            // [Fix] Do not trigger global update when showing, just refresh local
             _themeService.ApplyTheme(this, config.Settings.LauncherThemeEnum, WindowBackdropType.None, updateGlobal: false);
-            
-            // [Fix] Enforce transparency and remove any potential style overrides
             _themeService.EnforceTransparency(this);
-            
-            System.Diagnostics.Debug.WriteLine($"[RadialMenuWindow] RefreshThemeOnShow: After ApplyTheme, Background={this.Background}, Style={this.Style}");
         }
 
         // ==========================================
@@ -302,65 +271,53 @@ namespace Pulsar.Views
         {
             if (this.Opacity < 0.1) return;
 
-            // 1. Get Global Cursor Position (Physical Pixels)
+            // [Fix] Use Global Cursor Position directly to avoid WPF clamping/capture issues outside window bounds.
             var screenPoint = Forms.Cursor.Position;
 
-            // 2. Convert to WPF Coordinates (DPI Aware)
-            double wpfMouseX = screenPoint.X / _dpiScaleX;
-            double wpfMouseY = screenPoint.Y / _dpiScaleY;
+            // Convert Screen Pixels to WPF Logical Units
+            // Note: _dpiScaleX/Y are updated in UpdateWindowPosition()
+            double wpfGlobalX = screenPoint.X / _dpiScaleX;
+            double wpfGlobalY = screenPoint.Y / _dpiScaleY;
 
-            // 3. Convert to Window-Relative Coordinates
-            // Even if the mouse is outside the window, this calculation is valid.
-            // Center of window is at (250, 250) locally.
-            // We need: MouseX - WindowLeft, MouseY - WindowTop
-            
-            double relX = wpfMouseX - this.Left;
-            double relY = wpfMouseY - this.Top;
+            // Calculate relative to the MenuCanvas (Window)
+            // RelX = GlobalMouse - WindowLeft
+            // Since MenuCanvas is at 0,0 of the Window
+            double relX = wpfGlobalX - this.Left;
+            double relY = wpfGlobalY - this.Top;
 
-            // 4. Send to ViewModel for Polar Calculation
+            // 4. Send to ViewModel (0..500 relative coordinates)
             _viewModel.HandleMouseMove(relX, relY);
         }
 
-        /* [Removed] Local Event Handler
-        private void OnWindowMouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+        private void UpdateWindowPosition()
         {
-            if (this.Opacity < 0.1) return;
-
-            // Get position relative to this window (DPI aware)
-            var p = e.GetPosition(this);
-            
-            // 3. 发送给 ViewModel
-            _viewModel.HandleMouseMove(p.X, p.Y);
-        }
-        */
-
-        private void UpdateDpiAndPosition()
-        {
+            // Update DPI Scale
             var dpi = VisualTreeHelper.GetDpi(this);
             _dpiScaleX = dpi.DpiScaleX;
             _dpiScaleY = dpi.DpiScaleY;
 
+            // Get Global Cursor Position (Physical Pixels)
             var screenPoint = Forms.Cursor.Position;
+            
+            // Convert to WPF Logical Units
             double wpfMouseX = screenPoint.X / _dpiScaleX;
             double wpfMouseY = screenPoint.Y / _dpiScaleY;
 
-            double width = this.ActualWidth > 0 ? this.ActualWidth : 500;
-            double height = this.ActualHeight > 0 ? this.ActualHeight : 500;
+            // Center window on cursor
+            // Window Width/Height is fixed at 500 in XAML
+            double halfWidth = 250; 
+            double halfHeight = 250;
 
-            // [Enhanced] Smart Layout - Removed as per user request (Requirement 1: Cancel Smart Layout)
-            // The menu should appear exactly where summoned (centered on cursor usually), without shifting.
-            // If we still want to center on cursor:
-            double left = wpfMouseX - (width / 2);
-            double top = wpfMouseY - (height / 2);
+            this.Left = wpfMouseX - halfWidth;
+            this.Top = wpfMouseY - halfHeight;
 
-            this.Left = left;
-            this.Top = top;
+            // Reset Canvas Margin (it's now 0,0 relative to window)
+            MenuCanvas.Margin = new Thickness(0);
         }
 
         protected override void OnClosed(EventArgs e)
         {
-            CompositionTarget.Rendering -= UpdateLoop; // [Fix] Ensure loop stops
-            // this.MouseMove -= OnWindowMouseMove; // Removed
+            CompositionTarget.Rendering -= UpdateLoop; 
             
             if (_viewModel != null)
             {

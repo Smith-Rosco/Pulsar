@@ -15,6 +15,13 @@ namespace Pulsar.Services
     public class PluginRegistry
     {
         private readonly Dictionary<string, IPulsarPlugin> _plugins = new();
+        
+        // [Safety] Circuit Breaker State
+        private readonly Dictionary<string, int> _failureCounts = new();
+        private readonly Dictionary<string, DateTime> _brokenCircuits = new();
+        private const int MaxFailures = 3;
+        private readonly TimeSpan ResetTimeout = TimeSpan.FromMinutes(1);
+
         private readonly IServiceProvider _serviceProvider;
         private readonly PluginLoader _loader;
 
@@ -64,19 +71,32 @@ namespace Pulsar.Services
         }
 
         /// <summary>
-        /// 执行插件动作
+        /// 执行插件动作 (含熔断保护)
         /// </summary>
-        /// <param name="pluginId">插件 ID</param>
-        /// <param name="action">动作名称</param>
-        /// <param name="args">参数</param>
-        /// <param name="context">上下文</param>
-        /// <returns>插件执行结果</returns>
         public async Task<PluginResult> ExecuteAsync(
             string pluginId,
             string action,
             IReadOnlyDictionary<string, string> args,
             PulsarContext context)
         {
+            // 1. 检查熔断状态
+            if (_brokenCircuits.TryGetValue(pluginId, out var breakTime))
+            {
+                if (DateTime.UtcNow - breakTime < ResetTimeout)
+                {
+                    // 熔断中
+                    var remaining = (int)(ResetTimeout - (DateTime.UtcNow - breakTime)).TotalSeconds;
+                    Debug.WriteLine($"[PluginRegistry] 🛡️ Circuit Open: {pluginId} is disabled for {remaining}s");
+                    return PluginResult.Error($"Plugin disabled for safety. Try again in {remaining}s.");
+                }
+                else
+                {
+                    // 冷却结束，进入半开状态 (Half-Open)
+                    _brokenCircuits.Remove(pluginId);
+                    Debug.WriteLine($"[PluginRegistry] 🛡️ Circuit Half-Open: Retrying {pluginId}...");
+                }
+            }
+
             var plugin = GetPlugin(pluginId);
             
             if (plugin == null)
@@ -90,21 +110,54 @@ namespace Pulsar.Services
                 Debug.WriteLine($"[PluginRegistry] Executing: {pluginId}.{action}");
                 var result = await plugin.ExecuteAsync(action, args, context);
                 
+                // 2. 执行成功 - 重置计数器
+                if (_failureCounts.ContainsKey(pluginId))
+                {
+                    _failureCounts.Remove(pluginId);
+                }
+
                 if (result.Success)
                 {
                     Debug.WriteLine($"[PluginRegistry] ✓ Success: {result.Message ?? "OK"}");
                 }
                 else
                 {
-                    Debug.WriteLine($"[PluginRegistry] ❌ Failed: {result.Message ?? "Unknown error"}");
+                    Debug.WriteLine($"[PluginRegistry] ❌ Failed (Logic): {result.Message ?? "Unknown error"}");
+                    // 注意：逻辑失败通常不计入熔断，只有崩溃才计入。
+                    // 但如果插件持续返回逻辑错误，是否应该熔断？目前策略：仅异常熔断。
                 }
                 
                 return result;
             }
             catch (Exception ex)
             {
+                // 3. 发生异常 - 增加故障计数
                 Debug.WriteLine($"[PluginRegistry] ❌ Exception: {ex.Message}");
+                HandlePluginCrash(pluginId, ex);
                 return PluginResult.Error($"Plugin execution failed: {ex.Message}");
+            }
+        }
+
+        private void HandlePluginCrash(string pluginId, Exception ex)
+        {
+            if (!_failureCounts.ContainsKey(pluginId))
+            {
+                _failureCounts[pluginId] = 0;
+            }
+            
+            _failureCounts[pluginId]++;
+            int count = _failureCounts[pluginId];
+
+            Debug.WriteLine($"[PluginRegistry] ⚠️ Plugin {pluginId} crashed ({count}/{MaxFailures})");
+
+            if (count >= MaxFailures)
+            {
+                // 触发熔断
+                _brokenCircuits[pluginId] = DateTime.UtcNow;
+                _failureCounts.Remove(pluginId); // 重置计数，等待冷却后重试
+                Debug.WriteLine($"[PluginRegistry] 💥 Circuit Breaker Tripped! {pluginId} disabled for {ResetTimeout.TotalSeconds}s");
+                
+                // TODO: 可以发送系统通知告知用户插件已禁用
             }
         }
 

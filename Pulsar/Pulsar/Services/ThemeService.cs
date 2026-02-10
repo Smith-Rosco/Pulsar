@@ -13,7 +13,7 @@ namespace Pulsar.Services
 {
     public class ThemeService : IThemeService
     {
-        public event EventHandler<AppTheme> ThemeChanged;
+        public event EventHandler<AppTheme>? ThemeChanged;
 
         public void ApplyTheme(FrameworkElement element, AppTheme theme, WindowBackdropType backdrop = WindowBackdropType.None, bool updateGlobal = true)
         {

@@ -300,19 +300,27 @@ namespace Pulsar.Plugins.VbaRunner
 
                 // 4. 动态注入 VBA 模块
                 vbComponent = vbProject.VBComponents.Add(vbext_ct_StdModule);
+                
+                // Rename to ensure ASCII name and avoid localization issues
+                string moduleName = $"Pulsar_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
+                try { vbComponent.Name = moduleName; } catch { /* Ignore if rename fails */ }
+                
                 vbComponent.CodeModule.AddFromString(scriptContent);
 
                 Debug.WriteLine($"[ScriptEngine] VBA module '{vbComponent.Name}' injected");
 
                 // 5. 执行宏 (支持传递参数)
+                // Use fully qualified name to avoid ambiguity: "ModuleName.MacroName"
+                string runMacro = $"{vbComponent.Name}.{macroName}";
+                
                 if (argument != null)
                 {
-                    _app?.Run(macroName, argument);
+                    _app?.Run(runMacro, argument);
                     Debug.WriteLine($"[ScriptEngine] ✓ Macro executed with argument: {argument}");
                 }
                 else
                 {
-                    _app?.Run(macroName);
+                    _app?.Run(runMacro);
                     Debug.WriteLine($"[ScriptEngine] ✓ Macro executed without arguments");
                 }
             }

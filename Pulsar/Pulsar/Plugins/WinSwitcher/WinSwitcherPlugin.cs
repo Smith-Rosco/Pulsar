@@ -62,6 +62,11 @@ namespace Pulsar.Plugins.WinSwitcher
                 return PluginResult.Error("Missing required parameter: app");
             }
 
+            if (_windowService == null)
+            {
+                return PluginResult.Error("Service not available");
+            }
+
             Debug.WriteLine($"[WinSwitcherPlugin] Attempting to activate: {processName}");
 
             bool switched = await _windowService.SwitchToProcessAsync(processName);
@@ -125,6 +130,11 @@ namespace Pulsar.Plugins.WinSwitcher
             if (!args.TryGetValue("app", out var processName) || string.IsNullOrEmpty(processName))
             {
                 return PluginResult.Error("Missing required parameter: app");
+            }
+
+            if (_windowService == null)
+            {
+                return PluginResult.Error("Service not available");
             }
 
             Debug.WriteLine($"[WinSwitcherPlugin] Smart switch for: {processName}");

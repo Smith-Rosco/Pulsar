@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows.Media; // [New] For ImageSource
 using CommunityToolkit.Mvvm.ComponentModel;
 using Pulsar.Core.Plugin;
 using Pulsar.Models;
@@ -30,7 +31,7 @@ namespace Pulsar.ViewModels
         private ProfilesConfig? _config;
         private List<PluginSlot> _currentSlots = new();
         private GridItemType _currentType;
-        private PulsarContext _lastContext;
+        private PulsarContext? _lastContext;
         private MenuState _menuState = MenuState.Root;
         private List<SlotViewModel> _rootSlotBackup = new(); // Backup of root slots for restoration
         private List<ProcessWindowInfo>? _subWindows; // Windows currently displayed in SubMenu
@@ -223,6 +224,9 @@ namespace Pulsar.ViewModels
 
         private bool _isLoading; // [New] Prevent double-trigger flickering
 
+        // [New] Session-based Preview Cache
+        private Dictionary<IntPtr, ImageSource> _windowPreviewCache = new();
+
         private async void Show(GridItemType type)
         {
             if (IsVisible || _isLoading) return;
@@ -230,12 +234,16 @@ namespace Pulsar.ViewModels
 
             try
             {
+                // [Optimization] Clear Preview Cache for new session
+                _windowPreviewCache.Clear();
+
                 // 1. 捕获上下文
                 // 确保 WindowService 知道上一个窗口是谁（用于上下文捕获）
                 IntPtr foregroundHandle = WindowHelper.GetForegroundWindow();
                 _windowService.SetPreviousWindow(foregroundHandle);
                 
-                _lastContext = await PulsarContext.CaptureAsync(_windowService);
+                // [Optimization] Use synchronous Capture for lightweight data
+                _lastContext = PulsarContext.Capture(_windowService);
 
                 ActionExecuted = false;
                 ResetSelection();
@@ -593,7 +601,14 @@ namespace Pulsar.ViewModels
                     slotViewModel.Type = SlotType.Action;
                     slotViewModel.DataContext = item;
                     // [New] Set Strategy
-                    slotViewModel.ActionStrategy = new PluginActionStrategy(item, _pluginRegistry, _lastContext);
+                    if (_lastContext != null)
+                    {
+                        slotViewModel.ActionStrategy = new PluginActionStrategy(item, _pluginRegistry, _lastContext);
+                    }
+                    else
+                    {
+                        slotViewModel.ActionStrategy = new NoOpStrategy();
+                    }
                 }
                 else
                 {
@@ -712,14 +727,16 @@ namespace Pulsar.ViewModels
             CenterSlot.BadgeCount = slot.BadgeCount;
 
             // [New] Dynamic Preview Logic
-            // Requirement 1: Only show preview in SubMenu
+            // Requirement 1: Only show preview in SubMenu (for Window Preview)
+            // For Root Menu, we still want Dynamic Title and Center Icon updates.
+            
             if (_menuState != MenuState.SubMenu)
             {
                 CenterPreviewImage = null;
-                return;
+                // Do NOT return here, allow DynamicTitle to update below
             }
 
-            // Only show preview for Window slots or Single-Window Process slots
+            // Only show preview for Window slots or Single-Window Process slots in SubMenu
             IntPtr targetHwnd = IntPtr.Zero;
 
             if (slot.Type == SlotType.Window && slot.DataContext is ProcessWindowInfo win)
@@ -745,13 +762,20 @@ namespace Pulsar.ViewModels
             if (targetHwnd != IntPtr.Zero)
             {
                 // Verify window validity
-                if (WindowHelper.IsWindow(targetHwnd) && !WindowHelper.IsIconic(targetHwnd))
+                bool isWindow = WindowHelper.IsWindow(targetHwnd);
+                bool isIconic = WindowHelper.IsIconic(targetHwnd);
+
+                if (isWindow && !isIconic)
                 {
                     // Don't await here, let it run in background
                     _ = CapturePreviewAsync(targetHwnd, token);
                 }
                 else
                 {
+                     // [Debug] Why skipped?
+                     // if (!isWindow) System.Diagnostics.Debug.WriteLine($"[UpdateDynamicVisuals] Skipped capture for {DynamicTitle} (Invalid Handle: {targetHwnd})");
+                     // else if (isIconic) System.Diagnostics.Debug.WriteLine($"[UpdateDynamicVisuals] Skipped capture for {DynamicTitle} (Minimized)");
+
                      CenterPreviewImage = null; // Minimized or invalid -> No preview
                 }
             }
@@ -765,6 +789,13 @@ namespace Pulsar.ViewModels
         {
             try
             {
+                // [Optimization] Check Cache First (Skip delay if cached)
+                if (_windowPreviewCache.TryGetValue(hwnd, out var cached))
+                {
+                    CenterPreviewImage = cached;
+                    return;
+                }
+
                 // Small delay to prevent thrashing during fast mouse movement
                 await Task.Delay(50, token);
                 
@@ -777,6 +808,8 @@ namespace Pulsar.ViewModels
 
                 if (snapshot != null)
                 {
+                    // [Optimization] Cache Result
+                    _windowPreviewCache[hwnd] = snapshot;
                     CenterPreviewImage = snapshot;
                 }
                 else
@@ -786,7 +819,7 @@ namespace Pulsar.ViewModels
             }
             catch (TaskCanceledException)
             {
-                // Ignore
+                // Expected behavior
             }
             catch (Exception ex)
             {
@@ -794,7 +827,6 @@ namespace Pulsar.ViewModels
                 CenterPreviewImage = null;
             }
         }
-
 
         private void HandleKeyUp(object? sender, GlobalKeyEventArgs e)
         {
@@ -855,29 +887,29 @@ namespace Pulsar.ViewModels
                 {
                     RestoreRootMenu();
                 }
-                else
-                {
-                    // [Fix 2] In root menu, clicking center does nothing (invalid)
-                    // IsVisible = false;
-                }
                 return;
             }
 
-            // Slot Click -> Drill Down if Process
+            // Slot Click
             var slot = Slots.FirstOrDefault(s => s.SlotIndex == _activeSlotIndex);
             if (slot == null) return;
 
-            // [New] Strategy-based Drill Down Check
+            // [Restricted Interaction]
+            // Unified Logic: Clicking is ONLY for Navigation (Drill-down).
+            // Actual execution (Action/Switch) happens strictly on KeyUp (Ctrl Release).
+
+            // Check for Process Group (Switcher Mode Sub-menu)
             if (slot.ActionStrategy is ProcessGroupStrategy pgStrategy)
             {
-                // We need to know if we should drill down (count > 1).
-                // Ideally Strategy should handle this decision or expose property.
-                // Since we still have DataContext, we can check it quickly.
                 if (slot.DataContext is List<ProcessWindowInfo> windows && windows.Count > 1)
                 {
                      await pgStrategy.EnterSubMenuAsync(this, slot.Label);
+                     return;
                 }
             }
+
+            // Explicitly do NOTHING for leaf nodes (Command Mode or Single Window Switcher).
+            // The user requires that execution only happens on Ctrl release.
         }
 
         private void SwitchToWindow(ProcessWindowInfo winInfo)
@@ -921,17 +953,44 @@ namespace Pulsar.ViewModels
             var targetWin = windows.FirstOrDefault();
             if (targetWin != null)
             {
-                // Ensure UI updates immediately with placeholder before async capture
-                CenterPreviewImage = targetWin.AppIcon; 
-                
-                // Try capture actual window
-                // Use a dedicated token for this initial capture to allow cancellation if user moves mouse quickly
-                _previewCts?.Cancel();
-                _previewCts = new System.Threading.CancellationTokenSource();
-                var token = _previewCts.Token;
-
-                // Fire and forget
-                _ = CapturePreviewAsync(targetWin.Handle, token);
+                // [Optimization] Check Cache First
+                if (_windowPreviewCache.TryGetValue(targetWin.Handle, out var cachedPreview))
+                {
+                    CenterPreviewImage = cachedPreview;
+                }
+                else
+                {
+                    // Ensure UI updates immediately with placeholder before async capture
+                    CenterPreviewImage = targetWin.AppIcon; 
+                    
+                    // Try capture actual window
+                    // Use a dedicated token for this initial capture to allow cancellation if user moves mouse quickly
+                    _previewCts?.Cancel();
+                    _previewCts = new System.Threading.CancellationTokenSource();
+                    var token = _previewCts.Token;
+    
+                    // Fire and forget with delay to prevent animation stutter
+                    // Use a local async function to maintain UI thread context after delay
+                    async void DelayedCapture()
+                    {
+                        try
+                        {
+                            await Task.Delay(300, token); // Wait for expansion animation to finish
+                            if (token.IsCancellationRequested) return;
+                            if (_menuState != MenuState.SubMenu) return;
+                            await CapturePreviewAsync(targetWin.Handle, token);
+                        }
+                        catch (TaskCanceledException)
+                        {
+                            // Expected behavior when exiting submenu quickly
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[DelayedCapture] Failed: {ex.Message}");
+                        }
+                    }
+                    DelayedCapture();
+                }
             }
 
             // Sort by StartTime (Oldest @ 12:00 -> Index 1)
@@ -964,6 +1023,8 @@ namespace Pulsar.ViewModels
 
         public void RestoreRootMenu()
         {
+             _menuState = MenuState.Root;
+
              // [New] Trigger Contraction Animation
              AnimateToRadius(RadiusNormal, CenterSizeNormal);
              

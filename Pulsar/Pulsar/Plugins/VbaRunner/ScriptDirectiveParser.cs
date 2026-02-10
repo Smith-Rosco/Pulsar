@@ -24,8 +24,8 @@ namespace Pulsar.Plugins.VbaRunner
 
             try
             {
-                // 读取前 10 行 (比原版稍微宽松一点)
-                var lines = File.ReadLines(path).Take(10);
+                // 读取前 100 行 (防止指令定义在头部注释块之后)
+                var lines = File.ReadLines(path).Take(100);
                 
                 foreach (var line in lines)
                 {

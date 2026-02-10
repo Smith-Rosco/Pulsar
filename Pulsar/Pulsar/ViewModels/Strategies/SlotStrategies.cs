@@ -137,7 +137,7 @@ namespace Pulsar.ViewModels.Strategies
             // Let's stick to Execute = Switch for now, as per original ExecuteSelection logic.
             
             var target = validWindows.First();
-            new WindowSwitchStrategy(target).ExecuteAsync(slot, context);
+            await new WindowSwitchStrategy(target).ExecuteAsync(slot, context);
         }
         
         // Helper for the View Model to call explicitly for drill down

@@ -1,21 +1,18 @@
-// [Path]: Pulsar/Pulsar/Plugins/BookmarkletRunner/BookmarkletRunnerPlugin.cs
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Pulsar.Core.Plugin;
 using Pulsar.Native;
 using Pulsar.Services.Interfaces;
-using WinFormsClipboard = System.Windows.Forms.Clipboard;
-using WinFormsIDataObject = System.Windows.Forms.IDataObject;
-using WinFormsSendKeys = System.Windows.Forms.SendKeys;
 
 namespace Pulsar.Plugins.BookmarkletRunner
 {
     /// <summary>
     /// 书签脚本运行器插件 - 在浏览器中执行 Bookmarklet JavaScript 脚本
+    /// Refactored to use UI Automation for instant, clipboard-free injection.
     /// </summary>
     public class BookmarkletRunnerPlugin : IPulsarPlugin
     {
@@ -135,27 +132,14 @@ namespace Pulsar.Plugins.BookmarkletRunner
             // 7. 等待窗口切换动画完成
             await Task.Delay(200);
 
-            // 8. 执行剪贴板备份和键盘自动化
-            WinFormsIDataObject? originalClipboard = null;
+            // 8. 执行智能输入模式 (Smart Input Mode via UIA)
             try
             {
-                // 备份剪贴板
-                try
-                {
-                    originalClipboard = WinFormsClipboard.GetDataObject();
-                    Debug.WriteLine("[BookmarkletRunner] Clipboard backed up");
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[BookmarkletRunner] ⚠️ Warning: Failed to backup clipboard: {ex.Message}");
-                }
-
-                // 执行键盘自动化序列
-                bool success = await ExecuteKeyboardSequenceAsync(scriptContent);
+                bool success = ExecuteSmartInput(scriptContent);
                 
                 if (!success)
                 {
-                    return PluginResult.Error("Failed to execute keyboard sequence");
+                    return PluginResult.Error("Failed to execute script input");
                 }
 
                 Debug.WriteLine("[BookmarkletRunner] ✓ Bookmarklet executed successfully");
@@ -166,66 +150,61 @@ namespace Pulsar.Plugins.BookmarkletRunner
                 Debug.WriteLine($"[BookmarkletRunner] ❌ Error during execution: {ex.Message}");
                 return PluginResult.Error($"Execution failed: {ex.Message}");
             }
-            finally
-            {
-                // 9. 恢复剪贴板（无痕模式）
-                await Task.Delay(200); // 等待浏览器接收粘贴内容
-                
-                if (originalClipboard != null)
-                {
-                    try
-                    {
-                        WinFormsClipboard.SetDataObject(originalClipboard, true);
-                        Debug.WriteLine("[BookmarkletRunner] Clipboard restored");
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"[BookmarkletRunner] ⚠️ Warning: Failed to restore clipboard: {ex.Message}");
-                    }
-                }
-            }
         }
 
         /// <summary>
-        /// 执行键盘自动化序列
+        /// Executes the bookmarklet using UI Automation for instant injection.
+        /// Falls back to simulated typing if UIA fails.
+        /// No clipboard pollution!
         /// </summary>
-        private async Task<bool> ExecuteKeyboardSequenceAsync(string scriptContent)
+        private bool ExecuteSmartInput(string scriptContent)
         {
             try
             {
-                // 步骤 1: 聚焦地址栏 (Ctrl + L)
-                WinFormsSendKeys.SendWait("^l");
-                await Task.Delay(150);
-                Debug.WriteLine("[BookmarkletRunner] Address bar focused (Ctrl+L)");
+                // Ensure prefix
+                string fullScript = scriptContent.Trim();
+                if (!fullScript.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase))
+                {
+                    fullScript = "javascript:" + fullScript;
+                }
 
-                // [Fix] 步骤 2: 粘贴 'j' (绕过浏览器安全限制，同时避免 IME 问题)
-                // 替换原有的输入 'j'
-                WinFormsClipboard.SetText("j");
-                await Task.Delay(50);
-                WinFormsSendKeys.SendWait("^v");
-                await Task.Delay(50);
-                Debug.WriteLine("[BookmarkletRunner] Pasted 'j'");
+                // --- Step 1: Focus Address Bar ---
+                Debug.WriteLine("[BookmarkletRunner] Sending Ctrl+L...");
+                InputHelper.SendKeyCombination(InputHelper.VK_CONTROL, InputHelper.VK_L);
+                
+                // Wait for address bar to gain focus and select all text
+                Thread.Sleep(200);
 
-                // 步骤 3: 构造并粘贴 "avascript:[脚本内容]"
-                string pasteContent = "avascript:" + scriptContent;
-                WinFormsClipboard.SetText(pasteContent);
-                await Task.Delay(50);
-                Debug.WriteLine($"[BookmarkletRunner] Clipboard set ({pasteContent.Length} chars)");
+                // --- Step 2: Try UI Automation Injection ---
+                Debug.WriteLine("[BookmarkletRunner] Attempting UIA injection...");
+                bool uiaSuccess = UiaHelper.TrySetFocusedElementText(fullScript);
 
-                // 步骤 4: 粘贴 (Ctrl + V)
-                WinFormsSendKeys.SendWait("^v");
-                await Task.Delay(100);
-                Debug.WriteLine("[BookmarkletRunner] Content pasted (Ctrl+V)");
+                if (uiaSuccess)
+                {
+                    Debug.WriteLine("[BookmarkletRunner] UIA Injection Success! Executing...");
+                    
+                    // Small delay to ensure browser UI updates
+                    Thread.Sleep(50);
+                    
+                    // Send Enter to execute
+                    InputHelper.SendKeyCombination(InputHelper.VK_RETURN);
+                    return true;
+                }
 
-                // 步骤 5: 执行 (Enter)
-                WinFormsSendKeys.SendWait("{ENTER}");
-                Debug.WriteLine("[BookmarkletRunner] Executed (Enter)");
-
+                // --- Step 3: Fallback (Simulated Typing) ---
+                Debug.WriteLine("[BookmarkletRunner] ⚠️ UIA failed. Fallback to Simulated Typing (Turbo Mode).");
+                
+                // Note: SendText uses SendInput which is fast, but browser might render it slowly.
+                // But it's reliable and doesn't touch clipboard.
+                InputHelper.SendText(fullScript);
+                Thread.Sleep(50);
+                InputHelper.SendKeyCombination(InputHelper.VK_RETURN);
+                
                 return true;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[BookmarkletRunner] ❌ Keyboard sequence error: {ex.Message}");
+                Debug.WriteLine($"[BookmarkletRunner] ❌ Smart sequence error: {ex.Message}");
                 return false;
             }
         }

@@ -11,6 +11,10 @@ using Pulsar.Views;
 using System;
 using System.Windows;
 
+using System.Windows.Threading;
+using System.Threading.Tasks;
+using System.Diagnostics;
+
 namespace Pulsar
 {
     public partial class App : System.Windows.Application
@@ -21,6 +25,11 @@ namespace Pulsar
 
         protected override void OnStartup(StartupEventArgs e)
         {
+            // Global Exception Handling
+            this.DispatcherUnhandledException += OnDispatcherUnhandledException;
+            TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+            AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+
             base.OnStartup(e);
 
             var serviceCollection = new ServiceCollection();
@@ -70,6 +79,30 @@ namespace Pulsar
                 trayService?.Dispose();
             }
             base.OnExit(e);
+        }
+
+        private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+        {
+            Debug.WriteLine($"[CRITICAL] Unhandled Dispatcher Exception: {e.Exception.Message}");
+            Debug.WriteLine(e.Exception.StackTrace);
+            // Optionally: Prevent crash if recoverable
+            // e.Handled = true; 
+        }
+
+        private void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+        {
+            Debug.WriteLine($"[CRITICAL] Unobserved Task Exception: {e.Exception.Message}");
+            // Prevent process termination
+            e.SetObserved();
+        }
+
+        private void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+             if (e.ExceptionObject is Exception ex)
+             {
+                 Debug.WriteLine($"[CRITICAL] Unhandled Domain Exception: {ex.Message}");
+                 Debug.WriteLine(ex.StackTrace);
+             }
         }
     }
 }

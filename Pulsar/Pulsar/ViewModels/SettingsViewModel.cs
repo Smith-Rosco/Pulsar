@@ -107,14 +107,14 @@ namespace Pulsar.ViewModels
         public bool CanDeleteProfile => CurrentContext?.IsProfile == true;
         public bool CanAddSecrets => CurrentContext?.Key != "Launcher";
 
-        private ProfileSettings _generalSettings;
+        private ProfileSettings _generalSettings = new ProfileSettings();
         public ProfileSettings GeneralSettings
         {
             get => _generalSettings;
             set => SetProperty(ref _generalSettings, value);
         }
 
-        private ObservableCollection<PluginSlot> _currentSlots;
+        private ObservableCollection<PluginSlot> _currentSlots = new ObservableCollection<PluginSlot>();
         public ObservableCollection<PluginSlot> CurrentSlots
         {
             get => _currentSlots;
@@ -515,7 +515,7 @@ namespace Pulsar.ViewModels
              if (dialog.ShowDialog() == true && dialog.SelectedProcess != null)
              {
                  var selected = dialog.SelectedProcess;
-                 string cachedIconPath = null;
+                 string? cachedIconPath = null;
                  if (selected.AppIcon != null)
                  {
                      cachedIconPath = IconHelper.SaveIconToCache(selected.AppIcon, selected.ProcessName);

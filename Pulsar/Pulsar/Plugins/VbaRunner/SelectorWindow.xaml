@@ -4,16 +4,22 @@
         Title="Pulsar - Select Worksheet" Height="180" Width="400"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         WindowStartupLocation="CenterScreen" Topmost="True">
-    <Border Background="#2D2D30" CornerRadius="8" BorderThickness="1" BorderBrush="#3E3E42" Padding="20">
+    <Border Background="White" CornerRadius="8" BorderThickness="1" BorderBrush="#DDDDDD" Padding="20">
         <Border.Effect>
-            <DropShadowEffect BlurRadius="15" ShadowDepth="5" Opacity="0.5"/>
+            <DropShadowEffect BlurRadius="20" ShadowDepth="5" Opacity="0.2" Color="Black"/>
         </Border.Effect>
         <StackPanel>
-            <TextBlock Text="Select Target Worksheet:" FontWeight="SemiBold" Margin="0,0,0,15" Foreground="#F1F1F1" FontSize="14"/>
-            <ComboBox x:Name="SheetCombo" FontSize="14" Padding="8,5" Margin="0,0,0,25" Height="35"/>
+            <TextBlock Text="Select Target Worksheet" FontWeight="SemiBold" Margin="0,0,0,15" Foreground="#333333" FontSize="16"/>
+            <ComboBox x:Name="SheetCombo" FontSize="14" Padding="8,5" Margin="0,0,0,25" Height="35" Background="White" BorderBrush="#CCCCCC" Foreground="#333333"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Cancel" Click="Cancel_Click" IsCancel="True" Margin="0,0,10,0" Padding="15,6" Background="Transparent" Foreground="#F1F1F1" BorderBrush="#555"/>
-                <Button Content="Run Script" Click="Run_Click" IsDefault="True" Background="#007ACC" Foreground="White" Padding="20,6" BorderThickness="0"/>
+                <Button Content="Cancel" Click="Cancel_Click" IsCancel="True" Margin="0,0,10,0" Padding="15,6" Background="Transparent" Foreground="#666666" BorderBrush="#DDDDDD" BorderThickness="1"/>
+                <Button Content="Run Script" Click="Run_Click" IsDefault="True" Background="#007ACC" Foreground="White" Padding="20,6" BorderThickness="0">
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="4"/>
+                        </Style>
+                    </Button.Resources>
+                </Button>
             </StackPanel>
         </StackPanel>
     </Border>

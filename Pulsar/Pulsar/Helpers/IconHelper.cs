@@ -72,7 +72,7 @@ namespace Pulsar.Helpers
         }
 
         // [New] 之前提供的保存方法 (为了完整性再次列出，你不需要修改这部分如果已经添加了)
-        public static string SaveIconToCache(ImageSource image, string processName)
+        public static string? SaveIconToCache(ImageSource image, string processName)
         {
             if (image is not BitmapSource bitmapSource) return null;
 

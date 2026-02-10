@@ -62,6 +62,11 @@ namespace Pulsar.Features.Pki
             IReadOnlyDictionary<string, string> args,
             PulsarContext context)
         {
+            if (_credentialsManager == null || _windowService == null)
+            {
+                return PluginResult.Error("Services not initialized");
+            }
+
             // 1. 验证参数
             if (!args.TryGetValue("secretId", out var secretId) || string.IsNullOrEmpty(secretId))
             {

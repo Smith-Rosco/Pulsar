@@ -6,21 +6,23 @@
         xmlns:controls="clr-namespace:Pulsar.Views.Controls"
         xmlns:vm="clr-namespace:Pulsar.ViewModels"
         mc:Ignorable="d"
-        Title="Pulsar Overlay"
-        Height="500" Width="500"
-        WindowStyle="None"
-        AllowsTransparency="True"
-        Background="Transparent"
-        Topmost="True"
-        ShowInTaskbar="False"
-        ResizeMode="NoResize"
-        x:Name="RootWindow"
-        Style="{x:Null}">
+    Title="Pulsar Overlay"
+    Width="500" Height="500"
+    WindowStyle="None"
+    AllowsTransparency="True"
+    Background="Transparent"
+    Topmost="True"
+    ShowInTaskbar="False"
+    ResizeMode="NoResize"
+    x:Name="RootWindow"
+    Style="{x:Null}">
 
-    <Grid>
+    <Grid Background="Transparent">
+        <!-- [Refactor] Compact Mode: Window is now exact size of menu. Canvas handles interaction. -->
         <Canvas x:Name="MenuCanvas"
+                Background="Transparent"
                 Width="500" Height="500"
-                HorizontalAlignment="Center" VerticalAlignment="Center">
+                HorizontalAlignment="Left" VerticalAlignment="Top">
 
             <ItemsControl ItemsSource="{Binding Slots}">
                 <ItemsControl.ItemsPanel>

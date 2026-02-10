@@ -20,9 +20,75 @@ namespace Pulsar.Native
         [DllImport("user32.dll")]
         public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
-        [DllImport("user32.dll")]
+        [DllImport("user32.dll", EntryPoint = "SetForegroundWindow")]
         [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool SetForegroundWindow(IntPtr hWnd);
+        private static extern bool SetForegroundWindowNative(IntPtr hWnd);
+
+        public static bool SetForegroundWindow(IntPtr hWnd)
+        {
+            if (hWnd == IntPtr.Zero) return false;
+
+            // 1. Check if window is already foreground
+            IntPtr hForeground = GetForegroundWindow();
+            if (hForeground == hWnd) return true;
+
+            // 2. Try standard call first
+            if (SetForegroundWindowNative(hWnd)) return true;
+
+            // 3. Force switch using AttachThreadInput mechanism
+            // This is necessary when the OS blocks focus stealing (taskbar flashing)
+            try
+            {
+                uint foregroundThreadId = GetWindowThreadProcessId(hForeground, out _);
+                uint targetThreadId = GetWindowThreadProcessId(hWnd, out _);
+                uint currentThreadId = GetCurrentThreadId();
+
+                // If threads are different, we need to attach
+                if (foregroundThreadId != currentThreadId)
+                {
+                    AttachThreadInput(foregroundThreadId, currentThreadId, true);
+                    
+                    // Also attach to target thread if different
+                    if (targetThreadId != currentThreadId && targetThreadId != foregroundThreadId)
+                    {
+                        AttachThreadInput(targetThreadId, currentThreadId, true);
+                    }
+
+                    // Bring to top and show
+                    BringWindowToTop(hWnd);
+
+                    if (IsIconic(hWnd))
+                    {
+                        ShowWindow(hWnd, SW_RESTORE);
+                    }
+                    else
+                    {
+                        ShowWindow(hWnd, SW_SHOW);
+                    }
+                    
+                    // Try setting foreground again
+                    bool result = SetForegroundWindowNative(hWnd);
+                    
+                    // Detach
+                    AttachThreadInput(foregroundThreadId, currentThreadId, false);
+                    if (targetThreadId != currentThreadId && targetThreadId != foregroundThreadId)
+                    {
+                        AttachThreadInput(targetThreadId, currentThreadId, false);
+                    }
+                    
+                    return result;
+                }
+                else
+                {
+                    // If we are the foreground thread, just try again (should have worked above though)
+                     return SetForegroundWindowNative(hWnd);
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -70,6 +136,7 @@ namespace Pulsar.Native
 
         // --- Constants ---
         public const int SW_RESTORE = 9;
+        public const int SW_SHOW = 5;
         public const int GWL_EXSTYLE = -20;
         public const long WS_EX_TOOLWINDOW = 0x00000080L;
         public static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);

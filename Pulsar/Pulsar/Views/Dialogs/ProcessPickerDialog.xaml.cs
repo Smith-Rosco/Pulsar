@@ -17,10 +17,10 @@ namespace Pulsar.Views.Dialogs
     public partial class ProcessPickerDialog : FluentWindow
     {
         private readonly IWindowService _windowService;
-        private List<ProcessWindowInfo> _allWindows;
+        private List<ProcessWindowInfo>? _allWindows;
 
         // 公开选中的结果
-        public ProcessWindowInfo SelectedProcess { get; private set; }
+        public ProcessWindowInfo? SelectedProcess { get; private set; }
 
         public ProcessPickerDialog(IWindowService windowService)
         {

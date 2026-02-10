@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Pulsar.Services.Interfaces;
 using Pulsar.Models; // 确保引用了 WindowInfo 等模型
+using Pulsar.Native; // [New] Use centralized Native helper
 
 namespace Pulsar.Services
 {
@@ -304,10 +305,10 @@ namespace Pulsar.Services
 
         private void ForceForegroundWindow(IntPtr hWnd)
         {
+            // Use WindowHelper which implements AttachThreadInput logic for robust switching
+            // This replaces the old "Alt Key" hack which had side effects
             if (NativeMethods.IsIconic(hWnd)) NativeMethods.ShowWindow(hWnd, 9);
-            NativeMethods.keybd_event(0x12, 0, 0, 0); // Alt Down
-            NativeMethods.SetForegroundWindow(hWnd);
-            NativeMethods.keybd_event(0x12, 0, 2, 0); // Alt Up
+            WindowHelper.SetForegroundWindow(hWnd);
         }
 
         // 补充实现 IWindowService.RecordPreviousWindow()
@@ -320,36 +321,56 @@ namespace Pulsar.Services
         {
             return await Task.Run(() =>
             {
-                if (hWnd == IntPtr.Zero || !NativeMethods.IsWindow(hWnd)) return null;
+                if (hWnd == IntPtr.Zero || !NativeMethods.IsWindow(hWnd)) 
+                {
+                    Debug.WriteLine($"[CaptureWindow] Invalid Handle: {hWnd}");
+                    return null;
+                }
 
                 try
                 {
                     // 1. Get Dimensions
-                    if (!NativeMethods.GetWindowRect(hWnd, out var rect)) return null;
+                    if (!NativeMethods.GetWindowRect(hWnd, out var rect)) 
+                    {
+                        Debug.WriteLine($"[CaptureWindow] GetWindowRect failed for {hWnd}");
+                        return null;
+                    }
                     int width = rect.Right - rect.Left;
                     int height = rect.Bottom - rect.Top;
 
-                    if (width <= 0 || height <= 0) return null;
+                    if (width <= 0 || height <= 0) 
+                    {
+                        Debug.WriteLine($"[CaptureWindow] Invalid dimensions {width}x{height} for {hWnd}");
+                        return null;
+                    }
 
                     // 2. Create Bitmap
-                    using (var bitmap = new System.Drawing.Bitmap(width, height))
+                    using (var fullBitmap = new System.Drawing.Bitmap(width, height))
                     {
-                        using (var g = System.Drawing.Graphics.FromImage(bitmap))
+                        using (var g = System.Drawing.Graphics.FromImage(fullBitmap))
                         {
                             // 3. Print Window Content
                             IntPtr hdc = g.GetHdc();
+                            bool success = false;
                             try
                             {
                                 // PW_CLIENTONLY = 1
                                 // PW_RENDERFULLCONTENT = 0x00000002 (Windows 8.1+) - Captures layered windows/Chrome/WPF
                                 // Try RenderFullContent first
-                                bool success = NativeMethods.PrintWindow(hWnd, hdc, 0x00000002);
+                                success = NativeMethods.PrintWindow(hWnd, hdc, 0x00000002);
                                 if (!success)
                                 {
                                     // Fallback to default
+                                    Debug.WriteLine($"[CaptureWindow] PrintWindow(Full) failed for {hWnd}, retrying with default flags.");
                                     success = NativeMethods.PrintWindow(hWnd, hdc, 0);
                                 }
-                                if (!success) return null;
+                                
+                                if (!success)
+                                {
+                                    int error = Marshal.GetLastWin32Error();
+                                    Debug.WriteLine($"[CaptureWindow] PrintWindow failed completely for {hWnd}. Error: {error}");
+                                    return null;
+                                }
                             }
                             finally
                             {
@@ -357,28 +378,60 @@ namespace Pulsar.Services
                             }
                         }
 
-                        // 4. Convert to WPF ImageSource
-                        IntPtr hBitmap = bitmap.GetHbitmap();
-                        try
+                        // [Optimization] Downscale Bitmap
+                        // The UI only displays this in a ~110x110 circle (or slightly larger on hover).
+                        // Full HD/4K textures cause massive GPU upload lag on the UI thread.
+                        // We'll scale to max 400px dimension which is plenty for high DPI.
+                        int maxDim = 400;
+                        int newWidth = width;
+                        int newHeight = height;
+                        
+                        if (width > maxDim || height > maxDim)
                         {
-                            var wpfBitmap = Imaging.CreateBitmapSourceFromHBitmap(
-                                hBitmap,
-                                IntPtr.Zero,
-                                Int32Rect.Empty,
-                                BitmapSizeOptions.FromEmptyOptions());
-                            
-                            wpfBitmap.Freeze(); // Make cross-thread accessible
-                            return (ImageSource)wpfBitmap;
+                            double ratio = (double)width / height;
+                            if (width > height)
+                            {
+                                newWidth = maxDim;
+                                newHeight = (int)(maxDim / ratio);
+                            }
+                            else
+                            {
+                                newHeight = maxDim;
+                                newWidth = (int)(maxDim * ratio);
+                            }
                         }
-                        finally
+
+                        using (var scaledBitmap = new System.Drawing.Bitmap(newWidth, newHeight))
                         {
-                            NativeMethods.DeleteObject(hBitmap);
+                            using (var g = System.Drawing.Graphics.FromImage(scaledBitmap))
+                            {
+                                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                                g.DrawImage(fullBitmap, 0, 0, newWidth, newHeight);
+                            }
+                            
+                            // 4. Convert to WPF ImageSource (using scaled bitmap)
+                            IntPtr hBitmap = scaledBitmap.GetHbitmap();
+                            try
+                            {
+                                var wpfBitmap = Imaging.CreateBitmapSourceFromHBitmap(
+                                    hBitmap,
+                                    IntPtr.Zero,
+                                    Int32Rect.Empty,
+                                    BitmapSizeOptions.FromEmptyOptions());
+                                
+                                wpfBitmap.Freeze(); // Make cross-thread accessible
+                                return (ImageSource)wpfBitmap;
+                            }
+                            finally
+                            {
+                                NativeMethods.DeleteObject(hBitmap);
+                            }
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"Capture Failed: {ex.Message}");
+                    Debug.WriteLine($"[CaptureWindow] Exception for {hWnd}: {ex.Message}");
                     return null;
                 }
             });

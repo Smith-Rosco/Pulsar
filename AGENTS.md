@@ -13,8 +13,8 @@ This file provides context, conventions, and commands for AI agents (and human d
 
 **Plugin System (v4.0.0+)**:
 - **Interface**: `IPulsarPlugin` - All plugins implement this standard interface
-- **Context Passing**: `PulsarContext` - Immutable context snapshot captured when radial menu is invoked
-- **Plugin Registry**: `PluginRegistry` - Manages plugin lifecycle and execution
+- **Context Passing**: `PulsarContext` - Lazy-loaded, immutable context snapshot captured when radial menu is invoked
+- **Plugin Registry**: `PluginRegistry` - Manages plugin lifecycle and execution with **Circuit Breaker** protection
 - **Plugin Loader**: `PluginLoader` - Loads plugins from both built-in assembly and external DLLs
 - **Configuration**: `Profiles.json` - Single source of truth for all configuration (replaces legacy `appsettings.json`)
 
@@ -23,6 +23,7 @@ This file provides context, conventions, and commands for AI agents (and human d
 - **Plugin Isolation**: Plugin exceptions do not crash the main application
 - **Dependency Injection**: Plugins receive `IServiceProvider` during initialization
 - **Async First**: All plugin actions are async (`Task<PluginResult>`)
+- **Safety First**: Plugins that crash repeatedly (3 times) are automatically disabled for 60 seconds (Circuit Breaker).
 
 ## 2. Build & Test Commands
 
@@ -83,7 +84,7 @@ Adhere strictly to these conventions to maintain codebase consistency.
 - `Core/`: Interfaces, Base types, Abstract handlers.
   - `Core/Plugin/`: Plugin system core interfaces and types
     - `IPulsarPlugin.cs`: Plugin interface definition
-    - `PulsarContext.cs`: Immutable context snapshot
+    - `PulsarContext.cs`: Immutable context snapshot with Lazy loading
     - `PluginResult.cs`: Plugin execution result types
     - `PluginLoader.cs`: Plugin loading infrastructure
 - `Plugins/`: Built-in plugin implementations
@@ -95,7 +96,7 @@ Adhere strictly to these conventions to maintain codebase consistency.
 - `Models/`: Data transfer objects and configuration models.
   - `ProfilesConfig.cs`: New unified configuration model (v4.0.0+)
 - `Services/`: Business logic implementations (singleton/transient services).
-  - `PluginRegistry.cs`: Plugin registry and execution service
+  - `PluginRegistry.cs`: Plugin registry and execution service with Circuit Breaker
 - `ViewModels/`: MVVM ViewModels (inherit from `ObservableObject` or `ViewModelBase`).
 - `Views/`: XAML Windows, Controls, and UserControls.
 
@@ -194,11 +195,34 @@ Adhere strictly to these conventions to maintain codebase consistency.
 3. Implement `Initialize(IServiceProvider)` for dependency injection.
 4. Implement `ExecuteAsync(action, args, context)` for action handling.
 5. Use `PulsarContext` to access window information - NEVER query window state inside plugins.
+   - **Optimization**: `PulsarContext` is lazy-loaded. Access heavy properties (like `GetClipboardTextAsync`) only when necessary.
 6. See `PLUGIN_DEVELOPMENT.md` for detailed plugin development guide.
 
 ### Managing Secrets (PKI)
 - Secrets are handled by `PkiPlugin` and `CredentialsManager`.
 - Ensure sensitive data models use `[JsonIgnore]` to prevent accidental serialization to config files.
+
+### Input Simulation & Text Injection
+When injecting text into external applications (e.g., browsers, terminals), prioritize stability and performance.
+
+**Hierarchy of Injection Methods:**
+1.  **UI Automation (UIA) - Preferred**:
+    - **Mechanism**: Uses Windows Automation API (`IUIAutomationValuePattern.SetValue`).
+    - **Pros**: Instantaneous, invisible, does not touch clipboard, thread-safe (if marshaled correctly).
+    - **Cons**: Requires target element to support `ValuePattern` (Modern Browsers do).
+    - **Code**: See `Pulsar.Native.UiaHelper`.
+
+2.  **Clipboard Paste (Ctrl+V) - Fallback**:
+    - **Mechanism**: Set Clipboard text -> Send `Ctrl+V`.
+    - **Pros**: Fast, universally supported.
+    - **Cons**: overwrites user's clipboard (requires save/restore), prone to locking errors (`ExternalException`), requires STA thread affinity.
+
+3.  **Simulated Typing (SendInput) - Last Resort**:
+    - **Mechanism**: Sends array of `KEYBDINPUT` structures.
+    - **Pros**: Works everywhere, no clipboard issues.
+    - **Cons**: Slow (limited by target app's UI thread speed), visible "typing" animation.
+
+**Best Practice**: Always attempt UIA first. If it fails (element not found or pattern not supported), fall back to Clipboard or Typing depending on the context (Typing is safer for small text, Clipboard for large blocks).
 
 ## 5. Agent Behavior Rules
 

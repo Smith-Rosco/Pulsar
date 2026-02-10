@@ -3,21 +3,4 @@
   <PropertyGroup>
     <_LastSelectedProfileId>G:\0_Playground\Pulsar_Project\Pulsar\Pulsar\Properties\PublishProfiles\FolderProfile.pubxml</_LastSelectedProfileId>
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Update="Views\Dialogs\IconPickerDialog.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="Views\Dialogs\ProcessPickerDialog.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="Views\Dialogs\QuickSecretsDialog.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="Views\SettingsWindow.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="Views\SimpleInputDialog.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-  </ItemGroup>
 </Project>

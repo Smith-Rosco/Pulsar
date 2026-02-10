@@ -142,7 +142,8 @@ namespace Pulsar.Plugins.VbaRunner
                     }
 
                     // 7. 执行脚本
-                    _scriptEngine.ExecuteScript(scriptPath, "Main", scriptArg);
+                    string macroName = args.TryGetValue("macro", out var m) && !string.IsNullOrWhiteSpace(m) ? m : "Main";
+                    _scriptEngine.ExecuteScript(scriptPath, macroName, scriptArg);
                     successMessage = "Script executed successfully";
                 }
                 catch (Exception ex)

@@ -87,7 +87,7 @@ namespace Pulsar.Views.Dialogs
                 // Auto-set icon from process
                 if (proc.AppIcon != null)
                 {
-                    string cachedPath = IconHelper.SaveIconToCache(proc.AppIcon, proc.ProcessName);
+                    string? cachedPath = IconHelper.SaveIconToCache(proc.AppIcon, proc.ProcessName);
                     if (!string.IsNullOrEmpty(cachedPath))
                     {
                         UpdateIconPreview(cachedPath);

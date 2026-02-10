@@ -6,9 +6,9 @@ namespace Pulsar.Helpers
 {
     public class IconItem
     {
-        public string Name { get; set; }
-        public string Code { get; set; } // e.g., "E713"
-        public string Character { get; set; } // e.g., "\uE713"
+        public required string Name { get; set; }
+        public required string Code { get; set; } // e.g., "E713"
+        public string? Character { get; set; } // e.g., "\uE713"
     }
 
     public static class GlyphData

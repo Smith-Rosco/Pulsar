@@ -147,48 +147,102 @@ namespace Pulsar.Views.Controls
             OrbTranslate.Y = _currentOffset.Y / dpi.DpiScaleY;
         }
 
-        // ============================
-        // �ڲ���Ⱦ���� (���ֲ���)
-        // ============================
-        public static readonly DependencyProperty RenderImageProperty = DependencyProperty.Register("RenderImage", typeof(ImageSource), typeof(JellyOrb), new PropertyMetadata(null));
-        public static readonly DependencyProperty RenderGlyphProperty = DependencyProperty.Register("RenderGlyph", typeof(string), typeof(JellyOrb), new PropertyMetadata(string.Empty));
-        public static readonly DependencyProperty ShowImageProperty = DependencyProperty.Register("ShowImage", typeof(bool), typeof(JellyOrb), new PropertyMetadata(false));
 
-        public ImageSource RenderImage { get => (ImageSource)GetValue(RenderImageProperty); private set => SetValue(RenderImageProperty, value); }
-        public string RenderGlyph { get => (string)GetValue(RenderGlyphProperty); private set => SetValue(RenderGlyphProperty, value); }
-        public bool ShowImage { get => (bool)GetValue(ShowImageProperty); private set => SetValue(ShowImageProperty, value); }
+        private static void OnOrbImageChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is JellyOrb orb) orb.RefreshIcon(orb.IconKey); 
+        }
 
         private static void OnIconKeyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is JellyOrb orb) orb.RefreshIcon(e.NewValue as string);
         }
+        
+        // ============================
+        // Internal Rendering Properties (Read-Only)
+        // ============================
+        private static readonly DependencyPropertyKey RenderImagePropertyKey = 
+            DependencyProperty.RegisterReadOnly(nameof(RenderImage), typeof(ImageSource), typeof(JellyOrb), new PropertyMetadata(null));
+        
+        public static readonly DependencyProperty RenderImageProperty = RenderImagePropertyKey.DependencyProperty;
 
-        private static void OnOrbImageChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        private static readonly DependencyPropertyKey RenderGlyphPropertyKey = 
+            DependencyProperty.RegisterReadOnly(nameof(RenderGlyph), typeof(string), typeof(JellyOrb), new PropertyMetadata(string.Empty));
+        
+        public static readonly DependencyProperty RenderGlyphProperty = RenderGlyphPropertyKey.DependencyProperty;
+
+        private static readonly DependencyPropertyKey ShowImagePropertyKey = 
+            DependencyProperty.RegisterReadOnly(nameof(ShowImage), typeof(bool), typeof(JellyOrb), new PropertyMetadata(false));
+        
+        public static readonly DependencyProperty ShowImageProperty = ShowImagePropertyKey.DependencyProperty;
+
+        public ImageSource RenderImage
         {
-            if (d is JellyOrb orb) orb.RefreshIcon(orb.IconKey); // Re-run logic to check priority
+            get => (ImageSource)GetValue(RenderImageProperty);
+            private set => SetValue(RenderImagePropertyKey, value);
         }
 
-        private void RefreshIcon(string key)
+        public string RenderGlyph
         {
-            RenderImage = null; RenderGlyph = string.Empty; ShowImage = false;
+            get => (string)GetValue(RenderGlyphProperty);
+            private set => SetValue(RenderGlyphPropertyKey, value);
+        }
 
-            // 1. Priority: IconKey (Glyph or Path)
-            if (!string.IsNullOrWhiteSpace(key))
+        public bool ShowImage
+        {
+            get => (bool)GetValue(ShowImageProperty);
+            private set => SetValue(ShowImagePropertyKey, value);
+        }
+
+        private void RefreshIcon(string? key)
+        {
+            // Reset state
+            // Don't clear RenderImage immediately to avoid flicker if we just swap sources
+            
+            bool showingImage = false;
+            ImageSource? newImage = null;
+            string newGlyph = string.Empty;
+
+            // 1. Priority: OrbImage (Direct Image Binding) - e.g. Window Icon
+            // [Design Decision] If OrbImage is provided, it usually overrides the IconKey (which might be a generic fallback)
+            if (OrbImage != null)
+            {
+                newImage = OrbImage;
+                showingImage = true;
+            }
+            // 2. Fallback: IconKey (Glyph or Path)
+            else if (!string.IsNullOrWhiteSpace(key))
             {
                 if (key.Contains("\\") || key.Contains("."))
                 {
-                    var img = IconHelper.GetIconFromPath(key);
-                    if (img != null) { RenderImage = img; ShowImage = true; return; }
+                    // Path to image file
+                    try 
+                    {
+                        var img = IconHelper.GetIconFromPath(key);
+                        if (img != null) { newImage = img; showingImage = true; }
+                    }
+                    catch {}
                 }
-                var glyph = IconHelper.GetGlyph(key);
-                if (!string.IsNullOrEmpty(glyph)) { RenderGlyph = glyph; ShowImage = false; return; }
+                else
+                {
+                    // Glyph key
+                    var glyph = IconHelper.GetGlyph(key);
+                    if (!string.IsNullOrEmpty(glyph)) { newGlyph = glyph; showingImage = false; }
+                }
             }
-
-            // 2. Fallback: OrbImage (Bound ImageSource)
-            if (OrbImage != null)
+            
+            // Apply
+            if (showingImage)
             {
-                RenderImage = OrbImage;
-                ShowImage = true;
+                SetValue(RenderImagePropertyKey, newImage);
+                SetValue(ShowImagePropertyKey, true);
+                SetValue(RenderGlyphPropertyKey, string.Empty);
+            }
+            else
+            {
+                SetValue(RenderImagePropertyKey, null);
+                SetValue(ShowImagePropertyKey, false);
+                SetValue(RenderGlyphPropertyKey, newGlyph);
             }
         }
     }
