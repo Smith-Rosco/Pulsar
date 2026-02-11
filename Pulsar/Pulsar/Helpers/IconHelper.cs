@@ -71,7 +71,6 @@ namespace Pulsar.Helpers
             }
         }
 
-        // [New] 之前提供的保存方法 (为了完整性再次列出，你不需要修改这部分如果已经添加了)
         public static string? SaveIconToCache(ImageSource image, string processName)
         {
             if (image is not BitmapSource bitmapSource) return null;
@@ -82,38 +81,23 @@ namespace Pulsar.Helpers
                 string folder = Path.Combine(appData, "Pulsar", "Cache", "Icons");
                 if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
 
+                // Use ProcessName for filename, sanitized
                 string safeName = string.Join("_", processName.Split(Path.GetInvalidFileNameChars()));
                 string filePath = Path.Combine(folder, $"{safeName}.png");
 
-                // [Optimization] 如果文件已存在且有效，直接返回，避免重复写入导致的 IO 冲突
+                // [Optimization] If file exists, check if valid and return
                 if (File.Exists(filePath))
                 {
-                    try
+                    // Basic check: is file accessible?
+                    try 
                     {
-                        using (var fs = File.OpenRead(filePath))
-                        {
-                            if (fs.Length > 0) return filePath;
-                        }
+                        using (var fs = File.OpenRead(filePath)) { if (fs.Length > 0) return filePath; }
                     }
-                    catch
-                    {
-                        // 如果读取失败，说明文件可能有问题或被锁，尝试覆盖或生成新名
-                    }
+                    catch { /* File locked or corrupted, try overwrite */ }
                 }
 
-                try
-                {
-                    SaveBitmap(bitmapSource, filePath);
-                    return filePath;
-                }
-                catch (IOException)
-                {
-                    // [Fallback] 如果主文件被占用，生成带时间戳的副本
-                    string timestamp = DateTime.Now.Ticks.ToString();
-                    string altPath = Path.Combine(folder, $"{safeName}_{timestamp}.png");
-                    SaveBitmap(bitmapSource, altPath);
-                    return altPath;
-                }
+                SaveBitmap(bitmapSource, filePath);
+                return filePath;
             }
             catch (Exception ex)
             {

@@ -60,6 +60,7 @@ namespace Pulsar
             serviceCollection.AddSingleton<ITrayService, TrayIconService>();
             serviceCollection.AddSingleton<IThemeService, ThemeService>();
             serviceCollection.AddSingleton<GlobalKeyboardHook>();
+            serviceCollection.AddSingleton<IHotkeyService, HotkeyService>();
             
             // 2. Plugin System (New Architecture)
             serviceCollection.AddSingleton<PluginRegistry>();
@@ -70,9 +71,10 @@ namespace Pulsar
             // 4. UI Services
             serviceCollection.AddSingleton<RadialMenuViewModel>();
             serviceCollection.AddSingleton<RadialMenuWindow>();
+            // [Fix] Register SettingsViewModel with new dependency
             serviceCollection.AddTransient<SettingsViewModel>();
             serviceCollection.AddTransient<SettingsWindow>();
-
+            
             // Build Container
             Services = serviceCollection.BuildServiceProvider();
 
@@ -89,6 +91,10 @@ namespace Pulsar
             // 7. Warm up Main Window
             var mainWindow = Services.GetRequiredService<RadialMenuWindow>();
             mainWindow.Show();
+
+            // 8. Initialize Hotkey Service
+            var hotkeyService = Services.GetRequiredService<IHotkeyService>();
+            hotkeyService.Initialize();
         }
 
         protected override void OnExit(ExitEventArgs e)

@@ -16,6 +16,7 @@ namespace Pulsar.Core.Plugin
         public IntPtr TargetWindowHandle { get; }
         public string TargetProcessName { get; }  // 大写，如 "EXCEL"
         public int TargetProcessId { get; }
+        public string TargetExePath { get; } // [New]
         
         // === 共享存储 (用于插件间通信) ===
         public IReadOnlyDictionary<string, object>? SessionData { get; init; }
@@ -28,7 +29,8 @@ namespace Pulsar.Core.Plugin
         // 私有构造函数
         private PulsarContext(
             IntPtr hwnd, 
-            string processName, 
+            string processName,
+            string exePath, // [New]
             int pid,
             Func<Task<IReadOnlyList<ProcessWindowInfo>>> windowsFactory,
             Func<Task<string?>> clipboardFactory,
@@ -36,6 +38,7 @@ namespace Pulsar.Core.Plugin
         {
             TargetWindowHandle = hwnd;
             TargetProcessName = processName;
+            TargetExePath = exePath; // [New]
             TargetProcessId = pid;
             
             _windowsLazy = new Lazy<Task<IReadOnlyList<ProcessWindowInfo>>>(windowsFactory);
@@ -67,6 +70,7 @@ namespace Pulsar.Core.Plugin
         {
             var hwnd = windowService.GetPreviousWindow();
             string processName = string.Empty;
+            string exePath = string.Empty; // [New]
             int pid = 0;
             
             try
@@ -81,6 +85,11 @@ namespace Pulsar.Core.Plugin
                     using (var process = Process.GetProcessById(pid))
                     {
                         processName = process.ProcessName.ToUpperInvariant();
+                        try 
+                        {
+                             exePath = process.MainModule?.FileName ?? string.Empty;
+                        }
+                        catch { /* Ignore access denied */ }
                     }
                 }
             }
@@ -92,14 +101,14 @@ namespace Pulsar.Core.Plugin
             // 定义 Lazy 工厂
             
             // 1. 窗口列表工厂
-            var windowsFactory = async () => 
+            var windowsFactory = new Func<Task<IReadOnlyList<ProcessWindowInfo>>>(async () => 
             {
-                if (pid <= 0) return (IReadOnlyList<ProcessWindowInfo>)new List<ProcessWindowInfo>();
+                if (pid <= 0) return new List<ProcessWindowInfo>();
                 return await windowService.GetProcessWindowsAsync(pid);
-            };
+            });
 
             // 2. 剪贴板工厂 (需调度到 UI 线程)
-            var clipboardFactory = async () =>
+            var clipboardFactory = new Func<Task<string?>>(async () =>
             {
                 try 
                 {
@@ -117,12 +126,12 @@ namespace Pulsar.Core.Plugin
                     Debug.WriteLine($"[PulsarContext] Failed to get clipboard: {ex.Message}");
                     return null;
                 }
-            };
+            });
             
             // 3. 选中文本工厂 (占位)
-            var selectionFactory = () => Task.FromResult<string?>(null);
+            var selectionFactory = new Func<Task<string?>>(() => Task.FromResult<string?>(null));
 
-            return new PulsarContext(hwnd, processName, pid, windowsFactory, clipboardFactory, selectionFactory);
+            return new PulsarContext(hwnd, processName, exePath, pid, windowsFactory, clipboardFactory, selectionFactory);
         }
     }
 

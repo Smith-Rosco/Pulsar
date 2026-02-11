@@ -65,6 +65,55 @@
                     </StackPanel>
                 </ui:CardExpander>
 
+                <!-- Hotkeys Section -->
+                <ui:CardExpander Icon="Keyboard24" Header="Global Hotkeys" Margin="0,0,0,12" IsExpanded="True">
+                    <StackPanel>
+                        <!-- Grid Hotkey -->
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Show Menu" FontWeight="Medium"/>
+                                <TextBlock Text="Trigger the radial menu (Action Mode)" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                            </StackPanel>
+                            <ui:TextBox Grid.Column="1" Width="200"
+                                     Text="{Binding DataContext.ShowGridHotkey, RelativeSource={RelativeSource AncestorType=Page}, Mode=OneWay}"
+                                     PreviewKeyDown="Hotkey_PreviewKeyDown"
+                                     GotFocus="Hotkey_GotFocus"
+                                     LostFocus="Hotkey_LostFocus"
+                                     Tag="ShowGrid"
+                                     IsReadOnly="True"
+                                     Cursor="Hand"
+                                     PlaceholderText="Press keys..."/>
+                        </Grid>
+                        
+                        <Separator Margin="0,12"/>
+
+                        <!-- Switcher Hotkey -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Show Switcher" FontWeight="Medium"/>
+                                <TextBlock Text="Trigger the window switcher (Launcher Mode)" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                            </StackPanel>
+                            <ui:TextBox Grid.Column="1" Width="200"
+                                     Text="{Binding DataContext.ShowSwitcherHotkey, RelativeSource={RelativeSource AncestorType=Page}, Mode=OneWay}"
+                                     PreviewKeyDown="Hotkey_PreviewKeyDown"
+                                     GotFocus="Hotkey_GotFocus"
+                                     LostFocus="Hotkey_LostFocus"
+                                     Tag="ShowSwitcher"
+                                     IsReadOnly="True"
+                                     Cursor="Hand"
+                                     PlaceholderText="Press keys..."/>
+                        </Grid>
+                    </StackPanel>
+                </ui:CardExpander>
+
             </StackPanel>
         </ScrollViewer>
     </Grid>

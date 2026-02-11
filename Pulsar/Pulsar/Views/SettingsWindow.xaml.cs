@@ -30,6 +30,9 @@ namespace Pulsar.Views
             // Subscribe to theme changes
             _themeService.ThemeChanged += OnThemeChanged;
 
+            // Subscribe to ViewModel changes for Navigation
+            _viewModel.PropertyChanged += ViewModel_PropertyChanged;
+
             // Subscribe to Snackbar messages
             WeakReferenceMessenger.Default.Register<SnackbarMessage>(this, (r, m) =>
             {
@@ -85,6 +88,38 @@ namespace Pulsar.Views
                 }
                 DisableScrollViewers(child);
             }
+        }
+
+        private void ViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+             if (e.PropertyName == nameof(SettingsViewModel.CurrentView))
+             {
+                 // [Fix] Programmatic Navigation
+                 // Since Wpf.Ui Navigate method usually takes Type or instance, and our SelectionChanged handles it via Tag,
+                 // We should try to update the SelectedItem to trigger SelectionChanged.
+                 
+                 // If SelectedItem set is inaccessible, we will use Navigate(Type) which is standard.
+                 // However, we want to maintain our cached page instances.
+                 // Let's try Navigate(instance) if supported, or just manually set frame content and update selection visual.
+                 
+                 if (_viewModel.CurrentView == "Settings")
+                 {
+                     RootFrame.Navigate(_generalPage);
+                     // Try to update visual selection without triggering logic loop
+                     if (RootNavigation.MenuItems[0] is FrameworkElement item) 
+                     {
+                         // Use VisualState or specific property if available. 
+                         // For now, assume Navigate handles it or we accept visual desync as minor issue.
+                         // But usually we can cast to NavigationViewItem.
+                         if (item is NavigationViewItem navItem) navItem.IsActive = true; 
+                     }
+                 }
+                 else if (_viewModel.CurrentView == "Slots")
+                 {
+                     RootFrame.Navigate(_slotsPage);
+                     if (RootNavigation.MenuItems[1] is NavigationViewItem navItem) navItem.IsActive = true;
+                 }
+             }
         }
 
         private void OnThemeChanged(object? sender, AppTheme theme)

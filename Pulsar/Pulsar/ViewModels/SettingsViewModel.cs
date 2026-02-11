@@ -75,6 +75,7 @@ namespace Pulsar.ViewModels
         private readonly IConfigService _configService;
         private readonly IWindowService _windowService;
         private readonly IThemeService _themeService;
+        private readonly IHotkeyService _hotkeyService; // [New]
         private readonly SecretRepository _secretRepo = new SecretRepository();
         private ProfilesConfig _config;
 
@@ -160,14 +161,45 @@ namespace Pulsar.ViewModels
         // private void OnCurrentSlotsChanged() { } 
 
 
-        public SettingsViewModel(IConfigService configService, IWindowService windowService, IThemeService themeService)
+        public SettingsViewModel(IConfigService configService, IWindowService windowService, IThemeService themeService, IHotkeyService hotkeyService)
         {
             _configService = configService;
             _windowService = windowService;
             _themeService = themeService;
+            _hotkeyService = hotkeyService; // [New]
             _config = new ProfilesConfig();
             LoadSettings();
+
+            // [New] Subscribe to OpenSettingsMessage
+            WeakReferenceMessenger.Default.Register<OpenSettingsMessage>(this, (r, m) =>
+            {
+                // Ensure UI Thread
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    // 1. Refresh Contexts
+                    RefreshContexts();
+                    
+                    // 2. Select Profile
+                    var context = AvailableContexts.FirstOrDefault(c => c.Key == m.ProfileName);
+                    if (context != null)
+                    {
+                        CurrentContext = context;
+                    }
+                    
+                    // 3. Switch View
+                    if (!string.IsNullOrEmpty(m.ViewName))
+                    {
+                        SwitchView(m.ViewName);
+                    }
+
+                    // 4. Ensure Window is active (handled by Strategy but good redundancy)
+                });
+            });
         }
+
+        // [New] Pause/Resume Hotkeys
+        public void PauseHotkeys() => _hotkeyService.Pause();
+        public void ResumeHotkeys() => _hotkeyService.Resume();
 
         public async Task<ProfilesConfig> GetConfigAsync()
         {
@@ -187,6 +219,10 @@ namespace Pulsar.ViewModels
             OnPropertyChanged(nameof(SettingsTheme));
             OnPropertyChanged(nameof(SettingsThemeString));
             
+            // [New] Notify Hotkeys
+            OnPropertyChanged(nameof(ShowGridHotkey));
+            OnPropertyChanged(nameof(ShowSwitcherHotkey));
+
             // [Cleanup] Theme application is now handled by the View (SettingsWindow.xaml.cs)
             // System.Windows.Application.Current.Dispatcher.Invoke(() => 
             // {
@@ -208,7 +244,7 @@ namespace Pulsar.ViewModels
             AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.pki", "🔒 Secret (PKI)", "Auto-fill encrypted credentials"));
         }
 
-        private void RefreshContexts()
+        public void RefreshContexts()
         {
             var previousKey = CurrentContext?.Key;
 
@@ -750,6 +786,35 @@ namespace Pulsar.ViewModels
                     }
                 }
             }
+        }
+
+        public HotkeyConfig ShowGridHotkey
+        {
+            get => _config.Settings.Hotkeys.TryGetValue("ShowGrid", out var h) ? h : new HotkeyConfig { Key = "Q", Modifiers = "Control" };
+            set
+            {
+                _config.Settings.Hotkeys["ShowGrid"] = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public HotkeyConfig ShowSwitcherHotkey
+        {
+            get => _config.Settings.Hotkeys.TryGetValue("ShowSwitcher", out var h) ? h : new HotkeyConfig { Key = "Q", Modifiers = "Control,Shift" };
+            set
+            {
+                _config.Settings.Hotkeys["ShowSwitcher"] = value;
+                OnPropertyChanged();
+            }
+        }
+        
+        [RelayCommand]
+        public void UpdateHotkey(string actionId)
+        {
+            // Triggered after hotkey capture to ensure persistence/refresh if needed
+            // Currently Save() handles persistence, this might just be for UI refresh
+            if (actionId == "ShowGrid") OnPropertyChanged(nameof(ShowGridHotkey));
+            if (actionId == "ShowSwitcher") OnPropertyChanged(nameof(ShowSwitcherHotkey));
         }
 
         private void ApplySettingsTheme(AppTheme theme)

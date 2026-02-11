@@ -10,14 +10,27 @@ namespace Pulsar.Native
     public class GlobalKeyEventArgs : EventArgs
     {
         public int VkCode { get; }
-        public GlobalKeyEventArgs(int vkCode) => VkCode = vkCode;
+        public bool IsCtrl { get; }
+        public bool IsShift { get; }
+        public bool IsAlt { get; }
+        public bool IsWin { get; }
+        public bool Handled { get; set; }
+
+        public GlobalKeyEventArgs(int vkCode, bool isCtrl, bool isShift, bool isAlt, bool isWin)
+        {
+            VkCode = vkCode;
+            IsCtrl = isCtrl;
+            IsShift = isShift;
+            IsAlt = isAlt;
+            IsWin = isWin;
+            Handled = false;
+        }
     }
 
     public class GlobalKeyboardHook : IDisposable
     {
-        // 定义事件
-        public event EventHandler? OnGridTrigger;     // Ctrl + Q
-        public event EventHandler? OnSwitcherTrigger; // Ctrl + Shift + Q
+        // 定义事件 - 通用事件
+        public event EventHandler<GlobalKeyEventArgs>? OnKeyDown;
         public event EventHandler<GlobalKeyEventArgs>? OnKeyUp;
 
         // 钩子委托与句柄
@@ -32,12 +45,15 @@ namespace Pulsar.Native
         private const int WM_KEYUP = 0x0101;
         private const int WM_SYSKEYUP = 0x0105;
         
-        // 虚拟键码
-        private const int VK_Q = 0x51;
+        // 修饰键虚拟码
         private const int VK_LCONTROL = 0xA2;
         private const int VK_RCONTROL = 0xA3;
         private const int VK_LSHIFT = 0xA0;
         private const int VK_RSHIFT = 0xA1;
+        private const int VK_LALT = 0xA4;
+        private const int VK_RALT = 0xA5;
+        private const int VK_LWIN = 0x5B;
+        private const int VK_RWIN = 0x5C;
 
         public GlobalKeyboardHook()
         {
@@ -68,32 +84,26 @@ namespace Pulsar.Native
                 bool isKeyDown = (wParam == (IntPtr)WM_KEYDOWN || wParam == (IntPtr)WM_SYSKEYDOWN);
                 bool isKeyUp = (wParam == (IntPtr)WM_KEYUP || wParam == (IntPtr)WM_SYSKEYUP);
 
-                // 检测触发键 (Q)
-                if (isKeyDown && vkCode == VK_Q)
-                {
-                    // 使用 Win32 API 检查修饰键状态 (GetKeyState)
-                    // 0x8000 表示按键按下
-                    bool isCtrl = (GetKeyState(VK_LCONTROL) & 0x8000) != 0 || (GetKeyState(VK_RCONTROL) & 0x8000) != 0;
-                    bool isShift = (GetKeyState(VK_LSHIFT) & 0x8000) != 0 || (GetKeyState(VK_RSHIFT) & 0x8000) != 0;
+                // 获取修饰键状态
+                bool isCtrl = (GetKeyState(VK_LCONTROL) & 0x8000) != 0 || (GetKeyState(VK_RCONTROL) & 0x8000) != 0;
+                bool isShift = (GetKeyState(VK_LSHIFT) & 0x8000) != 0 || (GetKeyState(VK_RSHIFT) & 0x8000) != 0;
+                bool isAlt = (GetKeyState(VK_LALT) & 0x8000) != 0 || (GetKeyState(VK_RALT) & 0x8000) != 0;
+                bool isWin = (GetKeyState(VK_LWIN) & 0x8000) != 0 || (GetKeyState(VK_RWIN) & 0x8000) != 0;
 
-                    if (isCtrl)
-                    {
-                        if (isShift)
-                        {
-                            OnSwitcherTrigger?.Invoke(this, EventArgs.Empty);
-                            return (IntPtr)1; // 吞掉按键
-                        }
-                        else
-                        {
-                            OnGridTrigger?.Invoke(this, EventArgs.Empty);
-                            return (IntPtr)1; // 吞掉按键
-                        }
-                    }
+                var args = new GlobalKeyEventArgs(vkCode, isCtrl, isShift, isAlt, isWin);
+
+                if (isKeyDown)
+                {
+                    OnKeyDown?.Invoke(this, args);
+                }
+                else if (isKeyUp)
+                {
+                    OnKeyUp?.Invoke(this, args);
                 }
 
-                if (isKeyUp)
+                if (args.Handled)
                 {
-                    OnKeyUp?.Invoke(this, new GlobalKeyEventArgs(vkCode));
+                    return (IntPtr)1; // 吞掉按键
                 }
             }
             return CallNextHookEx(_hookID, nCode, wParam, lParam);

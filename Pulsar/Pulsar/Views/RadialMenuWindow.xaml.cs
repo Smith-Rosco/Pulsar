@@ -172,14 +172,9 @@ namespace Pulsar.Views
 
         private void Summon()
         {
-            // [修改] 1. 将当前窗口句柄存储到 Service 中
-            var current = WindowHelper.GetForegroundWindow();
-            var selfHandle = new WindowInteropHelper(this).Handle;
-
-            if (current != IntPtr.Zero && current != selfHandle)
-            {
-                _windowService.SetPreviousWindow(current);
-            }
+            // [Fix] Removed redundant SetPreviousWindow call. 
+            // The ViewModel now handles this via PulsarContext.Capture() BEFORE the window is shown,
+            // which avoids the race condition of capturing Pulsar itself.
 
             // 1. [定位] 瞬间移动位置 (紧凑模式)
             UpdateWindowPosition();

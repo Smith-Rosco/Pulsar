@@ -21,6 +21,15 @@ namespace Pulsar.Services
         // [New] 状态管理字段
         private IntPtr _previousWindowHandle = IntPtr.Zero;
         private Action? _hideMainWindowAction;
+        private readonly int _currentProcessId;
+
+        public WindowService()
+        {
+            using (var currentProcess = Process.GetCurrentProcess())
+            {
+                _currentProcessId = currentProcess.Id;
+            }
+        }
 
         // --- Native Import for Constructor/Focus ---
         [DllImport("user32.dll", EntryPoint = "GetForegroundWindow")]
@@ -55,6 +64,10 @@ namespace Pulsar.Services
 
         public void SetPreviousWindow(IntPtr handle)
         {
+            // [Fix] Ignore self (Pulsar) to prevent getting stuck in a loop
+            NativeMethods.GetWindowThreadProcessId(handle, out uint processId);
+            if (processId == _currentProcessId) return;
+
             _previousWindowHandle = handle;
         }
 
@@ -317,6 +330,98 @@ namespace Pulsar.Services
             _previousWindowHandle = GetForegroundWindow_Native();
         }
 
+        public void SwitchToPreviousWindow()
+        {
+            string currentTitle = GetWindowTitle(GetForegroundWindow_Native());
+            string prevTitle = GetWindowTitle(_previousWindowHandle);
+            
+            Debug.WriteLine($"[SwitchToPreviousWindow] Current: '{currentTitle}' ({GetForegroundWindow_Native()}) | Previous: '{prevTitle}' ({_previousWindowHandle})");
+            
+            // [Fix] Target the window immediately AFTER the previous window in Z-Order (Alt-Tab behavior)
+            // Logic: User was in App A (_previousWindowHandle). Invoked Pulsar.
+            // "Previous" implies the window before App A, which is next in Z-Order.
+            
+            if (_previousWindowHandle != IntPtr.Zero && NativeMethods.IsWindow(_previousWindowHandle))
+            {
+                IntPtr nextWindow = GetNextWindowInZOrder(_previousWindowHandle);
+                string nextTitle = GetWindowTitle(nextWindow);
+                Debug.WriteLine($"[SwitchToPreviousWindow] Found Next Window: '{nextTitle}' ({nextWindow})");
+                
+                if (nextWindow != IntPtr.Zero)
+                {
+                    ForceForegroundWindow(nextWindow);
+                    return;
+                }
+
+                Debug.WriteLine("[SwitchToPreviousWindow] No valid next window found, falling back to previous handle.");
+                // Fallback: If no "next" window exists (e.g. only one app), return to the previous window
+                ForceForegroundWindow(_previousWindowHandle);
+            }
+        }
+
+        private string GetWindowTitle(IntPtr hWnd)
+        {
+            if (hWnd == IntPtr.Zero) return "NULL";
+            int length = NativeMethods.GetWindowTextLength(hWnd);
+            if (length == 0) return "Empty/Hidden";
+            StringBuilder sb = new StringBuilder(length + 1);
+            NativeMethods.GetWindowText(hWnd, sb, sb.Capacity);
+            return sb.ToString();
+        }
+
+        private IntPtr GetNextWindowInZOrder(IntPtr current)
+        {
+            if (current == IntPtr.Zero) return IntPtr.Zero;
+
+            IntPtr next = NativeMethods.GetWindow(current, NativeMethods.GW_HWNDNEXT);
+            int scanLimit = 50; // Safety limit
+            int scanned = 0;
+            
+            while (next != IntPtr.Zero && scanned < scanLimit)
+            {
+                if (IsAltTabWindow(next)) return next;
+                next = NativeMethods.GetWindow(next, NativeMethods.GW_HWNDNEXT);
+                scanned++;
+            }
+            return IntPtr.Zero;
+        }
+
+        private bool IsAltTabWindow(IntPtr hWnd)
+        {
+            // 排除自身（虽然 SwitchToPreviousWindow 通常在关闭后调用，但 Z-Order 可能还有残留）
+            NativeMethods.GetWindowThreadProcessId(hWnd, out uint processId);
+            if (processId == _currentProcessId) return false;
+
+            // 排除不可见窗口
+            if (!NativeMethods.IsWindowVisible(hWnd)) return false;
+            
+            // [Fix] Allow minimized windows (Alt-Tab includes them)
+            // if (NativeMethods.IsIconic(hWnd)) return false; 
+
+            // Check for Cloaked (Virtual Desktop / UWP Suspended)
+            if (NativeMethods.DwmGetWindowAttribute(hWnd, NativeMethods.DWMWA_CLOAKED, out bool isCloaked, sizeof(bool)) == 0 && isCloaked)
+                return false;
+
+            // Check for ToolWindow
+            long exStyle = NativeMethods.GetWindowLong(hWnd, NativeMethods.GWL_EXSTYLE);
+            if ((exStyle & NativeMethods.WS_EX_TOOLWINDOW) != 0) return false;
+
+            // Check for Title
+            int length = NativeMethods.GetWindowTextLength(hWnd);
+            if (length == 0) return false;
+            
+            StringBuilder sb = new StringBuilder(length + 1);
+            NativeMethods.GetWindowText(hWnd, sb, sb.Capacity);
+            string title = sb.ToString();
+            
+            if (title == "Program Manager") return false; // Desktop
+            
+            // [Debug] Log valid candidate
+            // Debug.WriteLine($"[IsAltTabWindow] Valid Candidate: {title} ({hWnd})");
+
+            return true;
+        }
+
         public async Task<ImageSource?> CaptureWindowAsync(IntPtr hWnd)
         {
             return await Task.Run(() =>
@@ -473,5 +578,9 @@ namespace Pulsar.Services
         internal const int DWMWA_CLOAKED = 14;
         internal const int GWL_EXSTYLE = -20;
         internal const long WS_EX_TOOLWINDOW = 0x00000080;
+        
+        // [New] GetWindow
+        internal const uint GW_HWNDNEXT = 2;
+        [DllImport("user32.dll")] internal static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
     }
 }

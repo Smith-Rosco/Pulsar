@@ -27,6 +27,7 @@ namespace Pulsar.ViewModels
         private readonly IConfigService _configService;
         private readonly IWindowService _windowService;
         private readonly PluginRegistry _pluginRegistry;
+        private readonly System.IServiceProvider _serviceProvider;
 
         private ProfilesConfig? _config;
         private List<PluginSlot> _currentSlots = new();
@@ -108,23 +109,31 @@ namespace Pulsar.ViewModels
             set => SetProperty(ref _dynamicTitle, value);
         }
 
+        // [New] Quick Switch Timer
+        private DateTime _showStartTime;
+        private bool _pendingQuickSwitch; // [Fix] Track premature release during loading
+
         private const double ItemSize = 50;
         private const double CenterSize = 70;
 
         // 按键常量
         private const int VK_LCONTROL = 0xA2;
         private const int VK_RCONTROL = 0xA3;
+        private const int VK_LSHIFT = 0xA0;
+        private const int VK_RSHIFT = 0xA1;
         private const int VK_CONTROL = 0x11;
 
         public RadialMenuViewModel(
             IConfigService configService,
             IWindowService windowService,
             PluginRegistry pluginRegistry,
-            GlobalKeyboardHook hook)
+            IHotkeyService hotkeyService,
+            System.IServiceProvider serviceProvider)
         {
             _configService = configService;
             _windowService = windowService;
             _pluginRegistry = pluginRegistry;
+            _serviceProvider = serviceProvider;
 
             InitializeSlots();
 
@@ -133,9 +142,10 @@ namespace Pulsar.ViewModels
             _animTimer.Interval = TimeSpan.FromMilliseconds(16); // ~60 FPS
             _animTimer.Tick += (s, e) => UpdateLayoutAnimation();
 
-            hook.OnGridTrigger += (s, e) => Show(GridItemType.Action);
-            hook.OnSwitcherTrigger += (s, e) => Show(GridItemType.Launcher);
-            hook.OnKeyUp += HandleKeyUp;
+            // [Refactor] Use HotkeyService
+            hotkeyService.RegisterAction("ShowGrid", () => Show(GridItemType.Action));
+            hotkeyService.RegisterAction("ShowSwitcher", () => Show(GridItemType.Launcher));
+            hotkeyService.OnGlobalKeyUp += HandleKeyUp;
 
             _configService.ConfigUpdated += OnConfigUpdated;
             LoadConfigAsync();
@@ -234,16 +244,23 @@ namespace Pulsar.ViewModels
 
             try
             {
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                
                 // [Optimization] Clear Preview Cache for new session
                 _windowPreviewCache.Clear();
 
                 // 1. 捕获上下文
-                // 确保 WindowService 知道上一个窗口是谁（用于上下文捕获）
                 IntPtr foregroundHandle = WindowHelper.GetForegroundWindow();
+                System.Diagnostics.Debug.WriteLine($"[Show] Foreground Handle: {foregroundHandle}");
+                
                 _windowService.SetPreviousWindow(foregroundHandle);
                 
                 // [Optimization] Use synchronous Capture for lightweight data
                 _lastContext = PulsarContext.Capture(_windowService);
+                
+                // [New] Record start time for Quick Switch
+                _showStartTime = DateTime.Now;
+                _pendingQuickSwitch = false; // Reset
 
                 ActionExecuted = false;
                 ResetSelection();
@@ -288,9 +305,24 @@ namespace Pulsar.ViewModels
                     }
 
                     // 如果没找到或特定 Profile 为空，回退到 Global
-                    if (!foundProfile && _config.Profiles.TryGetValue("Global", out var globalProfile))
+                    if (!foundProfile)
                     {
-                        _currentSlots.AddRange(globalProfile.GetSlots(true));
+                        if (_config.Profiles.TryGetValue("Global", out var globalProfile))
+                        {
+                            _currentSlots.AddRange(globalProfile.GetSlots(true));
+                        }
+
+                        // [Smart Profile Creator]
+                        // Remove any existing Global item in Slot 1 to prioritize the Creator
+                        _currentSlots.RemoveAll(s => s.Slot == 1);
+
+                        _currentSlots.Add(new PluginSlot 
+                        { 
+                            Slot = 1, 
+                            Label = $"Add {activeProcess}", 
+                            IconKey = "\uE710", // Add Icon
+                            PluginId = "internal:create_profile" 
+                        });
                     }
 
                     CenterText = foundProfile ? activeProcess : "Global";
@@ -298,13 +330,25 @@ namespace Pulsar.ViewModels
                 }
 
                 IsVisible = true;
+                
+                // [Fix] Check if user released the key while we were loading
+                if (_pendingQuickSwitch)
+                {
+                    System.Diagnostics.Debug.WriteLine("[Show] Pending Quick Switch detected, executing immediately.");
+                    SetActionExecuted(true);
+                    _windowService.SwitchToPreviousWindow();
+                    IsVisible = false;
+                }
+                
+                sw.Stop();
+                System.Diagnostics.Debug.WriteLine($"[Show] Completed in {sw.ElapsedMilliseconds}ms");
             }
             finally
             {
                 _isLoading = false;
             }
         }
-
+        
         // [New] Paging
         private int _currentPage = 0;
         private List<List<ProcessWindowInfo>> _allProcessGroups = new();
@@ -359,8 +403,12 @@ namespace Pulsar.ViewModels
         
         private async Task LoadRunningProcessesAsync()
         {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
             _currentPage = 0;
             var windows = await _windowService.GetActiveWindowsAsync();
+            
+            sw.Stop();
+            System.Diagnostics.Debug.WriteLine($"[LoadRunningProcessesAsync] GetActiveWindowsAsync took {sw.ElapsedMilliseconds}ms for {windows.Count} windows");
 
             // 1. Group by Process
             var groups = windows
@@ -450,15 +498,7 @@ namespace Pulsar.ViewModels
                 remainingOthers.Add(otherGroups[i].ToList());
             }
             
-            // Reconstruct _allProcessGroups as a flat list for Paging logic to consume?
-            // Wait, if Page 0 has gaps (e.g. Slot 1, 3 are pinned, 2 is empty but we filled it),
-            // The logic "Skip(page*8).Take(8)" assumes a dense list.
-            // But Pinned slots might leave gaps if we don't have enough running apps to fill.
-            // AND we want Pinned slots to stay at their specific index (e.g. Slot 3).
-            
             // Refined Strategy:
-            // _allProcessGroups will be a List<List<ProcessWindowInfo>> where null represents an empty slot?
-            // No, standard paging logic is simpler.
             // Let's stick to: Page 0 is SPECIAL. Page 1+ are FLOW.
             
             // Store Page 0 specifically
@@ -582,7 +622,7 @@ namespace Pulsar.ViewModels
 
             RefreshMixedPage();
         }
-
+        
         private void BindSlots(List<PluginSlot> pluginSlots)
         {
             foreach (var slotViewModel in Slots)
@@ -601,7 +641,16 @@ namespace Pulsar.ViewModels
                     slotViewModel.Type = SlotType.Action;
                     slotViewModel.DataContext = item;
                     // [New] Set Strategy
-                    if (_lastContext != null)
+                    if (item.PluginId == "internal:create_profile" && _lastContext != null)
+                    {
+                        // [Fix] Pass TargetExePath to Strategy
+                        slotViewModel.ActionStrategy = new CreateProfileStrategy(
+                            _lastContext.TargetProcessName, 
+                            _lastContext.TargetExePath, 
+                            _configService, 
+                            _serviceProvider);
+                    }
+                    else if (_lastContext != null)
                     {
                         slotViewModel.ActionStrategy = new PluginActionStrategy(item, _pluginRegistry, _lastContext);
                     }
@@ -830,9 +879,50 @@ namespace Pulsar.ViewModels
 
         private void HandleKeyUp(object? sender, GlobalKeyEventArgs e)
         {
-            if (!IsVisible) return;
-            if (e.VkCode == VK_LCONTROL || e.VkCode == VK_RCONTROL || e.VkCode == VK_CONTROL)
+            // [Debug] Log KeyUp
+            System.Diagnostics.Debug.WriteLine($"[HandleKeyUp] Key: {e.VkCode}, IsVisible: {IsVisible}");
+
+            // [Refactor] Move modifier check up to handle "release during load" race condition
+            bool isModifierRelease = e.VkCode == VK_LCONTROL || e.VkCode == VK_RCONTROL || 
+                                     e.VkCode == VK_LSHIFT || e.VkCode == VK_RSHIFT ||
+                                     e.VkCode == 0xA4 || e.VkCode == 0xA5; // Alt
+
+            if (!IsVisible)
             {
+                // [Fix] If loading and modifier released, mark for immediate execution upon show
+                if (_isLoading && isModifierRelease)
+                {
+                     _pendingQuickSwitch = true;
+                     System.Diagnostics.Debug.WriteLine($"[HandleKeyUp] Key released during loading. Pending Quick Switch set.");
+                }
+                return;
+            }
+            
+            // [Refactor] Check for Control key release (standard behavior)
+            // or if the user customized modifiers, we should probably check if *those* modifiers were released.
+            // For now, keeping the "Ctrl Release" logic as the "Execute" trigger is specific to the current design paradigm
+            // (Hold Ctrl -> Select -> Release Ctrl -> Execute).
+            // If we allow changing the trigger key to "Alt+Space", does "Release Alt" trigger it?
+            // Yes, usually the modifier release triggers execution in radial menus.
+
+            // Simple heuristic: If any major modifier is released while visible, try execute.
+            if (isModifierRelease)
+            {
+                // [New] Quick Switch Logic
+                // If duration < 250ms AND no slot selected (or just center idle) AND we are in Root Menu
+                var duration = (DateTime.Now - _showStartTime).TotalMilliseconds;
+                System.Diagnostics.Debug.WriteLine($"[HandleKeyUp] Modifier Release. Duration: {duration}ms, ActiveSlot: {_activeSlotIndex}");
+                
+                // Allow active slot 0 (Center) because default idle state might land there if mouse doesn't move
+                if (duration < 250 && (_activeSlotIndex == -1 || _activeSlotIndex == 0) && _menuState == MenuState.Root)
+                {
+                     System.Diagnostics.Debug.WriteLine("[HandleKeyUp] Triggering Quick Switch");
+                     SetActionExecuted(true); // [Fix] Prevent Dismiss() from restoring previous window
+                     _windowService.SwitchToPreviousWindow();
+                     IsVisible = false;
+                     return;
+                }
+
                 ExecuteSelection();
                 IsVisible = false;
             }

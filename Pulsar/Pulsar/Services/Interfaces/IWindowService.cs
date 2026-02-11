@@ -54,6 +54,11 @@ namespace Pulsar.Services.Interfaces
         IntPtr GetPreviousWindow();
 
         /// <summary>
+        /// 切换回上一个记录的窗口 (用于快速切换模式)
+        /// </summary>
+        void SwitchToPreviousWindow();
+
+        /// <summary>
         /// 注册隐藏主窗口的操作委托
         /// </summary>
         void RegisterHideAction(Action hideAction);

@@ -31,6 +31,13 @@ namespace Pulsar.Models
         public double Springiness { get; set; } = 6.0;
         public double MaxDisplacement { get; set; } = 20.0;
 
+        // [New] Global Hotkeys Configuration
+        public Dictionary<string, HotkeyConfig> Hotkeys { get; set; } = new()
+        {
+            ["ShowGrid"] = new HotkeyConfig { Key = "Q", Modifiers = "Control,Shift" },
+            ["ShowSwitcher"] = new HotkeyConfig { Key = "Q", Modifiers = "Control" }
+        };
+
         // [Helper] 将字符串转换为 AppTheme 枚举
         [JsonIgnore]
         public AppTheme LauncherThemeEnum => 
@@ -39,6 +46,21 @@ namespace Pulsar.Models
         [JsonIgnore]
         public AppTheme SettingsThemeEnum => 
             Enum.TryParse<AppTheme>(SettingsTheme, true, out var result) ? result : AppTheme.Dark;
+    }
+
+    /// <summary>
+    /// 热键配置模型
+    /// </summary>
+    public class HotkeyConfig
+    {
+        public string Key { get; set; } = string.Empty;       // e.g., "Q", "Space", "F1"
+        public string Modifiers { get; set; } = string.Empty; // e.g., "Control", "Control,Shift", "Alt"
+
+        public override string ToString()
+        {
+            if (string.IsNullOrEmpty(Modifiers)) return Key;
+            return $"{Modifiers} + {Key}";
+        }
     }
 
     /// <summary>
