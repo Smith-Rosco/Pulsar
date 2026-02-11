@@ -1,8 +1,8 @@
 // [Path]: Pulsar/Pulsar/Services/PluginRegistry.cs
 
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Pulsar.Core.Plugin;
@@ -23,11 +23,15 @@ namespace Pulsar.Services
         private readonly TimeSpan ResetTimeout = TimeSpan.FromMinutes(1);
 
         private readonly IServiceProvider _serviceProvider;
+        private readonly ILogger<PluginRegistry> _logger;
         private readonly PluginLoader _loader;
+        private readonly Services.Interfaces.ITrayService? _trayService;
 
-        public PluginRegistry(IServiceProvider serviceProvider)
+        public PluginRegistry(IServiceProvider serviceProvider, ILogger<PluginRegistry> logger)
         {
             _serviceProvider = serviceProvider;
+            _logger = logger;
+            _trayService = _serviceProvider.GetService(typeof(Services.Interfaces.ITrayService)) as Services.Interfaces.ITrayService;
             
             // 初始化插件加载器
             string pluginDir = System.IO.Path.Combine(
@@ -42,7 +46,7 @@ namespace Pulsar.Services
         /// </summary>
         public void LoadAll()
         {
-            Debug.WriteLine("[PluginRegistry] Loading plugins...");
+            _logger.LogInformation("[PluginRegistry] Loading plugins...");
 
             var plugins = _loader.LoadAll();
             
@@ -50,15 +54,15 @@ namespace Pulsar.Services
             {
                 if (_plugins.ContainsKey(plugin.Id))
                 {
-                    Debug.WriteLine($"[PluginRegistry] ⚠️ Duplicate plugin ID: {plugin.Id}");
+                    _logger.LogWarning("[PluginRegistry] ⚠️ Duplicate plugin ID: {PluginId}", plugin.Id);
                     continue;
                 }
 
                 _plugins[plugin.Id] = plugin;
-                Debug.WriteLine($"[PluginRegistry] ✓ Registered plugin: {plugin.DisplayName} ({plugin.Id})");
+                _logger.LogInformation("[PluginRegistry] ✓ Registered plugin: {PluginName} ({PluginId})", plugin.DisplayName, plugin.Id);
             }
 
-            Debug.WriteLine($"[PluginRegistry] Loaded {_plugins.Count} plugins");
+            _logger.LogInformation("[PluginRegistry] Loaded {Count} plugins", _plugins.Count);
         }
 
         /// <summary>
@@ -86,14 +90,14 @@ namespace Pulsar.Services
                 {
                     // 熔断中
                     var remaining = (int)(ResetTimeout - (DateTime.UtcNow - breakTime)).TotalSeconds;
-                    Debug.WriteLine($"[PluginRegistry] 🛡️ Circuit Open: {pluginId} is disabled for {remaining}s");
+                    _logger.LogWarning("[PluginRegistry] 🛡️ Circuit Open: {PluginId} is disabled for {Remaining}s", pluginId, remaining);
                     return PluginResult.Error($"Plugin disabled for safety. Try again in {remaining}s.");
                 }
                 else
                 {
                     // 冷却结束，进入半开状态 (Half-Open)
                     _brokenCircuits.Remove(pluginId);
-                    Debug.WriteLine($"[PluginRegistry] 🛡️ Circuit Half-Open: Retrying {pluginId}...");
+                    _logger.LogInformation("[PluginRegistry] 🛡️ Circuit Half-Open: Retrying {PluginId}...", pluginId);
                 }
             }
 
@@ -101,13 +105,13 @@ namespace Pulsar.Services
             
             if (plugin == null)
             {
-                Debug.WriteLine($"[PluginRegistry] ❌ Plugin not found: {pluginId}");
+                _logger.LogError("[PluginRegistry] ❌ Plugin not found: {PluginId}", pluginId);
                 return PluginResult.Error($"Plugin not found: {pluginId}");
             }
 
             try
             {
-                Debug.WriteLine($"[PluginRegistry] Executing: {pluginId}.{action}");
+                _logger.LogDebug("[PluginRegistry] Executing: {PluginId}.{Action}", pluginId, action);
                 var result = await plugin.ExecuteAsync(action, args, context);
                 
                 // 2. 执行成功 - 重置计数器
@@ -118,11 +122,11 @@ namespace Pulsar.Services
 
                 if (result.Success)
                 {
-                    Debug.WriteLine($"[PluginRegistry] ✓ Success: {result.Message ?? "OK"}");
+                    _logger.LogInformation("[PluginRegistry] ✓ Success: {Message}", result.Message ?? "OK");
                 }
                 else
                 {
-                    Debug.WriteLine($"[PluginRegistry] ❌ Failed (Logic): {result.Message ?? "Unknown error"}");
+                    _logger.LogWarning("[PluginRegistry] ❌ Failed (Logic): {Message}", result.Message ?? "Unknown error");
                     // 注意：逻辑失败通常不计入熔断，只有崩溃才计入。
                     // 但如果插件持续返回逻辑错误，是否应该熔断？目前策略：仅异常熔断。
                 }
@@ -132,7 +136,7 @@ namespace Pulsar.Services
             catch (Exception ex)
             {
                 // 3. 发生异常 - 增加故障计数
-                Debug.WriteLine($"[PluginRegistry] ❌ Exception: {ex.Message}");
+                _logger.LogError(ex, "[PluginRegistry] ❌ Exception in plugin {PluginId}", pluginId);
                 HandlePluginCrash(pluginId, ex);
                 return PluginResult.Error($"Plugin execution failed: {ex.Message}");
             }
@@ -148,16 +152,21 @@ namespace Pulsar.Services
             _failureCounts[pluginId]++;
             int count = _failureCounts[pluginId];
 
-            Debug.WriteLine($"[PluginRegistry] ⚠️ Plugin {pluginId} crashed ({count}/{MaxFailures})");
+            _logger.LogWarning("[PluginRegistry] ⚠️ Plugin {PluginId} crashed ({Count}/{MaxFailures})", pluginId, count, MaxFailures);
 
             if (count >= MaxFailures)
             {
                 // 触发熔断
                 _brokenCircuits[pluginId] = DateTime.UtcNow;
                 _failureCounts.Remove(pluginId); // 重置计数，等待冷却后重试
-                Debug.WriteLine($"[PluginRegistry] 💥 Circuit Breaker Tripped! {pluginId} disabled for {ResetTimeout.TotalSeconds}s");
+                _logger.LogError("[PluginRegistry] 💥 Circuit Breaker Tripped! {PluginId} disabled for {Timeout}s", pluginId, ResetTimeout.TotalSeconds);
                 
-                // TODO: 可以发送系统通知告知用户插件已禁用
+                // 发送系统通知告知用户插件已禁用
+                _trayService?.ShowNotification(
+                    "插件已自动禁用", 
+                    $"插件 '{pluginId}' 因多次崩溃已被暂时禁用 {ResetTimeout.TotalSeconds} 秒，以保护主程序运行。", 
+                    System.Windows.Forms.ToolTipIcon.Error
+                );
             }
         }
 

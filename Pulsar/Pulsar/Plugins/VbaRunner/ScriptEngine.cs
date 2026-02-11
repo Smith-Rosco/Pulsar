@@ -336,6 +336,17 @@ namespace Pulsar.Plugins.VbaRunner
                     ex
                 );
             }
+            catch (COMException ex) when (ex.HResult == unchecked((int)0x800A0023))
+            {
+                // 0x800A0023: Application-defined or object-defined error
+                // Often caused by syntax errors in the injected code or runtime errors (like accessing invalid range)
+                Debug.WriteLine("[ScriptEngine] ❌ VBA Runtime/Compilation Error (0x800A0023)");
+                throw new InvalidOperationException(
+                    "VBA execution failed (Error 0x800A0023).\n" +
+                    "This usually indicates a syntax error in the VBA script or a runtime error (e.g., missing columns, invalid range access).",
+                    ex
+                );
+            }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[ScriptEngine] ❌ Execution error: {ex.Message}");

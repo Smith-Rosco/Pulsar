@@ -108,6 +108,14 @@ namespace Pulsar.Services
             });
         }
 
+        public void ShowNotification(string title, string message, Forms.ToolTipIcon icon)
+        {
+            if (_notifyIcon != null && _notifyIcon.Visible)
+            {
+                _notifyIcon.ShowBalloonTip(3000, title, message, icon);
+            }
+        }
+
         public void Dispose()
         {
             if (_notifyIcon != null)
