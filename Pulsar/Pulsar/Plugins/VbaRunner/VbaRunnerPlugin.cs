@@ -76,8 +76,18 @@ namespace Pulsar.Plugins.VbaRunner
 
             Debug.WriteLine($"[VbaRunnerPlugin] Script: {scriptPath}");
 
-            // 2. 解析脚本指令 (如需 UI 交互)
-            string directive = ScriptDirectiveParser.ParseDirective(scriptPath);
+            // 2. 读取脚本内容 & 解析指令 (减少 I/O)
+            string scriptContent;
+            try
+            {
+                scriptContent = await File.ReadAllTextAsync(scriptPath);
+            }
+            catch (Exception ex)
+            {
+                return PluginResult.Error($"Failed to read script: {ex.Message}");
+            }
+
+            string directive = ScriptDirectiveParser.ParseDirectiveFromContent(scriptContent);
             Debug.WriteLine($"[VbaRunnerPlugin] Directive: {directive}");
 
             // 3. 隐藏 Pulsar 主窗口
@@ -141,9 +151,9 @@ namespace Pulsar.Plugins.VbaRunner
                         scriptArg = selector.SelectedSheet;
                     }
 
-                    // 7. 执行脚本
+                    // 7. 执行脚本 (传入已读取的内容)
                     string macroName = args.TryGetValue("macro", out var m) && !string.IsNullOrWhiteSpace(m) ? m : "Main";
-                    _scriptEngine.ExecuteScript(scriptPath, macroName, scriptArg);
+                    _scriptEngine.ExecuteScriptContent(scriptContent, macroName, scriptArg);
                     successMessage = "Script executed successfully";
                 }
                 catch (Exception ex)

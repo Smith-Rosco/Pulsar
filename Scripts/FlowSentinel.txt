@@ -13,6 +13,18 @@ Option Explicit
 Private Const COLOR_BG_HEADER As Long = 14277081
 Private Const COLOR_BG_DASHBOARD As Long = 16316664
 Private Const COLOR_TEXT_WHITE As Long = 16777215
+Private Const FONT_NAME_MAIN As String = "Microsoft YaHei UI"
+
+' --- 列宽配置 (单位: 字符宽度) ---
+Private Const W_A_STATUS As Double = 12
+Private Const W_B_NOTE As Double = 16
+Private Const W_C_CALL As Double = 13
+Private Const W_D_STAGE As Double = 13
+Private Const W_E_RECIPE As Double = 16
+Private Const W_F_PPID As Double = 22
+Private Const W_G_MASK As Double = 12
+Private Const W_H_DCOP As Double = 18
+Private Const W_I_SEP As Double = 2.5
 
 ' 状态色 (莫兰迪色系)
 Private Const COLOR_STATUS_OK As Long = 14811105      ' 浅绿
@@ -231,25 +243,33 @@ Sub Main(Optional RefSheetName As Variant)
         .Rows.WrapText = False
         .Rows.AutoFit ' 确保行高紧凑
         
-        ' 设置较宽的默认列宽，方便阅读
-        .Columns("A").ColumnWidth = 10  ' Status
-        .Columns("B").ColumnWidth = 20  ' Note (New Position)
-        .Columns("C").ColumnWidth = 25  ' T1-Call
-        .Columns("D").ColumnWidth = 15  ' T1-Stage
-        .Columns("E").ColumnWidth = 30  ' T1-Recipe
-        .Columns("F:H").ColumnWidth = 10 ' T1-Params
-        .Columns("I").ColumnWidth = 3   ' Separator
-        .Columns("J").ColumnWidth = 25  ' T2-Call
-        .Columns("K").ColumnWidth = 15  ' T2-Stage
-        .Columns("L").ColumnWidth = 30  ' T2-Recipe
-        .Columns("M:O").ColumnWidth = 10 ' T2-Params
+        ' 使用常量配置列宽 (优雅且可维护)
+        .Columns("A").ColumnWidth = W_A_STATUS
+        .Columns("B").ColumnWidth = W_B_NOTE
+        .Columns("C").ColumnWidth = W_C_CALL
+        .Columns("D").ColumnWidth = W_D_STAGE
+        .Columns("E").ColumnWidth = W_E_RECIPE
+        .Columns("F").ColumnWidth = W_F_PPID
+        .Columns("G").ColumnWidth = W_G_MASK
+        .Columns("H").ColumnWidth = W_H_DCOP
+        .Columns("I").ColumnWidth = W_I_SEP
+        .Columns("J").ColumnWidth = W_C_CALL
+        .Columns("K").ColumnWidth = W_D_STAGE
+        .Columns("L").ColumnWidth = W_E_RECIPE
+        .Columns("M").ColumnWidth = W_F_PPID
+        .Columns("N").ColumnWidth = W_G_MASK
+        .Columns("O").ColumnWidth = W_H_DCOP
         
         ' 冻结窗格 (只冻结前5行: Dashboard 4 + Header 1)
         .Rows(5).AutoFilter
         .Activate
         ActiveWindow.DisplayGridlines = False
-        ActiveWindow.SplitRow = 5
+        .Range("A6").Select
         ActiveWindow.FreezePanes = True
+        
+        ' 全局字体设置
+        .Cells.Font.Name = FONT_NAME_MAIN
+        
         .Range("A1").Select
     End With
 
@@ -333,8 +353,8 @@ Sub RenderDashboard(ws As Worksheet, s As AuditStats, duration As Double)
     DrawCardCompact ws, "D3", "Exact", s.ExactMatch, RGB(46, 204, 113)
     DrawCardCompact ws, "F3", "Upgrade", s.LevelMatch, RGB(52, 152, 219)
     DrawCardCompact ws, "H3", "Diff", s.ParamDiff, RGB(241, 196, 15)
-    DrawCardCompact ws, "J3", "Miss T1", s.MissingT1, RGB(231, 76, 60)
-    DrawCardCompact ws, "L3", "Miss T2", s.MissingT2, RGB(230, 126, 34)
+    DrawCardCompact ws, "J3", "Deleted", s.MissingT1, RGB(231, 76, 60)
+    DrawCardCompact ws, "L3", "Added", s.MissingT2, RGB(230, 126, 34)
 End Sub
 
 Sub DrawCardCompact(ws As Worksheet, cellAddr As String, title As String, val As Long, color As Long)
@@ -400,6 +420,36 @@ Sub RenderRow(ws As Worksheet, r As Long, icon As String, status As String, ws1 
         ws.Range(ws.Cells(r, 1), ws.Cells(r, 15)).Interior.Color = color
     End If
     
+    ' 4. 智能差异高亮 (仅当两边都有数据时)
+    If r1 > 0 And r2 > 0 Then
+        Dim iDiff As Long, valCur As String, valRef As String
+        
+        ' 遍历关键列: Call(0), Stage(1), Recipe(2), PPID(3), Mask(4), DCOP(5)
+        For iDiff = 0 To 5
+            ' 安全获取文本值
+            On Error Resume Next
+            valCur = CStr(ws.Cells(r, 3 + iDiff).Value)
+            valRef = CStr(ws.Cells(r, 10 + iDiff).Value)
+            On Error GoTo 0
+            
+            ' 比对差异 (忽略大小写和空格)
+            If StrComp(Trim(valCur), Trim(valRef), vbTextCompare) <> 0 Then
+                ' 发现差异 - 红色加粗
+                ws.Cells(r, 3 + iDiff).Font.Color = RGB(200, 50, 50)
+                ws.Cells(r, 3 + iDiff).Font.Bold = True
+                
+                ws.Cells(r, 10 + iDiff).Font.Color = RGB(200, 50, 50)
+                ws.Cells(r, 10 + iDiff).Font.Bold = True
+            Else
+                ' 相同内容 - 保持深灰色 (除了Call列，它是超链接蓝色)
+                If iDiff <> 0 Then
+                    ws.Cells(r, 3 + iDiff).Font.Color = RGB(60, 60, 60)
+                    ws.Cells(r, 10 + iDiff).Font.Color = RGB(60, 60, 60)
+                End If
+            End If
+        Next iDiff
+    End If
+    
     ' UX: 全部边框 (Level 2 - 基础网格)
     ' 给每个单元格都画上细淡的边框
     With ws.Range(ws.Cells(r, 1), ws.Cells(r, 15)).Borders
@@ -423,15 +473,23 @@ Function CreateReportSheet() As Worksheet
     
     ' 更新表头 (加入 DCOP) - 移动到第5行
     Dim headers As Variant
-    headers = Array("Status", "Note", "T1-Call", "Stage", "Recipe", "PPID", "Mask", "DCOP", "", "T2-Call", "Stage", "Recipe", "PPID", "Mask", "DCOP")
+    headers = Array("Status", "Note", "[当前] Call", "Stage", "Recipe", "PPID", "Mask", "DCOP", "║", "[基准] Call", "Stage", "Recipe", "PPID", "Mask", "DCOP")
     
     With ws.Range("A5:O5")
         .Value = headers
         .Font.Bold = True
         .Font.Color = RGB(255, 255, 255)
-        .Interior.Color = RGB(60, 70, 85)
         .RowHeight = 25
         .VerticalAlignment = xlCenter
+        
+        ' 视觉分区: 公共区 (灰色)
+        .Resize(1, 2).Interior.Color = RGB(60, 70, 85)
+        ' [当前] 区 - 蓝色系
+        .Offset(0, 2).Resize(1, 6).Interior.Color = RGB(50, 90, 140)
+        ' 分隔符
+        .Cells(1, 9).Interior.Color = RGB(60, 70, 85)
+        ' [基准] 区 - 灰色系
+        .Offset(0, 9).Resize(1, 6).Interior.Color = RGB(100, 100, 100)
     End With
     
     Set CreateReportSheet = ws

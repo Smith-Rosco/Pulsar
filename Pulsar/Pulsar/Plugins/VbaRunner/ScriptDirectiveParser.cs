@@ -11,41 +11,51 @@ namespace Pulsar.Plugins.VbaRunner
     public static class ScriptDirectiveParser
     {
         /// <summary>
-        /// 解析脚本中的 Runner 指令
+        /// 解析脚本内容中的 Runner 指令
         /// </summary>
-        /// <param name="path">脚本文件路径</param>
+        /// <param name="content">脚本文件内容</param>
         /// <returns>指令名称，如果未找到则返回 "None"</returns>
-        public static string ParseDirective(string path)
+        public static string ParseDirectiveFromContent(string content)
         {
-            if (!File.Exists(path))
+            if (string.IsNullOrWhiteSpace(content))
             {
                 return "None";
             }
 
             try
             {
-                // 读取前 100 行 (防止指令定义在头部注释块之后)
-                var lines = File.ReadLines(path).Take(100);
-                
-                foreach (var line in lines)
+                // 使用 StringReader 读取前 100 行
+                using (var reader = new StringReader(content))
                 {
-                    // 匹配格式: ' @Runner: CommandName
-                    // \s* 允许 ' 和 @ 之间有空格，以及 : 后的空格
-                    var match = Regex.Match(line, @"'\s*@Runner:\s*(\w+)");
+                    string? line;
+                    int lineCount = 0;
                     
-                    if (match.Success) 
+                    while ((line = reader.ReadLine()) != null && lineCount < 100)
                     {
-                        string found = match.Groups[1].Value;
-                        return found;
+                        // 匹配格式: ' @Runner: CommandName
+                        var match = Regex.Match(line, @"'\s*@Runner:\s*(\w+)");
+                        if (match.Success) 
+                        {
+                            return match.Groups[1].Value;
+                        }
+                        lineCount++;
                     }
                 }
             }
             catch (Exception)
             {
-                // 忽略读取错误
+                // 忽略解析错误
             }
             
             return "None";
         }
+
+        // Keep legacy method for compatibility if needed, or redirect it
+        public static string ParseDirective(string path)
+        {
+            if (!File.Exists(path)) return "None";
+            return ParseDirectiveFromContent(File.ReadAllText(path));
+        }
+
     }
 }
