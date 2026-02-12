@@ -1,7 +1,7 @@
 using System.Windows;
 using Pulsar.Services.Interfaces;
-using Pulsar.Features.Pki.Services;
-using Pulsar.Features.Pki.Models;
+using Pulsar.Plugins.Core.Pki.Services;
+using Pulsar.Plugins.Core.Pki.Models;
 using Wpf.Ui.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using Pulsar.Models;

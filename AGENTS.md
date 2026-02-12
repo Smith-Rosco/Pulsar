@@ -18,6 +18,14 @@ This file provides context, conventions, and commands for AI agents (and human d
 - **Plugin Loader**: `PluginLoader` - Loads plugins from both built-in assembly and external DLLs
 - **Configuration**: `Profiles.json` - Single source of truth for all configuration (replaces legacy `appsettings.json`)
 
+**Plugin Tier Architecture**:
+- **Core Plugins** (`Plugins/Core/`): Essential infrastructure plugins that are always loaded, cannot be disabled, and have fail-fast behavior. Examples: PKI (credential management), Hotkey management.
+- **Extension Plugins** (`Plugins/`): Optional feature plugins that can be dynamically loaded/unloaded and are protected by Circuit Breaker. Examples: WinSwitcher, VbaRunner.
+
+**Key Distinction**:
+- Core plugins: Loaded at startup, critical for basic functionality, no Circuit Breaker (crashes are fatal)
+- Extension plugins: Optional features, isolated failures, automatic recovery via Circuit Breaker
+
 **Core Principles**:
 - **Focus Management**: All window context is captured at invocation time via `PulsarContext.Capture()`
 - **Plugin Isolation**: Plugin exceptions do not crash the main application
@@ -88,10 +96,10 @@ Adhere strictly to these conventions to maintain codebase consistency.
     - `PluginResult.cs`: Plugin execution result types
     - `PluginLoader.cs`: Plugin loading infrastructure
 - `Plugins/`: Built-in plugin implementations
+  - `Core/`: **Core plugins** - Infrastructure plugins that are essential and always loaded
+    - `Pki/`: PKI credentials management plugin (secrets, auto-fill)
   - `WinSwitcher/`: Window switching and application launching plugin
   - `BasicCommand/`: Simple command execution plugin
-- `Features/`: Feature-specific modules (e.g., `Pki/` for Secret Management).
-  - `Pki/PkiPlugin.cs`: PKI credentials management plugin
 - `Helpers/`: Static utilities and extensions.
 - `Models/`: Data transfer objects and configuration models.
   - `ProfilesConfig.cs`: New unified configuration model (v4.0.0+)
@@ -190,16 +198,31 @@ Adhere strictly to these conventions to maintain codebase consistency.
 3. Register the service in `App.xaml.cs` (`ConfigureServices` method).
 
 ### Adding a New Plugin
-1. Create a new class implementing `IPulsarPlugin` in `Plugins/[PluginName]/` (for built-in) or external project (for external plugins).
+
+**Step 1: Choose Plugin Tier**
+Decide whether your plugin is a **Core** or **Extension** plugin:
+
+| Aspect | Core Plugin | Extension Plugin |
+|--------|------------|------------------|
+| Location | `Plugins/Core/[Name]/` | `Plugins/[Name]/` |
+| Critical | Yes - app fails without it | No - app works without it |
+| Circuit Breaker | No - crashes are fatal | Yes - isolated failures |
+| Lifecycle | Always loaded, never disabled | Can be disabled/recovered |
+| Examples | PKI, Hotkey management | WinSwitcher, VbaRunner |
+
+**Step 2: Create Plugin Structure**
+1. Create a new class implementing `IPulsarPlugin` in the appropriate location.
 2. Implement required properties: `Id` (unique identifier), `DisplayName`.
 3. Implement `Initialize(IServiceProvider)` for dependency injection.
 4. Implement `ExecuteAsync(action, args, context)` for action handling.
-5. Use `PulsarContext` to access window information - NEVER query window state inside plugins.
-   - **Optimization**: `PulsarContext` is lazy-loaded. Access heavy properties (like `GetClipboardTextAsync`) only when necessary.
-6. See `PLUGIN_DEVELOPMENT.md` for detailed plugin development guide.
+
+**Step 3: Follow Best Practices**
+- Use `PulsarContext` to access window information - NEVER query window state inside plugins.
+- **Optimization**: `PulsarContext` is lazy-loaded. Access heavy properties (like `GetClipboardTextAsync`) only when necessary.
+- See `PLUGIN_DEVELOPMENT.md` for detailed plugin development guide.
 
 ### Managing Secrets (PKI)
-- Secrets are handled by `PkiPlugin` and `CredentialsManager`.
+- Secrets are handled by `PkiPlugin` (`Plugins/Core/Pki/`) and `CredentialsManager`.
 - Ensure sensitive data models use `[JsonIgnore]` to prevent accidental serialization to config files.
 
 ### Input Simulation & Text Injection

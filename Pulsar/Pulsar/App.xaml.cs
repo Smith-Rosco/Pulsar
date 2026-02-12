@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Pulsar.Core.Plugin;
-using Pulsar.Features.Pki;
-using Pulsar.Features.Pki.Services;
+using Pulsar.Plugins.Core.Pki;
+using Pulsar.Plugins.Core.Pki.Services;
 using Pulsar.Models;
 using Pulsar.Native;
 using Pulsar.Services;

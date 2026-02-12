@@ -10,7 +10,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Pulsar.Core.Messages;
-using Pulsar.Features.Pki.Services;
+using Pulsar.Plugins.Core.Pki.Services;
 using Pulsar.Helpers;
 using Pulsar.Models;
 using Pulsar.Services;
@@ -458,10 +458,10 @@ namespace Pulsar.ViewModels
                 if (nextSlot > 8) return;
 
                 var secretId = Guid.NewGuid();
-                var payload = new Features.Pki.Models.SecretPayload 
-                { 
-                    Account = dialog.ResultAccount, 
-                    EncryptedData = dialog.ResultEncryptedData 
+                var payload = new Plugins.Core.Pki.Models.SecretPayload
+                {
+                    Account = dialog.ResultAccount,
+                    EncryptedData = dialog.ResultEncryptedData
                 };
                 _pendingSecrets[secretId] = payload;
 
@@ -484,7 +484,7 @@ namespace Pulsar.ViewModels
             }
         }
 
-        private Dictionary<Guid, Features.Pki.Models.SecretPayload> _pendingSecrets = new();
+        private Dictionary<Guid, Plugins.Core.Pki.Models.SecretPayload> _pendingSecrets = new();
 
         [RelayCommand]
         public async Task EditSecret(PluginSlot slot)
