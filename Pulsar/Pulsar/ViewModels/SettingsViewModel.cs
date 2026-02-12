@@ -180,7 +180,7 @@ namespace Pulsar.ViewModels
                     RefreshContexts();
                     
                     // 2. Select Profile
-                    var context = AvailableContexts.FirstOrDefault(c => c.Key == m.ProfileName);
+                    var context = AvailableContexts.FirstOrDefault(c => c.Key.Equals(m.ProfileName, StringComparison.OrdinalIgnoreCase));
                     if (context != null)
                     {
                         CurrentContext = context;
@@ -242,6 +242,7 @@ namespace Pulsar.ViewModels
             AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.bookmarklet", "🔖 Bookmarklet", "Run JavaScript in browser"));
             AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.vbarunner", "📊 VBA Runner", "Run VBA scripts in Excel/WPS"));
             AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.pki", "🔒 Secret (PKI)", "Auto-fill encrypted credentials"));
+            AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.system", "⚙️ System", "Internal Pulsar commands"));
         }
 
         public void RefreshContexts()
@@ -403,6 +404,13 @@ namespace Pulsar.ViewModels
                     // Call existing AddSecret logic
                     AddSecret();
                     return;
+
+                case "com.pulsar.system":
+                    newItem.PluginId = "com.pulsar.system";
+                    newItem.Action = "pulsar.system.open_settings";
+                    newItem.Label = "Open Settings";
+                    newItem.IconKey = "E713"; // Settings Icon
+                    break;
 
                 default:
                     SendNotification("Error", $"Unknown plugin type: {pluginId}", ControlAppearance.Danger);

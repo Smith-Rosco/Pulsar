@@ -13,6 +13,7 @@
                      Themes are now injected manually per-window in ThemeService to prevent
                      style contamination between the Radial Menu (Transparent) and Settings (Mica).
                 -->
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ScrollViewerStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
             <converters:ScaleConverter x:Key="ScaleConverter"/>

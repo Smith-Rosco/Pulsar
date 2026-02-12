@@ -318,9 +318,8 @@ namespace Pulsar.Services
 
         private void ForceForegroundWindow(IntPtr hWnd)
         {
-            // Use WindowHelper which implements AttachThreadInput logic for robust switching
-            // This replaces the old "Alt Key" hack which had side effects
-            if (NativeMethods.IsIconic(hWnd)) NativeMethods.ShowWindow(hWnd, 9);
+            // Use WindowHelper which handles minimized windows and bypasses foreground lock
+            // This prevents "Background Restore" flashing
             WindowHelper.SetForegroundWindow(hWnd);
         }
 

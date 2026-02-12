@@ -11,6 +11,7 @@ namespace Pulsar.Views.Selectors
         public DataTemplate? BookmarkletFieldsTemplate { get; set; }
         public DataTemplate? VbaRunnerFieldsTemplate { get; set; }
         public DataTemplate? SecretFieldsTemplate { get; set; }
+        public DataTemplate? SystemCommandFieldsTemplate { get; set; }
 
         public override DataTemplate? SelectTemplate(object item, DependencyObject container)
         {
@@ -27,6 +28,9 @@ namespace Pulsar.Views.Selectors
 
                 if (slot.PluginId == "com.pulsar.pki")
                     return SecretFieldsTemplate;
+                
+                if (slot.PluginId == "com.pulsar.system")
+                    return SystemCommandFieldsTemplate;
 
                 return CommandFieldsTemplate;
             }

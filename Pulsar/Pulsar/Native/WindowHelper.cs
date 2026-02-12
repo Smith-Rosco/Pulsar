@@ -20,6 +20,18 @@ namespace Pulsar.Native
         [DllImport("user32.dll")]
         public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool SystemParametersInfo(uint uiAction, uint uiParam, IntPtr pvParam, uint fWinIni);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool SystemParametersInfo(uint uiAction, uint uiParam, ref uint pvParam, uint fWinIni);
+
+        public const uint SPI_GETFOREGROUNDLOCKTIMEOUT = 0x2000;
+        public const uint SPI_SETFOREGROUNDLOCKTIMEOUT = 0x2001;
+        public const uint SPIF_SENDCHANGE = 0x0002;
+
         [DllImport("user32.dll", EntryPoint = "SetForegroundWindow")]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool SetForegroundWindowNative(IntPtr hWnd);
@@ -28,65 +40,45 @@ namespace Pulsar.Native
         {
             if (hWnd == IntPtr.Zero) return false;
 
-            // 1. Check if window is already foreground
-            IntPtr hForeground = GetForegroundWindow();
-            if (hForeground == hWnd) return true;
+            // 1. Get current foreground lock timeout
+            uint originalTimeout = 0;
+            SystemParametersInfo(SPI_GETFOREGROUNDLOCKTIMEOUT, 0, ref originalTimeout, 0);
 
-            // 2. Try standard call first
-            if (SetForegroundWindowNative(hWnd)) return true;
-
-            // 3. Force switch using AttachThreadInput mechanism
-            // This is necessary when the OS blocks focus stealing (taskbar flashing)
             try
             {
-                uint foregroundThreadId = GetWindowThreadProcessId(hForeground, out _);
-                uint targetThreadId = GetWindowThreadProcessId(hWnd, out _);
-                uint currentThreadId = GetCurrentThreadId();
+                // 2. Temporarily disable foreground lock (Timeout = 0)
+                // This prevents the "taskbar flash" (orange state) by telling Windows "don't protect focus for this moment"
+                SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, (IntPtr)0, SPIF_SENDCHANGE);
 
-                // If threads are different, we need to attach
-                if (foregroundThreadId != currentThreadId)
+                // 3. Simulate Alt key release
+                // This tricks Windows into thinking the user performed a hardware action, granting focus rights
+                keybd_event(VK_MENU, 0, KEYEVENTF_KEYUP, 0);
+
+                // 4. Handle Minimized Windows
+                // Must be done while lock is disabled to prevent background flash
+                if (IsIconic(hWnd))
                 {
-                    AttachThreadInput(foregroundThreadId, currentThreadId, true);
-                    
-                    // Also attach to target thread if different
-                    if (targetThreadId != currentThreadId && targetThreadId != foregroundThreadId)
-                    {
-                        AttachThreadInput(targetThreadId, currentThreadId, true);
-                    }
+                    ShowWindow(hWnd, SW_RESTORE);
+                }
 
-                    // Bring to top and show
+                // 5. Execute Switch
+                // SetForegroundWindowNative works best now that lock is disabled
+                bool result = SetForegroundWindowNative(hWnd);
+                
+                if (!result)
+                {
+                    // Fallback: If standard set fails, try BringWindowToTop
                     BringWindowToTop(hWnd);
+                    result = SetForegroundWindowNative(hWnd);
+                }
 
-                    if (IsIconic(hWnd))
-                    {
-                        ShowWindow(hWnd, SW_RESTORE);
-                    }
-                    else
-                    {
-                        ShowWindow(hWnd, SW_SHOW);
-                    }
-                    
-                    // Try setting foreground again
-                    bool result = SetForegroundWindowNative(hWnd);
-                    
-                    // Detach
-                    AttachThreadInput(foregroundThreadId, currentThreadId, false);
-                    if (targetThreadId != currentThreadId && targetThreadId != foregroundThreadId)
-                    {
-                        AttachThreadInput(targetThreadId, currentThreadId, false);
-                    }
-                    
-                    return result;
-                }
-                else
-                {
-                    // If we are the foreground thread, just try again (should have worked above though)
-                     return SetForegroundWindowNative(hWnd);
-                }
+                return result;
             }
-            catch
+            finally
             {
-                return false;
+                // 6. Restore original setting (CRITICAL)
+                // Always restore the system state to avoid leaving the user's PC in an insecure state
+                SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, (IntPtr)originalTimeout, SPIF_SENDCHANGE);
             }
         }
 
@@ -96,9 +88,6 @@ namespace Pulsar.Native
 
         [DllImport("user32.dll")]
         public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-
-        [DllImport("user32.dll")]
-        public static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
 
         [DllImport("user32.dll")]
         public static extern bool BringWindowToTop(IntPtr hWnd);
@@ -117,9 +106,6 @@ namespace Pulsar.Native
 
         [DllImport("user32.dll", EntryPoint = "GetWindowLongPtr")]
         public static extern long GetWindowLong(IntPtr hWnd, int nIndex);
-
-        [DllImport("kernel32.dll")]
-        public static extern uint GetCurrentThreadId();
 
         [DllImport("user32.dll", EntryPoint = "SetWindowLongPtr")]
         public static extern IntPtr SetWindowLong(IntPtr hWnd, int nIndex, long dwNewLong);
