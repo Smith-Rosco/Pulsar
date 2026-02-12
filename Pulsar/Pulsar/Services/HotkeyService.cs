@@ -22,20 +22,22 @@ namespace Pulsar.Services
             _configService = configService;
         }
 
-        // [Optimization] Cache hotkey bitmasks for O(1) lookup
-        // Key: (VkCode << 8) | Modifiers
-        private readonly Dictionary<int, Action> _optimizedHotkeys = new();
+        private readonly Dictionary<int, List<ActionWithConfig>> _hotkeysByMainKey = new();
+        // Track currently held keys to support order-independent triggering (Chord)
+        private readonly HashSet<int> _pressedKeys = new();
 
         public event EventHandler<GlobalKeyStruct>? OnGlobalKeyUp;
         
         public void Pause()
         {
             _isPaused = true;
+            _pressedKeys.Clear();
         }
 
         public void Resume()
         {
             _isPaused = false;
+            _pressedKeys.Clear();
         }
 
         public async void Initialize()
@@ -59,13 +61,13 @@ namespace Pulsar.Services
             RebuildHotkeyCache();
 
             _hook.OnKeyDown += OnKeyDown;
-            // [Fix] Adapt to struct
-            _hook.OnKeyUp += (ref GlobalKeyStruct e) => OnGlobalKeyUp?.Invoke(this, e);
+            // Handle KeyUp to maintain state
+            _hook.OnKeyUp += OnKeyUp;
         }
 
         private void RebuildHotkeyCache()
         {
-            _optimizedHotkeys.Clear();
+            _hotkeysByMainKey.Clear();
             if (_config == null) return;
 
             foreach (var kvp in _actions)
@@ -81,22 +83,31 @@ namespace Pulsar.Services
                         if (!Enum.TryParse<Key>(hotkeyConfig.Key, true, out var wpfKey)) continue;
                         int vkCode = KeyInterop.VirtualKeyFromKey(wpfKey);
 
-                        // 2. Parse Modifiers to Bitmask
-                        // Ctrl=1, Shift=2, Alt=4, Win=8
-                        int modMask = 0;
+                        // 2. Parse Modifiers
                         var mods = hotkeyConfig.Modifiers.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                        bool reqCtrl = false, reqShift = false, reqAlt = false, reqWin = false;
+
                         foreach (var m in mods)
                         {
-                            if (m.Equals("Control", StringComparison.OrdinalIgnoreCase)) modMask |= 1;
-                            else if (m.Equals("Shift", StringComparison.OrdinalIgnoreCase)) modMask |= 2;
-                            else if (m.Equals("Alt", StringComparison.OrdinalIgnoreCase)) modMask |= 4;
-                            else if (m.Equals("Windows", StringComparison.OrdinalIgnoreCase)) modMask |= 8;
+                            if (m.Equals("Control", StringComparison.OrdinalIgnoreCase)) reqCtrl = true;
+                            else if (m.Equals("Shift", StringComparison.OrdinalIgnoreCase)) reqShift = true;
+                            else if (m.Equals("Alt", StringComparison.OrdinalIgnoreCase)) reqAlt = true;
+                            else if (m.Equals("Windows", StringComparison.OrdinalIgnoreCase)) reqWin = true;
                         }
 
-                        // 3. Create Unique Hash
-                        // Format: [VkCode (24 bits)] [Mods (8 bits)]
-                        int hash = (vkCode << 8) | modMask;
-                        _optimizedHotkeys[hash] = callback;
+                        if (!_hotkeysByMainKey.ContainsKey(vkCode))
+                        {
+                            _hotkeysByMainKey[vkCode] = new List<ActionWithConfig>();
+                        }
+
+                        _hotkeysByMainKey[vkCode].Add(new ActionWithConfig 
+                        { 
+                            Action = callback, 
+                            ReqCtrl = reqCtrl, 
+                            ReqShift = reqShift, 
+                            ReqAlt = reqAlt, 
+                            ReqWin = reqWin 
+                        });
                     }
                     catch (Exception) { /* Ignore invalid config */ }
                 }
@@ -141,24 +152,76 @@ namespace Pulsar.Services
         {
             if (_config == null || _isPaused) return;
 
-            // [Optimization] Fast Bitwise Lookup O(1)
+            // Update State
+            _pressedKeys.Add(e.VkCode);
+
+            // Check if any registered hotkey is satisfied by the CURRENT state
+            // We check hotkeys associated with ANY currently held key, not just the one pressed.
+            // This enables "Q then Ctrl" (triggering on Ctrl press) and "Ctrl then Q" (triggering on Q press).
             
-            // 1. Calculate current modifier mask
-            int currentMask = 0;
-            if (e.IsCtrl) currentMask |= 1;
-            if (e.IsShift) currentMask |= 2;
-            if (e.IsAlt) currentMask |= 4;
-            if (e.IsWin) currentMask |= 8;
+            // Optimization: Only check triggers related to the key just pressed 
+            // OR if the key just pressed is a modifier, check all held keys.
+            bool isModifier = IsModifierKey(e.VkCode);
 
-            // 2. Calculate Hash
-            int hash = (e.VkCode << 8) | currentMask;
-
-            // 3. Lookup
-            if (_optimizedHotkeys.TryGetValue(hash, out var callback))
+            if (isModifier)
             {
-                callback.Invoke();
-                e.Handled = true;
+                // If a modifier was pressed, check ALL currently held main keys
+                // copy to list to avoid modification during enumeration (though HashSet shouldn't change here)
+                foreach (var heldKey in _pressedKeys)
+                {
+                    if (CheckAndExecute(heldKey, ref e)) return;
+                }
             }
+            else
+            {
+                // Normal key pressed: check only this key
+                CheckAndExecute(e.VkCode, ref e);
+            }
+        }
+
+        private void OnKeyUp(ref GlobalKeyStruct e)
+        {
+            _pressedKeys.Remove(e.VkCode);
+            OnGlobalKeyUp?.Invoke(this, e);
+        }
+
+        private bool CheckAndExecute(int vkCode, ref GlobalKeyStruct e)
+        {
+            if (_hotkeysByMainKey.TryGetValue(vkCode, out var actions))
+            {
+                foreach (var item in actions)
+                {
+                    // Verify Modifiers strictly
+                    // Note: GlobalKeyStruct.IsCtrl/Shift etc. are populated by GetKeyState() 
+                    // which reflects the state *including* the key event currently being processed.
+                    if (item.ReqCtrl == e.IsCtrl &&
+                        item.ReqShift == e.IsShift &&
+                        item.ReqAlt == e.IsAlt &&
+                        item.ReqWin == e.IsWin)
+                    {
+                        item.Action.Invoke();
+                        e.Handled = true;
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private bool IsModifierKey(int vkCode)
+        {
+            // VK_SHIFT(16), VK_CONTROL(17), VK_MENU(18), VK_LWIN(91), VK_RWIN(92)
+            // Plus specific L/R variants
+            return (vkCode >= 160 && vkCode <= 165) || vkCode == 91 || vkCode == 92;
+        }
+
+        private class ActionWithConfig
+        {
+            public Action Action { get; set; } = delegate { };
+            public bool ReqCtrl { get; set; }
+            public bool ReqShift { get; set; }
+            public bool ReqAlt { get; set; }
+            public bool ReqWin { get; set; }
         }
     }
 }
