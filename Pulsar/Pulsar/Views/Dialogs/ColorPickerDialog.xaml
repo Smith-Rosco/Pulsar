@@ -122,12 +122,19 @@
 
         <!-- Action Buttons -->
         <Grid Grid.Row="4" Margin="0,20,0,0">
+            <Grid.Resources>
+                <ResourceDictionary>
+                    <ResourceDictionary.MergedDictionaries>
+                        <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+                    </ResourceDictionary.MergedDictionaries>
+                </ResourceDictionary>
+            </Grid.Resources>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <ui:Button Grid.Column="0" Content="Cancel" Appearance="Secondary" HorizontalAlignment="Stretch" Margin="0,0,8,0" Click="Cancel_Click"/>
-            <ui:Button Grid.Column="1" Content="Select" Appearance="Primary" HorizontalAlignment="Stretch" Margin="8,0,0,0" Click="Select_Click"/>
+            <ui:Button Grid.Column="0" Content="Cancel" Style="{StaticResource PulsarSecondaryButtonStyle}" HorizontalAlignment="Stretch" Margin="0,0,8,0" Click="Cancel_Click"/>
+            <ui:Button Grid.Column="1" Content="Select" Style="{StaticResource PulsarPrimaryButtonStyle}" HorizontalAlignment="Stretch" Margin="8,0,0,0" Click="Select_Click"/>
         </Grid>
     </Grid>
 </Window>

@@ -48,7 +48,10 @@
                             IsActive="{Binding IsActive}"
                             IsRecommended="{Binding IsRecommended}"
                             Size="{Binding Size}"
-                            BadgeCount="{Binding BadgeCount}"/>
+                            BadgeCount="{Binding BadgeCount}"
+                            CustomFill="{Binding CustomFillBrush}"
+                            CustomStroke="{Binding CustomStrokeBrush}"
+                            CustomForeground="{Binding CustomForegroundBrush}"/>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
@@ -74,7 +77,10 @@
                             Label="{Binding Label}"
                             IconKey="{Binding IconKey}"
                             OrbImage="{Binding IconImage}"
-                            BadgeCount="{Binding BadgeCount}">
+                            BadgeCount="{Binding BadgeCount}"
+                            CustomFill="{Binding CustomFillBrush}"
+                            CustomStroke="{Binding CustomStrokeBrush}"
+                            CustomForeground="{Binding CustomForegroundBrush}">
                              <controls:JellyOrb.Style>
                                 <Style TargetType="controls:JellyOrb">
                                     <!-- Default: Transparent (Preview Visible) -->
@@ -113,6 +119,16 @@
                     </Grid>
                 </Grid>
             </Grid>
+
+            <!-- [Optimized] Dynamic Title with Hard Shadow (No DropShadowEffect for Performance) -->
+
+            <!-- [New] Halo Dimmer Background (Simulated Frost) -->
+            <!-- Placed BEHIND the center orb but visually it serves as a backdrop. 
+                 Actually, it should be at ZIndex -1 relative to Slots if we want Slots on top?
+                 Currently Slots are drawn first (Z-Order bottom), then Center Container.
+                 Wait, ItemsControl (Slots) is defined BEFORE Center Container. So Slots are BELOW Center Container?
+                 Yes.
+                 To put this BEHIND everything, we should put it as the FIRST child of Canvas. -->
 
             <!-- [Optimized] Dynamic Title with Hard Shadow (No DropShadowEffect for Performance) -->
             <Grid Canvas.Left="0" 

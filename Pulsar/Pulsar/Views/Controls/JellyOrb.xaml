@@ -57,25 +57,30 @@
                  StrokeThickness="1.5">
             <Ellipse.Style>
                 <Style TargetType="Ellipse">
-                    <!-- Default: Use CustomFill Binding -->
-                    <!-- Note: If CustomFill is null, this sets Fill to null, which is invisible. 
-                         The DataTrigger below will override this with the Theme resource if it IS null. -->
+                    <!-- [New] Halo Effect: Drop Shadow for Contrast -->
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect Color="Black" BlurRadius="2" ShadowDepth="0" Opacity="0.5"/>
+                        </Setter.Value>
+                    </Setter>
+                    <!-- Default: Use Custom Bindings -->
                     <Setter Property="Fill" Value="{Binding CustomFill, ElementName=OrbRoot}"/>
-                    <Setter Property="Stroke" Value="{Binding CustomFill, ElementName=OrbRoot}"/>
+                    <Setter Property="Stroke" Value="{Binding CustomStroke, ElementName=OrbRoot}"/>
                     
                     <Style.Triggers>
                         <!-- Fallback: If CustomFill is Null, use Theme Resource -->
                         <DataTrigger Binding="{Binding CustomFill, ElementName=OrbRoot}" Value="{x:Null}">
                             <Setter Property="Fill" Value="{DynamicResource Theme.Orb.Fill}"/>
                             <Setter Property="Stroke" Value="{DynamicResource Theme.Orb.Stroke}"/>
+                            <!-- Remove Halo for default theme if needed, or keep it for better visibility -->
+                            <Setter Property="Effect" Value="{x:Null}"/>
                         </DataTrigger>
 
-                        <!-- Transparent Override (Highest Priority check order - usually last wins in XAML triggers?) -->
-                        <!-- Actually, if multiple triggers match, the last one wins. 
-                             So we want Transparent to win over everything else. -->
+                        <!-- Transparent Override (Highest Priority) -->
                         <DataTrigger Binding="{Binding IsTransparent, ElementName=OrbRoot}" Value="True">
                             <Setter Property="Fill" Value="Transparent"/>
                             <Setter Property="Stroke" Value="Transparent"/>
+                            <Setter Property="Effect" Value="{x:Null}"/>
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>
@@ -163,7 +168,6 @@
             <TextBlock Text="{Binding RenderGlyph, ElementName=OrbRoot, NotifyOnTargetUpdated=True}"
                        FontFamily="{Binding GlyphFontFamily, ElementName=OrbRoot}"
                        FontSize="20"
-                       Foreground="{DynamicResource Theme.Orb.Text}"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center">
                 <TextBlock.Triggers>
@@ -178,9 +182,16 @@
                 <TextBlock.Style>
                     <Style TargetType="TextBlock">
                         <Setter Property="Visibility" Value="Collapsed"/>
+                        <!-- Default: Use Custom Foreground -->
+                        <Setter Property="Foreground" Value="{Binding CustomForeground, ElementName=OrbRoot}"/>
+                        
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding ShowImage, ElementName=OrbRoot}" Value="False">
                                 <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                            <!-- Fallback: If CustomForeground is Null, use Theme Resource -->
+                            <DataTrigger Binding="{Binding CustomForeground, ElementName=OrbRoot}" Value="{x:Null}">
+                                <Setter Property="Foreground" Value="{DynamicResource Theme.Orb.Text}"/>
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
@@ -224,11 +235,12 @@
 
             <TextBlock Text="{Binding Label, ElementName=OrbRoot}"
                        FontSize="11" FontWeight="SemiBold" 
-                       Foreground="{DynamicResource Theme.Orb.Text}"
                        HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock.Style>
                     <Style TargetType="TextBlock">
                         <Setter Property="Visibility" Value="Collapsed"/>
+                        <Setter Property="Foreground" Value="{Binding CustomForeground, ElementName=OrbRoot}"/>
+
                         <Style.Triggers>
                             <MultiDataTrigger>
                                 <MultiDataTrigger.Conditions>
@@ -237,6 +249,10 @@
                                 </MultiDataTrigger.Conditions>
                                 <Setter Property="Visibility" Value="Visible"/>
                             </MultiDataTrigger>
+                            <!-- Fallback: If CustomForeground is Null, use Theme Resource -->
+                            <DataTrigger Binding="{Binding CustomForeground, ElementName=OrbRoot}" Value="{x:Null}">
+                                <Setter Property="Foreground" Value="{DynamicResource Theme.Orb.Text}"/>
+                            </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </TextBlock.Style>

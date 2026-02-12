@@ -77,9 +77,16 @@ namespace Pulsar.Views.Controls
         public static readonly DependencyProperty CustomFillProperty =
             DependencyProperty.Register(nameof(CustomFill), typeof(System.Windows.Media.Brush), typeof(JellyOrb), new PropertyMetadata(null));
 
+        public static readonly DependencyProperty CustomStrokeProperty =
+            DependencyProperty.Register(nameof(CustomStroke), typeof(System.Windows.Media.Brush), typeof(JellyOrb), new PropertyMetadata(null));
+
         // [New] Controls visibility of the inner content (Image/Text) without affecting the Orb shape/glow
         public static readonly DependencyProperty IsContentVisibleProperty =
             DependencyProperty.Register(nameof(IsContentVisible), typeof(bool), typeof(JellyOrb), new PropertyMetadata(true));
+
+        // [New] Custom Foreground (For Adaptive Contrast)
+        public static readonly DependencyProperty CustomForegroundProperty =
+            DependencyProperty.Register(nameof(CustomForeground), typeof(System.Windows.Media.Brush), typeof(JellyOrb), new PropertyMetadata(null));
 
         // [New] Badge Count
         public static readonly DependencyProperty BadgeCountProperty =
@@ -97,6 +104,8 @@ namespace Pulsar.Views.Controls
         public bool IsTransparent { get => (bool)GetValue(IsTransparentProperty); set => SetValue(IsTransparentProperty, value); }
         public bool ShowActiveGlow { get => (bool)GetValue(ShowActiveGlowProperty); set => SetValue(ShowActiveGlowProperty, value); }
         public System.Windows.Media.Brush CustomFill { get => (System.Windows.Media.Brush)GetValue(CustomFillProperty); set => SetValue(CustomFillProperty, value); }
+        public System.Windows.Media.Brush CustomStroke { get => (System.Windows.Media.Brush)GetValue(CustomStrokeProperty); set => SetValue(CustomStrokeProperty, value); }
+        public System.Windows.Media.Brush CustomForeground { get => (System.Windows.Media.Brush)GetValue(CustomForegroundProperty); set => SetValue(CustomForegroundProperty, value); }
         public bool IsContentVisible { get => (bool)GetValue(IsContentVisibleProperty); set => SetValue(IsContentVisibleProperty, value); }
         public int BadgeCount { get => (int)GetValue(BadgeCountProperty); set => SetValue(BadgeCountProperty, value); }
         public ImageSource OrbImage { get => (ImageSource)GetValue(OrbImageProperty); set => SetValue(OrbImageProperty, value); }

@@ -99,26 +99,58 @@ namespace Pulsar.ViewModels
 
         // [New] Custom Color for Slot Background/Border
         [ObservableProperty]
-        private System.Windows.Media.Brush? _customColor;
+        private System.Windows.Media.Brush? _customFillBrush;
+
+        [ObservableProperty]
+        private System.Windows.Media.Brush? _customStrokeBrush;
+
+        [ObservableProperty]
+        private System.Windows.Media.Brush? _customForegroundBrush;
 
         public void SetColor(string? hexColor)
         {
             if (string.IsNullOrWhiteSpace(hexColor))
             {
-                CustomColor = null;
+                CustomFillBrush = null;
+                CustomStrokeBrush = null;
+                CustomForegroundBrush = null;
                 return;
             }
 
             try
             {
                 var color = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hexColor);
-                var brush = new System.Windows.Media.SolidColorBrush(color);
-                brush.Freeze();
-                CustomColor = brush;
+                
+                // 1. Fill: Semi-transparent (Glassy look)
+                var fillBrush = new System.Windows.Media.SolidColorBrush(color);
+                fillBrush.Opacity = 0.25; // Enhance visibility while keeping transparency
+                fillBrush.Freeze();
+                CustomFillBrush = fillBrush;
+
+                // 2. Stroke: Solid (High contrast border)
+                var strokeBrush = new System.Windows.Media.SolidColorBrush(color);
+                strokeBrush.Opacity = 0.9;
+                strokeBrush.Freeze();
+                CustomStrokeBrush = strokeBrush;
+
+                // 3. Foreground: Adaptive Contrast
+                // Luminance formula: 0.299R + 0.587G + 0.114B
+                double luminance = (0.299 * color.R + 0.587 * color.G + 0.114 * color.B) / 255.0;
+                
+                // If background is bright (lum > 0.5), use Black text. Otherwise White.
+                // Note: Since our fill is only 25% opacity, the background color matters too.
+                // Assuming dark theme background, we mainly care if the stroke/fill makes it too bright.
+                // A simple heuristic: if the custom color is very bright, use black to stand out against the glow/stroke.
+                var foreColor = luminance > 0.7 ? System.Windows.Media.Colors.Black : System.Windows.Media.Colors.White;
+                var foreBrush = new System.Windows.Media.SolidColorBrush(foreColor);
+                foreBrush.Freeze();
+                CustomForegroundBrush = foreBrush;
             }
             catch
             {
-                CustomColor = null;
+                CustomFillBrush = null;
+                CustomStrokeBrush = null;
+                CustomForegroundBrush = null;
             }
         }
 
