@@ -27,6 +27,8 @@ namespace Pulsar.ViewModels
         private readonly IConfigService _configService;
         private readonly IWindowService _windowService;
         private readonly PluginRegistry _pluginRegistry;
+        private readonly IHotkeyService _hotkeyService; // [Clean] Make explicit
+        private readonly ITrayService _trayService; // [New]
         private readonly System.IServiceProvider _serviceProvider;
 
         private ProfilesConfig? _config;
@@ -128,11 +130,14 @@ namespace Pulsar.ViewModels
             IWindowService windowService,
             PluginRegistry pluginRegistry,
             IHotkeyService hotkeyService,
+            ITrayService trayService, // [New]
             System.IServiceProvider serviceProvider)
         {
             _configService = configService;
             _windowService = windowService;
             _pluginRegistry = pluginRegistry;
+            _hotkeyService = hotkeyService;
+            _trayService = trayService;
             _serviceProvider = serviceProvider;
 
             InitializeSlots();
@@ -653,7 +658,7 @@ namespace Pulsar.ViewModels
                     }
                     else if (_lastContext != null)
                     {
-                        slotViewModel.ActionStrategy = new PluginActionStrategy(item, _pluginRegistry, _lastContext);
+                        slotViewModel.ActionStrategy = new PluginActionStrategy(item, _pluginRegistry, _lastContext, _trayService);
                     }
                     else
                     {
@@ -783,7 +788,10 @@ namespace Pulsar.ViewModels
             if (_menuState != MenuState.SubMenu)
             {
                 CenterPreviewImage = null;
-                // Do NOT return here, allow DynamicTitle to update below
+                // [Optimization] Root Menu strictly does NOT capture previews.
+                // We return here for the preview logic, but we still need to set DynamicTitle below?
+                // Actually, the logic below sets DynamicTitle AND decides on targetHwnd.
+                // Let's proceed but force targetHwnd to Zero if not in SubMenu.
             }
 
             // Only show preview for Window slots or Single-Window Process slots in SubMenu
@@ -792,14 +800,16 @@ namespace Pulsar.ViewModels
             if (slot.Type == SlotType.Window && slot.DataContext is ProcessWindowInfo win)
             {
                 DynamicTitle = win.Title;
-                targetHwnd = win.Handle;
+                // Only capture in SubMenu
+                if (_menuState == MenuState.SubMenu) targetHwnd = win.Handle;
             }
             else if (slot.Type == SlotType.Process && slot.DataContext is List<ProcessWindowInfo> wins && wins.Count == 1)
             {
                 // Single window process -> Treat as window
                 var singleWin = wins.First();
                 DynamicTitle = singleWin.Title;
-                targetHwnd = singleWin.Handle;
+                // Only capture in SubMenu
+                if (_menuState == MenuState.SubMenu) targetHwnd = singleWin.Handle;
             }
             else
             {

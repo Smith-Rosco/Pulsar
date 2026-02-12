@@ -60,7 +60,7 @@ namespace Pulsar.Plugins.BookmarkletRunner
             // 1. 验证并获取脚本路径
             if (!args.TryGetValue("scriptPath", out var scriptPath) || string.IsNullOrEmpty(scriptPath))
             {
-                return PluginResult.Error("Missing required parameter: scriptPath");
+                return PluginResult.Error("缺少必要参数: scriptPath。请检查插件配置。");
             }
 
             Debug.WriteLine($"[BookmarkletRunner] Script path: {scriptPath}");
@@ -69,7 +69,7 @@ namespace Pulsar.Plugins.BookmarkletRunner
             if (!ScriptPreprocessor.IsPathSafe(scriptPath))
             {
                 Debug.WriteLine($"[BookmarkletRunner] ❌ Unsafe script path detected");
-                return PluginResult.Error("Invalid or unsafe script path");
+                return PluginResult.Error("脚本路径包含不安全字符或试图访问受限目录。");
             }
 
             // 3. 读取并预处理脚本
@@ -80,19 +80,19 @@ namespace Pulsar.Plugins.BookmarkletRunner
                 if (string.IsNullOrEmpty(scriptContent))
                 {
                     Debug.WriteLine("[BookmarkletRunner] ❌ Script is empty after preprocessing");
-                    return PluginResult.Error("Script file is empty");
+                    return PluginResult.Error("脚本内容为空。请检查文件是否正确。");
                 }
                 Debug.WriteLine($"[BookmarkletRunner] Script loaded successfully ({scriptContent.Length} chars)");
             }
             catch (FileNotFoundException ex)
             {
                 Debug.WriteLine($"[BookmarkletRunner] ❌ File not found: {ex.Message}");
-                return PluginResult.Error($"Script file not found: {scriptPath}");
+                return PluginResult.Error($"找不到脚本文件: {scriptPath}。请确认文件是否存在。");
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[BookmarkletRunner] ❌ Error reading script: {ex.Message}");
-                return PluginResult.Error($"Failed to read script: {ex.Message}");
+                return PluginResult.Error($"读取脚本失败: {ex.Message}");
             }
 
             // 4. 智能选择目标浏览器窗口
@@ -104,7 +104,7 @@ namespace Pulsar.Plugins.BookmarkletRunner
             if (browserHandle == IntPtr.Zero)
             {
                 Debug.WriteLine("[BookmarkletRunner] ❌ No browser window found");
-                return PluginResult.Error("No browser window found. Please open a browser first.");
+                return PluginResult.Error("未检测到运行中的浏览器。请先打开浏览器窗口。");
             }
 
             // 5. 隐藏 Pulsar 主窗口
@@ -139,16 +139,16 @@ namespace Pulsar.Plugins.BookmarkletRunner
                 
                 if (!success)
                 {
-                    return PluginResult.Error("Failed to execute script input");
+                    return PluginResult.Error("脚本输入失败。请重试。");
                 }
 
                 Debug.WriteLine("[BookmarkletRunner] ✓ Bookmarklet executed successfully");
-                return PluginResult.Ok("Bookmarklet executed");
+                return PluginResult.Ok("脚本已执行");
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[BookmarkletRunner] ❌ Error during execution: {ex.Message}");
-                return PluginResult.Error($"Execution failed: {ex.Message}");
+                return PluginResult.Error($"执行出错: {ex.Message}");
             }
         }
 

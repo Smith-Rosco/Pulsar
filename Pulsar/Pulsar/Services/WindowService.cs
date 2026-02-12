@@ -293,8 +293,20 @@ namespace Pulsar.Services
             });
         }
 
+        // [New] Icon Cache to prevent redundant IO/GDI operations
+        // Key: ExePath, Value: ImageSource
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ImageSource?> _iconCache = new();
+
         private ImageSource? ExtractIcon(string path)
         {
+            if (string.IsNullOrEmpty(path)) return null;
+
+            // 1. Check Cache
+            if (_iconCache.TryGetValue(path, out var cachedIcon))
+            {
+                return cachedIcon;
+            }
+
             try
             {
                 var shinfo = new SHFILEINFO();
@@ -307,10 +319,16 @@ namespace Pulsar.Services
                         BitmapSizeOptions.FromEmptyOptions());
                     image.Freeze();
                     NativeMethods.DestroyIcon(shinfo.hIcon);
+                    
+                    // 2. Add to Cache
+                    _iconCache.TryAdd(path, image);
                     return image;
                 }
             }
             catch { }
+
+            // Cache null result to prevent retrying bad paths
+            _iconCache.TryAdd(path, null);
             return null;
         }
 

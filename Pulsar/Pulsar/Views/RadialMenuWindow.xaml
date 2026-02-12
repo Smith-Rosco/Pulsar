@@ -114,27 +114,46 @@
                 </Grid>
             </Grid>
 
-            <TextBlock Text="{Binding DynamicTitle, NotifyOnTargetUpdated=True}"
-                       Canvas.Left="0" 
-                       Canvas.Top="{Binding TitleTopOffset}" 
-                       Width="500"
-                       TextAlignment="Center"
-                       Foreground="#DDFFFFFF"
-                       FontSize="16" FontWeight="SemiBold"
-                       IsHitTestVisible="False">
-                <TextBlock.Triggers>
-                    <EventTrigger RoutedEvent="Binding.TargetUpdated">
-                        <BeginStoryboard>
-                            <Storyboard>
-                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.4" To="1" Duration="0:0:0.25" />
-                            </Storyboard>
-                        </BeginStoryboard>
-                    </EventTrigger>
-                </TextBlock.Triggers>
-                <TextBlock.Effect>
-                    <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="2" Opacity="0.8"/>
-                </TextBlock.Effect>
-            </TextBlock>
+            <!-- [Optimized] Dynamic Title with Hard Shadow (No DropShadowEffect for Performance) -->
+            <Grid Canvas.Left="0" 
+                  Canvas.Top="{Binding TitleTopOffset}" 
+                  Width="500"
+                  IsHitTestVisible="False">
+                
+                <!-- Shadow Layer (Offset 1px) -->
+                <TextBlock Text="{Binding DynamicTitle, NotifyOnTargetUpdated=True}"
+                           TextAlignment="Center"
+                           Foreground="Black"
+                           FontSize="16" FontWeight="SemiBold"
+                           Opacity="0.5"
+                           Margin="1,1,0,0">
+                    <TextBlock.Triggers>
+                        <EventTrigger RoutedEvent="Binding.TargetUpdated">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="0.5" Duration="0:0:0.15" />
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </TextBlock.Triggers>
+                </TextBlock>
+
+                <!-- Foreground Layer -->
+                <TextBlock Text="{Binding DynamicTitle, NotifyOnTargetUpdated=True}"
+                           TextAlignment="Center"
+                           Foreground="#DDFFFFFF"
+                           FontSize="16" FontWeight="SemiBold">
+                    <TextBlock.Triggers>
+                        <EventTrigger RoutedEvent="Binding.TargetUpdated">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.4" To="1" Duration="0:0:0.15" />
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </TextBlock.Triggers>
+                </TextBlock>
+            </Grid>
         </Canvas>
     </Grid>
 </Window>

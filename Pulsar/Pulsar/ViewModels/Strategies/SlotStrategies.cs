@@ -5,6 +5,8 @@ using Pulsar.Core.Plugin;
 using Pulsar.Models;
 using Pulsar.Native;
 using Pulsar.Services;
+using Pulsar.Services.Interfaces; // [New]
+using System.Windows.Forms; // [New] For ToolTipIcon
 
 namespace Pulsar.ViewModels.Strategies
 {
@@ -33,12 +35,18 @@ namespace Pulsar.ViewModels.Strategies
         private readonly PluginSlot _pluginSlot;
         private readonly PluginRegistry _registry;
         private readonly PulsarContext _pulsarContext;
+        private readonly ITrayService _trayService; // [New]
 
-        public PluginActionStrategy(PluginSlot pluginSlot, PluginRegistry registry, PulsarContext pulsarContext)
+        public PluginActionStrategy(
+            PluginSlot pluginSlot, 
+            PluginRegistry registry, 
+            PulsarContext pulsarContext,
+            ITrayService trayService) // [New]
         {
             _pluginSlot = pluginSlot;
             _registry = registry;
             _pulsarContext = pulsarContext;
+            _trayService = trayService;
         }
 
         public async Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context)
@@ -50,7 +58,17 @@ namespace Pulsar.ViewModels.Strategies
             // which would otherwise re-trigger the hotkey hook while the menu is still visible.
             context.IsVisible = false;
 
-            await _registry.ExecuteAsync(_pluginSlot.PluginId, _pluginSlot.Action, _pluginSlot.Args, _pulsarContext);
+            var result = await _registry.ExecuteAsync(_pluginSlot.PluginId, _pluginSlot.Action, _pluginSlot.Args, _pulsarContext);
+
+            // [New] Elegant Error Handling
+            if (!result.Success)
+            {
+                // Audio Feedback
+                System.Media.SystemSounds.Hand.Play();
+
+                // Visual Feedback (Notification)
+                _trayService.ShowNotification("操作失败", result.Message ?? "未知错误", ToolTipIcon.Error);
+            }
         }
     }
 
