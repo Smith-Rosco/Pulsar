@@ -22,6 +22,12 @@ namespace Pulsar.Services
             _configService = configService;
         }
 
+        // [Optimization] Cache hotkey bitmasks for O(1) lookup
+        // Key: (VkCode << 8) | Modifiers
+        private readonly Dictionary<int, Action> _optimizedHotkeys = new();
+
+        public event EventHandler<GlobalKeyStruct>? OnGlobalKeyUp;
+        
         public void Pause()
         {
             _isPaused = true;
@@ -31,8 +37,6 @@ namespace Pulsar.Services
         {
             _isPaused = false;
         }
-
-        public event EventHandler<GlobalKeyEventArgs>? OnGlobalKeyUp;
 
         public async void Initialize()
         {
@@ -50,14 +54,59 @@ namespace Pulsar.Services
                 // [Default Swap] Window Switcher -> Ctrl + Q
                 _config.Settings.Hotkeys["ShowSwitcher"] = new HotkeyConfig { Key = "Q", Modifiers = "Control" };
             }
+            
+            // Build optimization cache
+            RebuildHotkeyCache();
 
             _hook.OnKeyDown += OnKeyDown;
-            _hook.OnKeyUp += (s, e) => OnGlobalKeyUp?.Invoke(this, e);
+            // [Fix] Adapt to struct
+            _hook.OnKeyUp += (ref GlobalKeyStruct e) => OnGlobalKeyUp?.Invoke(this, e);
+        }
+
+        private void RebuildHotkeyCache()
+        {
+            _optimizedHotkeys.Clear();
+            if (_config == null) return;
+
+            foreach (var kvp in _actions)
+            {
+                string actionId = kvp.Key;
+                Action callback = kvp.Value;
+
+                if (_config.Settings.Hotkeys.TryGetValue(actionId, out var hotkeyConfig))
+                {
+                    try 
+                    {
+                        // 1. Parse Key to VkCode
+                        if (!Enum.TryParse<Key>(hotkeyConfig.Key, true, out var wpfKey)) continue;
+                        int vkCode = KeyInterop.VirtualKeyFromKey(wpfKey);
+
+                        // 2. Parse Modifiers to Bitmask
+                        // Ctrl=1, Shift=2, Alt=4, Win=8
+                        int modMask = 0;
+                        var mods = hotkeyConfig.Modifiers.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                        foreach (var m in mods)
+                        {
+                            if (m.Equals("Control", StringComparison.OrdinalIgnoreCase)) modMask |= 1;
+                            else if (m.Equals("Shift", StringComparison.OrdinalIgnoreCase)) modMask |= 2;
+                            else if (m.Equals("Alt", StringComparison.OrdinalIgnoreCase)) modMask |= 4;
+                            else if (m.Equals("Windows", StringComparison.OrdinalIgnoreCase)) modMask |= 8;
+                        }
+
+                        // 3. Create Unique Hash
+                        // Format: [VkCode (24 bits)] [Mods (8 bits)]
+                        int hash = (vkCode << 8) | modMask;
+                        _optimizedHotkeys[hash] = callback;
+                    }
+                    catch (Exception) { /* Ignore invalid config */ }
+                }
+            }
         }
 
         public void RegisterAction(string actionId, Action callback)
         {
             _actions[actionId] = callback;
+            RebuildHotkeyCache();
         }
 
         public void UnregisterAction(string actionId)
@@ -65,6 +114,7 @@ namespace Pulsar.Services
             if (_actions.ContainsKey(actionId))
             {
                 _actions.Remove(actionId);
+                RebuildHotkeyCache();
             }
         }
 
@@ -74,6 +124,8 @@ namespace Pulsar.Services
             
             _config.Settings.Hotkeys[actionId] = newHotkey;
             await _configService.SaveAsync(_config);
+            
+            RebuildHotkeyCache();
         }
 
         public HotkeyConfig? GetHotkey(string actionId)
@@ -85,51 +137,27 @@ namespace Pulsar.Services
             return null;
         }
 
-        private void OnKeyDown(object? sender, GlobalKeyEventArgs e)
+        private void OnKeyDown(ref GlobalKeyStruct e)
         {
             if (_config == null || _isPaused) return;
 
-            // Convert VkCode to WPF Key
-            Key key = KeyInterop.KeyFromVirtualKey(e.VkCode);
-            string keyString = key.ToString();
-
-            // Construct current modifiers string
-            var mods = new List<string>();
-            if (e.IsCtrl) mods.Add("Control");
-            if (e.IsShift) mods.Add("Shift");
-            if (e.IsAlt) mods.Add("Alt");
-            if (e.IsWin) mods.Add("Windows");
+            // [Optimization] Fast Bitwise Lookup O(1)
             
-            // Iterate registered actions and check for match
-            foreach (var kvp in _actions)
+            // 1. Calculate current modifier mask
+            int currentMask = 0;
+            if (e.IsCtrl) currentMask |= 1;
+            if (e.IsShift) currentMask |= 2;
+            if (e.IsAlt) currentMask |= 4;
+            if (e.IsWin) currentMask |= 8;
+
+            // 2. Calculate Hash
+            int hash = (e.VkCode << 8) | currentMask;
+
+            // 3. Lookup
+            if (_optimizedHotkeys.TryGetValue(hash, out var callback))
             {
-                string actionId = kvp.Key;
-                Action callback = kvp.Value;
-
-                if (_config.Settings.Hotkeys.TryGetValue(actionId, out var hotkeyConfig))
-                {
-                    // Match Key
-                    if (!string.Equals(hotkeyConfig.Key, keyString, StringComparison.OrdinalIgnoreCase))
-                        continue;
-
-                    // Match Modifiers
-                    // Parse config modifiers: "Control,Shift" -> ["Control", "Shift"]
-                    var configMods = hotkeyConfig.Modifiers
-                        .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                        .Select(m => m.Trim())
-                        .ToList();
-
-                    // Check exact match (ignoring order)
-                    bool modifiersMatch = !configMods.Except(mods, StringComparer.OrdinalIgnoreCase).Any() && 
-                                          !mods.Except(configMods, StringComparer.OrdinalIgnoreCase).Any();
-
-                    if (modifiersMatch)
-                    {
-                        callback.Invoke();
-                        e.Handled = true;
-                        return; // Assume one action per key combo
-                    }
-                }
+                callback.Invoke();
+                e.Handled = true;
             }
         }
     }

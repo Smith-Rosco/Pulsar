@@ -8,6 +8,8 @@ using Pulsar.Services.Interfaces;
 using Pulsar.Models;
 using CommunityToolkit.Mvvm.Messaging;
 using Pulsar.Core.Messages;
+using System.Windows.Input;
+using Pulsar.Native;
 
 namespace Pulsar.Views
 {
@@ -63,9 +65,23 @@ namespace Pulsar.Views
 
             this.Loaded += (s, e) =>
             {
-                // Navigate to the first page by default
-                RootFrame.Navigate(_generalPage);
-                _viewModel.CurrentView = "Settings";
+                // [Fix] Respect ViewModel state on load instead of forcing General
+                // If Frame is empty, perform initial navigation based on current VM state
+                if (RootFrame.Content == null)
+                {
+                    if (_viewModel.CurrentView == "Slots")
+                    {
+                        RootFrame.Navigate(_slotsPage);
+                        // Ensure visual state matches
+                        if (RootNavigation.MenuItems[1] is NavigationViewItem navItem) navItem.IsActive = true;
+                    }
+                    else
+                    {
+                        RootFrame.Navigate(_generalPage);
+                         // Ensure visual state matches
+                        if (RootNavigation.MenuItems[0] is NavigationViewItem navItem) navItem.IsActive = true;
+                    }
+                }
 
                 // [Fix] Force hide scrollbars in NavigationView using VisualTreeHelper
                 DisableScrollViewers(RootNavigation);
@@ -94,30 +110,61 @@ namespace Pulsar.Views
         {
              if (e.PropertyName == nameof(SettingsViewModel.CurrentView))
              {
-                 // [Fix] Programmatic Navigation
-                 // Since Wpf.Ui Navigate method usually takes Type or instance, and our SelectionChanged handles it via Tag,
-                 // We should try to update the SelectedItem to trigger SelectionChanged.
+                 // [Fix] Robust Navigation State Synchronization
+                 // Map ViewModel ViewName to UI Tag
+                 // ViewModel: "Settings", "Slots"
+                 // UI Tags: "General", "Slots"
                  
-                 // If SelectedItem set is inaccessible, we will use Navigate(Type) which is standard.
-                 // However, we want to maintain our cached page instances.
-                 // Let's try Navigate(instance) if supported, or just manually set frame content and update selection visual.
-                 
-                 if (_viewModel.CurrentView == "Settings")
+                 string targetTag = _viewModel.CurrentView;
+                 if (targetTag == "Settings") targetTag = "General";
+
+                 bool found = false;
+
+                 // 1. Iterate Main Menu Items
+                 foreach (var item in RootNavigation.MenuItems)
                  {
-                     RootFrame.Navigate(_generalPage);
-                     // Try to update visual selection without triggering logic loop
-                     if (RootNavigation.MenuItems[0] is FrameworkElement item) 
+                     if (item is NavigationViewItem navItem)
                      {
-                         // Use VisualState or specific property if available. 
-                         // For now, assume Navigate handles it or we accept visual desync as minor issue.
-                         // But usually we can cast to NavigationViewItem.
-                         if (item is NavigationViewItem navItem) navItem.IsActive = true; 
+                         bool isMatch = navItem.Tag?.ToString() == targetTag;
+                         if (isMatch)
+                         {
+                             // Activate visual state
+                             navItem.IsActive = true; 
+                             // Perform actual navigation
+                             if (targetTag == "General") RootFrame.Navigate(_generalPage);
+                             else if (targetTag == "Slots") RootFrame.Navigate(_slotsPage);
+                             found = true;
+                         }
+                         else
+                         {
+                             // Deactivate others to prevent "double selection" ghosting
+                             navItem.IsActive = false;
+                         }
                      }
                  }
-                 else if (_viewModel.CurrentView == "Slots")
+                 
+                 // 2. Iterate Footer Items (if any future pages are there)
+                 foreach (var item in RootNavigation.FooterMenuItems)
                  {
-                     RootFrame.Navigate(_slotsPage);
-                     if (RootNavigation.MenuItems[1] is NavigationViewItem navItem) navItem.IsActive = true;
+                     if (item is NavigationViewItem navItem)
+                     {
+                         // Currently we only have "Save" which is a button, but good practice
+                         if (navItem.Tag?.ToString() == targetTag)
+                         {
+                             navItem.IsActive = true;
+                             found = true;
+                         }
+                         else
+                         {
+                             navItem.IsActive = false;
+                         }
+                     }
+                 }
+
+                 if (!found)
+                 {
+                     // Fallback safety
+                     System.Diagnostics.Debug.WriteLine($"[SettingsWindow] Target view '{targetTag}' not found in menu items.");
                  }
              }
         }
@@ -149,6 +196,39 @@ namespace Pulsar.Views
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             _viewModel.SaveCommand.Execute(null);
+        }
+
+        // [Fix] Lifecycle Management: Hide instead of Close to prevent memory leaks and keep Singleton alive
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            e.Cancel = true;
+            this.Hide();
+            
+            // [Optimization] Aggressive Memory Trimming
+            // This forces the OS to page out unused memory, significantly reducing
+            // the "perceived" memory footprint in Task Manager when the window is hidden.
+            TrimMemory();
+            
+            base.OnClosing(e);
+        }
+
+        private void TrimMemory()
+        {
+            try
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                
+                // -1, -1 tells the OS to swap out the process memory to disk
+                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                {
+                    WindowHelper.SetProcessWorkingSetSize(WindowHelper.GetCurrentProcess(), new IntPtr(-1), new IntPtr(-1));
+                }
+            }
+            catch 
+            {
+                // Optimization only - ignore failures
+            }
         }
     }
 }

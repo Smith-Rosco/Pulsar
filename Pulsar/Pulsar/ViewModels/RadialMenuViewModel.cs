@@ -877,7 +877,7 @@ namespace Pulsar.ViewModels
             }
         }
 
-        private void HandleKeyUp(object? sender, GlobalKeyEventArgs e)
+        private void HandleKeyUp(object? sender, GlobalKeyStruct e)
         {
             // [Debug] Log KeyUp
             System.Diagnostics.Debug.WriteLine($"[HandleKeyUp] Key: {e.VkCode}, IsVisible: {IsVisible}");

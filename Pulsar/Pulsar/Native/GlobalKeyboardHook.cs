@@ -7,16 +7,17 @@ using Pulsar.Native;
 
 namespace Pulsar.Native
 {
-    public class GlobalKeyEventArgs : EventArgs
+    // [Optimization] Changed from class to struct to reduce GC pressure (Stack allocation)
+    public struct GlobalKeyStruct
     {
-        public int VkCode { get; }
-        public bool IsCtrl { get; }
-        public bool IsShift { get; }
-        public bool IsAlt { get; }
-        public bool IsWin { get; }
-        public bool Handled { get; set; }
+        public int VkCode;
+        public bool IsCtrl;
+        public bool IsShift;
+        public bool IsAlt;
+        public bool IsWin;
+        public bool Handled;
 
-        public GlobalKeyEventArgs(int vkCode, bool isCtrl, bool isShift, bool isAlt, bool isWin)
+        public GlobalKeyStruct(int vkCode, bool isCtrl, bool isShift, bool isAlt, bool isWin)
         {
             VkCode = vkCode;
             IsCtrl = isCtrl;
@@ -29,9 +30,12 @@ namespace Pulsar.Native
 
     public class GlobalKeyboardHook : IDisposable
     {
+        // [Optimization] Use a delegate that passes the struct by reference to avoid copying
+        public delegate void GlobalKeyEventHandler(ref GlobalKeyStruct e);
+
         // 定义事件 - 通用事件
-        public event EventHandler<GlobalKeyEventArgs>? OnKeyDown;
-        public event EventHandler<GlobalKeyEventArgs>? OnKeyUp;
+        public event GlobalKeyEventHandler? OnKeyDown;
+        public event GlobalKeyEventHandler? OnKeyUp;
 
         // 钩子委托与句柄
         private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
@@ -84,21 +88,29 @@ namespace Pulsar.Native
                 bool isKeyDown = (wParam == (IntPtr)WM_KEYDOWN || wParam == (IntPtr)WM_SYSKEYDOWN);
                 bool isKeyUp = (wParam == (IntPtr)WM_KEYUP || wParam == (IntPtr)WM_SYSKEYUP);
 
-                // 获取修饰键状态
+                // [Optimization] Pre-filter: Only process if we have listeners
+                if ((isKeyDown && OnKeyDown == null) || (isKeyUp && OnKeyUp == null))
+                {
+                    return CallNextHookEx(_hookID, nCode, wParam, lParam);
+                }
+
+                // 获取修饰键状态 (Optimized bitwise checks)
+                // GetKeyState returns short. High order bit is key down.
                 bool isCtrl = (GetKeyState(VK_LCONTROL) & 0x8000) != 0 || (GetKeyState(VK_RCONTROL) & 0x8000) != 0;
                 bool isShift = (GetKeyState(VK_LSHIFT) & 0x8000) != 0 || (GetKeyState(VK_RSHIFT) & 0x8000) != 0;
                 bool isAlt = (GetKeyState(VK_LALT) & 0x8000) != 0 || (GetKeyState(VK_RALT) & 0x8000) != 0;
                 bool isWin = (GetKeyState(VK_LWIN) & 0x8000) != 0 || (GetKeyState(VK_RWIN) & 0x8000) != 0;
 
-                var args = new GlobalKeyEventArgs(vkCode, isCtrl, isShift, isAlt, isWin);
+                // [Optimization] Allocation-free struct on stack
+                var args = new GlobalKeyStruct(vkCode, isCtrl, isShift, isAlt, isWin);
 
                 if (isKeyDown)
                 {
-                    OnKeyDown?.Invoke(this, args);
+                    OnKeyDown?.Invoke(ref args);
                 }
                 else if (isKeyUp)
                 {
-                    OnKeyUp?.Invoke(this, args);
+                    OnKeyUp?.Invoke(ref args);
                 }
 
                 if (args.Handled)
@@ -108,6 +120,7 @@ namespace Pulsar.Native
             }
             return CallNextHookEx(_hookID, nCode, wParam, lParam);
         }
+
 
         // --- P/Invoke ---
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]

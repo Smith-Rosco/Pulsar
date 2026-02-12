@@ -15,7 +15,10 @@
     ShowInTaskbar="False"
     ResizeMode="NoResize"
     x:Name="RootWindow"
-    Style="{x:Null}">
+    Style="{x:Null}"
+    RenderOptions.BitmapScalingMode="LowQuality"
+    RenderOptions.CacheInvalidationThresholdMinimum="0.5"
+    RenderOptions.CacheInvalidationThresholdMaximum="2.0">
 
     <Grid Background="Transparent">
         <!-- [Refactor] Compact Mode: Window is now exact size of menu. Canvas handles interaction. -->

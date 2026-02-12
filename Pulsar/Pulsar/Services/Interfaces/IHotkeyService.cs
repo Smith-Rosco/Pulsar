@@ -21,6 +21,6 @@ namespace Pulsar.Services.Interfaces
         /// </summary>
         void Resume();
 
-        event EventHandler<GlobalKeyEventArgs>? OnGlobalKeyUp;
+        event EventHandler<GlobalKeyStruct>? OnGlobalKeyUp;
     }
 }

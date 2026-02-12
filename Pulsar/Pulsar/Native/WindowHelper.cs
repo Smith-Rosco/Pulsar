@@ -135,5 +135,13 @@ namespace Pulsar.Native
 
         public const int DWMWA_SYSTEMBACKDROP_TYPE = 38;
         public const int DWMSBT_NONE = 1;
+
+        // --- Memory Optimization ---
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool SetProcessWorkingSetSize(IntPtr hProcess, IntPtr dwMinimumWorkingSetSize, IntPtr dwMaximumWorkingSetSize);
+
+        [DllImport("kernel32.dll")]
+        public static extern IntPtr GetCurrentProcess();
     }
 }

@@ -72,8 +72,8 @@ namespace Pulsar
             serviceCollection.AddSingleton<RadialMenuViewModel>();
             serviceCollection.AddSingleton<RadialMenuWindow>();
             // [Fix] Register SettingsViewModel with new dependency
-            serviceCollection.AddTransient<SettingsViewModel>();
-            serviceCollection.AddTransient<SettingsWindow>();
+            serviceCollection.AddSingleton<SettingsViewModel>();
+            serviceCollection.AddSingleton<SettingsWindow>();
             
             // Build Container
             Services = serviceCollection.BuildServiceProvider();
