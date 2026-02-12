@@ -73,6 +73,10 @@ namespace Pulsar.Views.Controls
         public static readonly DependencyProperty ShowActiveGlowProperty =
             DependencyProperty.Register(nameof(ShowActiveGlow), typeof(bool), typeof(JellyOrb), new PropertyMetadata(true));
         
+        // [New] Custom Fill/Stroke Color (Overrides Theme)
+        public static readonly DependencyProperty CustomFillProperty =
+            DependencyProperty.Register(nameof(CustomFill), typeof(System.Windows.Media.Brush), typeof(JellyOrb), new PropertyMetadata(null));
+
         // [New] Controls visibility of the inner content (Image/Text) without affecting the Orb shape/glow
         public static readonly DependencyProperty IsContentVisibleProperty =
             DependencyProperty.Register(nameof(IsContentVisible), typeof(bool), typeof(JellyOrb), new PropertyMetadata(true));
@@ -92,6 +96,7 @@ namespace Pulsar.Views.Controls
         public bool IsRecommended { get => (bool)GetValue(IsRecommendedProperty); set => SetValue(IsRecommendedProperty, value); }
         public bool IsTransparent { get => (bool)GetValue(IsTransparentProperty); set => SetValue(IsTransparentProperty, value); }
         public bool ShowActiveGlow { get => (bool)GetValue(ShowActiveGlowProperty); set => SetValue(ShowActiveGlowProperty, value); }
+        public System.Windows.Media.Brush CustomFill { get => (System.Windows.Media.Brush)GetValue(CustomFillProperty); set => SetValue(CustomFillProperty, value); }
         public bool IsContentVisible { get => (bool)GetValue(IsContentVisibleProperty); set => SetValue(IsContentVisibleProperty, value); }
         public int BadgeCount { get => (int)GetValue(BadgeCountProperty); set => SetValue(BadgeCountProperty, value); }
         public ImageSource OrbImage { get => (ImageSource)GetValue(OrbImageProperty); set => SetValue(OrbImageProperty, value); }
@@ -176,6 +181,13 @@ namespace Pulsar.Views.Controls
         
         public static readonly DependencyProperty ShowImageProperty = ShowImagePropertyKey.DependencyProperty;
 
+        // [Fix] Dynamic Font Family Support
+        private static readonly DependencyPropertyKey GlyphFontFamilyPropertyKey = 
+            DependencyProperty.RegisterReadOnly(nameof(GlyphFontFamily), typeof(System.Windows.Media.FontFamily), typeof(JellyOrb), 
+                new PropertyMetadata(new System.Windows.Media.FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets, Segoe UI Emoji")));
+
+        public static readonly DependencyProperty GlyphFontFamilyProperty = GlyphFontFamilyPropertyKey.DependencyProperty;
+
         public ImageSource RenderImage
         {
             get => (ImageSource)GetValue(RenderImageProperty);
@@ -186,6 +198,12 @@ namespace Pulsar.Views.Controls
         {
             get => (string)GetValue(RenderGlyphProperty);
             private set => SetValue(RenderGlyphPropertyKey, value);
+        }
+
+        public System.Windows.Media.FontFamily GlyphFontFamily
+        {
+            get => (System.Windows.Media.FontFamily)GetValue(GlyphFontFamilyProperty);
+            private set => SetValue(GlyphFontFamilyPropertyKey, value);
         }
 
         public bool ShowImage
@@ -243,6 +261,22 @@ namespace Pulsar.Views.Controls
                 SetValue(RenderImagePropertyKey, null);
                 SetValue(ShowImagePropertyKey, false);
                 SetValue(RenderGlyphPropertyKey, newGlyph);
+
+                // [Fix] Determine correct font family
+                if (!string.IsNullOrEmpty(newGlyph))
+                {
+                    char first = newGlyph[0];
+                    // Segoe Fluent Icons PUA range (roughly E700-F8FF, but we use E000+ to be safe for MDL2 too)
+                    if (first >= 0xE000 && first <= 0xF8FF)
+                    {
+                        SetValue(GlyphFontFamilyPropertyKey, new System.Windows.Media.FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"));
+                    }
+                    else
+                    {
+                        // Text, Emoji, Standard Chars -> Use UI Font + Emoji
+                        SetValue(GlyphFontFamilyPropertyKey, new System.Windows.Media.FontFamily("Segoe UI, Segoe UI Emoji, Microsoft YaHei UI"));
+                    }
+                }
             }
         }
     }

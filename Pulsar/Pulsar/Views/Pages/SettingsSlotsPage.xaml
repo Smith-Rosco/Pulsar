@@ -18,6 +18,7 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVis"/>
         <converters:IsImagePathConverter x:Key="IsImagePath"/>
+        <converters:HexToBrushConverter x:Key="HexToBrush"/>
 
         <!-- Templates for different Plugin Types -->
         
@@ -45,22 +46,6 @@
                             Icon="{ui:SymbolIcon Code24}"
                             PlaceholderText="Arguments (Optional)"
                             Margin="0,0,0,10"/>
-
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <ui:TextBox Text="{Binding IconKey}" 
-                                Icon="{ui:SymbolIcon Image24}"
-                                PlaceholderText="Icon Key (Path or Font)"/>
-                    
-                    <ui:Button Grid.Column="1" Margin="8,0,0,0"
-                               Icon="{ui:SymbolIcon Folder24}"
-                               Command="{Binding DataContext.PickIconCommand, RelativeSource={RelativeSource AncestorType=Page}}" 
-                               CommandParameter="{Binding}"
-                               ToolTip="Open Icon Picker"/>
-                </Grid>
             </StackPanel>
         </DataTemplate>
 
@@ -87,22 +72,6 @@
                             Icon="{ui:SymbolIcon Code24}"
                             PlaceholderText="Arguments (Optional)"
                             Margin="0,0,0,10"/>
-
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <ui:TextBox Text="{Binding IconKey}" 
-                                Icon="{ui:SymbolIcon Image24}"
-                                PlaceholderText="Icon Key (Path or Font)"/>
-                    
-                    <ui:Button Grid.Column="1" Margin="8,0,0,0"
-                               Icon="{ui:SymbolIcon Folder24}"
-                               Command="{Binding DataContext.PickIconCommand, RelativeSource={RelativeSource AncestorType=Page}}" 
-                               CommandParameter="{Binding}"
-                               ToolTip="Open Icon Picker"/>
-                </Grid>
             </StackPanel>
         </DataTemplate>
 
@@ -148,21 +117,6 @@
                                            CommandParameter="{Binding}"
                                            ToolTip="Browse Script File"/>
                 </Grid>
-
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <ui:TextBox Text="{Binding IconKey}" 
-                                Icon="{ui:SymbolIcon Image24}"
-                                PlaceholderText="Icon Key"/>
-
-                    <ui:Button Grid.Column="1" Margin="8,0,0,0"
-                               Icon="{ui:SymbolIcon Folder24}"
-                               Command="{Binding DataContext.PickIconCommand, RelativeSource={RelativeSource AncestorType=Page}}" 
-                               CommandParameter="{Binding}"/>
-                </Grid>
             </StackPanel>
         </DataTemplate>
 
@@ -185,21 +139,6 @@
                                            CommandParameter="{Binding}"
                                            ToolTip="Browse VBA Script"/>
                 </Grid>
-
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <ui:TextBox Text="{Binding IconKey}" 
-                                Icon="{ui:SymbolIcon Image24}"
-                                PlaceholderText="Icon Key"/>
-
-                    <ui:Button Grid.Column="1" Margin="8,0,0,0"
-                               Icon="{ui:SymbolIcon Folder24}"
-                               Command="{Binding DataContext.PickIconCommand, RelativeSource={RelativeSource AncestorType=Page}}" 
-                               CommandParameter="{Binding}"/>
-                </Grid>
             </StackPanel>
         </DataTemplate>
 
@@ -217,21 +156,6 @@
                         <ComboBoxItem Content="Open Settings" Tag="pulsar.system.open_settings"/>
                         <ComboBoxItem Content="Quick Add Profile &amp; Settings" Tag="pulsar.system.quick_add_profile"/>
                     </ComboBox>
-                </Grid>
-
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <ui:TextBox Text="{Binding IconKey}" 
-                                Icon="{ui:SymbolIcon Image24}"
-                                PlaceholderText="Icon Key"/>
-
-                    <ui:Button Grid.Column="1" Margin="8,0,0,0"
-                               Icon="{ui:SymbolIcon Folder24}"
-                               Command="{Binding DataContext.PickIconCommand, RelativeSource={RelativeSource AncestorType=Page}}" 
-                               CommandParameter="{Binding}"/>
                 </Grid>
             </StackPanel>
         </DataTemplate>
@@ -497,6 +421,59 @@
                                     
                                     <!-- Dynamic Fields based on Type -->
                                     <ContentPresenter Content="{Binding}" ContentTemplateSelector="{StaticResource SlotItemFieldSelector}"/>
+
+                                    <!-- Appearance Section (Shared) -->
+                                    <TextBlock Text="Appearance" FontSize="12" FontWeight="SemiBold" Margin="0,12,0,4" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                    <Grid Margin="0,0,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="12"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Icon Field -->
+                                        <Grid Grid.Column="0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <ui:TextBox Text="{Binding IconKey}" 
+                                                        Icon="{ui:SymbolIcon Image24}"
+                                                        PlaceholderText="Icon, Emoji, or Text"/>
+                                            <ui:Button Grid.Column="1" Margin="4,0,0,0"
+                                                       Icon="{ui:SymbolIcon FolderOpen16}"
+                                                       Appearance="Secondary"
+                                                       Command="{Binding DataContext.PickIconCommand, RelativeSource={RelativeSource AncestorType=Page}}" 
+                                                       CommandParameter="{Binding}"
+                                                       ToolTip="Browse Icon File"/>
+                                        </Grid>
+
+                                        <!-- Color Field -->
+                                        <Grid Grid.Column="2">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            
+                                            <Border Grid.Column="0" Width="28" Height="28" CornerRadius="4" Margin="0,0,8,0"
+                                                    BorderBrush="{DynamicResource ControlElevationBorderBrush}" BorderThickness="1"
+                                                    Background="{Binding Color, Converter={StaticResource HexToBrush}}">
+                                            </Border>
+
+                                            <ui:TextBox Grid.Column="1" 
+                                                        Text="{Binding Color}" 
+                                                        Icon="{ui:SymbolIcon Color24}"
+                                                        PlaceholderText="#RRGGBB"/>
+
+                                            <ui:Button Grid.Column="2" Margin="4,0,0,0"
+                                                       Icon="{ui:SymbolIcon Drop24}"
+                                                       Appearance="Secondary"
+                                                       Command="{Binding DataContext.PickColorCommand, RelativeSource={RelativeSource AncestorType=Page}}" 
+                                                       CommandParameter="{Binding}"
+                                                       ToolTip="Pick Color from Palette"/>
+                                        </Grid>
+                                    </Grid>
                                 </StackPanel>
                             </ui:CardExpander>
                         </DataTemplate>

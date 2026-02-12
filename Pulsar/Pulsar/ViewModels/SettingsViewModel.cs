@@ -695,6 +695,29 @@ namespace Pulsar.ViewModels
         }
 
         [RelayCommand]
+        public void PickColor(PluginSlot item)
+        {
+            if (item == null) return;
+            var dialog = new Views.Dialogs.ColorPickerDialog(item.Color);
+            _themeService.ApplyTheme(dialog, SettingsTheme, WindowBackdropType.None, updateGlobal: false);
+            dialog.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
+            
+            if (dialog.ShowDialog() == true)
+            {
+                item.Color = dialog.SelectedHex;
+                // [Fix] Ensure the Brush converter updates by notifying property changed on item if needed, 
+                // but PluginSlot implements INPC so setting property is enough.
+                // However, the SlotViewModel using this item needs to update its CustomColor.
+                // In SettingsView, we bind directly to PluginSlot.Color, so it updates the UI here.
+                // But the RadialMenu needs a reload or live update?
+                // RadialMenuViewModel -> BindSlots -> SetColor.
+                // If we want live update in RadialMenu without reload, SlotViewModel needs to listen to PluginSlot changes?
+                // No, RadialMenu reloads on Save/ConfigUpdate. So user must Save.
+                // This is fine for Settings Page preview.
+            }
+        }
+
+        [RelayCommand]
         public void PickVbaScriptFile(PluginSlot item)
         {
             if (item == null) return;

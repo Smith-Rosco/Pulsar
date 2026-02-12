@@ -638,6 +638,7 @@ namespace Pulsar.ViewModels
                 {
                     slotViewModel.Label = item.Label;
                     slotViewModel.LoadIconData(item.IconKey);
+                    slotViewModel.SetColor(item.Color); // [New] Set Custom Color
                     slotViewModel.Type = SlotType.Action;
                     slotViewModel.DataContext = item;
                     // [New] Set Strategy

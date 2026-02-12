@@ -119,25 +119,32 @@ namespace Pulsar.Helpers
         public static string GetGlyph(string key)
         {
             if (string.IsNullOrWhiteSpace(key)) return string.Empty;
+            
+            // 1. Detect Explicit Hex Prefix (User INTENDS hex)
+            bool hasHexPrefix = key.StartsWith("0x", StringComparison.OrdinalIgnoreCase) || 
+                                key.StartsWith("u+", StringComparison.OrdinalIgnoreCase) || 
+                                key.StartsWith("\\u", StringComparison.OrdinalIgnoreCase);
+
             string cleanKey = key.Trim().Replace("0x", "").Replace("u+", "").Replace("\\u", "");
 
-            // Strategy 1: Hex Code (Standard)
+            // 2. Try Parse Hex
             if (int.TryParse(cleanKey, System.Globalization.NumberStyles.HexNumber, null, out int codePoint))
             {
-                return char.ConvertFromUtf32(codePoint);
+                // If explicit prefix, trust it.
+                if (hasHexPrefix) return char.ConvertFromUtf32(codePoint);
+
+                // If implicit (no prefix), only treat as Hex if it looks like a symbol code point
+                // Segoe Fluent: E000 - F8FF (Private Use Area)
+                // Emoji: 1F000+
+                // Avoid ambiguous ASCII range (e.g., "Add" -> 0xADD) unless explicit
+                if (codePoint >= 0xE000) 
+                {
+                    return char.ConvertFromUtf32(codePoint);
+                }
             }
             
-            // Strategy 2: Direct Character (Robustness)
-            // If the user pasted a single glyph, use it directly
-            if (cleanKey.Length == 1 || (cleanKey.Length == 2 && char.IsSurrogatePair(cleanKey, 0)))
-            {
-                // [Fix] Map "🔒" emoji to Segoe Fluent Icon "Lock" (E72E) to prevent rendering issues
-                if (cleanKey == "🔒") return "\uE72E";
-                
-                return cleanKey;
-            }
-
-            return string.Empty;
+            // 3. Return as-is (Allows "VBA", "🚀", "🧑‍💻", "CMD")
+            return key.Trim();
         }
     }
 }

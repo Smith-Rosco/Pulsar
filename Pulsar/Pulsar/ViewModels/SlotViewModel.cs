@@ -97,6 +97,31 @@ namespace Pulsar.ViewModels
         [ObservableProperty]
         private System.Windows.Media.ImageSource? _iconImage;
 
+        // [New] Custom Color for Slot Background/Border
+        [ObservableProperty]
+        private System.Windows.Media.Brush? _customColor;
+
+        public void SetColor(string? hexColor)
+        {
+            if (string.IsNullOrWhiteSpace(hexColor))
+            {
+                CustomColor = null;
+                return;
+            }
+
+            try
+            {
+                var color = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hexColor);
+                var brush = new System.Windows.Media.SolidColorBrush(color);
+                brush.Freeze();
+                CustomColor = brush;
+            }
+            catch
+            {
+                CustomColor = null;
+            }
+        }
+
         /// <summary>
         /// Holds the underlying data (ProcessWindowInfo, PluginSlot, or List<ProcessWindowInfo>)
         /// </summary>

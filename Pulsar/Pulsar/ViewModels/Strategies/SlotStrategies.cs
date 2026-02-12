@@ -44,8 +44,13 @@ namespace Pulsar.ViewModels.Strategies
         public async Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context)
         {
             context.SetActionExecuted(true);
-            await _registry.ExecuteAsync(_pluginSlot.PluginId, _pluginSlot.Action, _pluginSlot.Args, _pulsarContext);
+            
+            // [Fix] Hide the menu IMMEDIATELY before executing the plugin.
+            // This prevents infinite loops if the plugin simulates input (e.g., Ctrl release)
+            // which would otherwise re-trigger the hotkey hook while the menu is still visible.
             context.IsVisible = false;
+
+            await _registry.ExecuteAsync(_pluginSlot.PluginId, _pluginSlot.Action, _pluginSlot.Args, _pulsarContext);
         }
     }
 
@@ -72,13 +77,15 @@ namespace Pulsar.ViewModels.Strategies
                 return Task.CompletedTask;
             }
 
+            // [Fix] Hide first to prevent focus stealing issues or visual glitches
+            context.IsVisible = false;
+
             WindowHelper.SetForegroundWindow(_window.Handle);
             if (WindowHelper.IsIconic(_window.Handle))
             {
                 WindowHelper.ShowWindow(_window.Handle, 9); // SW_RESTORE
             }
 
-            context.IsVisible = false;
             return Task.CompletedTask;
         }
     }

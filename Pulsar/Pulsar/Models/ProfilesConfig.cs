@@ -137,6 +137,14 @@ namespace Pulsar.Models
             set => SetProperty(ref _iconKey, value);
         }
 
+        private string _color = string.Empty;
+        [JsonPropertyName("color")]
+        public string Color
+        {
+            get => _color;
+            set => SetProperty(ref _color, value);
+        }
+
         // [UI Support] 徽章与颜色
         [JsonIgnore]
         public string TypeBadge
