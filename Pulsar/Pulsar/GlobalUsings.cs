@@ -23,4 +23,4 @@ global using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 // 覆盖 System.Windows.Forms 中的 GridItem (WinForms 有个同名类用于 PropertyGrid)
 global using GridItem = Pulsar.Models.GridItem;
 // 指向你的 Enum 定义
-global using GridItemType = Pulsar.Models.Enums.GridItemType;
+global using RadialMenuMode = Pulsar.Models.Enums.RadialMenuMode;

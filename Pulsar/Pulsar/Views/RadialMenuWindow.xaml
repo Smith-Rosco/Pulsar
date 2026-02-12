@@ -42,6 +42,7 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <controls:JellyOrb 
+                            RenderTransformOrigin="0.5,0.5"
                             IconKey="{Binding IconKey}"
                             OrbImage="{Binding IconImage}"
                             Label="{Binding Label}"
@@ -51,7 +52,15 @@
                             BadgeCount="{Binding BadgeCount}"
                             CustomFill="{Binding CustomFillBrush}"
                             CustomStroke="{Binding CustomStrokeBrush}"
-                            CustomForeground="{Binding CustomForegroundBrush}"/>
+                            CustomForeground="{Binding CustomForegroundBrush}"
+                            Opacity="{Binding CurrentOpacity}">
+                            <controls:JellyOrb.RenderTransform>
+                                <TransformGroup>
+                                    <ScaleTransform ScaleX="{Binding CurrentScale}" ScaleY="{Binding CurrentScale}"/>
+                                    <TranslateTransform X="{Binding OffsetX}" Y="{Binding OffsetY}"/>
+                                </TransformGroup>
+                            </controls:JellyOrb.RenderTransform>
+                        </controls:JellyOrb>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
@@ -100,19 +109,58 @@
                              </controls:JellyOrb.Style>
                         </controls:JellyOrb>
 
-                        <!-- [New] Center Preview Layers (Double Buffered for Cross-fade) -->
+                        <!-- [New] Center Preview Layers (Fade & Scale) -->
                         <Grid IsHitTestVisible="False">
-                            <Ellipse x:Name="PreviewEllipseA" Width="{Binding Size}" Height="{Binding Size}"
-                                     Stroke="#40FFFFFF" StrokeThickness="1" Opacity="0">
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <Setter Property="Opacity" Value="0"/>
+                                    <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+                                    <Setter Property="RenderTransform">
+                                        <Setter.Value>
+                                            <ScaleTransform ScaleX="0.8" ScaleY="0.8"/>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasPreview}" Value="True">
+                                            <DataTrigger.EnterActions>
+                                                <BeginStoryboard>
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2"/>
+                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.25">
+                                                            <DoubleAnimation.EasingFunction>
+                                                                <BackEase EasingMode="EaseOut" Amplitude="0.4"/>
+                                                            </DoubleAnimation.EasingFunction>
+                                                        </DoubleAnimation>
+                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.25">
+                                                            <DoubleAnimation.EasingFunction>
+                                                                <BackEase EasingMode="EaseOut" Amplitude="0.4"/>
+                                                            </DoubleAnimation.EasingFunction>
+                                                        </DoubleAnimation>
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.EnterActions>
+                                            <DataTrigger.ExitActions>
+                                                <BeginStoryboard>
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.15"/>
+                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="0.8" Duration="0:0:0.15"/>
+                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="0.8" Duration="0:0:0.15"/>
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.ExitActions>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Grid.Style>
+
+                            <Ellipse Width="{Binding Size}" Height="{Binding Size}">
                                 <Ellipse.Fill>
-                                    <ImageBrush Stretch="UniformToFill"/>
+                                    <ImageBrush ImageSource="{Binding CenterPreviewImage}" Stretch="UniformToFill"/>
                                 </Ellipse.Fill>
-                            </Ellipse>
-                            <Ellipse x:Name="PreviewEllipseB" Width="{Binding Size}" Height="{Binding Size}"
-                                     Stroke="#40FFFFFF" StrokeThickness="1" Opacity="0">
-                                <Ellipse.Fill>
-                                    <ImageBrush Stretch="UniformToFill"/>
-                                </Ellipse.Fill>
+                                <Ellipse.Stroke>
+                                    <SolidColorBrush Color="White" Opacity="0.2"/>
+                                </Ellipse.Stroke>
+                                <Ellipse.StrokeThickness>1</Ellipse.StrokeThickness>
                             </Ellipse>
                         </Grid>
 

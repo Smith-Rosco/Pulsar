@@ -3,6 +3,38 @@
   "WorkspaceRootPath": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|g:\\0_playground\\pulsar_project\\pulsar\\pulsar\\native\\dwmhelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|solutionrelative:pulsar\\native\\dwmhelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|g:\\0_playground\\pulsar_project\\pulsar\\pulsar\\models\\contextinfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|solutionrelative:pulsar\\models\\contextinfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|g:\\0_playground\\pulsar_project\\pulsar\\pulsar\\models\\apptheme.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|solutionrelative:pulsar\\models\\apptheme.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|g:\\0_playground\\pulsar_project\\pulsar\\pulsar\\core\\converters\\stringemptytovisibilityconverter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|solutionrelative:pulsar\\core\\converters\\stringemptytovisibilityconverter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|g:\\0_playground\\pulsar_project\\pulsar\\pulsar\\core\\converters\\scaleconverter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|solutionrelative:pulsar\\core\\converters\\scaleconverter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|g:\\0_playground\\pulsar_project\\pulsar\\pulsar\\features\\pki\\models\\secretpayload.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|solutionrelative:pulsar\\features\\pki\\models\\secretpayload.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|g:\\0_playground\\pulsar_project\\pulsar\\pulsar\\features\\pki\\services\\secretrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|solutionrelative:pulsar\\features\\pki\\services\\secretrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|g:\\0_playground\\pulsar_project\\pulsar\\pulsar\\features\\pki\\services\\credentialsmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|solutionrelative:pulsar\\features\\pki\\services\\credentialsmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|g:\\0_playground\\pulsar_project\\pulsar\\pulsar\\plugins\\vbarunner\\scriptengine.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{C11EB550-2523-48C5-A47E-DF0F1518E054}|Pulsar\\Pulsar.csproj|solutionrelative:pulsar\\plugins\\vbarunner\\scriptengine.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
@@ -19,6 +51,110 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "DwmHelper.cs",
+              "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Native\\DwmHelper.cs",
+              "RelativeDocumentMoniker": "Pulsar\\Native\\DwmHelper.cs",
+              "ToolTip": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Native\\DwmHelper.cs",
+              "RelativeToolTip": "Pulsar\\Native\\DwmHelper.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-12T12:19:27.278Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ContextInfo.cs",
+              "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Models\\ContextInfo.cs",
+              "RelativeDocumentMoniker": "Pulsar\\Models\\ContextInfo.cs",
+              "ToolTip": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Models\\ContextInfo.cs",
+              "RelativeToolTip": "Pulsar\\Models\\ContextInfo.cs",
+              "ViewState": "AgIAACAAAAAAAAAAAAA3wAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-12T12:19:22.716Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "AppTheme.cs",
+              "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Models\\AppTheme.cs",
+              "RelativeDocumentMoniker": "Pulsar\\Models\\AppTheme.cs",
+              "ToolTip": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Models\\AppTheme.cs",
+              "RelativeToolTip": "Pulsar\\Models\\AppTheme.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-12T12:19:19.655Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "StringEmptyToVisibilityConverter.cs",
+              "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Core\\Converters\\StringEmptyToVisibilityConverter.cs",
+              "RelativeDocumentMoniker": "Pulsar\\Core\\Converters\\StringEmptyToVisibilityConverter.cs",
+              "ToolTip": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Core\\Converters\\StringEmptyToVisibilityConverter.cs",
+              "RelativeToolTip": "Pulsar\\Core\\Converters\\StringEmptyToVisibilityConverter.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-12T12:19:17.677Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "ScaleConverter.cs",
+              "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Core\\Converters\\ScaleConverter.cs",
+              "RelativeDocumentMoniker": "Pulsar\\Core\\Converters\\ScaleConverter.cs",
+              "ToolTip": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Core\\Converters\\ScaleConverter.cs",
+              "RelativeToolTip": "Pulsar\\Core\\Converters\\ScaleConverter.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-12T12:19:16.072Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "SecretPayload.cs",
+              "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Features\\Pki\\Models\\SecretPayload.cs",
+              "RelativeDocumentMoniker": "Pulsar\\Features\\Pki\\Models\\SecretPayload.cs",
+              "ToolTip": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Features\\Pki\\Models\\SecretPayload.cs",
+              "RelativeToolTip": "Pulsar\\Features\\Pki\\Models\\SecretPayload.cs",
+              "ViewState": "AgIAAAoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-12T12:19:13.456Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "SecretRepository.cs",
+              "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Features\\Pki\\Services\\SecretRepository.cs",
+              "RelativeDocumentMoniker": "Pulsar\\Features\\Pki\\Services\\SecretRepository.cs",
+              "ToolTip": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Features\\Pki\\Services\\SecretRepository.cs",
+              "RelativeToolTip": "Pulsar\\Features\\Pki\\Services\\SecretRepository.cs",
+              "ViewState": "AgIAADQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-12T12:19:10.557Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "CredentialsManager.cs",
+              "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Features\\Pki\\Services\\CredentialsManager.cs",
+              "RelativeDocumentMoniker": "Pulsar\\Features\\Pki\\Services\\CredentialsManager.cs",
+              "ToolTip": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Features\\Pki\\Services\\CredentialsManager.cs",
+              "RelativeToolTip": "Pulsar\\Features\\Pki\\Services\\CredentialsManager.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-12T12:19:06.056Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
               "Title": "ScriptEngine.cs",
               "DocumentMoniker": "G:\\0_Playground\\Pulsar_Project\\Pulsar\\Pulsar\\Plugins\\VbaRunner\\ScriptEngine.cs",
               "RelativeDocumentMoniker": "Pulsar\\Plugins\\VbaRunner\\ScriptEngine.cs",

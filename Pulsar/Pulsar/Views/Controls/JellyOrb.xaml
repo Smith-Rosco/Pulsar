@@ -87,14 +87,28 @@
             </Ellipse.Style>
         </Ellipse>
 
-        <Ellipse x:Name="ActiveShape" Fill="{DynamicResource Theme.Orb.Active.Glow}">
-            <Ellipse.Effect>
-                <BlurEffect Radius="15"/>
-            </Ellipse.Effect>
+        <Ellipse x:Name="ActiveShape">
             <Ellipse.Style>
                 <Style TargetType="Ellipse">
                     <Setter Property="Opacity" Value="0"/>
+                    
+                    <!-- 默认绑定到 CustomFill -->
+                    <Setter Property="Fill" Value="{Binding CustomFill, ElementName=OrbRoot}"/>
+                    
+                    <!-- Default Glow Technique: Blur -->
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <BlurEffect Radius="20"/>
+                        </Setter.Value>
+                    </Setter>
+                    <Setter Property="Margin" Value="-8"/>
+
                     <Style.Triggers>
+                        <!-- 如果 CustomFill 为空，回退到主题色 -->
+                        <DataTrigger Binding="{Binding CustomFill, ElementName=OrbRoot}" Value="{x:Null}">
+                            <Setter Property="Fill" Value="{DynamicResource Theme.Orb.Active.Glow}"/>
+                        </DataTrigger>
+
                         <!-- Only show if IsActive is True AND ShowActiveGlow is True -->
                         <MultiDataTrigger>
                             <MultiDataTrigger.Conditions>
@@ -105,7 +119,9 @@
                                 <BeginStoryboard>
                                     <Storyboard>
                                         <DoubleAnimation Storyboard.TargetProperty="Opacity" 
-                                                         To="1.0" Duration="0:0:0.2"/>
+                                                         To="0.8" Duration="0:0:0.15"/>
+                                        <DoubleAnimation Storyboard.TargetProperty="Effect.Radius" 
+                                                         To="25" Duration="0:0:0.15"/>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </MultiDataTrigger.EnterActions>
@@ -113,7 +129,9 @@
                                 <BeginStoryboard>
                                     <Storyboard>
                                         <DoubleAnimation Storyboard.TargetProperty="Opacity" 
-                                                         To="0.0" Duration="0:0:0.4"/>
+                                                         To="0.0" Duration="0:0:0.3"/>
+                                        <DoubleAnimation Storyboard.TargetProperty="Effect.Radius" 
+                                                         To="10" Duration="0:0:0.3"/>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </MultiDataTrigger.ExitActions>
@@ -131,7 +149,7 @@
                     <Style.Triggers>
                          <DataTrigger Binding="{Binding IsContentVisible, ElementName=OrbRoot}" Value="False">
                              <Setter Property="Opacity" Value="0"/>
-                             <Setter Property="Visibility" Value="Collapsed"/> <!-- Collapsed to remove hit test? No, keep layout -->
+                             <Setter Property="Visibility" Value="Collapsed"/> 
                          </DataTrigger>
                     </Style.Triggers>
                 </Style>
@@ -217,8 +235,7 @@
                             <DataTrigger Binding="{Binding BadgeCount}" Value="1">
                                 <Setter Property="Visibility" Value="Collapsed"/>
                             </DataTrigger>
-                            <!-- Use a converter or multiple triggers for > 1 check. 
-                                 Simpler: VM ensures BadgeCount is 0 if <= 1. -->
+                            <!-- VM ensures BadgeCount is 0 if <= 1. -->
                             <DataTrigger Binding="{Binding HasBadge}" Value="True">
                                 <Setter Property="Visibility" Value="Visible"/>
                             </DataTrigger>

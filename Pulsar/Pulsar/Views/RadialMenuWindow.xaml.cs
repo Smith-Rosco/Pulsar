@@ -46,15 +46,6 @@ namespace Pulsar.Views
 
             // 1. 监听 ViewModel 的属性变化 (Show/Hide 信号)
             _viewModel.PropertyChanged += OnViewModelPropertyChanged;
-            
-            // [New] Listen for CenterPreviewImage changes for smooth transition
-            _viewModel.PropertyChanged += (s, e) =>
-            {
-                if (e.PropertyName == nameof(RadialMenuViewModel.CenterPreviewImage))
-                {
-                    UpdatePreviewTransition(_viewModel.CenterPreviewImage);
-                }
-            };
 
             // 2. 窗口加载时初始化主题 (Loads user config)
             InitializeTheme();
@@ -119,37 +110,6 @@ namespace Pulsar.Views
         }
 
 
-        private bool _usePreviewA = true;
-
-        private void UpdatePreviewTransition(ImageSource? newImage)
-        {
-             var active = _usePreviewA ? PreviewEllipseA : PreviewEllipseB;
-             var inactive = _usePreviewA ? PreviewEllipseB : PreviewEllipseA;
-             
-             if (newImage == null)
-             {
-                 var fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(200));
-                 active.BeginAnimation(UIElement.OpacityProperty, fadeOut);
-                 return;
-             }
-             
-             if (inactive.Fill is ImageBrush brush)
-             {
-                 brush.ImageSource = newImage;
-             }
-             else
-             {
-                 inactive.Fill = new ImageBrush(newImage) { Stretch = Stretch.UniformToFill };
-             }
-             
-             var fadeIn = new DoubleAnimation(1, TimeSpan.FromMilliseconds(250));
-             var fadeOutActive = new DoubleAnimation(0, TimeSpan.FromMilliseconds(250));
-             
-             inactive.BeginAnimation(UIElement.OpacityProperty, fadeIn);
-             active.BeginAnimation(UIElement.OpacityProperty, fadeOutActive);
-             
-             _usePreviewA = !_usePreviewA;
-        }
 
         private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {

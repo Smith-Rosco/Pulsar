@@ -33,7 +33,7 @@ namespace Pulsar.ViewModels
 
         private ProfilesConfig? _config;
         private List<PluginSlot> _currentSlots = new();
-        private GridItemType _currentType;
+        private RadialMenuMode _currentMode;
         private PulsarContext? _lastContext;
         private MenuState _menuState = MenuState.Root;
         private List<SlotViewModel> _rootSlotBackup = new(); // Backup of root slots for restoration
@@ -55,7 +55,23 @@ namespace Pulsar.ViewModels
         public bool IsVisible
         {
             get => _isVisible;
-            set => SetProperty(ref _isVisible, value);
+            set 
+            {
+                if (SetProperty(ref _isVisible, value))
+                {
+                    if (!_isVisible)
+                    {
+                        _animTimer?.Stop();
+                        // Reset physics just in case
+                        foreach(var slot in Slots) slot.ResetAnimation();
+                    }
+                    else
+                    {
+                        // Ensure timer runs on Show
+                        if (_animTimer != null && !_animTimer.IsEnabled) _animTimer.Start();
+                    }
+                }
+            }
         }
 
         private string _centerText = "Pulsar";
@@ -95,8 +111,16 @@ namespace Pulsar.ViewModels
         public System.Windows.Media.ImageSource? CenterPreviewImage
         {
             get => _centerPreviewImage;
-            set => SetProperty(ref _centerPreviewImage, value);
+            set
+            {
+                if (SetProperty(ref _centerPreviewImage, value))
+                {
+                    OnPropertyChanged(nameof(HasPreview));
+                }
+            }
         }
+
+        public bool HasPreview => _centerPreviewImage != null;
 
         // Animation Timer
         private System.Windows.Threading.DispatcherTimer? _animTimer;
@@ -148,8 +172,8 @@ namespace Pulsar.ViewModels
             _animTimer.Tick += (s, e) => UpdateLayoutAnimation();
 
             // [Refactor] Use HotkeyService
-            hotkeyService.RegisterAction("ShowGrid", () => Show(GridItemType.Action));
-            hotkeyService.RegisterAction("ShowSwitcher", () => Show(GridItemType.Launcher));
+            hotkeyService.RegisterAction("ShowGrid", () => Show(RadialMenuMode.Action));
+            hotkeyService.RegisterAction("ShowSwitcher", () => Show(RadialMenuMode.Task));
             hotkeyService.OnGlobalKeyUp += HandleKeyUp;
 
             _configService.ConfigUpdated += OnConfigUpdated;
@@ -176,6 +200,7 @@ namespace Pulsar.ViewModels
 
         private void UpdateLayoutAnimation()
         {
+            // [Layout Animation]
             bool radiusDone = Math.Abs(_currentRadius - _animTargetRadius) < 1.0;
             bool centerDone = Math.Abs(_currentCenterSize - _animTargetCenterSize) < 1.0;
 
@@ -183,7 +208,7 @@ namespace Pulsar.ViewModels
             {
                 _currentRadius = _animTargetRadius;
                 _currentCenterSize = _animTargetCenterSize;
-                _animTimer?.Stop();
+                // [Fix] Do NOT stop timer here anymore. It's now the Main Loop for physics.
             }
             else
             {
@@ -192,21 +217,58 @@ namespace Pulsar.ViewModels
                 _currentCenterSize += (_animTargetCenterSize - _currentCenterSize) * 0.2;
             }
 
-            // 1. Update Center Slot
+            // 1. Update Center Slot (Anchored - No Magnetism)
             CenterSlot.Size = _currentCenterSize;
             CenterSlot.X = CenterX - _currentCenterSize / 2;
             CenterSlot.Y = CenterY - _currentCenterSize / 2;
+            CenterSlot.TargetOffsetX = 0; // [Fix] Anchor center - no magnetic drift
+            CenterSlot.TargetOffsetY = 0;
+            CenterSlot.UpdatePhysics(); // Keep physics loop running for consistency
             
             // 2. Update Title Position (Dynamic based on radius to avoid overlap)
             // CenterY (250) + Radius + HalfItem (25) + Padding (20)
             TitleTopOffset = CenterY + _currentRadius + 45;
 
+            // [New] Entrance & Physics Loop
+            double magnetRadius = 150.0;
+            double elapsedMs = (DateTime.Now - _showStartTime).TotalMilliseconds;
+
             // 3. Update Satellite Slots
             for (int i = 0; i < Slots.Count; i++)
             {
+                var slot = Slots[i];
+                
+                // [Layout] Update Base Position
                 var pos = RadialLayoutHelper.GetSlotPosition(i + 1, 8, _currentRadius, CenterX, CenterY, ItemSize);
-                Slots[i].X = pos.X;
-                Slots[i].Y = pos.Y;
+                slot.X = pos.X;
+                slot.Y = pos.Y;
+
+                // [Physics] Magnetism
+                double slotCenterX = slot.X + slot.Size / 2;
+                double slotCenterY = slot.Y + slot.Size / 2;
+                
+                double dx = _lastMouseX - slotCenterX;
+                double dy = _lastMouseY - slotCenterY;
+                double dist = Math.Sqrt(dx * dx + dy * dy);
+                
+                if (dist < magnetRadius)
+                {
+                    // Calculate attraction strength (0 to 1)
+                    double strength = (1.0 - (dist / magnetRadius));
+                    strength = Math.Pow(strength, 2); // Non-linear falloff
+                    
+                    // Pull towards mouse
+                    slot.TargetOffsetX = dx * strength * 0.3; 
+                    slot.TargetOffsetY = dy * strength * 0.3;
+                }
+                else
+                {
+                    slot.TargetOffsetX = 0;
+                    slot.TargetOffsetY = 0;
+                }
+                
+                // [Physics] Update Spring Dynamics
+                slot.UpdatePhysics();
             }
         }
 
@@ -244,7 +306,7 @@ namespace Pulsar.ViewModels
         // [New] Session-based Preview Cache
         private Dictionary<IntPtr, ImageSource> _windowPreviewCache = new();
 
-        private async void Show(GridItemType type)
+        private async void Show(RadialMenuMode mode)
         {
             if (IsVisible || _isLoading) return;
             _isLoading = true;
@@ -271,7 +333,7 @@ namespace Pulsar.ViewModels
 
                 ActionExecuted = false;
                 ResetSelection();
-                _currentType = type;
+                _currentMode = mode;
                 
                 // [New] Reset Layout to Normal
                 _currentRadius = RadiusNormal;
@@ -291,7 +353,7 @@ namespace Pulsar.ViewModels
 
                 if (_config == null) return;
 
-                if (type == GridItemType.Launcher)
+                if (mode == RadialMenuMode.Task)
                 {
                     // Launcher Mode (Switcher) - Load running processes
                     await LoadRunningProcessesAsync();
@@ -362,7 +424,7 @@ namespace Pulsar.ViewModels
 
         public void HandleMouseWheel(int delta)
         {
-            if (_menuState != MenuState.Root || _currentType != GridItemType.Launcher) return;
+            if (_menuState != MenuState.Root || _currentMode != RadialMenuMode.Task) return;
             if (_allProcessGroups.Count <= 8) return; // No need to page
 
             int direction = delta > 0 ? -1 : 1; // Wheel Up -> Prev Page, Down -> Next Page
@@ -613,7 +675,7 @@ namespace Pulsar.ViewModels
         // [New] Modified HandleMouseWheel to use Mixed Page logic
         public void HandleMouseWheelMixed(int delta)
         {
-            if (_menuState != MenuState.Root || _currentType != GridItemType.Launcher) return;
+            if (_menuState != MenuState.Root || _currentMode != RadialMenuMode.Task) return;
             
             // Calculate total pages
             int overflowPages = (int)Math.Ceiling((double)_overflowGroups.Count / 8.0);
@@ -678,16 +740,35 @@ namespace Pulsar.ViewModels
             }
         }
 
+        // [New] Mouse Tracking for Physics
+        private double _lastMouseX;
+        private double _lastMouseY;
+
         private void ResetSelection()
         {
             _activeSlotIndex = -1;
-            if (CenterSlot != null) CenterSlot.IsActive = false;
-            foreach (var slot in Slots) slot.IsActive = false;
+            
+            // [Fix] Reset Center Slot physics to prevent jitter
+            if (CenterSlot != null) 
+            {
+                CenterSlot.IsActive = false;
+                CenterSlot.ResetAnimation(); // Ensure center is stable
+            }
+            
+            foreach (var slot in Slots) 
+            {
+                slot.IsActive = false;
+                slot.ResetAnimation();
+            }
         }
 
         public void HandleMouseMove(double mouseX, double mouseY)
         {
             if (!IsVisible) return;
+            
+            // [New] Track Mouse Position for Physics Loop
+            _lastMouseX = mouseX;
+            _lastMouseY = mouseY;
 
             // [Fix] Dynamic DeadZone based on current radius
             // If expanded, center is larger.

@@ -164,6 +164,13 @@ namespace Pulsar.ViewModels
         /// </summary>
         public SlotType Type { get; set; } = SlotType.None;
 
+        // [New] Animation Properties (Entrance & Physics)
+        [ObservableProperty]
+        private double _currentScale = 0.0; // Start invisible
+        
+        [ObservableProperty]
+        private double _currentOpacity = 0.0;
+
         // [New] Magnetic Animation Offset
         [ObservableProperty]
         private double _offsetX;
@@ -171,9 +178,53 @@ namespace Pulsar.ViewModels
         [ObservableProperty]
         private double _offsetY;
 
+        // [New] Physics Logic
+        private const double Stiffness = 0.2;  // Spring constant (How strong is the spring?)
+        private const double Damping = 0.75;   // Friction (How fast does it stop?)
+        
+        // Target offset driven by Mouse Magnetism
+        public double TargetOffsetX { get; set; }
+        public double TargetOffsetY { get; set; }
+
         // [New] Physics Velocity for Spring Animation
         public double VelocityX { get; set; }
         public double VelocityY { get; set; }
+
+        public void ResetAnimation()
+        {
+            CurrentScale = 1.0;   // [Fix] Start fully visible for instant response
+            CurrentOpacity = 1.0; // [Fix] Start fully visible
+            OffsetX = 0;
+            OffsetY = 0;
+            VelocityX = 0;
+            VelocityY = 0;
+            TargetOffsetX = 0;
+            TargetOffsetY = 0;
+        }
+
+        public void UpdatePhysics()
+        {
+            // 1. Spring Force (Hooke's Law: F = -k * x)
+            // Calculate force pulling towards TargetOffset
+            double forceX = (TargetOffsetX - OffsetX) * Stiffness;
+            double forceY = (TargetOffsetY - OffsetY) * Stiffness;
+
+            // 2. Apply Force to Velocity
+            VelocityX += forceX;
+            VelocityY += forceY;
+
+            // 3. Apply Damping (Friction)
+            VelocityX *= Damping;
+            VelocityY *= Damping;
+
+            // 4. Update Position
+            OffsetX += VelocityX;
+            OffsetY += VelocityY;
+
+            // Snap to zero if very close to stop jitter
+            if (Math.Abs(VelocityX) < 0.01 && Math.Abs(TargetOffsetX - OffsetX) < 0.01) OffsetX = TargetOffsetX;
+            if (Math.Abs(VelocityY) < 0.01 && Math.Abs(TargetOffsetY - OffsetY) < 0.01) OffsetY = TargetOffsetY;
+        }
     }
 
     public enum SlotType
