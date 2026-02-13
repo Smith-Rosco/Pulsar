@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Pulsar.Core.Converters; // Added
 
 namespace Pulsar.Models
 {
@@ -69,28 +70,20 @@ namespace Pulsar.Models
     public class ProcessProfile
     {
         public string? Icon { get; set; }
-        public Dictionary<string, PluginSlot>? CommandMode { get; set; }
-        public Dictionary<string, PluginSlot>? SwitchMode { get; set; }
+        public string? Alias { get; set; }
+
+        [JsonConverter(typeof(LegacySlotConverter))]
+        public List<PluginSlot> CommandMode { get; set; } = new();
+
+        [JsonConverter(typeof(LegacySlotConverter))]
+        public List<PluginSlot> SwitchMode { get; set; } = new();
 
         /// <summary>
-        /// 辅助方法：从字典中提取槽位并设置 Slot 属性
+        /// 辅助方法：返回槽位列表
         /// </summary>
         public List<PluginSlot> GetSlots(bool isCommandMode)
         {
-            var dict = isCommandMode ? CommandMode : SwitchMode;
-            if (dict == null) return new List<PluginSlot>();
-
-            var slots = new List<PluginSlot>();
-            foreach (var kvp in dict)
-            {
-                // 从键名 "Slot_1" 中提取槽位编号
-                if (kvp.Key.StartsWith("Slot_") && int.TryParse(kvp.Key.Substring(5), out int slotIndex))
-                {
-                    kvp.Value.Slot = slotIndex;
-                    slots.Add(kvp.Value);
-                }
-            }
-            return slots;
+            return isCommandMode ? CommandMode : SwitchMode;
         }
     }
 
@@ -174,8 +167,8 @@ namespace Pulsar.Models
             }
         }
 
-        // [Runtime] 槽位索引（仅在运行时使用，由 key 如 "Slot_1" 解析得到）
-        [JsonIgnore]
+        // [Runtime] 槽位索引
+        [JsonPropertyName("slot")]
         public int Slot { get; set; }
 
         // [Indexer] 安全的索引器绑定，避免 KeyNotFoundException

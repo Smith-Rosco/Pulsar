@@ -32,7 +32,7 @@ namespace Pulsar.ViewModels
         private readonly System.IServiceProvider _serviceProvider;
 
         private ProfilesConfig? _config;
-        private List<PluginSlot> _currentSlots = new();
+        private IPageProvider? _pageProvider; // [New] Strategy for paging
         private RadialMenuMode _currentMode;
         private PulsarContext? _lastContext;
         private MenuState _menuState = MenuState.Root;
@@ -347,8 +347,7 @@ namespace Pulsar.ViewModels
                 
                 string activeProcess = _lastContext.TargetProcessName; // e.g., "EXCEL"
 
-                // 2. 确定数据源
-                _currentSlots.Clear();
+                // 2. Determine Data Source & Strategy
                 _menuState = MenuState.Root;
 
                 if (_config == null) return;
@@ -356,47 +355,52 @@ namespace Pulsar.ViewModels
                 if (mode == RadialMenuMode.Task)
                 {
                     // Launcher Mode (Switcher) - Load running processes
-                    await LoadRunningProcessesAsync();
+                    _pageProvider = new ProcessPageProvider(_windowService, _config, _serviceProvider);
                 }
                 else // Action Mode
                 {
+                    var slots = new List<PluginSlot>();
                     bool foundProfile = false;
 
-                    // 尝试查找特定进程的 Profile
+                    // Try specific profile
                     if (!string.IsNullOrEmpty(activeProcess) && _config.Profiles.TryGetValue(activeProcess, out var profile))
                     {
                         var profileSlots = profile.GetSlots(true); // true = CommandMode
                         if (profileSlots.Count > 0)
                         {
-                            _currentSlots.AddRange(profileSlots);
+                            slots.AddRange(profileSlots);
                             foundProfile = true;
                         }
                     }
 
-                    // 如果没找到或特定 Profile 为空，回退到 Global
+                    // Fallback to Global
                     if (!foundProfile)
                     {
                         if (_config.Profiles.TryGetValue("Global", out var globalProfile))
                         {
-                            _currentSlots.AddRange(globalProfile.GetSlots(true));
+                            slots.AddRange(globalProfile.GetSlots(true));
                         }
 
-                        // [Smart Profile Creator]
-                        // Remove any existing Global item in Slot 1 to prioritize the Creator
-                        _currentSlots.RemoveAll(s => s.Slot == 1);
-
-                        _currentSlots.Add(new PluginSlot 
+                        // [Smart Profile Creator] - Insert at start
+                        var creator = new PluginSlot 
                         { 
                             Slot = 1, 
                             Label = $"Add {activeProcess}", 
                             IconKey = "\uE710", // Add Icon
                             PluginId = "internal:create_profile" 
-                        });
+                        };
+                        
+                        // Check if we should replace slot 1 or just insert
+                        // Current logic: prioritize Creator.
+                        // Ideally, Creator is always available if no specific profile.
+                        slots.Insert(0, creator);
                     }
 
-                    CenterText = foundProfile ? activeProcess : "Global";
-                    BindSlots(_currentSlots);
+                    _pageProvider = new CommandPageProvider(slots, _pluginRegistry, _lastContext, _trayService, _serviceProvider);
                 }
+
+                await _pageProvider.LoadAsync();
+                _pageProvider.RefreshVisuals(Slots, CenterSlot);
 
                 IsVisible = true;
                 
@@ -418,326 +422,15 @@ namespace Pulsar.ViewModels
             }
         }
         
-        // [New] Paging
-        private int _currentPage = 0;
-        private List<List<ProcessWindowInfo>> _allProcessGroups = new();
-
         public void HandleMouseWheel(int delta)
         {
-            if (_menuState != MenuState.Root || _currentMode != RadialMenuMode.Task) return;
-            if (_allProcessGroups.Count <= 8) return; // No need to page
+            if (_menuState != MenuState.Root) return;
+            if (_pageProvider == null) return;
 
-            int direction = delta > 0 ? -1 : 1; // Wheel Up -> Prev Page, Down -> Next Page
-            int totalPages = (int)Math.Ceiling((double)_allProcessGroups.Count / 8.0);
-            
-            _currentPage += direction;
-            if (_currentPage < 0) _currentPage = totalPages - 1;
-            if (_currentPage >= totalPages) _currentPage = 0;
+            if (delta > 0) _pageProvider.PrevPage();
+            else _pageProvider.NextPage();
 
-            RefreshPage();
-        }
-
-        private void RefreshPage()
-        {
-             // Determine which groups to show based on _currentPage
-             // Page 0: Pinned + First batch of others
-             // Page 1+: Remaining others
-             
-             // Wait, logic is slightly complex. Let's simplify:
-             // We have _allProcessGroups (ordered list).
-             // We just take Skip(page * 8).Take(8).
-             
-             // Re-Binding
-             ClearVisuals();
-             CenterText = $"Page {_currentPage + 1}";
-             CenterSlot.Label = "Cancel";
-             
-             var pageGroups = _allProcessGroups.Skip(_currentPage * 8).Take(8).ToList();
-             
-             int index = 1;
-             foreach (var group in pageGroups)
-             {
-                 var slot = Slots.FirstOrDefault(s => s.SlotIndex == index);
-                 if (slot != null)
-                 {
-                     var firstWindow = group.First();
-                     slot.Label = firstWindow.ProcessName;
-                     slot.IconImage = firstWindow.AppIcon;
-                     slot.Type = SlotType.Process;
-                     slot.DataContext = group.ToList();
-                 }
-                 index++;
-             }
-        }
-        
-        private async Task LoadRunningProcessesAsync()
-        {
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-            _currentPage = 0;
-            var windows = await _windowService.GetActiveWindowsAsync();
-            
-            sw.Stop();
-            System.Diagnostics.Debug.WriteLine($"[LoadRunningProcessesAsync] GetActiveWindowsAsync took {sw.ElapsedMilliseconds}ms for {windows.Count} windows");
-
-            // 1. Group by Process
-            var groups = windows
-                .GroupBy(w => w.ProcessName)
-                .ToList();
-                
-            // 2. Sort by Pinned (Fixed Slots) vs Others
-            // Load "Global" profile to check for pinned slots
-            var pinnedMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase); // ProcessName -> SlotIndex (1-8)
-            if (_config != null && _config.Profiles.TryGetValue("Global", out var globalProfile))
-            {
-                // Fix: Load SwitchMode slots (false) instead of CommandMode slots (true) for Launcher/Switcher
-                var slots = globalProfile.GetSlots(false);
-                foreach(var item in slots)
-                {
-                     // If it's a WinSwitcher plugin action, the process name might be in Args["app"]
-                     if (item.PluginId == "com.pulsar.winswitcher" && item.Args.TryGetValue("app", out var appName))
-                     {
-                         pinnedMap[appName] = item.Slot;
-                     }
-                     // Fallback to label if no specific arg found
-                     else if (!string.IsNullOrEmpty(item.Label))
-                     {
-                        pinnedMap[item.Label] = item.Slot;
-                     }
-                }
-            }
-            
-            // Separate Pinned and Unpinned
-            var pinnedGroups = new List<IGrouping<string, ProcessWindowInfo>>();
-            var otherGroups = new List<IGrouping<string, ProcessWindowInfo>>();
-            
-            foreach(var g in groups)
-            {
-                // Is this process pinned?
-                if (pinnedMap.ContainsKey(g.Key))
-                {
-                    pinnedGroups.Add(g);
-                }
-                else
-                {
-                    otherGroups.Add(g);
-                }
-            }
-            
-            // 3. Construct the Master List for Paging
-            // The requirement says: "First page slots determined by settings... remaining fill others"
-            // We need a list of 8 slots for Page 0, then Page 1, etc.
-            
-            var page0 = new List<ProcessWindowInfo>[8];
-            Array.Clear(_page0Config, 0, 8); // Clear old config
-
-            // Fill Pinned
-            foreach(var pg in pinnedGroups)
-            {
-                // Find slot index
-                int slotIdx = pinnedMap[pg.Key]; // 1-8
-                if (slotIdx >= 1 && slotIdx <= 8)
-                {
-                    page0[slotIdx - 1] = pg.ToList();
-                    
-                    // [New] Find the PluginSlot config that mapped this
-                    if (_config != null && _config.Profiles.TryGetValue("Global", out var pinnedProfile))
-                    {
-                         var slots = pinnedProfile.GetSlots(false); // SwitchMode
-                         var configItem = slots.FirstOrDefault(s => s.Slot == slotIdx);
-                         _page0Config[slotIdx - 1] = configItem;
-                    }
-                }
-            }
-            
-            // Fill Empty Spots in Page 0 with Others
-            int otherIdx = 0;
-            for(int i=0; i<8; i++)
-            {
-                if (page0[i] == null && otherIdx < otherGroups.Count)
-                {
-                    page0[i] = otherGroups[otherIdx].ToList();
-                    otherIdx++;
-                }
-            }
-            
-            // Remaining others form subsequent pages
-            var remainingOthers = new List<List<ProcessWindowInfo>>();
-            for(int i=otherIdx; i<otherGroups.Count; i++)
-            {
-                remainingOthers.Add(otherGroups[i].ToList());
-            }
-            
-            // Refined Strategy:
-            // Let's stick to: Page 0 is SPECIAL. Page 1+ are FLOW.
-            
-            // Store Page 0 specifically
-            _page0Slots = page0;
-            _overflowGroups = remainingOthers;
-            
-            RefreshMixedPage();
-        }
-
-        private List<ProcessWindowInfo>[] _page0Slots = new List<ProcessWindowInfo>[8];
-        private PluginSlot?[] _page0Config = new PluginSlot?[8]; // [New] Store config for Page 0 slots
-        private List<List<ProcessWindowInfo>> _overflowGroups = new List<List<ProcessWindowInfo>>();
-        
-        private void RefreshMixedPage()
-        {
-             ClearVisuals();
-             
-             // [UX] Center Text defaults to Page Info or App Name
-             // But UpdateDynamicVisuals will override this on hover.
-             _centerText = _currentPage == 0 ? "Switch" : $"Page {_currentPage + 1}";
-             CenterText = _centerText;
-             
-             // [Fix 2] Remove "Cancel" text for Root Menu
-             CenterSlot.Label = _centerText; 
-             
-             if (_currentPage == 0)
-             {
-                 for(int i=0; i<8; i++)
-                 {
-                     var group = _page0Slots[i];
-                     if (group != null)
-                     {
-                         var slot = Slots[i]; // SlotIndex i+1 maps to Slots[i]
-                         var first = group.First();
-                         
-                         // [Fix] Priority: Configured Icon > Process Icon
-                         var config = _page0Config[i];
-                         if (config != null && !string.IsNullOrEmpty(config.IconKey))
-                         {
-                             slot.LoadIconData(config.IconKey);
-                             // If LoadIconData sets IconImage to null internally (e.g. font icon), 
-                             // we need to ensure AppIcon doesn't override it if we want the font icon.
-                             // SlotViewModel logic usually handles this.
-                         }
-                         else
-                         {
-                             slot.IconImage = first.AppIcon;
-                         }
-
-                         string baseLabel = !string.IsNullOrEmpty(config?.Label) ? config.Label : first.ProcessName;
-                         // [Fix 4] Add identifier for multi-window slots
-                         if (group.Count > 1)
-                         {
-                             slot.Label = $"{baseLabel} ({group.Count})";
-                             slot.BadgeCount = group.Count; // [New] Set Badge
-                         }
-                         else
-                         {
-                             slot.Label = baseLabel;
-                             slot.BadgeCount = 0;
-                         }
-
-                         slot.Type = SlotType.Process;
-                         slot.DataContext = group;
-                         // [New] Set Strategy
-                         slot.ActionStrategy = new ProcessGroupStrategy(group);
-                     }
-                 }
-             }
-             else
-             {
-                 // Page 1 starts from _overflowGroups index 0
-                 // Page 2 starts from _overflowGroups index 8...
-                 int offset = (_currentPage - 1) * 8;
-                 var pageItems = _overflowGroups.Skip(offset).Take(8).ToList();
-                 
-                 for(int i=0; i<pageItems.Count; i++)
-                 {
-                     var group = pageItems[i];
-                     var slot = Slots[i];
-                     var first = group.First();
-                     
-                     string baseLabel = first.ProcessName;
-                     // [Fix 4] Add identifier for multi-window slots
-                     if (group.Count > 1)
-                     {
-                         slot.Label = $"{baseLabel} ({group.Count})";
-                         slot.BadgeCount = group.Count; // [New] Set Badge
-                     }
-                     else
-                     {
-                         slot.Label = baseLabel;
-                         slot.BadgeCount = 0;
-                     }
-                     
-                     slot.IconImage = first.AppIcon;
-                     slot.Type = SlotType.Process;
-                     slot.DataContext = group;
-                     // [New] Set Strategy
-                     slot.ActionStrategy = new ProcessGroupStrategy(group);
-                 }
-             }
-        }
-
-        // [New] Modified HandleMouseWheel to use Mixed Page logic
-        public void HandleMouseWheelMixed(int delta)
-        {
-            if (_menuState != MenuState.Root || _currentMode != RadialMenuMode.Task) return;
-            
-            // Calculate total pages
-            int overflowPages = (int)Math.Ceiling((double)_overflowGroups.Count / 8.0);
-            int totalPages = 1 + overflowPages;
-            
-            if (totalPages <= 1) return;
-
-            int direction = delta > 0 ? -1 : 1; 
-            _currentPage += direction;
-            
-            if (_currentPage < 0) _currentPage = totalPages - 1;
-            if (_currentPage >= totalPages) _currentPage = 0;
-
-            RefreshMixedPage();
-        }
-        
-        private void BindSlots(List<PluginSlot> pluginSlots)
-        {
-            foreach (var slotViewModel in Slots)
-            {
-                var item = pluginSlots.FirstOrDefault(x => x.Slot == slotViewModel.SlotIndex);
-
-                slotViewModel.IsRecommended = false; // Reset
-                slotViewModel.IconImage = null;
-                slotViewModel.DataContext = null;
-                slotViewModel.BadgeCount = 0; // [Fix] Reset Badge
-
-                if (item != null)
-                {
-                    slotViewModel.Label = item.Label;
-                    slotViewModel.LoadIconData(item.IconKey);
-                    slotViewModel.SetColor(item.Color); // [New] Set Custom Color
-                    slotViewModel.Type = SlotType.Action;
-                    slotViewModel.DataContext = item;
-                    // [New] Set Strategy
-                    if (item.PluginId == "internal:create_profile" && _lastContext != null)
-                    {
-                        // [Fix] Pass TargetExePath to Strategy
-                        slotViewModel.ActionStrategy = new CreateProfileStrategy(
-                            _lastContext.TargetProcessName, 
-                            _lastContext.TargetExePath, 
-                            _configService, 
-                            _serviceProvider);
-                    }
-                    else if (_lastContext != null)
-                    {
-                        slotViewModel.ActionStrategy = new PluginActionStrategy(item, _pluginRegistry, _lastContext, _trayService);
-                    }
-                    else
-                    {
-                        slotViewModel.ActionStrategy = new NoOpStrategy();
-                    }
-                }
-                else
-                {
-                    slotViewModel.Label = "";
-                    slotViewModel.LoadIconData(string.Empty);
-                    slotViewModel.Type = SlotType.None;
-                    // [New] Set Strategy
-                    slotViewModel.ActionStrategy = new NoOpStrategy();
-                }
-            }
+            _pageProvider.RefreshVisuals(Slots, CenterSlot);
         }
 
         // [New] Mouse Tracking for Physics
@@ -1215,7 +908,14 @@ namespace Pulsar.ViewModels
              // Clear Preview
              CenterPreviewImage = null;
              
-             _ = LoadRunningProcessesAsync();
+             if (_pageProvider != null)
+             {
+                 _ = _pageProvider.LoadAsync().ContinueWith(t => 
+                 {
+                     System.Windows.Application.Current.Dispatcher.Invoke(() => 
+                        _pageProvider.RefreshVisuals(Slots, CenterSlot));
+                 });
+             }
         }
     }
 }

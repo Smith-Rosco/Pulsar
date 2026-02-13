@@ -15,6 +15,7 @@ namespace Pulsar.Views.Dialogs
     {
         private readonly IWindowService _windowService;
         public string ResultName { get; private set; } = string.Empty;
+        public string ResultAlias { get; private set; } = string.Empty; // [New]
         public string ResultIcon { get; private set; } = string.Empty;
 
         private readonly HashSet<string> _existingProfiles;
@@ -142,6 +143,7 @@ namespace Pulsar.Views.Dialogs
                     processed = processed.Substring(0, processed.Length - 4);
                 
                 ResultName = processed;
+                ResultAlias = AliasBox.Text?.Trim() ?? string.Empty; // [New]
                 DialogResult = true;
             }
         }

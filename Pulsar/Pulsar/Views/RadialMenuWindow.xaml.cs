@@ -70,7 +70,7 @@ namespace Pulsar.Views
             this.MouseLeftButtonUp += (s, e) => _viewModel.HandleLeftClick();
             
             // 5. [New] Handle Mouse Wheel for Paging
-            this.PreviewMouseWheel += (s, e) => _viewModel.HandleMouseWheelMixed(e.Delta);
+            this.PreviewMouseWheel += (s, e) => _viewModel.HandleMouseWheel(e.Delta);
 
             // ====================================================
             // 👻 [驻留模式初始化] (Resident Mode Init)

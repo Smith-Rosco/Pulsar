@@ -14,11 +14,18 @@
                      style contamination between the Radial Menu (Transparent) and Settings (Mica).
                 -->
                 <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ScrollViewerStyles.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/TooltipStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
             <converters:ScaleConverter x:Key="ScaleConverter"/>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             
+            <!-- Universal Icon Font Stack - Resolves "Squares" Issue -->
+            <!-- Priority: Pulsar Icons > Emoji > Symbols > Text Fallback (CJK/Latin) -->
+            <FontFamily x:Key="PulsarIconFontFamily">
+                Segoe Fluent Icons, Segoe MDL2 Assets, Segoe UI Emoji, Segoe UI Symbol, Microsoft YaHei UI, Segoe UI
+            </FontFamily>
+
             <!-- IconButtonStyle preserved as it's used in data templates that we might migrate or reference -->
             <Style x:Key="IconButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
                 <Setter Property="Background" Value="Transparent"/>

@@ -91,18 +91,26 @@ namespace Pulsar.Services
             // 切换到 WPF UI 线程
             System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
-                // [Refactor] Use Singleton instance directly
-                // Since SettingsWindow is now a Singleton, GetRequiredService always returns the same instance.
-                // The window handles its own lifecycle (Hide instead of Close), so it's always valid.
-                var window = _serviceProvider.GetRequiredService<SettingsWindow>();
+                // [Fix] Check for existing instance (Singleton behavior for Transient window)
+                var window = System.Windows.Application.Current.Windows.OfType<SettingsWindow>().FirstOrDefault();
                 
-                window.Show();
-                window.Activate();
-
-                if (window.WindowState == System.Windows.WindowState.Minimized)
-                {
-                    window.WindowState = System.Windows.WindowState.Normal;
-                }
+                    if (window == null)
+                    {
+                        window = _serviceProvider.GetRequiredService<SettingsWindow>();
+                        window.Show();
+                    }
+                    else
+                    {
+                        // [Fix] Ensure window is visible even if it was hidden (closing the window usually hides it)
+                        window.Show();
+                        
+                        if (window.WindowState == System.Windows.WindowState.Minimized)
+                        {
+                            window.WindowState = System.Windows.WindowState.Normal;
+                        }
+                        window.Activate();
+                        window.Focus();
+                    }
             });
         }
 

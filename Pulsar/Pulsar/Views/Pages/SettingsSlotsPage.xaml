@@ -18,6 +18,7 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVis"/>
         <converters:IsImagePathConverter x:Key="IsImagePath"/>
+        <converters:StringPathToImageSourceConverter x:Key="PathToImage"/>
         <converters:HexToBrushConverter x:Key="HexToBrush"/>
 
         <!-- Templates for different Plugin Types -->
@@ -197,138 +198,157 @@
         </Grid.RowDefinitions>
 
         <!-- Header Section -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,16">
-            <TextBlock Text="Menu Layout" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,8"/>
-            <TextBlock Text="Configure radial menu slots for different contexts." Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,16"/>
-            
-            <!-- Context Selector Header -->
-            <Border Grid.Row="0" Margin="0,0,0,16" 
-                    Background="{DynamicResource ControlFillColorDefaultBrush}" 
-                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1" 
-                    CornerRadius="8" 
-                    Padding="16">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+        <Grid Grid.Row="0" Margin="0,0,0,24">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
 
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
-                        <ui:SymbolIcon Symbol="SlideMultiple24" FontSize="20" Margin="0,0,12,0"/>
-                        <TextBlock Text="Active Menu Context" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                    </StackPanel>
-
-                    <ComboBox Grid.Column="1"
-                              ItemsSource="{Binding AvailableContexts}" 
-                              SelectedItem="{Binding CurrentContext}"
-                              HorizontalAlignment="Stretch"
-                              Margin="0,0,16,0">
-                        <ComboBox.ItemContainerStyle>
-                            <Style TargetType="ComboBoxItem">
-                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                <Setter Property="VerticalContentAlignment" Value="Center"/>
-                            </Style>
-                        </ComboBox.ItemContainerStyle>
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    
-                                    <!-- Unicode Icon (for built-in glyphs) -->
-                                    <TextBlock Grid.Column="0" 
-                                               Text="{Binding Icon}" 
-                                               FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, Segoe UI Emoji"
-                                               Margin="0,0,8,0" 
-                                               VerticalAlignment="Center">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Visibility" Value="Visible"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Icon, Converter={StaticResource IsImagePath}}" Value="True">
-                                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                    
-                                    <!-- Image Icon (for file paths) -->
-                                    <Image Grid.Column="0" 
-                                           Width="16" Height="16"
-                                           Margin="0,0,8,0" 
-                                           VerticalAlignment="Center"
-                                           RenderOptions.BitmapScalingMode="HighQuality">
-                                        <Image.Style>
-                                            <Style TargetType="Image">
-                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Icon, Converter={StaticResource IsImagePath}}" Value="True">
-                                                        <Setter Property="Visibility" Value="Visible"/>
-                                                        <Setter Property="Source" Value="{Binding Icon}"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Image.Style>
-                                    </Image>
-                                    
-                                    <TextBlock Grid.Column="1" 
-                                               Text="{Binding DisplayText}" 
-                                               VerticalAlignment="Center"
-                                               Margin="0,0,16,0"/>
-                                               
-                                    <!-- Visual Slots -->
-                                    <ItemsControl Grid.Column="2" ItemsSource="{Binding VisualSlots}" VerticalAlignment="Center">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <StackPanel Orientation="Horizontal"/>
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Ellipse Width="6" Height="6" Margin="2,0">
-                                                    <Ellipse.Style>
-                                                        <Style TargetType="Ellipse">
-                                                            <Setter Property="Fill" Value="{DynamicResource ControlStrongFillColorDisabledBrush}"/>
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding}" Value="True">
-                                                                    <Setter Property="Fill" Value="{DynamicResource SystemAccentColorBrush}"/>
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </Ellipse.Style>
-                                                </Ellipse>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </Grid>
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
-
-                    <StackPanel Grid.Column="2" Orientation="Horizontal">
-                        <!-- Add Profile Button -->
-                        <ui:Button Icon="{ui:SymbolIcon Add24}"
-                                   Appearance="Secondary"
-                                   ToolTip="Add New Profile"
-                                   Command="{Binding AddProfileDialogCommand}"
-                                   Margin="0,0,8,0"/>
-
-                        <!-- Delete Button -->
-                        <ui:Button Appearance="Danger"
-                                   Icon="{ui:SymbolIcon Delete24}"
-                                   Content="Delete"
-                                   Command="{Binding DeleteProfileCommand}"
-                                   Visibility="{Binding CanDeleteProfile, Converter={StaticResource BoolToVis}}"/>
-                    </StackPanel>
+            <!-- Left: Current Context Title (Fixed Header Style) -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Current Icon -->
+                <Grid Margin="0,0,12,0" VerticalAlignment="Center" Width="32" Height="32">
+                    <!-- Unicode Icon -->
+                    <!-- [Fix] Architecture: Defensive UI Rendering 
+                         Constraint: Wrapped in 32x32 Grid to prevent layout overflow.
+                         Trimming: CharacterEllipsis handles long text gracefully.
+                         Alignment: Center to ensure consistent baseline. -->
+                    <TextBlock Text="{Binding CurrentContext.Icon}" 
+                               FontSize="24"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis"
+                               TextWrapping="NoWrap"
+                               FontFamily="{StaticResource PulsarIconFontFamily}"
+                               Visibility="{Binding CurrentContext.Icon, Converter={StaticResource IsImagePath}, ConverterParameter=Inverse}"/>
+                    
+                    <!-- Image Icon -->
+                    <Image Source="{Binding CurrentContext.Icon, Converter={StaticResource PathToImage}}"
+                           Width="32" Height="32"
+                           RenderOptions.BitmapScalingMode="HighQuality"
+                           Visibility="{Binding CurrentContext.Icon, Converter={StaticResource IsImagePath}}"/>
                 </Grid>
-            </Border>
-        </StackPanel>
+
+                <!-- Title -->
+                <TextBlock Text="{Binding CurrentContext.DisplayName}" 
+                           FontSize="24" FontWeight="SemiBold" 
+                           FontFamily="Segoe UI, Microsoft YaHei UI"
+                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+
+                <!-- Edit Profile Button -->
+                <ui:Button Appearance="Transparent"
+                           Icon="{ui:SymbolIcon Edit20}"
+                           Command="{Binding EditProfileCommand}"
+                           Visibility="{Binding CanEditProfile, Converter={StaticResource BoolToVis}}"
+                           ToolTip="Edit Profile Alias &amp; Icon"
+                           VerticalAlignment="Center"
+                           Margin="0,4,0,0"/>
+            </StackPanel>
+
+            <!-- Right: Actions -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                
+                <!-- Context Switcher -->
+                <ComboBox ItemsSource="{Binding AvailableContexts}" 
+                          SelectedItem="{Binding CurrentContext}"
+                          Width="220"
+                          ToolTip="Switch Menu Context"
+                          Margin="0,0,8,0">
+                    <ComboBox.ItemContainerStyle>
+                        <Style TargetType="ComboBoxItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            <Setter Property="VerticalContentAlignment" Value="Center"/>
+                        </Style>
+                    </ComboBox.ItemContainerStyle>
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <!-- Unicode Icon -->
+                                <TextBlock Grid.Column="0" 
+                                           Text="{Binding Icon}" 
+                                           FontFamily="{StaticResource PulsarIconFontFamily}"
+                                           Margin="0,0,8,0" 
+                                           VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Icon, Converter={StaticResource IsImagePath}}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                
+                                <!-- Image Icon -->
+                                <Image Grid.Column="0" 
+                                       Width="16" Height="16"
+                                       Margin="0,0,8,0" 
+                                       VerticalAlignment="Center"
+                                       RenderOptions.BitmapScalingMode="HighQuality">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Icon, Converter={StaticResource IsImagePath}}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                    <Setter Property="Source" Value="{Binding Icon, Converter={StaticResource PathToImage}}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                
+                                <!-- [Fix] Corrected Binding from DisplayText to DisplayName -->
+                                <TextBlock Grid.Column="1" 
+                                           Text="{Binding DisplayName}" 
+                                           FontFamily="Segoe UI, Microsoft YaHei UI"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,16,0"/>
+                                           
+                                <!-- Visual Slot Counter (Badge) -->
+                                <Border Grid.Column="2" 
+                                        Background="{DynamicResource ControlFillColorSecondaryBrush}" 
+                                        CornerRadius="4" 
+                                        Padding="6,2"
+                                        VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding SlotCount}" 
+                                                   FontWeight="SemiBold"
+                                                   FontSize="12"/>
+                                        <TextBlock Text=" slots" 
+                                                   FontSize="12" 
+                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+
+                <!-- Add Profile Button -->
+                <ui:Button Icon="{ui:SymbolIcon Add24}"
+                           Appearance="Secondary"
+                           ToolTip="Add New Profile"
+                           Command="{Binding AddProfileDialogCommand}"
+                           Margin="0,0,8,0"/>
+
+                <!-- Delete Button -->
+                <ui:Button Appearance="Danger"
+                           Icon="{ui:SymbolIcon Delete24}"
+                           Command="{Binding DeleteProfileCommand}"
+                           ToolTip="Delete Current Profile"
+                           Visibility="{Binding CanDeleteProfile, Converter={StaticResource BoolToVis}}"/>
+            </StackPanel>
+        </Grid>
 
         <!-- Slots List -->
         <Grid Grid.Row="1">
@@ -396,7 +416,9 @@
                                                 <TextBlock Text="{Binding Slot, StringFormat='Slot {0}'}" 
                                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
                                                            FontSize="12" Margin="0,0,8,0"/>
-                                                <Border Background="{DynamicResource ControlFillColorSecondaryBrush}" CornerRadius="4" Padding="4,1">
+                                                <Border Background="{DynamicResource ControlFillColorSecondaryBrush}" 
+                                                        CornerRadius="4" Padding="4,1"
+                                                        Visibility="{Binding TypeBadge, Converter={StaticResource StringEmptyToVis}, FallbackValue=Collapsed}">
                                                     <TextBlock Text="{Binding TypeBadge}" FontSize="10" Foreground="{Binding TypeColor}"/>
                                                 </Border>
                                             </StackPanel>

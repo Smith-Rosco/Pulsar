@@ -1,4 +1,4 @@
-<ui:FluentWindow x:Class="Pulsar.Views.Dialogs.InputProfileDialog"
+<ui:FluentWindow x:Class="Pulsar.Views.Dialogs.EditProfileDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -6,7 +6,7 @@
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:controls="clr-namespace:Pulsar.Views.Controls"
         mc:Ignorable="d"
-        Title="New Profile" Height="380" Width="400"
+        Title="Edit Profile" Height="420" Width="400"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         ExtendsContentIntoTitleBar="True"
@@ -23,51 +23,38 @@
     <Grid Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/> <!-- TitleBar -->
-            <RowDefinition Height="Auto"/> <!-- Input -->
+            <RowDefinition Height="Auto"/> <!-- Process (Read Only) -->
+            <RowDefinition Height="Auto"/> <!-- Alias -->
             <RowDefinition Height="Auto"/> <!-- Icon -->
             <RowDefinition Height="*"/>    <!-- Spacer -->
             <RowDefinition Height="Auto"/> <!-- Buttons -->
         </Grid.RowDefinitions>
 
-        <ui:TitleBar Title="New Profile" Grid.Row="0"/>
+        <ui:TitleBar Title="Edit Profile" Grid.Row="0"/>
         
-        <!-- Profile Name Input -->
-        <StackPanel Grid.Row="1" Margin="0,0,0,20">
-            <TextBlock Text="Application Process" FontWeight="Medium" Margin="0,0,0,8"/>
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                
-                <ui:TextBox x:Name="InputBox" 
-                            PlaceholderText="e.g., chrome, notepad, code"
-                            Icon="{ui:SymbolIcon Apps24}"
-                            TextChanged="InputBox_TextChanged"/>
-                
-                <ui:Button Grid.Column="1" Margin="8,0,0,0"
-                           Icon="{ui:SymbolIcon TargetEdit20}"
-                           Click="PickProcess_Click"
-                           ToolTip="Pick from running process"
-                           Style="{StaticResource PulsarSecondaryButtonStyle}"/>
-            </Grid>
-            
-            <TextBlock x:Name="ErrorText" 
-                       Text="Profile already exists" 
-                       Foreground="{DynamicResource PaletteRedBrush}" 
-                       FontSize="12" 
-                       Margin="0,6,0,0"
-                       Visibility="Collapsed"/>
+        <!-- Process Name (Read Only) -->
+        <StackPanel Grid.Row="1" Margin="0,0,0,16">
+            <TextBlock Text="Process Name" FontWeight="Medium" Margin="0,0,0,8"/>
+            <ui:TextBox Text="{Binding ProcessName, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}" 
+                        Icon="{ui:SymbolIcon Apps24}"
+                        IsReadOnly="True"
+                        ToolTip="Process name cannot be changed."/>
+        </StackPanel>
 
-            <!-- Alias Input (New) -->
-            <TextBlock Text="Alias (Optional)" FontWeight="Medium" Margin="0,16,0,8"/>
+        <!-- Alias Input -->
+        <StackPanel Grid.Row="2" Margin="0,0,0,20">
+            <TextBlock Text="Alias (Optional)" FontWeight="Medium" Margin="0,0,0,8"/>
             <ui:TextBox x:Name="AliasBox" 
                         PlaceholderText="Custom display name"
                         Icon="{ui:SymbolIcon Rename24}"/>
+            <TextBlock Text="Overrides process name in menu." 
+                       FontSize="11" 
+                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                       Margin="0,4,0,0"/>
         </StackPanel>
 
         <!-- Icon Selection -->
-        <StackPanel Grid.Row="2" Margin="0,0,0,10">
+        <StackPanel Grid.Row="3" Margin="0,0,0,10">
             <TextBlock Text="Profile Icon" FontWeight="Medium" Margin="0,0,0,8"/>
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -99,7 +86,7 @@
         </StackPanel>
 
         <!-- Action Buttons -->
-        <Grid Grid.Row="4" Margin="0,16,0,0">
+        <Grid Grid.Row="5" Margin="0,16,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
@@ -111,14 +98,12 @@
                        Margin="0,0,6,0"
                        Click="Cancel_Click"/>
             
-            <ui:Button x:Name="OkButton"
+            <ui:Button Content="Save" 
                        Grid.Column="1"
-                       Content="Create" 
                        Style="{StaticResource PulsarPrimaryButtonStyle}" 
                        HorizontalAlignment="Stretch" 
                        Margin="6,0,0,0"
-                       Click="Ok_Click"
-                       IsEnabled="False"/>
+                       Click="Ok_Click"/>
         </Grid>
     </Grid>
 </ui:FluentWindow>

@@ -105,9 +105,9 @@ namespace Pulsar.Services
                     // Global 配置 - 窗口切换模式
                     ["Global"] = new ProcessProfile
                     {
-                        SwitchMode = new Dictionary<string, PluginSlot>
+                        SwitchMode = new List<PluginSlot>
                         {
-                            ["Slot_1"] = new PluginSlot
+                            new PluginSlot
                             {
                                 Slot = 1,
                                 PluginId = "com.pulsar.winswitcher",
@@ -117,7 +117,7 @@ namespace Pulsar.Services
                                     ["app"] = "chrome",
                                 }
                             },
-                            ["Slot_2"] = new PluginSlot
+                            new PluginSlot
                             {
                                 Slot = 2,
                                 PluginId = "com.pulsar.winswitcher",
@@ -127,7 +127,7 @@ namespace Pulsar.Services
                                     ["app"] = "code",
                                 }
                             },
-                            ["Slot_3"] = new PluginSlot
+                            new PluginSlot
                             {
                                 Slot = 3,
                                 PluginId = "com.pulsar.winswitcher",
@@ -138,9 +138,9 @@ namespace Pulsar.Services
                                 }
                             }
                         },
-                         CommandMode = new Dictionary<string, PluginSlot>
+                         CommandMode = new List<PluginSlot>
                         {
-                            ["Slot_1"] = new PluginSlot
+                            new PluginSlot
                             {
                                 Slot = 1,
                                 PluginId = "com.pulsar.command",

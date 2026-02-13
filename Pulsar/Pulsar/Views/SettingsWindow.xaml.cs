@@ -198,19 +198,27 @@ namespace Pulsar.Views
             _viewModel.SaveCommand.Execute(null);
         }
 
-        // [Fix] Lifecycle Management: Hide instead of Close to prevent memory leaks and keep Singleton alive
-        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        // [Fix] Lifecycle Management: Allow Close to reset state (Transient behavior)
+        protected override void OnClosed(EventArgs e)
         {
-            e.Cancel = true;
-            this.Hide();
+            // Unsubscribe from events to prevent memory leaks in Singleton services
+            if (_themeService != null)
+            {
+                _themeService.ThemeChanged -= OnThemeChanged;
+            }
             
-            // [Optimization] Aggressive Memory Trimming
-            // This forces the OS to page out unused memory, significantly reducing
-            // the "perceived" memory footprint in Task Manager when the window is hidden.
+            // Clean up resources
+            _generalPage = null;
+            _slotsPage = null;
+            
+            // Trigger GC to clean up the Transient ViewModel and Pages
             TrimMemory();
             
-            base.OnClosing(e);
+            base.OnClosed(e);
         }
+
+        // Removed OnClosing override that forced Hide()
+        // protected override void OnClosing(System.ComponentModel.CancelEventArgs e) ...
 
         private void TrimMemory()
         {

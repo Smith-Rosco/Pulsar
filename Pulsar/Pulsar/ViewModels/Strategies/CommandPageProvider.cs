@@ -1,0 +1,85 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading.Tasks;
+using Pulsar.Models;
+using Pulsar.Core.Plugin;
+using Pulsar.Services; // Added
+using Pulsar.Services.Interfaces;
+using Pulsar.ViewModels;
+
+namespace Pulsar.ViewModels.Strategies
+{
+    public class CommandPageProvider : BasePageProvider
+    {
+        private readonly List<PluginSlot> _allSlots;
+        private readonly PluginRegistry _pluginRegistry;
+        private readonly PulsarContext _context;
+        private readonly ITrayService _trayService;
+
+        private readonly IServiceProvider _serviceProvider;
+
+        public override int TotalPages => (int)Math.Ceiling((double)_allSlots.Count / _itemsPerPage);
+
+        public CommandPageProvider(
+            List<PluginSlot> slots, 
+            PluginRegistry pluginRegistry, 
+            PulsarContext context, 
+            ITrayService trayService,
+            IServiceProvider serviceProvider)
+        {
+            _allSlots = slots ?? new List<PluginSlot>();
+            _pluginRegistry = pluginRegistry;
+            _context = context;
+            _trayService = trayService;
+            _serviceProvider = serviceProvider;
+        }
+
+        public override Task LoadAsync()
+        {
+            _currentPage = 0;
+            return Task.CompletedTask;
+        }
+
+        public override void RefreshVisuals(ObservableCollection<SlotViewModel> slots, SlotViewModel centerSlot)
+        {
+            ClearSlots(slots);
+            
+            // Simple Paging
+            var pageItems = _allSlots.Skip(_currentPage * _itemsPerPage).Take(_itemsPerPage).ToList();
+
+            for (int i = 0; i < pageItems.Count; i++)
+            {
+                var item = pageItems[i];
+                var slot = slots[i]; // Slot 1 is index 0
+                
+                slot.Label = item.Label;
+                slot.LoadIconData(item.IconKey);
+                slot.SetColor(item.Color);
+                slot.Type = SlotType.Action;
+                slot.DataContext = item;
+
+                if (item.PluginId == "internal:create_profile")
+                {
+                    // Resolve dependencies
+                    var configService = (IConfigService)_serviceProvider.GetService(typeof(IConfigService))!;
+                    
+                    slot.ActionStrategy = new CreateProfileStrategy(
+                        _context.TargetProcessName, 
+                        _context.TargetExePath, 
+                        configService, 
+                        _serviceProvider);
+                }
+                else
+                {
+                    slot.ActionStrategy = new PluginActionStrategy(item, _pluginRegistry, _context, _trayService);
+                }
+            }
+
+            // Update Center Text
+            string centerText = TotalPages > 1 ? $"Page {_currentPage + 1}/{TotalPages}" : (string.IsNullOrEmpty(_context.TargetProcessName) ? "Global" : _context.TargetProcessName);
+            centerSlot.Label = centerText;
+        }
+    }
+}

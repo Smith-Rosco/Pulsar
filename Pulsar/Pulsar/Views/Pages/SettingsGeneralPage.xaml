@@ -114,6 +114,28 @@
                     </StackPanel>
                 </ui:CardExpander>
 
+                <!-- Danger Zone -->
+                <ui:CardExpander Icon="Warning24" Header="Advanced" IsExpanded="False" Margin="0,0,0,12">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Reset Configuration" FontWeight="Medium" Foreground="{DynamicResource PaletteRedBrush}"/>
+                                <TextBlock Text="Restore all settings to default values. A backup will be created." 
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                            </StackPanel>
+                            <ui:Button Grid.Column="1" 
+                                       Content="Reset to Defaults"
+                                       Appearance="Danger"
+                                       Icon="{ui:SymbolIcon ArrowReset24}"
+                                       Command="{Binding DataContext.ResetConfigCommand, RelativeSource={RelativeSource AncestorType=Page}}"/>
+                        </Grid>
+                    </StackPanel>
+                </ui:CardExpander>
+
             </StackPanel>
         </ScrollViewer>
     </Grid>

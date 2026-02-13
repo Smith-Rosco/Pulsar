@@ -59,7 +59,7 @@ namespace Pulsar.ViewModels.Strategies
                 config.Profiles[_processName] = new ProcessProfile
                 {
                     Icon = iconKey, // Use extracted icon
-                    CommandMode = new Dictionary<string, PluginSlot>()
+                    CommandMode = new List<PluginSlot>()
                 };
                 await _configService.SaveAsync(config);
             }
