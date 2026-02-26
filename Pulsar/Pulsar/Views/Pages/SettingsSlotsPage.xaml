@@ -207,28 +207,14 @@
 
             <!-- Left: Current Context Title (Fixed Header Style) -->
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                <!-- Current Icon -->
-                <Grid Margin="0,0,12,0" VerticalAlignment="Center" Width="32" Height="32">
-                    <!-- Unicode Icon -->
-                    <!-- [Fix] Architecture: Defensive UI Rendering 
-                         Constraint: Wrapped in 32x32 Grid to prevent layout overflow.
-                         Trimming: CharacterEllipsis handles long text gracefully.
-                         Alignment: Center to ensure consistent baseline. -->
-                    <TextBlock Text="{Binding CurrentContext.Icon}" 
-                               FontSize="24"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center"
-                               TextTrimming="CharacterEllipsis"
-                               TextWrapping="NoWrap"
-                               FontFamily="{StaticResource PulsarIconFontFamily}"
-                               Visibility="{Binding CurrentContext.Icon, Converter={StaticResource IsImagePath}, ConverterParameter=Inverse}"/>
-                    
-                    <!-- Image Icon -->
-                    <Image Source="{Binding CurrentContext.Icon, Converter={StaticResource PathToImage}}"
-                           Width="32" Height="32"
-                           RenderOptions.BitmapScalingMode="HighQuality"
-                           Visibility="{Binding CurrentContext.Icon, Converter={StaticResource IsImagePath}}"/>
-                </Grid>
+                <!-- Current Icon (Unified) -->
+                <controls:JellyOrb IconKey="{Binding CurrentContext.Icon}"
+                                   Size="32"
+                                   Width="32" Height="32"
+                                   IsTransparent="True"
+                                   ShowActiveGlow="False"
+                                   Margin="0,0,12,0"
+                                   VerticalAlignment="Center"/>
 
                 <!-- Title -->
                 <TextBlock Text="{Binding CurrentContext.DisplayName}" 
@@ -270,42 +256,15 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 
-                                <!-- Unicode Icon -->
-                                <TextBlock Grid.Column="0" 
-                                           Text="{Binding Icon}" 
-                                           FontFamily="{StaticResource PulsarIconFontFamily}"
-                                           Margin="0,0,8,0" 
-                                           VerticalAlignment="Center">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="Visibility" Value="Visible"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Icon, Converter={StaticResource IsImagePath}}" Value="True">
-                                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
-                                
-                                <!-- Image Icon -->
-                                <Image Grid.Column="0" 
-                                       Width="16" Height="16"
-                                       Margin="0,0,8,0" 
-                                       VerticalAlignment="Center"
-                                       RenderOptions.BitmapScalingMode="HighQuality">
-                                    <Image.Style>
-                                        <Style TargetType="Image">
-                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Icon, Converter={StaticResource IsImagePath}}" Value="True">
-                                                    <Setter Property="Visibility" Value="Visible"/>
-                                                    <Setter Property="Source" Value="{Binding Icon, Converter={StaticResource PathToImage}}"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Image.Style>
-                                </Image>
+                                <!-- Unified Icon -->
+                                <controls:JellyOrb Grid.Column="0"
+                                                   IconKey="{Binding Icon}"
+                                                   Size="20"
+                                                   Width="20" Height="20"
+                                                   IsTransparent="True"
+                                                   ShowActiveGlow="False"
+                                                   Margin="0,0,8,0"
+                                                   VerticalAlignment="Center"/>
                                 
                                 <!-- [Fix] Corrected Binding from DisplayText to DisplayName -->
                                 <TextBlock Grid.Column="1" 

@@ -17,7 +17,9 @@ using Pulsar.Models;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Wpf.Ui.Controls;
-using Pulsar.Views.Dialogs;
+using Pulsar.ViewModels.Dialogs;
+using DialogResult = Pulsar.Models.Enums.DialogResult;
+using DialogButtons = Pulsar.Models.Enums.DialogButtons;
 
 namespace Pulsar.ViewModels
 {
@@ -69,6 +71,7 @@ namespace Pulsar.ViewModels
         private readonly IWindowService _windowService;
         private readonly IThemeService _themeService;
         private readonly IHotkeyService _hotkeyService;
+        private readonly IDialogService _dialogService;
         private readonly SecretRepository _secretRepo = new SecretRepository();
         private ProfilesConfig _config;
 
@@ -144,12 +147,13 @@ namespace Pulsar.ViewModels
             CurrentContext.SlotCount = CurrentSlots.Count;
         }
 
-        public SettingsViewModel(IConfigService configService, IWindowService windowService, IThemeService themeService, IHotkeyService hotkeyService)
+        public SettingsViewModel(IConfigService configService, IWindowService windowService, IThemeService themeService, IHotkeyService hotkeyService, IDialogService dialogService)
         {
             _configService = configService;
             _windowService = windowService;
             _themeService = themeService;
             _hotkeyService = hotkeyService;
+            _dialogService = dialogService;
             _config = new ProfilesConfig();
             Initialize();
 
@@ -193,6 +197,8 @@ namespace Pulsar.ViewModels
         public void PauseHotkeys() => _hotkeyService.Pause();
         public void ResumeHotkeys() => _hotkeyService.Resume();
 
+        private bool _suppressSlotSync = false;
+
         public async Task<ProfilesConfig> GetConfigAsync()
         {
              if (_config == null) _config = await _configService.LoadAsync();
@@ -201,28 +207,36 @@ namespace Pulsar.ViewModels
 
         private async Task LoadSettings()
         {
-            var sharedConfig = await _configService.LoadAsync();
-            // [Transactional] Deep Clone to work on a draft
-            var options = new System.Text.Json.JsonSerializerOptions 
-            { 
-                PropertyNameCaseInsensitive = true,
-                WriteIndented = true 
-            };
-            var json = System.Text.Json.JsonSerializer.Serialize(sharedConfig, options);
-            _config = System.Text.Json.JsonSerializer.Deserialize<ProfilesConfig>(json, options) ?? new ProfilesConfig();
+            _suppressSlotSync = true;
+            try
+            {
+                var sharedConfig = await _configService.LoadAsync();
+                // [Transactional] Deep Clone to work on a draft
+                var options = new System.Text.Json.JsonSerializerOptions 
+                { 
+                    PropertyNameCaseInsensitive = true,
+                    WriteIndented = true 
+                };
+                var json = System.Text.Json.JsonSerializer.Serialize(sharedConfig, options);
+                _config = System.Text.Json.JsonSerializer.Deserialize<ProfilesConfig>(json, options) ?? new ProfilesConfig();
 
-            GeneralSettings = _config.Settings;
-            InitializePluginTypes();
-            RefreshContexts();
+                GeneralSettings = _config.Settings;
+                InitializePluginTypes();
+                RefreshContexts();
 
-            // Notify properties to trigger bindings/theme updates
-            OnPropertyChanged(nameof(LauncherTheme));
-            OnPropertyChanged(nameof(SettingsTheme));
-            OnPropertyChanged(nameof(SettingsThemeString));
-            
-            // [New] Notify Hotkeys
-            OnPropertyChanged(nameof(ShowGridHotkey));
-            OnPropertyChanged(nameof(ShowSwitcherHotkey));
+                // Notify properties to trigger bindings/theme updates
+                OnPropertyChanged(nameof(LauncherTheme));
+                OnPropertyChanged(nameof(SettingsTheme));
+                OnPropertyChanged(nameof(SettingsThemeString));
+                
+                // [New] Notify Hotkeys
+                OnPropertyChanged(nameof(ShowGridHotkey));
+                OnPropertyChanged(nameof(ShowSwitcherHotkey));
+            }
+            finally
+            {
+                _suppressSlotSync = false;
+            }
         }
 
         private void UpdateContextStats(ContextInfo ctx)
@@ -358,16 +372,15 @@ namespace Pulsar.ViewModels
         }
 
         [RelayCommand(CanExecute = nameof(CanAddSecrets))]
-        public void AddSecret()
+        public async Task AddSecret()
         {
             if (CurrentSlots == null) return;
             // [Refactor] Removed 8-slot limit
 
-            var dialog = new Views.Dialogs.QuickSecretsDialog(_windowService);
-            _themeService.ApplyTheme(dialog, SettingsTheme, WindowBackdropType.None, updateGlobal: false);
-            dialog.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
+            var vm = new QuickSecretsViewModel();
+            var result = await _dialogService.ShowCustomAsync("Secret Configuration", vm, DialogButtons.OkCancel);
 
-            if (dialog.ShowDialog() == true)
+            if (result == DialogResult.Confirmed)
             {
                 int nextSlot = 1;
                 if (CurrentSlots.Count > 0) nextSlot = CurrentSlots.Max(s => s.Slot) + 1;
@@ -375,8 +388,8 @@ namespace Pulsar.ViewModels
                 var secretId = Guid.NewGuid();
                 var payload = new Plugins.Core.Pki.Models.SecretPayload
                 {
-                    Account = dialog.ResultAccount,
-                    EncryptedData = dialog.ResultEncryptedData
+                    Account = vm.Account,
+                    EncryptedData = vm.ResultEncryptedData
                 };
                 _pendingSecrets[secretId] = payload;
 
@@ -385,12 +398,12 @@ namespace Pulsar.ViewModels
                     Slot = nextSlot,
                     PluginId = "com.pulsar.pki",
                     Action = "fill",
-                    Label = dialog.ResultLabel,
+                    Label = vm.Label,
                     IconKey = "E72E", // Lock Icon
                     Args = new Dictionary<string, string>
                     {
                         ["secretId"] = secretId.ToString(),
-                        ["autoEnter"] = dialog.ResultAutoEnter.ToString()
+                        ["autoEnter"] = vm.AutoEnter.ToString()
                     }
                 };
 
@@ -400,39 +413,26 @@ namespace Pulsar.ViewModels
         }
 
         [RelayCommand]
-        public void AddProfileDialog()
+        public async Task AddProfileDialog()
         {
             var existingKeys = _config.Profiles.Keys.ToList();
             
-            var dialog = new InputProfileDialog(_windowService, existingKeys);
-            _themeService.ApplyTheme(dialog, SettingsTheme, WindowBackdropType.None, updateGlobal: false);
-            dialog.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
-            
-            if (dialog.ShowDialog() == true)
+            var vm = new InputProfileViewModel(_windowService, _dialogService, existingKeys);
+            var result = await _dialogService.ShowCustomAsync("New Profile", vm, DialogButtons.OkCancel);
+
+            if (result == DialogResult.Confirmed)
             {
-                var processName = dialog.ResultName;
-                var iconKey = dialog.ResultIcon;
-                var alias = dialog.ResultAlias; // [New]
+                var processName = vm.ProcessName;
+                var iconKey = vm.IconKey;
+                var alias = vm.Alias;
 
                 if (string.IsNullOrWhiteSpace(processName)) return;
 
-                // [Smart Icon Discovery]
-                // If user entered a name but didn't pick a custom icon (still default/empty),
-                // try to find a running process with that name and extract its icon.
-                if (string.IsNullOrWhiteSpace(iconKey) || iconKey == "\uE945" || iconKey == "\uE774")
-                {
-                    string? discoveredIcon = TryDiscoverIconForProcess(processName);
-                    if (!string.IsNullOrEmpty(discoveredIcon))
-                    {
-                        iconKey = discoveredIcon;
-                    }
-                    else if (string.IsNullOrWhiteSpace(iconKey) || iconKey.Length > 2)
-                    {
-                        // Fallback only if discovery failed AND current key is invalid/long text
-                        iconKey = "\uE774"; 
-                    }
-                }
-
+                // [Smart Icon Discovery] logic is inside InputProfileViewModel if user picked process.
+                // But if user typed manually, we might still want to discover?
+                // InputProfileViewModel.PickProcess handles it.
+                // If manual typing, we trust InputProfileViewModel's IconKey (default or picked).
+                
                 if (_config.Profiles.ContainsKey(processName))
                 {
                     SendNotification("Error", $"Profile '{processName}' already exists.", ControlAppearance.Danger);
@@ -442,7 +442,7 @@ namespace Pulsar.ViewModels
                 _config.Profiles[processName] = new ProcessProfile 
                 { 
                     Icon = iconKey,
-                    Alias = alias, // [New]
+                    Alias = alias,
                     CommandMode = new List<PluginSlot>() 
                 };
                 RefreshContexts();
@@ -486,21 +486,20 @@ namespace Pulsar.ViewModels
         }
 
         [RelayCommand]
-        public void EditProfile()
+        public async Task EditProfile()
         {
             if (CurrentContext?.IsProfile != true || _config.Profiles == null) return;
             
             var profileKey = CurrentContext.Key;
             if (!_config.Profiles.TryGetValue(profileKey, out var profileData)) return;
 
-            var dialog = new EditProfileDialog(profileKey, profileData.Alias ?? string.Empty, profileData.Icon ?? "\uE945");
-            _themeService.ApplyTheme(dialog, SettingsTheme, WindowBackdropType.None, updateGlobal: false);
-            dialog.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
+            var vm = new EditProfileViewModel(_dialogService, profileKey, profileData.Alias, profileData.Icon);
+            var result = await _dialogService.ShowCustomAsync("Edit Profile", vm, DialogButtons.OkCancel);
 
-            if (dialog.ShowDialog() == true)
+            if (result == DialogResult.Confirmed)
             {
-                profileData.Alias = dialog.ResultAlias;
-                profileData.Icon = dialog.ResultIcon;
+                profileData.Alias = vm.Alias;
+                profileData.Icon = vm.IconKey;
 
                 // Refresh UI
                 RefreshContexts();
@@ -510,34 +509,51 @@ namespace Pulsar.ViewModels
             }
         }
 
+        partial void OnCurrentContextChanging(ContextInfo? value)
+        {
+            if (!_suppressSlotSync)
+            {
+                SyncSlotsToConfig();
+            }
+        }
+
+        private void SyncSlotsToConfig()
+        {
+            if (_config == null || CurrentContext == null || CurrentSlots == null) return;
+
+            // Clone list to ensure config has its own copy
+            var listToSave = CurrentSlots.ToList();
+
+            if (CurrentContext.Key == "Launcher")
+            {
+                if (!_config.Profiles.ContainsKey("Global")) _config.Profiles["Global"] = new ProcessProfile();
+                _config.Profiles["Global"].SwitchMode = listToSave;
+            }
+            else if (CurrentContext.Key == "Global")
+            {
+                if (!_config.Profiles.ContainsKey("Global")) _config.Profiles["Global"] = new ProcessProfile();
+                _config.Profiles["Global"].CommandMode = listToSave;
+            }
+            else
+            {
+                // For regular profiles
+                if (!_config.Profiles.TryGetValue(CurrentContext.Key, out var profile))
+                {
+                    // Should exist if context exists, but create if missing to be safe
+                    profile = new ProcessProfile();
+                    _config.Profiles[CurrentContext.Key] = profile;
+                }
+                profile.CommandMode = listToSave;
+            }
+        }
+
         [RelayCommand]
         public async Task Save()
         {
             if (_config == null) return;
             
-            // [Refactor] Save List back to Config
-            if (IsSlotsView && CurrentSlots != null && CurrentContext != null)
-            {
-                var listToSave = CurrentSlots.ToList();
-                
-                if (CurrentContext.Key == "Launcher")
-                {
-                     if (!_config.Profiles.ContainsKey("Global")) _config.Profiles["Global"] = new ProcessProfile();
-                     _config.Profiles["Global"].SwitchMode = listToSave;
-                }
-                else if (CurrentContext.Key == "Global")
-                {
-                     if (!_config.Profiles.ContainsKey("Global")) _config.Profiles["Global"] = new ProcessProfile();
-                     _config.Profiles["Global"].CommandMode = listToSave;
-                }
-                else
-                {
-                     if (_config.Profiles.TryGetValue(CurrentContext.Key, out var profile))
-                     {
-                         profile.CommandMode = listToSave;
-                     }
-                }
-            }
+            // [Fix] Ensure current modifications are committed before saving
+            SyncSlotsToConfig();
             
             var allSecrets = await _secretRepo.LoadAsync();
             foreach (var kvp in _pendingSecrets)
@@ -556,12 +572,10 @@ namespace Pulsar.ViewModels
         [RelayCommand]
         public async Task ResetConfig()
         {
-            var dialog = new Views.Dialogs.ConfirmationDialog("Reset Configuration", 
+            var result = await _dialogService.ShowConfirmationAsync("Reset Configuration", 
                 "This will reset all settings and profiles to default values.\n\nA backup of your current configuration will be created.\nAre you sure you want to proceed?");
-            _themeService.ApplyTheme(dialog, SettingsTheme, WindowBackdropType.None, updateGlobal: false);
-            dialog.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
             
-            if (dialog.ShowDialog() == true)
+            if (result == Pulsar.Models.Enums.DialogResult.Confirmed)
             {
                 // 1. Create Backup
                 try 
@@ -687,21 +701,19 @@ namespace Pulsar.ViewModels
                 return;
             }
 
-            var dialog = new Views.Dialogs.QuickSecretsDialog(_windowService);
-            _themeService.ApplyTheme(dialog, SettingsTheme, WindowBackdropType.None, updateGlobal: false);
-            dialog.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
-
+            var vm = new QuickSecretsViewModel();
             bool autoEnter = slot.Args.TryGetValue("autoEnter", out var ae) && bool.Parse(ae);
-            
-            dialog.LoadForEdit(slot.Label, payload.Account, payload.EncryptedData, autoEnter);
+            vm.LoadForEdit(slot.Label, payload.Account, payload.EncryptedData, autoEnter);
 
-            if (dialog.ShowDialog() == true)
+            var result = await _dialogService.ShowCustomAsync("Edit Secret", vm, DialogButtons.OkCancel);
+
+            if (result == DialogResult.Confirmed)
             {
-                slot.Label = dialog.ResultLabel;
-                slot.Args["autoEnter"] = dialog.ResultAutoEnter.ToString();
+                slot.Label = vm.Label;
+                slot.Args["autoEnter"] = vm.AutoEnter.ToString();
                 
-                payload.Account = dialog.ResultAccount;
-                payload.EncryptedData = dialog.ResultEncryptedData;
+                payload.Account = vm.Account;
+                payload.EncryptedData = vm.ResultEncryptedData;
                 _pendingSecrets[secretId] = payload;
 
                 SendNotification("Success", "Secret updated.", ControlAppearance.Success);
@@ -709,17 +721,15 @@ namespace Pulsar.ViewModels
         }
 
         [RelayCommand]
-        public void RemoveSlot(PluginSlot item)
+        public async Task RemoveSlot(PluginSlot item)
         {
             if (CurrentSlots == null || !CurrentSlots.Contains(item)) return;
             
             // Show confirmation dialog
-            var dialog = new Views.Dialogs.ConfirmationDialog("Confirm Deletion", 
+            var result = await _dialogService.ShowConfirmationAsync("Confirm Deletion", 
                 $"Are you sure you want to remove '{item.Label}' from Slot {item.Slot}?");
-            _themeService.ApplyTheme(dialog, SettingsTheme, WindowBackdropType.None, updateGlobal: false);
-            dialog.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
             
-            if (dialog.ShowDialog() == true)
+            if (result == Pulsar.Models.Enums.DialogResult.Confirmed)
             {
                 CurrentSlots.Remove(item);
                 
@@ -728,15 +738,14 @@ namespace Pulsar.ViewModels
         }
         
         [RelayCommand]
-        public void PickProcess(object parameter)
+        public async Task PickProcess(object parameter)
         {
-             var dialog = new Views.Dialogs.ProcessPickerDialog(_windowService);
-             _themeService.ApplyTheme(dialog, SettingsTheme, WindowBackdropType.None, updateGlobal: false);
-             dialog.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
-
-             if (dialog.ShowDialog() == true && dialog.SelectedProcess != null)
+             var vm = new ProcessPickerViewModel(_windowService);
+             var result = await _dialogService.ShowCustomAsync("Select Application", vm, DialogButtons.OkCancel);
+             
+             if (result == DialogResult.Confirmed && vm.SelectedProcess != null)
              {
-                 var selected = dialog.SelectedProcess;
+                 var selected = vm.SelectedProcess;
                  string? cachedIconPath = null;
                  if (selected.AppIcon != null)
                  {
@@ -784,15 +793,15 @@ namespace Pulsar.ViewModels
 
         
         [RelayCommand]
-        public void PickIcon(PluginSlot item)
+        public async Task PickIcon(PluginSlot item)
         {
             if (item == null) return;
-            var dialog = new Views.Dialogs.IconPickerDialog(item.IconKey);
-            _themeService.ApplyTheme(dialog, SettingsTheme, WindowBackdropType.None, updateGlobal: false);
-            dialog.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
-            if (dialog.ShowDialog() == true)
+            var vm = new IconPickerViewModel(item.IconKey);
+            var result = await _dialogService.ShowCustomAsync("Select Icon", vm, DialogButtons.OkCancel);
+
+            if (result == DialogResult.Confirmed)
             {
-                item.IconKey = dialog.SelectedKey;
+                item.IconKey = vm.SelectedKey;
             }
         }
 

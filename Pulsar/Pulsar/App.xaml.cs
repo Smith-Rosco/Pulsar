@@ -61,6 +61,7 @@ namespace Pulsar
             serviceCollection.AddSingleton<IThemeService, ThemeService>();
             serviceCollection.AddSingleton<GlobalKeyboardHook>();
             serviceCollection.AddSingleton<IHotkeyService, HotkeyService>();
+            serviceCollection.AddSingleton<IDialogService, DialogService>();
             
             // 2. Plugin System (New Architecture)
             serviceCollection.AddSingleton<PluginRegistry>();

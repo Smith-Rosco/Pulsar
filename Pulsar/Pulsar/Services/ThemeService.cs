@@ -13,10 +13,17 @@ namespace Pulsar.Services
 {
     public class ThemeService : IThemeService
     {
+        public AppTheme CurrentTheme { get; private set; } = AppTheme.Dark;
+
         public event EventHandler<AppTheme>? ThemeChanged;
 
         public void ApplyTheme(FrameworkElement element, AppTheme theme, WindowBackdropType backdrop = WindowBackdropType.None, bool updateGlobal = true)
         {
+            if (updateGlobal)
+            {
+                CurrentTheme = theme;
+            }
+
             if (element == null) return;
             System.Diagnostics.Debug.WriteLine($"[ThemeService] ApplyTheme: Element={element.GetType().Name}, Theme={theme}");
 

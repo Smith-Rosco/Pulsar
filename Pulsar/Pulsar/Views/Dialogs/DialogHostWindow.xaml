@@ -1,0 +1,96 @@
+<ui:FluentWindow x:Class="Pulsar.Views.Dialogs.DialogHostWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:viewmodels="clr-namespace:Pulsar.ViewModels"
+        xmlns:enums="clr-namespace:Pulsar.Models.Enums"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        mc:Ignorable="d"
+        Title="{Binding Title}"
+        Height="450" Width="600"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        WindowBackdropType="Mica"
+        ExtendsContentIntoTitleBar="True"
+        WindowStyle="None"
+        AllowsTransparency="False"
+        Background="Transparent">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+            
+            <!-- Default String Template -->
+            <DataTemplate DataType="{x:Type sys:String}">
+                <TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="14" Foreground="{DynamicResource Theme.Text.Primary}"/>
+            </DataTemplate>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Border Background="{DynamicResource Theme.Background}"
+            BorderBrush="{DynamicResource Theme.Border.Brush}"
+            BorderThickness="1"
+            CornerRadius="8">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/> <!-- Header -->
+                <RowDefinition Height="*"/>    <!-- Content -->
+                <RowDefinition Height="Auto"/> <!-- Footer -->
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <ui:TitleBar Title="{Binding Title}" Grid.Row="0"/>
+
+            <!-- Content -->
+            <ScrollViewer Grid.Row="1"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Padding="20,0,20,20">
+                <ScrollViewer.Style>
+                    <Style TargetType="ScrollViewer">
+                        <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsScrollable}" Value="False">
+                                <Setter Property="VerticalScrollBarVisibility" Value="Disabled"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ScrollViewer.Style>
+                <ContentPresenter Content="{Binding Content}"/>
+            </ScrollViewer>
+
+            <!-- Footer -->
+            <Border Grid.Row="2"
+                    Background="{DynamicResource Theme.Control.Background}"
+                    Padding="20,15"
+                    CornerRadius="0,0,8,8">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <ui:Button Content="{Binding SecondaryButtonText}"
+                               Visibility="{Binding IsSecondaryButtonVisible, Converter={StaticResource BoolToVis}}"
+                               Style="{StaticResource PulsarSecondaryButtonStyle}"
+                               Command="{Binding CloseCommand}"
+                               Margin="0,0,10,0">
+                        <ui:Button.CommandParameter>
+                            <enums:DialogResult>Cancelled</enums:DialogResult>
+                        </ui:Button.CommandParameter>
+                    </ui:Button>
+
+                    <ui:Button Content="{Binding PrimaryButtonText}"
+                               Visibility="{Binding IsPrimaryButtonVisible, Converter={StaticResource BoolToVis}}"
+                               Style="{StaticResource PulsarPrimaryButtonStyle}"
+                               Command="{Binding CloseCommand}"
+                               IsDefault="True">
+                        <ui:Button.CommandParameter>
+                            <enums:DialogResult>Confirmed</enums:DialogResult>
+                        </ui:Button.CommandParameter>
+                    </ui:Button>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</ui:FluentWindow>

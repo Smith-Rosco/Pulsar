@@ -1,0 +1,82 @@
+<UserControl x:Class="Pulsar.Views.Dialogs.Contents.InputProfileContent"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:controls="clr-namespace:Pulsar.Views.Controls"
+             xmlns:viewmodels="clr-namespace:Pulsar.ViewModels.Dialogs"
+             mc:Ignorable="d" 
+             d:DesignHeight="400" d:DesignWidth="400">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <StackPanel Margin="0">
+        <!-- Profile Name Input -->
+        <TextBlock Text="Application Process" FontWeight="Medium" Margin="0,0,0,8"/>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            
+            <ui:TextBox Text="{Binding ProcessName, UpdateSourceTrigger=PropertyChanged}"
+                        PlaceholderText="e.g., chrome, notepad, code"
+                        Icon="{ui:SymbolIcon Apps24}"/>
+            
+            <ui:Button Grid.Column="1" Margin="8,0,0,0"
+                       Icon="{ui:SymbolIcon TargetEdit20}"
+                       Command="{Binding PickProcessCommand}"
+                       ToolTip="Pick from running process"
+                       Style="{StaticResource PulsarSecondaryButtonStyle}"/>
+        </Grid>
+        
+        <TextBlock Text="{Binding ErrorMessage}" 
+                   Foreground="{DynamicResource PaletteRedBrush}" 
+                   FontSize="12" 
+                   Margin="0,6,0,0"
+                   Visibility="{Binding HasError, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+        <!-- Alias Input -->
+        <TextBlock Text="Alias (Optional)" FontWeight="Medium" Margin="0,16,0,8"/>
+        <ui:TextBox Text="{Binding Alias, UpdateSourceTrigger=PropertyChanged}"
+                    PlaceholderText="Custom display name"
+                    Icon="{ui:SymbolIcon Rename24}"/>
+
+        <!-- Icon Selection -->
+        <TextBlock Text="Profile Icon" FontWeight="Medium" Margin="0,20,0,8"/>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Preview -->
+            <Border Background="{DynamicResource ControlFillColorDefaultBrush}" 
+                    BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}" 
+                    BorderThickness="1" CornerRadius="8"
+                    Width="64" Height="64" Margin="0,0,16,0">
+                <controls:JellyOrb Size="48" IsActive="False" IsHitTestVisible="False" IconKey="{Binding IconKey}"/>
+            </Border>
+
+            <!-- Info -->
+            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                <TextBlock Text="Selected Icon" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                <TextBlock Text="{Binding IconKey}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+            </StackPanel>
+
+            <!-- Change Button -->
+            <ui:Button Grid.Column="2" Content="Change" 
+                       Style="{StaticResource PulsarSecondaryButtonStyle}" 
+                       Command="{Binding PickIconCommand}"
+                       VerticalAlignment="Center"/>
+        </Grid>
+    </StackPanel>
+</UserControl>

@@ -3,6 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:converters="clr-namespace:Pulsar.Core.Converters"
+             xmlns:dialogs="clr-namespace:Pulsar.ViewModels.Dialogs"
+             xmlns:views="clr-namespace:Pulsar.Views.Dialogs.Contents"
              ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
         <ResourceDictionary>
@@ -16,6 +18,22 @@
                 <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ScrollViewerStyles.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/TooltipStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+
+            <DataTemplate DataType="{x:Type dialogs:ProcessPickerViewModel}">
+                <views:ProcessPickerContent/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type dialogs:IconPickerViewModel}">
+                <views:IconPickerContent/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type dialogs:InputProfileViewModel}">
+                <views:InputProfileContent/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type dialogs:QuickSecretsViewModel}">
+                <views:QuickSecretsContent/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type dialogs:EditProfileViewModel}">
+                <views:EditProfileContent/>
+            </DataTemplate>
 
             <converters:ScaleConverter x:Key="ScaleConverter"/>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
