@@ -34,7 +34,7 @@ namespace Pulsar.Core.Converters
             {
                 return brush.Color.ToString();
             }
-            return null;
+            return System.Windows.DependencyProperty.UnsetValue;
         }
     }
 }

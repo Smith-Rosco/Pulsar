@@ -14,7 +14,7 @@ namespace Pulsar.Core.Converters
     /// </summary>
     public class StringPathToImageSourceConverter : IValueConverter
     {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value is not string str || string.IsNullOrWhiteSpace(str))
                 return null;
@@ -51,7 +51,7 @@ namespace Pulsar.Core.Converters
             }
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             throw new NotImplementedException();
         }
