@@ -22,6 +22,11 @@ namespace Pulsar.Plugins.Core.Pki
 
         public string Id => "com.pulsar.pki";
         public string DisplayName => "PKI Credentials Manager";
+        public string Version => "1.0.0";
+        public string Author => "Pulsar Team";
+        public string Description => "Securely manages and injects credentials into applications.";
+        public string Icon => "\uE72E"; // Lock Icon
+        public bool CanDisable => false; // Core Plugin
 
         public void Initialize(IServiceProvider services)
         {

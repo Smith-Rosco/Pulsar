@@ -20,6 +20,11 @@ namespace Pulsar.Plugins.BookmarkletRunner
 
         public string Id => "com.pulsar.bookmarklet";
         public string DisplayName => "Bookmarklet Runner";
+        public string Version => "1.0.0";
+        public string Author => "Pulsar Team";
+        public string Description => "Execute JavaScript bookmarklets in the active browser.";
+        public string Icon => "\uE896"; // Code/Script Icon
+        public bool CanDisable => true; // Extension plugin, can be disabled
 
         public void Initialize(IServiceProvider services)
         {

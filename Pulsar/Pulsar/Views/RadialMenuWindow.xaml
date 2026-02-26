@@ -49,6 +49,7 @@
                             IsActive="{Binding IsActive}"
                             IsRecommended="{Binding IsRecommended}"
                             Size="{Binding Size}"
+                            IsEnabled="{Binding IsEnabled}"
                             BadgeCount="{Binding BadgeCount}"
                             CustomFill="{Binding CustomFillBrush}"
                             CustomStroke="{Binding CustomStrokeBrush}"

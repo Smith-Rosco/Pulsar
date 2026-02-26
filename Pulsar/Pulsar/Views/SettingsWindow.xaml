@@ -52,7 +52,13 @@
                                            Icon="{ui:SymbolIcon DialPad24}" 
                                            TargetPageType="{x:Type TypeName=Page}" 
                                            Tag="Slots"/>
+
+                    <ui:NavigationViewItem Content="Plugins" 
+                                           Icon="{ui:SymbolIcon PuzzlePiece24}" 
+                                           TargetPageType="{x:Type TypeName=Page}" 
+                                           Tag="Plugins"/>
                 </ui:NavigationView.MenuItems>
+
 
             <ui:NavigationView.FooterMenuItems>
                 <ui:NavigationViewItem Content="Save Changes" 

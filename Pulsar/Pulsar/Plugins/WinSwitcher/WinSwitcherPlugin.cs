@@ -12,12 +12,19 @@ namespace Pulsar.Plugins.WinSwitcher
     /// <summary>
     /// 窗口切换插件 - 处理应用程序的智能切换和启动
     /// </summary>
-    public class WinSwitcherPlugin : IPulsarPlugin
+    public class WinSwitcherPlugin : IPluginConfigurable
     {
         private IWindowService? _windowService;
+        private bool _showPreviews = true;
+        private HashSet<string> _excludedProcesses = new();
 
         public string Id => "com.pulsar.winswitcher";
         public string DisplayName => "Window Switcher";
+        public string Version => "1.0.0";
+        public string Author => "Pulsar Team";
+        public string Description => "Switch to running windows or launch new application instances.";
+        public string Icon => "\uE8B8"; // Window/Switch Icon
+        public bool CanDisable => false; // Core Plugin
 
         public void Initialize(IServiceProvider services)
         {
@@ -29,6 +36,44 @@ namespace Pulsar.Plugins.WinSwitcher
             }
 
             Debug.WriteLine("[WinSwitcherPlugin] Initialized successfully");
+        }
+
+        public IEnumerable<PluginSettingDefinition> GetSettingsDefinition()
+        {
+            yield return PluginSettingDefinition.Create(
+                key: "ShowPreviews",
+                label: "Show Previews",
+                type: PluginSettingType.Boolean,
+                defaultValue: true,
+                description: "Show window preview thumbnails in the switcher."
+            );
+
+            yield return PluginSettingDefinition.Create(
+                key: "ExcludeProcesses",
+                label: "Exclude Processes",
+                type: PluginSettingType.String,
+                defaultValue: "",
+                description: "Comma-separated list of process names to ignore."
+            );
+        }
+
+        public void UpdateSettings(Dictionary<string, object> settings)
+        {
+            if (settings.TryGetValue("ShowPreviews", out var showPreviewsObj))
+            {
+                if (showPreviewsObj is bool bVal) _showPreviews = bVal;
+                else if (bool.TryParse(showPreviewsObj?.ToString(), out var bParsed)) _showPreviews = bParsed;
+            }
+
+            if (settings.TryGetValue("ExcludeProcesses", out var excludeObj) && excludeObj != null)
+            {
+                var excludeStr = excludeObj.ToString() ?? string.Empty;
+                _excludedProcesses = excludeStr.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                               .Select(p => p.Trim())
+                                               .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            }
+
+            Debug.WriteLine($"[WinSwitcherPlugin] Settings updated. ShowPreviews={_showPreviews}, Excluded count={_excludedProcesses.Count}");
         }
 
         public async Task<PluginResult> ExecuteAsync(
@@ -60,6 +105,12 @@ namespace Pulsar.Plugins.WinSwitcher
             if (!args.TryGetValue("app", out var processName) || string.IsNullOrEmpty(processName))
             {
                 return PluginResult.Error("Missing required parameter: app");
+            }
+
+            if (_excludedProcesses.Contains(processName))
+            {
+                Debug.WriteLine($"[WinSwitcherPlugin] 🛑 Process excluded by settings: {processName}");
+                return PluginResult.Error($"Process is excluded by settings: {processName}");
             }
 
             if (_windowService == null)
@@ -94,6 +145,11 @@ namespace Pulsar.Plugins.WinSwitcher
             {
                 return PluginResult.Error("Missing required parameter: path");
             }
+            // Launch is explicitly requested, so we might not check excluded processes here, 
+            // but for SmartSwitch we should.
+            // However, if the user explicitly wants to launch an app, maybe we shouldn't block it even if it's in the "Exclude from Switcher" list.
+            // "ExcludeProcesses" usually means "Exclude from the list of switchable windows".
+            // So Launch should probably be allowed.
 
             args.TryGetValue("arguments", out var arguments);
 
@@ -130,6 +186,18 @@ namespace Pulsar.Plugins.WinSwitcher
             if (!args.TryGetValue("app", out var processName) || string.IsNullOrEmpty(processName))
             {
                 return PluginResult.Error("Missing required parameter: app");
+            }
+
+            if (_excludedProcesses.Contains(processName))
+            {
+                 Debug.WriteLine($"[WinSwitcherPlugin] 🛑 Process excluded by settings (SmartSwitch): {processName}");
+                 // If excluded, we probably shouldn't switch to it.
+                 // Should we fall back to Launch?
+                 // If it's excluded from "Switching", maybe we treat it as "Not Running" for the purpose of switching?
+                 // But if the setting is "Exclude from Switcher", it implies we shouldn't switch to it via the switcher.
+                 // However, if the user invokes "SmartSwitch" explicitly for this app, they probably want to go there.
+                 // But let's respect the setting as a "Block" for now to demonstrate the feature.
+                 return PluginResult.Error($"Process is excluded by settings: {processName}");
             }
 
             if (_windowService == null)

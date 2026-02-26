@@ -20,6 +20,11 @@ namespace Pulsar.Plugins.VbaRunner
 
         public string Id => "com.pulsar.vbarunner";
         public string DisplayName => "VBA Script Runner";
+        public string Version => "1.0.0";
+        public string Author => "Pulsar Team";
+        public string Description => "Execute VBA scripts in Excel/WPS with context awareness.";
+        public string Icon => "\uE71D"; // Excel/Table Icon
+        public bool CanDisable => true; // Extension plugin, can be disabled
 
         public void Initialize(IServiceProvider services)
         {

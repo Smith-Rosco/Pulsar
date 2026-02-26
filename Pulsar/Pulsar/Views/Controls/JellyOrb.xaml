@@ -299,6 +299,15 @@
             <Setter Property="Panel.ZIndex" Value="0"/>
 
             <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.3"/>
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <BlurEffect Radius="2"/>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+
                 <DataTrigger Binding="{Binding IsActive, RelativeSource={RelativeSource Self}}" Value="True">
                     <Setter Property="Panel.ZIndex" Value="99"/>
                     <Setter Property="Opacity" Value="1.0"/>

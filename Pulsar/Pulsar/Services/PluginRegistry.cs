@@ -26,6 +26,7 @@ namespace Pulsar.Services
         private readonly ILogger<PluginRegistry> _logger;
         private readonly PluginLoader _loader;
         private readonly Services.Interfaces.ITrayService? _trayService;
+        private Services.Interfaces.IConfigService? _configService; // [New]
 
         public PluginRegistry(IServiceProvider serviceProvider, ILogger<PluginRegistry> logger)
         {
@@ -46,6 +47,9 @@ namespace Pulsar.Services
         /// </summary>
         public void LoadAll()
         {
+            // [New] Resolve ConfigService
+            _configService = _serviceProvider.GetService(typeof(Services.Interfaces.IConfigService)) as Services.Interfaces.IConfigService;
+
             _logger.LogInformation("[PluginRegistry] Loading plugins...");
 
             var plugins = _loader.LoadAll();
@@ -59,6 +63,35 @@ namespace Pulsar.Services
                 }
 
                 _plugins[plugin.Id] = plugin;
+                
+                // [New] Ensure plugin has a profile entry
+                if (_configService != null)
+                {
+                    var config = _configService.Current;
+                    if (config != null)
+                    {
+                        if (!config.Plugins.TryGetValue(plugin.Id, out var profile))
+                        {
+                            profile = new Models.PluginProfile { Enabled = true };
+                            config.Plugins[plugin.Id] = profile;
+                        }
+                        
+                        // [Fix] Apply saved settings on startup
+                        if (plugin is IPluginConfigurable configurable)
+                        {
+                            try
+                            {
+                                configurable.UpdateSettings(profile.Config);
+                                _logger.LogInformation("[PluginRegistry] Applied settings for {PluginId}", plugin.Id);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "[PluginRegistry] Failed to apply settings for {PluginId}", plugin.Id);
+                            }
+                        }
+                    }
+                }
+
                 _logger.LogInformation("[PluginRegistry] ✓ Registered plugin: {PluginName} ({PluginId})", plugin.DisplayName, plugin.Id);
             }
 
@@ -83,6 +116,19 @@ namespace Pulsar.Services
             IReadOnlyDictionary<string, string> args,
             PulsarContext context)
         {
+            // [New] Check Enabled State from Config
+            if (_configService != null && _configService.Current != null)
+            {
+                if (_configService.Current.Plugins.TryGetValue(pluginId, out var profile))
+                {
+                    if (!profile.Enabled)
+                    {
+                        _logger.LogWarning("[PluginRegistry] 🛑 Plugin is disabled by user: {PluginId}", pluginId);
+                        return PluginResult.Error("Plugin is disabled.");
+                    }
+                }
+            }
+
             // 1. 检查熔断状态
             if (_brokenCircuits.TryGetValue(pluginId, out var breakTime))
             {
@@ -168,6 +214,44 @@ namespace Pulsar.Services
                     System.Windows.Forms.ToolTipIcon.Error
                 );
             }
+        }
+
+        /// <summary>
+        /// Manually enable or disable a plugin.
+        /// </summary>
+        public async Task SetPluginStateAsync(string pluginId, bool enabled)
+        {
+            if (_configService == null) return;
+            
+            var config = _configService.Current;
+            if (config == null) return;
+
+            if (!config.Plugins.TryGetValue(pluginId, out var profile))
+            {
+                profile = new Models.PluginProfile();
+                config.Plugins[pluginId] = profile;
+            }
+
+            if (profile.Enabled != enabled)
+            {
+                profile.Enabled = enabled;
+                _logger.LogInformation("[PluginRegistry] Plugin {PluginId} state changed to {State}", pluginId, enabled ? "Enabled" : "Disabled");
+                await _configService.SaveAsync(config);
+                
+                // Trigger OnEnable/OnDisable hooks here if/when implemented
+            }
+        }
+
+        /// <summary>
+        /// Check if a plugin is enabled.
+        /// </summary>
+        public bool IsPluginEnabled(string pluginId)
+        {
+            if (_configService?.Current?.Plugins.TryGetValue(pluginId, out var profile) == true)
+            {
+                return profile.Enabled;
+            }
+            return true; // Default to enabled if not configured
         }
 
         /// <summary>

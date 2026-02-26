@@ -7,7 +7,9 @@ using Pulsar.Native;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels;
+using Pulsar.ViewModels.Settings; // Added
 using Pulsar.Views;
+using Pulsar.Views.Pages; // Added
 using System;
 using System.Windows;
 using System.IO;
@@ -72,8 +74,14 @@ namespace Pulsar
             // 4. UI Services
             serviceCollection.AddSingleton<RadialMenuViewModel>();
             serviceCollection.AddSingleton<RadialMenuWindow>();
+            
             // [Fix] Register SettingsViewModel as Transient for fresh state on every open
             serviceCollection.AddTransient<SettingsViewModel>();
+            
+            // [New] Plugin Management UI
+            serviceCollection.AddTransient<PluginManagerViewModel>();
+            serviceCollection.AddTransient<SettingsPluginsPage>();
+
             serviceCollection.AddTransient<SettingsWindow>();
             
             // Build Container

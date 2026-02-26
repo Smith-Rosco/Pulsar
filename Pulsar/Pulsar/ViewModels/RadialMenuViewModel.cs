@@ -488,7 +488,10 @@ namespace Pulsar.ViewModels
             else if (_activeSlotIndex > 0)
             {
                 var slot = Slots.FirstOrDefault(s => s.SlotIndex == _activeSlotIndex);
-                if (slot != null) slot.IsActive = true;
+                if (slot != null && slot.IsEnabled) // [Fix] Only activate if enabled
+                {
+                    slot.IsActive = true;
+                }
             }
 
             UpdateDynamicVisuals();
@@ -748,7 +751,7 @@ namespace Pulsar.ViewModels
             }
 
             var slot = Slots.FirstOrDefault(s => s.SlotIndex == _activeSlotIndex);
-            if (slot == null) return;
+            if (slot == null || !slot.IsEnabled) return; // [Fix] Check IsEnabled
 
             await slot.ExecuteAsync(this);
         }
@@ -769,7 +772,7 @@ namespace Pulsar.ViewModels
 
             // Slot Click
             var slot = Slots.FirstOrDefault(s => s.SlotIndex == _activeSlotIndex);
-            if (slot == null) return;
+            if (slot == null || !slot.IsEnabled) return; // [Fix] Check IsEnabled
 
             // [Restricted Interaction]
             // Unified Logic: Clicking is ONLY for Navigation (Drill-down).

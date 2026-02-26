@@ -70,10 +70,27 @@ namespace Pulsar.ViewModels.Strategies
                         _context.TargetExePath, 
                         configService, 
                         _serviceProvider);
+                    
+                    slot.IsEnabled = true; // Always enabled
                 }
                 else
                 {
-                    slot.ActionStrategy = new PluginActionStrategy(item, _pluginRegistry, _context, _trayService);
+                    // Check if plugin is enabled
+                    bool isEnabled = _pluginRegistry.IsPluginEnabled(item.PluginId);
+                    slot.IsEnabled = isEnabled;
+                    
+                    if (isEnabled)
+                    {
+                        slot.ActionStrategy = new PluginActionStrategy(item, _pluginRegistry, _context, _trayService);
+                    }
+                    else
+                    {
+                        // Disabled Strategy (Toast or NoOp)
+                        slot.ActionStrategy = new NoOpStrategy(); 
+                        // Optional: Append (Disabled) to label? 
+                        // slot.Label += " (Disabled)"; 
+                        // Better to rely on visual cue (greyed out)
+                    }
                 }
             }
 

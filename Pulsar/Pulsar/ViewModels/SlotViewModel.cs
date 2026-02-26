@@ -171,6 +171,10 @@ namespace Pulsar.ViewModels
         [ObservableProperty]
         private double _currentOpacity = 0.0;
 
+        // [New] Enabled State for Ghost Slots
+        [ObservableProperty]
+        private bool _isEnabled = true;
+
         // [New] Magnetic Animation Offset
         [ObservableProperty]
         private double _offsetX;

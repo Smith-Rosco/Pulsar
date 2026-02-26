@@ -22,6 +22,31 @@ namespace Pulsar.Core.Plugin
         string DisplayName { get; }
 
         /// <summary>
+        /// 插件版本号 (建议语义化版本，如 "1.0.0")
+        /// </summary>
+        string Version { get; }
+
+        /// <summary>
+        /// 插件作者/维护者
+        /// </summary>
+        string Author { get; }
+
+        /// <summary>
+        /// 插件简短描述
+        /// </summary>
+        string Description { get; }
+
+        /// <summary>
+        /// 插件图标 (Segoe Fluent Icons 字符或 Emoji)
+        /// </summary>
+        string Icon { get; }
+
+        /// <summary>
+        /// 是否允许禁用 (核心插件应返回 false)
+        /// </summary>
+        bool CanDisable { get; }
+
+        /// <summary>
         /// 冷启动初始化 (在 App 启动时调用一次)
         /// </summary>
         /// <param name="services">服务提供者，用于依赖注入</param>

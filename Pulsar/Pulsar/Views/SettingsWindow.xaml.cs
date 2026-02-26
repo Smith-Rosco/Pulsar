@@ -3,9 +3,11 @@ using System.Windows;
 using System.Windows.Controls;
 using Wpf.Ui.Controls;
 using Pulsar.ViewModels;
+using Pulsar.ViewModels.Settings; // Added
 using Pulsar.Views.Pages;
 using Pulsar.Services.Interfaces;
 using Pulsar.Models;
+
 using CommunityToolkit.Mvvm.Messaging;
 using Pulsar.Core.Messages;
 using System.Windows.Input;
@@ -16,16 +18,19 @@ namespace Pulsar.Views
     public partial class SettingsWindow : FluentWindow
     {
         private readonly SettingsViewModel _viewModel;
+        private readonly PluginManagerViewModel _pluginManager; // [New]
         private readonly IThemeService _themeService;
         
         // Manual Page Cache
         private SettingsGeneralPage? _generalPage;
         private SettingsSlotsPage? _slotsPage;
+        private SettingsPluginsPage? _pluginsPage; // [New]
 
-        public SettingsWindow(SettingsViewModel viewModel, IThemeService themeService)
+        public SettingsWindow(SettingsViewModel viewModel, PluginManagerViewModel pluginManager, IThemeService themeService)
         {
             InitializeComponent();
             _viewModel = viewModel;
+            _pluginManager = pluginManager;
             _themeService = themeService;
             DataContext = viewModel;
 
@@ -34,6 +39,7 @@ namespace Pulsar.Views
 
             // Subscribe to ViewModel changes for Navigation
             _viewModel.PropertyChanged += ViewModel_PropertyChanged;
+
 
             // Subscribe to Snackbar messages
             WeakReferenceMessenger.Default.Register<SnackbarMessage>(this, (r, m) =>
@@ -58,10 +64,12 @@ namespace Pulsar.Views
             // Initialize Pages with the shared ViewModel
             _generalPage = new SettingsGeneralPage(viewModel);
             _slotsPage = new SettingsSlotsPage(viewModel);
+            _pluginsPage = new SettingsPluginsPage(_pluginManager, _themeService); // [New]
 
             // [Fix] Apply theme explicitly to pages to fix inheritance issues
             _themeService.ApplyTheme(_generalPage, _viewModel.SettingsTheme, updateGlobal: false);
             _themeService.ApplyTheme(_slotsPage, _viewModel.SettingsTheme, updateGlobal: false);
+            // _pluginsPage handles its own initial theme application in constructor to prevent XamlParseException
 
             this.Loaded += (s, e) =>
             {
@@ -72,18 +80,22 @@ namespace Pulsar.Views
                     if (_viewModel.CurrentView == "Slots")
                     {
                         RootFrame.Navigate(_slotsPage);
-                        // Ensure visual state matches
                         if (RootNavigation.MenuItems[1] is NavigationViewItem navItem) navItem.IsActive = true;
+                    }
+                    else if (_viewModel.CurrentView == "Plugins")
+                    {
+                        RootFrame.Navigate(_pluginsPage);
+                        if (RootNavigation.MenuItems[2] is NavigationViewItem navItem) navItem.IsActive = true;
                     }
                     else
                     {
                         RootFrame.Navigate(_generalPage);
-                         // Ensure visual state matches
                         if (RootNavigation.MenuItems[0] is NavigationViewItem navItem) navItem.IsActive = true;
                     }
                 }
 
                 // [Fix] Force hide scrollbars in NavigationView using VisualTreeHelper
+
                 DisableScrollViewers(RootNavigation);
             };
             
@@ -112,8 +124,8 @@ namespace Pulsar.Views
              {
                  // [Fix] Robust Navigation State Synchronization
                  // Map ViewModel ViewName to UI Tag
-                 // ViewModel: "Settings", "Slots"
-                 // UI Tags: "General", "Slots"
+                 // ViewModel: "Settings", "Slots", "Plugins"
+                 // UI Tags: "General", "Slots", "Plugins"
                  
                  string targetTag = _viewModel.CurrentView;
                  if (targetTag == "Settings") targetTag = "General";
@@ -133,8 +145,10 @@ namespace Pulsar.Views
                              // Perform actual navigation
                              if (targetTag == "General") RootFrame.Navigate(_generalPage);
                              else if (targetTag == "Slots") RootFrame.Navigate(_slotsPage);
+                             else if (targetTag == "Plugins") RootFrame.Navigate(_pluginsPage);
                              found = true;
                          }
+
                          else
                          {
                              // Deactivate others to prevent "double selection" ghosting
@@ -174,6 +188,7 @@ namespace Pulsar.Views
             // Re-apply theme to pages when global theme changes
             if (_generalPage != null) _themeService.ApplyTheme(_generalPage, theme, updateGlobal: false);
             if (_slotsPage != null) _themeService.ApplyTheme(_slotsPage, theme, updateGlobal: false);
+            if (_pluginsPage != null) _themeService.ApplyTheme(_pluginsPage, theme, updateGlobal: false); // [New]
         }
 
         private void RootNavigation_SelectionChanged(NavigationView sender, RoutedEventArgs args)
@@ -190,10 +205,16 @@ namespace Pulsar.Views
                      RootFrame.Navigate(_slotsPage);
                      _viewModel.CurrentView = "Slots";
                  }
+                 else if (item.Tag?.ToString() == "Plugins")
+                 {
+                     RootFrame.Navigate(_pluginsPage);
+                     _viewModel.CurrentView = "Plugins";
+                 }
              }
         }
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
+
         {
             _viewModel.SaveCommand.Execute(null);
         }
@@ -210,6 +231,7 @@ namespace Pulsar.Views
             // Clean up resources
             _generalPage = null;
             _slotsPage = null;
+            _pluginsPage = null;
             
             // Trigger GC to clean up the Transient ViewModel and Pages
             TrimMemory();

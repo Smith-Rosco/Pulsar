@@ -16,6 +16,11 @@ namespace Pulsar.Plugins.BasicCommand
     {
         public string Id => "com.pulsar.command";
         public string DisplayName => "Simple Command";
+        public string Version => "1.0.0";
+        public string Author => "Pulsar Team";
+        public string Description => "Execute shell commands or simulate keystrokes.";
+        public string Icon => "\uE756"; // Command Prompt (TVMonitor or similar)
+        public bool CanDisable => true;
 
         public void Initialize(IServiceProvider services)
         {

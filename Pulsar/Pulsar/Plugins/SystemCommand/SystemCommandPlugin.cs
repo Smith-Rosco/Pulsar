@@ -15,6 +15,11 @@ namespace Pulsar.Plugins.SystemCommand
     {
         public string Id => "com.pulsar.system";
         public string DisplayName => "System Command";
+        public string Version => "1.0.0";
+        public string Author => "Pulsar Team";
+        public string Description => "Internal system commands for Pulsar control.";
+        public string Icon => "\uE713"; // Settings Icon
+        public bool CanDisable => false; // Core Plugin
 
         private IServiceProvider? _services;
 

@@ -14,7 +14,30 @@ namespace Pulsar.Models
     public class ProfilesConfig
     {
         public ProfileSettings Settings { get; set; } = new();
+        
+        /// <summary>
+        /// 插件配置 - Key: PluginId (e.g. "com.pulsar.winswitcher")
+        /// </summary>
+        public Dictionary<string, PluginProfile> Plugins { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+        
         public Dictionary<string, ProcessProfile> Profiles { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// 单个插件的配置档案
+    /// </summary>
+    public class PluginProfile
+    {
+        /// <summary>
+        /// 是否启用该插件
+        /// </summary>
+        public bool Enabled { get; set; } = true;
+
+        /// <summary>
+        /// 插件自定义配置存储区 (Key-Value)
+        /// 注意：System.Text.Json 反序列化时 value 可能是 JsonElement
+        /// </summary>
+        public Dictionary<string, object> Config { get; set; } = new();
     }
 
     /// <summary>
