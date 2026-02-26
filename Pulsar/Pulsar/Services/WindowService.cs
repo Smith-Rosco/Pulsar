@@ -166,17 +166,26 @@ namespace Pulsar.Services
                         // 1. 基础过滤
                     if (!NativeMethods.IsWindowVisible(hWnd)) return true;
 
-                    // [Fix] 增强过滤：排除 Cloaked 窗口 (如 UWP 挂起、虚拟桌面)
-                    if (NativeMethods.DwmGetWindowAttribute(hWnd, NativeMethods.DWMWA_CLOAKED, out bool isCloaked, sizeof(bool)) == 0)
+                    // [Fix] Enhanced filtering: DWMWA_CLOAKED (using correct P/Invoke signature with int)
+                    // sizeof(int) is 4 bytes. DWM API returns S_OK (0) on success.
+                    if (NativeMethods.DwmGetWindowAttribute(hWnd, NativeMethods.DWMWA_CLOAKED, out int isCloakedVal, sizeof(int)) == 0)
                     {
-                        if (isCloaked) return true;
+                        if (isCloakedVal != 0) return true; // Window is cloaked (e.g. suspended UWP app)
                     }
 
-                    // [Fix] 增强过滤：排除工具窗口 (ToolWindow)
+                    // [Fix] Enhanced filtering: Tool Windows & Ownership Check (Alt-Tab heuristic)
                     long exStyle = NativeMethods.GetWindowLong(hWnd, NativeMethods.GWL_EXSTYLE);
                     if ((exStyle & NativeMethods.WS_EX_TOOLWINDOW) != 0) return true;
 
-                    // 2. 标题过滤
+                    // Check for Owner window
+                    IntPtr owner = NativeMethods.GetWindow(hWnd, NativeMethods.GW_OWNER);
+                    if (owner != IntPtr.Zero)
+                    {
+                        // If window has an owner, it must be an AppWindow to be shown
+                        if ((exStyle & NativeMethods.WS_EX_APPWINDOW) == 0) return true;
+                    }
+
+                    // 2. Title Filtering
                     int length = NativeMethods.GetWindowTextLength(hWnd);
                     if (length == 0) return true;
 
@@ -186,16 +195,19 @@ namespace Pulsar.Services
 
                     if (string.IsNullOrWhiteSpace(title) || title == "Program Manager") return true;
 
-                    // 3. 获取进程信息
-                    NativeMethods.GetWindowThreadProcessId(hWnd, out uint processId);
-                    try
-                    {
-                        using (var proc = Process.GetProcessById((int)processId))
+                        // 3. 获取进程信息
+                        NativeMethods.GetWindowThreadProcessId(hWnd, out uint processId);
+                        try
                         {
-                            if (proc.HasExited) return true;
+                            using (var proc = Process.GetProcessById((int)processId))
+                            {
+                                if (proc.HasExited) return true;
 
-                            string fullPath = "";
-                            try { fullPath = proc.MainModule?.FileName ?? ""; } catch { }
+                                // [Blacklist Filter] Check against known system processes
+                                if (_processBlacklist.Contains(proc.ProcessName)) return true;
+
+                                string fullPath = "";
+                                try { fullPath = proc.MainModule?.FileName ?? ""; } catch { }
 
                             // 提取图标
                             ImageSource? iconSource = null;
@@ -253,15 +265,18 @@ namespace Pulsar.Services
                     }
                     string title = sb.ToString();
 
-                    // 4. 获取进程信息
-                    try
-                    {
-                        using (var proc = Process.GetProcessById((int)processId))
+                        // 4. 获取进程信息
+                        try
                         {
-                            if (proc.HasExited) return true;
+                            using (var proc = Process.GetProcessById((int)processId))
+                            {
+                                if (proc.HasExited) return true;
 
-                            string fullPath = "";
-                            try { fullPath = proc.MainModule?.FileName ?? ""; } catch { }
+                                // [Blacklist Filter] Check against known system processes
+                                if (_processBlacklist.Contains(proc.ProcessName)) return true;
+
+                                string fullPath = "";
+                                try { fullPath = proc.MainModule?.FileName ?? ""; } catch { }
 
                             // 提取图标
                             ImageSource? iconSource = null;
@@ -416,25 +431,20 @@ namespace Pulsar.Services
             // if (NativeMethods.IsIconic(hWnd)) return false; 
 
             // Check for Cloaked (Virtual Desktop / UWP Suspended)
-            if (NativeMethods.DwmGetWindowAttribute(hWnd, NativeMethods.DWMWA_CLOAKED, out bool isCloaked, sizeof(bool)) == 0 && isCloaked)
-                return false;
-
-            // Check for ToolWindow
+            // [Fix] Check if window is cloaked using correct int signature
+            if (NativeMethods.DwmGetWindowAttribute(hWnd, NativeMethods.DWMWA_CLOAKED, out int isCloakedVal, sizeof(int)) == 0 && isCloakedVal != 0)
+            {
+                // Window is cloaked, treat as minimized/hidden
+                return true; 
+            }
+            
+            // Check for Tool Window
             long exStyle = NativeMethods.GetWindowLong(hWnd, NativeMethods.GWL_EXSTYLE);
             if ((exStyle & NativeMethods.WS_EX_TOOLWINDOW) != 0) return false;
-
-            // Check for Title
-            int length = NativeMethods.GetWindowTextLength(hWnd);
-            if (length == 0) return false;
             
-            StringBuilder sb = new StringBuilder(length + 1);
-            NativeMethods.GetWindowText(hWnd, sb, sb.Capacity);
-            string title = sb.ToString();
-            
-            if (title == "Program Manager") return false; // Desktop
-            
-            // [Debug] Log valid candidate
-            // Debug.WriteLine($"[IsAltTabWindow] Valid Candidate: {title} ({hWnd})");
+            // Check for Owner
+            IntPtr owner = NativeMethods.GetWindow(hWnd, NativeMethods.GW_OWNER);
+            if (owner != IntPtr.Zero && (exStyle & NativeMethods.WS_EX_APPWINDOW) == 0) return false;
 
             return true;
         }
@@ -558,46 +568,68 @@ namespace Pulsar.Services
                 }
             });
         }
-    }
+        private const int GWL_EXSTYLE_CONST = -20;
+        private const long WS_EX_TOOLWINDOW_CONST = 0x00000080L;
+        private const long WS_EX_APPWINDOW_CONST = 0x00040000L;
+        private const int DWMWA_CLOAKED_CONST = 14;
+        private const uint GW_HWNDNEXT_CONST = 2;
+        private const uint GW_OWNER_CONST = 4;
+        private const uint GW_CHILD_CONST = 5;
 
-    // 保持 NativeMethods 类不变
-    internal static class NativeMethods
-    {
-        [DllImport("user32.dll")] internal static extern bool SetForegroundWindow(IntPtr hWnd);
-        [DllImport("user32.dll")] internal static extern bool IsIconic(IntPtr hWnd);
-        [DllImport("user32.dll")] internal static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-        [DllImport("user32.dll")] internal static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, uint dwExtraInfo);
-        
-        // [New] Capture Helpers
-        [DllImport("user32.dll")] internal static extern bool IsWindow(IntPtr hWnd);
-        [DllImport("user32.dll")] internal static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
-        [DllImport("user32.dll")] internal static extern bool PrintWindow(IntPtr hwnd, IntPtr hDC, uint nFlags);
-        [DllImport("gdi32.dll")] internal static extern bool DeleteObject(IntPtr hObject);
-
-        [StructLayout(LayoutKind.Sequential)]
-        public struct RECT
+        // [New] Blacklist for system/background processes that shouldn't appear
+        private static readonly HashSet<string> _processBlacklist = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            public int Left, Top, Right, Bottom;
-        }
+            "applicationframehost", // UWP shell
+            "systemsettings",       // Settings (when suspended)
+            "searchapp",            // Search
+            "textinputhost",        // Input Method / Emoji Panel
+            "shellexperiencehost",  // Start Menu etc.
+            "lockapp",              // Lock Screen
+            "video.ui",             // Xbox Game Bar / Video Overlay
+            "gamebar",              // Game Bar
+            "yourphone",            // Phone Link background
+            "calc"                  // Calculator often stays suspended
+        };
 
-        public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
-        [DllImport("user32.dll")] internal static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
-        [DllImport("user32.dll")] internal static extern bool IsWindowVisible(IntPtr hWnd);
-        [DllImport("user32.dll", CharSet = CharSet.Auto)] internal static extern int GetWindowTextLength(IntPtr hWnd);
-        [DllImport("user32.dll", CharSet = CharSet.Auto)] internal static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
-        [DllImport("user32.dll")] internal static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
-        [DllImport("user32.dll", SetLastError = true)][return: MarshalAs(UnmanagedType.Bool)] internal static extern bool DestroyIcon(IntPtr hIcon);
-        
-        // [New] DWM & Window Style API
-        [DllImport("dwmapi.dll")] internal static extern int DwmGetWindowAttribute(IntPtr hwnd, int dwAttribute, out bool pvAttribute, int cbAttribute);
-        [DllImport("user32.dll")] internal static extern long GetWindowLong(IntPtr hWnd, int nIndex);
-        
-        internal const int DWMWA_CLOAKED = 14;
-        internal const int GWL_EXSTYLE = -20;
-        internal const long WS_EX_TOOLWINDOW = 0x00000080;
-        
-        // [New] GetWindow
-        internal const uint GW_HWNDNEXT = 2;
-        [DllImport("user32.dll")] internal static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
+        internal static class NativeMethods
+        {
+            // Constants exposed for service logic
+            internal const int DWMWA_CLOAKED = 14;
+            internal const int GWL_EXSTYLE = -20;
+            internal const long WS_EX_TOOLWINDOW = 0x00000080L;
+            internal const long WS_EX_APPWINDOW = 0x00040000L;
+            internal const uint GW_HWNDNEXT = 2;
+            internal const uint GW_OWNER = 4;
+            internal const uint GW_CHILD = 5;
+
+            // [New] GetWindow
+            [DllImport("user32.dll")] internal static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
+
+            public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+            [DllImport("user32.dll")] internal static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+            [DllImport("user32.dll")] internal static extern bool IsWindowVisible(IntPtr hWnd);
+            [DllImport("user32.dll")] internal static extern bool IsWindow(IntPtr hWnd); // Added
+            [DllImport("user32.dll", CharSet = CharSet.Auto)] internal static extern int GetWindowTextLength(IntPtr hWnd);
+            [DllImport("user32.dll", CharSet = CharSet.Auto)] internal static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+            [DllImport("user32.dll")] internal static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+            [DllImport("user32.dll", SetLastError = true)][return: MarshalAs(UnmanagedType.Bool)] internal static extern bool DestroyIcon(IntPtr hIcon);
+            [DllImport("gdi32.dll", EntryPoint = "DeleteObject")] [return: MarshalAs(UnmanagedType.Bool)] internal static extern bool DeleteObject([In] IntPtr hObject); // Added
+            
+            // [New] DWM & Window Style API
+            // [Fix] Correct P/Invoke signature for DWMWA_CLOAKED (expects int, not bool)
+            [DllImport("dwmapi.dll")] internal static extern int DwmGetWindowAttribute(IntPtr hwnd, int dwAttribute, out int pvAttribute, int cbAttribute);
+            [DllImport("user32.dll")] internal static extern long GetWindowLong(IntPtr hWnd, int nIndex);
+            [DllImport("user32.dll")] internal static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+            [DllImport("user32.dll")] internal static extern bool PrintWindow(IntPtr hwnd, IntPtr hdcBlt, uint nFlags);
+            
+            [StructLayout(LayoutKind.Sequential)]
+            internal struct RECT
+            {
+                public int Left;
+                public int Top;
+                public int Right;
+                public int Bottom;
+            }
+        }
     }
 }
