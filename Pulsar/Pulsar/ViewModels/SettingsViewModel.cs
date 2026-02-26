@@ -754,14 +754,14 @@ namespace Pulsar.ViewModels
                  
                  if (parameter is PluginSlot slot)
                  {
-                     if (slot.PluginId == "com.pulsar.winswitcher")
-                     {
-                         // [Fix] Use indexer to ensure PropertyChanged notification updates the UI
-                         slot["app"] = selected.ProcessName;
-                         slot["path"] = selected.ExePath;
-                         if (string.IsNullOrWhiteSpace(slot.Label) || slot.Label == "New App")
-                             slot.Label = selected.Title;
-                     }
+                        if (slot.PluginId == "com.pulsar.winswitcher")
+                        {
+                            // [Fix] Use indexer to ensure PropertyChanged notification updates the UI
+                            slot["app"] = selected.ProcessName.ToUpperInvariant();
+                            slot["path"] = selected.ExePath;
+                            if (string.IsNullOrWhiteSpace(slot.Label) || slot.Label == "New App")
+                                slot.Label = selected.Title;
+                        }
                      else if (slot.PluginId == "com.pulsar.command")
                      {
                          // [Fix] Use indexer here too

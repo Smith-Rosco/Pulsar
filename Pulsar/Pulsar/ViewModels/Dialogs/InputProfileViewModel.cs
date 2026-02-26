@@ -121,9 +121,9 @@ namespace Pulsar.ViewModels.Dialogs
                 // Clean up name
                 var processed = ProcessName.Trim();
                 if (processed.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-                    ProcessName = processed.Substring(0, processed.Length - 4);
+                    ProcessName = processed.Substring(0, processed.Length - 4).ToUpperInvariant();
                 else
-                    ProcessName = processed;
+                    ProcessName = processed.ToUpperInvariant();
             }
             return Task.FromResult(true);
         }
