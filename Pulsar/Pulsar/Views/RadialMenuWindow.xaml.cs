@@ -133,27 +133,33 @@ namespace Pulsar.Views
         private void Summon()
         {
             // [Fix] Removed redundant SetPreviousWindow call. 
-            // The ViewModel now handles this via PulsarContext.Capture() BEFORE the window is shown,
-            // which avoids the race condition of capturing Pulsar itself.
+            // The ViewModel now handles this via PulsarContext.Capture() BEFORE the window is shown.
 
-            // 1. [定位] 瞬间移动位置 (紧凑模式)
+            // 1. [定位] 瞬间移动位置 (紧凑模式) - 此时 Opacity 为 0，移动无痕
             UpdateWindowPosition();
             
-            // [Refactor] Compact Mode: Show window and CAPTURE MOUSE
-            this.Show();
+            // [Refactor] Resident Mode: Window is always Visible.
+            // Ensure Visibility is Visible (just in case)
+            if (this.Visibility != Visibility.Visible)
+            {
+                this.Visibility = Visibility.Visible;
+            }
+
+            // Bring to foreground and Activate
             this.Activate();
             
             // Critical: Capture mouse to track gestures outside the 500x500 bounds
             bool captured = MenuCanvas.CaptureMouse();
             System.Diagnostics.Debug.WriteLine($"[RadialMenuWindow] Summon - CaptureMouse: {captured}");
 
-            // [New] Animation (Pop-in)
+            // [New] Restore Interaction
             this.IsHitTestVisible = true; 
             
-            // Clear any HoldEnd animations from Dismiss
+            // Clear any HoldEnd animations from Dismiss to prevent "flicker" from old values
             this.BeginAnimation(UIElement.OpacityProperty, null);
             this.Opacity = 0;
 
+            // Prepare Animations
             var scaleAnim = new DoubleAnimation(0.8, 1.0, TimeSpan.FromMilliseconds(150));
             scaleAnim.EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut };
             
@@ -165,6 +171,8 @@ namespace Pulsar.Views
             
             trans.BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnim);
             trans.BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnim);
+            
+            // Start Fade In
             this.BeginAnimation(UIElement.OpacityProperty, fadeAnim);
 
             this.Focus();
@@ -182,7 +190,10 @@ namespace Pulsar.Views
             // [Refactor] Release Capture
             MenuCanvas.ReleaseMouseCapture();
             
-            // 2. [隐身] 优雅退出
+            // 2. [穿透] 立即关闭交互，防止在淡出过程中误触
+            this.IsHitTestVisible = false;
+
+            // 3. [隐身] 优雅退出 (Ghost Mode)
             _viewModel.CenterPreviewImage = null;
 
             // 显式停止之前的动画并播放淡出动画
@@ -192,14 +203,13 @@ namespace Pulsar.Views
             fadeOut.Completed += (s, e) =>
             {
                 _viewModel.ClearVisuals();
-                this.Hide(); // [Refactor] Hide window completely
+                // [Refactor] Never Hide() the window. 
+                // Just leave it transparent and non-hit-testable.
+                // this.Hide(); <--- REMOVED
             };
             
             this.BeginAnimation(UIElement.OpacityProperty, fadeOut);
             
-            // 3. [穿透] 关闭交互
-            this.IsHitTestVisible = false;
-
             // [修改] 4. 显式归还焦点 (条件性)
             if (!_viewModel.ActionExecuted)
             {
