@@ -789,22 +789,32 @@ namespace Pulsar.ViewModels
             
             if (confirm != DialogResult.Confirmed) return;
 
-            if (_config.Profiles.Remove(profileName))
+            // [Fix] Suppress sync to prevent zombie resurrection of the deleted profile
+            _suppressSlotSync = true;
+            try
             {
-                // [Fix] Save changes to disk
-                await _configService.SaveAsync(_config);
-                
-                SendNotification("Deleted", $"Profile '{profileName}' deleted.", ControlAppearance.Info);
-                
-                // [Fix] Refresh contexts and fallback to Global or first available
-                RefreshContexts();
-                
-                // Try to switch to Global, or Launcher, or first one
-                var fallback = AvailableContexts.FirstOrDefault(c => c.Key == "Global") 
-                               ?? AvailableContexts.FirstOrDefault(c => c.Key == "Launcher")
-                               ?? AvailableContexts.FirstOrDefault();
-                               
-                CurrentContext = fallback;
+                if (_config.Profiles.Remove(profileName))
+                {
+                    // [Fix] Save changes to disk
+                    await _configService.SaveAsync(_config);
+                    
+                    SendNotification("Deleted", $"Profile '{profileName}' deleted.", ControlAppearance.Info);
+                    
+                    // [Fix] Refresh contexts and fallback to Global or first available
+                    RefreshContexts();
+                    
+                    // Try to switch to Global, or Launcher, or first one
+                    var fallback = AvailableContexts.FirstOrDefault(c => c.Key == "Global") 
+                                   ?? AvailableContexts.FirstOrDefault(c => c.Key == "Launcher")
+                                   ?? AvailableContexts.FirstOrDefault();
+                                   
+                    CurrentContext = fallback;
+                }
+            }
+            finally
+            {
+                // [Important] Re-enable sync only after context switch is complete
+                _suppressSlotSync = false;
             }
         }
         

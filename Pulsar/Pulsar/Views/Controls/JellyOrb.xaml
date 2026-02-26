@@ -225,14 +225,15 @@
                 </TextBlock.Style>
             </TextBlock>
 
-            <!-- [New] Badge for Multi-Window Count -->
-            <!-- [Fix] Added ElementName=OrbRoot to prevent Binding Expression Error 40 -->
+            <!-- [Architectural Fix] Reduced Badge Size to fit Safe Area -->
+            <!-- Previous: MinWidth=18, Height=18, Margin="0,-10,-10,0" (Too large for 24px container) -->
+            <!-- New: MinWidth=12, Height=12, Margin="0,-2,-2,0" (Tightly integrated) -->
             <Border Background="#FF0078D7" 
-                    CornerRadius="10" 
-                    MinWidth="18" Height="18"
+                    CornerRadius="6" 
+                    MinWidth="12" Height="12"
                     HorizontalAlignment="Right" VerticalAlignment="Top"
-                    Margin="0,-10,-10,0"
-                    Padding="4,0"
+                    Margin="0,-2,-2,0"
+                    Padding="2,0"
                     Panel.ZIndex="100">
                 <Border.Style>
                     <Style TargetType="Border">
@@ -253,12 +254,16 @@
                 </Border.Style>
                 <TextBlock Text="{Binding BadgeCount, ElementName=OrbRoot}" 
                            Foreground="White" 
-                           FontSize="10" 
+                           FontSize="8" 
                            FontWeight="Bold"
                            HorizontalAlignment="Center" 
                            VerticalAlignment="Center"/>
             </Border>
     
+            <!-- [Architectural Fix] Prevent Text Overflow with Viewbox (DownOnly) -->
+            <!-- Wraps TextBlock in a Viewbox constrained to 22px width -->
+            <!-- Short text remains normal size. Long text scales down gracefully. -->
+            <Viewbox StretchDirection="DownOnly" MaxWidth="22" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock Text="{Binding Label, ElementName=OrbRoot}"
                            FontSize="11" FontWeight="SemiBold" 
                            HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -283,6 +288,7 @@
                         </Style>
                     </TextBlock.Style>
                 </TextBlock>
+            </Viewbox>
             </Grid>
         </Viewbox>
     </Grid>

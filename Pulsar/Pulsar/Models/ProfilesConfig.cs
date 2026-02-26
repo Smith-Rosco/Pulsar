@@ -26,8 +26,8 @@ namespace Pulsar.Models
         public double TriggerDistance { get; set; } = 100.0;
         
         // [Compatibility] 使用 string 存储主题，但提供枚举转换
-        public string LauncherTheme { get; set; } = "Dark";
-        public string SettingsTheme { get; set; } = "Dark";
+        public string LauncherTheme { get; set; } = "Light";
+        public string SettingsTheme { get; set; } = "Light";
         public double HoverScale { get; set; } = 1.2;
         public double Springiness { get; set; } = 6.0;
         public double MaxDisplacement { get; set; } = 20.0;
