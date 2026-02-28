@@ -33,7 +33,8 @@
     
     <PublishReadyToRun>true</PublishReadyToRun>
     
-    <!-- Trimming disabled by default (plugin system uses reflection). Re-enable once trimmer roots are in place. -->
+    <!-- Trimming currently incompatible with WinForms usage (NETSDK1175).
+         Keep disabled until we remove System.Windows.Forms dependencies (NotifyIcon/SendKeys, etc). -->
     <PublishTrimmed>false</PublishTrimmed>
     <TrimMode>partial</TrimMode>
     
