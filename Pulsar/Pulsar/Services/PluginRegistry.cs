@@ -116,37 +116,6 @@ namespace Pulsar.Services
             IReadOnlyDictionary<string, string> args,
             PulsarContext context)
         {
-            // [New] Check Enabled State from Config
-            if (_configService != null && _configService.Current != null)
-            {
-                if (_configService.Current.Plugins.TryGetValue(pluginId, out var profile))
-                {
-                    if (!profile.Enabled)
-                    {
-                        _logger.LogWarning("[PluginRegistry] 🛑 Plugin is disabled by user: {PluginId}", pluginId);
-                        return PluginResult.Error("Plugin is disabled.");
-                    }
-                }
-            }
-
-            // 1. 检查熔断状态
-            if (_brokenCircuits.TryGetValue(pluginId, out var breakTime))
-            {
-                if (DateTime.UtcNow - breakTime < ResetTimeout)
-                {
-                    // 熔断中
-                    var remaining = (int)(ResetTimeout - (DateTime.UtcNow - breakTime)).TotalSeconds;
-                    _logger.LogWarning("[PluginRegistry] 🛡️ Circuit Open: {PluginId} is disabled for {Remaining}s", pluginId, remaining);
-                    return PluginResult.Error($"Plugin disabled for safety. Try again in {remaining}s.");
-                }
-                else
-                {
-                    // 冷却结束，进入半开状态 (Half-Open)
-                    _brokenCircuits.Remove(pluginId);
-                    _logger.LogInformation("[PluginRegistry] 🛡️ Circuit Half-Open: Retrying {PluginId}...", pluginId);
-                }
-            }
-
             var plugin = GetPlugin(pluginId);
             
             if (plugin == null)
@@ -155,13 +124,46 @@ namespace Pulsar.Services
                 return PluginResult.Error($"Plugin not found: {pluginId}");
             }
 
+            var tier = GetTier(plugin);
+
+            // [Rule] Core plugins cannot be disabled by user config.
+            if (tier == PluginTier.Extension)
+            {
+                // Check Enabled State from Config
+                if (_configService != null && _configService.Current != null)
+                {
+                    if (_configService.Current.Plugins.TryGetValue(pluginId, out var profile))
+                    {
+                        if (!profile.Enabled)
+                        {
+                            _logger.LogWarning("[PluginRegistry] 🛑 Plugin is disabled by user: {PluginId}", pluginId);
+                            return PluginResult.Error("Plugin is disabled.");
+                        }
+                    }
+                }
+
+                // Circuit Breaker only applies to Extension plugins.
+                if (_brokenCircuits.TryGetValue(pluginId, out var breakTime))
+                {
+                    if (DateTime.UtcNow - breakTime < ResetTimeout)
+                    {
+                        var remaining = (int)(ResetTimeout - (DateTime.UtcNow - breakTime)).TotalSeconds;
+                        _logger.LogWarning("[PluginRegistry] 🛡️ Circuit Open: {PluginId} is disabled for {Remaining}s", pluginId, remaining);
+                        return PluginResult.Error($"Plugin disabled for safety. Try again in {remaining}s.");
+                    }
+
+                    _brokenCircuits.Remove(pluginId);
+                    _logger.LogInformation("[PluginRegistry] 🛡️ Circuit Half-Open: Retrying {PluginId}...", pluginId);
+                }
+            }
+
             try
             {
                 _logger.LogDebug("[PluginRegistry] Executing: {PluginId}.{Action}", pluginId, action);
                 var result = await plugin.ExecuteAsync(action, args, context);
                 
-                // 2. 执行成功 - 重置计数器
-                if (_failureCounts.ContainsKey(pluginId))
+                // Extension plugin succeeded - reset crash counters.
+                if (tier == PluginTier.Extension && _failureCounts.ContainsKey(pluginId))
                 {
                     _failureCounts.Remove(pluginId);
                 }
@@ -181,11 +183,29 @@ namespace Pulsar.Services
             }
             catch (Exception ex)
             {
-                // 3. 发生异常 - 增加故障计数
                 _logger.LogError(ex, "[PluginRegistry] ❌ Exception in plugin {PluginId}", pluginId);
-                HandlePluginCrash(pluginId, ex);
+
+                // Only Extension plugins are isolated with Circuit Breaker.
+                if (tier == PluginTier.Extension)
+                {
+                    HandlePluginCrash(pluginId, ex);
+                }
+
                 return PluginResult.Error($"Plugin execution failed: {ex.Message}");
             }
+        }
+
+        private static PluginTier GetTier(IPulsarPlugin plugin)
+        {
+            if (plugin is IPluginTiered tiered)
+            {
+                return tiered.Tier;
+            }
+
+            // Backwards-compatible default:
+            // - If a plugin cannot be disabled, treat it as Core.
+            // - Otherwise treat it as Extension.
+            return plugin.CanDisable ? PluginTier.Extension : PluginTier.Core;
         }
 
         private void HandlePluginCrash(string pluginId, Exception ex)
@@ -222,6 +242,13 @@ namespace Pulsar.Services
         public async Task SetPluginStateAsync(string pluginId, bool enabled)
         {
             if (_configService == null) return;
+
+            // Core plugins cannot be disabled.
+            var plugin = GetPlugin(pluginId);
+            if (plugin != null && !plugin.CanDisable)
+            {
+                return;
+            }
             
             var config = _configService.Current;
             if (config == null) return;
@@ -247,6 +274,12 @@ namespace Pulsar.Services
         /// </summary>
         public bool IsPluginEnabled(string pluginId)
         {
+            var plugin = GetPlugin(pluginId);
+            if (plugin != null && !plugin.CanDisable)
+            {
+                return true;
+            }
+
             if (_configService?.Current?.Plugins.TryGetValue(pluginId, out var profile) == true)
             {
                 return profile.Enabled;

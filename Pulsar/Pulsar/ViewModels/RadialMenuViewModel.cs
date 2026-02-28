@@ -13,6 +13,7 @@ using Pulsar.Services.Interfaces;
 using Pulsar.Native;
 using Pulsar.Helpers;
 using Pulsar.ViewModels.Strategies; // [New]
+using Microsoft.Extensions.Logging;
 
 namespace Pulsar.ViewModels
 {
@@ -30,6 +31,7 @@ namespace Pulsar.ViewModels
         private readonly IHotkeyService _hotkeyService; // [Clean] Make explicit
         private readonly ITrayService _trayService; // [New]
         private readonly System.IServiceProvider _serviceProvider;
+        private readonly ILogger<RadialMenuViewModel>? _logger;
 
         private ProfilesConfig? _config;
         private IPageProvider? _pageProvider; // [New] Strategy for paging
@@ -155,7 +157,8 @@ namespace Pulsar.ViewModels
             PluginRegistry pluginRegistry,
             IHotkeyService hotkeyService,
             ITrayService trayService, // [New]
-            System.IServiceProvider serviceProvider)
+            System.IServiceProvider serviceProvider,
+            ILogger<RadialMenuViewModel>? logger = null)
         {
             _configService = configService;
             _windowService = windowService;
@@ -163,6 +166,7 @@ namespace Pulsar.ViewModels
             _hotkeyService = hotkeyService;
             _trayService = trayService;
             _serviceProvider = serviceProvider;
+            _logger = logger;
 
             InitializeSlots();
 
@@ -325,7 +329,7 @@ namespace Pulsar.ViewModels
                 _windowService.SetPreviousWindow(foregroundHandle);
                 
                 // [Optimization] Use synchronous Capture for lightweight data
-                _lastContext = PulsarContext.Capture(_windowService);
+                _lastContext = PulsarContext.Capture(_windowService, _logger);
                 
                 // [New] Record start time for Quick Switch
                 _showStartTime = DateTime.Now;

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
@@ -66,7 +67,7 @@ namespace Pulsar.Core.Plugin
         /// <summary>
         /// 捕获当前上下文 (轻量级，非阻塞)
         /// </summary>
-        public static PulsarContext Capture(IWindowService windowService)
+        public static PulsarContext Capture(IWindowService windowService, ILogger? logger = null)
         {
             var hwnd = windowService.GetPreviousWindow();
             string processName = string.Empty;
@@ -95,7 +96,7 @@ namespace Pulsar.Core.Plugin
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[PulsarContext] Failed to get process info: {ex.Message}");
+                logger?.LogWarning(ex, "[PulsarContext] Failed to get process info");
             }
 
             // 定义 Lazy 工厂
@@ -123,7 +124,7 @@ namespace Pulsar.Core.Plugin
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"[PulsarContext] Failed to get clipboard: {ex.Message}");
+                    logger?.LogWarning(ex, "[PulsarContext] Failed to get clipboard");
                     return null;
                 }
             });

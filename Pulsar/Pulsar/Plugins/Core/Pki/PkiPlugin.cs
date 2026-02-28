@@ -2,9 +2,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin;
 using Pulsar.Plugins.Core.Pki.Services;
 using Pulsar.Native;
@@ -19,6 +19,8 @@ namespace Pulsar.Plugins.Core.Pki
     {
         private CredentialsManager? _credentialsManager;
         private IWindowService? _windowService;
+        private SecretRepository? _secretRepository;
+        private ILogger<PkiPlugin>? _logger;
 
         public string Id => "com.pulsar.pki";
         public string DisplayName => "PKI Credentials Manager";
@@ -32,6 +34,8 @@ namespace Pulsar.Plugins.Core.Pki
         {
             _credentialsManager = services.GetService(typeof(CredentialsManager)) as CredentialsManager;
             _windowService = services.GetService(typeof(IWindowService)) as IWindowService;
+            _secretRepository = services.GetService(typeof(SecretRepository)) as SecretRepository;
+            _logger = services.GetService(typeof(ILogger<PkiPlugin>)) as ILogger<PkiPlugin>;
 
             if (_credentialsManager == null)
             {
@@ -41,8 +45,12 @@ namespace Pulsar.Plugins.Core.Pki
             {
                 throw new InvalidOperationException("IWindowService service is not available");
             }
+            if (_secretRepository == null)
+            {
+                throw new InvalidOperationException("SecretRepository service is not available");
+            }
 
-            Debug.WriteLine("[PkiPlugin] Initialized successfully");
+            _logger?.LogInformation("[PkiPlugin] Initialized successfully");
         }
 
         public async Task<PluginResult> ExecuteAsync(
@@ -72,42 +80,46 @@ namespace Pulsar.Plugins.Core.Pki
                 return PluginResult.Error("Services not initialized");
             }
 
+            if (_secretRepository == null)
+            {
+                return PluginResult.Error("Secret repository not initialized");
+            }
+
             // 1. 验证参数
             if (!args.TryGetValue("secretId", out var secretId) || string.IsNullOrEmpty(secretId))
             {
                 return PluginResult.Error("Missing required parameter: secretId");
             }
 
-            Debug.WriteLine($"[PkiPlugin] Starting injection for secret: {secretId}");
+            _logger?.LogInformation("[PkiPlugin] Starting injection for secret: {SecretId}", secretId);
 
             try
             {
                 // 2. 加载并解密凭据
                 if (!Guid.TryParse(secretId, out var secretGuid))
                 {
-                    Debug.WriteLine($"[PkiPlugin] ❌ Invalid secret ID format: {secretId}");
+                    _logger?.LogWarning("[PkiPlugin] Invalid secret ID format: {SecretId}", secretId);
                     return PluginResult.Error($"Invalid secret ID format: {secretId}");
                 }
 
-                var secretRepo = new SecretRepository();
-                var secrets = await secretRepo.LoadAsync();
+                var secrets = await _secretRepository.LoadAsync();
 
                 if (!secrets.TryGetValue(secretGuid, out var payload))
                 {
-                    Debug.WriteLine($"[PkiPlugin] ❌ Secret not found: {secretId}");
+                    _logger?.LogWarning("[PkiPlugin] Secret not found: {SecretId}", secretId);
                     return PluginResult.Error($"Secret not found: {secretId}");
                 }
 
                 if (string.IsNullOrEmpty(payload.EncryptedData))
                 {
-                    Debug.WriteLine($"[PkiPlugin] ❌ EncryptedData is empty for: {secretId}");
+                    _logger?.LogWarning("[PkiPlugin] EncryptedData is empty for: {SecretId}", secretId);
                     return PluginResult.Error("Secret data is empty");
                 }
 
                 string password = _credentialsManager.Decrypt(payload.EncryptedData);
                 if (string.IsNullOrEmpty(password))
                 {
-                    Debug.WriteLine("[PkiPlugin] ❌ Decryption failed");
+                    _logger?.LogWarning("[PkiPlugin] Decryption failed");
                     return PluginResult.Error("Decryption failed");
                 }
 
@@ -119,28 +131,34 @@ namespace Pulsar.Plugins.Core.Pki
                 if (targetHwnd != IntPtr.Zero)
                 {
                     WindowHelper.SetForegroundWindow(targetHwnd);
-                    Debug.WriteLine($"[PkiPlugin] Focus returned to window: {targetHwnd}");
+                    _logger?.LogDebug("[PkiPlugin] Focus returned to window: {Hwnd}", targetHwnd);
                 }
                 else
                 {
-                    Debug.WriteLine("[PkiPlugin] ⚠️ Warning: TargetWindowHandle is Zero");
+                    _logger?.LogWarning("[PkiPlugin] TargetWindowHandle is Zero");
                 }
 
                 // 5. 等待窗口切换缓冲
                 await Task.Delay(100);
 
-                // 6. 注入序列
-                // 如果有账号，发送 账号 + TAB
+                // 6. 注入序列 (UIA -> SendKeys fallback)
+                // Try UIA first: set text into the currently focused element without touching clipboard.
                 if (!string.IsNullOrEmpty(payload.Account))
                 {
-                    SendKeys.SendWait(EscapeSendKeys(payload.Account));
+                    if (!UiaHelper.TrySetFocusedElementText(payload.Account))
+                    {
+                        SendKeys.SendWait(EscapeSendKeys(payload.Account));
+                    }
+
                     await Task.Delay(10);
                     SendKeys.SendWait("{TAB}");
                     await Task.Delay(10);
                 }
 
-                // 始终发送密码
-                SendKeys.SendWait(EscapeSendKeys(password));
+                if (!UiaHelper.TrySetFocusedElementText(password))
+                {
+                    SendKeys.SendWait(EscapeSendKeys(password));
+                }
 
                 // 7. 自动回车 (从 args 读取，默认为 false)
                 bool autoEnter = args.TryGetValue("autoEnter", out var autoEnterStr) 
@@ -152,12 +170,12 @@ namespace Pulsar.Plugins.Core.Pki
                     SendKeys.SendWait("{ENTER}");
                 }
 
-                Debug.WriteLine("[PkiPlugin] ✓ Injection sequence finished");
+                _logger?.LogInformation("[PkiPlugin] Injection sequence finished");
                 return PluginResult.Ok("Credentials injected successfully");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[PkiPlugin] ❌ Exception: {ex.Message}");
+                _logger?.LogError(ex, "[PkiPlugin] Injection failed");
                 return PluginResult.Error($"Injection failed: {ex.Message}");
             }
         }

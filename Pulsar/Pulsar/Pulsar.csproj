@@ -34,6 +34,10 @@
     <PublishReadyToRun>true</PublishReadyToRun>
     
     <TrimMode>partial</TrimMode> 
+
+    <!-- Plugin discovery uses reflection (Assembly.GetTypes). Trimming can remove plugin types and break runtime loading.
+         Keep trimming disabled until we add proper trimmer roots/annotations for the plugin system. -->
+    <PublishTrimmed>false</PublishTrimmed>
     
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin;
 using Pulsar.Services.Interfaces;
 
@@ -15,6 +16,7 @@ namespace Pulsar.Plugins.WinSwitcher
     public class WinSwitcherPlugin : IPluginConfigurable
     {
         private IWindowService? _windowService;
+        private ILogger<WinSwitcherPlugin>? _logger;
         private bool _showPreviews = true;
         private HashSet<string> _excludedProcesses = new();
 
@@ -24,18 +26,19 @@ namespace Pulsar.Plugins.WinSwitcher
         public string Author => "Pulsar Team";
         public string Description => "Switch to running windows or launch new application instances.";
         public string Icon => "\uE8B8"; // Window/Switch Icon
-        public bool CanDisable => false; // Core Plugin
+        public bool CanDisable => true; // Extension plugin
 
         public void Initialize(IServiceProvider services)
         {
             _windowService = services.GetService(typeof(IWindowService)) as IWindowService;
+            _logger = services.GetService(typeof(ILogger<WinSwitcherPlugin>)) as ILogger<WinSwitcherPlugin>;
 
             if (_windowService == null)
             {
                 throw new InvalidOperationException("IWindowService service is not available");
             }
 
-            Debug.WriteLine("[WinSwitcherPlugin] Initialized successfully");
+            _logger?.LogInformation("[WinSwitcherPlugin] Initialized successfully");
         }
 
         public IEnumerable<PluginSettingDefinition> GetSettingsDefinition()
@@ -73,7 +76,10 @@ namespace Pulsar.Plugins.WinSwitcher
                                                .ToHashSet(StringComparer.OrdinalIgnoreCase);
             }
 
-            Debug.WriteLine($"[WinSwitcherPlugin] Settings updated. ShowPreviews={_showPreviews}, Excluded count={_excludedProcesses.Count}");
+            _logger?.LogInformation(
+                "[WinSwitcherPlugin] Settings updated. ShowPreviews={ShowPreviews}, ExcludedCount={ExcludedCount}",
+                _showPreviews,
+                _excludedProcesses.Count);
         }
 
         public async Task<PluginResult> ExecuteAsync(
@@ -109,7 +115,7 @@ namespace Pulsar.Plugins.WinSwitcher
 
             if (_excludedProcesses.Contains(processName))
             {
-                Debug.WriteLine($"[WinSwitcherPlugin] 🛑 Process excluded by settings: {processName}");
+                _logger?.LogWarning("[WinSwitcherPlugin] Process excluded by settings: {ProcessName}", processName);
                 return PluginResult.Error($"Process is excluded by settings: {processName}");
             }
 
@@ -118,18 +124,18 @@ namespace Pulsar.Plugins.WinSwitcher
                 return PluginResult.Error("Service not available");
             }
 
-            Debug.WriteLine($"[WinSwitcherPlugin] Attempting to activate: {processName}");
+            _logger?.LogDebug("[WinSwitcherPlugin] Attempting to activate: {ProcessName}", processName);
 
             bool switched = await _windowService.SwitchToProcessAsync(processName);
             
             if (switched)
             {
-                Debug.WriteLine($"[WinSwitcherPlugin] ✓ Successfully switched to: {processName}");
+                _logger?.LogInformation("[WinSwitcherPlugin] Successfully switched to: {ProcessName}", processName);
                 return PluginResult.Ok($"Switched to {processName}");
             }
             else
             {
-                Debug.WriteLine($"[WinSwitcherPlugin] ❌ Process not running: {processName}");
+                _logger?.LogInformation("[WinSwitcherPlugin] Process not running: {ProcessName}", processName);
                 return PluginResult.Error($"Process not running: {processName}");
             }
         }
@@ -153,7 +159,7 @@ namespace Pulsar.Plugins.WinSwitcher
 
             args.TryGetValue("arguments", out var arguments);
 
-            Debug.WriteLine($"[WinSwitcherPlugin] Launching: {exePath}");
+            _logger?.LogInformation("[WinSwitcherPlugin] Launching: {ExePath}", exePath);
 
             try
             {
@@ -166,12 +172,12 @@ namespace Pulsar.Plugins.WinSwitcher
                 };
 
                 Process.Start(startInfo);
-                Debug.WriteLine($"[WinSwitcherPlugin] ✓ Successfully launched: {exePath}");
+                _logger?.LogInformation("[WinSwitcherPlugin] Successfully launched: {ExePath}", exePath);
                 return PluginResult.Ok($"Launched {exePath}");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[WinSwitcherPlugin] ❌ Launch failed: {ex.Message}");
+                _logger?.LogError(ex, "[WinSwitcherPlugin] Launch failed: {ExePath}", exePath);
                 return PluginResult.Error($"Launch failed: {ex.Message}");
             }
         }
@@ -190,7 +196,7 @@ namespace Pulsar.Plugins.WinSwitcher
 
             if (_excludedProcesses.Contains(processName))
             {
-                 Debug.WriteLine($"[WinSwitcherPlugin] 🛑 Process excluded by settings (SmartSwitch): {processName}");
+                 _logger?.LogWarning("[WinSwitcherPlugin] Process excluded by settings (SmartSwitch): {ProcessName}", processName);
                  // If excluded, we probably shouldn't switch to it.
                  // Should we fall back to Launch?
                  // If it's excluded from "Switching", maybe we treat it as "Not Running" for the purpose of switching?
@@ -205,13 +211,13 @@ namespace Pulsar.Plugins.WinSwitcher
                 return PluginResult.Error("Service not available");
             }
 
-            Debug.WriteLine($"[WinSwitcherPlugin] Smart switch for: {processName}");
+            _logger?.LogDebug("[WinSwitcherPlugin] Smart switch for: {ProcessName}", processName);
 
             // 1. 尝试切换
             bool switched = await _windowService.SwitchToProcessAsync(processName);
             if (switched)
             {
-                Debug.WriteLine($"[WinSwitcherPlugin] ✓ Switched to existing window: {processName}");
+                _logger?.LogInformation("[WinSwitcherPlugin] Switched to existing window: {ProcessName}", processName);
                 return PluginResult.Ok($"Switched to {processName}");
             }
 
@@ -231,18 +237,18 @@ namespace Pulsar.Plugins.WinSwitcher
                     };
 
                     Process.Start(startInfo);
-                    Debug.WriteLine($"[WinSwitcherPlugin] ✓ Launched new instance: {exePath}");
+                    _logger?.LogInformation("[WinSwitcherPlugin] Launched new instance: {ExePath}", exePath);
                     return PluginResult.Ok($"Launched {processName}");
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"[WinSwitcherPlugin] ❌ Launch failed: {ex.Message}");
+                    _logger?.LogError(ex, "[WinSwitcherPlugin] Launch failed: {ExePath}", exePath);
                     return PluginResult.Error($"Launch failed: {ex.Message}");
                 }
             }
             else
             {
-                Debug.WriteLine($"[WinSwitcherPlugin] ❌ Cannot launch: No path specified");
+                _logger?.LogWarning("[WinSwitcherPlugin] Cannot launch: No path specified");
                 return PluginResult.Error($"Process not running and no path specified");
             }
         }

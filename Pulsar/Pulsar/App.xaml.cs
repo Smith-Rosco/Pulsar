@@ -70,6 +70,7 @@ namespace Pulsar
 
             // 3. PKI Service
             serviceCollection.AddSingleton<CredentialsManager>();
+            serviceCollection.AddSingleton<SecretRepository>();
 
             // 4. UI Services
             serviceCollection.AddSingleton<RadialMenuViewModel>();

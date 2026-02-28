@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
+using Microsoft.Extensions.Logging;
 
 namespace Pulsar.Core.Plugin
 {
@@ -15,11 +16,13 @@ namespace Pulsar.Core.Plugin
     {
         private readonly string _pluginDirectory;
         private readonly IServiceProvider _services;
+        private readonly ILogger<PluginLoader>? _logger;
 
         public PluginLoader(IServiceProvider services, string pluginDir)
         {
             _services = services;
             _pluginDirectory = pluginDir;
+            _logger = services.GetService(typeof(ILogger<PluginLoader>)) as ILogger<PluginLoader>;
         }
 
         /// <summary>
@@ -39,11 +42,11 @@ namespace Pulsar.Core.Plugin
                     .ToList();
                 
                 plugins.AddRange(builtinPlugins);
-                Debug.WriteLine($"[PluginLoader] Loaded {builtinPlugins.Count} builtin plugins");
+                _logger?.LogInformation("[PluginLoader] Loaded {Count} builtin plugins", builtinPlugins.Count);
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[PluginLoader] Error loading builtin plugins: {ex.Message}");
+                _logger?.LogError(ex, "[PluginLoader] Error loading builtin plugins");
             }
 
             // 2. 加载外部插件 (Plugins/ 子目录)
@@ -90,12 +93,16 @@ namespace Pulsar.Core.Plugin
                                     if (foundPlugins.Any())
                                     {
                                         plugins.AddRange(foundPlugins);
-                                        Debug.WriteLine($"[PluginLoader] Loaded {foundPlugins.Count} plugins from {Path.GetFileName(dllPath)} (Context: {folder})");
+                                        _logger?.LogInformation(
+                                            "[PluginLoader] Loaded {Count} plugins from {Assembly} (Context: {Folder})",
+                                            foundPlugins.Count,
+                                            Path.GetFileName(dllPath),
+                                            folder);
                                     }
                                 }
                                 catch (Exception ex)
                                 {
-                                    Debug.WriteLine($"[PluginLoader] Failed to load assembly {dllPath} in context {folder}: {ex.Message}");
+                                    _logger?.LogWarning(ex, "[PluginLoader] Failed to load assembly {AssemblyPath} in context {Folder}", dllPath, folder);
                                 }
                             }
                             
@@ -103,18 +110,18 @@ namespace Pulsar.Core.Plugin
                         }
                         catch (Exception ex)
                         {
-                            Debug.WriteLine($"[PluginLoader] Error processing plugin folder {folder}: {ex.Message}");
+                            _logger?.LogWarning(ex, "[PluginLoader] Error processing plugin folder {Folder}", folder);
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"[PluginLoader] Error scanning plugin directory: {ex.Message}");
+                    _logger?.LogError(ex, "[PluginLoader] Error scanning plugin directory");
                 }
             }
             else
             {
-                Debug.WriteLine($"[PluginLoader] Plugin directory not found: {_pluginDirectory}");
+                _logger?.LogInformation("[PluginLoader] Plugin directory not found: {PluginDirectory}", _pluginDirectory);
             }
 
             // 3. 初始化所有插件
@@ -123,11 +130,11 @@ namespace Pulsar.Core.Plugin
                 try
                 {
                     plugin.Initialize(_services);
-                    Debug.WriteLine($"[PluginLoader] Initialized plugin: {plugin.Id} ({plugin.DisplayName})");
+                    _logger?.LogInformation("[PluginLoader] Initialized plugin: {PluginId} ({DisplayName})", plugin.Id, plugin.DisplayName);
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"[PluginLoader] Failed to initialize plugin {plugin.Id}: {ex.Message}");
+                    _logger?.LogError(ex, "[PluginLoader] Failed to initialize plugin {PluginId}", plugin.Id);
                 }
             }
 
