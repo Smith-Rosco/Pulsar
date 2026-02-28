@@ -1,12 +1,13 @@
 using System;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Microsoft.Extensions.Logging;
 
 namespace Pulsar.Plugins.VbaRunner
 {
     public class VbaModuleInjector
     {
+        public static ILogger? Logger { get; set; }
         private const int vbext_ct_StdModule = 1;
         
         // COM Error Codes
@@ -124,7 +125,7 @@ namespace Pulsar.Plugins.VbaRunner
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[VbaInjector] Failed to clean up module: {ex.Message}");
+                Logger?.LogDebug(ex, "[VbaInjector] Failed to clean up module");
             }
         }
 

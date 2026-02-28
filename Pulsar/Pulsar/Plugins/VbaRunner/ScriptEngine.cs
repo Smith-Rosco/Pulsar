@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using Microsoft.Extensions.Logging;
 using Pulsar.Native;
 
 namespace Pulsar.Plugins.VbaRunner
@@ -12,6 +12,7 @@ namespace Pulsar.Plugins.VbaRunner
     /// </summary>
     public class ScriptEngine : IDisposable
     {
+        public static ILogger? Logger { get; set; }
         private readonly ComConnectionManager _connectionManager;
         private readonly VbaModuleInjector _injector;
         
@@ -33,13 +34,13 @@ namespace Pulsar.Plugins.VbaRunner
 
             if (_connectionManager.TryGetApplication(targetProcessId, out _app))
             {
-                Debug.WriteLine("[ScriptEngine] Connected to Application.");
+                Logger?.LogDebug("[ScriptEngine] Connected to Application.");
                 
                 // Try to get ActiveWorkbook with retry
                 return TryGetActiveWorkbook();
             }
 
-            Debug.WriteLine("[ScriptEngine] Failed to connect to any instance.");
+            Logger?.LogDebug("[ScriptEngine] Failed to connect to any instance.");
             return false;
         }
 
@@ -62,7 +63,7 @@ namespace Pulsar.Plugins.VbaRunner
                     _workbook = _app.ActiveWorkbook;
                     if (_workbook != null)
                     {
-                        Debug.WriteLine($"[ScriptEngine] Active workbook: {_workbook.Name}");
+                        Logger?.LogDebug("[ScriptEngine] Active workbook: {Name}", (string)_workbook.Name);
                         return true;
                     }
                     return false;
@@ -70,7 +71,7 @@ namespace Pulsar.Plugins.VbaRunner
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[ScriptEngine] Failed to get ActiveWorkbook: {ex.Message}");
+                Logger?.LogDebug(ex, "[ScriptEngine] Failed to get ActiveWorkbook");
                 return false;
             }
         }
@@ -98,7 +99,7 @@ namespace Pulsar.Plugins.VbaRunner
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[ScriptEngine] Error getting sheets: {ex.Message}");
+                Logger?.LogDebug(ex, "[ScriptEngine] Error getting sheets");
             }
 
             return names;

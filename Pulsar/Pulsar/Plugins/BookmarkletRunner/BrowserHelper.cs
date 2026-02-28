@@ -3,6 +3,7 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace Pulsar.Plugins.BookmarkletRunner
 {
@@ -11,6 +12,7 @@ namespace Pulsar.Plugins.BookmarkletRunner
     /// </summary>
     internal static class BrowserHelper
     {
+        public static ILogger? Logger { get; set; }
         // 支持的浏览器进程名（按优先级排序）
         private static readonly string[] BrowserProcessNames = 
         { 
@@ -50,18 +52,18 @@ namespace Pulsar.Plugins.BookmarkletRunner
                         // 只选择有主窗口句柄的进程（排除后台进程和子进程）
                         if (process.MainWindowHandle != IntPtr.Zero)
                         {
-                            Debug.WriteLine($"[BrowserHelper] Found browser: {browserName} (PID: {process.Id})");
+                            Logger?.LogDebug("[BrowserHelper] Found browser: {Browser} (PID: {Pid})", browserName, process.Id);
                             return process.MainWindowHandle;
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"[BrowserHelper] Error checking {browserName}: {ex.Message}");
+                    Logger?.LogDebug(ex, "[BrowserHelper] Error checking {Browser}", browserName);
                 }
             }
 
-            Debug.WriteLine("[BrowserHelper] No browser window found");
+            Logger?.LogDebug("[BrowserHelper] No browser window found");
             return IntPtr.Zero;
         }
 
@@ -77,12 +79,12 @@ namespace Pulsar.Plugins.BookmarkletRunner
             // 策略 1：如果上下文窗口是浏览器，直接使用
             if (contextWindowHandle != IntPtr.Zero && IsBrowserProcess(contextProcessName))
             {
-                Debug.WriteLine($"[BrowserHelper] Using context browser: {contextProcessName}");
+                Logger?.LogDebug("[BrowserHelper] Using context browser: {ProcessName}", contextProcessName);
                 return contextWindowHandle;
             }
 
             // 策略 2：回退到查找第一个可用浏览器
-            Debug.WriteLine("[BrowserHelper] Context is not a browser, searching for available browser...");
+            Logger?.LogDebug("[BrowserHelper] Context is not a browser, searching for available browser...");
             return FindBrowserWindow();
         }
     }

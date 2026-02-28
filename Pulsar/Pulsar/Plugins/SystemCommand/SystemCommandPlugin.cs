@@ -11,7 +11,7 @@ using Pulsar.Views;
 
 namespace Pulsar.Plugins.SystemCommand
 {
-    public class SystemCommandPlugin : IPulsarPlugin
+    public class SystemCommandPlugin : IPulsarPlugin, IPluginTiered
     {
         public string Id => "com.pulsar.system";
         public string DisplayName => "System Command";
@@ -20,6 +20,7 @@ namespace Pulsar.Plugins.SystemCommand
         public string Description => "Internal system commands for Pulsar control.";
         public string Icon => "\uE713"; // Settings Icon
         public bool CanDisable => false; // Core Plugin
+        public PluginTier Tier => PluginTier.Core;
 
         private IServiceProvider? _services;
 

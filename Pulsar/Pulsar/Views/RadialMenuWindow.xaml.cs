@@ -4,6 +4,7 @@ using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels;
 using Pulsar.Native;        // WindowHelper
 using Pulsar.Models;        // AppTheme
+using Microsoft.Extensions.Logging;
 using System;
 using System.ComponentModel;
 using System.Windows;
@@ -22,6 +23,7 @@ namespace Pulsar.Views
         private readonly RadialMenuViewModel _viewModel;
         private readonly IConfigService _configService;
         private readonly IThemeService _themeService;
+        private readonly ILogger<RadialMenuWindow> _logger;
 
         // [Fix] 添加 WindowService 字段以解决报错
         private readonly IWindowService _windowService;
@@ -30,13 +32,19 @@ namespace Pulsar.Views
         private double _dpiScaleX = 1.0;
         private double _dpiScaleY = 1.0;
 
-        public RadialMenuWindow(RadialMenuViewModel vm, IConfigService configService, IWindowService windowService, IThemeService themeService)
+        public RadialMenuWindow(
+            RadialMenuViewModel vm,
+            IConfigService configService,
+            IWindowService windowService,
+            IThemeService themeService,
+            ILogger<RadialMenuWindow> logger)
         {
             // Initialize Fields First
             _viewModel = vm;
             _configService = configService;
             _windowService = windowService;
             _themeService = themeService;
+            _logger = logger;
 
             // [Theme Isolation] Apply Default Theme immediately before InitializeComponent
             _themeService.ApplyTheme(this, AppTheme.Dark, WindowBackdropType.None, updateGlobal: false);
@@ -105,7 +113,7 @@ namespace Pulsar.Views
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Theme Init Failed: {ex.Message}");
+                _logger.LogWarning(ex, "Theme init failed");
             }
         }
 
@@ -150,7 +158,7 @@ namespace Pulsar.Views
             
             // Critical: Capture mouse to track gestures outside the 500x500 bounds
             bool captured = MenuCanvas.CaptureMouse();
-            System.Diagnostics.Debug.WriteLine($"[RadialMenuWindow] Summon - CaptureMouse: {captured}");
+            _logger.LogDebug("[RadialMenuWindow] Summon - CaptureMouse: {Captured}", captured);
 
             // [New] Restore Interaction
             this.IsHitTestVisible = true; 

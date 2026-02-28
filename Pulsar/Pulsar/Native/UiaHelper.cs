@@ -1,8 +1,8 @@
 using System;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.System.Com;
@@ -12,6 +12,8 @@ namespace Pulsar.Native
 {
     public static class UiaHelper
     {
+        public static ILogger? Logger { get; set; }
+
         /// <summary>
         /// Attempts to set the text of the currently focused UI element using UI Automation.
         /// This is much faster and cleaner than SendInput simulation or Clipboard pasting.
@@ -38,7 +40,7 @@ namespace Pulsar.Native
 
                 if (hr != 0 || automation == null)
                 {
-                    Debug.WriteLine($"[UiaHelper] Failed to create IUIAutomation: {hr}");
+                    Logger?.LogDebug("[UiaHelper] Failed to create IUIAutomation: {HResult}", hr);
                     return false;
                 }
 
@@ -50,13 +52,13 @@ namespace Pulsar.Native
                 }
                 catch (COMException ex)
                 {
-                    Debug.WriteLine($"[UiaHelper] Failed to get focused element: {ex.Message}");
+                    Logger?.LogDebug(ex, "[UiaHelper] Failed to get focused element");
                     return false;
                 }
 
                 if (focusedElement == null)
                 {
-                    Debug.WriteLine("[UiaHelper] No focused element found.");
+                    Logger?.LogDebug("[UiaHelper] No focused element found.");
                     return false;
                 }
 
@@ -91,22 +93,22 @@ namespace Pulsar.Native
                             }
                         }
                         
-                        Debug.WriteLine("[UiaHelper] Successfully set text via ValuePattern.");
+                        Logger?.LogDebug("[UiaHelper] Successfully set text via ValuePattern.");
                         return true;
                     }
                     catch (Exception ex)
                     {
-                        Debug.WriteLine($"[UiaHelper] Failed to set value: {ex.Message}");
+                        Logger?.LogDebug(ex, "[UiaHelper] Failed to set value");
                         return false;
                     }
                 }
                 
-                Debug.WriteLine("[UiaHelper] Focused element does not support ValuePattern.");
+                Logger?.LogDebug("[UiaHelper] Focused element does not support ValuePattern.");
                 return false;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[UiaHelper] Unexpected error: {ex.Message}");
+                Logger?.LogDebug(ex, "[UiaHelper] Unexpected error");
                 return false;
             }
         }

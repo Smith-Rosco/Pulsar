@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin;
 
 namespace Pulsar.Plugins.BasicCommand
@@ -12,8 +13,9 @@ namespace Pulsar.Plugins.BasicCommand
     /// <summary>
     /// 简单命令插件 - 处理简单的进程启动和 SendKeys 命令
     /// </summary>
-    public class SimpleCommandPlugin : IPulsarPlugin
+    public class SimpleCommandPlugin : IPulsarPlugin, IPluginTiered
     {
+        private ILogger<SimpleCommandPlugin>? _logger;
         public string Id => "com.pulsar.command";
         public string DisplayName => "Simple Command";
         public string Version => "1.0.0";
@@ -21,10 +23,12 @@ namespace Pulsar.Plugins.BasicCommand
         public string Description => "Execute shell commands or simulate keystrokes.";
         public string Icon => "\uE756"; // Command Prompt (TVMonitor or similar)
         public bool CanDisable => true;
+        public PluginTier Tier => PluginTier.Extension;
 
         public void Initialize(IServiceProvider services)
         {
-            Debug.WriteLine("[SimpleCommandPlugin] Initialized successfully");
+            _logger = services.GetService(typeof(ILogger<SimpleCommandPlugin>)) as ILogger<SimpleCommandPlugin>;
+            _logger?.LogInformation("[SimpleCommandPlugin] Initialized successfully");
         }
 
         public async Task<PluginResult> ExecuteAsync(
@@ -55,7 +59,7 @@ namespace Pulsar.Plugins.BasicCommand
             args.TryGetValue("arguments", out var arguments);
             args.TryGetValue("workingDir", out var workingDir);
 
-            Debug.WriteLine($"[SimpleCommandPlugin] Running: {path}");
+            _logger?.LogInformation("[SimpleCommandPlugin] Running: {Path}", path);
 
             try
             {
@@ -72,12 +76,12 @@ namespace Pulsar.Plugins.BasicCommand
                 }
 
                 Process.Start(startInfo);
-                Debug.WriteLine($"[SimpleCommandPlugin] ✓ Successfully executed: {path}");
+                _logger?.LogInformation("[SimpleCommandPlugin] Successfully executed: {Path}", path);
                 return PluginResult.Ok($"Executed {path}");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[SimpleCommandPlugin] ❌ Execution failed: {ex.Message}");
+                _logger?.LogError(ex, "[SimpleCommandPlugin] Execution failed: {Path}", path);
                 return PluginResult.Error($"Execution failed: {ex.Message}");
             }
         }
@@ -101,7 +105,7 @@ namespace Pulsar.Plugins.BasicCommand
                 int.TryParse(delayStr, out delay);
             }
 
-            Debug.WriteLine($"[SimpleCommandPlugin] Sending keys: {keys}");
+            _logger?.LogInformation("[SimpleCommandPlugin] Sending keys: {Keys}", keys);
 
             try
             {
@@ -110,12 +114,12 @@ namespace Pulsar.Plugins.BasicCommand
                 
                 SendKeys.SendWait(keys);
                 
-                Debug.WriteLine($"[SimpleCommandPlugin] ✓ Keys sent successfully");
+                _logger?.LogInformation("[SimpleCommandPlugin] Keys sent successfully");
                 return PluginResult.Ok("Keys sent");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[SimpleCommandPlugin] ❌ SendKeys failed: {ex.Message}");
+                _logger?.LogError(ex, "[SimpleCommandPlugin] SendKeys failed");
                 return PluginResult.Error($"SendKeys failed: {ex.Message}");
             }
         }

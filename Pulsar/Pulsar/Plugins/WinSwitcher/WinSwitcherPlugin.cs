@@ -13,7 +13,7 @@ namespace Pulsar.Plugins.WinSwitcher
     /// <summary>
     /// 窗口切换插件 - 处理应用程序的智能切换和启动
     /// </summary>
-    public class WinSwitcherPlugin : IPluginConfigurable
+    public class WinSwitcherPlugin : IPluginConfigurable, IPluginTiered
     {
         private IWindowService? _windowService;
         private ILogger<WinSwitcherPlugin>? _logger;
@@ -27,6 +27,7 @@ namespace Pulsar.Plugins.WinSwitcher
         public string Description => "Switch to running windows or launch new application instances.";
         public string Icon => "\uE8B8"; // Window/Switch Icon
         public bool CanDisable => true; // Extension plugin
+        public PluginTier Tier => PluginTier.Extension;
 
         public void Initialize(IServiceProvider services)
         {

@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin;
 using Pulsar.Native;
 using Pulsar.Services.Interfaces;
@@ -14,9 +14,10 @@ namespace Pulsar.Plugins.BookmarkletRunner
     /// 书签脚本运行器插件 - 在浏览器中执行 Bookmarklet JavaScript 脚本
     /// Refactored to use UI Automation for instant, clipboard-free injection.
     /// </summary>
-    public class BookmarkletRunnerPlugin : IPulsarPlugin
+    public class BookmarkletRunnerPlugin : IPulsarPlugin, IPluginTiered
     {
         private IWindowService? _windowService;
+        private ILogger<BookmarkletRunnerPlugin>? _logger;
 
         public string Id => "com.pulsar.bookmarklet";
         public string DisplayName => "Bookmarklet Runner";
@@ -25,17 +26,19 @@ namespace Pulsar.Plugins.BookmarkletRunner
         public string Description => "Execute JavaScript bookmarklets in the active browser.";
         public string Icon => "\uE896"; // Code/Script Icon
         public bool CanDisable => true; // Extension plugin, can be disabled
+        public PluginTier Tier => PluginTier.Extension;
 
         public void Initialize(IServiceProvider services)
         {
             _windowService = services.GetService(typeof(IWindowService)) as IWindowService;
+            _logger = services.GetService(typeof(ILogger<BookmarkletRunnerPlugin>)) as ILogger<BookmarkletRunnerPlugin>;
 
             if (_windowService == null)
             {
                 throw new InvalidOperationException("IWindowService is not available");
             }
 
-            Debug.WriteLine("[BookmarkletRunner] Initialized successfully");
+            _logger?.LogInformation("[BookmarkletRunner] Initialized successfully");
         }
 
         public async Task<PluginResult> ExecuteAsync(
@@ -68,12 +71,12 @@ namespace Pulsar.Plugins.BookmarkletRunner
                 return PluginResult.Error("缺少必要参数: scriptPath。请检查插件配置。");
             }
 
-            Debug.WriteLine($"[BookmarkletRunner] Script path: {scriptPath}");
+            _logger?.LogDebug("[BookmarkletRunner] Script path: {ScriptPath}", scriptPath);
 
             // 2. 安全性检查
             if (!ScriptPreprocessor.IsPathSafe(scriptPath))
             {
-                Debug.WriteLine($"[BookmarkletRunner] ❌ Unsafe script path detected");
+                _logger?.LogWarning("[BookmarkletRunner] Unsafe script path detected");
                 return PluginResult.Error("脚本路径包含不安全字符或试图访问受限目录。");
             }
 
@@ -84,19 +87,19 @@ namespace Pulsar.Plugins.BookmarkletRunner
                 scriptContent = ScriptPreprocessor.PreprocessScript(scriptPath);
                 if (string.IsNullOrEmpty(scriptContent))
                 {
-                    Debug.WriteLine("[BookmarkletRunner] ❌ Script is empty after preprocessing");
+                    _logger?.LogWarning("[BookmarkletRunner] Script is empty after preprocessing");
                     return PluginResult.Error("脚本内容为空。请检查文件是否正确。");
                 }
-                Debug.WriteLine($"[BookmarkletRunner] Script loaded successfully ({scriptContent.Length} chars)");
+                _logger?.LogDebug("[BookmarkletRunner] Script loaded successfully ({Length} chars)", scriptContent.Length);
             }
             catch (FileNotFoundException ex)
             {
-                Debug.WriteLine($"[BookmarkletRunner] ❌ File not found: {ex.Message}");
+                _logger?.LogWarning(ex, "[BookmarkletRunner] File not found");
                 return PluginResult.Error($"找不到脚本文件: {scriptPath}。请确认文件是否存在。");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[BookmarkletRunner] ❌ Error reading script: {ex.Message}");
+                _logger?.LogError(ex, "[BookmarkletRunner] Error reading script");
                 return PluginResult.Error($"读取脚本失败: {ex.Message}");
             }
 
@@ -108,13 +111,13 @@ namespace Pulsar.Plugins.BookmarkletRunner
 
             if (browserHandle == IntPtr.Zero)
             {
-                Debug.WriteLine("[BookmarkletRunner] ❌ No browser window found");
+                _logger?.LogWarning("[BookmarkletRunner] No browser window found");
                 return PluginResult.Error("未检测到运行中的浏览器。请先打开浏览器窗口。");
             }
 
             // 5. 隐藏 Pulsar 主窗口
             _windowService?.HideMainWindow();
-            Debug.WriteLine("[BookmarkletRunner] Pulsar window hidden");
+            _logger?.LogDebug("[BookmarkletRunner] Pulsar window hidden");
 
             // 6. 聚焦浏览器窗口
             try
@@ -126,11 +129,11 @@ namespace Pulsar.Plugins.BookmarkletRunner
                 }
                 
                 WindowHelper.SetForegroundWindow(browserHandle);
-                Debug.WriteLine("[BookmarkletRunner] Browser window focused");
+                _logger?.LogDebug("[BookmarkletRunner] Browser window focused");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[BookmarkletRunner] ❌ Error focusing browser: {ex.Message}");
+                _logger?.LogWarning(ex, "[BookmarkletRunner] Error focusing browser");
                 return PluginResult.Error($"Failed to focus browser: {ex.Message}");
             }
 
@@ -147,12 +150,12 @@ namespace Pulsar.Plugins.BookmarkletRunner
                     return PluginResult.Error("脚本输入失败。请重试。");
                 }
 
-                Debug.WriteLine("[BookmarkletRunner] ✓ Bookmarklet executed successfully");
+                _logger?.LogInformation("[BookmarkletRunner] Bookmarklet executed successfully");
                 return PluginResult.Ok("脚本已执行");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[BookmarkletRunner] ❌ Error during execution: {ex.Message}");
+                _logger?.LogError(ex, "[BookmarkletRunner] Error during execution");
                 return PluginResult.Error($"执行出错: {ex.Message}");
             }
         }
@@ -174,19 +177,19 @@ namespace Pulsar.Plugins.BookmarkletRunner
                 }
 
                 // --- Step 1: Focus Address Bar ---
-                Debug.WriteLine("[BookmarkletRunner] Sending Ctrl+L...");
+                _logger?.LogDebug("[BookmarkletRunner] Sending Ctrl+L...");
                 InputHelper.SendKeyCombination(InputHelper.VK_CONTROL, InputHelper.VK_L);
                 
                 // Wait for address bar to gain focus and select all text
                 Thread.Sleep(200);
 
                 // --- Step 2: Try UI Automation Injection ---
-                Debug.WriteLine("[BookmarkletRunner] Attempting UIA injection...");
+                _logger?.LogDebug("[BookmarkletRunner] Attempting UIA injection...");
                 bool uiaSuccess = UiaHelper.TrySetFocusedElementText(fullScript);
 
                 if (uiaSuccess)
                 {
-                    Debug.WriteLine("[BookmarkletRunner] UIA Injection Success! Executing...");
+                    _logger?.LogDebug("[BookmarkletRunner] UIA injection success. Executing...");
                     
                     // Small delay to ensure browser UI updates
                     Thread.Sleep(50);
@@ -197,7 +200,7 @@ namespace Pulsar.Plugins.BookmarkletRunner
                 }
 
                 // --- Step 3: Fallback (Simulated Typing) ---
-                Debug.WriteLine("[BookmarkletRunner] ⚠️ UIA failed. Fallback to Simulated Typing (Turbo Mode).");
+                _logger?.LogWarning("[BookmarkletRunner] UIA failed. Fallback to simulated typing.");
                 
                 // Note: SendText uses SendInput which is fast, but browser might render it slowly.
                 // But it's reliable and doesn't touch clipboard.
@@ -209,7 +212,7 @@ namespace Pulsar.Plugins.BookmarkletRunner
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[BookmarkletRunner] ❌ Smart sequence error: {ex.Message}");
+                _logger?.LogError(ex, "[BookmarkletRunner] Smart sequence error");
                 return false;
             }
         }

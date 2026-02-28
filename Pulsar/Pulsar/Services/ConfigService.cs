@@ -1,5 +1,6 @@
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
+using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
 using System.Text.Json;
@@ -16,13 +17,15 @@ namespace Pulsar.Services
         private const string ConfigFileName = "Profiles.json";
         private readonly string _configPath;
         private ProfilesConfig? _cachedConfig;
+        private readonly ILogger<ConfigService> _logger;
 
         public event Action? ConfigUpdated;
 
         public ProfilesConfig Current => _cachedConfig ?? CreateDefaultConfig();
 
-        public ConfigService()
+        public ConfigService(ILogger<ConfigService> logger)
         {
+            _logger = logger;
             string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Pulsar");
             Directory.CreateDirectory(folder);
             _configPath = Path.Combine(folder, ConfigFileName);
@@ -62,7 +65,7 @@ namespace Pulsar.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[ConfigService] Failed to load config: {ex.Message}");
+                _logger.LogWarning(ex, "[ConfigService] Failed to load config");
                 _cachedConfig = CreateDefaultConfig();
             }
 

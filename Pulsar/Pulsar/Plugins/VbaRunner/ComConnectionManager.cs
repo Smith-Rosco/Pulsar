@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
+using Microsoft.Extensions.Logging;
 using Pulsar.Native;
 
 namespace Pulsar.Plugins.VbaRunner
@@ -14,6 +15,7 @@ namespace Pulsar.Plugins.VbaRunner
     /// </summary>
     public class ComConnectionManager
     {
+        public static ILogger? Logger { get; set; }
         // COM Imports
         [DllImport("oleaut32.dll", PreserveSig = true)]
         private static extern int GetActiveObject(ref Guid rclsid, IntPtr pvReserved, [MarshalAs(UnmanagedType.IUnknown)] out object? ppunk);
@@ -112,7 +114,7 @@ namespace Pulsar.Plugins.VbaRunner
         private bool TryGetByWindowHandleStrategy(int targetProcessId, out dynamic? app)
         {
             app = null;
-            Debug.WriteLine($"[ComManager] Strategy B: Window Search for PID {targetProcessId}");
+            Logger?.LogDebug("[ComManager] Strategy B: Window Search for PID {Pid}", targetProcessId);
 
             var candidates = new List<IntPtr>();
             WindowHelper.EnumWindows((hwnd, lParam) =>
@@ -162,7 +164,7 @@ namespace Pulsar.Plugins.VbaRunner
         private bool TryGetByRotStrategy(int targetProcessId, out dynamic? app)
         {
             app = null;
-            Debug.WriteLine($"[ComManager] Strategy C: ROT Search for PID {targetProcessId}");
+            Logger?.LogDebug("[ComManager] Strategy C: ROT Search for PID {Pid}", targetProcessId);
 
             IRunningObjectTable? rot = null;
             IEnumMoniker? enumMoniker = null;
@@ -215,7 +217,7 @@ namespace Pulsar.Plugins.VbaRunner
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[ComManager] ROT Error: {ex.Message}");
+                Logger?.LogDebug(ex, "[ComManager] ROT Error");
             }
             finally
             {

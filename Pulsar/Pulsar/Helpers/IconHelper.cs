@@ -7,11 +7,13 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Microsoft.Extensions.Logging;
 
 namespace Pulsar.Helpers
 {
     public static class IconHelper
     {
+        public static ILogger? Logger { get; set; }
         /// <summary>
         /// 智能获取图标：如果是图片文件则直接加载，如果是程序则提取图标
         /// </summary>
@@ -101,7 +103,7 @@ namespace Pulsar.Helpers
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[IconHelper] Save failed: {ex.Message}");
+                Logger?.LogDebug(ex, "[IconHelper] Save failed");
                 return null;
             }
         }

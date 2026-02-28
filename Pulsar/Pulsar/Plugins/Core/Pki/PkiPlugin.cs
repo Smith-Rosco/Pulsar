@@ -15,7 +15,7 @@ namespace Pulsar.Plugins.Core.Pki
     /// <summary>
     /// PKI 插件 - 处理密码自动填充和凭据注入
     /// </summary>
-    public class PkiPlugin : IPulsarPlugin
+    public class PkiPlugin : IPulsarPlugin, IPluginTiered
     {
         private CredentialsManager? _credentialsManager;
         private IWindowService? _windowService;
@@ -29,6 +29,7 @@ namespace Pulsar.Plugins.Core.Pki
         public string Description => "Securely manages and injects credentials into applications.";
         public string Icon => "\uE72E"; // Lock Icon
         public bool CanDisable => false; // Core Plugin
+        public PluginTier Tier => PluginTier.Core;
 
         public void Initialize(IServiceProvider services)
         {

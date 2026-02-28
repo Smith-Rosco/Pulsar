@@ -1,12 +1,13 @@
 using System;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Microsoft.Extensions.Logging;
 
 namespace Pulsar.Plugins.VbaRunner
 {
     public static class ComRetryHelper
     {
+        public static ILogger? Logger { get; set; }
         private const int RPC_E_CALL_REJECTED = unchecked((int)0x80010001);
         private const int MK_E_UNAVAILABLE = unchecked((int)0x800401E3);
 
@@ -22,7 +23,7 @@ namespace Pulsar.Plugins.VbaRunner
                 catch (COMException ex) when (ex.ErrorCode == RPC_E_CALL_REJECTED || ex.ErrorCode == MK_E_UNAVAILABLE)
                 {
                     if (i == maxRetries - 1) throw;
-                    Debug.WriteLine($"[ComRetry] {operationName} rejected (Busy/Unavailable). Retrying {i + 1}/{maxRetries}...");
+                    Logger?.LogDebug("[ComRetry] {Operation} rejected (Busy/Unavailable). Retrying {Attempt}/{MaxRetries}...", operationName, i + 1, maxRetries);
                     Thread.Sleep(delayMs);
                 }
             }
@@ -39,7 +40,7 @@ namespace Pulsar.Plugins.VbaRunner
                 catch (COMException ex) when (ex.ErrorCode == RPC_E_CALL_REJECTED || ex.ErrorCode == MK_E_UNAVAILABLE)
                 {
                     if (i == maxRetries - 1) throw;
-                    Debug.WriteLine($"[ComRetry] {operationName} rejected (Busy/Unavailable). Retrying {i + 1}/{maxRetries}...");
+                    Logger?.LogDebug("[ComRetry] {Operation} rejected (Busy/Unavailable). Retrying {Attempt}/{MaxRetries}...", operationName, i + 1, maxRetries);
                     Thread.Sleep(delayMs);
                 }
             }

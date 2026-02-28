@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Media;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 using Wpf.Ui.Appearance;
@@ -13,9 +14,16 @@ namespace Pulsar.Services
 {
     public class ThemeService : IThemeService
     {
+        private readonly ILogger<ThemeService> _logger;
+
         public AppTheme CurrentTheme { get; private set; } = AppTheme.Dark;
 
         public event EventHandler<AppTheme>? ThemeChanged;
+
+        public ThemeService(ILogger<ThemeService> logger)
+        {
+            _logger = logger;
+        }
 
         public void ApplyTheme(FrameworkElement element, AppTheme theme, WindowBackdropType backdrop = WindowBackdropType.None, bool updateGlobal = true)
         {
@@ -25,7 +33,7 @@ namespace Pulsar.Services
             }
 
             if (element == null) return;
-            System.Diagnostics.Debug.WriteLine($"[ThemeService] ApplyTheme: Element={element.GetType().Name}, Theme={theme}");
+            _logger.LogDebug("[ThemeService] ApplyTheme: Element={Element}, Theme={Theme}", element.GetType().Name, theme);
 
             // Branch Logic
             if (element is Pulsar.Views.RadialMenuWindow radWin)

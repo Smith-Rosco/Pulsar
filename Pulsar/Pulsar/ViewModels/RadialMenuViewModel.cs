@@ -324,7 +324,7 @@ namespace Pulsar.ViewModels
 
                 // 1. 捕获上下文
                 IntPtr foregroundHandle = WindowHelper.GetForegroundWindow();
-                System.Diagnostics.Debug.WriteLine($"[Show] Foreground Handle: {foregroundHandle}");
+                _logger?.LogDebug("[Show] Foreground Handle: {Hwnd}", foregroundHandle);
                 
                 _windowService.SetPreviousWindow(foregroundHandle);
                 
@@ -411,14 +411,14 @@ namespace Pulsar.ViewModels
                 // [Fix] Check if user released the key while we were loading
                 if (_pendingQuickSwitch)
                 {
-                    System.Diagnostics.Debug.WriteLine("[Show] Pending Quick Switch detected, executing immediately.");
+                    _logger?.LogDebug("[Show] Pending Quick Switch detected, executing immediately.");
                     SetActionExecuted(true);
                     _windowService.SwitchToPreviousWindow();
                     IsVisible = false;
                 }
                 
                 sw.Stop();
-                System.Diagnostics.Debug.WriteLine($"[Show] Completed in {sw.ElapsedMilliseconds}ms");
+                _logger?.LogDebug("[Show] Completed in {ElapsedMs}ms", sw.ElapsedMilliseconds);
             }
             finally
             {
@@ -666,7 +666,7 @@ namespace Pulsar.ViewModels
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Preview Capture Failed: {ex.Message}");
+                _logger?.LogDebug(ex, "Preview capture failed");
                 CenterPreviewImage = null;
             }
         }
@@ -674,7 +674,7 @@ namespace Pulsar.ViewModels
         private void HandleKeyUp(object? sender, GlobalKeyStruct e)
         {
             // [Debug] Log KeyUp
-            System.Diagnostics.Debug.WriteLine($"[HandleKeyUp] Key: {e.VkCode}, IsVisible: {IsVisible}");
+            _logger?.LogDebug("[HandleKeyUp] Key: {Key}, IsVisible: {IsVisible}", e.VkCode, IsVisible);
 
             // [Refactor] Move modifier check up to handle "release during load" race condition
             bool isModifierRelease = e.VkCode == VK_LCONTROL || e.VkCode == VK_RCONTROL || 
@@ -686,8 +686,8 @@ namespace Pulsar.ViewModels
                 // [Fix] If loading and modifier released, mark for immediate execution upon show
                 if (_isLoading && isModifierRelease)
                 {
-                     _pendingQuickSwitch = true;
-                     System.Diagnostics.Debug.WriteLine($"[HandleKeyUp] Key released during loading. Pending Quick Switch set.");
+                      _pendingQuickSwitch = true;
+                      _logger?.LogDebug("[HandleKeyUp] Key released during loading. Pending Quick Switch set.");
                 }
                 return;
             }
@@ -705,12 +705,12 @@ namespace Pulsar.ViewModels
                 // [New] Quick Switch Logic
                 // If duration < 250ms AND no slot selected (or just center idle) AND we are in Root Menu
                 var duration = (DateTime.Now - _showStartTime).TotalMilliseconds;
-                System.Diagnostics.Debug.WriteLine($"[HandleKeyUp] Modifier Release. Duration: {duration}ms, ActiveSlot: {_activeSlotIndex}");
+                _logger?.LogDebug("[HandleKeyUp] Modifier Release. Duration: {DurationMs}ms, ActiveSlot: {ActiveSlot}", duration, _activeSlotIndex);
                 
                 // Allow active slot 0 (Center) because default idle state might land there if mouse doesn't move
                 if (duration < 250 && (_activeSlotIndex == -1 || _activeSlotIndex == 0) && _menuState == MenuState.Root)
                 {
-                     System.Diagnostics.Debug.WriteLine("[HandleKeyUp] Triggering Quick Switch");
+                     _logger?.LogDebug("[HandleKeyUp] Triggering Quick Switch");
                      SetActionExecuted(true); // [Fix] Prevent Dismiss() from restoring previous window
                      _windowService.SwitchToPreviousWindow();
                      IsVisible = false;
@@ -870,7 +870,7 @@ namespace Pulsar.ViewModels
                         }
                         catch (Exception ex)
                         {
-                            System.Diagnostics.Debug.WriteLine($"[DelayedCapture] Failed: {ex.Message}");
+                            _logger?.LogDebug(ex, "[DelayedCapture] Failed");
                         }
                     }
                     DelayedCapture();

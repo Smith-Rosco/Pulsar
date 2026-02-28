@@ -7,6 +7,7 @@ using Pulsar.ViewModels.Settings; // Added
 using Pulsar.Views.Pages;
 using Pulsar.Services.Interfaces;
 using Pulsar.Models;
+using Microsoft.Extensions.Logging;
 
 using CommunityToolkit.Mvvm.Messaging;
 using Pulsar.Core.Messages;
@@ -20,18 +21,24 @@ namespace Pulsar.Views
         private readonly SettingsViewModel _viewModel;
         private readonly PluginManagerViewModel _pluginManager; // [New]
         private readonly IThemeService _themeService;
+        private readonly ILogger<SettingsWindow> _logger;
         
         // Manual Page Cache
         private SettingsGeneralPage? _generalPage;
         private SettingsSlotsPage? _slotsPage;
         private SettingsPluginsPage? _pluginsPage; // [New]
 
-        public SettingsWindow(SettingsViewModel viewModel, PluginManagerViewModel pluginManager, IThemeService themeService)
+        public SettingsWindow(
+            SettingsViewModel viewModel,
+            PluginManagerViewModel pluginManager,
+            IThemeService themeService,
+            ILogger<SettingsWindow> logger)
         {
             InitializeComponent();
             _viewModel = viewModel;
             _pluginManager = pluginManager;
             _themeService = themeService;
+            _logger = logger;
             DataContext = viewModel;
 
             // Subscribe to theme changes
@@ -175,12 +182,12 @@ namespace Pulsar.Views
                      }
                  }
 
-                 if (!found)
-                 {
-                     // Fallback safety
-                     System.Diagnostics.Debug.WriteLine($"[SettingsWindow] Target view '{targetTag}' not found in menu items.");
-                 }
-             }
+                  if (!found)
+                  {
+                      // Fallback safety
+                      _logger.LogWarning("[SettingsWindow] Target view '{TargetTag}' not found in menu items.", targetTag);
+                  }
+              }
         }
 
         private void OnThemeChanged(object? sender, AppTheme theme)

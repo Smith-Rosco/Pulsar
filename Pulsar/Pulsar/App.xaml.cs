@@ -10,10 +10,12 @@ using Pulsar.ViewModels;
 using Pulsar.ViewModels.Settings; // Added
 using Pulsar.Views;
 using Pulsar.Views.Pages; // Added
+using Pulsar.Helpers;
 using System;
 using System.Windows;
 using System.IO;
 using Serilog;
+using Microsoft.Extensions.Logging;
 
 using System.Windows.Threading;
 using System.Threading.Tasks;
@@ -87,6 +89,17 @@ namespace Pulsar
             
             // Build Container
             Services = serviceCollection.BuildServiceProvider();
+
+            // Initialize static helpers that need logging
+            IconHelper.Logger = Services.GetService<ILoggerFactory>()?.CreateLogger("IconHelper");
+            UiaHelper.Logger = Services.GetService<ILoggerFactory>()?.CreateLogger("UiaHelper");
+            Pulsar.Plugins.BookmarkletRunner.BrowserHelper.Logger = Services.GetService<ILoggerFactory>()?.CreateLogger("BrowserHelper");
+
+            // VBA runner internals
+            Pulsar.Plugins.VbaRunner.ScriptEngine.Logger = Services.GetService<ILoggerFactory>()?.CreateLogger("VbaRunner.ScriptEngine");
+            Pulsar.Plugins.VbaRunner.ComRetryHelper.Logger = Services.GetService<ILoggerFactory>()?.CreateLogger("VbaRunner.ComRetryHelper");
+            Pulsar.Plugins.VbaRunner.ComConnectionManager.Logger = Services.GetService<ILoggerFactory>()?.CreateLogger("VbaRunner.ComConnectionManager");
+            Pulsar.Plugins.VbaRunner.VbaModuleInjector.Logger = Services.GetService<ILoggerFactory>()?.CreateLogger("VbaRunner.VbaModuleInjector");
 
             // ================================================
             // 5. Initialize Plugin System

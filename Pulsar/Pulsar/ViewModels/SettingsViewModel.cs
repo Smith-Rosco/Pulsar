@@ -16,6 +16,7 @@ using Pulsar.Helpers;
 using Pulsar.Models;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
+using Microsoft.Extensions.Logging;
 using Wpf.Ui.Controls;
 using Pulsar.ViewModels.Dialogs;
 using DialogResult = Pulsar.Models.Enums.DialogResult;
@@ -72,7 +73,8 @@ namespace Pulsar.ViewModels
         private readonly IThemeService _themeService;
         private readonly IHotkeyService _hotkeyService;
         private readonly IDialogService _dialogService;
-        private readonly SecretRepository _secretRepo = new SecretRepository();
+        private readonly SecretRepository _secretRepo;
+        private readonly ILogger<SettingsViewModel> _logger;
         private ProfilesConfig _config;
 
         [ObservableProperty]
@@ -147,13 +149,22 @@ namespace Pulsar.ViewModels
             CurrentContext.SlotCount = CurrentSlots.Count;
         }
 
-        public SettingsViewModel(IConfigService configService, IWindowService windowService, IThemeService themeService, IHotkeyService hotkeyService, IDialogService dialogService)
+        public SettingsViewModel(
+            IConfigService configService,
+            IWindowService windowService,
+            IThemeService themeService,
+            IHotkeyService hotkeyService,
+            IDialogService dialogService,
+            SecretRepository secretRepo,
+            ILogger<SettingsViewModel> logger)
         {
             _configService = configService;
             _windowService = windowService;
             _themeService = themeService;
             _hotkeyService = hotkeyService;
             _dialogService = dialogService;
+            _secretRepo = secretRepo;
+            _logger = logger;
             _config = new ProfilesConfig();
             Initialize();
 
@@ -480,7 +491,7 @@ namespace Pulsar.ViewModels
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[IconDiscovery] Failed for {processName}: {ex.Message}");
+                _logger.LogDebug(ex, "[IconDiscovery] Failed for {ProcessName}", processName);
             }
             return null;
         }

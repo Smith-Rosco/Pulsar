@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Microsoft.Extensions.Logging;
 using Pulsar.Services.Interfaces;
 using Pulsar.Models; // 确保引用了 WindowInfo 等模型
 using Pulsar.Native; // [New] Use centralized Native helper
@@ -18,13 +19,16 @@ namespace Pulsar.Services
 {
     public class WindowService : IWindowService
     {
+        private readonly ILogger<WindowService> _logger;
+
         // [New] 状态管理字段
         private IntPtr _previousWindowHandle = IntPtr.Zero;
         private Action? _hideMainWindowAction;
         private readonly int _currentProcessId;
 
-        public WindowService()
+        public WindowService(ILogger<WindowService> logger)
         {
+            _logger = logger;
             using (var currentProcess = Process.GetCurrentProcess())
             {
                 _currentProcessId = currentProcess.Id;
@@ -144,7 +148,7 @@ namespace Pulsar.Services
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"Launch Error: {ex.Message}");
+                    _logger.LogWarning(ex, "[WindowService] Launch error: {Command}", command);
                     return false;
                 }
             });
@@ -367,7 +371,12 @@ namespace Pulsar.Services
             string currentTitle = GetWindowTitle(GetForegroundWindow_Native());
             string prevTitle = GetWindowTitle(_previousWindowHandle);
             
-            Debug.WriteLine($"[SwitchToPreviousWindow] Current: '{currentTitle}' ({GetForegroundWindow_Native()}) | Previous: '{prevTitle}' ({_previousWindowHandle})");
+            _logger.LogDebug(
+                "[SwitchToPreviousWindow] Current: '{CurrentTitle}' ({CurrentHwnd}) | Previous: '{PrevTitle}' ({PrevHwnd})",
+                currentTitle,
+                GetForegroundWindow_Native(),
+                prevTitle,
+                _previousWindowHandle);
             
             // [Fix] Target the window immediately AFTER the previous window in Z-Order (Alt-Tab behavior)
             // Logic: User was in App A (_previousWindowHandle). Invoked Pulsar.
@@ -377,7 +386,7 @@ namespace Pulsar.Services
             {
                 IntPtr nextWindow = GetNextWindowInZOrder(_previousWindowHandle);
                 string nextTitle = GetWindowTitle(nextWindow);
-                Debug.WriteLine($"[SwitchToPreviousWindow] Found Next Window: '{nextTitle}' ({nextWindow})");
+                _logger.LogDebug("[SwitchToPreviousWindow] Found Next Window: '{Title}' ({Hwnd})", nextTitle, nextWindow);
                 
                 if (nextWindow != IntPtr.Zero)
                 {
@@ -385,7 +394,7 @@ namespace Pulsar.Services
                     return;
                 }
 
-                Debug.WriteLine("[SwitchToPreviousWindow] No valid next window found, falling back to previous handle.");
+                _logger.LogDebug("[SwitchToPreviousWindow] No valid next window found, falling back to previous handle.");
                 // Fallback: If no "next" window exists (e.g. only one app), return to the previous window
                 ForceForegroundWindow(_previousWindowHandle);
             }
@@ -455,7 +464,7 @@ namespace Pulsar.Services
             {
                 if (hWnd == IntPtr.Zero || !NativeMethods.IsWindow(hWnd)) 
                 {
-                    Debug.WriteLine($"[CaptureWindow] Invalid Handle: {hWnd}");
+                    _logger.LogDebug("[CaptureWindow] Invalid Handle: {Hwnd}", hWnd);
                     return null;
                 }
 
@@ -464,7 +473,7 @@ namespace Pulsar.Services
                     // 1. Get Dimensions
                     if (!NativeMethods.GetWindowRect(hWnd, out var rect)) 
                     {
-                        Debug.WriteLine($"[CaptureWindow] GetWindowRect failed for {hWnd}");
+                        _logger.LogDebug("[CaptureWindow] GetWindowRect failed for {Hwnd}", hWnd);
                         return null;
                     }
                     int width = rect.Right - rect.Left;
@@ -472,7 +481,7 @@ namespace Pulsar.Services
 
                     if (width <= 0 || height <= 0) 
                     {
-                        Debug.WriteLine($"[CaptureWindow] Invalid dimensions {width}x{height} for {hWnd}");
+                        _logger.LogDebug("[CaptureWindow] Invalid dimensions {Width}x{Height} for {Hwnd}", width, height, hWnd);
                         return null;
                     }
 
@@ -493,14 +502,14 @@ namespace Pulsar.Services
                                 if (!success)
                                 {
                                     // Fallback to default
-                                    Debug.WriteLine($"[CaptureWindow] PrintWindow(Full) failed for {hWnd}, retrying with default flags.");
+                                    _logger.LogDebug("[CaptureWindow] PrintWindow(Full) failed for {Hwnd}, retrying with default flags.", hWnd);
                                     success = NativeMethods.PrintWindow(hWnd, hdc, 0);
                                 }
                                 
                                 if (!success)
                                 {
                                     int error = Marshal.GetLastWin32Error();
-                                    Debug.WriteLine($"[CaptureWindow] PrintWindow failed completely for {hWnd}. Error: {error}");
+                                    _logger.LogDebug("[CaptureWindow] PrintWindow failed completely for {Hwnd}. Error: {Error}", hWnd, error);
                                     return null;
                                 }
                             }
@@ -563,7 +572,7 @@ namespace Pulsar.Services
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"[CaptureWindow] Exception for {hWnd}: {ex.Message}");
+                    _logger.LogDebug(ex, "[CaptureWindow] Exception for {Hwnd}", hWnd);
                     return null;
                 }
             });
