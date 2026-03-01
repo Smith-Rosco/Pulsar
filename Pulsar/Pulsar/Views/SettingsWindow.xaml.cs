@@ -27,6 +27,7 @@ namespace Pulsar.Views
         private SettingsGeneralPage? _generalPage;
         private SettingsSlotsPage? _slotsPage;
         private SettingsPluginsPage? _pluginsPage; // [New]
+        private SettingsAboutPage? _aboutPage; // [New]
 
         public SettingsWindow(
             SettingsViewModel viewModel,
@@ -72,11 +73,13 @@ namespace Pulsar.Views
             _generalPage = new SettingsGeneralPage(viewModel);
             _slotsPage = new SettingsSlotsPage(viewModel);
             _pluginsPage = new SettingsPluginsPage(_pluginManager, _themeService); // [New]
+            _aboutPage = new SettingsAboutPage(new AboutViewModel()); // [New]
 
             // [Fix] Apply theme explicitly to pages to fix inheritance issues
             _themeService.ApplyTheme(_generalPage, _viewModel.SettingsTheme, updateGlobal: false);
             _themeService.ApplyTheme(_slotsPage, _viewModel.SettingsTheme, updateGlobal: false);
             _themeService.ApplyTheme(_pluginsPage, _viewModel.SettingsTheme, updateGlobal: false);
+            _themeService.ApplyTheme(_aboutPage, _viewModel.SettingsTheme, updateGlobal: false); // [New]
 
             this.Loaded += (s, e) =>
             {
@@ -93,6 +96,11 @@ namespace Pulsar.Views
                     {
                         RootFrame.Navigate(_pluginsPage);
                         if (RootNavigation.MenuItems[2] is NavigationViewItem navItem) navItem.IsActive = true;
+                    }
+                    else if (_viewModel.CurrentView == "About")
+                    {
+                        RootFrame.Navigate(_aboutPage);
+                        if (RootNavigation.MenuItems[3] is NavigationViewItem navItem) navItem.IsActive = true;
                     }
                     else
                     {
@@ -131,8 +139,8 @@ namespace Pulsar.Views
              {
                  // [Fix] Robust Navigation State Synchronization
                  // Map ViewModel ViewName to UI Tag
-                 // ViewModel: "Settings", "Slots", "Plugins"
-                 // UI Tags: "General", "Slots", "Plugins"
+                 // ViewModel: "Settings", "Slots", "Plugins", "About"
+                 // UI Tags: "General", "Slots", "Plugins", "About"
                  
                  string targetTag = _viewModel.CurrentView;
                  if (targetTag == "Settings") targetTag = "General";
@@ -153,6 +161,7 @@ namespace Pulsar.Views
                              if (targetTag == "General") RootFrame.Navigate(_generalPage);
                              else if (targetTag == "Slots") RootFrame.Navigate(_slotsPage);
                              else if (targetTag == "Plugins") RootFrame.Navigate(_pluginsPage);
+                             else if (targetTag == "About") RootFrame.Navigate(_aboutPage);
                              found = true;
                          }
 
@@ -178,6 +187,7 @@ namespace Pulsar.Views
             if (_generalPage != null) _themeService.ApplyTheme(_generalPage, theme, updateGlobal: false);
             if (_slotsPage != null) _themeService.ApplyTheme(_slotsPage, theme, updateGlobal: false);
             if (_pluginsPage != null) _themeService.ApplyTheme(_pluginsPage, theme, updateGlobal: false); // [New]
+            if (_aboutPage != null) _themeService.ApplyTheme(_aboutPage, theme, updateGlobal: false); // [New]
         }
 
         private void RootNavigation_SelectionChanged(NavigationView sender, RoutedEventArgs args)
@@ -199,6 +209,11 @@ namespace Pulsar.Views
                      RootFrame.Navigate(_pluginsPage);
                      _viewModel.CurrentView = "Plugins";
                  }
+                 else if (item.Tag?.ToString() == "About")
+                 {
+                     RootFrame.Navigate(_aboutPage);
+                     _viewModel.CurrentView = "About";
+                 }
              }
         }
 
@@ -215,6 +230,7 @@ namespace Pulsar.Views
             _generalPage = null;
             _slotsPage = null;
             _pluginsPage = null;
+            _aboutPage = null;
             
             // Trigger GC to clean up the Transient ViewModel and Pages
             TrimMemory();

@@ -57,6 +57,11 @@
                                            Icon="{ui:SymbolIcon PuzzlePiece24}" 
                                            TargetPageType="{x:Type TypeName=Page}" 
                                            Tag="Plugins"/>
+
+                    <ui:NavigationViewItem Content="About" 
+                                           Icon="{ui:SymbolIcon Info24}" 
+                                           TargetPageType="{x:Type TypeName=Page}" 
+                                           Tag="About"/>
                 </ui:NavigationView.MenuItems>
         </ui:NavigationView>
 
