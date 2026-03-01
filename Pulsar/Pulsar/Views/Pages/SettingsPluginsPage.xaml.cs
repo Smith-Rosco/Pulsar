@@ -10,8 +10,6 @@ namespace Pulsar.Views.Pages
 {
     public partial class SettingsPluginsPage : Page
     {
-        private string _currentStickyGroup = string.Empty;
-
         public SettingsPluginsPage(PluginManagerViewModel viewModel, IThemeService themeService)
         {
             InitializeComponent();
@@ -21,78 +19,6 @@ namespace Pulsar.Views.Pages
             // If applied before, the XAML-defined <Page.Resources> replaces the ResourceDictionary
             // instance and discards injected dictionaries (ControlsDictionary / ThemesDictionary / Pulsar Theme.*).
             themeService.ApplyTheme(this, themeService.CurrentTheme, updateGlobal: false);
-        }
-
-        /// <summary>
-        /// Handles scroll events to update sticky header
-        /// </summary>
-        private void PluginsScroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
-        {
-            UpdateStickyHeader();
-        }
-
-        /// <summary>
-        /// Updates the sticky header based on current scroll position
-        /// </summary>
-        private void UpdateStickyHeader()
-        {
-            if (PluginsItemsControl.Items.Count == 0)
-            {
-                StickyHeaderOverlay.Visibility = Visibility.Collapsed;
-                return;
-            }
-
-            var scrollViewer = PluginsScroll;
-            var scrollOffset = scrollViewer.VerticalOffset;
-
-            // Find which group is currently at the top
-            string? topGroupName = null;
-            double minDistance = double.MaxValue;
-
-            for (int i = 0; i < PluginsItemsControl.Items.Count; i++)
-            {
-                var container = PluginsItemsControl.ItemContainerGenerator.ContainerFromIndex(i) as FrameworkElement;
-                if (container == null) continue;
-
-                // Find the Expander within the container
-                var expander = FindVisualChild<Expander>(container);
-                if (expander == null) continue;
-
-                // Get the position of the expander relative to the ScrollViewer
-                var transform = expander.TransformToAncestor(scrollViewer);
-                var position = transform.Transform(new System.Windows.Point(0, 0));
-
-                // Check if this group is near the top (within 40px threshold)
-                if (position.Y <= 40 && position.Y > -expander.ActualHeight)
-                {
-                    var distance = Math.Abs(position.Y);
-                    if (distance < minDistance)
-                    {
-                        minDistance = distance;
-                        topGroupName = expander.Tag as string;
-                    }
-                }
-            }
-
-            // Update sticky header if group changed
-            if (topGroupName != null && topGroupName != _currentStickyGroup)
-            {
-                _currentStickyGroup = topGroupName;
-                StickyHeaderText.Text = topGroupName;
-                StickyHeaderOverlay.Visibility = Visibility.Visible;
-
-                // Fade in animation
-                var fadeIn = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200));
-                StickyHeaderOverlay.BeginAnimation(OpacityProperty, fadeIn);
-            }
-            else if (topGroupName == null && _currentStickyGroup != string.Empty)
-            {
-                // Fade out when no group is at top
-                _currentStickyGroup = string.Empty;
-                var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(200));
-                fadeOut.Completed += (s, e) => StickyHeaderOverlay.Visibility = Visibility.Collapsed;
-                StickyHeaderOverlay.BeginAnimation(OpacityProperty, fadeOut);
-            }
         }
 
         /// <summary>
@@ -132,9 +58,46 @@ namespace Pulsar.Views.Pages
                     // Animate scroll to position
                     var targetOffset = PluginsScroll.VerticalOffset + position.Y - 10; // 10px padding from top
                     AnimateScroll(PluginsScroll.VerticalOffset, targetOffset);
+                    
+                    // Add highlight pulse animation
+                    HighlightGroupHeader(expander);
                     break;
                 }
             }
+        }
+
+        /// <summary>
+        /// Adds a visual highlight pulse to the group header
+        /// </summary>
+        private void HighlightGroupHeader(Expander expander)
+        {
+            // Find the TextBlock header
+            var header = FindVisualChild<TextBlock>(expander);
+            if (header == null) return;
+
+            // Store original foreground
+            var originalBrush = header.Foreground;
+
+            // Create color animation to accent color and back
+            var colorAnimation = new ColorAnimation
+            {
+                To = (System.Windows.Media.Color)System.Windows.Application.Current.Resources["SystemAccentColor"],
+                Duration = TimeSpan.FromMilliseconds(200),
+                AutoReverse = true,
+                RepeatBehavior = new RepeatBehavior(2) // Pulse twice
+            };
+
+            // Apply animation to a new SolidColorBrush
+            var animatedBrush = new SolidColorBrush(((SolidColorBrush)originalBrush).Color);
+            header.Foreground = animatedBrush;
+            
+            colorAnimation.Completed += (s, e) =>
+            {
+                // Restore original brush after animation
+                header.Foreground = originalBrush;
+            };
+
+            animatedBrush.BeginAnimation(SolidColorBrush.ColorProperty, colorAnimation);
         }
 
         /// <summary>

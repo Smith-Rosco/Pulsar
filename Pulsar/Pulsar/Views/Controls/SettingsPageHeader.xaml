@@ -18,13 +18,13 @@
     </UserControl.Resources>
     
     <Grid Margin="0,0,0,20">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="Auto"/>
-        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
         
-        <!-- Left: Title and Description -->
-        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+        <!-- Top Row: Title and Description -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,12">
             <TextBlock Text="{Binding Title, ElementName=Root}" 
                        FontSize="28" 
                        FontWeight="SemiBold" 
@@ -34,10 +34,10 @@
                        Visibility="{Binding Description, ElementName=Root, Converter={StaticResource StringEmptyToVisibilityConverter}}"/>
         </StackPanel>
         
-        <!-- Right: Page Actions -->
-        <StackPanel Grid.Column="1" 
+        <!-- Bottom Row: Page Actions (Full Width) -->
+        <StackPanel Grid.Row="1" 
                     Orientation="Horizontal" 
-                    VerticalAlignment="Center">
+                    HorizontalAlignment="Left">
             <ContentPresenter Content="{Binding ActionsContent, ElementName=Root}"
                               ContentTemplate="{Binding ActionsContentTemplate, ElementName=Root}"/>
         </StackPanel>

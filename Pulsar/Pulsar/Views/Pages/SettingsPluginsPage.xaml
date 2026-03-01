@@ -73,7 +73,7 @@
                                           IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
                                           Background="Transparent"
                                           BorderThickness="0"
-                                          Padding="0"
+                                          Padding="0,4,0,8"
                                           HorizontalContentAlignment="Left">
                                 <ContentPresenter ContentSource="Header"/>
                             </ToggleButton>
@@ -92,6 +92,14 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <!-- Lightweight Group Header Style -->
+        <Style x:Key="GroupHeaderStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
+            <Setter Property="Margin" Value="0,0,0,0"/>
         </Style>
 
         <Style x:Key="PluginDashboardCardStyle" TargetType="Border">
@@ -113,18 +121,6 @@
                     </Setter>
                 </Trigger>
             </Style.Triggers>
-        </Style>
-
-        <!-- Sticky Group Header Style -->
-        <Style x:Key="StickyGroupHeaderStyle" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource ApplicationBackgroundBrush}"/>
-            <Setter Property="Padding" Value="0,8,0,8"/>
-            <Setter Property="Margin" Value="0,0,0,0"/>
-            <Setter Property="Effect">
-                <Setter.Value>
-                    <DropShadowEffect BlurRadius="8" ShadowDepth="2" Direction="270" Color="Black" Opacity="0.15"/>
-                </Setter.Value>
-            </Setter>
         </Style>
         
         <!-- Setting Templates -->
@@ -191,7 +187,6 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -232,69 +227,9 @@
             </controls:SettingsPageHeader.ActionsContent>
         </controls:SettingsPageHeader>
 
-        <!-- Recommendations Section -->
-        <ItemsControl Grid.Row="1" 
-                      ItemsSource="{Binding Recommendations}"
-                      Visibility="{Binding HasRecommendations, Converter={StaticResource BooleanToVisibilityConverter}}"
-                      Margin="0,0,0,16">
-            <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                    <Border Background="{DynamicResource SystemFillColorAttentionBackgroundBrush}"
-                            BorderBrush="{DynamicResource SystemFillColorAttentionBrush}"
-                            BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="16"
-                            Margin="0,0,0,8">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-
-                            <!-- Icon -->
-                            <TextBlock Grid.Column="0" 
-                                       Text="{Binding Icon}" 
-                                       FontSize="24" 
-                                       VerticalAlignment="Center"
-                                       Margin="0,0,12,0"/>
-
-                            <!-- Content -->
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding Title}" 
-                                           FontWeight="SemiBold" 
-                                           FontSize="14"
-                                           Margin="0,0,0,4"/>
-                                <TextBlock Text="{Binding Message}" 
-                                           FontSize="12" 
-                                           TextWrapping="Wrap"
-                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                            </StackPanel>
-
-                            <!-- Action Button -->
-                            <ui:Button Grid.Column="2"
-                                       Content="{Binding ActionLabel}"
-                                       Command="{Binding DataContext.ExecuteRecommendationActionCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                       CommandParameter="{Binding}"
-                                       Style="{StaticResource PulsarSecondaryButtonStyle}"
-                                       Margin="12,0,8,0"/>
-
-                            <!-- Dismiss Button -->
-                            <ui:Button Grid.Column="3"
-                                       Icon="{ui:SymbolIcon Dismiss24}"
-                                       Command="{Binding DataContext.DismissRecommendationCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                       CommandParameter="{Binding}"
-                                       Style="{StaticResource PulsarIconButtonStyle}"/>
-                        </Grid>
-                    </Border>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
-
         <!-- Grouped List with Sticky Header Support -->
-        <Grid Grid.Row="2">
-            <ScrollViewer x:Name="PluginsScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,16,0" Style="{StaticResource OverlayScrollViewerStyle}" ScrollChanged="PluginsScroll_ScrollChanged">
+        <Grid Grid.Row="1">
+            <ScrollViewer x:Name="PluginsScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,16,0" Style="{StaticResource OverlayScrollViewerStyle}">
                 <Grid Width="{Binding ElementName=PluginsScroll, Path=ViewportWidth}">
                     <ItemsControl x:Name="PluginsItemsControl" ItemsSource="{Binding GroupedPlugins}">
                 <ItemsControl.ItemTemplate>
@@ -302,12 +237,7 @@
                         <!-- Group Container -->
                          <Expander IsExpanded="True" Margin="0,0,0,16" Style="{StaticResource PluginsGroupExpanderStyle}" Tag="{Binding GroupName}">
                             <Expander.Header>
-                                <Border Style="{StaticResource StickyGroupHeaderStyle}">
-                                    <TextBlock Text="{Binding GroupName}" 
-                                               FontSize="16" 
-                                               FontWeight="SemiBold"
-                                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                                </Border>
+                                <TextBlock Text="{Binding GroupName}" Style="{StaticResource GroupHeaderStyle}"/>
                             </Expander.Header>
 
                             <!-- Plugin List in Group -->
@@ -338,48 +268,47 @@
                                             
                                             <!-- Header Content: Badges + Health Progress -->
                                             <controls:ExpandableCard.HeaderContent>
-                                                <StackPanel>
-                                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                                        <!-- Core Badge -->
-                                                        <Border Visibility="{Binding CanDisable, Converter={StaticResource InverseBoolToVisConverter}}"
-                                                                Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
-                                                                CornerRadius="4" 
-                                                                Padding="4,1" 
-                                                                Margin="0,0,8,0">
-                                                            <TextBlock Text="Core" 
-                                                                       FontSize="10" 
-                                                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                                                        </Border>
-                                                        
-                                                        <!-- Health Badge -->
-                                                        <TextBlock Text="{Binding HealthBadge}" 
-                                                                   FontSize="14"
-                                                                   ToolTip="{Binding HealthReport.Status}"
-                                                                   AutomationProperties.Name="{Binding HealthReport.Status}"/>
-                                                    </StackPanel>
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <!-- Core Badge -->
+                                                    <Border Visibility="{Binding CanDisable, Converter={StaticResource InverseBoolToVisConverter}}"
+                                                            Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
+                                                            CornerRadius="4" 
+                                                            Padding="4,1" 
+                                                            Margin="0,0,8,0"
+                                                            VerticalAlignment="Center">
+                                                        <TextBlock Text="Core" 
+                                                                   FontSize="10" 
+                                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                                    </Border>
+                                                    
+                                                    <!-- Health Badge -->
+                                                    <TextBlock Text="{Binding HealthBadge}" 
+                                                               FontSize="14"
+                                                               ToolTip="{Binding HealthReport.Status}"
+                                                               AutomationProperties.Name="{Binding HealthReport.Status}"
+                                                               Margin="0,0,8,0"
+                                                               VerticalAlignment="Center"/>
                                                     
                                                     <!-- Health Score with Progress Bar -->
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <TextBlock Text="Health:" 
-                                                                   FontSize="11" 
-                                                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                                                   Margin="0,0,6,0"
-                                                                   VerticalAlignment="Center"/>
-                                                        
-                                                        <ProgressBar Value="{Binding HealthReport.HealthScore}" 
-                                                                     Maximum="100"
-                                                                     Width="60" 
-                                                                     Height="4"
-                                                                     Foreground="{Binding HealthScoreColor, Converter={StaticResource HexToBrushConverter}}"
-                                                                     VerticalAlignment="Center"
-                                                                     Margin="0,0,6,0"/>
-                                                        
-                                                        <TextBlock Text="{Binding HealthScoreText}" 
-                                                                   FontSize="11" 
-                                                                   FontWeight="SemiBold"
-                                                                   Foreground="{Binding HealthScoreColor, Converter={StaticResource HexToBrushConverter}}"
-                                                                   VerticalAlignment="Center"/>
-                                                    </StackPanel>
+                                                    <TextBlock Text="Health:" 
+                                                               FontSize="11" 
+                                                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                               Margin="0,0,6,0"
+                                                               VerticalAlignment="Center"/>
+                                                    
+                                                    <ProgressBar Value="{Binding HealthReport.HealthScore}" 
+                                                                 Maximum="100"
+                                                                 Width="60" 
+                                                                 Height="4"
+                                                                 Foreground="{Binding HealthScoreColor, Converter={StaticResource HexToBrushConverter}}"
+                                                                 VerticalAlignment="Center"
+                                                                 Margin="0,0,6,0"/>
+                                                    
+                                                    <TextBlock Text="{Binding HealthScoreText}" 
+                                                               FontSize="11" 
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{Binding HealthScoreColor, Converter={StaticResource HexToBrushConverter}}"
+                                                               VerticalAlignment="Center"/>
                                                 </StackPanel>
                                             </controls:ExpandableCard.HeaderContent>
                                             
@@ -494,21 +423,17 @@
                     <TextBlock Text="Try adjusting your search criteria" 
                                FontSize="12" 
                                Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,12"/>
+                    <ui:Button Content="Clear Search"
+                               Command="{Binding ClearSearchCommand}"
+                               Icon="{ui:SymbolIcon Dismiss24}"
+                               Style="{StaticResource PulsarSecondaryButtonStyle}"
+                               Visibility="{Binding SearchText, Converter={StaticResource StringEmptyToVisibilityConverter}}"
                                HorizontalAlignment="Center"/>
                 </StackPanel>
             </Grid>
         </ScrollViewer>
-        
-        <!-- Sticky Header Overlay -->
-        <Border x:Name="StickyHeaderOverlay" 
-                VerticalAlignment="Top" 
-                Visibility="Collapsed"
-                Style="{StaticResource StickyGroupHeaderStyle}">
-            <TextBlock x:Name="StickyHeaderText" 
-                       FontSize="16" 
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-        </Border>
     </Grid>
     </Grid>
 </Page>
