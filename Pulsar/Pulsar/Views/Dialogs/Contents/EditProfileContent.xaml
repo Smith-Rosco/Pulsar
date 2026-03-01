@@ -19,7 +19,7 @@
 
     <StackPanel Margin="0">
         <TextBlock Text="Process Name" FontWeight="Medium"/>
-        <TextBlock Text="{Binding ProcessName}" Margin="0,4,0,16" Opacity="0.7" FontSize="14"/>
+        <TextBlock Text="{Binding DisplayProcessName}" Margin="0,4,0,16" Opacity="0.7" FontSize="14"/>
 
         <!-- Alias Input -->
         <TextBlock Text="Alias (Display Name)" FontWeight="Medium" Margin="0,0,0,8"/>

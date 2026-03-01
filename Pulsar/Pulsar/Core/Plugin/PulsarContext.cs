@@ -19,6 +19,13 @@ namespace Pulsar.Core.Plugin
         public int TargetProcessId { get; }
         public string TargetExePath { get; } // [New]
         
+        /// <summary>
+        /// 显示用进程名 - 首字母大写格式 (如 "Excel")
+        /// 用于 UI 显示，提升用户体验
+        /// </summary>
+        [System.Text.Json.Serialization.JsonIgnore]
+        public string DisplayProcessName => Pulsar.Helpers.ProcessNameFormatter.ToDisplayName(TargetProcessName);
+        
         // === 共享存储 (用于插件间通信) ===
         public IReadOnlyDictionary<string, object>? SessionData { get; init; }
 

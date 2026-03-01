@@ -77,7 +77,7 @@ namespace Pulsar.Plugins.Core.SystemCommand
                             if (!string.IsNullOrEmpty(context.TargetProcessName))
                             {
                                 WeakReferenceMessenger.Default.Send(new OpenSettingsMessage(context.TargetProcessName, "Slots"));
-                                return PluginResult.Ok($"Quick Add for {context.TargetProcessName}");
+                                return PluginResult.Ok($"Quick Add for {context.DisplayProcessName}");  // ✅ 使用格式化的进程名
                             }
                             else
                             {

@@ -99,7 +99,9 @@ namespace Pulsar.ViewModels.Strategies
             }
 
             // Update Center Text
-            string centerText = TotalPages > 1 ? $"Page {_currentPage + 1}/{TotalPages}" : (string.IsNullOrEmpty(_context.TargetProcessName) ? "Global" : _context.TargetProcessName);
+            string centerText = TotalPages > 1 
+                ? $"Page {_currentPage + 1}/{TotalPages}" 
+                : (string.IsNullOrEmpty(_context.TargetProcessName) ? "Global" : _context.DisplayProcessName);
             centerSlot.Label = centerText;
         }
     }

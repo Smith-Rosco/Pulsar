@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Pulsar.Helpers;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels.Base;
 using System;
@@ -21,6 +22,11 @@ namespace Pulsar.ViewModels.Dialogs
 
         [ObservableProperty]
         private string _iconKey = "\uE945";
+
+        /// <summary>
+        /// 显示用的进程名 - 首字母大写格式
+        /// </summary>
+        public string DisplayProcessName => ProcessNameFormatter.ToDisplayName(ProcessName);
 
         public Action<DialogResult>? RequestClose { get; set; }
         public bool IsScrollable => true;
@@ -51,3 +57,4 @@ namespace Pulsar.ViewModels.Dialogs
         }
     }
 }
+

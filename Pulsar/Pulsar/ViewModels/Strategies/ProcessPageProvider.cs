@@ -149,7 +149,9 @@ namespace Pulsar.ViewModels.Strategies
                             slot.SetColor(config.Color);
                         }
 
-                        string baseLabel = !string.IsNullOrEmpty(config?.Label) ? config.Label : first.ProcessName;
+                        string baseLabel = !string.IsNullOrEmpty(config?.Label) 
+                            ? config.Label 
+                            : ProcessNameFormatter.ToDisplayName(first.ProcessName);
                         if (group.Count > 1)
                         {
                             slot.Label = $"{baseLabel} ({group.Count})";
@@ -177,7 +179,7 @@ namespace Pulsar.ViewModels.Strategies
                     var slot = slots[i];
                     var first = group.First();
 
-                    string baseLabel = first.ProcessName;
+                    string baseLabel = ProcessNameFormatter.ToDisplayName(first.ProcessName);
                     if (group.Count > 1)
                     {
                         slot.Label = $"{baseLabel} ({group.Count})";

@@ -102,6 +102,30 @@ namespace Pulsar.Models
         public List<PluginSlot> SwitchMode { get; set; } = new();
 
         /// <summary>
+        /// 内部字段 - 存储关联的进程名 (由 ConfigService 或 ViewModel 设置)
+        /// </summary>
+        [JsonIgnore]
+        internal string? AssociatedProcessName { get; set; }
+
+        /// <summary>
+        /// 显示名称 - 优先使用 Alias，否则格式化进程名为首字母大写
+        /// </summary>
+        [JsonIgnore]
+        public string DisplayName
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(Alias))
+                    return Alias;
+
+                if (!string.IsNullOrEmpty(AssociatedProcessName))
+                    return Pulsar.Helpers.ProcessNameFormatter.ToDisplayName(AssociatedProcessName);
+
+                return string.Empty;
+            }
+        }
+
+        /// <summary>
         /// 辅助方法：返回槽位列表
         /// </summary>
         public List<PluginSlot> GetSlots(bool isCommandMode)

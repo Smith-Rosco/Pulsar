@@ -60,7 +60,25 @@ namespace Pulsar.ViewModels
         public ContextInfo(string key, string displayName, string icon, bool isProfile, string? alias = null)
         {
             Key = key;
-            DisplayName = displayName;
+            
+            // 🎯 核心逻辑：自动格式化显示名称
+            // 优先级：Alias > 格式化的 Key > 原始 displayName
+            if (!string.IsNullOrWhiteSpace(alias))
+            {
+                // 用户自定义别名优先
+                DisplayName = alias;
+            }
+            else if (isProfile)
+            {
+                // Profile 类型：格式化进程名（EXCEL → Excel）
+                DisplayName = ProcessNameFormatter.ToDisplayName(key);
+            }
+            else
+            {
+                // 系统上下文（Launcher/Global）：使用原始名称
+                DisplayName = displayName;
+            }
+            
             Icon = icon;
             IsProfile = isProfile;
             Alias = alias;
@@ -461,7 +479,7 @@ namespace Pulsar.ViewModels
                 RefreshContexts();
                 CurrentContext = AvailableContexts.FirstOrDefault(c => c.Key == processName);
                 
-                SendNotification("Success", $"Profile '{processName}' created.", ControlAppearance.Success);
+                SendNotification("Success", $"Profile '{ProcessNameFormatter.ToDisplayName(processName)}' created.", ControlAppearance.Success);
             }
         }
 
@@ -654,10 +672,9 @@ namespace Pulsar.ViewModels
                     _config.Profiles.TryGetValue(profileKey, out var profileData);
                     string iconKey = !string.IsNullOrEmpty(profileData?.Icon) ? profileData.Icon : "\uE945";
                     
-                    // [New] Use Alias if available
-                    string displayName = !string.IsNullOrWhiteSpace(profileData?.Alias) ? profileData.Alias : profileKey;
-
-                    var profileCtx = new ContextInfo(profileKey, displayName, iconKey, true, profileData?.Alias);
+                    // ✅ 简化逻辑：直接传递 profileKey，让 ContextInfo 构造函数自动处理格式化
+                    // 优先级：Alias > 格式化的 profileKey (EXCEL → Excel) > 原始 profileKey
+                    var profileCtx = new ContextInfo(profileKey, profileKey, iconKey, true, profileData?.Alias);
                     UpdateContextStats(profileCtx);
                     AvailableContexts.Add(profileCtx);
                 }

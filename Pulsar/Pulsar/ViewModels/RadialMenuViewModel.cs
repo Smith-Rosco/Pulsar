@@ -395,7 +395,7 @@ namespace Pulsar.ViewModels
                         var creator = new PluginSlot 
                         { 
                             Order = 0, // Order = 0 ensures it appears first
-                            Label = $"Add {activeProcess}", 
+                            Label = $"Add {_lastContext.DisplayProcessName}",  // ✅ 使用格式化的进程名
                             IconKey = "\uE710", // Add Icon
                             PluginId = "internal:create_profile" 
                         };
