@@ -1,11 +1,13 @@
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
+using Pulsar.Services.Validation;
 using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Pulsar.Services
 {
@@ -18,10 +20,16 @@ namespace Pulsar.Services
         private readonly string _configPath;
         private ProfilesConfig? _cachedConfig;
         private readonly ILogger<ConfigService> _logger;
+        private ConfigValidationPipeline? _validationPipeline;
 
         public event Action? ConfigUpdated;
 
         public ProfilesConfig Current => _cachedConfig ?? CreateDefaultConfig();
+        
+        /// <summary>
+        /// 最近一次验证结果
+        /// </summary>
+        public ValidationResult? LastValidationResult { get; private set; }
 
         public ConfigService(ILogger<ConfigService> logger)
         {
@@ -29,6 +37,14 @@ namespace Pulsar.Services
             string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Pulsar");
             Directory.CreateDirectory(folder);
             _configPath = Path.Combine(folder, ConfigFileName);
+        }
+        
+        /// <summary>
+        /// 设置验证管道（延迟注入，因为 ConfigService 在 PluginRegistry 之前创建）
+        /// </summary>
+        public void SetValidationPipeline(ConfigValidationPipeline pipeline)
+        {
+            _validationPipeline = pipeline;
         }
 
         public async Task<ProfilesConfig> LoadAsync()
@@ -62,6 +78,44 @@ namespace Pulsar.Services
                 }
 
                 _cachedConfig = loaded;
+                
+                // [New] Validate configuration after loading
+                if (_validationPipeline != null && _cachedConfig != null)
+                {
+                    try
+                    {
+                        LastValidationResult = await _validationPipeline.ValidateAsync(_cachedConfig);
+                        
+                        if (!LastValidationResult.IsValid)
+                        {
+                            _logger.LogWarning(
+                                "[ConfigService] Configuration validation failed with {ErrorCount} errors",
+                                LastValidationResult.Errors.Count);
+                            
+                            foreach (var error in LastValidationResult.Errors.Take(5)) // Log first 5 errors
+                            {
+                                _logger.LogWarning(
+                                    "[ConfigService] Validation error [{PluginId}]: {Message}",
+                                    error.PluginId ?? "Global",
+                                    error.Message);
+                            }
+                        }
+                        else if (LastValidationResult.Warnings.Any())
+                        {
+                            _logger.LogInformation(
+                                "[ConfigService] Configuration loaded with {WarningCount} warnings",
+                                LastValidationResult.Warnings.Count);
+                        }
+                        else
+                        {
+                            _logger.LogInformation("[ConfigService] Configuration validated successfully");
+                        }
+                    }
+                    catch (Exception validationEx)
+                    {
+                        _logger.LogError(validationEx, "[ConfigService] Validation pipeline threw exception");
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -74,6 +128,42 @@ namespace Pulsar.Services
 
         public async Task SaveAsync(ProfilesConfig config)
         {
+            // [New] Validate before saving
+            if (_validationPipeline != null)
+            {
+                try
+                {
+                    LastValidationResult = await _validationPipeline.ValidateAsync(config);
+                    
+                    if (!LastValidationResult.IsValid)
+                    {
+                        var errorMessages = string.Join("; ", LastValidationResult.Errors.Select(e => e.Message));
+                        _logger.LogError(
+                            "[ConfigService] Cannot save invalid configuration. Errors: {Errors}",
+                            errorMessages);
+                        
+                        throw new InvalidOperationException(
+                            $"Configuration validation failed: {errorMessages}");
+                    }
+                    
+                    if (LastValidationResult.Warnings.Any())
+                    {
+                        _logger.LogWarning(
+                            "[ConfigService] Saving configuration with {WarningCount} warnings",
+                            LastValidationResult.Warnings.Count);
+                    }
+                }
+                catch (InvalidOperationException)
+                {
+                    throw; // Re-throw validation errors
+                }
+                catch (Exception validationEx)
+                {
+                    _logger.LogError(validationEx, "[ConfigService] Validation pipeline threw exception during save");
+                    // Continue with save despite validation error
+                }
+            }
+            
             _cachedConfig = config;
             var options = new JsonSerializerOptions 
             { 

@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin;
+using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Services.Interfaces;
 
 namespace Pulsar.Plugins.Core.WinSwitcher
@@ -15,7 +16,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
     /// <summary>
     /// 窗口切换插件 - 处理应用程序的智能切换和启动
     /// </summary>
-    public class WinSwitcherPlugin : IPluginConfigurable, IPluginTiered
+    public class WinSwitcherPlugin : IPluginConfigurable, IPluginTiered, IPluginMetadataProvider
     {
         private IWindowService? _windowService;
         private ILogger<WinSwitcherPlugin>? _logger;
@@ -258,6 +259,66 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                 _logger?.LogWarning("[WinSwitcherPlugin] Cannot launch: No path specified");
                 return PluginResult.Error($"Process not running and no path specified");
             }
+        }
+
+        /// <summary>
+        /// 获取插件元数据
+        /// </summary>
+        public PluginMetadata GetMetadata()
+        {
+            return new PluginMetadata
+            {
+                Id = Id,
+                Display = new DisplayInfo
+                {
+                    Name = DisplayName,
+                    Description = Description,
+                    IconKey = "🪟", // Window emoji
+                    Category = "Productivity",
+                    Version = Version,
+                    Author = Author,
+                    DocumentationUrl = DocumentationUrl,
+                    License = "MIT"
+                },
+                Schema = new ConfigSchema
+                {
+                    Version = 1,
+                    Properties = new Dictionary<string, PropertySchema>
+                    {
+                        ["ShowPreviews"] = new PropertySchema
+                        {
+                            Type = "bool",
+                            Description = "Show window preview thumbnails in the switcher",
+                            DefaultValue = true
+                        },
+                        ["ExcludeProcesses"] = new PropertySchema
+                        {
+                            Type = "string",
+                            Description = "Comma-separated list of process names to ignore",
+                            DefaultValue = "",
+                            Placeholder = "e.g., notepad,calc"
+                        }
+                    },
+                    RequiredProperties = Array.Empty<string>()
+                },
+                UI = new UIHints
+                {
+                    Badge = "App",
+                    AccentColor = "#2196F3",
+                    ShowInQuickAccess = true,
+                    SortOrder = 5,
+                    IsFeatured = true
+                },
+                Capabilities = new PluginCapabilities
+                {
+                    SupportedActions = new List<string> { "switch", "launch", "activate" },
+                    RequiresForegroundWindow = false,
+                    Dependencies = new List<string>(),
+                    CanDisable = false,
+                    Tier = PluginTier.Core,
+                    MinPulsarVersion = "1.0.0"
+                }
+            };
         }
     }
 }

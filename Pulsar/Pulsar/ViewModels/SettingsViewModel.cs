@@ -128,6 +128,33 @@ namespace Pulsar.ViewModels
         public bool CanEditProfile => CurrentContext?.IsProfile == true; // [New]
         public bool CanAddSecrets => CurrentContext?.Key != "Launcher";
 
+        // [Phase 2] Unsaved Changes Tracking
+        [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+        private bool _hasUnsavedChanges;
+
+        /// <summary>
+        /// Mark configuration as dirty (has unsaved changes)
+        /// </summary>
+        private void MarkDirty()
+        {
+            HasUnsavedChanges = true;
+        }
+
+        /// <summary>
+        /// [Phase 3] Show unsaved changes confirmation dialog
+        /// </summary>
+        public async Task<DialogResult> ShowUnsavedChangesDialogAsync()
+        {
+            var result = await _dialogService.ShowMessageAsync(
+                "Unsaved Changes",
+                "You have unsaved changes. Do you want to save before closing?",
+                Models.Enums.DialogType.Warning,
+                Models.Enums.DialogButtons.SaveDontSaveCancel
+            );
+            return result;
+        }
+
         private ProfileSettings _generalSettings = new ProfileSettings();
         public ProfileSettings GeneralSettings
         {
@@ -263,6 +290,9 @@ namespace Pulsar.ViewModels
                 // [New] Notify Hotkeys
                 OnPropertyChanged(nameof(ShowGridHotkey));
                 OnPropertyChanged(nameof(ShowSwitcherHotkey));
+                
+                // [Phase 2] Reset dirty flag after loading
+                HasUnsavedChanges = false;
             }
             finally
             {
@@ -398,6 +428,7 @@ namespace Pulsar.ViewModels
             }
 
             CurrentSlots.Add(newItem);
+            MarkDirty(); // [Phase 2]
             
             SendNotification("Success", "Slot added.", ControlAppearance.Success);
         }
@@ -439,6 +470,7 @@ namespace Pulsar.ViewModels
                 };
 
                 CurrentSlots.Add(newItem);
+                MarkDirty(); // [Phase 2]
                 SendNotification("Success", "Secret added (pending save).", ControlAppearance.Success);
             }
         }
@@ -479,6 +511,7 @@ namespace Pulsar.ViewModels
                 RefreshContexts();
                 CurrentContext = AvailableContexts.FirstOrDefault(c => c.Key == processName);
                 
+                MarkDirty(); // [Phase 2]
                 SendNotification("Success", $"Profile '{ProcessNameFormatter.ToDisplayName(processName)}' created.", ControlAppearance.Success);
             }
         }
@@ -536,6 +569,7 @@ namespace Pulsar.ViewModels
                 RefreshContexts();
                 CurrentContext = AvailableContexts.FirstOrDefault(c => c.Key == profileKey);
                 
+                MarkDirty(); // [Phase 2]
                 SendNotification("Success", "Profile updated.", ControlAppearance.Success);
             }
         }
@@ -578,26 +612,37 @@ namespace Pulsar.ViewModels
             }
         }
 
-        [RelayCommand]
+        [RelayCommand(CanExecute = nameof(HasUnsavedChanges))]
         public async Task Save()
         {
             if (_config == null) return;
             
-            // [Fix] Ensure current modifications are committed before saving
-            SyncSlotsToConfig();
-            
-            var allSecrets = await _secretRepo.LoadAsync();
-            foreach (var kvp in _pendingSecrets)
+            try
             {
-                allSecrets[kvp.Key] = kvp.Value;
+                // [Fix] Ensure current modifications are committed before saving
+                SyncSlotsToConfig();
+                
+                var allSecrets = await _secretRepo.LoadAsync();
+                foreach (var kvp in _pendingSecrets)
+                {
+                    allSecrets[kvp.Key] = kvp.Value;
+                }
+                
+                await _secretRepo.SaveAsync(allSecrets);
+                _pendingSecrets.Clear();
+                
+                await _configService.SaveAsync(_config);
+                
+                // [Phase 2] Reset dirty flag after successful save
+                HasUnsavedChanges = false;
+                
+                SendNotification("Saved", "Configuration saved successfully.", ControlAppearance.Success);
             }
-            
-            await _secretRepo.SaveAsync(allSecrets);
-            _pendingSecrets.Clear();
-            
-            await _configService.SaveAsync(_config);
-            
-            SendNotification("Saved", "Configuration saved successfully.", ControlAppearance.Success);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[SettingsViewModel] Failed to save configuration");
+                SendNotification("Error", "Failed to save changes. Please try again.", ControlAppearance.Danger);
+            }
         }
 
         [RelayCommand]
@@ -746,6 +791,7 @@ namespace Pulsar.ViewModels
                 payload.EncryptedData = vm.ResultEncryptedData;
                 _pendingSecrets[secretId] = payload;
 
+                MarkDirty(); // [Phase 2]
                 SendNotification("Success", "Secret updated.", ControlAppearance.Success);
             }
         }
@@ -762,6 +808,7 @@ namespace Pulsar.ViewModels
             if (result == Pulsar.Models.Enums.DialogResult.Confirmed)
             {
                 CurrentSlots.Remove(item);
+                MarkDirty(); // [Phase 2]
                 
                 SendNotification("Deleted", "Slot removed.", ControlAppearance.Info);
             }
@@ -788,6 +835,7 @@ namespace Pulsar.ViewModels
                 CurrentSlots.Add(slot);
             }
             
+            MarkDirty(); // [Phase 2]
             SendNotification("Moved", $"'{item.Label}' moved up.", ControlAppearance.Info);
         }
 
@@ -812,6 +860,7 @@ namespace Pulsar.ViewModels
                 CurrentSlots.Add(slot);
             }
             
+            MarkDirty(); // [Phase 2]
             SendNotification("Moved", $"'{item.Label}' moved down.", ControlAppearance.Info);
         }
         
@@ -998,6 +1047,7 @@ namespace Pulsar.ViewModels
             {
                 _config.Settings.LauncherTheme = value.ToString();
                 OnPropertyChanged();
+                MarkDirty(); // [Phase 2]
             }
         }
 
@@ -1012,6 +1062,7 @@ namespace Pulsar.ViewModels
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(SettingsThemeString));
                     ApplySettingsTheme(value);
+                    MarkDirty(); // [Phase 2]
                 }
             }
         }
@@ -1031,6 +1082,7 @@ namespace Pulsar.ViewModels
                     {
                         ApplySettingsTheme(themeEnum);
                     }
+                    MarkDirty(); // [Phase 2]
                 }
             }
         }
@@ -1042,6 +1094,7 @@ namespace Pulsar.ViewModels
             {
                 _config.Settings.Hotkeys["ShowGrid"] = value;
                 OnPropertyChanged();
+                MarkDirty(); // [Phase 2]
             }
         }
 
@@ -1052,6 +1105,7 @@ namespace Pulsar.ViewModels
             {
                 _config.Settings.Hotkeys["ShowSwitcher"] = value;
                 OnPropertyChanged();
+                MarkDirty(); // [Phase 2]
             }
         }
         
@@ -1127,6 +1181,7 @@ namespace Pulsar.ViewModels
                     CurrentSlots[i].Order = i + 1;
                 }
 
+                MarkDirty(); // [Phase 2]
                 SendNotification("Reordered", $"'{sourceSlot.Label}' moved.", ControlAppearance.Info);
             }
         }

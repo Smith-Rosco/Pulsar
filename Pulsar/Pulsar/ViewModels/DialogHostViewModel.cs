@@ -25,6 +25,13 @@ namespace Pulsar.ViewModels
         [ObservableProperty]
         private string _secondaryButtonText = "Cancel";
 
+        // [Phase 3] Third button for Save/Don't Save/Cancel scenarios
+        [ObservableProperty]
+        private bool _isTertiaryButtonVisible;
+
+        [ObservableProperty]
+        private string _tertiaryButtonText = "Don't Save";
+
         [ObservableProperty]
         private bool _isScrollable = true;
 
@@ -51,33 +58,43 @@ namespace Pulsar.ViewModels
                     IsPrimaryButtonVisible = true;
                     PrimaryButtonText = "OK";
                     IsSecondaryButtonVisible = false;
+                    IsTertiaryButtonVisible = false;
                     break;
                 case DialogButtons.OkCancel:
                     IsPrimaryButtonVisible = true;
                     PrimaryButtonText = "OK";
                     IsSecondaryButtonVisible = true;
                     SecondaryButtonText = "Cancel";
+                    IsTertiaryButtonVisible = false;
                     break;
                 case DialogButtons.YesNo:
                     IsPrimaryButtonVisible = true;
                     PrimaryButtonText = "Yes";
                     IsSecondaryButtonVisible = true;
                     SecondaryButtonText = "No";
+                    IsTertiaryButtonVisible = false;
                     break;
                 case DialogButtons.YesNoCancel:
-                    // This one is tricky with only 2 buttons. Maybe need a third?
-                    // For now let's map Cancel to Secondary and Yes/No to content? 
-                    // Or just add a tertiary button.
-                    // Let's stick to 2 buttons for now and maybe handle YesNoCancel later if needed
-                    // or just fallback to OkCancel behavior for now.
                     IsPrimaryButtonVisible = true;
                     PrimaryButtonText = "Yes";
+                    IsTertiaryButtonVisible = true;
+                    TertiaryButtonText = "No";
                     IsSecondaryButtonVisible = true;
-                    SecondaryButtonText = "No";
+                    SecondaryButtonText = "Cancel";
+                    break;
+                case DialogButtons.SaveDontSaveCancel:
+                    // [Phase 3] Save/Don't Save/Cancel for unsaved changes
+                    IsPrimaryButtonVisible = true;
+                    PrimaryButtonText = "Save";
+                    IsTertiaryButtonVisible = true;
+                    TertiaryButtonText = "Don't Save";
+                    IsSecondaryButtonVisible = true;
+                    SecondaryButtonText = "Cancel";
                     break;
                 case DialogButtons.None:
                     IsPrimaryButtonVisible = false;
                     IsSecondaryButtonVisible = false;
+                    IsTertiaryButtonVisible = false;
                     break;
             }
         }

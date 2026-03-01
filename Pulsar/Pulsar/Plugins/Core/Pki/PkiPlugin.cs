@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin;
+using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Plugins.Core.Pki.Services;
 using Pulsar.Native;
 using Pulsar.Services.Interfaces;
@@ -17,7 +18,7 @@ namespace Pulsar.Plugins.Core.Pki
     /// <summary>
     /// PKI 插件 - 处理密码自动填充和凭据注入
     /// </summary>
-    public class PkiPlugin : IPulsarPlugin, IPluginTiered
+    public class PkiPlugin : IPulsarPlugin, IPluginTiered, IPluginMetadataProvider
     {
         private CredentialsManager? _credentialsManager;
         private IWindowService? _windowService;
@@ -203,6 +204,72 @@ namespace Pulsar.Plugins.Core.Pki
                 .Replace("~", "{~}")
                 .Replace("(", "{(}")
                 .Replace(")", "{)}");
+        }
+
+        /// <summary>
+        /// 获取插件元数据
+        /// </summary>
+        public PluginMetadata GetMetadata()
+        {
+            return new PluginMetadata
+            {
+                Id = Id,
+                Display = new DisplayInfo
+                {
+                    Name = DisplayName,
+                    Description = Description,
+                    IconKey = "🔐", // Emoji for better visual
+                    Category = "Security",
+                    Version = Version,
+                    Author = Author,
+                    DocumentationUrl = DocumentationUrl,
+                    License = "MIT"
+                },
+                Schema = new ConfigSchema
+                {
+                    Version = 1,
+                    Properties = new Dictionary<string, PropertySchema>
+                    {
+                        ["autoSubmit"] = new PropertySchema
+                        {
+                            Type = "bool",
+                            Description = "Automatically press Enter after injecting password",
+                            DefaultValue = false
+                        },
+                        ["injectionDelay"] = new PropertySchema
+                        {
+                            Type = "int",
+                            Description = "Delay in milliseconds between keystrokes (0-1000)",
+                            DefaultValue = 50,
+                            Validators = new List<ValidationRule> { new RangeValidator(0, 1000) }
+                        },
+                        ["useUiaFirst"] = new PropertySchema
+                        {
+                            Type = "bool",
+                            Description = "Try UI Automation before SendKeys (faster but may not work in all apps)",
+                            DefaultValue = true
+                        }
+                    },
+                    RequiredProperties = Array.Empty<string>()
+                },
+                UI = new UIHints
+                {
+                    Badge = "Secret",
+                    AccentColor = "#4CAF50",
+                    ShowInQuickAccess = true,
+                    SortOrder = 10, // High priority
+                    IsFeatured = true
+                },
+                Capabilities = new PluginCapabilities
+                {
+                    SupportedActions = new List<string> { "fill", "inject" },
+                    RequiresForegroundWindow = true,
+                    Dependencies = new List<string>(),
+                    CanDisable = false,
+                    Tier = PluginTier.Core,
+                    MinPulsarVersion = "1.0.0"
+                }
+            };
         }
     }
 }

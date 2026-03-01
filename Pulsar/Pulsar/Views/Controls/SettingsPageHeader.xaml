@@ -37,7 +37,8 @@
         <!-- Bottom Row: Page Actions (Full Width) -->
         <StackPanel Grid.Row="1" 
                     Orientation="Horizontal" 
-                    HorizontalAlignment="Left">
+                    HorizontalAlignment="Left"
+                    DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}">
             <ContentPresenter Content="{Binding ActionsContent, ElementName=Root}"
                               ContentTemplate="{Binding ActionsContentTemplate, ElementName=Root}"/>
         </StackPanel>

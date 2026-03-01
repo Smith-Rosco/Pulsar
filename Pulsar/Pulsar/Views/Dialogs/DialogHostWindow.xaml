@@ -70,6 +70,18 @@
                     Padding="20,15"
                     CornerRadius="0,0,8,8">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <!-- Tertiary Button (e.g., "Don't Save" or "No" in 3-button dialogs) -->
+                    <ui:Button Content="{Binding TertiaryButtonText}"
+                               Visibility="{Binding IsTertiaryButtonVisible, Converter={StaticResource BoolToVis}}"
+                               Style="{StaticResource PulsarSecondaryButtonStyle}"
+                               Command="{Binding CloseCommand}"
+                               Margin="0,0,10,0">
+                        <ui:Button.CommandParameter>
+                            <enums:DialogResult>No</enums:DialogResult>
+                        </ui:Button.CommandParameter>
+                    </ui:Button>
+
+                    <!-- Secondary Button (e.g., "Cancel") -->
                     <ui:Button Content="{Binding SecondaryButtonText}"
                                Visibility="{Binding IsSecondaryButtonVisible, Converter={StaticResource BoolToVis}}"
                                Style="{StaticResource PulsarSecondaryButtonStyle}"
@@ -80,6 +92,7 @@
                         </ui:Button.CommandParameter>
                     </ui:Button>
 
+                    <!-- Primary Button (e.g., "Save" or "OK") -->
                     <ui:Button Content="{Binding PrimaryButtonText}"
                                Visibility="{Binding IsPrimaryButtonVisible, Converter={StaticResource BoolToVis}}"
                                Style="{StaticResource PulsarPrimaryButtonStyle}"

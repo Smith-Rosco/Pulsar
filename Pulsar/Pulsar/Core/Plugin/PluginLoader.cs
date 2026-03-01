@@ -6,6 +6,8 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
 using Microsoft.Extensions.Logging;
+using Pulsar.Core.Plugin.Metadata;
+using Pulsar.Services.Interfaces;
 
 namespace Pulsar.Core.Plugin
 {
@@ -17,12 +19,14 @@ namespace Pulsar.Core.Plugin
         private readonly string _pluginDirectory;
         private readonly IServiceProvider _services;
         private readonly ILogger<PluginLoader>? _logger;
+        private readonly IPluginMetadataRegistry? _metadataRegistry;
 
         public PluginLoader(IServiceProvider services, string pluginDir)
         {
             _services = services;
             _pluginDirectory = pluginDir;
             _logger = services.GetService(typeof(ILogger<PluginLoader>)) as ILogger<PluginLoader>;
+            _metadataRegistry = services.GetService(typeof(IPluginMetadataRegistry)) as IPluginMetadataRegistry;
         }
 
         /// <summary>
@@ -135,7 +139,35 @@ namespace Pulsar.Core.Plugin
                 _logger?.LogError(ex, "[PluginLoader] Failed to sort plugins by dependencies");
             }
 
-            // 4. Initialize all plugins
+            // 4. Collect metadata from plugins
+            if (_metadataRegistry != null)
+            {
+                foreach (var plugin in plugins)
+                {
+                    try
+                    {
+                        if (plugin is IPluginMetadataProvider metadataProvider)
+                        {
+                            var metadata = metadataProvider.GetMetadata();
+                            _metadataRegistry.Register(metadata);
+                            _logger?.LogDebug("[PluginLoader] Registered metadata for plugin: {PluginId}", plugin.Id);
+                        }
+                        else
+                        {
+                            // Create default metadata from IPulsarPlugin properties
+                            var defaultMetadata = CreateDefaultMetadata(plugin);
+                            _metadataRegistry.Register(defaultMetadata);
+                            _logger?.LogDebug("[PluginLoader] Created default metadata for plugin: {PluginId}", plugin.Id);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.LogWarning(ex, "[PluginLoader] Failed to collect metadata for plugin {PluginId}", plugin.Id);
+                    }
+                }
+            }
+
+            // 5. Initialize all plugins
             foreach (var plugin in plugins)
             {
                 try
@@ -200,6 +232,51 @@ namespace Pulsar.Core.Plugin
             }
 
             return sorted;
+        }
+
+        /// <summary>
+        /// Create default metadata from IPulsarPlugin properties (for plugins that don't implement IPluginMetadataProvider)
+        /// </summary>
+        private PluginMetadata CreateDefaultMetadata(IPulsarPlugin plugin)
+        {
+            var tier = PluginTier.Extension;
+            if (plugin is IPluginTiered tiered)
+            {
+                tier = tiered.Tier;
+            }
+
+            return new PluginMetadata
+            {
+                Id = plugin.Id,
+                Display = new DisplayInfo
+                {
+                    Name = plugin.DisplayName,
+                    Description = plugin.Description,
+                    IconKey = plugin.Icon,
+                    Category = plugin.Tags.FirstOrDefault() ?? "General",
+                    Version = plugin.Version,
+                    Author = plugin.Author,
+                    DocumentationUrl = plugin.DocumentationUrl,
+                    License = plugin.License
+                },
+                Schema = null, // No schema for non-configurable plugins
+                UI = new UIHints
+                {
+                    Badge = tier == PluginTier.Core ? "Core" : "Plugin",
+                    AccentColor = tier == PluginTier.Core ? "#FF6B35" : "#4A90E2",
+                    ShowInQuickAccess = true,
+                    SortOrder = 100
+                },
+                Capabilities = new PluginCapabilities
+                {
+                    SupportedActions = new List<string>(), // Unknown without metadata
+                    RequiresForegroundWindow = false,
+                    Dependencies = plugin.Dependencies.ToList(),
+                    CanDisable = plugin.CanDisable,
+                    Tier = tier,
+                    MinPulsarVersion = plugin.MinPulsarVersion
+                }
+            };
         }
     }
 }

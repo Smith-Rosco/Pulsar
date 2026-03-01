@@ -29,6 +29,9 @@ namespace Pulsar.Views
         private SettingsPluginsPage? _pluginsPage; // [New]
         private SettingsAboutPage? _aboutPage; // [New]
 
+        // [Phase 3] Flag to prevent re-entry during programmatic close
+        private bool _isClosingProgrammatically = false;
+
         public SettingsWindow(
             SettingsViewModel viewModel,
             PluginManagerViewModel pluginManager,
@@ -114,6 +117,9 @@ namespace Pulsar.Views
                 DisableScrollViewers(RootNavigation);
             };
             
+            // [New] Ctrl+S Keyboard Shortcut for Save
+            this.PreviewKeyDown += OnPreviewKeyDown;
+            
             RootNavigation.SelectionChanged += RootNavigation_SelectionChanged;
         }
 
@@ -130,6 +136,20 @@ namespace Pulsar.Views
                     scrollViewer.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
                 }
                 DisableScrollViewers(child);
+            }
+        }
+
+        // [New] Keyboard Shortcut Handler
+        private void OnPreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            // Ctrl+S: Save
+            if (e.Key == System.Windows.Input.Key.S && System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.Control)
+            {
+                if (_viewModel.SaveCommand.CanExecute(null))
+                {
+                    _viewModel.SaveCommand.Execute(null);
+                    e.Handled = true;
+                }
             }
         }
 
@@ -236,6 +256,51 @@ namespace Pulsar.Views
             TrimMemory();
             
             base.OnClosed(e);
+        }
+
+        // [Phase 3] Intercept window closing to check for unsaved changes
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            // Prevent re-entry if we're closing programmatically
+            if (_isClosingProgrammatically)
+            {
+                base.OnClosing(e);
+                return;
+            }
+
+            if (_viewModel.HasUnsavedChanges)
+            {
+                // Cancel the close temporarily
+                e.Cancel = true;
+
+                // Show confirmation dialog asynchronously without blocking
+                System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                {
+                    var result = await _viewModel.ShowUnsavedChangesDialogAsync();
+
+                    if (result == Pulsar.Models.Enums.DialogResult.Confirmed)
+                    {
+                        // User chose "Save" - save and then close
+                        await _viewModel.SaveCommand.ExecuteAsync(null);
+                        // Close programmatically
+                        _isClosingProgrammatically = true;
+                        _viewModel.HasUnsavedChanges = false;
+                        this.Close();
+                    }
+                    else if (result == Pulsar.Models.Enums.DialogResult.No)
+                    {
+                        // User chose "Don't Save" - discard changes and close
+                        _isClosingProgrammatically = true;
+                        _viewModel.HasUnsavedChanges = false;
+                        this.Close();
+                    }
+                    // else: User chose "Cancel" - do nothing (window stays open)
+                });
+            }
+            else
+            {
+                base.OnClosing(e);
+            }
         }
 
         // Removed OnClosing override that forced Hide()

@@ -69,12 +69,16 @@ namespace Pulsar
             
             // 2. Plugin System (New Architecture)
             serviceCollection.AddSingleton<PluginRegistry>();
+            serviceCollection.AddSingleton<IPluginMetadataRegistry, PluginMetadataRegistry>();
             
             // [New] Plugin Monitoring & Analytics Services
             serviceCollection.AddSingleton<IPluginUsageTracker, PluginUsageTracker>();
             serviceCollection.AddSingleton<IPluginHealthMonitor, PluginHealthMonitor>();
             serviceCollection.AddSingleton<IPluginLogService, PluginLogService>();
             serviceCollection.AddSingleton<IPluginRecommendationEngine, PluginRecommendationEngine>();
+            
+            // [New] Configuration Validation
+            serviceCollection.AddSingleton<Services.Validation.ConfigValidationPipeline>();
 
             // 3. PKI Service
             serviceCollection.AddSingleton<CredentialsManager>();
@@ -114,6 +118,15 @@ namespace Pulsar
             
             // Load plugins asynchronously (blocks startup, but ensures plugins are ready)
             Task.Run(async () => await pluginRegistry.LoadAllAsync()).GetAwaiter().GetResult();
+
+            // [New] Setup validation pipeline for ConfigService
+            var configService = Services.GetRequiredService<IConfigService>();
+            var validationPipeline = Services.GetRequiredService<Services.Validation.ConfigValidationPipeline>();
+            if (configService is ConfigService concreteConfigService)
+            {
+                concreteConfigService.SetValidationPipeline(validationPipeline);
+                Log.Information("[App] Validation pipeline configured for ConfigService");
+            }
 
             // 6. Start Services
             var trayService = Services.GetRequiredService<ITrayService>();

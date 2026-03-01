@@ -63,6 +63,29 @@
                                            TargetPageType="{x:Type TypeName=Page}" 
                                            Tag="About"/>
                 </ui:NavigationView.MenuItems>
+
+                <!-- Footer: Save Button -->
+                <ui:NavigationView.FooterMenuItems>
+                    <ui:NavigationViewItem 
+                        Content="Save Changes"
+                        Icon="{ui:SymbolIcon Save24}"
+                        Command="{Binding SaveCommand}"
+                        ToolTip="Save all changes (Ctrl+S)">
+                        
+                        <!-- [Phase 4] Red Dot Indicator using InfoBadge with forced style -->
+                        <ui:NavigationViewItem.InfoBadge>
+                            <ui:InfoBadge>
+                                <ui:InfoBadge.Template>
+                                    <ControlTemplate TargetType="ui:InfoBadge">
+                                        <Ellipse Width="8" Height="8" 
+                                                 Fill="#E74856"
+                                                 Visibility="{Binding DataContext.HasUnsavedChanges, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}"/>
+                                    </ControlTemplate>
+                                </ui:InfoBadge.Template>
+                            </ui:InfoBadge>
+                        </ui:NavigationViewItem.InfoBadge>
+                    </ui:NavigationViewItem>
+                </ui:NavigationView.FooterMenuItems>
         </ui:NavigationView>
 
         <!-- Content Frame -->

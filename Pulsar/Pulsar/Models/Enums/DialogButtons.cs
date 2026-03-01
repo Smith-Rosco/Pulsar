@@ -6,6 +6,7 @@ namespace Pulsar.Models.Enums
         OkCancel,
         YesNo,
         YesNoCancel,
+        SaveDontSaveCancel, // [Phase 3] For unsaved changes prompt
         None
     }
 }

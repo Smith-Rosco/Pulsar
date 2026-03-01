@@ -32,7 +32,7 @@
             <controls:SettingsPageHeader.ActionsContent>
                 <ui:Button Content="Reset to Defaults"
                            Icon="{ui:SymbolIcon ArrowReset24}"
-                           Command="{Binding DataContext.ResetConfigCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                           Command="{Binding ResetConfigCommand}"
                            Style="{StaticResource PulsarDangerButtonStyle}"/>
             </controls:SettingsPageHeader.ActionsContent>
         </controls:SettingsPageHeader>
