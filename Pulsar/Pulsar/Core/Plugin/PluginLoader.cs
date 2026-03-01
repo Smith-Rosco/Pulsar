@@ -124,7 +124,18 @@ namespace Pulsar.Core.Plugin
                 _logger?.LogInformation("[PluginLoader] Plugin directory not found: {PluginDirectory}", _pluginDirectory);
             }
 
-            // 3. 初始化所有插件
+            // 3. Sort plugins by dependencies (topological sort)
+            try
+            {
+                plugins = TopologicalSort(plugins);
+                _logger?.LogInformation("[PluginLoader] Sorted {Count} plugins by dependencies", plugins.Count);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[PluginLoader] Failed to sort plugins by dependencies");
+            }
+
+            // 4. Initialize all plugins
             foreach (var plugin in plugins)
             {
                 try
@@ -139,6 +150,56 @@ namespace Pulsar.Core.Plugin
             }
 
             return plugins;
+        }
+
+        /// <summary>
+        /// Topological sort plugins by dependencies
+        /// </summary>
+        private List<IPulsarPlugin> TopologicalSort(List<IPulsarPlugin> plugins)
+        {
+            var sorted = new List<IPulsarPlugin>();
+            var visited = new HashSet<string>();
+            var visiting = new HashSet<string>();
+            var pluginMap = plugins.ToDictionary(p => p.Id);
+
+            void Visit(IPulsarPlugin plugin)
+            {
+                if (visited.Contains(plugin.Id))
+                    return;
+
+                if (visiting.Contains(plugin.Id))
+                {
+                    _logger?.LogWarning("[PluginLoader] Circular dependency detected for plugin: {PluginId}", plugin.Id);
+                    throw new InvalidOperationException($"Circular dependency detected for plugin: {plugin.Id}");
+                }
+
+                visiting.Add(plugin.Id);
+
+                // Visit dependencies first
+                foreach (var depId in plugin.Dependencies)
+                {
+                    if (pluginMap.TryGetValue(depId, out var dependency))
+                    {
+                        Visit(dependency);
+                    }
+                    else
+                    {
+                        _logger?.LogWarning("[PluginLoader] Missing dependency '{DependencyId}' for plugin '{PluginId}'", depId, plugin.Id);
+                        throw new InvalidOperationException($"Missing dependency '{depId}' for plugin '{plugin.Id}'");
+                    }
+                }
+
+                visiting.Remove(plugin.Id);
+                visited.Add(plugin.Id);
+                sorted.Add(plugin);
+            }
+
+            foreach (var plugin in plugins)
+            {
+                Visit(plugin);
+            }
+
+            return sorted;
         }
     }
 }

@@ -53,7 +53,7 @@ namespace Pulsar.Services
         /// <summary>
         /// 加载并初始化所有插件
         /// </summary>
-        public void LoadAll()
+        public async Task LoadAllAsync()
         {
             // [New] Resolve ConfigService
             _configService = _serviceProvider.GetService(typeof(Services.Interfaces.IConfigService)) as Services.Interfaces.IConfigService;
@@ -84,17 +84,39 @@ namespace Pulsar.Services
                             config.Plugins[plugin.Id] = profile;
                         }
                         
-                        // [Fix] Apply saved settings on startup
+                        // [Fix] Apply saved settings on startup with validation
                         if (plugin is IPluginConfigurable configurable)
                         {
                             try
                             {
+                                // Validate settings before applying
+                                var validationResult = configurable.ValidateSettings(profile.Config);
+                                if (!validationResult.IsValid)
+                                {
+                                    _logger.LogWarning("[PluginRegistry] Invalid settings for {PluginId}: {Errors}", 
+                                        plugin.Id, string.Join(", ", validationResult.Errors));
+                                }
+                                
                                 configurable.UpdateSettings(profile.Config);
                                 _logger.LogInformation("[PluginRegistry] Applied settings for {PluginId}", plugin.Id);
                             }
                             catch (Exception ex)
                             {
                                 _logger.LogError(ex, "[PluginRegistry] Failed to apply settings for {PluginId}", plugin.Id);
+                            }
+                        }
+                        
+                        // [New] Call OnEnableAsync for lifecycle-aware plugins
+                        if (plugin is IPluginLifecycle lifecycle && profile.Enabled)
+                        {
+                            try
+                            {
+                                await lifecycle.OnEnableAsync();
+                                _logger.LogInformation("[PluginRegistry] Called OnEnableAsync for {PluginId}", plugin.Id);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "[PluginRegistry] OnEnableAsync failed for {PluginId}", plugin.Id);
                             }
                         }
                     }
@@ -190,8 +212,13 @@ namespace Pulsar.Services
                 else
                 {
                     _logger.LogWarning("[PluginRegistry] ❌ Failed (Logic): {Message}", result.Message ?? "Unknown error");
-                    // 注意：逻辑失败通常不计入熔断，只有崩溃才计入。
-                    // 但如果插件持续返回逻辑错误，是否应该熔断？目前策略：仅异常熔断。
+                    
+                    // [New] Handle Critical severity errors for Extension plugins
+                    if (tier == PluginTier.Extension && result.Severity == PluginErrorSeverity.Critical)
+                    {
+                        _logger.LogWarning("[PluginRegistry] Critical error detected, counting towards circuit breaker");
+                        HandlePluginCrash(pluginId, new InvalidOperationException(result.Message ?? "Critical plugin error"));
+                    }
                 }
                 
                 return result;
@@ -298,8 +325,11 @@ namespace Pulsar.Services
 
             // Core plugins cannot be disabled.
             var plugin = GetPlugin(pluginId);
-            if (plugin != null && !plugin.CanDisable)
+            if (plugin == null) return;
+            
+            if (!plugin.CanDisable)
             {
+                _logger.LogWarning("[PluginRegistry] Cannot disable core plugin: {PluginId}", pluginId);
                 return;
             }
             
@@ -316,9 +346,30 @@ namespace Pulsar.Services
             {
                 profile.Enabled = enabled;
                 _logger.LogInformation("[PluginRegistry] Plugin {PluginId} state changed to {State}", pluginId, enabled ? "Enabled" : "Disabled");
-                await _configService.SaveAsync(config);
                 
-                // Trigger OnEnable/OnDisable hooks here if/when implemented
+                // [New] Call lifecycle hooks
+                if (plugin is IPluginLifecycle lifecycle)
+                {
+                    try
+                    {
+                        if (enabled)
+                        {
+                            await lifecycle.OnEnableAsync();
+                            _logger.LogInformation("[PluginRegistry] Called OnEnableAsync for {PluginId}", pluginId);
+                        }
+                        else
+                        {
+                            await lifecycle.OnDisableAsync();
+                            _logger.LogInformation("[PluginRegistry] Called OnDisableAsync for {PluginId}", pluginId);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "[PluginRegistry] Lifecycle hook failed for {PluginId}", pluginId);
+                    }
+                }
+                
+                await _configService.SaveAsync(config);
             }
         }
 
@@ -352,5 +403,31 @@ namespace Pulsar.Services
         /// 获取插件数量
         /// </summary>
         public int Count => _plugins.Count;
+
+        /// <summary>
+        /// Unload all plugins (called on application exit)
+        /// </summary>
+        public async Task UnloadAllAsync()
+        {
+            _logger.LogInformation("[PluginRegistry] Unloading all plugins...");
+            
+            foreach (var plugin in _plugins.Values)
+            {
+                if (plugin is IPluginLifecycle lifecycle)
+                {
+                    try
+                    {
+                        await lifecycle.OnUnloadAsync();
+                        _logger.LogInformation("[PluginRegistry] Called OnUnloadAsync for {PluginId}", plugin.Id);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "[PluginRegistry] OnUnloadAsync failed for {PluginId}", plugin.Id);
+                    }
+                }
+            }
+            
+            _logger.LogInformation("[PluginRegistry] All plugins unloaded");
+        }
     }
 }

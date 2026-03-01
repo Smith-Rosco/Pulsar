@@ -1,14 +1,16 @@
-// [Path]: Pulsar/Pulsar/Plugins/BasicCommand/SimpleCommandPlugin.cs
+// [Path]: Pulsar/Pulsar/Plugins/Extensions/BasicCommand/SimpleCommandPlugin.cs
 
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin;
 
-namespace Pulsar.Plugins.BasicCommand
+namespace Pulsar.Plugins.Extensions.BasicCommand
 {
     /// <summary>
     /// 简单命令插件 - 处理简单的进程启动和 SendKeys 命令
@@ -16,6 +18,7 @@ namespace Pulsar.Plugins.BasicCommand
     public class SimpleCommandPlugin : IPulsarPlugin, IPluginTiered
     {
         private ILogger<SimpleCommandPlugin>? _logger;
+        
         public string Id => "com.pulsar.command";
         public string DisplayName => "Simple Command";
         public string Version => "1.0.0";
@@ -24,6 +27,10 @@ namespace Pulsar.Plugins.BasicCommand
         public string Icon => "\uE756"; // Command Prompt (TVMonitor or similar)
         public bool CanDisable => true;
         public PluginTier Tier => PluginTier.Extension;
+        
+        // 新增元数据属性
+        public IEnumerable<string> Tags => new[] { "Command", "Utility", "General" };
+        public string? DocumentationUrl => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Docs", "Plugins", "BasicCommand.md");
 
         public void Initialize(IServiceProvider services)
         {

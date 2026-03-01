@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 
-namespace Pulsar.Plugins.BookmarkletRunner
+namespace Pulsar.Plugins.Extensions.BookmarkletRunner
 {
     /// <summary>
     /// 浏览器检测和识别工具类

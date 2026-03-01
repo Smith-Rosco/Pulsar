@@ -2,6 +2,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
@@ -30,6 +32,10 @@ namespace Pulsar.Plugins.Core.Pki
         public string Icon => "\uE72E"; // Lock Icon
         public bool CanDisable => false; // Core Plugin
         public PluginTier Tier => PluginTier.Core;
+        
+        // 新增元数据属性
+        public IEnumerable<string> Tags => new[] { "Security", "Credentials", "Core" };
+        public string? DocumentationUrl => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Docs", "Plugins", "PkiPlugin.md");
 
         public void Initialize(IServiceProvider services)
         {

@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 
-namespace Pulsar.Plugins.VbaRunner
+namespace Pulsar.Plugins.Extensions.VbaRunner
 {
     public static class ComRetryHelper
     {

@@ -7,7 +7,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using Pulsar.Native;
 
-namespace Pulsar.Plugins.VbaRunner
+namespace Pulsar.Plugins.Extensions.VbaRunner
 {
     /// <summary>
     /// Manages COM connections to Excel/WPS instances.

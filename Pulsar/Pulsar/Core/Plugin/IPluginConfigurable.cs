@@ -18,5 +18,16 @@ namespace Pulsar.Core.Plugin
         /// </summary>
         /// <param name="settings">The current configuration dictionary.</param>
         void UpdateSettings(Dictionary<string, object> settings);
+
+        /// <summary>
+        /// Validates the provided settings before applying them.
+        /// Default implementation returns success (no validation).
+        /// </summary>
+        /// <param name="settings">The settings to validate.</param>
+        /// <returns>Validation result with errors if any.</returns>
+        PluginConfigValidationResult ValidateSettings(Dictionary<string, object> settings)
+        {
+            return PluginConfigValidationResult.Success();
+        }
     }
 }

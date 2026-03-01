@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -8,7 +9,7 @@ using Pulsar.Core.Plugin;
 using Pulsar.Native;
 using Pulsar.Services.Interfaces;
 
-namespace Pulsar.Plugins.BookmarkletRunner
+namespace Pulsar.Plugins.Extensions.BookmarkletRunner
 {
     /// <summary>
     /// 书签脚本运行器插件 - 在浏览器中执行 Bookmarklet JavaScript 脚本
@@ -27,6 +28,11 @@ namespace Pulsar.Plugins.BookmarkletRunner
         public string Icon => "\uE896"; // Code/Script Icon
         public bool CanDisable => true; // Extension plugin, can be disabled
         public PluginTier Tier => PluginTier.Extension;
+        
+        // 新增元数据属性
+        public IEnumerable<string> Tags => new[] { "Browser", "JavaScript", "Automation" };
+        public IEnumerable<string> Dependencies => new[] { "com.pulsar.winswitcher" };
+        public string? DocumentationUrl => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Docs", "Plugins", "BookmarkletRunner.md");
 
         public void Initialize(IServiceProvider services)
         {

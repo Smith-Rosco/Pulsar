@@ -1,14 +1,16 @@
-// [Path]: Pulsar/Pulsar/Plugins/WinSwitcher/WinSwitcherPlugin.cs
+// [Path]: Pulsar/Pulsar/Plugins/Core/WinSwitcher/WinSwitcherPlugin.cs
 
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin;
 using Pulsar.Services.Interfaces;
 
-namespace Pulsar.Plugins.WinSwitcher
+namespace Pulsar.Plugins.Core.WinSwitcher
 {
     /// <summary>
     /// 窗口切换插件 - 处理应用程序的智能切换和启动
@@ -28,6 +30,10 @@ namespace Pulsar.Plugins.WinSwitcher
         public string Icon => "\uE8B8"; // Window/Switch Icon
         public bool CanDisable => false; // Core plugin
         public PluginTier Tier => PluginTier.Core;
+        
+        // 新增元数据属性
+        public IEnumerable<string> Tags => new[] { "Window Management", "Core", "Productivity" };
+        public string? DocumentationUrl => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Docs", "Plugins", "WinSwitcher.md");
 
         public void Initialize(IServiceProvider services)
         {

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows; // Explicitly use WPF namespace
@@ -9,7 +10,7 @@ using Pulsar.Core.Messages;
 using Pulsar.Core.Plugin;
 using Pulsar.Views;
 
-namespace Pulsar.Plugins.SystemCommand
+namespace Pulsar.Plugins.Core.SystemCommand
 {
     public class SystemCommandPlugin : IPulsarPlugin, IPluginTiered
     {
@@ -21,6 +22,10 @@ namespace Pulsar.Plugins.SystemCommand
         public string Icon => "\uE713"; // Settings Icon
         public bool CanDisable => false; // Core Plugin
         public PluginTier Tier => PluginTier.Core;
+        
+        // 新增元数据属性
+        public IEnumerable<string> Tags => new[] { "System", "Internal", "Core" };
+        public string? DocumentationUrl => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Docs", "Plugins", "SystemCommand.md");
 
         private IServiceProvider? _services;
 

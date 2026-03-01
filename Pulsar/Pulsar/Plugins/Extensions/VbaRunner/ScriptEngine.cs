@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using Pulsar.Native;
 
-namespace Pulsar.Plugins.VbaRunner
+namespace Pulsar.Plugins.Extensions.VbaRunner
 {
     /// <summary>
     /// Orchestrates VBA script execution by coordinating connection, injection, and execution.

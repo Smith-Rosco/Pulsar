@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.Extensions.Logging;
@@ -8,12 +9,12 @@ using Pulsar.Core.Plugin;
 using Pulsar.Native;
 using Pulsar.Services.Interfaces;
 
-namespace Pulsar.Plugins.VbaRunner
+namespace Pulsar.Plugins.Extensions.VbaRunner
 {
     /// <summary>
     /// VBA Runner Plugin - Executes VBA scripts in Excel/WPS with interactive support
     /// </summary>
-    public class VbaRunnerPlugin : IPulsarPlugin, IPluginTiered
+    public class VbaRunnerPlugin : IPulsarPlugin, IPluginTiered, IPluginLifecycle
     {
         private IWindowService? _windowService;
         private ScriptEngine? _scriptEngine;
@@ -27,17 +28,44 @@ namespace Pulsar.Plugins.VbaRunner
         public string Icon => "\uE71D"; // Excel/Table Icon
         public bool CanDisable => true; // Extension plugin, can be disabled
         public PluginTier Tier => PluginTier.Extension;
+        
+        // 新增元数据属性
+        public IEnumerable<string> Tags => new[] { "Automation", "Excel", "Scripting" };
+        public IEnumerable<string> Dependencies => new[] { "com.pulsar.winswitcher" };
+        public string? DocumentationUrl => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Docs", "Plugins", "VbaRunner.md");
 
         public void Initialize(IServiceProvider services)
         {
             _windowService = services.GetService(typeof(IWindowService)) as IWindowService;
-            _scriptEngine = new ScriptEngine();
             _logger = services.GetService(typeof(ILogger<VbaRunnerPlugin>)) as ILogger<VbaRunnerPlugin>;
 
             if (_windowService == null)
             {
                 _logger?.LogWarning("[VbaRunnerPlugin] IWindowService not available");
             }
+            
+            _logger?.LogInformation("[VbaRunnerPlugin] Initialized successfully");
+        }
+        
+        // IPluginLifecycle 实现
+        public async Task OnEnableAsync()
+        {
+            _scriptEngine = new ScriptEngine();
+            _logger?.LogInformation("[VbaRunnerPlugin] Plugin enabled, ScriptEngine created");
+            await Task.CompletedTask;
+        }
+
+        public async Task OnDisableAsync()
+        {
+            _logger?.LogInformation("[VbaRunnerPlugin] Plugin disabled, cleaning up resources");
+            _scriptEngine = null;
+            await Task.CompletedTask;
+        }
+
+        public async Task OnUnloadAsync()
+        {
+            _logger?.LogInformation("[VbaRunnerPlugin] Plugin unloading");
+            await OnDisableAsync();
         }
 
         public async Task<PluginResult> ExecuteAsync(

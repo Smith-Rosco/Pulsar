@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Pulsar.Core.Plugin
@@ -45,6 +46,35 @@ namespace Pulsar.Core.Plugin
         /// 是否允许禁用 (核心插件应返回 false)
         /// </summary>
         bool CanDisable { get; }
+
+        /// <summary>
+        /// 插件分类标签 (用于分组和筛选)
+        /// 默认返回 "General"
+        /// </summary>
+        IEnumerable<string> Tags => new[] { "General" };
+
+        /// <summary>
+        /// 最低 Pulsar 版本要求 (语义化版本)
+        /// 默认为 "1.0.0"
+        /// </summary>
+        string MinPulsarVersion => "1.0.0";
+
+        /// <summary>
+        /// 文档链接 (可选)
+        /// </summary>
+        string? DocumentationUrl => null;
+
+        /// <summary>
+        /// 许可证 (如 "MIT"/"Proprietary")
+        /// 默认为 "MIT"
+        /// </summary>
+        string License => "MIT";
+
+        /// <summary>
+        /// 依赖的插件 ID 列表 (可选)
+        /// 用于确保插件按正确顺序加载
+        /// </summary>
+        IEnumerable<string> Dependencies => Enumerable.Empty<string>();
 
         /// <summary>
         /// 冷启动初始化 (在 App 启动时调用一次)

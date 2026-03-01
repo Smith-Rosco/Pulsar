@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace Pulsar.Plugins.VbaRunner
+namespace Pulsar.Plugins.Extensions.VbaRunner
 {
     /// <summary>
     /// 脚本指令解析器 - 解析 VBA 脚本头部的 @Runner 指令

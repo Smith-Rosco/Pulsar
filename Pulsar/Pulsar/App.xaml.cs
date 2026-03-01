@@ -99,19 +99,21 @@ namespace Pulsar
             // Initialize static helpers that need logging
             IconHelper.Logger = Services.GetService<ILoggerFactory>()?.CreateLogger("IconHelper");
             UiaHelper.Logger = Services.GetService<ILoggerFactory>()?.CreateLogger("UiaHelper");
-            Pulsar.Plugins.BookmarkletRunner.BrowserHelper.Logger = Services.GetService<ILoggerFactory>()?.CreateLogger("BrowserHelper");
+            Pulsar.Plugins.Extensions.BookmarkletRunner.BrowserHelper.Logger = Services.GetService<ILoggerFactory>()?.CreateLogger("BrowserHelper");
 
             // VBA runner internals
-            Pulsar.Plugins.VbaRunner.ScriptEngine.Logger = Services.GetService<ILoggerFactory>()?.CreateLogger("VbaRunner.ScriptEngine");
-            Pulsar.Plugins.VbaRunner.ComRetryHelper.Logger = Services.GetService<ILoggerFactory>()?.CreateLogger("VbaRunner.ComRetryHelper");
-            Pulsar.Plugins.VbaRunner.ComConnectionManager.Logger = Services.GetService<ILoggerFactory>()?.CreateLogger("VbaRunner.ComConnectionManager");
-            Pulsar.Plugins.VbaRunner.VbaModuleInjector.Logger = Services.GetService<ILoggerFactory>()?.CreateLogger("VbaRunner.VbaModuleInjector");
+            Pulsar.Plugins.Extensions.VbaRunner.ScriptEngine.Logger = Services.GetService<ILoggerFactory>()?.CreateLogger("VbaRunner.ScriptEngine");
+            Pulsar.Plugins.Extensions.VbaRunner.ComRetryHelper.Logger = Services.GetService<ILoggerFactory>()?.CreateLogger("VbaRunner.ComRetryHelper");
+            Pulsar.Plugins.Extensions.VbaRunner.ComConnectionManager.Logger = Services.GetService<ILoggerFactory>()?.CreateLogger("VbaRunner.ComConnectionManager");
+            Pulsar.Plugins.Extensions.VbaRunner.VbaModuleInjector.Logger = Services.GetService<ILoggerFactory>()?.CreateLogger("VbaRunner.VbaModuleInjector");
 
             // ================================================
             // 5. Initialize Plugin System
             // ================================================
             var pluginRegistry = Services.GetRequiredService<PluginRegistry>();
-            pluginRegistry.LoadAll();
+            
+            // Load plugins asynchronously (blocks startup, but ensures plugins are ready)
+            Task.Run(async () => await pluginRegistry.LoadAllAsync()).GetAwaiter().GetResult();
 
             // 6. Start Services
             var trayService = Services.GetRequiredService<ITrayService>();
@@ -132,6 +134,13 @@ namespace Pulsar
             
             if (Services != null)
             {
+                // Unload all plugins
+                var pluginRegistry = Services.GetService<PluginRegistry>();
+                if (pluginRegistry != null)
+                {
+                    Task.Run(async () => await pluginRegistry.UnloadAllAsync()).GetAwaiter().GetResult();
+                }
+                
                 var trayService = Services.GetService<ITrayService>();
                 trayService?.Dispose();
             }

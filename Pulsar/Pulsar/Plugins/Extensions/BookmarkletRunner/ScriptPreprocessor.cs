@@ -4,7 +4,7 @@ using System;
 using System.IO;
 using System.Text.RegularExpressions;
 
-namespace Pulsar.Plugins.BookmarkletRunner
+namespace Pulsar.Plugins.Extensions.BookmarkletRunner
 {
     /// <summary>
     /// 脚本预处理工具类 - 处理书签脚本文件的读取和格式化

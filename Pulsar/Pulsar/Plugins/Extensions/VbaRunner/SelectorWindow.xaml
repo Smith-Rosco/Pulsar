@@ -1,4 +1,4 @@
-<Window x:Class="Pulsar.Plugins.VbaRunner.SelectorWindow"
+<Window x:Class="Pulsar.Plugins.Extensions.VbaRunner.SelectorWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Pulsar - Select Worksheet" Height="180" Width="400"
