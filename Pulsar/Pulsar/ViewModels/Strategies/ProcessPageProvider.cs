@@ -16,6 +16,9 @@ namespace Pulsar.ViewModels.Strategies
         private readonly IWindowService _windowService;
         private readonly ProfilesConfig _config;
         private readonly System.IServiceProvider _serviceProvider; // If needed for Plugin Registry etc.
+        private readonly IPluginUsageTracker? _usageTracker;
+        private readonly IPluginHealthMonitor? _healthMonitor;
+        private readonly IPluginLogService? _logService;
 
         private List<ProcessWindowInfo>[] _page0Slots = new List<ProcessWindowInfo>[8];
         private PluginSlot?[] _page0Config = new PluginSlot?[8];
@@ -28,6 +31,11 @@ namespace Pulsar.ViewModels.Strategies
             _windowService = windowService;
             _config = config;
             _serviceProvider = serviceProvider;
+            
+            // Resolve analytics services
+            _usageTracker = serviceProvider.GetService(typeof(IPluginUsageTracker)) as IPluginUsageTracker;
+            _healthMonitor = serviceProvider.GetService(typeof(IPluginHealthMonitor)) as IPluginHealthMonitor;
+            _logService = serviceProvider.GetService(typeof(IPluginLogService)) as IPluginLogService;
         }
 
         public override async Task LoadAsync()
@@ -154,7 +162,7 @@ namespace Pulsar.ViewModels.Strategies
 
                         slot.Type = SlotType.Process;
                         slot.DataContext = group;
-                        slot.ActionStrategy = new ProcessGroupStrategy(group);
+                        slot.ActionStrategy = new ProcessGroupStrategy(group, _usageTracker, _healthMonitor, _logService);
                     }
                 }
             }
@@ -183,7 +191,7 @@ namespace Pulsar.ViewModels.Strategies
                     slot.IconImage = first.AppIcon;
                     slot.Type = SlotType.Process;
                     slot.DataContext = group;
-                    slot.ActionStrategy = new ProcessGroupStrategy(group);
+                    slot.ActionStrategy = new ProcessGroupStrategy(group, _usageTracker, _healthMonitor, _logService);
                 }
             }
         }

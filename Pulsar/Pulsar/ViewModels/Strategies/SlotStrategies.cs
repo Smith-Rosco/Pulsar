@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Diagnostics;
 using Pulsar.Core.Plugin;
 using Pulsar.Models;
 using Pulsar.Native;
@@ -78,33 +79,81 @@ namespace Pulsar.ViewModels.Strategies
     public class WindowSwitchStrategy : IActionStrategy
     {
         private readonly ProcessWindowInfo _window;
+        private readonly IPluginUsageTracker? _usageTracker;
+        private readonly IPluginHealthMonitor? _healthMonitor;
+        private readonly IPluginLogService? _logService;
 
-        public WindowSwitchStrategy(ProcessWindowInfo window)
+        public WindowSwitchStrategy(ProcessWindowInfo window, 
+            IPluginUsageTracker? usageTracker = null, 
+            IPluginHealthMonitor? healthMonitor = null,
+            IPluginLogService? logService = null)
         {
             _window = window;
+            _usageTracker = usageTracker;
+            _healthMonitor = healthMonitor;
+            _logService = logService;
         }
 
         public Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context)
         {
             context.SetActionExecuted(true);
 
-            if (!WindowHelper.IsWindow(_window.Handle))
+            var stopwatch = Stopwatch.StartNew();
+            bool success = false;
+
+            try
             {
-                System.Media.SystemSounds.Exclamation.Play();
+                if (!WindowHelper.IsWindow(_window.Handle))
+                {
+                    System.Media.SystemSounds.Exclamation.Play();
+                    context.IsVisible = false;
+                    _logService?.Log("com.pulsar.winswitcher", PluginLogLevel.Warning,
+                        "Window handle is no longer valid",
+                        null,
+                        "switch",
+                        new Dictionary<string, string>
+                        {
+                            ["app"] = _window.ProcessName,
+                            ["title"] = _window.Title
+                        },
+                        stopwatch.ElapsedMilliseconds);
+                    return Task.CompletedTask;
+                }
+
+                // [Fix] Hide first to prevent focus stealing issues or visual glitches
                 context.IsVisible = false;
+
+                WindowHelper.SetForegroundWindow(_window.Handle);
+                if (WindowHelper.IsIconic(_window.Handle))
+                {
+                    WindowHelper.ShowWindow(_window.Handle, 9); // SW_RESTORE
+                }
+
+                success = true;
                 return Task.CompletedTask;
             }
-
-            // [Fix] Hide first to prevent focus stealing issues or visual glitches
-            context.IsVisible = false;
-
-            WindowHelper.SetForegroundWindow(_window.Handle);
-            if (WindowHelper.IsIconic(_window.Handle))
+            finally
             {
-                WindowHelper.ShowWindow(_window.Handle, 9); // SW_RESTORE
-            }
+                stopwatch.Stop();
 
-            return Task.CompletedTask;
+                // Record statistics for WinSwitcher plugin
+                _usageTracker?.RecordExecution("com.pulsar.winswitcher", success, stopwatch.ElapsedMilliseconds, _window.ProcessName);
+                
+                if (success)
+                {
+                    _healthMonitor?.RecordSuccess("com.pulsar.winswitcher");
+                    _logService?.Log("com.pulsar.winswitcher", PluginLogLevel.Info,
+                        "Switched window",
+                        null,
+                        "switch",
+                        new Dictionary<string, string>
+                        {
+                            ["app"] = _window.ProcessName,
+                            ["title"] = _window.Title
+                        },
+                        stopwatch.ElapsedMilliseconds);
+                }
+            }
         }
     }
 
@@ -114,10 +163,19 @@ namespace Pulsar.ViewModels.Strategies
     public class ProcessGroupStrategy : IActionStrategy
     {
         private readonly List<ProcessWindowInfo> _windows;
+        private readonly IPluginUsageTracker? _usageTracker;
+        private readonly IPluginHealthMonitor? _healthMonitor;
+        private readonly IPluginLogService? _logService;
 
-        public ProcessGroupStrategy(List<ProcessWindowInfo> windows)
+        public ProcessGroupStrategy(List<ProcessWindowInfo> windows, 
+            IPluginUsageTracker? usageTracker = null, 
+            IPluginHealthMonitor? healthMonitor = null,
+            IPluginLogService? logService = null)
         {
             _windows = windows;
+            _usageTracker = usageTracker;
+            _healthMonitor = healthMonitor;
+            _logService = logService;
         }
 
         public async Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context)
@@ -162,7 +220,7 @@ namespace Pulsar.ViewModels.Strategies
             // Let's stick to Execute = Switch for now, as per original ExecuteSelection logic.
             
             var target = validWindows.First();
-            await new WindowSwitchStrategy(target).ExecuteAsync(slot, context);
+            await new WindowSwitchStrategy(target, _usageTracker, _healthMonitor, _logService).ExecuteAsync(slot, context);
         }
         
         // Helper for the View Model to call explicitly for drill down

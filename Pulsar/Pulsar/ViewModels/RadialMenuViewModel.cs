@@ -32,6 +32,8 @@ namespace Pulsar.ViewModels
         private readonly ITrayService _trayService; // [New]
         private readonly System.IServiceProvider _serviceProvider;
         private readonly ILogger<RadialMenuViewModel>? _logger;
+        private readonly IPluginUsageTracker? _usageTracker; // [New]
+        private readonly IPluginHealthMonitor? _healthMonitor; // [New]
 
         private ProfilesConfig? _config;
         private IPageProvider? _pageProvider; // [New] Strategy for paging
@@ -167,6 +169,10 @@ namespace Pulsar.ViewModels
             _trayService = trayService;
             _serviceProvider = serviceProvider;
             _logger = logger;
+            
+            // [New] Resolve analytics services
+            _usageTracker = serviceProvider.GetService(typeof(IPluginUsageTracker)) as IPluginUsageTracker;
+            _healthMonitor = serviceProvider.GetService(typeof(IPluginHealthMonitor)) as IPluginHealthMonitor;
 
             InitializeSlots();
 
@@ -891,7 +897,7 @@ namespace Pulsar.ViewModels
                     slot.Type = SlotType.Window;
                     slot.DataContext = win;
                     slot.BadgeCount = 0; // [Fix] Ensure no badges in sub-menu
-                    slot.ActionStrategy = new WindowSwitchStrategy(win); // [New] Set Strategy
+                    slot.ActionStrategy = new WindowSwitchStrategy(win, _usageTracker, _healthMonitor); // [New] Set Strategy with analytics
                 }
                 else
                 {

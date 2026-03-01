@@ -16,22 +16,6 @@ namespace Pulsar.Views.Pages
 
             InitializeComponent();
             DataContext = viewModel;
-
-            this.Loaded += OnPageLoaded;
-        }
-
-        private void OnPageLoaded(object sender, RoutedEventArgs e)
-        {
-            var baseStyle = this.TryFindResource(typeof(System.Windows.Controls.ListViewItem)) as Style;
-
-            if (baseStyle != null)
-            {
-                var newStyle = new Style(typeof(System.Windows.Controls.ListViewItem), baseStyle);
-                newStyle.Setters.Add(new Setter(System.Windows.Controls.ListViewItem.MarginProperty, new Thickness(0, 2, 0, 2)));
-                newStyle.Setters.Add(new Setter(System.Windows.Controls.ListViewItem.PaddingProperty, new Thickness(8)));
-                
-                PluginsList.ItemContainerStyle = newStyle;
-            }
         }
     }
 }

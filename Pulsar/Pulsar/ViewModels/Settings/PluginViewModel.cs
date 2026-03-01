@@ -14,15 +14,29 @@ namespace Pulsar.ViewModels.Settings
 {
     public partial class PluginViewModel : ObservableObject
     {
+        private const int ViewLogsPreviewCount = 2;
         private readonly IPulsarPlugin _plugin;
         private readonly PluginRegistry _registry;
         private readonly IConfigService _configService;
+        private readonly IPluginUsageTracker? _usageTracker;
+        private readonly IPluginHealthMonitor? _healthMonitor;
+        private readonly IPluginLogService? _logService;
+        private readonly IDialogService? _dialogService;
 
         [ObservableProperty]
         private bool _isEnabled;
 
         [ObservableProperty]
         private bool _hasSettings;
+
+        [ObservableProperty]
+        private PluginUsageStats _usageStats = new();
+
+        [ObservableProperty]
+        private PluginHealthReport _healthReport = new();
+
+        [ObservableProperty]
+        private int _recentErrorCount;
 
         public string Id => _plugin.Id;
         public string Name => _plugin.DisplayName;
@@ -34,11 +48,46 @@ namespace Pulsar.ViewModels.Settings
 
         public ObservableCollection<PluginSettingViewModel> Settings { get; } = new();
 
-        public PluginViewModel(IPulsarPlugin plugin, PluginRegistry registry, IConfigService configService)
+        // [New] UI-friendly properties
+        public string UsageSummary => $"{UsageStats.TotalExecutions} uses";
+        public string ProfilesSummary => $"{UsageStats.UsedInProfiles.Count} profiles";
+        public string LastUsedSummary => UsageStats.LastUsed.HasValue 
+            ? FormatTimeAgo(UsageStats.LastUsed.Value) 
+            : "Never used";
+        public string HealthBadge => HealthReport.Status switch
+        {
+            PluginHealthStatus.Healthy => "✅",
+            PluginHealthStatus.Warning => "⚠️",
+            PluginHealthStatus.Critical => "🔴",
+            PluginHealthStatus.Unused => "💤",
+            PluginHealthStatus.Disabled => "🚫",
+            _ => ""
+        };
+        public string HealthScoreText => $"{HealthReport.HealthScore}/100";
+        public string HealthScoreColor => HealthReport.HealthScore switch
+        {
+            >= 90 => "#28a745",  // Green
+            >= 70 => "#ffc107",  // Orange/Yellow
+            _ => "#dc3545"       // Red
+        };
+        public string SuccessRateText => UsageStats.TotalExecutions > 0
+            ? $"{(double)UsageStats.SuccessCount / UsageStats.TotalExecutions * 100:F1}%"
+            : "N/A";
+        public string AvgExecutionTimeText => $"{UsageStats.AverageExecutionTimeMs:F0}ms";
+        public bool IsViewLogsVisible => RecentErrorCount > 0;
+        public string ViewLogsLabel => RecentErrorCount > 0 ? $"View Logs ({RecentErrorCount} errors)" : "View Logs";
+
+        public PluginViewModel(IPulsarPlugin plugin, PluginRegistry registry, IConfigService configService,
+            IPluginUsageTracker? usageTracker = null, IPluginHealthMonitor? healthMonitor = null,
+            IPluginLogService? logService = null, IDialogService? dialogService = null)
         {
             _plugin = plugin;
             _registry = registry;
             _configService = configService;
+            _usageTracker = usageTracker;
+            _healthMonitor = healthMonitor;
+            _logService = logService;
+            _dialogService = dialogService;
 
             // Load Initial State
             _isEnabled = _registry.IsPluginEnabled(plugin.Id);
@@ -49,6 +98,53 @@ namespace Pulsar.ViewModels.Settings
                 HasSettings = true;
                 LoadSettings(configurable);
             }
+
+            // Load Statistics and Health Data
+            LoadAnalytics();
+        }
+
+        private void LoadAnalytics()
+        {
+            // Load Usage Stats
+            if (_usageTracker != null)
+            {
+                UsageStats = _usageTracker.GetStats(Id);
+            }
+
+            // Load Health Report
+            if (_healthMonitor != null)
+            {
+                HealthReport = _healthMonitor.GetHealthReport(Id);
+            }
+
+            // Load Recent Errors Count
+            if (_logService != null)
+            {
+                var recentErrors = _logService.GetRecentErrors(Id, ViewLogsPreviewCount);
+                RecentErrorCount = recentErrors.Count;
+            }
+
+            // Notify UI properties
+            OnPropertyChanged(nameof(UsageSummary));
+            OnPropertyChanged(nameof(ProfilesSummary));
+            OnPropertyChanged(nameof(LastUsedSummary));
+            OnPropertyChanged(nameof(HealthBadge));
+            OnPropertyChanged(nameof(HealthScoreText));
+            OnPropertyChanged(nameof(HealthScoreColor));
+            OnPropertyChanged(nameof(SuccessRateText));
+            OnPropertyChanged(nameof(AvgExecutionTimeText));
+            OnPropertyChanged(nameof(IsViewLogsVisible));
+            OnPropertyChanged(nameof(ViewLogsLabel));
+        }
+
+        private string FormatTimeAgo(DateTime dateTime)
+        {
+            var span = DateTime.UtcNow - dateTime;
+            if (span.TotalMinutes < 1) return "Just now";
+            if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes} minutes ago";
+            if (span.TotalHours < 24) return $"{(int)span.TotalHours} hours ago";
+            if (span.TotalDays < 30) return $"{(int)span.TotalDays} days ago";
+            return dateTime.ToLocalTime().ToString("yyyy-MM-dd");
         }
 
         private void LoadSettings(IPluginConfigurable configurable)
@@ -151,6 +247,41 @@ namespace Pulsar.ViewModels.Settings
         {
             // Fire and forget save
             _ = _registry.SetPluginStateAsync(Id, value);
+        }
+
+        [RelayCommand]
+        private async Task ViewLogs()
+        {
+            if (_logService == null || _dialogService == null)
+            {
+                return;
+            }
+
+            var vm = new Pulsar.ViewModels.Dialogs.PluginLogViewerViewModel(_logService, Id, Name);
+            await _dialogService.ShowCustomAsync($"Plugin Logs: {Name}", vm, Models.Enums.DialogButtons.Ok);
+        }
+
+        [RelayCommand]
+        private void RefreshAnalytics()
+        {
+            LoadAnalytics();
+        }
+
+        [RelayCommand]
+        private async Task Configure()
+        {
+            if (_dialogService == null || !HasSettings)
+            {
+                return;
+            }
+
+            // TODO: 实现插件配置对话框
+            // 当前暂时显示提示信息，后续可以创建专门的配置对话框
+            await _dialogService.ShowMessageAsync(
+                "Plugin Configuration",
+                $"Configuration UI for {Name} will be implemented in Phase 3.",
+                Models.Enums.DialogType.Info,
+                Models.Enums.DialogButtons.Ok);
         }
     }
 }

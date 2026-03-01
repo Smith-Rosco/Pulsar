@@ -69,6 +69,11 @@ namespace Pulsar
             
             // 2. Plugin System (New Architecture)
             serviceCollection.AddSingleton<PluginRegistry>();
+            
+            // [New] Plugin Monitoring & Analytics Services
+            serviceCollection.AddSingleton<IPluginUsageTracker, PluginUsageTracker>();
+            serviceCollection.AddSingleton<IPluginHealthMonitor, PluginHealthMonitor>();
+            serviceCollection.AddSingleton<IPluginLogService, PluginLogService>();
 
             // 3. PKI Service
             serviceCollection.AddSingleton<CredentialsManager>();

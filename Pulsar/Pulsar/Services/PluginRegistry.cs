@@ -3,9 +3,11 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Pulsar.Core.Plugin;
+using Pulsar.Models;
 
 namespace Pulsar.Services
 {
@@ -27,12 +29,18 @@ namespace Pulsar.Services
         private readonly PluginLoader _loader;
         private readonly Services.Interfaces.ITrayService? _trayService;
         private Services.Interfaces.IConfigService? _configService; // [New]
+        private readonly Services.Interfaces.IPluginUsageTracker? _usageTracker; // [New]
+        private readonly Services.Interfaces.IPluginHealthMonitor? _healthMonitor; // [New]
+        private readonly Services.Interfaces.IPluginLogService? _logService; // [New]
 
         public PluginRegistry(IServiceProvider serviceProvider, ILogger<PluginRegistry> logger)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
             _trayService = _serviceProvider.GetService(typeof(Services.Interfaces.ITrayService)) as Services.Interfaces.ITrayService;
+            _usageTracker = _serviceProvider.GetService(typeof(Services.Interfaces.IPluginUsageTracker)) as Services.Interfaces.IPluginUsageTracker;
+            _healthMonitor = _serviceProvider.GetService(typeof(Services.Interfaces.IPluginHealthMonitor)) as Services.Interfaces.IPluginHealthMonitor;
+            _logService = _serviceProvider.GetService(typeof(Services.Interfaces.IPluginLogService)) as Services.Interfaces.IPluginLogService;
             
             // 初始化插件加载器
             string pluginDir = System.IO.Path.Combine(
@@ -157,11 +165,18 @@ namespace Pulsar.Services
                 }
             }
 
+            // [New] 开始计时
+            var stopwatch = Stopwatch.StartNew();
+            bool success = false;
+            Exception? exception = null;
+
             try
             {
                 _logger.LogDebug("[PluginRegistry] Executing: {PluginId}.{Action}", pluginId, action);
                 var result = await plugin.ExecuteAsync(action, args, context);
                 
+                success = result.Success;
+
                 // Extension plugin succeeded - reset crash counters.
                 if (tier == PluginTier.Extension && _failureCounts.ContainsKey(pluginId))
                 {
@@ -183,6 +198,8 @@ namespace Pulsar.Services
             }
             catch (Exception ex)
             {
+                exception = ex;
+                success = false;
                 _logger.LogError(ex, "[PluginRegistry] ❌ Exception in plugin {PluginId}", pluginId);
 
                 // Only Extension plugins are isolated with Circuit Breaker.
@@ -192,6 +209,37 @@ namespace Pulsar.Services
                 }
 
                 return PluginResult.Error($"Plugin execution failed: {ex.Message}");
+            }
+            finally
+            {
+                stopwatch.Stop();
+
+                // [New] 记录统计数据
+                _usageTracker?.RecordExecution(pluginId, success, stopwatch.ElapsedMilliseconds, context.TargetProcessName);
+
+                // [New] 记录健康监控
+                if (success)
+                {
+                    _healthMonitor?.RecordSuccess(pluginId);
+                }
+                else if (exception != null)
+                {
+                    _healthMonitor?.RecordError(pluginId, exception, action);
+                }
+
+                // [New] 记录日志
+                if (success)
+                {
+                    _logService?.Log(pluginId, PluginLogLevel.Info,
+                        $"Executed action '{action}' successfully",
+                        null, action, args as Dictionary<string, string>, stopwatch.ElapsedMilliseconds);
+                }
+                else
+                {
+                    _logService?.Log(pluginId, PluginLogLevel.Error,
+                        $"Failed to execute action '{action}'",
+                        exception, action, args as Dictionary<string, string>, stopwatch.ElapsedMilliseconds);
+                }
             }
         }
 
@@ -227,6 +275,11 @@ namespace Pulsar.Services
                 _failureCounts.Remove(pluginId); // 重置计数，等待冷却后重试
                 _logger.LogError("[PluginRegistry] 💥 Circuit Breaker Tripped! {PluginId} disabled for {Timeout}s", pluginId, ResetTimeout.TotalSeconds);
                 
+                // [New] 记录 Circuit Breaker 触发
+                _healthMonitor?.RecordCircuitBreakerTrip(pluginId);
+                _logService?.Log(pluginId, PluginLogLevel.Critical,
+                    $"Circuit Breaker triggered - plugin temporarily disabled for {ResetTimeout.TotalSeconds}s");
+
                 // 发送系统通知告知用户插件已禁用
                 _trayService?.ShowNotification(
                     "插件已自动禁用", 

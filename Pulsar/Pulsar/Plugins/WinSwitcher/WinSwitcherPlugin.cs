@@ -26,8 +26,8 @@ namespace Pulsar.Plugins.WinSwitcher
         public string Author => "Pulsar Team";
         public string Description => "Switch to running windows or launch new application instances.";
         public string Icon => "\uE8B8"; // Window/Switch Icon
-        public bool CanDisable => true; // Extension plugin
-        public PluginTier Tier => PluginTier.Extension;
+        public bool CanDisable => false; // Core plugin
+        public PluginTier Tier => PluginTier.Core;
 
         public void Initialize(IServiceProvider services)
         {

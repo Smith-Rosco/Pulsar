@@ -56,6 +56,7 @@ namespace Pulsar.ViewModels.Strategies
                 slot.BadgeCount = 0;
                 slot.SetColor(null);
                 slot.ActionStrategy = new NoOpStrategy();
+                slot.IsEnabled = true;
             }
         }
     }

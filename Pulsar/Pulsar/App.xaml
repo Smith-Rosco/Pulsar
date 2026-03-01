@@ -31,8 +31,11 @@
             <DataTemplate DataType="{x:Type dialogs:QuickSecretsViewModel}">
                 <views:QuickSecretsContent/>
             </DataTemplate>
-            <DataTemplate DataType="{x:Type dialogs:EditProfileViewModel}">
-                <views:EditProfileContent/>
+             <DataTemplate DataType="{x:Type dialogs:EditProfileViewModel}">
+                 <views:EditProfileContent/>
+             </DataTemplate>
+            <DataTemplate DataType="{x:Type dialogs:PluginLogViewerViewModel}">
+                <views:PluginLogViewerContentHost/>
             </DataTemplate>
 
             <converters:ScaleConverter x:Key="ScaleConverter"/>
