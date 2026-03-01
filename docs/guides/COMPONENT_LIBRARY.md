@@ -1,15 +1,34 @@
-# ExpandableCard 重构指南
+# Pulsar Component Library Guide
 
-## 当前状态
-- ✅ ExpandableCard 通用控件已创建
-- ✅ AGENTS.md 已更新组件化最佳实践
-- ✅ Plugins 页面已重构完成
-- ✅ Slots 页面已重构完成
-- ✅ 构建测试通过（0 警告，0 错误）
+**Status**: Published  
+**Version**: v1.0.0  
+**Last Updated**: 2026-03-01  
+**Related Documents**: [AGENTS.md](../../AGENTS.md), [UI_BEST_PRACTICES.md](./UI_BEST_PRACTICES.md)
 
-## 重构示例: Plugins 页面
+---
 
-### 改造前 (当前代码 ~220 行):
+## Overview
+
+This guide documents reusable UI components in the Pulsar project, promoting code reuse and consistency across the application.
+
+## Available Components
+
+### ExpandableCard
+
+**Location**: `Views/Controls/ExpandableCard.xaml`
+
+A parameterized, reusable card component that encapsulates common UI patterns for expandable content with actions and toggle controls.
+
+**Status**: ✅ Production Ready
+- ✅ Used in Plugins page
+- ✅ Used in Slots page
+- ✅ Build tested (0 warnings, 0 errors)
+
+---
+
+## ExpandableCard Usage
+
+### Before Refactoring (~220 lines):
 ```xml
 <ui:CardExpander Margin="0,0,0,8" IsExpanded="False">
     <ui:CardExpander.ContextMenu>

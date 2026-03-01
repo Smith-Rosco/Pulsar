@@ -1,176 +1,314 @@
-# Pulsar 架构设计文档 (PADD) v2.0
+# Pulsar Architecture Design Document (PADD) v4.0.0
 
-**状态**: Approved | **核心**: Plugin System & Static Mapping | **最后更新**: 2026-01-26
-
-## 1. 项目愿景 (Project Vision)
-
-Pulsar 是一个基于 C# WPF 的高性能桌面效率工具。
-
-* **核心形态**: 快捷键唤起的**径向菜单 (Radial Menu)**。
-* **核心哲学**: **肌肉记忆 (Muscle Memory)** 至上。摒弃传统 Alt-Tab 的线性遍历，利用空间位置实现“盲操作”。
-* **技术转型**: 从单纯的“启动器 (Launcher)”演进为“应用容器 (Container)”。通过统一的插件系统接管业务逻辑，实现毫秒级响应和统一的反馈机制。
+**Status**: Published | **Core**: Plugin System v4.0 with Metadata & Circuit Breaker | **Last Updated**: 2026-03-01  
+**Related Documents**: [PLUGIN_DEVELOPMENT.md](./PLUGIN_DEVELOPMENT.md), [AGENTS.md](./AGENTS.md)
 
 ---
 
-## 2. 系统核心架构 (System Architecture)
+## 1. Project Vision
 
-### 2.1 运行模式 (Operational Modes)
+Pulsar is a high-performance desktop productivity tool built with C# WPF.
 
-Pulsar 通过不同的快捷键触发两种独立模式，数据结构需严格隔离：
-
-1. **指令模式 (Command Mode)** - `Ctrl + Q`
-* **逻辑**: 基于当前激活窗口（上下文），加载静态配置的动作。
-* **用途**: 执行 VBA 脚本、填充密码 (PKI)、数据转换等。
-* **布局**: 严格对应 `Profiles.json` 配置，不随使用频率改变位置。
-
-
-2. **切换模式 (Switch Mode)** - `Ctrl + Shift + Q`
-* **逻辑**: 快速激活其他应用程序。
-* **布局**:
-* **外圈 (Outer Ring)**: 静态配置。例如：左侧固定是 Chrome，右侧固定是 VS Code。
-* **中心 (Center)**: 动态显示 **MRU (Most Recently Used)** 窗口（即“上一个窗口”），用于瞬间切回。
-
-
-
-
-
-### 2.2 插件系统 (The Plugin System)
-
-Pulsar 核心层不再包含具体业务，只负责：**捕获上下文** -> **分发任务** -> **渲染反馈**。
-
-支持三种插件形态：
-
-1. **Native Plugins (C# DLL)**: 运行在 Pulsar 进程内，访问完整的 WPF 对象。
-2. **FFI Plugins (Rust/C++ DLL)**: 通过 P/Invoke 调用，追求极致计算性能和系统底层操作。
-3. **Adapters (Legacy EXE)**: 用于兼容旧的独立工具 (如 VBA Runner)，通过插件层封装进程调用。
+* **Core Form**: Hotkey-invoked **Radial Menu**
+* **Core Philosophy**: **Muscle Memory** first. Abandons traditional Alt-Tab linear traversal, utilizing spatial positioning for "blind operation"
+* **Technical Evolution**: From simple "Launcher" to "Application Container". Unified plugin system handles business logic, achieving millisecond-level response and unified feedback mechanism
 
 ---
 
-## 3. 技术规范与接口设计 (Technical Specs)
+## 2. System Core Architecture
 
-### 3.1 统一上下文对象 (Unified Context)
+### 2.1 Operational Modes
 
-Pulsar 在唤起瞬间冻结系统状态，并封装为不可变对象传递给插件。这消除了插件自行搜寻窗口的开销和竞态风险。
+Pulsar triggers two independent modes via different hotkeys, with strictly isolated data structures:
 
-```csharp
-public struct PulsarContext
-{
-    // 目标窗口信息（用户唤起 Pulsar 时所在的窗口）
-    public IntPtr TargetWindowHandle; 
-    public string TargetProcessName;  // e.g., "EXCEL"
-    public int TargetProcessId;
-    
-    // 用户输入/交互数据
-    public string SelectedText;       // 预读取的选中文本（可选）
-    public string ClipboardText;      // 剪贴板内容
-    
-    // 共享存储（用于插件间通信，暂定）
-    public Dictionary<string, object> SessionData; 
-}
+#### 1. Command Mode - `Ctrl + Q`
+* **Logic**: Based on currently active window (context), loads statically configured actions
+* **Use Cases**: Execute VBA scripts, fill passwords (PKI), data transformation, etc.
+* **Layout**: Strictly corresponds to `Profiles.json` configuration, position does not change with usage frequency
 
+#### 2. Switch Mode - `Ctrl + Shift + Q`
+* **Logic**: Quickly activate other applications
+* **Layout**:
+  * **Outer Ring**: Static configuration (e.g., Chrome fixed on left, VS Code fixed on right)
+  * **Center**: Dynamically displays **MRU (Most Recently Used)** window (i.e., "previous window") for instant return
+
+---
+
+### 2.2 Plugin System v4.0
+
+**Architecture**: Pulsar core no longer contains specific business logic, only responsible for: **Capture Context** → **Dispatch Tasks** → **Render Feedback**
+
+#### Plugin Tier Architecture
+
+| Tier | Description | Characteristics | Examples |
+|------|-------------|-----------------|----------|
+| **Core Plugin** | Essential infrastructure plugins | - Cannot be disabled<br>- Crash causes app exit<br>- No Circuit Breaker protection | PKI, WinSwitcher |
+| **Extension Plugin** | Optional feature plugins | - Can be disabled<br>- Crash isolation<br>- Circuit Breaker protection | VbaRunner, BookmarkletRunner |
+
+**Key Distinction**:
+- **Core plugins**: Loaded at startup, critical for basic functionality, no Circuit Breaker (crashes are fatal)
+- **Extension plugins**: Optional features, isolated failures, automatic recovery via Circuit Breaker
+
+#### Circuit Breaker Mechanism
+
+Extension plugins are protected by Circuit Breaker:
+
+- **Trigger Condition**: 3 crashes within 1 minute
+- **Breaker Duration**: 60 seconds
+- **Recovery Strategy**: Half-Open state, allows single retry
+
+**State Transitions**:
+```
+Closed (Normal) → Open (Breaker) → Half-Open (Test) → Closed (Recovered)
+     ↑                                                    ↓
+     └──────────────── Successful Execution ─────────────┘
 ```
 
-### 3.2 插件接口契约 (Interface Contract)
+#### Supported Plugin Forms
 
-#### C# 接口定义
+1. **Native Plugins (C# DLL)**: Run within Pulsar process, access full WPF objects
+2. **FFI Plugins (Rust/C++ DLL)**: Called via P/Invoke, pursuing extreme computational performance and system-level operations
+3. **Adapters (Legacy EXE)**: Compatible with old standalone tools (e.g., VBA Runner), encapsulating process calls through plugin layer
+
+---
+
+## 3. Technical Specifications
+
+### 3.1 Unified Context Object (PulsarContext)
+
+Pulsar freezes system state at invocation moment and encapsulates it as an immutable object passed to plugins. This eliminates plugin overhead of searching for windows and race condition risks.
+
+```csharp
+public class PulsarContext
+{
+    // Lightweight properties (synchronous acquisition)
+    public IntPtr TargetWindowHandle { get; }
+    public string TargetProcessName { get; }  // Uppercase, e.g., "EXCEL"
+    public int TargetProcessId { get; }
+    public string TargetExePath { get; }
+    
+    // Heavyweight properties (lazy-loaded, on-demand async acquisition)
+    public Task<IReadOnlyList<ProcessWindowInfo>> GetTargetProcessWindowsAsync();
+    public Task<string?> GetClipboardTextAsync();
+    public Task<string?> GetSelectedTextAsync();
+}
+```
+
+**Performance Optimization**:
+- **Lazy Loading**: Heavy properties (clipboard, window list) are only loaded when accessed
+- **Context Capture**: Captured once at radial menu invocation, avoiding repeated queries
+- **Immutability**: Context is read-only, preventing plugin side effects
+
+---
+
+### 3.2 Plugin Interface Contract
+
+#### IPulsarPlugin (Required)
 
 ```csharp
 public interface IPulsarPlugin
 {
-    string Id { get; }          // e.g., "com.pulsar.pki"
-    void Initialize();          // 冷启动初始化
+    // Metadata
+    string Id { get; }                    // Unique identifier (reverse domain format)
+    string DisplayName { get; }           // Display name
+    string Version { get; }               // Semantic version (e.g., "1.0.0")
+    string Author { get; }                // Author/maintainer
+    string Description { get; }           // Brief description
+    string Icon { get; }                  // Segoe Fluent Icons or Emoji
+    bool CanDisable { get; }              // Whether can be disabled
     
-    // 执行入口
-    // action: 配置文件中指定的动作名
-    // args: 静态参数
-    // context: 运行时环境
-    PluginResult Execute(string action, Dictionary<string, string> args, PulsarContext context);
+    // Lifecycle
+    void Initialize(IServiceProvider services);
+    
+    // Execution
+    Task<PluginResult> ExecuteAsync(
+        string action,
+        IReadOnlyDictionary<string, string> args,
+        PulsarContext context
+    );
 }
-
-public struct PluginResult
-{
-    public bool Success;
-    public string Message;      // 用于日志或 Toast 显示
-    public VisualCue Cue;       // e.g., ShowCheckMark, ShakeWindow, ErrorRed
-}
-
 ```
 
-#### Rust FFI 导出规范 (extern "C")
+#### IPluginTiered (Recommended)
 
-```rust
-#[repr(C)]
-pub struct FFIContext {
-    pub target_hwnd: usize,
-    pub selected_text: *const c_char,
-    // ... 其他字段需与 C# 内存布局对齐
+```csharp
+public interface IPluginTiered
+{
+    PluginTier Tier { get; }
 }
 
-#[no_mangle]
-pub extern "C" fn pulsar_plugin_execute(
-    action: *const c_char, 
-    context: FFIContext
-) -> FFIResult {
-    // Rust 高性能逻辑
-    // 直接利用 target_hwnd 操作窗口
+public enum PluginTier
+{
+    Core,       // Core plugin
+    Extension   // Extension plugin
+}
+```
+
+#### IPluginMetadataProvider (Optional)
+
+Plugins can provide rich metadata for UI rendering and configuration validation:
+
+```csharp
+public interface IPluginMetadataProvider
+{
+    PluginMetadata GetMetadata();
 }
 
+public class PluginMetadata
+{
+    public DisplayInfo Display { get; set; }        // Name, icon, category
+    public UIHints UI { get; set; }                 // Badge, color, sort order
+    public PluginCapabilities Capabilities { get; set; }  // Actions, dependencies
+    public ConfigSchema Schema { get; set; }        // Configuration schema
+}
 ```
 
 ---
 
-## 4. 配置驱动系统 (Configuration Driven)
+### 3.3 Focus Management (Focus Boomerang)
 
-配置是静态的，以保证肌肉记忆。
+**Problem**: When PKI plugin injects credentials, focus must return to the original window.
 
-### `Profiles.json` 结构定义
+**Solution**: Focus Boomerang pattern
+
+1. **Capture**: `WindowService.SetPreviousWindow()` captures foreground window handle when radial menu is invoked
+2. **Execute**: Plugin performs its action
+3. **Hide**: Radial menu hides
+4. **Return**: `SetForegroundWindow()` forcefully returns focus to captured window
+5. **Buffer**: `await Task.Delay(100)` allows window to stabilize
+6. **Inject**: Send keystrokes to target window
+
+**Implementation**:
+```csharp
+// In RadialMenuViewModel.Show()
+_windowService.SetPreviousWindow(WindowHelper.GetForegroundWindow());
+
+// In PkiHandler.ExecuteAsync()
+await _mainWindow.Dispatcher.InvokeAsync(() => _mainWindow.Hide());
+var targetHandle = _windowService.GetPreviousWindow();
+WindowHelper.SetForegroundWindow(targetHandle);
+await Task.Delay(100);
+SendKeys.SendWait(password);
+```
+
+---
+
+### 3.4 Storage Strategy (PKI Module)
+
+**Split Storage** for security:
+
+- **Profiles.json**: Stores only UI layout structure (`SecretItem` ID, Label, Icon)
+- **secrets.json**: Stores sensitive data (`SecretPayload` Account, EncryptedData via DPAPI), linked by ID
+
+**Data Hydration**: `RadialMenuViewModel` loads both files in parallel and fills Payload back into Item in memory.
+
+**Concurrency Safety**: Must save `secrets.json` first and release file lock, **then** save `Profiles.json` (triggers reload event).
+
+---
+
+## 4. Configuration System
+
+Configuration is static to ensure muscle memory.
+
+### Profiles.json Structure
 
 ```json
 {
   "Settings": {
-    "CenterSlotBehavior": "MRU_Window" // 切换模式下的中心动作
+    "CenterSlotBehavior": "MRU_Window"
   },
   "Profiles": {
-    // === 针对 Excel 的配置 ===
     "EXCEL": {
       "CommandMode": {
-        // 只有在 Excel 下，1 点钟方向才是运行这个特定的 VBA
-        "Slot_1": { "plugin": "VBARunner", "action": "run", "args": { "script": "format.vbs" } },
-        "Slot_3": { "plugin": "RustPKI",   "action": "fill", "args": { "type": "login" } }
+        "Slot_1": { "PluginId": "com.pulsar.vbarunner", "Action": "run", "Args": { "script": "format.vbs" } },
+        "Slot_3": { "PluginId": "com.pulsar.pki", "Action": "fill", "Args": { "type": "login" } }
       },
-      "SwitchMode": {
-        // 允许针对特定软件覆盖切换逻辑，若为空则使用 Global
-      }
+      "SwitchMode": {}
     },
-    
-    // === 全局默认配置 ===
     "Global": {
       "SwitchMode": {
-        "Slot_1": { "plugin": "WinSwitcher", "action": "activate", "args": { "app": "chrome" } },
-        "Slot_2": { "plugin": "WinSwitcher", "action": "activate", "args": { "app": "code" } }
+        "Slot_1": { "PluginId": "com.pulsar.winswitcher", "Action": "activate", "Args": { "app": "chrome" } },
+        "Slot_2": { "PluginId": "com.pulsar.winswitcher", "Action": "activate", "Args": { "app": "code" } }
       }
     }
   }
 }
-
 ```
 
 ---
 
-## 5. 开发路线图 (Roadmap)
+## 5. Key Architectural Decisions
 
-### 第一阶段：核心重构 (Core Refactoring)
+### ADR-001: Plugin Metadata System
 
-1. **定义 `IPulsarPlugin` 接口**：创建 `Pulsar.Core` 类库。
-2. **实现插件加载器 (PluginLoader)**：使用 Reflection 加载 C# DLL，使用 `DllImport` 加载 Rust DLL。
-3. **重构主循环**：Pulsar 唤起 -> 识别 Process -> 读取 Profile -> 渲染 UI。
+**Decision**: Plugins self-describe their capabilities via `IPluginMetadataProvider`
 
-### 第二阶段：插件迁移 (Migration)
+**Rationale**:
+- Eliminates hardcoded UI properties in core code
+- Enables dynamic UI generation
+- Supports configuration validation at load time
 
-1. **PKI 模块**：封装为 Native Plugin (C#)，直接操作句柄填充密码。
-2. **VBA Runner**：创建 `ExternalAdapterPlugin`，接管现有的 EXE 调用，但增加 `PulsarContext` 传递（作为命令行参数传递句柄）和日志捕获。
-3. **窗口切换器**：实现“中心动态 MRU，周围静态配置”的逻辑。
+**Consequences**:
+- New plugins require no core code changes
+- UI automatically adapts to plugin capabilities
+- Configuration errors detected at startup instead of runtime
 
-### 第三阶段：Rust 引入 (Performance)
+### ADR-002: Circuit Breaker for Extension Plugins
 
-1. 尝试用 Rust 重写窗口查找与管理逻辑，编译为 DLL 供 Switch Mode 调用。
+**Decision**: Extension plugins protected by Circuit Breaker, Core plugins are not
+
+**Rationale**:
+- Core plugins are essential; their failure should be immediately visible
+- Extension plugins are optional; graceful degradation is acceptable
+- Circuit Breaker prevents cascading failures
+
+**Consequences**:
+- Extension plugin crashes don't bring down the app
+- Users notified via toast when plugin disabled
+- Automatic recovery after cooldown period
+
+---
+
+## 6. Module Structure
+
+```
+Pulsar/
+├── Core/
+│   ├── Plugin/
+│   │   ├── IPulsarPlugin.cs           # Core plugin interface
+│   │   ├── PulsarContext.cs           # Context with lazy loading
+│   │   ├── PluginResult.cs            # Execution result
+│   │   ├── PluginLoader.cs            # Plugin discovery & loading
+│   │   └── Metadata/                  # Metadata system
+│   │       ├── IPluginMetadataProvider.cs
+│   │       ├── PluginMetadata.cs
+│   │       ├── ConfigSchema.cs
+│   │       └── ValidationRule.cs
+│   └── ...
+├── Plugins/
+│   ├── Core/                          # Core plugins (always loaded)
+│   │   ├── Pki/                       # Credential injection
+│   │   └── WinSwitcher/               # Window switching
+│   └── [Extension plugins]            # Optional plugins
+├── Services/
+│   ├── PluginRegistry.cs              # Plugin lifecycle & Circuit Breaker
+│   ├── PluginMetadataRegistry.cs      # Metadata storage
+│   ├── ConfigService.cs               # Configuration management
+│   └── Validation/
+│       └── ConfigValidationPipeline.cs # 3-stage validation
+└── ...
+```
+
+---
+
+## 7. Related Documents
+
+- **[PLUGIN_DEVELOPMENT.md](./PLUGIN_DEVELOPMENT.md)** - Complete plugin development guide
+- **[AGENTS.md](./AGENTS.md)** - AI Agent operational guide and coding conventions
+- **[PKI Implementation Archive](./docs/archive/2026-01/PKI_IMPLEMENTATION.md)** - Historical PKI implementation details
+
+---
+
+**Version History**:
+- v4.0.0 (2026-03-01): Added plugin tier architecture, Circuit Breaker, metadata system, Focus Boomerang
+- v2.0 (2026-01-26): Initial plugin system design

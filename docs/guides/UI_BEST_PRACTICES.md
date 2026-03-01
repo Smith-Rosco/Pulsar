@@ -1,13 +1,25 @@
-# Plugins Page UX Improvements - Implementation Summary
+# Pulsar UI Development Best Practices
 
-## 📅 Date: 2026-03-01
-## 🎯 Status: ✅ Completed (High Priority Items)
+**Status**: Published  
+**Version**: v1.0.0  
+**Last Updated**: 2026-03-01  
+**Related Documents**: [COMPONENT_LIBRARY.md](./COMPONENT_LIBRARY.md), [AGENTS.md](../../AGENTS.md)
 
 ---
 
-## 🎨 What Changed
+## Overview
 
-### 1. **Collapsible Card Design**
+This guide documents UI/UX best practices and design patterns used in the Pulsar project, based on lessons learned from the Plugins Page UX improvements.
+
+---
+
+## Design Principles
+
+### 1. Progressive Disclosure
+
+**Principle**: Show essential information by default, reveal details on demand.
+
+**Implementation**: Collapsible Card Design
 - **Default View**: Shows only essential information (Name, Description, Health Score, Toggle)
 - **Expanded View**: Click chevron button to reveal detailed statistics
 - **Benefit**: 60% faster scanning, 40% less scrolling

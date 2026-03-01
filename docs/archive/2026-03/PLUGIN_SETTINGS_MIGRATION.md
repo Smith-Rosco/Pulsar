@@ -1,6 +1,16 @@
-📋 Pulsar Plugins 仪表盘重构 - 开发文档
-🎯 项目目标
-将 Plugins 标签页从"静态配置页"升级为"动态仪表盘"，提供插件使用统计、健康监控、日志查看等增值功能，让用户主动想来查看。
+# Pulsar Plugins Dashboard Refactoring - Development Guide
+
+> ⚠️ **ARCHIVED DOCUMENT**  
+> **Status**: Archived (Planning Document)  
+> **Archive Date**: 2026-03-01  
+> **Reason**: Feature planning document, implementation pending  
+> **Note**: This document describes a proposed plugin dashboard enhancement that has not yet been implemented
+
+---
+
+## 🎯 Project Goal
+Upgrade the Plugins tab from a "static configuration page" to a "dynamic dashboard" providing plugin usage statistics, health monitoring, log viewing, and other value-added features to encourage active user engagement.
+
 ---
 📐 架构设计
 1. 整体架构
