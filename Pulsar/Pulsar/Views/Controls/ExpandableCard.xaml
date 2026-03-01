@@ -5,11 +5,24 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:controls="clr-namespace:Pulsar.Views.Controls"
+             xmlns:converters="clr-namespace:Pulsar.Core.Converters"
              mc:Ignorable="d" 
              x:Name="Root">
     
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVisibilityConverter"/>
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    
     <ui:CardExpander IsExpanded="{Binding IsExpanded, ElementName=Root, Mode=TwoWay}"
-                     ContextMenu="{Binding CardContextMenu, ElementName=Root}">
+                     ContextMenu="{Binding CardContextMenu, ElementName=Root}"
+                     Margin="0,0,0,8"
+                     HorizontalContentAlignment="Stretch">
         <ui:CardExpander.Header>
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -50,42 +63,39 @@
                 
                 <!-- Primary Action Button -->
                 <ui:Button Grid.Column="2"
-                           Appearance="Transparent"
-                           Icon="{Binding PrimaryActionIcon, ElementName=Root}"
+                           Style="{StaticResource PulsarIconButtonStyle}"
                            Command="{Binding PrimaryActionCommand, ElementName=Root}"
                            ToolTip="{Binding PrimaryActionTooltip, ElementName=Root}"
                            Visibility="{Binding PrimaryActionVisibility, ElementName=Root}"
                            VerticalAlignment="Center"
-                           Margin="0,0,4,0"/>
+                           Margin="0,0,4,0">
+                    <ui:Button.Icon>
+                        <ui:SymbolIcon Symbol="{Binding PrimaryActionIcon, ElementName=Root, FallbackValue=Settings24, TargetNullValue=Settings24}" FontSize="16"/>
+                    </ui:Button.Icon>
+                </ui:Button>
                 
                 <!-- Secondary Action Button -->
                 <ui:Button Grid.Column="3"
-                           Appearance="Transparent"
-                           Icon="{Binding SecondaryActionIcon, ElementName=Root}"
+                           Style="{StaticResource PulsarIconButtonStyle}"
                            Command="{Binding SecondaryActionCommand, ElementName=Root}"
                            ToolTip="{Binding SecondaryActionTooltip, ElementName=Root}"
                            Visibility="{Binding SecondaryActionVisibility, ElementName=Root}"
                            VerticalAlignment="Center"
-                           Margin="0,0,4,0"/>
+                           Margin="0,0,4,0">
+                    <ui:Button.Icon>
+                        <ui:SymbolIcon Symbol="{Binding SecondaryActionIcon, ElementName=Root, FallbackValue=DocumentText24, TargetNullValue=DocumentText24}" FontSize="16"/>
+                    </ui:Button.Icon>
+                </ui:Button>
 
                 <!-- Toggle Switch -->
                 <ui:ToggleSwitch Grid.Column="4" 
                                  IsChecked="{Binding IsToggleEnabled, ElementName=Root, Mode=TwoWay}" 
                                  IsEnabled="{Binding CanToggle, ElementName=Root}"
+                                 Visibility="{Binding IsToggleVisible, ElementName=Root, Converter={StaticResource BoolToVis}}"
                                  Content=""
                                  VerticalAlignment="Center"
-                                 Margin="8,0,0,0">
-                    <ui:ToggleSwitch.Style>
-                        <Style TargetType="ui:ToggleSwitch" BasedOn="{StaticResource {x:Type ui:ToggleSwitch}}">
-                            <Setter Property="Visibility" Value="Visible"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsToggleVisible, ElementName=Root}" Value="False">
-                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ui:ToggleSwitch.Style>
-                </ui:ToggleSwitch>
+                                 Margin="8,0,0,0"
+                                 MinWidth="40" Checked="ToggleSwitch_Checked"/>
             </Grid>
         </ui:CardExpander.Header>
 

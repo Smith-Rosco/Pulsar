@@ -76,7 +76,7 @@ namespace Pulsar.Views
             // [Fix] Apply theme explicitly to pages to fix inheritance issues
             _themeService.ApplyTheme(_generalPage, _viewModel.SettingsTheme, updateGlobal: false);
             _themeService.ApplyTheme(_slotsPage, _viewModel.SettingsTheme, updateGlobal: false);
-            // _pluginsPage handles its own initial theme application in constructor to prevent XamlParseException
+            _themeService.ApplyTheme(_pluginsPage, _viewModel.SettingsTheme, updateGlobal: false);
 
             this.Loaded += (s, e) =>
             {

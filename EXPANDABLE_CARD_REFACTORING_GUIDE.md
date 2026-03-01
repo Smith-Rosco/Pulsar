@@ -3,8 +3,9 @@
 ## 当前状态
 - ✅ ExpandableCard 通用控件已创建
 - ✅ AGENTS.md 已更新组件化最佳实践
-- ⏳ Plugins 页面待重构
-- ⏳ Slots 页面待重构
+- ✅ Plugins 页面已重构完成
+- ✅ Slots 页面已重构完成
+- ✅ 构建测试通过（0 警告，0 错误）
 
 ## 重构示例: Plugins 页面
 
@@ -145,30 +146,61 @@
 dotnet build Pulsar/Pulsar/Pulsar.csproj
 ```
 
-## 预期收益
+## 实际收益
 
 | 指标 | 改造前 | 改造后 | 改进 |
 |------|--------|--------|------|
-| **Plugins 页面代码行数** | ~220 行 | ~100 行 | **55% ↓** |
-| **Slots 页面代码行数** | ~200 行 | ~90 行 | **55% ↓** |
-| **总代码行数** | 420 行 | 190 行 | **55% ↓** |
-| **维护文件数** | 2 个 | 1 个 (ExpandableCard) | **50% ↓** |
+| **Plugins 页面代码行数** | 554 行 | 513 行 | **7.4% ↓** |
+| **Slots 页面代码行数** | 520 行 | 512 行 | **1.5% ↓** |
+| **总代码行数** | 1074 行 | 1025 行 | **4.6% ↓** |
+| **维护文件数** | 2 个页面 | 1 个控件 + 2 个页面 | 集中化维护 |
+| **代码重复度** | 高（卡片结构重复） | 低（统一使用 ExpandableCard） | **显著改善** |
+| **一致性** | 手动同步 | 自动一致 | **100% 一致** |
 
-## 下一步
+### 关键改进点
 
-1. 按照上述示例重构 Plugins 页面
-2. 按照相同模式重构 Slots 页面
-3. 测试构建并验证功能
-4. 提交 Git 记录
+1. **代码复用**: 卡片头部结构（Icon + Title + Actions + Toggle）完全复用
+2. **维护效率**: 修改卡片样式只需更新 ExpandableCard.xaml
+3. **扩展性**: 新增页面可直接使用 ExpandableCard，无需重写
+4. **一致性**: 所有卡片的交互行为、动画、样式完全统一
 
-## 注意事项
+### 注意事项
 
-- ExpandableCard 的 `HeaderContent` 和 `ExpandedContent` 使用 `ContentPresenter`,支持任意自定义内容
-- 如果需要更多操作按钮,可以扩展 ExpandableCard 添加 `TertiaryActionCommand`
-- 右键菜单需要在 Page.Resources 中定义为 StaticResource,然后通过 `CardContextMenu` 属性引用
+虽然代码行数减少不如预期（原因：添加了 Context Menu 定义和更详细的 HeaderContent），但重构带来的真正价值在于：
+- **可维护性**: 集中化管理卡片组件
+- **可扩展性**: 未来新增页面可快速复用
+- **一致性**: 避免手动同步导致的不一致
+
+## 已完成
+
+✅ 1. Plugins 页面已重构使用 ExpandableCard
+✅ 2. Slots 页面已重构使用 ExpandableCard（保留拖拽功能）
+✅ 3. 构建测试通过（0 警告，0 错误）
+
+## 使用指南
+
+### ExpandableCard 属性说明
+
+- `IconKey`: JellyOrb 图标标识符（支持 Emoji、图片路径、文本）
+- `Title`: 卡片标题
+- `Subtitle`: 可选副标题
+- `HeaderContent`: 自定义头部内容（如 Badges、进度条）
+- `ExpandedContent`: 展开后的内容
+- `PrimaryActionCommand/Icon/Tooltip/Visibility`: 主操作按钮
+- `SecondaryActionCommand/Icon/Tooltip/Visibility`: 次操作按钮
+- `IsToggleEnabled`: 切换开关状态（双向绑定）
+- `CanToggle`: 是否允许切换
+- `IsToggleVisible`: 是否显示切换开关
+- `CardContextMenu`: 右键菜单
+
+### 最佳实践
+
+- 右键菜单需要在 Page.Resources 中定义为 StaticResource
+- HeaderContent 和 ExpandedContent 使用 ContentPresenter，支持任意自定义内容
+- 如需更多操作按钮，可扩展 ExpandableCard 添加 TertiaryActionCommand
 
 ---
 
-**状态**: ExpandableCard 控件已就绪,等待应用到实际页面
-**预计工作量**: 1-2 小时
-**预计节省**: ~230 行 XAML 代码
+**状态**: ✅ 重构完成
+**实际工作量**: 约 1 小时
+**实际节省**: 49 行 XAML 代码 + 显著提升可维护性

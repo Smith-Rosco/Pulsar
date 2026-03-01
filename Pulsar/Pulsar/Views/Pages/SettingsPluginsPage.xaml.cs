@@ -14,13 +14,13 @@ namespace Pulsar.Views.Pages
 
         public SettingsPluginsPage(PluginManagerViewModel viewModel, IThemeService themeService)
         {
-            // IMPORTANT: Must apply theme BEFORE InitializeComponent() because
-            // the XAML contains StaticResource lookups (BasedOn={StaticResource ...}) that
-            // require the Wpf.Ui ControlsDictionary to be present in the Page's resources.
-            themeService.ApplyTheme(this, themeService.CurrentTheme);
-
             InitializeComponent();
             DataContext = viewModel;
+
+            // Apply theme AFTER InitializeComponent().
+            // If applied before, the XAML-defined <Page.Resources> replaces the ResourceDictionary
+            // instance and discards injected dictionaries (ControlsDictionary / ThemesDictionary / Pulsar Theme.*).
+            themeService.ApplyTheme(this, themeService.CurrentTheme, updateGlobal: false);
         }
 
         /// <summary>
@@ -206,4 +206,3 @@ namespace Pulsar.Views.Pages
         }
     }
 }
-

@@ -13,12 +13,48 @@
       Title="SettingsPluginsPage">
 
     <Page.Resources>
-        <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVisibilityConverter"/>
-        <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisConverter"/>
-        <converters:HexToBrushConverter x:Key="HexToBrushConverter"/>
-        <converters:CollectionEmptyToVisibilityConverter x:Key="CollectionEmptyToVisibilityConverter"/>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVisibilityConverter"/>
+            <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisConverter"/>
+            <converters:HexToBrushConverter x:Key="HexToBrushConverter"/>
+            <converters:CollectionEmptyToVisibilityConverter x:Key="CollectionEmptyToVisibilityConverter"/>
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+            <!-- Plugin Context Menu -->
+        <ContextMenu x:Key="PluginContextMenu">
+            <ContextMenu.Resources>
+                <ResourceDictionary>
+                    <ResourceDictionary.MergedDictionaries>
+                        <ui:ControlsDictionary/>
+                    </ResourceDictionary.MergedDictionaries>
+                </ResourceDictionary>
+            </ContextMenu.Resources>
+            <MenuItem Header="Configure" 
+                      Command="{Binding ConfigureCommand}"
+                      Visibility="{Binding HasSettings, Converter={StaticResource BoolToVis}}">
+                <MenuItem.Icon>
+                    <ui:SymbolIcon Symbol="Settings24"/>
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="View Logs" 
+                      Command="{Binding ViewLogsCommand}">
+                <MenuItem.Icon>
+                    <ui:SymbolIcon Symbol="DocumentText24"/>
+                </MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="Refresh Analytics" 
+                      Command="{Binding RefreshAnalyticsCommand}">
+                <MenuItem.Icon>
+                    <ui:SymbolIcon Symbol="ArrowClockwise24"/>
+                </MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
 
         <Style x:Key="PluginsGroupExpanderStyle" TargetType="Expander">
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
@@ -149,6 +185,7 @@
                                           BooleanTemplate="{StaticResource BooleanSettingTemplate}"
                                           StringTemplate="{StaticResource StringSettingTemplate}"
                                           SelectionTemplate="{StaticResource SelectionSettingTemplate}"/>
+        </ResourceDictionary>
     </Page.Resources>
 
     <Grid>
@@ -180,14 +217,14 @@
                 <ui:Button x:Name="JumpToCoreButton"
                            Content="Core Plugins"
                            Icon="{ui:SymbolIcon Shield24}"
-                           Appearance="Secondary"
+                           Style="{StaticResource PulsarSecondaryButtonStyle}"
                            Click="JumpToCoreButton_Click"
                            ToolTip="Jump to Core Plugins"
                            Margin="0,0,4,0"/>
                 <ui:Button x:Name="JumpToExtensionButton"
                            Content="Extensions"
                            Icon="{ui:SymbolIcon PuzzlePiece24}"
-                           Appearance="Secondary"
+                           Style="{StaticResource PulsarSecondaryButtonStyle}"
                            Click="JumpToExtensionButton_Click"
                            ToolTip="Jump to Extension Plugins"/>
             </StackPanel>
@@ -197,7 +234,7 @@
                        Content="Refresh"
                        Command="{Binding RefreshAllCommand}"
                        Icon="{ui:SymbolIcon ArrowClockwise24}"
-                       Appearance="Secondary"/>
+                       Style="{StaticResource PulsarSecondaryButtonStyle}"/>
         </Grid>
 
         <!-- Recommendations Section -->
@@ -245,7 +282,7 @@
                                        Content="{Binding ActionLabel}"
                                        Command="{Binding DataContext.ExecuteRecommendationActionCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                        CommandParameter="{Binding}"
-                                       Appearance="Secondary"
+                                       Style="{StaticResource PulsarSecondaryButtonStyle}"
                                        Margin="12,0,8,0"/>
 
                             <!-- Dismiss Button -->
@@ -253,7 +290,7 @@
                                        Icon="{ui:SymbolIcon Dismiss24}"
                                        Command="{Binding DataContext.DismissRecommendationCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                        CommandParameter="{Binding}"
-                                       Appearance="Secondary"/>
+                                       Style="{StaticResource PulsarIconButtonStyle}"/>
                         </Grid>
                     </Border>
                 </DataTemplate>
@@ -288,226 +325,154 @@
                                 </ItemsControl.ItemContainerStyle>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <!-- Plugin Card using CardExpander -->
-                                        <ui:CardExpander Margin="0,0,0,8" IsExpanded="False">
-                                            <ui:CardExpander.ContextMenu>
-                                                <ContextMenu>
-                                                    <ContextMenu.Resources>
-                                                        <ResourceDictionary>
-                                                            <ResourceDictionary.MergedDictionaries>
-                                                                <ui:ControlsDictionary/>
-                                                            </ResourceDictionary.MergedDictionaries>
-                                                        </ResourceDictionary>
-                                                    </ContextMenu.Resources>
-                                                    <MenuItem Header="Configure" 
-                                                              Command="{Binding ConfigureCommand}"
-                                                              Visibility="{Binding HasSettings, Converter={StaticResource BoolToVis}}">
-                                                        <MenuItem.Icon>
-                                                            <ui:SymbolIcon Symbol="Settings24"/>
-                                                        </MenuItem.Icon>
-                                                    </MenuItem>
-                                                    <MenuItem Header="View Logs" 
-                                                              Command="{Binding ViewLogsCommand}">
-                                                        <MenuItem.Icon>
-                                                            <ui:SymbolIcon Symbol="DocumentText24"/>
-                                                        </MenuItem.Icon>
-                                                    </MenuItem>
-                                                    <Separator/>
-                                                    <MenuItem Header="Refresh Analytics" 
-                                                              Command="{Binding RefreshAnalyticsCommand}">
-                                                        <MenuItem.Icon>
-                                                            <ui:SymbolIcon Symbol="ArrowClockwise24"/>
-                                                        </MenuItem.Icon>
-                                                    </MenuItem>
-                                                </ContextMenu>
-                                            </ui:CardExpander.ContextMenu>
+                                        <!-- Plugin Card using ExpandableCard -->
+                                        <controls:ExpandableCard 
+                                            IconKey="{Binding Icon}"
+                                            Title="{Binding Name}"
+                                            IsToggleEnabled="{Binding IsEnabled, Mode=TwoWay}"
+                                            CanToggle="{Binding CanDisable}"
+                                            PrimaryActionCommand="{Binding ConfigureCommand}"
+                                            PrimaryActionIcon="Settings24"
+                                            PrimaryActionTooltip="Configure"
+                                            PrimaryActionVisibility="{Binding HasSettings, Converter={StaticResource BoolToVis}}"
+                                            SecondaryActionCommand="{Binding ViewLogsCommand}"
+                                            SecondaryActionIcon="DocumentText24"
+                                            SecondaryActionTooltip="View Logs"
+                                            SecondaryActionVisibility="{Binding IsViewLogsVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                            CardContextMenu="{StaticResource PluginContextMenu}">
                                             
-                                            <ui:CardExpander.Header>
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                    </Grid.ColumnDefinitions>
-
-                                                    <!-- Icon (JellyOrb) -->
-                                                    <controls:JellyOrb Grid.Column="0"
-                                                                       IconKey="{Binding Icon}" 
-                                                                       Size="32" 
-                                                                       Width="32" Height="32" 
-                                                                       IsTransparent="True"
-                                                                       ShowActiveGlow="False"
-                                                                       Margin="0,0,12,0"/>
-
-                                                    <!-- Info Section -->
-                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                        <!-- Name & Badges -->
-                                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                                            <TextBlock Text="{Binding Name}" 
-                                                                       FontSize="14" 
-                                                                       FontWeight="SemiBold"/>
-                                                            
-                                                            <!-- Core Badge -->
-                                                            <Border Visibility="{Binding CanDisable, Converter={StaticResource InverseBoolToVisConverter}}"
-                                                                    Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
-                                                                    CornerRadius="4" 
-                                                                    Padding="4,1" 
-                                                                    Margin="8,0,0,0"
-                                                                    VerticalAlignment="Center">
-                                                                <TextBlock Text="Core" 
-                                                                           FontSize="10" 
-                                                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                                                            </Border>
-
-                                                            <!-- Health Badge -->
-                                                            <TextBlock Text="{Binding HealthBadge}" 
-                                                                       FontSize="14" 
-                                                                       Margin="8,0,0,0"
-                                                                       VerticalAlignment="Center"
-                                                                       ToolTip="{Binding HealthReport.Status}"
-                                                                       AutomationProperties.Name="{Binding HealthReport.Status}"/>
-                                                        </StackPanel>
-
-                                                        <!-- Health Score with Progress Bar -->
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <TextBlock Text="Health:" 
-                                                                       FontSize="11" 
-                                                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                                                       Margin="0,0,6,0"
-                                                                       VerticalAlignment="Center"/>
-                                                            
-                                                            <!-- Progress Bar -->
-                                                            <ProgressBar Value="{Binding HealthReport.HealthScore}" 
-                                                                         Maximum="100"
-                                                                         Width="60" 
-                                                                         Height="4"
-                                                                         Foreground="{Binding HealthScoreColor, Converter={StaticResource HexToBrushConverter}}"
-                                                                         VerticalAlignment="Center"
-                                                                         Margin="0,0,6,0"/>
-                                                            
-                                                            <!-- Score Text -->
-                                                            <TextBlock Text="{Binding HealthScoreText}" 
-                                                                       FontSize="11" 
-                                                                       FontWeight="SemiBold"
-                                                                       Foreground="{Binding HealthScoreColor, Converter={StaticResource HexToBrushConverter}}"
-                                                                       VerticalAlignment="Center"/>
-                                                        </StackPanel>
+                                            <!-- Header Content: Badges + Health Progress -->
+                                            <controls:ExpandableCard.HeaderContent>
+                                                <StackPanel>
+                                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                                        <!-- Core Badge -->
+                                                        <Border Visibility="{Binding CanDisable, Converter={StaticResource InverseBoolToVisConverter}}"
+                                                                Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
+                                                                CornerRadius="4" 
+                                                                Padding="4,1" 
+                                                                Margin="0,0,8,0">
+                                                            <TextBlock Text="Core" 
+                                                                       FontSize="10" 
+                                                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                                        </Border>
+                                                        
+                                                        <!-- Health Badge -->
+                                                        <TextBlock Text="{Binding HealthBadge}" 
+                                                                   FontSize="14"
+                                                                   ToolTip="{Binding HealthReport.Status}"
+                                                                   AutomationProperties.Name="{Binding HealthReport.Status}"/>
                                                     </StackPanel>
                                                     
-                                                    <!-- Action Buttons -->
-                                                    <ui:Button Grid.Column="2"
-                                                               Appearance="Transparent"
-                                                               Icon="{ui:SymbolIcon Settings24}"
-                                                               Command="{Binding ConfigureCommand}"
-                                                               ToolTip="Configure"
-                                                               VerticalAlignment="Center"
-                                                               Margin="0,0,4,0"
-                                                               Visibility="{Binding HasSettings, Converter={StaticResource BoolToVis}}"/>
-                                                    
-                                                    <ui:Button Grid.Column="3"
-                                                               Appearance="Transparent"
-                                                               Icon="{ui:SymbolIcon DocumentText24}"
-                                                               Command="{Binding ViewLogsCommand}"
-                                                               ToolTip="View Logs"
-                                                               VerticalAlignment="Center"
-                                                               Margin="0,0,4,0"
-                                                               Visibility="{Binding IsViewLogsVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-
-                                                    <!-- Enable/Disable Toggle -->
-                                                    <ui:ToggleSwitch Grid.Column="4" 
-                                                                     IsChecked="{Binding IsEnabled, Mode=TwoWay}" 
-                                                                     IsEnabled="{Binding CanDisable}"
-                                                                     Content=""
-                                                                     VerticalAlignment="Center"
-                                                                     Margin="8,0,0,0"/>
-                                                </Grid>
-                                            </ui:CardExpander.Header>
-
-                                            <!-- Expanded Content -->
-                                            <StackPanel Margin="0,8,0,0">
-                                                <!-- Description -->
-                                                <TextBlock Text="{Binding Description}" 
-                                                           FontSize="12" 
-                                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
-                                                           TextWrapping="Wrap"
-                                                           Margin="0,0,0,12"/>
-                                                
-                                                <!-- Statistics Row -->
-                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                                    <StackPanel Orientation="Horizontal" Margin="0,0,24,0">
-                                                        <ui:SymbolIcon Symbol="ChartMultiple24" 
-                                                                       FontSize="14" 
-                                                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                                                       Margin="0,0,6,0"
-                                                                       VerticalAlignment="Center"/>
-                                                        <TextBlock Text="{Binding UsageSummary}" 
-                                                                   FontSize="12" 
-                                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                                                   VerticalAlignment="Center"/>
-                                                    </StackPanel>
-
-                                                    <StackPanel Orientation="Horizontal" Margin="0,0,24,0">
-                                                        <ui:SymbolIcon Symbol="Folder24" 
-                                                                       FontSize="14" 
-                                                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                                                       Margin="0,0,6,0"
-                                                                       VerticalAlignment="Center"/>
-                                                        <TextBlock Text="{Binding ProfilesSummary}" 
-                                                                   FontSize="12" 
-                                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                                                   VerticalAlignment="Center"/>
-                                                    </StackPanel>
-
+                                                    <!-- Health Score with Progress Bar -->
                                                     <StackPanel Orientation="Horizontal">
-                                                        <ui:SymbolIcon Symbol="Clock24" 
-                                                                       FontSize="14" 
-                                                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                                                       Margin="0,0,6,0"
-                                                                       VerticalAlignment="Center"/>
-                                                        <TextBlock Text="{Binding LastUsedSummary}" 
-                                                                   FontSize="12" 
-                                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                        <TextBlock Text="Health:" 
+                                                                   FontSize="11" 
+                                                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                                   Margin="0,0,6,0"
+                                                                   VerticalAlignment="Center"/>
+                                                        
+                                                        <ProgressBar Value="{Binding HealthReport.HealthScore}" 
+                                                                     Maximum="100"
+                                                                     Width="60" 
+                                                                     Height="4"
+                                                                     Foreground="{Binding HealthScoreColor, Converter={StaticResource HexToBrushConverter}}"
+                                                                     VerticalAlignment="Center"
+                                                                     Margin="0,0,6,0"/>
+                                                        
+                                                        <TextBlock Text="{Binding HealthScoreText}" 
+                                                                   FontSize="11" 
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="{Binding HealthScoreColor, Converter={StaticResource HexToBrushConverter}}"
                                                                    VerticalAlignment="Center"/>
                                                     </StackPanel>
                                                 </StackPanel>
-
-                                                <!-- Performance Metrics Row -->
-                                                <StackPanel Orientation="Horizontal">
-                                                    <StackPanel Orientation="Horizontal" Margin="0,0,24,0">
-                                                        <TextBlock Text="⚡" FontSize="12" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                                        <TextBlock Text="{Binding AvgExecutionTimeText}" 
-                                                                   FontSize="12" 
-                                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                                                   VerticalAlignment="Center"/>
-                                                    </StackPanel>
-
-                                                    <StackPanel Orientation="Horizontal" Margin="0,0,24,0">
-                                                        <TextBlock Text="✓" FontSize="12" Foreground="#28a745" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                                        <TextBlock Text="{Binding SuccessRateText}" 
-                                                                   FontSize="12" 
-                                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                                                   VerticalAlignment="Center"/>
-                                                    </StackPanel>
+                                            </controls:ExpandableCard.HeaderContent>
+                                            
+                                            <!-- Expanded Content: Statistics -->
+                                            <controls:ExpandableCard.ExpandedContent>
+                                                <StackPanel>
+                                                    <!-- Description -->
+                                                    <TextBlock Text="{Binding Description}" 
+                                                               FontSize="12" 
+                                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
+                                                               TextWrapping="Wrap"
+                                                               Margin="0,0,0,12"/>
                                                     
-                                                    <!-- Error Count Badge -->
-                                                    <Border Background="{DynamicResource SystemFillColorCriticalBackgroundBrush}"
-                                                            CornerRadius="4"
-                                                            Padding="8,2"
-                                                            Visibility="{Binding IsViewLogsVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <TextBlock Text="⚠" FontSize="12" Margin="0,0,4,0" VerticalAlignment="Center"/>
-                                                            <TextBlock Text="{Binding ViewLogsLabel}" 
-                                                                       FontSize="11" 
-                                                                       FontWeight="Medium"
-                                                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                                    <!-- Statistics Row -->
+                                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                                        <StackPanel Orientation="Horizontal" Margin="0,0,24,0">
+                                                            <ui:SymbolIcon Symbol="ChartMultiple24" 
+                                                                           FontSize="14" 
+                                                                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                                           Margin="0,0,6,0"
+                                                                           VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{Binding UsageSummary}" 
+                                                                       FontSize="12" 
+                                                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                                        VerticalAlignment="Center"/>
                                                         </StackPanel>
-                                                    </Border>
+
+                                                        <StackPanel Orientation="Horizontal" Margin="0,0,24,0">
+                                                            <ui:SymbolIcon Symbol="Folder24" 
+                                                                           FontSize="14" 
+                                                                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                                           Margin="0,0,6,0"
+                                                                           VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{Binding ProfilesSummary}" 
+                                                                       FontSize="12" 
+                                                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                                       VerticalAlignment="Center"/>
+                                                        </StackPanel>
+
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <ui:SymbolIcon Symbol="Clock24" 
+                                                                           FontSize="14" 
+                                                                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                                           Margin="0,0,6,0"
+                                                                           VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{Binding LastUsedSummary}" 
+                                                                       FontSize="12" 
+                                                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                                       VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
+
+                                                    <!-- Performance Metrics Row -->
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <StackPanel Orientation="Horizontal" Margin="0,0,24,0">
+                                                            <TextBlock Text="⚡" FontSize="12" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{Binding AvgExecutionTimeText}" 
+                                                                       FontSize="12" 
+                                                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                                       VerticalAlignment="Center"/>
+                                                        </StackPanel>
+
+                                                        <StackPanel Orientation="Horizontal" Margin="0,0,24,0">
+                                                            <TextBlock Text="✓" FontSize="12" Foreground="#28a745" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{Binding SuccessRateText}" 
+                                                                       FontSize="12" 
+                                                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                                       VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                        
+                                                        <!-- Error Count Badge -->
+                                                        <Border Background="{DynamicResource SystemFillColorCriticalBackgroundBrush}"
+                                                                CornerRadius="4"
+                                                                Padding="8,2"
+                                                                Visibility="{Binding IsViewLogsVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock Text="⚠" FontSize="12" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                                                <TextBlock Text="{Binding ViewLogsLabel}" 
+                                                                           FontSize="11" 
+                                                                           FontWeight="Medium"
+                                                                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                                                           VerticalAlignment="Center"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </StackPanel>
                                                 </StackPanel>
-                                            </StackPanel>
-                                        </ui:CardExpander>
+                                            </controls:ExpandableCard.ExpandedContent>
+                                        </controls:ExpandableCard>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>

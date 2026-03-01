@@ -60,7 +60,7 @@
                         <DataTemplate>
                             <ui:Button Command="{Binding DataContext.SelectIconCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
                                        CommandParameter="{Binding Code}"
-                                       Appearance="Transparent" 
+                                       Style="{StaticResource PulsarIconButtonStyle}" 
                                        Padding="4" Margin="2"
                                        ToolTip="{Binding Name}"
                                        Height="56" Width="56"

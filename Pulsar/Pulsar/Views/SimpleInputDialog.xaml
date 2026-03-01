@@ -22,9 +22,16 @@
         </StackPanel>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-            <ui:Button Content="Cancel" IsCancel="True" Width="80" Appearance="Secondary" Margin="0,0,10,0"/>
-            <ui:Button Content="OK" IsDefault="True" Click="Ok_Click" Width="80" Appearance="Primary"
-                       Foreground="{DynamicResource Theme.Accent.Foreground}" Background="{DynamicResource Theme.Accent}"/>
+            <StackPanel.Resources>
+                <ResourceDictionary>
+                    <ResourceDictionary.MergedDictionaries>
+                        <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+                    </ResourceDictionary.MergedDictionaries>
+                </ResourceDictionary>
+            </StackPanel.Resources>
+
+            <ui:Button Content="Cancel" IsCancel="True" Width="80" Style="{StaticResource PulsarSecondaryButtonStyle}" Margin="0,0,10,0"/>
+            <ui:Button Content="OK" IsDefault="True" Click="Ok_Click" Width="80" Style="{StaticResource PulsarPrimaryButtonStyle}"/>
         </StackPanel>
     </Grid>
 </ui:FluentWindow>
