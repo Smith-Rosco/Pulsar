@@ -74,6 +74,7 @@ namespace Pulsar
             serviceCollection.AddSingleton<IPluginUsageTracker, PluginUsageTracker>();
             serviceCollection.AddSingleton<IPluginHealthMonitor, PluginHealthMonitor>();
             serviceCollection.AddSingleton<IPluginLogService, PluginLogService>();
+            serviceCollection.AddSingleton<IPluginRecommendationEngine, PluginRecommendationEngine>();
 
             // 3. PKI Service
             serviceCollection.AddSingleton<CredentialsManager>();

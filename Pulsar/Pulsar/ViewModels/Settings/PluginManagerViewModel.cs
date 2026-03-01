@@ -30,9 +30,11 @@ namespace Pulsar.ViewModels.Settings
         private readonly IPluginHealthMonitor? _healthMonitor;
         private readonly IPluginLogService? _logService;
         private readonly IDialogService? _dialogService;
+        private readonly IPluginRecommendationEngine? _recommendationEngine;
 
         public ObservableCollection<PluginViewModel> Plugins { get; } = new();
         public ObservableCollection<PluginGroup> GroupedPlugins { get; } = new();
+        public ObservableCollection<PluginRecommendation> Recommendations { get; } = new();
         
         public ICollectionView FilteredPlugins { get; private set; }
 
@@ -42,9 +44,13 @@ namespace Pulsar.ViewModels.Settings
         [ObservableProperty]
         private string _searchText = "";
 
+        [ObservableProperty]
+        private bool _hasRecommendations;
+
         public PluginManagerViewModel(PluginRegistry registry, IConfigService configService,
             IPluginUsageTracker? usageTracker = null, IPluginHealthMonitor? healthMonitor = null,
-            IPluginLogService? logService = null, IDialogService? dialogService = null)
+            IPluginLogService? logService = null, IDialogService? dialogService = null,
+            IPluginRecommendationEngine? recommendationEngine = null)
         {
             _registry = registry;
             _configService = configService;
@@ -52,6 +58,7 @@ namespace Pulsar.ViewModels.Settings
             _healthMonitor = healthMonitor;
             _logService = logService;
             _dialogService = dialogService;
+            _recommendationEngine = recommendationEngine;
             
             // Initialize CollectionView for filtering
             FilteredPlugins = CollectionViewSource.GetDefaultView(Plugins);
@@ -59,6 +66,7 @@ namespace Pulsar.ViewModels.Settings
 
             LoadPlugins();
             UpdateGroupedPlugins();
+            LoadRecommendations();
         }
 
         partial void OnSearchTextChanged(string value)
@@ -129,6 +137,54 @@ namespace Pulsar.ViewModels.Settings
             }
         }
 
+        private void LoadRecommendations()
+        {
+            if (_recommendationEngine == null)
+                return;
+
+            Recommendations.Clear();
+            var recommendations = _recommendationEngine.GetRecommendations();
+            
+            foreach (var recommendation in recommendations.Take(3)) // 只显示前 3 个推荐
+            {
+                Recommendations.Add(recommendation);
+            }
+
+            HasRecommendations = Recommendations.Count > 0;
+        }
+
+        [RelayCommand]
+        private void DismissRecommendation(PluginRecommendation recommendation)
+        {
+            Recommendations.Remove(recommendation);
+            HasRecommendations = Recommendations.Count > 0;
+        }
+
+        [RelayCommand]
+        private async Task ExecuteRecommendationAction(PluginRecommendation recommendation)
+        {
+            if (recommendation.Type == RecommendationType.DisableUnusedPlugin)
+            {
+                // 禁用插件
+                var plugin = Plugins.FirstOrDefault(p => p.Id == recommendation.PluginId);
+                if (plugin != null && plugin.CanDisable)
+                {
+                    plugin.IsEnabled = false;
+                    Recommendations.Remove(recommendation);
+                    HasRecommendations = Recommendations.Count > 0;
+                }
+            }
+            else if (recommendation.Type == RecommendationType.CheckPluginErrors)
+            {
+                // 打开日志查看器
+                var plugin = Plugins.FirstOrDefault(p => p.Id == recommendation.PluginId);
+                if (plugin != null)
+                {
+                    await plugin.ViewLogsCommand.ExecuteAsync(null);
+                }
+            }
+        }
+
         [RelayCommand]
         private void RefreshAll()
         {
@@ -140,6 +196,9 @@ namespace Pulsar.ViewModels.Settings
             
             // Update grouping
             UpdateGroupedPlugins();
+            
+            // Refresh recommendations
+            LoadRecommendations();
         }
     }
 }

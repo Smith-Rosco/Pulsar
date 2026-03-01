@@ -131,6 +131,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -158,8 +159,68 @@
                        Appearance="Secondary"/>
         </Grid>
 
+        <!-- Recommendations Section -->
+        <ItemsControl Grid.Row="1" 
+                      ItemsSource="{Binding Recommendations}"
+                      Visibility="{Binding HasRecommendations, Converter={StaticResource BooleanToVisibilityConverter}}"
+                      Margin="0,0,0,16">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Border Background="{DynamicResource SystemFillColorAttentionBackgroundBrush}"
+                            BorderBrush="{DynamicResource SystemFillColorAttentionBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="16"
+                            Margin="0,0,0,8">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Icon -->
+                            <TextBlock Grid.Column="0" 
+                                       Text="{Binding Icon}" 
+                                       FontSize="24" 
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,12,0"/>
+
+                            <!-- Content -->
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Title}" 
+                                           FontWeight="SemiBold" 
+                                           FontSize="14"
+                                           Margin="0,0,0,4"/>
+                                <TextBlock Text="{Binding Message}" 
+                                           FontSize="12" 
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                            </StackPanel>
+
+                            <!-- Action Button -->
+                            <ui:Button Grid.Column="2"
+                                       Content="{Binding ActionLabel}"
+                                       Command="{Binding DataContext.ExecuteRecommendationActionCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                       CommandParameter="{Binding}"
+                                       Appearance="Secondary"
+                                       Margin="12,0,8,0"/>
+
+                            <!-- Dismiss Button -->
+                            <ui:Button Grid.Column="3"
+                                       Icon="{ui:SymbolIcon Dismiss24}"
+                                       Command="{Binding DataContext.DismissRecommendationCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                       CommandParameter="{Binding}"
+                                       Appearance="Secondary"/>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
         <!-- Grouped List -->
-        <ScrollViewer x:Name="PluginsScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <ScrollViewer x:Name="PluginsScroll" Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <Grid Width="{Binding ElementName=PluginsScroll, Path=ViewportWidth}">
                 <ItemsControl ItemsSource="{Binding GroupedPlugins}">
                 <ItemsControl.ItemTemplate>
