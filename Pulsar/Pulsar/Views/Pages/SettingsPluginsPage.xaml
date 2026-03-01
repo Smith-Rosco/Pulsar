@@ -220,7 +220,7 @@
         </ItemsControl>
 
         <!-- Grouped List -->
-        <ScrollViewer x:Name="PluginsScroll" Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <ScrollViewer x:Name="PluginsScroll" Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,16,0" Style="{StaticResource OverlayScrollViewerStyle}">
             <Grid Width="{Binding ElementName=PluginsScroll, Path=ViewportWidth}">
                 <ItemsControl ItemsSource="{Binding GroupedPlugins}">
                 <ItemsControl.ItemTemplate>
