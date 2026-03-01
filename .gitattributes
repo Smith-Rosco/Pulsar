@@ -1,0 +1,35 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# C# source files - always use CRLF on Windows
+*.cs text eol=crlf
+*.csproj text eol=crlf
+*.sln text eol=crlf
+
+# XAML files - always use CRLF
+*.xaml text eol=crlf
+
+# Configuration files - always use CRLF
+*.json text eol=crlf
+*.xml text eol=crlf
+*.config text eol=crlf
+
+# Markdown and documentation - always use CRLF
+*.md text eol=crlf
+*.txt text eol=crlf
+
+# Scripts - use LF (cross-platform compatibility)
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Binary files - never modify
+*.dll binary
+*.exe binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.7z binary
