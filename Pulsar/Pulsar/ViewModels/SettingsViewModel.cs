@@ -895,16 +895,15 @@ namespace Pulsar.ViewModels
         }
 
         [RelayCommand]
-        public void PickColor(PluginSlot item)
+        public async Task PickColor(PluginSlot item)
         {
             if (item == null) return;
-            var dialog = new Views.Dialogs.ColorPickerDialog(item.Color);
-            _themeService.ApplyTheme(dialog, SettingsTheme, WindowBackdropType.None, updateGlobal: false);
-            dialog.Owner = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive);
             
-            if (dialog.ShowDialog() == true)
+            var selectedColor = await _dialogService.ShowColorPickerAsync("Pick a Color", item.Color);
+            
+            if (selectedColor != null)
             {
-                item.Color = dialog.SelectedHex;
+                item.Color = selectedColor;
                 // [Fix] Ensure the Brush converter updates by notifying property changed on item if needed, 
                 // but PluginSlot implements INPC so setting property is enough.
                 // However, the SlotViewModel using this item needs to update its CustomColor.

@@ -1,0 +1,23 @@
+<UserControl x:Class="Pulsar.Views.Dialogs.Contents.InputDialogContent"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:vm="clr-namespace:Pulsar.ViewModels.Dialogs"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:InputDialogViewModel}">
+    
+    <StackPanel Margin="20">
+        <TextBlock Text="{Binding Message}" 
+                   TextWrapping="Wrap"
+                   Margin="0,0,0,15"
+                   FontSize="14"/>
+        
+        <ui:TextBox Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}"
+                    PlaceholderText="{Binding Placeholder}"
+                    Padding="10"
+                    FontSize="14"
+                    Loaded="InputTextBox_Loaded"/>
+    </StackPanel>
+</UserControl>
