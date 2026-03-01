@@ -164,25 +164,7 @@ namespace Pulsar.Views
                      }
                  }
                  
-                 // 2. Iterate Footer Items (if any future pages are there)
-                 foreach (var item in RootNavigation.FooterMenuItems)
-                 {
-                     if (item is NavigationViewItem navItem)
-                     {
-                         // Currently we only have "Save" which is a button, but good practice
-                         if (navItem.Tag?.ToString() == targetTag)
-                         {
-                             navItem.IsActive = true;
-                             found = true;
-                         }
-                         else
-                         {
-                             navItem.IsActive = false;
-                         }
-                     }
-                 }
-
-                  if (!found)
+                   if (!found)
                   {
                       // Fallback safety
                       _logger.LogWarning("[SettingsWindow] Target view '{TargetTag}' not found in menu items.", targetTag);
@@ -218,12 +200,6 @@ namespace Pulsar.Views
                      _viewModel.CurrentView = "Plugins";
                  }
              }
-        }
-
-        private void SaveButton_Click(object sender, RoutedEventArgs e)
-
-        {
-            _viewModel.SaveCommand.Execute(null);
         }
 
         // [Fix] Lifecycle Management: Allow Close to reset state (Transient behavior)

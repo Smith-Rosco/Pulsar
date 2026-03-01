@@ -195,47 +195,42 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Top Toolbar -->
-        <Grid Grid.Row="0" Margin="0,0,0,16">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="300"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            
-            <!-- Search Box -->
-            <ui:TextBox Grid.Column="0"
-                        PlaceholderText="Search plugins..."
-                        Icon="{ui:SymbolIcon Search24}"
-                        Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                        ClearButtonEnabled="True"
-                        HorizontalAlignment="Left"/>
-            
-            <!-- Quick Navigation Buttons -->
-            <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="0,0,8,0">
-                <ui:Button x:Name="JumpToCoreButton"
-                           Content="Core Plugins"
-                           Icon="{ui:SymbolIcon Shield24}"
-                           Style="{StaticResource PulsarSecondaryButtonStyle}"
-                           Click="JumpToCoreButton_Click"
-                           ToolTip="Jump to Core Plugins"
-                           Margin="0,0,4,0"/>
-                <ui:Button x:Name="JumpToExtensionButton"
-                           Content="Extensions"
-                           Icon="{ui:SymbolIcon PuzzlePiece24}"
-                           Style="{StaticResource PulsarSecondaryButtonStyle}"
-                           Click="JumpToExtensionButton_Click"
-                           ToolTip="Jump to Extension Plugins"/>
-            </StackPanel>
-            
-            <!-- Refresh Button -->
-            <ui:Button Grid.Column="3"
-                       Content="Refresh"
-                       Command="{Binding RefreshAllCommand}"
-                       Icon="{ui:SymbolIcon ArrowClockwise24}"
-                       Style="{StaticResource PulsarSecondaryButtonStyle}"/>
-        </Grid>
+        <!-- Unified Page Header -->
+        <controls:SettingsPageHeader Grid.Row="0"
+                                     Title="Plugins"
+                                     Description="Manage plugin lifecycle, health, and configuration">
+            <controls:SettingsPageHeader.ActionsContent>
+                <StackPanel Orientation="Horizontal">
+                    <!-- Search Box -->
+                    <ui:TextBox PlaceholderText="Search plugins..."
+                                Icon="{ui:SymbolIcon Search24}"
+                                Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                ClearButtonEnabled="True"
+                                Width="240"
+                                Margin="0,0,8,0"/>
+                    
+                    <!-- Quick Navigation Buttons -->
+                    <ui:Button Content="Core"
+                               Icon="{ui:SymbolIcon Shield24}"
+                               Style="{StaticResource PulsarSecondaryButtonStyle}"
+                               Click="JumpToCoreButton_Click"
+                               ToolTip="Jump to Core Plugins"
+                               Margin="0,0,4,0"/>
+                    <ui:Button Content="Extensions"
+                               Icon="{ui:SymbolIcon PuzzlePiece24}"
+                               Style="{StaticResource PulsarSecondaryButtonStyle}"
+                               Click="JumpToExtensionButton_Click"
+                               ToolTip="Jump to Extension Plugins"
+                               Margin="0,0,8,0"/>
+                    
+                    <!-- Refresh Button -->
+                    <ui:Button Content="Refresh"
+                               Command="{Binding RefreshAllCommand}"
+                               Icon="{ui:SymbolIcon ArrowClockwise24}"
+                               Style="{StaticResource PulsarSecondaryButtonStyle}"/>
+                </StackPanel>
+            </controls:SettingsPageHeader.ActionsContent>
+        </controls:SettingsPageHeader>
 
         <!-- Recommendations Section -->
         <ItemsControl Grid.Row="1" 

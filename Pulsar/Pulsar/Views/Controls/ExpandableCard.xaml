@@ -95,7 +95,7 @@
                                  Content=""
                                  VerticalAlignment="Center"
                                  Margin="8,0,0,0"
-                                 MinWidth="40" Checked="ToggleSwitch_Checked"/>
+                                 MinWidth="40"/>
             </Grid>
         </ui:CardExpander.Header>
 

@@ -1,0 +1,45 @@
+<UserControl x:Class="Pulsar.Views.Controls.SettingsPageHeader"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:converters="clr-namespace:Pulsar.Core.Converters"
+             mc:Ignorable="d" 
+             x:Name="Root">
+    
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVisibilityConverter"/>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    
+    <Grid Margin="0,0,0,20">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        
+        <!-- Left: Title and Description -->
+        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+            <TextBlock Text="{Binding Title, ElementName=Root}" 
+                       FontSize="28" 
+                       FontWeight="SemiBold" 
+                       Margin="0,0,0,8"/>
+            <TextBlock Text="{Binding Description, ElementName=Root}" 
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                       Visibility="{Binding Description, ElementName=Root, Converter={StaticResource StringEmptyToVisibilityConverter}}"/>
+        </StackPanel>
+        
+        <!-- Right: Page Actions -->
+        <StackPanel Grid.Column="1" 
+                    Orientation="Horizontal" 
+                    VerticalAlignment="Center">
+            <ContentPresenter Content="{Binding ActionsContent, ElementName=Root}"
+                              ContentTemplate="{Binding ActionsContentTemplate, ElementName=Root}"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

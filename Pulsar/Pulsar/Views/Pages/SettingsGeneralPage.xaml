@@ -6,9 +6,18 @@
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:vm="clr-namespace:Pulsar.ViewModels"
       xmlns:models="clr-namespace:Pulsar.Models"
+      xmlns:controls="clr-namespace:Pulsar.Views.Controls"
       mc:Ignorable="d" 
       d:DesignHeight="600" d:DesignWidth="800"
-      Title="General Settings">
+      Title="General">
+
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Page.Resources>
 
     <Grid Margin="0">
         <Grid.RowDefinitions>
@@ -16,10 +25,17 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Margin="0,0,0,20">
-            <TextBlock Text="General Settings" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,8"/>
-            <TextBlock Text="Configure application behavior and appearance." Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-        </StackPanel>
+        <!-- Unified Page Header -->
+        <controls:SettingsPageHeader Grid.Row="0"
+                                     Title="General"
+                                     Description="Configure application behavior and appearance">
+            <controls:SettingsPageHeader.ActionsContent>
+                <ui:Button Content="Reset to Defaults"
+                           Icon="{ui:SymbolIcon ArrowReset24}"
+                           Command="{Binding DataContext.ResetConfigCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                           Style="{StaticResource PulsarDangerButtonStyle}"/>
+            </controls:SettingsPageHeader.ActionsContent>
+        </controls:SettingsPageHeader>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel DataContext="{Binding GeneralSettings}" Margin="0,0,20,0">
@@ -110,28 +126,6 @@
                                      IsReadOnly="True"
                                      Cursor="Hand"
                                      PlaceholderText="Press keys..."/>
-                        </Grid>
-                    </StackPanel>
-                </ui:CardExpander>
-
-                <!-- Danger Zone -->
-                <ui:CardExpander Icon="Warning24" Header="Advanced" IsExpanded="False" Margin="0,0,0,12">
-                    <StackPanel>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="Reset Configuration" FontWeight="Medium" Foreground="{DynamicResource PaletteRedBrush}"/>
-                                <TextBlock Text="Restore all settings to default values. A backup will be created." 
-                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"/>
-                            </StackPanel>
-                            <ui:Button Grid.Column="1" 
-                                       Content="Reset to Defaults"
-                                       Appearance="Danger"
-                                       Icon="{ui:SymbolIcon ArrowReset24}"
-                                       Command="{Binding DataContext.ResetConfigCommand, RelativeSource={RelativeSource AncestorType=Page}}"/>
                         </Grid>
                     </StackPanel>
                 </ui:CardExpander>

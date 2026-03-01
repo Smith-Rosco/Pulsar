@@ -209,117 +209,91 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Header Section -->
-        <Grid Grid.Row="0" Margin="0,0,0,24">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+        <!-- Unified Page Header -->
+        <controls:SettingsPageHeader Grid.Row="0"
+                                     Title="{Binding CurrentContext.DisplayName, FallbackValue='Slots'}"
+                                     Description="Configure actions for this context">
+            <controls:SettingsPageHeader.ActionsContent>
+                <StackPanel Orientation="Horizontal">
+                    <!-- Context Switcher -->
+                    <ComboBox ItemsSource="{Binding AvailableContexts}" 
+                              SelectedItem="{Binding CurrentContext}"
+                              Width="220"
+                              ToolTip="Switch Menu Context"
+                              Margin="0,0,8,0">
+                        <ComboBox.ItemContainerStyle>
+                            <Style TargetType="ComboBoxItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                            </Style>
+                        </ComboBox.ItemContainerStyle>
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <controls:JellyOrb Grid.Column="0"
+                                                       IconKey="{Binding Icon}"
+                                                       Size="20"
+                                                       Width="20" Height="20"
+                                                       IsTransparent="True"
+                                                       ShowActiveGlow="False"
+                                                       Margin="0,0,8,0"
+                                                       VerticalAlignment="Center"/>
+                                    
+                                    <TextBlock Grid.Column="1" 
+                                               Text="{Binding DisplayName}" 
+                                               FontFamily="Segoe UI, Microsoft YaHei UI"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,16,0"/>
+                                               
+                                    <Border Grid.Column="2" 
+                                            Background="{DynamicResource ControlFillColorSecondaryBrush}" 
+                                            CornerRadius="4" 
+                                            Padding="6,2"
+                                            VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding SlotCount}" 
+                                                       FontWeight="SemiBold"
+                                                       FontSize="12"/>
+                                            <TextBlock Text=" slots" 
+                                                       FontSize="12" 
+                                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
 
-            <!-- Left: Current Context Title (Fixed Header Style) -->
-            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                <!-- Current Icon (Unified) -->
-                <controls:JellyOrb IconKey="{Binding CurrentContext.Icon}"
-                                   Size="32"
-                                   Width="32" Height="32"
-                                   IsTransparent="True"
-                                   ShowActiveGlow="False"
-                                   Margin="0,0,12,0"
-                                   VerticalAlignment="Center"/>
+                    <!-- Edit Profile Button -->
+                    <ui:Button Style="{StaticResource PulsarIconButtonStyle}"
+                               Icon="{ui:SymbolIcon Edit20}"
+                               Command="{Binding EditProfileCommand}"
+                               Visibility="{Binding CanEditProfile, Converter={StaticResource BoolToVis}}"
+                               ToolTip="Edit Profile Alias &amp; Icon"
+                               Margin="0,0,8,0"/>
 
-                <!-- Title -->
-                <TextBlock Text="{Binding CurrentContext.DisplayName}" 
-                           FontSize="24" FontWeight="SemiBold" 
-                           FontFamily="Segoe UI, Microsoft YaHei UI"
-                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <!-- Add Profile Button -->
+                    <ui:Button Icon="{ui:SymbolIcon Add24}"
+                               Style="{StaticResource PulsarSecondaryButtonStyle}"
+                               ToolTip="Add New Profile"
+                               Command="{Binding AddProfileDialogCommand}"
+                               Margin="0,0,8,0"/>
 
-                <!-- Edit Profile Button -->
-                <ui:Button Style="{StaticResource PulsarIconButtonStyle}"
-                           Icon="{ui:SymbolIcon Edit20}"
-                           Command="{Binding EditProfileCommand}"
-                           Visibility="{Binding CanEditProfile, Converter={StaticResource BoolToVis}}"
-                           ToolTip="Edit Profile Alias &amp; Icon"
-                           VerticalAlignment="Center"
-                           Margin="0,4,0,0"/>
-            </StackPanel>
-
-            <!-- Right: Actions -->
-            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                
-                <!-- Context Switcher -->
-                <ComboBox ItemsSource="{Binding AvailableContexts}" 
-                          SelectedItem="{Binding CurrentContext}"
-                          Width="220"
-                          ToolTip="Switch Menu Context"
-                          Margin="0,0,8,0">
-                    <ComboBox.ItemContainerStyle>
-                        <Style TargetType="ComboBoxItem">
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                            <Setter Property="VerticalContentAlignment" Value="Center"/>
-                        </Style>
-                    </ComboBox.ItemContainerStyle>
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                
-                                <!-- Unified Icon -->
-                                <controls:JellyOrb Grid.Column="0"
-                                                   IconKey="{Binding Icon}"
-                                                   Size="20"
-                                                   Width="20" Height="20"
-                                                   IsTransparent="True"
-                                                   ShowActiveGlow="False"
-                                                   Margin="0,0,8,0"
-                                                   VerticalAlignment="Center"/>
-                                
-                                <!-- [Fix] Corrected Binding from DisplayText to DisplayName -->
-                                <TextBlock Grid.Column="1" 
-                                           Text="{Binding DisplayName}" 
-                                           FontFamily="Segoe UI, Microsoft YaHei UI"
-                                           VerticalAlignment="Center"
-                                           Margin="0,0,16,0"/>
-                                           
-                                <!-- Visual Slot Counter (Badge) -->
-                                <Border Grid.Column="2" 
-                                        Background="{DynamicResource ControlFillColorSecondaryBrush}" 
-                                        CornerRadius="4" 
-                                        Padding="6,2"
-                                        VerticalAlignment="Center">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{Binding SlotCount}" 
-                                                   FontWeight="SemiBold"
-                                                   FontSize="12"/>
-                                        <TextBlock Text=" slots" 
-                                                   FontSize="12" 
-                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                                    </StackPanel>
-                                </Border>
-                            </Grid>
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
-
-                <!-- Add Profile Button -->
-                <ui:Button Icon="{ui:SymbolIcon Add24}"
-                           Style="{StaticResource PulsarSecondaryButtonStyle}"
-                           ToolTip="Add New Profile"
-                           Command="{Binding AddProfileDialogCommand}"
-                           Margin="0,0,8,0"/>
-
-                <!-- Delete Button -->
-                <ui:Button Style="{StaticResource PulsarDangerButtonStyle}"
-                           Icon="{ui:SymbolIcon Delete24}"
-                           Command="{Binding DeleteProfileCommand}"
-                           ToolTip="Delete Current Profile"
-                           Visibility="{Binding CanDeleteProfile, Converter={StaticResource BoolToVis}}"/>
-            </StackPanel>
-        </Grid>
+                    <!-- Delete Button -->
+                    <ui:Button Style="{StaticResource PulsarDangerButtonStyle}"
+                               Icon="{ui:SymbolIcon Delete24}"
+                               Command="{Binding DeleteProfileCommand}"
+                               ToolTip="Delete Current Profile"
+                               Visibility="{Binding CanDeleteProfile, Converter={StaticResource BoolToVis}}"/>
+                </StackPanel>
+            </controls:SettingsPageHeader.ActionsContent>
+        </controls:SettingsPageHeader>
 
         <!-- Slots List -->
         <Grid Grid.Row="1">

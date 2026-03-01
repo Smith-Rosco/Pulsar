@@ -43,12 +43,12 @@
                                IsBackButtonVisible="Collapsed">
 
                 <ui:NavigationView.MenuItems>
-                    <ui:NavigationViewItem Content="General Settings" 
+                    <ui:NavigationViewItem Content="General" 
                                            Icon="{ui:SymbolIcon Settings24}" 
                                            TargetPageType="{x:Type TypeName=Page}" 
                                            Tag="General"/>
                     
-                    <ui:NavigationViewItem Content="Slots Manager" 
+                    <ui:NavigationViewItem Content="Slots" 
                                            Icon="{ui:SymbolIcon DialPad24}" 
                                            TargetPageType="{x:Type TypeName=Page}" 
                                            Tag="Slots"/>
@@ -58,14 +58,6 @@
                                            TargetPageType="{x:Type TypeName=Page}" 
                                            Tag="Plugins"/>
                 </ui:NavigationView.MenuItems>
-
-
-            <ui:NavigationView.FooterMenuItems>
-                <ui:NavigationViewItem Content="Save Changes" 
-                                       Icon="{ui:SymbolIcon Save24}"
-                                       Click="SaveButton_Click"
-                                       Foreground="{DynamicResource SystemAccentColorBrush}"/>
-            </ui:NavigationView.FooterMenuItems>
         </ui:NavigationView>
 
         <!-- Content Frame -->

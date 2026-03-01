@@ -132,8 +132,29 @@ Adhere strictly to these conventions to maintain codebase consistency.
    - **Settings/Dialogs**: Uses `Wpf.Ui` themes with Mica backdrop.
    - **Action**: When creating a new window, you MUST inject the theme manually via `IThemeService.ApplyTheme()` in the constructor.
    - **Pages/Frames**: Controls inside a `Page` hosted in a `Frame` do not inherit Window resources correctly. You MUST explicitly call `IThemeService.ApplyTheme()` on the `Page` instance itself.
+   - **Critical Pitfall (Pages + XAML Resources)**: If a `Page` defines `<Page.Resources>`, WPF will create/assign the `Resources` dictionary during XAML load. If you call `ApplyTheme(page, ...)` *before* `InitializeComponent()`, the XAML load can replace the `Resources` dictionary instance, discarding injected dictionaries (e.g., `ThemesDictionary`, `ControlsDictionary`, and Pulsar `Themes/Theme.*.xaml`).
+     - **Symptom**: Theme DynamicResources become missing (e.g. `Theme.Orb.*`), resulting in blank/unstyled visuals (e.g. `JellyOrb`'s `OrbFill` appears empty) and generally "ugly" fallback UI.
+     - **Rule**: Prefer calling `ApplyTheme()` *after* `InitializeComponent()` for `Page`s, and/or re-apply theme once after load.
+     - **Rule**: `SettingsWindow` should explicitly apply theme to each cached page (`General`, `Slots`, `Plugins`) to keep behavior consistent.
    - **Context Menus**: Do not inherit Window resources. Manually inject `ui:ControlsDictionary` into `ContextMenu.Resources`.
    - **Animations**: When switching themes, avoid clearing resources (`MergedDictionaries.Remove`) if animations are running (common in `Wpf.Ui`). Instead, update the existing `ThemesDictionary.Theme` property in place.
+
+4.1 **Resources Hygiene (XAMLParseException Prevention)**
+   - **Rule**: Each element can set `Resources` only once. Do not mix a top-level `<ResourceDictionary>...</ResourceDictionary>` followed by additional resources in the same `<Page.Resources>` block.
+   - **Correct Pattern (Page)**:
+     ```xml
+     <Page.Resources>
+         <ResourceDictionary>
+             <ResourceDictionary.MergedDictionaries>
+                 <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+             </ResourceDictionary.MergedDictionaries>
+
+             <!-- All converters/styles/templates go here (same dictionary) -->
+             <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+             <DataTemplate x:Key="MyTemplate">...</DataTemplate>
+         </ResourceDictionary>
+     </Page.Resources>
+     ```
 
 5. **Button Styling - CRITICAL**: Do NOT use `Appearance="Primary"` on WPF-UI buttons!
    
@@ -415,6 +436,13 @@ A parameterized, reusable card component that encapsulates common UI patterns:
    - Use `ContentPresenter` for customizable areas
 5. **Refactor Existing Pages**: Replace duplicated XAML with component usage
 6. **Document in AGENTS.md**: Record the component's purpose and usage
+
+#### **Experience Log: Settings Tabs + Componentization**
+
+This repo has a recurring class of issues caused by *resource scope* and *theme injection timing* in WPF:
+- Componentization (e.g. `ExpandableCard`) is recommended for repeating card patterns because it centralizes layout + action affordances and reduces UX drift.
+- Do NOT over-componentize entire `Page`s/tabs; keep `Page` as the composition layer (filtering/grouping/sticky headers/navigation), and extract only the repeating UI primitives.
+- When a reusable control depends on Pulsar styles (e.g. icon buttons), prefer making the control self-sufficient by merging the required style dictionaries in its own `UserControl.Resources`.
 
 #### **Example: Refactoring to ExpandableCard**
 
