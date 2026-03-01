@@ -4,6 +4,7 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:dd="urn:gong-wpf-dragdrop"
       xmlns:models="clr-namespace:Pulsar.Models"
       xmlns:selectors="clr-namespace:Pulsar.Views.Selectors"
       xmlns:converters="clr-namespace:Pulsar.Core.Converters"
@@ -349,30 +350,52 @@
                         </Style.Triggers>
                     </Style>
                 </ScrollViewer.Style>
-                <ItemsControl ItemsSource="{Binding CurrentSlots}" AlternationCount="2">
+                <ItemsControl ItemsSource="{Binding CurrentSlots}" 
+                              AlternationCount="2"
+                              dd:DragDrop.IsDragSource="True"
+                              dd:DragDrop.IsDropTarget="True"
+                              dd:DragDrop.DropHandler="{Binding}"
+                              dd:DragDrop.UseDefaultDragAdorner="True"
+                              dd:DragDrop.DefaultDragAdornerOpacity="0.5">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type models:PluginSlot}">
-                            <ui:CardExpander Margin="0,0,0,8" IsExpanded="False">
+                            <ui:CardExpander Margin="0,0,0,8" 
+                                           IsExpanded="False"
+                                           Expanded="CardExpander_Expanded">
                                 <ui:CardExpander.Header>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
 
+                                        <!-- Drag Handle -->
+                                        <ui:SymbolIcon Grid.Column="0" 
+                                                       Symbol="Navigation24" 
+                                                       FontSize="20"
+                                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                       Margin="0,0,8,0"
+                                                       VerticalAlignment="Center"
+                                                       Cursor="SizeAll"
+                                                       ToolTip="Drag to reorder"/>
+
                                         <!-- Icon -->
-                                        <controls:JellyOrb IconKey="{Binding IconKey}" 
+                                        <controls:JellyOrb Grid.Column="1"
+                                                           IconKey="{Binding IconKey}" 
                                                            Size="32" Width="32" Height="32" 
                                                            IsTransparent="True"
                                                            ShowActiveGlow="False"
                                                            Margin="0,0,12,0"/>
 
                                         <!-- Text Info -->
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                             <TextBlock Text="{Binding Label}" FontWeight="SemiBold" FontSize="14"/>
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="{Binding Slot, StringFormat='Slot {0}'}" 
+                                                <TextBlock Text="{Binding Order, StringFormat='Order {0}'}" 
                                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
                                                            FontSize="12" Margin="0,0,8,0"/>
                                                 <Border Background="{DynamicResource ControlFillColorSecondaryBrush}" 
@@ -383,8 +406,28 @@
                                             </StackPanel>
                                         </StackPanel>
                                         
-                                        <!-- Remove Button (Visible in Header) -->
-                                        <ui:Button Grid.Column="2"
+                                        <!-- Move Up Button -->
+                                        <ui:Button Grid.Column="3"
+                                                   Appearance="Transparent"
+                                                   Icon="{ui:SymbolIcon ArrowUp24}"
+                                                   Command="{Binding DataContext.MoveSlotUpCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                   CommandParameter="{Binding}"
+                                                   ToolTip="Move Up"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,4,0"/>
+                                        
+                                        <!-- Move Down Button -->
+                                        <ui:Button Grid.Column="4"
+                                                   Appearance="Transparent"
+                                                   Icon="{ui:SymbolIcon ArrowDown24}"
+                                                   Command="{Binding DataContext.MoveSlotDownCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                   CommandParameter="{Binding}"
+                                                   ToolTip="Move Down"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,4,0"/>
+                                        
+                                        <!-- Remove Button -->
+                                        <ui:Button Grid.Column="5"
                                                    Appearance="Transparent"
                                                    Icon="{ui:SymbolIcon Dismiss24}"
                                                    Foreground="{DynamicResource PaletteRedBrush}"

@@ -21,6 +21,8 @@ using Wpf.Ui.Controls;
 using Pulsar.ViewModels.Dialogs;
 using DialogResult = Pulsar.Models.Enums.DialogResult;
 using DialogButtons = Pulsar.Models.Enums.DialogButtons;
+using GongSolutions.Wpf.DragDrop;
+using DragDropEffects = System.Windows.DragDropEffects;
 
 namespace Pulsar.ViewModels
 {
@@ -66,7 +68,7 @@ namespace Pulsar.ViewModels
         }
     }
 
-    public partial class SettingsViewModel : ObservableObject
+    public partial class SettingsViewModel : ObservableObject, GongSolutions.Wpf.DragDrop.IDropTarget
     {
         private readonly IConfigService _configService;
         private readonly IWindowService _windowService;
@@ -317,14 +319,14 @@ namespace Pulsar.ViewModels
             if (CurrentSlots == null) return;
             // [Refactor] Removed 8-slot limit check
             
-            // Find next available slot index
-            int nextSlot = 1;
+            // Find next available order index
+            int nextOrder = 1;
             if (CurrentSlots.Count > 0)
             {
-                nextSlot = CurrentSlots.Max(s => s.Slot) + 1;
+                nextOrder = CurrentSlots.Max(s => s.Order) + 1;
             }
 
-            var newItem = new PluginSlot { Slot = nextSlot };
+            var newItem = new PluginSlot { Order = nextOrder };
 
             switch (pluginId)
             {
@@ -747,6 +749,54 @@ namespace Pulsar.ViewModels
                 SendNotification("Deleted", "Slot removed.", ControlAppearance.Info);
             }
         }
+
+        [RelayCommand]
+        public void MoveSlotUp(PluginSlot item)
+        {
+            if (CurrentSlots == null || !CurrentSlots.Contains(item)) return;
+            
+            var index = CurrentSlots.IndexOf(item);
+            if (index <= 0) return; // Already at top
+            
+            var prevItem = CurrentSlots[index - 1];
+            
+            // Swap Order values
+            (item.Order, prevItem.Order) = (prevItem.Order, item.Order);
+            
+            // Re-sort the collection by Order
+            var sortedList = CurrentSlots.OrderBy(s => s.Order).ToList();
+            CurrentSlots.Clear();
+            foreach (var slot in sortedList)
+            {
+                CurrentSlots.Add(slot);
+            }
+            
+            SendNotification("Moved", $"'{item.Label}' moved up.", ControlAppearance.Info);
+        }
+
+        [RelayCommand]
+        public void MoveSlotDown(PluginSlot item)
+        {
+            if (CurrentSlots == null || !CurrentSlots.Contains(item)) return;
+            
+            var index = CurrentSlots.IndexOf(item);
+            if (index < 0 || index >= CurrentSlots.Count - 1) return; // Already at bottom
+            
+            var nextItem = CurrentSlots[index + 1];
+            
+            // Swap Order values
+            (item.Order, nextItem.Order) = (nextItem.Order, item.Order);
+            
+            // Re-sort the collection by Order
+            var sortedList = CurrentSlots.OrderBy(s => s.Order).ToList();
+            CurrentSlots.Clear();
+            foreach (var slot in sortedList)
+            {
+                CurrentSlots.Add(slot);
+            }
+            
+            SendNotification("Moved", $"'{item.Label}' moved down.", ControlAppearance.Info);
+        }
         
         [RelayCommand]
         public async Task PickProcess(object parameter)
@@ -1016,6 +1066,53 @@ namespace Pulsar.ViewModels
         private void SendNotification(string title, string message, ControlAppearance appearance = ControlAppearance.Secondary)
         {
             WeakReferenceMessenger.Default.Send(new SnackbarMessage(title, message, appearance));
+        }
+
+        // ===== IDropTarget Implementation for Drag & Drop Reordering =====
+        
+        void GongSolutions.Wpf.DragDrop.IDropTarget.DragOver(GongSolutions.Wpf.DragDrop.IDropInfo dropInfo)
+        {
+            if (dropInfo.Data is PluginSlot && dropInfo.TargetCollection != null)
+            {
+                dropInfo.DropTargetAdorner = GongSolutions.Wpf.DragDrop.DropTargetAdorners.Insert;
+                dropInfo.Effects = DragDropEffects.Move;
+            }
+        }
+
+        void GongSolutions.Wpf.DragDrop.IDropTarget.Drop(GongSolutions.Wpf.DragDrop.IDropInfo dropInfo)
+        {
+            if (dropInfo.Data is PluginSlot sourceSlot && dropInfo.TargetCollection != null)
+            {
+                var sourceIndex = CurrentSlots.IndexOf(sourceSlot);
+                if (sourceIndex < 0) return;
+
+                // Use InsertIndex from dropInfo - this matches the visual indicator exactly
+                var insertIndex = dropInfo.InsertIndex;
+                
+                // Clamp to valid range
+                if (insertIndex < 0) insertIndex = 0;
+                if (insertIndex > CurrentSlots.Count) insertIndex = CurrentSlots.Count;
+
+                // Remove source from collection
+                CurrentSlots.RemoveAt(sourceIndex);
+
+                // Adjust insert index if we removed an item before the target position
+                if (sourceIndex < insertIndex)
+                {
+                    insertIndex--;
+                }
+
+                // Insert at the exact position indicated by the adorner
+                CurrentSlots.Insert(insertIndex, sourceSlot);
+
+                // Reassign Order values based on new positions
+                for (int i = 0; i < CurrentSlots.Count; i++)
+                {
+                    CurrentSlots[i].Order = i + 1;
+                }
+
+                SendNotification("Reordered", $"'{sourceSlot.Label}' moved.", ControlAppearance.Info);
+            }
         }
     }
 }

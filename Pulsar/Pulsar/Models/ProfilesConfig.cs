@@ -161,6 +161,15 @@ namespace Pulsar.Models
             set => SetProperty(ref _color, value);
         }
 
+        // [New] 逻辑顺序 - 用户定义的优先级，用于自定义 Slot 显示顺序
+        private int _order = 0;
+        [JsonPropertyName("order")]
+        public int Order
+        {
+            get => _order;
+            set => SetProperty(ref _order, value);
+        }
+
         // [UI Support] 徽章与颜色
         [JsonIgnore]
         public string TypeBadge
@@ -190,8 +199,9 @@ namespace Pulsar.Models
             }
         }
 
-        // [Runtime] 槽位索引
-        [JsonPropertyName("slot")]
+        // [Runtime] 槽位索引 - 运行时由 RadialMenuViewModel 动态分配 (1-8)
+        // 不再存储到 JSON，改为运行时计算
+        [JsonIgnore]
         public int Slot { get; set; }
 
         // [Indexer] 安全的索引器绑定，避免 KeyNotFoundException

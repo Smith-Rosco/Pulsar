@@ -112,7 +112,7 @@ namespace Pulsar.Services
                         {
                             new PluginSlot
                             {
-                                Slot = 1,
+                                Order = 1,
                                 PluginId = "com.pulsar.winswitcher",
                                 Action = "activate",
                                 Args = new Dictionary<string, string>
@@ -122,7 +122,7 @@ namespace Pulsar.Services
                             },
                             new PluginSlot
                             {
-                                Slot = 2,
+                                Order = 2,
                                 PluginId = "com.pulsar.winswitcher",
                                 Action = "activate",
                                 Args = new Dictionary<string, string>
@@ -132,7 +132,7 @@ namespace Pulsar.Services
                             },
                             new PluginSlot
                             {
-                                Slot = 3,
+                                Order = 3,
                                 PluginId = "com.pulsar.winswitcher",
                                 Action = "activate",
                                 Args = new Dictionary<string, string>
@@ -145,7 +145,7 @@ namespace Pulsar.Services
                         {
                             new PluginSlot
                             {
-                                Slot = 1,
+                                Order = 1,
                                 PluginId = "com.pulsar.command",
                                 Action = "run",
                                 Args = new Dictionary<string, string>

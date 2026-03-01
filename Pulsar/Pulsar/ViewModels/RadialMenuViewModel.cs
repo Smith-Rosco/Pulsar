@@ -385,18 +385,16 @@ namespace Pulsar.ViewModels
                             slots.AddRange(globalProfile.GetSlots(true));
                         }
 
-                        // [Smart Profile Creator] - Insert at start
+                        // [Smart Profile Creator] - Insert at start with Order = 0 (highest priority)
                         var creator = new PluginSlot 
                         { 
-                            Slot = 1, 
+                            Order = 0, // Order = 0 ensures it appears first
                             Label = $"Add {activeProcess}", 
                             IconKey = "\uE710", // Add Icon
                             PluginId = "internal:create_profile" 
                         };
                         
-                        // Check if we should replace slot 1 or just insert
-                        // Current logic: prioritize Creator.
-                        // Ideally, Creator is always available if no specific profile.
+                        // Insert at start - will be sorted by Order in CommandPageProvider
                         slots.Insert(0, creator);
                     }
 

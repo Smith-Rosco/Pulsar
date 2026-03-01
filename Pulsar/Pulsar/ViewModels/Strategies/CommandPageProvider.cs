@@ -29,7 +29,8 @@ namespace Pulsar.ViewModels.Strategies
             ITrayService trayService,
             IServiceProvider serviceProvider)
         {
-            _allSlots = slots ?? new List<PluginSlot>();
+            // [Order Support] 按 Order 字段排序，确保用户自定义顺序生效
+            _allSlots = slots?.OrderBy(s => s.Order).ToList() ?? new List<PluginSlot>();
             _pluginRegistry = pluginRegistry;
             _context = context;
             _trayService = trayService;
@@ -46,13 +47,16 @@ namespace Pulsar.ViewModels.Strategies
         {
             ClearSlots(slots);
             
-            // Simple Paging
+            // [Order Support] 按 Order 排序后分页
             var pageItems = _allSlots.Skip(_currentPage * _itemsPerPage).Take(_itemsPerPage).ToList();
 
             for (int i = 0; i < pageItems.Count; i++)
             {
                 var item = pageItems[i];
                 var slot = slots[i]; // Slot 1 is index 0
+                
+                // [Runtime Assignment] 动态分配物理 Slot 位置 (1-8)
+                item.Slot = i + 1;
                 
                 slot.Label = item.Label;
                 slot.LoadIconData(item.IconKey);
