@@ -21,6 +21,7 @@ Practical guides for common development tasks:
 
 - **[Component Library](guides/COMPONENT_LIBRARY.md)** - Reusable UI components (ExpandableCard, JellyOrb)
 - **[UI Best Practices](guides/UI_BEST_PRACTICES.md)** - UI/UX design patterns and guidelines
+- **[Contributing Guide](CONTRIBUTING.md)** - Documentation standards and best practices
 
 ---
 

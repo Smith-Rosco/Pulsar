@@ -138,7 +138,7 @@ namespace Pulsar.Services
         }
 
         /// <summary>
-        /// 执行插件动作 (含熔断保护)
+        /// 执行插件动作 (含熔断保护 + 统一日志上下文)
         /// </summary>
         public async Task<PluginResult> ExecuteAsync(
             string pluginId,
@@ -150,7 +150,7 @@ namespace Pulsar.Services
             
             if (plugin == null)
             {
-                _logger.LogError("[PluginRegistry] ❌ Plugin not found: {PluginId}", pluginId);
+                _logger.LogError("Plugin not found: {PluginId}", pluginId);
                 return PluginResult.Error($"Plugin not found: {pluginId}");
             }
 
@@ -166,7 +166,7 @@ namespace Pulsar.Services
                     {
                         if (!profile.Enabled)
                         {
-                            _logger.LogWarning("[PluginRegistry] 🛑 Plugin is disabled by user: {PluginId}", pluginId);
+                            _logger.LogWarning("Plugin is disabled by user: {PluginId}", pluginId);
                             return PluginResult.Error("Plugin is disabled.");
                         }
                     }
@@ -178,23 +178,29 @@ namespace Pulsar.Services
                     if (DateTime.UtcNow - breakTime < ResetTimeout)
                     {
                         var remaining = (int)(ResetTimeout - (DateTime.UtcNow - breakTime)).TotalSeconds;
-                        _logger.LogWarning("[PluginRegistry] 🛡️ Circuit Open: {PluginId} is disabled for {Remaining}s", pluginId, remaining);
+                        _logger.LogWarning("Circuit Open: {PluginId} is disabled for {Remaining}s", pluginId, remaining);
                         return PluginResult.Error($"Plugin disabled for safety. Try again in {remaining}s.");
                     }
 
                     _brokenCircuits.Remove(pluginId);
-                    _logger.LogInformation("[PluginRegistry] 🛡️ Circuit Half-Open: Retrying {PluginId}...", pluginId);
+                    _logger.LogInformation("Circuit Half-Open: Retrying {PluginId}...", pluginId);
                 }
             }
 
-            // [New] 开始计时
+            // [Unified Logging] 创建插件执行上下文作用域
+            using var executionScope = PluginExecutionContext.BeginScope(
+                pluginId, 
+                action, 
+                targetProcessName: context.TargetProcessName
+            );
+
             var stopwatch = Stopwatch.StartNew();
             bool success = false;
             Exception? exception = null;
 
             try
             {
-                _logger.LogDebug("[PluginRegistry] Executing: {PluginId}.{Action}", pluginId, action);
+                _logger.LogDebug("Executing plugin action");
                 var result = await plugin.ExecuteAsync(action, args, context);
                 
                 success = result.Success;
@@ -207,16 +213,16 @@ namespace Pulsar.Services
 
                 if (result.Success)
                 {
-                    _logger.LogInformation("[PluginRegistry] ✓ Success: {Message}", result.Message ?? "OK");
+                    _logger.LogInformation("Plugin execution succeeded: {Message}", result.Message ?? "OK");
                 }
                 else
                 {
-                    _logger.LogWarning("[PluginRegistry] ❌ Failed (Logic): {Message}", result.Message ?? "Unknown error");
+                    _logger.LogWarning("Plugin execution failed (logic error): {Message}", result.Message ?? "Unknown error");
                     
                     // [New] Handle Critical severity errors for Extension plugins
                     if (tier == PluginTier.Extension && result.Severity == PluginErrorSeverity.Critical)
                     {
-                        _logger.LogWarning("[PluginRegistry] Critical error detected, counting towards circuit breaker");
+                        _logger.LogWarning("Critical error detected, counting towards circuit breaker");
                         HandlePluginCrash(pluginId, new InvalidOperationException(result.Message ?? "Critical plugin error"));
                     }
                 }
@@ -227,7 +233,7 @@ namespace Pulsar.Services
             {
                 exception = ex;
                 success = false;
-                _logger.LogError(ex, "[PluginRegistry] ❌ Exception in plugin {PluginId}", pluginId);
+                _logger.LogError(ex, "Plugin execution threw exception");
 
                 // Only Extension plugins are isolated with Circuit Breaker.
                 if (tier == PluginTier.Extension)
@@ -254,19 +260,8 @@ namespace Pulsar.Services
                     _healthMonitor?.RecordError(pluginId, exception, action);
                 }
 
-                // [New] 记录日志
-                if (success)
-                {
-                    _logService?.Log(pluginId, PluginLogLevel.Info,
-                        $"Executed action '{action}' successfully",
-                        null, action, args as Dictionary<string, string>, stopwatch.ElapsedMilliseconds);
-                }
-                else
-                {
-                    _logService?.Log(pluginId, PluginLogLevel.Error,
-                        $"Failed to execute action '{action}'",
-                        exception, action, args as Dictionary<string, string>, stopwatch.ElapsedMilliseconds);
-                }
+                // [Deprecated] PluginLogService 不再写入日志，仅作为查询层
+                // 所有日志已通过 Serilog + PluginContextEnricher 自动记录
             }
         }
 
@@ -293,19 +288,17 @@ namespace Pulsar.Services
             _failureCounts[pluginId]++;
             int count = _failureCounts[pluginId];
 
-            _logger.LogWarning("[PluginRegistry] ⚠️ Plugin {PluginId} crashed ({Count}/{MaxFailures})", pluginId, count, MaxFailures);
+            _logger.LogWarning("Plugin crashed ({Count}/{MaxFailures})", count, MaxFailures);
 
             if (count >= MaxFailures)
             {
                 // 触发熔断
                 _brokenCircuits[pluginId] = DateTime.UtcNow;
                 _failureCounts.Remove(pluginId); // 重置计数，等待冷却后重试
-                _logger.LogError("[PluginRegistry] 💥 Circuit Breaker Tripped! {PluginId} disabled for {Timeout}s", pluginId, ResetTimeout.TotalSeconds);
+                _logger.LogCritical("Circuit Breaker Tripped! Plugin temporarily disabled for {Timeout}s", ResetTimeout.TotalSeconds);
                 
                 // [New] 记录 Circuit Breaker 触发
                 _healthMonitor?.RecordCircuitBreakerTrip(pluginId);
-                _logService?.Log(pluginId, PluginLogLevel.Critical,
-                    $"Circuit Breaker triggered - plugin temporarily disabled for {ResetTimeout.TotalSeconds}s");
 
                 // 发送系统通知告知用户插件已禁用
                 _trayService?.ShowNotification(

@@ -5,6 +5,8 @@ using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels.Base;
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using DialogResult = Pulsar.Models.Enums.DialogResult;
@@ -16,6 +18,41 @@ namespace Pulsar.ViewModels.Dialogs
         private readonly IPluginLogService _logService;
         private readonly string _pluginId;
         private const int PageSize = 100;
+
+        private List<PluginLogEntry> _filteredCache = new();
+
+        [ObservableProperty]
+        private int _totalCount;
+
+        [ObservableProperty]
+        private int _filteredCount;
+
+        [ObservableProperty]
+        private int _debugCount;
+
+        [ObservableProperty]
+        private int _infoCount;
+
+        [ObservableProperty]
+        private int _warningCount;
+
+        [ObservableProperty]
+        private int _errorCount;
+
+        [ObservableProperty]
+        private int _criticalCount;
+
+        [ObservableProperty]
+        private string _timeRangeLabel = string.Empty;
+
+        [ObservableProperty]
+        private bool _isTruncated;
+
+        public string TruncatedHint => IsTruncated ? "Results truncated to 2000 entries. Narrow filters to see more." : string.Empty;
+
+        public bool HasFilteredLogs => FilteredCount > 0;
+
+        public bool CanLoadMore => !IsLoading && _skip < FilteredCount;
 
         [ObservableProperty]
         private ObservableCollection<PluginLogEntry> _logs = new();
@@ -40,6 +77,7 @@ namespace Pulsar.ViewModels.Dialogs
         public ObservableCollection<FilterOption<PluginLogLevel?>> LevelOptions { get; } = new()
         {
             new FilterOption<PluginLogLevel?>("All", null),
+            new FilterOption<PluginLogLevel?>("Debug", PluginLogLevel.Debug),
             new FilterOption<PluginLogLevel?>("Info", PluginLogLevel.Info),
             new FilterOption<PluginLogLevel?>("Warning", PluginLogLevel.Warning),
             new FilterOption<PluginLogLevel?>("Error", PluginLogLevel.Error),
@@ -60,7 +98,7 @@ namespace Pulsar.ViewModels.Dialogs
             _pluginId = pluginId;
             PluginName = pluginName;
             SelectedLevelOption = LevelOptions.FirstOrDefault();
-            SelectedTimeRangeOption = TimeRangeOptions.FirstOrDefault(o => o.Value == TimeRangeOption.Last24Hours)
+            SelectedTimeRangeOption = TimeRangeOptions.FirstOrDefault(o => o.Value == TimeRangeOption.All)
                 ?? TimeRangeOptions.FirstOrDefault();
             _ = LoadInitialAsync();
         }
@@ -103,10 +141,13 @@ namespace Pulsar.ViewModels.Dialogs
                 }
 
                 _skip += next.Count;
+
+                OnPropertyChanged(nameof(CanLoadMore));
             }
             finally
             {
                 IsLoading = false;
+                OnPropertyChanged(nameof(CanLoadMore));
             }
         }
 
@@ -125,6 +166,30 @@ namespace Pulsar.ViewModels.Dialogs
             }
         }
 
+        [RelayCommand]
+        private void OpenLogFolder()
+        {
+            try
+            {
+                var baseDir = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "Pulsar",
+                    "Logs",
+                    "Plugins");
+
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments = $"\"{baseDir}\"",
+                    UseShellExecute = true
+                });
+            }
+            catch
+            {
+                // No-op: diagnostics convenience only
+            }
+        }
+
         private async Task LoadInitialAsync()
         {
             await ReloadAsync();
@@ -140,32 +205,88 @@ namespace Pulsar.ViewModels.Dialogs
             IsLoading = true;
             try
             {
+                TimeRangeLabel = SelectedTimeRangeOption?.Label ?? string.Empty;
+
+                var result = await Task.Run(BuildCacheResult);
+                _filteredCache = result.Filtered;
+
+                TotalCount = result.TotalCount;
+                FilteredCount = result.FilteredCount;
+                DebugCount = result.DebugCount;
+                InfoCount = result.InfoCount;
+                WarningCount = result.WarningCount;
+                ErrorCount = result.ErrorCount;
+                CriticalCount = result.CriticalCount;
+                IsTruncated = result.Truncated;
+
+                OnPropertyChanged(nameof(TruncatedHint));
+
                 _skip = 0;
                 Logs.Clear();
-                var initial = await Task.Run(() => GetFilteredLogs(_skip, PageSize));
-                foreach (var log in initial)
+                foreach (var log in _filteredCache.Take(PageSize))
                 {
                     Logs.Add(log);
                 }
                 _skip = Logs.Count;
+
+                OnPropertyChanged(nameof(HasFilteredLogs));
+                OnPropertyChanged(nameof(CanLoadMore));
             }
             finally
             {
                 IsLoading = false;
+                OnPropertyChanged(nameof(CanLoadMore));
             }
         }
 
-        private List<PluginLogEntry> GetFilteredLogs(int skip, int take)
+        private CacheBuildResult BuildCacheResult()
         {
-            var logs = _logService.GetLogs(_pluginId, 0, int.MaxValue, SelectedLevelOption?.Value);
+            var all = _logService.GetLogs(_pluginId, 0, int.MaxValue, null);
+            var timeFiltered = all.Where(MatchesTimeRange).ToList();
 
-            logs = logs
-                .Where(MatchesTimeRange)
+            var totalCount = timeFiltered.Count;
+            var debugCount = timeFiltered.Count(l => l.Level == PluginLogLevel.Debug);
+            var infoCount = timeFiltered.Count(l => l.Level == PluginLogLevel.Info);
+            var warningCount = timeFiltered.Count(l => l.Level == PluginLogLevel.Warning);
+            var errorCount = timeFiltered.Count(l => l.Level == PluginLogLevel.Error);
+            var criticalCount = timeFiltered.Count(l => l.Level == PluginLogLevel.Critical);
+
+            var levelFiltered = SelectedLevelOption?.Value.HasValue == true
+                ? timeFiltered.Where(l => l.Level == SelectedLevelOption.Value.Value).ToList()
+                : timeFiltered;
+
+            var filtered = levelFiltered
                 .Where(MatchesSearch)
                 .OrderByDescending(l => l.Timestamp)
                 .ToList();
 
-            return logs.Skip(skip).Take(take).ToList();
+            var truncated = false;
+            if (filtered.Count > 2000)
+            {
+                filtered = filtered.Take(2000).ToList();
+                truncated = true;
+            }
+
+            return new CacheBuildResult(
+                totalCount,
+                filtered.Count,
+                debugCount,
+                infoCount,
+                warningCount,
+                errorCount,
+                criticalCount,
+                filtered,
+                truncated);
+        }
+
+        private List<PluginLogEntry> GetFilteredLogs(int skip, int take)
+        {
+            if (_filteredCache.Count == 0)
+            {
+                _filteredCache = BuildCacheResult().Filtered;
+            }
+
+            return _filteredCache.Skip(skip).Take(take).ToList();
         }
 
         private bool MatchesTimeRange(PluginLogEntry entry)
@@ -175,7 +296,7 @@ namespace Pulsar.ViewModels.Dialogs
                 return true;
             }
 
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var since = (SelectedTimeRangeOption?.Value ?? TimeRangeOption.Last24Hours) switch
             {
                 TimeRangeOption.Last24Hours => now.AddHours(-24),
@@ -197,8 +318,20 @@ namespace Pulsar.ViewModels.Dialogs
             var term = SearchText.Trim();
             return (entry.Message?.Contains(term, StringComparison.OrdinalIgnoreCase) == true)
                 || (entry.Exception?.Contains(term, StringComparison.OrdinalIgnoreCase) == true)
-                || (entry.Action?.Contains(term, StringComparison.OrdinalIgnoreCase) == true);
+                || (entry.Action?.Contains(term, StringComparison.OrdinalIgnoreCase) == true)
+                || (entry.ExecutionId?.Contains(term, StringComparison.OrdinalIgnoreCase) == true);
         }
+
+        private sealed record CacheBuildResult(
+            int TotalCount,
+            int FilteredCount,
+            int DebugCount,
+            int InfoCount,
+            int WarningCount,
+            int ErrorCount,
+            int CriticalCount,
+            List<PluginLogEntry> Filtered,
+            bool Truncated);
 
         public Task<bool> CanCloseAsync(DialogResult result)
         {

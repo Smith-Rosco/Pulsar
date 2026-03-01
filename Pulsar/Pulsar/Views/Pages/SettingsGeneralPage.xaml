@@ -30,10 +30,22 @@
                                      Title="General"
                                      Description="Configure application behavior and appearance">
             <controls:SettingsPageHeader.ActionsContent>
-                <ui:Button Content="Reset to Defaults"
-                           Icon="{ui:SymbolIcon ArrowReset24}"
-                           Command="{Binding ResetConfigCommand}"
-                           Style="{StaticResource PulsarDangerButtonStyle}"/>
+                <StackPanel Orientation="Horizontal">
+                    <ui:Button Content="Open App Logs"
+                               Icon="{ui:SymbolIcon DocumentText24}"
+                               Command="{Binding OpenLogsFolderCommand}"
+                               Style="{StaticResource PulsarSecondaryButtonStyle}"
+                               Margin="0,0,8,0"/>
+                    <ui:Button Content="Open Plugin Logs"
+                               Icon="{ui:SymbolIcon FolderOpen24}"
+                               Command="{Binding OpenPluginLogsFolderCommand}"
+                               Style="{StaticResource PulsarSecondaryButtonStyle}"
+                               Margin="0,0,8,0"/>
+                    <ui:Button Content="Reset to Defaults"
+                               Icon="{ui:SymbolIcon ArrowReset24}"
+                               Command="{Binding ResetConfigCommand}"
+                               Style="{StaticResource PulsarDangerButtonStyle}"/>
+                </StackPanel>
             </controls:SettingsPageHeader.ActionsContent>
         </controls:SettingsPageHeader>
 

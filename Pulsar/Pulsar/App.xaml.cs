@@ -31,20 +31,44 @@ namespace Pulsar
 
         protected override void OnStartup(StartupEventArgs e)
         {
-            // 0. Initialize Logging (Pulsar Sentinel)
-            var logPath = Path.Combine(
+            // 0. Initialize Logging (Pulsar Sentinel - Unified Architecture)
+            var logsBaseDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), 
                 "Pulsar", 
-                "Logs", 
-                "pulsar-.log");
+                "Logs");
+            
+            var pluginLogsDir = Path.Combine(logsBaseDir, "Plugins");
+            Directory.CreateDirectory(pluginLogsDir);
 
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
+                .Enrich.With<Pulsar.Logging.PluginContextEnricher>()
                 .WriteTo.Debug()
-                .WriteTo.File(logPath, rollingInterval: RollingInterval.Day, retainedFileCountLimit: 7)
+                // 主程序日志（不包含插件日志）
+                .WriteTo.Logger(lc => lc
+                    .Filter.ByExcluding(evt => evt.Properties.ContainsKey("PluginId"))
+                    .WriteTo.File(
+                        path: Path.Combine(logsBaseDir, "pulsar-.log"),
+                        rollingInterval: RollingInterval.Day,
+                        retainedFileCountLimit: 7,
+                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
+                    ))
+                // 插件日志（按插件 ID 分文件）
+                .WriteTo.Logger(lc => lc
+                    .Filter.ByIncludingOnly(evt => evt.Properties.ContainsKey("PluginId"))
+                    .WriteTo.Map(
+                        keyPropertyName: "PluginId",
+                        configure: (pluginId, wt) => wt.File(
+                            path: Path.Combine(pluginLogsDir, $"{pluginId}-.log"),
+                            rollingInterval: RollingInterval.Day,
+                            retainedFileCountLimit: 30,
+                            fileSizeLimitBytes: 100_000_000, // 100MB per file
+                            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] [{Action}] [ExecId:{ExecutionId}] [Elapsed:{ElapsedMs}ms] {Message:lj}{NewLine}{Exception}"
+                        )
+                    ))
                 .CreateLogger();
 
-            Log.Information("=== Pulsar Application Starting ===");
+            Log.Information("=== Pulsar Application Starting (Unified Logging Architecture) ===");
 
             // Global Exception Handling
             this.DispatcherUnhandledException += OnDispatcherUnhandledException;

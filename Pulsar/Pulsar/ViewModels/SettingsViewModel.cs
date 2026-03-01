@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized; // Added for INotifyCollectionChanged
 using System.IO; // Added for File operations
 using System.Linq;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -793,6 +794,55 @@ namespace Pulsar.ViewModels
 
                 MarkDirty(); // [Phase 2]
                 SendNotification("Success", "Secret updated.", ControlAppearance.Success);
+            }
+        }
+
+        [RelayCommand]
+        private void OpenLogsFolder()
+        {
+            try
+            {
+                var baseDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "Pulsar",
+                    "Logs");
+
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments = $"\"{baseDir}\"",
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[SettingsViewModel] Failed to open logs folder");
+                SendNotification("Error", "Failed to open logs folder.", ControlAppearance.Danger);
+            }
+        }
+
+        [RelayCommand]
+        private void OpenPluginLogsFolder()
+        {
+            try
+            {
+                var baseDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "Pulsar",
+                    "Logs",
+                    "Plugins");
+
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments = $"\"{baseDir}\"",
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[SettingsViewModel] Failed to open plugin logs folder");
+                SendNotification("Error", "Failed to open plugin logs folder.", ControlAppearance.Danger);
             }
         }
 

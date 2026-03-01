@@ -263,7 +263,7 @@
                                             SecondaryActionCommand="{Binding ViewLogsCommand}"
                                             SecondaryActionIcon="DocumentText24"
                                             SecondaryActionTooltip="View Logs"
-                                            SecondaryActionVisibility="{Binding IsViewLogsVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                            SecondaryActionVisibility="Visible"
                                             CardContextMenu="{StaticResource PluginContextMenu}">
                                             
                                             <!-- Header Content: Badges + Health Progress -->

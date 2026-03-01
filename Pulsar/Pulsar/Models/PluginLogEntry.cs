@@ -25,6 +25,7 @@ namespace Pulsar.Models
         public DateTime Timestamp { get; set; }
         public string PluginId { get; set; } = string.Empty;
         public PluginLogLevel Level { get; set; }
+        public string? ExecutionId { get; set; }
         public string Message { get; set; } = string.Empty;
         public string? Exception { get; set; }
         public string? Action { get; set; } // 执行的动作名

@@ -16,12 +16,14 @@
             <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVisibilityConverter"/>
             <converters:LogLevelToColorConverter x:Key="LogLevelToColorConverter"/>
             <converters:UtcToLocalTimeConverter x:Key="UtcToLocalTimeConverter"/>
+            <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisConverter"/>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
@@ -61,8 +63,45 @@
                        Icon="{ui:SymbolIcon ArrowDownload24}"/>
         </Grid>
 
+        <!-- Stats -->
+        <Grid Grid.Row="1" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                <Border Background="{DynamicResource ControlFillColorTertiaryBrush}" CornerRadius="6" Padding="10,4" Margin="0,0,8,0">
+                    <TextBlock Text="{Binding TotalCount, StringFormat=Total: {0}}" FontSize="11" Opacity="0.9"/>
+                </Border>
+                <Border Background="{DynamicResource ControlFillColorTertiaryBrush}" CornerRadius="6" Padding="10,4" Margin="0,0,8,0">
+                    <TextBlock Text="{Binding DebugCount, StringFormat=Debug: {0}}" FontSize="11" Opacity="0.9"/>
+                </Border>
+                <Border Background="{DynamicResource ControlFillColorTertiaryBrush}" CornerRadius="6" Padding="10,4" Margin="0,0,8,0">
+                    <TextBlock Text="{Binding InfoCount, StringFormat=Info: {0}}" FontSize="11" Opacity="0.9"/>
+                </Border>
+                <Border Background="{DynamicResource ControlFillColorTertiaryBrush}" CornerRadius="6" Padding="10,4" Margin="0,0,8,0">
+                    <TextBlock Text="{Binding WarningCount, StringFormat=Warn: {0}}" FontSize="11" Opacity="0.9"/>
+                </Border>
+                <Border Background="{DynamicResource ControlFillColorTertiaryBrush}" CornerRadius="6" Padding="10,4" Margin="0,0,8,0">
+                    <TextBlock Text="{Binding ErrorCount, StringFormat=Error: {0}}" FontSize="11" Opacity="0.9"/>
+                </Border>
+                <Border Background="{DynamicResource ControlFillColorTertiaryBrush}" CornerRadius="6" Padding="10,4">
+                    <TextBlock Text="{Binding CriticalCount, StringFormat=Critical: {0}}" FontSize="11" Opacity="0.9"/>
+                </Border>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="{Binding TimeRangeLabel}" FontSize="11" Opacity="0.7" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <ui:Button Content="Open Folder"
+                           Command="{Binding OpenLogFolderCommand}"
+                           Style="{StaticResource PulsarSecondaryButtonStyle}"
+                           Icon="{ui:SymbolIcon FolderOpen24}"/>
+            </StackPanel>
+        </Grid>
+
         <!-- Log list -->
-        <Border Grid.Row="1"
+        <Border Grid.Row="2"
                 Background="{DynamicResource ControlFillColorDefaultBrush}"
                 BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}"
                 BorderThickness="1"
@@ -71,7 +110,13 @@
             <Grid>
                 <ListView ItemsSource="{Binding Logs}"
                           ScrollViewer.VerticalScrollBarVisibility="Auto"
-                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                          Visibility="{Binding HasFilteredLogs, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                        </Style>
+                    </ListView.ItemContainerStyle>
                     <ListView.ItemTemplate>
                         <DataTemplate>
                             <Grid Margin="6">
@@ -99,16 +144,39 @@
                                                TextWrapping="Wrap"
                                                FontSize="12"/>
 
+                                    <TextBlock Text="{Binding Action, StringFormat=Action: {0}}"
+                                               FontSize="11"
+                                               Opacity="0.6"
+                                               Visibility="{Binding Action, Converter={StaticResource StringEmptyToVisibilityConverter}}"/>
+
+                                    <TextBlock Text="{Binding ExecutionId, StringFormat=ExecId: {0}}"
+                                               FontSize="11"
+                                               Opacity="0.6"
+                                               TextTrimming="CharacterEllipsis"
+                                               ToolTip="{Binding ExecutionId}"
+                                               Visibility="{Binding ExecutionId, Converter={StaticResource StringEmptyToVisibilityConverter}}"/>
+
                                     <TextBlock Text="{Binding Exception}"
                                                TextWrapping="Wrap"
                                                FontSize="11"
                                                Opacity="0.6"
+                                               MaxHeight="140"
+                                               TextTrimming="CharacterEllipsis"
+                                               ToolTip="{Binding Exception}"
                                                Visibility="{Binding Exception, Converter={StaticResource StringEmptyToVisibilityConverter}}"/>
                                 </StackPanel>
                             </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>
+
+                <StackPanel HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Visibility="{Binding HasFilteredLogs, Converter={StaticResource InverseBoolToVisConverter}}">
+                    <ui:SymbolIcon Symbol="DocumentText24" FontSize="44" Opacity="0.35" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                    <TextBlock Text="No logs for selected filters" FontSize="14" FontWeight="SemiBold" Opacity="0.8" HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                    <TextBlock Text="Try expanding the time range or clearing search." FontSize="11" Opacity="0.6" HorizontalAlignment="Center"/>
+                </StackPanel>
 
                 <Grid Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
                       Background="Transparent">
@@ -118,11 +186,23 @@
         </Border>
 
         <!-- Footer -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <TextBlock Text="{Binding TruncatedHint}"
+                       FontSize="11"
+                       Opacity="0.7"
+                       VerticalAlignment="Center"
+                       Margin="0,0,12,0"
+                       Visibility="{Binding TruncatedHint, Converter={StaticResource StringEmptyToVisibilityConverter}}"/>
+            <TextBlock Text="{Binding FilteredCount, StringFormat=Showing: {0}}"
+                       FontSize="11"
+                       Opacity="0.7"
+                       VerticalAlignment="Center"
+                       Margin="0,0,12,0"/>
             <ui:Button Content="Load More"
-                       Command="{Binding LoadMoreCommand}"
-                       Style="{StaticResource PulsarSecondaryButtonStyle}"
-                       Icon="{ui:SymbolIcon MoreHorizontal24}"/>
+                        Command="{Binding LoadMoreCommand}"
+                        IsEnabled="{Binding CanLoadMore}"
+                        Style="{StaticResource PulsarSecondaryButtonStyle}"
+                        Icon="{ui:SymbolIcon MoreHorizontal24}"/>
         </StackPanel>
     </Grid>
 </UserControl>
