@@ -67,6 +67,18 @@
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
             <Setter Property="SnapsToDevicePixels" Value="True"/>
         </Style>
+
+        <!-- Sticky Group Header Style -->
+        <Style x:Key="StickyGroupHeaderStyle" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource ApplicationBackgroundBrush}"/>
+            <Setter Property="Padding" Value="0,8,0,8"/>
+            <Setter Property="Margin" Value="0,0,0,0"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="8" ShadowDepth="2" Direction="270" Color="Black" Opacity="0.15"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
         
         <!-- Setting Templates -->
         <DataTemplate x:Key="BooleanSettingTemplate" DataType="{x:Type vm:BooleanSettingViewModel}">
@@ -141,6 +153,7 @@
                 <ColumnDefinition Width="300"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             
             <!-- Search Box -->
@@ -151,8 +164,25 @@
                         ClearButtonEnabled="True"
                         HorizontalAlignment="Left"/>
             
+            <!-- Quick Navigation Buttons -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="0,0,8,0">
+                <ui:Button x:Name="JumpToCoreButton"
+                           Content="Core Plugins"
+                           Icon="{ui:SymbolIcon Shield24}"
+                           Appearance="Secondary"
+                           Click="JumpToCoreButton_Click"
+                           ToolTip="Jump to Core Plugins"
+                           Margin="0,0,4,0"/>
+                <ui:Button x:Name="JumpToExtensionButton"
+                           Content="Extensions"
+                           Icon="{ui:SymbolIcon PuzzlePiece24}"
+                           Appearance="Secondary"
+                           Click="JumpToExtensionButton_Click"
+                           ToolTip="Jump to Extension Plugins"/>
+            </StackPanel>
+            
             <!-- Refresh Button -->
-            <ui:Button Grid.Column="2"
+            <ui:Button Grid.Column="3"
                        Content="Refresh"
                        Command="{Binding RefreshAllCommand}"
                        Icon="{ui:SymbolIcon ArrowClockwise24}"
@@ -219,19 +249,22 @@
             </ItemsControl.ItemTemplate>
         </ItemsControl>
 
-        <!-- Grouped List -->
-        <ScrollViewer x:Name="PluginsScroll" Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,16,0" Style="{StaticResource OverlayScrollViewerStyle}">
-            <Grid Width="{Binding ElementName=PluginsScroll, Path=ViewportWidth}">
-                <ItemsControl ItemsSource="{Binding GroupedPlugins}">
+        <!-- Grouped List with Sticky Header Support -->
+        <Grid Grid.Row="2">
+            <ScrollViewer x:Name="PluginsScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,16,0" Style="{StaticResource OverlayScrollViewerStyle}" ScrollChanged="PluginsScroll_ScrollChanged">
+                <Grid Width="{Binding ElementName=PluginsScroll, Path=ViewportWidth}">
+                    <ItemsControl x:Name="PluginsItemsControl" ItemsSource="{Binding GroupedPlugins}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <!-- Group Container -->
-                         <Expander IsExpanded="True" Margin="0,0,0,16" Style="{StaticResource PluginsGroupExpanderStyle}">
+                         <Expander IsExpanded="True" Margin="0,0,0,16" Style="{StaticResource PluginsGroupExpanderStyle}" Tag="{Binding GroupName}">
                             <Expander.Header>
-                                <TextBlock Text="{Binding GroupName}" 
-                                           FontSize="16" 
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                                <Border Style="{StaticResource StickyGroupHeaderStyle}">
+                                    <TextBlock Text="{Binding GroupName}" 
+                                               FontSize="16" 
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                                </Border>
                             </Expander.Header>
 
                             <!-- Plugin List in Group -->
@@ -428,5 +461,17 @@
                 </StackPanel>
             </Grid>
         </ScrollViewer>
+        
+        <!-- Sticky Header Overlay -->
+        <Border x:Name="StickyHeaderOverlay" 
+                VerticalAlignment="Top" 
+                Visibility="Collapsed"
+                Style="{StaticResource StickyGroupHeaderStyle}">
+            <TextBlock x:Name="StickyHeaderText" 
+                       FontSize="16" 
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+        </Border>
+    </Grid>
     </Grid>
 </Page>
