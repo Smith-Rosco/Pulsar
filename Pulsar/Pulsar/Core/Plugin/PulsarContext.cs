@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
+using Pulsar.Core.Plugin.Security;
 
 namespace Pulsar.Core.Plugin
 {
@@ -18,6 +19,17 @@ namespace Pulsar.Core.Plugin
         public string TargetProcessName { get; }  // 大写，如 "EXCEL"
         public int TargetProcessId { get; }
         public string TargetExePath { get; } // [New]
+        
+        // === 权限管理 ===
+        /// <summary>
+        /// 当前执行的插件 ID (用于权限检查)
+        /// </summary>
+        public string? CurrentPluginId { get; internal set; }
+        
+        /// <summary>
+        /// 权限拦截器 (用于运行时权限检查)
+        /// </summary>
+        internal PermissionInterceptor? PermissionInterceptor { get; set; }
         
         /// <summary>
         /// 显示用进程名 - 首字母大写格式 (如 "Excel")
@@ -58,23 +70,63 @@ namespace Pulsar.Core.Plugin
         
         /// <summary>
         /// 获取目标进程的所有窗口（延迟加载）
+        /// 需要权限: ReadProcessWindows
         /// </summary>
-        public Task<IReadOnlyList<ProcessWindowInfo>> GetTargetProcessWindowsAsync() => _windowsLazy.Value;
+        public Task<IReadOnlyList<ProcessWindowInfo>> GetTargetProcessWindowsAsync()
+        {
+            CheckPermission(PluginPermission.ReadProcessWindows, nameof(GetTargetProcessWindowsAsync));
+            return _windowsLazy.Value;
+        }
 
         /// <summary>
         /// 获取剪贴板文本（延迟加载）
+        /// 需要权限: ReadClipboard
         /// </summary>
-        public Task<string?> GetClipboardTextAsync() => _clipboardLazy.Value;
+        public Task<string?> GetClipboardTextAsync()
+        {
+            CheckPermission(PluginPermission.ReadClipboard, nameof(GetClipboardTextAsync));
+            return _clipboardLazy.Value;
+        }
 
         /// <summary>
         /// 获取选中的文本（延迟加载，暂未实现）
+        /// 需要权限: ReadSelectedText
         /// </summary>
-        public Task<string?> GetSelectedTextAsync() => _selectedTextLazy.Value;
+        public Task<string?> GetSelectedTextAsync()
+        {
+            CheckPermission(PluginPermission.ReadSelectedText, nameof(GetSelectedTextAsync));
+            return _selectedTextLazy.Value;
+        }
+
+        /// <summary>
+        /// 检查权限
+        /// </summary>
+        private void CheckPermission(PluginPermission permission, string operation)
+        {
+            // 如果没有设置插件 ID 或权限拦截器，跳过检查（向后兼容）
+            if (string.IsNullOrEmpty(CurrentPluginId) || PermissionInterceptor == null)
+            {
+                return;
+            }
+
+            // 检查是否有绕过权限检查的权限（核心插件）
+            if (PermissionInterceptor.HasPermission(CurrentPluginId, PluginPermission.BypassPermissionCheck))
+            {
+                return;
+            }
+
+            // 执行权限检查
+            PermissionInterceptor.CheckPermission(CurrentPluginId, permission, operation);
+        }
 
         /// <summary>
         /// 捕获当前上下文 (轻量级，非阻塞)
         /// </summary>
-        public static PulsarContext Capture(IWindowService windowService, ILogger? logger = null)
+        /// <param name="windowService">窗口服务</param>
+        /// <param name="logger">日志记录器</param>
+        /// <param name="permissionInterceptor">权限拦截器（可选）</param>
+        /// <returns>上下文实例</returns>
+        public static PulsarContext Capture(IWindowService windowService, ILogger? logger = null, PermissionInterceptor? permissionInterceptor = null)
         {
             var hwnd = windowService.GetPreviousWindow();
             string processName = string.Empty;
@@ -139,7 +191,9 @@ namespace Pulsar.Core.Plugin
             // 3. 选中文本工厂 (占位)
             var selectionFactory = new Func<Task<string?>>(() => Task.FromResult<string?>(null));
 
-            return new PulsarContext(hwnd, processName, exePath, pid, windowsFactory, clipboardFactory, selectionFactory);
+            var context = new PulsarContext(hwnd, processName, exePath, pid, windowsFactory, clipboardFactory, selectionFactory);
+            context.PermissionInterceptor = permissionInterceptor;
+            return context;
         }
     }
 

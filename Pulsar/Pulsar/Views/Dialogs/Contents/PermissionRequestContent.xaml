@@ -1,0 +1,135 @@
+<UserControl x:Class="Pulsar.Views.Dialogs.Contents.PermissionRequestContent"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:vm="clr-namespace:Pulsar.ViewModels.Dialogs"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance Type=vm:PermissionRequestViewModel}"
+             d:DesignHeight="400" d:DesignWidth="500">
+    
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header Icon -->
+        <ui:SymbolIcon Grid.Row="0" 
+                       Symbol="ShieldKeyhole24" 
+                       FontSize="48"
+                       Foreground="{DynamicResource SystemAccentColorSecondaryBrush}"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,20"/>
+
+        <!-- Title -->
+        <TextBlock Grid.Row="1" 
+                   Text="权限请求"
+                   FontSize="20"
+                   FontWeight="SemiBold"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,10"/>
+
+        <!-- Plugin Info -->
+        <StackPanel Grid.Row="2" Margin="0,0,0,20">
+            <TextBlock TextWrapping="Wrap" HorizontalAlignment="Center">
+                <Run Text="插件 "/>
+                <Run Text="{Binding PluginName, Mode=OneWay}" FontWeight="SemiBold"/>
+                <Run Text=" 请求以下权限："/>
+            </TextBlock>
+        </StackPanel>
+
+        <!-- Permission Details Card -->
+        <Border Grid.Row="3" 
+                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="16"
+                Margin="0,0,0,16">
+            <StackPanel>
+                <!-- Permission Name -->
+                <TextBlock Text="{Binding PermissionDisplayName}" 
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,8"/>
+
+                <!-- Permission Description -->
+                <TextBlock Text="{Binding PermissionDescription}" 
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                           Margin="0,0,0,12"/>
+
+                <!-- Risk Level Badge -->
+                <Border Background="{Binding RiskLevelColor}"
+                        CornerRadius="4"
+                        Padding="8,4"
+                        HorizontalAlignment="Left">
+                    <TextBlock Text="{Binding RiskLevelText}" 
+                               Foreground="White"
+                               FontSize="12"
+                               FontWeight="SemiBold"/>
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <!-- Reason (if provided) -->
+        <Border Grid.Row="4" 
+                Background="{DynamicResource LayerFillColorDefaultBrush}"
+                BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="6"
+                Padding="12"
+                Margin="0,0,0,16"
+                Visibility="{Binding Reason, Converter={StaticResource BoolToVis}}">
+            <StackPanel>
+                <TextBlock Text="请求原因：" 
+                           FontWeight="SemiBold"
+                           FontSize="12"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                           Margin="0,0,0,4"/>
+                <TextBlock Text="{Binding Reason}" 
+                           TextWrapping="Wrap"
+                           FontSize="13"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Remember Choice -->
+        <CheckBox Grid.Row="5" 
+                  Content="记住我的选择（不再询问）"
+                  IsChecked="{Binding RememberChoice}"
+                  VerticalAlignment="Bottom"
+                  Margin="0,0,0,20"/>
+
+        <!-- Action Buttons -->
+        <Grid Grid.Row="6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <ui:Button Grid.Column="0"
+                       Content="拒绝"
+                       Command="{Binding DenyCommand}"
+                       HorizontalAlignment="Stretch"
+                       Appearance="Secondary"/>
+
+            <ui:Button Grid.Column="2"
+                       Content="授予权限"
+                       Command="{Binding GrantCommand}"
+                       HorizontalAlignment="Stretch"
+                       Appearance="Primary"/>
+        </Grid>
+    </Grid>
+</UserControl>

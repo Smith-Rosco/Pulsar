@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Plugin.Versioning;
+using Pulsar.Core.Plugin.Security;
 using Pulsar.Models;
 
 namespace Pulsar.Services
@@ -19,6 +20,10 @@ namespace Pulsar.Services
     /// - 插件宿主隔离（PluginHost）
     /// - 内存安全（WeakReference + GC）
     /// - 热重载支持
+    /// 
+    /// 新特性 (v2.1):
+    /// - 权限管理系统
+    /// - 运行时权限检查
     /// </summary>
     public class PluginRegistryV2
     {
@@ -39,6 +44,12 @@ namespace Pulsar.Services
         private readonly PluginVersionResolver _versionResolver;
         private readonly PluginManifestLoader _manifestLoader;
         private HotReloadManager? _hotReloadManager;
+        private readonly PermissionInterceptor _permissionInterceptor;
+
+        /// <summary>
+        /// 权限拦截器 - 用于管理插件权限
+        /// </summary>
+        public PermissionInterceptor PermissionInterceptor => _permissionInterceptor;
 
         public PluginRegistryV2(IServiceProvider serviceProvider, ILogger<PluginRegistryV2> logger)
         {
@@ -50,6 +61,10 @@ namespace Pulsar.Services
             
             _versionResolver = new PluginVersionResolver(logger);
             _manifestLoader = new PluginManifestLoader(logger);
+            
+            // 创建权限拦截器
+            var permissionLogger = _serviceProvider.GetService(typeof(ILogger<PermissionInterceptor>)) as ILogger<PermissionInterceptor>;
+            _permissionInterceptor = new PermissionInterceptor(permissionLogger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<PermissionInterceptor>.Instance);
         }
 
         /// <summary>
@@ -84,10 +99,22 @@ namespace Pulsar.Services
                 // 4. 注册插件
                 _hosts[host.PluginId] = host;
 
-                // 5. 注册到热重载管理器
+                // 5. 注册权限（根据插件层级自动授予）
+                var tier = GetTier(host);
+                var permissions = tier switch
+                {
+                    PluginTier.Core => PermissionSets.System, // 核心插件获得系统权限
+                    PluginTier.Extension => PermissionSets.Standard, // 扩展插件获得标准权限
+                    _ => PermissionSets.Basic
+                };
+                _permissionInterceptor.RegisterPluginPermissions(host.PluginId, permissions);
+                _permissionInterceptor.GrantPermissions(host.PluginId, permissions);
+                _logger.LogDebug("[PluginRegistryV2] Granted {Tier} permissions to {PluginId}", tier, host.PluginId);
+
+                // 6. 注册到热重载管理器
                 _hotReloadManager?.RegisterPlugin(host.PluginId, pluginPath);
 
-                // 6. 确保配置中有插件条目
+                // 7. 确保配置中有插件条目
                 if (_configService != null)
                 {
                     var config = _configService.Current;
@@ -238,6 +265,10 @@ namespace Pulsar.Services
                 action, 
                 targetProcessName: context.TargetProcessName
             );
+
+            // 设置权限上下文
+            context.CurrentPluginId = pluginId;
+            context.PermissionInterceptor = _permissionInterceptor;
 
             var stopwatch = Stopwatch.StartNew();
             bool success = false;

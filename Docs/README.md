@@ -1,7 +1,17 @@
 # Pulsar Documentation Center
 
-**Last Updated**: 2026-03-01  
-**Documentation Version**: v4.0.0
+**Last Updated**: 2026-03-02  
+**Documentation Version**: v4.1.0  
+**Current Phase**: Phase 2 - Plugin System Modernization
+
+---
+
+## 🚀 Quick Start
+
+**New to Pulsar?** Start here:
+- **[HANDOVER.md](HANDOVER.md)** - Project handover document with current status and quick start guide
+- **[AGENTS.md](../AGENTS.md)** - AI Agent operational guide and coding conventions
+- **[PLUGIN_QUICKSTART.md](PLUGIN_QUICKSTART.md)** - Plugin development quick start
 
 ---
 
@@ -9,9 +19,30 @@
 
 Essential documents for understanding and working with Pulsar:
 
+- **[HANDOVER.md](HANDOVER.md)** - Current project status and handover guide ✨ NEW
 - **[ARCHITECTURE.md](../ARCHITECTURE.md)** - System architecture design (v4.0.0)
 - **[PLUGIN_DEVELOPMENT.md](../PLUGIN_DEVELOPMENT.md)** - Plugin development guide
 - **[AGENTS.md](../AGENTS.md)** - AI Agent operational guide and coding conventions
+
+---
+
+## 🎯 Phase 2: Plugin System Modernization
+
+Current development phase focused on enterprise-grade plugin infrastructure:
+
+- **[PHASE2_TASKS.md](PHASE2_TASKS.md)** - Task list and progress tracking
+- **[PHASE2_TASK2_COMPLETION_REPORT.md](PHASE2_TASK2_COMPLETION_REPORT.md)** - Permission system completion report ✅
+
+**Progress**: 2/6 tasks completed (33%)
+
+| Task | Status | Completion Date |
+|------|--------|----------------|
+| 1. Hot Reload Manager | ✅ Completed | 2026-03-02 |
+| 2. Permission System | ✅ Completed | 2026-03-02 |
+| 3. Dependency Isolation | 🔴 Pending | - |
+| 4. Plugin Package Manager | 🔴 Pending | - |
+| 5. Unit Tests | 🟡 In Progress | - |
+| 6. Plugin Market UI | 🔴 Pending | - |
 
 ---
 
@@ -19,9 +50,23 @@ Essential documents for understanding and working with Pulsar:
 
 Practical guides for common development tasks:
 
+- **[PLUGIN_QUICKSTART.md](PLUGIN_QUICKSTART.md)** - Plugin development quick start
 - **[Component Library](guides/COMPONENT_LIBRARY.md)** - Reusable UI components (ExpandableCard, JellyOrb)
 - **[UI Best Practices](guides/UI_BEST_PRACTICES.md)** - UI/UX design patterns and guidelines
 - **[Contributing Guide](CONTRIBUTING.md)** - Documentation standards and best practices
+
+---
+
+## 📦 Plugin Documentation
+
+Documentation for built-in plugins:
+
+- **[WinSwitcher](Plugins/WinSwitcher.md)** - Window switching and application launching
+- **[PkiPlugin](Plugins/PkiPlugin.md)** - PKI credentials management (Core plugin)
+- **[BasicCommand](Plugins/BasicCommand.md)** - Basic command execution
+- **[VbaRunner](Plugins/VbaRunner.md)** - VBA script runner
+- **[BookmarkletRunner](Plugins/BookmarkletRunner.md)** - Bookmarklet runner
+- **[SystemCommand](Plugins/SystemCommand.md)** - System command execution
 
 ---
 
@@ -30,6 +75,7 @@ Practical guides for common development tasks:
 Archived documents for reference (completed features and planning documents):
 
 ### 2026-03 Archives
+- **[Phase 2 Task 1](archive/2026-03/phase2-task1/)** - Hot reload manager implementation ✨ NEW
 - **[Refactoring Report](archive/2026-03/REFACTORING_REPORT.md)** - Plugin configuration architecture refactoring (Phase 1 & 2)
 - **[Plugin Settings Migration](archive/2026-03/PLUGIN_SETTINGS_MIGRATION.md)** - Plugin dashboard enhancement proposal (planning)
 
