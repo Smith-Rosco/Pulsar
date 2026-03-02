@@ -119,7 +119,33 @@ namespace Pulsar
             serviceCollection.AddTransient<PluginManagerViewModel>();
             serviceCollection.AddTransient<SettingsPluginsPage>();
 
-            // [Marketplace] Plugin Marketplace Services
+            // [External Plugins] External Plugin Management Services
+            serviceCollection.AddSingleton<LocalPluginScanner>(sp =>
+            {
+                var pluginDirectory = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "Pulsar",
+                    "Plugins");
+                var logger = sp.GetService<ILogger<LocalPluginScanner>>();
+                return new LocalPluginScanner(pluginDirectory, logger);
+            });
+            
+            serviceCollection.AddSingleton<PluginPackageManager>(sp =>
+            {
+                var pluginInstallDirectory = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "Pulsar",
+                    "Plugins");
+                var logger = sp.GetService<ILogger<PluginPackageManager>>();
+                
+                return new PluginPackageManager(pluginInstallDirectory, logger);
+            });
+            
+            serviceCollection.AddTransient<ExternalPluginManagerViewModel>();
+            serviceCollection.AddTransient<SettingsExternalPluginsPage>();
+            
+            // [Deprecated] Keep old marketplace services for backward compatibility
+#pragma warning disable CS0618 // Type or member is obsolete
             serviceCollection.AddSingleton<PluginRepository>(sp =>
             {
                 var repositoryPath = Path.Combine(
@@ -129,16 +155,7 @@ namespace Pulsar
                 var logger = sp.GetService<ILogger<PluginRepository>>();
                 return new PluginRepository(repositoryPath, logger);
             });
-            serviceCollection.AddSingleton<PluginPackageManager>(sp =>
-            {
-                var repository = sp.GetRequiredService<PluginRepository>();
-                var pluginInstallDirectory = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "Pulsar",
-                    "Plugins");
-                var logger = sp.GetService<ILogger<PluginPackageManager>>();
-                return new PluginPackageManager(repository, pluginInstallDirectory, logger);
-            });
+#pragma warning restore CS0618
             serviceCollection.AddTransient<PluginMarketViewModel>();
             serviceCollection.AddTransient<SettingsMarketplacePage>();
 

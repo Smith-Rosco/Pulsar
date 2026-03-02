@@ -166,7 +166,7 @@ namespace Pulsar.ViewModels.Settings
         }
 
         /// <summary>
-        /// 安装插件
+        /// 安装插件命令
         /// </summary>
         [RelayCommand]
         private async Task InstallPluginAsync(PluginPackageInfo plugin)
@@ -177,39 +177,21 @@ namespace Pulsar.ViewModels.Settings
             {
                 StatusMessage = $"Installing {plugin.Name}...";
 
-                var result = await _packageManager.InstallAsync(plugin.Id, plugin.Version, installDependencies: true);
+                // NOTE: InstallAsync method has been removed from PluginPackageManager
+                // This ViewModel is deprecated - use ExternalPluginManagerViewModel instead
+                StatusMessage = "This feature is deprecated. Please use 'External Plugins' page to install plugins from files.";
 
-                if (result.Success)
+                if (_dialogService != null)
                 {
-                    StatusMessage = $"Successfully installed {plugin.Name}";
-                    plugin.IsInstalled = true;
-                    plugin.InstalledVersion = plugin.Version;
-
-                    if (_dialogService != null)
-                    {
-                        await _dialogService.ShowMessageAsync(
-                            "Installation Complete",
-                            $"{plugin.Name} has been installed successfully.\n\nPlease restart Pulsar to load the plugin.");
-                    }
-
-                    await RefreshPluginsAsync();
-                }
-                else
-                {
-                    StatusMessage = $"Failed to install {plugin.Name}: {result.ErrorMessage}";
-
-                    if (_dialogService != null)
-                    {
-                        await _dialogService.ShowMessageAsync(
-                            "Installation Failed",
-                            $"Failed to install {plugin.Name}:\n\n{result.ErrorMessage}");
-                    }
+                    await _dialogService.ShowMessageAsync(
+                        "Feature Deprecated",
+                        "Online plugin installation is not implemented.\n\nPlease use 'External Plugins' page to install plugins from ZIP files.");
                 }
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "[PluginMarketViewModel] Failed to install plugin {PluginId}", plugin.Id);
-                StatusMessage = $"Error installing {plugin.Name}: {ex.Message}";
+                StatusMessage = $"Error: {ex.Message}";
+                _logger?.LogError(ex, "[PluginMarketViewModel] Failed to show deprecation message");
             }
         }
 
@@ -225,39 +207,21 @@ namespace Pulsar.ViewModels.Settings
             {
                 StatusMessage = $"Updating {plugin.Name}...";
 
-                var result = await _packageManager.UpdateAsync(plugin.Id);
+                // NOTE: UpdateAsync method has been removed from PluginPackageManager
+                // This ViewModel is deprecated - use ExternalPluginManagerViewModel instead
+                StatusMessage = "This feature is deprecated. Please use 'External Plugins' page to manage plugins.";
 
-                if (result.Success)
+                if (_dialogService != null)
                 {
-                    StatusMessage = $"Successfully updated {plugin.Name}";
-                    plugin.InstalledVersion = plugin.Version;
-                    plugin.HasUpdate = false;
-
-                    if (_dialogService != null)
-                    {
-                        await _dialogService.ShowMessageAsync(
-                            "Update Complete",
-                            $"{plugin.Name} has been updated successfully.\n\nPlease restart Pulsar to load the new version.");
-                    }
-
-                    await RefreshPluginsAsync();
-                }
-                else
-                {
-                    StatusMessage = $"Failed to update {plugin.Name}: {result.ErrorMessage}";
-
-                    if (_dialogService != null)
-                    {
-                        await _dialogService.ShowMessageAsync(
-                            "Update Failed",
-                            $"Failed to update {plugin.Name}:\n\n{result.ErrorMessage}");
-                    }
+                    await _dialogService.ShowMessageAsync(
+                        "Feature Deprecated",
+                        "Online plugin updates are not implemented.\n\nPlease manually download and install the latest version from 'External Plugins' page.");
                 }
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "[PluginMarketViewModel] Failed to update plugin {PluginId}", plugin.Id);
-                StatusMessage = $"Error updating {plugin.Name}: {ex.Message}";
+                _logger?.LogError(ex, "[PluginMarketViewModel] Failed to show deprecation message");
+                StatusMessage = $"Error: {ex.Message}";
             }
         }
 

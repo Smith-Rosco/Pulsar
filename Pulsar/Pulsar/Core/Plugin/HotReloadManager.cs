@@ -43,7 +43,9 @@ namespace Pulsar.Core.Plugin
         /// <summary>
         /// 插件重载完成事件
         /// </summary>
+#pragma warning disable CS0067 // Event is never used (reserved for future hot-reload functionality)
         public event EventHandler<PluginReloadedEventArgs>? PluginReloaded;
+#pragma warning restore CS0067
 
         public HotReloadManager(string pluginDirectory, ILogger<HotReloadManager>? logger = null)
         {

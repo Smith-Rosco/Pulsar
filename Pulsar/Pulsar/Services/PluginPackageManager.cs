@@ -18,32 +18,22 @@ using Pulsar.Models;
 namespace Pulsar.Services
 {
     /// <summary>
-    /// 插件包管理器 - 实现插件的安装、更新、卸载
+    /// 插件包管理器 - 实现插件的安装、卸载（从本地文件）
     /// </summary>
     public class PluginPackageManager
     {
-        private readonly PluginRepository _repository;
         private readonly string _pluginInstallDirectory;
         private readonly ILogger<PluginPackageManager>? _logger;
-        private readonly HttpClient _httpClient;
-        private readonly PluginVersionResolver _versionResolver;
         private readonly SemaphoreSlim _operationLock = new(1, 1);
 
         public event EventHandler<PluginOperationProgressEventArgs>? OperationProgress;
 
         public PluginPackageManager(
-            PluginRepository repository,
             string pluginInstallDirectory,
             ILogger<PluginPackageManager>? logger = null)
         {
-            _repository = repository;
             _pluginInstallDirectory = pluginInstallDirectory;
             _logger = logger;
-            _httpClient = new HttpClient
-            {
-                Timeout = TimeSpan.FromMinutes(5)
-            };
-            _versionResolver = new PluginVersionResolver();
 
             // 确保安装目录存在
             if (!Directory.Exists(_pluginInstallDirectory))
@@ -52,182 +42,7 @@ namespace Pulsar.Services
             }
         }
 
-        /// <summary>
-        /// 安装插件
-        /// </summary>
-        public async Task<PluginOperationResult> InstallAsync(
-            string pluginId,
-            string? version = null,
-            bool installDependencies = true,
-            CancellationToken cancellationToken = default)
-        {
-            var stopwatch = Stopwatch.StartNew();
 
-            await _operationLock.WaitAsync(cancellationToken);
-            try
-            {
-                _logger?.LogInformation("[PluginPackageManager] Installing plugin: {PluginId} v{Version}", pluginId, version ?? "latest");
-
-                // 1. 获取包信息
-                var package = version != null
-                    ? _repository.GetPackage(pluginId, version)
-                    : _repository.GetLatestVersion(pluginId);
-
-                if (package == null)
-                {
-                    return PluginOperationResult.Failed(pluginId, PluginOperationType.Install, $"Plugin {pluginId} not found in repository");
-                }
-
-                // 2. 检查是否已安装
-                if (IsPluginInstalled(pluginId))
-                {
-                    return PluginOperationResult.Failed(pluginId, PluginOperationType.Install, $"Plugin {pluginId} is already installed");
-                }
-
-                // 3. 解析并安装依赖
-                if (installDependencies && package.Dependencies.Any())
-                {
-                    ReportProgress(pluginId, PluginInstallStatus.Installing, 10, "Resolving dependencies...");
-
-                    var dependencyResult = await InstallDependenciesAsync(package, cancellationToken);
-                    if (!dependencyResult.Success)
-                    {
-                        return PluginOperationResult.Failed(pluginId, PluginOperationType.Install, $"Failed to install dependencies: {dependencyResult.ErrorMessage}");
-                    }
-                }
-
-                // 4. 下载包（如果需要）
-                if (!_repository.IsPackageDownloaded(pluginId, package.Version))
-                {
-                    ReportProgress(pluginId, PluginInstallStatus.Downloading, 30, "Downloading package...");
-
-                    var downloadResult = await DownloadPackageAsync(package, cancellationToken);
-                    if (!downloadResult.Success)
-                    {
-                        return downloadResult;
-                    }
-                }
-
-                // 5. 验证包完整性
-                ReportProgress(pluginId, PluginInstallStatus.Installing, 60, "Verifying package...");
-
-                if (!await VerifyPackageAsync(package, cancellationToken))
-                {
-                    return PluginOperationResult.Failed(pluginId, PluginOperationType.Install, "Package verification failed");
-                }
-
-                // 6. 解压并安装
-                ReportProgress(pluginId, PluginInstallStatus.Installing, 80, "Extracting package...");
-
-                var installResult = await ExtractAndInstallAsync(package, cancellationToken);
-                if (!installResult.Success)
-                {
-                    return installResult;
-                }
-
-                // 7. 更新包信息
-                package.IsInstalled = true;
-                package.InstalledVersion = package.Version;
-                await _repository.AddOrUpdatePackageAsync(package, cancellationToken);
-
-                ReportProgress(pluginId, PluginInstallStatus.Installed, 100, "Installation completed");
-
-                stopwatch.Stop();
-                _logger?.LogInformation("[PluginPackageManager] Successfully installed {PluginId} v{Version} in {Duration}ms",
-                    pluginId, package.Version, stopwatch.ElapsedMilliseconds);
-
-                return PluginOperationResult.Successful(pluginId, PluginOperationType.Install, stopwatch.Elapsed);
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "[PluginPackageManager] Failed to install plugin {PluginId}", pluginId);
-                ReportProgress(pluginId, PluginInstallStatus.Failed, 0, $"Installation failed: {ex.Message}");
-                return PluginOperationResult.Failed(pluginId, PluginOperationType.Install, ex.Message);
-            }
-            finally
-            {
-                _operationLock.Release();
-            }
-        }
-
-        /// <summary>
-        /// 更新插件
-        /// </summary>
-        public async Task<PluginOperationResult> UpdateAsync(
-            string pluginId,
-            string? targetVersion = null,
-            CancellationToken cancellationToken = default)
-        {
-            var stopwatch = Stopwatch.StartNew();
-
-            await _operationLock.WaitAsync(cancellationToken);
-            try
-            {
-                _logger?.LogInformation("[PluginPackageManager] Updating plugin: {PluginId}", pluginId);
-
-                // 1. 检查是否已安装
-                if (!IsPluginInstalled(pluginId))
-                {
-                    return PluginOperationResult.Failed(pluginId, PluginOperationType.Update, $"Plugin {pluginId} is not installed");
-                }
-
-                // 2. 获取当前版本和目标版本
-                var currentPackage = _repository.GetAllPackages()
-                    .FirstOrDefault(p => p.Id == pluginId && p.IsInstalled);
-
-                var targetPackage = targetVersion != null
-                    ? _repository.GetPackage(pluginId, targetVersion)
-                    : _repository.GetLatestVersion(pluginId);
-
-                if (targetPackage == null)
-                {
-                    return PluginOperationResult.Failed(pluginId, PluginOperationType.Update, "Target version not found");
-                }
-
-                if (currentPackage != null && currentPackage.Version == targetPackage.Version)
-                {
-                    return PluginOperationResult.Failed(pluginId, PluginOperationType.Update, "Already at target version");
-                }
-
-                ReportProgress(pluginId, PluginInstallStatus.Updating, 10, "Preparing update...");
-
-                // 3. 卸载旧版本
-                ReportProgress(pluginId, PluginInstallStatus.Updating, 30, "Removing old version...");
-
-                var uninstallResult = await UninstallAsync(pluginId, keepData: true, cancellationToken: cancellationToken);
-                if (!uninstallResult.Success)
-                {
-                    return PluginOperationResult.Failed(pluginId, PluginOperationType.Update, $"Failed to uninstall old version: {uninstallResult.ErrorMessage}");
-                }
-
-                // 4. 安装新版本
-                ReportProgress(pluginId, PluginInstallStatus.Updating, 50, "Installing new version...");
-
-                var installResult = await InstallAsync(pluginId, targetPackage.Version, installDependencies: true, cancellationToken: cancellationToken);
-                if (!installResult.Success)
-                {
-                    return PluginOperationResult.Failed(pluginId, PluginOperationType.Update, $"Failed to install new version: {installResult.ErrorMessage}");
-                }
-
-                ReportProgress(pluginId, PluginInstallStatus.Installed, 100, "Update completed");
-
-                stopwatch.Stop();
-                _logger?.LogInformation("[PluginPackageManager] Successfully updated {PluginId} to v{Version} in {Duration}ms",
-                    pluginId, targetPackage.Version, stopwatch.ElapsedMilliseconds);
-
-                return PluginOperationResult.Successful(pluginId, PluginOperationType.Update, stopwatch.Elapsed);
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "[PluginPackageManager] Failed to update plugin {PluginId}", pluginId);
-                ReportProgress(pluginId, PluginInstallStatus.Failed, 0, $"Update failed: {ex.Message}");
-                return PluginOperationResult.Failed(pluginId, PluginOperationType.Update, ex.Message);
-            }
-            finally
-            {
-                _operationLock.Release();
-            }
-        }
 
         /// <summary>
         /// 卸载插件
@@ -273,19 +88,6 @@ namespace Pulsar.Services
                     }
                 }
 
-                ReportProgress(pluginId, PluginInstallStatus.Uninstalling, 80, "Updating registry...");
-
-                // 3. 更新包信息
-                var package = _repository.GetAllPackages()
-                    .FirstOrDefault(p => p.Id == pluginId && p.IsInstalled);
-
-                if (package != null)
-                {
-                    package.IsInstalled = false;
-                    package.InstalledVersion = null;
-                    await _repository.AddOrUpdatePackageAsync(package, cancellationToken);
-                }
-
                 ReportProgress(pluginId, PluginInstallStatus.NotInstalled, 100, "Uninstallation completed");
 
                 stopwatch.Stop();
@@ -303,219 +105,6 @@ namespace Pulsar.Services
             finally
             {
                 _operationLock.Release();
-            }
-        }
-
-        /// <summary>
-        /// 下载插件包
-        /// </summary>
-        private async Task<PluginOperationResult> DownloadPackageAsync(
-            PluginPackageInfo package,
-            CancellationToken cancellationToken)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(package.DownloadUrl))
-                {
-                    return PluginOperationResult.Failed(package.Id, PluginOperationType.Download, "Download URL is not specified");
-                }
-
-                var packagePath = _repository.GetPackagePath(package.Id, package.Version);
-                if (!Directory.Exists(packagePath))
-                {
-                    Directory.CreateDirectory(packagePath);
-                }
-
-                var packageFilePath = _repository.GetPackageFilePath(package.Id, package.Version);
-
-                _logger?.LogInformation("[PluginPackageManager] Downloading {PluginId} from {Url}", package.Id, package.DownloadUrl);
-
-                using var response = await _httpClient.GetAsync(package.DownloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-                response.EnsureSuccessStatusCode();
-
-                var totalBytes = response.Content.Headers.ContentLength ?? 0;
-                var downloadedBytes = 0L;
-
-                using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
-                using var fileStream = new FileStream(packageFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true);
-
-                var buffer = new byte[8192];
-                int bytesRead;
-
-                while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length, cancellationToken)) > 0)
-                {
-                    await fileStream.WriteAsync(buffer, 0, bytesRead, cancellationToken);
-                    downloadedBytes += bytesRead;
-
-                    if (totalBytes > 0)
-                    {
-                        var progress = (int)((downloadedBytes * 100) / totalBytes);
-                        ReportProgress(package.Id, PluginInstallStatus.Downloading, 30 + (progress * 30 / 100), $"Downloading... {downloadedBytes}/{totalBytes} bytes");
-                    }
-                }
-
-                package.LocalPath = packageFilePath;
-                await _repository.AddOrUpdatePackageAsync(package, cancellationToken);
-
-                _logger?.LogInformation("[PluginPackageManager] Downloaded {PluginId} to {Path}", package.Id, packageFilePath);
-
-                return PluginOperationResult.Successful(package.Id, PluginOperationType.Download, TimeSpan.Zero);
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "[PluginPackageManager] Failed to download {PluginId}", package.Id);
-                return PluginOperationResult.Failed(package.Id, PluginOperationType.Download, ex.Message);
-            }
-        }
-
-        /// <summary>
-        /// 验证包完整性
-        /// </summary>
-        private async Task<bool> VerifyPackageAsync(PluginPackageInfo package, CancellationToken cancellationToken)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(package.LocalPath) || !File.Exists(package.LocalPath))
-                {
-                    return false;
-                }
-
-                // 如果提供了 SHA256 校验和，验证文件完整性
-                if (!string.IsNullOrEmpty(package.Sha256))
-                {
-                    using var sha256 = SHA256.Create();
-                    using var stream = File.OpenRead(package.LocalPath);
-                    var hash = await sha256.ComputeHashAsync(stream, cancellationToken);
-                    var hashString = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
-
-                    if (hashString != package.Sha256.ToLowerInvariant())
-                    {
-                        _logger?.LogError("[PluginPackageManager] SHA256 mismatch for {PluginId}: expected {Expected}, got {Actual}",
-                            package.Id, package.Sha256, hashString);
-                        return false;
-                    }
-                }
-
-                // 验证 ZIP 文件完整性
-                try
-                {
-                    using var archive = ZipFile.OpenRead(package.LocalPath);
-                    // 如果能打开，说明文件完整
-                    return true;
-                }
-                catch
-                {
-                    _logger?.LogError("[PluginPackageManager] Invalid ZIP file for {PluginId}", package.Id);
-                    return false;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "[PluginPackageManager] Failed to verify package {PluginId}", package.Id);
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// 解压并安装包
-        /// </summary>
-        private async Task<PluginOperationResult> ExtractAndInstallAsync(
-            PluginPackageInfo package,
-            CancellationToken cancellationToken)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(package.LocalPath) || !File.Exists(package.LocalPath))
-                {
-                    return PluginOperationResult.Failed(package.Id, PluginOperationType.Install, "Package file not found");
-                }
-
-                var installPath = Path.Combine(_pluginInstallDirectory, package.Id);
-
-                // 删除旧的安装目录（如果存在）
-                if (Directory.Exists(installPath))
-                {
-                    Directory.Delete(installPath, recursive: true);
-                }
-
-                Directory.CreateDirectory(installPath);
-
-                // 解压 ZIP 文件
-                await Task.Run(() => ZipFile.ExtractToDirectory(package.LocalPath, installPath), cancellationToken);
-
-                _logger?.LogInformation("[PluginPackageManager] Extracted {PluginId} to {Path}", package.Id, installPath);
-
-                return PluginOperationResult.Successful(package.Id, PluginOperationType.Install, TimeSpan.Zero);
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "[PluginPackageManager] Failed to extract package {PluginId}", package.Id);
-                return PluginOperationResult.Failed(package.Id, PluginOperationType.Install, ex.Message);
-            }
-        }
-
-        /// <summary>
-        /// 安装依赖项
-        /// </summary>
-        private async Task<PluginOperationResult> InstallDependenciesAsync(
-            PluginPackageInfo package,
-            CancellationToken cancellationToken)
-        {
-            try
-            {
-                _logger?.LogInformation("[PluginPackageManager] Installing dependencies for {PluginId}", package.Id);
-
-                foreach (var dependency in package.Dependencies.Where(d => !d.IsOptional))
-                {
-                    // 检查依赖是否已安装
-                    if (IsPluginInstalled(dependency.PluginId))
-                    {
-                        _logger?.LogDebug("[PluginPackageManager] Dependency {DependencyId} is already installed", dependency.PluginId);
-                        continue;
-                    }
-
-                    // 解析版本约束
-                    var availableVersions = _repository.GetPackageVersions(dependency.PluginId);
-                    
-                    // 注册可用版本到 resolver
-                    foreach (var pkg in availableVersions)
-                    {
-                        var manifest = new PluginManifest
-                        {
-                            Id = pkg.Id,
-                            Version = pkg.Version,
-                            DisplayName = pkg.Name,
-                            Description = pkg.Description
-                        };
-                        _versionResolver.RegisterVersion(manifest);
-                    }
-
-                    var resolvedManifest = _versionResolver.ResolveVersion(
-                        dependency.PluginId,
-                        dependency.VersionConstraint);
-
-                    if (resolvedManifest == null)
-                    {
-                        return PluginOperationResult.Failed(
-                            package.Id,
-                            PluginOperationType.Install,
-                            $"Cannot resolve dependency {dependency.PluginId} {dependency.VersionConstraint}");
-                    }
-
-                    // 递归安装依赖
-                    var installResult = await InstallAsync(dependency.PluginId, resolvedManifest.Version, installDependencies: true, cancellationToken: cancellationToken);
-                    if (!installResult.Success)
-                    {
-                        return installResult;
-                    }
-                }
-
-                return PluginOperationResult.Successful(package.Id, PluginOperationType.Install, TimeSpan.Zero);
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "[PluginPackageManager] Failed to install dependencies for {PluginId}", package.Id);
-                return PluginOperationResult.Failed(package.Id, PluginOperationType.Install, ex.Message);
             }
         }
 
@@ -717,39 +306,6 @@ namespace Pulsar.Services
                         }
                     }, cancellationToken);
 
-                    // 8. 添加到仓库索引（如果不存在）
-                    var existingPackage = _repository.GetPackage(pluginId, manifest.Version);
-                    if (existingPackage == null)
-                    {
-                        var packageInfo = new PluginPackageInfo
-                        {
-                            Id = manifest.Id,
-                            Name = manifest.DisplayName ?? manifest.Id,
-                            Version = manifest.Version,
-                            Description = manifest.Description ?? string.Empty,
-                            Author = manifest.Author ?? "Unknown",
-                            Tags = manifest.Tags?.ToList() ?? new List<string>(),
-                            Dependencies = manifest.Dependencies?.Select(d => new PluginDependency
-                            {
-                                PluginId = d.Key,
-                                VersionConstraint = d.Value,
-                                IsOptional = false
-                            }).ToList() ?? new List<PluginDependency>(),
-                            IsInstalled = true,
-                            InstalledVersion = manifest.Version,
-                            LocalPath = zipFilePath
-                        };
-
-                        await _repository.AddOrUpdatePackageAsync(packageInfo, cancellationToken);
-                    }
-                    else
-                    {
-                        existingPackage.IsInstalled = true;
-                        existingPackage.InstalledVersion = manifest.Version;
-                        existingPackage.LocalPath = zipFilePath;
-                        await _repository.AddOrUpdatePackageAsync(existingPackage, cancellationToken);
-                    }
-
                     ReportProgress(pluginId, PluginInstallStatus.Installed, 100, "Installation completed");
 
                     stopwatch.Stop();
@@ -788,7 +344,6 @@ namespace Pulsar.Services
 
         public void Dispose()
         {
-            _httpClient?.Dispose();
             _operationLock?.Dispose();
         }
     }

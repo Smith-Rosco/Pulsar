@@ -13,6 +13,7 @@ namespace Pulsar.Services
     /// <summary>
     /// 本地插件仓库 - 管理插件索引和版本存储
     /// </summary>
+    [Obsolete("PluginRepository is deprecated. Use LocalPluginScanner for scanning installed plugins and PluginPackageManager for installation. Online plugin repository is not implemented.")]
     public class PluginRepository
     {
         private readonly string _repositoryPath;
@@ -351,6 +352,7 @@ namespace Pulsar.Services
     {
         public int TotalPackages { get; set; }
         public int UniquePlugins { get; set; }
+        public int InstalledCount { get; set; }
         public int TotalDownloads { get; set; }
         public double AverageRating { get; set; }
         public DateTime LastUpdated { get; set; }
