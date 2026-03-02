@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -328,6 +329,69 @@ namespace Pulsar.ViewModels.Settings
         private void ViewPluginDetails(PluginPackageInfo plugin)
         {
             SelectedPlugin = plugin;
+        }
+
+        /// <summary>
+        /// 从本地文件安装插件
+        /// </summary>
+        [RelayCommand]
+        private async Task InstallFromFileAsync()
+        {
+            try
+            {
+                // 打开文件选择对话框
+                var openFileDialog = new Microsoft.Win32.OpenFileDialog
+                {
+                    Title = "Select Plugin Package",
+                    Filter = "Plugin Package (*.zip)|*.zip|All Files (*.*)|*.*",
+                    Multiselect = false
+                };
+
+                if (openFileDialog.ShowDialog() == true)
+                {
+                    var filePath = openFileDialog.FileName;
+                    StatusMessage = $"Installing plugin from {Path.GetFileName(filePath)}...";
+
+                    var result = await _packageManager.InstallFromFileAsync(filePath);
+
+                    if (result.Success)
+                    {
+                        StatusMessage = $"Successfully installed plugin from file";
+
+                        if (_dialogService != null)
+                        {
+                            await _dialogService.ShowMessageAsync(
+                                "Installation Complete",
+                                $"Plugin has been installed successfully.\n\nPlease restart Pulsar to load the plugin.");
+                        }
+
+                        await RefreshPluginsAsync();
+                    }
+                    else
+                    {
+                        StatusMessage = $"Failed to install plugin: {result.ErrorMessage}";
+
+                        if (_dialogService != null)
+                        {
+                            await _dialogService.ShowMessageAsync(
+                                "Installation Failed",
+                                $"Failed to install plugin from file:\n\n{result.ErrorMessage}");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[PluginMarketViewModel] Failed to install plugin from file");
+                StatusMessage = $"Error installing plugin from file: {ex.Message}";
+
+                if (_dialogService != null)
+                {
+                    await _dialogService.ShowMessageAsync(
+                        "Installation Error",
+                        $"An error occurred while installing the plugin:\n\n{ex.Message}");
+                }
+            }
         }
 
         /// <summary>

@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -630,6 +631,159 @@ namespace Pulsar.Services
                 Progress = progress,
                 Message = message
             });
+        }
+
+        /// <summary>
+        /// 从本地 ZIP 文件安装插件
+        /// </summary>
+        public async Task<PluginOperationResult> InstallFromFileAsync(
+            string zipFilePath,
+            CancellationToken cancellationToken = default)
+        {
+            var stopwatch = Stopwatch.StartNew();
+
+            await _operationLock.WaitAsync(cancellationToken);
+            try
+            {
+                _logger?.LogInformation("[PluginPackageManager] Installing plugin from file: {Path}", zipFilePath);
+
+                // 1. 验证文件存在
+                if (!File.Exists(zipFilePath))
+                {
+                    return PluginOperationResult.Failed("unknown", PluginOperationType.Install, $"File not found: {zipFilePath}");
+                }
+
+                // 2. 验证是否为有效的 ZIP 文件
+                if (!Path.GetExtension(zipFilePath).Equals(".zip", StringComparison.OrdinalIgnoreCase))
+                {
+                    return PluginOperationResult.Failed("unknown", PluginOperationType.Install, "File must be a .zip archive");
+                }
+
+                ReportProgress("unknown", PluginInstallStatus.Installing, 10, "Validating package...");
+
+                // 3. 解压到临时目录并读取 manifest.json
+                var tempExtractPath = Path.Combine(Path.GetTempPath(), $"Pulsar_Install_{Guid.NewGuid()}");
+                Directory.CreateDirectory(tempExtractPath);
+
+                try
+                {
+                    await Task.Run(() => ZipFile.ExtractToDirectory(zipFilePath, tempExtractPath), cancellationToken);
+
+                    // 4. 查找 manifest.json
+                    var manifestPath = Path.Combine(tempExtractPath, "manifest.json");
+                    if (!File.Exists(manifestPath))
+                    {
+                        return PluginOperationResult.Failed("unknown", PluginOperationType.Install, "Invalid plugin package: manifest.json not found");
+                    }
+
+                    // 5. 读取 manifest.json
+                    var manifestJson = await File.ReadAllTextAsync(manifestPath, cancellationToken);
+                    var manifest = JsonSerializer.Deserialize<PluginManifest>(manifestJson);
+
+                    if (manifest == null || string.IsNullOrEmpty(manifest.Id))
+                    {
+                        return PluginOperationResult.Failed("unknown", PluginOperationType.Install, "Invalid manifest.json: missing Id field");
+                    }
+
+                    var pluginId = manifest.Id;
+                    ReportProgress(pluginId, PluginInstallStatus.Installing, 30, $"Installing {manifest.DisplayName ?? pluginId}...");
+
+                    // 6. 检查是否已安装
+                    if (IsPluginInstalled(pluginId))
+                    {
+                        return PluginOperationResult.Failed(pluginId, PluginOperationType.Install, $"Plugin {pluginId} is already installed. Please uninstall it first.");
+                    }
+
+                    // 7. 移动到插件目录
+                    var installPath = Path.Combine(_pluginInstallDirectory, pluginId);
+                    Directory.CreateDirectory(installPath);
+
+                    ReportProgress(pluginId, PluginInstallStatus.Installing, 60, "Copying files...");
+
+                    await Task.Run(() =>
+                    {
+                        foreach (var file in Directory.GetFiles(tempExtractPath, "*", SearchOption.AllDirectories))
+                        {
+                            var relativePath = Path.GetRelativePath(tempExtractPath, file);
+                            var targetPath = Path.Combine(installPath, relativePath);
+                            var targetDir = Path.GetDirectoryName(targetPath);
+
+                            if (targetDir != null && !Directory.Exists(targetDir))
+                            {
+                                Directory.CreateDirectory(targetDir);
+                            }
+
+                            File.Copy(file, targetPath, overwrite: true);
+                        }
+                    }, cancellationToken);
+
+                    // 8. 添加到仓库索引（如果不存在）
+                    var existingPackage = _repository.GetPackage(pluginId, manifest.Version);
+                    if (existingPackage == null)
+                    {
+                        var packageInfo = new PluginPackageInfo
+                        {
+                            Id = manifest.Id,
+                            Name = manifest.DisplayName ?? manifest.Id,
+                            Version = manifest.Version,
+                            Description = manifest.Description ?? string.Empty,
+                            Author = manifest.Author ?? "Unknown",
+                            Tags = manifest.Tags?.ToList() ?? new List<string>(),
+                            Dependencies = manifest.Dependencies?.Select(d => new PluginDependency
+                            {
+                                PluginId = d.Key,
+                                VersionConstraint = d.Value,
+                                IsOptional = false
+                            }).ToList() ?? new List<PluginDependency>(),
+                            IsInstalled = true,
+                            InstalledVersion = manifest.Version,
+                            LocalPath = zipFilePath
+                        };
+
+                        await _repository.AddOrUpdatePackageAsync(packageInfo, cancellationToken);
+                    }
+                    else
+                    {
+                        existingPackage.IsInstalled = true;
+                        existingPackage.InstalledVersion = manifest.Version;
+                        existingPackage.LocalPath = zipFilePath;
+                        await _repository.AddOrUpdatePackageAsync(existingPackage, cancellationToken);
+                    }
+
+                    ReportProgress(pluginId, PluginInstallStatus.Installed, 100, "Installation completed");
+
+                    stopwatch.Stop();
+                    _logger?.LogInformation("[PluginPackageManager] Successfully installed {PluginId} v{Version} from file in {Duration}ms",
+                        pluginId, manifest.Version, stopwatch.ElapsedMilliseconds);
+
+                    return PluginOperationResult.Successful(pluginId, PluginOperationType.Install, stopwatch.Elapsed);
+                }
+                finally
+                {
+                    // 清理临时目录
+                    if (Directory.Exists(tempExtractPath))
+                    {
+                        try
+                        {
+                            Directory.Delete(tempExtractPath, recursive: true);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger?.LogWarning(ex, "[PluginPackageManager] Failed to delete temp directory: {Path}", tempExtractPath);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[PluginPackageManager] Failed to install plugin from file");
+                ReportProgress("unknown", PluginInstallStatus.Failed, 0, $"Installation failed: {ex.Message}");
+                return PluginOperationResult.Failed("unknown", PluginOperationType.Install, ex.Message);
+            }
+            finally
+            {
+                _operationLock.Release();
+            }
         }
 
         public void Dispose()

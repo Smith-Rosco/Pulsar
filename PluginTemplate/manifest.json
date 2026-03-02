@@ -1,0 +1,15 @@
+{
+  "Id": "com.example.exampleplugin",
+  "DisplayName": "Example Plugin",
+  "Version": "1.0.0",
+  "Description": "A simple example plugin that demonstrates the Pulsar plugin system",
+  "Author": "Your Name",
+  "AuthorUrl": "https://github.com/yourusername",
+  "ProjectUrl": "https://github.com/yourusername/exampleplugin",
+  "LicenseUrl": "https://github.com/yourusername/exampleplugin/blob/main/LICENSE",
+  "Icon": "🔌",
+  "Tags": ["example", "demo", "tutorial"],
+  "Dependencies": {},
+  "MinPulsarVersion": "4.0.0",
+  "EntryPoint": "ExamplePlugin.ExamplePlugin"
+}

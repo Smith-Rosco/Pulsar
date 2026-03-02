@@ -59,7 +59,7 @@
                                            Tag="Plugins"/>
 
                     <ui:NavigationViewItem Content="Marketplace" 
-                                           Icon="{ui:SymbolIcon Store24}" 
+                                           Icon="{ui:SymbolIcon StoreMicrosoft24}" 
                                            TargetPageType="{x:Type TypeName=Page}" 
                                            Tag="Marketplace"/>
 
