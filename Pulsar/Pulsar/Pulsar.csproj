@@ -60,7 +60,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="WPF-UI" Version="4.2.0" />
-    <PackageReference Include="NuGet.Versioning" Version="6.11.1" />
+    <PackageReference Include="NuGet.Versioning" Version="7.3.0" />
   </ItemGroup>
 
   <ItemGroup>
