@@ -44,7 +44,7 @@
                     
                                 <ui:Button Grid.Column="1" Margin="8,0,0,0"
                                            Icon="{ui:SymbolIcon TargetEdit20}"
-                                           Command="{Binding DataContext.PickProcessCommand, RelativeSource={RelativeSource AncestorType=Page}}" 
+                                           Command="{Binding Tag.PickProcessCommand, RelativeSource={RelativeSource AncestorType=StackPanel}}" 
                                            CommandParameter="{Binding}"
                                            ToolTip="Pick Executable from Running App"
                                            Style="{StaticResource PulsarIconButtonStyle}"/>
@@ -71,7 +71,7 @@
                     
                     <ui:Button Grid.Column="1" Margin="8,0,0,0"
                                Icon="{ui:SymbolIcon TargetEdit20}"
-                               Command="{Binding DataContext.PickProcessCommand, RelativeSource={RelativeSource AncestorType=Page}}" 
+                               Command="{Binding Tag.PickProcessCommand, RelativeSource={RelativeSource AncestorType=StackPanel}}" 
                                CommandParameter="{Binding}"
                                ToolTip="Pick Executable from Running App"
                                Style="{StaticResource PulsarIconButtonStyle}"/>
@@ -363,7 +363,8 @@
                                 <controls:ExpandableCard Grid.Column="1"
                                                          IconKey="{Binding IconKey}"
                                                          Title="{Binding Label}"
-                                                         IsToggleVisible="False">
+                                                         IsToggleVisible="False"
+                                                         PageDataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Page}}">
                                     
                                     <!-- Header Content: Order + Type Badge -->
                                     <controls:ExpandableCard.HeaderContent>
@@ -381,7 +382,7 @@
                                     
                                     <!-- Expanded Content: Slot Configuration Form -->
                                     <controls:ExpandableCard.ExpandedContent>
-                                        <StackPanel>
+                                        <StackPanel Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Page}}">
                                             <ui:TextBox Text="{Binding Label}" PlaceholderText="Display Label" Margin="0,0,0,10"/>
                                             
                                             <!-- Dynamic Fields based on Type -->
@@ -408,7 +409,7 @@
                             <ui:Button Grid.Column="1" Margin="4,0,0,0"
                                        Icon="{ui:SymbolIcon FolderOpen16}"
                                        Style="{StaticResource PulsarIconButtonStyle}"
-                                       Command="{Binding DataContext.PickIconCommand, RelativeSource={RelativeSource AncestorType=Page}}" 
+                                       Command="{Binding Tag.PickIconCommand, RelativeSource={RelativeSource AncestorType=StackPanel}}" 
                                        CommandParameter="{Binding}"
                                        ToolTip="Browse Icon File"/>
                                                 </Grid>
@@ -434,7 +435,7 @@
                             <ui:Button Grid.Column="2" Margin="4,0,0,0"
                                        Icon="{ui:SymbolIcon Drop24}"
                                        Style="{StaticResource PulsarIconButtonStyle}"
-                                       Command="{Binding DataContext.PickColorCommand, RelativeSource={RelativeSource AncestorType=Page}}" 
+                                       Command="{Binding Tag.PickColorCommand, RelativeSource={RelativeSource AncestorType=StackPanel}}" 
                                        CommandParameter="{Binding}"
                                        ToolTip="Pick Color from Palette"/>
                                                 </Grid>
@@ -454,7 +455,7 @@
                                    Content="Move Up"
                                    Icon="{ui:SymbolIcon ArrowUp24}"
                                    Style="{StaticResource PulsarSecondaryButtonStyle}"
-                                   Command="{Binding DataContext.MoveSlotUpCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                   Command="{Binding Tag.MoveSlotUpCommand, RelativeSource={RelativeSource AncestorType=StackPanel}}"
                                    CommandParameter="{Binding}"
                                    HorizontalAlignment="Stretch"/>
                                                 
@@ -462,7 +463,7 @@
                                    Content="Move Down"
                                    Icon="{ui:SymbolIcon ArrowDown24}"
                                    Style="{StaticResource PulsarSecondaryButtonStyle}"
-                                   Command="{Binding DataContext.MoveSlotDownCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                   Command="{Binding Tag.MoveSlotDownCommand, RelativeSource={RelativeSource AncestorType=StackPanel}}"
                                    CommandParameter="{Binding}"
                                    HorizontalAlignment="Stretch"/>
                                                 
@@ -470,7 +471,7 @@
                                    Content="Remove"
                                    Icon="{ui:SymbolIcon Delete24}"
                                    Style="{StaticResource PulsarDangerButtonStyle}"
-                                   Command="{Binding DataContext.RemoveSlotCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                   Command="{Binding Tag.RemoveSlotCommand, RelativeSource={RelativeSource AncestorType=StackPanel}}"
                                    CommandParameter="{Binding}"
                                    HorizontalAlignment="Stretch"/>
                                             </Grid>

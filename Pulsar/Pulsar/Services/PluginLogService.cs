@@ -203,7 +203,20 @@ namespace Pulsar.Services
 
             try
             {
-                var lines = File.ReadAllLines(filePath);
+                // 🔧 修复：使用 FileShare.ReadWrite 允许其他进程（Serilog）同时写入
+                string[] lines;
+                using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var reader = new StreamReader(stream))
+                {
+                    var linesList = new List<string>();
+                    string? line;
+                    while ((line = reader.ReadLine()) != null)
+                    {
+                        linesList.Add(line);
+                    }
+                    lines = linesList.ToArray();
+                }
+                
                 var logPattern = @"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}) \[(\w+)\] \[([^\]]*)\] \[ExecId:([^\]]*)\] \[Elapsed:(\d*)ms\] (.*)$";
                 var regex = new Regex(logPattern);
 

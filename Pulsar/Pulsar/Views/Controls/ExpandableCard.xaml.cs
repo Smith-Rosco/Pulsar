@@ -80,6 +80,10 @@ namespace Pulsar.Views.Controls
         public static readonly DependencyProperty IsExpandedProperty =
             DependencyProperty.Register(nameof(IsExpanded), typeof(bool), typeof(ExpandableCard), new PropertyMetadata(false));
 
+        // 🔧 修复：Page DataContext 传递（解决 UserControl 断开可视树的问题）
+        public static readonly DependencyProperty PageDataContextProperty =
+            DependencyProperty.Register(nameof(PageDataContext), typeof(object), typeof(ExpandableCard), new PropertyMetadata(null));
+
         #endregion
 
         #region Properties
@@ -202,6 +206,12 @@ namespace Pulsar.Views.Controls
         {
             get => (bool)GetValue(IsExpandedProperty);
             set => SetValue(IsExpandedProperty, value);
+        }
+
+        public object PageDataContext
+        {
+            get => GetValue(PageDataContextProperty);
+            set => SetValue(PageDataContextProperty, value);
         }
 
         #endregion

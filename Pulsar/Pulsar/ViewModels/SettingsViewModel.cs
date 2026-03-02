@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized; // Added for INotifyCollectionChanged
+using System.ComponentModel; // Added for PropertyChangedEventArgs
 using System.IO; // Added for File operations
 using System.Linq;
 using System.Diagnostics;
@@ -172,6 +173,11 @@ namespace Pulsar.ViewModels
                 if (_currentSlots != null)
                 {
                     _currentSlots.CollectionChanged -= OnCurrentSlotsCollectionChanged;
+                    // 取消订阅旧集合中所有对象的属性变更事件
+                    foreach (var slot in _currentSlots)
+                    {
+                        slot.PropertyChanged -= OnSlotPropertyChanged;
+                    }
                 }
 
                 if (SetProperty(ref _currentSlots, value))
@@ -179,6 +185,12 @@ namespace Pulsar.ViewModels
                     if (_currentSlots != null)
                     {
                         _currentSlots.CollectionChanged += OnCurrentSlotsCollectionChanged;
+                        // 订阅新集合中所有对象的属性变更事件
+                        foreach (var slot in _currentSlots)
+                        {
+                            slot.PropertyChanged -= OnSlotPropertyChanged; // 防止重复订阅
+                            slot.PropertyChanged += OnSlotPropertyChanged;
+                        }
                         UpdateCurrentContextVisuals();
                     }
                 }
@@ -187,7 +199,34 @@ namespace Pulsar.ViewModels
 
         private void OnCurrentSlotsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
+            // 处理集合变更（添加/删除）
+            if (e.OldItems != null)
+            {
+                foreach (PluginSlot slot in e.OldItems)
+                {
+                    slot.PropertyChanged -= OnSlotPropertyChanged;
+                }
+            }
+
+            if (e.NewItems != null)
+            {
+                foreach (PluginSlot slot in e.NewItems)
+                {
+                    slot.PropertyChanged -= OnSlotPropertyChanged; // 防止重复订阅
+                    slot.PropertyChanged += OnSlotPropertyChanged;
+                }
+            }
+
             UpdateCurrentContextVisuals();
+            MarkDirty(); // 集合变更（添加/删除）也需要标记为脏
+        }
+
+        /// <summary>
+        /// 监听 PluginSlot 内部属性变更（Label, IconKey, Color, Args 等）
+        /// </summary>
+        private void OnSlotPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            MarkDirty();
         }
 
         private void UpdateCurrentContextVisuals()
@@ -359,7 +398,7 @@ namespace Pulsar.ViewModels
                 }
             }
 
-            CurrentSlots = new ObservableCollection<PluginSlot>(sourceList.OrderBy(s => s.Slot));
+            CurrentSlots = new ObservableCollection<PluginSlot>(sourceList.OrderBy(s => s.Order));
         }
 
         [RelayCommand]
@@ -368,14 +407,45 @@ namespace Pulsar.ViewModels
             if (CurrentSlots == null) return;
             // [Refactor] Removed 8-slot limit check
             
-            // Find next available order index
+            // 🎯 关键修复：根据上下文类型决定使用 Order 还是 Slot
+            bool isLauncherMode = CurrentContext?.Key == "Launcher";
+            
             int nextOrder = 1;
+            int nextSlot = 1;
+            
             if (CurrentSlots.Count > 0)
             {
                 nextOrder = CurrentSlots.Max(s => s.Order) + 1;
+                
+                // 对于 Launcher 模式，找到下一个可用的 Slot 位置（1-8）
+                if (isLauncherMode)
+                {
+                    var usedSlots = CurrentSlots.Where(s => s.Slot >= 1 && s.Slot <= 8)
+                                                 .Select(s => s.Slot)
+                                                 .ToHashSet();
+                    
+                    for (int i = 1; i <= 8; i++)
+                    {
+                        if (!usedSlots.Contains(i))
+                        {
+                            nextSlot = i;
+                            break;
+                        }
+                    }
+                    
+                    // 如果 1-8 都被占用，使用 Order 作为 Slot（会被动态分配）
+                    if (nextSlot == 1 && usedSlots.Contains(1))
+                    {
+                        nextSlot = nextOrder;
+                    }
+                }
             }
 
-            var newItem = new PluginSlot { Order = nextOrder };
+            var newItem = new PluginSlot 
+            { 
+                Order = nextOrder,
+                Slot = isLauncherMode ? nextSlot : 0  // Launcher 模式设置 Slot，其他模式使用 Order
+            };
 
             switch (pluginId)
             {

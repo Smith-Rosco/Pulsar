@@ -100,8 +100,10 @@
         </ui:CardExpander.Header>
 
         <!-- Expanded Content -->
-        <ContentPresenter Content="{Binding ExpandedContent, ElementName=Root}"
-                          ContentTemplate="{Binding ExpandedContentTemplate, ElementName=Root}"
-                          Margin="0,8,0,0"/>
+        <Grid Tag="{Binding PageDataContext, ElementName=Root}">
+            <ContentPresenter Content="{Binding ExpandedContent, ElementName=Root}"
+                              ContentTemplate="{Binding ExpandedContentTemplate, ElementName=Root}"
+                              Margin="0,8,0,0"/>
+        </Grid>
     </ui:CardExpander>
 </UserControl>
