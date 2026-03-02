@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.Loader;
 
@@ -10,10 +11,12 @@ namespace Pulsar.Core.Plugin
     public class PluginLoadContext : AssemblyLoadContext
     {
         private readonly AssemblyDependencyResolver _resolver;
+        private readonly Dictionary<string, string>? _shimMap;
 
-        public PluginLoadContext(string pluginPath) : base(isCollectible: true)
+        public PluginLoadContext(string pluginPath, Dictionary<string, string>? shimMap = null) : base(isCollectible: true)
         {
             _resolver = new AssemblyDependencyResolver(pluginPath);
+            _shimMap = shimMap;
         }
 
         protected override Assembly? Load(AssemblyName assemblyName)
@@ -25,6 +28,23 @@ namespace Pulsar.Core.Plugin
             if (assemblyName.Name == "Pulsar")
             {
                 return null; 
+            }
+
+            // [新增] 检查是否存在 Shim 程序集
+            if (_shimMap != null && assemblyName.Name != null && assemblyName.Version != null)
+            {
+                var shimKey = $"{assemblyName.Name}@{assemblyName.Version}";
+                if (_shimMap.TryGetValue(shimKey, out var shimPath))
+                {
+                    try
+                    {
+                        return LoadFromAssemblyPath(shimPath);
+                    }
+                    catch
+                    {
+                        // Shim 加载失败，继续正常流程
+                    }
+                }
             }
 
             // 1. 尝试从插件目录解析依赖 (.deps.json 或本地 DLL)

@@ -5,8 +5,10 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin.Metadata;
+using Pulsar.Core.Plugin.Dependencies;
 using Pulsar.Services.Interfaces;
 
 namespace Pulsar.Core.Plugin
@@ -20,6 +22,8 @@ namespace Pulsar.Core.Plugin
         private readonly IServiceProvider _services;
         private readonly ILogger<PluginLoader>? _logger;
         private readonly IPluginMetadataRegistry? _metadataRegistry;
+        private readonly DependencyIsolationManager? _dependencyManager;
+        private DependencyIsolationResult? _dependencyAnalysisResult;
 
         public PluginLoader(IServiceProvider services, string pluginDir)
         {
@@ -27,6 +31,12 @@ namespace Pulsar.Core.Plugin
             _pluginDirectory = pluginDir;
             _logger = services.GetService(typeof(ILogger<PluginLoader>)) as ILogger<PluginLoader>;
             _metadataRegistry = services.GetService(typeof(IPluginMetadataRegistry)) as IPluginMetadataRegistry;
+            
+            // 初始化依赖隔离管理器
+            if (Directory.Exists(pluginDir))
+            {
+                _dependencyManager = new DependencyIsolationManager(pluginDir, null);
+            }
         }
 
         /// <summary>
@@ -35,6 +45,38 @@ namespace Pulsar.Core.Plugin
         public List<IPulsarPlugin> LoadAll()
         {
             var plugins = new List<IPulsarPlugin>();
+
+            // 0. 分析并解决依赖冲突 (如果启用)
+            if (_dependencyManager != null)
+            {
+                try
+                {
+                    _logger?.LogInformation("[PluginLoader] Analyzing plugin dependencies...");
+                    _dependencyAnalysisResult = _dependencyManager.AnalyzeAndResolveAsync().GetAwaiter().GetResult();
+                    
+                    if (_dependencyAnalysisResult.Success)
+                    {
+                        _logger?.LogInformation("[PluginLoader] Dependency analysis completed: {Conflicts} conflicts, {Shims} shims generated",
+                            _dependencyAnalysisResult.Conflicts.Count,
+                            _dependencyAnalysisResult.GeneratedShims.Count);
+
+                        // 如果存在严重冲突，记录警告
+                        if (_dependencyAnalysisResult.HasCriticalConflicts)
+                        {
+                            _logger?.LogWarning("[PluginLoader] Critical dependency conflicts detected. Some plugins may fail to load.");
+                            _logger?.LogWarning("[PluginLoader] Conflict report:\n{Report}", _dependencyManager.GenerateConflictReport());
+                        }
+                    }
+                    else
+                    {
+                        _logger?.LogError("[PluginLoader] Dependency analysis failed: {Error}", _dependencyAnalysisResult.ErrorMessage);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogError(ex, "[PluginLoader] Failed to analyze plugin dependencies");
+                }
+            }
 
             // 1. 加载内置插件 (当前程序集)
             try
@@ -78,8 +120,26 @@ namespace Pulsar.Core.Plugin
                                 anchorDll = dllFiles.First();
                             }
 
-                            // 创建隔离上下文
-                            var context = new PluginLoadContext(anchorDll);
+                            // 创建隔离上下文，传入 Shim 映射
+                            Dictionary<string, string>? shimMap = null;
+                            if (_dependencyAnalysisResult != null && _dependencyAnalysisResult.GeneratedShims.Any())
+                            {
+                                shimMap = new Dictionary<string, string>();
+                                foreach (var shimPath in _dependencyAnalysisResult.GeneratedShims)
+                                {
+                                    try
+                                    {
+                                        var shimName = System.IO.Path.GetFileNameWithoutExtension(shimPath);
+                                        shimMap[shimName] = shimPath;
+                                    }
+                                    catch
+                                    {
+                                        // 忽略无效的 Shim 路径
+                                    }
+                                }
+                            }
+
+                            var context = new PluginLoadContext(anchorDll, shimMap);
 
                             foreach (var dllPath in dllFiles)
                             {
@@ -277,6 +337,30 @@ namespace Pulsar.Core.Plugin
                     MinPulsarVersion = plugin.MinPulsarVersion
                 }
             };
+        }
+
+        /// <summary>
+        /// 获取依赖分析结果
+        /// </summary>
+        public DependencyIsolationResult? GetDependencyAnalysisResult()
+        {
+            return _dependencyAnalysisResult;
+        }
+
+        /// <summary>
+        /// 获取依赖冲突报告
+        /// </summary>
+        public string GetDependencyConflictReport()
+        {
+            return _dependencyManager?.GenerateConflictReport() ?? "Dependency analysis not available.";
+        }
+
+        /// <summary>
+        /// 检查是否存在严重的依赖冲突
+        /// </summary>
+        public bool HasCriticalDependencyConflicts()
+        {
+            return _dependencyManager?.HasCriticalConflicts() ?? false;
         }
     }
 }
