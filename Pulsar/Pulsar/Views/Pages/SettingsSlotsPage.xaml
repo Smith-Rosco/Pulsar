@@ -31,7 +31,7 @@
         
         <!-- 1. WinSwitcher / Launcher -->
         <DataTemplate x:Key="LauncherFieldsTemplate">
-            <StackPanel>
+            <StackPanel Loaded="DataTemplateStackPanel_Loaded">
                 <Grid Margin="0,0,0,10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -59,7 +59,7 @@
 
         <!-- 2. Command Runner -->
         <DataTemplate x:Key="CommandFieldsTemplate">
-            <StackPanel>
+            <StackPanel Loaded="DataTemplateStackPanel_Loaded">
                 <Grid Margin="0,0,0,10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -86,7 +86,7 @@
 
         <!-- 3. Secret (PKI) -->
         <DataTemplate x:Key="SecretFieldsTemplate">
-            <StackPanel>
+            <StackPanel Loaded="DataTemplateStackPanel_Loaded">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -101,7 +101,7 @@
                                 <ui:Button Grid.Column="1" Margin="8,0,0,0"
                                            Icon="{ui:SymbolIcon Edit24}"
                                            Content="Edit Secret"
-                                           Command="{Binding DataContext.EditSecretCommand, RelativeSource={RelativeSource AncestorType=Page}}" 
+                                           Command="{Binding Tag.EditSecretCommand, RelativeSource={RelativeSource AncestorType=StackPanel}}" 
                                            CommandParameter="{Binding}"
                                            Style="{StaticResource PulsarSecondaryButtonStyle}"/>
                 </Grid>
@@ -110,7 +110,7 @@
 
         <!-- 4. Bookmarklet -->
         <DataTemplate x:Key="BookmarkletFieldsTemplate">
-            <StackPanel>
+            <StackPanel Loaded="DataTemplateStackPanel_Loaded">
                 <Grid Margin="0,0,0,10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -123,7 +123,7 @@
 
                                 <ui:Button Grid.Column="1" Margin="8,0,0,0"
                                            Icon="{ui:SymbolIcon FolderOpen24}"
-                                           Command="{Binding DataContext.PickScriptFileCommand, RelativeSource={RelativeSource AncestorType=Page}}" 
+                                           Command="{Binding Tag.PickScriptFileCommand, RelativeSource={RelativeSource AncestorType=StackPanel}}" 
                                            CommandParameter="{Binding}"
                                            ToolTip="Browse Script File"
                                            Style="{StaticResource PulsarIconButtonStyle}"/>
@@ -133,7 +133,7 @@
 
         <!-- 5. VBA Runner -->
         <DataTemplate x:Key="VbaRunnerFieldsTemplate">
-            <StackPanel>
+            <StackPanel Loaded="DataTemplateStackPanel_Loaded">
                 <Grid Margin="0,0,0,10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -146,7 +146,7 @@
 
                                 <ui:Button Grid.Column="1" Margin="8,0,0,0"
                                            Icon="{ui:SymbolIcon FolderOpen24}"
-                                           Command="{Binding DataContext.PickVbaScriptFileCommand, RelativeSource={RelativeSource AncestorType=Page}}" 
+                                           Command="{Binding Tag.PickVbaScriptFileCommand, RelativeSource={RelativeSource AncestorType=StackPanel}}" 
                                            CommandParameter="{Binding}"
                                            ToolTip="Browse VBA Script"
                                            Style="{StaticResource PulsarIconButtonStyle}"/>
@@ -156,7 +156,7 @@
 
         <!-- 6. System Command -->
         <DataTemplate x:Key="SystemCommandFieldsTemplate">
-            <StackPanel>
+            <StackPanel Loaded="DataTemplateStackPanel_Loaded">
                 <Grid Margin="0,0,0,10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -361,6 +361,7 @@
                                                ToolTip="Drag to reorder"/>
                                 
                                 <controls:ExpandableCard Grid.Column="1"
+                                                         x:Name="SlotCard"
                                                          IconKey="{Binding IconKey}"
                                                          Title="{Binding Label}"
                                                          IsToggleVisible="False"
@@ -382,7 +383,7 @@
                                     
                                     <!-- Expanded Content: Slot Configuration Form -->
                                     <controls:ExpandableCard.ExpandedContent>
-                                        <StackPanel Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Page}}">
+                                        <StackPanel Loaded="StackPanel_Loaded">
                                             <ui:TextBox Text="{Binding Label}" PlaceholderText="Display Label" Margin="0,0,0,10"/>
                                             
                                             <!-- Dynamic Fields based on Type -->

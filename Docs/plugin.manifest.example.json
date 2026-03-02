@@ -1,0 +1,36 @@
+{
+  "id": "com.pulsar.pki",
+  "version": "2.1.0",
+  "minPulsarVersion": "4.0.0",
+  "maxPulsarVersion": "5.0.0",
+  "displayName": "PKI Credentials Manager",
+  "description": "Secure credential injection with DPAPI encryption and UI Automation",
+  "author": "Pulsar Team",
+  "license": "MIT",
+  "icon": "🔐",
+  "entryPoint": "Pulsar.Plugins.Core.Pki.PkiPlugin",
+  "dependencies": {},
+  "packageDependencies": {},
+  "permissions": [
+    "clipboard.read",
+    "clipboard.write",
+    "window.focus",
+    "filesystem.read"
+  ],
+  "files": [
+    "Pulsar.dll"
+  ],
+  "tags": [
+    "Security",
+    "Credentials",
+    "Automation"
+  ],
+  "documentationUrl": "https://pulsar.dev/docs/plugins/pki",
+  "homepage": "https://pulsar.dev",
+  "isCore": true,
+  "tier": "Core",
+  "metadata": {
+    "supportedActions": ["fill", "inject"],
+    "requiresForegroundWindow": true
+  }
+}

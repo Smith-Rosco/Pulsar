@@ -25,6 +25,58 @@ namespace Pulsar.Views.Pages
              }
         }
 
+        /// <summary>
+        /// Workaround for UserControl breaking visual tree binding.
+        /// Manually sets StackPanel.Tag to ExpandableCard.PageDataContext when loaded.
+        /// </summary>
+        private void StackPanel_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is StackPanel stackPanel)
+            {
+                // Find the ExpandableCard ancestor
+                var expandableCard = FindVisualParent<Pulsar.Views.Controls.ExpandableCard>(stackPanel);
+                if (expandableCard != null && expandableCard.PageDataContext != null)
+                {
+                    // Set the Tag to PageDataContext so child buttons can bind to commands
+                    stackPanel.Tag = expandableCard.PageDataContext;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Workaround for DataTemplate StackPanels inside ContentPresenter.
+        /// These are nested deeper and need to find the outer StackPanel's Tag.
+        /// </summary>
+        private void DataTemplateStackPanel_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is StackPanel innerStackPanel)
+            {
+                // Find the outer StackPanel (the one with Loaded="StackPanel_Loaded")
+                var outerStackPanel = FindVisualParent<StackPanel>(innerStackPanel);
+                
+                // Skip the inner StackPanel itself and find the actual outer one
+                while (outerStackPanel != null && outerStackPanel == innerStackPanel)
+                {
+                    outerStackPanel = FindVisualParent<StackPanel>(System.Windows.Media.VisualTreeHelper.GetParent(outerStackPanel));
+                }
+                
+                if (outerStackPanel != null && outerStackPanel.Tag != null)
+                {
+                    // Copy the Tag from outer StackPanel
+                    innerStackPanel.Tag = outerStackPanel.Tag;
+                }
+                else
+                {
+                    // Fallback: try to find ExpandableCard directly
+                    var expandableCard = FindVisualParent<Pulsar.Views.Controls.ExpandableCard>(innerStackPanel);
+                    if (expandableCard != null && expandableCard.PageDataContext != null)
+                    {
+                        innerStackPanel.Tag = expandableCard.PageDataContext;
+                    }
+                }
+            }
+        }
+
         // Accordion effect: Only one CardExpander can be expanded at a time
         private void CardExpander_Expanded(object sender, RoutedEventArgs e)
         {
