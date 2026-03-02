@@ -20,6 +20,7 @@ namespace Pulsar.Views
     {
         private readonly SettingsViewModel _viewModel;
         private readonly PluginManagerViewModel _pluginManager; // [New]
+        private readonly PluginMarketViewModel _pluginMarket; // [Marketplace]
         private readonly IThemeService _themeService;
         private readonly ILogger<SettingsWindow> _logger;
         
@@ -27,6 +28,7 @@ namespace Pulsar.Views
         private SettingsGeneralPage? _generalPage;
         private SettingsSlotsPage? _slotsPage;
         private SettingsPluginsPage? _pluginsPage; // [New]
+        private SettingsMarketplacePage? _marketplacePage; // [Marketplace]
         private SettingsAboutPage? _aboutPage; // [New]
 
         // [Phase 3] Flag to prevent re-entry during programmatic close
@@ -35,12 +37,14 @@ namespace Pulsar.Views
         public SettingsWindow(
             SettingsViewModel viewModel,
             PluginManagerViewModel pluginManager,
+            PluginMarketViewModel pluginMarket,
             IThemeService themeService,
             ILogger<SettingsWindow> logger)
         {
             InitializeComponent();
             _viewModel = viewModel;
             _pluginManager = pluginManager;
+            _pluginMarket = pluginMarket;
             _themeService = themeService;
             _logger = logger;
             DataContext = viewModel;
@@ -76,12 +80,14 @@ namespace Pulsar.Views
             _generalPage = new SettingsGeneralPage(viewModel);
             _slotsPage = new SettingsSlotsPage(viewModel);
             _pluginsPage = new SettingsPluginsPage(_pluginManager, _themeService); // [New]
+            _marketplacePage = new SettingsMarketplacePage(_pluginMarket, _themeService); // [Marketplace]
             _aboutPage = new SettingsAboutPage(new AboutViewModel()); // [New]
 
             // [Fix] Apply theme explicitly to pages to fix inheritance issues
             _themeService.ApplyTheme(_generalPage, _viewModel.SettingsTheme, updateGlobal: false);
             _themeService.ApplyTheme(_slotsPage, _viewModel.SettingsTheme, updateGlobal: false);
             _themeService.ApplyTheme(_pluginsPage, _viewModel.SettingsTheme, updateGlobal: false);
+            _themeService.ApplyTheme(_marketplacePage, _viewModel.SettingsTheme, updateGlobal: false); // [Marketplace]
             _themeService.ApplyTheme(_aboutPage, _viewModel.SettingsTheme, updateGlobal: false); // [New]
 
             this.Loaded += (s, e) =>
@@ -100,10 +106,15 @@ namespace Pulsar.Views
                         RootFrame.Navigate(_pluginsPage);
                         if (RootNavigation.MenuItems[2] is NavigationViewItem navItem) navItem.IsActive = true;
                     }
+                    else if (_viewModel.CurrentView == "Marketplace")
+                    {
+                        RootFrame.Navigate(_marketplacePage);
+                        if (RootNavigation.MenuItems[3] is NavigationViewItem navItem) navItem.IsActive = true;
+                    }
                     else if (_viewModel.CurrentView == "About")
                     {
                         RootFrame.Navigate(_aboutPage);
-                        if (RootNavigation.MenuItems[3] is NavigationViewItem navItem) navItem.IsActive = true;
+                        if (RootNavigation.MenuItems[4] is NavigationViewItem navItem) navItem.IsActive = true;
                     }
                     else
                     {
@@ -178,11 +189,12 @@ namespace Pulsar.Views
                              // Activate visual state
                              navItem.IsActive = true; 
                              // Perform actual navigation
-                             if (targetTag == "General") RootFrame.Navigate(_generalPage);
-                             else if (targetTag == "Slots") RootFrame.Navigate(_slotsPage);
-                             else if (targetTag == "Plugins") RootFrame.Navigate(_pluginsPage);
-                             else if (targetTag == "About") RootFrame.Navigate(_aboutPage);
-                             found = true;
+                              if (targetTag == "General") RootFrame.Navigate(_generalPage);
+                              else if (targetTag == "Slots") RootFrame.Navigate(_slotsPage);
+                              else if (targetTag == "Plugins") RootFrame.Navigate(_pluginsPage);
+                              else if (targetTag == "Marketplace") RootFrame.Navigate(_marketplacePage);
+                              else if (targetTag == "About") RootFrame.Navigate(_aboutPage);
+                              found = true;
                          }
 
                          else
@@ -207,6 +219,7 @@ namespace Pulsar.Views
             if (_generalPage != null) _themeService.ApplyTheme(_generalPage, theme, updateGlobal: false);
             if (_slotsPage != null) _themeService.ApplyTheme(_slotsPage, theme, updateGlobal: false);
             if (_pluginsPage != null) _themeService.ApplyTheme(_pluginsPage, theme, updateGlobal: false); // [New]
+            if (_marketplacePage != null) _themeService.ApplyTheme(_marketplacePage, theme, updateGlobal: false); // [Marketplace]
             if (_aboutPage != null) _themeService.ApplyTheme(_aboutPage, theme, updateGlobal: false); // [New]
         }
 
@@ -224,16 +237,21 @@ namespace Pulsar.Views
                      RootFrame.Navigate(_slotsPage);
                      _viewModel.CurrentView = "Slots";
                  }
-                 else if (item.Tag?.ToString() == "Plugins")
-                 {
-                     RootFrame.Navigate(_pluginsPage);
-                     _viewModel.CurrentView = "Plugins";
-                 }
-                 else if (item.Tag?.ToString() == "About")
-                 {
-                     RootFrame.Navigate(_aboutPage);
-                     _viewModel.CurrentView = "About";
-                 }
+                  else if (item.Tag?.ToString() == "Plugins")
+                  {
+                      RootFrame.Navigate(_pluginsPage);
+                      _viewModel.CurrentView = "Plugins";
+                  }
+                  else if (item.Tag?.ToString() == "Marketplace")
+                  {
+                      RootFrame.Navigate(_marketplacePage);
+                      _viewModel.CurrentView = "Marketplace";
+                  }
+                  else if (item.Tag?.ToString() == "About")
+                  {
+                      RootFrame.Navigate(_aboutPage);
+                      _viewModel.CurrentView = "About";
+                  }
              }
         }
 
@@ -250,6 +268,7 @@ namespace Pulsar.Views
             _generalPage = null;
             _slotsPage = null;
             _pluginsPage = null;
+            _marketplacePage = null;
             _aboutPage = null;
             
             // Trigger GC to clean up the Transient ViewModel and Pages

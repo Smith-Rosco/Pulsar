@@ -119,6 +119,20 @@ namespace Pulsar
             serviceCollection.AddTransient<PluginManagerViewModel>();
             serviceCollection.AddTransient<SettingsPluginsPage>();
 
+            // [Marketplace] Plugin Marketplace Services
+            serviceCollection.AddSingleton<PluginRepository>(sp =>
+            {
+                var repositoryPath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "Pulsar",
+                    "PluginRepository");
+                var logger = sp.GetService<ILogger<PluginRepository>>();
+                return new PluginRepository(repositoryPath, logger);
+            });
+            serviceCollection.AddSingleton<PluginPackageManager>();
+            serviceCollection.AddTransient<PluginMarketViewModel>();
+            serviceCollection.AddTransient<SettingsMarketplacePage>();
+
             serviceCollection.AddTransient<SettingsWindow>();
             
             // Build Container

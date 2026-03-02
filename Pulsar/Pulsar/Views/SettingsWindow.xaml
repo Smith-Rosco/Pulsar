@@ -58,6 +58,11 @@
                                            TargetPageType="{x:Type TypeName=Page}" 
                                            Tag="Plugins"/>
 
+                    <ui:NavigationViewItem Content="Marketplace" 
+                                           Icon="{ui:SymbolIcon Store24}" 
+                                           TargetPageType="{x:Type TypeName=Page}" 
+                                           Tag="Marketplace"/>
+
                     <ui:NavigationViewItem Content="About" 
                                            Icon="{ui:SymbolIcon Info24}" 
                                            TargetPageType="{x:Type TypeName=Page}" 
