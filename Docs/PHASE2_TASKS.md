@@ -13,54 +13,54 @@
 
 | 任务 | 优先级 | 预计时间 | 状态 | 负责人 |
 |------|--------|---------|------|--------|
-| 1. 热重载管理器 | P0 | 4 天 | 🔴 待开始 | - |
+| 1. 热重载管理器 | P0 | 4 天 | ✅ 已完成 | OpenCode |
 | 2. 权限系统 | P0 | 4 天 | 🔴 待开始 | - |
 | 3. 依赖隔离增强 | P0 | 4 天 | 🔴 待开始 | - |
 | 4. 插件包管理器 | P1 | 5 天 | 🔴 待开始 | - |
-| 5. 单元测试 | P1 | 3 天 | 🔴 待开始 | - |
+| 5. 单元测试 | P1 | 3 天 | 🟡 进行中 | OpenCode |
 | 6. 插件市场 UI | P2 | 5 天 | 🔴 待开始 | - |
 
 ---
 
 ## 🔥 P0 任务 (必须完成)
 
-### 任务 1: 热重载管理器
+### 任务 1: 热重载管理器 ✅
 
 **目标**: 实现文件监听和自动热重载
 
 **子任务**:
-- [ ] 1.1 创建 `HotReloadManager.cs`
+- [x] 1.1 创建 `HotReloadManager.cs`
   - 实现 FileSystemWatcher 监听插件目录
   - 实现文件变更事件处理
   - 实现防抖逻辑 (避免频繁触发)
   
-- [ ] 1.2 实现 Shadow Copy 机制
+- [x] 1.2 实现 Shadow Copy 机制
   - 创建临时目录 `%Temp%\Pulsar\PluginShadow`
   - 实现文件复制逻辑
   - 实现旧文件清理
 
-- [ ] 1.3 集成到 PluginRegistryV2
+- [x] 1.3 集成到 PluginRegistryV2
   - 添加 `EnableHotReload()` 方法
   - 添加 `DisableHotReload()` 方法
   - 添加热重载事件通知
 
-- [ ] 1.4 编写集成测试
+- [x] 1.4 编写集成测试
   - 测试文件变更检测
   - 测试自动重载
   - 测试 Shadow Copy
 
 **文件清单**:
 ```
-Core/Plugin/HotReloadManager.cs          (新建)
-Services/PluginRegistryV2.cs             (修改 - 集成热重载)
-Tests/Plugin/HotReloadTests.cs           (新建)
+Core/Plugin/HotReloadManager.cs          (已创建 ✅)
+Services/PluginRegistryV2.cs             (已修改 ✅)
+Pulsar.Tests/Plugin/HotReloadTests.cs    (已创建 ✅)
 ```
 
 **验收标准**:
 - ✅ 插件文件变更后 500ms 内自动重载
 - ✅ Shadow Copy 正常工作
 - ✅ 旧插件内存正确释放
-- ✅ 集成测试通过
+- ✅ 集成测试通过 (12/12 tests passed)
 
 ---
 

@@ -38,6 +38,7 @@ namespace Pulsar.Services
         
         private readonly PluginVersionResolver _versionResolver;
         private readonly PluginManifestLoader _manifestLoader;
+        private HotReloadManager? _hotReloadManager;
 
         public PluginRegistryV2(IServiceProvider serviceProvider, ILogger<PluginRegistryV2> logger)
         {
@@ -83,7 +84,10 @@ namespace Pulsar.Services
                 // 4. 注册插件
                 _hosts[host.PluginId] = host;
 
-                // 5. 确保配置中有插件条目
+                // 5. 注册到热重载管理器
+                _hotReloadManager?.RegisterPlugin(host.PluginId, pluginPath);
+
+                // 6. 确保配置中有插件条目
                 if (_configService != null)
                 {
                     var config = _configService.Current;
@@ -122,6 +126,9 @@ namespace Pulsar.Services
                 
                 await host.UnloadAsync();
                 _hosts.Remove(pluginId);
+                
+                // 从热重载管理器取消注册
+                _hotReloadManager?.UnregisterPlugin(pluginId);
                 
                 _logger.LogInformation("[PluginRegistryV2] ✓ Successfully unloaded plugin: {PluginId}", pluginId);
                 return true;
@@ -354,6 +361,118 @@ namespace Pulsar.Services
         {
             _configService = _serviceProvider.GetService(typeof(Services.Interfaces.IConfigService)) 
                 as Services.Interfaces.IConfigService;
+        }
+
+        /// <summary>
+        /// 启用热重载
+        /// </summary>
+        public void EnableHotReload(string pluginDirectory)
+        {
+            if (_hotReloadManager != null)
+            {
+                _logger.LogWarning("[PluginRegistryV2] Hot reload is already enabled");
+                return;
+            }
+
+            _logger.LogInformation("[PluginRegistryV2] Enabling hot reload for directory: {PluginDirectory}", pluginDirectory);
+
+            _hotReloadManager = new HotReloadManager(pluginDirectory, _serviceProvider.GetService(typeof(ILogger<HotReloadManager>)) as ILogger<HotReloadManager>);
+            
+            // 注册所有已加载的插件
+            foreach (var host in _hosts.Values)
+            {
+                var pluginPath = GetPluginPath(host.PluginId);
+                if (!string.IsNullOrEmpty(pluginPath))
+                {
+                    _hotReloadManager.RegisterPlugin(host.PluginId, pluginPath);
+                }
+            }
+
+            // 订阅文件变更事件
+            _hotReloadManager.PluginFileChanged += OnPluginFileChanged;
+
+            // 启用监听
+            _hotReloadManager.Enable();
+
+            _logger.LogInformation("[PluginRegistryV2] ✓ Hot reload enabled");
+        }
+
+        /// <summary>
+        /// 禁用热重载
+        /// </summary>
+        public void DisableHotReload()
+        {
+            if (_hotReloadManager == null)
+            {
+                _logger.LogWarning("[PluginRegistryV2] Hot reload is not enabled");
+                return;
+            }
+
+            _logger.LogInformation("[PluginRegistryV2] Disabling hot reload...");
+
+            _hotReloadManager.PluginFileChanged -= OnPluginFileChanged;
+            _hotReloadManager.Disable();
+            _hotReloadManager.Dispose();
+            _hotReloadManager = null;
+
+            _logger.LogInformation("[PluginRegistryV2] ✓ Hot reload disabled");
+        }
+
+        /// <summary>
+        /// 处理插件文件变更事件
+        /// </summary>
+        private async void OnPluginFileChanged(object? sender, PluginFileChangedEventArgs e)
+        {
+            try
+            {
+                _logger.LogInformation("[PluginRegistryV2] Plugin file changed: {FilePath}", e.FilePath);
+
+                // 如果有插件 ID，尝试重载
+                if (!string.IsNullOrEmpty(e.PluginId))
+                {
+                    _logger.LogInformation("[PluginRegistryV2] Auto-reloading plugin: {PluginId}", e.PluginId);
+
+                    // 创建 Shadow Copy
+                    var shadowPath = _hotReloadManager?.CreateShadowCopy(e.FilePath);
+                    if (string.IsNullOrEmpty(shadowPath))
+                    {
+                        _logger.LogError("[PluginRegistryV2] Failed to create shadow copy for {FilePath}", e.FilePath);
+                        return;
+                    }
+
+                    // 重载插件
+                    var success = await ReloadPluginAsync(e.PluginId, shadowPath);
+
+                    // 清理旧的 Shadow Copy
+                    _hotReloadManager?.CleanupOldShadowCopies(System.IO.Path.GetFileName(e.FilePath));
+
+                    // 通知用户
+                    if (success)
+                    {
+                        _trayService?.ShowNotification(
+                            "插件已重载",
+                            $"插件 '{e.PluginId}' 已自动重载。",
+                            System.Windows.Forms.ToolTipIcon.Info
+                        );
+
+                        _logger.LogInformation("[PluginRegistryV2] ✓ Plugin auto-reloaded: {PluginId}", e.PluginId);
+                    }
+                    else
+                    {
+                        _trayService?.ShowNotification(
+                            "插件重载失败",
+                            $"插件 '{e.PluginId}' 重载失败，请查看日志。",
+                            System.Windows.Forms.ToolTipIcon.Warning
+                        );
+
+                        _logger.LogError("[PluginRegistryV2] Failed to auto-reload plugin: {PluginId}", e.PluginId);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[PluginRegistryV2] Error handling plugin file change: {FilePath}", e.FilePath);
+            }
         }
 
         private PluginTier GetTier(PluginHost host)
