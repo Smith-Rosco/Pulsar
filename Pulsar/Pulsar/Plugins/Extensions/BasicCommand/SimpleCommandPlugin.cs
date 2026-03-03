@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Threading;
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin;
@@ -15,7 +16,7 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
     /// <summary>
     /// 简单命令插件 - 处理简单的进程启动和 SendKeys 命令
     /// </summary>
-    public class SimpleCommandPlugin : IPulsarPlugin, IPluginTiered
+    public class SimpleCommandPlugin : IPulsarPlugin, IPluginTiered, ICancellablePulsarPlugin
     {
         private ILogger<SimpleCommandPlugin>? _logger;
         
@@ -51,13 +52,30 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
             };
         }
 
+        public async Task<PluginResult> ExecuteAsync(
+            string action,
+            IReadOnlyDictionary<string, string> args,
+            PulsarContext context,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return action.ToLowerInvariant() switch
+            {
+                "run" => await RunCommandAsync(args, context, cancellationToken),
+                "sendkeys" => await SendKeysAsync(args, context, cancellationToken),
+                _ => PluginResult.Error($"Unknown action: {action}")
+            };
+        }
+
         /// <summary>
         /// 运行外部命令或打开文件/URL
         /// </summary>
         private async Task<PluginResult> RunCommandAsync(
             IReadOnlyDictionary<string, string> args,
-            PulsarContext context)
+            PulsarContext context,
+            CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (!args.TryGetValue("path", out var path) || string.IsNullOrEmpty(path))
             {
                 return PluginResult.Error("Missing required parameter: path");
@@ -82,9 +100,14 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
                     startInfo.WorkingDirectory = workingDir;
                 }
 
+                cancellationToken.ThrowIfCancellationRequested();
                 Process.Start(startInfo);
                 _logger?.LogInformation("[SimpleCommandPlugin] Successfully executed: {Path}", path);
                 return PluginResult.Ok($"Executed {path}");
+            }
+            catch (OperationCanceledException)
+            {
+                return PluginResult.Error("Operation cancelled");
             }
             catch (Exception ex)
             {
@@ -98,8 +121,10 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
         /// </summary>
         private async Task<PluginResult> SendKeysAsync(
             IReadOnlyDictionary<string, string> args,
-            PulsarContext context)
+            PulsarContext context,
+            CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (!args.TryGetValue("keys", out var keys) || string.IsNullOrEmpty(keys))
             {
                 return PluginResult.Error("Missing required parameter: keys");
@@ -117,12 +142,17 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
             try
             {
                 // 等待窗口切换
-                await Task.Delay(delay);
+                await Task.Delay(delay, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
                 
                 SendKeys.SendWait(keys);
                 
                 _logger?.LogInformation("[SimpleCommandPlugin] Keys sent successfully");
                 return PluginResult.Ok("Keys sent");
+            }
+            catch (OperationCanceledException)
+            {
+                return PluginResult.Error("Operation cancelled");
             }
             catch (Exception ex)
             {

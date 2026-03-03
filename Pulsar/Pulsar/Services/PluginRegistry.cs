@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Threading;
 using Pulsar.Core.Plugin;
 using Pulsar.Models;
 
@@ -32,6 +33,7 @@ namespace Pulsar.Services
         private readonly Services.Interfaces.IPluginUsageTracker? _usageTracker; // [New]
         private readonly Services.Interfaces.IPluginHealthMonitor? _healthMonitor; // [New]
         private readonly Services.Interfaces.IPluginLogService? _logService; // [New]
+        private readonly TimeSpan _defaultExtensionTimeout = TimeSpan.FromMilliseconds(2500);
 
         public PluginRegistry(IServiceProvider serviceProvider, ILogger<PluginRegistry> logger)
         {
@@ -197,43 +199,109 @@ namespace Pulsar.Services
             var stopwatch = Stopwatch.StartNew();
             bool success = false;
             Exception? exception = null;
+            bool timedOut = false;
+            TimeSpan? timeout = null;
 
             try
             {
                 _logger.LogDebug("Executing plugin action");
-                var result = await plugin.ExecuteAsync(action, args, context);
-                
-                success = result.Success;
 
-                // Extension plugin succeeded - reset crash counters.
-                if (tier == PluginTier.Extension && _failureCounts.ContainsKey(pluginId))
-                {
-                    _failureCounts.Remove(pluginId);
-                }
+                var tierTimeout = GetExecutionTimeout(tier);
+                timeout = tierTimeout;
 
-                if (result.Success)
+                if (tierTimeout.HasValue)
                 {
-                    _logger.LogInformation("Plugin execution succeeded: {Message}", result.Message ?? "OK");
+                    using var cts = new CancellationTokenSource(tierTimeout.Value);
+                    var token = cts.Token;
+
+                    Task<PluginResult> executionTask;
+                    if (plugin is ICancellablePulsarPlugin cancellablePlugin)
+                    {
+                        executionTask = cancellablePlugin.ExecuteAsync(action, args, context, token);
+                    }
+                    else
+                    {
+                        executionTask = plugin.ExecuteAsync(action, args, context);
+                    }
+
+                    var completedTask = await Task.WhenAny(executionTask, Task.Delay(Timeout.Infinite, token));
+                    if (completedTask != executionTask)
+                    {
+                        timedOut = true;
+                        throw new TimeoutException($"Plugin execution timed out after {tierTimeout.Value.TotalMilliseconds}ms");
+                    }
+
+                    var result = await executionTask;
+                    success = result.Success;
+
+                    // Extension plugin succeeded - reset crash counters.
+                    if (tier == PluginTier.Extension && _failureCounts.ContainsKey(pluginId))
+                    {
+                        _failureCounts.Remove(pluginId);
+                    }
+
+                    if (result.Success)
+                    {
+                        _logger.LogInformation("Plugin execution succeeded: {Message}", result.Message ?? "OK");
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Plugin execution failed (logic error): {Message}", result.Message ?? "Unknown error");
+
+                        // [New] Handle Critical severity errors for Extension plugins
+                        if (tier == PluginTier.Extension && result.Severity == PluginErrorSeverity.Critical)
+                        {
+                            _logger.LogWarning("Critical error detected, counting towards circuit breaker");
+                            HandlePluginCrash(pluginId, new InvalidOperationException(result.Message ?? "Critical plugin error"));
+                        }
+                    }
+
+                    return result;
                 }
                 else
                 {
-                    _logger.LogWarning("Plugin execution failed (logic error): {Message}", result.Message ?? "Unknown error");
-                    
-                    // [New] Handle Critical severity errors for Extension plugins
-                    if (tier == PluginTier.Extension && result.Severity == PluginErrorSeverity.Critical)
-                    {
-                        _logger.LogWarning("Critical error detected, counting towards circuit breaker");
-                        HandlePluginCrash(pluginId, new InvalidOperationException(result.Message ?? "Critical plugin error"));
-                    }
-                }
+                    var result = await plugin.ExecuteAsync(action, args, context);
                 
-                return result;
+                    success = result.Success;
+
+                    // Extension plugin succeeded - reset crash counters.
+                    if (tier == PluginTier.Extension && _failureCounts.ContainsKey(pluginId))
+                    {
+                        _failureCounts.Remove(pluginId);
+                    }
+
+                    if (result.Success)
+                    {
+                        _logger.LogInformation("Plugin execution succeeded: {Message}", result.Message ?? "OK");
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Plugin execution failed (logic error): {Message}", result.Message ?? "Unknown error");
+
+                        // [New] Handle Critical severity errors for Extension plugins
+                        if (tier == PluginTier.Extension && result.Severity == PluginErrorSeverity.Critical)
+                        {
+                            _logger.LogWarning("Critical error detected, counting towards circuit breaker");
+                            HandlePluginCrash(pluginId, new InvalidOperationException(result.Message ?? "Critical plugin error"));
+                        }
+                    }
+
+                    return result;
+                }
             }
             catch (Exception ex)
             {
                 exception = ex;
                 success = false;
-                _logger.LogError(ex, "Plugin execution threw exception");
+                if (ex is TimeoutException)
+                {
+                    timedOut = true;
+                    _logger.LogWarning(ex, "Plugin execution timed out");
+                }
+                else
+                {
+                    _logger.LogError(ex, "Plugin execution threw exception");
+                }
 
                 // Only Extension plugins are isolated with Circuit Breaker.
                 if (tier == PluginTier.Extension)
@@ -241,6 +309,10 @@ namespace Pulsar.Services
                     HandlePluginCrash(pluginId, ex);
                 }
 
+                if (timedOut)
+                {
+                    return PluginResult.Error($"Plugin execution timed out after {timeout?.TotalMilliseconds ?? 0}ms", PluginErrorSeverity.Critical);
+                }
                 return PluginResult.Error($"Plugin execution failed: {ex.Message}");
             }
             finally
@@ -263,6 +335,26 @@ namespace Pulsar.Services
                 // [Deprecated] PluginLogService 不再写入日志，仅作为查询层
                 // 所有日志已通过 Serilog + PluginContextEnricher 自动记录
             }
+        }
+
+        private TimeSpan? GetExecutionTimeout(PluginTier tier)
+        {
+            if (tier != PluginTier.Extension)
+            {
+                return null;
+            }
+
+            if (_configService?.Current != null)
+            {
+                var configured = _configService.Current.Settings.PluginExecutionTimeoutMs;
+                if (configured <= 0)
+                {
+                    return null;
+                }
+                return TimeSpan.FromMilliseconds(configured);
+            }
+
+            return _defaultExtensionTimeout;
         }
 
         private static PluginTier GetTier(IPulsarPlugin plugin)

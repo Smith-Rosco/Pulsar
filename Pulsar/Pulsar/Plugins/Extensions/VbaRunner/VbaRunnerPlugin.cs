@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.Extensions.Logging;
@@ -14,7 +15,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
     /// <summary>
     /// VBA Runner Plugin - Executes VBA scripts in Excel/WPS with interactive support
     /// </summary>
-    public class VbaRunnerPlugin : IPulsarPlugin, IPluginTiered, IPluginLifecycle
+    public class VbaRunnerPlugin : IPulsarPlugin, IPluginTiered, IPluginLifecycle, ICancellablePulsarPlugin
     {
         private IWindowService? _windowService;
         private ScriptEngine? _scriptEngine;
@@ -85,10 +86,32 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
             };
         }
 
+        public async Task<PluginResult> ExecuteAsync(
+            string action,
+            IReadOnlyDictionary<string, string> args,
+            PulsarContext context,
+            CancellationToken cancellationToken)
+        {
+            if (_scriptEngine == null)
+            {
+                return PluginResult.Error("Plugin initialization failed");
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            return action.ToLowerInvariant() switch
+            {
+                "run" => await RunScriptAsync(args, context, cancellationToken),
+                _ => PluginResult.Error($"Unknown action: {action}")
+            };
+        }
+
         private async Task<PluginResult> RunScriptAsync(
             IReadOnlyDictionary<string, string> args,
-            PulsarContext context)
+            PulsarContext context,
+            CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             _logger?.LogDebug(
                 "[VbaRunnerPlugin] RunScriptAsync started. TargetHwnd={TargetHwnd}, TargetProcess={TargetProcess}, TargetPid={TargetPid}",
                 context.TargetWindowHandle,
@@ -117,7 +140,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
             string scriptContent;
             try
             {
-                scriptContent = await File.ReadAllTextAsync(scriptPath);
+                scriptContent = await File.ReadAllTextAsync(scriptPath, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -137,7 +160,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
                 _logger?.LogDebug("[VbaRunnerPlugin] Setting foreground window to: {Hwnd}", context.TargetWindowHandle);
                 bool success = WindowHelper.SetForegroundWindow(context.TargetWindowHandle);
                 _logger?.LogDebug("[VbaRunnerPlugin] SetForegroundWindow result: {Success}", success);
-                await Task.Delay(100); // 等待窗口切换
+                await Task.Delay(100, cancellationToken); // 等待窗口切换
             }
             else
             {
@@ -152,10 +175,11 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
 
             _logger?.LogDebug("[VbaRunnerPlugin] Dispatching to UI thread...");
 
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            var dispatcherOperation = System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 try
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     // 5. 连接 Excel/WPS
                     _logger?.LogDebug("[VbaRunnerPlugin] Calling ScriptEngine.Connect()...");
                     bool connected = _scriptEngine!.Connect(context.TargetProcessId);
@@ -198,6 +222,14 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
                     errorMessage = $"Execution failed: {ex.Message}";
                 }
             });
+
+            var completed = await Task.WhenAny(dispatcherOperation.Task, Task.Delay(Timeout.Infinite, cancellationToken));
+            if (completed != dispatcherOperation.Task)
+            {
+                throw new OperationCanceledException(cancellationToken);
+            }
+
+            await dispatcherOperation.Task;
 
             // [Fix] 8. 归还焦点给原始窗口 (Professional Architect Recommendation)
             // 无论脚本执行成功与否，都尝试将焦点还给用户之前工作的窗口

@@ -15,7 +15,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
     /// 书签脚本运行器插件 - 在浏览器中执行 Bookmarklet JavaScript 脚本
     /// Refactored to use UI Automation for instant, clipboard-free injection.
     /// </summary>
-    public class BookmarkletRunnerPlugin : IPulsarPlugin, IPluginTiered
+    public class BookmarkletRunnerPlugin : IPulsarPlugin, IPluginTiered, ICancellablePulsarPlugin
     {
         private IWindowService? _windowService;
         private ILogger<BookmarkletRunnerPlugin>? _logger;
@@ -64,13 +64,35 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
             };
         }
 
+        public async Task<PluginResult> ExecuteAsync(
+            string action,
+            IReadOnlyDictionary<string, string> args,
+            PulsarContext context,
+            CancellationToken cancellationToken)
+        {
+            if (_windowService == null)
+            {
+                return PluginResult.Error("Plugin not initialized");
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            return action.ToLowerInvariant() switch
+            {
+                "run" => await RunBookmarkletAsync(args, context, cancellationToken),
+                _ => PluginResult.Error($"Unknown action: {action}")
+            };
+        }
+
         /// <summary>
         /// 运行书签脚本
         /// </summary>
         private async Task<PluginResult> RunBookmarkletAsync(
             IReadOnlyDictionary<string, string> args,
-            PulsarContext context)
+            PulsarContext context,
+            CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             // 1. 验证并获取脚本路径
             if (!args.TryGetValue("scriptPath", out var scriptPath) || string.IsNullOrEmpty(scriptPath))
             {
@@ -144,12 +166,13 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
             }
 
             // 7. 等待窗口切换动画完成
-            await Task.Delay(200);
+            await Task.Delay(200, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
 
             // 8. 执行智能输入模式 (Smart Input Mode via UIA)
             try
             {
-                bool success = ExecuteSmartInput(scriptContent);
+                bool success = ExecuteSmartInput(scriptContent, cancellationToken);
                 
                 if (!success)
                 {
@@ -158,6 +181,10 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
 
                 _logger?.LogInformation("[BookmarkletRunner] Bookmarklet executed successfully");
                 return PluginResult.Ok("脚本已执行");
+            }
+            catch (OperationCanceledException)
+            {
+                return PluginResult.Error("Operation cancelled");
             }
             catch (Exception ex)
             {
@@ -171,7 +198,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
         /// Falls back to simulated typing if UIA fails.
         /// No clipboard pollution!
         /// </summary>
-        private bool ExecuteSmartInput(string scriptContent)
+        private bool ExecuteSmartInput(string scriptContent, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -187,7 +214,9 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
                 InputHelper.SendKeyCombination(InputHelper.VK_CONTROL, InputHelper.VK_L);
                 
                 // Wait for address bar to gain focus and select all text
+                cancellationToken.ThrowIfCancellationRequested();
                 Thread.Sleep(200);
+                cancellationToken.ThrowIfCancellationRequested();
 
                 // --- Step 2: Try UI Automation Injection ---
                 _logger?.LogDebug("[BookmarkletRunner] Attempting UIA injection...");
@@ -199,6 +228,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
                     
                     // Small delay to ensure browser UI updates
                     Thread.Sleep(50);
+                    cancellationToken.ThrowIfCancellationRequested();
                     
                     // Send Enter to execute
                     InputHelper.SendKeyCombination(InputHelper.VK_RETURN);
@@ -210,11 +240,17 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
                 
                 // Note: SendText uses SendInput which is fast, but browser might render it slowly.
                 // But it's reliable and doesn't touch clipboard.
+                cancellationToken.ThrowIfCancellationRequested();
                 InputHelper.SendText(fullScript);
                 Thread.Sleep(50);
+                cancellationToken.ThrowIfCancellationRequested();
                 InputHelper.SendKeyCombination(InputHelper.VK_RETURN);
                 
                 return true;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
