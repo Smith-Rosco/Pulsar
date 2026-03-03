@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows; // Explicitly use WPF namespace
 using CommunityToolkit.Mvvm.Messaging;
@@ -13,7 +12,7 @@ using Pulsar.Views;
 
 namespace Pulsar.Plugins.Core.SystemCommand
 {
-    public class SystemCommandPlugin : IPulsarPlugin, IPluginTiered, ICancellablePulsarPlugin
+    public class SystemCommandPlugin : IPulsarPlugin, IPluginTiered
     {
         public string Id => "com.pulsar.system";
         public string DisplayName => "System Command";
@@ -52,7 +51,6 @@ namespace Pulsar.Plugins.Core.SystemCommand
             {
                 try
                 {
-                    // Ensure Settings Window is Open
                     // Ensure Settings Window is Open
                     var settingsWindow = System.Windows.Application.Current.Windows.OfType<SettingsWindow>().FirstOrDefault();
                     if (settingsWindow == null)
@@ -95,79 +93,6 @@ namespace Pulsar.Plugins.Core.SystemCommand
                     return PluginResult.Error($"Failed to execute system command: {ex.Message}");
                 }
             });
-        }
-
-        public async Task<PluginResult> ExecuteAsync(
-            string action,
-            IReadOnlyDictionary<string, string> args,
-            PulsarContext context,
-            CancellationToken cancellationToken)
-        {
-            if (_services == null) return PluginResult.Error("System plugin not initialized");
-
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var command = action;
-            if ((command == "run" || command == "execute") && args.TryGetValue("command", out var specificCommand))
-            {
-                command = specificCommand;
-            }
-
-            var dispatcherOperation = System.Windows.Application.Current.Dispatcher.InvokeAsync<PluginResult>(() =>
-            {
-                try
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    // Ensure Settings Window is Open
-                    var settingsWindow = System.Windows.Application.Current.Windows.OfType<SettingsWindow>().FirstOrDefault();
-                    if (settingsWindow == null)
-                    {
-                        settingsWindow = _services.GetRequiredService<SettingsWindow>();
-                        settingsWindow.Show();
-                    }
-                    else
-                    {
-                        settingsWindow.Show();
-                        if (settingsWindow.WindowState == WindowState.Minimized)
-                            settingsWindow.WindowState = WindowState.Normal;
-                        settingsWindow.Activate();
-                    }
-
-                    // Now handle the command
-                    switch (command)
-                    {
-                        case "pulsar.system.open_settings":
-                            WeakReferenceMessenger.Default.Send(new OpenSettingsMessage("Global", "Settings"));
-                            return PluginResult.Ok("Settings opened");
-
-                        case "pulsar.system.quick_add_profile":
-                            if (!string.IsNullOrEmpty(context.TargetProcessName))
-                            {
-                                WeakReferenceMessenger.Default.Send(new OpenSettingsMessage(context.TargetProcessName, "Slots"));
-                                return PluginResult.Ok($"Quick Add for {context.DisplayProcessName}");
-                            }
-                            else
-                            {
-                                return PluginResult.Error("No target process found in context");
-                            }
-
-                        default:
-                            return PluginResult.Error($"Unknown system command: {command}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    return PluginResult.Error($"Failed to execute system command: {ex.Message}");
-                }
-            });
-
-            var completed = await Task.WhenAny(dispatcherOperation.Task, Task.Delay(Timeout.Infinite, cancellationToken));
-            if (completed != dispatcherOperation.Task)
-            {
-                throw new OperationCanceledException(cancellationToken);
-            }
-
-            return await dispatcherOperation.Task;
         }
     }
 }

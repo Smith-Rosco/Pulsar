@@ -65,12 +65,6 @@ namespace Pulsar.Models
         // [New] Remote Desktop Settings
         public RemoteDesktopSettings RemoteDesktop { get; set; } = new();
 
-        /// <summary>
-        /// Default timeout (ms) for extension plugin action execution.
-        /// 0 or negative means no timeout.
-        /// </summary>
-        public int PluginExecutionTimeoutMs { get; set; } = 2500;
-
         // [Helper] 将字符串转换为 AppTheme 枚举
         [JsonIgnore]
         public AppTheme LauncherThemeEnum => 
