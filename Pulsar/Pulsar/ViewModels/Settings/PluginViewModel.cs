@@ -307,12 +307,28 @@ namespace Pulsar.ViewModels.Settings
 
                     if (result == Models.Enums.DialogResult.Confirmed)
                     {
-                        // Note: ProcessRegistryService already updated Profiles.json
-                        // Just refresh the settings display
-                        Settings.Clear();
-                        if (_plugin is IPluginConfigurable configurable)
+                        // [Fix] Update plugin configuration with new blacklist value
+                        var config = _configService.Current;
+                        if (config.Plugins.TryGetValue(Id, out var profile))
                         {
-                            LoadSettings(configurable);
+                            // Update the ExcludeProcesses setting
+                            profile.Config["ExcludeProcesses"] = vm.Result ?? string.Empty;
+                            
+                            // [Critical] Notify plugin to update WindowService blacklist
+                            if (_plugin is IPluginConfigurable configurable)
+                            {
+                                configurable.UpdateSettings(profile.Config);
+                            }
+                            
+                            // Save to disk
+                            await _configService.SaveAsync(config);
+                        }
+                        
+                        // Refresh the settings display
+                        Settings.Clear();
+                        if (_plugin is IPluginConfigurable configurableForDisplay)
+                        {
+                            LoadSettings(configurableForDisplay);
                         }
                     }
                 }
