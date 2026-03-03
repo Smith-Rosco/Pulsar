@@ -84,6 +84,7 @@ namespace Pulsar
 
             // 1. Core Services
             serviceCollection.AddSingleton<IConfigService, ConfigService>();
+            serviceCollection.AddSingleton<IProcessRegistryService, ProcessRegistryService>();
             serviceCollection.AddSingleton<IWindowService, WindowService>();
             serviceCollection.AddSingleton<ITrayService, TrayIconService>();
             serviceCollection.AddSingleton<IThemeService, ThemeService>();
@@ -191,6 +192,11 @@ namespace Pulsar
                 concreteConfigService.SetValidationPipeline(validationPipeline);
                 Log.Information("[App] Validation pipeline configured for ConfigService");
             }
+
+            // [New] Initialize ProcessRegistryService (migrate from legacy config)
+            var processRegistryService = Services.GetRequiredService<IProcessRegistryService>();
+            Task.Run(async () => await processRegistryService.InitializeAsync()).GetAwaiter().GetResult();
+            Log.Information("[App] ProcessRegistryService initialized");
 
             // 6. Start Services
             var trayService = Services.GetRequiredService<ITrayService>();

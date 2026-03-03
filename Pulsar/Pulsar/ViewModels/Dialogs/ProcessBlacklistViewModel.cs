@@ -14,6 +14,7 @@ namespace Pulsar.ViewModels.Dialogs
     public partial class ProcessBlacklistViewModel : ObservableObject, IDialogViewModel
     {
         private readonly IWindowService _windowService;
+        private readonly IProcessRegistryService _processRegistryService;
         private readonly string _currentBlacklist;
 
         [ObservableProperty]
@@ -27,9 +28,10 @@ namespace Pulsar.ViewModels.Dialogs
 
         public string Result { get; private set; } = string.Empty;
 
-        public ProcessBlacklistViewModel(IWindowService windowService, string currentBlacklist)
+        public ProcessBlacklistViewModel(IWindowService windowService, IProcessRegistryService processRegistryService, string currentBlacklist)
         {
             _windowService = windowService;
+            _processRegistryService = processRegistryService;
             _currentBlacklist = currentBlacklist;
             LoadProcessesAsync();
         }
@@ -39,57 +41,30 @@ namespace Pulsar.ViewModels.Dialogs
             IsLoading = true;
             try
             {
-                var windows = await _windowService.GetActiveWindowsAsync();
-                
-                // Group by process name and get unique processes
-                var uniqueProcesses = windows
-                    .GroupBy(w => w.ProcessName, StringComparer.OrdinalIgnoreCase)
-                    .Select(g => g.First())
-                    .OrderBy(w => w.ProcessName)
-                    .ToList();
+                // 1. 从注册表获取所有已知进程
+                var allProcesses = await _processRegistryService.GetAllProcessesAsync();
 
-                // Parse current blacklist
-                var blacklistedNames = _currentBlacklist
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(s => s.Trim())
-                    .Where(s => !string.IsNullOrEmpty(s))
+                // 2. 获取正在运行的进程（用于标记"运行中"状态）
+                var windows = await _windowService.GetActiveWindowsAsync();
+                var runningNames = windows
+                    .Select(w => w.ProcessName)
                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-                // Create a dictionary to track which processes we've added
-                var addedProcesses = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-                // Add running processes
-                foreach (var process in uniqueProcesses)
+                // 3. 构建 UI 列表
+                foreach (var entry in allProcesses)
                 {
+                    // 加载图标（三级缓存）
+                    var icon = await _processRegistryService.GetIconAsync(entry.ProcessName);
+
                     Processes.Add(new ProcessItemViewModel
                     {
-                        ProcessName = process.ProcessName,
-                        Icon = process.AppIcon,
-                        IsBlacklisted = blacklistedNames.Contains(process.ProcessName)
+                        ProcessName = entry.ProcessName,
+                        DisplayName = entry.DisplayName ?? entry.ProcessName,
+                        Icon = icon,
+                        IsBlacklisted = entry.IsBlacklisted,
+                        IsRunning = runningNames.Contains(entry.ProcessName),
+                        LastSeen = entry.LastSeen
                     });
-                    addedProcesses.Add(process.ProcessName);
-                }
-
-                // Add blacklisted processes that are not currently running
-                foreach (var blacklistedName in blacklistedNames)
-                {
-                    if (!addedProcesses.Contains(blacklistedName))
-                    {
-                        Processes.Add(new ProcessItemViewModel
-                        {
-                            ProcessName = blacklistedName,
-                            Icon = null,
-                            IsBlacklisted = true
-                        });
-                    }
-                }
-
-                // Sort by name
-                var sorted = Processes.OrderBy(p => p.ProcessName).ToList();
-                Processes.Clear();
-                foreach (var item in sorted)
-                {
-                    Processes.Add(item);
                 }
             }
             finally
@@ -98,19 +73,23 @@ namespace Pulsar.ViewModels.Dialogs
             }
         }
 
-        public Task<bool> CanCloseAsync(DialogResult result)
+        public async Task<bool> CanCloseAsync(DialogResult result)
         {
             if (result == DialogResult.Confirmed)
             {
-                // Build comma-separated string
+                // 获取所有被勾选的进程
                 var blacklisted = Processes
                     .Where(p => p.IsBlacklisted)
                     .Select(p => p.ProcessName)
                     .ToList();
 
+                // 更新注册表（会自动同步到 Profiles.json）
+                await _processRegistryService.UpdateBlacklistAsync(blacklisted);
+
+                // 返回逗号分隔的字符串（用于向后兼容）
                 Result = string.Join(",", blacklisted);
             }
-            return Task.FromResult(true);
+            return true;
         }
     }
 
@@ -120,9 +99,25 @@ namespace Pulsar.ViewModels.Dialogs
         private string _processName = string.Empty;
 
         [ObservableProperty]
+        private string _displayName = string.Empty;
+
+        [ObservableProperty]
         private System.Windows.Media.ImageSource? _icon;
 
         [ObservableProperty]
         private bool _isBlacklisted;
+
+        [ObservableProperty]
+        private bool _isRunning;
+
+        [ObservableProperty]
+        private DateTime _lastSeen;
+
+        /// <summary>
+        /// 状态文本：显示运行状态或最后见到时间
+        /// </summary>
+        public string StatusText => IsRunning 
+            ? "Running" 
+            : $"Last seen: {LastSeen:yyyy-MM-dd}";
     }
 }

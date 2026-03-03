@@ -95,6 +95,7 @@ namespace Pulsar.ViewModels
         private readonly IThemeService _themeService;
         private readonly IHotkeyService _hotkeyService;
         private readonly IDialogService _dialogService;
+        private readonly IProcessRegistryService? _processRegistryService;
         private readonly SecretRepository _secretRepo;
         private readonly ILogger<SettingsViewModel> _logger;
         private ProfilesConfig _config;
@@ -243,7 +244,8 @@ namespace Pulsar.ViewModels
             IHotkeyService hotkeyService,
             IDialogService dialogService,
             SecretRepository secretRepo,
-            ILogger<SettingsViewModel> logger)
+            ILogger<SettingsViewModel> logger,
+            IProcessRegistryService? processRegistryService = null)
         {
             _configService = configService;
             _windowService = windowService;
@@ -252,8 +254,12 @@ namespace Pulsar.ViewModels
             _dialogService = dialogService;
             _secretRepo = secretRepo;
             _logger = logger;
+            _processRegistryService = processRegistryService;
             _config = new ProfilesConfig();
             Initialize();
+
+            // Load cache statistics
+            _ = LoadCacheStatisticsAsync();
 
             // Subscribe to OpenSettingsMessage
             WeakReferenceMessenger.Default.Register<OpenSettingsMessage>(this, (r, m) =>
@@ -1237,6 +1243,59 @@ namespace Pulsar.ViewModels
             if (actionId == "ShowGrid") OnPropertyChanged(nameof(ShowGridHotkey));
             if (actionId == "ShowSwitcher") OnPropertyChanged(nameof(ShowSwitcherHotkey));
         }
+
+        // ===== Cache Management =====
+
+        [ObservableProperty]
+        private string _cacheStatistics = "Loading...";
+
+        private async Task LoadCacheStatisticsAsync()
+        {
+            if (_processRegistryService == null)
+            {
+                CacheStatistics = "Cache service not available";
+                return;
+            }
+
+            try
+            {
+                var stats = await _processRegistryService.GetCacheStatisticsAsync();
+                CacheStatistics = stats.Summary;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[SettingsViewModel] Failed to load cache statistics");
+                CacheStatistics = "Failed to load statistics";
+            }
+        }
+
+        [RelayCommand]
+        private async Task CleanCacheAsync()
+        {
+            if (_processRegistryService == null) return;
+
+            try
+            {
+                var result = await _dialogService.ShowConfirmationAsync(
+                    "Clean Icon Cache",
+                    "This will remove cached icons for processes not seen in the last 30 days. Blacklisted processes will not be affected.\n\nContinue?");
+
+                if (result == DialogResult.Confirmed)
+                {
+                    await _processRegistryService.CleanupExpiredCacheAsync(30);
+                    await LoadCacheStatisticsAsync();
+                    
+                    SendNotification("Cache Cleaned", "Expired icon cache has been removed", ControlAppearance.Success);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[SettingsViewModel] Failed to clean cache");
+                SendNotification("Error", "Failed to clean cache", ControlAppearance.Danger);
+            }
+        }
+
+        // ===== Theme Management =====
 
         private void ApplySettingsTheme(AppTheme theme)
         {

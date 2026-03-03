@@ -39,8 +39,10 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
+                        <!-- Icon with running indicator -->
                         <Grid Grid.Column="0" Width="32" Height="32" Margin="0,0,10,0">
                             <Border Background="{DynamicResource ControlFillColorDefaultBrush}" CornerRadius="4">
                                 <ui:SymbolIcon Symbol="AppGeneric24" FontSize="16" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
@@ -57,15 +59,46 @@
                                     </Style>
                                 </Image.Style>
                             </Image>
+                            <!-- Running indicator (green dot) -->
+                            <Ellipse Width="8" Height="8" 
+                                     Fill="LimeGreen" 
+                                     HorizontalAlignment="Right" 
+                                     VerticalAlignment="Bottom"
+                                     Margin="0,0,-2,-2">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
                         </Grid>
 
-                        <TextBlock Grid.Column="1" 
-                                   Text="{Binding ProcessName}" 
-                                   VerticalAlignment="Center"
-                                   FontWeight="SemiBold" 
-                                   TextTrimming="CharacterEllipsis"/>
+                        <!-- Process name and display name -->
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding DisplayName}" 
+                                       FontWeight="SemiBold" 
+                                       TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Text="{Binding ProcessName}" 
+                                       FontSize="11" 
+                                       Opacity="0.7"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
 
-                        <CheckBox Grid.Column="2" 
+                        <!-- Status text -->
+                        <TextBlock Grid.Column="2" 
+                                   Text="{Binding StatusText}" 
+                                   FontSize="11" 
+                                   Opacity="0.7" 
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,12,0"/>
+
+                        <!-- Blacklist checkbox -->
+                        <CheckBox Grid.Column="3" 
                                   IsChecked="{Binding IsBlacklisted}"
                                   VerticalAlignment="Center"/>
                     </Grid>

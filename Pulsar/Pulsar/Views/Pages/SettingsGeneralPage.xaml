@@ -142,6 +142,35 @@
                     </StackPanel>
                 </ui:CardExpander>
 
+                <!-- Cache Management Section -->
+                <ui:CardExpander Icon="Database24" Header="Cache Management" Margin="0,0,0,12" IsExpanded="False">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Icon Cache Statistics" FontWeight="Medium"/>
+                                <TextBlock Text="{Binding DataContext.CacheStatistics, RelativeSource={RelativeSource AncestorType=Page}}" 
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
+                                           FontSize="12"/>
+                            </StackPanel>
+                            <ui:Button Grid.Column="1" 
+                                       Content="Clean Cache"
+                                       Icon="{ui:SymbolIcon Delete24}"
+                                       Command="{Binding DataContext.CleanCacheCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                       Style="{StaticResource PulsarSecondaryButtonStyle}"/>
+                        </Grid>
+                        
+                        <TextBlock Text="Removes icon cache for processes not seen in the last 30 days (blacklisted processes are never removed)." 
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}" 
+                                   FontSize="11"
+                                   Margin="0,0,0,0"/>
+                    </StackPanel>
+                </ui:CardExpander>
+
             </StackPanel>
         </ScrollViewer>
     </Grid>

@@ -20,6 +20,7 @@ namespace Pulsar.Services
     public class WindowService : IWindowService
     {
         private readonly ILogger<WindowService> _logger;
+        private readonly IProcessRegistryService? _processRegistryService;
 
         // [New] 状态管理字段
         private IntPtr _previousWindowHandle = IntPtr.Zero;
@@ -30,9 +31,10 @@ namespace Pulsar.Services
         private HashSet<string> _dynamicBlacklist = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private readonly object _blacklistLock = new object();
 
-        public WindowService(ILogger<WindowService> logger)
+        public WindowService(ILogger<WindowService> logger, IProcessRegistryService? processRegistryService = null)
         {
             _logger = logger;
+            _processRegistryService = processRegistryService;
             using (var currentProcess = Process.GetCurrentProcess())
             {
                 _currentProcessId = currentProcess.Id;
@@ -286,6 +288,13 @@ namespace Pulsar.Services
 
                 // [Fix] 移除强制去重逻辑，直接返回所有有效窗口
                 // 这允许 ViewModel 识别同一进程的多个窗口并进行分组
+                
+                // [New] 批量注册进程到注册表（异步，不阻塞）
+                if (_processRegistryService != null && results.Count > 0)
+                {
+                    _ = Task.Run(() => _processRegistryService.RegisterProcessesAsync(results));
+                }
+                
                 return results;
             });
         }

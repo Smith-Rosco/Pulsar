@@ -284,10 +284,11 @@ namespace Pulsar.ViewModels.Settings
             // Special handling for WinSwitcher blacklist configuration
             if (Id == "com.pulsar.winswitcher")
             {
-                // Get WindowService from DI container
+                // Get services from DI container
                 var windowService = _serviceProvider?.GetService<IWindowService>();
+                var processRegistryService = _serviceProvider?.GetService<IProcessRegistryService>();
 
-                if (windowService != null)
+                if (windowService != null && processRegistryService != null)
                 {
                     // Get current blacklist value
                     var currentConfig = GetCurrentConfig();
@@ -295,7 +296,10 @@ namespace Pulsar.ViewModels.Settings
                         ? val?.ToString() ?? string.Empty 
                         : string.Empty;
 
-                    var vm = new Pulsar.ViewModels.Dialogs.ProcessBlacklistViewModel(windowService, currentBlacklist);
+                    var vm = new Pulsar.ViewModels.Dialogs.ProcessBlacklistViewModel(
+                        windowService, 
+                        processRegistryService, 
+                        currentBlacklist);
                     var result = await _dialogService.ShowCustomAsync(
                         "Process Blacklist", 
                         vm, 
@@ -303,10 +307,8 @@ namespace Pulsar.ViewModels.Settings
 
                     if (result == Models.Enums.DialogResult.Confirmed)
                     {
-                        // Update the ExcludeProcesses setting
-                        OnSettingChanged("ExcludeProcesses", vm.Result);
-                        
-                        // Refresh settings display
+                        // Note: ProcessRegistryService already updated Profiles.json
+                        // Just refresh the settings display
                         Settings.Clear();
                         if (_plugin is IPluginConfigurable configurable)
                         {
