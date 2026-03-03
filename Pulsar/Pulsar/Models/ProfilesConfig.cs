@@ -188,13 +188,20 @@ namespace Pulsar.Models
             set => SetProperty(ref _color, value);
         }
 
-        // [New] 逻辑顺序 - 用户定义的优先级，用于自定义 Slot 显示顺序
-        private int _order = 0;
+        // [Deprecated] Order 属性已废弃，保留仅用于向后兼容的数据迁移
+        // 新代码应使用 Slot 属性作为唯一的位置标识
         [JsonPropertyName("order")]
-        public int Order
+        [Obsolete("Use Slot property instead. Order is deprecated and will be removed in future versions.")]
+        public int Order { get; set; } = 0;
+
+        // [Primary] 槽位位置 - 用户定义的固定位置 (1-8 for Launcher, 1+ for Actions)
+        // 这是唯一的排序依据，持久化到 JSON
+        private int _slot = 0;
+        [JsonPropertyName("slot")]
+        public int Slot
         {
-            get => _order;
-            set => SetProperty(ref _order, value);
+            get => _slot;
+            set => SetProperty(ref _slot, value);
         }
 
         // [UI Support] 徽章与颜色
@@ -225,11 +232,6 @@ namespace Pulsar.Models
                 return "#FFFFFF";
             }
         }
-
-        // [Runtime] 槽位索引 - 运行时由 RadialMenuViewModel 动态分配 (1-8)
-        // 不再存储到 JSON，改为运行时计算
-        [JsonIgnore]
-        public int Slot { get; set; }
 
         // [Indexer] 安全的索引器绑定，避免 KeyNotFoundException
         public string this[string key]

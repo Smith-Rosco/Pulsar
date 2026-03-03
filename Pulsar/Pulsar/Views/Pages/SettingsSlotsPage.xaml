@@ -367,10 +367,10 @@
                                                          IsToggleVisible="False"
                                                          PageDataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Page}}">
                                     
-                                    <!-- Header Content: Order + Type Badge -->
+                                    <!-- Header Content: Position + Type Badge -->
                                     <controls:ExpandableCard.HeaderContent>
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{Binding Order, StringFormat='Order {0}'}" 
+                                            <TextBlock Text="{Binding Slot, StringFormat='Position {0}'}" 
                                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
                                                        FontSize="12" Margin="0,0,8,0"/>
                                             <Border Background="{DynamicResource ControlFillColorSecondaryBrush}" 

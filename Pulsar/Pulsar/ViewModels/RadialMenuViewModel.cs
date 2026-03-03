@@ -391,16 +391,16 @@ namespace Pulsar.ViewModels
                             slots.AddRange(globalProfile.GetSlots(true));
                         }
 
-                        // [Smart Profile Creator] - Insert at start with Order = 0 (highest priority)
+                        // [Smart Profile Creator] - Insert at start with Slot = 0 (highest priority)
                         var creator = new PluginSlot 
                         { 
-                            Order = 0, // Order = 0 ensures it appears first
+                            Slot = 0, // Slot = 0 ensures it appears first
                             Label = $"Add {_lastContext.DisplayProcessName}",  // ✅ 使用格式化的进程名
                             IconKey = "\uE710", // Add Icon
                             PluginId = "internal:create_profile" 
                         };
                         
-                        // Insert at start - will be sorted by Order in CommandPageProvider
+                        // Insert at start - will be sorted by Slot in CommandPageProvider
                         slots.Insert(0, creator);
                     }
 

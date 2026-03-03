@@ -9,7 +9,7 @@ namespace Pulsar.Core.Converters
 {
     /// <summary>
     /// Handles migration from Dictionary-based slots ("Slot_1": {...}) to List-based slots ([{ "Slot": 1, ... }])
-    /// Also auto-assigns Order field if missing (for backward compatibility)
+    /// Also migrates deprecated Order field to Slot field (for backward compatibility)
     /// </summary>
     public class LegacySlotConverter : JsonConverter<List<PluginSlot>>
     {
@@ -52,16 +52,16 @@ namespace Pulsar.Core.Converters
                         
                         if (slot != null)
                         {
-                            // [Migration] Use slotIndex as Order if Order is not set
-                            if (slot.Order == 0) slot.Order = slotIndex;
+                            // [Migration] Use slotIndex as Slot if Slot is not set
+                            if (slot.Slot == 0) slot.Slot = slotIndex;
                             list.Add(slot);
                         }
                     }
                 }
             }
 
-            // [Auto-Assign Order] If any slot has Order = 0, assign sequential order
-            NormalizeOrder(list);
+            // [Data Migration] Migrate Order → Slot for backward compatibility
+            MigrateOrderToSlot(list);
 
             return list;
         }
@@ -73,29 +73,42 @@ namespace Pulsar.Core.Converters
         }
 
         /// <summary>
-        /// 规范化 Order 字段：如果有任何 Slot 的 Order = 0，则按当前顺序自动分配 1, 2, 3...
+        /// 数据迁移：将废弃的 Order 字段迁移到 Slot 字段
+        /// 如果 Slot = 0 但 Order > 0，则使用 Order 的值作为 Slot
+        /// 如果两者都为 0，则按当前顺序自动分配 1, 2, 3...
         /// </summary>
-        private static void NormalizeOrder(List<PluginSlot> slots)
+        private static void MigrateOrderToSlot(List<PluginSlot> slots)
         {
             if (slots.Count == 0) return;
 
-            // 检查是否有未设置 Order 的 Slot
-            bool hasUnsetOrder = slots.Any(s => s.Order == 0);
-            
-            if (hasUnsetOrder)
+            // Step 1: Migrate Order → Slot
+            foreach (var slot in slots)
             {
-                // 按当前顺序分配 Order
+#pragma warning disable CS0618 // Type or member is obsolete
+                if (slot.Slot == 0 && slot.Order > 0)
+                {
+                    slot.Slot = slot.Order;
+                }
+#pragma warning restore CS0618
+            }
+
+            // Step 2: Auto-assign Slot for items with Slot = 0
+            bool hasUnsetSlot = slots.Any(s => s.Slot == 0);
+            
+            if (hasUnsetSlot)
+            {
+                // 按当前顺序分配 Slot
                 for (int i = 0; i < slots.Count; i++)
                 {
-                    if (slots[i].Order == 0)
+                    if (slots[i].Slot == 0)
                     {
-                        slots[i].Order = i + 1;
+                        slots[i].Slot = i + 1;
                     }
                 }
             }
 
-            // 按 Order 排序
-            slots.Sort((a, b) => a.Order.CompareTo(b.Order));
+            // Step 3: Sort by Slot
+            slots.Sort((a, b) => a.Slot.CompareTo(b.Slot));
         }
     }
 }

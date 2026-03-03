@@ -404,53 +404,26 @@ namespace Pulsar.ViewModels
                 }
             }
 
-            CurrentSlots = new ObservableCollection<PluginSlot>(sourceList.OrderBy(s => s.Order));
+            // [Refactor] 统一使用 Slot 作为排序依据
+            CurrentSlots = new ObservableCollection<PluginSlot>(sourceList.OrderBy(s => s.Slot));
         }
 
         [RelayCommand]
         public void AddSlotOfType(string pluginId)
         {
             if (CurrentSlots == null) return;
-            // [Refactor] Removed 8-slot limit check
             
-            // 🎯 关键修复：根据上下文类型决定使用 Order 还是 Slot
-            bool isLauncherMode = CurrentContext?.Key == "Launcher";
-            
-            int nextOrder = 1;
+            // [Refactor] 统一使用 Slot 作为位置标识
             int nextSlot = 1;
             
             if (CurrentSlots.Count > 0)
             {
-                nextOrder = CurrentSlots.Max(s => s.Order) + 1;
-                
-                // 对于 Launcher 模式，找到下一个可用的 Slot 位置（1-8）
-                if (isLauncherMode)
-                {
-                    var usedSlots = CurrentSlots.Where(s => s.Slot >= 1 && s.Slot <= 8)
-                                                 .Select(s => s.Slot)
-                                                 .ToHashSet();
-                    
-                    for (int i = 1; i <= 8; i++)
-                    {
-                        if (!usedSlots.Contains(i))
-                        {
-                            nextSlot = i;
-                            break;
-                        }
-                    }
-                    
-                    // 如果 1-8 都被占用，使用 Order 作为 Slot（会被动态分配）
-                    if (nextSlot == 1 && usedSlots.Contains(1))
-                    {
-                        nextSlot = nextOrder;
-                    }
-                }
+                nextSlot = CurrentSlots.Max(s => s.Slot) + 1;
             }
 
             var newItem = new PluginSlot 
             { 
-                Order = nextOrder,
-                Slot = isLauncherMode ? nextSlot : 0  // Launcher 模式设置 Slot，其他模式使用 Order
+                Slot = nextSlot
             };
 
             switch (pluginId)
@@ -950,11 +923,11 @@ namespace Pulsar.ViewModels
             
             var prevItem = CurrentSlots[index - 1];
             
-            // Swap Order values
-            (item.Order, prevItem.Order) = (prevItem.Order, item.Order);
+            // [Refactor] Swap Slot values instead of Order
+            (item.Slot, prevItem.Slot) = (prevItem.Slot, item.Slot);
             
-            // Re-sort the collection by Order
-            var sortedList = CurrentSlots.OrderBy(s => s.Order).ToList();
+            // Re-sort the collection by Slot
+            var sortedList = CurrentSlots.OrderBy(s => s.Slot).ToList();
             CurrentSlots.Clear();
             foreach (var slot in sortedList)
             {
@@ -975,11 +948,11 @@ namespace Pulsar.ViewModels
             
             var nextItem = CurrentSlots[index + 1];
             
-            // Swap Order values
-            (item.Order, nextItem.Order) = (nextItem.Order, item.Order);
+            // [Refactor] Swap Slot values instead of Order
+            (item.Slot, nextItem.Slot) = (nextItem.Slot, item.Slot);
             
-            // Re-sort the collection by Order
-            var sortedList = CurrentSlots.OrderBy(s => s.Order).ToList();
+            // Re-sort the collection by Slot
+            var sortedList = CurrentSlots.OrderBy(s => s.Slot).ToList();
             CurrentSlots.Clear();
             foreach (var slot in sortedList)
             {
@@ -1386,10 +1359,10 @@ namespace Pulsar.ViewModels
                 // Insert at the exact position indicated by the adorner
                 CurrentSlots.Insert(insertIndex, sourceSlot);
 
-                // Reassign Order values based on new positions
+                // [Refactor] Reassign Slot values based on new positions (1, 2, 3...)
                 for (int i = 0; i < CurrentSlots.Count; i++)
                 {
-                    CurrentSlots[i].Order = i + 1;
+                    CurrentSlots[i].Slot = i + 1;
                 }
 
                 MarkDirty(); // [Phase 2]
