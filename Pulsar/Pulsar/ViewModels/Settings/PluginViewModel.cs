@@ -9,6 +9,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Pulsar.ViewModels.Settings
 {
@@ -22,6 +23,7 @@ namespace Pulsar.ViewModels.Settings
         private readonly IPluginHealthMonitor? _healthMonitor;
         private readonly IPluginLogService? _logService;
         private readonly IDialogService? _dialogService;
+        private readonly IServiceProvider? _serviceProvider;
 
         [ObservableProperty]
         private bool _isEnabled;
@@ -79,7 +81,7 @@ namespace Pulsar.ViewModels.Settings
 
         public PluginViewModel(IPulsarPlugin plugin, PluginRegistry registry, IConfigService configService,
             IPluginUsageTracker? usageTracker = null, IPluginHealthMonitor? healthMonitor = null,
-            IPluginLogService? logService = null, IDialogService? dialogService = null)
+            IPluginLogService? logService = null, IDialogService? dialogService = null, IServiceProvider? serviceProvider = null)
         {
             _plugin = plugin;
             _registry = registry;
@@ -88,6 +90,7 @@ namespace Pulsar.ViewModels.Settings
             _healthMonitor = healthMonitor;
             _logService = logService;
             _dialogService = dialogService;
+            _serviceProvider = serviceProvider;
 
             // Load Initial State
             _isEnabled = _registry.IsPluginEnabled(plugin.Id);
@@ -213,6 +216,9 @@ namespace Pulsar.ViewModels.Settings
 
             if (newValue != null)
             {
+                // [Architectural Note] No need to convert JsonElement here anymore.
+                // ConfigService.LoadAsync() now normalizes all JsonElement values at load time.
+                // This ensures type consistency throughout the application lifecycle.
                 profile.Config[key] = newValue;
             }
             else
@@ -270,13 +276,53 @@ namespace Pulsar.ViewModels.Settings
         [RelayCommand]
         private async Task Configure()
         {
-            if (_dialogService == null || !HasSettings)
+            if (_dialogService == null)
             {
                 return;
             }
 
-            // TODO: 实现插件配置对话框
-            // 当前暂时显示提示信息，后续可以创建专门的配置对话框
+            // Special handling for WinSwitcher blacklist configuration
+            if (Id == "com.pulsar.winswitcher")
+            {
+                // Get WindowService from DI container
+                var windowService = _serviceProvider?.GetService<IWindowService>();
+
+                if (windowService != null)
+                {
+                    // Get current blacklist value
+                    var currentConfig = GetCurrentConfig();
+                    var currentBlacklist = currentConfig.TryGetValue("ExcludeProcesses", out var val) 
+                        ? val?.ToString() ?? string.Empty 
+                        : string.Empty;
+
+                    var vm = new Pulsar.ViewModels.Dialogs.ProcessBlacklistViewModel(windowService, currentBlacklist);
+                    var result = await _dialogService.ShowCustomAsync(
+                        "Process Blacklist", 
+                        vm, 
+                        Models.Enums.DialogButtons.OkCancel);
+
+                    if (result == Models.Enums.DialogResult.Confirmed)
+                    {
+                        // Update the ExcludeProcesses setting
+                        OnSettingChanged("ExcludeProcesses", vm.Result);
+                        
+                        // Refresh settings display
+                        Settings.Clear();
+                        if (_plugin is IPluginConfigurable configurable)
+                        {
+                            LoadSettings(configurable);
+                        }
+                    }
+                }
+                return;
+            }
+
+            // Default behavior for other plugins
+            if (!HasSettings)
+            {
+                return;
+            }
+
             await _dialogService.ShowMessageAsync(
                 "Plugin Configuration",
                 $"Configuration UI for {Name} will be implemented in Phase 3.",

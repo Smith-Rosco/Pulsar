@@ -77,6 +77,21 @@ namespace Pulsar.Services
                     loaded.Profiles = new Dictionary<string, ProcessProfile>(loaded.Profiles, StringComparer.OrdinalIgnoreCase);
                 }
 
+                // [Architectural Fix] Normalize all JsonElement values in plugin configs to concrete types
+                // System.Text.Json deserializes Dictionary<string, object> values as JsonElement.
+                // This causes type validation failures when saving. We normalize all values at load time
+                // to ensure type consistency throughout the application lifecycle.
+                if (loaded?.Plugins != null)
+                {
+                    foreach (var pluginProfile in loaded.Plugins.Values)
+                    {
+                        if (pluginProfile.Config != null)
+                        {
+                            pluginProfile.Config = NormalizeConfigDictionary(pluginProfile.Config);
+                        }
+                    }
+                }
+
                 _cachedConfig = loaded;
                 
                 // [New] Validate configuration after loading
@@ -128,6 +143,20 @@ namespace Pulsar.Services
 
         public async Task SaveAsync(ProfilesConfig config)
         {
+            // [Architectural Fix] Normalize all plugin configs before validation and saving
+            // This ensures any JsonElement values that might have been introduced during
+            // runtime modifications are converted to concrete types.
+            if (config?.Plugins != null)
+            {
+                foreach (var pluginProfile in config.Plugins.Values)
+                {
+                    if (pluginProfile.Config != null)
+                    {
+                        pluginProfile.Config = NormalizeConfigDictionary(pluginProfile.Config);
+                    }
+                }
+            }
+
             // [New] Validate before saving
             if (_validationPipeline != null)
             {
@@ -249,6 +278,43 @@ namespace Pulsar.Services
             };
 
             return config;
+        }
+
+        /// <summary>
+        /// Normalizes a configuration dictionary by converting all JsonElement values to concrete types.
+        /// This is the architectural solution to the JsonElement type mismatch problem.
+        /// </summary>
+        /// <param name="config">The configuration dictionary to normalize</param>
+        /// <returns>A new dictionary with all JsonElement values converted to concrete types</returns>
+        private static Dictionary<string, object> NormalizeConfigDictionary(Dictionary<string, object> config)
+        {
+            var normalized = new Dictionary<string, object>(config.Count);
+
+            foreach (var kvp in config)
+            {
+                if (kvp.Value is JsonElement element)
+                {
+                    // Convert JsonElement to concrete type based on its ValueKind
+                    normalized[kvp.Key] = element.ValueKind switch
+                    {
+                        JsonValueKind.String => element.GetString() ?? string.Empty,
+                        JsonValueKind.Number => element.TryGetInt32(out var intVal) ? intVal : element.GetDouble(),
+                        JsonValueKind.True => true,
+                        JsonValueKind.False => false,
+                        JsonValueKind.Null => string.Empty, // Treat null as empty string for config values
+                        JsonValueKind.Array => element.ToString(), // Serialize arrays as JSON strings
+                        JsonValueKind.Object => element.ToString(), // Serialize objects as JSON strings
+                        _ => element.ToString()
+                    };
+                }
+                else
+                {
+                    // Value is already a concrete type, keep it as-is
+                    normalized[kvp.Key] = kvp.Value;
+                }
+            }
+
+            return normalized;
         }
     }
 }

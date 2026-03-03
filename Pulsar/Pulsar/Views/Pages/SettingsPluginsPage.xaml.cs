@@ -17,7 +17,7 @@ namespace Pulsar.Views.Pages
 
             // Apply theme AFTER InitializeComponent().
             // If applied before, the XAML-defined <Page.Resources> replaces the ResourceDictionary
-            // instance and discards injected dictionaries (ControlsDictionary / ThemesDictionary / Pulsar Theme.*).
+            // instance and discards injected dictionaries (ControlsDictionaries / ThemesDictionary / Pulsar Theme.*).
             themeService.ApplyTheme(this, themeService.CurrentTheme, updateGlobal: false);
         }
 

@@ -22,6 +22,7 @@ namespace Pulsar.ViewModels.Strategies
 
         private List<ProcessWindowInfo>[] _page0Slots = new List<ProcessWindowInfo>[8];
         private PluginSlot?[] _page0Config = new PluginSlot?[8];
+        private bool[] _page0IsRunning = new bool[8];
         private List<List<ProcessWindowInfo>> _overflowGroups = new();
 
         public override int TotalPages => 1 + (int)Math.Ceiling((double)_overflowGroups.Count / 8.0);
@@ -45,66 +46,101 @@ namespace Pulsar.ViewModels.Strategies
             // 1. Group by Process
             var groups = windows.GroupBy(w => w.ProcessName).ToList();
 
-            // 2. Identify Pinned Slots (SwitchMode in Global profile)
-            var pinnedMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            // 2. Build map of ALL configured slots (running or not)
+            var allConfiguredSlots = new Dictionary<int, PluginSlot>();
             if (_config?.Profiles.TryGetValue("Global", out var globalProfile) == true && globalProfile.SwitchMode != null)
             {
-                // [Migration] SwitchMode is now List<PluginSlot>
                 foreach (var item in globalProfile.SwitchMode)
                 {
-                    if (item.PluginId == "com.pulsar.winswitcher" && item.Args.TryGetValue("app", out var appName))
+                    if (item.PluginId == "com.pulsar.winswitcher" && item.Slot >= 1 && item.Slot <= 8)
                     {
-                        pinnedMap[appName] = item.Slot;
-                    }
-                    else if (!string.IsNullOrEmpty(item.Label))
-                    {
-                         // Fallback to label
-                         pinnedMap[item.Label] = item.Slot;
+                        allConfiguredSlots[item.Slot] = item;
                     }
                 }
             }
 
-            // 3. Separate Pinned vs Others
+            // 3. Build reverse lookup: ProcessName -> SlotIndex
+            var pinnedMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            foreach (var kvp in allConfiguredSlots)
+            {
+                if (kvp.Value.Args.TryGetValue("app", out var appName))
+                {
+                    pinnedMap[appName] = kvp.Key;
+                }
+                else if (!string.IsNullOrEmpty(kvp.Value.Label))
+                {
+                    pinnedMap[kvp.Value.Label] = kvp.Key;
+                }
+            }
+
+            // 4. Separate running processes into Pinned vs Others
             var pinnedGroups = new List<IGrouping<string, ProcessWindowInfo>>();
             var otherGroups = new List<IGrouping<string, ProcessWindowInfo>>();
 
             foreach (var g in groups)
             {
-                if (pinnedMap.ContainsKey(g.Key)) pinnedGroups.Add(g);
-                else otherGroups.Add(g);
-            }
-
-            // 4. Build Page 0 (Pinned + First batch of Others)
-            Array.Clear(_page0Slots, 0, 8);
-            Array.Clear(_page0Config, 0, 8);
-
-            foreach (var pg in pinnedGroups)
-            {
-                int slotIdx = pinnedMap[pg.Key];
-                if (slotIdx >= 1 && slotIdx <= 8)
+                if (pinnedMap.ContainsKey(g.Key))
                 {
-                    _page0Slots[slotIdx - 1] = pg.ToList();
-                    
-                    // Store config for icon/label/color
-                    if (_config?.Profiles.TryGetValue("Global", out var gp) == true)
-                    {
-                        _page0Config[slotIdx - 1] = gp.SwitchMode.FirstOrDefault(s => s.Slot == slotIdx);
-                    }
+                    pinnedGroups.Add(g);
+                }
+                else
+                {
+                    otherGroups.Add(g);
                 }
             }
 
-            // Fill gaps in Page 0 with Others
+            // 5. Initialize Page 0 arrays
+            Array.Clear(_page0Slots, 0, 8);
+            Array.Clear(_page0Config, 0, 8);
+            Array.Clear(_page0IsRunning, 0, 8);
+
+            // 6. Fill configured slots (running or placeholder)
+            foreach (var kvp in allConfiguredSlots)
+            {
+                int slotIdx = kvp.Key - 1; // Convert 1-based to 0-based
+                _page0Config[slotIdx] = kvp.Value;
+
+                // Check if this configured app is currently running
+                string? appName = null;
+                if (kvp.Value.Args.TryGetValue("app", out var app))
+                {
+                    appName = app;
+                }
+                else if (!string.IsNullOrEmpty(kvp.Value.Label))
+                {
+                    appName = kvp.Value.Label;
+                }
+
+                var runningGroup = pinnedGroups.FirstOrDefault(g => 
+                    string.Equals(g.Key, appName, StringComparison.OrdinalIgnoreCase));
+
+                if (runningGroup != null)
+                {
+                    // App is running
+                    _page0Slots[slotIdx] = runningGroup.ToList();
+                    _page0IsRunning[slotIdx] = true;
+                }
+                else
+                {
+                    // App is NOT running - create empty placeholder
+                    _page0Slots[slotIdx] = new List<ProcessWindowInfo>();
+                    _page0IsRunning[slotIdx] = false;
+                }
+            }
+
+            // 7. Fill remaining empty slots with unconfigured running processes
             int otherIdx = 0;
             for (int i = 0; i < 8; i++)
             {
-                if (_page0Slots[i] == null && otherIdx < otherGroups.Count)
+                if (_page0Config[i] == null && otherIdx < otherGroups.Count)
                 {
                     _page0Slots[i] = otherGroups[otherIdx].ToList();
+                    _page0IsRunning[i] = true;
                     otherIdx++;
                 }
             }
 
-            // Remaining others form Overflow Pages
+            // 8. Remaining others form Overflow Pages
             _overflowGroups.Clear();
             for (int i = otherIdx; i < otherGroups.Count; i++)
             {
@@ -128,11 +164,21 @@ namespace Pulsar.ViewModels.Strategies
                 for (int i = 0; i < 8; i++)
                 {
                     var group = _page0Slots[i];
-                    if (group != null && group.Count > 0)
+                    var config = _page0Config[i];
+                    var isRunning = _page0IsRunning[i];
+
+                    // Skip empty unconfigured slots
+                    if (config == null && (group == null || group.Count == 0))
                     {
-                        var slot = slots[i];
+                        continue;
+                    }
+
+                    var slot = slots[i];
+
+                    if (isRunning && group != null && group.Count > 0)
+                    {
+                        // Running process - normal display
                         var first = group.First();
-                        var config = _page0Config[i];
 
                         // Config Priority
                         if (config != null && !string.IsNullOrEmpty(config.IconKey))
@@ -165,6 +211,30 @@ namespace Pulsar.ViewModels.Strategies
                         slot.Type = SlotType.Process;
                         slot.DataContext = group;
                         slot.ActionStrategy = new ProcessGroupStrategy(group, _usageTracker, _healthMonitor, _logService);
+                        slot.CurrentOpacity = 1.0;
+                    }
+                    else if (!isRunning && config != null)
+                    {
+                        // Configured but NOT running - placeholder
+                        if (!string.IsNullOrEmpty(config.IconKey))
+                        {
+                            slot.LoadIconData(config.IconKey);
+                        }
+
+                        if (!string.IsNullOrEmpty(config.Color))
+                        {
+                            slot.SetColor(config.Color);
+                        }
+
+                        string baseLabel = !string.IsNullOrEmpty(config.Label) 
+                            ? config.Label 
+                            : "App";
+                        slot.Label = $"{baseLabel} (Not Running)";
+
+                        slot.Type = SlotType.Process;
+                        slot.DataContext = config;
+                        slot.ActionStrategy = new LaunchApplicationStrategy(config);
+                        slot.CurrentOpacity = 0.5;
                     }
                 }
             }

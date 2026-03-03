@@ -61,10 +61,10 @@ namespace Pulsar.Plugins.Core.WinSwitcher
 
             yield return PluginSettingDefinition.Create(
                 key: "ExcludeProcesses",
-                label: "Exclude Processes",
+                label: "Blacklist (Exclude Processes)",
                 type: PluginSettingType.String,
                 defaultValue: "",
-                description: "Comma-separated list of process names to ignore."
+                description: "Comma-separated list of process names to exclude from the window switcher. Click the '+' button to select from running processes."
             );
         }
 
@@ -82,6 +82,9 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                 _excludedProcesses = excludeStr.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                                                .Select(p => p.Trim())
                                                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                
+                // [New] Update WindowService blacklist
+                _windowService?.UpdateBlacklist(_excludedProcesses);
             }
 
             _logger?.LogInformation(

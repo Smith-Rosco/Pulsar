@@ -28,6 +28,7 @@ namespace Pulsar.ViewModels.Settings
         private readonly IPluginHealthMonitor? _healthMonitor;
         private readonly IPluginLogService? _logService;
         private readonly IDialogService? _dialogService;
+        private readonly IServiceProvider? _serviceProvider;
 
         public ObservableCollection<PluginViewModel> Plugins { get; } = new();
         public ObservableCollection<PluginGroup> GroupedPlugins { get; } = new();
@@ -42,7 +43,7 @@ namespace Pulsar.ViewModels.Settings
 
         public PluginManagerViewModel(PluginRegistry registry, IConfigService configService,
             IPluginUsageTracker? usageTracker = null, IPluginHealthMonitor? healthMonitor = null,
-            IPluginLogService? logService = null, IDialogService? dialogService = null)
+            IPluginLogService? logService = null, IDialogService? dialogService = null, IServiceProvider? serviceProvider = null)
         {
             _registry = registry;
             _configService = configService;
@@ -50,6 +51,7 @@ namespace Pulsar.ViewModels.Settings
             _healthMonitor = healthMonitor;
             _logService = logService;
             _dialogService = dialogService;
+            _serviceProvider = serviceProvider;
             
             // Initialize CollectionView for filtering
             FilteredPlugins = CollectionViewSource.GetDefaultView(Plugins);
@@ -83,7 +85,7 @@ namespace Pulsar.ViewModels.Settings
             foreach (var plugin in allPlugins)
             {
                 Plugins.Add(new PluginViewModel(plugin, _registry, _configService, 
-                    _usageTracker, _healthMonitor, _logService, _dialogService));
+                    _usageTracker, _healthMonitor, _logService, _dialogService, _serviceProvider));
             }
 
             if (Plugins.Any())

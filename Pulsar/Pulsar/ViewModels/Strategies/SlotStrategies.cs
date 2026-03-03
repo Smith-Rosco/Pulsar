@@ -190,36 +190,10 @@ namespace Pulsar.ViewModels.Strategies
                 return;
             }
 
-            // If only one window, switch directly
-            // User Requirement Update: Even for single windows, if it's a "Group" slot (Process level),
-            // the logic in original code was:
-            // "Directly switch to the most recently active window" (ExecuteSelection)
-            // But HandleLeftClick had slightly different logic.
-            // Let's unify: Click/Execute on Process Group -> Switch to Latest.
-            // Wait, original Drill Down Logic:
-            /*
-                var validWindows = windows.Where(w => WindowHelper.IsWindow(w.Handle)).ToList();
-                if (validWindows.Any())
-                {
-                    // Requirement: Directly switch to the most recently active window
-                    SwitchToWindow(validWindows.First());
-                }
-            */
-            // So default action is Switch. Drill down is via "EnterSubMenu" which was called in HandleLeftClick
-            // BUT wait, HandleLeftClick called EnterSubMenu only if count > 1.
-            
-            // Wait, this strategy is for "ExecuteSelection" (Keyboard Release or Click).
-            // If the user wants to drill down, that logic was inside HandleLeftClick explicitly calling EnterSubMenu.
-            // Standard "Execute" means "Do the primary action".
-            // For a Process Group, primary action is "Switch to most recent".
-            
-            // HOWEVER, if we want to support Drill Down, that's usually a specific interaction (like Hover + Time, or Click).
-            // In the original code, HandleLeftClick did Drill Down. ExecuteSelection did Switch.
-            
-            // To support both, we might need a separate method on Strategy like "OnDrillDown" or handle it here.
-            // Let's stick to Execute = Switch for now, as per original ExecuteSelection logic.
-            
-            var target = validWindows.First();
+            // [Fix] Smart switch to the most recently ACTIVATED window (not most recently started)
+            // Sort by LastActivationTime descending (most recent first)
+            // This ensures we jump to the window the user was most recently using
+            var target = validWindows.OrderByDescending(w => w.LastActivationTime).First();
             await new WindowSwitchStrategy(target, _usageTracker, _healthMonitor, _logService).ExecuteAsync(slot, context);
         }
         
@@ -245,6 +219,64 @@ namespace Pulsar.ViewModels.Strategies
             {
                 context.IsVisible = false;
             }
+            return Task.CompletedTask;
+        }
+    }
+
+    /// <summary>
+    /// Strategy for launching a configured application that is not currently running.
+    /// </summary>
+    public class LaunchApplicationStrategy : IActionStrategy
+    {
+        private readonly PluginSlot _config;
+
+        public LaunchApplicationStrategy(PluginSlot config)
+        {
+            _config = config;
+        }
+
+        public Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context)
+        {
+            context.SetActionExecuted(true);
+            context.IsVisible = false;
+
+            try
+            {
+                // Extract path and arguments from config
+                string? path = null;
+                string? arguments = null;
+
+                if (_config.Args.TryGetValue("path", out var pathValue))
+                {
+                    path = pathValue;
+                }
+
+                if (_config.Args.TryGetValue("arguments", out var argsValue))
+                {
+                    arguments = argsValue;
+                }
+
+                if (string.IsNullOrWhiteSpace(path))
+                {
+                    System.Media.SystemSounds.Hand.Play();
+                    return Task.CompletedTask;
+                }
+
+                // Launch the application
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = path,
+                    Arguments = arguments ?? string.Empty,
+                    UseShellExecute = true
+                };
+
+                Process.Start(startInfo);
+            }
+            catch
+            {
+                System.Media.SystemSounds.Hand.Play();
+            }
+
             return Task.CompletedTask;
         }
     }

@@ -38,6 +38,11 @@ namespace Pulsar.Services.Interfaces
         /// 获取指定进程ID的所有可见窗口
         /// </summary>
         Task<List<ProcessWindowInfo>> GetProcessWindowsAsync(int processId);
+        
+        /// <summary>
+        /// 更新窗口黑名单（用户自定义 + 系统默认）
+        /// </summary>
+        void UpdateBlacklist(IEnumerable<string> userBlacklist);
 
         // --- 上下文感知与焦点回旋 (Focus Boomerang) ---
 

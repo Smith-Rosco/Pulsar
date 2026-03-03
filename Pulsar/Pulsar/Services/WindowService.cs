@@ -25,6 +25,10 @@ namespace Pulsar.Services
         private IntPtr _previousWindowHandle = IntPtr.Zero;
         private Action? _hideMainWindowAction;
         private readonly int _currentProcessId;
+        
+        // [New] Dynamic blacklist - can be updated by plugins
+        private HashSet<string> _dynamicBlacklist = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private readonly object _blacklistLock = new object();
 
         public WindowService(ILogger<WindowService> logger)
         {
@@ -33,6 +37,31 @@ namespace Pulsar.Services
             {
                 _currentProcessId = currentProcess.Id;
             }
+            
+            // Initialize with default system blacklist
+            lock (_blacklistLock)
+            {
+                _dynamicBlacklist = new HashSet<string>(_systemBlacklist, StringComparer.OrdinalIgnoreCase);
+            }
+        }
+        
+        /// <summary>
+        /// Updates the dynamic blacklist (merges with system blacklist)
+        /// </summary>
+        public void UpdateBlacklist(IEnumerable<string> userBlacklist)
+        {
+            lock (_blacklistLock)
+            {
+                _dynamicBlacklist = new HashSet<string>(_systemBlacklist, StringComparer.OrdinalIgnoreCase);
+                foreach (var process in userBlacklist)
+                {
+                    if (!string.IsNullOrWhiteSpace(process))
+                    {
+                        _dynamicBlacklist.Add(process.Trim());
+                    }
+                }
+            }
+            _logger.LogInformation("[WindowService] Blacklist updated. Total entries: {Count}", _dynamicBlacklist.Count);
         }
 
         // --- Native Import for Constructor/Focus ---
@@ -164,6 +193,7 @@ namespace Pulsar.Services
             return Task.Run(() =>
             {
                 var results = new List<ProcessWindowInfo>();
+                int zOrderIndex = 0; // Track Z-Order position (lower = more recent)
 
                 NativeMethods.EnumWindows((hWnd, lParam) =>
                 {
@@ -207,8 +237,13 @@ namespace Pulsar.Services
                             {
                                 if (proc.HasExited) return true;
 
-                                // [Blacklist Filter] Check against known system processes
-                                if (_processBlacklist.Contains(proc.ProcessName)) return true;
+                                // [Blacklist Filter] Check against dynamic blacklist (system + user)
+                                bool isBlacklisted;
+                                lock (_blacklistLock)
+                                {
+                                    isBlacklisted = _dynamicBlacklist.Contains(proc.ProcessName);
+                                }
+                                if (isBlacklisted) return true;
 
                                 string fullPath = "";
                                 try { fullPath = proc.MainModule?.FileName ?? ""; } catch { }
@@ -223,6 +258,13 @@ namespace Pulsar.Services
                             DateTime startTime = DateTime.MinValue;
                             try { startTime = proc.StartTime; } catch { }
 
+                            // [New] Calculate LastActivationTime based on Z-Order
+                            // EnumWindows returns windows in Z-Order (top to bottom)
+                            // Lower zOrderIndex = more recently activated
+                            // We use a synthetic timestamp: Now - (zOrderIndex * 1 second)
+                            // This ensures proper sorting while being deterministic
+                            DateTime lastActivationTime = DateTime.Now.AddSeconds(-zOrderIndex);
+
                             results.Add(new ProcessWindowInfo
                             {
                                 Title = title,
@@ -230,8 +272,11 @@ namespace Pulsar.Services
                                 ExePath = fullPath,
                                 Handle = hWnd,
                                 AppIcon = iconSource,
-                                StartTime = startTime
+                                StartTime = startTime,
+                                LastActivationTime = lastActivationTime
                             });
+                            
+                            zOrderIndex++; // Increment for next window
                         }
                     }
                     catch { /* 忽略系统进程 */ }
@@ -250,6 +295,7 @@ namespace Pulsar.Services
             return Task.Run(() =>
             {
                 var results = new List<ProcessWindowInfo>();
+                int zOrderIndex = 0; // Track Z-Order position
 
                 NativeMethods.EnumWindows((hWnd, lParam) =>
                 {
@@ -276,8 +322,13 @@ namespace Pulsar.Services
                             {
                                 if (proc.HasExited) return true;
 
-                                // [Blacklist Filter] Check against known system processes
-                                if (_processBlacklist.Contains(proc.ProcessName)) return true;
+                                // [Blacklist Filter] Check against dynamic blacklist (system + user)
+                                bool isBlacklisted;
+                                lock (_blacklistLock)
+                                {
+                                    isBlacklisted = _dynamicBlacklist.Contains(proc.ProcessName);
+                                }
+                                if (isBlacklisted) return true;
 
                                 string fullPath = "";
                                 try { fullPath = proc.MainModule?.FileName ?? ""; } catch { }
@@ -292,6 +343,9 @@ namespace Pulsar.Services
                             DateTime startTime = DateTime.MinValue;
                             try { startTime = proc.StartTime; } catch { }
 
+                            // [New] Calculate LastActivationTime based on Z-Order
+                            DateTime lastActivationTime = DateTime.Now.AddSeconds(-zOrderIndex);
+
                             results.Add(new ProcessWindowInfo
                             {
                                 Title = string.IsNullOrEmpty(title) ? "Window" : title,
@@ -299,8 +353,11 @@ namespace Pulsar.Services
                                 ExePath = fullPath,
                                 Handle = hWnd,
                                 AppIcon = iconSource,
-                                StartTime = startTime
+                                StartTime = startTime,
+                                LastActivationTime = lastActivationTime
                             });
+                            
+                            zOrderIndex++;
                         }
                     }
                     catch { /* 忽略系统进程 */ }
@@ -585,8 +642,8 @@ namespace Pulsar.Services
         private const uint GW_OWNER_CONST = 4;
         private const uint GW_CHILD_CONST = 5;
 
-        // [New] Blacklist for system/background processes that shouldn't appear
-        private static readonly HashSet<string> _processBlacklist = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        // [New] System blacklist for known problematic processes (always excluded)
+        private static readonly HashSet<string> _systemBlacklist = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "applicationframehost", // UWP shell
             "systemsettings",       // Settings (when suspended)

@@ -5,6 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:viewmodels="clr-namespace:Pulsar.ViewModels"
+        xmlns:dialogs="clr-namespace:Pulsar.ViewModels.Dialogs"
+        xmlns:contents="clr-namespace:Pulsar.Views.Dialogs.Contents"
         xmlns:enums="clr-namespace:Pulsar.Models.Enums"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
@@ -29,6 +31,11 @@
             <!-- Default String Template -->
             <DataTemplate DataType="{x:Type sys:String}">
                 <TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="14" Foreground="{DynamicResource Theme.Text.Primary}"/>
+            </DataTemplate>
+            
+            <!-- ProcessBlacklistViewModel Template -->
+            <DataTemplate DataType="{x:Type dialogs:ProcessBlacklistViewModel}">
+                <contents:ProcessBlacklistContent/>
             </DataTemplate>
         </ResourceDictionary>
     </Window.Resources>
