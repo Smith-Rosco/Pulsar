@@ -298,7 +298,7 @@ namespace Pulsar.Services
                     normalized[kvp.Key] = element.ValueKind switch
                     {
                         JsonValueKind.String => element.GetString() ?? string.Empty,
-                        JsonValueKind.Number => element.TryGetInt32(out var intVal) ? intVal : element.GetDouble(),
+                        JsonValueKind.Number => NormalizeNumber(element),
                         JsonValueKind.True => true,
                         JsonValueKind.False => false,
                         JsonValueKind.Null => string.Empty, // Treat null as empty string for config values
@@ -315,6 +315,24 @@ namespace Pulsar.Services
             }
 
             return normalized;
+        }
+
+        private static object NormalizeNumber(JsonElement element)
+        {
+            // Try to parse as integer first
+            if (element.TryGetInt32(out var intVal))
+            {
+                return intVal;
+            }
+            
+            // Try as long
+            if (element.TryGetInt64(out var longVal))
+            {
+                return longVal;
+            }
+            
+            // Fall back to double
+            return element.GetDouble();
         }
     }
 }
