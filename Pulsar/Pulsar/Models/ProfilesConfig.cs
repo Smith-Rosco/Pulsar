@@ -62,6 +62,9 @@ namespace Pulsar.Models
             ["ShowSwitcher"] = new HotkeyConfig { Key = "Q", Modifiers = "Control" }
         };
 
+        // [New] Remote Desktop Settings
+        public RemoteDesktopSettings RemoteDesktop { get; set; } = new();
+
         // [Helper] 将字符串转换为 AppTheme 枚举
         [JsonIgnore]
         public AppTheme LauncherThemeEnum => 
@@ -246,5 +249,17 @@ namespace Pulsar.Models
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// 远程桌面设置
+    /// </summary>
+    public class RemoteDesktopSettings
+    {
+        /// <summary>
+        /// 是否启用远程桌面伪全屏功能
+        /// 自动将远程桌面从真全屏转换为无边框窗口化，允许 Pulsar 热键正常工作
+        /// </summary>
+        public bool EnableFakeFullscreen { get; set; } = false;
     }
 }

@@ -91,6 +91,7 @@ namespace Pulsar
             serviceCollection.AddSingleton<GlobalKeyboardHook>();
             serviceCollection.AddSingleton<IHotkeyService, HotkeyService>();
             serviceCollection.AddSingleton<IDialogService, DialogService>();
+            serviceCollection.AddSingleton<IRemoteDesktopService, RemoteDesktopService>();
             
             // 2. Plugin System (New Architecture)
             serviceCollection.AddSingleton<PluginRegistry>();
@@ -209,6 +210,15 @@ namespace Pulsar
             // 8. Initialize Hotkey Service
             var hotkeyService = Services.GetRequiredService<IHotkeyService>();
             hotkeyService.Initialize();
+
+            // 9. Initialize Remote Desktop Service (if enabled)
+            var config = configService.LoadAsync().GetAwaiter().GetResult();
+            if (config.Settings.RemoteDesktop.EnableFakeFullscreen)
+            {
+                var rdpService = Services.GetRequiredService<IRemoteDesktopService>();
+                rdpService.EnableFakeFullscreen();
+                Log.Information("[App] Remote Desktop fake fullscreen enabled");
+            }
         }
 
         protected override void OnExit(ExitEventArgs e)
@@ -226,6 +236,10 @@ namespace Pulsar
                 
                 var trayService = Services.GetService<ITrayService>();
                 trayService?.Dispose();
+
+                // Dispose Remote Desktop Service
+                var rdpService = Services.GetService<IRemoteDesktopService>();
+                rdpService?.Dispose();
             }
 
             Log.CloseAndFlush();
