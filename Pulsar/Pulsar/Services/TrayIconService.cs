@@ -11,6 +11,7 @@ namespace Pulsar.Services
     public class TrayIconService : ITrayService
     {
         private Forms.NotifyIcon? _notifyIcon;
+        private Forms.ContextMenuStrip? _contextMenu;
         private readonly IServiceProvider _serviceProvider;
 
         public TrayIconService(IServiceProvider serviceProvider)
@@ -32,23 +33,12 @@ namespace Pulsar.Services
             TryLoadCustomIcon();
 
             // 2. 构建右键菜单
-            var contextMenu = new Forms.ContextMenuStrip();
-            var settingsItem = new Forms.ToolStripMenuItem("Settings", null, OnSettingsClicked);
+            BuildContextMenu();
 
-            var exitItem = new Forms.ToolStripMenuItem("Exit Pulsar");
-            exitItem.Click += (s, e) =>
-            {
-                Dispose();
-                System.Windows.Application.Current.Shutdown();
-            };
-
-            contextMenu.Items.Add(settingsItem);
-            contextMenu.Items.Add(new Forms.ToolStripSeparator());
-            contextMenu.Items.Add(exitItem);
-
-            _notifyIcon.ContextMenuStrip = contextMenu;
-
-            // 3. 双击打开设置
+            // 3. 单击打开设置（仅左键）
+            _notifyIcon.MouseClick += OnTrayIconMouseClick;
+            
+            // 4. 双击打开设置（保留兼容性）
             _notifyIcon.DoubleClick += OnSettingsClicked;
 
             // 最后显示图标
@@ -83,6 +73,79 @@ namespace Pulsar.Services
             {
                 // 如果发生任何异常（如文件未找到、属性未设置为Resource），回退到系统图标
                 _notifyIcon.Icon = SystemIcons.Application;
+            }
+        }
+
+        private void BuildContextMenu()
+        {
+            _contextMenu = new Forms.ContextMenuStrip();
+
+            // 1. Settings
+            var settingsItem = new Forms.ToolStripMenuItem("Settings", null, OnSettingsClicked);
+            _contextMenu.Items.Add(settingsItem);
+
+            // 2. 远程桌面功能（动态显示）
+            var configService = _serviceProvider.GetService<IConfigService>();
+            if (configService?.Current?.Settings?.RemoteDesktop?.EnableFakeFullscreen == true)
+            {
+                _contextMenu.Items.Add(new Forms.ToolStripSeparator());
+                
+                var rdpItem = new Forms.ToolStripMenuItem("Convert RDP to Fake Fullscreen");
+                rdpItem.Click += OnConvertRdpClicked;
+                _contextMenu.Items.Add(rdpItem);
+            }
+
+            // 3. Exit
+            _contextMenu.Items.Add(new Forms.ToolStripSeparator());
+            
+            var exitItem = new Forms.ToolStripMenuItem("Exit Pulsar");
+            exitItem.Click += (s, e) =>
+            {
+                Dispose();
+                System.Windows.Application.Current.Shutdown();
+            };
+            _contextMenu.Items.Add(exitItem);
+
+            if (_notifyIcon != null)
+            {
+                _notifyIcon.ContextMenuStrip = _contextMenu;
+            }
+        }
+
+        private void OnConvertRdpClicked(object? sender, EventArgs e)
+        {
+            var rdpService = _serviceProvider.GetService<IRemoteDesktopService>();
+            if (rdpService == null)
+            {
+                ShowNotification("Pulsar", "远程桌面服务未启用", Forms.ToolTipIcon.Warning);
+                return;
+            }
+
+            int count = rdpService.ScanAndConvertAllRdpWindows();
+            
+            ShowNotification(
+                "Pulsar", 
+                count > 0 
+                    ? $"已转换 {count} 个远程桌面窗口为伪全屏" 
+                    : "未找到全屏远程桌面窗口",
+                count > 0 ? Forms.ToolTipIcon.Info : Forms.ToolTipIcon.Warning
+            );
+        }
+
+        public void UpdateContextMenu()
+        {
+            if (_notifyIcon != null)
+            {
+                BuildContextMenu();
+            }
+        }
+
+        private void OnTrayIconMouseClick(object? sender, Forms.MouseEventArgs e)
+        {
+            // 只在左键单击时打开设置，右键由 ContextMenuStrip 自动处理
+            if (e.Button == Forms.MouseButtons.Left)
+            {
+                OnSettingsClicked(sender, e);
             }
         }
 

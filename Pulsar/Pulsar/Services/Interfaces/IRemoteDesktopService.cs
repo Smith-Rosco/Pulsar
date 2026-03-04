@@ -27,5 +27,12 @@ namespace Pulsar.Services.Interfaces
         /// </summary>
         /// <returns>如果在远程桌面会话中返回 true</returns>
         bool IsInRemoteDesktopSession();
+
+        /// <summary>
+        /// 扫描所有现有的远程桌面窗口并转换为伪全屏
+        /// 用于启动时主动处理已存在的全屏RDP窗口，或手动触发批量转换
+        /// </summary>
+        /// <returns>成功转换的窗口数量</returns>
+        int ScanAndConvertAllRdpWindows();
     }
 }

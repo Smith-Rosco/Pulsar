@@ -218,6 +218,23 @@ namespace Pulsar
                 var rdpService = Services.GetRequiredService<IRemoteDesktopService>();
                 rdpService.EnableFakeFullscreen();
                 Log.Information("[App] Remote Desktop fake fullscreen enabled");
+                
+                // 延迟500ms后主动扫描已存在的全屏RDP窗口
+                Task.Delay(500).ContinueWith(_ =>
+                {
+                    try
+                    {
+                        int count = rdpService.ScanAndConvertAllRdpWindows();
+                        if (count > 0)
+                        {
+                            Log.Information("[App] Startup scan converted {Count} existing RDP window(s)", count);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "[App] Error scanning RDP windows on startup");
+                    }
+                }, TaskScheduler.Default);
             }
         }
 
