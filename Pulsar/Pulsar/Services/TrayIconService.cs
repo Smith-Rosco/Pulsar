@@ -84,18 +84,7 @@ namespace Pulsar.Services
             var settingsItem = new Forms.ToolStripMenuItem("Settings", null, OnSettingsClicked);
             _contextMenu.Items.Add(settingsItem);
 
-            // 2. 远程桌面功能（动态显示）
-            var configService = _serviceProvider.GetService<IConfigService>();
-            if (configService?.Current?.Settings?.RemoteDesktop?.EnableFakeFullscreen == true)
-            {
-                _contextMenu.Items.Add(new Forms.ToolStripSeparator());
-                
-                var rdpItem = new Forms.ToolStripMenuItem("Convert RDP to Fake Fullscreen");
-                rdpItem.Click += OnConvertRdpClicked;
-                _contextMenu.Items.Add(rdpItem);
-            }
-
-            // 3. Exit
+            // 2. Exit
             _contextMenu.Items.Add(new Forms.ToolStripSeparator());
             
             var exitItem = new Forms.ToolStripMenuItem("Exit Pulsar");
@@ -109,34 +98,6 @@ namespace Pulsar.Services
             if (_notifyIcon != null)
             {
                 _notifyIcon.ContextMenuStrip = _contextMenu;
-            }
-        }
-
-        private void OnConvertRdpClicked(object? sender, EventArgs e)
-        {
-            var rdpService = _serviceProvider.GetService<IRemoteDesktopService>();
-            if (rdpService == null)
-            {
-                ShowNotification("Pulsar", "远程桌面服务未启用", Forms.ToolTipIcon.Warning);
-                return;
-            }
-
-            int count = rdpService.ScanAndConvertAllRdpWindows();
-            
-            ShowNotification(
-                "Pulsar", 
-                count > 0 
-                    ? $"已转换 {count} 个远程桌面窗口为伪全屏" 
-                    : "未找到全屏远程桌面窗口",
-                count > 0 ? Forms.ToolTipIcon.Info : Forms.ToolTipIcon.Warning
-            );
-        }
-
-        public void UpdateContextMenu()
-        {
-            if (_notifyIcon != null)
-            {
-                BuildContextMenu();
             }
         }
 

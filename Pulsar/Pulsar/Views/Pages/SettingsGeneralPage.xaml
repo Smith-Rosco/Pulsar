@@ -171,54 +171,6 @@
                     </StackPanel>
                 </ui:CardExpander>
 
-                <!-- Remote Desktop Section -->
-                <ui:CardExpander Icon="Desktop24" Header="Remote Desktop" Margin="0,0,0,12" IsExpanded="False">
-                    <StackPanel>
-                        <Grid Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="Enable Fake Fullscreen Mode" FontWeight="Medium"/>
-                                <TextBlock Text="Automatically convert Remote Desktop from true fullscreen to borderless windowed, allowing Pulsar hotkeys to work" 
-                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
-                                           FontSize="12"
-                                           TextWrapping="Wrap"/>
-                            </StackPanel>
-                            <ui:ToggleSwitch Grid.Column="1" 
-                                             IsChecked="{Binding DataContext.EnableRemoteDesktopFakeFullscreen, RelativeSource={RelativeSource AncestorType=Page}, Mode=TwoWay}"/>
-                        </Grid>
-
-                        <Border Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
-                                CornerRadius="4"
-                                Padding="12"
-                                Margin="0,0,0,12">
-                            <StackPanel>
-                                <TextBlock Text="💡 Use Cases" 
-                                           FontWeight="SemiBold"
-                                           FontSize="12"
-                                           Margin="0,0,0,8"/>
-                                <TextBlock Text="• Use Ctrl+Q to invoke Pulsar radial menu in Remote Desktop fullscreen" 
-                                           FontSize="11"
-                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                           Margin="0,0,0,4"/>
-                                <TextBlock Text="• Use PKI plugin to auto-fill passwords on Remote Desktop lock screen" 
-                                           FontSize="11"
-                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                           Margin="0,0,0,4"/>
-                                <TextBlock Text="• Quickly switch to other windows (Alt+Tab)" 
-                                           FontSize="11"
-                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                            </StackPanel>
-                        </Border>
-
-                        <TextBlock Text="⚠️ Note: Taskbar will remain visible when enabled" 
-                                   Foreground="{DynamicResource SystemFillColorAttentionBrush}"
-                                   FontSize="11"/>
-                    </StackPanel>
-                </ui:CardExpander>
-
             </StackPanel>
         </ScrollViewer>
     </Grid>

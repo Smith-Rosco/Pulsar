@@ -1217,38 +1217,6 @@ namespace Pulsar.ViewModels
             if (actionId == "ShowSwitcher") OnPropertyChanged(nameof(ShowSwitcherHotkey));
         }
 
-        // ===== Remote Desktop Settings =====
-
-        public bool EnableRemoteDesktopFakeFullscreen
-        {
-            get => _config.Settings.RemoteDesktop.EnableFakeFullscreen;
-            set
-            {
-                if (_config.Settings.RemoteDesktop.EnableFakeFullscreen != value)
-                {
-                    _config.Settings.RemoteDesktop.EnableFakeFullscreen = value;
-                    OnPropertyChanged();
-                    MarkDirty();
-
-                    // Dynamically enable/disable the service
-                    var rdpService = App.Current.Services.GetService(typeof(IRemoteDesktopService)) as IRemoteDesktopService;
-                    if (rdpService != null)
-                    {
-                        if (value)
-                        {
-                            rdpService.EnableFakeFullscreen();
-                            _logger.LogInformation("[SettingsViewModel] Remote Desktop fake fullscreen enabled");
-                        }
-                        else
-                        {
-                            rdpService.DisableFakeFullscreen();
-                            _logger.LogInformation("[SettingsViewModel] Remote Desktop fake fullscreen disabled");
-                        }
-                    }
-                }
-            }
-        }
-
         // ===== Cache Management =====
 
         [ObservableProperty]

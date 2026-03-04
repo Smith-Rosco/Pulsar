@@ -16,11 +16,5 @@ namespace Pulsar.Services.Interfaces
         /// <param name="message">通知内容</param>
         /// <param name="icon">通知图标类型 (Info, Warning, Error)</param>
         void ShowNotification(string title, string message, System.Windows.Forms.ToolTipIcon icon);
-        
-        /// <summary>
-        /// 更新托盘图标的右键菜单
-        /// 用于动态添加/移除菜单项（如远程桌面功能）
-        /// </summary>
-        void UpdateContextMenu();
     }
 }
