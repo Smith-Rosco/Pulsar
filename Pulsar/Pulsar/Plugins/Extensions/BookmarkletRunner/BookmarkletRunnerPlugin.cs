@@ -86,17 +86,42 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
                 return PluginResult.Error("脚本路径包含不安全字符或试图访问受限目录。");
             }
 
-            // 3. 读取并预处理脚本
-            string scriptContent;
+            // 3. 读取并预处理脚本（使用新的验证系统）
+            ScriptPreprocessor.ValidationResult validationResult;
             try
             {
-                scriptContent = ScriptPreprocessor.PreprocessScript(scriptPath);
-                if (string.IsNullOrEmpty(scriptContent))
+                string rawContent = File.ReadAllText(scriptPath);
+                validationResult = ScriptPreprocessor.ProcessScriptContent(rawContent, _logger);
+
+                if (!validationResult.IsValid)
+                {
+                    _logger?.LogError("[BookmarkletRunner] Script validation failed");
+                    
+                    // Build detailed error message
+                    var errorMsg = new System.Text.StringBuilder();
+                    errorMsg.AppendLine("脚本验证失败:");
+                    foreach (var error in validationResult.Errors)
+                    {
+                        errorMsg.AppendLine($"  • {error}");
+                    }
+                    
+                    return PluginResult.Error(errorMsg.ToString().TrimEnd());
+                }
+
+                // Log warnings (non-fatal)
+                foreach (var warning in validationResult.Warnings)
+                {
+                    _logger?.LogWarning("[BookmarkletRunner] {Warning}", warning);
+                }
+
+                if (string.IsNullOrEmpty(validationResult.ProcessedScript))
                 {
                     _logger?.LogWarning("[BookmarkletRunner] Script is empty after preprocessing");
                     return PluginResult.Error("脚本内容为空。请检查文件是否正确。");
                 }
-                _logger?.LogDebug("[BookmarkletRunner] Script loaded successfully ({Length} chars)", scriptContent.Length);
+
+                _logger?.LogDebug("[BookmarkletRunner] Script validated successfully ({Length} chars)", 
+                    validationResult.ProcessedScript.Length);
             }
             catch (FileNotFoundException ex)
             {
@@ -108,6 +133,8 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
                 _logger?.LogError(ex, "[BookmarkletRunner] Error reading script");
                 return PluginResult.Error($"读取脚本失败: {ex.Message}");
             }
+
+            string scriptContent = validationResult.ProcessedScript;
 
             // 4. 智能选择目标浏览器窗口
             IntPtr browserHandle = BrowserHelper.GetTargetBrowserWindow(
