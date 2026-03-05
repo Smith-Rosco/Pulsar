@@ -13,6 +13,7 @@ namespace Pulsar.ViewModels.Dialogs
     public partial class EditProfileViewModel : ObservableObject, IDialogViewModel
     {
         private readonly IDialogService _dialogService;
+        private readonly IFuzzySearchService<IconItem> _searchService;
         
         [ObservableProperty]
         private string _processName;
@@ -31,9 +32,10 @@ namespace Pulsar.ViewModels.Dialogs
         public Action<DialogResult>? RequestClose { get; set; }
         public bool IsScrollable => true;
 
-        public EditProfileViewModel(IDialogService dialogService, string processName, string alias, string iconKey)
+        public EditProfileViewModel(IDialogService dialogService, IFuzzySearchService<IconItem> searchService, string processName, string alias, string iconKey)
         {
             _dialogService = dialogService;
+            _searchService = searchService;
             ProcessName = processName;
             Alias = alias ?? string.Empty;
             IconKey = iconKey ?? "\uE945";
@@ -42,7 +44,7 @@ namespace Pulsar.ViewModels.Dialogs
         [RelayCommand]
         private async Task PickIcon()
         {
-            var picker = new IconPickerViewModel(IconKey);
+            var picker = new IconPickerViewModel(_searchService, IconKey);
             var result = await _dialogService.ShowCustomAsync("Select Icon", picker, DialogButtons.OkCancel);
 
             if (result == DialogResult.Confirmed)

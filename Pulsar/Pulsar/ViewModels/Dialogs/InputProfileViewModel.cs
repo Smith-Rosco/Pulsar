@@ -16,6 +16,7 @@ namespace Pulsar.ViewModels.Dialogs
     {
         private readonly IWindowService _windowService;
         private readonly IDialogService _dialogService;
+        private readonly IFuzzySearchService<IconItem> _searchService;
         private readonly HashSet<string> _existingProfiles;
 
         [ObservableProperty]
@@ -37,10 +38,11 @@ namespace Pulsar.ViewModels.Dialogs
         public Action<DialogResult>? RequestClose { get; set; }
         public bool IsScrollable => true;
 
-        public InputProfileViewModel(IWindowService windowService, IDialogService dialogService, IEnumerable<string> existingProfiles)
+        public InputProfileViewModel(IWindowService windowService, IDialogService dialogService, IFuzzySearchService<IconItem> searchService, IEnumerable<string> existingProfiles)
         {
             _windowService = windowService;
             _dialogService = dialogService;
+            _searchService = searchService;
             _existingProfiles = new HashSet<string>(existingProfiles, StringComparer.OrdinalIgnoreCase);
         }
 
@@ -99,7 +101,7 @@ namespace Pulsar.ViewModels.Dialogs
         [RelayCommand]
         private async Task PickIcon()
         {
-            var picker = new IconPickerViewModel(IconKey);
+            var picker = new IconPickerViewModel(_searchService, IconKey);
             var result = await _dialogService.ShowCustomAsync("Select Icon", picker, DialogButtons.OkCancel);
 
             if (result == DialogResult.Confirmed)

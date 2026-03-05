@@ -95,6 +95,7 @@ namespace Pulsar.ViewModels
         private readonly IThemeService _themeService;
         private readonly IHotkeyService _hotkeyService;
         private readonly IDialogService _dialogService;
+        private readonly IFuzzySearchService<IconItem> _searchService;
         private readonly IProcessRegistryService? _processRegistryService;
         private readonly SecretRepository _secretRepo;
         private readonly ILogger<SettingsViewModel> _logger;
@@ -243,6 +244,7 @@ namespace Pulsar.ViewModels
             IThemeService themeService,
             IHotkeyService hotkeyService,
             IDialogService dialogService,
+            IFuzzySearchService<IconItem> searchService,
             SecretRepository secretRepo,
             ILogger<SettingsViewModel> logger,
             IProcessRegistryService? processRegistryService = null)
@@ -252,6 +254,7 @@ namespace Pulsar.ViewModels
             _themeService = themeService;
             _hotkeyService = hotkeyService;
             _dialogService = dialogService;
+            _searchService = searchService;
             _secretRepo = secretRepo;
             _logger = logger;
             _processRegistryService = processRegistryService;
@@ -530,7 +533,7 @@ namespace Pulsar.ViewModels
         {
             var existingKeys = _config.Profiles.Keys.ToList();
             
-            var vm = new InputProfileViewModel(_windowService, _dialogService, existingKeys);
+            var vm = new InputProfileViewModel(_windowService, _dialogService, _searchService, existingKeys);
             var result = await _dialogService.ShowCustomAsync("New Profile", vm, DialogButtons.OkCancel);
 
             if (result == DialogResult.Confirmed)
@@ -607,7 +610,7 @@ namespace Pulsar.ViewModels
             var profileKey = CurrentContext.Key;
             if (!_config.Profiles.TryGetValue(profileKey, out var profileData)) return;
 
-            var vm = new EditProfileViewModel(_dialogService, profileKey, profileData.Alias ?? string.Empty, profileData.Icon ?? string.Empty);
+            var vm = new EditProfileViewModel(_dialogService, _searchService, profileKey, profileData.Alias ?? string.Empty, profileData.Icon ?? string.Empty);
             var result = await _dialogService.ShowCustomAsync("Edit Profile", vm, DialogButtons.OkCancel);
 
             if (result == DialogResult.Confirmed)
@@ -1050,7 +1053,7 @@ namespace Pulsar.ViewModels
         public async Task PickIcon(PluginSlot item)
         {
             if (item == null) return;
-            var vm = new IconPickerViewModel(item.IconKey);
+            var vm = new IconPickerViewModel(_searchService, item.IconKey);
             var result = await _dialogService.ShowCustomAsync("Select Icon", vm, DialogButtons.OkCancel);
 
             if (result == DialogResult.Confirmed)
