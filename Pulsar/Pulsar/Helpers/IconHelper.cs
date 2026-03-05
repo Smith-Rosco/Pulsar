@@ -1,6 +1,7 @@
 // [Path]: Pulsar/Pulsar/Helpers/IconHelper.cs
 
 using System;
+using System.Collections.Concurrent;
 using System.Drawing; // System.Drawing.Common
 using System.IO;
 using System.Windows;
@@ -14,6 +15,9 @@ namespace Pulsar.Helpers
     public static class IconHelper
     {
         public static ILogger? Logger { get; set; }
+        
+        // Cache for GetGlyph results to avoid repeated parsing
+        private static readonly ConcurrentDictionary<string, string> _glyphCache = new();
         /// <summary>
         /// 智能获取图标：如果是图片文件则直接加载，如果是程序则提取图标
         /// </summary>
@@ -122,31 +126,35 @@ namespace Pulsar.Helpers
         {
             if (string.IsNullOrWhiteSpace(key)) return string.Empty;
             
-            // 1. Detect Explicit Hex Prefix (User INTENDS hex)
-            bool hasHexPrefix = key.StartsWith("0x", StringComparison.OrdinalIgnoreCase) || 
-                                key.StartsWith("u+", StringComparison.OrdinalIgnoreCase) || 
-                                key.StartsWith("\\u", StringComparison.OrdinalIgnoreCase);
-
-            string cleanKey = key.Trim().Replace("0x", "").Replace("u+", "").Replace("\\u", "");
-
-            // 2. Try Parse Hex
-            if (int.TryParse(cleanKey, System.Globalization.NumberStyles.HexNumber, null, out int codePoint))
+            // Check cache first
+            return _glyphCache.GetOrAdd(key, k =>
             {
-                // If explicit prefix, trust it.
-                if (hasHexPrefix) return char.ConvertFromUtf32(codePoint);
+                // 1. Detect Explicit Hex Prefix (User INTENDS hex)
+                bool hasHexPrefix = k.StartsWith("0x", StringComparison.OrdinalIgnoreCase) || 
+                                    k.StartsWith("u+", StringComparison.OrdinalIgnoreCase) || 
+                                    k.StartsWith("\\u", StringComparison.OrdinalIgnoreCase);
 
-                // If implicit (no prefix), only treat as Hex if it looks like a symbol code point
-                // Segoe Fluent: E000 - F8FF (Private Use Area)
-                // Emoji: 1F000+
-                // Avoid ambiguous ASCII range (e.g., "Add" -> 0xADD) unless explicit
-                if (codePoint >= 0xE000) 
+                string cleanKey = k.Trim().Replace("0x", "").Replace("u+", "").Replace("\\u", "");
+
+                // 2. Try Parse Hex
+                if (int.TryParse(cleanKey, System.Globalization.NumberStyles.HexNumber, null, out int codePoint))
                 {
-                    return char.ConvertFromUtf32(codePoint);
+                    // If explicit prefix, trust it.
+                    if (hasHexPrefix) return char.ConvertFromUtf32(codePoint);
+
+                    // If implicit (no prefix), only treat as Hex if it looks like a symbol code point
+                    // Segoe Fluent: E000 - F8FF (Private Use Area)
+                    // Emoji: 1F000+
+                    // Avoid ambiguous ASCII range (e.g., "Add" -> 0xADD) unless explicit
+                    if (codePoint >= 0xE000) 
+                    {
+                        return char.ConvertFromUtf32(codePoint);
+                    }
                 }
-            }
-            
-            // 3. Return as-is (Allows "VBA", "🚀", "🧑‍💻", "CMD")
-            return key.Trim();
+                
+                // 3. Return as-is (Allows "VBA", "🚀", "🧑‍💻", "CMD")
+                return k.Trim();
+            });
         }
     }
 }
