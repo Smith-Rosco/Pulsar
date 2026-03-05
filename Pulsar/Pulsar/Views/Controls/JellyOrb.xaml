@@ -32,7 +32,7 @@
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding IsRecommended, ElementName=OrbRoot}" Value="True">
                             <DataTrigger.EnterActions>
-                                <BeginStoryboard>
+                                <BeginStoryboard x:Name="RecommendedPulse">
                                     <Storyboard>
                                         <DoubleAnimation Storyboard.TargetProperty="Opacity" 
                                                          To="0.6" Duration="0:0:0.5" AutoReverse="True" RepeatBehavior="Forever"/>
@@ -48,12 +48,37 @@
                                 </BeginStoryboard>
                             </DataTrigger.ExitActions>
                         </DataTrigger>
+                        
+                        <!-- [UX Improvement] Reduce recommended glow when active to avoid visual overload -->
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding IsRecommended, ElementName=OrbRoot}" Value="True"/>
+                                <Condition Binding="{Binding IsActive, ElementName=OrbRoot}" Value="True"/>
+                            </MultiDataTrigger.Conditions>
+                            <MultiDataTrigger.EnterActions>
+                                <StopStoryboard BeginStoryboardName="RecommendedPulse"/>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" 
+                                                         To="0.3" Duration="0:0:0.15"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </MultiDataTrigger.EnterActions>
+                            <MultiDataTrigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" 
+                                                         To="0.6" Duration="0:0:0.15"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </MultiDataTrigger.ExitActions>
+                        </MultiDataTrigger>
                     </Style.Triggers>
                 </Style>
             </Ellipse.Style>
         </Ellipse>
 
-        <Ellipse x:Name="OrbFill" 
+        <Ellipse x:Name="OrbFill"
                  StrokeThickness="1.5">
             <Ellipse.Style>
                 <Style TargetType="Ellipse">

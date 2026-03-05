@@ -27,7 +27,7 @@ namespace Pulsar.Views.Controls
         // �Ӳ�ǿ��: ����ƶ� 100px��Orb �ƶ� 12px
         private const double ParallaxIntensity = 0.12;
 
-        // ���λ������ (����): �������Χ
+        // ���λ������ (����): �������Χ
         private const double MaxOffsetLimit = 12.0;
 
         public JellyOrb()

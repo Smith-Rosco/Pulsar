@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Pulsar.ViewModels.Strategies;
+using System;
 using System.Threading.Tasks;
 
 namespace Pulsar.ViewModels

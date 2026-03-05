@@ -416,19 +416,39 @@ namespace Pulsar.Services
 
         private async Task SaveRegistryAsync()
         {
-            try
-            {
-                var options = new JsonSerializerOptions
-                {
-                    WriteIndented = true
-                };
+            const int maxRetries = 3;
+            const int delayMs = 50;
 
-                var json = JsonSerializer.Serialize(_registry, options);
-                await File.WriteAllTextAsync(_registryPath, json);
-            }
-            catch (Exception ex)
+            for (int attempt = 0; attempt < maxRetries; attempt++)
             {
-                _logger.LogError(ex, "[ProcessRegistry] Failed to save registry");
+                try
+                {
+                    var options = new JsonSerializerOptions
+                    {
+                        WriteIndented = true
+                    };
+
+                    var json = JsonSerializer.Serialize(_registry, options);
+                    
+                    // Use FileStream with FileShare.Read to allow concurrent reads
+                    using (var fileStream = new FileStream(_registryPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                    using (var writer = new StreamWriter(fileStream))
+                    {
+                        await writer.WriteAsync(json);
+                    }
+                    
+                    return; // Success
+                }
+                catch (IOException ex) when (attempt < maxRetries - 1)
+                {
+                    _logger.LogWarning(ex, "[ProcessRegistry] File access conflict, retrying... (Attempt {Attempt}/{MaxRetries})", attempt + 1, maxRetries);
+                    await Task.Delay(delayMs);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[ProcessRegistry] Failed to save registry");
+                    return;
+                }
             }
         }
 

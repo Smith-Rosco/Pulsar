@@ -152,6 +152,10 @@ namespace Pulsar.ViewModels
         private const double BounceScale = 0.92;
         private const int HintDisplayDuration = 800;
 
+        // [UX Improvement] Quick Switch Position Tolerance
+        private const double QuickSwitchPositionTolerance = 30.0; // 30px tolerance from center
+        private const double DeadZoneRatio = 0.6; // Dead zone is 60% of center orb size
+
         private const double ItemSize = 50;
         private const double CenterSize = 70;
 
@@ -508,11 +512,11 @@ namespace Pulsar.ViewModels
             _lastMouseX = mouseX;
             _lastMouseY = mouseY;
 
-            // [Fix] Dynamic DeadZone based on current radius
-            // If expanded, center is larger.
-            // Normal: 90 -> DeadZone 40
-            // Expanded: 150 -> DeadZone 80?
-            double deadZone = (_currentRadius > 120) ? 80.0 : 40.0;
+            // [UX Improvement] Consistent DeadZone Ratio
+            // Dead zone is always 60% of center orb size, regardless of expansion state
+            // Normal: 70px * 0.6 = 42px
+            // Expanded: 110px * 0.6 = 66px
+            double deadZone = _currentCenterSize * DeadZoneRatio;
             
             int newSlotIndex = RadialLayoutHelper.GetSlotIndexFromPoint(mouseX, mouseY, CenterX, CenterY, deadZone, 8);
 
@@ -743,15 +747,15 @@ namespace Pulsar.ViewModels
             // Simple heuristic: If any major modifier is released while visible, try execute.
             if (isModifierRelease)
             {
-                // [New] Quick Switch Logic
-                // If duration < 250ms AND no slot selected (or just center idle) AND we are in Root Menu
+                // [UX Improvement] Quick Switch Logic with Position Tolerance
+                // If duration < 250ms AND mouse is within tolerance zone AND we are in Root Menu
                 var duration = (DateTime.Now - _showStartTime).TotalMilliseconds;
                 _logger?.LogDebug("[HandleKeyUp] Modifier Release. Duration: {DurationMs}ms, ActiveSlot: {ActiveSlot}", duration, _activeSlotIndex);
                 
-                // Allow active slot 0 (Center) because default idle state might land there if mouse doesn't move
-                if (duration < 250 && (_activeSlotIndex == -1 || _activeSlotIndex == 0) && _menuState == MenuState.Root)
+                // Check if within quick switch zone (allows slight mouse movement)
+                if (duration < 250 && IsWithinQuickSwitchZone() && _menuState == MenuState.Root)
                 {
-                     _logger?.LogDebug("[HandleKeyUp] Triggering Quick Switch");
+                     _logger?.LogDebug("[HandleKeyUp] Triggering Quick Switch (within tolerance zone)");
                      SetActionExecuted(true); // [Fix] Prevent Dismiss() from restoring previous window
                      _windowService.SwitchToPreviousWindow();
                      IsVisible = false;
@@ -761,6 +765,18 @@ namespace Pulsar.ViewModels
                 ExecuteSelection();
                 IsVisible = false;
             }
+        }
+
+        // [UX Improvement] Check if mouse is within quick switch tolerance zone
+        private bool IsWithinQuickSwitchZone()
+        {
+            // Calculate distance from center
+            double dx = _lastMouseX - CenterX;
+            double dy = _lastMouseY - CenterY;
+            double distFromCenter = Math.Sqrt(dx * dx + dy * dy);
+            
+            // Allow quick switch if mouse is within tolerance radius from center
+            return distFromCenter < QuickSwitchPositionTolerance;
         }
 
         private async void ExecuteSelection()
