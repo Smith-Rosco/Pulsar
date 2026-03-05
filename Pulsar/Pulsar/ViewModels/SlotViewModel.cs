@@ -175,7 +175,11 @@ namespace Pulsar.ViewModels
         [ObservableProperty]
         private bool _isEnabled = true;
 
-        // [New] Magnetic Animation Offset
+        // [New] Magnetic Animation Offset (from physics)
+        private double _magneticOffsetX;
+        private double _magneticOffsetY;
+
+        // [New] Combined Offset (Magnetic only) - Bound to XAML
         [ObservableProperty]
         private double _offsetX;
 
@@ -198,6 +202,8 @@ namespace Pulsar.ViewModels
         {
             CurrentScale = 1.0;   // [Fix] Start fully visible for instant response
             CurrentOpacity = 1.0; // [Fix] Start fully visible
+            _magneticOffsetX = 0;
+            _magneticOffsetY = 0;
             OffsetX = 0;
             OffsetY = 0;
             VelocityX = 0;
@@ -210,8 +216,8 @@ namespace Pulsar.ViewModels
         {
             // 1. Spring Force (Hooke's Law: F = -k * x)
             // Calculate force pulling towards TargetOffset
-            double forceX = (TargetOffsetX - OffsetX) * Stiffness;
-            double forceY = (TargetOffsetY - OffsetY) * Stiffness;
+            double forceX = (TargetOffsetX - _magneticOffsetX) * Stiffness;
+            double forceY = (TargetOffsetY - _magneticOffsetY) * Stiffness;
 
             // 2. Apply Force to Velocity
             VelocityX += forceX;
@@ -222,12 +228,16 @@ namespace Pulsar.ViewModels
             VelocityY *= Damping;
 
             // 4. Update Position
-            OffsetX += VelocityX;
-            OffsetY += VelocityY;
+            _magneticOffsetX += VelocityX;
+            _magneticOffsetY += VelocityY;
 
             // Snap to zero if very close to stop jitter
-            if (Math.Abs(VelocityX) < 0.01 && Math.Abs(TargetOffsetX - OffsetX) < 0.01) OffsetX = TargetOffsetX;
-            if (Math.Abs(VelocityY) < 0.01 && Math.Abs(TargetOffsetY - OffsetY) < 0.01) OffsetY = TargetOffsetY;
+            if (Math.Abs(VelocityX) < 0.01 && Math.Abs(TargetOffsetX - _magneticOffsetX) < 0.01) _magneticOffsetX = TargetOffsetX;
+            if (Math.Abs(VelocityY) < 0.01 && Math.Abs(TargetOffsetY - _magneticOffsetY) < 0.01) _magneticOffsetY = TargetOffsetY;
+
+            // 5. Set final offset (magnetic only)
+            OffsetX = _magneticOffsetX;
+            OffsetY = _magneticOffsetY;
         }
     }
 

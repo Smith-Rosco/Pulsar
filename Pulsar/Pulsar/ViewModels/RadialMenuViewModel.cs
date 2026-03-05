@@ -143,6 +143,15 @@ namespace Pulsar.ViewModels
         private DateTime _showStartTime;
         private bool _pendingQuickSwitch; // [Fix] Track premature release during loading
 
+        // [New] Boundary Feedback State
+        private DateTime _lastScrollTime = DateTime.MinValue;
+        private bool _hasShownSinglePageHint = false;
+
+        // [New] Boundary Feedback Animation Constants
+        private const int BounceDuration = 120;
+        private const double BounceScale = 0.92;
+        private const int HintDisplayDuration = 800;
+
         private const double ItemSize = 50;
         private const double CenterSize = 70;
 
@@ -435,8 +444,36 @@ namespace Pulsar.ViewModels
             if (_menuState != MenuState.Root) return;
             if (_pageProvider == null) return;
 
-            if (delta > 0) _pageProvider.PrevPage();
-            else _pageProvider.NextPage();
+            // [New] Direction: delta < 0 = scroll down = next page
+            int direction = delta < 0 ? 1 : -1;
+
+            // [New] Boundary detection
+            int currentPage = GetCurrentPage();
+            int totalPages = GetTotalPages();
+            int targetPage = currentPage + direction;
+
+            // [New] Handle single page case
+            if (totalPages <= 1)
+            {
+                ShowSinglePageHint();
+                return;
+            }
+
+            // [New] Handle boundary bounce
+            if (targetPage < 0)
+            {
+                AnimateBounce(true);  // First page
+                return;
+            }
+            if (targetPage >= totalPages)
+            {
+                AnimateBounce(false);  // Last page
+                return;
+            }
+
+            // [Original] Instant page switch (no animation)
+            if (direction > 0) _pageProvider.NextPage();
+            else _pageProvider.PrevPage();
 
             _pageProvider.RefreshVisuals(Slots, CenterSlot);
         }
@@ -927,6 +964,98 @@ namespace Pulsar.ViewModels
                         _pageProvider.RefreshVisuals(Slots, CenterSlot));
                  });
              }
+        }
+
+        // ============================
+        // [New] Page Transition Animation Methods
+        // ============================
+
+        private int GetCurrentPage()
+        {
+            return _pageProvider?.CurrentPage ?? 0;
+        }
+
+        private int GetTotalPages()
+        {
+            return _pageProvider?.TotalPages ?? 1;
+        }
+
+        // ============================
+        // [New] Boundary Feedback Animation Methods (保留)
+        // ============================
+
+        private async void AnimateBounce(bool isFirstPage)
+        {
+            var startTime = DateTime.Now;
+            var halfDuration = BounceDuration / 2;
+
+            // Phase 1: Compress (0 -> 50%)
+            while ((DateTime.Now - startTime).TotalMilliseconds < halfDuration)
+            {
+                var elapsed = (DateTime.Now - startTime).TotalMilliseconds;
+                var progress = elapsed / halfDuration;
+                var scale = 1.0 + (BounceScale - 1.0) * progress;
+
+                foreach (var slot in Slots)
+                {
+                    slot.CurrentScale = scale;
+                }
+
+                await Task.Delay(16);
+            }
+
+            // Phase 2: Bounce back with elastic (50% -> 100%)
+            startTime = DateTime.Now;
+            while ((DateTime.Now - startTime).TotalMilliseconds < halfDuration)
+            {
+                var elapsed = (DateTime.Now - startTime).TotalMilliseconds;
+                var progress = elapsed / halfDuration;
+                
+                // Elastic easing
+                var c4 = (2 * Math.PI) / 3;
+                var easedProgress = Math.Pow(2, -10 * progress) * Math.Sin((progress * 10 - 0.75) * c4) + 1;
+                
+                var scale = BounceScale + (1.0 - BounceScale) * easedProgress;
+
+                foreach (var slot in Slots)
+                {
+                    slot.CurrentScale = scale;
+                }
+
+                await Task.Delay(16);
+            }
+
+            // Ensure final value
+            foreach (var slot in Slots)
+            {
+                slot.CurrentScale = 1.0;
+            }
+
+            // Show hint
+            var hintText = isFirstPage ? "已是第一页" : "已是最后一页";
+            ShowTemporaryHint(hintText, 500);
+        }
+
+        private void ShowTemporaryHint(string text, int durationMs)
+        {
+            var originalText = CenterText;
+            CenterText = text;
+
+            Task.Delay(durationMs).ContinueWith(_ =>
+            {
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    CenterText = originalText;
+                });
+            });
+        }
+
+        private void ShowSinglePageHint()
+        {
+            if (_hasShownSinglePageHint) return;
+
+            ShowTemporaryHint("仅 1 页，无需翻页", HintDisplayDuration);
+            _hasShownSinglePageHint = true;
         }
     }
 }

@@ -16,6 +16,8 @@ namespace Pulsar.ViewModels.Strategies
         void NextPage();
         void PrevPage();
         void RefreshVisuals(ObservableCollection<SlotViewModel> slots, SlotViewModel centerSlot);
+        int TotalPages { get; }  // [New] Add TotalPages to interface
+        int CurrentPage { get; }  // [New] Add CurrentPage to interface
     }
 
     /// <summary>
@@ -27,6 +29,7 @@ namespace Pulsar.ViewModels.Strategies
         protected int _itemsPerPage = 8;
         
         public virtual int TotalPages => 1;
+        public int CurrentPage => _currentPage;  // [New] Public accessor
 
         public abstract Task LoadAsync();
 
