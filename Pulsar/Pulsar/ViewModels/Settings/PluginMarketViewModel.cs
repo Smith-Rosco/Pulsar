@@ -20,7 +20,9 @@ namespace Pulsar.ViewModels.Settings
     /// </summary>
     public partial class PluginMarketViewModel : ObservableObject
     {
+#pragma warning disable CS0618 // Type or member is obsolete
         private readonly PluginRepository _repository;
+#pragma warning restore CS0618 // Type or member is obsolete
         private readonly PluginPackageManager _packageManager;
         private readonly ILogger<PluginMarketViewModel>? _logger;
         private readonly IDialogService? _dialogService;
@@ -56,7 +58,9 @@ namespace Pulsar.ViewModels.Settings
         private RepositoryStatistics? _statistics;
 
         public PluginMarketViewModel(
+#pragma warning disable CS0618 // Type or member is obsolete
             PluginRepository repository,
+#pragma warning restore CS0618 // Type or member is obsolete
             PluginPackageManager packageManager,
             ILogger<PluginMarketViewModel>? logger = null,
             IDialogService? dialogService = null)

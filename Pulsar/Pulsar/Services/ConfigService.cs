@@ -158,7 +158,7 @@ namespace Pulsar.Services
             }
 
             // [New] Validate before saving
-            if (_validationPipeline != null)
+            if (_validationPipeline != null && config != null)
             {
                 try
                 {

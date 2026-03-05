@@ -92,6 +92,17 @@ namespace Pulsar
             serviceCollection.AddSingleton<IHotkeyService, HotkeyService>();
             serviceCollection.AddSingleton<IDialogService, DialogService>();
             
+            // [New] Fuzzy Search Service (for IconPicker and future use)
+            serviceCollection.AddSingleton(typeof(Pulsar.Services.Interfaces.IFuzzySearchService<>), typeof(Pulsar.Services.FuzzySearch.FuzzySearchService<>));
+            serviceCollection.AddSingleton<Pulsar.Services.Interfaces.IFuzzySearchService<Pulsar.Helpers.IconItem>>(sp =>
+            {
+                var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Pulsar.Services.FuzzySearch.FuzzySearchService<Pulsar.Helpers.IconItem>>>();
+                var innerService = new Pulsar.Services.FuzzySearch.FuzzySearchService<Pulsar.Helpers.IconItem>(logger);
+                
+                var cachedLogger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Pulsar.Services.FuzzySearch.CachedFuzzySearchService<Pulsar.Helpers.IconItem>>>();
+                return new Pulsar.Services.FuzzySearch.CachedFuzzySearchService<Pulsar.Helpers.IconItem>(innerService, cachedLogger);
+            });
+            
             // 2. Plugin System (New Architecture)
             serviceCollection.AddSingleton<PluginRegistry>();
             serviceCollection.AddSingleton<IPluginMetadataRegistry, PluginMetadataRegistry>();
