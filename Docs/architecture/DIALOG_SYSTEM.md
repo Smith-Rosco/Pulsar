@@ -183,15 +183,21 @@ Create a UserControl in `Views/Dialogs/Contents/`:
 </UserControl>
 ```
 
-### Step 3: Register DataTemplate (if needed)
+### Step 3: Register DataTemplate (REQUIRED)
 
-Add to `DialogHostWindow.xaml` Resources:
+**CRITICAL**: You MUST register a DataTemplate in `DialogHostWindow.xaml` for your ViewModel, otherwise the dialog will display the ViewModel's type name instead of your UI.
+
+Add to `Views/Dialogs/DialogHostWindow.xaml` in the `<Window.Resources>` section:
 
 ```xml
 <DataTemplate DataType="{x:Type dialogs:MyDialogViewModel}">
     <contents:MyDialogContent/>
 </DataTemplate>
 ```
+
+**Why this is required**: WPF's `ContentPresenter` uses implicit DataTemplates to determine how to render objects. Without a registered DataTemplate, it falls back to calling `ToString()` on your ViewModel, which displays the fully qualified type name (e.g., "Pulsar.ViewModels.Dialogs.MyDialogViewModel").
+
+**Location**: `Pulsar/Pulsar/Views/Dialogs/DialogHostWindow.xaml` around line 40-80 (in the Dialog ViewModel Templates section)
 
 ### Step 4: Call Dialog with Correct Size
 
@@ -280,6 +286,18 @@ DialogPlacement.CenterActiveWindow // Relative to active window
 
 ## Troubleshooting
 
+### Dialog shows ViewModel type name instead of UI
+**Symptom**: Dialog displays "Pulsar.ViewModels.Dialogs.MyDialogViewModel" instead of your custom UI.
+
+**Root Cause**: Missing DataTemplate registration in `DialogHostWindow.xaml`.
+
+**Solution**: Add DataTemplate registration in `Views/Dialogs/DialogHostWindow.xaml`:
+```xml
+<DataTemplate DataType="{x:Type dialogs:MyDialogViewModel}">
+    <contents:MyDialogContent/>
+</DataTemplate>
+```
+
 ### Dialog is too large for simple confirmation
 **Solution**: Use `ShowConfirmationAsync()` or `ShowMessageAsync()` instead of custom dialog.
 
@@ -303,5 +321,6 @@ DialogPlacement.CenterActiveWindow // Relative to active window
 ---
 
 **Change History**:
+- v1.2.0 (2026-03-07): Emphasized DataTemplate registration requirement, added troubleshooting for missing DataTemplate
 - v1.1.0 (2026-03-07): Added XSmall/LargeResizable presets, icon display, button semantics, size selection guide
 - v1.0.0 (2026-03-03): Initial extraction from AGENTS.md

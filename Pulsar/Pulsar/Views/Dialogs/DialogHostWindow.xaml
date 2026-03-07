@@ -36,9 +36,45 @@
                 <TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="14" Foreground="{DynamicResource Theme.Text.Primary}"/>
             </DataTemplate>
             
-            <!-- ProcessBlacklistViewModel Template -->
+            <!-- Dialog ViewModel Templates -->
             <DataTemplate DataType="{x:Type dialogs:ProcessBlacklistViewModel}">
                 <contents:ProcessBlacklistContent/>
+            </DataTemplate>
+            
+            <DataTemplate DataType="{x:Type dialogs:ColorPickerViewModel}">
+                <contents:ColorPickerContent/>
+            </DataTemplate>
+            
+            <DataTemplate DataType="{x:Type dialogs:IconPickerViewModel}">
+                <contents:IconPickerContent/>
+            </DataTemplate>
+            
+            <DataTemplate DataType="{x:Type dialogs:InputDialogViewModel}">
+                <contents:InputDialogContent/>
+            </DataTemplate>
+            
+            <DataTemplate DataType="{x:Type dialogs:InputProfileViewModel}">
+                <contents:InputProfileContent/>
+            </DataTemplate>
+            
+            <DataTemplate DataType="{x:Type dialogs:EditProfileViewModel}">
+                <contents:EditProfileContent/>
+            </DataTemplate>
+            
+            <DataTemplate DataType="{x:Type dialogs:PermissionRequestViewModel}">
+                <contents:PermissionRequestContent/>
+            </DataTemplate>
+            
+            <DataTemplate DataType="{x:Type dialogs:PluginLogViewerViewModel}">
+                <contents:PluginLogViewerContentHost/>
+            </DataTemplate>
+            
+            <DataTemplate DataType="{x:Type dialogs:ProcessPickerViewModel}">
+                <contents:ProcessPickerContent/>
+            </DataTemplate>
+            
+            <DataTemplate DataType="{x:Type dialogs:QuickSecretsViewModel}">
+                <contents:QuickSecretsContent/>
             </DataTemplate>
         </ResourceDictionary>
     </Window.Resources>

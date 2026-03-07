@@ -8,6 +8,10 @@
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:ColorPickerViewModel}">
     
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+    
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/> <!-- Preview & Hex -->
@@ -81,30 +85,43 @@
         </StackPanel>
 
         <!-- Presets -->
-        <StackPanel Grid.Row="2">
-            <TextBlock Text="Presets" Margin="0,0,0,8" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-            <ItemsControl ItemsSource="{Binding Presets}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel Orientation="Horizontal"/>
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Button Width="32" Height="32" Margin="0,0,8,8" 
-                                Command="{Binding DataContext.SelectPresetCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                CommandParameter="{Binding}"
-                                Cursor="Hand"
-                                ToolTip="{Binding Name}">
-                            <Button.Template>
-                                <ControlTemplate>
-                                    <Border CornerRadius="16" Background="{Binding Brush}" BorderThickness="1" BorderBrush="#30000000"/>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </StackPanel>
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            
+            <TextBlock Grid.Row="0" 
+                       Text="Presets" 
+                       Margin="0,0,0,8" 
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+            
+            <ScrollViewer Grid.Row="1" 
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl ItemsSource="{Binding Presets}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Width="32" Height="32" Margin="0,0,8,8" 
+                                    Command="{Binding DataContext.SelectPresetCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding}"
+                                    Cursor="Hand"
+                                    ToolTip="{Binding Name}">
+                                <Button.Template>
+                                    <ControlTemplate>
+                                        <Border CornerRadius="16" Background="{Binding Brush}" BorderThickness="1" BorderBrush="#30000000"/>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
     </Grid>
 </UserControl>

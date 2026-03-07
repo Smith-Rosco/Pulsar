@@ -118,7 +118,7 @@ This file provides essential context, conventions, and routing for AI agents wor
 |------|----------|
 | **Build/Run commands** | [Docs/ops/BUILD_AND_RUN.md](./Docs/ops/BUILD_AND_RUN.md) |
 | **Add/modify plugin** | [PLUGIN_DEVELOPMENT.md](./PLUGIN_DEVELOPMENT.md), [Docs/architecture/PLUGIN_SYSTEM.md](./Docs/architecture/PLUGIN_SYSTEM.md) |
-| **Add dialog** | [Docs/architecture/DIALOG_SYSTEM.md](./Docs/architecture/DIALOG_SYSTEM.md) - **Always specify DialogSizeConstraints!** |
+| **Add dialog** | [Docs/architecture/DIALOG_SYSTEM.md](./Docs/architecture/DIALOG_SYSTEM.md) - **Always specify DialogSizeConstraints AND register DataTemplate!** |
 | **Modify UI (XAML)** | [Docs/guides/UI_BEST_PRACTICES.md](./Docs/guides/UI_BEST_PRACTICES.md) |
 | **Use reusable components** | [Docs/guides/COMPONENT_LIBRARY.md](./Docs/guides/COMPONENT_LIBRARY.md) |
 | **Understand architecture** | [ARCHITECTURE.md](./ARCHITECTURE.md), [Docs/architecture/](./Docs/architecture/) |
@@ -183,7 +183,8 @@ This file provides essential context, conventions, and routing for AI agents wor
 ### Adding a New Dialog
 1. Create ViewModel implementing `IDialogViewModel` in `ViewModels/Dialogs/`
 2. Create UserControl in `Views/Dialogs/Contents/`
-3. Use `DialogService.ShowCustomAsync<T>()` to display
+3. **CRITICAL**: Register DataTemplate in `Views/Dialogs/DialogHostWindow.xaml` (see DIALOG_SYSTEM.md Step 3)
+4. Use `DialogService.ShowCustomAsync<T>()` to display with appropriate `DialogSizeConstraints`
 
 **Deep Dive**: [Docs/architecture/DIALOG_SYSTEM.md](./Docs/architecture/DIALOG_SYSTEM.md)
 
