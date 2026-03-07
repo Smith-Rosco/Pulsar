@@ -970,7 +970,7 @@ namespace Pulsar.ViewModels
         public async Task PickProcess(object parameter)
         {
              var vm = new ProcessPickerViewModel(_windowService);
-             var result = await _dialogService.ShowCustomAsync("Select Application", vm, DialogButtons.OkCancel);
+             var result = await _dialogService.ShowCustomAsync("Select Application", vm, DialogButtons.OkCancel, DialogSizeConstraints.LargeResizable);
              
              if (result == DialogResult.Confirmed && vm.SelectedProcess != null)
              {
@@ -1054,7 +1054,7 @@ namespace Pulsar.ViewModels
         {
             if (item == null) return;
             var vm = new IconPickerViewModel(_searchService, item.IconKey);
-            var result = await _dialogService.ShowCustomAsync("Select Icon", vm, DialogButtons.OkCancel);
+            var result = await _dialogService.ShowCustomAsync("Select Icon", vm, DialogButtons.OkCancel, DialogSizeConstraints.LargeResizable);
 
             if (result == DialogResult.Confirmed)
             {

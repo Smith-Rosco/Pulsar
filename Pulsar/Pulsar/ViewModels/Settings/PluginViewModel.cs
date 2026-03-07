@@ -264,7 +264,7 @@ namespace Pulsar.ViewModels.Settings
             }
 
             var vm = new Pulsar.ViewModels.Dialogs.PluginLogViewerViewModel(_logService, Id, Name);
-            await _dialogService.ShowCustomAsync($"Plugin Logs: {Name}", vm, Models.Enums.DialogButtons.Ok);
+            await _dialogService.ShowCustomAsync($"Plugin Logs: {Name}", vm, Models.Enums.DialogButtons.Ok, Models.DialogSizeConstraints.Large);
         }
 
         [RelayCommand]
@@ -303,7 +303,8 @@ namespace Pulsar.ViewModels.Settings
                     var result = await _dialogService.ShowCustomAsync(
                         "Process Blacklist", 
                         vm, 
-                        Models.Enums.DialogButtons.OkCancel);
+                        Models.Enums.DialogButtons.OkCancel,
+                        Models.DialogSizeConstraints.Large);
 
                     if (result == Models.Enums.DialogResult.Confirmed)
                     {

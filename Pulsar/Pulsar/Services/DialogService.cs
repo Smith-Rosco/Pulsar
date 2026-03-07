@@ -37,11 +37,17 @@ namespace Pulsar.Services
                 var vm = new DialogHostViewModel
                 {
                     Title = title,
-                    Content = message // Simple string content
+                    Content = message, // Simple string content
+                    DialogType = type
                 };
                 vm.ConfigureButtons(buttons);
 
-                return ShowDialogInternal(vm, DialogPlacement.CenterOwner, DialogSizeConstraints.Small);
+                // Use Small for SaveDontSaveCancel (3 buttons), XSmall for simple messages
+                var sizeConstraints = buttons == DialogButtons.SaveDontSaveCancel 
+                    ? DialogSizeConstraints.Small 
+                    : DialogSizeConstraints.XSmall;
+
+                return ShowDialogInternal(vm, DialogPlacement.CenterOwner, sizeConstraints);
             });
         }
 
@@ -49,6 +55,15 @@ namespace Pulsar.Services
             string title, 
             TViewModel content, 
             DialogButtons buttons = DialogButtons.OkCancel)
+        {
+            return await ShowCustomAsync(title, content, buttons, DialogSizeConstraints.Medium);
+        }
+
+        public async Task<Pulsar.Models.Enums.DialogResult> ShowCustomAsync<TViewModel>(
+            string title, 
+            TViewModel content, 
+            DialogButtons buttons,
+            DialogSizeConstraints sizeConstraints)
         {
             return await RunOnUi(() =>
             {
@@ -66,7 +81,7 @@ namespace Pulsar.Services
 
                 vm.ConfigureButtons(buttons);
 
-                return ShowDialogInternal(vm, DialogPlacement.CenterOwner, DialogSizeConstraints.Medium);
+                return ShowDialogInternal(vm, DialogPlacement.CenterOwner, sizeConstraints);
             });
         }
 
@@ -116,7 +131,7 @@ namespace Pulsar.Services
                     SecondaryButtonText = cancelText
                 };
 
-                return ShowDialogInternal(vm, DialogPlacement.CenterOwner, DialogSizeConstraints.Small);
+                return ShowDialogInternal(vm, DialogPlacement.CenterOwner, DialogSizeConstraints.XSmall);
             });
         }
 
@@ -293,14 +308,20 @@ namespace Pulsar.Services
             DialogSizeConstraints? sizeConstraints = null,
             WindowBackdropType backdrop = WindowBackdropType.Mica)
         {
+            // Use default constraints if none provided
+            var constraints = sizeConstraints ?? DialogSizeConstraints.Default;
+
             // 1. Apply theme (inferred from context)
             var theme = InferThemeFromContext();
             _themeService.ApplyTheme(window, theme, backdrop, updateGlobal: false);
 
             // 2. Apply size constraints
-            ApplySizeConstraints(window, sizeConstraints ?? DialogSizeConstraints.Default);
+            ApplySizeConstraints(window, constraints);
 
-            // 3. Find best owner and apply placement
+            // 3. Configure resize behavior and title bar buttons
+            window.ConfigureResizeBehavior(constraints.AllowResize, constraints.ShowMaximizeButton);
+
+            // 4. Find best owner and apply placement
             var owner = FindBestOwner(placement);
             ApplyPlacement(window, placement, owner);
         }
@@ -311,8 +332,8 @@ namespace Pulsar.Services
             DialogSizeConstraints? sizeConstraints = null,
             WindowBackdropType backdrop = WindowBackdropType.Mica)
         {
-            // Create window via DI to inject dependencies like IThemeService
-            var window = ActivatorUtilities.CreateInstance<DialogHostWindow>(_serviceProvider);
+            // Create window without DI (no longer needs IThemeService injection)
+            var window = new DialogHostWindow();
             
             window.DataContext = viewModel;
 
@@ -324,7 +345,7 @@ namespace Pulsar.Services
                 window.Close();
             };
 
-            // Apply all window configurations (theme, placement, size)
+            // Apply all window configurations (theme, placement, size, resize behavior)
             PrepareWindow(window, placement, sizeConstraints, backdrop);
 
             window.ShowDialog();

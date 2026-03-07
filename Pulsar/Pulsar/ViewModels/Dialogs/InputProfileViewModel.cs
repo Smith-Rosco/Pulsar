@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Pulsar.Helpers;
+using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels.Base;
 using System;
@@ -80,7 +81,7 @@ namespace Pulsar.ViewModels.Dialogs
         private async Task PickProcess()
         {
             var picker = new ProcessPickerViewModel(_windowService);
-            var result = await _dialogService.ShowCustomAsync("Select Application", picker, DialogButtons.OkCancel);
+            var result = await _dialogService.ShowCustomAsync("Select Application", picker, DialogButtons.OkCancel, DialogSizeConstraints.LargeResizable);
             
             if (result == DialogResult.Confirmed && picker.SelectedProcess != null)
             {
@@ -102,7 +103,7 @@ namespace Pulsar.ViewModels.Dialogs
         private async Task PickIcon()
         {
             var picker = new IconPickerViewModel(_searchService, IconKey);
-            var result = await _dialogService.ShowCustomAsync("Select Icon", picker, DialogButtons.OkCancel);
+            var result = await _dialogService.ShowCustomAsync("Select Icon", picker, DialogButtons.OkCancel, DialogSizeConstraints.LargeResizable);
 
             if (result == DialogResult.Confirmed)
             {

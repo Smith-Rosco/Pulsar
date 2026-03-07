@@ -118,7 +118,7 @@ This file provides essential context, conventions, and routing for AI agents wor
 |------|----------|
 | **Build/Run commands** | [Docs/ops/BUILD_AND_RUN.md](./Docs/ops/BUILD_AND_RUN.md) |
 | **Add/modify plugin** | [PLUGIN_DEVELOPMENT.md](./PLUGIN_DEVELOPMENT.md), [Docs/architecture/PLUGIN_SYSTEM.md](./Docs/architecture/PLUGIN_SYSTEM.md) |
-| **Add dialog** | [Docs/architecture/DIALOG_SYSTEM.md](./Docs/architecture/DIALOG_SYSTEM.md) |
+| **Add dialog** | [Docs/architecture/DIALOG_SYSTEM.md](./Docs/architecture/DIALOG_SYSTEM.md) - **Always specify DialogSizeConstraints!** |
 | **Modify UI (XAML)** | [Docs/guides/UI_BEST_PRACTICES.md](./Docs/guides/UI_BEST_PRACTICES.md) |
 | **Use reusable components** | [Docs/guides/COMPONENT_LIBRARY.md](./Docs/guides/COMPONENT_LIBRARY.md) |
 | **Understand architecture** | [ARCHITECTURE.md](./ARCHITECTURE.md), [Docs/architecture/](./Docs/architecture/) |

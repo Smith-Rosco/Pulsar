@@ -35,6 +35,12 @@ namespace Pulsar.ViewModels
         [ObservableProperty]
         private bool _isScrollable = true;
 
+        [ObservableProperty]
+        private DialogType _dialogType = DialogType.Info;
+
+        [ObservableProperty]
+        private bool _useDangerStyleForTertiary = false;
+
         public Action<Pulsar.Models.Enums.DialogResult>? RequestClose { get; set; }
 
         [RelayCommand]
@@ -88,6 +94,7 @@ namespace Pulsar.ViewModels
                     PrimaryButtonText = "Save";
                     IsTertiaryButtonVisible = true;
                     TertiaryButtonText = "Don't Save";
+                    UseDangerStyleForTertiary = true; // "Don't Save" is a destructive action
                     IsSecondaryButtonVisible = true;
                     SecondaryButtonText = "Cancel";
                     break;
