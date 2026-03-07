@@ -101,6 +101,11 @@ namespace Pulsar.ViewModels
         private readonly ILogger<SettingsViewModel> _logger;
         private ProfilesConfig _config;
 
+        // ===== Drag & Drop Debounce Fields =====
+        private DateTime _lastDragOverTime = DateTime.MinValue;
+        private const int DragOverThrottleMs = 50; // Throttle DragOver to max 20 times per second
+        private CancellationTokenSource? _notificationDebounceToken;
+
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(IsSettingsView))]
         [NotifyPropertyChangedFor(nameof(IsSlotsView))]
@@ -916,7 +921,7 @@ namespace Pulsar.ViewModels
             }
         }
 
-        [RelayCommand]
+        [RelayCommand(CanExecute = nameof(CanMoveSlotUp))]
         public void MoveSlotUp(PluginSlot item)
         {
             if (CurrentSlots == null || !CurrentSlots.Contains(item)) return;
@@ -924,24 +929,31 @@ namespace Pulsar.ViewModels
             var index = CurrentSlots.IndexOf(item);
             if (index <= 0) return; // Already at top
             
-            var prevItem = CurrentSlots[index - 1];
+            // ✅ Efficient: Use ObservableCollection.Move() instead of Clear + Add loop
+            CurrentSlots.Move(index, index - 1);
             
-            // [Refactor] Swap Slot values instead of Order
-            (item.Slot, prevItem.Slot) = (prevItem.Slot, item.Slot);
-            
-            // Re-sort the collection by Slot
-            var sortedList = CurrentSlots.OrderBy(s => s.Slot).ToList();
-            CurrentSlots.Clear();
-            foreach (var slot in sortedList)
+            // Reassign Slot values to maintain consistency (1, 2, 3...)
+            for (int i = 0; i < CurrentSlots.Count; i++)
             {
-                CurrentSlots.Add(slot);
+                CurrentSlots[i].Slot = i + 1;
             }
             
-            MarkDirty(); // [Phase 2]
-            SendNotification("Moved", $"'{item.Label}' moved up.", ControlAppearance.Info);
+            MarkDirty();
+            SendDebouncedNotification("Moved", $"'{item.Label}' moved up.", ControlAppearance.Info);
+            _logger.LogInformation("Slot '{Label}' moved up from position {OldPos} to {NewPos}", 
+                item.Label, index + 1, index);
         }
 
-        [RelayCommand]
+        private bool CanMoveSlotUp(PluginSlot? item)
+        {
+            if (item == null || CurrentSlots == null || !CurrentSlots.Contains(item)) 
+                return false;
+            
+            var index = CurrentSlots.IndexOf(item);
+            return index > 0; // Can move up if not at top
+        }
+
+        [RelayCommand(CanExecute = nameof(CanMoveSlotDown))]
         public void MoveSlotDown(PluginSlot item)
         {
             if (CurrentSlots == null || !CurrentSlots.Contains(item)) return;
@@ -949,21 +961,28 @@ namespace Pulsar.ViewModels
             var index = CurrentSlots.IndexOf(item);
             if (index < 0 || index >= CurrentSlots.Count - 1) return; // Already at bottom
             
-            var nextItem = CurrentSlots[index + 1];
+            // ✅ Efficient: Use ObservableCollection.Move() instead of Clear + Add loop
+            CurrentSlots.Move(index, index + 1);
             
-            // [Refactor] Swap Slot values instead of Order
-            (item.Slot, nextItem.Slot) = (nextItem.Slot, item.Slot);
-            
-            // Re-sort the collection by Slot
-            var sortedList = CurrentSlots.OrderBy(s => s.Slot).ToList();
-            CurrentSlots.Clear();
-            foreach (var slot in sortedList)
+            // Reassign Slot values to maintain consistency (1, 2, 3...)
+            for (int i = 0; i < CurrentSlots.Count; i++)
             {
-                CurrentSlots.Add(slot);
+                CurrentSlots[i].Slot = i + 1;
             }
             
-            MarkDirty(); // [Phase 2]
-            SendNotification("Moved", $"'{item.Label}' moved down.", ControlAppearance.Info);
+            MarkDirty();
+            SendDebouncedNotification("Moved", $"'{item.Label}' moved down.", ControlAppearance.Info);
+            _logger.LogInformation("Slot '{Label}' moved down from position {OldPos} to {NewPos}", 
+                item.Label, index + 1, index + 2);
+        }
+
+        private bool CanMoveSlotDown(PluginSlot? item)
+        {
+            if (item == null || CurrentSlots == null || !CurrentSlots.Contains(item)) 
+                return false;
+            
+            var index = CurrentSlots.IndexOf(item);
+            return index >= 0 && index < CurrentSlots.Count - 1; // Can move down if not at bottom
         }
         
         [RelayCommand]
@@ -1293,10 +1312,46 @@ namespace Pulsar.ViewModels
             WeakReferenceMessenger.Default.Send(new SnackbarMessage(title, message, appearance));
         }
 
+        /// <summary>
+        /// Send a debounced notification that will be delayed by 300ms.
+        /// If another notification is triggered within this time, the previous one is cancelled.
+        /// </summary>
+        private async void SendDebouncedNotification(string title, string message, ControlAppearance appearance = ControlAppearance.Secondary)
+        {
+            // Cancel previous notification if still pending
+            _notificationDebounceToken?.Cancel();
+            _notificationDebounceToken = new CancellationTokenSource();
+            
+            try
+            {
+                // Wait 300ms - if user performs another action, this will be cancelled
+                await Task.Delay(300, _notificationDebounceToken.Token);
+                SendNotification(title, message, appearance);
+            }
+            catch (TaskCanceledException)
+            {
+                // Notification was cancelled by a newer action, ignore
+                _logger.LogDebug("Notification cancelled by newer action");
+            }
+        }
+
         // ===== IDropTarget Implementation for Drag & Drop Reordering =====
         
         void GongSolutions.Wpf.DragDrop.IDropTarget.DragOver(GongSolutions.Wpf.DragDrop.IDropInfo dropInfo)
         {
+            // ✅ Throttle: Limit processing frequency to reduce UI flicker
+            var now = DateTime.UtcNow;
+            if ((now - _lastDragOverTime).TotalMilliseconds < DragOverThrottleMs)
+            {
+                // Keep previous state, don't reset adorner
+                if (dropInfo.Data is PluginSlot && dropInfo.TargetCollection != null)
+                {
+                    dropInfo.Effects = DragDropEffects.Move; // Still allow drop
+                }
+                return;
+            }
+            _lastDragOverTime = now;
+            
             if (dropInfo.Data is PluginSlot && dropInfo.TargetCollection != null)
             {
                 dropInfo.DropTargetAdorner = GongSolutions.Wpf.DragDrop.DropTargetAdorners.Insert;
@@ -1318,27 +1373,45 @@ namespace Pulsar.ViewModels
                 if (insertIndex < 0) insertIndex = 0;
                 if (insertIndex > CurrentSlots.Count) insertIndex = CurrentSlots.Count;
 
-                // Remove source from collection
-                CurrentSlots.RemoveAt(sourceIndex);
-
                 // Adjust insert index if we removed an item before the target position
                 if (sourceIndex < insertIndex)
                 {
                     insertIndex--;
                 }
 
-                // Insert at the exact position indicated by the adorner
-                CurrentSlots.Insert(insertIndex, sourceSlot);
+                // ✅ Debounce: Only proceed if position actually changed
+                if (sourceIndex == insertIndex)
+                {
+                    _logger.LogDebug("Slot dropped at same position (index {Index}), ignoring", sourceIndex);
+                    return; // No actual movement, skip operation
+                }
 
-                // [Refactor] Reassign Slot values based on new positions (1, 2, 3...)
+                // ✅ Efficient: Use ObservableCollection.Move() instead of Remove + Insert
+                CurrentSlots.Move(sourceIndex, insertIndex);
+
+                // Reassign Slot values based on new positions (1, 2, 3...)
                 for (int i = 0; i < CurrentSlots.Count; i++)
                 {
                     CurrentSlots[i].Slot = i + 1;
                 }
 
-                MarkDirty(); // [Phase 2]
-                SendNotification("Reordered", $"'{sourceSlot.Label}' moved.", ControlAppearance.Info);
+                MarkDirty();
+                
+                // ✅ Use debounced notification to prevent spam during rapid dragging
+                SendDebouncedNotification("Reordered", 
+                    $"'{sourceSlot.Label}' moved to position {insertIndex + 1}.", 
+                    ControlAppearance.Info);
+                    
+                _logger.LogInformation("Slot '{Label}' moved from position {OldPos} to {NewPos}", 
+                    sourceSlot.Label, sourceIndex + 1, insertIndex + 1);
             }
+        }
+
+        void GongSolutions.Wpf.DragDrop.IDropTarget.DragLeave(GongSolutions.Wpf.DragDrop.IDropInfo dropInfo)
+        {
+            // Reset throttle timer when drag leaves
+            _lastDragOverTime = DateTime.MinValue;
+            _logger.LogDebug("Drag operation left drop target");
         }
     }
 }
