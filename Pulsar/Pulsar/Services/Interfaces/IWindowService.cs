@@ -50,18 +50,41 @@ namespace Pulsar.Services.Interfaces
         /// 记录唤起 Pulsar 前的窗口句柄
         /// </summary>
         void SetPreviousWindow(IntPtr handle);
+        
+        /// <summary>
+        /// 记录窗口激活到历史栈（用于 Quick Switch）
+        /// </summary>
+        void RecordWindowActivation(IntPtr hwnd);
 
         /// <summary>
         /// 获取之前记录的窗口句柄
         /// </summary>
-        /// // [New] 状态管理方法
-        void RecordPreviousWindow(); // 记录当前活动窗口
         IntPtr GetPreviousWindow();
+        
+        /// <summary>
+        /// 记录当前活动窗口
+        /// </summary>
+        void RecordPreviousWindow();
 
         /// <summary>
         /// 切换回上一个记录的窗口 (用于快速切换模式)
         /// </summary>
         void SwitchToPreviousWindow();
+        
+        /// <summary>
+        /// 设置焦点归还模式
+        /// </summary>
+        void SetFocusRestoreMode(FocusRestoreMode mode, IntPtr targetWindow = default);
+        
+        /// <summary>
+        /// 获取当前焦点归还模式
+        /// </summary>
+        FocusRestoreMode GetFocusRestoreMode();
+        
+        /// <summary>
+        /// 执行焦点归还（根据当前模式）
+        /// </summary>
+        void RestoreFocus();
 
         /// <summary>
         /// 注册隐藏主窗口的操作委托

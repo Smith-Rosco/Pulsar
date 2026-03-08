@@ -27,6 +27,22 @@ namespace Pulsar.Services
         private Action? _hideMainWindowAction;
         private readonly int _currentProcessId;
         
+        // [New] Window History Stack for Quick Switch (方案 A)
+        private Stack<IntPtr> _windowHistory = new Stack<IntPtr>();
+        private const int MaxHistorySize = 10;
+        private readonly object _historyLock = new object();
+        
+        // [New] Quick Switch Pair - 用于双向切换的状态记忆
+        private IntPtr _quickSwitchSource = IntPtr.Zero;  // 切换的起点窗口
+        private IntPtr _quickSwitchTarget = IntPtr.Zero;  // 切换的目标窗口
+        private DateTime _lastQuickSwitchTime = DateTime.MinValue;
+        private const int QuickSwitchTimeoutMs = 5000; // 5秒内的连续切换视为同一对
+        
+        // [New] Focus Restore State Machine
+        private FocusRestoreMode _focusRestoreMode = FocusRestoreMode.RestorePrevious;
+        private IntPtr _focusRestoreTarget = IntPtr.Zero;
+        private readonly object _focusLock = new object();
+        
         // [New] Dynamic blacklist - can be updated by plugins
         private HashSet<string> _dynamicBlacklist = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private readonly object _blacklistLock = new object();
@@ -104,6 +120,47 @@ namespace Pulsar.Services
             if (processId == _currentProcessId) return;
 
             _previousWindowHandle = handle;
+            
+            // [New] Also record to history stack
+            RecordWindowActivation(handle);
+        }
+        
+        /// <summary>
+        /// 记录窗口激活到历史栈（用于 Quick Switch）
+        /// </summary>
+        public void RecordWindowActivation(IntPtr hwnd)
+        {
+            if (hwnd == IntPtr.Zero) return;
+            
+            // 排除 Pulsar 自身
+            NativeMethods.GetWindowThreadProcessId(hwnd, out uint processId);
+            if (processId == _currentProcessId)
+            {
+                _logger.LogDebug("[WindowHistory] Ignoring Pulsar window: {Hwnd}", hwnd);
+                return;
+            }
+            
+            lock (_historyLock)
+            {
+                // 去重：如果栈顶已经是这个窗口，不重复记录
+                if (_windowHistory.Count > 0 && _windowHistory.Peek() == hwnd)
+                {
+                    _logger.LogDebug("[WindowHistory] Window already at top of stack: {Hwnd}", hwnd);
+                    return;
+                }
+                
+                _windowHistory.Push(hwnd);
+                _logger.LogInformation("[WindowHistory] Recorded window: {Hwnd} (Title: {Title}), Stack size: {Size}", 
+                    hwnd, GetWindowTitle(hwnd), _windowHistory.Count);
+                
+                // 限制栈大小
+                if (_windowHistory.Count > MaxHistorySize)
+                {
+                    var temp = _windowHistory.ToArray();
+                    _windowHistory = new Stack<IntPtr>(temp.Take(MaxHistorySize).Reverse());
+                    _logger.LogDebug("[WindowHistory] Trimmed stack to {MaxSize} entries", MaxHistorySize);
+                }
+            }
         }
 
         public IntPtr GetPreviousWindow()
@@ -434,35 +491,276 @@ namespace Pulsar.Services
 
         public void SwitchToPreviousWindow()
         {
-            string currentTitle = GetWindowTitle(GetForegroundWindow_Native());
-            string prevTitle = GetWindowTitle(_previousWindowHandle);
+            IntPtr current = GetForegroundWindow_Native();
+            string currentTitle = GetWindowTitle(current);
             
-            _logger.LogDebug(
-                "[SwitchToPreviousWindow] Current: '{CurrentTitle}' ({CurrentHwnd}) | Previous: '{PrevTitle}' ({PrevHwnd})",
-                currentTitle,
-                GetForegroundWindow_Native(),
-                prevTitle,
-                _previousWindowHandle);
+            _logger.LogDebug("[SwitchToPreviousWindow] Current foreground: '{Title}' ({Hwnd})", currentTitle, current);
             
-            // [Fix] Target the window immediately AFTER the previous window in Z-Order (Alt-Tab behavior)
-            // Logic: User was in App A (_previousWindowHandle). Invoked Pulsar.
-            // "Previous" implies the window before App A, which is next in Z-Order.
+            // [Fix] 检查当前窗口是否是 Pulsar
+            NativeMethods.GetWindowThreadProcessId(current, out uint currentPid);
+            bool currentIsPulsar = (currentPid == _currentProcessId);
             
-            if (_previousWindowHandle != IntPtr.Zero && NativeMethods.IsWindow(_previousWindowHandle))
+            lock (_historyLock)
             {
-                IntPtr nextWindow = GetNextWindowInZOrder(_previousWindowHandle);
-                string nextTitle = GetWindowTitle(nextWindow);
-                _logger.LogDebug("[SwitchToPreviousWindow] Found Next Window: '{Title}' ({Hwnd})", nextTitle, nextWindow);
+                _logger.LogDebug("[SwitchToPreviousWindow] History stack size: {Size}, Current is Pulsar: {IsPulsar}", 
+                    _windowHistory.Count, currentIsPulsar);
                 
-                if (nextWindow != IntPtr.Zero)
+                // [New] 检查是否在 Quick Switch 对的上下文中（5秒内的连续切换）
+                TimeSpan timeSinceLastSwitch = DateTime.Now - _lastQuickSwitchTime;
+                bool isInSwitchPairContext = timeSinceLastSwitch.TotalMilliseconds < QuickSwitchTimeoutMs;
+                
+                if (isInSwitchPairContext)
                 {
-                    ForceForegroundWindow(nextWindow);
+                    _logger.LogDebug("[SwitchToPreviousWindow] In Switch Pair context (last switch: {Ms}ms ago)", 
+                        timeSinceLastSwitch.TotalMilliseconds);
+                    
+                    // 验证切换对是否仍然有效
+                    bool sourceValid = _quickSwitchSource != IntPtr.Zero && 
+                                      NativeMethods.IsWindow(_quickSwitchSource) && 
+                                      IsAltTabWindow(_quickSwitchSource);
+                    bool targetValid = _quickSwitchTarget != IntPtr.Zero && 
+                                      NativeMethods.IsWindow(_quickSwitchTarget) && 
+                                      IsAltTabWindow(_quickSwitchTarget);
+                    
+                    if (sourceValid && targetValid)
+                    {
+                        // [Fix] 判断当前在哪个窗口，切换到另一个
+                        IntPtr switchTo = IntPtr.Zero;
+                        
+                        // 如果当前是 Pulsar，使用 _previousWindowHandle 来判断
+                        IntPtr effectiveCurrent = currentIsPulsar ? _previousWindowHandle : current;
+                        
+                        _logger.LogDebug("[SwitchToPreviousWindow] Effective current: '{Title}' ({Hwnd}), Source: '{SourceTitle}' ({Source}), Target: '{TargetTitle}' ({Target})", 
+                            GetWindowTitle(effectiveCurrent), effectiveCurrent,
+                            GetWindowTitle(_quickSwitchSource), _quickSwitchSource,
+                            GetWindowTitle(_quickSwitchTarget), _quickSwitchTarget);
+                        
+                        if (effectiveCurrent == _quickSwitchTarget)
+                        {
+                            // 当前在目标窗口，切换回源窗口
+                            switchTo = _quickSwitchSource;
+                            _logger.LogInformation("[SwitchToPreviousWindow] Switch Pair: Returning to Source '{Title}' ({Hwnd})", 
+                                GetWindowTitle(switchTo), switchTo);
+                        }
+                        else if (effectiveCurrent == _quickSwitchSource)
+                        {
+                            // 当前在源窗口，切换到目标窗口
+                            switchTo = _quickSwitchTarget;
+                            _logger.LogInformation("[SwitchToPreviousWindow] Switch Pair: Going to Target '{Title}' ({Hwnd})", 
+                                GetWindowTitle(switchTo), switchTo);
+                        }
+                        else
+                        {
+                            // 当前窗口不在切换对中，说明用户手动切换了其他窗口，重置切换对
+                            _logger.LogDebug("[SwitchToPreviousWindow] Current window not in Switch Pair, resetting pair");
+                            goto FALLBACK_TO_HISTORY;
+                        }
+                        
+                        if (switchTo != IntPtr.Zero)
+                        {
+                            ForceForegroundWindow(switchTo);
+                            SetFocusRestoreMode(FocusRestoreMode.NoRestore);
+                            _lastQuickSwitchTime = DateTime.Now; // 更新切换时间
+                            
+                            // [Critical Fix] 更新 _previousWindowHandle 为切换后的窗口
+                            _previousWindowHandle = switchTo;
+                            
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogDebug("[SwitchToPreviousWindow] Switch Pair invalid (Source: {SourceValid}, Target: {TargetValid}), falling back to history", 
+                            sourceValid, targetValid);
+                    }
+                }
+                
+                FALLBACK_TO_HISTORY:
+                
+                // [Original] 从历史栈查找窗口
+                // [Critical Fix] 排除"真正的当前窗口"（用户正在使用的窗口）
+                // 如果当前是 Pulsar，真正的当前窗口是 _previousWindowHandle
+                // 如果当前不是 Pulsar，真正的当前窗口是 current
+                IntPtr realCurrentWindow = currentIsPulsar ? _previousWindowHandle : current;
+                
+                if (realCurrentWindow != IntPtr.Zero && 
+                    _windowHistory.Count > 0 && 
+                    _windowHistory.Peek() == realCurrentWindow)
+                {
+                    _windowHistory.Pop();
+                    _logger.LogDebug("[SwitchToPreviousWindow] Popped real current window '{Title}' ({Hwnd}) from stack", 
+                        GetWindowTitle(realCurrentWindow), realCurrentWindow);
+                }
+                
+                // 查找第一个有效的历史窗口
+                IntPtr targetWindow = IntPtr.Zero;
+                while (_windowHistory.Count > 0)
+                {
+                    IntPtr prev = _windowHistory.Pop();
+                    string prevTitle = GetWindowTitle(prev);
+                    
+                    _logger.LogDebug("[SwitchToPreviousWindow] Checking history window: '{Title}' ({Hwnd})", prevTitle, prev);
+                    
+                    // 验证窗口仍然有效
+                    if (NativeMethods.IsWindow(prev) && IsAltTabWindow(prev))
+                    {
+                        targetWindow = prev;
+                        _logger.LogInformation("[SwitchToPreviousWindow] Found valid history window: '{Title}' ({Hwnd})", prevTitle, prev);
+                        break;
+                    }
+                    else
+                    {
+                        _logger.LogDebug("[SwitchToPreviousWindow] Window no longer valid, skipping: '{Title}' ({Hwnd})", prevTitle, prev);
+                    }
+                }
+                
+                if (targetWindow != IntPtr.Zero)
+                {
+                    // [New] 建立新的切换对
+                    // [Fix] 确保 Source 和 Target 不是同一个窗口
+                    IntPtr sourceWindow = currentIsPulsar ? _previousWindowHandle : current;
+                    
+                    // 如果 source 和 target 相同，说明历史栈有问题，不建立切换对
+                    if (sourceWindow != targetWindow && sourceWindow != IntPtr.Zero)
+                    {
+                        _quickSwitchSource = sourceWindow;
+                        _quickSwitchTarget = targetWindow;
+                        _lastQuickSwitchTime = DateTime.Now;
+                        
+                        _logger.LogInformation("[SwitchToPreviousWindow] Established Switch Pair: Source='{SourceTitle}' ({Source}) <-> Target='{TargetTitle}' ({Target})", 
+                            GetWindowTitle(_quickSwitchSource), _quickSwitchSource,
+                            GetWindowTitle(_quickSwitchTarget), _quickSwitchTarget);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("[SwitchToPreviousWindow] Cannot establish Switch Pair: Source and Target are the same window '{Title}' ({Hwnd})", 
+                            GetWindowTitle(targetWindow), targetWindow);
+                    }
+                    
+                    ForceForegroundWindow(targetWindow);
+                    SetFocusRestoreMode(FocusRestoreMode.NoRestore);
+                    
+                    // [Critical Fix] 更新 _previousWindowHandle 为切换后的窗口
+                    // 这样下次切换时，_previousWindowHandle 才是正确的"当前窗口"
+                    _previousWindowHandle = targetWindow;
+                    
+                    // [Fix] 不再将窗口推回栈，保持栈的不可变性
                     return;
                 }
-
-                _logger.LogDebug("[SwitchToPreviousWindow] No valid next window found, falling back to previous handle.");
-                // Fallback: If no "next" window exists (e.g. only one app), return to the previous window
-                ForceForegroundWindow(_previousWindowHandle);
+                
+                _logger.LogWarning("[SwitchToPreviousWindow] History stack exhausted, falling back to _previousWindowHandle");
+            }
+            
+            // Fallback: 如果历史栈为空或所有窗口都无效，使用 _previousWindowHandle
+            if (_previousWindowHandle != IntPtr.Zero && NativeMethods.IsWindow(_previousWindowHandle))
+            {
+                string fallbackTitle = GetWindowTitle(_previousWindowHandle);
+                
+                if (IsAltTabWindow(_previousWindowHandle))
+                {
+                    _logger.LogInformation("[SwitchToPreviousWindow] Fallback to _previousWindowHandle: '{Title}' ({Hwnd})", 
+                        fallbackTitle, _previousWindowHandle);
+                    
+                    // [New] 建立切换对（使用当前前台窗口作为源）
+                    IntPtr currentForeground = GetForegroundWindow_Native();
+                    NativeMethods.GetWindowThreadProcessId(currentForeground, out uint currentForegroundPid);
+                    if (currentForegroundPid != _currentProcessId)
+                    {
+                        _quickSwitchSource = currentForeground;
+                        _quickSwitchTarget = _previousWindowHandle;
+                        _lastQuickSwitchTime = DateTime.Now;
+                    }
+                    
+                    ForceForegroundWindow(_previousWindowHandle);
+                    SetFocusRestoreMode(FocusRestoreMode.NoRestore);
+                }
+                else
+                {
+                    _logger.LogWarning("[SwitchToPreviousWindow] _previousWindowHandle is not a valid Alt-Tab window: '{Title}' ({Hwnd})", 
+                        fallbackTitle, _previousWindowHandle);
+                }
+            }
+            else
+            {
+                _logger.LogWarning("[SwitchToPreviousWindow] No valid previous window found");
+            }
+        }
+        
+        // ==========================================
+        // [New] Focus Restore State Machine
+        // ==========================================
+        
+        public void SetFocusRestoreMode(FocusRestoreMode mode, IntPtr targetWindow = default)
+        {
+            lock (_focusLock)
+            {
+                _focusRestoreMode = mode;
+                _focusRestoreTarget = targetWindow;
+                
+                _logger.LogDebug(
+                    "[FocusManager] Mode set to {Mode}, Target: {Target}", 
+                    mode, 
+                    targetWindow);
+            }
+        }
+        
+        public FocusRestoreMode GetFocusRestoreMode()
+        {
+            lock (_focusLock)
+            {
+                return _focusRestoreMode;
+            }
+        }
+        
+        public void RestoreFocus()
+        {
+            lock (_focusLock)
+            {
+                _logger.LogInformation("[FocusManager] Restoring focus. Mode: {Mode}", _focusRestoreMode);
+                
+                switch (_focusRestoreMode)
+                {
+                    case FocusRestoreMode.NoRestore:
+                        _logger.LogDebug("[FocusManager] NoRestore mode - skipping focus restoration");
+                        break;
+                        
+                    case FocusRestoreMode.RestorePrevious:
+                        if (_previousWindowHandle != IntPtr.Zero && 
+                            NativeMethods.IsWindow(_previousWindowHandle))
+                        {
+                            _logger.LogInformation(
+                                "[FocusManager] Restoring to previous window: {Hwnd} ({Title})", 
+                                _previousWindowHandle, 
+                                GetWindowTitle(_previousWindowHandle));
+                            ForceForegroundWindow(_previousWindowHandle);
+                        }
+                        else
+                        {
+                            _logger.LogWarning("[FocusManager] Previous window handle is invalid");
+                        }
+                        break;
+                        
+                    case FocusRestoreMode.RestoreTarget:
+                        if (_focusRestoreTarget != IntPtr.Zero && 
+                            NativeMethods.IsWindow(_focusRestoreTarget))
+                        {
+                            _logger.LogInformation(
+                                "[FocusManager] Restoring to target window: {Hwnd} ({Title})", 
+                                _focusRestoreTarget, 
+                                GetWindowTitle(_focusRestoreTarget));
+                            ForceForegroundWindow(_focusRestoreTarget);
+                        }
+                        else
+                        {
+                            _logger.LogWarning("[FocusManager] Target window invalid, falling back to previous");
+                            goto case FocusRestoreMode.RestorePrevious;
+                        }
+                        break;
+                }
+                
+                // 重置为默认模式
+                _focusRestoreMode = FocusRestoreMode.RestorePrevious;
+                _focusRestoreTarget = IntPtr.Zero;
             }
         }
 
@@ -505,12 +803,12 @@ namespace Pulsar.Services
             // [Fix] Allow minimized windows (Alt-Tab includes them)
             // if (NativeMethods.IsIconic(hWnd)) return false; 
 
-            // Check for Cloaked (Virtual Desktop / UWP Suspended)
-            // [Fix] Check if window is cloaked using correct int signature
+            // [Fix] Check for Cloaked (Virtual Desktop / UWP Suspended)
+            // Cloaked windows should NOT appear in Alt-Tab list
             if (NativeMethods.DwmGetWindowAttribute(hWnd, NativeMethods.DWMWA_CLOAKED, out int isCloakedVal, sizeof(int)) == 0 && isCloakedVal != 0)
             {
-                // Window is cloaked, treat as minimized/hidden
-                return true; 
+                // Window is cloaked (on another virtual desktop or suspended)
+                return false;  // [Fix] Changed from true to false
             }
             
             // Check for Tool Window
