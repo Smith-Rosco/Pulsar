@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -123,6 +124,8 @@ namespace Pulsar.Core.Plugin.Dependencies
         /// <summary>
         /// 保存 Shim 程序集 (使用 System.Reflection.Metadata)
         /// </summary>
+        [UnconditionalSuppressMessage("SingleFile", "IL3000:Avoid accessing Assembly file path when publishing as a single file",
+            Justification = "Assembly.Location is checked for empty string before use. In single-file mode, shim generation is skipped.")]
         private void SaveShimAssembly(AssemblyBuilder assemblyBuilder, string outputPath, Assembly sourceAssembly)
         {
             // 注意: 这是一个简化的实现
@@ -133,7 +136,18 @@ namespace Pulsar.Core.Plugin.Dependencies
 
             // 临时方案: 复制源程序集并修改版本信息
             // 这不是真正的 Shim，但可以作为占位符
-            File.Copy(sourceAssembly.Location, outputPath, overwrite: true);
+            
+            // 获取程序集位置 - 兼容 single-file 发布
+            string assemblyLocation = sourceAssembly.Location;
+            if (string.IsNullOrEmpty(assemblyLocation))
+            {
+                // Single-file 模式下，Assembly.Location 为空
+                // 使用 CodeBase 或从 AppContext.BaseDirectory 查找
+                _logger?.LogWarning("[ShimAssemblyGenerator] Assembly.Location is empty (single-file mode). Shim generation skipped for {AssemblyName}", sourceAssembly.FullName);
+                return;
+            }
+            
+            File.Copy(assemblyLocation, outputPath, overwrite: true);
         }
 
         /// <summary>
