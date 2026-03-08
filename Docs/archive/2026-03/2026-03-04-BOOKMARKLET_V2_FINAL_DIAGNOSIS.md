@@ -1,5 +1,13 @@
 # 🎯 test_error.js "没有反应" 问题 - 最终诊断
 
+> ⚠️ **ARCHIVED DOCUMENT**  
+> **Archived Date**: 2026-03-08  
+> **Original Date**: 2026-03-04  
+> **Status**: Historical reference only, no longer maintained  
+> **Reason**: Issue diagnosed and resolved. For current plugin documentation, see [Docs/Plugins/BookmarkletRunner.md](../../Plugins/BookmarkletRunner.md)
+
+---
+
 ## 📊 诊断结果
 
 ### ✅ 验证系统工作正常

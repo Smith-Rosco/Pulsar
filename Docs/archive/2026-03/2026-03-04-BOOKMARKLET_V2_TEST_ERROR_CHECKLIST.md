@@ -1,5 +1,13 @@
 # 🔍 test_error.js 执行检查清单
 
+> ⚠️ **ARCHIVED DOCUMENT**  
+> **Archived Date**: 2026-03-08  
+> **Original Date**: 2026-03-04  
+> **Status**: Historical reference only, no longer maintained  
+> **Reason**: Testing completed. For current plugin documentation, see [Docs/Plugins/BookmarkletRunner.md](../../Plugins/BookmarkletRunner.md)
+
+---
+
 ## 请按以下步骤操作：
 
 ### 步骤 1: 清空日志（可选）

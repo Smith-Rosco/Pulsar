@@ -1,5 +1,13 @@
 # ✅ Bookmarklet Runner v2.0.0 - 完成报告
 
+> ⚠️ **ARCHIVED DOCUMENT**  
+> **Archived Date**: 2026-03-08  
+> **Original Date**: 2026-03-04  
+> **Status**: Historical reference only, no longer maintained  
+> **Reason**: Project completed and committed to Git (commits: 62ecf39, 097ec30)
+
+---
+
 ## 📊 Git 提交摘要
 
 ### Commit 1: 核心功能实现

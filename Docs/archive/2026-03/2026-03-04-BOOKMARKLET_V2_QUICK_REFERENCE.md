@@ -1,5 +1,13 @@
 # 🚀 Bookmarklet Runner v2.0.0 - 快速参考
 
+> ⚠️ **ARCHIVED DOCUMENT**  
+> **Archived Date**: 2026-03-08  
+> **Original Date**: 2026-03-04  
+> **Status**: Historical reference only, no longer maintained  
+> **Reason**: Project completed. For current plugin documentation, see [Docs/Plugins/BookmarkletRunner.md](../../Plugins/BookmarkletRunner.md)
+
+---
+
 ## ✅ 实施完成
 
 - **状态**: 生产就绪
