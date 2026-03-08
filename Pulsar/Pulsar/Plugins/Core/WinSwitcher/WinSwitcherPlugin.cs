@@ -20,7 +20,8 @@ namespace Pulsar.Plugins.Core.WinSwitcher
     {
         private const string LogPrefix = "[WinSwitcher]";
         
-        private IWindowService? _windowService;
+        // Initialized in Initialize() method with null check - guaranteed non-null after initialization
+        private IWindowService _windowService = null!;
         private ILogger<WinSwitcherPlugin>? _logger;
         private HashSet<string> _excludedProcesses = new();
 
@@ -39,7 +40,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
 
         public void Initialize(IServiceProvider services)
         {
-            _windowService = services.GetService(typeof(IWindowService)) as IWindowService;
+            _windowService = (services.GetService(typeof(IWindowService)) as IWindowService)!;
             _logger = services.GetService(typeof(ILogger<WinSwitcherPlugin>)) as ILogger<WinSwitcherPlugin>;
 
             if (_windowService == null)

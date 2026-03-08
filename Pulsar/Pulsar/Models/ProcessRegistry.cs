@@ -99,6 +99,38 @@ namespace Pulsar.Models
         public int ExpiredProcesses { get; set; }
 
         /// <summary>
+        /// 保存尝试次数
+        /// </summary>
+        public int SaveAttempts { get; set; }
+
+        /// <summary>
+        /// 保存失败次数
+        /// </summary>
+        public int SaveFailures { get; set; }
+
+        /// <summary>
+        /// 总保存耗时
+        /// </summary>
+        public TimeSpan TotalSaveTime { get; set; }
+
+        /// <summary>
+        /// 待保存的更改数（防抖队列）
+        /// </summary>
+        public int PendingChanges { get; set; }
+
+        /// <summary>
+        /// 保存成功率
+        /// </summary>
+        [JsonIgnore]
+        public double SaveSuccessRate => SaveAttempts > 0 ? 1.0 - (SaveFailures / (double)SaveAttempts) : 1.0;
+
+        /// <summary>
+        /// 平均保存耗时
+        /// </summary>
+        [JsonIgnore]
+        public TimeSpan AverageSaveTime => SaveAttempts > 0 ? TimeSpan.FromMilliseconds(TotalSaveTime.TotalMilliseconds / SaveAttempts) : TimeSpan.Zero;
+
+        /// <summary>
         /// 格式化的缓存大小字符串
         /// </summary>
         [JsonIgnore]
@@ -119,6 +151,6 @@ namespace Pulsar.Models
         /// </summary>
         [JsonIgnore]
         public string Summary => 
-            $"{TotalProcesses} processes, {BlacklistedProcesses} blacklisted, {FormattedCacheSize} cache";
+            $"{TotalProcesses} processes, {BlacklistedProcesses} blacklisted, {FormattedCacheSize} cache, {SaveSuccessRate:P1} save success";
     }
 }

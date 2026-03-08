@@ -78,5 +78,10 @@ namespace Pulsar.Services.Interfaces
         /// 初始化服务（从配置迁移黑名单）
         /// </summary>
         Task InitializeAsync();
+
+        /// <summary>
+        /// 刷新待处理的更改到磁盘（应用退出时调用）
+        /// </summary>
+        Task FlushAsync();
     }
 }

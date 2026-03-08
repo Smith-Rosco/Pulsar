@@ -20,7 +20,7 @@ namespace Pulsar.Services
     /// <summary>
     /// 进程注册表服务实现 - 统一管理进程元数据和图标缓存
     /// </summary>
-    public class ProcessRegistryService : IProcessRegistryService
+    public class ProcessRegistryService : IProcessRegistryService, IDisposable
     {
         private readonly ILogger<ProcessRegistryService> _logger;
         private readonly IConfigService _configService;
@@ -42,6 +42,17 @@ namespace Pulsar.Services
         private readonly LogSampler _registrationLogSampler = new LogSampler(10);  // Sample 1 in 10 for process registration
         private readonly LogSampler _iconCacheLogSampler = new LogSampler(10);     // Sample 1 in 10 for icon caching
 
+        // [Performance] Debouncing mechanism for write throttling
+        private System.Threading.Timer? _saveTimer;
+        private bool _hasPendingChanges = false;
+        private const int SAVE_DEBOUNCE_MS = 2000; // Merge multiple writes within 2 seconds
+        
+        // [Performance] Metrics tracking
+        private int _saveAttempts = 0;
+        private int _saveFailures = 0;
+        private long _totalSaveTimeMs = 0;
+        private readonly object _metricsLock = new object();
+
         public ProcessRegistryService(ILogger<ProcessRegistryService> logger, IConfigService configService)
         {
             _logger = logger;
@@ -58,6 +69,14 @@ namespace Pulsar.Services
             {
                 Directory.CreateDirectory(_iconCacheFolder);
             }
+            
+            // 初始化防抖定时器
+            _saveTimer = new System.Threading.Timer(
+                callback: async _ => await DebouncedSaveAsync(),
+                state: null,
+                dueTime: Timeout.Infinite,
+                period: Timeout.Infinite
+            );
         }
 
         // ========== 初始化 ==========
@@ -165,8 +184,9 @@ namespace Pulsar.Services
                     _iconMemoryCache.TryAdd(processName, icon);
                 }
 
-                // 保存注册表（异步，不阻塞）
-                _ = Task.Run(() => SaveRegistryAsync());
+                // 标记有待保存的更改，触发防抖定时器
+                _hasPendingChanges = true;
+                _saveTimer?.Change(SAVE_DEBOUNCE_MS, Timeout.Infinite);
             }
             finally
             {
@@ -219,7 +239,8 @@ namespace Pulsar.Services
                     if (cachePath != null)
                     {
                         entry.IconPath = cachePath;
-                        await SaveRegistryAsync();
+                        // 非关键操作：使用防抖保存
+                        TriggerDebouncedSave();
                     }
 
                     _iconMemoryCache.TryAdd(processName, icon);
@@ -262,7 +283,8 @@ namespace Pulsar.Services
                 if (entry != null)
                 {
                     entry.IsBlacklisted = isBlacklisted;
-                    await SaveRegistryAsync();
+                    // 关键操作：立即保存
+                    await SaveImmediatelyAsync();
                 }
             }
             finally
@@ -302,7 +324,8 @@ namespace Pulsar.Services
                     }
                 }
 
-                await SaveRegistryAsync();
+                // 关键操作：立即保存
+                await SaveImmediatelyAsync();
 
                 // 同步到 Profiles.json (保持向后兼容)
                 await SyncToProfilesConfigAsync(blacklistSet);
@@ -371,7 +394,8 @@ namespace Pulsar.Services
 
                 if (expiredProcesses.Count > 0)
                 {
-                    await SaveRegistryAsync();
+                    // 维护操作：立即保存
+                    await SaveImmediatelyAsync();
                     // [Logging] Keep Information - important maintenance event
                     _logger.LogInformation(
                         "[ProcessRegistry] Cleaned up {Count} expired processes (threshold: {Days} days)",
@@ -412,10 +436,61 @@ namespace Pulsar.Services
             stats.ExpiredProcesses = _registry.Processes.Values
                 .Count(p => !p.IsBlacklisted && (now - p.LastSeen).TotalDays > 30);
 
+            // 添加性能指标
+            lock (_metricsLock)
+            {
+                stats.SaveAttempts = _saveAttempts;
+                stats.SaveFailures = _saveFailures;
+                stats.TotalSaveTime = TimeSpan.FromMilliseconds(_totalSaveTimeMs);
+            }
+            
+            stats.PendingChanges = _hasPendingChanges ? 1 : 0;
+
             return stats;
         }
 
         // ========== 私有方法 ==========
+
+        /// <summary>
+        /// 防抖保存方法 - 由定时器触发，合并多次写入为一次
+        /// </summary>
+        private async Task DebouncedSaveAsync()
+        {
+            await _fileLock.WaitAsync();
+            try
+            {
+                if (_hasPendingChanges)
+                {
+                    await SaveRegistryAsync();
+                    _hasPendingChanges = false;
+                }
+            }
+            finally
+            {
+                _fileLock.Release();
+            }
+        }
+
+        /// <summary>
+        /// 触发防抖保存 - 用于非关键操作（如图标缓存更新）
+        /// </summary>
+        private void TriggerDebouncedSave()
+        {
+            _hasPendingChanges = true;
+            _saveTimer?.Change(SAVE_DEBOUNCE_MS, Timeout.Infinite);
+        }
+
+        /// <summary>
+        /// 立即保存 - 用于关键操作（如用户修改黑名单）
+        /// </summary>
+        private async Task SaveImmediatelyAsync()
+        {
+            // 取消待处理的防抖保存
+            _saveTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+            _hasPendingChanges = false;
+            
+            await SaveRegistryAsync();
+        }
 
         private async Task LoadRegistryAsync()
         {
@@ -440,7 +515,8 @@ namespace Pulsar.Services
         private async Task SaveRegistryAsync()
         {
             const int maxRetries = 3;
-            const int delayMs = 50;
+            const int baseDelayMs = 100; // 增加基础延迟
+            var startTime = DateTime.Now;
 
             for (int attempt = 0; attempt < maxRetries; attempt++)
             {
@@ -453,11 +529,17 @@ namespace Pulsar.Services
 
                     var json = JsonSerializer.Serialize(_registry, options);
                     
-                    // Use FileStream with FileShare.Read to allow concurrent reads
-                    using (var fileStream = new FileStream(_registryPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                    using (var writer = new StreamWriter(fileStream))
+                    // 原子写入：先写临时文件，再替换（避免损坏）
+                    var tempPath = _registryPath + ".tmp";
+                    await File.WriteAllTextAsync(tempPath, json);
+                    File.Move(tempPath, _registryPath, overwrite: true);
+                    
+                    // 记录成功指标
+                    var elapsed = DateTime.Now - startTime;
+                    lock (_metricsLock)
                     {
-                        await writer.WriteAsync(json);
+                        _saveAttempts++;
+                        _totalSaveTimeMs += (long)elapsed.TotalMilliseconds;
                     }
                     
                     return; // Success
@@ -468,16 +550,33 @@ namespace Pulsar.Services
                     var now = DateTime.Now;
                     if ((now - _lastFileConflictLogTime).TotalMilliseconds > FILE_CONFLICT_LOG_COOLDOWN_MS)
                     {
-                        _logger.LogWarning("[ProcessRegistry] File access conflict, retrying (attempt {Attempt}/{MaxRetries})", attempt + 1, maxRetries);
+                        _logger.LogWarning("[ProcessRegistry] File conflict, retry {Attempt}/{Max}", attempt + 1, maxRetries);
                         _lastFileConflictLogTime = now;
                     }
-                    await Task.Delay(delayMs);
+                    
+                    // 指数退避
+                    await Task.Delay(baseDelayMs * (attempt + 1));
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError("[ProcessRegistry] Failed to save registry: {Message}", ex.Message);
+                    _logger.LogError(ex, "[ProcessRegistry] Save failed");
+                    
+                    // 记录失败指标
+                    lock (_metricsLock)
+                    {
+                        _saveAttempts++;
+                        _saveFailures++;
+                    }
+                    
                     return;
                 }
+            }
+            
+            // 所有重试都失败
+            lock (_metricsLock)
+            {
+                _saveAttempts++;
+                _saveFailures++;
             }
         }
 
@@ -520,7 +619,8 @@ namespace Pulsar.Services
                     }
                 }
 
-                await SaveRegistryAsync();
+                // 初始化迁移：立即保存
+                await SaveImmediatelyAsync();
 
                 // [Logging] Keep Information - important one-time migration event
                 _logger.LogInformation(
@@ -558,6 +658,29 @@ namespace Pulsar.Services
             {
                 _logger.LogError(ex, "[ProcessRegistry] Failed to sync to Profiles.json");
             }
+        }
+
+        // ========== 生命周期管理 ==========
+
+        /// <summary>
+        /// 刷新待处理的更改到磁盘（应用退出时调用）
+        /// </summary>
+        public async Task FlushAsync()
+        {
+            if (_hasPendingChanges)
+            {
+                _logger.LogInformation("[ProcessRegistry] Flushing pending changes on shutdown");
+                await DebouncedSaveAsync();
+            }
+        }
+
+        /// <summary>
+        /// 释放资源
+        /// </summary>
+        public void Dispose()
+        {
+            _saveTimer?.Dispose();
+            _fileLock?.Dispose();
         }
     }
 }

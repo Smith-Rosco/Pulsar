@@ -15,6 +15,8 @@ using System;
 using System.Windows;
 using System.IO;
 using Serilog;
+using Serilog.Core;
+using Serilog.Events;
 using Microsoft.Extensions.Logging;
 
 using System.Windows.Threading;
@@ -40,8 +42,11 @@ namespace Pulsar
             var pluginLogsDir = Path.Combine(logsBaseDir, "Plugins");
             Directory.CreateDirectory(pluginLogsDir);
 
+            // Create a level switch for runtime log level control
+            var levelSwitch = new LoggingLevelSwitch(LogEventLevel.Information);
+
             Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
+                .MinimumLevel.ControlledBy(levelSwitch)
                 .Enrich.With<Pulsar.Logging.PluginContextEnricher>()
                 .WriteTo.Debug()
                 // 主程序日志（不包含插件日志）
@@ -68,7 +73,7 @@ namespace Pulsar
                     ))
                 .CreateLogger();
 
-            Log.Information("=== Pulsar Application Starting (Unified Logging Architecture) ===");
+            Log.Information("=== Pulsar Application Starting (Log Level: {Level}) ===", levelSwitch.MinimumLevel);
             
             // [New] Check System Integrity (焦点锁定设置)
             WindowHelper.CheckSystemIntegrity();
@@ -85,6 +90,8 @@ namespace Pulsar
 
             // 0. Logging Services
             serviceCollection.AddLogging(loggingBuilder => loggingBuilder.AddSerilog(dispose: true));
+            serviceCollection.AddSingleton(levelSwitch);
+            serviceCollection.AddSingleton<ILoggingConfigService, LoggingConfigService>();
 
             // 1. Core Services
             serviceCollection.AddSingleton<IConfigService, ConfigService>();
@@ -233,6 +240,13 @@ namespace Pulsar
             
             if (Services != null)
             {
+                // Flush pending ProcessRegistry changes
+                var processRegistry = Services.GetService<IProcessRegistryService>();
+                if (processRegistry != null)
+                {
+                    Task.Run(async () => await processRegistry.FlushAsync()).GetAwaiter().GetResult();
+                }
+                
                 // Unload all plugins
                 var pluginRegistry = Services.GetService<PluginRegistry>();
                 if (pluginRegistry != null)
