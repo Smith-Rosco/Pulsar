@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging;
 using Pulsar.Services.Interfaces;
 using Pulsar.Models; // 确保引用了 WindowInfo 等模型
 using Pulsar.Native; // [New] Use centralized Native helper
+using Pulsar.Helpers; // [Logging] For LogSampler
 
 namespace Pulsar.Services
 {
@@ -46,6 +47,11 @@ namespace Pulsar.Services
         // [New] Dynamic blacklist - can be updated by plugins
         private HashSet<string> _dynamicBlacklist = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private readonly object _blacklistLock = new object();
+        
+        // [Logging] Log samplers for high-frequency operations
+        private readonly LogSampler _historyLogSampler = new LogSampler(5);      // Sample 1 in 5 for history recording
+        private readonly LogSampler _captureLogSampler = new LogSampler(20);     // Sample 1 in 20 for capture failures
+        private readonly LogSampler _switchDebugSampler = new LogSampler(3);     // Sample 1 in 3 for switch debug logs
 
         public WindowService(ILogger<WindowService> logger, IProcessRegistryService? processRegistryService = null)
         {
@@ -136,8 +142,7 @@ namespace Pulsar.Services
             NativeMethods.GetWindowThreadProcessId(hwnd, out uint processId);
             if (processId == _currentProcessId)
             {
-                _logger.LogDebug("[WindowHistory] Ignoring Pulsar window: {Hwnd}", hwnd);
-                return;
+                return; // [Logging] Removed debug log - too frequent and low value
             }
             
             lock (_historyLock)
@@ -145,19 +150,24 @@ namespace Pulsar.Services
                 // 去重：如果栈顶已经是这个窗口，不重复记录
                 if (_windowHistory.Count > 0 && _windowHistory.Peek() == hwnd)
                 {
-                    _logger.LogDebug("[WindowHistory] Window already at top of stack: {Hwnd}", hwnd);
-                    return;
+                    return; // [Logging] Removed debug log - too frequent
                 }
                 
                 _windowHistory.Push(hwnd);
-                _logger.LogInformation("[WindowHistory] Recorded window: {Hwnd} (Title: {Title}), Stack size: {Size}", 
-                    hwnd, GetWindowTitle(hwnd), _windowHistory.Count);
+                
+                // [Logging] Sample history recording logs (1 in 5)
+                if (_historyLogSampler.ShouldLog())
+                {
+                    _logger.LogDebug("[WindowHistory] Recorded window: '{Title}' (sampled 1/{Rate})", 
+                        GetWindowTitle(hwnd), _historyLogSampler.Rate);
+                }
                 
                 // 限制栈大小
                 if (_windowHistory.Count > MaxHistorySize)
                 {
                     var temp = _windowHistory.ToArray();
                     _windowHistory = new Stack<IntPtr>(temp.Take(MaxHistorySize).Reverse());
+                    // [Logging] Keep this debug log - happens rarely (only when stack exceeds limit)
                     _logger.LogDebug("[WindowHistory] Trimmed stack to {MaxSize} entries", MaxHistorySize);
                 }
             }
@@ -494,26 +504,18 @@ namespace Pulsar.Services
             IntPtr current = GetForegroundWindow_Native();
             string currentTitle = GetWindowTitle(current);
             
-            _logger.LogDebug("[SwitchToPreviousWindow] Current foreground: '{Title}' ({Hwnd})", currentTitle, current);
-            
             // [Fix] 检查当前窗口是否是 Pulsar
             NativeMethods.GetWindowThreadProcessId(current, out uint currentPid);
             bool currentIsPulsar = (currentPid == _currentProcessId);
             
             lock (_historyLock)
             {
-                _logger.LogDebug("[SwitchToPreviousWindow] History stack size: {Size}, Current is Pulsar: {IsPulsar}", 
-                    _windowHistory.Count, currentIsPulsar);
-                
                 // [New] 检查是否在 Quick Switch 对的上下文中（5秒内的连续切换）
                 TimeSpan timeSinceLastSwitch = DateTime.Now - _lastQuickSwitchTime;
                 bool isInSwitchPairContext = timeSinceLastSwitch.TotalMilliseconds < QuickSwitchTimeoutMs;
                 
                 if (isInSwitchPairContext)
                 {
-                    _logger.LogDebug("[SwitchToPreviousWindow] In Switch Pair context (last switch: {Ms}ms ago)", 
-                        timeSinceLastSwitch.TotalMilliseconds);
-                    
                     // 验证切换对是否仍然有效
                     bool sourceValid = _quickSwitchSource != IntPtr.Zero && 
                                       NativeMethods.IsWindow(_quickSwitchSource) && 
@@ -530,29 +532,31 @@ namespace Pulsar.Services
                         // 如果当前是 Pulsar，使用 _previousWindowHandle 来判断
                         IntPtr effectiveCurrent = currentIsPulsar ? _previousWindowHandle : current;
                         
-                        _logger.LogDebug("[SwitchToPreviousWindow] Effective current: '{Title}' ({Hwnd}), Source: '{SourceTitle}' ({Source}), Target: '{TargetTitle}' ({Target})", 
-                            GetWindowTitle(effectiveCurrent), effectiveCurrent,
-                            GetWindowTitle(_quickSwitchSource), _quickSwitchSource,
-                            GetWindowTitle(_quickSwitchTarget), _quickSwitchTarget);
-                        
                         if (effectiveCurrent == _quickSwitchTarget)
                         {
                             // 当前在目标窗口，切换回源窗口
                             switchTo = _quickSwitchSource;
-                            _logger.LogInformation("[SwitchToPreviousWindow] Switch Pair: Returning to Source '{Title}' ({Hwnd})", 
-                                GetWindowTitle(switchTo), switchTo);
+                            // [Logging] Sample switch pair debug logs (1 in 3)
+                            if (_switchDebugSampler.ShouldLog())
+                            {
+                                _logger.LogDebug("[SwitchToPreviousWindow] Switch Pair: Returning to Source '{Title}' (sampled 1/{Rate})", 
+                                    GetWindowTitle(switchTo), _switchDebugSampler.Rate);
+                            }
                         }
                         else if (effectiveCurrent == _quickSwitchSource)
                         {
                             // 当前在源窗口，切换到目标窗口
                             switchTo = _quickSwitchTarget;
-                            _logger.LogInformation("[SwitchToPreviousWindow] Switch Pair: Going to Target '{Title}' ({Hwnd})", 
-                                GetWindowTitle(switchTo), switchTo);
+                            // [Logging] Sample switch pair debug logs (1 in 3)
+                            if (_switchDebugSampler.ShouldLog())
+                            {
+                                _logger.LogDebug("[SwitchToPreviousWindow] Switch Pair: Going to Target '{Title}' (sampled 1/{Rate})", 
+                                    GetWindowTitle(switchTo), _switchDebugSampler.Rate);
+                            }
                         }
                         else
                         {
                             // 当前窗口不在切换对中，说明用户手动切换了其他窗口，重置切换对
-                            _logger.LogDebug("[SwitchToPreviousWindow] Current window not in Switch Pair, resetting pair");
                             goto FALLBACK_TO_HISTORY;
                         }
                         
@@ -567,11 +571,6 @@ namespace Pulsar.Services
                             
                             return;
                         }
-                    }
-                    else
-                    {
-                        _logger.LogDebug("[SwitchToPreviousWindow] Switch Pair invalid (Source: {SourceValid}, Target: {TargetValid}), falling back to history", 
-                            sourceValid, targetValid);
                     }
                 }
                 
@@ -588,8 +587,6 @@ namespace Pulsar.Services
                     _windowHistory.Peek() == realCurrentWindow)
                 {
                     _windowHistory.Pop();
-                    _logger.LogDebug("[SwitchToPreviousWindow] Popped real current window '{Title}' ({Hwnd}) from stack", 
-                        GetWindowTitle(realCurrentWindow), realCurrentWindow);
                 }
                 
                 // 查找第一个有效的历史窗口
@@ -597,20 +594,14 @@ namespace Pulsar.Services
                 while (_windowHistory.Count > 0)
                 {
                     IntPtr prev = _windowHistory.Pop();
-                    string prevTitle = GetWindowTitle(prev);
-                    
-                    _logger.LogDebug("[SwitchToPreviousWindow] Checking history window: '{Title}' ({Hwnd})", prevTitle, prev);
                     
                     // 验证窗口仍然有效
                     if (NativeMethods.IsWindow(prev) && IsAltTabWindow(prev))
                     {
                         targetWindow = prev;
-                        _logger.LogInformation("[SwitchToPreviousWindow] Found valid history window: '{Title}' ({Hwnd})", prevTitle, prev);
+                        // [Logging] Keep this Information log - important user action
+                        _logger.LogInformation("[SwitchToPreviousWindow] Found history window: '{Title}'", GetWindowTitle(prev));
                         break;
-                    }
-                    else
-                    {
-                        _logger.LogDebug("[SwitchToPreviousWindow] Window no longer valid, skipping: '{Title}' ({Hwnd})", prevTitle, prev);
                     }
                 }
                 
@@ -627,14 +618,15 @@ namespace Pulsar.Services
                         _quickSwitchTarget = targetWindow;
                         _lastQuickSwitchTime = DateTime.Now;
                         
-                        _logger.LogInformation("[SwitchToPreviousWindow] Established Switch Pair: Source='{SourceTitle}' ({Source}) <-> Target='{TargetTitle}' ({Target})", 
-                            GetWindowTitle(_quickSwitchSource), _quickSwitchSource,
-                            GetWindowTitle(_quickSwitchTarget), _quickSwitchTarget);
+                        // [Logging] Keep this Information log - important state change
+                        _logger.LogInformation("[SwitchToPreviousWindow] Established Switch Pair: '{Source}' <-> '{Target}'", 
+                            GetWindowTitle(_quickSwitchSource),
+                            GetWindowTitle(_quickSwitchTarget));
                     }
                     else
                     {
-                        _logger.LogWarning("[SwitchToPreviousWindow] Cannot establish Switch Pair: Source and Target are the same window '{Title}' ({Hwnd})", 
-                            GetWindowTitle(targetWindow), targetWindow);
+                        // [Logging] Keep this Warning - indicates potential issue
+                        _logger.LogWarning("[SwitchToPreviousWindow] Cannot establish Switch Pair: Source and Target are the same");
                     }
                     
                     ForceForegroundWindow(targetWindow);
@@ -648,7 +640,7 @@ namespace Pulsar.Services
                     return;
                 }
                 
-                _logger.LogWarning("[SwitchToPreviousWindow] History stack exhausted, falling back to _previousWindowHandle");
+                _logger.LogWarning("[SwitchToPreviousWindow] History stack exhausted, falling back");
             }
             
             // Fallback: 如果历史栈为空或所有窗口都无效，使用 _previousWindowHandle
@@ -658,8 +650,7 @@ namespace Pulsar.Services
                 
                 if (IsAltTabWindow(_previousWindowHandle))
                 {
-                    _logger.LogInformation("[SwitchToPreviousWindow] Fallback to _previousWindowHandle: '{Title}' ({Hwnd})", 
-                        fallbackTitle, _previousWindowHandle);
+                    _logger.LogInformation("[SwitchToPreviousWindow] Fallback to previous: '{Title}'", fallbackTitle);
                     
                     // [New] 建立切换对（使用当前前台窗口作为源）
                     IntPtr currentForeground = GetForegroundWindow_Native();
@@ -676,8 +667,7 @@ namespace Pulsar.Services
                 }
                 else
                 {
-                    _logger.LogWarning("[SwitchToPreviousWindow] _previousWindowHandle is not a valid Alt-Tab window: '{Title}' ({Hwnd})", 
-                        fallbackTitle, _previousWindowHandle);
+                    _logger.LogWarning("[SwitchToPreviousWindow] Previous window is not valid Alt-Tab window");
                 }
             }
             else
@@ -697,10 +687,7 @@ namespace Pulsar.Services
                 _focusRestoreMode = mode;
                 _focusRestoreTarget = targetWindow;
                 
-                _logger.LogDebug(
-                    "[FocusManager] Mode set to {Mode}, Target: {Target}", 
-                    mode, 
-                    targetWindow);
+                // [Logging] Removed debug log - called very frequently, low diagnostic value
             }
         }
         
@@ -716,26 +703,27 @@ namespace Pulsar.Services
         {
             lock (_focusLock)
             {
-                _logger.LogInformation("[FocusManager] Restoring focus. Mode: {Mode}", _focusRestoreMode);
+                // [Logging] Downgraded to Debug - called frequently, only log failures
+                _logger.LogDebug("[FocusManager] Restoring focus. Mode: {Mode}", _focusRestoreMode);
                 
                 switch (_focusRestoreMode)
                 {
                     case FocusRestoreMode.NoRestore:
-                        _logger.LogDebug("[FocusManager] NoRestore mode - skipping focus restoration");
+                        // [Logging] Removed debug log - too verbose
                         break;
                         
                     case FocusRestoreMode.RestorePrevious:
                         if (_previousWindowHandle != IntPtr.Zero && 
                             NativeMethods.IsWindow(_previousWindowHandle))
                         {
-                            _logger.LogInformation(
-                                "[FocusManager] Restoring to previous window: {Hwnd} ({Title})", 
-                                _previousWindowHandle, 
+                            // [Logging] Downgraded to Debug - success case, not critical
+                            _logger.LogDebug("[FocusManager] Restoring to previous window: '{Title}'", 
                                 GetWindowTitle(_previousWindowHandle));
                             ForceForegroundWindow(_previousWindowHandle);
                         }
                         else
                         {
+                            // [Logging] Keep Warning - indicates issue
                             _logger.LogWarning("[FocusManager] Previous window handle is invalid");
                         }
                         break;
@@ -744,14 +732,14 @@ namespace Pulsar.Services
                         if (_focusRestoreTarget != IntPtr.Zero && 
                             NativeMethods.IsWindow(_focusRestoreTarget))
                         {
-                            _logger.LogInformation(
-                                "[FocusManager] Restoring to target window: {Hwnd} ({Title})", 
-                                _focusRestoreTarget, 
+                            // [Logging] Downgraded to Debug - success case
+                            _logger.LogDebug("[FocusManager] Restoring to target window: '{Title}'", 
                                 GetWindowTitle(_focusRestoreTarget));
                             ForceForegroundWindow(_focusRestoreTarget);
                         }
                         else
                         {
+                            // [Logging] Keep Warning - indicates issue
                             _logger.LogWarning("[FocusManager] Target window invalid, falling back to previous");
                             goto case FocusRestoreMode.RestorePrevious;
                         }
@@ -828,7 +816,11 @@ namespace Pulsar.Services
             {
                 if (hWnd == IntPtr.Zero || !NativeMethods.IsWindow(hWnd)) 
                 {
-                    _logger.LogDebug("[CaptureWindow] Invalid Handle: {Hwnd}", hWnd);
+                    // [Logging] Sample capture failures (1 in 20) - happens frequently
+                    if (_captureLogSampler.ShouldLog())
+                    {
+                        _logger.LogDebug("[CaptureWindow] Invalid Handle: {Hwnd} (sampled 1/{Rate})", hWnd, _captureLogSampler.Rate);
+                    }
                     return null;
                 }
 
@@ -837,7 +829,11 @@ namespace Pulsar.Services
                     // 1. Get Dimensions
                     if (!NativeMethods.GetWindowRect(hWnd, out var rect)) 
                     {
-                        _logger.LogDebug("[CaptureWindow] GetWindowRect failed for {Hwnd}", hWnd);
+                        // [Logging] Sample GetWindowRect failures (1 in 20)
+                        if (_captureLogSampler.ShouldLog())
+                        {
+                            _logger.LogDebug("[CaptureWindow] GetWindowRect failed for {Hwnd} (sampled 1/{Rate})", hWnd, _captureLogSampler.Rate);
+                        }
                         return null;
                     }
                     int width = rect.Right - rect.Left;
@@ -845,7 +841,12 @@ namespace Pulsar.Services
 
                     if (width <= 0 || height <= 0) 
                     {
-                        _logger.LogDebug("[CaptureWindow] Invalid dimensions {Width}x{Height} for {Hwnd}", width, height, hWnd);
+                        // [Logging] Sample dimension failures (1 in 20)
+                        if (_captureLogSampler.ShouldLog())
+                        {
+                            _logger.LogDebug("[CaptureWindow] Invalid dimensions {Width}x{Height} for {Hwnd} (sampled 1/{Rate})", 
+                                width, height, hWnd, _captureLogSampler.Rate);
+                        }
                         return null;
                     }
 
@@ -866,14 +867,24 @@ namespace Pulsar.Services
                                 if (!success)
                                 {
                                     // Fallback to default
-                                    _logger.LogDebug("[CaptureWindow] PrintWindow(Full) failed for {Hwnd}, retrying with default flags.", hWnd);
+                                    // [Logging] Sample PrintWindow failures (1 in 20)
+                                    if (_captureLogSampler.ShouldLog())
+                                    {
+                                        _logger.LogDebug("[CaptureWindow] PrintWindow(Full) failed for {Hwnd}, retrying with default flags (sampled 1/{Rate})", 
+                                            hWnd, _captureLogSampler.Rate);
+                                    }
                                     success = NativeMethods.PrintWindow(hWnd, hdc, 0);
                                 }
                                 
                                 if (!success)
                                 {
-                                    int error = Marshal.GetLastWin32Error();
-                                    _logger.LogDebug("[CaptureWindow] PrintWindow failed completely for {Hwnd}. Error: {Error}", hWnd, error);
+                                    // [Logging] Sample complete failures (1 in 20)
+                                    if (_captureLogSampler.ShouldLog())
+                                    {
+                                        int error = Marshal.GetLastWin32Error();
+                                        _logger.LogDebug("[CaptureWindow] PrintWindow failed completely for {Hwnd}. Error: {Error} (sampled 1/{Rate})", 
+                                            hWnd, error, _captureLogSampler.Rate);
+                                    }
                                     return null;
                                 }
                             }
@@ -936,7 +947,11 @@ namespace Pulsar.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogDebug(ex, "[CaptureWindow] Exception for {Hwnd}", hWnd);
+                    // [Logging] Sample exceptions (1 in 20) - can happen frequently
+                    if (_captureLogSampler.ShouldLog())
+                    {
+                        _logger.LogDebug(ex, "[CaptureWindow] Exception for {Hwnd} (sampled 1/{Rate})", hWnd, _captureLogSampler.Rate);
+                    }
                     return null;
                 }
             });

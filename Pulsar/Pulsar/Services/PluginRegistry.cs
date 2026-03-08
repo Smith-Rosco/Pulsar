@@ -56,10 +56,12 @@ namespace Pulsar.Services
         /// </summary>
         public async Task LoadAllAsync()
         {
-
+            // [Logging] Single startup log instead of per-plugin logs
             _logger.LogInformation("[PluginRegistry] Loading plugins...");
 
             var plugins = _loader.LoadAll();
+            var loadedPluginNames = new List<string>();
+            var failedPlugins = new List<string>();
             
             foreach (var plugin in plugins)
             {
@@ -70,6 +72,7 @@ namespace Pulsar.Services
                 }
 
                 _plugins[plugin.Id] = plugin;
+                bool loadSuccess = true;
                 
                 // [New] Ensure plugin has a profile entry
                 if (_configService != null)
@@ -97,11 +100,13 @@ namespace Pulsar.Services
                                 }
                                 
                                 configurable.UpdateSettings(profile.Config);
-                                _logger.LogInformation("[PluginRegistry] Applied settings for {PluginId}", plugin.Id);
+                                // [Logging] Downgraded to Debug - happens for every plugin
+                                _logger.LogDebug("[PluginRegistry] Applied settings for {PluginId}", plugin.Id);
                             }
                             catch (Exception ex)
                             {
                                 _logger.LogError(ex, "[PluginRegistry] Failed to apply settings for {PluginId}", plugin.Id);
+                                loadSuccess = false;
                             }
                         }
                         
@@ -111,20 +116,38 @@ namespace Pulsar.Services
                             try
                             {
                                 await lifecycle.OnEnableAsync();
-                                _logger.LogInformation("[PluginRegistry] Called OnEnableAsync for {PluginId}", plugin.Id);
+                                // [Logging] Downgraded to Debug - happens for every plugin
+                                _logger.LogDebug("[PluginRegistry] Called OnEnableAsync for {PluginId}", plugin.Id);
                             }
                             catch (Exception ex)
                             {
                                 _logger.LogError(ex, "[PluginRegistry] OnEnableAsync failed for {PluginId}", plugin.Id);
+                                loadSuccess = false;
                             }
                         }
                     }
                 }
 
-                _logger.LogInformation("[PluginRegistry] ✓ Registered plugin: {PluginName} ({PluginId})", plugin.DisplayName, plugin.Id);
+                // [Logging] Collect plugin names for summary instead of logging each one
+                if (loadSuccess)
+                {
+                    loadedPluginNames.Add(plugin.DisplayName);
+                }
+                else
+                {
+                    failedPlugins.Add(plugin.DisplayName);
+                }
             }
 
-            _logger.LogInformation("[PluginRegistry] Loaded {Count} plugins", _plugins.Count);
+            // [Logging] Single summary log with all loaded plugins
+            _logger.LogInformation("[PluginRegistry] Loaded {Count} plugins: {PluginList}", 
+                _plugins.Count, string.Join(", ", loadedPluginNames));
+            
+            if (failedPlugins.Count > 0)
+            {
+                _logger.LogWarning("[PluginRegistry] {Count} plugins failed to initialize: {FailedList}", 
+                    failedPlugins.Count, string.Join(", ", failedPlugins));
+            }
         }
 
         /// <summary>
@@ -199,29 +222,33 @@ namespace Pulsar.Services
 
             try
             {
-                _logger.LogDebug("Executing plugin action");
+                // [Logging] Removed debug log - too frequent, low value
                 var result = await plugin.ExecuteAsync(action, args, context);
                 
                 success = result.Success;
 
                 if (result.Success)
                 {
-                    _logger.LogInformation("Plugin execution succeeded: {Message}", result.Message ?? "OK");
+                    // [Logging] Downgraded to Debug - happens frequently for every plugin execution
+                    _logger.LogDebug("Plugin execution succeeded: {Message}", result.Message ?? "OK");
                     
                     // Extension plugin succeeded - reset crash counters.
                     if (tier == PluginTier.Extension && _failureCounts.ContainsKey(pluginId))
                     {
                         _failureCounts.Remove(pluginId);
+                        // [Logging] Keep Debug - useful for troubleshooting circuit breaker
                         _logger.LogDebug("Reset failure count for {PluginId} after successful execution", pluginId);
                     }
                 }
                 else
                 {
+                    // [Logging] Keep Warning - indicates problem
                     _logger.LogWarning("Plugin execution failed (logic error): {Message}", result.Message ?? "Unknown error");
                     
                     // [New] Handle Critical severity errors for Extension plugins
                     if (tier == PluginTier.Extension && result.Severity == PluginErrorSeverity.Critical)
                     {
+                        // [Logging] Keep Warning - important for circuit breaker
                         _logger.LogWarning("Critical error detected, counting towards circuit breaker");
                         HandlePluginCrash(pluginId, new InvalidOperationException(result.Message ?? "Critical plugin error"));
                     }
@@ -338,6 +365,7 @@ namespace Pulsar.Services
             if (profile.Enabled != enabled)
             {
                 profile.Enabled = enabled;
+                // [Logging] Keep Information - important user action
                 _logger.LogInformation("[PluginRegistry] Plugin {PluginId} state changed to {State}", pluginId, enabled ? "Enabled" : "Disabled");
                 
                 // [New] Call lifecycle hooks
@@ -348,16 +376,19 @@ namespace Pulsar.Services
                         if (enabled)
                         {
                             await lifecycle.OnEnableAsync();
-                            _logger.LogInformation("[PluginRegistry] Called OnEnableAsync for {PluginId}", pluginId);
+                            // [Logging] Downgraded to Debug - internal operation
+                            _logger.LogDebug("[PluginRegistry] Called OnEnableAsync for {PluginId}", pluginId);
                         }
                         else
                         {
                             await lifecycle.OnDisableAsync();
-                            _logger.LogInformation("[PluginRegistry] Called OnDisableAsync for {PluginId}", pluginId);
+                            // [Logging] Downgraded to Debug - internal operation
+                            _logger.LogDebug("[PluginRegistry] Called OnDisableAsync for {PluginId}", pluginId);
                         }
                     }
                     catch (Exception ex)
                     {
+                        // [Logging] Keep Error - indicates problem
                         _logger.LogError(ex, "[PluginRegistry] Lifecycle hook failed for {PluginId}", pluginId);
                     }
                 }
@@ -402,7 +433,11 @@ namespace Pulsar.Services
         /// </summary>
         public async Task UnloadAllAsync()
         {
-            _logger.LogInformation("[PluginRegistry] Unloading all plugins...");
+            // [Logging] Keep Information - important shutdown event
+            _logger.LogInformation("[PluginRegistry] Unloading {Count} plugins...", _plugins.Count);
+            
+            var unloadedCount = 0;
+            var failedCount = 0;
             
             foreach (var plugin in _plugins.Values)
             {
@@ -411,16 +446,28 @@ namespace Pulsar.Services
                     try
                     {
                         await lifecycle.OnUnloadAsync();
-                        _logger.LogInformation("[PluginRegistry] Called OnUnloadAsync for {PluginId}", plugin.Id);
+                        // [Logging] Downgraded to Debug - happens for every plugin
+                        _logger.LogDebug("[PluginRegistry] Called OnUnloadAsync for {PluginId}", plugin.Id);
+                        unloadedCount++;
                     }
                     catch (Exception ex)
                     {
+                        // [Logging] Keep Error - indicates problem during shutdown
                         _logger.LogError(ex, "[PluginRegistry] OnUnloadAsync failed for {PluginId}", plugin.Id);
+                        failedCount++;
                     }
                 }
             }
             
-            _logger.LogInformation("[PluginRegistry] All plugins unloaded");
+            // [Logging] Single summary log
+            if (failedCount > 0)
+            {
+                _logger.LogWarning("[PluginRegistry] Unloaded {Unloaded} plugins ({Failed} failed)", unloadedCount, failedCount);
+            }
+            else
+            {
+                _logger.LogInformation("[PluginRegistry] All {Count} plugins unloaded successfully", unloadedCount);
+            }
         }
     }
 }

@@ -34,6 +34,14 @@ namespace Pulsar.Services
         // 注册表数据（内存副本）
         private ProcessRegistry _registry = new();
 
+        // [Logging] Error deduplication - track last error time to avoid log spam
+        private DateTime _lastFileConflictLogTime = DateTime.MinValue;
+        private const int FILE_CONFLICT_LOG_COOLDOWN_MS = 60000; // Log same error max once per minute
+        
+        // [Logging] Log samplers for high-frequency operations
+        private readonly LogSampler _registrationLogSampler = new LogSampler(10);  // Sample 1 in 10 for process registration
+        private readonly LogSampler _iconCacheLogSampler = new LogSampler(10);     // Sample 1 in 10 for icon caching
+
         public ProcessRegistryService(ILogger<ProcessRegistryService> logger, IConfigService configService)
         {
             _logger = logger;
@@ -64,6 +72,7 @@ namespace Pulsar.Services
                 // 2. 从 Profiles.json 迁移黑名单（首次启动或同步）
                 await MigrateFromLegacyConfigAsync();
 
+                // [Logging] Keep Information - important startup event
                 _logger.LogInformation("[ProcessRegistry] Initialized with {Count} processes", _registry.Processes.Count);
             }
             catch (Exception ex)
@@ -111,7 +120,13 @@ namespace Pulsar.Services
                     }
 
                     _registry.Processes[processName] = entry;
-                    _logger.LogDebug("[ProcessRegistry] Registered new process: {ProcessName}", processName);
+                    
+                    // [Logging] Sample new process registration (1 in 10)
+                    if (_registrationLogSampler.ShouldLog())
+                    {
+                        _logger.LogDebug("[ProcessRegistry] Registered new process: {ProcessName} (sampled 1/{Rate})", 
+                            processName, _registrationLogSampler.Rate);
+                    }
                 }
                 else
                 {
@@ -134,7 +149,13 @@ namespace Pulsar.Services
                     if (!string.IsNullOrEmpty(cachePath))
                     {
                         entry.IconPath = cachePath;
-                        _logger.LogDebug("[ProcessRegistry] Cached icon for {ProcessName}", processName);
+                        
+                        // [Logging] Sample icon caching (1 in 10)
+                        if (_iconCacheLogSampler.ShouldLog())
+                        {
+                            _logger.LogDebug("[ProcessRegistry] Cached icon for {ProcessName} (sampled 1/{Rate})", 
+                                processName, _iconCacheLogSampler.Rate);
+                        }
                     }
                 }
 
@@ -286,6 +307,7 @@ namespace Pulsar.Services
                 // 同步到 Profiles.json (保持向后兼容)
                 await SyncToProfilesConfigAsync(blacklistSet);
 
+                // [Logging] Keep Information - important user action
                 _logger.LogInformation("[ProcessRegistry] Updated blacklist: {Count} processes", blacklistSet.Count);
             }
             finally
@@ -350,6 +372,7 @@ namespace Pulsar.Services
                 if (expiredProcesses.Count > 0)
                 {
                     await SaveRegistryAsync();
+                    // [Logging] Keep Information - important maintenance event
                     _logger.LogInformation(
                         "[ProcessRegistry] Cleaned up {Count} expired processes (threshold: {Days} days)",
                         expiredProcesses.Count,
@@ -439,14 +462,20 @@ namespace Pulsar.Services
                     
                     return; // Success
                 }
-                catch (IOException ex) when (attempt < maxRetries - 1)
+                catch (IOException) when (attempt < maxRetries - 1)
                 {
-                    _logger.LogWarning(ex, "[ProcessRegistry] File access conflict, retrying... (Attempt {Attempt}/{MaxRetries})", attempt + 1, maxRetries);
+                    // [Logging] Only log file conflicts once per minute to avoid spam
+                    var now = DateTime.Now;
+                    if ((now - _lastFileConflictLogTime).TotalMilliseconds > FILE_CONFLICT_LOG_COOLDOWN_MS)
+                    {
+                        _logger.LogWarning("[ProcessRegistry] File access conflict, retrying (attempt {Attempt}/{MaxRetries})", attempt + 1, maxRetries);
+                        _lastFileConflictLogTime = now;
+                    }
                     await Task.Delay(delayMs);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "[ProcessRegistry] Failed to save registry");
+                    _logger.LogError("[ProcessRegistry] Failed to save registry: {Message}", ex.Message);
                     return;
                 }
             }
@@ -493,6 +522,7 @@ namespace Pulsar.Services
 
                 await SaveRegistryAsync();
 
+                // [Logging] Keep Information - important one-time migration event
                 _logger.LogInformation(
                     "[ProcessRegistry] Migrated {Count} blacklisted processes from Profiles.json",
                     blacklistedNames.Count);
@@ -520,7 +550,8 @@ namespace Pulsar.Services
                 config.Plugins["com.pulsar.winswitcher"].Config["ExcludeProcesses"] = excludeProcesses;
 
                 await _configService.SaveAsync(config);
-
+                
+                // [Logging] Downgraded to Debug - happens frequently, not critical
                 _logger.LogDebug("[ProcessRegistry] Synced blacklist to Profiles.json");
             }
             catch (Exception ex)
