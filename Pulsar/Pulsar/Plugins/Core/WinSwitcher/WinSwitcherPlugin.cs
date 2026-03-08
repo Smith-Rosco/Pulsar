@@ -16,11 +16,12 @@ namespace Pulsar.Plugins.Core.WinSwitcher
     /// <summary>
     /// 窗口切换插件 - 处理应用程序的智能切换和启动
     /// </summary>
-    public class WinSwitcherPlugin : IPluginConfigurable, IPluginTiered, IPluginMetadataProvider
+    public class WinSwitcherPlugin : IPluginConfigurable, IPluginTiered, IPluginMetadataProvider, IPluginLifecycle
     {
+        private const string LogPrefix = "[WinSwitcher]";
+        
         private IWindowService? _windowService;
         private ILogger<WinSwitcherPlugin>? _logger;
-        private bool _showPreviews = true;
         private HashSet<string> _excludedProcesses = new();
 
         public string Id => "com.pulsar.winswitcher";
@@ -46,36 +47,22 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                 throw new InvalidOperationException("IWindowService service is not available");
             }
 
-            _logger?.LogInformation("[WinSwitcherPlugin] Initialized successfully");
+            _logger?.LogInformation($"{LogPrefix} Initialized successfully");
         }
 
         public IEnumerable<PluginSettingDefinition> GetSettingsDefinition()
         {
             yield return PluginSettingDefinition.Create(
-                key: "ShowPreviews",
-                label: "Show Previews",
-                type: PluginSettingType.Boolean,
-                defaultValue: true,
-                description: "Show window preview thumbnails in the switcher."
-            );
-
-            yield return PluginSettingDefinition.Create(
                 key: "ExcludeProcesses",
-                label: "Blacklist (Exclude Processes)",
+                label: "Blacklist (Exclude from Window List)",
                 type: PluginSettingType.String,
                 defaultValue: "",
-                description: "Comma-separated list of process names to exclude from the window switcher. Click the '+' button to select from running processes."
+                description: "Comma-separated list of process names to exclude from automatic window discovery (e.g., in Switch Mode). Does not affect explicit switching via Profiles.json."
             );
         }
 
         public void UpdateSettings(Dictionary<string, object> settings)
         {
-            if (settings.TryGetValue("ShowPreviews", out var showPreviewsObj))
-            {
-                if (showPreviewsObj is bool bVal) _showPreviews = bVal;
-                else if (bool.TryParse(showPreviewsObj?.ToString(), out var bParsed)) _showPreviews = bParsed;
-            }
-
             if (settings.TryGetValue("ExcludeProcesses", out var excludeObj) && excludeObj != null)
             {
                 var excludeStr = excludeObj.ToString() ?? string.Empty;
@@ -88,9 +75,76 @@ namespace Pulsar.Plugins.Core.WinSwitcher
             }
 
             _logger?.LogInformation(
-                "[WinSwitcherPlugin] Settings updated. ShowPreviews={ShowPreviews}, ExcludedCount={ExcludedCount}",
-                _showPreviews,
+                $"{LogPrefix} Settings updated. ExcludedCount={{ExcludedCount}}",
                 _excludedProcesses.Count);
+        }
+
+        public PluginConfigValidationResult ValidateSettings(Dictionary<string, object> settings)
+        {
+            var result = new PluginConfigValidationResult { IsValid = true };
+            
+            if (settings.TryGetValue("ExcludeProcesses", out var excludeObj) && excludeObj != null)
+            {
+                var excludeStr = excludeObj.ToString() ?? string.Empty;
+                var processes = excludeStr.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                
+                foreach (var process in processes)
+                {
+                    var trimmed = process.Trim();
+                    
+                    // 验证进程名不包含非法字符
+                    if (trimmed.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                    {
+                        result.IsValid = false;
+                        result.Errors.Add($"Invalid process name '{trimmed}': contains illegal characters");
+                    }
+                    
+                    // 警告：进程名不应包含 .exe 后缀（记录日志但不阻止）
+                    if (trimmed.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                    {
+                        _logger?.LogWarning($"{LogPrefix} Process name '{{ProcessName}}' should not include .exe extension (will be auto-stripped)", trimmed);
+                    }
+                    
+                    // 验证长度
+                    if (trimmed.Length > 255)
+                    {
+                        result.IsValid = false;
+                        result.Errors.Add($"Process name '{trimmed}' exceeds maximum length (255 characters)");
+                    }
+                }
+            }
+            
+            return result;
+        }
+
+        public async Task OnEnableAsync()
+        {
+            _logger?.LogInformation($"{LogPrefix} Plugin enabled");
+            
+            // 重新同步黑名单到 WindowService
+            if (_excludedProcesses.Count > 0)
+            {
+                _windowService?.UpdateBlacklist(_excludedProcesses);
+                _logger?.LogDebug($"{LogPrefix} Blacklist synchronized: {{Count}} entries", _excludedProcesses.Count);
+            }
+            
+            await Task.CompletedTask;
+        }
+        
+        public async Task OnDisableAsync()
+        {
+            _logger?.LogInformation($"{LogPrefix} Plugin disabled");
+            
+            // 清空黑名单（恢复默认系统黑名单）
+            _windowService?.UpdateBlacklist(Enumerable.Empty<string>());
+            
+            await Task.CompletedTask;
+        }
+        
+        public async Task OnUnloadAsync()
+        {
+            _logger?.LogInformation($"{LogPrefix} Plugin unloading - cleaning up resources");
+            await OnDisableAsync();
         }
 
         public async Task<PluginResult> ExecuteAsync(
@@ -100,7 +154,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
         {
             if (_windowService == null)
             {
-                return PluginResult.Error("Plugin not initialized");
+                return PluginResult.Error("WindowService not initialized", PluginErrorSeverity.Critical);
             }
 
             return action.ToLowerInvariant() switch
@@ -108,7 +162,8 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                 "activate" => await ActivateWindowAsync(args, context),
                 "launch" => await LaunchApplicationAsync(args, context),
                 "switch" => await SmartSwitchAsync(args, context), // 智能切换或启动
-                _ => PluginResult.Error($"Unknown action: {action}")
+                _ => PluginResult.Error($"Unknown action: {action}. Supported: activate, launch, switch", 
+                    PluginErrorSeverity.Recoverable)
             };
         }
 
@@ -121,33 +176,23 @@ namespace Pulsar.Plugins.Core.WinSwitcher
         {
             if (!args.TryGetValue("app", out var processName) || string.IsNullOrEmpty(processName))
             {
-                return PluginResult.Error("Missing required parameter: app");
+                return PluginResult.Error("Missing required parameter: app", PluginErrorSeverity.Recoverable);
             }
 
-            if (_excludedProcesses.Contains(processName))
-            {
-                _logger?.LogWarning("[WinSwitcherPlugin] Process excluded by settings: {ProcessName}", processName);
-                return PluginResult.Error($"Process is excluded by settings: {processName}");
-            }
-
-            if (_windowService == null)
-            {
-                return PluginResult.Error("Service not available");
-            }
-
-            _logger?.LogDebug("[WinSwitcherPlugin] Attempting to activate: {ProcessName}", processName);
+            _logger?.LogDebug($"{LogPrefix} Attempting to activate: {{ProcessName}}", processName);
 
             bool switched = await _windowService.SwitchToProcessAsync(processName);
             
             if (switched)
             {
-                _logger?.LogInformation("[WinSwitcherPlugin] Successfully switched to: {ProcessName}", processName);
+                _logger?.LogInformation($"{LogPrefix} Successfully switched to: {{ProcessName}}", processName);
                 return PluginResult.Ok($"Switched to {processName}");
             }
             else
             {
-                _logger?.LogInformation("[WinSwitcherPlugin] Process not running: {ProcessName}", processName);
-                return PluginResult.Error($"Process not running: {processName}");
+                _logger?.LogInformation($"{LogPrefix} Process not running: {{ProcessName}}", processName);
+                return PluginResult.Error($"Process '{processName}' is not running", 
+                    PluginErrorSeverity.Recoverable);
             }
         }
 
@@ -160,17 +205,33 @@ namespace Pulsar.Plugins.Core.WinSwitcher
         {
             if (!args.TryGetValue("path", out var exePath) || string.IsNullOrEmpty(exePath))
             {
-                return PluginResult.Error("Missing required parameter: path");
+                return PluginResult.Error("Missing required parameter: path", PluginErrorSeverity.Recoverable);
             }
-            // Launch is explicitly requested, so we might not check excluded processes here, 
-            // but for SmartSwitch we should.
-            // However, if the user explicitly wants to launch an app, maybe we shouldn't block it even if it's in the "Exclude from Switcher" list.
-            // "ExcludeProcesses" usually means "Exclude from the list of switchable windows".
-            // So Launch should probably be allowed.
+            
+            // 验证路径格式
+            if (!Path.IsPathRooted(exePath))
+            {
+                return PluginResult.Error($"Path must be absolute: {exePath}", PluginErrorSeverity.Recoverable);
+            }
+            
+            // 验证文件存在性
+            if (!File.Exists(exePath))
+            {
+                return PluginResult.Error($"Application not found: {exePath}", PluginErrorSeverity.Recoverable);
+            }
+            
+            // 验证文件扩展名白名单
+            var allowedExtensions = new[] { ".exe", ".bat", ".cmd", ".lnk" };
+            var ext = Path.GetExtension(exePath).ToLowerInvariant();
+            if (!allowedExtensions.Contains(ext))
+            {
+                return PluginResult.Error($"Unsupported file type: {ext}. Allowed: {string.Join(", ", allowedExtensions)}", 
+                    PluginErrorSeverity.Recoverable);
+            }
 
             args.TryGetValue("arguments", out var arguments);
 
-            _logger?.LogInformation("[WinSwitcherPlugin] Launching: {ExePath}", exePath);
+            _logger?.LogInformation($"{LogPrefix} Launching: {{ExePath}} {{Arguments}}", exePath, arguments ?? "");
 
             try
             {
@@ -183,13 +244,28 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                 };
 
                 Process.Start(startInfo);
-                _logger?.LogInformation("[WinSwitcherPlugin] Successfully launched: {ExePath}", exePath);
-                return PluginResult.Ok($"Launched {exePath}");
+                _logger?.LogInformation($"{LogPrefix} Successfully launched: {{ExePath}}", exePath);
+                return PluginResult.Ok($"Launched {Path.GetFileName(exePath)}");
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                _logger?.LogError(ex, $"{LogPrefix} File not found: {{ExePath}}", exePath);
+                return PluginResult.Error($"File not found: {ex.Message}", PluginErrorSeverity.Recoverable);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger?.LogError(ex, $"{LogPrefix} Access denied: {{ExePath}}", exePath);
+                return PluginResult.Error($"Access denied: {ex.Message}", PluginErrorSeverity.Critical);
+            }
+            catch (System.ComponentModel.Win32Exception ex)
+            {
+                _logger?.LogError(ex, $"{LogPrefix} Win32 error launching: {{ExePath}}", exePath);
+                return PluginResult.Error($"Failed to launch: {ex.Message}", PluginErrorSeverity.Recoverable);
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "[WinSwitcherPlugin] Launch failed: {ExePath}", exePath);
-                return PluginResult.Error($"Launch failed: {ex.Message}");
+                _logger?.LogError(ex, $"{LogPrefix} Unexpected error launching: {{ExePath}}", exePath);
+                return PluginResult.Error($"Launch failed: {ex.Message}", PluginErrorSeverity.Critical);
             }
         }
 
@@ -202,65 +278,30 @@ namespace Pulsar.Plugins.Core.WinSwitcher
         {
             if (!args.TryGetValue("app", out var processName) || string.IsNullOrEmpty(processName))
             {
-                return PluginResult.Error("Missing required parameter: app");
+                return PluginResult.Error("Missing required parameter: app", PluginErrorSeverity.Recoverable);
             }
 
-            if (_excludedProcesses.Contains(processName))
-            {
-                 _logger?.LogWarning("[WinSwitcherPlugin] Process excluded by settings (SmartSwitch): {ProcessName}", processName);
-                 // If excluded, we probably shouldn't switch to it.
-                 // Should we fall back to Launch?
-                 // If it's excluded from "Switching", maybe we treat it as "Not Running" for the purpose of switching?
-                 // But if the setting is "Exclude from Switcher", it implies we shouldn't switch to it via the switcher.
-                 // However, if the user invokes "SmartSwitch" explicitly for this app, they probably want to go there.
-                 // But let's respect the setting as a "Block" for now to demonstrate the feature.
-                 return PluginResult.Error($"Process is excluded by settings: {processName}");
-            }
-
-            if (_windowService == null)
-            {
-                return PluginResult.Error("Service not available");
-            }
-
-            _logger?.LogDebug("[WinSwitcherPlugin] Smart switch for: {ProcessName}", processName);
+            _logger?.LogDebug($"{LogPrefix} Smart switch for: {{ProcessName}}", processName);
 
             // 1. 尝试切换
             bool switched = await _windowService.SwitchToProcessAsync(processName);
             if (switched)
             {
-                _logger?.LogInformation("[WinSwitcherPlugin] Switched to existing window: {ProcessName}", processName);
+                _logger?.LogInformation($"{LogPrefix} Switched to existing window: {{ProcessName}}", processName);
                 return PluginResult.Ok($"Switched to {processName}");
             }
 
             // 2. 切换失败，尝试启动
             if (args.TryGetValue("path", out var exePath) && !string.IsNullOrEmpty(exePath))
             {
-                args.TryGetValue("arguments", out var arguments);
-
-                try
-                {
-                    var startInfo = new ProcessStartInfo
-                    {
-                        FileName = exePath,
-                        Arguments = arguments ?? string.Empty,
-                        UseShellExecute = true,
-                        WindowStyle = ProcessWindowStyle.Normal
-                    };
-
-                    Process.Start(startInfo);
-                    _logger?.LogInformation("[WinSwitcherPlugin] Launched new instance: {ExePath}", exePath);
-                    return PluginResult.Ok($"Launched {processName}");
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogError(ex, "[WinSwitcherPlugin] Launch failed: {ExePath}", exePath);
-                    return PluginResult.Error($"Launch failed: {ex.Message}");
-                }
+                // 调用 LaunchApplicationAsync (已包含完整验证和错误处理)
+                return await LaunchApplicationAsync(args, context);
             }
             else
             {
-                _logger?.LogWarning("[WinSwitcherPlugin] Cannot launch: No path specified");
-                return PluginResult.Error($"Process not running and no path specified");
+                _logger?.LogWarning($"{LogPrefix} Cannot launch: No path specified for {{ProcessName}}", processName);
+                return PluginResult.Error($"Process '{processName}' is not running and no launch path specified", 
+                    PluginErrorSeverity.Recoverable);
             }
         }
 
@@ -288,16 +329,10 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                     Version = 1,
                     Properties = new Dictionary<string, PropertySchema>
                     {
-                        ["ShowPreviews"] = new PropertySchema
-                        {
-                            Type = "bool",
-                            Description = "Show window preview thumbnails in the switcher",
-                            DefaultValue = true
-                        },
                         ["ExcludeProcesses"] = new PropertySchema
                         {
                             Type = "string",
-                            Description = "Comma-separated list of process names to ignore",
+                            Description = "Comma-separated list of process names to exclude from automatic window discovery",
                             DefaultValue = "",
                             Placeholder = "e.g., notepad,calc"
                         }
