@@ -12,6 +12,12 @@ namespace Pulsar.Native
         public delegate void WinEventDelegate(IntPtr hWinEventHook, uint eventType,
             IntPtr hwnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime);
 
+        // [New] 焦点锁定管理（引用计数保护）
+        private static readonly object _foregroundLockMutex = new object();
+        private static int _foregroundLockDisableCount = 0;
+        private static uint _originalForegroundLockTimeout = 0;
+        private static bool _systemIntegrityChecked = false;
+
         // --- P/Invoke Definitions ---
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -39,50 +45,165 @@ namespace Pulsar.Native
         [DllImport("user32.dll", EntryPoint = "SetForegroundWindow")]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool SetForegroundWindowNative(IntPtr hWnd);
+        
+        [DllImport("user32.dll")]
+        static extern bool AllowSetForegroundWindow(int dwProcessId);
 
+        [DllImport("user32.dll")]
+        static extern uint LockSetForegroundWindow(uint uLockCode);
+
+        const uint LSFW_LOCK = 1;
+        const uint LSFW_UNLOCK = 2;
+
+        /// <summary>
+        /// 安全的焦点切换（方案 A: 引用计数 + 方案 C: 安全 API）
+        /// </summary>
         public static bool SetForegroundWindow(IntPtr hWnd)
         {
             if (hWnd == IntPtr.Zero) return false;
 
-            // 1. Get current foreground lock timeout
-            uint originalTimeout = 0;
-            SystemParametersInfo(SPI_GETFOREGROUNDLOCKTIMEOUT, 0, ref originalTimeout, 0);
+            bool lockAcquired = false;
 
             try
             {
-                // 2. Temporarily disable foreground lock (Timeout = 0)
-                // This prevents the "taskbar flash" (orange state) by telling Windows "don't protect focus for this moment"
-                SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, (IntPtr)0, SPIF_SENDCHANGE);
-
-                // 3. Simulate Alt key release
-                // This tricks Windows into thinking the user performed a hardware action, granting focus rights
-                keybd_event(VK_MENU, 0, KEYEVENTF_KEYUP, 0);
-
-                // 4. Handle Minimized Windows
-                // Must be done while lock is disabled to prevent background flash
-                if (IsIconic(hWnd))
+                lock (_foregroundLockMutex)
                 {
-                    ShowWindow(hWnd, SW_RESTORE);
+                    // 第一次调用：禁用焦点锁定
+                    if (_foregroundLockDisableCount == 0)
+                    {
+                        SystemParametersInfo(SPI_GETFOREGROUNDLOCKTIMEOUT, 0, ref _originalForegroundLockTimeout, 0);
+                        SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, (IntPtr)0, SPIF_SENDCHANGE);
+                    }
+
+                    _foregroundLockDisableCount++;
+                    lockAcquired = true;
                 }
 
-                // 5. Execute Switch
-                // SetForegroundWindowNative works best now that lock is disabled
-                bool result = SetForegroundWindowNative(hWnd);
-                
-                if (!result)
-                {
-                    // Fallback: If standard set fails, try BringWindowToTop
-                    BringWindowToTop(hWnd);
-                    result = SetForegroundWindowNative(hWnd);
-                }
-
-                return result;
+                // 在锁外执行焦点切换（避免长时间持锁）
+                return SetForegroundWindowInternal(hWnd);
             }
             finally
             {
-                // 6. Restore original setting (CRITICAL)
-                // Always restore the system state to avoid leaving the user's PC in an insecure state
-                SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, (IntPtr)originalTimeout, SPIF_SENDCHANGE);
+                if (lockAcquired)
+                {
+                    lock (_foregroundLockMutex)
+                    {
+                        _foregroundLockDisableCount--;
+
+                        // 最后一次调用：恢复焦点锁定
+                        if (_foregroundLockDisableCount == 0)
+                        {
+                            SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, (IntPtr)_originalForegroundLockTimeout, SPIF_SENDCHANGE);
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 内部焦点切换实现（方案 C: 使用安全 API）
+        /// </summary>
+        private static bool SetForegroundWindowInternal(IntPtr hWnd)
+        {
+            // 获取目标窗口的进程 ID
+            GetWindowThreadProcessId(hWnd, out uint processId);
+
+            // 方法 1: 授权目标进程设置前台窗口（Windows Vista+）
+            try
+            {
+                AllowSetForegroundWindow((int)processId);
+            }
+            catch
+            {
+                // 某些 Windows 版本可能不支持，忽略错误
+            }
+
+            // 方法 2: 临时解锁焦点
+            try
+            {
+                LockSetForegroundWindow(LSFW_UNLOCK);
+            }
+            catch
+            {
+                // 某些 Windows 版本可能不支持，忽略错误
+            }
+
+            // 方法 3: 模拟 Alt 键释放（授予焦点权限）
+            keybd_event(VK_MENU, 0, KEYEVENTF_KEYUP, 0);
+
+            // 处理最小化窗口
+            if (IsIconic(hWnd))
+            {
+                ShowWindow(hWnd, SW_RESTORE);
+            }
+
+            // 执行焦点切换
+            bool result = SetForegroundWindowNative(hWnd);
+
+            if (!result)
+            {
+                // Fallback: 如果标准设置失败，尝试 BringWindowToTop
+                BringWindowToTop(hWnd);
+                result = SetForegroundWindowNative(hWnd);
+            }
+
+            // 重新锁定焦点（可选，系统会自动恢复）
+            try
+            {
+                LockSetForegroundWindow(LSFW_LOCK);
+            }
+            catch
+            {
+                // 忽略错误
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 检查并恢复系统完整性（启动时调用）
+        /// </summary>
+        public static void CheckSystemIntegrity()
+        {
+            if (_systemIntegrityChecked) return;
+
+            lock (_foregroundLockMutex)
+            {
+                uint currentTimeout = 0;
+                SystemParametersInfo(SPI_GETFOREGROUNDLOCKTIMEOUT, 0, ref currentTimeout, 0);
+
+                // 如果检测到异常值（0 表示禁用），恢复默认值
+                if (currentTimeout == 0)
+                {
+                    uint defaultTimeout = 200000; // Windows 默认值（200 秒）
+                    SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, (IntPtr)defaultTimeout, SPIF_SENDCHANGE);
+                }
+
+                _systemIntegrityChecked = true;
+            }
+        }
+
+        /// <summary>
+        /// 紧急恢复系统设置（崩溃前调用）
+        /// </summary>
+        public static void EmergencyRestore()
+        {
+            try
+            {
+                lock (_foregroundLockMutex)
+                {
+                    // 如果有未恢复的锁定，强制恢复
+                    if (_foregroundLockDisableCount > 0)
+                    {
+                        uint timeout = _originalForegroundLockTimeout > 0 ? _originalForegroundLockTimeout : 200000;
+                        SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, (IntPtr)timeout, SPIF_SENDCHANGE);
+                        _foregroundLockDisableCount = 0;
+                    }
+                }
+            }
+            catch
+            {
+                // 崩溃时忽略所有错误
             }
         }
 

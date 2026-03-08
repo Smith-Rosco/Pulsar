@@ -218,15 +218,8 @@ namespace Pulsar.Views
             
             this.BeginAnimation(UIElement.OpacityProperty, fadeOut);
             
-            // [修改] 4. 显式归还焦点 (条件性)
-            if (!_viewModel.ActionExecuted)
-            {
-                var prev = _windowService.GetPreviousWindow();
-                if (prev != IntPtr.Zero)
-                {
-                    WindowHelper.SetForegroundWindow(prev);
-                }
-            }
+            // [重构] 使用焦点管理状态机（替代原有的条件判断）
+            _windowService.RestoreFocus();
         }
 
         private async void RefreshThemeOnShow()

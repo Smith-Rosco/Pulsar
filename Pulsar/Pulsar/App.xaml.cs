@@ -69,6 +69,10 @@ namespace Pulsar
                 .CreateLogger();
 
             Log.Information("=== Pulsar Application Starting (Unified Logging Architecture) ===");
+            
+            // [New] Check System Integrity (焦点锁定设置)
+            WindowHelper.CheckSystemIntegrity();
+            Log.Information("[SystemIntegrity] Focus lock timeout checked and restored if needed");
 
             // Global Exception Handling
             this.DispatcherUnhandledException += OnDispatcherUnhandledException;
@@ -248,6 +252,10 @@ namespace Pulsar
         private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
             Log.Fatal(e.Exception, "[CRITICAL] Unhandled Dispatcher Exception");
+            
+            // [New] Emergency restore system settings
+            WindowHelper.EmergencyRestore();
+            
             // Optionally: Prevent crash if recoverable
             // e.Handled = true; 
         }
@@ -263,7 +271,11 @@ namespace Pulsar
         {
              if (e.ExceptionObject is Exception ex)
              {
-                 Log.Fatal(ex, "[CRITICAL] Unhandled Domain Exception");
+                 Log.Fatal(ex, "[CRITICAL] Unhandled AppDomain Exception (IsTerminating={IsTerminating})", e.IsTerminating);
+                 
+                 // [New] Emergency restore system settings before crash
+                 WindowHelper.EmergencyRestore();
+                 
                  Log.CloseAndFlush();
              }
         }
