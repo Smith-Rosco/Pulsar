@@ -42,6 +42,31 @@ namespace Pulsar.Native
         private LowLevelKeyboardProc _proc;
         private IntPtr _hookID = IntPtr.Zero;
 
+        // [RDP Fix] Internal modifier state tracker (Ground Truth)
+        // Tracks modifier key state based on Hook events, not GetKeyState()
+        // This solves the RDP modifier key stuck issue where GetKeyState() returns stale state
+        private bool _trackedCtrlDown = false;
+        private bool _trackedShiftDown = false;
+        private bool _trackedAltDown = false;
+        private bool _trackedWinDown = false;
+
+        // [Configuration] Modifier state detection mode
+        // - Hybrid (default): Trust Hook events for modifier state (RDP-safe)
+        // - Legacy: Use GetKeyState() for backward compatibility
+        private bool _useHybridMode = true;
+
+        /// <summary>
+        /// Gets or sets the modifier state detection mode.
+        /// Hybrid mode (default) uses internal state tracking based on Hook events,
+        /// which is immune to RDP state synchronization issues.
+        /// Legacy mode uses GetKeyState() for backward compatibility.
+        /// </summary>
+        public bool UseHybridMode
+        {
+            get => _useHybridMode;
+            set => _useHybridMode = value;
+        }
+
         // Win32 常量
         private const int WH_KEYBOARD_LL = 13;
         private const int WM_KEYDOWN = 0x0100;
@@ -94,12 +119,30 @@ namespace Pulsar.Native
                     return CallNextHookEx(_hookID, nCode, wParam, lParam);
                 }
 
-                // 获取修饰键状态 (Optimized bitwise checks)
-                // GetKeyState returns short. High order bit is key down.
-                bool isCtrl = (GetKeyState(VK_LCONTROL) & 0x8000) != 0 || (GetKeyState(VK_RCONTROL) & 0x8000) != 0;
-                bool isShift = (GetKeyState(VK_LSHIFT) & 0x8000) != 0 || (GetKeyState(VK_RSHIFT) & 0x8000) != 0;
-                bool isAlt = (GetKeyState(VK_LALT) & 0x8000) != 0 || (GetKeyState(VK_RALT) & 0x8000) != 0;
-                bool isWin = (GetKeyState(VK_LWIN) & 0x8000) != 0 || (GetKeyState(VK_RWIN) & 0x8000) != 0;
+                // [RDP Fix] Update internal modifier state tracker based on Hook events
+                // This must happen BEFORE we read the state, to ensure consistency
+                UpdateModifierTracker(vkCode, isKeyDown, isKeyUp);
+
+                // [RDP Fix] Get modifier state using selected mode
+                bool isCtrl, isShift, isAlt, isWin;
+
+                if (_useHybridMode)
+                {
+                    // Hybrid Mode: Trust internal tracker (immune to RDP state sync issues)
+                    isCtrl = _trackedCtrlDown;
+                    isShift = _trackedShiftDown;
+                    isAlt = _trackedAltDown;
+                    isWin = _trackedWinDown;
+                }
+                else
+                {
+                    // Legacy Mode: Use GetKeyState() for backward compatibility
+                    // GetKeyState returns short. High order bit is key down.
+                    isCtrl = (GetKeyState(VK_LCONTROL) & 0x8000) != 0 || (GetKeyState(VK_RCONTROL) & 0x8000) != 0;
+                    isShift = (GetKeyState(VK_LSHIFT) & 0x8000) != 0 || (GetKeyState(VK_RSHIFT) & 0x8000) != 0;
+                    isAlt = (GetKeyState(VK_LALT) & 0x8000) != 0 || (GetKeyState(VK_RALT) & 0x8000) != 0;
+                    isWin = (GetKeyState(VK_LWIN) & 0x8000) != 0 || (GetKeyState(VK_RWIN) & 0x8000) != 0;
+                }
 
                 // [Optimization] Allocation-free struct on stack
                 var args = new GlobalKeyStruct(vkCode, isCtrl, isShift, isAlt, isWin);
@@ -121,6 +164,98 @@ namespace Pulsar.Native
             return CallNextHookEx(_hookID, nCode, wParam, lParam);
         }
 
+
+        /// <summary>
+        /// [RDP Fix] Updates internal modifier state tracker based on Hook events.
+        /// This is the ground truth for modifier key state, immune to RDP sync issues.
+        /// </summary>
+        /// <param name="vkCode">Virtual key code from the hook event</param>
+        /// <param name="isKeyDown">True if this is a key down event</param>
+        /// <param name="isKeyUp">True if this is a key up event</param>
+        private void UpdateModifierTracker(int vkCode, bool isKeyDown, bool isKeyUp)
+        {
+            // Ctrl (both L/R variants + generic VK_CONTROL)
+            if (vkCode == VK_LCONTROL || vkCode == VK_RCONTROL || vkCode == 0x11)
+            {
+                if (isKeyDown)
+                {
+                    _trackedCtrlDown = true;
+                }
+                else if (isKeyUp)
+                {
+                    _trackedCtrlDown = false;
+                }
+            }
+
+            // Shift (both L/R variants + generic VK_SHIFT)
+            if (vkCode == VK_LSHIFT || vkCode == VK_RSHIFT || vkCode == 0x10)
+            {
+                if (isKeyDown)
+                {
+                    _trackedShiftDown = true;
+                }
+                else if (isKeyUp)
+                {
+                    _trackedShiftDown = false;
+                }
+            }
+
+            // Alt (both L/R variants + generic VK_MENU)
+            if (vkCode == VK_LALT || vkCode == VK_RALT || vkCode == 0x12)
+            {
+                if (isKeyDown)
+                {
+                    _trackedAltDown = true;
+                }
+                else if (isKeyUp)
+                {
+                    _trackedAltDown = false;
+                }
+            }
+
+            // Win (both L/R variants)
+            if (vkCode == VK_LWIN || vkCode == VK_RWIN)
+            {
+                if (isKeyDown)
+                {
+                    _trackedWinDown = true;
+                }
+                else if (isKeyUp)
+                {
+                    _trackedWinDown = false;
+                }
+            }
+        }
+
+        /// <summary>
+        /// [RDP Fix] Resets all tracked modifier states to released.
+        /// Call this when focus is lost or when RDP disconnect is detected.
+        /// </summary>
+        public void ResetModifierState()
+        {
+            _trackedCtrlDown = false;
+            _trackedShiftDown = false;
+            _trackedAltDown = false;
+            _trackedWinDown = false;
+        }
+
+        /// <summary>
+        /// [Diagnostics] Verifies consistency between tracked state and GetKeyState().
+        /// Returns true if states match, false if inconsistency detected.
+        /// Useful for debugging RDP state sync issues.
+        /// </summary>
+        public bool VerifyStateConsistency()
+        {
+            bool getKeyStateCtrl = (GetKeyState(VK_LCONTROL) & 0x8000) != 0 || (GetKeyState(VK_RCONTROL) & 0x8000) != 0;
+            bool getKeyStateShift = (GetKeyState(VK_LSHIFT) & 0x8000) != 0 || (GetKeyState(VK_RSHIFT) & 0x8000) != 0;
+            bool getKeyStateAlt = (GetKeyState(VK_LALT) & 0x8000) != 0 || (GetKeyState(VK_RALT) & 0x8000) != 0;
+            bool getKeyStateWin = (GetKeyState(VK_LWIN) & 0x8000) != 0 || (GetKeyState(VK_RWIN) & 0x8000) != 0;
+
+            return _trackedCtrlDown == getKeyStateCtrl &&
+                   _trackedShiftDown == getKeyStateShift &&
+                   _trackedAltDown == getKeyStateAlt &&
+                   _trackedWinDown == getKeyStateWin;
+        }
 
         // --- P/Invoke ---
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]

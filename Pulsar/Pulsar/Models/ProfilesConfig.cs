@@ -43,7 +43,7 @@ namespace Pulsar.Models
     /// <summary>
     /// 全局设置
     /// </summary>
-    public class ProfileSettings
+    public partial class ProfileSettings : ObservableObject
     {
         public string CenterSlotBehavior { get; set; } = "MRU_Window";
         public double TriggerDistance { get; set; } = 100.0;
@@ -55,6 +55,13 @@ namespace Pulsar.Models
         public double Springiness { get; set; } = 6.0;
         public double MaxDisplacement { get; set; } = 20.0;
 
+        // [New] Radial Menu Layout Configuration
+        /// <summary>
+        /// 每页显示的 slot 数量 (4-12)
+        /// </summary>
+        [ObservableProperty]
+        private int _slotsPerPage = 8;
+
         // [New] Global Hotkeys Configuration
         public Dictionary<string, HotkeyConfig> Hotkeys { get; set; } = new()
         {
@@ -62,6 +69,8 @@ namespace Pulsar.Models
             ["ShowSwitcher"] = new HotkeyConfig { Key = "Q", Modifiers = "Control" }
         };
 
+        // [RDP Fix] Input System Configuration
+        public InputSettings Input { get; set; } = new();
 
         // [Helper] 将字符串转换为 AppTheme 枚举
         [JsonIgnore]
@@ -86,6 +95,32 @@ namespace Pulsar.Models
             if (string.IsNullOrEmpty(Modifiers)) return Key;
             return $"{Modifiers} + {Key}";
         }
+    }
+
+    /// <summary>
+    /// [RDP Fix] Input system configuration
+    /// Controls how modifier key states are detected and tracked
+    /// </summary>
+    public class InputSettings
+    {
+        /// <summary>
+        /// Modifier state detection mode.
+        /// - "Hybrid" (default): Uses internal state tracking based on Hook events (RDP-safe)
+        /// - "Legacy": Uses GetKeyState() API (may have issues in RDP sessions)
+        /// </summary>
+        public string ModifierStateMode { get; set; } = "Hybrid";
+
+        /// <summary>
+        /// Enable detailed logging for modifier state changes.
+        /// Useful for debugging RDP state sync issues.
+        /// </summary>
+        public bool EnableModifierStateLogging { get; set; } = false;
+
+        /// <summary>
+        /// Helper property to check if Hybrid mode is enabled
+        /// </summary>
+        [JsonIgnore]
+        public bool IsHybridMode => ModifierStateMode.Equals("Hybrid", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>

@@ -232,6 +232,25 @@ namespace Pulsar
             var hotkeyService = Services.GetRequiredService<IHotkeyService>();
             hotkeyService.Initialize();
 
+            // [RDP Fix] Apply input configuration to GlobalKeyboardHook
+            var keyboardHook = Services.GetRequiredService<GlobalKeyboardHook>();
+            Task.Run(async () =>
+            {
+                var config = await configService.LoadAsync();
+                if (config?.Settings?.Input != null)
+                {
+                    keyboardHook.UseHybridMode = config.Settings.Input.IsHybridMode;
+                    Log.Information("[App] GlobalKeyboardHook configured: ModifierStateMode={Mode}", 
+                        config.Settings.Input.ModifierStateMode);
+                }
+                else
+                {
+                    // Default to Hybrid mode if no config
+                    keyboardHook.UseHybridMode = true;
+                    Log.Information("[App] GlobalKeyboardHook using default Hybrid mode");
+                }
+            }).GetAwaiter().GetResult();
+
         }
 
         protected override void OnExit(ExitEventArgs e)

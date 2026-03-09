@@ -2,14 +2,96 @@
 
 **Status**: Published  
 **Scope**: Architecture  
-**Applies To**: PKI plugin, text injection scenarios  
-**Last Updated**: 2026-03-03
+**Applies To**: PKI plugin, text injection scenarios, modifier key detection  
+**Last Updated**: 2026-03-09
 
 ---
 
 ## Overview
 
 When injecting text into external applications (e.g., browsers, terminals), Pulsar uses a hierarchical approach prioritizing stability and performance.
+
+---
+
+## Modifier Key State Detection (RDP Fix)
+
+### Problem Statement
+
+In Remote Desktop (RDP) environments, modifier key states (Ctrl, Shift, Alt, Win) can become desynchronized between the local client and remote host:
+
+1. **Local Client** captures KeyUp event when user releases Shift
+2. **RDP Protocol Layer** may delay or drop the event transmission
+3. **Remote Host** `GetKeyState()` still reports Shift as pressed (0x8000 bit set)
+4. **Pulsar** reads stale state, causing hotkey detection failures
+
+### Solution: Hybrid Mode (Default)
+
+Pulsar uses a **Modifier State Tracker** in `GlobalKeyboardHook` that maintains internal state based on Hook events (ground truth), rather than relying solely on `GetKeyState()`.
+
+#### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    GlobalKeyboardHook                        │
+├─────────────────────────────────────────────────────────────┤
+│  WH_KEYBOARD_LL Hook                                         │
+│    ↓                                                          │
+│  HookCallback(WM_KEYDOWN/KEYUP)                              │
+│    ↓                                                          │
+│  UpdateModifierTracker() ← Ground Truth                      │
+│    ↓                                                          │
+│  [Hybrid Mode]                                               │
+│    ├─ Use Tracked State (immune to RDP sync issues)         │
+│    └─ Fallback: GetKeyState() for non-modifier keys         │
+│                                                               │
+│  [Legacy Mode]                                               │
+│    └─ Use GetKeyState() directly (backward compatibility)   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### Configuration
+
+In `Profiles.json`:
+
+```json
+{
+  "Settings": {
+    "Input": {
+      "ModifierStateMode": "Hybrid",  // "Hybrid" (default) | "Legacy"
+      "EnableModifierStateLogging": false
+    }
+  }
+}
+```
+
+- **Hybrid Mode** (Recommended): Uses internal state tracking based on Hook events. Immune to RDP state sync issues.
+- **Legacy Mode**: Uses `GetKeyState()` API directly. May have issues in RDP sessions but provided for backward compatibility.
+
+#### API Reference
+
+**GlobalKeyboardHook Methods:**
+
+- `UseHybridMode` (Property): Get/set modifier state detection mode
+- `ResetModifierState()`: Manually reset all tracked modifier states (useful when focus is lost)
+- `VerifyStateConsistency()`: Diagnostic method to check if tracked state matches `GetKeyState()`
+
+**Example Usage:**
+
+```csharp
+var hook = serviceProvider.GetRequiredService<GlobalKeyboardHook>();
+
+// Enable Hybrid mode (default)
+hook.UseHybridMode = true;
+
+// Reset state when RDP disconnect detected
+hook.ResetModifierState();
+
+// Verify consistency for debugging
+if (!hook.VerifyStateConsistency())
+{
+    logger.LogWarning("Modifier state inconsistency detected");
+}
+```
 
 ---
 
@@ -129,8 +211,10 @@ SendKeys.SendWait(password);
 
 - [ARCHITECTURE.md](../../ARCHITECTURE.md) - Focus management details
 - [Plugin System](./PLUGIN_SYSTEM.md) - Plugin architecture
+- [RDP Modifier Key Stuck Issue](../lessons/RDP_MODIFIER_KEY_STUCK.md) - Detailed problem analysis and solution
 
 ---
 
 **Change History**:
 - v1.0.0 (2026-03-03): Initial extraction from AGENTS.md
+- v1.1.0 (2026-03-09): Added Modifier Key State Detection (RDP Fix) architecture
