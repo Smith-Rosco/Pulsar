@@ -108,6 +108,9 @@ namespace Pulsar.ViewModels
         private const double CenterSizeExpanded = 110;
         private double _currentCenterSize = CenterSizeNormal;
         
+        // [UX Enhancement] Dynamic Slot Size based on slot count
+        private double _currentSlotSize = 50.0;
+        
         // [New] Dynamic Slots Per Page
         private int _slotsPerPage = 8; // Default, will be loaded from config
         
@@ -139,6 +142,7 @@ namespace Pulsar.ViewModels
         private System.Windows.Threading.DispatcherTimer? _animTimer;
         private double _animTargetRadius;
         private double _animTargetCenterSize;
+        private double _animTargetSlotSize; // [UX Enhancement] Animate slot size changes
         
         // [New] Dynamic Title & Thumbnail
         private string _dynamicTitle = "";
@@ -231,41 +235,76 @@ namespace Pulsar.ViewModels
 
         private void InitializeSlots()
         {
-            CenterSlot = new SlotViewModel(0, CenterX - CenterSizeNormal / 2, CenterY - CenterSizeNormal / 2, CenterSizeNormal);
+            // [UX Enhancement] Calculate dynamic sizes based on slot count
+            _currentSlotSize = RadialLayoutHelper.CalculateOptimalSlotSize(_slotsPerPage);
+            _currentCenterSize = RadialLayoutHelper.CalculateOptimalCenterSize(_slotsPerPage);
+            _currentRadius = RadialLayoutHelper.CalculateOptimalRadius(_slotsPerPage, _currentSlotSize);
             
-            // [New] Use dynamic slot count
+            // Initialize animation targets
+            _animTargetRadius = _currentRadius;
+            _animTargetCenterSize = _currentCenterSize;
+            _animTargetSlotSize = _currentSlotSize;
+            
+            CenterSlot = new SlotViewModel(0, 
+                CenterX - _currentCenterSize / 2, 
+                CenterY - _currentCenterSize / 2, 
+                _currentCenterSize);
+            
+            // [New] Use dynamic slot count and size
             for (int i = 1; i <= _slotsPerPage; i++)
             {
-                var pos = RadialLayoutHelper.GetSlotPosition(i, _slotsPerPage, _currentRadius, CenterX, CenterY, ItemSize);
-                Slots.Add(new SlotViewModel(i, pos.X, pos.Y, ItemSize));
+                var pos = RadialLayoutHelper.GetSlotPosition(i, _slotsPerPage, _currentRadius, CenterX, CenterY, _currentSlotSize);
+                Slots.Add(new SlotViewModel(i, pos.X, pos.Y, _currentSlotSize));
             }
+            
+            // [Validation] Log initial layout metrics
+            double density = RadialLayoutHelper.CalculateVisualDensity(_slotsPerPage, _currentSlotSize, _currentRadius);
+            _logger?.LogInformation(
+                "[InitializeSlots] Initial layout - Slots: {Count}, SlotSize: {SlotSize:F1}px, CenterSize: {CenterSize:F1}px, Radius: {Radius:F1}px, Density: {Density:F2}",
+                _slotsPerPage, _currentSlotSize, _currentCenterSize, _currentRadius, density);
         }
 
-        // [New] Layout Animation Logic
+        // [New] Layout Animation Logic - Enhanced to support slot size animation
         private void AnimateToRadius(double targetRadius, double targetCenterSize)
         {
             _animTargetRadius = targetRadius;
             _animTargetCenterSize = targetCenterSize;
+            // Note: Slot size animation is handled separately in AnimateToLayout()
+            if (!_animTimer!.IsEnabled) _animTimer.Start();
+        }
+        
+        /// <summary>
+        /// [UX Enhancement] Animate to new layout with dynamic slot sizing.
+        /// Provides smooth transitions when slot count changes.
+        /// </summary>
+        private void AnimateToLayout(double targetRadius, double targetCenterSize, double targetSlotSize)
+        {
+            _animTargetRadius = targetRadius;
+            _animTargetCenterSize = targetCenterSize;
+            _animTargetSlotSize = targetSlotSize;
             if (!_animTimer!.IsEnabled) _animTimer.Start();
         }
 
         private void UpdateLayoutAnimation()
         {
-            // [Layout Animation]
+            // [Layout Animation] - Enhanced with slot size animation
             bool radiusDone = Math.Abs(_currentRadius - _animTargetRadius) < 1.0;
             bool centerDone = Math.Abs(_currentCenterSize - _animTargetCenterSize) < 1.0;
+            bool slotSizeDone = Math.Abs(_currentSlotSize - _animTargetSlotSize) < 0.5;
 
-            if (radiusDone && centerDone)
-            {
-                _currentRadius = _animTargetRadius;
-                _currentCenterSize = _animTargetCenterSize;
-                // [Fix] Do NOT stop timer here anymore. It's now the Main Loop for physics.
-            }
-            else
+            if (!radiusDone || !centerDone || !slotSizeDone)
             {
                 // Simple Lerp: current = current + (target - current) * 0.2
                 _currentRadius += (_animTargetRadius - _currentRadius) * 0.2;
                 _currentCenterSize += (_animTargetCenterSize - _currentCenterSize) * 0.2;
+                _currentSlotSize += (_animTargetSlotSize - _currentSlotSize) * 0.2;
+            }
+            else
+            {
+                // Snap to final values
+                _currentRadius = _animTargetRadius;
+                _currentCenterSize = _animTargetCenterSize;
+                _currentSlotSize = _animTargetSlotSize;
             }
 
             // 1. Update Center Slot (Anchored - No Magnetism)
@@ -278,21 +317,22 @@ namespace Pulsar.ViewModels
             
             // 2. Update Title Position (Dynamic based on radius to avoid overlap)
             // CenterY (250) + Radius + HalfItem (25) + Padding (20)
-            TitleTopOffset = CenterY + _currentRadius + 45;
+            TitleTopOffset = CenterY + _currentRadius + (_currentSlotSize / 2) + 20;
 
             // [New] Entrance & Physics Loop
             double magnetRadius = 150.0;
             double elapsedMs = (DateTime.Now - _showStartTime).TotalMilliseconds;
 
-            // 3. Update Satellite Slots
+            // 3. Update Satellite Slots with dynamic sizing
             for (int i = 0; i < Slots.Count; i++)
             {
                 var slot = Slots[i];
                 
-                // [Layout] Update Base Position - Use dynamic slot count
-                var pos = RadialLayoutHelper.GetSlotPosition(i + 1, _slotsPerPage, _currentRadius, CenterX, CenterY, ItemSize);
+                // [Layout] Update Base Position with dynamic slot size
+                var pos = RadialLayoutHelper.GetSlotPosition(i + 1, _slotsPerPage, _currentRadius, CenterX, CenterY, _currentSlotSize);
                 slot.X = pos.X;
                 slot.Y = pos.Y;
+                slot.Size = _currentSlotSize; // [UX Enhancement] Animate slot size
 
                 // [Physics] Magnetism
                 double slotCenterX = slot.X + slot.Size / 2;
@@ -416,15 +456,17 @@ namespace Pulsar.ViewModels
                 ResetSelection();
                 _currentMode = mode;
                 
-                // [New] Reset Layout to Normal
-                _currentRadius = RadiusNormal;
-                _currentCenterSize = CenterSizeNormal;
+                // [UX Enhancement] Reset Layout to Normal with dynamic sizing
+                _currentSlotSize = RadialLayoutHelper.CalculateOptimalSlotSize(_slotsPerPage);
+                _currentCenterSize = RadialLayoutHelper.CalculateOptimalCenterSize(_slotsPerPage);
+                _currentRadius = RadialLayoutHelper.CalculateOptimalRadius(_slotsPerPage, _currentSlotSize);
+                
                 // Force update center slot position immediately
                 CenterSlot.Size = _currentCenterSize;
                 CenterSlot.X = CenterX - _currentCenterSize / 2;
                 CenterSlot.Y = CenterY - _currentCenterSize / 2;
                 
-                AnimateToRadius(RadiusNormal, CenterSizeNormal); // Ensure visual state matches
+                AnimateToLayout(_currentRadius, _currentCenterSize, _currentSlotSize); // Ensure visual state matches
                 
                 string activeProcess = _lastContext.TargetProcessName; // e.g., "EXCEL"
 
@@ -945,8 +987,14 @@ namespace Pulsar.ViewModels
             _menuState = MenuState.SubMenu;
             _subWindows = windows;
             
-            // [New] Trigger Expansion Animation (Radius 150, CenterSize 110)
-            AnimateToRadius(RadiusExpanded, CenterSizeExpanded);
+            // [UX Enhancement] Calculate dynamic expanded sizes based on current slot count
+            // SubMenu uses slightly larger sizes for better window preview visibility
+            double expandedSlotSize = RadialLayoutHelper.CalculateOptimalSlotSize(_slotsPerPage) * 0.95; // Slightly smaller for more windows
+            double expandedCenterSize = RadialLayoutHelper.CalculateOptimalCenterSize(_slotsPerPage) * 1.4; // Larger for preview
+            double expandedRadius = RadialLayoutHelper.CalculateOptimalRadius(_slotsPerPage, expandedSlotSize) * 1.25; // Wider spread
+            
+            // Trigger smooth expansion animation
+            AnimateToLayout(expandedRadius, expandedCenterSize, expandedSlotSize);
 
             ClearVisuals();
             CenterText = "Back";
@@ -1038,8 +1086,12 @@ namespace Pulsar.ViewModels
         {
              _menuState = MenuState.Root;
 
-             // [New] Trigger Contraction Animation
-             AnimateToRadius(RadiusNormal, CenterSizeNormal);
+             // [UX Enhancement] Trigger smooth contraction animation back to dynamic normal sizes
+             double normalSlotSize = RadialLayoutHelper.CalculateOptimalSlotSize(_slotsPerPage);
+             double normalCenterSize = RadialLayoutHelper.CalculateOptimalCenterSize(_slotsPerPage);
+             double normalRadius = RadialLayoutHelper.CalculateOptimalRadius(_slotsPerPage, normalSlotSize);
+             
+             AnimateToLayout(normalRadius, normalCenterSize, normalSlotSize);
              
              // Clear Preview
              CenterPreviewImage = null;
@@ -1150,6 +1202,8 @@ namespace Pulsar.ViewModels
         /// [Architecture] Runtime update of slots per page count.
         /// Triggered by WeakReferenceMessenger when Settings are saved.
         /// Ensures immediate visual feedback without requiring app restart.
+        /// 
+        /// [UX Enhancement] Now includes smooth animation transitions for all size changes.
         /// </summary>
         public void UpdateSlotsPerPage(int newCount)
         {
@@ -1162,6 +1216,8 @@ namespace Pulsar.ViewModels
             
             int oldCount = _slotsPerPage;
             double oldRadius = _currentRadius;
+            double oldSlotSize = _currentSlotSize;
+            double oldCenterSize = _currentCenterSize;
             
             // [Validation] Clamp to valid range (4-12 slots)
             newCount = Math.Clamp(newCount, 4, 12);
@@ -1175,17 +1231,17 @@ namespace Pulsar.ViewModels
             
             _slotsPerPage = newCount;
             
-            // [Layout] Recalculate optimal radius based on new slot count
-            double newRadius = RadialLayoutHelper.CalculateOptimalRadius(_slotsPerPage);
-            _currentRadius = newRadius;
-            _animTargetRadius = newRadius;
+            // [UX Enhancement] Calculate new dynamic sizes
+            double newSlotSize = RadialLayoutHelper.CalculateOptimalSlotSize(_slotsPerPage);
+            double newCenterSize = RadialLayoutHelper.CalculateOptimalCenterSize(_slotsPerPage);
+            double newRadius = RadialLayoutHelper.CalculateOptimalRadius(_slotsPerPage, newSlotSize);
             
             // [Architecture] Reinitialize slots collection with new count
             Slots.Clear();
             for (int i = 1; i <= _slotsPerPage; i++)
             {
-                var pos = RadialLayoutHelper.GetSlotPosition(i, _slotsPerPage, _currentRadius, CenterX, CenterY, ItemSize);
-                Slots.Add(new SlotViewModel(i, pos.X, pos.Y, ItemSize));
+                var pos = RadialLayoutHelper.GetSlotPosition(i, _slotsPerPage, newRadius, CenterX, CenterY, newSlotSize);
+                Slots.Add(new SlotViewModel(i, pos.X, pos.Y, newSlotSize));
             }
             
             // [Validation] Verify slot count matches expectation
@@ -1196,14 +1252,24 @@ namespace Pulsar.ViewModels
                     _slotsPerPage, Slots.Count);
             }
             
+            // [UX Enhancement] Trigger smooth animation to new layout
+            AnimateToLayout(newRadius, newCenterSize, newSlotSize);
+            
             // [UX] Refresh current page content to populate new slots
             _pageProvider?.RefreshVisuals(Slots, CenterSlot);
             
             // [Logging] Log layout metrics for debugging
             double anglePerSlot = 360.0 / _slotsPerPage;
+            double density = RadialLayoutHelper.CalculateVisualDensity(_slotsPerPage, newSlotSize, newRadius);
+            
             _logger?.LogInformation(
-                "[UpdateSlotsPerPage] Layout updated - Slots: {Count}, Radius: {Radius:F1}px (Δ{Delta:+0.0;-0.0}px), Angle: {Angle:F1}°/slot", 
-                _slotsPerPage, _currentRadius, newRadius - oldRadius, anglePerSlot);
+                "[UpdateSlotsPerPage] Layout updated - Slots: {Count}, SlotSize: {SlotSize:F1}px (Δ{SlotDelta:+0.0;-0.0}px), CenterSize: {CenterSize:F1}px (Δ{CenterDelta:+0.0;-0.0}px), Radius: {Radius:F1}px (Δ{RadiusDelta:+0.0;-0.0}px), Angle: {Angle:F1}°/slot, Density: {Density:F2}", 
+                _slotsPerPage, 
+                newSlotSize, newSlotSize - oldSlotSize,
+                newCenterSize, newCenterSize - oldCenterSize,
+                newRadius, newRadius - oldRadius, 
+                anglePerSlot, 
+                density);
         }
     }
 }

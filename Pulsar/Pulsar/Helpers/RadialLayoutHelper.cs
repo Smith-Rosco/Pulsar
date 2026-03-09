@@ -9,6 +9,147 @@ namespace Pulsar.Helpers
     {
         private const double DegToRad = Math.PI / 180.0;
         private const double RadToDeg = 180.0 / Math.PI;
+        
+        // Layout constants
+        private const double BaseRadius = 90.0;           // Default radius for 8 slots
+        private const double DefaultSlotSize = 50.0;      // Default slot size in pixels
+        private const double MinSlotSpacing = 10.0;       // Minimum spacing between adjacent slots
+        private const double MaxRadius = 180.0;           // Maximum radius to fit in 500x500 canvas
+
+        /// <summary>
+        /// Calculates the optimal radius based on slot count to prevent visual overlap.
+        /// Uses geometric formula: R = (slotSize + spacing) / (2 * sin(π / slotCount))
+        /// </summary>
+        /// <param name="slotCount">Number of slots (4-12)</param>
+        /// <param name="slotSize">Size of each slot in pixels (default: 50px)</param>
+        /// <param name="baseRadius">Base radius for reference (default: 90px)</param>
+        /// <returns>Optimal radius in pixels, clamped to [baseRadius, maxRadius]</returns>
+        public static double CalculateOptimalRadius(int slotCount, double slotSize = DefaultSlotSize, double baseRadius = BaseRadius)
+        {
+            // For very low slot counts (4-6), base radius is sufficient
+            if (slotCount <= 6)
+            {
+                return baseRadius;
+            }
+            
+            // Calculate minimum safe radius to avoid overlap
+            // Formula derived from: chord length = 2R * sin(θ/2), where θ = 2π/n
+            double angleRad = Math.PI / slotCount;
+            double minRadius = (slotSize + MinSlotSpacing) / (2 * Math.Sin(angleRad));
+            
+            // Use the larger of base radius or calculated minimum
+            double optimalRadius = Math.Max(baseRadius, minRadius);
+            
+            // Clamp to maximum to ensure it fits in canvas (500x500, center at 250,250)
+            // Max safe radius = 250 - slotSize/2 - margin
+            return Math.Min(optimalRadius, MaxRadius);
+        }
+        
+        /// <summary>
+        /// Calculates the optimal dead zone ratio based on slot count.
+        /// Higher slot counts need slightly larger dead zones for better UX.
+        /// </summary>
+        /// <param name="slotCount">Number of slots (4-12)</param>
+        /// <returns>Dead zone ratio (0.60 - 0.65)</returns>
+        public static double CalculateDeadZoneRatio(int slotCount)
+        {
+            // Base ratio: 0.60 for 4-8 slots
+            // Increase slightly for higher counts to improve center targeting
+            const double baseRatio = 0.60;
+            const double increment = 0.005; // +0.5% per slot above 8
+            
+            if (slotCount <= 8)
+            {
+                return baseRatio;
+            }
+            
+            // 10 slots: 0.61, 12 slots: 0.62
+            return Math.Min(baseRatio + (slotCount - 8) * increment, 0.65);
+        }
+        
+        /// <summary>
+        /// [UX Enhancement] Calculates optimal slot size based on slot count.
+        /// Maintains consistent visual density by scaling slot size inversely with count.
+        /// 
+        /// Design Philosophy:
+        /// - Fewer slots (4-6): Larger slots for better visibility and easier targeting
+        /// - More slots (10-12): Smaller slots to prevent crowding and maintain clarity
+        /// - 8 slots: Baseline reference (50px)
+        /// 
+        /// Formula: slotSize = BaseSize * (1 - (count - 8) * ScaleFactor)
+        /// </summary>
+        /// <param name="slotCount">Number of slots (4-12)</param>
+        /// <returns>Optimal slot size in pixels (38-60px range)</returns>
+        public static double CalculateOptimalSlotSize(int slotCount)
+        {
+            const double BaseSlotSize = 50.0;      // Reference size for 8 slots
+            const double ScaleFactor = 0.04;       // 4% change per slot deviation
+            
+            // Linear scaling: 4 slots = 58px, 8 slots = 50px, 12 slots = 42px
+            double scale = 1.0 - (slotCount - 8) * ScaleFactor;
+            double slotSize = BaseSlotSize * scale;
+            
+            // Boundary constraints:
+            // - Minimum 38px: Ensures clickability (exceeds 32px mouse target standard)
+            // - Maximum 60px: Prevents oversized appearance with few slots
+            return Math.Clamp(slotSize, 38.0, 60.0);
+        }
+        
+        /// <summary>
+        /// [UX Enhancement] Calculates optimal center orb size based on slot count.
+        /// Maintains visual balance by scaling center size with slot density.
+        /// 
+        /// Design Philosophy:
+        /// - Fewer slots: Larger center for visual weight and prominence
+        /// - More slots: Smaller center to allocate space for satellite slots
+        /// - 8 slots: Baseline reference (70px)
+        /// 
+        /// Formula: centerSize = BaseSize * (1 - (count - 8) * ScaleFactor)
+        /// </summary>
+        /// <param name="slotCount">Number of slots (4-12)</param>
+        /// <returns>Optimal center size in pixels (55-85px range)</returns>
+        public static double CalculateOptimalCenterSize(int slotCount)
+        {
+            const double BaseCenterSize = 70.0;    // Reference size for 8 slots
+            const double ScaleFactor = 0.035;      // 3.5% change per slot deviation
+            
+            // Linear scaling: 4 slots = 80px, 8 slots = 70px, 12 slots = 60px
+            double scale = 1.0 - (slotCount - 8) * ScaleFactor;
+            double centerSize = BaseCenterSize * scale;
+            
+            // Boundary constraints:
+            // - Minimum 55px: Maintains usability for back/cancel action
+            // - Maximum 85px: Prevents center from dominating with few slots
+            return Math.Clamp(centerSize, 55.0, 85.0);
+        }
+        
+        /// <summary>
+        /// [Validation] Calculates visual density metric for layout quality assessment.
+        /// 
+        /// Visual Density = (Total slot width) / (Circumference)
+        /// 
+        /// Interpretation:
+        /// - 0.85 - 1.15: Optimal range (balanced spacing)
+        /// - &lt; 0.85: Too sparse (slots feel disconnected)
+        /// - &gt; 1.15: Too crowded (slots feel cramped)
+        /// 
+        /// This metric helps validate that dynamic sizing maintains consistent UX.
+        /// </summary>
+        /// <param name="slotCount">Number of slots</param>
+        /// <param name="slotSize">Size of each slot in pixels</param>
+        /// <param name="radius">Radius of the circle</param>
+        /// <returns>Visual density ratio (target: 0.85-1.15)</returns>
+        public static double CalculateVisualDensity(int slotCount, double slotSize, double radius)
+        {
+            // Total width occupied by all slots
+            double totalSlotWidth = slotSize * slotCount;
+            
+            // Circumference of the circle
+            double circumference = 2 * Math.PI * radius;
+            
+            // Density ratio: how much of the circle is occupied by slots
+            return totalSlotWidth / circumference;
+        }
 
         /// <summary>
         /// Calculates the X/Y coordinates for a satellite slot based on its index and the current radius.
