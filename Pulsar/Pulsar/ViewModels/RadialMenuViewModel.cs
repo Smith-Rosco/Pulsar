@@ -35,6 +35,10 @@ namespace Pulsar.ViewModels
         private readonly IPluginUsageTracker? _usageTracker; // [New]
         private readonly IPluginHealthMonitor? _healthMonitor; // [New]
 
+        // [Logging] Sampling counter for high-frequency logs (1/10 sampling)
+        private int _logSampleCounter = 0;
+        private const int LOG_SAMPLE_RATE = 10;
+
         private ProfilesConfig? _config;
         private IPageProvider? _pageProvider; // [New] Strategy for paging
         private RadialMenuMode _currentMode;
@@ -718,8 +722,11 @@ namespace Pulsar.ViewModels
 
         private void HandleKeyUp(object? sender, GlobalKeyStruct e)
         {
-            // [Debug] Log KeyUp
-            _logger?.LogDebug("[HandleKeyUp] Key: {Key}, IsVisible: {IsVisible}", e.VkCode, IsVisible);
+            // [Logging] Sample debug logs (1/10 rate)
+            if (++_logSampleCounter % LOG_SAMPLE_RATE == 0)
+            {
+                _logger?.LogDebug("[HandleKeyUp] Key: {Key}, IsVisible: {IsVisible}", e.VkCode, IsVisible);
+            }
 
             // [Refactor] Move modifier check up to handle "release during load" race condition
             bool isModifierRelease = e.VkCode == VK_LCONTROL || e.VkCode == VK_RCONTROL || 
@@ -750,12 +757,17 @@ namespace Pulsar.ViewModels
                 // [UX Improvement] Quick Switch Logic with Position Tolerance
                 // If duration < 250ms AND mouse is within tolerance zone AND we are in Root Menu
                 var duration = (DateTime.Now - _showStartTime).TotalMilliseconds;
-                _logger?.LogDebug("[HandleKeyUp] Modifier Release. Duration: {DurationMs}ms, ActiveSlot: {ActiveSlot}", duration, _activeSlotIndex);
+                
+                // [Logging] Only log modifier release on sampled events
+                if (_logSampleCounter % LOG_SAMPLE_RATE == 0)
+                {
+                    _logger?.LogDebug("[HandleKeyUp] Modifier Release. Duration: {DurationMs}ms, ActiveSlot: {ActiveSlot}", duration, _activeSlotIndex);
+                }
                 
                 // Check if within quick switch zone (allows slight mouse movement)
                 if (duration < 250 && IsWithinQuickSwitchZone() && _menuState == MenuState.Root)
                 {
-                     _logger?.LogDebug("[HandleKeyUp] Triggering Quick Switch (within tolerance zone)");
+                     _logger?.LogDebug("[HandleKeyUp] Quick Switch triggered (duration: {DurationMs}ms)", duration);
                      SetActionExecuted(true); // [Fix] Prevent Dismiss() from restoring previous window
                      _windowService.SwitchToPreviousWindow();
                      IsVisible = false;
@@ -888,21 +900,23 @@ namespace Pulsar.ViewModels
             CenterSlot.Type = SlotType.Action; 
             CenterSlot.ActionStrategy = new BackActionStrategy(); // [New] Set Strategy
             
-            // [New] Capture Center Preview if multiple windows
-            // Requirement 2: Center assumes preview function for the most recently active window
-            // 'windows' list is typically Z-Order sorted (Active first), so FirstOrDefault() is correct.
-            var targetWin = windows.FirstOrDefault();
-            if (targetWin != null)
+            // [Fix] Sort by StartTime first for stable muscle memory (Oldest @ 12:00 -> Index 1)
+            var sortedWindows = windows.OrderBy(w => w.StartTime).ToList();
+            
+            // [New] Capture Center Preview for the most recently active window
+            // Use LastActivationTime to find the most recent window (Z-Order semantic)
+            var mostRecentWin = windows.OrderByDescending(w => w.LastActivationTime).FirstOrDefault();
+            if (mostRecentWin != null)
             {
                 // [Optimization] Check Cache First
-                if (_windowPreviewCache.TryGetValue(targetWin.Handle, out var cachedPreview))
+                if (_windowPreviewCache.TryGetValue(mostRecentWin.Handle, out var cachedPreview))
                 {
                     CenterPreviewImage = cachedPreview;
                 }
                 else
                 {
                     // Ensure UI updates immediately with placeholder before async capture
-                    CenterPreviewImage = targetWin.AppIcon; 
+                    CenterPreviewImage = mostRecentWin.AppIcon; 
                     
                     // Try capture actual window
                     // Use a dedicated token for this initial capture to allow cancellation if user moves mouse quickly
@@ -919,7 +933,7 @@ namespace Pulsar.ViewModels
                             await Task.Delay(300, token); // Wait for expansion animation to finish
                             if (token.IsCancellationRequested) return;
                             if (_menuState != MenuState.SubMenu) return;
-                            await CapturePreviewAsync(targetWin.Handle, token);
+                            await CapturePreviewAsync(mostRecentWin.Handle, token);
                         }
                         catch (TaskCanceledException)
                         {
@@ -933,9 +947,6 @@ namespace Pulsar.ViewModels
                     DelayedCapture();
                 }
             }
-
-            // Sort by StartTime (Oldest @ 12:00 -> Index 1)
-            var sortedWindows = windows.OrderBy(w => w.StartTime).ToList();
 
             for (int i = 0; i < 8; i++)
             {

@@ -101,5 +101,13 @@ namespace Pulsar.Services.Interfaces
         /// 捕获指定窗口的静态快照
         /// </summary>
         Task<System.Windows.Media.ImageSource?> CaptureWindowAsync(IntPtr hWnd);
+        
+        /// <summary>
+        /// 智能选择目标窗口：从窗口列表中选择最合适的窗口进行切换
+        /// 如果之前记录的窗口（Pulsar 唤起前的窗口）在列表中，则跳过它，选择次最近激活的窗口
+        /// </summary>
+        /// <param name="windows">候选窗口列表（按 LastActivationTime 降序排列）</param>
+        /// <returns>选中的目标窗口，如果列表为空则返回 null</returns>
+        ProcessWindowInfo? SelectTargetWindow(List<ProcessWindowInfo> windows);
     }
 }

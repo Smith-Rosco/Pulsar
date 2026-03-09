@@ -254,7 +254,70 @@ namespace Pulsar.Services
 
         public Task<bool> SwitchToProcessAsync(string processName)
         {
-            return Task.Run(() => FocusWindow(processName));
+            return Task.Run(() =>
+            {
+                string targetName = processName.ToLower().Replace(".exe", "");
+                var processes = Process.GetProcessesByName(targetName);
+                
+                if (processes.Length == 0) return false;
+                
+                // [Enhancement] Smart Window Switching for Multi-Window Processes
+                // If current foreground window belongs to target process, switch to next most recent window
+                
+                // Get current foreground window
+                IntPtr currentForeground = GetForegroundWindow_Native();
+                GetWindowThreadProcessId(currentForeground, out uint currentPid);
+                
+                // Collect all valid windows from target process with Z-Order tracking
+                var targetWindows = new List<(IntPtr Handle, int ZOrder, uint ProcessId)>();
+                int zOrder = 0;
+                
+                foreach (var proc in processes)
+                {
+                    if (proc.MainWindowHandle != IntPtr.Zero)
+                    {
+                        GetWindowThreadProcessId(proc.MainWindowHandle, out uint winPid);
+                        
+                        // Check if this window is the current foreground window
+                        bool isCurrentWindow = (proc.MainWindowHandle == currentForeground);
+                        
+                        if (isCurrentWindow)
+                        {
+                            // Current window - deprioritize by assigning max Z-Order
+                            targetWindows.Add((proc.MainWindowHandle, int.MaxValue, winPid));
+                            _logger?.LogDebug("[SwitchToProcess] Current window detected: {ProcessName} (PID: {Pid})", 
+                                processName, winPid);
+                        }
+                        else
+                        {
+                            // Non-current window - use actual Z-Order (lower = more recent)
+                            targetWindows.Add((proc.MainWindowHandle, zOrder++, winPid));
+                        }
+                    }
+                }
+                
+                if (targetWindows.Count == 0) return false;
+                
+                // Sort by Z-Order: smallest first (most recently activated non-current window)
+                var targetWindow = targetWindows.OrderBy(w => w.ZOrder).First();
+                
+                // Log the switch decision
+                if (targetWindow.ZOrder == int.MaxValue)
+                {
+                    // Only one window exists, switching to itself
+                    _logger?.LogDebug("[SwitchToProcess] Single window process, switching to same window: {ProcessName}", 
+                        processName);
+                }
+                else
+                {
+                    // Switching to a different window
+                    _logger?.LogInformation("[SwitchToProcess] Smart switch: {ProcessName} -> Most recent non-current window (Z-Order: {ZOrder})", 
+                        processName, targetWindow.ZOrder);
+                }
+                
+                ForceForegroundWindow(targetWindow.Handle);
+                return true;
+            });
         }
 
         public Task<List<ProcessWindowInfo>> GetActiveWindowsAsync()
@@ -955,6 +1018,58 @@ namespace Pulsar.Services
                     return null;
                 }
             });
+        }
+        
+        /// <summary>
+        /// 智能选择目标窗口：从窗口列表中选择最合适的窗口进行切换
+        /// 如果之前记录的窗口（Pulsar 唤起前的窗口）在列表中，则跳过它，选择次最近激活的窗口
+        /// </summary>
+        public ProcessWindowInfo? SelectTargetWindow(List<ProcessWindowInfo> windows)
+        {
+            if (windows == null || windows.Count == 0)
+            {
+                _logger.LogWarning("[SelectTargetWindow] Empty window list provided");
+                return null;
+            }
+            
+            // [Fix] Use _previousWindowHandle (window before Pulsar was invoked) instead of current foreground
+            // Current foreground is always Pulsar itself, which is not useful for smart switching
+            IntPtr previousWindow = _previousWindowHandle;
+            
+            // Filter out invalid windows
+            var validWindows = windows.Where(w => NativeMethods.IsWindow(w.Handle)).ToList();
+            
+            if (validWindows.Count == 0)
+            {
+                _logger.LogWarning("[SelectTargetWindow] No valid windows in list");
+                return null;
+            }
+            
+            // Sort by LastActivationTime descending (most recent first)
+            var sortedWindows = validWindows.OrderByDescending(w => w.LastActivationTime).ToList();
+            
+            // Find the first window that is NOT the previous window
+            ProcessWindowInfo? target = null;
+            foreach (var win in sortedWindows)
+            {
+                if (win.Handle != previousWindow)
+                {
+                    target = win;
+                    _logger.LogInformation("[SelectTargetWindow] Smart switch: Skipping previous window, selected '{Title}' (Process: {ProcessName})", 
+                        win.Title, win.ProcessName);
+                    break;
+                }
+            }
+            
+            // Fallback: if all windows are the previous window (single window case), use the most recent one
+            if (target == null)
+            {
+                target = sortedWindows.First();
+                _logger.LogDebug("[SelectTargetWindow] Single window process, using most recent: '{Title}'", 
+                    target.Title);
+            }
+            
+            return target;
         }
         private const int GWL_EXSTYLE_CONST = -20;
         private const long WS_EX_TOOLWINDOW_CONST = 0x00000080L;

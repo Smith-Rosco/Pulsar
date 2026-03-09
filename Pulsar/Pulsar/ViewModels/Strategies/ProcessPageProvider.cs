@@ -229,7 +229,7 @@ namespace Pulsar.ViewModels.Strategies
 
                     slotViewModel.Type = SlotType.Process;
                     slotViewModel.DataContext = slotItem.Windows;
-                    slotViewModel.ActionStrategy = new ProcessGroupStrategy(slotItem.Windows, _usageTracker, _healthMonitor, _logService);
+                    slotViewModel.ActionStrategy = new ProcessGroupStrategy(slotItem.Windows, _windowService, _usageTracker, _healthMonitor, _logService);
                     slotViewModel.CurrentOpacity = 1.0;
                 }
                 else if (slotItem.IsConfigured && !slotItem.IsRunning && slotItem.Config != null)

@@ -163,16 +163,19 @@ namespace Pulsar.ViewModels.Strategies
     public class ProcessGroupStrategy : IActionStrategy
     {
         private readonly List<ProcessWindowInfo> _windows;
+        private readonly IWindowService _windowService;
         private readonly IPluginUsageTracker? _usageTracker;
         private readonly IPluginHealthMonitor? _healthMonitor;
         private readonly IPluginLogService? _logService;
 
-        public ProcessGroupStrategy(List<ProcessWindowInfo> windows, 
+        public ProcessGroupStrategy(List<ProcessWindowInfo> windows,
+            IWindowService windowService,
             IPluginUsageTracker? usageTracker = null, 
             IPluginHealthMonitor? healthMonitor = null,
             IPluginLogService? logService = null)
         {
             _windows = windows;
+            _windowService = windowService;
             _usageTracker = usageTracker;
             _healthMonitor = healthMonitor;
             _logService = logService;
@@ -180,20 +183,16 @@ namespace Pulsar.ViewModels.Strategies
 
         public async Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context)
         {
-            var validWindows = _windows.Where(w => WindowHelper.IsWindow(w.Handle)).ToList();
+            // [Enhancement] Use WindowService's smart window selection
+            var target = _windowService.SelectTargetWindow(_windows);
             
-            if (!validWindows.Any())
+            if (target == null)
             {
                 System.Media.SystemSounds.Exclamation.Play();
-                // Trigger reload via context if possible, or just close
                 context.IsVisible = false; 
                 return;
             }
 
-            // [Fix] Smart switch to the most recently ACTIVATED window (not most recently started)
-            // Sort by LastActivationTime descending (most recent first)
-            // This ensures we jump to the window the user was most recently using
-            var target = validWindows.OrderByDescending(w => w.LastActivationTime).First();
             await new WindowSwitchStrategy(target, _usageTracker, _healthMonitor, _logService).ExecuteAsync(slot, context);
         }
         
