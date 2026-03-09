@@ -5,7 +5,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Media; // [New] For ImageSource
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Messaging; // [Architecture] For SlotsPerPageChangedMessage
 using Pulsar.Core.Plugin;
+using Pulsar.Core.Messages; // [Architecture] For SlotsPerPageChangedMessage
 using Pulsar.Models;
 using Pulsar.Models.Enums;
 using Pulsar.Services;
@@ -106,6 +108,9 @@ namespace Pulsar.ViewModels
         private const double CenterSizeExpanded = 110;
         private double _currentCenterSize = CenterSizeNormal;
         
+        // [New] Dynamic Slots Per Page
+        private int _slotsPerPage = 8; // Default, will be loaded from config
+        
         // [New] Dynamic Title Position
         private double _titleTopOffset = 350;
         public double TitleTopOffset
@@ -191,6 +196,13 @@ namespace Pulsar.ViewModels
             _usageTracker = serviceProvider.GetService(typeof(IPluginUsageTracker)) as IPluginUsageTracker;
             _healthMonitor = serviceProvider.GetService(typeof(IPluginHealthMonitor)) as IPluginHealthMonitor;
 
+            // [New] Load slots per page from config
+            _slotsPerPage = _configService.GetValidatedSlotsPerPage();
+            
+            // [New] Calculate optimal radius based on slot count
+            _currentRadius = RadialLayoutHelper.CalculateOptimalRadius(_slotsPerPage);
+            _animTargetRadius = _currentRadius;
+
             InitializeSlots();
 
             // [New] Initialize Animation Timer
@@ -205,14 +217,26 @@ namespace Pulsar.ViewModels
 
             _configService.ConfigUpdated += OnConfigUpdated;
             LoadConfigAsync();
+            
+            // [Architecture] Register message handler for real-time slot count updates from Settings
+            WeakReferenceMessenger.Default.Register<SlotsPerPageChangedMessage>(this, (r, m) =>
+            {
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    _logger?.LogInformation("[RadialMenuViewModel] Received SlotsPerPageChangedMessage: {Count}", m.NewCount);
+                    UpdateSlotsPerPage(m.NewCount);
+                });
+            });
         }
 
         private void InitializeSlots()
         {
             CenterSlot = new SlotViewModel(0, CenterX - CenterSizeNormal / 2, CenterY - CenterSizeNormal / 2, CenterSizeNormal);
-            for (int i = 1; i <= 8; i++)
+            
+            // [New] Use dynamic slot count
+            for (int i = 1; i <= _slotsPerPage; i++)
             {
-                var pos = RadialLayoutHelper.GetSlotPosition(i, 8, _currentRadius, CenterX, CenterY, ItemSize);
+                var pos = RadialLayoutHelper.GetSlotPosition(i, _slotsPerPage, _currentRadius, CenterX, CenterY, ItemSize);
                 Slots.Add(new SlotViewModel(i, pos.X, pos.Y, ItemSize));
             }
         }
@@ -265,8 +289,8 @@ namespace Pulsar.ViewModels
             {
                 var slot = Slots[i];
                 
-                // [Layout] Update Base Position
-                var pos = RadialLayoutHelper.GetSlotPosition(i + 1, 8, _currentRadius, CenterX, CenterY, ItemSize);
+                // [Layout] Update Base Position - Use dynamic slot count
+                var pos = RadialLayoutHelper.GetSlotPosition(i + 1, _slotsPerPage, _currentRadius, CenterX, CenterY, ItemSize);
                 slot.X = pos.X;
                 slot.Y = pos.Y;
 
@@ -307,6 +331,36 @@ namespace Pulsar.ViewModels
         private async void OnConfigUpdated()
         {
             _config = await _configService.LoadAsync();
+            
+            // [Fix] Check if slots per page has changed
+            int newSlotsPerPage = _configService.GetValidatedSlotsPerPage();
+            if (newSlotsPerPage != _slotsPerPage)
+            {
+                _logger?.LogInformation(
+                    "[RadialMenuViewModel] Slots per page changed from {OldCount} to {NewCount}, reinitializing layout",
+                    _slotsPerPage, newSlotsPerPage);
+                
+                _slotsPerPage = newSlotsPerPage;
+                
+                // Recalculate optimal radius
+                double newRadius = RadialLayoutHelper.CalculateOptimalRadius(_slotsPerPage);
+                _currentRadius = newRadius;
+                _animTargetRadius = newRadius;
+                
+                // Reinitialize slots collection
+                Slots.Clear();
+                for (int i = 1; i <= _slotsPerPage; i++)
+                {
+                    var pos = RadialLayoutHelper.GetSlotPosition(i, _slotsPerPage, _currentRadius, CenterX, CenterY, ItemSize);
+                    Slots.Add(new SlotViewModel(i, pos.X, pos.Y, ItemSize));
+                }
+                
+                // Refresh current page if menu is visible
+                if (IsVisible && _pageProvider != null)
+                {
+                    _pageProvider.RefreshVisuals(Slots, CenterSlot);
+                }
+            }
         }
 
         public void ClearVisuals()
@@ -516,13 +570,13 @@ namespace Pulsar.ViewModels
             _lastMouseX = mouseX;
             _lastMouseY = mouseY;
 
-            // [UX Improvement] Consistent DeadZone Ratio
-            // Dead zone is always 60% of center orb size, regardless of expansion state
-            // Normal: 70px * 0.6 = 42px
-            // Expanded: 110px * 0.6 = 66px
-            double deadZone = _currentCenterSize * DeadZoneRatio;
+            // [UX Improvement] Dynamic DeadZone Ratio based on slot count
+            // Base: 60% for 4-8 slots, increases slightly for higher counts
+            double deadZoneRatio = RadialLayoutHelper.CalculateDeadZoneRatio(_slotsPerPage);
+            double deadZone = _currentCenterSize * deadZoneRatio;
             
-            int newSlotIndex = RadialLayoutHelper.GetSlotIndexFromPoint(mouseX, mouseY, CenterX, CenterY, deadZone, 8);
+            // [New] Use dynamic slot count
+            int newSlotIndex = RadialLayoutHelper.GetSlotIndexFromPoint(mouseX, mouseY, CenterX, CenterY, deadZone, _slotsPerPage);
 
             if (_activeSlotIndex != newSlotIndex)
             {
@@ -948,7 +1002,11 @@ namespace Pulsar.ViewModels
                 }
             }
 
-            for (int i = 0; i < 8; i++)
+            // [Architecture] SubMenu uses current slot configuration, not hardcoded 8
+            // This allows users with 10 or 12 slots to see more windows at once
+            int maxWindowsToShow = Math.Min(_slotsPerPage, sortedWindows.Count);
+            
+            for (int i = 0; i < _slotsPerPage; i++)
             {
                 var slot = Slots.FirstOrDefault(s => s.SlotIndex == i + 1);
                 if (slot == null) continue;
@@ -971,6 +1029,9 @@ namespace Pulsar.ViewModels
                     slot.ActionStrategy = new NoOpStrategy(); // [New] Clear Strategy
                 }
             }
+            
+            _logger?.LogDebug("[EnterSubMenuAsync] Displaying {WindowCount} windows across {SlotCount} slots", 
+                maxWindowsToShow, _slotsPerPage);
         }
 
         public void RestoreRootMenu()
@@ -1083,6 +1144,66 @@ namespace Pulsar.ViewModels
 
             ShowTemporaryHint("仅 1 页，无需翻页", HintDisplayDuration);
             _hasShownSinglePageHint = true;
+        }
+
+        /// <summary>
+        /// [Architecture] Runtime update of slots per page count.
+        /// Triggered by WeakReferenceMessenger when Settings are saved.
+        /// Ensures immediate visual feedback without requiring app restart.
+        /// </summary>
+        public void UpdateSlotsPerPage(int newCount)
+        {
+            // [Validation] Early exit if no change
+            if (newCount == _slotsPerPage)
+            {
+                _logger?.LogDebug("[UpdateSlotsPerPage] No change detected (current: {Count}), skipping update", _slotsPerPage);
+                return;
+            }
+            
+            int oldCount = _slotsPerPage;
+            double oldRadius = _currentRadius;
+            
+            // [Validation] Clamp to valid range (4-12 slots)
+            newCount = Math.Clamp(newCount, 4, 12);
+            
+            if (newCount != oldCount)
+            {
+                _logger?.LogInformation(
+                    "[UpdateSlotsPerPage] Reconfiguring layout: {OldCount} → {NewCount} slots", 
+                    oldCount, newCount);
+            }
+            
+            _slotsPerPage = newCount;
+            
+            // [Layout] Recalculate optimal radius based on new slot count
+            double newRadius = RadialLayoutHelper.CalculateOptimalRadius(_slotsPerPage);
+            _currentRadius = newRadius;
+            _animTargetRadius = newRadius;
+            
+            // [Architecture] Reinitialize slots collection with new count
+            Slots.Clear();
+            for (int i = 1; i <= _slotsPerPage; i++)
+            {
+                var pos = RadialLayoutHelper.GetSlotPosition(i, _slotsPerPage, _currentRadius, CenterX, CenterY, ItemSize);
+                Slots.Add(new SlotViewModel(i, pos.X, pos.Y, ItemSize));
+            }
+            
+            // [Validation] Verify slot count matches expectation
+            if (Slots.Count != _slotsPerPage)
+            {
+                _logger?.LogError(
+                    "[UpdateSlotsPerPage] Slot count mismatch! Expected: {Expected}, Actual: {Actual}",
+                    _slotsPerPage, Slots.Count);
+            }
+            
+            // [UX] Refresh current page content to populate new slots
+            _pageProvider?.RefreshVisuals(Slots, CenterSlot);
+            
+            // [Logging] Log layout metrics for debugging
+            double anglePerSlot = 360.0 / _slotsPerPage;
+            _logger?.LogInformation(
+                "[UpdateSlotsPerPage] Layout updated - Slots: {Count}, Radius: {Radius:F1}px (Δ{Delta:+0.0;-0.0}px), Angle: {Angle:F1}°/slot", 
+                _slotsPerPage, _currentRadius, newRadius - oldRadius, anglePerSlot);
         }
     }
 }

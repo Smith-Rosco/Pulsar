@@ -143,11 +143,35 @@ namespace Pulsar.ViewModels
         private bool _hasUnsavedChanges;
 
         /// <summary>
+        /// CanExecute method for SaveCommand
+        /// </summary>
+        private bool CanSave()
+        {
+            bool result = HasUnsavedChanges;
+            _logger.LogInformation("[CanSave] Called. Returning {Result}", result);
+            return result;
+        }
+
+        /// <summary>
         /// Mark configuration as dirty (has unsaved changes)
         /// </summary>
         private void MarkDirty()
         {
+            _logger.LogInformation("[MarkDirty] Called. Current HasUnsavedChanges = {Current}", HasUnsavedChanges);
             HasUnsavedChanges = true;
+            _logger.LogInformation("[MarkDirty] Set HasUnsavedChanges = {New}", HasUnsavedChanges);
+            
+            // [Fix] Manually notify command to refresh CanExecute
+            // This is needed because ui:NavigationViewItem may not automatically respond to property changes
+            try
+            {
+                SaveCommand.NotifyCanExecuteChanged();
+                _logger.LogInformation("[MarkDirty] SaveCommand.NotifyCanExecuteChanged() called successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[MarkDirty] Failed to notify SaveCommand");
+            }
         }
 
         /// <summary>
@@ -168,7 +192,36 @@ namespace Pulsar.ViewModels
         public ProfileSettings GeneralSettings
         {
             get => _generalSettings;
-            set => SetProperty(ref _generalSettings, value);
+            set
+            {
+                if (_generalSettings != null)
+                {
+                    _generalSettings.PropertyChanged -= OnGeneralSettingsPropertyChanged;
+                }
+                
+                if (SetProperty(ref _generalSettings, value))
+                {
+                    if (_generalSettings != null)
+                    {
+                        _generalSettings.PropertyChanged += OnGeneralSettingsPropertyChanged;
+                    }
+                }
+            }
+        }
+        
+        private void OnGeneralSettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            _logger.LogInformation("[OnGeneralSettingsPropertyChanged] Property changed: {PropertyName}", e.PropertyName);
+            
+            if (e.PropertyName == nameof(ProfileSettings.SlotsPerPage))
+            {
+                OnPropertyChanged(nameof(SlotsPerPagePreview));
+                MarkDirty();
+            }
+            else
+            {
+                MarkDirty();
+            }
         }
 
         private ObservableCollection<PluginSlot> _currentSlots = new ObservableCollection<PluginSlot>();
@@ -344,6 +397,9 @@ namespace Pulsar.ViewModels
                 // [New] Notify Hotkeys
                 OnPropertyChanged(nameof(ShowGridHotkey));
                 OnPropertyChanged(nameof(ShowSwitcherHotkey));
+                
+                // [New] Notify Radial Menu Layout
+                OnPropertyChanged(nameof(SlotsPerPagePreview));
                 
                 // [Phase 2] Reset dirty flag after loading
                 HasUnsavedChanges = false;
@@ -670,10 +726,16 @@ namespace Pulsar.ViewModels
             }
         }
 
-        [RelayCommand(CanExecute = nameof(HasUnsavedChanges))]
+        [RelayCommand(CanExecute = nameof(CanSave))]
         public async Task Save()
         {
-            if (_config == null) return;
+            _logger.LogInformation("[Save] Method called. HasUnsavedChanges = {Value}", HasUnsavedChanges);
+            
+            if (_config == null)
+            {
+                _logger.LogWarning("[Save] _config is null, returning");
+                return;
+            }
             
             try
             {
@@ -690,6 +752,10 @@ namespace Pulsar.ViewModels
                 _pendingSecrets.Clear();
                 
                 await _configService.SaveAsync(_config);
+                
+                // [Architecture] Notify RadialMenuViewModel to reinitialize slots if count changed
+                // This ensures immediate visual feedback without requiring app restart
+                WeakReferenceMessenger.Default.Send(new SlotsPerPageChangedMessage(_config.Settings.SlotsPerPage));
                 
                 // [Phase 2] Reset dirty flag after successful save
                 HasUnsavedChanges = false;
@@ -1227,6 +1293,17 @@ namespace Pulsar.ViewModels
                 _config.Settings.Hotkeys["ShowSwitcher"] = value;
                 OnPropertyChanged();
                 MarkDirty(); // [Phase 2]
+            }
+        }
+        
+        // [New] Radial Menu Layout Configuration - Preview Text
+        public string SlotsPerPagePreview
+        {
+            get
+            {
+                int slots = GeneralSettings?.SlotsPerPage ?? 8;
+                double angle = 360.0 / slots;
+                return $"{slots} slots ({angle:F0}° sectors)";
             }
         }
         
