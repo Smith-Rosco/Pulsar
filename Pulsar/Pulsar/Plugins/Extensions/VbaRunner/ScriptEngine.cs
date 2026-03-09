@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Pulsar.Native;
 
@@ -15,6 +17,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
         public static ILogger? Logger { get; set; }
         private readonly ComConnectionManager _connectionManager;
         private readonly VbaModuleInjector _injector;
+        private readonly PrerequisiteValidator _validator;
         
         private dynamic? _app;
         private dynamic? _workbook;
@@ -23,6 +26,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
         {
             _connectionManager = new ComConnectionManager();
             _injector = new VbaModuleInjector();
+            _validator = new PrerequisiteValidator(Logger);
         }
 
         /// <summary>
@@ -103,6 +107,66 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
             }
 
             return names;
+        }
+
+        /// <summary>
+        /// Validate prerequisites against active workbook
+        /// </summary>
+        /// <param name="requirements">List of requirement strings (e.g., "Sheet=SheetName")</param>
+        /// <returns>Validation result with details</returns>
+        public PrerequisiteResult ValidatePrerequisites(List<string> requirements)
+        {
+            if (_workbook == null)
+            {
+                return PrerequisiteResult.Failure(
+                    new List<string> { "No active workbook" });
+            }
+            
+            return _validator.Validate(_workbook, requirements);
+        }
+        
+        /// <summary>
+        /// Get filtered sheet names based on filter pattern
+        /// </summary>
+        /// <param name="filter">Filter pattern (e.g., "exclude:_Config_*" or "include:Data*")</param>
+        /// <returns>Filtered list of visible sheet names</returns>
+        public List<string> GetFilteredSheetNames(string? filter = null)
+        {
+            var allSheets = GetVisibleSheetNames();
+            
+            if (string.IsNullOrWhiteSpace(filter))
+                return allSheets;
+            
+            try
+            {
+                // Parse filter: "exclude:pattern" or "include:pattern"
+                var parts = filter.Split(':', 2);
+                if (parts.Length != 2) return allSheets;
+                
+                string mode = parts[0].Trim().ToLowerInvariant();
+                string pattern = parts[1].Trim();
+                
+                // Convert wildcard pattern to regex
+                string regexPattern = "^" + 
+                    Regex.Escape(pattern)
+                        .Replace("\\*", ".*")
+                        .Replace("\\?", ".") + 
+                    "$";
+                
+                var regex = new Regex(regexPattern, RegexOptions.IgnoreCase);
+                
+                return mode switch
+                {
+                    "exclude" => allSheets.Where(s => !regex.IsMatch(s)).ToList(),
+                    "include" => allSheets.Where(s => regex.IsMatch(s)).ToList(),
+                    _ => allSheets
+                };
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogDebug(ex, "[ScriptEngine] Error applying sheet filter");
+                return allSheets;
+            }
         }
 
         /// <summary>

@@ -113,7 +113,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
 
             _logger?.LogDebug("[VbaRunnerPlugin] Script: {ScriptPath}", scriptPath);
 
-            // 2. 读取脚本内容 & 解析指令 (减少 I/O)
+            // 2. 读取脚本内容 & 解析所有指令
             string scriptContent;
             try
             {
@@ -124,8 +124,10 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
                 return PluginResult.Error($"Failed to read script: {ex.Message}");
             }
 
-            string directive = ScriptDirectiveParser.ParseDirectiveFromContent(scriptContent);
-            _logger?.LogDebug("[VbaRunnerPlugin] Directive: {Directive}", directive);
+            ScriptDirectives directives = ScriptDirectiveParser.ParseAllDirectives(scriptContent);
+            _logger?.LogDebug(
+                "[VbaRunnerPlugin] Directives parsed - Runner={Runner}, Macro={Macro}, Requires={RequiresCount}, OnMissing={OnMissing}",
+                directives.Runner, directives.Macro, directives.Requires.Count, directives.OnMissing);
 
             // 3. 隐藏 Pulsar 主窗口
             _logger?.LogDebug("[VbaRunnerPlugin] Hiding main window...");
@@ -145,8 +147,6 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
             }
 
             // 注意：COM 操作和 UI 必须在 STA 线程执行
-            // ExecuteAsync 通常在线程池线程运行，因此我们需要调度到 UI 线程 (STA)
-            
             string? errorMessage = null;
             string? successMessage = null;
 
@@ -166,29 +166,76 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
                         return;
                     }
 
-                    object? scriptArg = null;
-
-                    // 6. 处理 UI 交互
-                    if (directive == "ShowSheetSelector")
+                    // **PHASE 1: Validate Prerequisites**
+                    if (directives.Requires.Count > 0)
                     {
-                        var sheets = _scriptEngine.GetVisibleSheetNames();
-                        if (sheets.Count == 0)
+                        _logger?.LogDebug("[VbaRunnerPlugin] Validating {Count} prerequisites...", directives.Requires.Count);
+                        var validationResult = _scriptEngine.ValidatePrerequisites(directives.Requires);
+                        
+                        if (!validationResult.IsValid)
                         {
-                            errorMessage = "No visible sheets found.";
-                            return;
+                            _logger?.LogInformation(
+                                "[VbaRunnerPlugin] Prerequisites not met: {Missing}", 
+                                string.Join(", ", validationResult.MissingItems));
+                            
+                            // Run setup/onMissing macro
+                            string setupMacro = directives.OnMissing;
+                            _logger?.LogInformation("[VbaRunnerPlugin] Running setup macro: {Macro}", setupMacro);
+                            
+                            try
+                            {
+                                _scriptEngine.ExecuteScriptContent(scriptContent, setupMacro, null);
+                                successMessage = "Setup completed. Please configure and run again.";
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger?.LogError(ex, "[VbaRunnerPlugin] Setup macro failed");
+                                errorMessage = $"Setup failed: {ex.Message}";
+                            }
+                            
+                            return; // Exit early - don't continue to main execution
                         }
-
-                        var selector = new SelectorWindow(sheets);
-                        if (selector.ShowDialog() != true)
-                        {
-                            errorMessage = "Operation cancelled by user.";
-                            return;
-                        }
-                        scriptArg = selector.SelectedSheet;
+                        
+                        _logger?.LogDebug("[VbaRunnerPlugin] All prerequisites validated successfully");
                     }
 
-                    // 7. 执行脚本 (传入已读取的内容)
-                    string macroName = args.TryGetValue("macro", out var m) && !string.IsNullOrWhiteSpace(m) ? m : "Main";
+                    // **PHASE 2: Handle UI Interaction (if prerequisites met)**
+                    object? scriptArg = null;
+                    
+                    if (directives.Runner == "ShowSheetSelector")
+                    {
+                        var sheets = _scriptEngine.GetFilteredSheetNames(directives.SheetFilter);
+                        
+                        if (sheets.Count == 0)
+                        {
+                            errorMessage = "No valid sheets found.";
+                            return;
+                        }
+                        
+                        // Auto-select if only one option and AutoSelectSingle is true
+                        if (sheets.Count == 1 && directives.AutoSelectSingle)
+                        {
+                            scriptArg = sheets[0];
+                            _logger?.LogDebug("[VbaRunnerPlugin] Auto-selected single sheet: {Sheet}", scriptArg);
+                        }
+                        else
+                        {
+                            var selector = new SelectorWindow(sheets);
+                            if (selector.ShowDialog() != true)
+                            {
+                                errorMessage = "Operation cancelled by user.";
+                                return;
+                            }
+                            scriptArg = selector.SelectedSheet;
+                        }
+                    }
+
+                    // **PHASE 3: Execute Main Macro**
+                    string macroName = args.TryGetValue("macro", out var m) && !string.IsNullOrWhiteSpace(m) 
+                        ? m 
+                        : directives.Macro;
+                    
+                    _logger?.LogDebug("[VbaRunnerPlugin] Executing macro: {Macro}", macroName);
                     _scriptEngine.ExecuteScriptContent(scriptContent, macroName, scriptArg);
                     successMessage = "Script executed successfully";
                 }
@@ -199,8 +246,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
                 }
             });
 
-            // [Fix] 8. 归还焦点给原始窗口 (Professional Architect Recommendation)
-            // 无论脚本执行成功与否，都尝试将焦点还给用户之前工作的窗口
+            // 8. 归还焦点给原始窗口
             if (context.TargetWindowHandle != IntPtr.Zero)
             {
                 _logger?.LogDebug("[VbaRunnerPlugin] Restoring focus to original window: {Hwnd}", context.TargetWindowHandle);

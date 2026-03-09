@@ -1,0 +1,525 @@
+' @Runner: ShowSheetSelector
+' @Requires: Sheet="_Config_Input"
+' @OnMissing: Setup
+' @SheetFilter: exclude:_Config_*
+' @AutoSelectSingle: false
+' @Macro: Main
+' [Module]: GenerateReversionFlow (VbaRunner)
+Option Explicit
+
+' ==========================================
+' 1. 生产入口 (Pulsar VbaRunner)
+' ==========================================
+Private Type ProductInfo
+    NewFullCode As String
+    NewBaseName As String
+    NewVersionName As String
+    OldFullCode As String
+    OldBaseName As String
+    OldVersionName As String
+End Type
+
+Private Const INPUT_SHEET_NAME As String = "_Config_Input"
+Private Const TARGET_HEADER_ROW As Long = 9
+
+' 列名常量
+Private Const COL_KEY_PPID As String = "PPID"
+Private Const COL_KEY_MASK As String = "MASK"
+Private Const COL_KEY_PARAM As String = "Parameter"
+
+' NEW: Setup entry point (called when config missing)
+Public Sub Setup()
+    Dim wb As Workbook
+    Set wb = ActiveWorkbook
+    
+    If wb Is Nothing Then
+        MsgBox "错误：未找到活动工作簿", vbCritical
+        Exit Sub
+    End If
+    
+    CreateConfigTemplate wb
+    
+    MsgBox "已生成配置表：" & INPUT_SHEET_NAME & vbCrLf & _
+           "请填写：" & vbCrLf & _
+           "- A6: 新产品名 (Target)" & vbCrLf & _
+           "- B6: 旧产品名 (Ref)" & vbCrLf & _
+           "- A9:A... 新 Mask" & vbCrLf & _
+           "- B9:B... 旧 Mask" & vbCrLf & _
+           "填写后重新运行。", vbInformation
+End Sub
+
+' MODIFIED: Main now assumes config exists (validated by plugin)
+Public Sub Main(targetSheetName As String)
+    Dim wb As Workbook
+    Dim wsSource As Worksheet
+    Dim wsConfig As Worksheet
+    Dim layerToNewMap As Object
+    Dim oldToNewMap As Object
+    Dim newPID As String, oldPID As String
+    Dim wsTarget As Worksheet
+    Dim processedRows As Long, changedRows As Long
+    Dim t0 As Double
+
+    Dim prevScreenUpdating As Boolean
+    Dim prevEnableEvents As Boolean
+    Dim prevDisplayAlerts As Boolean
+    Dim prevCalculation As XlCalculation
+    Dim prevStatusBar As Variant
+
+    Dim didError As Boolean
+    Dim errText As String
+    Dim successText As String
+    Dim showSuccess As Boolean
+
+    On Error GoTo EH
+    t0 = Timer
+    With Application
+        prevScreenUpdating = .ScreenUpdating
+        prevEnableEvents = .EnableEvents
+        prevDisplayAlerts = .DisplayAlerts
+        prevCalculation = .Calculation
+        prevStatusBar = .StatusBar
+
+        .ScreenUpdating = False
+        .EnableEvents = False
+        .DisplayAlerts = False
+        .Calculation = xlCalculationManual
+        .StatusBar = False
+    End With
+
+    Set wb = ActiveWorkbook
+    If wb Is Nothing Then Err.Raise vbObjectError + 700, "Main", "No active workbook."
+
+    Set wsSource = wb.Worksheets(targetSheetName)
+    If wsSource Is Nothing Then Err.Raise vbObjectError + 701, "Main", "Source sheet not found: " & targetSheetName
+
+    If wsSource.Name = INPUT_SHEET_NAME Then
+        MsgBox "错误：不能选择配置表作为源数据：" & INPUT_SHEET_NAME, vbCritical
+        GoTo CleanUp
+    End If
+
+    ' Config sheet MUST exist (plugin validated this)
+    Set wsConfig = GetConfigSheet(wb)
+    If wsConfig Is Nothing Then
+        ' This should never happen if plugin validation works
+        MsgBox "内部错误：配置表验证失败", vbCritical
+        GoTo CleanUp
+    End If
+
+    newPID = CleanString(wsConfig.Cells(6, 1).Value)
+    oldPID = CleanString(wsConfig.Cells(6, 2).Value)
+    If newPID = "" Or oldPID = "" Then
+        MsgBox "错误：配置不完整。请在 " & INPUT_SHEET_NAME & " 的 A6/B6 填写新旧产品名。", vbCritical
+        GoTo CleanUp
+    End If
+
+    Set layerToNewMap = BuildLayerToNewMap(wsConfig)
+    Set oldToNewMap = BuildOldToNewMap(wsConfig, layerToNewMap)
+    If layerToNewMap.Count = 0 Then
+        MsgBox "错误：未读取到任何新 Mask。请在 " & INPUT_SHEET_NAME & " 的 A9:A... 填写。", vbCritical
+        GoTo CleanUp
+    End If
+
+    RunProductRevision wsSource, newPID, oldPID, layerToNewMap, oldToNewMap, wsTarget, processedRows, changedRows
+
+    successText = "运行完成。" & vbCrLf & _
+                  "源数据表: " & wsSource.Name & vbCrLf & _
+                  "输出表: " & wsTarget.Name & vbCrLf & _
+                  "处理行数: " & processedRows & vbCrLf & _
+                  "发生更改的行数: " & changedRows & vbCrLf & _
+                  "耗时(秒): " & Format(Timer - t0, "0.00")
+    showSuccess = True
+
+CleanUp:
+    On Error Resume Next
+    With Application
+        .ScreenUpdating = prevScreenUpdating
+        .EnableEvents = prevEnableEvents
+        .DisplayAlerts = prevDisplayAlerts
+        .Calculation = prevCalculation
+        .StatusBar = prevStatusBar
+    End With
+    On Error GoTo 0
+
+    If didError Then
+        MsgBox "运行失败：" & errText, vbCritical
+    ElseIf showSuccess Then
+        MsgBox successText, vbInformation
+    End If
+    Exit Sub
+
+EH:
+    didError = True
+    errText = Err.Description
+    Resume CleanUp
+End Sub
+
+' ==========================================
+' 2. 核心执行逻辑
+' ==========================================
+Private Sub RunProductRevision(wsSource As Worksheet, newPID As String, oldPID As String, _
+                               layerMap As Object, replaceMap As Object, _
+                               ByRef wsTarget As Worksheet, ByRef processedRows As Long, ByRef changedRows As Long)
+    Dim pInfo As ProductInfo
+    Dim lastRow As Long, r As Long, currentHeaderRow As Long
+    Dim colMap As Object
+
+    processedRows = 0
+    changedRows = 0
+
+    wsSource.Copy After:=wsSource
+    Set wsTarget = wsSource.Parent.Worksheets(wsSource.Index + 1)
+    wsTarget.Name = CreateUniqueSheetName(wsSource.Parent, newPID)
+
+    currentHeaderRow = AlignHeaderRow(wsTarget)
+    If currentHeaderRow = -1 Then Err.Raise vbObjectError + 710, "RunProductRevision", "Header row not found."
+
+    pInfo = InitProductInfo(newPID, oldPID)
+    Set colMap = CreateObject("Scripting.Dictionary")
+    If Not MapColumns(wsTarget, currentHeaderRow, colMap) Then Err.Raise vbObjectError + 711, "RunProductRevision", "Required headers missing."
+    
+    InsertAndFormatColumns wsTarget, currentHeaderRow, colMap
+    colMap.RemoveAll
+    MapColumns wsTarget, currentHeaderRow, colMap
+
+    Dim lastCell As Range
+    Set lastCell = wsTarget.Cells.Find("*", SearchOrder:=xlByRows, SearchDirection:=xlPrevious)
+    If lastCell Is Nothing Then Exit Sub
+    lastRow = lastCell.Row
+
+    For r = currentHeaderRow + 1 To lastRow
+        processedRows = processedRows + 1
+        If ProcessRow(r, wsTarget, colMap, pInfo, layerMap, replaceMap) Then
+            changedRows = changedRows + 1
+        End If
+    Next r
+
+    UpdateTitle wsTarget, pInfo.NewFullCode
+End Sub
+
+' ==========================================
+' 3. 单行处理
+' ==========================================
+Private Function ProcessRow(r As Long, ws As Worksheet, map As Object, pInfo As ProductInfo, _
+                            layerMap As Object, replaceMap As Object) As Boolean
+    Dim paramVal As String
+    Dim oldPPID As String, newPPID As String
+    Dim oldMaskVal As String, newMaskVal As String, currentLayer As String
+    Dim isMaskChanged As Boolean
+    Dim oldKey As Variant
+    
+    Dim c_PPID As Long, c_PPID_New As Long
+    Dim c_MASK As Long, c_MASK_New As Long
+    Dim c_Status As Long
+    
+    c_Status = 1
+    c_PPID = map("PPID"): c_PPID_New = c_PPID + 1
+    c_MASK = map("MASK"): c_MASK_New = c_MASK + 1
+    
+    paramVal = UCase(CleanString(ws.Cells(r, map("Parameter")).Value))
+    oldPPID = CleanString(ws.Cells(r, c_PPID).Value)
+    newPPID = oldPPID
+    isMaskChanged = False
+
+    ProcessRow = False
+    
+    ' A. MASK 列处理
+    oldMaskVal = CleanString(ws.Cells(r, c_MASK).Value)
+    newMaskVal = oldMaskVal
+    If oldMaskVal <> "" Then
+        currentLayer = GetLayerCode(oldMaskVal)
+        If layerMap.Exists(currentLayer) Then
+            newMaskVal = layerMap(currentLayer)
+            If newMaskVal <> oldMaskVal Then
+                ws.Cells(r, c_MASK_New).Value = newMaskVal
+                HighlightCell ws.Cells(r, c_MASK_New)
+                isMaskChanged = True
+                ProcessRow = True
+            End If
+        End If
+    End If
+    
+    ' B. PPID 列处理
+    If oldPPID <> "" Then
+        ' 逻辑 1: 全局文本替换 (MMI)
+        For Each oldKey In replaceMap.Keys
+            If InStr(1, newPPID, oldKey, vbTextCompare) > 0 Then
+                newPPID = Replace(newPPID, oldKey, replaceMap(oldKey), , , vbTextCompare)
+            End If
+        Next oldKey
+        
+        ' 逻辑 2: Mask 联动
+        If isMaskChanged Then
+            If InStr(1, newPPID, oldMaskVal, vbTextCompare) > 0 Then
+                newPPID = Replace(newPPID, oldMaskVal, newMaskVal, , , vbTextCompare)
+            End If
+        End If
+        
+        ' 逻辑 3: 版本号
+        If InStr(paramVal, "$FILE2") > 0 Or InStr(paramVal, "WTTEST") > 0 Then
+            If InStr(1, newPPID, pInfo.OldVersionName, vbTextCompare) > 0 Then
+                newPPID = Replace(newPPID, pInfo.OldVersionName, pInfo.NewVersionName, , , vbTextCompare)
+            End If
+        End If
+        
+        If newPPID <> oldPPID Then
+            ws.Cells(r, c_PPID_New).Value = newPPID
+            HighlightCell ws.Cells(r, c_PPID_New)
+            ws.Cells(r, c_Status).Value = "更改"
+            HighlightCell ws.Cells(r, c_Status)
+            ProcessRow = True
+        End If
+    End If
+    
+    If isMaskChanged Then
+        ws.Cells(r, c_Status).Value = "更改"
+        HighlightCell ws.Cells(r, c_Status)
+        ProcessRow = True
+    End If
+End Function
+
+' ==========================================
+' 4. 配置读取与工具函数
+' ==========================================
+
+' [构建字典] 注意起始行号变为 9
+Private Function BuildLayerToNewMap(wsConfig As Worksheet) As Object
+    Dim dict As Object
+    Dim lastRow As Long, i As Long, newM As String, layer As String
+    Set dict = CreateObject("Scripting.Dictionary")
+    
+    lastRow = wsConfig.Cells(wsConfig.Rows.Count, 1).End(xlUp).Row
+    If lastRow < 9 Then lastRow = 9
+
+    For i = 9 To lastRow
+        newM = CleanString(wsConfig.Cells(i, 1).Value)
+        If newM <> "" Then
+            layer = GetLayerCode(newM)
+            If layer <> "" Then
+                If Not dict.Exists(layer) Then
+                    dict.Add layer, newM
+                End If
+            End If
+        End If
+    Next i
+    Set BuildLayerToNewMap = dict
+End Function
+
+Private Function BuildOldToNewMap(wsConfig As Worksheet, layerMap As Object) As Object
+    Dim dict As Object
+    Dim lastRow As Long, i As Long, oldM As String, newM As String, layer As String
+    Set dict = CreateObject("Scripting.Dictionary")
+    
+    lastRow = wsConfig.Cells(wsConfig.Rows.Count, 2).End(xlUp).Row
+    If lastRow < 9 Then lastRow = 9
+
+    For i = 9 To lastRow
+        oldM = CleanString(wsConfig.Cells(i, 2).Value)
+        If oldM <> "" Then
+            layer = GetLayerCode(oldM)
+            If layerMap.Exists(layer) Then
+                newM = layerMap(layer)
+                If newM <> oldM And Not dict.Exists(oldM) Then
+                    dict.Add oldM, newM
+                End If
+            End If
+        End If
+    Next i
+    Set BuildOldToNewMap = dict
+End Function
+
+' --- 通用函数 ---
+Private Function CleanString(txt As Variant) As String
+    Dim s As String
+    If IsError(txt) Or IsNull(txt) Then CleanString = "": Exit Function
+    s = CStr(txt)
+    s = Replace(s, Chr(160), ""): s = Replace(s, " ", ""): s = Trim(s)
+    CleanString = s
+End Function
+
+Private Function GetLayerCode(maskStr As String) As String
+    Dim parts() As String, suffix As String
+    If InStr(maskStr, "-") > 0 Then
+        parts = Split(maskStr, "-")
+        If UBound(parts) >= 1 Then suffix = parts(1) Else suffix = maskStr
+    Else
+        suffix = maskStr
+    End If
+    If Len(suffix) >= 2 Then GetLayerCode = UCase(Left(suffix, 2)) Else GetLayerCode = UCase(suffix)
+End Function
+
+Private Function GetConfigSheet(wb As Workbook) As Worksheet
+    On Error Resume Next
+    Set GetConfigSheet = wb.Worksheets(INPUT_SHEET_NAME)
+    On Error GoTo 0
+End Function
+
+Private Sub CreateConfigTemplate(wb As Workbook)
+    Dim ws As Worksheet
+
+    On Error Resume Next
+    Set ws = wb.Worksheets(INPUT_SHEET_NAME)
+    On Error GoTo 0
+    If Not ws Is Nothing Then Exit Sub
+
+    Set ws = wb.Worksheets.Add(Before:=wb.Worksheets(1))
+    ws.Name = INPUT_SHEET_NAME
+
+    With ws
+        .Cells.Clear
+        .Cells(1, 1).Value = "【PIE 改版配置】"
+        .Cells(1, 1).Font.Size = 14
+        .Cells(1, 1).Font.Bold = True
+
+        .Cells(5, 1).Value = "新产品名 (Target)"
+        .Cells(5, 2).Value = "旧产品名 (Ref)"
+        .Cells(6, 1).Value = "SV2191FA-X.01"
+        .Cells(6, 2).Value = "SV2191AA.01"
+
+        .Range("A5:B5").Font.Bold = True
+        .Range("A5:B5").Interior.Color = RGB(200, 220, 255)
+        .Range("A6:B6").Interior.Color = RGB(240, 240, 240)
+
+        .Cells(8, 1).Value = "新 Mask List (A列)"
+        .Cells(8, 2).Value = "旧 Mask List (B列)"
+        .Range("A8:B8").Font.Bold = True
+        .Range("A8:B8").Interior.Color = RGB(255, 220, 200)
+
+        .Cells(9, 1).Value = "5920-A12"
+        .Cells(9, 2).Value = "5920-W11"
+        .Cells(10, 1).Value = "5920-W11"
+        .Cells(10, 2).Value = "5920-A11"
+        .Cells(11, 1).Value = "5920-TT6"
+        .Cells(11, 2).Value = "5920-TT1"
+
+        .Columns("A:B").ColumnWidth = 35
+    End With
+End Sub
+
+ 
+
+Private Function InitProductInfo(newPID As String, oldPID As String) As ProductInfo
+    Dim res As ProductInfo, dotPos As Long
+    res.NewFullCode = UCase(newPID)
+    If Len(res.NewFullCode) >= 6 Then res.NewBaseName = Left(res.NewFullCode, 6)
+    dotPos = InStr(res.NewFullCode, "."): If dotPos > 1 Then res.NewVersionName = Left(res.NewFullCode, dotPos - 1) Else res.NewVersionName = res.NewFullCode
+    res.OldFullCode = UCase(oldPID)
+    If Len(res.OldFullCode) >= 6 Then res.OldBaseName = Left(res.OldFullCode, 6)
+    dotPos = InStr(res.OldFullCode, "."): If dotPos > 1 Then res.OldVersionName = Left(res.OldFullCode, dotPos - 1) Else res.OldVersionName = res.OldFullCode
+    InitProductInfo = res
+End Function
+
+Private Function AlignHeaderRow(ws As Worksheet) As Long
+    Dim r As Long, found As Boolean
+    For r = 1 To 20
+        If Not ws.Rows(r).Find("PPID", LookAt:=xlWhole) Is Nothing And Not ws.Rows(r).Find("MASK", LookAt:=xlWhole) Is Nothing Then
+            found = True: Exit For
+        End If
+    Next r
+    If Not found Then AlignHeaderRow = -1: Exit Function
+    If r > TARGET_HEADER_ROW Then ws.Rows("1:" & (r - TARGET_HEADER_ROW)).Delete Shift:=xlUp
+    If r < TARGET_HEADER_ROW Then ws.Rows("1:" & (TARGET_HEADER_ROW - r)).Insert Shift:=xlDown
+    AlignHeaderRow = TARGET_HEADER_ROW
+End Function
+
+Private Sub InsertAndFormatColumns(ws As Worksheet, hRow As Long, map As Object)
+    Dim colPPID As Long, colMASK As Long
+    colPPID = map("PPID"): colMASK = map("MASK")
+
+    ' 为避免插入导致列号偏移：从更靠右的列开始插入
+    If colPPID > colMASK Then
+        ws.Columns(colPPID + 1).Insert
+        With ws.Cells(hRow, colPPID + 1)
+            .Value = "更改后"
+            .Interior.ColorIndex = 6
+        End With
+
+        ws.Columns(colMASK + 1).Insert
+        With ws.Cells(hRow, colMASK + 1)
+            .Value = "更改后"
+            .Interior.ColorIndex = 6
+        End With
+    Else
+        ws.Columns(colMASK + 1).Insert
+        With ws.Cells(hRow, colMASK + 1)
+            .Value = "更改后"
+            .Interior.ColorIndex = 6
+        End With
+
+        ws.Columns(colPPID + 1).Insert
+        With ws.Cells(hRow, colPPID + 1)
+            .Value = "更改后"
+            .Interior.ColorIndex = 6
+        End With
+    End If
+
+    ws.Columns(1).Insert
+End Sub
+
+Private Sub UpdateTitle(ws As Worksheet, newVal As String)
+    Dim rng As Range: Set rng = ws.Cells(4, 2): rng.Value = newVal: HighlightCell rng
+End Sub
+
+Private Function MapColumns(ws As Worksheet, hRow As Long, dict As Object) As Boolean
+    On Error Resume Next
+    dict.Add "PPID", ws.Rows(hRow).Find(COL_KEY_PPID, LookAt:=xlWhole).Column
+    dict.Add "MASK", ws.Rows(hRow).Find(COL_KEY_MASK, LookAt:=xlWhole).Column
+    dict.Add "Parameter", ws.Rows(hRow).Find(COL_KEY_PARAM, LookAt:=xlWhole).Column
+    On Error GoTo 0
+    If dict.Count < 3 Then MapColumns = False Else MapColumns = True
+End Function
+
+Private Sub HighlightCell(rng As Range)
+    rng.Interior.ColorIndex = 6
+End Sub
+
+Private Function CreateUniqueSheetName(wb As Workbook, newPID As String) As String
+    Dim prefix As String
+    Dim stamp As String
+    Dim baseName As String
+    Dim candidate As String
+    Dim i As Long
+
+    prefix = SanitizeSheetName(UCase(newPID))
+    If prefix = "" Then prefix = "REV"
+    prefix = Left(prefix, 12)
+
+    stamp = Format(Now, "mmdd_hhnnss")
+    baseName = Left(prefix & "_" & stamp, 31)
+
+    candidate = baseName
+    If Not SheetExists(wb, candidate) Then
+        CreateUniqueSheetName = candidate
+        Exit Function
+    End If
+
+    For i = 1 To 99
+        candidate = Left(baseName, 31 - (Len(CStr(i)) + 1)) & "_" & CStr(i)
+        If Not SheetExists(wb, candidate) Then
+            CreateUniqueSheetName = candidate
+            Exit Function
+        End If
+    Next i
+
+    CreateUniqueSheetName = Left(baseName, 28) & "_X"
+End Function
+
+Private Function SheetExists(wb As Workbook, sheetName As String) As Boolean
+    Dim ws As Worksheet
+    On Error Resume Next
+    Set ws = wb.Worksheets(sheetName)
+    SheetExists = (Not ws Is Nothing)
+    On Error GoTo 0
+End Function
+
+Private Function SanitizeSheetName(s As String) As String
+    Dim badChars As Variant
+    Dim i As Long
+
+    badChars = Array(":", "\\", "/", "?", "*", "[", "]")
+    For i = LBound(badChars) To UBound(badChars)
+        s = Replace(s, CStr(badChars(i)), "_")
+    Next i
+    s = Replace(s, "'", "_")
+    SanitizeSheetName = s
+End Function

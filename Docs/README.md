@@ -1,7 +1,7 @@
 # Pulsar Documentation Center
 
-**Last Updated**: 2026-03-03  
-**Documentation Version**: v4.1.0  
+**Last Updated**: 2026-03-09  
+**Documentation Version**: v4.2.0  
 **Architecture**: AI-first, task-oriented navigation
 
 ---
@@ -24,6 +24,7 @@
 | **Build or run the application** | [Docs/ops/BUILD_AND_RUN.md](./ops/BUILD_AND_RUN.md) |
 | **Understand the architecture** | [ARCHITECTURE.md](../ARCHITECTURE.md) |
 | **Add or modify a plugin** | [PLUGIN_DEVELOPMENT.md](../PLUGIN_DEVELOPMENT.md), [architecture/PLUGIN_SYSTEM.md](./architecture/PLUGIN_SYSTEM.md) |
+| **Generate VBA scripts (AI)** | [guides/VBARUNNER_AI_SCRIPTING.md](./guides/VBARUNNER_AI_SCRIPTING.md) |
 | **Add a dialog** | [architecture/DIALOG_SYSTEM.md](./architecture/DIALOG_SYSTEM.md) |
 | **Modify UI (XAML)** | [guides/UI_BEST_PRACTICES.md](./guides/UI_BEST_PRACTICES.md) |
 | **Use reusable components** | [guides/COMPONENT_LIBRARY.md](./guides/COMPONENT_LIBRARY.md) |
@@ -54,6 +55,7 @@ Stable conceptual truths about system design:
 How-to playbooks for common tasks:
 - **[UI_BEST_PRACTICES.md](./guides/UI_BEST_PRACTICES.md)** - UI/UX design patterns
 - **[COMPONENT_LIBRARY.md](./guides/COMPONENT_LIBRARY.md)** - Reusable UI components (ExpandableCard, JellyOrb)
+- **[VBARUNNER_AI_SCRIPTING.md](./guides/VBARUNNER_AI_SCRIPTING.md)** - AI guide for generating VBA scripts with Smart Directives
 
 ### Lessons (Docs/lessons/)
 Pain archive - known pitfalls and correct patterns:
@@ -88,6 +90,9 @@ Documentation for built-in plugins:
 - **[PkiPlugin](./Plugins/PkiPlugin.md)** - PKI credentials management (Core plugin)
 - **[BasicCommand](./Plugins/BasicCommand.md)** - Basic command execution
 - **[VbaRunner](./Plugins/VbaRunner.md)** - VBA script runner
+  - **[VbaRunner Directives](./Plugins/VbaRunner_Directives.md)** - Directive reference
+  - **[VbaRunner AI Scripting](./guides/VBARUNNER_AI_SCRIPTING.md)** - AI scripting guide
+  - **[Smart Directives Implementation](./Plugins/VbaRunner_SmartDirectives_Implementation.md)** - Architecture details
 - **[BookmarkletRunner](./Plugins/BookmarkletRunner.md)** - Bookmarklet runner
 - **[SystemCommand](./Plugins/SystemCommand.md)** - System command execution
 
@@ -170,5 +175,6 @@ When creating or updating documentation:
 ---
 
 **Change History**:
+- v4.2.0 (2026-03-09): Added VbaRunner Smart Directive System documentation
 - v4.1.0 (2026-03-03): Refactored for AI-first architecture with task-oriented navigation
 - v4.0.0 (2026-03-01): Initial documentation center
