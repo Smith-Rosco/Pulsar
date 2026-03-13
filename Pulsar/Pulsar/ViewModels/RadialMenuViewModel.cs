@@ -1002,12 +1002,13 @@ namespace Pulsar.ViewModels
             CenterSlot.Type = SlotType.Action; 
             CenterSlot.ActionStrategy = new BackActionStrategy(); // [New] Set Strategy
             
-            // [Fix] Sort by StartTime first for stable muscle memory (Oldest @ 12:00 -> Index 1)
-            var sortedWindows = windows.OrderBy(w => w.StartTime).ToList();
+            // [Refactor] Sort by FirstSeenTime for stable muscle memory (Oldest @ 12:00 -> Index 1)
+            // FirstSeenTime 提供稳定的首次出现顺序，不受窗口激活顺序影响
+            var sortedWindows = windows.OrderBy(w => w.FirstSeenTime).ToList();
             
-            // [New] Capture Center Preview for the most recently active window
-            // Use LastActivationTime to find the most recent window (Z-Order semantic)
-            var mostRecentWin = windows.OrderByDescending(w => w.LastActivationTime).FirstOrDefault();
+            // [Refactor] Capture Center Preview for the most recently active window
+            // Use RealActivationTime to find the most recent window (真实激活时间)
+            var mostRecentWin = windows.OrderByDescending(w => w.RealActivationTime).FirstOrDefault();
             if (mostRecentWin != null)
             {
                 // [Optimization] Check Cache First

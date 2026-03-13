@@ -18,6 +18,44 @@ using Pulsar.Helpers; // [Logging] For LogSampler
 
 namespace Pulsar.Services
 {
+    /// <summary>
+    /// 窗口注册表条目 - 追踪窗口的生命周期和激活历史
+    /// </summary>
+    internal class WindowRegistryEntry
+    {
+        public IntPtr Handle { get; set; }
+        public DateTime FirstSeenTime { get; set; }
+        public DateTime LastActivationTime { get; set; }
+        public string ProcessName { get; set; } = string.Empty;
+    }
+    
+    /// <summary>
+    /// 切换对快照 (不可变) - 用于稳定的双向窗口切换
+    /// 一旦建立，在超时前保持不变，避免状态污染
+    /// </summary>
+    internal class SwitchPairSnapshot
+    {
+        public IntPtr SourceWindow { get; }
+        public IntPtr TargetWindow { get; }
+        public DateTime CreatedAt { get; }
+        
+        public SwitchPairSnapshot(IntPtr source, IntPtr target)
+        {
+            SourceWindow = source;
+            TargetWindow = target;
+            CreatedAt = DateTime.Now;
+        }
+        
+        public bool IsExpired(int timeoutMs) => 
+            (DateTime.Now - CreatedAt).TotalMilliseconds > timeoutMs;
+        
+        public bool IsValid(Func<IntPtr, bool> validator) =>
+            WindowService.NativeMethods.IsWindow(SourceWindow) && 
+            WindowService.NativeMethods.IsWindow(TargetWindow) &&
+            validator(SourceWindow) && 
+            validator(TargetWindow);
+    }
+
     public class WindowService : IWindowService
     {
         private readonly ILogger<WindowService> _logger;
@@ -33,10 +71,9 @@ namespace Pulsar.Services
         private const int MaxHistorySize = 10;
         private readonly object _historyLock = new object();
         
-        // [New] Quick Switch Pair - 用于双向切换的状态记忆
-        private IntPtr _quickSwitchSource = IntPtr.Zero;  // 切换的起点窗口
-        private IntPtr _quickSwitchTarget = IntPtr.Zero;  // 切换的目标窗口
-        private DateTime _lastQuickSwitchTime = DateTime.MinValue;
+        // [Refactor] Switch Pair Management - 使用不可变快照避免状态污染
+        private SwitchPairSnapshot? _activeSwitchPair = null;
+        private readonly object _switchPairLock = new object();
         private const int QuickSwitchTimeoutMs = 5000; // 5秒内的连续切换视为同一对
         
         // [New] Focus Restore State Machine
@@ -52,6 +89,12 @@ namespace Pulsar.Services
         private readonly LogSampler _historyLogSampler = new LogSampler(5);      // Sample 1 in 5 for history recording
         private readonly LogSampler _captureLogSampler = new LogSampler(20);     // Sample 1 in 20 for capture failures
         private readonly LogSampler _switchDebugSampler = new LogSampler(3);     // Sample 1 in 3 for switch debug logs
+        
+        // [Refactor] Global Window Registry - 全局窗口注册表
+        // 追踪窗口的首次出现时间和真实激活时间，提供稳定的排序基准
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<IntPtr, WindowRegistryEntry> _windowRegistry = new();
+        private readonly object _registryLock = new object();
+        private System.Threading.Timer? _cleanupTimer;
 
         public WindowService(ILogger<WindowService> logger, IProcessRegistryService? processRegistryService = null)
         {
@@ -67,6 +110,16 @@ namespace Pulsar.Services
             {
                 _dynamicBlacklist = new HashSet<string>(_systemBlacklist, StringComparer.OrdinalIgnoreCase);
             }
+            
+            // [Refactor] Initialize cleanup timer for window registry
+            _cleanupTimer = new System.Threading.Timer(
+                _ => CleanupWindowRegistry(),
+                null,
+                TimeSpan.FromMinutes(5),  // First cleanup after 5 minutes
+                TimeSpan.FromMinutes(5)   // Periodic cleanup every 5 minutes
+            );
+            
+            _logger.LogInformation("[WindowService] Initialized with registry cleanup timer");
         }
         
         /// <summary>
@@ -396,6 +449,9 @@ namespace Pulsar.Services
                             // We use a synthetic timestamp: Now - (zOrderIndex * 1 second)
                             // This ensures proper sorting while being deterministic
                             DateTime lastActivationTime = DateTime.Now.AddSeconds(-zOrderIndex);
+                            
+                            // [Refactor] Register or update window in global registry
+                            var registryEntry = RegisterOrUpdateWindow(hWnd, proc.ProcessName);
 
                             results.Add(new ProcessWindowInfo
                             {
@@ -405,7 +461,9 @@ namespace Pulsar.Services
                                 Handle = hWnd,
                                 AppIcon = iconSource,
                                 StartTime = startTime,
-                                LastActivationTime = lastActivationTime
+                                LastActivationTime = lastActivationTime, // Z-Order synthetic (legacy)
+                                FirstSeenTime = registryEntry.FirstSeenTime, // [NEW] Stable sort key
+                                RealActivationTime = registryEntry.LastActivationTime // [NEW] Real activation time
                             });
                             
                             zOrderIndex++; // Increment for next window
@@ -484,6 +542,9 @@ namespace Pulsar.Services
 
                             // [New] Calculate LastActivationTime based on Z-Order
                             DateTime lastActivationTime = DateTime.Now.AddSeconds(-zOrderIndex);
+                            
+                            // [Refactor] Register or update window in global registry
+                            var registryEntry = RegisterOrUpdateWindow(hWnd, proc.ProcessName);
 
                             results.Add(new ProcessWindowInfo
                             {
@@ -493,7 +554,9 @@ namespace Pulsar.Services
                                 Handle = hWnd,
                                 AppIcon = iconSource,
                                 StartTime = startTime,
-                                LastActivationTime = lastActivationTime
+                                LastActivationTime = lastActivationTime, // Z-Order synthetic (legacy)
+                                FirstSeenTime = registryEntry.FirstSeenTime, // [NEW] Stable sort key
+                                RealActivationTime = registryEntry.LastActivationTime // [NEW] Real activation time
                             });
                             
                             zOrderIndex++;
@@ -565,164 +628,95 @@ namespace Pulsar.Services
         public void SwitchToPreviousWindow()
         {
             IntPtr current = GetForegroundWindow_Native();
-            string currentTitle = GetWindowTitle(current);
-            
-            // [Fix] 检查当前窗口是否是 Pulsar
             NativeMethods.GetWindowThreadProcessId(current, out uint currentPid);
             bool currentIsPulsar = (currentPid == _currentProcessId);
             
-            lock (_historyLock)
+            // 确定"真实当前窗口" (如果当前是 Pulsar，使用 _previousWindowHandle)
+            IntPtr realCurrentWindow = currentIsPulsar ? _previousWindowHandle : current;
+            
+            lock (_switchPairLock)
             {
-                // [New] 检查是否在 Quick Switch 对的上下文中（5秒内的连续切换）
-                TimeSpan timeSinceLastSwitch = DateTime.Now - _lastQuickSwitchTime;
-                bool isInSwitchPairContext = timeSinceLastSwitch.TotalMilliseconds < QuickSwitchTimeoutMs;
-                
-                if (isInSwitchPairContext)
+                // [Refactor] 1. 检查是否有有效的切换对
+                if (_activeSwitchPair != null && 
+                    !_activeSwitchPair.IsExpired(QuickSwitchTimeoutMs) && 
+                    _activeSwitchPair.IsValid(IsAltTabWindow))
                 {
-                    // 验证切换对是否仍然有效
-                    bool sourceValid = _quickSwitchSource != IntPtr.Zero && 
-                                      NativeMethods.IsWindow(_quickSwitchSource) && 
-                                      IsAltTabWindow(_quickSwitchSource);
-                    bool targetValid = _quickSwitchTarget != IntPtr.Zero && 
-                                      NativeMethods.IsWindow(_quickSwitchTarget) && 
-                                      IsAltTabWindow(_quickSwitchTarget);
+                    // 判断当前在切换对的哪一侧
+                    IntPtr switchTo = IntPtr.Zero;
                     
-                    if (sourceValid && targetValid)
+                    if (realCurrentWindow == _activeSwitchPair.TargetWindow)
                     {
-                        // [Fix] 判断当前在哪个窗口，切换到另一个
-                        IntPtr switchTo = IntPtr.Zero;
+                        switchTo = _activeSwitchPair.SourceWindow;
+                        if (_switchDebugSampler.ShouldLog())
+                        {
+                            _logger.LogDebug("[QuickSwitch] Pair: Target -> Source '{Title}' (sampled 1/{Rate})", 
+                                GetWindowTitle(switchTo), _switchDebugSampler.Rate);
+                        }
+                    }
+                    else if (realCurrentWindow == _activeSwitchPair.SourceWindow)
+                    {
+                        switchTo = _activeSwitchPair.TargetWindow;
+                        if (_switchDebugSampler.ShouldLog())
+                        {
+                            _logger.LogDebug("[QuickSwitch] Pair: Source -> Target '{Title}' (sampled 1/{Rate})", 
+                                GetWindowTitle(switchTo), _switchDebugSampler.Rate);
+                        }
+                    }
+                    else
+                    {
+                        // 当前窗口不在切换对中，说明用户手动切换了其他窗口
+                        _logger.LogDebug("[QuickSwitch] Current window outside pair, resetting");
+                        _activeSwitchPair = null;
+                        goto FALLBACK_TO_HISTORY;
+                    }
+                    
+                    if (switchTo != IntPtr.Zero)
+                    {
+                        ForceForegroundWindow(switchTo);
+                        SetFocusRestoreMode(FocusRestoreMode.NoRestore);
                         
-                        // 如果当前是 Pulsar，使用 _previousWindowHandle 来判断
-                        IntPtr effectiveCurrent = currentIsPulsar ? _previousWindowHandle : current;
+                        // [CRITICAL] 不修改 _previousWindowHandle
+                        // 切换对在超时前保持不变
                         
-                        if (effectiveCurrent == _quickSwitchTarget)
-                        {
-                            // 当前在目标窗口，切换回源窗口
-                            switchTo = _quickSwitchSource;
-                            // [Logging] Sample switch pair debug logs (1 in 3)
-                            if (_switchDebugSampler.ShouldLog())
-                            {
-                                _logger.LogDebug("[SwitchToPreviousWindow] Switch Pair: Returning to Source '{Title}' (sampled 1/{Rate})", 
-                                    GetWindowTitle(switchTo), _switchDebugSampler.Rate);
-                            }
-                        }
-                        else if (effectiveCurrent == _quickSwitchSource)
-                        {
-                            // 当前在源窗口，切换到目标窗口
-                            switchTo = _quickSwitchTarget;
-                            // [Logging] Sample switch pair debug logs (1 in 3)
-                            if (_switchDebugSampler.ShouldLog())
-                            {
-                                _logger.LogDebug("[SwitchToPreviousWindow] Switch Pair: Going to Target '{Title}' (sampled 1/{Rate})", 
-                                    GetWindowTitle(switchTo), _switchDebugSampler.Rate);
-                            }
-                        }
-                        else
-                        {
-                            // 当前窗口不在切换对中，说明用户手动切换了其他窗口，重置切换对
-                            goto FALLBACK_TO_HISTORY;
-                        }
-                        
-                        if (switchTo != IntPtr.Zero)
-                        {
-                            ForceForegroundWindow(switchTo);
-                            SetFocusRestoreMode(FocusRestoreMode.NoRestore);
-                            _lastQuickSwitchTime = DateTime.Now; // 更新切换时间
-                            
-                            // [Critical Fix] 更新 _previousWindowHandle 为切换后的窗口
-                            _previousWindowHandle = switchTo;
-                            
-                            return;
-                        }
+                        return;
                     }
                 }
                 
                 FALLBACK_TO_HISTORY:
                 
-                // [Original] 从历史栈查找窗口
-                // [Critical Fix] 排除"真正的当前窗口"（用户正在使用的窗口）
-                // 如果当前是 Pulsar，真正的当前窗口是 _previousWindowHandle
-                // 如果当前不是 Pulsar，真正的当前窗口是 current
-                IntPtr realCurrentWindow = currentIsPulsar ? _previousWindowHandle : current;
-                
-                if (realCurrentWindow != IntPtr.Zero && 
-                    _windowHistory.Count > 0 && 
-                    _windowHistory.Peek() == realCurrentWindow)
-                {
-                    _windowHistory.Pop();
-                }
-                
-                // 查找第一个有效的历史窗口
-                IntPtr targetWindow = IntPtr.Zero;
-                while (_windowHistory.Count > 0)
-                {
-                    IntPtr prev = _windowHistory.Pop();
-                    
-                    // 验证窗口仍然有效
-                    if (NativeMethods.IsWindow(prev) && IsAltTabWindow(prev))
-                    {
-                        targetWindow = prev;
-                        // [Logging] Keep this Information log - important user action
-                        _logger.LogInformation("[SwitchToPreviousWindow] Found history window: '{Title}'", GetWindowTitle(prev));
-                        break;
-                    }
-                }
+                // [Refactor] 2. 从历史栈查找目标窗口
+                IntPtr targetWindow = FindValidHistoryWindow(realCurrentWindow);
                 
                 if (targetWindow != IntPtr.Zero)
                 {
-                    // [New] 建立新的切换对
-                    // [Fix] 确保 Source 和 Target 不是同一个窗口
-                    IntPtr sourceWindow = currentIsPulsar ? _previousWindowHandle : current;
-                    
-                    // 如果 source 和 target 相同，说明历史栈有问题，不建立切换对
-                    if (sourceWindow != targetWindow && sourceWindow != IntPtr.Zero)
+                    // 建立新的切换对 (使用不可变快照)
+                    if (realCurrentWindow != IntPtr.Zero && realCurrentWindow != targetWindow)
                     {
-                        _quickSwitchSource = sourceWindow;
-                        _quickSwitchTarget = targetWindow;
-                        _lastQuickSwitchTime = DateTime.Now;
-                        
-                        // [Logging] Keep this Information log - important state change
-                        _logger.LogInformation("[SwitchToPreviousWindow] Established Switch Pair: '{Source}' <-> '{Target}'", 
-                            GetWindowTitle(_quickSwitchSource),
-                            GetWindowTitle(_quickSwitchTarget));
-                    }
-                    else
-                    {
-                        // [Logging] Keep this Warning - indicates potential issue
-                        _logger.LogWarning("[SwitchToPreviousWindow] Cannot establish Switch Pair: Source and Target are the same");
+                        _activeSwitchPair = new SwitchPairSnapshot(realCurrentWindow, targetWindow);
+                        _logger.LogInformation("[QuickSwitch] New Pair: '{Source}' <-> '{Target}'", 
+                            GetWindowTitle(realCurrentWindow), GetWindowTitle(targetWindow));
                     }
                     
                     ForceForegroundWindow(targetWindow);
                     SetFocusRestoreMode(FocusRestoreMode.NoRestore);
                     
-                    // [Critical Fix] 更新 _previousWindowHandle 为切换后的窗口
-                    // 这样下次切换时，_previousWindowHandle 才是正确的"当前窗口"
-                    _previousWindowHandle = targetWindow;
+                    // [CRITICAL] 不修改 _previousWindowHandle
+                    // 让 SetPreviousWindow() 在下次 Pulsar 显示时更新
                     
-                    // [Fix] 不再将窗口推回栈，保持栈的不可变性
                     return;
                 }
                 
-                _logger.LogWarning("[SwitchToPreviousWindow] History stack exhausted, falling back");
-            }
-            
-            // Fallback: 如果历史栈为空或所有窗口都无效，使用 _previousWindowHandle
-            if (_previousWindowHandle != IntPtr.Zero && NativeMethods.IsWindow(_previousWindowHandle))
-            {
-                string fallbackTitle = GetWindowTitle(_previousWindowHandle);
-                
-                if (IsAltTabWindow(_previousWindowHandle))
+                // [Refactor] 3. Fallback: 使用 _previousWindowHandle
+                if (_previousWindowHandle != IntPtr.Zero && 
+                    NativeMethods.IsWindow(_previousWindowHandle) && 
+                    IsAltTabWindow(_previousWindowHandle))
                 {
-                    _logger.LogInformation("[SwitchToPreviousWindow] Fallback to previous: '{Title}'", fallbackTitle);
+                    _logger.LogInformation("[QuickSwitch] Fallback to previous window: '{Title}'", 
+                        GetWindowTitle(_previousWindowHandle));
                     
-                    // [New] 建立切换对（使用当前前台窗口作为源）
-                    IntPtr currentForeground = GetForegroundWindow_Native();
-                    NativeMethods.GetWindowThreadProcessId(currentForeground, out uint currentForegroundPid);
-                    if (currentForegroundPid != _currentProcessId)
+                    if (realCurrentWindow != IntPtr.Zero && realCurrentWindow != _previousWindowHandle)
                     {
-                        _quickSwitchSource = currentForeground;
-                        _quickSwitchTarget = _previousWindowHandle;
-                        _lastQuickSwitchTime = DateTime.Now;
+                        _activeSwitchPair = new SwitchPairSnapshot(realCurrentWindow, _previousWindowHandle);
                     }
                     
                     ForceForegroundWindow(_previousWindowHandle);
@@ -730,12 +724,39 @@ namespace Pulsar.Services
                 }
                 else
                 {
-                    _logger.LogWarning("[SwitchToPreviousWindow] Previous window is not valid Alt-Tab window");
+                    _logger.LogWarning("[QuickSwitch] No valid previous window found");
                 }
             }
-            else
+        }
+        
+        /// <summary>
+        /// 从历史栈查找有效窗口 (辅助方法)
+        /// </summary>
+        private IntPtr FindValidHistoryWindow(IntPtr excludeWindow)
+        {
+            lock (_historyLock)
             {
-                _logger.LogWarning("[SwitchToPreviousWindow] No valid previous window found");
+                // 移除栈顶的当前窗口
+                if (_windowHistory.Count > 0 && _windowHistory.Peek() == excludeWindow)
+                {
+                    _windowHistory.Pop();
+                }
+                
+                // 查找第一个有效的历史窗口
+                while (_windowHistory.Count > 0)
+                {
+                    IntPtr candidate = _windowHistory.Pop();
+                    
+                    if (candidate != excludeWindow && 
+                        NativeMethods.IsWindow(candidate) && 
+                        IsAltTabWindow(candidate))
+                    {
+                        _logger.LogInformation("[QuickSwitch] Found history window: '{Title}'", GetWindowTitle(candidate));
+                        return candidate;
+                    }
+                }
+                
+                return IntPtr.Zero;
             }
         }
         
@@ -1071,6 +1092,65 @@ namespace Pulsar.Services
             
             return target;
         }
+        
+        // ==========================================
+        // [Refactor] Window Registry Management
+        // ==========================================
+        
+        /// <summary>
+        /// 注册或更新窗口到全局注册表
+        /// 首次出现时记录 FirstSeenTime，后续更新仅更新 LastActivationTime
+        /// </summary>
+        private WindowRegistryEntry RegisterOrUpdateWindow(IntPtr hwnd, string processName)
+        {
+            return _windowRegistry.AddOrUpdate(
+                hwnd,
+                // 新窗口：记录首次出现时间
+                (h) => new WindowRegistryEntry
+                {
+                    Handle = h,
+                    FirstSeenTime = DateTime.Now,
+                    LastActivationTime = DateTime.Now,
+                    ProcessName = processName
+                },
+                // 已存在窗口：仅更新激活时间
+                (h, existing) =>
+                {
+                    existing.LastActivationTime = DateTime.Now;
+                    return existing;
+                }
+            );
+        }
+        
+        /// <summary>
+        /// 清理已关闭窗口的注册表条目 (定期调用)
+        /// 防止内存泄漏
+        /// </summary>
+        private void CleanupWindowRegistry()
+        {
+            try
+            {
+                var deadHandles = _windowRegistry
+                    .Where(kvp => !NativeMethods.IsWindow(kvp.Key))
+                    .Select(kvp => kvp.Key)
+                    .ToList();
+                
+                foreach (var handle in deadHandles)
+                {
+                    _windowRegistry.TryRemove(handle, out _);
+                }
+                
+                if (deadHandles.Count > 0)
+                {
+                    _logger.LogDebug("[WindowRegistry] Cleaned up {Count} dead window entries", deadHandles.Count);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "[WindowRegistry] Cleanup failed");
+            }
+        }
+        
         private const int GWL_EXSTYLE_CONST = -20;
         private const long WS_EX_TOOLWINDOW_CONST = 0x00000080L;
         private const long WS_EX_APPWINDOW_CONST = 0x00040000L;
