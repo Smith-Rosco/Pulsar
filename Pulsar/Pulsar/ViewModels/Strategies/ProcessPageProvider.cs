@@ -32,9 +32,10 @@ namespace Pulsar.ViewModels.Strategies
         // All slots across all pages (configured positions are fixed, unconfigured fill gaps)
         private List<SlotItem> _allSlots = new();
 
-        public override int TotalPages => (int)Math.Ceiling((double)_allSlots.Count / 8.0);
+        public override int TotalPages => (int)Math.Ceiling((double)_allSlots.Count / (double)ItemsPerPage);
 
         public ProcessPageProvider(IWindowService windowService, ProfilesConfig config, System.IServiceProvider serviceProvider)
+            : base(serviceProvider.GetService(typeof(IConfigService)) as IConfigService)
         {
             _windowService = windowService;
             _config = config;
@@ -178,14 +179,14 @@ namespace Pulsar.ViewModels.Strategies
             centerSlot.LoadIconData(string.Empty);
             centerSlot.ActionStrategy = new NoOpStrategy();
 
-            // Calculate which slots to display on current page
-            int startIndex = _currentPage * 8;
-            int endIndex = Math.Min(startIndex + 8, _allSlots.Count);
+            // Calculate which slots to display on current page (use dynamic ItemsPerPage)
+            int startIndex = _currentPage * ItemsPerPage;
+            int endIndex = Math.Min(startIndex + ItemsPerPage, _allSlots.Count);
 
             for (int i = startIndex; i < endIndex; i++)
             {
                 var slotItem = _allSlots[i];
-                var slotViewModel = slots[i - startIndex]; // Map to visual slot position (0-7)
+                var slotViewModel = slots[i - startIndex]; // Map to visual slot position (0-N)
 
                 // Skip completely empty slots
                 if (!slotItem.IsConfigured && !slotItem.IsRunning)

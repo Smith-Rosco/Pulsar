@@ -17,6 +17,10 @@ namespace Pulsar.Services
     public class ConfigService : IConfigService
     {
         private const string ConfigFileName = "Profiles.json";
+        private const int MIN_SLOTS_PER_PAGE = 4;
+        private const int MAX_SLOTS_PER_PAGE = 12;
+        private const int DEFAULT_SLOTS_PER_PAGE = 8;
+        
         private readonly string _configPath;
         private ProfilesConfig? _cachedConfig;
         private readonly ILogger<ConfigService> _logger;
@@ -333,6 +337,59 @@ namespace Pulsar.Services
             
             // Fall back to double
             return element.GetDouble();
+        }
+        
+        /// <summary>
+        /// 获取经过验证的每页 slot 数量 (4-12)
+        /// </summary>
+        public int GetValidatedSlotsPerPage()
+        {
+            int slots = Current.Settings.SlotsPerPage;
+            
+            // 验证并约束到合理范围
+            if (slots < MIN_SLOTS_PER_PAGE || slots > MAX_SLOTS_PER_PAGE)
+            {
+                _logger.LogWarning(
+                    "[ConfigService] Invalid SlotsPerPage value: {Value}. Clamping to range [{Min}, {Max}]",
+                    slots, MIN_SLOTS_PER_PAGE, MAX_SLOTS_PER_PAGE);
+                
+                slots = Math.Clamp(slots, MIN_SLOTS_PER_PAGE, MAX_SLOTS_PER_PAGE);
+            }
+            
+            return slots;
+        }
+        
+        /// <summary>
+        /// 设置每页 slot 数量并保存配置
+        /// </summary>
+        public void SetSlotsPerPage(int value)
+        {
+            int clampedValue = Math.Clamp(value, MIN_SLOTS_PER_PAGE, MAX_SLOTS_PER_PAGE);
+            
+            if (clampedValue != value)
+            {
+                _logger.LogWarning(
+                    "[ConfigService] SlotsPerPage value {Value} out of range. Clamped to {ClampedValue}",
+                    value, clampedValue);
+            }
+            
+            Current.Settings.SlotsPerPage = clampedValue;
+            
+            // 异步保存，但不等待（避免阻塞 UI）
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await SaveAsync(Current);
+                    _logger.LogInformation(
+                        "[ConfigService] SlotsPerPage updated to {Value}",
+                        clampedValue);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[ConfigService] Failed to save SlotsPerPage configuration");
+                }
+            });
         }
     }
 }

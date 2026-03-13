@@ -20,7 +20,7 @@ namespace Pulsar.ViewModels.Strategies
 
         private readonly IServiceProvider _serviceProvider;
 
-        public override int TotalPages => (int)Math.Ceiling((double)_allSlots.Count / _itemsPerPage);
+        public override int TotalPages => (int)Math.Ceiling((double)_allSlots.Count / (double)ItemsPerPage);
 
         public CommandPageProvider(
             List<PluginSlot> slots, 
@@ -28,6 +28,7 @@ namespace Pulsar.ViewModels.Strategies
             PulsarContext context, 
             ITrayService trayService,
             IServiceProvider serviceProvider)
+            : base(serviceProvider.GetService(typeof(IConfigService)) as IConfigService)
         {
             // [Refactor] 按 Slot 字段排序，确保用户自定义顺序生效
             _allSlots = slots?.OrderBy(s => s.Slot).ToList() ?? new List<PluginSlot>();
@@ -47,8 +48,8 @@ namespace Pulsar.ViewModels.Strategies
         {
             ClearSlots(slots);
             
-            // [Refactor] 按 Slot 排序后分页
-            var pageItems = _allSlots.Skip(_currentPage * _itemsPerPage).Take(_itemsPerPage).ToList();
+            // [Refactor] 按 Slot 排序后分页，使用动态 ItemsPerPage
+            var pageItems = _allSlots.Skip(_currentPage * ItemsPerPage).Take(ItemsPerPage).ToList();
 
             for (int i = 0; i < pageItems.Count; i++)
             {

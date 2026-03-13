@@ -27,9 +27,24 @@ namespace Pulsar.ViewModels.Strategies
     {
         protected int _currentPage = 0;
         protected int _itemsPerPage = 8;
+        protected readonly IConfigService? _configService;
         
         public virtual int TotalPages => 1;
         public int CurrentPage => _currentPage;  // [New] Public accessor
+        
+        /// <summary>
+        /// Gets the dynamic items per page from config, or falls back to default
+        /// </summary>
+        protected int ItemsPerPage => _configService?.GetValidatedSlotsPerPage() ?? _itemsPerPage;
+
+        protected BasePageProvider(IConfigService? configService = null)
+        {
+            _configService = configService;
+            if (_configService != null)
+            {
+                _itemsPerPage = _configService.GetValidatedSlotsPerPage();
+            }
+        }
 
         public abstract Task LoadAsync();
 

@@ -93,6 +93,37 @@
                     </StackPanel>
                 </ui:CardExpander>
 
+                <!-- Radial Menu Layout Section -->
+                <ui:CardExpander Icon="Apps24" Header="Radial Menu Layout" Margin="0,0,0,12" IsExpanded="True">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Slots Per Page" FontWeight="Medium"/>
+                                <TextBlock Text="{Binding DataContext.SlotsPerPagePreview, RelativeSource={RelativeSource AncestorType=Page}}" 
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
+                                           FontSize="12"
+                                           Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <ui:NumberBox Grid.Column="1"
+                                          Value="{Binding SlotsPerPage, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          Minimum="4"
+                                          Maximum="12"
+                                          SpinButtonPlacementMode="Inline"
+                                          Width="120"/>
+                        </Grid>
+                        
+                        <TextBlock Text="Adjust the number of action slots displayed per page. Higher values allow more actions but create smaller trigger regions. Changes take effect after saving." 
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}" 
+                                   FontSize="11"
+                                   Margin="0,0,0,0"/>
+                    </StackPanel>
+                </ui:CardExpander>
+
                 <!-- Hotkeys Section -->
                 <ui:CardExpander Icon="Keyboard24" Header="Global Hotkeys" Margin="0,0,0,12" IsExpanded="True">
                     <StackPanel>

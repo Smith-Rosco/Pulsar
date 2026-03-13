@@ -18,6 +18,16 @@ namespace Pulsar.Services.Interfaces
         
         Task<ProfilesConfig> LoadAsync();
         Task SaveAsync(ProfilesConfig config);
+        
+        /// <summary>
+        /// 获取经过验证的每页 slot 数量 (4-12)
+        /// </summary>
+        int GetValidatedSlotsPerPage();
+        
+        /// <summary>
+        /// 设置每页 slot 数量并保存配置
+        /// </summary>
+        void SetSlotsPerPage(int value);
     }
 }
 
