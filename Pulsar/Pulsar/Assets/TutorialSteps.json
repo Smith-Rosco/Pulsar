@@ -1,49 +1,54 @@
 {
-  "version": "1.0",
+  "version": "1.0.0",
   "steps": [
     {
       "id": "step1_welcome",
-      "title": "欢迎使用 Pulsar",
-      "description": "Pulsar 是一个基于肌肉记忆的快速启动器\n让我们用 30 秒了解核心功能\n\n核心特性：\n• 全局热键触发，无需鼠标\n• 两种模式：切换窗口 & 执行命令\n• 空间定位，盲操作友好",
+      "title": "欢迎使用 Pulsar！",
+      "description": "Pulsar 是一个基于肌肉记忆的快速启动器。让我们用 2 分钟了解核心功能：\n\n• 两种触发模式：\n  - 任务模式 (Ctrl+Q)：快速切换窗口\n  - 动作模式 (Ctrl+Shift+Q)：执行应用专属命令\n\n• 空间定位，盲操作友好",
       "type": "Instruction",
-      "focusMode": "AlwaysFocused",
-      "layout": {
-        "cardPosition": "Center",
-        "cardSizeMode": "Fixed",
-        "fixedCardWidth": 500,
-        "fixedCardHeight": 400
-      },
+      "target": null,
       "completionTrigger": {
-        "type": "ButtonClick"
-      }
+        "type": "ButtonClick",
+        "targetValue": "StartButton"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Fixed",
+        "fixedCardWidth": 450,
+        "fixedCardHeight": 300
+      },
+      "focusMode": "AlwaysObserving"
     },
     {
       "id": "step2_open_settings",
       "title": "打开设置界面",
-      "description": "请左键单击任务栏托盘中的 Pulsar 图标\n（或右键选择\"设置\"）\n\n💡 提示：托盘图标通常在屏幕右下角",
-      "type": "WaitForAction",
-      "focusMode": "AlwaysObserving",
-      "target": {
-        "type": "TrayIcon"
-      },
-      "layout": {
-        "cardPosition": "BottomRight",
-        "cardSizeMode": "Auto"
-      },
+      "description": "点击下方按钮打开设置界面\n\n💡 提示：你也可以通过托盘图标打开设置",
+      "type": "Instruction",
+      "target": null,
       "completionTrigger": {
         "type": "WindowOpened",
         "targetValue": "SettingsWindow"
-      }
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Fixed",
+        "fixedCardWidth": 450,
+        "fixedCardHeight": 300
+      },
+      "focusMode": "AlwaysObserving"
     },
     {
       "id": "step3_settings_overview",
       "title": "设置界面导览",
       "description": "这里可以配置 Pulsar 的所有功能：\n\n• 常规 - 热键、主题、启动项\n• 槽位配置 - 为不同应用配置快捷操作\n• 插件 - 管理功能扩展\n\n每个 Profile 可配置不同的槽位：\n• 通过顶部下拉框切换 Profile\n• 每个 Profile 的槽位独立配置",
       "type": "Instruction",
-      "focusMode": "AlwaysObserving",
       "target": {
         "type": "Window",
         "elementName": "SettingsWindow"
+      },
+      "completionTrigger": {
+        "type": "ButtonClick",
+        "targetValue": "NextButton"
       },
       "layout": {
         "targetWindow": {
@@ -58,108 +63,154 @@
         "fixedCardWidth": 450,
         "fixedCardHeight": 300
       },
-      "completionTrigger": {
-        "type": "ButtonClick"
-      }
+      "focusMode": "AlwaysObserving"
     },
     {
       "id": "step4_navigate_slots",
       "title": "进入槽位配置",
-      "description": "点击左侧导航栏的\"槽位配置\"选项\n\n这里可以为每个 Profile 配置专属的快捷操作",
-      "type": "WaitForAction",
-      "focusMode": "AlwaysObserving",
-      "layout": {
-        "cardPosition": "TopRight",
-        "cardSizeMode": "Fixed",
-        "fixedCardWidth": 450,
-        "fixedCardHeight": 250
+      "description": "请点击左侧导航栏的\"槽位配置\"\n\n槽位配置是 Pulsar 的核心功能：\n• 为不同应用配置专属快捷操作\n• 通过顶部下拉框选择要配置的 Profile\n• Global Profile 的槽位在所有应用中可用",
+      "type": "WaitForNavigation",
+      "target": {
+        "type": "UIElement",
+        "elementName": "SlotsNavigationItem"
       },
       "completionTrigger": {
         "type": "NavigationItemClicked",
         "targetValue": "Slots"
-      }
-    },
-    {
-      "id": "step5_add_slot",
-      "title": "添加第一个槽位",
-      "description": "点击\"添加槽位\"按钮\n\n槽位是 Pulsar 的核心概念：\n• 每个槽位对应一个快捷操作\n• 通过方向键选择槽位\n• 支持窗口切换、命令执行等多种功能",
-      "type": "WaitForAction",
-      "focusMode": "AlwaysObserving",
+      },
       "layout": {
+        "targetWindow": {
+          "left": 0.25,
+          "top": 0.15,
+          "width": 0.5,
+          "height": 0.7,
+          "isRelative": true
+        },
         "cardPosition": "TopRight",
         "cardSizeMode": "Fixed",
         "fixedCardWidth": 450,
         "fixedCardHeight": 300
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step5_add_winswitcher_slot",
+      "title": "配置窗口切换槽位",
+      "description": "让我们添加一个窗口切换槽位\n\n步骤：\n1. 在顶部下拉框中选择 \"Launcher\" Context\n   （这会显示 Global Profile 的 SwitchMode 槽位）\n2. 点击底部的 [Add Slot] 按钮\n3. 在弹出菜单中选择 \"Window Switcher\" 插件\n4. 在 app 参数中输入：notepad\n5. 在 Display Label 中输入：记事本\n6. 点击卡片外部区域收起配置\n\n💡 提示：这个槽位会在任务模式 (Ctrl+Q) 时显示",
+      "type": "WaitForAction",
+      "target": {
+        "type": "UIElement",
+        "elementName": "AddSlotButton"
       },
       "completionTrigger": {
         "type": "SlotAdded",
-        "targetValue": "{\"pluginId\":\"com.pulsar.winswitcher\"}"
-      }
-    },
-    {
-      "id": "step6_test_hotkey",
-      "title": "测试热键",
-      "description": "现在按下 Ctrl+Q 试试！\n\n你应该会看到轮盘菜单出现\n• 使用方向键选择槽位\n• 松开 Ctrl 键执行操作\n\n💡 提示：这是任务模式，用于快速切换窗口",
-      "type": "WaitForAction",
-      "focusMode": "AlwaysObserving",
-      "layout": {
-        "cardPosition": "TopRight",
-        "cardSizeMode": "Fixed",
-        "fixedCardWidth": 450,
-        "fixedCardHeight": 300
+        "targetValue": "{\"PluginId\":\"com.pulsar.winswitcher\",\"Profile\":\"Global\"}"
       },
-      "completionTrigger": {
-        "type": "RadialMenuShown",
-        "targetValue": "Task"
-      }
-    },
-    {
-      "id": "step7_action_mode",
-      "title": "动作模式",
-      "description": "Pulsar 还有第二种模式：动作模式\n\n按下 Ctrl+Shift+Q 可以触发动作模式：\n• 执行应用专属命令\n• 运行 VBA 脚本\n• 触发自定义操作\n\n两种模式配合使用，效率翻倍！",
-      "type": "Instruction",
-      "focusMode": "AlwaysObserving",
       "layout": {
+        "targetWindow": {
+          "left": 0.25,
+          "top": 0.15,
+          "width": 0.5,
+          "height": 0.7,
+          "isRelative": true
+        },
         "cardPosition": "TopRight",
         "cardSizeMode": "Fixed",
         "fixedCardWidth": 450,
         "fixedCardHeight": 350
       },
-      "completionTrigger": {
-        "type": "ButtonClick"
-      }
+      "focusMode": "AlwaysObserving"
     },
     {
-      "id": "step8_profile_system",
-      "title": "Profile 系统",
-      "description": "Pulsar 支持多 Profile 配置：\n\n• Global Profile - 全局可用\n• 应用专属 Profile - 自动切换\n  例如：notepad.exe、chrome.exe\n\n当你切换到不同应用时，Pulsar 会自动加载对应的 Profile 配置\n\n💡 提示：在设置界面顶部可以切换和管理 Profile",
-      "type": "Instruction",
-      "focusMode": "AlwaysObserving",
+      "id": "step6_test_switch_mode",
+      "title": "测试任务模式",
+      "description": "现在让我们测试任务模式的窗口切换功能！\n\n步骤：\n1. 按下 Ctrl+Q 触发任务模式\n2. 移动鼠标到 \"记事本\" 槽位\n3. 释放按键，Pulsar 会打开/切换到记事本\n\n💡 提示：\n• 任务模式 (Ctrl+Q) 用于快速切换窗口\n• 外圈显示静态配置的应用\n• 中心显示最近使用 (MRU) 的窗口",
+      "type": "WaitForAction",
+      "target": null,
+      "completionTrigger": {
+        "type": "RadialMenuShown",
+        "targetValue": "Task"
+      },
       "layout": {
         "cardPosition": "TopRight",
         "cardSizeMode": "Fixed",
         "fixedCardWidth": 450,
-        "fixedCardHeight": 400
+        "fixedCardHeight": 300
       },
-      "completionTrigger": {
-        "type": "ButtonClick"
-      }
+      "focusMode": "AlwaysObserving"
     },
     {
-      "id": "step9_complete",
-      "title": "教程完成！",
-      "description": "恭喜！你已经掌握了 Pulsar 的核心功能\n\n接下来你可以：\n• 为常用应用添加更多槽位\n• 探索插件系统，扩展功能\n• 自定义热键和主题\n\n开始享受高效的工作流程吧！\n\n💡 提示：随时可以在设置中重新查看教程",
-      "type": "Instruction",
-      "focusMode": "AlwaysFocused",
-      "layout": {
-        "cardPosition": "Center",
-        "cardSizeMode": "Fixed",
-        "fixedCardWidth": 500,
-        "fixedCardHeight": 450
+      "id": "step7_add_command_slot",
+      "title": "配置应用专属命令槽位",
+      "description": "现在记事本已经打开，让我们为它配置专属命令槽位\n\n步骤：\n1. 回到设置窗口\n2. 在顶部下拉框中选择 \"Notepad\" Profile\n3. 点击底部的 [Add Slot] 按钮\n4. 选择任意插件并配置参数\n5. 设置 Display Label\n6. 点击卡片外部区域收起配置\n\n💡 提示：这个槽位会在动作模式 (Ctrl+Shift+Q) 激活记事本时显示",
+      "type": "WaitForAction",
+      "target": {
+        "type": "UIElement",
+        "elementName": "NotepadProfile"
       },
       "completionTrigger": {
-        "type": "ButtonClick"
-      }
+        "type": "SlotAdded",
+        "targetValue": "{\"Profile\":\"notepad\"}"
+      },
+      "layout": {
+        "targetWindow": {
+          "left": 0.05,
+          "top": 0.1,
+          "width": 0.5,
+          "height": 0.8,
+          "isRelative": true
+        },
+        "externalWindows": {
+          "notepad": {
+            "left": 0.57,
+            "top": 0.1,
+            "width": 0.38,
+            "height": 0.8,
+            "isRelative": true
+          }
+        },
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Fixed",
+        "fixedCardWidth": 450,
+        "fixedCardHeight": 380
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step8_test_command_mode",
+      "title": "测试动作模式",
+      "description": "最后一步！让我们测试动作模式\n\n步骤：\n1. 确保记事本窗口处于激活状态\n2. 按下 Ctrl+Shift+Q 触发动作模式\n3. 移动鼠标到配置的槽位\n4. 释放按键，执行对应操作\n\n💡 提示：动作模式 (Ctrl+Shift+Q) 会根据当前激活的应用显示专属命令",
+      "type": "WaitForAction",
+      "target": null,
+      "completionTrigger": {
+        "type": "RadialMenuShown",
+        "targetValue": "Action"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Fixed",
+        "fixedCardWidth": 450,
+        "fixedCardHeight": 300
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step9_completion",
+      "title": "恭喜！教程完成",
+      "description": "你已经掌握了 Pulsar 的核心功能：\n\n✅ 任务模式 (Ctrl+Q)\n   快速切换窗口，外圈静态配置 + 中心 MRU\n\n✅ 动作模式 (Ctrl+Shift+Q)\n   执行当前应用的专属命令\n\n✅ Profile 配置\n   每个应用可配置独立的槽位\n   Global Profile 在所有应用中可用\n\n💡 提示：\n• 在设置中可以随时重新查看教程\n• 支持为每个应用配置专属操作\n• 更多插件请访问插件市场",
+      "type": "Instruction",
+      "target": null,
+      "completionTrigger": {
+        "type": "ButtonClick",
+        "targetValue": "CompleteButton"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Fixed",
+        "fixedCardWidth": 450,
+        "fixedCardHeight": 300
+      },
+      "focusMode": "AlwaysObserving"
     }
   ]
 }

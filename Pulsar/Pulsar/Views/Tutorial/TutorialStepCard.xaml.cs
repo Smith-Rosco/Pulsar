@@ -99,7 +99,15 @@ namespace Pulsar.Views.Tutorial
             {
                 NextButton.Visibility = Visibility.Visible;
 
-                NextButton.Content = "下一步";
+                // [Fix] 最后一步显示"完成"而非"下一步"
+                if (step.Id == "step9_completion")
+                {
+                    NextButton.Content = "完成";
+                }
+                else
+                {
+                    NextButton.Content = "下一步";
+                }
             }
             else
             {

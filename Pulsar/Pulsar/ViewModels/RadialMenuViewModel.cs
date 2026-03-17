@@ -43,12 +43,14 @@ namespace Pulsar.ViewModels
 
         private ProfilesConfig? _config;
         private IPageProvider? _pageProvider; // [New] Strategy for paging
-        private RadialMenuMode _currentMode;
         
         /// <summary>
         /// 当前轮盘菜单模式 (Task/Action)
+        /// [Fix] 使用 ObservableProperty 确保 PropertyChanged 事件被触发，
+        /// 以便 Tutorial 系统的 RadialMenuShownTriggerHandler 能正确检测模式变化
         /// </summary>
-        public RadialMenuMode CurrentMode => _currentMode;
+        [ObservableProperty]
+        private RadialMenuMode _currentMode;
         private PulsarContext? _lastContext;
         private MenuState _menuState = MenuState.Root;
         private List<SlotViewModel> _rootSlotBackup = new(); // Backup of root slots for restoration
@@ -459,7 +461,7 @@ namespace Pulsar.ViewModels
 
                 ActionExecuted = false;
                 ResetSelection();
-                _currentMode = mode;
+                CurrentMode = mode; // [Fix] 使用生成的属性而非私有字段，确保触发 PropertyChanged
                 
                 // [UX Enhancement] Reset Layout to Normal with dynamic sizing
                 _currentSlotSize = RadialLayoutHelper.CalculateOptimalSlotSize(_slotsPerPage);
