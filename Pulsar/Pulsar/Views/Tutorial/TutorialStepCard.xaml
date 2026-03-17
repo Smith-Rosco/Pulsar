@@ -1,0 +1,157 @@
+<!-- [Path]: Pulsar/Pulsar/Views/Tutorial/TutorialStepCard.xaml -->
+
+<UserControl x:Class="Pulsar.Views.Tutorial.TutorialStepCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             mc:Ignorable="d"
+             d:DesignHeight="300" d:DesignWidth="400">
+    
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            
+            <!-- Card entrance animation -->
+            <Storyboard x:Key="CardEntranceAnimation">
+                <DoubleAnimation Storyboard.TargetName="CardBorder"
+                               Storyboard.TargetProperty="Opacity"
+                               From="0" To="1"
+                               Duration="0:0:0.3">
+                    <DoubleAnimation.EasingFunction>
+                        <CubicEase EasingMode="EaseOut"/>
+                    </DoubleAnimation.EasingFunction>
+                </DoubleAnimation>
+                <DoubleAnimation Storyboard.TargetName="ScaleTransform"
+                               Storyboard.TargetProperty="ScaleX"
+                               From="0.9" To="1"
+                               Duration="0:0:0.3">
+                    <DoubleAnimation.EasingFunction>
+                        <CubicEase EasingMode="EaseOut"/>
+                    </DoubleAnimation.EasingFunction>
+                </DoubleAnimation>
+                <DoubleAnimation Storyboard.TargetName="ScaleTransform"
+                               Storyboard.TargetProperty="ScaleY"
+                               From="0.9" To="1"
+                               Duration="0:0:0.3">
+                    <DoubleAnimation.EasingFunction>
+                        <CubicEase EasingMode="EaseOut"/>
+                    </DoubleAnimation.EasingFunction>
+                </DoubleAnimation>
+            </Storyboard>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    
+    <Grid>
+        <Border x:Name="CardBorder"
+                Background="White"
+                BorderBrush="#E0E0E0"
+                BorderThickness="1"
+                CornerRadius="12"
+                MaxWidth="420"
+                Padding="24"
+                RenderTransformOrigin="0.5,0.5">
+            
+            <Border.Effect>
+                <DropShadowEffect Color="Black" 
+                                Opacity="0.3" 
+                                BlurRadius="32" 
+                                ShadowDepth="8"
+                                Direction="270"/>
+            </Border.Effect>
+            
+            <Border.RenderTransform>
+                <ScaleTransform x:Name="ScaleTransform" ScaleX="1" ScaleY="1"/>
+            </Border.RenderTransform>
+            
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                
+                <!-- Step counter -->
+                <TextBlock x:Name="StepCounter"
+                          Grid.Row="0"
+                          Text="步骤 1/9"
+                          FontSize="12"
+                          FontWeight="Medium"
+                          Foreground="#666666"
+                          Margin="0,0,0,8"/>
+                
+                <!-- Title -->
+                <TextBlock x:Name="TitleText"
+                          Grid.Row="1"
+                          Text="欢迎使用 Pulsar"
+                          FontSize="18"
+                          FontWeight="SemiBold"
+                          Foreground="#1A1A1A"
+                          TextWrapping="Wrap"
+                          Margin="0,0,0,12"/>
+                
+                <!-- Description with ScrollViewer -->
+                <ScrollViewer Grid.Row="2"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              Margin="0,0,0,20">
+                    <TextBlock x:Name="DescriptionText"
+                              Text="这是教程描述文本"
+                              FontSize="14"
+                              Foreground="#4A4A4A"
+                              TextWrapping="Wrap"
+                              LineHeight="20"/>
+                </ScrollViewer>
+
+                <!-- Wait-for-action helper text -->
+                <TextBlock x:Name="WaitHintText"
+                           Grid.Row="3"
+                           Text="完成操作后会自动继续；如未自动继续，可点击“继续”。"
+                           FontSize="12"
+                           Foreground="#6A6A6A"
+                           TextWrapping="Wrap"
+                           Visibility="Collapsed"
+                           Margin="0,0,0,16"/>
+                 
+                <!-- Action buttons -->
+                <Grid Grid.Row="4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <ui:Button x:Name="RetryButton"
+                               Grid.Column="0"
+                               Content="重新定位"
+                               Style="{StaticResource PulsarSecondaryButtonStyle}"
+                               Click="OnRetryButtonClick"
+                               Visibility="Collapsed"
+                               Margin="0,0,12,0"/>
+
+                    <StackPanel x:Name="ButtonPanel"
+                               Grid.Column="2"
+                               Orientation="Horizontal"
+                               HorizontalAlignment="Right">
+                    
+                    <ui:Button x:Name="SkipButton"
+                              Content="跳过教程"
+                              Style="{StaticResource PulsarSecondaryButtonStyle}"
+                              Click="OnSkipButtonClick"
+                              Margin="0,0,12,0"/>
+                    
+                     <ui:Button x:Name="NextButton"
+                               Content="下一步"
+                               Style="{StaticResource PulsarPrimaryButtonStyle}"
+                               Click="OnNextButtonClick"/>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

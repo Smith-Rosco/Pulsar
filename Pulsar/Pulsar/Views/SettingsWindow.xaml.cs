@@ -34,6 +34,9 @@ namespace Pulsar.Views
         // [Phase 3] Flag to prevent re-entry during programmatic close
         private bool _isClosingProgrammatically = false;
 
+        // [Tutorial] Expose NavigationView for tutorial system
+        public NavigationView GetNavigationView() => RootNavigation;
+
         public SettingsWindow(
             SettingsViewModel viewModel,
             PluginManagerViewModel pluginManager,

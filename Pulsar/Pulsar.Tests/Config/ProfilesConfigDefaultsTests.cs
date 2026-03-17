@@ -61,14 +61,15 @@ namespace Pulsar.Tests.Config
         }
 
         [Fact]
-        public void ProfileSettings_ShouldHaveRemoteDesktopSettings()
+        public void ProfileSettings_ShouldHaveInputSettings()
         {
             // Act
             var settings = new ProfileSettings();
 
             // Assert
-            settings.RemoteDesktop.Should().NotBeNull();
-            settings.RemoteDesktop.EnableFakeFullscreen.Should().BeFalse("should be disabled by default");
+            settings.Input.Should().NotBeNull();
+            settings.Input.ModifierStateMode.Should().Be("Hybrid");
+            settings.Input.EnableModifierStateLogging.Should().BeFalse();
         }
 
         [Fact]

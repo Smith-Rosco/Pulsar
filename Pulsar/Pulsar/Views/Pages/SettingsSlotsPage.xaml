@@ -9,6 +9,7 @@
       xmlns:selectors="clr-namespace:Pulsar.Views.Selectors"
       xmlns:converters="clr-namespace:Pulsar.Core.Converters"
       xmlns:controls="clr-namespace:Pulsar.Views.Controls"
+      xmlns:tutorial="clr-namespace:Pulsar.Helpers.Tutorial"
       xmlns:sys="clr-namespace:System;assembly=mscorlib"
       mc:Ignorable="d" 
       d:DesignHeight="800" d:DesignWidth="800"
@@ -548,13 +549,15 @@
 
             <!-- Footer: Add Slot Button -->
             <Grid Grid.Row="1" Margin="0,16,0,0">
-            <ui:Button Content="Add Slot" 
+            <ui:Button x:Name="AddSlotButton"
+                       Content="Add Slot" 
                        Style="{StaticResource PulsarSecondaryButtonStyle}"
                        Icon="{ui:SymbolIcon Add24}"
                        HorizontalAlignment="Stretch"
                        Height="40"
                        Click="AddSlotButton_Click"
-                       ContextMenu="{StaticResource AddSlotContextMenu}"/>
+                       ContextMenu="{StaticResource AddSlotContextMenu}"
+                       tutorial:TutorialMarker.Id="AddSlotButton"/>
             </Grid>
         </Grid>
     </Grid>

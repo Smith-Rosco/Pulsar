@@ -6,11 +6,13 @@
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:vm="clr-namespace:Pulsar.ViewModels"
         xmlns:converters="clr-namespace:Pulsar.Core.Converters"
+        xmlns:tutorial="clr-namespace:Pulsar.Helpers.Tutorial"
         mc:Ignorable="d"
         Title="Pulsar Configuration" Height="700" Width="1000"
         WindowStartupLocation="CenterScreen"
         ExtendsContentIntoTitleBar="True"
-        WindowBackdropType="Mica">
+        WindowBackdropType="Mica"
+        tutorial:TutorialMarker.Id="SettingsWindow">
 
     <Window.Resources>
         <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVis"/>
@@ -48,10 +50,12 @@
                                            TargetPageType="{x:Type TypeName=Page}" 
                                            Tag="General"/>
                     
-                    <ui:NavigationViewItem Content="Slots" 
+                    <ui:NavigationViewItem x:Name="SlotsNavigationItem"
+                                           Content="Slots" 
                                            Icon="{ui:SymbolIcon DialPad24}" 
                                            TargetPageType="{x:Type TypeName=Page}" 
-                                           Tag="Slots"/>
+                                           Tag="Slots"
+                                           tutorial:TutorialMarker.Id="SlotsNavigationItem"/>
 
                     <ui:NavigationViewItem Content="Plugins" 
                                            Icon="{ui:SymbolIcon PuzzlePiece24}" 

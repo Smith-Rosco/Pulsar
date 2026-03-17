@@ -1,0 +1,29 @@
+<!-- [Path]: Pulsar/Pulsar/Views/Tutorial/TutorialOverlayWindow.xaml -->
+
+<Window x:Class="Pulsar.Views.Tutorial.TutorialOverlayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Tutorial Overlay"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        WindowState="Maximized"
+        ResizeMode="NoResize">
+    
+    <Grid x:Name="RootGrid">
+        <!-- Semi-transparent overlay background -->
+        <Rectangle x:Name="OverlayBackground" 
+                   Fill="#B4000000"
+                   IsHitTestVisible="False"/>
+        
+        <!-- Content container for tutorial card (centered) -->
+        <ContentPresenter x:Name="CardPresenter"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center"/>
+    </Grid>
+</Window>

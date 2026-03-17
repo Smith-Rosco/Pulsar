@@ -44,6 +44,11 @@ namespace Pulsar.ViewModels
         private ProfilesConfig? _config;
         private IPageProvider? _pageProvider; // [New] Strategy for paging
         private RadialMenuMode _currentMode;
+        
+        /// <summary>
+        /// 当前轮盘菜单模式 (Task/Action)
+        /// </summary>
+        public RadialMenuMode CurrentMode => _currentMode;
         private PulsarContext? _lastContext;
         private MenuState _menuState = MenuState.Root;
         private List<SlotViewModel> _rootSlotBackup = new(); // Backup of root slots for restoration

@@ -103,6 +103,16 @@ namespace Pulsar
             serviceCollection.AddSingleton<IHotkeyService, HotkeyService>();
             serviceCollection.AddSingleton<IDialogService, DialogService>();
             
+            // Tutorial Service
+            serviceCollection.AddSingleton<Pulsar.Services.Tutorial.TutorialStepLoader>();
+            serviceCollection.AddSingleton<Pulsar.Services.Tutorial.TriggerHandlers.ITriggerHandlerFactory, Pulsar.Services.Tutorial.TriggerHandlers.TriggerHandlerFactory>();
+            serviceCollection.AddSingleton<ITargetLocator, Pulsar.Services.Tutorial.TargetLocator>();
+            serviceCollection.AddSingleton<IOverlayManager, Pulsar.Services.Tutorial.OverlayManager>();
+            serviceCollection.AddSingleton<ITutorialService, TutorialService>();
+            serviceCollection.AddSingleton<IWindowLayoutManager, WindowLayoutManager>();
+            serviceCollection.AddSingleton<ILogger<Pulsar.Services.Tutorial.TutorialOrchestrator>>(sp =>
+                sp.GetRequiredService<ILoggerFactory>().CreateLogger<Pulsar.Services.Tutorial.TutorialOrchestrator>());
+            
             // [New] Fuzzy Search Service (for IconPicker and future use)
             serviceCollection.AddSingleton(typeof(Pulsar.Services.Interfaces.IFuzzySearchService<>), typeof(Pulsar.Services.FuzzySearch.FuzzySearchService<>));
             serviceCollection.AddSingleton<Pulsar.Services.Interfaces.IFuzzySearchService<Pulsar.Helpers.IconItem>>(sp =>
@@ -250,6 +260,35 @@ namespace Pulsar
                     Log.Information("[App] GlobalKeyboardHook using default Hybrid mode");
                 }
             }).GetAwaiter().GetResult();
+
+            // 9. Check for first launch and start tutorial (must run on UI thread)
+            Dispatcher.InvokeAsync(async () =>
+            {
+                try
+                {
+                    var config = await configService.LoadAsync();
+                    if (!config.Settings.HasCompletedTutorial)
+                    {
+                        Log.Information("[App] First launch detected, starting tutorial");
+                        
+                        // Wait for UI to initialize
+                        await Task.Delay(1500);
+                        
+                         var tutorialService = Services.GetRequiredService<ITutorialService>();
+                         // Prefer resuming an incomplete tutorial when possible.
+                         await tutorialService.CheckResumeAsync();
+
+                         if (!tutorialService.IsTutorialActive)
+                         {
+                             await tutorialService.StartTutorialAsync();
+                         }
+                     }
+                 }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "[App] Failed to start tutorial");
+                }
+            });
 
         }
 

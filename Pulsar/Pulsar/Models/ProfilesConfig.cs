@@ -72,6 +72,17 @@ namespace Pulsar.Models
         // [RDP Fix] Input System Configuration
         public InputSettings Input { get; set; } = new();
 
+        // [Tutorial] Tutorial System Configuration
+        /// <summary>
+        /// 是否已完成教程
+        /// </summary>
+        public bool HasCompletedTutorial { get; set; } = false;
+
+        /// <summary>
+        /// 最后完成的教程步骤 ID（用于断点续传）
+        /// </summary>
+        public string? LastTutorialStep { get; set; } = null;
+
         // [Helper] 将字符串转换为 AppTheme 枚举
         [JsonIgnore]
         public AppTheme LauncherThemeEnum => 

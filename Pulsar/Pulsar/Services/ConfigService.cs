@@ -1,6 +1,7 @@
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 using Pulsar.Services.Validation;
+using Pulsar.Helpers;
 using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
@@ -204,18 +205,107 @@ namespace Pulsar.Services
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             };
 
-            using var stream = File.Create(_configPath);
-            await JsonSerializer.SerializeAsync(stream, config, options);
+            // [Fix] 使用重试逻辑处理文件访问冲突
+            // 教程系统可能会快速连续保存配置，需要重试机制
+            const int maxRetries = 3;
+            const int delayMs = 100;
+            
+            for (int attempt = 0; attempt < maxRetries; attempt++)
+            {
+                try
+                {
+                    // 先写入临时文件，然后原子性替换
+                    var tempPath = _configPath + ".tmp";
+                    
+                    using (var stream = new FileStream(
+                        tempPath, 
+                        FileMode.Create, 
+                        FileAccess.Write, 
+                        FileShare.None,
+                        bufferSize: 4096,
+                        useAsync: true))
+                    {
+                        await JsonSerializer.SerializeAsync(stream, config, options);
+                        await stream.FlushAsync();
+                    }
+                    
+                    // 原子性替换文件
+                    File.Move(tempPath, _configPath, overwrite: true);
+                    
+                    _logger.LogDebug("[ConfigService] Configuration saved successfully");
+                    break; // 成功，退出重试循环
+                }
+                catch (IOException ex) when (attempt < maxRetries - 1)
+                {
+                    _logger.LogWarning(
+                        "[ConfigService] File access conflict on attempt {Attempt}/{MaxRetries}, retrying in {Delay}ms. Error: {Error}",
+                        attempt + 1,
+                        maxRetries,
+                        delayMs,
+                        ex.Message);
+                    
+                    await Task.Delay(delayMs);
+                }
+                catch (IOException ex) when (attempt == maxRetries - 1)
+                {
+                    _logger.LogError(ex, "[ConfigService] Failed to save configuration after {MaxRetries} attempts", maxRetries);
+                    throw;
+                }
+            }
 
             ConfigUpdated?.Invoke();
         }
 
         /// <summary>
-        /// 创建默认配置
+        /// 创建默认配置 - 使用 Fallback 配置并启动后台检测
         /// </summary>
         private ProfilesConfig CreateDefaultConfig()
         {
-            var config = new ProfilesConfig
+            _logger.LogInformation("[ConfigService] Creating default configuration with Fallback apps");
+            
+            // 1. 生成 Fallback 配置 (Windows 内置应用)
+            var config = CreateFallbackConfig();
+            
+            // 2. 启动后台检测任务 (异步,不阻塞启动)
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    // 等待 1 秒,确保 UI 已初始化
+                    await Task.Delay(1000);
+                    
+                    _logger.LogInformation("[ConfigService] Starting background application detection...");
+                    
+                    var detector = new ApplicationDetector(_logger);
+                    var installedApps = await detector.DetectInstalledApplicationsAsync();
+                    
+                    // 3. 生成智能配置
+                    var smartConfig = CreateSmartConfig(installedApps);
+                    
+                    // 4. 更新配置
+                    await SaveAsync(smartConfig);
+                    
+                    _logger.LogInformation(
+                        "[ConfigService] Smart configuration loaded with {SwitchCount} Switch Mode apps and {CommandCount} Command Mode slots",
+                        smartConfig.Profiles["Global"].SwitchMode.Count,
+                        smartConfig.Profiles["Global"].CommandMode.Count);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[ConfigService] Failed to generate smart configuration, keeping Fallback config");
+                }
+            });
+            
+            return config;
+        }
+
+        /// <summary>
+        /// 创建 Fallback 配置 (Windows 内置应用)
+        /// 用于首次启动时立即可用,后台检测完成后会被智能配置替换
+        /// </summary>
+        private ProfilesConfig CreateFallbackConfig()
+        {
+            return new ProfilesConfig
             {
                 Settings = new ProfileSettings
                 {
@@ -228,7 +318,6 @@ namespace Pulsar.Services
                 },
                 Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
                 {
-                    // Global 配置 - 窗口切换模式
                     ["Global"] = new ProcessProfile
                     {
                         SwitchMode = new List<PluginSlot>
@@ -238,50 +327,169 @@ namespace Pulsar.Services
                                 Slot = 1,
                                 PluginId = "com.pulsar.winswitcher",
                                 Action = "activate",
-                                Args = new Dictionary<string, string>
-                                {
-                                    ["app"] = "chrome",
-                                }
+                                Args = new Dictionary<string, string> { ["app"] = "notepad" },
+                                Label = "Notepad",
+                                IconKey = "\uE70F"
                             },
                             new PluginSlot
                             {
                                 Slot = 2,
                                 PluginId = "com.pulsar.winswitcher",
                                 Action = "activate",
-                                Args = new Dictionary<string, string>
-                                {
-                                    ["app"] = "code",
-                                }
+                                Args = new Dictionary<string, string> { ["app"] = "explorer" },
+                                Label = "File Explorer",
+                                IconKey = "\uE8B7"
                             },
                             new PluginSlot
                             {
                                 Slot = 3,
                                 PluginId = "com.pulsar.winswitcher",
                                 Action = "activate",
-                                Args = new Dictionary<string, string>
-                                {
-                                    ["app"] = "WindowsTerminal",
-                                }
+                                Args = new Dictionary<string, string> { ["app"] = "calc" },
+                                Label = "Calculator",
+                                IconKey = "\uE8EF"
                             }
+                            // Slot 4-8 预留给异步检测和教程
                         },
-                         CommandMode = new List<PluginSlot>
+                        CommandMode = new List<PluginSlot>
                         {
                             new PluginSlot
                             {
                                 Slot = 1,
                                 PluginId = "com.pulsar.command",
                                 Action = "run",
-                                Args = new Dictionary<string, string>
-                                {
-                                    ["path"] = "cmd.exe",
-                                }
+                                Args = new Dictionary<string, string> { ["path"] = "cmd.exe" },
+                                Label = "Command Prompt",
+                                IconKey = "\uE756"
                             }
                         }
                     }
                 }
             };
+        }
 
-            return config;
+        /// <summary>
+        /// 创建智能配置 (基于检测到的应用)
+        /// </summary>
+        private ProfilesConfig CreateSmartConfig(List<AppDefinition> installedApps)
+        {
+            _logger.LogInformation("[ConfigService] Creating smart configuration from {Count} detected apps", installedApps.Count);
+            
+            // 1. 按优先级排序,取前 6 个 (预留 Slot 7-8 给教程)
+            var topApps = CommonApplicationDatabase.GetTopApplications(installedApps, maxCount: 6);
+            
+            // 2. 生成 Switch Mode 槽位
+            var switchModeSlots = new List<PluginSlot>();
+            int slotIndex = 1;
+            
+            foreach (var app in topApps)
+            {
+                switchModeSlots.Add(new PluginSlot
+                {
+                    Slot = slotIndex++,
+                    PluginId = "com.pulsar.winswitcher",
+                    Action = "activate",
+                    Args = new Dictionary<string, string> { ["app"] = app.ProcessName },
+                    Label = app.DisplayName,
+                    IconKey = app.IconKey
+                });
+                
+                _logger.LogDebug("[ConfigService] Added {AppName} to Slot {Slot}", app.DisplayName, slotIndex - 1);
+            }
+            
+            // 3. 确保至少有 Notepad (Fallback) - 用于教程演示
+            if (!topApps.Any(a => a.ProcessName.Equals("notepad", StringComparison.OrdinalIgnoreCase)) && slotIndex <= 6)
+            {
+                var notepadApp = CommonApplicationDatabase.GetAllApplications()
+                    .FirstOrDefault(a => a.ProcessName == "notepad");
+                    
+                if (notepadApp != null)
+                {
+                    switchModeSlots.Add(new PluginSlot
+                    {
+                        Slot = slotIndex++,
+                        PluginId = "com.pulsar.winswitcher",
+                        Action = "activate",
+                        Args = new Dictionary<string, string> { ["app"] = notepadApp.ProcessName },
+                        Label = notepadApp.DisplayName,
+                        IconKey = notepadApp.IconKey
+                    });
+                    
+                    _logger.LogDebug("[ConfigService] Added Notepad as Fallback to Slot {Slot}", slotIndex - 1);
+                }
+            }
+            
+            // 4. Slot 7-8 预留给教程 (不填充)
+            _logger.LogInformation("[ConfigService] Slots 7-8 reserved for tutorial");
+            
+            // 5. 生成 Command Mode 槽位
+            var commandModeSlots = CreateCommandModeSlots(installedApps);
+            
+            // 6. 构建配置
+            return new ProfilesConfig
+            {
+                Settings = new ProfileSettings
+                {
+                    CenterSlotBehavior = "MRU_Window",
+                    TriggerDistance = 100.0,
+                    LauncherTheme = "Light",
+                    HoverScale = 1.2,
+                    Springiness = 6.0,
+                    MaxDisplacement = 20.0
+                },
+                Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["Global"] = new ProcessProfile
+                    {
+                        SwitchMode = switchModeSlots,
+                        CommandMode = commandModeSlots
+                    }
+                }
+            };
+        }
+
+        /// <summary>
+        /// 创建 Command Mode 示例槽位
+        /// </summary>
+        private List<PluginSlot> CreateCommandModeSlots(List<AppDefinition> installedApps)
+        {
+            var slots = new List<PluginSlot>();
+            
+            // Slot 1: 基础命令 (CMD)
+            slots.Add(new PluginSlot
+            {
+                Slot = 1,
+                PluginId = "com.pulsar.command",
+                Action = "run",
+                Args = new Dictionary<string, string> { ["path"] = "cmd.exe" },
+                Label = "Command Prompt",
+                IconKey = "\uE756"
+            });
+            
+            _logger.LogDebug("[ConfigService] Added Command Prompt to Command Mode Slot 1");
+            
+            // Slot 2: VBA 示例 (如果检测到 Excel)
+            var hasExcel = installedApps.Any(a => a.ProcessName.Equals("EXCEL", StringComparison.OrdinalIgnoreCase));
+            if (hasExcel)
+            {
+                slots.Add(new PluginSlot
+                {
+                    Slot = 2,
+                    PluginId = "com.pulsar.vbarunner",
+                    Action = "run",
+                    Args = new Dictionary<string, string>
+                    {
+                        ["target"] = "excel",
+                        ["script"] = "MsgBox \"Hello from Pulsar VBA!\", vbInformation, \"Pulsar Demo\""
+                    },
+                    Label = "Excel VBA Demo",
+                    IconKey = "\uE8A5"
+                });
+                
+                _logger.LogDebug("[ConfigService] Added Excel VBA Demo to Command Mode Slot 2");
+            }
+            
+            return slots;
         }
 
         /// <summary>
