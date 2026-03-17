@@ -108,8 +108,12 @@ namespace Pulsar
             serviceCollection.AddSingleton<Pulsar.Services.Tutorial.TriggerHandlers.ITriggerHandlerFactory, Pulsar.Services.Tutorial.TriggerHandlers.TriggerHandlerFactory>();
             serviceCollection.AddSingleton<ITargetLocator, Pulsar.Services.Tutorial.TargetLocator>();
             serviceCollection.AddSingleton<IOverlayManager, Pulsar.Services.Tutorial.OverlayManager>();
-            serviceCollection.AddSingleton<ITutorialService, TutorialService>();
             serviceCollection.AddSingleton<IWindowLayoutManager, WindowLayoutManager>();
+            serviceCollection.AddSingleton<Pulsar.Services.Tutorial.ISettingsWindowAccessor, Pulsar.Services.Tutorial.SettingsWindowAccessor>();
+            serviceCollection.AddSingleton<Pulsar.Services.Tutorial.ITutorialTriggerEngine, Pulsar.Services.Tutorial.TutorialTriggerEngine>();
+            serviceCollection.AddSingleton<Pulsar.Services.Tutorial.ITutorialSpotlightController, Pulsar.Services.Tutorial.TutorialSpotlightController>();
+            serviceCollection.AddSingleton<Pulsar.Services.Tutorial.IWaitStepHintTimeout, Pulsar.Services.Tutorial.WaitStepHintTimeout>();
+            serviceCollection.AddSingleton<ITutorialService, TutorialService>();
             serviceCollection.AddSingleton<ILogger<Pulsar.Services.Tutorial.TutorialOrchestrator>>(sp =>
                 sp.GetRequiredService<ILoggerFactory>().CreateLogger<Pulsar.Services.Tutorial.TutorialOrchestrator>());
             

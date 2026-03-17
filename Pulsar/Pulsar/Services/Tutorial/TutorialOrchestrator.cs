@@ -127,7 +127,7 @@ namespace Pulsar.Services.Tutorial
             {
                 _isTransitioning = true;
 
-                CancelWaitStepTimeout();
+                _waitStepHintTimeout.Cancel();
                 
                 if (_currentStepIndex < _steps.Count - 1)
                 {
@@ -312,7 +312,7 @@ namespace Pulsar.Services.Tutorial
             {
                 _logger.LogInformation("[TutorialOrchestrator] Tutorial completed");
 
-                CancelWaitStepTimeout();
+                _waitStepHintTimeout.Cancel();
 
                 await UpdateConfigAsync(s =>
                 {
@@ -320,7 +320,7 @@ namespace Pulsar.Services.Tutorial
                     s.LastTutorialStep = null;
                 });
 
-                CleanupCurrentTrigger();
+                _triggerEngine.Cleanup();
                 CleanupStepCard();
                 
                 _overlayManager.Close();
@@ -369,90 +369,13 @@ namespace Pulsar.Services.Tutorial
             }
         }
 
-        /// <summary>
-        /// 设置当前步骤的触发器
-        /// </summary>
-        private void SetupTrigger(TutorialStep step)
-        {
-            try
-            {
-                if (step.CompletionTrigger == null)
-                {
-                    return;
-                }
-
-                var trigger = step.CompletionTrigger;
-
-                // 特殊处理：NavigationItemClicked 需要运行时的 NavigationView
-                if (trigger.Type == TutorialTriggerType.NavigationItemClicked)
-                {
-                    var settingsWindow = GetSettingsWindow();
-                    if (settingsWindow != null)
-                    {
-                        var navigationView = settingsWindow.GetNavigationView();
-                        _currentTriggerHandler = new NavigationItemClickedTriggerHandler(navigationView);
-                        _currentTriggerHandler.Setup(trigger, OnTriggerFired);
-                    }
-                    else
-                    {
-                        _logger.LogWarning("[TutorialOrchestrator] SettingsWindow not found for NavigationItemClicked trigger");
-                    }
-                    return;
-                }
-
-                // 使用工厂创建触发器处理器
-                _currentTriggerHandler = _triggerHandlerFactory.CreateHandler(trigger.Type);
-
-                if (_currentTriggerHandler != null)
-                {
-                    _currentTriggerHandler.Setup(trigger, OnTriggerFired);
-                    _logger.LogDebug("[TutorialOrchestrator] Setup trigger handler for type: {Type}", trigger.Type);
-                }
-                else
-                {
-                    // ButtonClick is handled directly by TutorialStepCard; no external handler is expected.
-                    if (trigger.Type != TutorialTriggerType.ButtonClick)
-                    {
-                        _logger.LogWarning("[TutorialOrchestrator] No handler available for trigger type: {Type}", trigger.Type);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "[TutorialOrchestrator] Error setting up trigger for step: {StepId}", step.Id);
-                // 不抛出异常，允许教程继续（用户可以手动点击 Next）
-            }
-        }
-
-        /// <summary>
-        /// 清理当前触发器
-        /// </summary>
-        private void CleanupCurrentTrigger()
-        {
-            try
-            {
-                if (_currentTriggerHandler != null)
-                {
-                    _currentTriggerHandler.Cleanup();
-                    _currentTriggerHandler = null;
-                    _logger.LogDebug("[TutorialOrchestrator] Trigger handler cleaned up");
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "[TutorialOrchestrator] Error cleaning up trigger handler");
-                // 确保引用被清除，即使 Cleanup 失败
-                _currentTriggerHandler = null;
-            }
-        }
-
         public async Task SkipAsync()
         {
             try
             {
                 _logger.LogInformation("[TutorialOrchestrator] Skip requested");
 
-                CancelWaitStepTimeout();
+                _waitStepHintTimeout.Cancel();
 
                 await UpdateConfigAsync(s =>
                 {
@@ -460,7 +383,7 @@ namespace Pulsar.Services.Tutorial
                     s.LastTutorialStep = null;
                 });
 
-                CleanupCurrentTrigger();
+                _triggerEngine.Cleanup();
                 CleanupStepCard();
 
                 _overlayManager.Close();
@@ -527,62 +450,6 @@ namespace Pulsar.Services.Tutorial
                 default:
                     return Views.Tutorial.OverlayState.Focused;
             }
-        }
-
-        private void StartWaitStepTimeout(TutorialStep step)
-        {
-            if (step.Type != TutorialStepType.WaitForAction && step.Type != TutorialStepType.WaitForNavigation)
-            {
-                return;
-            }
-
-            CancelWaitStepTimeout();
-
-            var stepId = step.Id;
-            _waitStepTimeoutCts = new CancellationTokenSource();
-            var token = _waitStepTimeoutCts.Token;
-
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(30), token);
-                }
-                catch (TaskCanceledException)
-                {
-                    return;
-                }
-
-                if (token.IsCancellationRequested)
-                {
-                    return;
-                }
-
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
-                {
-                    if (CurrentStep?.Id != stepId)
-                    {
-                        return;
-                    }
-
-                    _stepCard?.SetWaitHintText(
-                        "未检测到操作也没关系：你可以点击“继续”跳过，或点“重新定位”再试一次。"
-                    );
-                });
-            });
-        }
-
-        private void CancelWaitStepTimeout()
-        {
-            try
-            {
-                _waitStepTimeoutCts?.Cancel();
-            }
-            catch
-            {
-            }
-
-            _waitStepTimeoutCts = null;
         }
 
         /// <summary>

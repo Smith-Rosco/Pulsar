@@ -32,14 +32,11 @@ namespace Pulsar.Services
             IConfigService configService,
             ILogger<TutorialService> logger,
             ILogger<TutorialOrchestrator> orchestratorLogger,
-            SettingsViewModel settingsViewModel,
-            RadialMenuViewModel radialMenuViewModel,
-            IWindowLayoutManager layoutManager,
-            IWindowService windowService,
             TutorialStepLoader stepLoader,
-            Tutorial.TriggerHandlers.ITriggerHandlerFactory triggerHandlerFactory,
-            ITargetLocator targetLocator,
-            IOverlayManager overlayManager)
+            IOverlayManager overlayManager,
+            ITutorialTriggerEngine triggerEngine,
+            ITutorialSpotlightController spotlightController,
+            IWaitStepHintTimeout waitStepHintTimeout)
         {
             _configService = configService;
             _logger = logger;
@@ -47,14 +44,11 @@ namespace Pulsar.Services
             _orchestrator = new TutorialOrchestrator(
                 configService,
                 orchestratorLogger,
-                settingsViewModel,
-                radialMenuViewModel,
-                layoutManager,
-                windowService,
                 stepLoader,
-                triggerHandlerFactory,
-                targetLocator,
-                overlayManager);
+                overlayManager,
+                triggerEngine,
+                spotlightController,
+                waitStepHintTimeout);
 
             // Connect orchestrator events to service events
             _orchestrator.StepChanged += OnOrchestratorStepChanged;
