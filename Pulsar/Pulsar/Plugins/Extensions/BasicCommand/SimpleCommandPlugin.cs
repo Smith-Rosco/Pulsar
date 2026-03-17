@@ -1,10 +1,10 @@
 // [Path]: Pulsar/Pulsar/Plugins/Extensions/BasicCommand/SimpleCommandPlugin.cs
+// [Refactored]: 2026-03-17 - Migrated to PluginBase + Constructor Injection
 
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
@@ -14,31 +14,43 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
 {
     /// <summary>
     /// 简单命令插件 - 处理简单的进程启动和 SendKeys 命令
+    /// 
+    /// [重构说明]
+    /// - 继承 PluginBase<T> 消除样板代码
+    /// - 使用构造函数注入替代 Service Locator
+    /// - 使用基类辅助方法简化参数验证
     /// </summary>
-    public class SimpleCommandPlugin : IPulsarPlugin, IPluginTiered
+    public class SimpleCommandPlugin : PluginBase<SimpleCommandPlugin>
     {
-        private ILogger<SimpleCommandPlugin>? _logger;
-        
-        public string Id => "com.pulsar.command";
-        public string DisplayName => "Simple Command";
-        public string Version => "1.0.0";
-        public string Author => "Pulsar Team";
-        public string Description => "Execute shell commands or simulate keystrokes.";
-        public string Icon => "\uE756"; // Command Prompt (TVMonitor or similar)
-        public bool CanDisable => true;
-        public PluginTier Tier => PluginTier.Extension;
-        
-        // 新增元数据属性
-        public IEnumerable<string> Tags => new[] { "Command", "Utility", "General" };
-        public string? DocumentationUrl => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Docs", "Plugins", "BasicCommand.md");
-
-        public void Initialize(IServiceProvider services)
+        // 构造函数注入 - 编译时依赖检查
+        public SimpleCommandPlugin(ILogger<SimpleCommandPlugin> logger) 
+            : base(logger)
         {
-            _logger = services.GetService(typeof(ILogger<SimpleCommandPlugin>)) as ILogger<SimpleCommandPlugin>;
-            _logger?.LogInformation("[SimpleCommandPlugin] Initialized successfully");
+            // Logger 已由基类自动注入
         }
 
-        public async Task<PluginResult> ExecuteAsync(
+        #region 插件元数据
+
+        public override string Id => "com.pulsar.command";
+        public override string DisplayName => "Simple Command";
+        public override string Version => "1.0.0";
+        public override string Author => "Pulsar Team";
+        public override string Description => "Execute shell commands or simulate keystrokes.";
+        public override string Icon => "\uE756"; // Command Prompt Icon
+        public override bool CanDisable => true;
+        public override PluginTier Tier => PluginTier.Extension;
+        
+        public override IEnumerable<string> Tags => new[] { "Command", "Utility", "General" };
+        public override string? DocumentationUrl => Path.Combine(
+            AppDomain.CurrentDomain.BaseDirectory, 
+            "Docs", "Plugins", "BasicCommand.md"
+        );
+
+        #endregion
+
+        #region 插件执行逻辑
+
+        public override async Task<PluginResult> ExecuteAsync(
             string action,
             IReadOnlyDictionary<string, string> args,
             PulsarContext context)
@@ -47,7 +59,7 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
             {
                 "run" => await RunCommandAsync(args, context),
                 "sendkeys" => await SendKeysAsync(args, context),
-                _ => PluginResult.Error($"Unknown action: {action}")
+                _ => UnknownActionError(action, "run", "sendkeys")
             };
         }
 
@@ -58,15 +70,14 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
             IReadOnlyDictionary<string, string> args,
             PulsarContext context)
         {
-            if (!args.TryGetValue("path", out var path) || string.IsNullOrEmpty(path))
-            {
-                return PluginResult.Error("Missing required parameter: path");
-            }
+            // 使用基类辅助方法验证参数
+            if (!TryGetRequiredArg(args, "path", out var path))
+                return MissingParameterError("path");
 
             args.TryGetValue("arguments", out var arguments);
             args.TryGetValue("workingDir", out var workingDir);
 
-            _logger?.LogInformation("[SimpleCommandPlugin] Running: {Path}", path);
+            Logger.LogInformation("Running command: {Path}", path);
 
             try
             {
@@ -83,12 +94,12 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
                 }
 
                 Process.Start(startInfo);
-                _logger?.LogInformation("[SimpleCommandPlugin] Successfully executed: {Path}", path);
+                Logger.LogInformation("Command executed successfully: {Path}", path);
                 return PluginResult.Ok($"Executed {path}");
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "[SimpleCommandPlugin] Execution failed: {Path}", path);
+                Logger.LogError(ex, "Command execution failed: {Path}", path);
                 return PluginResult.Error($"Execution failed: {ex.Message}");
             }
         }
@@ -100,10 +111,9 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
             IReadOnlyDictionary<string, string> args,
             PulsarContext context)
         {
-            if (!args.TryGetValue("keys", out var keys) || string.IsNullOrEmpty(keys))
-            {
-                return PluginResult.Error("Missing required parameter: keys");
-            }
+            // 使用基类辅助方法验证参数
+            if (!TryGetRequiredArg(args, "keys", out var keys))
+                return MissingParameterError("keys");
 
             // 获取延迟参数（默认 50ms）
             int delay = 50;
@@ -112,7 +122,7 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
                 int.TryParse(delayStr, out delay);
             }
 
-            _logger?.LogInformation("[SimpleCommandPlugin] Sending keys: {Keys}", keys);
+            Logger.LogInformation("Sending keys: {Keys}", keys);
 
             try
             {
@@ -121,14 +131,16 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
                 
                 SendKeys.SendWait(keys);
                 
-                _logger?.LogInformation("[SimpleCommandPlugin] Keys sent successfully");
+                Logger.LogInformation("Keys sent successfully");
                 return PluginResult.Ok("Keys sent");
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "[SimpleCommandPlugin] SendKeys failed");
+                Logger.LogError(ex, "SendKeys failed");
                 return PluginResult.Error($"SendKeys failed: {ex.Message}");
             }
         }
+
+        #endregion
     }
 }

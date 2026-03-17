@@ -95,13 +95,27 @@ namespace Pulsar.Services
                                 var validationResult = configurable.ValidateSettings(profile.Config);
                                 if (!validationResult.IsValid)
                                 {
-                                    _logger.LogWarning("[PluginRegistry] Invalid settings for {PluginId}: {Errors}", 
+                                    _logger.LogError("[PluginRegistry] Invalid settings for {PluginId}: {Errors}", 
                                         plugin.Id, string.Join(", ", validationResult.Errors));
+                                    
+                                    // [CRITICAL FIX] Do NOT apply invalid settings
+                                    // Instead, get and apply default settings
+                                    var defaultSettings = GetDefaultSettings(configurable);
+                                    configurable.UpdateSettings(defaultSettings);
+                                    
+                                    // Update profile with default settings for next startup
+                                    profile.Config = defaultSettings;
+                                    
+                                    _logger.LogWarning("[PluginRegistry] Applied default settings for {PluginId} due to validation failure", plugin.Id);
+                                    loadSuccess = false;
                                 }
-                                
-                                configurable.UpdateSettings(profile.Config);
-                                // [Logging] Downgraded to Debug - happens for every plugin
-                                _logger.LogDebug("[PluginRegistry] Applied settings for {PluginId}", plugin.Id);
+                                else
+                                {
+                                    // Validation passed - apply settings
+                                    configurable.UpdateSettings(profile.Config);
+                                    // [Logging] Downgraded to Debug - happens for every plugin
+                                    _logger.LogDebug("[PluginRegistry] Applied settings for {PluginId}", plugin.Id);
+                                }
                             }
                             catch (Exception ex)
                             {
@@ -427,6 +441,32 @@ namespace Pulsar.Services
         /// 获取插件数量
         /// </summary>
         public int Count => _plugins.Count;
+
+        /// <summary>
+        /// Get default settings for a configurable plugin
+        /// </summary>
+        private Dictionary<string, object> GetDefaultSettings(IPluginConfigurable configurable)
+        {
+            var defaultSettings = new Dictionary<string, object>();
+            
+            try
+            {
+                var definitions = configurable.GetSettingsDefinition();
+                foreach (var def in definitions)
+                {
+                    if (def.DefaultValue != null)
+                    {
+                        defaultSettings[def.Key] = def.DefaultValue;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[PluginRegistry] Failed to get default settings");
+            }
+            
+            return defaultSettings;
+        }
 
         /// <summary>
         /// Unload all plugins (called on application exit)

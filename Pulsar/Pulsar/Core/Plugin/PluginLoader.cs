@@ -23,6 +23,7 @@ namespace Pulsar.Core.Plugin
         private readonly ILogger<PluginLoader>? _logger;
         private readonly IPluginMetadataRegistry? _metadataRegistry;
         private readonly DependencyIsolationManager? _dependencyManager;
+        private readonly PluginFactory _pluginFactory;
         private DependencyIsolationResult? _dependencyAnalysisResult;
 
         public PluginLoader(IServiceProvider services, string pluginDir)
@@ -31,6 +32,7 @@ namespace Pulsar.Core.Plugin
             _pluginDirectory = pluginDir;
             _logger = services.GetService(typeof(ILogger<PluginLoader>)) as ILogger<PluginLoader>;
             _metadataRegistry = services.GetService(typeof(IPluginMetadataRegistry)) as IPluginMetadataRegistry;
+            _pluginFactory = new PluginFactory(services);
             
             // 初始化依赖隔离管理器
             if (Directory.Exists(pluginDir))
@@ -78,17 +80,29 @@ namespace Pulsar.Core.Plugin
                 }
             }
 
-            // 1. 加载内置插件 (当前程序集)
+            // 1. 加载内置插件 (当前程序集) - 使用 PluginFactory 支持构造函数注入
             try
             {
-                var builtinPlugins = Assembly.GetExecutingAssembly()
+                var pluginTypes = Assembly.GetExecutingAssembly()
                     .GetTypes()
                     .Where(t => typeof(IPulsarPlugin).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)
-                    .Select(t => (IPulsarPlugin)Activator.CreateInstance(t)!)
                     .ToList();
                 
-                plugins.AddRange(builtinPlugins);
-                _logger?.LogInformation("[PluginLoader] Loaded {Count} builtin plugins", builtinPlugins.Count);
+                foreach (var pluginType in pluginTypes)
+                {
+                    try
+                    {
+                        var plugin = _pluginFactory.CreatePlugin(pluginType);
+                        plugins.Add(plugin);
+                        _logger?.LogDebug("[PluginLoader] Created builtin plugin: {PluginType}", pluginType.Name);
+                    }
+                    catch (PluginInstantiationException ex)
+                    {
+                        _logger?.LogError(ex, "[PluginLoader] Failed to instantiate builtin plugin: {PluginType}", pluginType.Name);
+                    }
+                }
+                
+                _logger?.LogInformation("[PluginLoader] Loaded {Count} builtin plugins", plugins.Count);
             }
             catch (Exception ex)
             {
@@ -148,18 +162,32 @@ namespace Pulsar.Core.Plugin
                                     // 通过上下文加载程序集
                                     var assembly = context.LoadFromAssemblyPath(dllPath);
 
-                                    // 扫描实现了 IPulsarPlugin 的类型
-                                    var foundPlugins = assembly.GetTypes()
+                                    // 扫描实现了 IPulsarPlugin 的类型 - 使用 PluginFactory
+                                    var pluginTypes = assembly.GetTypes()
                                         .Where(t => typeof(IPulsarPlugin).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)
-                                        .Select(t => (IPulsarPlugin)Activator.CreateInstance(t)!)
                                         .ToList();
 
-                                    if (foundPlugins.Any())
+                                    var loadedCount = 0;
+                                    foreach (var pluginType in pluginTypes)
                                     {
-                                        plugins.AddRange(foundPlugins);
+                                        try
+                                        {
+                                            var plugin = _pluginFactory.CreatePlugin(pluginType);
+                                            plugins.Add(plugin);
+                                            loadedCount++;
+                                            _logger?.LogDebug("[PluginLoader] Created external plugin: {PluginType}", pluginType.Name);
+                                        }
+                                        catch (PluginInstantiationException ex)
+                                        {
+                                            _logger?.LogError(ex, "[PluginLoader] Failed to instantiate external plugin: {PluginType}", pluginType.Name);
+                                        }
+                                    }
+
+                                    if (loadedCount > 0)
+                                    {
                                         _logger?.LogInformation(
                                             "[PluginLoader] Loaded {Count} plugins from {Assembly} (Context: {Folder})",
-                                            foundPlugins.Count,
+                                            loadedCount,
                                             Path.GetFileName(dllPath),
                                             folder);
                                     }
