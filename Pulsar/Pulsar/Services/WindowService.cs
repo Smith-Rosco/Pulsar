@@ -60,6 +60,7 @@ namespace Pulsar.Services
     {
         private readonly ILogger<WindowService> _logger;
         private readonly IProcessRegistryService? _processRegistryService;
+        private readonly ILoggerFactory? _loggerFactory;
 
         // [New] 状态管理字段
         private IntPtr _previousWindowHandle = IntPtr.Zero;
@@ -95,11 +96,16 @@ namespace Pulsar.Services
         private readonly System.Collections.Concurrent.ConcurrentDictionary<IntPtr, WindowRegistryEntry> _windowRegistry = new();
         private readonly object _registryLock = new object();
         private System.Threading.Timer? _cleanupTimer;
+        
+        // [Fix] Global Window Activation Monitor - 全局窗口激活监听器
+        // 实时追踪所有窗口激活事件，解决手动切换窗口后 Quick Switch 失效的问题
+        private WindowActivationMonitor? _activationMonitor;
 
-        public WindowService(ILogger<WindowService> logger, IProcessRegistryService? processRegistryService = null)
+        public WindowService(ILogger<WindowService> logger, IProcessRegistryService? processRegistryService = null, ILoggerFactory? loggerFactory = null)
         {
             _logger = logger;
             _processRegistryService = processRegistryService;
+            _loggerFactory = loggerFactory;
             using (var currentProcess = Process.GetCurrentProcess())
             {
                 _currentProcessId = currentProcess.Id;
@@ -119,7 +125,36 @@ namespace Pulsar.Services
                 TimeSpan.FromMinutes(5)   // Periodic cleanup every 5 minutes
             );
             
-            _logger.LogInformation("[WindowService] Initialized with registry cleanup timer");
+            // [Architecture] Always enable global window tracking for Quick Switch functionality
+            // This is a lightweight Windows Hook with minimal resource consumption
+            ILogger<WindowActivationMonitor>? monitorLogger = null;
+            if (_loggerFactory != null)
+            {
+                monitorLogger = _loggerFactory.CreateLogger<WindowActivationMonitor>();
+                _logger.LogInformation("[WindowService] Created logger for WindowActivationMonitor");
+            }
+            else
+            {
+                _logger.LogWarning("[WindowService] LoggerFactory is null, WindowActivationMonitor will not have logging");
+            }
+            
+            _activationMonitor = new WindowActivationMonitor(monitorLogger);
+            _activationMonitor.WindowActivated += OnGlobalWindowActivated;
+            _activationMonitor.Start();
+            
+            _logger.LogInformation("[WindowService] Initialized with registry cleanup timer and global window tracking");
+        }
+        
+        /// <summary>
+        /// [Fix] 全局窗口激活事件处理器
+        /// </summary>
+        private void OnGlobalWindowActivated(IntPtr hwnd)
+        {
+            _logger.LogDebug("[WindowService] 📥 OnGlobalWindowActivated called. HWND: {Hwnd}, Title: '{Title}'", 
+                hwnd, GetWindowTitle(hwnd));
+            
+            // 实时记录窗口激活到历史栈
+            RecordWindowActivation(hwnd);
         }
         
         /// <summary>
@@ -189,38 +224,40 @@ namespace Pulsar.Services
         /// </summary>
         public void RecordWindowActivation(IntPtr hwnd)
         {
-            if (hwnd == IntPtr.Zero) return;
+            if (hwnd == IntPtr.Zero)
+            {
+                _logger.LogDebug("[WindowHistory] ❌ Skipped: HWND is Zero");
+                return;
+            }
             
             // 排除 Pulsar 自身
             NativeMethods.GetWindowThreadProcessId(hwnd, out uint processId);
             if (processId == _currentProcessId)
             {
-                return; // [Logging] Removed debug log - too frequent and low value
+                _logger.LogDebug("[WindowHistory] ❌ Skipped: Pulsar itself (PID: {Pid})", processId);
+                return;
             }
+            
+            string title = GetWindowTitle(hwnd);
             
             lock (_historyLock)
             {
                 // 去重：如果栈顶已经是这个窗口，不重复记录
                 if (_windowHistory.Count > 0 && _windowHistory.Peek() == hwnd)
                 {
-                    return; // [Logging] Removed debug log - too frequent
+                    _logger.LogDebug("[WindowHistory] ❌ Skipped: Already at top of stack. Title: '{Title}'", title);
+                    return;
                 }
                 
                 _windowHistory.Push(hwnd);
-                
-                // [Logging] Sample history recording logs (1 in 5)
-                if (_historyLogSampler.ShouldLog())
-                {
-                    _logger.LogDebug("[WindowHistory] Recorded window: '{Title}' (sampled 1/{Rate})", 
-                        GetWindowTitle(hwnd), _historyLogSampler.Rate);
-                }
+                _logger.LogInformation("[WindowHistory] ✅ Recorded window: '{Title}' (Stack size: {Size}/{Max})", 
+                    title, _windowHistory.Count, MaxHistorySize);
                 
                 // 限制栈大小
                 if (_windowHistory.Count > MaxHistorySize)
                 {
                     var temp = _windowHistory.ToArray();
                     _windowHistory = new Stack<IntPtr>(temp.Take(MaxHistorySize).Reverse());
-                    // [Logging] Keep this debug log - happens rarely (only when stack exceeds limit)
                     _logger.LogDebug("[WindowHistory] Trimmed stack to {MaxSize} entries", MaxHistorySize);
                 }
             }
@@ -627,12 +664,39 @@ namespace Pulsar.Services
 
         public void SwitchToPreviousWindow()
         {
+            _logger.LogInformation("[QuickSwitch] ========== SwitchToPreviousWindow START ==========");
+            
             IntPtr current = GetForegroundWindow_Native();
             NativeMethods.GetWindowThreadProcessId(current, out uint currentPid);
             bool currentIsPulsar = (currentPid == _currentProcessId);
             
+            _logger.LogInformation("[QuickSwitch] Current foreground: '{Title}' (HWND: {Hwnd}, PID: {Pid}, IsPulsar: {IsPulsar})", 
+                GetWindowTitle(current), current, currentPid, currentIsPulsar);
+            
             // 确定"真实当前窗口" (如果当前是 Pulsar，使用 _previousWindowHandle)
             IntPtr realCurrentWindow = currentIsPulsar ? _previousWindowHandle : current;
+            
+            _logger.LogInformation("[QuickSwitch] Real current window: '{Title}' (HWND: {Hwnd})", 
+                GetWindowTitle(realCurrentWindow), realCurrentWindow);
+            
+            // 记录历史栈状态
+            lock (_historyLock)
+            {
+                _logger.LogInformation("[QuickSwitch] History stack size: {Size}", _windowHistory.Count);
+                if (_windowHistory.Count > 0)
+                {
+                    var historyArray = _windowHistory.ToArray();
+                    for (int i = 0; i < Math.Min(5, historyArray.Length); i++)
+                    {
+                        _logger.LogInformation("[QuickSwitch]   [{Index}] '{Title}' (HWND: {Hwnd})", 
+                            i, GetWindowTitle(historyArray[i]), historyArray[i]);
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("[QuickSwitch] ⚠️ History stack is EMPTY!");
+                }
+            }
             
             lock (_switchPairLock)
             {
@@ -684,8 +748,13 @@ namespace Pulsar.Services
                 
                 FALLBACK_TO_HISTORY:
                 
+                _logger.LogInformation("[QuickSwitch] Entering FALLBACK_TO_HISTORY mode");
+                
                 // [Refactor] 2. 从历史栈查找目标窗口
                 IntPtr targetWindow = FindValidHistoryWindow(realCurrentWindow);
+                
+                _logger.LogInformation("[QuickSwitch] FindValidHistoryWindow returned: '{Title}' (HWND: {Hwnd})", 
+                    GetWindowTitle(targetWindow), targetWindow);
                 
                 if (targetWindow != IntPtr.Zero)
                 {
@@ -724,36 +793,59 @@ namespace Pulsar.Services
                 }
                 else
                 {
-                    _logger.LogWarning("[QuickSwitch] No valid previous window found");
+                    _logger.LogWarning("[QuickSwitch] ❌ No valid previous window found");
                 }
             }
+            
+            _logger.LogInformation("[QuickSwitch] ========== SwitchToPreviousWindow END ==========");
         }
         
         /// <summary>
         /// 从历史栈查找有效窗口 (辅助方法)
+        /// [Fix] 使用非破坏性查找，保留历史栈完整性
         /// </summary>
         private IntPtr FindValidHistoryWindow(IntPtr excludeWindow)
         {
             lock (_historyLock)
             {
-                // 移除栈顶的当前窗口
-                if (_windowHistory.Count > 0 && _windowHistory.Peek() == excludeWindow)
-                {
-                    _windowHistory.Pop();
-                }
+                _logger.LogDebug("[QuickSwitch] FindValidHistoryWindow: Searching for valid window (exclude: '{Title}')", 
+                    GetWindowTitle(excludeWindow));
                 
-                // 查找第一个有效的历史窗口
-                while (_windowHistory.Count > 0)
+                // [Fix] 非破坏性查找：转换为数组进行遍历
+                var historyArray = _windowHistory.ToArray();
+                
+                _logger.LogDebug("[QuickSwitch] FindValidHistoryWindow: Checking {Count} candidates", historyArray.Length);
+                
+                // 查找第一个有效的历史窗口（跳过当前窗口）
+                int index = 0;
+                foreach (var candidate in historyArray)
                 {
-                    IntPtr candidate = _windowHistory.Pop();
+                    bool isExcluded = (candidate == excludeWindow);
+                    bool isValidWindow = NativeMethods.IsWindow(candidate);
+                    bool isAltTab = isValidWindow && IsAltTabWindow(candidate);
                     
-                    if (candidate != excludeWindow && 
-                        NativeMethods.IsWindow(candidate) && 
-                        IsAltTabWindow(candidate))
+                    _logger.LogDebug("[QuickSwitch]   [{Index}] '{Title}' - Excluded: {Excluded}, Valid: {Valid}, AltTab: {AltTab}", 
+                        index++, GetWindowTitle(candidate), isExcluded, isValidWindow, isAltTab);
+                    
+                    if (!isExcluded && isValidWindow && isAltTab)
                     {
-                        _logger.LogInformation("[QuickSwitch] Found history window: '{Title}'", GetWindowTitle(candidate));
+                        _logger.LogInformation("[QuickSwitch] ✅ Found valid history window: '{Title}'", GetWindowTitle(candidate));
                         return candidate;
                     }
+                }
+                
+                _logger.LogWarning("[QuickSwitch] ❌ No valid history window found");
+                
+                // [Optimization] 清理无效窗口（已关闭的窗口）
+                var validWindows = historyArray
+                    .Where(h => NativeMethods.IsWindow(h))
+                    .ToArray();
+                
+                if (validWindows.Length < historyArray.Length)
+                {
+                    _windowHistory = new Stack<IntPtr>(validWindows.Reverse());
+                    _logger.LogDebug("[QuickSwitch] Cleaned up history: {Removed} invalid windows removed", 
+                        historyArray.Length - validWindows.Length);
                 }
                 
                 return IntPtr.Zero;
