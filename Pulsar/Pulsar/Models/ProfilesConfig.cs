@@ -83,6 +83,12 @@ namespace Pulsar.Models
         /// </summary>
         public string? LastTutorialStep { get; set; } = null;
 
+        // [Logging] Logging System Configuration
+        /// <summary>
+        /// 日志系统配置
+        /// </summary>
+        public LoggingSettings Logging { get; set; } = new();
+
         // [Helper] 将字符串转换为 AppTheme 枚举
         [JsonIgnore]
         public AppTheme LauncherThemeEnum => 
@@ -132,6 +138,42 @@ namespace Pulsar.Models
         /// </summary>
         [JsonIgnore]
         public bool IsHybridMode => ModifierStateMode.Equals("Hybrid", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Logging system configuration
+    /// </summary>
+    public class LoggingSettings
+    {
+        /// <summary>
+        /// Minimum log level (Verbose, Debug, Information, Warning, Error, Fatal)
+        /// </summary>
+        public string MinimumLevel { get; set; } = "Information";
+
+        /// <summary>
+        /// Number of days to retain main application logs
+        /// </summary>
+        public int MainLogRetentionDays { get; set; } = 7;
+
+        /// <summary>
+        /// Number of days to retain plugin logs
+        /// </summary>
+        public int PluginLogRetentionDays { get; set; } = 30;
+
+        /// <summary>
+        /// Maximum size per plugin log file in bytes (default: 100MB)
+        /// </summary>
+        public long PluginLogMaxSizeBytes { get; set; } = 100_000_000;
+
+        /// <summary>
+        /// Enable debug output to Visual Studio Output window
+        /// </summary>
+        public bool EnableDebugOutput { get; set; } = true;
+
+        /// <summary>
+        /// Custom log directory path (optional, defaults to %AppData%/Pulsar/Logs)
+        /// </summary>
+        public string? CustomLogDirectory { get; set; } = null;
     }
 
     /// <summary>

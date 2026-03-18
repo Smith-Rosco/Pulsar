@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.System.Com;
@@ -10,9 +11,21 @@ using Windows.Win32.UI.Accessibility;
 
 namespace Pulsar.Native
 {
+    /// <summary>
+    /// UI Automation helper for interacting with focused UI elements
+    /// </summary>
     public static class UiaHelper
     {
-        public static ILogger? Logger { get; set; }
+        private static ILogger _logger = NullLogger.Instance;
+        
+        /// <summary>
+        /// Initialize the logger for UiaHelper. Should be called once during application startup.
+        /// </summary>
+        /// <param name="loggerFactory">Logger factory from DI container</param>
+        public static void Initialize(ILoggerFactory loggerFactory)
+        {
+            _logger = loggerFactory?.CreateLogger("UiaHelper") ?? NullLogger.Instance;
+        }
 
         /// <summary>
         /// Attempts to set the text of the currently focused UI element using UI Automation.
@@ -40,7 +53,7 @@ namespace Pulsar.Native
 
                 if (hr != 0 || automation == null)
                 {
-                    Logger?.LogDebug("[UiaHelper] Failed to create IUIAutomation: {HResult}", hr);
+                    _logger.LogDebug("Failed to create IUIAutomation: {HResult}", hr);
                     return false;
                 }
 
@@ -52,13 +65,13 @@ namespace Pulsar.Native
                 }
                 catch (COMException ex)
                 {
-                    Logger?.LogDebug(ex, "[UiaHelper] Failed to get focused element");
+                    _logger.LogDebug(ex, "Failed to get focused element");
                     return false;
                 }
 
                 if (focusedElement == null)
                 {
-                    Logger?.LogDebug("[UiaHelper] No focused element found.");
+                    _logger.LogDebug("No focused element found");
                     return false;
                 }
 
@@ -93,22 +106,22 @@ namespace Pulsar.Native
                             }
                         }
                         
-                        Logger?.LogDebug("[UiaHelper] Successfully set text via ValuePattern.");
+                        _logger.LogDebug("Successfully set text via ValuePattern");
                         return true;
                     }
                     catch (Exception ex)
                     {
-                        Logger?.LogDebug(ex, "[UiaHelper] Failed to set value");
+                        _logger.LogDebug(ex, "Failed to set value via ValuePattern");
                         return false;
                     }
                 }
                 
-                Logger?.LogDebug("[UiaHelper] Focused element does not support ValuePattern.");
+                _logger.LogDebug("Focused element does not support ValuePattern");
                 return false;
             }
             catch (Exception ex)
             {
-                Logger?.LogDebug(ex, "[UiaHelper] Unexpected error");
+                _logger.LogDebug(ex, "Unexpected error in UIA text injection");
                 return false;
             }
         }

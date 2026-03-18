@@ -2,12 +2,26 @@ using System;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Pulsar.Plugins.Extensions.VbaRunner
 {
+    /// <summary>
+    /// COM retry helper for handling transient COM errors
+    /// </summary>
     public static class ComRetryHelper
     {
-        public static ILogger? Logger { get; set; }
+        private static ILogger _logger = NullLogger.Instance;
+        
+        /// <summary>
+        /// Initialize the logger for ComRetryHelper. Should be called once during application startup.
+        /// </summary>
+        /// <param name="loggerFactory">Logger factory from DI container</param>
+        public static void Initialize(ILoggerFactory loggerFactory)
+        {
+            _logger = loggerFactory?.CreateLogger("VbaRunner.ComRetryHelper") ?? NullLogger.Instance;
+        }
+        
         private const int RPC_E_CALL_REJECTED = unchecked((int)0x80010001);
         private const int MK_E_UNAVAILABLE = unchecked((int)0x800401E3);
 
@@ -23,7 +37,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
                 catch (COMException ex) when (ex.ErrorCode == RPC_E_CALL_REJECTED || ex.ErrorCode == MK_E_UNAVAILABLE)
                 {
                     if (i == maxRetries - 1) throw;
-                    Logger?.LogDebug("[ComRetry] {Operation} rejected (Busy/Unavailable). Retrying {Attempt}/{MaxRetries}...", operationName, i + 1, maxRetries);
+                    _logger.LogDebug("{Operation} rejected (Busy/Unavailable). Retrying {Attempt}/{MaxRetries}", operationName, i + 1, maxRetries);
                     Thread.Sleep(delayMs);
                 }
             }
@@ -40,7 +54,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
                 catch (COMException ex) when (ex.ErrorCode == RPC_E_CALL_REJECTED || ex.ErrorCode == MK_E_UNAVAILABLE)
                 {
                     if (i == maxRetries - 1) throw;
-                    Logger?.LogDebug("[ComRetry] {Operation} rejected (Busy/Unavailable). Retrying {Attempt}/{MaxRetries}...", operationName, i + 1, maxRetries);
+                    _logger.LogDebug("{Operation} rejected (Busy/Unavailable). Retrying {Attempt}/{MaxRetries}", operationName, i + 1, maxRetries);
                     Thread.Sleep(delayMs);
                 }
             }

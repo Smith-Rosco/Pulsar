@@ -4,15 +4,26 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Pulsar.Plugins.Extensions.BookmarkletRunner
 {
     /// <summary>
-    /// 浏览器检测和识别工具类
+    /// Browser detection and identification helper
     /// </summary>
     internal static class BrowserHelper
     {
-        public static ILogger? Logger { get; set; }
+        private static ILogger _logger = NullLogger.Instance;
+        
+        /// <summary>
+        /// Initialize the logger for BrowserHelper. Should be called once during application startup.
+        /// </summary>
+        /// <param name="loggerFactory">Logger factory from DI container</param>
+        public static void Initialize(ILoggerFactory loggerFactory)
+        {
+            _logger = loggerFactory?.CreateLogger("BrowserHelper") ?? NullLogger.Instance;
+        }
+        
         // 支持的浏览器进程名（按优先级排序）
         private static readonly string[] BrowserProcessNames = 
         { 
@@ -52,18 +63,18 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
                         // 只选择有主窗口句柄的进程（排除后台进程和子进程）
                         if (process.MainWindowHandle != IntPtr.Zero)
                         {
-                            Logger?.LogDebug("[BrowserHelper] Found browser: {Browser} (PID: {Pid})", browserName, process.Id);
+                            _logger.LogDebug("Found browser: {Browser} (PID: {Pid})", browserName, process.Id);
                             return process.MainWindowHandle;
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    Logger?.LogDebug(ex, "[BrowserHelper] Error checking {Browser}", browserName);
+                    _logger.LogDebug(ex, "Error checking browser {Browser}", browserName);
                 }
             }
 
-            Logger?.LogDebug("[BrowserHelper] No browser window found");
+            _logger.LogDebug("No browser window found");
             return IntPtr.Zero;
         }
 
@@ -79,12 +90,12 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
             // 策略 1：如果上下文窗口是浏览器，直接使用
             if (contextWindowHandle != IntPtr.Zero && IsBrowserProcess(contextProcessName))
             {
-                Logger?.LogDebug("[BrowserHelper] Using context browser: {ProcessName}", contextProcessName);
+                _logger.LogDebug("Using context browser: {ProcessName}", contextProcessName);
                 return contextWindowHandle;
             }
 
             // 策略 2：回退到查找第一个可用浏览器
-            Logger?.LogDebug("[BrowserHelper] Context is not a browser, searching for available browser...");
+            _logger.LogDebug("Context is not a browser, searching for available browser");
             return FindBrowserWindow();
         }
     }

@@ -148,7 +148,7 @@ namespace Pulsar.ViewModels
         private bool CanSave()
         {
             bool result = HasUnsavedChanges;
-            _logger.LogInformation("[CanSave] Called. Returning {Result}", result);
+            _logger.LogDebug("CanSave called, returning {Result}", result);
             return result;
         }
 
@@ -157,20 +157,19 @@ namespace Pulsar.ViewModels
         /// </summary>
         private void MarkDirty()
         {
-            _logger.LogInformation("[MarkDirty] Called. Current HasUnsavedChanges = {Current}", HasUnsavedChanges);
+            _logger.LogDebug("MarkDirty called, HasUnsavedChanges: {Current} -> true", HasUnsavedChanges);
             HasUnsavedChanges = true;
-            _logger.LogInformation("[MarkDirty] Set HasUnsavedChanges = {New}", HasUnsavedChanges);
             
             // [Fix] Manually notify command to refresh CanExecute
             // This is needed because ui:NavigationViewItem may not automatically respond to property changes
             try
             {
                 SaveCommand.NotifyCanExecuteChanged();
-                _logger.LogInformation("[MarkDirty] SaveCommand.NotifyCanExecuteChanged() called successfully");
+                _logger.LogDebug("SaveCommand.NotifyCanExecuteChanged() called successfully");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[MarkDirty] Failed to notify SaveCommand");
+                _logger.LogError(ex, "Failed to notify SaveCommand");
             }
         }
 
@@ -211,7 +210,7 @@ namespace Pulsar.ViewModels
         
         private void OnGeneralSettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            _logger.LogInformation("[OnGeneralSettingsPropertyChanged] Property changed: {PropertyName}", e.PropertyName);
+            _logger.LogDebug("GeneralSettings property changed: {PropertyName}", e.PropertyName);
             
             if (e.PropertyName == nameof(ProfileSettings.SlotsPerPage))
             {
@@ -494,8 +493,9 @@ namespace Pulsar.ViewModels
             {
                 case "com.pulsar.winswitcher":
                     newItem.PluginId = "com.pulsar.winswitcher";
-                    newItem.Action = "activate";
+                    newItem.Action = "switch"; // Changed from "activate" to support auto-launch
                     newItem.Args["app"] = "chrome";
+                    newItem.Args["path"] = ""; // Add path parameter for launch capability
                     newItem.Label = "New App";
                     newItem.IconKey = "E710";
                     break;
@@ -544,7 +544,17 @@ namespace Pulsar.ViewModels
             CurrentSlots.Add(newItem);
             MarkDirty(); // [Phase 2]
             
-            SendNotification("Success", "Slot added.", ControlAppearance.Success);
+            // Provide helpful notification based on plugin type
+            string notificationMessage = pluginId switch
+            {
+                "com.pulsar.winswitcher" => "Slot added. Remember to configure both 'app' and 'path' parameters.",
+                "com.pulsar.command" => "Slot added. Configure the 'path' parameter to specify the executable.",
+                "com.pulsar.bookmarklet" => "Slot added. Set the 'scriptPath' to your JavaScript file.",
+                "com.pulsar.vbarunner" => "Slot added. Set the 'scriptPath' to your VBA script file.",
+                _ => "Slot added."
+            };
+            
+            SendNotification("Success", notificationMessage, ControlAppearance.Success);
         }
 
         [RelayCommand(CanExecute = nameof(CanAddSecrets))]

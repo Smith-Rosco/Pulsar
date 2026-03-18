@@ -9,12 +9,25 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Pulsar.Helpers
 {
+    /// <summary>
+    /// Icon helper for loading and caching icons from various sources
+    /// </summary>
     public static class IconHelper
     {
-        public static ILogger? Logger { get; set; }
+        private static ILogger _logger = NullLogger.Instance;
+        
+        /// <summary>
+        /// Initialize the logger for IconHelper. Should be called once during application startup.
+        /// </summary>
+        /// <param name="loggerFactory">Logger factory from DI container</param>
+        public static void Initialize(ILoggerFactory loggerFactory)
+        {
+            _logger = loggerFactory?.CreateLogger("IconHelper") ?? NullLogger.Instance;
+        }
         
         // Cache for GetGlyph results to avoid repeated parsing
         private static readonly ConcurrentDictionary<string, string> _glyphCache = new();
@@ -107,7 +120,7 @@ namespace Pulsar.Helpers
             }
             catch (Exception ex)
             {
-                Logger?.LogDebug(ex, "[IconHelper] Save failed");
+                _logger.LogDebug(ex, "Failed to save icon to cache for process {ProcessName}", processName);
                 return null;
             }
         }

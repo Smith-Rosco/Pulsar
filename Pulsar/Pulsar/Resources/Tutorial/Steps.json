@@ -68,7 +68,7 @@
     {
       "id": "step4_navigate_slots",
       "title": "进入槽位配置",
-      "description": "请点击左侧导航栏的\"槽位配置\"\n\n槽位配置是 Pulsar 的核心功能：\n• 为不同应用配置专属快捷操作\n• 通过顶部下拉框选择要配置的 Profile\n• Global Profile 的槽位在所有应用中可用",
+      "description": "请点击左侧导航栏的\"槽位配置\"\n\n槽位配置是 Pulsar 的核心功能：\n• 为不同应用配置专属快捷操作\n• 通过顶部下拉框切换不同的菜单上下文\n• 每个 Profile 可以配置独立的槽位\n\n💡 术语说明：\n• Context（上下文）：决定显示哪个 Profile 的哪种模式\n• Profile：应用专属配置（如 Chrome、Notepad）\n• Global：全局配置，在所有应用中可用",
       "type": "WaitForNavigation",
       "target": {
         "type": "UIElement",
@@ -88,15 +88,15 @@
         },
         "cardPosition": "TopRight",
         "cardSizeMode": "Fixed",
-        "fixedCardWidth": 450,
-        "fixedCardHeight": 300
+        "fixedCardWidth": 480,
+        "fixedCardHeight": 360
       },
       "focusMode": "AlwaysObserving"
     },
     {
       "id": "step5_add_winswitcher_slot",
       "title": "配置窗口切换槽位",
-      "description": "让我们添加一个窗口切换槽位\n\n步骤：\n1. 在顶部下拉框中选择 \"Launcher\" Context\n   （这会显示 Global Profile 的 SwitchMode 槽位）\n2. 点击底部的 [Add Slot] 按钮\n3. 在弹出菜单中选择 \"Window Switcher\" 插件\n4. 在 app 参数中输入：notepad\n5. 在 Display Label 中输入：记事本\n6. 点击卡片外部区域收起配置\n\n💡 提示：这个槽位会在任务模式 (Ctrl+Q) 时显示",
+      "description": "让我们添加一个窗口切换槽位\n\n步骤：\n1. 在顶部下拉框中选择 \"Launcher\" Context\n   （显示 Global Profile 的任务模式槽位）\n2. 点击底部的 [Add Slot] 按钮\n3. 在弹出菜单中选择 \"Window Switcher\" 插件\n4. 配置参数：\n   • app: notepad\n   • path: C:\\Windows\\System32\\notepad.exe\n   • Display Label: 记事本\n5. 点击卡片外部区域收起配置\n\n💡 提示：\n• action 默认为 \"switch\"，会智能切换或启动\n• 可点击 app 右侧的目标按钮快速选择进程\n• 此槽位会在任务模式 (Ctrl+Q) 时显示\n\n⚠️ 注意：必须同时填写 app 和 path 才能正常工作",
       "type": "WaitForAction",
       "target": {
         "type": "UIElement",
@@ -116,15 +116,15 @@
         },
         "cardPosition": "TopRight",
         "cardSizeMode": "Fixed",
-        "fixedCardWidth": 450,
-        "fixedCardHeight": 350
+        "fixedCardWidth": 480,
+        "fixedCardHeight": 420
       },
       "focusMode": "AlwaysObserving"
     },
     {
       "id": "step6_test_switch_mode",
       "title": "测试任务模式",
-      "description": "现在让我们测试任务模式的窗口切换功能！\n\n步骤：\n1. 按下 Ctrl+Q 触发任务模式\n2. 移动鼠标到 \"记事本\" 槽位\n3. 释放按键，Pulsar 会打开/切换到记事本\n\n💡 提示：\n• 任务模式 (Ctrl+Q) 用于快速切换窗口\n• 外圈显示静态配置的应用\n• 中心显示最近使用 (MRU) 的窗口",
+      "description": "现在让我们测试任务模式的窗口切换功能！\n\n步骤：\n1. 按住 Ctrl+Q 触发任务模式\n2. 移动鼠标到 \"记事本\" 槽位\n3. 释放按键，Pulsar 会启动/切换到记事本\n\n💡 提示：\n• 任务模式 (Ctrl+Q) 用于快速切换窗口\n• 外圈显示静态配置的应用槽位\n• 中心显示最近使用 (MRU) 的窗口\n• 如果记事本未启动，会自动启动\n\n⚠️ 故障排除：\n• 如果槽位未显示，检查是否选择了 Launcher Context\n• 如果无法启动，确认 path 参数是否正确填写",
       "type": "WaitForAction",
       "target": null,
       "completionTrigger": {
@@ -134,15 +134,15 @@
       "layout": {
         "cardPosition": "TopRight",
         "cardSizeMode": "Fixed",
-        "fixedCardWidth": 450,
-        "fixedCardHeight": 300
+        "fixedCardWidth": 480,
+        "fixedCardHeight": 360
       },
       "focusMode": "AlwaysObserving"
     },
     {
       "id": "step7_add_command_slot",
       "title": "配置应用专属命令槽位",
-      "description": "现在记事本已经打开，让我们为它配置专属命令槽位\n\n步骤：\n1. 回到设置窗口\n2. 在顶部下拉框中选择 \"Notepad\" Profile\n3. 点击底部的 [Add Slot] 按钮\n4. 选择任意插件并配置参数\n5. 设置 Display Label\n6. 点击卡片外部区域收起配置\n\n💡 提示：这个槽位会在动作模式 (Ctrl+Shift+Q) 激活记事本时显示",
+      "description": "现在记事本已经打开，让我们为它配置专属命令槽位\n\n步骤：\n1. 回到设置窗口（如已关闭，从托盘图标重新打开）\n2. 在顶部下拉框中选择 \"Notepad\" Profile\n   （记事本的专属配置）\n3. 点击底部的 [Add Slot] 按钮\n4. 推荐选择 \"Command Runner\" 插件\n5. 配置示例：\n   • path: notepad.exe\n   • arguments: C:\\Windows\\System32\\drivers\\etc\\hosts\n   • Display Label: 打开 Hosts 文件\n6. 点击卡片外部区域收起配置\n\n💡 提示：\n• 此槽位仅在记事本激活时的动作模式中显示\n• 可以为不同应用配置完全不同的命令\n• Command Runner 可以执行任何命令行程序",
       "type": "WaitForAction",
       "target": {
         "type": "UIElement",
@@ -171,15 +171,15 @@
         },
         "cardPosition": "TopRight",
         "cardSizeMode": "Fixed",
-        "fixedCardWidth": 450,
-        "fixedCardHeight": 380
+        "fixedCardWidth": 480,
+        "fixedCardHeight": 420
       },
       "focusMode": "AlwaysObserving"
     },
     {
       "id": "step8_test_command_mode",
       "title": "测试动作模式",
-      "description": "最后一步！让我们测试动作模式\n\n步骤：\n1. 确保记事本窗口处于激活状态\n2. 按下 Ctrl+Shift+Q 触发动作模式\n3. 移动鼠标到配置的槽位\n4. 释放按键，执行对应操作\n\n💡 提示：动作模式 (Ctrl+Shift+Q) 会根据当前激活的应用显示专属命令",
+      "description": "最后一步！让我们测试动作模式\n\n步骤：\n1. 点击记事本窗口，确保它处于激活状态\n2. 按住 Ctrl+Shift+Q 触发动作模式\n3. 移动鼠标到刚配置的槽位\n4. 释放按键，执行对应操作\n\n💡 提示：\n• 动作模式 (Ctrl+Shift+Q) 显示当前应用的专属命令\n• 不同应用会显示不同的槽位配置\n• Global Profile 的 CommandMode 槽位在所有应用中可见\n\n⚠️ 故障排除：\n• 如果槽位未显示，确认记事本窗口是否激活\n• 如果显示的是其他应用的槽位，切换到记事本窗口",
       "type": "WaitForAction",
       "target": null,
       "completionTrigger": {
@@ -189,15 +189,15 @@
       "layout": {
         "cardPosition": "TopRight",
         "cardSizeMode": "Fixed",
-        "fixedCardWidth": 450,
-        "fixedCardHeight": 300
+        "fixedCardWidth": 480,
+        "fixedCardHeight": 380
       },
       "focusMode": "AlwaysObserving"
     },
     {
       "id": "step9_completion",
-      "title": "恭喜！教程完成",
-      "description": "你已经掌握了 Pulsar 的核心功能：\n\n✅ 任务模式 (Ctrl+Q)\n   快速切换窗口，外圈静态配置 + 中心 MRU\n\n✅ 动作模式 (Ctrl+Shift+Q)\n   执行当前应用的专属命令\n\n✅ Profile 配置\n   每个应用可配置独立的槽位\n   Global Profile 在所有应用中可用\n\n💡 提示：\n• 在设置中可以随时重新查看教程\n• 支持为每个应用配置专属操作\n• 更多插件请访问插件市场",
+      "title": "🎉 恭喜！教程完成",
+      "description": "你已经掌握了 Pulsar 的核心功能：\n\n✅ 任务模式 (Ctrl+Q)\n   快速切换窗口，外圈静态配置 + 中心 MRU\n\n✅ 动作模式 (Ctrl+Shift+Q)\n   执行当前应用的专属命令\n\n✅ Profile 配置\n   每个应用可配置独立的槽位\n   Global Profile 在所有应用中可用\n\n📚 进阶技巧：\n• 使用拖拽调整槽位顺序\n• 为槽位设置自定义图标和颜色\n• 探索更多插件（PKI、VBA Runner 等）\n• 配置自定义热键组合\n\n💡 提示：\n• 在设置中可以随时重新查看教程\n• 支持为每个应用配置专属操作\n• 遇到问题可查看文档或提交反馈",
       "type": "Instruction",
       "target": null,
       "completionTrigger": {
@@ -207,8 +207,8 @@
       "layout": {
         "cardPosition": "TopRight",
         "cardSizeMode": "Fixed",
-        "fixedCardWidth": 450,
-        "fixedCardHeight": 300
+        "fixedCardWidth": 480,
+        "fixedCardHeight": 420
       },
       "focusMode": "AlwaysObserving"
     }

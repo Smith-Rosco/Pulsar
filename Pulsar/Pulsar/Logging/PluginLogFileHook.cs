@@ -61,9 +61,11 @@ namespace Pulsar.Logging
                 {
                     File.AppendAllText(filePath, sb.ToString());
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // 静默失败，避免影响主程序
+                    // Fallback to Debug output to avoid losing logs completely
+                    System.Diagnostics.Debug.WriteLine($"[PluginLogFileHook] Failed to write log: {ex.Message}");
+                    Serilog.Debugging.SelfLog.WriteLine("Failed to write plugin log: {0}", ex);
                 }
             }
         }

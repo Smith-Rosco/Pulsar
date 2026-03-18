@@ -2,12 +2,18 @@ using System;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Pulsar.Plugins.Extensions.VbaRunner
 {
     public class VbaModuleInjector
     {
-        public static ILogger? Logger { get; set; }
+        private static ILogger _logger = NullLogger.Instance;
+        
+        public static void Initialize(ILoggerFactory loggerFactory)
+        {
+            _logger = loggerFactory?.CreateLogger("VbaRunner.VbaModuleInjector") ?? NullLogger.Instance;
+        }
         private const int vbext_ct_StdModule = 1;
         
         // COM Error Codes
@@ -125,7 +131,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
             }
             catch (Exception ex)
             {
-                Logger?.LogDebug(ex, "[VbaInjector] Failed to clean up module");
+                _logger.LogDebug(ex, "[VbaInjector] Failed to clean up module");
             }
         }
 

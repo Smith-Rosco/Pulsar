@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Pulsar.Native;
 
 namespace Pulsar.Plugins.Extensions.VbaRunner
@@ -14,7 +15,12 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
     /// </summary>
     public class ScriptEngine : IDisposable
     {
-        public static ILogger? Logger { get; set; }
+        private static ILogger _logger = NullLogger.Instance;
+        
+        public static void Initialize(ILoggerFactory loggerFactory)
+        {
+            _logger = loggerFactory?.CreateLogger("VbaRunner.ScriptEngine") ?? NullLogger.Instance;
+        }
         private readonly ComConnectionManager _connectionManager;
         private readonly VbaModuleInjector _injector;
         private readonly PrerequisiteValidator _validator;
@@ -26,7 +32,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
         {
             _connectionManager = new ComConnectionManager();
             _injector = new VbaModuleInjector();
-            _validator = new PrerequisiteValidator(Logger);
+            _validator = new PrerequisiteValidator(_logger);
         }
 
         /// <summary>
@@ -38,13 +44,13 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
 
             if (_connectionManager.TryGetApplication(targetProcessId, out _app))
             {
-                Logger?.LogDebug("[ScriptEngine] Connected to Application.");
+                _logger.LogDebug("[ScriptEngine] Connected to Application.");
                 
                 // Try to get ActiveWorkbook with retry
                 return TryGetActiveWorkbook();
             }
 
-            Logger?.LogDebug("[ScriptEngine] Failed to connect to any instance.");
+            _logger.LogDebug("[ScriptEngine] Failed to connect to any instance.");
             return false;
         }
 
@@ -67,7 +73,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
                     _workbook = _app.ActiveWorkbook;
                     if (_workbook != null)
                     {
-                        Logger?.LogDebug("[ScriptEngine] Active workbook: {Name}", (string)_workbook.Name);
+                        _logger.LogDebug("[ScriptEngine] Active workbook: {Name}", (string)_workbook.Name);
                         return true;
                     }
                     return false;
@@ -75,7 +81,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
             }
             catch (Exception ex)
             {
-                Logger?.LogDebug(ex, "[ScriptEngine] Failed to get ActiveWorkbook");
+                _logger.LogDebug(ex, "[ScriptEngine] Failed to get ActiveWorkbook");
                 return false;
             }
         }
@@ -103,7 +109,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
             }
             catch (Exception ex)
             {
-                Logger?.LogDebug(ex, "[ScriptEngine] Error getting sheets");
+                _logger.LogDebug(ex, "[ScriptEngine] Error getting sheets");
             }
 
             return names;
@@ -164,7 +170,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
             }
             catch (Exception ex)
             {
-                Logger?.LogDebug(ex, "[ScriptEngine] Error applying sheet filter");
+                _logger.LogDebug(ex, "[ScriptEngine] Error applying sheet filter");
                 return allSheets;
             }
         }

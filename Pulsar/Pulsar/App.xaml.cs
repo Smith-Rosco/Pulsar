@@ -34,6 +34,7 @@ namespace Pulsar
         protected override void OnStartup(StartupEventArgs e)
         {
             // 0. Initialize Logging (Pulsar Sentinel - Unified Architecture)
+            // Note: We use default settings here, will update from config later
             var logsBaseDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), 
                 "Pulsar", 
@@ -45,39 +46,45 @@ namespace Pulsar
             // Create a level switch for runtime log level control
             var levelSwitch = new LoggingLevelSwitch(LogEventLevel.Information);
 
-            Log.Logger = new LoggerConfiguration()
+            // Build logger configuration with default values
+            var loggerConfig = new LoggerConfiguration()
                 .MinimumLevel.ControlledBy(levelSwitch)
-                .Enrich.With<Pulsar.Logging.PluginContextEnricher>()
-                .WriteTo.Debug()
-                // 主程序日志（不包含插件日志）
-                .WriteTo.Logger(lc => lc
-                    .Filter.ByExcluding(evt => evt.Properties.ContainsKey("PluginId"))
-                    .WriteTo.File(
-                        path: Path.Combine(logsBaseDir, "pulsar-.log"),
+                .Enrich.With<Pulsar.Logging.PluginContextEnricher>();
+
+            // Conditionally add Debug sink (will be updated from config later)
+            loggerConfig = loggerConfig.WriteTo.Debug();
+
+            // Main application logs (excluding plugin logs)
+            loggerConfig = loggerConfig.WriteTo.Logger(lc => lc
+                .Filter.ByExcluding(evt => evt.Properties.ContainsKey("PluginId"))
+                .WriteTo.File(
+                    path: Path.Combine(logsBaseDir, "pulsar-.log"),
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 7,
+                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
+                ));
+
+            // Plugin logs (separated by plugin ID)
+            loggerConfig = loggerConfig.WriteTo.Logger(lc => lc
+                .Filter.ByIncludingOnly(evt => evt.Properties.ContainsKey("PluginId"))
+                .WriteTo.Map(
+                    keyPropertyName: "PluginId",
+                    configure: (pluginId, wt) => wt.File(
+                        path: Path.Combine(pluginLogsDir, $"{pluginId}-.log"),
                         rollingInterval: RollingInterval.Day,
-                        retainedFileCountLimit: 7,
-                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
-                    ))
-                // 插件日志（按插件 ID 分文件）
-                .WriteTo.Logger(lc => lc
-                    .Filter.ByIncludingOnly(evt => evt.Properties.ContainsKey("PluginId"))
-                    .WriteTo.Map(
-                        keyPropertyName: "PluginId",
-                        configure: (pluginId, wt) => wt.File(
-                            path: Path.Combine(pluginLogsDir, $"{pluginId}-.log"),
-                            rollingInterval: RollingInterval.Day,
-                            retainedFileCountLimit: 30,
-                            fileSizeLimitBytes: 100_000_000, // 100MB per file
-                            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] [{Action}] [ExecId:{ExecutionId}] [Elapsed:{ElapsedMs}ms] {Message:lj}{NewLine}{Exception}"
-                        )
-                    ))
-                .CreateLogger();
+                        retainedFileCountLimit: 30,
+                        fileSizeLimitBytes: 100_000_000,
+                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] [{Action}] [ExecId:{ExecutionId}] [Elapsed:{ElapsedMs}ms] {Message:lj}{NewLine}{Exception}"
+                    )
+                ));
+
+            Log.Logger = loggerConfig.CreateLogger();
 
             Log.Information("=== Pulsar Application Starting (Log Level: {Level}) ===", levelSwitch.MinimumLevel);
             
             // [New] Check System Integrity (焦点锁定设置)
             WindowHelper.CheckSystemIntegrity();
-            Log.Information("[SystemIntegrity] Focus lock timeout checked and restored if needed");
+            Log.Information("System integrity check completed");
 
             // Global Exception Handling
             this.DispatcherUnhandledException += OnDispatcherUnhandledException;
@@ -202,15 +209,16 @@ namespace Pulsar
             Services = serviceCollection.BuildServiceProvider();
 
             // Initialize static helpers that need logging
-            IconHelper.Logger = Services.GetService<ILoggerFactory>()?.CreateLogger("IconHelper");
-            UiaHelper.Logger = Services.GetService<ILoggerFactory>()?.CreateLogger("UiaHelper");
-            Pulsar.Plugins.Extensions.BookmarkletRunner.BrowserHelper.Logger = Services.GetService<ILoggerFactory>()?.CreateLogger("BrowserHelper");
+            var loggerFactory = Services.GetRequiredService<ILoggerFactory>();
+            IconHelper.Initialize(loggerFactory);
+            UiaHelper.Initialize(loggerFactory);
+            Pulsar.Plugins.Extensions.BookmarkletRunner.BrowserHelper.Initialize(loggerFactory);
 
             // VBA runner internals
-            Pulsar.Plugins.Extensions.VbaRunner.ScriptEngine.Logger = Services.GetService<ILoggerFactory>()?.CreateLogger("VbaRunner.ScriptEngine");
-            Pulsar.Plugins.Extensions.VbaRunner.ComRetryHelper.Logger = Services.GetService<ILoggerFactory>()?.CreateLogger("VbaRunner.ComRetryHelper");
-            Pulsar.Plugins.Extensions.VbaRunner.ComConnectionManager.Logger = Services.GetService<ILoggerFactory>()?.CreateLogger("VbaRunner.ComConnectionManager");
-            Pulsar.Plugins.Extensions.VbaRunner.VbaModuleInjector.Logger = Services.GetService<ILoggerFactory>()?.CreateLogger("VbaRunner.VbaModuleInjector");
+            Pulsar.Plugins.Extensions.VbaRunner.ScriptEngine.Initialize(loggerFactory);
+            Pulsar.Plugins.Extensions.VbaRunner.ComRetryHelper.Initialize(loggerFactory);
+            Pulsar.Plugins.Extensions.VbaRunner.ComConnectionManager.Initialize(loggerFactory);
+            Pulsar.Plugins.Extensions.VbaRunner.VbaModuleInjector.Initialize(loggerFactory);
 
             // ================================================
             // 5. Initialize Plugin System
@@ -226,13 +234,41 @@ namespace Pulsar
             if (configService is ConfigService concreteConfigService)
             {
                 concreteConfigService.SetValidationPipeline(validationPipeline);
-                Log.Information("[App] Validation pipeline configured for ConfigService");
+                Log.Information("Validation pipeline configured for ConfigService");
             }
+
+            // [New] Apply logging configuration from Profiles.json
+            Task.Run(async () =>
+            {
+                try
+                {
+                    var config = await configService.LoadAsync();
+                    if (config?.Settings?.Logging != null)
+                    {
+                        var loggingSettings = config.Settings.Logging;
+                        
+                        // Update log level
+                        if (Enum.TryParse<LogEventLevel>(loggingSettings.MinimumLevel, true, out var logLevel))
+                        {
+                            levelSwitch.MinimumLevel = logLevel;
+                            Log.Information("Log level updated from config: {Level}", logLevel);
+                        }
+                        
+                        // Note: Retention days and file size limits are applied at logger creation time
+                        // To change them dynamically would require recreating the logger
+                        // For now, they will take effect on next application restart
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Failed to apply logging configuration from Profiles.json, using defaults");
+                }
+            }).GetAwaiter().GetResult();
 
             // [New] Initialize ProcessRegistryService (migrate from legacy config)
             var processRegistryService = Services.GetRequiredService<IProcessRegistryService>();
             Task.Run(async () => await processRegistryService.InitializeAsync()).GetAwaiter().GetResult();
-            Log.Information("[App] ProcessRegistryService initialized");
+            Log.Information("ProcessRegistryService initialized");
 
             // 6. Start Services
             var trayService = Services.GetRequiredService<ITrayService>();
@@ -254,14 +290,14 @@ namespace Pulsar
                 if (config?.Settings?.Input != null)
                 {
                     keyboardHook.UseHybridMode = config.Settings.Input.IsHybridMode;
-                    Log.Information("[App] GlobalKeyboardHook configured: ModifierStateMode={Mode}", 
+                    Log.Information("GlobalKeyboardHook configured: ModifierStateMode={Mode}", 
                         config.Settings.Input.ModifierStateMode);
                 }
                 else
                 {
                     // Default to Hybrid mode if no config
                     keyboardHook.UseHybridMode = true;
-                    Log.Information("[App] GlobalKeyboardHook using default Hybrid mode");
+                    Log.Information("GlobalKeyboardHook using default Hybrid mode");
                 }
             }).GetAwaiter().GetResult();
 
@@ -273,7 +309,7 @@ namespace Pulsar
                     var config = await configService.LoadAsync();
                     if (!config.Settings.HasCompletedTutorial)
                     {
-                        Log.Information("[App] First launch detected, starting tutorial");
+                        Log.Information("First launch detected, starting tutorial");
                         
                         // Wait for UI to initialize
                         await Task.Delay(1500);
@@ -290,7 +326,7 @@ namespace Pulsar
                  }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "[App] Failed to start tutorial");
+                    Log.Error(ex, "Failed to start tutorial");
                 }
             });
 
@@ -327,7 +363,7 @@ namespace Pulsar
 
         private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
-            Log.Fatal(e.Exception, "[CRITICAL] Unhandled Dispatcher Exception");
+            Log.Fatal(e.Exception, "Unhandled Dispatcher Exception");
             
             // [New] Emergency restore system settings
             WindowHelper.EmergencyRestore();
@@ -338,7 +374,7 @@ namespace Pulsar
 
         private void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
         {
-            Log.Error(e.Exception, "[CRITICAL] Unobserved Task Exception");
+            Log.Error(e.Exception, "Unobserved Task Exception");
             // Prevent process termination
             e.SetObserved();
         }
@@ -347,7 +383,7 @@ namespace Pulsar
         {
              if (e.ExceptionObject is Exception ex)
              {
-                 Log.Fatal(ex, "[CRITICAL] Unhandled AppDomain Exception (IsTerminating={IsTerminating})", e.IsTerminating);
+                 Log.Fatal(ex, "Unhandled AppDomain Exception (IsTerminating={IsTerminating})", e.IsTerminating);
                  
                  // [New] Emergency restore system settings before crash
                  WindowHelper.EmergencyRestore();

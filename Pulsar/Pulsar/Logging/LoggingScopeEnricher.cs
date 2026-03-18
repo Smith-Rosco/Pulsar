@@ -88,78 +88,78 @@ namespace Pulsar.Logging
     /// </summary>
     public static class PluginLoggingScope
     {
-        /// <summary>
-        /// 创建插件执行作用域
-        /// </summary>
-        /// <param name="logger">日志记录器</param>
-        /// <param name="pluginId">插件 ID</param>
-        /// <param name="action">动作名称</param>
-        /// <param name="executionId">执行 ID（可选，自动生成）</param>
-        /// <returns>作用域 Disposable</returns>
-        public static IDisposable BeginPluginScope(
-            this Microsoft.Extensions.Logging.ILogger logger,
-            string pluginId,
-            string action,
-            string? executionId = null)
+    /// <summary>
+    /// 创建插件执行作用域
+    /// </summary>
+    /// <param name="logger">日志记录器</param>
+    /// <param name="pluginId">插件 ID</param>
+    /// <param name="action">动作名称</param>
+    /// <param name="executionId">执行 ID（可选，自动生成）</param>
+    /// <returns>作用域 Disposable</returns>
+    public static IDisposable? BeginPluginScope(
+        this Microsoft.Extensions.Logging.ILogger logger,
+        string pluginId,
+        string action,
+        string? executionId = null)
+    {
+        var scopeData = new Dictionary<string, object>
         {
-            var scopeData = new Dictionary<string, object>
-            {
-                ["PluginId"] = pluginId,
-                ["Action"] = action,
-                ["ExecutionId"] = executionId ?? Guid.NewGuid().ToString("N").Substring(0, 8),
-                ["StartTime"] = DateTime.UtcNow
-            };
+            ["PluginId"] = pluginId,
+            ["Action"] = action,
+            ["ExecutionId"] = executionId ?? Guid.NewGuid().ToString("N").Substring(0, 8),
+            ["StartTime"] = DateTime.UtcNow
+        };
 
-            return logger.BeginScope(scopeData);
-        }
+        return logger.BeginScope(scopeData);
+    }
 
-        /// <summary>
-        /// 创建操作作用域（用于跟踪长时间操作）
-        /// </summary>
-        public static IDisposable BeginOperationScope(
-            this Microsoft.Extensions.Logging.ILogger logger,
-            string operationName,
-            Dictionary<string, object>? additionalData = null)
+    /// <summary>
+    /// 创建操作作用域（用于跟踪长时间操作）
+    /// </summary>
+    public static IDisposable? BeginOperationScope(
+        this Microsoft.Extensions.Logging.ILogger logger,
+        string operationName,
+        Dictionary<string, object>? additionalData = null)
+    {
+        var scopeData = new Dictionary<string, object>
         {
-            var scopeData = new Dictionary<string, object>
-            {
-                ["Operation"] = operationName,
-                ["OperationId"] = Guid.NewGuid().ToString("N").Substring(0, 8),
-                ["StartTime"] = DateTime.UtcNow
-            };
+            ["Operation"] = operationName,
+            ["OperationId"] = Guid.NewGuid().ToString("N").Substring(0, 8),
+            ["StartTime"] = DateTime.UtcNow
+        };
 
-            if (additionalData != null)
+        if (additionalData != null)
+        {
+            foreach (var kvp in additionalData)
             {
-                foreach (var kvp in additionalData)
-                {
-                    scopeData[kvp.Key] = kvp.Value;
-                }
+                scopeData[kvp.Key] = kvp.Value;
             }
-
-            return logger.BeginScope(scopeData);
         }
 
-        /// <summary>
-        /// 创建用户操作作用域
-        /// </summary>
-        public static IDisposable BeginUserActionScope(
-            this Microsoft.Extensions.Logging.ILogger logger,
-            string actionName,
-            string? targetProcess = null)
+        return logger.BeginScope(scopeData);
+    }
+
+    /// <summary>
+    /// 创建用户操作作用域
+    /// </summary>
+    public static IDisposable? BeginUserActionScope(
+        this Microsoft.Extensions.Logging.ILogger logger,
+        string actionName,
+        string? targetProcess = null)
+    {
+        var scopeData = new Dictionary<string, object>
         {
-            var scopeData = new Dictionary<string, object>
-            {
-                ["UserAction"] = actionName,
-                ["ActionId"] = Guid.NewGuid().ToString("N").Substring(0, 8),
-                ["Timestamp"] = DateTime.UtcNow
-            };
+            ["UserAction"] = actionName,
+            ["ActionId"] = Guid.NewGuid().ToString("N").Substring(0, 8),
+            ["Timestamp"] = DateTime.UtcNow
+        };
 
-            if (!string.IsNullOrEmpty(targetProcess))
-            {
-                scopeData["TargetProcess"] = targetProcess;
-            }
-
-            return logger.BeginScope(scopeData);
+        if (!string.IsNullOrEmpty(targetProcess))
+        {
+            scopeData["TargetProcess"] = targetProcess;
         }
+
+        return logger.BeginScope(scopeData);
+    }
     }
 }

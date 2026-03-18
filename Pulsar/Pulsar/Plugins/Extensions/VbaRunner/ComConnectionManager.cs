@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Pulsar.Native;
 
 namespace Pulsar.Plugins.Extensions.VbaRunner
@@ -15,7 +16,12 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
     /// </summary>
     public class ComConnectionManager
     {
-        public static ILogger? Logger { get; set; }
+        private static ILogger _logger = NullLogger.Instance;
+        
+        public static void Initialize(ILoggerFactory loggerFactory)
+        {
+            _logger = loggerFactory?.CreateLogger("VbaRunner.ComConnectionManager") ?? NullLogger.Instance;
+        }
         // COM Imports
         [DllImport("oleaut32.dll", PreserveSig = true)]
         private static extern int GetActiveObject(ref Guid rclsid, IntPtr pvReserved, [MarshalAs(UnmanagedType.IUnknown)] out object? ppunk);
@@ -114,7 +120,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
         private bool TryGetByWindowHandleStrategy(int targetProcessId, out dynamic? app)
         {
             app = null;
-            Logger?.LogDebug("[ComManager] Strategy B: Window Search for PID {Pid}", targetProcessId);
+            _logger.LogDebug("[ComManager] Strategy B: Window Search for PID {Pid}", targetProcessId);
 
             var candidates = new List<IntPtr>();
             WindowHelper.EnumWindows((hwnd, lParam) =>
@@ -164,7 +170,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
         private bool TryGetByRotStrategy(int targetProcessId, out dynamic? app)
         {
             app = null;
-            Logger?.LogDebug("[ComManager] Strategy C: ROT Search for PID {Pid}", targetProcessId);
+            _logger.LogDebug("[ComManager] Strategy C: ROT Search for PID {Pid}", targetProcessId);
 
             IRunningObjectTable? rot = null;
             IEnumMoniker? enumMoniker = null;
@@ -217,7 +223,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
             }
             catch (Exception ex)
             {
-                Logger?.LogDebug(ex, "[ComManager] ROT Error");
+                _logger.LogDebug(ex, "[ComManager] ROT Error");
             }
             finally
             {

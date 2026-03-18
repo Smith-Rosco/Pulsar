@@ -172,13 +172,19 @@ This file provides essential context, conventions, and routing for AI agents wor
 2. Implement class in `Services/`
 3. Register in `App.xaml.cs` (`ConfigureServices` method)
 
-### Adding a New Plugin
+### Adding a New Plugin (Modern Approach)
 1. Choose tier (Core vs Extension)
-2. Create class implementing `IPulsarPlugin` in appropriate location
-3. Implement `Initialize()` and `ExecuteAsync()`
-4. Use `PulsarContext` for window information (never query live state)
+2. Create class inheriting `PluginBase<T>` in appropriate location
+3. Use constructor injection for dependencies
+4. Implement `ExecuteAsync()` and required metadata properties
+5. Use `PulsarContext` for window information (never query live state)
 
-**Deep Dive**: [PLUGIN_DEVELOPMENT.md](./PLUGIN_DEVELOPMENT.md)
+**Example**: `Pulsar/Pulsar/Plugins/Extensions/BasicCommand/SimpleCommandPlugin.cs` (146 lines)
+
+**Deep Dive**: 
+- [PLUGIN_DEVELOPMENT.md](./PLUGIN_DEVELOPMENT.md) - Complete guide
+- [Docs/guides/PLUGIN_MIGRATION_GUIDE.md](./Docs/guides/PLUGIN_MIGRATION_GUIDE.md) - Migration steps
+- [Docs/architecture/PLUGIN_SYSTEM.md](./Docs/architecture/PLUGIN_SYSTEM.md) - Architecture details
 
 ### Adding a New Dialog
 1. Create ViewModel implementing `IDialogViewModel` in `ViewModels/Dialogs/`
@@ -198,7 +204,7 @@ This file provides essential context, conventions, and routing for AI agents wor
 **Deep Dive**: [Docs/guides/UI_BEST_PRACTICES.md](./Docs/guides/UI_BEST_PRACTICES.md), [Docs/lessons/](./Docs/lessons/)
 
 ### Managing Secrets (PKI)
-- Secrets handled by `PkiPlugin` (`Plugins/Core/Pki/`) and `CredentialsManager`
+- Secrets handled by `PkiPlugin` (`Pulsar/Pulsar/Plugins/Core/Pki/`) and `CredentialsManager`
 - Use `[JsonIgnore]` on sensitive data models to prevent serialization
 
 ---
@@ -275,17 +281,49 @@ dotnet restore Pulsar/Pulsar/Pulsar.csproj
 
 ## 10. Documentation Index
 
+### Core Documentation
 - **[Docs/README.md](./Docs/README.md)** - Documentation center with task-oriented navigation
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** - System architecture overview
 - **[PLUGIN_DEVELOPMENT.md](./PLUGIN_DEVELOPMENT.md)** - Plugin development guide
-- **[Docs/architecture/](./Docs/architecture/)** - Detailed architecture docs (Plugin System, Dialog System, Input Injection)
-- **[Docs/guides/](./Docs/guides/)** - How-to guides (UI Best Practices, Component Library)
+
+### Architecture & Design
+- **[Docs/architecture/](./Docs/architecture/)** - Detailed architecture docs
+  - [PLUGIN_SYSTEM.md](./Docs/architecture/PLUGIN_SYSTEM.md) - Plugin system architecture
+  - [PLUGIN_SYSTEM_REFACTORING_REPORT.md](./Docs/architecture/PLUGIN_SYSTEM_REFACTORING_REPORT.md) - Refactoring audit
+  - [PLUGIN_OPTIMIZATION_RECOMMENDATIONS.md](./Docs/architecture/PLUGIN_OPTIMIZATION_RECOMMENDATIONS.md) - Future roadmap
+  - [DIALOG_SYSTEM.md](./Docs/architecture/DIALOG_SYSTEM.md) - Dialog system
+  - [INPUT_INJECTION.md](./Docs/architecture/INPUT_INJECTION.md) - PKI/Input injection
+
+### Guides & Best Practices
+- **[Docs/guides/](./Docs/guides/)** - How-to guides
+  - [PLUGIN_MIGRATION_GUIDE.md](./Docs/guides/PLUGIN_MIGRATION_GUIDE.md) - Plugin migration steps
+  - [UI_BEST_PRACTICES.md](./Docs/guides/UI_BEST_PRACTICES.md) - UI development
+  - [COMPONENT_LIBRARY.md](./Docs/guides/COMPONENT_LIBRARY.md) - Reusable components
+
+### Troubleshooting
 - **[Docs/lessons/](./Docs/lessons/)** - Pain archive (WPF pitfalls, known issues)
+  - [WPFUI_BUTTON_PRIMARY_BUG.md](./Docs/lessons/WPFUI_BUTTON_PRIMARY_BUG.md)
+  - [WPF_THEME_INJECTION_PITFALLS.md](./Docs/lessons/WPF_THEME_INJECTION_PITFALLS.md)
+  - [WPF_USERCONTROL_BINDING_BREAKS.md](./Docs/lessons/WPF_USERCONTROL_BINDING_BREAKS.md)
+  - [CONTEXTMENU_RESOURCE_INHERITANCE.md](./Docs/lessons/CONTEXTMENU_RESOURCE_INHERITANCE.md)
+  - [WPF_SCROLLVIEWER_VISIBILITY.md](./Docs/lessons/WPF_SCROLLVIEWER_VISIBILITY.md)
+  - [WPF_RESOURCES_HYGIENE.md](./Docs/lessons/WPF_RESOURCES_HYGIENE.md)
+
+### Operations & Decisions
 - **[Docs/decisions/](./Docs/decisions/)** - Architecture Decision Records (ADRs)
 - **[Docs/ops/](./Docs/ops/)** - Operational docs (Build/Run, Release)
 - **[Docs/archive/](./Docs/archive/)** - Historical documents (not current truth)
+- **[Docs/CONTRIBUTING.md](./Docs/CONTRIBUTING.md)** - Documentation standards
+
+### Code Examples
+- **Plugin Examples**:
+  - `Pulsar/Pulsar/Plugins/Extensions/BasicCommand/SimpleCommandPlugin.cs` - Modern plugin (146 lines)
+  - `Pulsar/Pulsar/Plugins/Extensions/BasicCommand/SimpleCommandPlugin.Refactored.cs` - Annotated example (168 lines)
+- **Core Components**:
+  - `Pulsar/Pulsar/Core/Plugin/PluginBase.cs` - Plugin base class (247 lines)
+  - `Pulsar/Pulsar/Core/Plugin/PluginFactory.cs` - Plugin factory (213 lines)
 
 ---
 
-*Last Updated: 2026-03-03*  
-*Version: 2.0.0 (Refactored for AI-first documentation architecture)*
+*Last Updated: 2026-03-17*  
+*Version: 2.1.0 (Updated with plugin refactoring documentation)*
