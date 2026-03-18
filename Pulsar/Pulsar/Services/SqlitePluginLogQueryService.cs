@@ -312,8 +312,8 @@ namespace Pulsar.Services
                     stats["ErrorCount"] = reader.GetInt32(1);
                     stats["AvgExecutionTime"] = reader.IsDBNull(2) ? 0.0 : reader.GetDouble(2);
                     stats["MaxExecutionTime"] = reader.IsDBNull(3) ? 0L : reader.GetInt64(3);
-                    stats["FirstLog"] = reader.IsDBNull(4) ? (DateTime?)null : DateTime.Parse(reader.GetString(4));
-                    stats["LastLog"] = reader.IsDBNull(5) ? (DateTime?)null : DateTime.Parse(reader.GetString(5));
+                    stats["FirstLog"] = reader.IsDBNull(4) ? null! : (object)DateTime.Parse(reader.GetString(4));
+                    stats["LastLog"] = reader.IsDBNull(5) ? null! : (object)DateTime.Parse(reader.GetString(5));
                 }
             }
             catch (Exception ex)

@@ -139,8 +139,14 @@ namespace Pulsar.Services
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "[ConfigService] Failed to load config");
-                _cachedConfig = CreateDefaultConfig();
+                _logger.LogError(ex, "[ConfigService] Failed to load config from {Path}", _configPath);
+                
+                // [Fix] 加载失败时不覆盖现有文件
+                // 创建默认配置但不保存，避免覆盖用户数据
+                // 直接使用 CreateFallbackConfig() 而不是 CreateDefaultConfig()，避免触发后台检测
+                _cachedConfig = CreateFallbackConfig();
+                
+                _logger.LogWarning("[ConfigService] Using fallback configuration in memory only (not saving to disk to preserve existing file)");
             }
 
             return _cachedConfig ?? CreateDefaultConfig();
@@ -261,40 +267,59 @@ namespace Pulsar.Services
         /// </summary>
         private ProfilesConfig CreateDefaultConfig()
         {
-            _logger.LogInformation("[ConfigService] Creating default configuration with Fallback apps");
+            _logger.LogInformation("[ConfigService] Creating default configuration");
             
             // 1. 生成 Fallback 配置 (Windows 内置应用)
             var config = CreateFallbackConfig();
             
-            // 2. 启动后台检测任务 (异步,不阻塞启动)
-            _ = Task.Run(async () =>
+            // 2. [Fix] 只在配置文件不存在时启动后台检测
+            // 这避免了在配置加载失败时意外覆盖现有配置
+            if (!File.Exists(_configPath))
             {
-                try
+                _logger.LogInformation("[ConfigService] First launch detected, scheduling background app detection");
+                
+                // 启动后台检测任务 (异步,不阻塞启动)
+                _ = Task.Run(async () =>
                 {
-                    // 等待 1 秒,确保 UI 已初始化
-                    await Task.Delay(1000);
-                    
-                    _logger.LogInformation("[ConfigService] Starting background application detection...");
-                    
-                    var detector = new ApplicationDetector(_logger);
-                    var installedApps = await detector.DetectInstalledApplicationsAsync();
-                    
-                    // 3. 生成智能配置
-                    var smartConfig = CreateSmartConfig(installedApps);
-                    
-                    // 4. 更新配置
-                    await SaveAsync(smartConfig);
-                    
-                    _logger.LogInformation(
-                        "[ConfigService] Smart configuration loaded with {SwitchCount} Switch Mode apps and {CommandCount} Command Mode slots",
-                        smartConfig.Profiles["Global"].SwitchMode.Count,
-                        smartConfig.Profiles["Global"].CommandMode.Count);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "[ConfigService] Failed to generate smart configuration, keeping Fallback config");
-                }
-            });
+                    try
+                    {
+                        // 等待 1 秒,确保 UI 已初始化
+                        await Task.Delay(1000);
+                        
+                        // [Fix] 防护 2：重新检查配置文件是否已存在
+                        // 用户可能在这 1 秒内手动创建了配置
+                        if (File.Exists(_configPath))
+                        {
+                            _logger.LogInformation("[ConfigService] Config file created during detection delay, aborting auto-detection");
+                            return;
+                        }
+                        
+                        _logger.LogInformation("[ConfigService] Starting background application detection...");
+                        
+                        var detector = new ApplicationDetector(_logger);
+                        var installedApps = await detector.DetectInstalledApplicationsAsync();
+                        
+                        // 3. 生成智能配置
+                        var smartConfig = CreateSmartConfig(installedApps);
+                        
+                        // 4. 更新配置
+                        await SaveAsync(smartConfig);
+                        
+                        _logger.LogInformation(
+                            "[ConfigService] Smart configuration loaded with {SwitchCount} Switch Mode apps and {CommandCount} Command Mode slots",
+                            smartConfig.Profiles["Global"].SwitchMode.Count,
+                            smartConfig.Profiles["Global"].CommandMode.Count);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "[ConfigService] Failed to generate smart configuration");
+                    }
+                });
+            }
+            else
+            {
+                _logger.LogWarning("[ConfigService] Config file exists but CreateDefaultConfig was called (likely due to load failure)");
+            }
             
             return config;
         }
@@ -326,8 +351,12 @@ namespace Pulsar.Services
                             {
                                 Slot = 1,
                                 PluginId = "com.pulsar.winswitcher",
-                                Action = "activate",
-                                Args = new Dictionary<string, string> { ["app"] = "notepad" },
+                                Action = "switch",
+                                Args = new Dictionary<string, string> 
+                                { 
+                                    ["app"] = "notepad",
+                                    ["path"] = "notepad.exe"
+                                },
                                 Label = "Notepad",
                                 IconKey = "\uE70F"
                             },
@@ -335,8 +364,12 @@ namespace Pulsar.Services
                             {
                                 Slot = 2,
                                 PluginId = "com.pulsar.winswitcher",
-                                Action = "activate",
-                                Args = new Dictionary<string, string> { ["app"] = "explorer" },
+                                Action = "switch",
+                                Args = new Dictionary<string, string> 
+                                { 
+                                    ["app"] = "explorer",
+                                    ["path"] = "explorer.exe"
+                                },
                                 Label = "File Explorer",
                                 IconKey = "\uE8B7"
                             },
@@ -344,8 +377,12 @@ namespace Pulsar.Services
                             {
                                 Slot = 3,
                                 PluginId = "com.pulsar.winswitcher",
-                                Action = "activate",
-                                Args = new Dictionary<string, string> { ["app"] = "calc" },
+                                Action = "switch",
+                                Args = new Dictionary<string, string> 
+                                { 
+                                    ["app"] = "calc",
+                                    ["path"] = "calc.exe"
+                                },
                                 Label = "Calculator",
                                 IconKey = "\uE8EF"
                             }
@@ -375,6 +412,18 @@ namespace Pulsar.Services
         {
             _logger.LogInformation("[ConfigService] Creating smart configuration from {Count} detected apps", installedApps.Count);
             
+            // [Fix] 尝试保留现有配置的重要状态
+            bool hasCompletedTutorial = false;
+            string? lastTutorialStep = null;
+            
+            if (_cachedConfig != null)
+            {
+                hasCompletedTutorial = _cachedConfig.Settings.HasCompletedTutorial;
+                lastTutorialStep = _cachedConfig.Settings.LastTutorialStep;
+                _logger.LogDebug("[ConfigService] Preserving tutorial state: HasCompleted={HasCompleted}, LastStep={LastStep}", 
+                    hasCompletedTutorial, lastTutorialStep ?? "null");
+            }
+            
             // 1. 按优先级排序,取前 6 个 (预留 Slot 7-8 给教程)
             var topApps = CommonApplicationDatabase.GetTopApplications(installedApps, maxCount: 6);
             
@@ -384,12 +433,20 @@ namespace Pulsar.Services
             
             foreach (var app in topApps)
             {
+                // [Fix] 使用 switch 动作而不是 activate，支持自动启动
+                // 对于大多数应用，使用 processName.exe 作为启动路径
+                var args = new Dictionary<string, string> 
+                { 
+                    ["app"] = app.ProcessName,
+                    ["path"] = $"{app.ProcessName}.exe"
+                };
+                
                 switchModeSlots.Add(new PluginSlot
                 {
                     Slot = slotIndex++,
                     PluginId = "com.pulsar.winswitcher",
-                    Action = "activate",
-                    Args = new Dictionary<string, string> { ["app"] = app.ProcessName },
+                    Action = "switch",
+                    Args = args,
                     Label = app.DisplayName,
                     IconKey = app.IconKey
                 });
@@ -409,8 +466,12 @@ namespace Pulsar.Services
                     {
                         Slot = slotIndex++,
                         PluginId = "com.pulsar.winswitcher",
-                        Action = "activate",
-                        Args = new Dictionary<string, string> { ["app"] = notepadApp.ProcessName },
+                        Action = "switch",
+                        Args = new Dictionary<string, string> 
+                        { 
+                            ["app"] = notepadApp.ProcessName,
+                            ["path"] = "notepad.exe"
+                        },
                         Label = notepadApp.DisplayName,
                         IconKey = notepadApp.IconKey
                     });
@@ -435,7 +496,15 @@ namespace Pulsar.Services
                     LauncherTheme = "Light",
                     HoverScale = 1.2,
                     Springiness = 6.0,
-                    MaxDisplacement = 20.0
+                    MaxDisplacement = 20.0,
+                    
+                    // [Fix] 保留 Tutorial 状态，避免重复启动教程
+                    HasCompletedTutorial = hasCompletedTutorial,
+                    LastTutorialStep = lastTutorialStep,
+                    
+                    // [Fix] 设置配置元数据
+                    ConfigCreatedAt = DateTime.UtcNow,
+                    HasCompletedInitialDetection = true
                 },
                 Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
                 {

@@ -89,6 +89,17 @@ namespace Pulsar.Models
         /// </summary>
         public LoggingSettings Logging { get; set; } = new();
 
+        // [Config Metadata] Configuration metadata for tracking and protection
+        /// <summary>
+        /// 配置文件创建时间戳
+        /// </summary>
+        public DateTime? ConfigCreatedAt { get; set; } = null;
+
+        /// <summary>
+        /// 是否已完成初始应用检测
+        /// </summary>
+        public bool HasCompletedInitialDetection { get; set; } = false;
+
         // [Helper] 将字符串转换为 AppTheme 枚举
         [JsonIgnore]
         public AppTheme LauncherThemeEnum => 
