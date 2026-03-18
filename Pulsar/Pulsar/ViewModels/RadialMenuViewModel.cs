@@ -1076,6 +1076,10 @@ namespace Pulsar.ViewModels
                     slot.DataContext = win;
                     slot.BadgeCount = 0; // [Fix] Ensure no badges in sub-menu
                     slot.ActionStrategy = new WindowSwitchStrategy(win, _usageTracker, _healthMonitor); // [New] Set Strategy with analytics
+                    
+                    // [Fix] Reset animation state to ensure slot is fully visible
+                    // Without this, slots may retain CurrentOpacity = 0 from previous state
+                    slot.ResetAnimation();
                 }
                 else
                 {
@@ -1083,6 +1087,9 @@ namespace Pulsar.ViewModels
                     slot.LoadIconData(string.Empty);
                     slot.Type = SlotType.None;
                     slot.ActionStrategy = new NoOpStrategy(); // [New] Clear Strategy
+                    
+                    // [Fix] Reset animation state for empty slots too (consistency)
+                    slot.ResetAnimation();
                 }
             }
             

@@ -349,60 +349,85 @@ namespace Pulsar.Services
                 string targetName = processName.ToLower().Replace(".exe", "");
                 var processes = Process.GetProcessesByName(targetName);
                 
-                if (processes.Length == 0) return false;
+                if (processes.Length == 0)
+                {
+                    _logger?.LogDebug("[SwitchToProcess] Process not found: {ProcessName}", processName);
+                    return false;
+                }
                 
-                // [Enhancement] Smart Window Switching for Multi-Window Processes
-                // If current foreground window belongs to target process, switch to next most recent window
+                // [Refactor] Smart Window Switching for Multi-Window Processes
+                // Uses Window Registry to track real activation times (via WindowActivationMonitor)
                 
                 // Get current foreground window
                 IntPtr currentForeground = GetForegroundWindow_Native();
-                GetWindowThreadProcessId(currentForeground, out uint currentPid);
                 
-                // Collect all valid windows from target process with Z-Order tracking
-                var targetWindows = new List<(IntPtr Handle, int ZOrder, uint ProcessId)>();
-                int zOrder = 0;
+                // Collect all valid windows from target process with real activation times
+                var targetWindows = new List<(IntPtr Handle, DateTime LastActivation, string Title)>();
                 
                 foreach (var proc in processes)
                 {
                     if (proc.MainWindowHandle != IntPtr.Zero)
                     {
-                        GetWindowThreadProcessId(proc.MainWindowHandle, out uint winPid);
+                        IntPtr hwnd = proc.MainWindowHandle;
                         
-                        // Check if this window is the current foreground window
-                        bool isCurrentWindow = (proc.MainWindowHandle == currentForeground);
-                        
-                        if (isCurrentWindow)
+                        // Query registry for real activation time
+                        DateTime lastActivation;
+                        if (_windowRegistry.TryGetValue(hwnd, out var entry))
                         {
-                            // Current window - deprioritize by assigning max Z-Order
-                            targetWindows.Add((proc.MainWindowHandle, int.MaxValue, winPid));
-                            _logger?.LogDebug("[SwitchToProcess] Current window detected: {ProcessName} (PID: {Pid})", 
-                                processName, winPid);
+                            lastActivation = entry.LastActivationTime;
                         }
                         else
                         {
-                            // Non-current window - use actual Z-Order (lower = more recent)
-                            targetWindows.Add((proc.MainWindowHandle, zOrder++, winPid));
+                            // Fallback: window not in registry yet (newly created)
+                            // Use DateTime.MinValue to deprioritize
+                            lastActivation = DateTime.MinValue;
+                            _logger?.LogDebug("[SwitchToProcess] Window not in registry (newly created): {Title}", 
+                                GetWindowTitle(hwnd));
                         }
+                        
+                        targetWindows.Add((hwnd, lastActivation, GetWindowTitle(hwnd)));
                     }
                 }
                 
-                if (targetWindows.Count == 0) return false;
-                
-                // Sort by Z-Order: smallest first (most recently activated non-current window)
-                var targetWindow = targetWindows.OrderBy(w => w.ZOrder).First();
-                
-                // Log the switch decision
-                if (targetWindow.ZOrder == int.MaxValue)
+                if (targetWindows.Count == 0)
                 {
-                    // Only one window exists, switching to itself
-                    _logger?.LogDebug("[SwitchToProcess] Single window process, switching to same window: {ProcessName}", 
-                        processName);
+                    _logger?.LogWarning("[SwitchToProcess] No valid windows found for process: {ProcessName}", processName);
+                    return false;
+                }
+                
+                // Sort by LastActivation descending (most recent first)
+                // Then filter out current foreground window
+                var sortedWindows = targetWindows.OrderByDescending(w => w.LastActivation).ToList();
+                
+                // Log all candidate windows for debugging
+                if (targetWindows.Count > 1)
+                {
+                    _logger?.LogInformation("[SwitchToProcess] Multi-window process detected: {ProcessName} ({Count} windows)", 
+                        processName, targetWindows.Count);
+                    
+                    for (int i = 0; i < sortedWindows.Count; i++)
+                    {
+                        var w = sortedWindows[i];
+                        bool isCurrent = (w.Handle == currentForeground);
+                        _logger?.LogDebug("[SwitchToProcess]   [{Index}] '{Title}' - LastActivation: {Time}, IsCurrent: {IsCurrent}", 
+                            i, w.Title, w.LastActivation, isCurrent);
+                    }
+                }
+                
+                // Select target: most recent window that is NOT current foreground
+                var targetWindow = sortedWindows.FirstOrDefault(w => w.Handle != currentForeground);
+                
+                // Fallback: if all windows are current (single window case), use most recent
+                if (targetWindow.Handle == IntPtr.Zero)
+                {
+                    targetWindow = sortedWindows.First();
+                    _logger?.LogDebug("[SwitchToProcess] Single window process, switching to same window: '{Title}'", 
+                        targetWindow.Title);
                 }
                 else
                 {
-                    // Switching to a different window
-                    _logger?.LogInformation("[SwitchToProcess] Smart switch: {ProcessName} -> Most recent non-current window (Z-Order: {ZOrder})", 
-                        processName, targetWindow.ZOrder);
+                    _logger?.LogInformation("[SwitchToProcess] Smart switch: {ProcessName} -> '{Title}' (LastActivation: {Time})", 
+                        processName, targetWindow.Title, targetWindow.LastActivation);
                 }
                 
                 ForceForegroundWindow(targetWindow.Handle);
