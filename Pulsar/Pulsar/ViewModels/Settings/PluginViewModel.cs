@@ -290,7 +290,7 @@ namespace Pulsar.ViewModels.Settings
 
                 if (windowService != null && processRegistryService != null)
                 {
-                    // Get current blacklist value
+                    // Get current configuration values
                     var currentConfig = GetCurrentConfig();
                     var currentBlacklist = currentConfig.TryGetValue("ExcludeProcesses", out var val) 
                         ? val?.ToString() ?? string.Empty 
@@ -301,29 +301,32 @@ namespace Pulsar.ViewModels.Settings
                         processRegistryService, 
                         currentBlacklist);
                     var result = await _dialogService.ShowCustomAsync(
-                        "Process Blacklist", 
+                        "Window Switcher Configuration", 
                         vm, 
                         Models.Enums.DialogButtons.OkCancel,
                         Models.DialogSizeConstraints.Large);
 
                     if (result == Models.Enums.DialogResult.Confirmed)
                     {
-                        // [Fix] Update plugin configuration with new blacklist value
+                        // Update plugin configuration with new blacklist
                         var config = _configService.Current;
-                        if (config.Plugins.TryGetValue(Id, out var profile))
+                        if (!config.Plugins.TryGetValue(Id, out var profile))
                         {
-                            // Update the ExcludeProcesses setting
-                            profile.Config["ExcludeProcesses"] = vm.Result ?? string.Empty;
-                            
-                            // [Critical] Notify plugin to update WindowService blacklist
-                            if (_plugin is IPluginConfigurable configurable)
-                            {
-                                configurable.UpdateSettings(profile.Config);
-                            }
-                            
-                            // Save to disk
-                            await _configService.SaveAsync(config);
+                            profile = new PluginProfile();
+                            config.Plugins[Id] = profile;
                         }
+                        
+                        // Update blacklist setting
+                        profile.Config["ExcludeProcesses"] = vm.Result ?? string.Empty;
+                        
+                        // Notify plugin to update WindowService
+                        if (_plugin is IPluginConfigurable configurable)
+                        {
+                            configurable.UpdateSettings(profile.Config);
+                        }
+                        
+                        // Save to disk
+                        await _configService.SaveAsync(config);
                         
                         // Refresh the settings display
                         Settings.Clear();
