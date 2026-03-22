@@ -123,7 +123,6 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="90"/>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="16"/>
                     <ColumnDefinition Width="90"/>
                     <ColumnDefinition Width="*"/>
@@ -133,23 +132,20 @@
                 <!-- Color label -->
                 <TextBlock Text="Color" FontWeight="SemiBold" VerticalAlignment="Center" FontSize="13"/>
 
-                <!-- Color swatch -->
-                <Border Grid.Column="1"
-                        Width="28" Height="28"
-                        CornerRadius="4"
-                        Margin="0,0,4,0"
-                        BorderBrush="{DynamicResource ControlElevationBorderBrush}"
-                        BorderThickness="1"
-                        Background="{Binding Slot.Color, Converter={StaticResource HexToBrush}}"
-                        VerticalAlignment="Center"
-                        ToolTip="Slot Color"/>
-
-                <!-- Color picker button -->
-                <ui:Button Grid.Column="2"
-                           Icon="{ui:SymbolIcon Drop24}"
+                <!-- Color picker button with background showing current color -->
+                <ui:Button Grid.Column="1"
                            Style="{StaticResource PulsarIconButtonStyle}"
                            Click="PickColor_Click"
-                           ToolTip="Pick color"/>
+                           ToolTip="Pick color"
+                           Width="32" Height="32"
+                           Padding="0"
+                           Background="{Binding Slot.Color, Converter={StaticResource HexToBrush}}"
+                           Margin="0,0,4,0">
+                    <ui:Button.Icon>
+                        <ui:SymbolIcon Symbol="Drop24" FontSize="16"
+                                       Foreground="White"/>
+                    </ui:Button.Icon>
+                </ui:Button>
 
                 <!-- Divider spacer -->
                 <Border Grid.Column="3"/>
