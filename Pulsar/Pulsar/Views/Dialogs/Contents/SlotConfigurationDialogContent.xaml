@@ -67,7 +67,7 @@
                         <!-- Optional badge -->
                         <Border Grid.Column="4"
                                 Background="{DynamicResource ControlFillColorSecondaryBrush}"
-                                CornerRadius="999"
+                                                CornerRadius="4"
                                 Padding="8,2"
                                 Margin="6,0,0,0"
                                 VerticalAlignment="Center"
@@ -130,7 +130,7 @@
 
                 <!-- Color picker button: border always visible, background = selected color -->
                 <Border Grid.Column="1"
-                        Width="32" Height="32"
+                        Width="44" Height="28"
                         CornerRadius="6"
                         BorderBrush="{DynamicResource ControlElevationBorderBrush}"
                         BorderThickness="1"
@@ -163,7 +163,7 @@
                 <ui:TextBox Grid.Column="1"
                             Text="{Binding Slot.IconKey}"
                             Icon="{ui:SymbolIcon Image24}"
-                            PlaceholderText="Icon key or file path"/>
+                            PlaceholderText="e.g. Settings24 or C:\icon.png"/>
 
                 <!-- Icon picker button -->
                 <ui:Button Grid.Column="2"
@@ -189,7 +189,7 @@
             <StackPanel Margin="0,12,0,0">
 
                 <!-- Action section: single action label -->
-                <StackPanel Margin="0,0,0,14"
+                <StackPanel Margin="0,4,0,14"
                             Visibility="{Binding HasSingleAction, Converter={StaticResource BoolToVis}}">
                     <TextBlock Text="ACTION" FontSize="10" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
@@ -204,7 +204,7 @@
                 </StackPanel>
 
                 <!-- Action section: radio list (2-4 actions) -->
-                <StackPanel Margin="0,0,0,14"
+                <StackPanel Margin="0,4,0,14"
                             Visibility="{Binding UseRadioActions, Converter={StaticResource BoolToVis}}">
                     <TextBlock Text="ACTION" FontSize="10" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
@@ -225,7 +225,7 @@
                 </StackPanel>
 
                 <!-- Action section: combobox (>4 actions) -->
-                <StackPanel Margin="0,0,0,14"
+                <StackPanel Margin="0,4,0,14"
                             Visibility="{Binding UseComboActions, Converter={StaticResource BoolToVis}}">
                     <TextBlock Text="ACTION" FontSize="10" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
@@ -286,7 +286,7 @@
                 </Border>
 
                 <!-- Parameters: Required -->
-                <StackPanel Margin="0,0,0,16"
+                <StackPanel Margin="0,4,0,16"
                             Visibility="{Binding HasRequiredParameters, Converter={StaticResource BoolToVis}}">
                     <TextBlock Text="CONFIGURATION" FontSize="10" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
@@ -296,7 +296,7 @@
                 </StackPanel>
 
                 <!-- Parameters: Optional -->
-                <StackPanel Margin="0,0,0,16"
+                <StackPanel Margin="0,4,0,16"
                             Visibility="{Binding HasOptionalParameters, Converter={StaticResource BoolToVis}}">
                     <TextBlock Text="OPTIONS" FontSize="10" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
@@ -306,7 +306,7 @@
                 </StackPanel>
 
                 <!-- Parameters: Advanced -->
-                <StackPanel Margin="0,0,0,8"
+                <StackPanel Margin="0,4,0,8"
                             Visibility="{Binding HasAdvancedParameters, Converter={StaticResource BoolToVis}}">
                     <TextBlock Text="ADVANCED" FontSize="10" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
@@ -321,16 +321,33 @@
         <!-- ═══════════════════════════════════════════
              SECTION 3: Footer (Delete)
              ═══════════════════════════════════════════ -->
-        <StackPanel Grid.Row="2" Margin="0,12,0,0">
-            <Border Background="{DynamicResource ControlStrokeColorSecondaryBrush}" Height="1" Margin="0,0,0,12"/>
-
-            <!-- Delete Slot: danger, left-aligned -->
-            <ui:Button Content="Delete Slot"
-                       Icon="{ui:SymbolIcon Delete24}"
-                       Style="{StaticResource PulsarDangerButtonStyle}"
-                       Click="RemoveSlot_Click"
-                       HorizontalAlignment="Left"
-                       ToolTip="Permanently remove this slot"/>
+        <StackPanel Grid.Row="2" Margin="0,16,0,0">
+            <!-- Danger zone header -->
+            <Border Background="{DynamicResource SystemFillColorCriticalBackgroundBrush}"
+                    BorderBrush="{DynamicResource SystemFillColorCriticalBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Padding="12,10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Danger Zone" FontWeight="SemiBold" FontSize="13"
+                                   Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                        <TextBlock Text="This action cannot be undone."
+                                   FontSize="12" Margin="0,2,0,0"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                    </StackPanel>
+                    <ui:Button Grid.Column="1"
+                               Content="Delete Slot"
+                               Icon="{ui:SymbolIcon Delete24}"
+                               Style="{StaticResource PulsarDangerButtonStyle}"
+                               Click="RemoveSlot_Click"
+                               ToolTip="Permanently remove this slot"/>
+                </Grid>
+            </Border>
         </StackPanel>
     </Grid>
 </UserControl>
