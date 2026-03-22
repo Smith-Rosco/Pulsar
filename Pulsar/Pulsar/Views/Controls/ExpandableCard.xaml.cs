@@ -247,32 +247,6 @@ namespace Pulsar.Views.Controls
         public ExpandableCard()
         {
             InitializeComponent();
-            // Intercept header toggle click when ClickCommand is set
-            this.PreviewMouseLeftButtonDown += OnPreviewMouseLeftButtonDown;
-        }
-
-        private void OnPreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            if (ClickCommand == null) return;
-
-            // Only intercept clicks on the CardExpander toggle area (not on buttons inside header)
-            var hit = e.OriginalSource as DependencyObject;
-            // Walk up visual tree: if click landed on a Button, let it through
-            var element = hit;
-            while (element != null)
-            {
-                if (element is System.Windows.Controls.Button || element is System.Windows.Controls.Primitives.ToggleButton)
-                    return;
-                if (element == this)
-                    break;
-                element = System.Windows.Media.VisualTreeHelper.GetParent(element);
-            }
-
-            if (ClickCommand.CanExecute(ClickCommandParameter))
-            {
-                ClickCommand.Execute(ClickCommandParameter);
-                e.Handled = true;
-            }
         }
     }
 }

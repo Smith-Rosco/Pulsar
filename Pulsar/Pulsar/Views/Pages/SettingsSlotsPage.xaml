@@ -274,70 +274,82 @@
                                                            Title="{Binding Label}"
                                                            Subtitle="{Binding ActionLabel}"
                                                            IsToggleVisible="False"
-                                                           PrimaryActionIcon="Settings24"
-                                                           PrimaryActionTooltip="Edit Slot"
-                                                           PrimaryActionCommand="{Binding DataContext.OpenSlotConfigurationCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                           PrimaryActionCommandParameter="{Binding}"
-                                                           PrimaryActionVisibility="Visible"
-                                                           ClickCommand="{Binding DataContext.OpenSlotConfigurationCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                           ClickCommandParameter="{Binding}"
+                                                           PrimaryActionVisibility="Collapsed"
                                                            PageDataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Page}}">
-                                    
-                                     <!-- Header Content: Position + Status + Three-dot menu -->
-                                      <controls:ExpandableCard.HeaderContent>
-                                           <WrapPanel>
-                                                     <TextBlock Text="{Binding Slot, StringFormat='Position {0}'}"
-                                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                                                FontSize="12"
-                                                               Margin="0,0,8,0"
-                                                               VerticalAlignment="Center"/>
-                                                   <Border Background="{DynamicResource ControlFillColorSecondaryBrush}"
-                                                           CornerRadius="999"
-                                                           Padding="8,2"
-                                                           Margin="0,0,8,0"
-                                                           Visibility="{Binding TypeBadge, Converter={StaticResource StringEmptyToVis}, FallbackValue=Collapsed}">
-                                                       <TextBlock Text="{Binding TypeBadge}" FontSize="10" Foreground="{Binding TypeColor}"/>
-                                                   </Border>
-                                                     <Border Background="{DynamicResource ControlFillColorSecondaryBrush}"
-                                                             CornerRadius="999"
-                                                             Padding="8,2"
-                                                             Margin="0,0,8,0">
-                                                         <TextBlock Text="{Binding HealthBadgeText}" FontSize="10" Foreground="{Binding HealthBadgeColor}"/>
-                                                     </Border>
-                                                     <!-- SummaryTokens chips (max 3) -->
-                                                     <ItemsControl ItemsSource="{Binding SummaryTokens}"
-                                                                   Visibility="{Binding HasSummaryTokens, Converter={StaticResource BoolToVis}}">
-                                                         <ItemsControl.ItemsPanel>
-                                                             <ItemsPanelTemplate>
-                                                                 <WrapPanel Orientation="Horizontal"/>
-                                                             </ItemsPanelTemplate>
-                                                         </ItemsControl.ItemsPanel>
-                                                         <ItemsControl.ItemTemplate>
-                                                             <DataTemplate>
-                                                                 <Border Background="{DynamicResource ControlFillColorDefaultBrush}"
-                                                                         CornerRadius="999"
-                                                                         Padding="6,2"
-                                                                         Margin="0,0,4,0"
-                                                                         BorderBrush="{DynamicResource ControlElevationBorderBrush}"
-                                                                         BorderThickness="1">
-                                                                     <TextBlock Text="{Binding}" FontSize="10"
-                                                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                                                                MaxWidth="80"
-                                                                                TextTrimming="CharacterEllipsis"/>
-                                                                 </Border>
-                                                             </DataTemplate>
-                                                         </ItemsControl.ItemTemplate>
-                                                     </ItemsControl>
-                                                     <!-- Three-dot context menu button -->
-                                                     <ui:Button Style="{StaticResource PulsarIconButtonStyle}"
-                                                                Icon="{ui:SymbolIcon MoreHorizontal24}"
-                                                                ToolTip="More options"
-                                                                Padding="4"
-                                                                Click="SlotMoreButton_Click"
-                                                                Tag="{Binding}"/>
-                                           </WrapPanel>
-                                        </controls:ExpandableCard.HeaderContent>
-                                      
+                                     
+                                      <!-- Header Content: Position + Three-dot menu (compact) -->
+                                       <controls:ExpandableCard.HeaderContent>
+                                            <WrapPanel>
+                                                      <TextBlock Text="{Binding Slot, StringFormat='#{0}'}"
+                                                                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                                 FontSize="12"
+                                                                Margin="0,0,8,0"
+                                                                VerticalAlignment="Center"/>
+                                                      <!-- Three-dot context menu button -->
+                                                      <ui:Button Style="{StaticResource PulsarIconButtonStyle}"
+                                                                 Icon="{ui:SymbolIcon MoreHorizontal24}"
+                                                                 ToolTip="More options"
+                                                                 Padding="4"
+                                                                 Click="SlotMoreButton_Click"
+                                                                 Tag="{Binding}"/>
+                                            </WrapPanel>
+                                         </controls:ExpandableCard.HeaderContent>
+
+                                      <!-- Expanded Content: read-only info panel -->
+                                      <controls:ExpandableCard.ExpandedContent>
+                                          <StackPanel Margin="0,4,0,8">
+                                              <!-- Type + Health badges row -->
+                                              <WrapPanel Margin="0,0,0,8">
+                                                  <Border Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                                          CornerRadius="999"
+                                                          Padding="8,2"
+                                                          Margin="0,0,6,0"
+                                                          Visibility="{Binding TypeBadge, Converter={StaticResource StringEmptyToVis}, FallbackValue=Collapsed}">
+                                                      <TextBlock Text="{Binding TypeBadge}" FontSize="11" Foreground="{Binding TypeColor}" FontWeight="SemiBold"/>
+                                                  </Border>
+                                                  <Border Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                                          CornerRadius="999"
+                                                          Padding="8,2"
+                                                          Margin="0,0,6,0">
+                                                      <TextBlock Text="{Binding HealthBadgeText}" FontSize="11" Foreground="{Binding HealthBadgeColor}"/>
+                                                  </Border>
+                                              </WrapPanel>
+
+                                              <!-- Summary tokens -->
+                                              <ItemsControl ItemsSource="{Binding SummaryTokens}"
+                                                            Visibility="{Binding HasSummaryTokens, Converter={StaticResource BoolToVis}}"
+                                                            Margin="0,0,0,10">
+                                                  <ItemsControl.ItemsPanel>
+                                                      <ItemsPanelTemplate>
+                                                          <WrapPanel Orientation="Horizontal"/>
+                                                      </ItemsPanelTemplate>
+                                                  </ItemsControl.ItemsPanel>
+                                                  <ItemsControl.ItemTemplate>
+                                                      <DataTemplate>
+                                                          <Border Background="{DynamicResource ControlFillColorDefaultBrush}"
+                                                                  CornerRadius="4"
+                                                                  Padding="8,3"
+                                                                  Margin="0,0,6,4"
+                                                                  BorderBrush="{DynamicResource ControlElevationBorderBrush}"
+                                                                  BorderThickness="1">
+                                                              <TextBlock Text="{Binding}" FontSize="11"
+                                                                         Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                                         MaxWidth="120"
+                                                                         TextTrimming="CharacterEllipsis"/>
+                                                          </Border>
+                                                      </DataTemplate>
+                                                  </ItemsControl.ItemTemplate>
+                                              </ItemsControl>
+
+                                              <!-- Edit button -->
+                                              <ui:Button Content="Edit"
+                                                         Icon="{ui:SymbolIcon Edit24}"
+                                                         Style="{StaticResource PulsarSecondaryButtonStyle}"
+                                                         Command="{Binding DataContext.OpenSlotConfigurationCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                         CommandParameter="{Binding}"
+                                                         HorizontalAlignment="Left"/>
+                                          </StackPanel>
+                                       </controls:ExpandableCard.ExpandedContent>
                                  </controls:ExpandableCard>
                              </Grid>
                          </DataTemplate>
