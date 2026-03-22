@@ -49,16 +49,20 @@
                                FontSize="14" 
                                FontWeight="SemiBold"/>
                     
-                    <!-- Subtitle (optional) -->
-                    <TextBlock Text="{Binding Subtitle, ElementName=Root}" 
-                               FontSize="12" 
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               Visibility="{Binding Subtitle, ElementName=Root, Converter={StaticResource StringEmptyToVisibilityConverter}}"/>
-                    
-                    <!-- Header Content (custom content like badges, progress bars) -->
-                    <ContentPresenter Content="{Binding HeaderContent, ElementName=Root}"
-                                       ContentTemplate="{Binding HeaderContentTemplate, ElementName=Root}"
-                                       Margin="0,2,0,0"/>
+                    <!-- Subtitle + HeaderContent on same row -->
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding Subtitle, ElementName=Root}" 
+                                   FontSize="12" 
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   VerticalAlignment="Center"
+                                   Visibility="{Binding Subtitle, ElementName=Root, Converter={StaticResource StringEmptyToVisibilityConverter}}"/>
+                        
+                        <!-- Header Content (e.g. position badge, chips) -->
+                        <ContentPresenter Content="{Binding HeaderContent, ElementName=Root}"
+                                          ContentTemplate="{Binding HeaderContentTemplate, ElementName=Root}"
+                                          Margin="6,0,0,0"
+                                          VerticalAlignment="Center"/>
+                    </StackPanel>
                 </StackPanel>
                 
                 <!-- Primary Action Button -->

@@ -259,16 +259,17 @@
                                                            PrimaryActionVisibility="Collapsed"
                                                            PageDataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Page}}">
                                      
-                                      <!-- Header Content: Position (compact) -->
+                                      <!-- Header Content: Position badge inline with subtitle -->
                                        <controls:ExpandableCard.HeaderContent>
-                                            <WrapPanel>
-                                                      <TextBlock Text="{Binding Slot, StringFormat='#{0}'}"
-                                                                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                                                 FontSize="12"
-                                                                Margin="0,0,8,0"
-                                                                VerticalAlignment="Center"/>
-                                            </WrapPanel>
-                                         </controls:ExpandableCard.HeaderContent>
+                                           <Border Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                                   CornerRadius="4"
+                                                   Padding="5,1"
+                                                   VerticalAlignment="Center">
+                                               <TextBlock Text="{Binding Slot, StringFormat='#{0}'}"
+                                                          Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                          FontSize="10"/>
+                                           </Border>
+                                        </controls:ExpandableCard.HeaderContent>
 
                                       <!-- Expanded Content: read-only info panel + action buttons -->
                                       <controls:ExpandableCard.ExpandedContent>
