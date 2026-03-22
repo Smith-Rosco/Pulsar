@@ -273,12 +273,12 @@
 
                                       <!-- Expanded Content: read-only info panel + action buttons -->
                                       <controls:ExpandableCard.ExpandedContent>
-                                          <StackPanel Margin="0,6,0,8"
+                                          <StackPanel Margin="0,4,0,6"
                                                       Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Page}}"
                                                       Loaded="ExpandedPanel_Loaded">
 
                                               <!-- Type + Health + SummaryTokens info row -->
-                                              <WrapPanel Margin="0,0,0,10">
+                                              <WrapPanel Margin="0,0,0,8">
                                                    <!-- Type badge -->
                                                    <Border CornerRadius="4"
                                                            Padding="6,2"
@@ -338,10 +338,6 @@
                                                        </ItemsControl.ItemTemplate>
                                                    </ItemsControl>
                                                </WrapPanel>
-
-                                              <!-- Divider -->
-                                              <Border Background="{DynamicResource ControlStrokeColorSecondaryBrush}"
-                                                      Height="1" Margin="0,0,0,10"/>
 
                                               <!-- Action buttons row -->
                                               <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
