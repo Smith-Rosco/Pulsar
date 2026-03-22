@@ -54,6 +54,15 @@ namespace Pulsar.Views.Dialogs.Contents
             }
         }
 
+        private async void ColorSwatch_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (DataContext is SlotConfigurationDialogViewModel viewModel)
+            {
+                await viewModel.PickColorAsync();
+                e.Handled = true;
+            }
+        }
+
         private async void PickColor_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is SlotConfigurationDialogViewModel viewModel)

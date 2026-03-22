@@ -118,49 +118,55 @@
                             PlaceholderText="Display Label"/>
             </Grid>
 
-            <!-- Row 2: Color + Icon -->
-            <Grid Margin="0,0,0,4">
+            <!-- Row 2: Color -->
+            <Grid Margin="0,0,0,8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="90"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="16"/>
-                    <ColumnDefinition Width="90"/>
-                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- Color label -->
                 <TextBlock Text="Color" FontWeight="SemiBold" VerticalAlignment="Center" FontSize="13"/>
 
-                <!-- Color picker button with background showing current color -->
-                <ui:Button Grid.Column="1"
-                           Style="{StaticResource PulsarIconButtonStyle}"
-                           Click="PickColor_Click"
-                           ToolTip="Pick color"
-                           Width="32" Height="32"
-                           Padding="0"
-                           Background="{Binding Slot.Color, Converter={StaticResource HexToBrush}}"
-                           Margin="0,0,4,0">
-                    <ui:Button.Icon>
-                        <ui:SymbolIcon Symbol="Drop24" FontSize="16"
-                                       Foreground="White"/>
-                    </ui:Button.Icon>
-                </ui:Button>
+                <!-- Color picker button: border always visible, background = selected color -->
+                <Border Grid.Column="1"
+                        Width="32" Height="32"
+                        CornerRadius="6"
+                        BorderBrush="{DynamicResource ControlElevationBorderBrush}"
+                        BorderThickness="1"
+                        Background="{Binding Slot.Color, Converter={StaticResource HexToBrush}}"
+                        VerticalAlignment="Center"
+                        ToolTip="Pick color"
+                        Cursor="Hand"
+                        MouseLeftButtonDown="ColorSwatch_MouseLeftButtonDown">
+                    <ui:SymbolIcon Symbol="Drop24" FontSize="14" Foreground="White"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <ui:SymbolIcon.Effect>
+                            <DropShadowEffect Color="Black" Opacity="0.6" BlurRadius="3" ShadowDepth="0"/>
+                        </ui:SymbolIcon.Effect>
+                    </ui:SymbolIcon>
+                </Border>
+            </Grid>
 
-                <!-- Divider spacer -->
-                <Border Grid.Column="3"/>
+            <!-- Row 3: Icon -->
+            <Grid Margin="0,0,0,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="90"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
                 <!-- Icon label -->
-                <TextBlock Grid.Column="4" Text="Icon" FontWeight="SemiBold" VerticalAlignment="Center" FontSize="13"/>
+                <TextBlock Text="Icon" FontWeight="SemiBold" VerticalAlignment="Center" FontSize="13"/>
 
                 <!-- Icon TextBox -->
-                <ui:TextBox Grid.Column="5"
+                <ui:TextBox Grid.Column="1"
                             Text="{Binding Slot.IconKey}"
                             Icon="{ui:SymbolIcon Image24}"
                             PlaceholderText="Icon key or file path"/>
 
                 <!-- Icon picker button -->
-                <ui:Button Grid.Column="6"
+                <ui:Button Grid.Column="2"
                            Icon="{ui:SymbolIcon FolderOpen16}"
                            Style="{StaticResource PulsarIconButtonStyle}"
                            Click="PickIcon_Click"
