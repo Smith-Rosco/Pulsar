@@ -106,49 +106,64 @@
                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                        Margin="0,0,0,12"/>
 
-            <!-- Label + Appearance in a single header row -->
+            <!-- Row 1: Label -->
             <Grid Margin="0,0,0,8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="90"/>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="28"/>
-                    <ColumnDefinition Width="8"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="28"/>
                 </Grid.ColumnDefinitions>
-
-                <!-- Label -->
                 <TextBlock Text="Label" FontWeight="SemiBold" VerticalAlignment="Center" FontSize="13"/>
                 <ui:TextBox Grid.Column="1"
                             Text="{Binding Slot.Label, UpdateSourceTrigger=PropertyChanged}"
                             PlaceholderText="Display Label"/>
+            </Grid>
 
-                <!-- Color swatch + picker -->
-                <Border Grid.Column="2"
+            <!-- Row 2: Color + Icon -->
+            <Grid Margin="0,0,0,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="90"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="90"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Color label -->
+                <TextBlock Text="Color" FontWeight="SemiBold" VerticalAlignment="Center" FontSize="13"/>
+
+                <!-- Color swatch -->
+                <Border Grid.Column="1"
                         Width="28" Height="28"
                         CornerRadius="4"
-                        Margin="8,0,4,0"
+                        Margin="0,0,4,0"
                         BorderBrush="{DynamicResource ControlElevationBorderBrush}"
                         BorderThickness="1"
                         Background="{Binding Slot.Color, Converter={StaticResource HexToBrush}}"
                         VerticalAlignment="Center"
                         ToolTip="Slot Color"/>
-                <ui:Button Grid.Column="3"
+
+                <!-- Color picker button -->
+                <ui:Button Grid.Column="2"
                            Icon="{ui:SymbolIcon Drop24}"
                            Style="{StaticResource PulsarIconButtonStyle}"
                            Click="PickColor_Click"
                            ToolTip="Pick color"/>
 
-                <!-- Spacer -->
-                <Border Grid.Column="4"/>
+                <!-- Divider spacer -->
+                <Border Grid.Column="3"/>
 
-                <!-- Icon text + picker -->
+                <!-- Icon label -->
+                <TextBlock Grid.Column="4" Text="Icon" FontWeight="SemiBold" VerticalAlignment="Center" FontSize="13"/>
+
+                <!-- Icon TextBox -->
                 <ui:TextBox Grid.Column="5"
                             Text="{Binding Slot.IconKey}"
                             Icon="{ui:SymbolIcon Image24}"
-                            PlaceholderText="Icon or image"
-                            Width="130"/>
+                            PlaceholderText="Icon key or file path"/>
+
+                <!-- Icon picker button -->
                 <ui:Button Grid.Column="6"
                            Icon="{ui:SymbolIcon FolderOpen16}"
                            Style="{StaticResource PulsarIconButtonStyle}"
@@ -289,20 +304,14 @@
                 </StackPanel>
 
                 <!-- Parameters: Advanced -->
-                <Expander Margin="0,0,0,8"
-                          Background="Transparent"
-                          BorderThickness="0"
-                          Padding="0"
-                          Visibility="{Binding HasAdvancedParameters, Converter={StaticResource BoolToVis}}">
-                    <Expander.Header>
-                        <TextBlock Text="ADVANCED" FontSize="10" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                    </Expander.Header>
-                    <StackPanel Margin="0,10,0,0">
-                        <ItemsControl ItemsSource="{Binding AdvancedParameters}"
-                                      ItemTemplate="{StaticResource DialogSlotParameterFieldTemplate}"/>
-                    </StackPanel>
-                </Expander>
+                <StackPanel Margin="0,0,0,8"
+                            Visibility="{Binding HasAdvancedParameters, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="ADVANCED" FontSize="10" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               Margin="0,0,0,10"/>
+                    <ItemsControl ItemsSource="{Binding AdvancedParameters}"
+                                  ItemTemplate="{StaticResource DialogSlotParameterFieldTemplate}"/>
+                </StackPanel>
 
             </StackPanel>
         </ScrollViewer>
