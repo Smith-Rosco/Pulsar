@@ -273,55 +273,68 @@
 
                                       <!-- Expanded Content: read-only info panel + action buttons -->
                                       <controls:ExpandableCard.ExpandedContent>
-                                          <StackPanel Margin="0,4,0,8"
+                                          <StackPanel Margin="0,6,0,8"
                                                       Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Page}}"
                                                       Loaded="ExpandedPanel_Loaded">
-                                              <!-- Type + Health badges row -->
-                                              <WrapPanel Margin="0,0,0,8">
-                                                  <Border Background="{DynamicResource ControlFillColorSecondaryBrush}"
-                                                          CornerRadius="999"
+
+                                              <!-- Type + Health + SummaryTokens badges row -->
+                                              <WrapPanel Margin="0,0,0,10">
+                                                  <!-- Type badge -->
+                                                  <Border CornerRadius="999"
                                                           Padding="8,2"
                                                           Margin="0,0,6,0"
+                                                          BorderBrush="{DynamicResource ControlElevationBorderBrush}"
+                                                          BorderThickness="1"
+                                                          Background="{DynamicResource ControlFillColorSecondaryBrush}"
                                                           Visibility="{Binding TypeBadge, Converter={StaticResource StringEmptyToVis}, FallbackValue=Collapsed}">
-                                                      <TextBlock Text="{Binding TypeBadge}" FontSize="11" Foreground="{Binding TypeColor}" FontWeight="SemiBold"/>
+                                                      <TextBlock Text="{Binding TypeBadge}"
+                                                                 FontSize="11" FontWeight="SemiBold"
+                                                                 Foreground="{Binding TypeColor}"/>
                                                   </Border>
-                                                  <Border Background="{DynamicResource ControlFillColorSecondaryBrush}"
-                                                          CornerRadius="999"
+                                                  <!-- Health badge -->
+                                                  <Border CornerRadius="999"
                                                           Padding="8,2"
-                                                          Margin="0,0,6,0">
-                                                      <TextBlock Text="{Binding HealthBadgeText}" FontSize="11" Foreground="{Binding HealthBadgeColor}"/>
+                                                          Margin="0,0,6,0"
+                                                          BorderBrush="{DynamicResource ControlElevationBorderBrush}"
+                                                          BorderThickness="1"
+                                                          Background="{DynamicResource ControlFillColorSecondaryBrush}">
+                                                      <TextBlock Text="{Binding HealthBadgeText}"
+                                                                 FontSize="11"
+                                                                 Foreground="{Binding HealthBadgeColor}"/>
                                                   </Border>
+                                                  <!-- Summary tokens -->
+                                                  <ItemsControl ItemsSource="{Binding SummaryTokens}"
+                                                                Visibility="{Binding HasSummaryTokens, Converter={StaticResource BoolToVis}}">
+                                                      <ItemsControl.ItemsPanel>
+                                                          <ItemsPanelTemplate>
+                                                              <WrapPanel Orientation="Horizontal"/>
+                                                          </ItemsPanelTemplate>
+                                                      </ItemsControl.ItemsPanel>
+                                                      <ItemsControl.ItemTemplate>
+                                                          <DataTemplate>
+                                                              <Border CornerRadius="999"
+                                                                      Padding="8,2"
+                                                                      Margin="0,0,6,0"
+                                                                      BorderBrush="{DynamicResource ControlElevationBorderBrush}"
+                                                                      BorderThickness="1"
+                                                                      Background="{DynamicResource ControlFillColorSecondaryBrush}">
+                                                                  <TextBlock Text="{Binding}" FontSize="11"
+                                                                             Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                                             MaxWidth="120"
+                                                                             TextTrimming="CharacterEllipsis"/>
+                                                              </Border>
+                                                          </DataTemplate>
+                                                      </ItemsControl.ItemTemplate>
+                                                  </ItemsControl>
                                               </WrapPanel>
 
-                                              <!-- Summary tokens -->
-                                              <ItemsControl ItemsSource="{Binding SummaryTokens}"
-                                                            Visibility="{Binding HasSummaryTokens, Converter={StaticResource BoolToVis}}"
-                                                            Margin="0,0,0,10">
-                                                  <ItemsControl.ItemsPanel>
-                                                      <ItemsPanelTemplate>
-                                                          <WrapPanel Orientation="Horizontal"/>
-                                                      </ItemsPanelTemplate>
-                                                  </ItemsControl.ItemsPanel>
-                                                  <ItemsControl.ItemTemplate>
-                                                      <DataTemplate>
-                                                          <Border Background="{DynamicResource ControlFillColorDefaultBrush}"
-                                                                  CornerRadius="4"
-                                                                  Padding="8,3"
-                                                                  Margin="0,0,6,4"
-                                                                  BorderBrush="{DynamicResource ControlElevationBorderBrush}"
-                                                                  BorderThickness="1">
-                                                              <TextBlock Text="{Binding}" FontSize="11"
-                                                                         Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                                                         MaxWidth="120"
-                                                                         TextTrimming="CharacterEllipsis"/>
-                                                          </Border>
-                                                      </DataTemplate>
-                                                  </ItemsControl.ItemTemplate>
-                                              </ItemsControl>
+                                              <!-- Divider -->
+                                              <Border Background="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                                                      Height="1" Margin="0,0,0,10"/>
 
-                                              <!-- Action buttons row: Edit + Remove -->
-                                              <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                                  <ui:Button Content="Edit"
+                                              <!-- Action buttons row -->
+                                              <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
+                                                  <ui:Button Content="Edit Slot"
                                                              Icon="{ui:SymbolIcon Edit24}"
                                                              Style="{StaticResource PulsarSecondaryButtonStyle}"
                                                              Margin="0,0,8,0"
@@ -333,6 +346,7 @@
                                                              Click="ExpandedRemove_Click"
                                                              Tag="{Binding}"/>
                                               </StackPanel>
+
                                           </StackPanel>
                                        </controls:ExpandableCard.ExpandedContent>
                                  </controls:ExpandableCard>

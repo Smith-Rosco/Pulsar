@@ -21,10 +21,10 @@
 
             <!-- Parameter field template with tier-aware annotations -->
             <DataTemplate x:Key="DialogSlotParameterFieldTemplate" DataType="{x:Type models:SlotParameterEditorField}">
-                <StackPanel Margin="0,0,0,10">
+                <StackPanel Margin="0,0,0,12">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="100"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
@@ -35,7 +35,6 @@
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="{Binding Label}" FontWeight="SemiBold" FontSize="13"
                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                            <!-- Required asterisk -->
                             <TextBlock Text=" *" FontWeight="Bold" FontSize="13"
                                        Foreground="#DC2626"
                                        Visibility="{Binding IsRequired, Converter={StaticResource BoolToVis}}"/>
@@ -48,7 +47,7 @@
 
                         <!-- Picker button -->
                         <ui:Button Grid.Column="2"
-                                   Margin="8,0,0,0"
+                                   Margin="6,0,0,0"
                                    Content="{Binding PickerButtonLabel}"
                                    Click="SlotParameterPicker_Click"
                                    Tag="{Binding}"
@@ -58,7 +57,7 @@
                         <!-- Help tooltip -->
                         <ui:Button Grid.Column="3"
                                    Width="28" Height="28"
-                                   Margin="8,0,0,0"
+                                   Margin="6,0,0,0"
                                    Icon="{ui:SymbolIcon Info24}"
                                    Style="{StaticResource PulsarIconButtonStyle}"
                                    ToolTip="{Binding HelpTooltipText}"
@@ -68,8 +67,8 @@
                         <!-- Optional badge -->
                         <Border Grid.Column="4"
                                 Background="{DynamicResource ControlFillColorSecondaryBrush}"
-                                CornerRadius="4"
-                                Padding="6,2"
+                                CornerRadius="999"
+                                Padding="8,2"
                                 Margin="6,0,0,0"
                                 VerticalAlignment="Center"
                                 Visibility="{Binding IsOptional, Converter={StaticResource BoolToVis}}">
@@ -80,7 +79,7 @@
 
                     <!-- Validation message -->
                     <TextBlock Text="{Binding ValidationMessage}"
-                               Margin="120,2,0,0"
+                               Margin="100,4,0,0"
                                Foreground="{DynamicResource SystemFillColorCautionBrush}"
                                FontSize="11"
                                TextWrapping="Wrap"
@@ -173,24 +172,24 @@
             <StackPanel Margin="0,12,0,0">
 
                 <!-- Action section: single action label -->
-                <StackPanel Margin="0,0,0,10"
+                <StackPanel Margin="0,0,0,14"
                             Visibility="{Binding HasSingleAction, Converter={StaticResource BoolToVis}}">
-                    <TextBlock Text="Action" FontSize="12" FontWeight="SemiBold"
+                    <TextBlock Text="ACTION" FontSize="10" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                Margin="0,0,0,6"/>
                     <TextBlock Text="{Binding Slot.ActionLabel}"
                                FontSize="13"
                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                     <TextBlock Text="{Binding Slot.ActionDescription}"
-                               Margin="0,2,0,0" FontSize="12" TextWrapping="Wrap"
+                               Margin="0,3,0,0" FontSize="12" TextWrapping="Wrap"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                Visibility="{Binding HasActionDescription, Converter={StaticResource BoolToVis}}"/>
                 </StackPanel>
 
                 <!-- Action section: radio list (2-4 actions) -->
-                <StackPanel Margin="0,0,0,10"
+                <StackPanel Margin="0,0,0,14"
                             Visibility="{Binding UseRadioActions, Converter={StaticResource BoolToVis}}">
-                    <TextBlock Text="Action" FontSize="12" FontWeight="SemiBold"
+                    <TextBlock Text="ACTION" FontSize="10" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                Margin="0,0,0,6"/>
                     <ItemsControl ItemsSource="{Binding AvailableActions}">
@@ -209,24 +208,16 @@
                 </StackPanel>
 
                 <!-- Action section: combobox (>4 actions) -->
-                <StackPanel Margin="0,0,0,10"
+                <StackPanel Margin="0,0,0,14"
                             Visibility="{Binding UseComboActions, Converter={StaticResource BoolToVis}}">
-                    <TextBlock Text="Action" FontSize="12" FontWeight="SemiBold"
+                    <TextBlock Text="ACTION" FontSize="10" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                Margin="0,0,0,6"/>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="90"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Action" FontWeight="SemiBold" VerticalAlignment="Center" FontSize="13"/>
-                        <ComboBox Grid.Column="1"
-                                  ItemsSource="{Binding AvailableActions}"
-                                  SelectedValuePath="Value"
-                                  DisplayMemberPath="Label"
-                                  SelectedValue="{Binding Slot.Action}"
-                                  SelectionChanged="ActionComboBox_SelectionChanged"/>
-                    </Grid>
+                    <ComboBox ItemsSource="{Binding AvailableActions}"
+                              SelectedValuePath="Value"
+                              DisplayMemberPath="Label"
+                              SelectedValue="{Binding Slot.Action}"
+                              SelectionChanged="ActionComboBox_SelectionChanged"/>
                 </StackPanel>
 
                 <!-- ValidationSummary: severity-aware (below action, above params) -->
@@ -277,39 +268,37 @@
                     </Grid>
                 </Border>
 
-                <!-- Parameters: Required (with red * in template) -->
-                <StackPanel Margin="0,0,0,10"
+                <!-- Parameters: Required -->
+                <StackPanel Margin="0,0,0,16"
                             Visibility="{Binding HasRequiredParameters, Converter={StaticResource BoolToVis}}">
-                    <TextBlock Text="Configuration" FontSize="12" FontWeight="SemiBold"
+                    <TextBlock Text="CONFIGURATION" FontSize="10" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               Margin="0,0,0,8"/>
+                               Margin="0,0,0,10"/>
                     <ItemsControl ItemsSource="{Binding RequiredParameters}"
                                   ItemTemplate="{StaticResource DialogSlotParameterFieldTemplate}"/>
                 </StackPanel>
 
-                <!-- Parameters: Optional (with Optional badge in template) -->
-                <StackPanel Margin="0,0,0,10"
+                <!-- Parameters: Optional -->
+                <StackPanel Margin="0,0,0,16"
                             Visibility="{Binding HasOptionalParameters, Converter={StaticResource BoolToVis}}">
-                    <TextBlock Text="Options" FontSize="12" FontWeight="SemiBold"
+                    <TextBlock Text="OPTIONS" FontSize="10" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               Margin="0,0,0,8"/>
+                               Margin="0,0,0,10"/>
                     <ItemsControl ItemsSource="{Binding OptionalParameters}"
                                   ItemTemplate="{StaticResource DialogSlotParameterFieldTemplate}"/>
                 </StackPanel>
 
-                <!-- Parameters: Advanced inside collapsed Expander -->
-                <Expander Margin="0,0,0,10"
+                <!-- Parameters: Advanced -->
+                <Expander Margin="0,0,0,8"
                           Background="Transparent"
                           BorderThickness="0"
                           Padding="0"
                           Visibility="{Binding HasAdvancedParameters, Converter={StaticResource BoolToVis}}">
                     <Expander.Header>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Advanced" FontSize="12" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                        </StackPanel>
+                        <TextBlock Text="ADVANCED" FontSize="10" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                     </Expander.Header>
-                    <StackPanel Margin="0,8,0,0">
+                    <StackPanel Margin="0,10,0,0">
                         <ItemsControl ItemsSource="{Binding AdvancedParameters}"
                                       ItemTemplate="{StaticResource DialogSlotParameterFieldTemplate}"/>
                     </StackPanel>
