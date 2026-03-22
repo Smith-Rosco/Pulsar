@@ -103,6 +103,24 @@ namespace Pulsar.Services
                 .AsReadOnly();
         }
 
+        public SlotActionMetadata? GetActionMetadata(string pluginId, string action)
+        {
+            if (string.IsNullOrWhiteSpace(pluginId) || string.IsNullOrWhiteSpace(action))
+            {
+                return null;
+            }
+
+            var metadata = GetMetadata(pluginId);
+            if (metadata?.Actions == null)
+            {
+                return null;
+            }
+
+            return metadata.Actions.TryGetValue(action, out var actionMetadata)
+                ? actionMetadata
+                : null;
+        }
+
         /// <summary>
         /// 获取按排序优先级排序的元数据
         /// </summary>

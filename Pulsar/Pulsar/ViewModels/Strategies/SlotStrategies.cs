@@ -103,7 +103,7 @@ namespace Pulsar.ViewModels.Strategies
 
             try
             {
-                if (!WindowHelper.IsWindow(_window.Handle))
+                if (!PulsarNative.IsWindow(_window.Handle))
                 {
                     System.Media.SystemSounds.Exclamation.Play();
                     context.IsVisible = false;
@@ -123,10 +123,10 @@ namespace Pulsar.ViewModels.Strategies
                 // [Fix] Hide first to prevent focus stealing issues or visual glitches
                 context.IsVisible = false;
 
-                WindowHelper.SetForegroundWindow(_window.Handle);
-                if (WindowHelper.IsIconic(_window.Handle))
+                PulsarNative.SetForegroundWindow(_window.Handle);
+                if (PulsarNative.IsIconic(_window.Handle))
                 {
-                    WindowHelper.ShowWindow(_window.Handle, 9); // SW_RESTORE
+                    PulsarNative.ShowWindow(_window.Handle, PulsarNative.SW_RESTORE);
                 }
 
                 success = true;

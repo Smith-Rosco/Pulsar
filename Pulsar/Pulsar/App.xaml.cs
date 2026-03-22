@@ -83,7 +83,7 @@ namespace Pulsar
             Log.Information("=== Pulsar Application Starting (Log Level: {Level}) ===", levelSwitch.MinimumLevel);
             
             // [New] Check System Integrity (焦点锁定设置)
-            WindowHelper.CheckSystemIntegrity();
+            PulsarNative.CheckSystemIntegrity();
             Log.Information("System integrity check completed");
 
             // Global Exception Handling
@@ -366,7 +366,7 @@ namespace Pulsar
             Log.Fatal(e.Exception, "Unhandled Dispatcher Exception");
             
             // [New] Emergency restore system settings
-            WindowHelper.EmergencyRestore();
+            PulsarNative.EmergencyRestore();
             
             // Optionally: Prevent crash if recoverable
             // e.Handled = true; 
@@ -386,7 +386,7 @@ namespace Pulsar
                  Log.Fatal(ex, "Unhandled AppDomain Exception (IsTerminating={IsTerminating})", e.IsTerminating);
                  
                  // [New] Emergency restore system settings before crash
-                 WindowHelper.EmergencyRestore();
+                 PulsarNative.EmergencyRestore();
                  
                  Log.CloseAndFlush();
              }

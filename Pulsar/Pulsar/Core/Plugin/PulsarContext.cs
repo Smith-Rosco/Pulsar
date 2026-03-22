@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 using Pulsar.Core.Plugin.Security;
+using Pulsar.Native;
 
 namespace Pulsar.Core.Plugin
 {
@@ -138,7 +139,7 @@ namespace Pulsar.Core.Plugin
                 if (hwnd != IntPtr.Zero)
                 {
                     uint processId;
-                    NativeMethods.GetWindowThreadProcessId(hwnd, out processId);
+                    PulsarNative.GetWindowThreadProcessId(hwnd, out processId);
                     pid = (int)processId;
                     
                     // 仅获取进程名，不做其他重型操作
@@ -195,11 +196,5 @@ namespace Pulsar.Core.Plugin
             context.PermissionInterceptor = permissionInterceptor;
             return context;
         }
-    }
-
-    internal static class NativeMethods
-    {
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        internal static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
     }
 }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin;
+using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Native;
 using Pulsar.Services.Interfaces;
 
@@ -14,7 +15,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
     /// <summary>
     /// VBA Runner Plugin - Executes VBA scripts in Excel/WPS with interactive support
     /// </summary>
-    public class VbaRunnerPlugin : IPulsarPlugin, IPluginTiered, IPluginLifecycle
+    public class VbaRunnerPlugin : IPulsarPlugin, IPluginTiered, IPluginLifecycle, IPluginMetadataProvider
     {
         private IWindowService? _windowService;
         private ScriptEngine? _scriptEngine;
@@ -45,6 +46,94 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
             }
             
             _logger?.LogInformation("[VbaRunnerPlugin] Initialized successfully");
+        }
+
+        public PluginMetadata GetMetadata()
+        {
+            return new PluginMetadata
+            {
+                Id = Id,
+                Display = new DisplayInfo
+                {
+                    Name = DisplayName,
+                    Description = Description,
+                    IconKey = Icon,
+                    Category = "Automation",
+                    Version = Version,
+                    Author = Author,
+                    DocumentationUrl = DocumentationUrl,
+                    License = "MIT"
+                },
+                Schema = null,
+                UI = new UIHints
+                {
+                    Badge = "VBA Script",
+                    AccentColor = "#FF8C00",
+                    ShowInQuickAccess = true,
+                    SortOrder = 40,
+                    IsFeatured = true
+                },
+                Capabilities = new PluginCapabilities
+                {
+                    SupportedActions = new List<string> { "run" },
+                    RequiresForegroundWindow = true,
+                    Dependencies = new List<string> { "com.pulsar.winswitcher" },
+                    CanDisable = CanDisable,
+                    Tier = Tier,
+                    MinPulsarVersion = "1.0.0"
+                },
+                Actions = new Dictionary<string, SlotActionMetadata>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["run"] = new SlotActionMetadata
+                    {
+                        Name = "run",
+                        Label = "Run VBA Script",
+                        Description = "Execute a VBA script file in the target spreadsheet application.",
+                        Parameters = new List<SlotParameterMetadata>
+                        {
+                            new()
+                            {
+                                Key = "scriptPath",
+                                Type = "string",
+                                Label = "Script File",
+                                Description = "Path to the VBA script file.",
+                                IsRequired = true,
+                                Group = SlotParameterGroup.Required,
+                                SummaryLabel = "Script",
+                                SummaryMode = SlotParameterSummaryMode.SafeStateOnly,
+                                ConfiguredSummaryText = "file ready",
+                                MissingSummaryText = "file missing",
+                                PresentationHint = SlotParameterPresentationHint.QuickEdit,
+                                QuickEditPriority = 100,
+                                Placeholder = "%USERPROFILE%\\Documents\\Pulsar\\Scripts\\example.txt",
+                                Example = "%USERPROFILE%\\Documents\\Pulsar\\Scripts\\macro.bas",
+                                InputHint = "Choose a .txt, .vbs, or .bas file.",
+                                ValidationHint = "Required and must point to a readable local file.",
+                                PickerIntent = SlotPickerIntent.File,
+                                Validators = new List<ValidationRule> { new RequiredValidator() }
+                            },
+                            new()
+                            {
+                                Key = "macro",
+                                Type = "string",
+                                Label = "Macro Override",
+                                Description = "Optional macro name override when the script defines multiple entry points.",
+                                IsRequired = false,
+                                Group = SlotParameterGroup.Advanced,
+                                SummaryLabel = "Macro",
+                                SummaryMode = SlotParameterSummaryMode.SafeStateOnly,
+                                ConfiguredSummaryText = "override set",
+                                MissingSummaryText = "auto detect",
+                                PresentationHint = SlotParameterPresentationHint.DialogOnly,
+                                Placeholder = "Main",
+                                Example = "SetupWorkbook",
+                                InputHint = "Leave empty to use the macro declared in the script file.",
+                                ValidationHint = "Optional advanced override."
+                            }
+                        }
+                    }
+                }
+            };
         }
         
         // IPluginLifecycle 实现
@@ -137,7 +226,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
             if (context.TargetWindowHandle != IntPtr.Zero)
             {
                 _logger?.LogDebug("[VbaRunnerPlugin] Setting foreground window to: {Hwnd}", context.TargetWindowHandle);
-                bool success = WindowHelper.SetForegroundWindow(context.TargetWindowHandle);
+                bool success = PulsarNative.SetForegroundWindow(context.TargetWindowHandle);
                 _logger?.LogDebug("[VbaRunnerPlugin] SetForegroundWindow result: {Success}", success);
                 await Task.Delay(100); // 等待窗口切换
             }
@@ -250,7 +339,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
             if (context.TargetWindowHandle != IntPtr.Zero)
             {
                 _logger?.LogDebug("[VbaRunnerPlugin] Restoring focus to original window: {Hwnd}", context.TargetWindowHandle);
-                WindowHelper.SetForegroundWindow(context.TargetWindowHandle);
+                PulsarNative.SetForegroundWindow(context.TargetWindowHandle);
             }
 
             _logger?.LogDebug("[VbaRunnerPlugin] Dispatcher completed - Result: {Result}", errorMessage ?? successMessage);

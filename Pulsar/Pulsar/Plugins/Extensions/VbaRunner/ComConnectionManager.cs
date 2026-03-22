@@ -37,7 +37,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool EnumChildWindows(IntPtr hwndParent, WindowHelper.EnumWindowsProc lpEnumFunc, IntPtr lParam);
+        private static extern bool EnumChildWindows(IntPtr hwndParent, PulsarNative.EnumWindowsProc lpEnumFunc, IntPtr lParam);
 
         [DllImport("oleacc.dll")]
         private static extern int AccessibleObjectFromWindow(IntPtr hwnd, uint dwObjectID, ref Guid riid, [MarshalAs(UnmanagedType.IUnknown)] out object? ppvObject);
@@ -123,10 +123,10 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
             _logger.LogDebug("[ComManager] Strategy B: Window Search for PID {Pid}", targetProcessId);
 
             var candidates = new List<IntPtr>();
-            WindowHelper.EnumWindows((hwnd, lParam) =>
+            PulsarNative.EnumWindows((hwnd, lParam) =>
             {
-                WindowHelper.GetWindowThreadProcessId(hwnd, out uint pid);
-                if (pid == targetProcessId && WindowHelper.IsWindowVisible(hwnd))
+                PulsarNative.GetWindowThreadProcessId(hwnd, out uint pid);
+                if (pid == targetProcessId && PulsarNative.IsWindowVisible(hwnd))
                 {
                     candidates.Add(hwnd);
                 }
@@ -286,7 +286,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
             try
             {
                 IntPtr hwnd = (IntPtr)app.Hwnd;
-                WindowHelper.GetWindowThreadProcessId(hwnd, out uint pid);
+                PulsarNative.GetWindowThreadProcessId(hwnd, out uint pid);
                 return pid == targetPid;
             }
             catch

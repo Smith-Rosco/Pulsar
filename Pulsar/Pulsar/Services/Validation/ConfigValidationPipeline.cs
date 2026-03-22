@@ -46,7 +46,10 @@ namespace Pulsar.Services.Validation
             // Stage 2: Plugin Custom Validation
             await ValidatePluginConfigsAsync(config, result);
 
-            // Stage 3: Dependency Check
+            // Stage 3: Slot Argument Validation
+            ValidateSlotArguments(config, result);
+
+            // Stage 4: Dependency Check
             ValidateDependencies(config, result);
 
             _logger.LogInformation(
@@ -200,8 +203,116 @@ namespace Pulsar.Services.Validation
             await Task.CompletedTask;
         }
 
+        private void ValidateSlotArguments(ProfilesConfig config, ValidationResult result)
+        {
+            foreach (var (profileName, profile) in config.Profiles)
+            {
+                ValidateSlots(profile.SwitchMode, profileName, "switch", result);
+                ValidateSlots(profile.CommandMode, profileName, "command", result);
+            }
+        }
+
+        private void ValidateSlots(IEnumerable<PluginSlot> slots, string profileName, string modeName, ValidationResult result)
+        {
+            foreach (var slot in slots)
+            {
+                var actionMetadata = _metadataRegistry.GetActionMetadata(slot.PluginId, slot.Action);
+                if (actionMetadata == null)
+                {
+                    continue;
+                }
+
+                foreach (var parameter in actionMetadata.Parameters)
+                {
+                    var value = GetSlotArgument(slot, parameter);
+                    var propertyName = $"slot[{profileName}:{modeName}:{slot.Slot}].{parameter.Key}";
+
+                    if (parameter.IsRequired && string.IsNullOrWhiteSpace(value))
+                    {
+                        result.AddError(
+                            $"Slot {slot.Slot} ({slot.Label}) is missing required parameter '{parameter.Label}' for action '{slot.Action}'",
+                            slot.PluginId,
+                            propertyName);
+
+                        continue;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(value))
+                    {
+                        continue;
+                    }
+
+                    if (!IsSlotTypeMatch(value, parameter.Type))
+                    {
+                        result.AddError(
+                            $"Slot {slot.Slot} ({slot.Label}) parameter '{parameter.Label}' expects {parameter.Type}",
+                            slot.PluginId,
+                            propertyName);
+
+                        continue;
+                    }
+
+                    foreach (var validator in parameter.Validators)
+                    {
+                        if (!validator.Validate(CoerceSlotValue(value, parameter.Type), out var error))
+                        {
+                            result.AddError(
+                                $"Slot {slot.Slot} ({slot.Label}) parameter '{parameter.Label}' is invalid: {error}",
+                                slot.PluginId,
+                                propertyName);
+                        }
+                    }
+                }
+            }
+        }
+
+        private static string GetSlotArgument(PluginSlot slot, SlotParameterMetadata parameter)
+        {
+            if (slot.Args.TryGetValue(parameter.Key, out var value) && !string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
+
+            foreach (var alias in parameter.Aliases)
+            {
+                if (slot.Args.TryGetValue(alias, out value) && !string.IsNullOrWhiteSpace(value))
+                {
+                    return value;
+                }
+            }
+
+            return string.Empty;
+        }
+
+        private static bool IsSlotTypeMatch(string value, string expectedType)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return true;
+            }
+
+            return expectedType.ToLowerInvariant() switch
+            {
+                "string" => true,
+                "guid" => Guid.TryParse(value, out _),
+                "int" => int.TryParse(value, out _),
+                "bool" => bool.TryParse(value, out _),
+                _ => true
+            };
+        }
+
+        private static object CoerceSlotValue(string value, string expectedType)
+        {
+            return expectedType.ToLowerInvariant() switch
+            {
+                "int" when int.TryParse(value, out var intValue) => intValue,
+                "bool" when bool.TryParse(value, out var boolValue) => boolValue,
+                _ => value
+            };
+        }
+
         /// <summary>
-        /// Stage 3: 验证插件依赖关系
+        /// Stage 4: 验证插件依赖关系
         /// </summary>
         private void ValidateDependencies(ProfilesConfig config, ValidationResult result)
         {

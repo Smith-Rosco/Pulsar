@@ -5,6 +5,7 @@ using System.Windows.Media;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using Pulsar.Models;
+using Pulsar.Native;
 using Pulsar.Services.Interfaces;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
@@ -163,10 +164,10 @@ namespace Pulsar.Services
             var hwnd = interop.Handle;
             if (hwnd != IntPtr.Zero)
             {
-                int backdropType = Pulsar.Native.WindowHelper.DWMSBT_NONE;
-                Pulsar.Native.WindowHelper.DwmSetWindowAttribute(
+            int backdropType = PulsarNative.DWMSBT_NONE;
+            PulsarNative.DwmSetWindowAttribute(
                     hwnd, 
-                    Pulsar.Native.WindowHelper.DWMWA_SYSTEMBACKDROP_TYPE, 
+                    PulsarNative.DWMWA_SYSTEMBACKDROP_TYPE,
                     ref backdropType, 
                     sizeof(int));
             }

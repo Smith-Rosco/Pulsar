@@ -356,6 +356,152 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                     CanDisable = false,
                     Tier = PluginTier.Core,
                     MinPulsarVersion = "1.0.0"
+                },
+                Actions = new Dictionary<string, SlotActionMetadata>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["switch"] = new SlotActionMetadata
+                    {
+                        Name = "switch",
+                        Label = "Switch or Launch",
+                        Description = "Switch to a running app window, or launch it when no matching window is found.",
+                        Parameters = new List<SlotParameterMetadata>
+                        {
+                            new()
+                            {
+                                Key = "app",
+                                Type = "string",
+                                Label = "Process Name",
+                                Description = "Executable process name used to find a running window.",
+                                IsRequired = true,
+                                Group = SlotParameterGroup.Required,
+                                SummaryLabel = "App",
+                                SummaryMode = SlotParameterSummaryMode.RawValue,
+                                ConfiguredSummaryText = "app selected",
+                                MissingSummaryText = "app missing",
+                                PresentationHint = SlotParameterPresentationHint.QuickEdit,
+                                QuickEditPriority = 100,
+                                Placeholder = "chrome",
+                                Example = "chrome",
+                                InputHint = "Use the process name without .exe.",
+                                ValidationHint = "Required for switching to an existing window.",
+                                PickerIntent = SlotPickerIntent.Process,
+                                Validators = new List<ValidationRule> { new RequiredValidator() }
+                            },
+                            new()
+                            {
+                                Key = "path",
+                                Type = "string",
+                                Label = "Launch Path",
+                                Description = "Optional fallback executable path used when the app is not already running.",
+                                IsRequired = false,
+                                Group = SlotParameterGroup.Optional,
+                                SummaryLabel = "Launch",
+                                SummaryMode = SlotParameterSummaryMode.SafeStateOnly,
+                                ConfiguredSummaryText = "fallback ready",
+                                MissingSummaryText = "switch only",
+                                PresentationHint = SlotParameterPresentationHint.DialogOnly,
+                                Placeholder = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+                                Example = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+                                InputHint = "Use an absolute path for reliable launching.",
+                                ValidationHint = "Leave empty if this slot should only switch.",
+                                PickerIntent = SlotPickerIntent.Process
+                            },
+                            new()
+                            {
+                                Key = "arguments",
+                                Type = "string",
+                                Label = "Launch Arguments",
+                                Description = "Optional command-line arguments passed when launching the app.",
+                                IsRequired = false,
+                                Group = SlotParameterGroup.Advanced,
+                                SummaryLabel = "Args",
+                                SummaryMode = SlotParameterSummaryMode.SafeStateOnly,
+                                ConfiguredSummaryText = "args set",
+                                MissingSummaryText = "no args",
+                                PresentationHint = SlotParameterPresentationHint.DialogOnly,
+                                Placeholder = "--profile-directory=Default",
+                                Example = "--new-window https://example.com",
+                                InputHint = "Applied only when a new process is launched.",
+                                ValidationHint = "Optional advanced launch behavior."
+                            }
+                        }
+                    },
+                    ["launch"] = new SlotActionMetadata
+                    {
+                        Name = "launch",
+                        Label = "Launch Application",
+                        Description = "Always launch an application using an explicit executable path.",
+                        Parameters = new List<SlotParameterMetadata>
+                        {
+                            new()
+                            {
+                                Key = "path",
+                                Type = "string",
+                                Label = "Executable Path",
+                                Description = "Absolute path to the application to launch.",
+                                IsRequired = true,
+                                Group = SlotParameterGroup.Required,
+                                SummaryLabel = "App",
+                                SummaryMode = SlotParameterSummaryMode.SafeStateOnly,
+                                ConfiguredSummaryText = "path ready",
+                                MissingSummaryText = "path missing",
+                                PresentationHint = SlotParameterPresentationHint.QuickEdit,
+                                QuickEditPriority = 100,
+                                Placeholder = "C:\\Windows\\System32\\notepad.exe",
+                                Example = "C:\\Windows\\System32\\notepad.exe",
+                                InputHint = "Use a full path to an executable, shortcut, or script.",
+                                ValidationHint = "Must point to an existing supported file.",
+                                PickerIntent = SlotPickerIntent.Process,
+                                Validators = new List<ValidationRule> { new RequiredValidator() }
+                            },
+                            new()
+                            {
+                                Key = "arguments",
+                                Type = "string",
+                                Label = "Launch Arguments",
+                                Description = "Optional command-line arguments passed to the target application.",
+                                IsRequired = false,
+                                Group = SlotParameterGroup.Optional,
+                                SummaryLabel = "Args",
+                                SummaryMode = SlotParameterSummaryMode.SafeStateOnly,
+                                ConfiguredSummaryText = "args set",
+                                MissingSummaryText = "no args",
+                                PresentationHint = SlotParameterPresentationHint.DialogOnly,
+                                Placeholder = "--incognito",
+                                Example = "--new-window https://example.com"
+                            }
+                        }
+                    },
+                    ["activate"] = new SlotActionMetadata
+                    {
+                        Name = "activate",
+                        Label = "Switch Only",
+                        Description = "Switch to an already running application window without launching a new instance.",
+                        Parameters = new List<SlotParameterMetadata>
+                        {
+                            new()
+                            {
+                                Key = "app",
+                                Type = "string",
+                                Label = "Process Name",
+                                Description = "Executable process name used to find the target window.",
+                                IsRequired = true,
+                                Group = SlotParameterGroup.Required,
+                                SummaryLabel = "App",
+                                SummaryMode = SlotParameterSummaryMode.RawValue,
+                                ConfiguredSummaryText = "app selected",
+                                MissingSummaryText = "app missing",
+                                PresentationHint = SlotParameterPresentationHint.QuickEdit,
+                                QuickEditPriority = 100,
+                                Placeholder = "chrome",
+                                Example = "chrome",
+                                InputHint = "Use the process name without .exe.",
+                                ValidationHint = "This action only works if the app is already running.",
+                                PickerIntent = SlotPickerIntent.Process,
+                                Validators = new List<ValidationRule> { new RequiredValidator() }
+                            }
+                        }
+                    }
                 }
             };
         }

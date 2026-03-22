@@ -363,7 +363,8 @@ namespace Pulsar.Core.Plugin
                     CanDisable = plugin.CanDisable,
                     Tier = tier,
                     MinPulsarVersion = plugin.MinPulsarVersion
-                }
+                },
+                Actions = new Dictionary<string, SlotActionMetadata>(StringComparer.OrdinalIgnoreCase)
             };
         }
 

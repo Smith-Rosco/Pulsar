@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Pulsar.Models;
 using Pulsar.Services;
+using Pulsar.Services.Validation;
 using Xunit;
 
 namespace Pulsar.Tests.Config
@@ -190,6 +191,40 @@ namespace Pulsar.Tests.Config
             loadedConfig.Settings.HoverScale.Should().Be(1.5);
             loadedConfig.Profiles.Should().ContainKey("TestProcess");
             loadedConfig.Profiles["TestProcess"].Alias.Should().Be("Test");
+        }
+
+        [Fact]
+        public async Task LoadAndSave_ShouldPreserveSlotArgs_WhenUsingLegacyAliasKeys()
+        {
+            var service = CreateConfigService();
+            var config = new ProfilesConfig();
+            config.Profiles["Global"] = new ProcessProfile
+            {
+                CommandMode = new List<PluginSlot>
+                {
+                    new()
+                    {
+                        Slot = 1,
+                        PluginId = "com.pulsar.pki",
+                        Action = "fill",
+                        Label = "Secret",
+                        Args = new System.Collections.Generic.Dictionary<string, string>
+                        {
+                            ["secretId"] = "12345678-1234-1234-1234-123456789abc",
+                            ["autoSubmit"] = "true"
+                        }
+                    }
+                }
+            };
+
+            await service.SaveAsync(config);
+
+            var service2 = CreateConfigService();
+            var loadedConfig = await service2.LoadAsync();
+            var slot = loadedConfig.Profiles["Global"].CommandMode[0];
+
+            slot.Args.Should().ContainKey("autoSubmit");
+            slot.Args["autoSubmit"].Should().Be("true");
         }
 
         /// <summary>

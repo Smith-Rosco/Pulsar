@@ -2,9 +2,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Text.Json.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Pulsar.Core.Converters; // Added
+using Pulsar.Core.Plugin.Metadata;
 
 namespace Pulsar.Models
 {
@@ -235,6 +238,16 @@ namespace Pulsar.Models
     }
 
     /// <summary>
+    /// Validation severity level for a PluginSlot.
+    /// </summary>
+    public enum ValidationSeverity
+    {
+        None,
+        Warning,
+        Error
+    }
+
+    /// <summary>
     /// 插件槽位配置 - 定义要调用的插件和参数
     /// </summary>
     public class PluginSlot : CommunityToolkit.Mvvm.ComponentModel.ObservableObject
@@ -347,6 +360,144 @@ namespace Pulsar.Models
                     OnPropertyChanged("Item[]"); // 通知 UI 索引器属性已变更
                 }
             }
+        }
+
+        [JsonIgnore]
+        public ObservableCollection<SlotActionOption> AvailableActions { get; set; } = new();
+
+        [JsonIgnore]
+        public ObservableCollection<SlotParameterEditorField> RequiredParameters { get; set; } = new();
+
+        [JsonIgnore]
+        public ObservableCollection<SlotParameterEditorField> OptionalParameters { get; set; } = new();
+
+        [JsonIgnore]
+        public ObservableCollection<SlotParameterEditorField> AdvancedParameters { get; set; } = new();
+
+        [JsonIgnore]
+        public ObservableCollection<SlotParameterEditorField> QuickEditParameters { get; set; } = new();
+
+        [JsonIgnore]
+        public ObservableCollection<string> SummaryTokens { get; set; } = new();
+
+        [JsonIgnore]
+        public string ActionLabel { get; set; } = string.Empty;
+
+        [JsonIgnore]
+        public string ActionDescription { get; set; } = string.Empty;
+
+        [JsonIgnore]
+        public string ValidationSummary { get; set; } = string.Empty;
+
+        [JsonIgnore]
+        public ValidationSeverity ValidationSeverity { get; private set; } = ValidationSeverity.None;
+
+        [JsonIgnore]
+        public bool HasActionChoices => AvailableActions.Count > 1;
+
+        [JsonIgnore]
+        public bool HasRequiredParameters => RequiredParameters.Count > 0;
+
+        [JsonIgnore]
+        public bool HasOptionalParameters => OptionalParameters.Count > 0;
+
+        [JsonIgnore]
+        public bool HasAdvancedParameters => AdvancedParameters.Count > 0;
+
+        [JsonIgnore]
+        public bool HasValidationSummary => !string.IsNullOrWhiteSpace(ValidationSummary);
+
+        [JsonIgnore]
+        public bool HasQuickEditParameters => QuickEditParameters.Count > 0;
+
+        [JsonIgnore]
+        public bool HasInlineQuickEditContent => HasQuickEditParameters || HasActionChoices;
+
+        [JsonIgnore]
+        public bool HasSummaryTokens => SummaryTokens.Count > 0;
+
+        [JsonIgnore]
+        public string HealthBadgeText => ValidationSeverity switch
+        {
+            ValidationSeverity.Error => "Error",
+            ValidationSeverity.Warning => "Warning",
+            _ => "Ready"
+        };
+
+        [JsonIgnore]
+        public string HealthBadgeColor => ValidationSeverity switch
+        {
+            ValidationSeverity.Error => "#DC2626",
+            ValidationSeverity.Warning => "#D97706",
+            _ => "#15803D"
+        };
+
+        [JsonIgnore]
+        public string QuickEditBadgeText => HasQuickEditParameters ? $"{QuickEditParameters.Count} quick edits" : "Quick edits in dialog";
+
+        [JsonIgnore]
+        public string SummaryFallbackText => HasValidationSummary ? "Configuration issues detected" : "Open full configuration for details";
+
+        public void SetParameterMetadata(
+            IEnumerable<SlotActionOption> availableActions,
+            SlotActionMetadata? actionMetadata,
+            IEnumerable<SlotParameterEditorField> required,
+            IEnumerable<SlotParameterEditorField> optional,
+            IEnumerable<SlotParameterEditorField> advanced,
+            IEnumerable<SlotParameterEditorField> quickEdit,
+            IEnumerable<string> summaryTokens)
+        {
+            AvailableActions = new ObservableCollection<SlotActionOption>(availableActions);
+            RequiredParameters = new ObservableCollection<SlotParameterEditorField>(required);
+            OptionalParameters = new ObservableCollection<SlotParameterEditorField>(optional);
+            AdvancedParameters = new ObservableCollection<SlotParameterEditorField>(advanced);
+            QuickEditParameters = new ObservableCollection<SlotParameterEditorField>(quickEdit);
+            SummaryTokens = new ObservableCollection<string>(summaryTokens.Where(token => !string.IsNullOrWhiteSpace(token)).Take(3));
+            ActionLabel = actionMetadata?.Label ?? Action;
+            ActionDescription = actionMetadata?.Description ?? string.Empty;
+
+            OnPropertyChanged(nameof(AvailableActions));
+            OnPropertyChanged(nameof(RequiredParameters));
+            OnPropertyChanged(nameof(OptionalParameters));
+            OnPropertyChanged(nameof(AdvancedParameters));
+            OnPropertyChanged(nameof(QuickEditParameters));
+            OnPropertyChanged(nameof(SummaryTokens));
+            OnPropertyChanged(nameof(ActionLabel));
+            OnPropertyChanged(nameof(ActionDescription));
+            OnPropertyChanged(nameof(HasActionChoices));
+            OnPropertyChanged(nameof(HasRequiredParameters));
+            OnPropertyChanged(nameof(HasOptionalParameters));
+            OnPropertyChanged(nameof(HasAdvancedParameters));
+            OnPropertyChanged(nameof(HasQuickEditParameters));
+            OnPropertyChanged(nameof(HasInlineQuickEditContent));
+            OnPropertyChanged(nameof(HasSummaryTokens));
+            OnPropertyChanged(nameof(HealthBadgeText));
+            OnPropertyChanged(nameof(HealthBadgeColor));
+            OnPropertyChanged(nameof(QuickEditBadgeText));
+            OnPropertyChanged(nameof(SummaryFallbackText));
+        }
+
+        public void SetValidationSummary(string summary)
+        {
+            ValidationSummary = summary;
+
+            // Auto-infer severity from summary content
+            if (string.IsNullOrWhiteSpace(summary))
+                ValidationSeverity = ValidationSeverity.None;
+            else if (summary.Contains("error", StringComparison.OrdinalIgnoreCase)
+                  || summary.Contains("required", StringComparison.OrdinalIgnoreCase)
+                  || summary.Contains("invalid", StringComparison.OrdinalIgnoreCase)
+                  || summary.Contains("missing", StringComparison.OrdinalIgnoreCase))
+                ValidationSeverity = ValidationSeverity.Error;
+            else
+                ValidationSeverity = ValidationSeverity.Warning;
+
+            OnPropertyChanged(nameof(ValidationSummary));
+            OnPropertyChanged(nameof(HasValidationSummary));
+            OnPropertyChanged(nameof(ValidationSeverity));
+            OnPropertyChanged(nameof(HealthBadgeText));
+            OnPropertyChanged(nameof(HealthBadgeColor));
+            OnPropertyChanged(nameof(SummaryFallbackText));
         }
     }
 

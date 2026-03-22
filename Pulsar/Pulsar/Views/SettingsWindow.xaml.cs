@@ -338,7 +338,7 @@ namespace Pulsar.Views
                 // -1, -1 tells the OS to swap out the process memory to disk
                 if (Environment.OSVersion.Platform == PlatformID.Win32NT)
                 {
-                    WindowHelper.SetProcessWorkingSetSize(WindowHelper.GetCurrentProcess(), new IntPtr(-1), new IntPtr(-1));
+                    PulsarNative.SetProcessWorkingSetSize(PulsarNative.GetCurrentProcess(), new IntPtr(-1), new IntPtr(-1));
                 }
             }
             catch 

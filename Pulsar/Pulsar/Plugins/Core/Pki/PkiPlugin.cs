@@ -138,7 +138,7 @@ namespace Pulsar.Plugins.Core.Pki
                 var targetHwnd = context.TargetWindowHandle;
                 if (targetHwnd != IntPtr.Zero)
                 {
-                    WindowHelper.SetForegroundWindow(targetHwnd);
+                    PulsarNative.SetForegroundWindow(targetHwnd);
                     _logger?.LogDebug("[PkiPlugin] Focus returned to window: {Hwnd}", targetHwnd);
                 }
                 else
@@ -268,6 +268,111 @@ namespace Pulsar.Plugins.Core.Pki
                     CanDisable = false,
                     Tier = PluginTier.Core,
                     MinPulsarVersion = "1.0.0"
+                },
+                Actions = new Dictionary<string, SlotActionMetadata>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["fill"] = new SlotActionMetadata
+                    {
+                        Name = "fill",
+                        Label = "Fill Credentials",
+                        Description = "Inject a saved secret into the active application.",
+                        ParameterAliases = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                        {
+                            ["autoSubmit"] = "autoEnter"
+                        },
+                        Parameters = new List<SlotParameterMetadata>
+                        {
+                            new()
+                            {
+                                Key = "secretId",
+                                Type = "guid",
+                                Label = "Secret",
+                                Description = "Saved credential to inject.",
+                                IsRequired = true,
+                                Group = SlotParameterGroup.Required,
+                                SummaryLabel = "Secret",
+                                SummaryMode = SlotParameterSummaryMode.SafeStateOnly,
+                                ConfiguredSummaryText = "selected",
+                                MissingSummaryText = "not selected",
+                                PresentationHint = SlotParameterPresentationHint.DialogOnly,
+                                QuickEditPriority = 100,
+                                Placeholder = "Select a saved secret",
+                                InputHint = "Choose a secret from the secure store.",
+                                ValidationHint = "Required for credential injection.",
+                                PickerIntent = SlotPickerIntent.Secret,
+                                IsSensitive = true,
+                                Validators = new List<ValidationRule> { new RequiredValidator(), new RegexValidator("^[0-9a-fA-F-]{36}$", "Secret must be a valid GUID.") }
+                            },
+                            new()
+                            {
+                                Key = "autoEnter",
+                                Type = "bool",
+                                Label = "Press Enter After Fill",
+                                Description = "Press Enter after injecting the secret.",
+                                IsRequired = false,
+                                Group = SlotParameterGroup.Optional,
+                                SummaryLabel = "Submit",
+                                SummaryMode = SlotParameterSummaryMode.RawValue,
+                                ConfiguredSummaryText = "enter on",
+                                MissingSummaryText = "enter off",
+                                PresentationHint = SlotParameterPresentationHint.QuickEdit,
+                                QuickEditPriority = 90,
+                                Example = "true",
+                                InputHint = "Use true or false.",
+                                ValidationHint = "Legacy name autoSubmit is also accepted.",
+                                DefaultValue = false,
+                                Aliases = new List<string> { "autoSubmit" }
+                            }
+                        }
+                    },
+                    ["inject"] = new SlotActionMetadata
+                    {
+                        Name = "inject",
+                        Label = "Fill Credentials",
+                        Description = "Legacy alias of fill.",
+                        ParameterAliases = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                        {
+                            ["autoSubmit"] = "autoEnter"
+                        },
+                        Parameters = new List<SlotParameterMetadata>
+                        {
+                            new()
+                            {
+                                Key = "secretId",
+                                Type = "guid",
+                                Label = "Secret",
+                                Description = "Saved credential to inject.",
+                                IsRequired = true,
+                                Group = SlotParameterGroup.Required,
+                                SummaryLabel = "Secret",
+                                SummaryMode = SlotParameterSummaryMode.SafeStateOnly,
+                                ConfiguredSummaryText = "selected",
+                                MissingSummaryText = "not selected",
+                                PresentationHint = SlotParameterPresentationHint.DialogOnly,
+                                QuickEditPriority = 100,
+                                PickerIntent = SlotPickerIntent.Secret,
+                                IsSensitive = true,
+                                Validators = new List<ValidationRule> { new RequiredValidator(), new RegexValidator("^[0-9a-fA-F-]{36}$", "Secret must be a valid GUID.") }
+                            },
+                            new()
+                            {
+                                Key = "autoEnter",
+                                Type = "bool",
+                                Label = "Press Enter After Fill",
+                                Description = "Press Enter after injecting the secret.",
+                                IsRequired = false,
+                                Group = SlotParameterGroup.Optional,
+                                SummaryLabel = "Submit",
+                                SummaryMode = SlotParameterSummaryMode.RawValue,
+                                ConfiguredSummaryText = "enter on",
+                                MissingSummaryText = "enter off",
+                                PresentationHint = SlotParameterPresentationHint.QuickEdit,
+                                QuickEditPriority = 90,
+                                DefaultValue = false,
+                                Aliases = new List<string> { "autoSubmit" }
+                            }
+                        }
+                    }
                 }
             };
         }

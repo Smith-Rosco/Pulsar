@@ -13,11 +13,13 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Pulsar.Core.Messages;
+using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Plugins.Core.Pki.Services;
 using Pulsar.Helpers;
 using Pulsar.Models;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
+using Pulsar.Services.Validation;
 using Microsoft.Extensions.Logging;
 using Wpf.Ui.Controls;
 using Pulsar.ViewModels.Dialogs;
@@ -98,6 +100,7 @@ namespace Pulsar.ViewModels
         private readonly IFuzzySearchService<IconItem> _searchService;
         private readonly IProcessRegistryService? _processRegistryService;
         private readonly SecretRepository _secretRepo;
+        private readonly IPluginMetadataRegistry _pluginMetadataRegistry;
         private readonly ILogger<SettingsViewModel> _logger;
         private ProfilesConfig _config;
 
@@ -285,6 +288,12 @@ namespace Pulsar.ViewModels
         /// </summary>
         private void OnSlotPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            if (sender is PluginSlot slot
+                && (e.PropertyName == "Item[]" || e.PropertyName == nameof(PluginSlot.Action)))
+            {
+                UpdateSlotPresentation(slot);
+            }
+
             MarkDirty();
         }
 
@@ -303,6 +312,7 @@ namespace Pulsar.ViewModels
             IDialogService dialogService,
             IFuzzySearchService<IconItem> searchService,
             SecretRepository secretRepo,
+            IPluginMetadataRegistry pluginMetadataRegistry,
             ILogger<SettingsViewModel> logger,
             IProcessRegistryService? processRegistryService = null)
         {
@@ -313,6 +323,7 @@ namespace Pulsar.ViewModels
             _dialogService = dialogService;
             _searchService = searchService;
             _secretRepo = secretRepo;
+            _pluginMetadataRegistry = pluginMetadataRegistry;
             _logger = logger;
             _processRegistryService = processRegistryService;
             _config = new ProfilesConfig();
@@ -469,6 +480,8 @@ namespace Pulsar.ViewModels
 
             // [Refactor] 统一使用 Slot 作为排序依据
             CurrentSlots = new ObservableCollection<PluginSlot>(sourceList.OrderBy(s => s.Slot));
+
+            RefreshSlotParameterMetadata();
         }
 
         [RelayCommand]
@@ -542,6 +555,7 @@ namespace Pulsar.ViewModels
             }
 
             CurrentSlots.Add(newItem);
+            InitializeSlotMetadata(newItem);
             MarkDirty(); // [Phase 2]
             
             // Provide helpful notification based on plugin type
@@ -594,6 +608,7 @@ namespace Pulsar.ViewModels
                 };
 
                 CurrentSlots.Add(newItem);
+                InitializeSlotMetadata(newItem);
                 MarkDirty(); // [Phase 2]
                 SendNotification("Success", "Secret added (pending save).", ControlAppearance.Success);
             }
@@ -775,7 +790,17 @@ namespace Pulsar.ViewModels
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[SettingsViewModel] Failed to save configuration");
-                SendNotification("Error", "Failed to save changes. Please try again.", ControlAppearance.Danger);
+
+                if (_configService.LastValidationResult is { IsValid: false } validationResult)
+                {
+                    RefreshSlotValidationSummaries(validationResult);
+                    var firstError = validationResult.Errors.FirstOrDefault()?.Message ?? "Failed to save changes.";
+                    SendNotification("Validation Error", firstError, ControlAppearance.Danger);
+                }
+                else
+                {
+                    SendNotification("Error", "Failed to save changes. Please try again.", ControlAppearance.Danger);
+                }
             }
         }
 
@@ -980,6 +1005,29 @@ namespace Pulsar.ViewModels
         }
 
         [RelayCommand]
+        public async Task OpenSlotConfiguration(PluginSlot slot)
+        {
+            if (slot == null)
+            {
+                return;
+            }
+
+            var vm = new SlotConfigurationDialogViewModel(
+                slot,
+                SetSlotAction,
+                PickSlotParameterValue,
+                PickIcon,
+                PickColor,
+                RemoveSlot);
+
+            await _dialogService.ShowCustomAsync(
+                $"Configure Slot {slot.Slot}",
+                vm,
+                DialogButtons.OkCancel,
+                DialogSizeConstraints.LargeResizable);
+        }
+
+        [RelayCommand]
         public async Task RemoveSlot(PluginSlot item)
         {
             if (CurrentSlots == null || !CurrentSlots.Contains(item)) return;
@@ -1078,26 +1126,28 @@ namespace Pulsar.ViewModels
                  
                  if (parameter is PluginSlot slot)
                  {
-                        if (slot.PluginId == "com.pulsar.winswitcher")
-                        {
+                     if (slot.PluginId == "com.pulsar.winswitcher")
+                     {
                             // [Fix] Use indexer to ensure PropertyChanged notification updates the UI
                             slot["app"] = selected.ProcessName.ToUpperInvariant();
                             slot["path"] = selected.ExePath;
                             if (string.IsNullOrWhiteSpace(slot.Label) || slot.Label == "New App")
                                 slot.Label = selected.Title;
                         }
-                     else if (slot.PluginId == "com.pulsar.command")
-                     {
+                      else if (slot.PluginId == "com.pulsar.command")
+                      {
                          // [Fix] Use indexer here too
                          slot["path"] = selected.ExePath;
                          if (string.IsNullOrWhiteSpace(slot.Label) || slot.Label == "New Cmd")
                              slot.Label = selected.Title;
-                     }
-                     
-                     if (!string.IsNullOrEmpty(cachedIconPath)) slot.IconKey = cachedIconPath;
-                 }
-              }
-         }
+                      }
+
+                      RefreshSlotValidationSummary(slot);
+                      
+                      if (!string.IsNullOrEmpty(cachedIconPath)) slot.IconKey = cachedIconPath;
+                  }
+               }
+          }
         
 
 
@@ -1204,6 +1254,7 @@ namespace Pulsar.ViewModels
             {
                 // [Fix] Use indexer to ensure PropertyChanged notification
                 item["scriptPath"] = dialog.FileName; 
+                RefreshSlotValidationSummary(item);
             }
         }
 
@@ -1234,7 +1285,168 @@ namespace Pulsar.ViewModels
             {
                 // [Fix] Use indexer to ensure PropertyChanged notification
                 item["scriptPath"] = dialog.FileName; 
+                RefreshSlotValidationSummary(item);
             }
+        }
+
+        public void SetSlotAction(PluginSlot slot, string? action)
+        {
+            if (slot == null || string.IsNullOrWhiteSpace(action) || string.Equals(slot.Action, action, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            slot.Action = action;
+            InitializeSlotMetadata(slot);
+            RefreshSlotValidationSummary(slot);
+            MarkDirty();
+        }
+
+        public async Task PickSlotParameterValue(SlotParameterEditorField field)
+        {
+            if (field == null)
+            {
+                return;
+            }
+
+            switch (field.Metadata.PickerIntent)
+            {
+                case Pulsar.Core.Plugin.Metadata.SlotPickerIntent.Process:
+                    await PickProcess(field.Slot);
+                    break;
+
+                case Pulsar.Core.Plugin.Metadata.SlotPickerIntent.File:
+                    if (field.Slot.PluginId == "com.pulsar.vbarunner")
+                    {
+                        PickVbaScriptFile(field.Slot);
+                    }
+                    else
+                    {
+                        PickScriptFile(field.Slot);
+                    }
+                    break;
+
+                case Pulsar.Core.Plugin.Metadata.SlotPickerIntent.Secret:
+                    await EditSecret(field.Slot);
+                    break;
+            }
+        }
+
+        private void RefreshSlotParameterMetadata()
+        {
+            if (CurrentSlots == null)
+            {
+                return;
+            }
+
+            foreach (var slot in CurrentSlots)
+            {
+                InitializeSlotMetadata(slot);
+            }
+
+            RefreshSlotValidationSummaries(_configService.LastValidationResult);
+        }
+
+        private void InitializeSlotMetadata(PluginSlot slot)
+        {
+            var metadata = _pluginMetadataRegistry.GetMetadata(slot.PluginId);
+            var actionOptions = metadata?.Actions
+                .Select(action => new SlotActionOption
+                {
+                    Value = action.Key,
+                    Label = action.Value.Label ?? action.Key,
+                    Description = action.Value.Description
+                })
+                .OrderBy(action => action.Label)
+                .ToList() ?? new List<SlotActionOption>();
+
+            var actionMetadata = _pluginMetadataRegistry.GetActionMetadata(slot.PluginId, slot.Action)
+                ?? metadata?.Actions.Values.FirstOrDefault();
+
+            if (actionMetadata != null && string.IsNullOrWhiteSpace(slot.Action))
+            {
+                slot.Action = actionMetadata.Name;
+            }
+
+            var parameters = actionMetadata?.Parameters
+                .Select(parameter => new SlotParameterEditorField(slot, parameter))
+                .ToList() ?? new List<SlotParameterEditorField>();
+
+            var quickEditParameters = SlotParameterPresentationHelper.BuildQuickEditParameters(parameters);
+            var summaryTokens = SlotParameterPresentationHelper.BuildSummaryTokens(parameters, slot.ValidationSummary);
+
+            slot.SetParameterMetadata(
+                actionOptions,
+                actionMetadata,
+                parameters.Where(parameter => parameter.Metadata.Group == Pulsar.Core.Plugin.Metadata.SlotParameterGroup.Required),
+                parameters.Where(parameter => parameter.Metadata.Group == Pulsar.Core.Plugin.Metadata.SlotParameterGroup.Optional),
+                parameters.Where(parameter => parameter.Metadata.Group == Pulsar.Core.Plugin.Metadata.SlotParameterGroup.Advanced),
+                quickEditParameters,
+                summaryTokens);
+        }
+
+        private void RefreshSlotValidationSummaries(ValidationResult? validationResult)
+        {
+            if (CurrentSlots == null)
+            {
+                return;
+            }
+
+            foreach (var slot in CurrentSlots)
+            {
+                var summary = validationResult?.Errors
+                    .Where(error => error.PluginId == slot.PluginId && error.PropertyName != null && error.PropertyName.Contains($":{slot.Slot}]"))
+                    .Select(error => error.Message)
+                    .FirstOrDefault() ?? string.Empty;
+
+                slot.SetValidationSummary(summary);
+                UpdateSlotPresentation(slot);
+            }
+        }
+
+        private void RefreshSlotValidationSummary(PluginSlot slot)
+        {
+            var validationResult = _configService.LastValidationResult;
+            if (validationResult == null)
+            {
+                slot.SetValidationSummary(string.Empty);
+                return;
+            }
+
+            var summary = validationResult.Errors
+                .Where(error => error.PluginId == slot.PluginId && error.PropertyName != null && error.PropertyName.Contains($":{slot.Slot}]"))
+                .Select(error => error.Message)
+                .FirstOrDefault() ?? string.Empty;
+
+                slot.SetValidationSummary(summary);
+                UpdateSlotPresentation(slot);
+        }
+
+        private void UpdateSlotPresentation(PluginSlot slot)
+        {
+            if (slot == null)
+            {
+                return;
+            }
+
+            var parameters = slot.RequiredParameters
+                .Concat(slot.OptionalParameters)
+                .Concat(slot.AdvancedParameters)
+                .ToList();
+
+            slot.SetParameterMetadata(
+                slot.AvailableActions,
+                new SlotActionMetadata
+                {
+                    Name = slot.Action,
+                    Label = slot.ActionLabel,
+                    Description = slot.ActionDescription
+                },
+                slot.RequiredParameters,
+                slot.OptionalParameters,
+                slot.AdvancedParameters,
+                SlotParameterPresentationHelper.BuildQuickEditParameters(parameters),
+                SlotParameterPresentationHelper.BuildSummaryTokens(parameters, slot.ValidationSummary));
         }
 
         public AppTheme LauncherTheme

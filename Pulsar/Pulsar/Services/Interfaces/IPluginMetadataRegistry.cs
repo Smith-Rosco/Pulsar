@@ -48,5 +48,10 @@ namespace Pulsar.Services.Interfaces
         /// </summary>
         /// <returns>所有分类名称的集合</returns>
         IReadOnlyCollection<string> GetAllCategories();
+
+        /// <summary>
+        /// 获取指定插件动作的槽位元数据
+        /// </summary>
+        SlotActionMetadata? GetActionMetadata(string pluginId, string action);
     }
 }

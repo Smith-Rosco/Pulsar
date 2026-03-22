@@ -96,9 +96,9 @@ namespace Pulsar.Views
             // 1. 获取窗口句柄
             var hwnd = new WindowInteropHelper(this).Handle;
             // 2. 获取当前扩展样式
-            long currentStyle = WindowHelper.GetWindowLong(hwnd, WindowHelper.GWL_EXSTYLE);
+            long currentStyle = PulsarNative.GetWindowLong(hwnd, PulsarNative.GWL_EXSTYLE);
             // 3. 注入 ToolWindow 样式 (使其在 Alt+Tab 中不可见)
-            WindowHelper.SetWindowLong(hwnd, WindowHelper.GWL_EXSTYLE, currentStyle | WindowHelper.WS_EX_TOOLWINDOW);
+            PulsarNative.SetWindowLong(hwnd, PulsarNative.GWL_EXSTYLE, currentStyle | PulsarNative.WS_EX_TOOLWINDOW);
 
             // 4. [New] Activate "Self-Healing" Transparency
             _themeService.EnforceTransparency(this);

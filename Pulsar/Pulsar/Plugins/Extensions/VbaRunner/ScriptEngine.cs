@@ -66,7 +66,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
                     try
                     {
                         IntPtr hwnd = (IntPtr)_app.Hwnd;
-                        WindowHelper.SetForegroundWindow(hwnd);
+                        PulsarNative.SetForegroundWindow(hwnd);
                     }
                     catch { }
 

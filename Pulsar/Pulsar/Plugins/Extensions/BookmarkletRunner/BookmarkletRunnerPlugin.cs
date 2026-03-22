@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin;
+using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Native;
 using Pulsar.Services.Interfaces;
 
@@ -15,7 +16,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
     /// 书签脚本运行器插件 - 在浏览器中执行 Bookmarklet JavaScript 脚本
     /// Refactored to use UI Automation for instant, clipboard-free injection.
     /// </summary>
-    public class BookmarkletRunnerPlugin : IPulsarPlugin, IPluginTiered
+    public class BookmarkletRunnerPlugin : IPulsarPlugin, IPluginTiered, IPluginMetadataProvider
     {
         private IWindowService? _windowService;
         private ILogger<BookmarkletRunnerPlugin>? _logger;
@@ -45,6 +46,76 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
             }
 
             _logger?.LogInformation("[BookmarkletRunner] Initialized successfully");
+        }
+
+        public PluginMetadata GetMetadata()
+        {
+            return new PluginMetadata
+            {
+                Id = Id,
+                Display = new DisplayInfo
+                {
+                    Name = DisplayName,
+                    Description = Description,
+                    IconKey = Icon,
+                    Category = "Browser",
+                    Version = Version,
+                    Author = Author,
+                    DocumentationUrl = DocumentationUrl,
+                    License = "MIT"
+                },
+                Schema = null,
+                UI = new UIHints
+                {
+                    Badge = "JS Script",
+                    AccentColor = "#FF6B6B",
+                    ShowInQuickAccess = true,
+                    SortOrder = 30,
+                    IsFeatured = true
+                },
+                Capabilities = new PluginCapabilities
+                {
+                    SupportedActions = new List<string> { "run" },
+                    RequiresForegroundWindow = true,
+                    Dependencies = new List<string> { "com.pulsar.winswitcher" },
+                    CanDisable = CanDisable,
+                    Tier = Tier,
+                    MinPulsarVersion = "1.0.0"
+                },
+                Actions = new Dictionary<string, SlotActionMetadata>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["run"] = new SlotActionMetadata
+                    {
+                        Name = "run",
+                        Label = "Run Bookmarklet",
+                        Description = "Load and execute a bookmarklet script file in the active browser.",
+                        Parameters = new List<SlotParameterMetadata>
+                        {
+                            new()
+                            {
+                                Key = "scriptPath",
+                                Type = "string",
+                                Label = "Script File",
+                                Description = "Path to the JavaScript file that contains the bookmarklet.",
+                                IsRequired = true,
+                                Group = SlotParameterGroup.Required,
+                                SummaryLabel = "Script",
+                                SummaryMode = SlotParameterSummaryMode.SafeStateOnly,
+                                ConfiguredSummaryText = "file ready",
+                                MissingSummaryText = "file missing",
+                                PresentationHint = SlotParameterPresentationHint.QuickEdit,
+                                QuickEditPriority = 100,
+                                Placeholder = "%APPDATA%\\Pulsar\\Scripts\\example.js",
+                                Example = "%APPDATA%\\Pulsar\\Scripts\\bookmarklet.js",
+                                InputHint = "Choose a .js or supported text file.",
+                                ValidationHint = "Required and must point to a readable local file.",
+                                PickerIntent = SlotPickerIntent.File,
+                                Validators = new List<ValidationRule> { new RequiredValidator() }
+                            }
+                        }
+                    }
+                }
+            };
         }
 
         public async Task<PluginResult> ExecuteAsync(
@@ -156,12 +227,12 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
             try
             {
                 // Only restore if minimized to preserve maximized state
-                if (WindowHelper.IsIconic(browserHandle))
+                if (PulsarNative.IsIconic(browserHandle))
                 {
-                    WindowHelper.ShowWindow(browserHandle, WindowHelper.SW_RESTORE);
+                    PulsarNative.ShowWindow(browserHandle, PulsarNative.SW_RESTORE);
                 }
                 
-                WindowHelper.SetForegroundWindow(browserHandle);
+                PulsarNative.SetForegroundWindow(browserHandle);
                 _logger?.LogDebug("[BookmarkletRunner] Browser window focused");
             }
             catch (Exception ex)

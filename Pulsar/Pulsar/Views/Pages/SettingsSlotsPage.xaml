@@ -6,7 +6,6 @@
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:dd="urn:gong-wpf-dragdrop"
       xmlns:models="clr-namespace:Pulsar.Models"
-      xmlns:selectors="clr-namespace:Pulsar.Views.Selectors"
       xmlns:converters="clr-namespace:Pulsar.Core.Converters"
       xmlns:controls="clr-namespace:Pulsar.Views.Controls"
       xmlns:tutorial="clr-namespace:Pulsar.Helpers.Tutorial"
@@ -28,132 +27,70 @@
             <converters:StringPathToImageSourceConverter x:Key="PathToImage"/>
             <converters:HexToBrushConverter x:Key="HexToBrush"/>
 
-            <!-- Templates for different Plugin Types -->
-        
-        <!-- 1. WinSwitcher / Launcher -->
-        <DataTemplate x:Key="LauncherFieldsTemplate">
-            <StackPanel Loaded="DataTemplateStackPanel_Loaded">
-                <Grid Margin="0,0,0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <ui:TextBox Text="{Binding [app]}" 
-                                Icon="{ui:SymbolIcon Search24}"
-                                PlaceholderText="Process Name (e.g. chrome)"
-                                ToolTip="This name is used for switching to the window."/>
-                    
-                                <ui:Button Grid.Column="1" Margin="8,0,0,0"
-                                           Icon="{ui:SymbolIcon TargetEdit20}"
-                                           Command="{Binding Tag.PickProcessCommand, RelativeSource={RelativeSource AncestorType=StackPanel}}" 
-                                           CommandParameter="{Binding}"
-                                           ToolTip="Pick Executable from Running App"
-                                           Style="{StaticResource PulsarIconButtonStyle}"/>
-                </Grid>
+            <DataTemplate x:Key="SlotParameterFieldTemplate" DataType="{x:Type models:SlotParameterEditorField}">
+                <StackPanel Margin="0,0,0,8">
+                    <!-- Single unified row: label | textbox | picker | info | badge -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-                <ui:TextBox Text="{Binding [arguments]}" 
-                            Icon="{ui:SymbolIcon Code24}"
-                            PlaceholderText="Arguments (Optional)"
-                            Margin="0,0,0,10"/>
-            </StackPanel>
-        </DataTemplate>
+                        <TextBlock Text="{Binding Label}"
+                                   Grid.Column="0"
+                                   VerticalAlignment="Center"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
 
-        <!-- 2. Command Runner -->
-        <DataTemplate x:Key="CommandFieldsTemplate">
-            <StackPanel Loaded="DataTemplateStackPanel_Loaded">
-                <Grid Margin="0,0,0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <ui:TextBox Text="{Binding [path]}" 
-                                Icon="{ui:SymbolIcon AppGeneric24}"
-                                PlaceholderText="Executable Path"/>
-                    
-                    <ui:Button Grid.Column="1" Margin="8,0,0,0"
-                               Icon="{ui:SymbolIcon TargetEdit20}"
-                               Command="{Binding Tag.PickProcessCommand, RelativeSource={RelativeSource AncestorType=StackPanel}}" 
-                               CommandParameter="{Binding}"
-                               ToolTip="Pick Executable from Running App"
-                               Style="{StaticResource PulsarIconButtonStyle}"/>
-                </Grid>
+                        <ui:TextBox Grid.Column="1"
+                                    Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                    PlaceholderText="{Binding Placeholder}"/>
 
-                <ui:TextBox Text="{Binding [arguments]}" 
-                            Icon="{ui:SymbolIcon Code24}"
-                            PlaceholderText="Arguments (Optional)"
-                            Margin="0,0,0,10"/>
-            </StackPanel>
-        </DataTemplate>
+                        <ui:Button Grid.Column="2"
+                                   Margin="8,0,0,0"
+                                   Content="{Binding PickerButtonLabel}"
+                                   Click="SlotParameterPicker_Click"
+                                   Tag="{Binding}"
+                                   Visibility="{Binding HasPicker, Converter={StaticResource BoolToVis}}"
+                                   Style="{StaticResource PulsarSecondaryButtonStyle}"/>
 
-        <!-- 3. Secret (PKI) -->
-        <DataTemplate x:Key="SecretFieldsTemplate">
-            <StackPanel Loaded="DataTemplateStackPanel_Loaded">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    
-                    <ui:TextBox Text="••••••••••••••••" 
-                                Icon="{ui:SymbolIcon LockClosed24}"
-                                IsEnabled="False"
-                                ToolTip="Encrypted Credential"/>
+                        <ui:Button Grid.Column="3"
+                                   Width="28"
+                                   Height="28"
+                                   Margin="8,0,0,0"
+                                   Icon="{ui:SymbolIcon Info24}"
+                                   Style="{StaticResource PulsarIconButtonStyle}"
+                                   ToolTip="{Binding HelpTooltipText}"
+                                   Visibility="{Binding HasHelpContent, Converter={StaticResource BoolToVis}}"
+                                   Focusable="True"/>
 
-                                <ui:Button Grid.Column="1" Margin="8,0,0,0"
-                                           Icon="{ui:SymbolIcon Edit24}"
-                                           Content="Edit Secret"
-                                           Command="{Binding Tag.EditSecretCommand, RelativeSource={RelativeSource AncestorType=StackPanel}}" 
-                                           CommandParameter="{Binding}"
-                                           Style="{StaticResource PulsarSecondaryButtonStyle}"/>
-                </Grid>
-            </StackPanel>
-        </DataTemplate>
+                        <Border Grid.Column="4"
+                                Background="{DynamicResource ControlFillColorTertiaryBrush}"
+                                CornerRadius="4"
+                                Padding="6,1"
+                                Margin="8,0,0,0"
+                                VerticalAlignment="Center"
+                                Visibility="{Binding IsRequired, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="Required" FontSize="10" Foreground="{DynamicResource SystemFillColorCautionBrush}"/>
+                        </Border>
+                    </Grid>
 
-        <!-- 4. Bookmarklet -->
-        <DataTemplate x:Key="BookmarkletFieldsTemplate">
-            <StackPanel Loaded="DataTemplateStackPanel_Loaded">
-                <Grid Margin="0,0,0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <ui:TextBox Text="{Binding [scriptPath]}" 
-                                Icon="{ui:SymbolIcon DocumentJavascript24}"
-                                PlaceholderText="Script Path (.js)"
-                                ToolTip="Path to .js file"/>
+                    <TextBlock Text="{Binding ValidationHint}"
+                               Margin="104,4,0,0"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               TextWrapping="Wrap"
+                               Visibility="{Binding HasValidationHint, Converter={StaticResource BoolToVis}}"/>
 
-                                <ui:Button Grid.Column="1" Margin="8,0,0,0"
-                                           Icon="{ui:SymbolIcon FolderOpen24}"
-                                           Command="{Binding Tag.PickScriptFileCommand, RelativeSource={RelativeSource AncestorType=StackPanel}}" 
-                                           CommandParameter="{Binding}"
-                                           ToolTip="Browse Script File"
-                                           Style="{StaticResource PulsarIconButtonStyle}"/>
-                </Grid>
-            </StackPanel>
-        </DataTemplate>
-
-        <!-- 5. VBA Runner -->
-        <DataTemplate x:Key="VbaRunnerFieldsTemplate">
-            <StackPanel Loaded="DataTemplateStackPanel_Loaded">
-                <Grid Margin="0,0,0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <ui:TextBox Text="{Binding [scriptPath]}" 
-                                Icon="{ui:SymbolIcon DocumentData24}"
-                                PlaceholderText="VBA Script Path (.txt/.vbs)"
-                                ToolTip="Path to .txt/.vbs file"/>
-
-                                <ui:Button Grid.Column="1" Margin="8,0,0,0"
-                                           Icon="{ui:SymbolIcon FolderOpen24}"
-                                           Command="{Binding Tag.PickVbaScriptFileCommand, RelativeSource={RelativeSource AncestorType=StackPanel}}" 
-                                           CommandParameter="{Binding}"
-                                           ToolTip="Browse VBA Script"
-                                           Style="{StaticResource PulsarIconButtonStyle}"/>
-                </Grid>
-            </StackPanel>
-        </DataTemplate>
+                    <TextBlock Text="{Binding ValidationMessage}"
+                               Margin="104,2,0,0"
+                               Foreground="{DynamicResource SystemFillColorCautionBrush}"
+                               TextWrapping="Wrap"
+                               Visibility="{Binding HasValidationMessage, Converter={StaticResource BoolToVis}}"/>
+                </StackPanel>
+            </DataTemplate>
 
         <!-- 6. System Command -->
         <DataTemplate x:Key="SystemCommandFieldsTemplate">
@@ -173,13 +110,19 @@
             </StackPanel>
         </DataTemplate>
 
-        <selectors:SlotItemFieldSelector x:Key="SlotItemFieldSelector"
-                                         LauncherFieldsTemplate="{StaticResource LauncherFieldsTemplate}"
-                                         CommandFieldsTemplate="{StaticResource CommandFieldsTemplate}"
-                                         BookmarkletFieldsTemplate="{StaticResource BookmarkletFieldsTemplate}"
-                                         VbaRunnerFieldsTemplate="{StaticResource VbaRunnerFieldsTemplate}"
-                                         SecretFieldsTemplate="{StaticResource SecretFieldsTemplate}"
-                                         SystemCommandFieldsTemplate="{StaticResource SystemCommandFieldsTemplate}"/>
+        <!-- Slot Item Context Menu (three-dot button) -->
+        <ContextMenu x:Key="SlotItemContextMenu">
+            <ContextMenu.Resources>
+                <ResourceDictionary>
+                    <ResourceDictionary.MergedDictionaries>
+                        <ui:ControlsDictionary />
+                    </ResourceDictionary.MergedDictionaries>
+                </ResourceDictionary>
+            </ContextMenu.Resources>
+            <MenuItem Header="Remove Slot"
+                      Icon="{ui:SymbolIcon Delete24}"
+                      Click="SlotContextMenu_RemoveSlot_Click"/>
+        </ContextMenu>
 
         <!-- Context Menu Style -->
         <ContextMenu x:Key="AddSlotContextMenu"
@@ -422,130 +365,210 @@
                                                    VerticalAlignment="Center"/>
                                 </Border>
                                 
-                                <controls:ExpandableCard Grid.Column="1"
-                                                         x:Name="SlotCard"
-                                                         IconKey="{Binding IconKey}"
-                                                         Title="{Binding Label}"
-                                                         IsToggleVisible="False"
-                                                         PageDataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Page}}">
+                                 <controls:ExpandableCard Grid.Column="1"
+                                                          x:Name="SlotCard"
+                                                          IconKey="{Binding IconKey}"
+                                                          Title="{Binding Label}"
+                                                          Subtitle="{Binding ActionLabel}"
+                                                          IsToggleVisible="False"
+                                                          PageDataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Page}}">
                                     
-                                    <!-- Header Content: Position + Type Badge -->
-                                    <controls:ExpandableCard.HeaderContent>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{Binding Slot, StringFormat='Position {0}'}" 
-                                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
-                                                       FontSize="12" Margin="0,0,8,0"/>
-                                            <Border Background="{DynamicResource ControlFillColorSecondaryBrush}" 
-                                                    CornerRadius="4" Padding="4,1"
-                                                    Visibility="{Binding TypeBadge, Converter={StaticResource StringEmptyToVis}, FallbackValue=Collapsed}">
-                                                <TextBlock Text="{Binding TypeBadge}" FontSize="10" Foreground="{Binding TypeColor}"/>
-                                            </Border>
-                                        </StackPanel>
-                                    </controls:ExpandableCard.HeaderContent>
-                                    
-                                    <!-- Expanded Content: Slot Configuration Form -->
-                                    <controls:ExpandableCard.ExpandedContent>
-                                        <StackPanel Loaded="StackPanel_Loaded">
-                                            <ui:TextBox Text="{Binding Label}" PlaceholderText="Display Label" Margin="0,0,0,10"/>
-                                            
-                                            <!-- Dynamic Fields based on Type -->
-                                            <ContentPresenter Content="{Binding}" ContentTemplateSelector="{StaticResource SlotItemFieldSelector}"/>
+                                     <!-- Header Content: Position + Status + Three-dot menu -->
+                                      <controls:ExpandableCard.HeaderContent>
+                                           <WrapPanel>
+                                                     <TextBlock Text="{Binding Slot, StringFormat='Position {0}'}"
+                                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                                FontSize="12"
+                                                               Margin="0,0,8,0"
+                                                               VerticalAlignment="Center"/>
+                                                   <Border Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                                           CornerRadius="999"
+                                                           Padding="8,2"
+                                                           Margin="0,0,8,0"
+                                                           Visibility="{Binding TypeBadge, Converter={StaticResource StringEmptyToVis}, FallbackValue=Collapsed}">
+                                                       <TextBlock Text="{Binding TypeBadge}" FontSize="10" Foreground="{Binding TypeColor}"/>
+                                                   </Border>
+                                                     <Border Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                                             CornerRadius="999"
+                                                             Padding="8,2"
+                                                             Margin="0,0,8,0">
+                                                         <TextBlock Text="{Binding HealthBadgeText}" FontSize="10" Foreground="{Binding HealthBadgeColor}"/>
+                                                     </Border>
+                                                     <!-- SummaryTokens chips (max 3) -->
+                                                     <ItemsControl ItemsSource="{Binding SummaryTokens}"
+                                                                   Visibility="{Binding HasSummaryTokens, Converter={StaticResource BoolToVis}}">
+                                                         <ItemsControl.ItemsPanel>
+                                                             <ItemsPanelTemplate>
+                                                                 <WrapPanel Orientation="Horizontal"/>
+                                                             </ItemsPanelTemplate>
+                                                         </ItemsControl.ItemsPanel>
+                                                         <ItemsControl.ItemTemplate>
+                                                             <DataTemplate>
+                                                                 <Border Background="{DynamicResource ControlFillColorDefaultBrush}"
+                                                                         CornerRadius="999"
+                                                                         Padding="6,2"
+                                                                         Margin="0,0,4,0"
+                                                                         BorderBrush="{DynamicResource ControlElevationBorderBrush}"
+                                                                         BorderThickness="1">
+                                                                     <TextBlock Text="{Binding}" FontSize="10"
+                                                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                                                MaxWidth="80"
+                                                                                TextTrimming="CharacterEllipsis"/>
+                                                                 </Border>
+                                                             </DataTemplate>
+                                                         </ItemsControl.ItemTemplate>
+                                                     </ItemsControl>
+                                                     <!-- Three-dot context menu button -->
+                                                     <ui:Button Style="{StaticResource PulsarIconButtonStyle}"
+                                                                Icon="{ui:SymbolIcon MoreHorizontal24}"
+                                                                ToolTip="More options"
+                                                                Padding="4"
+                                                                Click="SlotMoreButton_Click"
+                                                                Tag="{Binding}"/>
+                                           </WrapPanel>
+                                        </controls:ExpandableCard.HeaderContent>
+                                      
+                                     <!-- Expanded Content: Quick Edit -->
+                                      <controls:ExpandableCard.ExpandedContent>
+                                          <StackPanel Loaded="StackPanel_Loaded">
+                                              <!-- ValidationSummary: severity-aware -->
+                                              <Border CornerRadius="8"
+                                                       Padding="10,8"
+                                                       Margin="0,0,0,12"
+                                                       Visibility="{Binding HasValidationSummary, Converter={StaticResource BoolToVis}}">
+                                                  <Border.Style>
+                                                      <Style TargetType="Border">
+                                                          <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBackgroundBrush}"/>
+                                                          <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCautionBrush}"/>
+                                                          <Setter Property="BorderThickness" Value="1"/>
+                                                          <Style.Triggers>
+                                                              <DataTrigger Binding="{Binding ValidationSeverity}" Value="Error">
+                                                                  <Setter Property="Background" Value="{DynamicResource SystemFillColorCriticalBackgroundBrush}"/>
+                                                                  <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
+                                                              </DataTrigger>
+                                                          </Style.Triggers>
+                                                      </Style>
+                                                  </Border.Style>
+                                                  <Grid>
+                                                      <Grid.ColumnDefinitions>
+                                                          <ColumnDefinition Width="Auto"/>
+                                                          <ColumnDefinition Width="*"/>
+                                                      </Grid.ColumnDefinitions>
+                                                      <!-- Warning icon (default) -->
+                                                      <ui:SymbolIcon Symbol="Warning24"
+                                                                     FontSize="14"
+                                                                     Margin="0,0,8,0"
+                                                                     VerticalAlignment="Top">
+                                                          <ui:SymbolIcon.Style>
+                                                              <Style TargetType="ui:SymbolIcon">
+                                                                  <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}"/>
+                                                                  <Setter Property="Visibility" Value="Visible"/>
+                                                                  <Style.Triggers>
+                                                                      <DataTrigger Binding="{Binding ValidationSeverity}" Value="Error">
+                                                                          <Setter Property="Visibility" Value="Collapsed"/>
+                                                                      </DataTrigger>
+                                                                  </Style.Triggers>
+                                                              </Style>
+                                                          </ui:SymbolIcon.Style>
+                                                      </ui:SymbolIcon>
+                                                      <!-- Error icon -->
+                                                      <ui:SymbolIcon Symbol="ErrorCircle24"
+                                                                     FontSize="14"
+                                                                     Margin="0,0,8,0"
+                                                                     VerticalAlignment="Top">
+                                                          <ui:SymbolIcon.Style>
+                                                              <Style TargetType="ui:SymbolIcon">
+                                                                  <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
+                                                                  <Setter Property="Visibility" Value="Collapsed"/>
+                                                                  <Style.Triggers>
+                                                                      <DataTrigger Binding="{Binding ValidationSeverity}" Value="Error">
+                                                                          <Setter Property="Visibility" Value="Visible"/>
+                                                                      </DataTrigger>
+                                                                  </Style.Triggers>
+                                                              </Style>
+                                                          </ui:SymbolIcon.Style>
+                                                      </ui:SymbolIcon>
+                                                      <TextBlock Grid.Column="1"
+                                                                 Text="{Binding ValidationSummary}"
+                                                                 Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                                                 TextWrapping="Wrap"/>
+                                                  </Grid>
+                                              </Border>
 
-                                            <!-- Appearance Section (Shared) -->
-                                            <TextBlock Text="Appearance" FontSize="12" FontWeight="SemiBold" Margin="0,12,0,4" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                                            <Grid Margin="0,0,0,0">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="12"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
+                                             <Grid Margin="0,0,0,8">
+                                                 <Grid.ColumnDefinitions>
+                                                     <ColumnDefinition Width="100"/>
+                                                     <ColumnDefinition Width="*"/>
+                                                 </Grid.ColumnDefinitions>
 
-                                                <!-- Icon Field -->
-                                                <Grid Grid.Column="0">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    <ui:TextBox Text="{Binding IconKey}" 
-                                                                Icon="{ui:SymbolIcon Image24}"
-                                                                PlaceholderText="Icon, Emoji, or Text"/>
-                            <ui:Button Grid.Column="1" Margin="4,0,0,0"
-                                       Icon="{ui:SymbolIcon FolderOpen16}"
-                                       Style="{StaticResource PulsarIconButtonStyle}"
-                                       Command="{Binding Tag.PickIconCommand, RelativeSource={RelativeSource AncestorType=StackPanel}}" 
-                                       CommandParameter="{Binding}"
-                                       ToolTip="Browse Icon File"/>
-                                                </Grid>
+                                                 <TextBlock Text="Label"
+                                                            VerticalAlignment="Center"
+                                                            FontWeight="SemiBold"
+                                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
 
-                                                <!-- Color Field -->
-                                                <Grid Grid.Column="2">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    
-                                                    <Border Grid.Column="0" Width="28" Height="28" CornerRadius="4" Margin="0,0,8,0"
-                                                            BorderBrush="{DynamicResource ControlElevationBorderBrush}" BorderThickness="1"
-                                                            Background="{Binding Color, Converter={StaticResource HexToBrush}}">
-                                                    </Border>
+                                                 <ui:TextBox Grid.Column="1"
+                                                             Text="{Binding Label}"
+                                                             PlaceholderText="Display label"/>
+                                             </Grid>
 
-                                                    <ui:TextBox Grid.Column="1" 
-                                                                Text="{Binding Color}" 
-                                                                Icon="{ui:SymbolIcon Color24}"
-                                                                PlaceholderText="#RRGGBB"/>
+                                             <Grid Margin="0,0,0,8"
+                                                   Visibility="{Binding HasActionChoices, Converter={StaticResource BoolToVis}}">
+                                                 <Grid.ColumnDefinitions>
+                                                     <ColumnDefinition Width="100"/>
+                                                     <ColumnDefinition Width="*"/>
+                                                 </Grid.ColumnDefinitions>
 
-                            <ui:Button Grid.Column="2" Margin="4,0,0,0"
-                                       Icon="{ui:SymbolIcon Drop24}"
-                                       Style="{StaticResource PulsarIconButtonStyle}"
-                                       Command="{Binding Tag.PickColorCommand, RelativeSource={RelativeSource AncestorType=StackPanel}}" 
-                                       CommandParameter="{Binding}"
-                                       ToolTip="Pick Color from Palette"/>
-                                                </Grid>
-                                            </Grid>
-                                            
-                                            <!-- Action Buttons Row -->
-                                            <Grid Margin="0,16,0,0">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="8"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="8"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-                                                
-                        <ui:Button Grid.Column="0"
-                                   Content="Move Up"
-                                   Icon="{ui:SymbolIcon ArrowUp24}"
-                                   Style="{StaticResource PulsarSecondaryButtonStyle}"
-                                   Command="{Binding Tag.MoveSlotUpCommand, RelativeSource={RelativeSource AncestorType=StackPanel}}"
-                                   CommandParameter="{Binding}"
-                                   HorizontalAlignment="Stretch"/>
-                                                
-                        <ui:Button Grid.Column="2"
-                                   Content="Move Down"
-                                   Icon="{ui:SymbolIcon ArrowDown24}"
-                                   Style="{StaticResource PulsarSecondaryButtonStyle}"
-                                   Command="{Binding Tag.MoveSlotDownCommand, RelativeSource={RelativeSource AncestorType=StackPanel}}"
-                                   CommandParameter="{Binding}"
-                                   HorizontalAlignment="Stretch"/>
-                                                
-                        <ui:Button Grid.Column="4"
-                                   Content="Remove"
-                                   Icon="{ui:SymbolIcon Delete24}"
-                                   Style="{StaticResource PulsarDangerButtonStyle}"
-                                   Command="{Binding Tag.RemoveSlotCommand, RelativeSource={RelativeSource AncestorType=StackPanel}}"
-                                   CommandParameter="{Binding}"
-                                   HorizontalAlignment="Stretch"/>
-                                            </Grid>
-                                        </StackPanel>
-                                    </controls:ExpandableCard.ExpandedContent>
-                                </controls:ExpandableCard>
-                            </Grid>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
+                                                 <TextBlock Text="Action"
+                                                            VerticalAlignment="Center"
+                                                            FontWeight="SemiBold"
+                                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                                 <ComboBox Grid.Column="1"
+                                                           ItemsSource="{Binding AvailableActions}"
+                                                           SelectedValuePath="Value"
+                                                           DisplayMemberPath="Label"
+                                                           SelectedValue="{Binding Action}"
+                                                           SelectionChanged="ActionComboBox_SelectionChanged"/>
+                                             </Grid>
+
+                                              <ItemsControl ItemsSource="{Binding QuickEditParameters}"
+                                                            ItemTemplate="{StaticResource SlotParameterFieldTemplate}"
+                                                            Visibility="{Binding HasQuickEditParameters, Converter={StaticResource BoolToVis}}"/>
+
+                                              <!-- Hint when no QuickEditParameters -->
+                                              <TextBlock Text="Open Edit Details for full configuration"
+                                                         Margin="0,4,0,8"
+                                                         FontSize="12"
+                                                         Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                         FontStyle="Italic"
+                                                         HorizontalAlignment="Center">
+                                                  <TextBlock.Style>
+                                                      <Style TargetType="TextBlock">
+                                                          <Setter Property="Visibility" Value="Collapsed"/>
+                                                          <Style.Triggers>
+                                                              <DataTrigger Binding="{Binding HasQuickEditParameters}" Value="False">
+                                                                  <Setter Property="Visibility" Value="Visible"/>
+                                                              </DataTrigger>
+                                                          </Style.Triggers>
+                                                      </Style>
+                                                  </TextBlock.Style>
+                                              </TextBlock>
+
+                                              <!-- Edit Details: single full-width action button -->
+                                              <ui:Button Content="Edit Details"
+                                                         Margin="0,10,0,0"
+                                                         Icon="{ui:SymbolIcon Settings24}"
+                                                         Style="{StaticResource PulsarSecondaryButtonStyle}"
+                                                         Command="{Binding Tag.OpenSlotConfigurationCommand, RelativeSource={RelativeSource AncestorType=StackPanel}}"
+                                                         CommandParameter="{Binding}"
+                                                         HorizontalAlignment="Stretch"/>
+                                          </StackPanel>
+                                      </controls:ExpandableCard.ExpandedContent>
+                                 </controls:ExpandableCard>
+                             </Grid>
+                         </DataTemplate>
+                     </ItemsControl.ItemTemplate>
+                 </ItemsControl>
+             </ScrollViewer>
 
             <!-- Footer: Add Slot Button -->
             <Grid Grid.Row="1" Margin="0,16,0,0">

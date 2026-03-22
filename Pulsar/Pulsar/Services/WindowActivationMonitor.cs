@@ -1,8 +1,8 @@
 // [Path]: Pulsar/Pulsar/Services/WindowActivationMonitor.cs
 
 using System;
-using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
+using Pulsar.Native;
 
 namespace Pulsar.Services
 {
@@ -14,7 +14,7 @@ namespace Pulsar.Services
     {
         private readonly ILogger<WindowActivationMonitor>? _logger;
         private IntPtr _hookHandle;
-        private WinEventDelegate? _hookDelegate;
+        private PulsarNative.WinEventDelegate? _hookDelegate;
         private bool _isRunning;
         private readonly object _lock = new object();
 
@@ -48,14 +48,14 @@ namespace Pulsar.Services
                     
                     _logger?.LogInformation("[WindowActivationMonitor] Attempting to register WinEvent hook...");
                     
-                    _hookHandle = SetWinEventHook(
-                        EVENT_SYSTEM_FOREGROUND,
-                        EVENT_SYSTEM_FOREGROUND,
+                    _hookHandle = PulsarNative.SetWinEventHook(
+                        PulsarNative.EVENT_SYSTEM_FOREGROUND,
+                        PulsarNative.EVENT_SYSTEM_FOREGROUND,
                         IntPtr.Zero,
                         _hookDelegate,
-                        0, // All processes
-                        0, // All threads
-                        WINEVENT_OUTOFCONTEXT);
+                        0,
+                        0,
+                        PulsarNative.WINEVENT_OUTOFCONTEXT);
 
                     if (_hookHandle == IntPtr.Zero)
                     {
@@ -90,7 +90,7 @@ namespace Pulsar.Services
                 {
                     if (_hookHandle != IntPtr.Zero)
                     {
-                        UnhookWinEvent(_hookHandle);
+                        PulsarNative.UnhookWinEvent(_hookHandle);
                         _hookHandle = IntPtr.Zero;
                     }
 
@@ -117,7 +117,7 @@ namespace Pulsar.Services
                 return;
             }
 
-            if (eventType == EVENT_SYSTEM_FOREGROUND && hwnd != IntPtr.Zero)
+            if (eventType == PulsarNative.EVENT_SYSTEM_FOREGROUND && hwnd != IntPtr.Zero)
             {
                 try
                 {
@@ -136,35 +136,5 @@ namespace Pulsar.Services
         {
             Stop();
         }
-
-        // ==========================================
-        // Native Methods
-        // ==========================================
-
-        private delegate void WinEventDelegate(
-            IntPtr hWinEventHook,
-            uint eventType,
-            IntPtr hwnd,
-            int idObject,
-            int idChild,
-            uint dwEventThread,
-            uint dwmsEventTime);
-
-        [DllImport("user32.dll")]
-        private static extern IntPtr SetWinEventHook(
-            uint eventMin,
-            uint eventMax,
-            IntPtr hmodWinEventProc,
-            WinEventDelegate lpfnWinEventProc,
-            uint idProcess,
-            uint idThread,
-            uint dwFlags);
-
-        [DllImport("user32.dll")]
-        private static extern bool UnhookWinEvent(IntPtr hWinEventHook);
-
-        // Event constants
-        private const uint EVENT_SYSTEM_FOREGROUND = 0x0003;
-        private const uint WINEVENT_OUTOFCONTEXT = 0x0000;
     }
 }

@@ -50,8 +50,8 @@ namespace Pulsar.Services
             (DateTime.Now - CreatedAt).TotalMilliseconds > timeoutMs;
         
         public bool IsValid(Func<IntPtr, bool> validator) =>
-            WindowService.NativeMethods.IsWindow(SourceWindow) && 
-            WindowService.NativeMethods.IsWindow(TargetWindow) &&
+            PulsarNative.IsWindow(SourceWindow) && 
+            PulsarNative.IsWindow(TargetWindow) &&
             validator(SourceWindow) && 
             validator(TargetWindow);
     }
@@ -85,6 +85,21 @@ namespace Pulsar.Services
         // [New] Dynamic blacklist - can be updated by plugins
         private HashSet<string> _dynamicBlacklist = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private readonly object _blacklistLock = new object();
+
+        // System blacklist for known problematic processes (always excluded)
+        private static readonly HashSet<string> _systemBlacklist = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "applicationframehost", // UWP shell
+            "systemsettings",       // Settings (when suspended)
+            "searchapp",            // Search
+            "textinputhost",        // Input Method / Emoji Panel
+            "shellexperiencehost",  // Start Menu etc.
+            "lockapp",              // Lock Screen
+            "video.ui",             // Xbox Game Bar / Video Overlay
+            "gamebar",              // Game Bar
+            "yourphone",            // Phone Link background
+            "calc"                  // Calculator often stays suspended
+        };
         
         // [Logging] Log samplers for high-frequency operations
         private readonly LogSampler _historyLogSampler = new LogSampler(5);      // Sample 1 in 5 for history recording
@@ -176,12 +191,6 @@ namespace Pulsar.Services
             _logger.LogInformation("[WindowService] Blacklist updated. Total entries: {Count}", _dynamicBlacklist.Count);
         }
 
-        // --- Native Import for Constructor/Focus ---
-        [DllImport("user32.dll", EntryPoint = "GetForegroundWindow")]
-        private static extern IntPtr GetForegroundWindow_Native();
-        [DllImport("user32.dll")]
-        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
-
         // --- Native Import for Icon Extraction ---
         [DllImport("shell32.dll", CharSet = CharSet.Auto)]
         private static extern IntPtr SHGetFileInfo(string pszPath, uint dwFileAttributes, ref SHFILEINFO psfi, uint cbFileInfo, uint uFlags);
@@ -210,7 +219,7 @@ namespace Pulsar.Services
         public void SetPreviousWindow(IntPtr handle)
         {
             // [Fix] Ignore self (Pulsar) to prevent getting stuck in a loop
-            NativeMethods.GetWindowThreadProcessId(handle, out uint processId);
+            PulsarNative.GetWindowThreadProcessId(handle, out uint processId);
             if (processId == _currentProcessId) return;
 
             _previousWindowHandle = handle;
@@ -231,7 +240,7 @@ namespace Pulsar.Services
             }
             
             // 排除 Pulsar 自身
-            NativeMethods.GetWindowThreadProcessId(hwnd, out uint processId);
+            PulsarNative.GetWindowThreadProcessId(hwnd, out uint processId);
             if (processId == _currentProcessId)
             {
                 _logger.LogDebug("[WindowHistory] ❌ Skipped: Pulsar itself (PID: {Pid})", processId);
@@ -287,10 +296,10 @@ namespace Pulsar.Services
         {
             try
             {
-                IntPtr hWnd = GetForegroundWindow_Native();
+                IntPtr hWnd = PulsarNative.GetForegroundWindow();
                 if (hWnd == IntPtr.Zero) return new WindowInfo("Global", "", "Desktop");
 
-                GetWindowThreadProcessId(hWnd, out uint processId);
+                PulsarNative.GetWindowThreadProcessId(hWnd, out uint processId);
                 using (var process = Process.GetProcessById((int)processId))
                 {
                     string path = "";
@@ -359,7 +368,7 @@ namespace Pulsar.Services
                 // Uses Window Registry to track real activation times (via WindowActivationMonitor)
                 
                 // Get current foreground window
-                IntPtr currentForeground = GetForegroundWindow_Native();
+                IntPtr currentForeground = PulsarNative.GetForegroundWindow();
                 
                 // Collect all valid windows from target process with real activation times
                 var targetWindows = new List<(IntPtr Handle, DateTime LastActivation, string Title)>();
@@ -442,42 +451,42 @@ namespace Pulsar.Services
                 var results = new List<ProcessWindowInfo>();
                 int zOrderIndex = 0; // Track Z-Order position (lower = more recent)
 
-                NativeMethods.EnumWindows((hWnd, lParam) =>
+                PulsarNative.EnumWindows((hWnd, lParam) =>
                 {
                         // 1. 基础过滤
-                    if (!NativeMethods.IsWindowVisible(hWnd)) return true;
+                    if (!PulsarNative.IsWindowVisible(hWnd)) return true;
 
                     // [Fix] Enhanced filtering: DWMWA_CLOAKED (using correct P/Invoke signature with int)
                     // sizeof(int) is 4 bytes. DWM API returns S_OK (0) on success.
-                    if (NativeMethods.DwmGetWindowAttribute(hWnd, NativeMethods.DWMWA_CLOAKED, out int isCloakedVal, sizeof(int)) == 0)
+                    if (PulsarNative.DwmGetWindowAttribute(hWnd, PulsarNative.DWMWA_CLOAKED, out int isCloakedVal, sizeof(int)) == 0)
                     {
                         if (isCloakedVal != 0) return true; // Window is cloaked (e.g. suspended UWP app)
                     }
 
                     // [Fix] Enhanced filtering: Tool Windows & Ownership Check (Alt-Tab heuristic)
-                    long exStyle = NativeMethods.GetWindowLong(hWnd, NativeMethods.GWL_EXSTYLE);
-                    if ((exStyle & NativeMethods.WS_EX_TOOLWINDOW) != 0) return true;
+                    long exStyle = PulsarNative.GetWindowLong(hWnd, PulsarNative.GWL_EXSTYLE);
+                    if ((exStyle & PulsarNative.WS_EX_TOOLWINDOW) != 0) return true;
 
                     // Check for Owner window
-                    IntPtr owner = NativeMethods.GetWindow(hWnd, NativeMethods.GW_OWNER);
+                    IntPtr owner = PulsarNative.GetWindow(hWnd, PulsarNative.GW_OWNER);
                     if (owner != IntPtr.Zero)
                     {
                         // If window has an owner, it must be an AppWindow to be shown
-                        if ((exStyle & NativeMethods.WS_EX_APPWINDOW) == 0) return true;
+                        if ((exStyle & PulsarNative.WS_EX_APPWINDOW) == 0) return true;
                     }
 
                     // 2. Title Filtering
-                    int length = NativeMethods.GetWindowTextLength(hWnd);
+                    int length = PulsarNative.GetWindowTextLength(hWnd);
                     if (length == 0) return true;
 
                     StringBuilder sb = new StringBuilder(length + 1);
-                    NativeMethods.GetWindowText(hWnd, sb, sb.Capacity);
+                    PulsarNative.GetWindowText(hWnd, sb, sb.Capacity);
                     string title = sb.ToString();
 
                     if (string.IsNullOrWhiteSpace(title) || title == "Program Manager") return true;
 
                         // 3. 获取进程信息
-                        NativeMethods.GetWindowThreadProcessId(hWnd, out uint processId);
+                        PulsarNative.GetWindowThreadProcessId(hWnd, out uint processId);
                         try
                         {
                             using (var proc = Process.GetProcessById((int)processId))
@@ -556,21 +565,21 @@ namespace Pulsar.Services
                 var results = new List<ProcessWindowInfo>();
                 int zOrderIndex = 0; // Track Z-Order position
 
-                NativeMethods.EnumWindows((hWnd, lParam) =>
+                PulsarNative.EnumWindows((hWnd, lParam) =>
                 {
                     // 1. 基础过滤
-                    if (!NativeMethods.IsWindowVisible(hWnd)) return true;
+                    if (!PulsarNative.IsWindowVisible(hWnd)) return true;
 
                     // 2. 进程过滤
-                    NativeMethods.GetWindowThreadProcessId(hWnd, out uint processId);
+                    PulsarNative.GetWindowThreadProcessId(hWnd, out uint processId);
                     if (processId != targetProcessId) return true;
 
                     // 3. 标题过滤 (可选，如果不想要无标题窗口)
-                    int length = NativeMethods.GetWindowTextLength(hWnd);
+                    int length = PulsarNative.GetWindowTextLength(hWnd);
                     StringBuilder sb = new StringBuilder(length + 1);
                     if (length > 0)
                     {
-                        NativeMethods.GetWindowText(hWnd, sb, sb.Capacity);
+                        PulsarNative.GetWindowText(hWnd, sb, sb.Capacity);
                     }
                     string title = sb.ToString();
 
@@ -658,7 +667,7 @@ namespace Pulsar.Services
                         Int32Rect.Empty,
                         BitmapSizeOptions.FromEmptyOptions());
                     image.Freeze();
-                    NativeMethods.DestroyIcon(shinfo.hIcon);
+                    PulsarNative.DestroyIcon(shinfo.hIcon);
                     
                     // 2. Add to Cache
                     _iconCache.TryAdd(path, image);
@@ -678,21 +687,21 @@ namespace Pulsar.Services
         {
             // Use WindowHelper which handles minimized windows and bypasses foreground lock
             // This prevents "Background Restore" flashing
-            WindowHelper.SetForegroundWindow(hWnd);
+            PulsarNative.SetForegroundWindow(hWnd);
         }
 
         // 补充实现 IWindowService.RecordPreviousWindow()
         public void RecordPreviousWindow()
         {
-            _previousWindowHandle = GetForegroundWindow_Native();
+            _previousWindowHandle = PulsarNative.GetForegroundWindow();
         }
 
         public void SwitchToPreviousWindow()
         {
             _logger.LogInformation("[QuickSwitch] ========== SwitchToPreviousWindow START ==========");
             
-            IntPtr current = GetForegroundWindow_Native();
-            NativeMethods.GetWindowThreadProcessId(current, out uint currentPid);
+            IntPtr current = PulsarNative.GetForegroundWindow();
+            PulsarNative.GetWindowThreadProcessId(current, out uint currentPid);
             bool currentIsPulsar = (currentPid == _currentProcessId);
             
             _logger.LogInformation("[QuickSwitch] Current foreground: '{Title}' (HWND: {Hwnd}, PID: {Pid}, IsPulsar: {IsPulsar})", 
@@ -802,7 +811,7 @@ namespace Pulsar.Services
                 
                 // [Refactor] 3. Fallback: 使用 _previousWindowHandle
                 if (_previousWindowHandle != IntPtr.Zero && 
-                    NativeMethods.IsWindow(_previousWindowHandle) && 
+                    PulsarNative.IsWindow(_previousWindowHandle) && 
                     IsAltTabWindow(_previousWindowHandle))
                 {
                     _logger.LogInformation("[QuickSwitch] Fallback to previous window: '{Title}'", 
@@ -846,7 +855,7 @@ namespace Pulsar.Services
                 foreach (var candidate in historyArray)
                 {
                     bool isExcluded = (candidate == excludeWindow);
-                    bool isValidWindow = NativeMethods.IsWindow(candidate);
+                    bool isValidWindow = PulsarNative.IsWindow(candidate);
                     bool isAltTab = isValidWindow && IsAltTabWindow(candidate);
                     
                     _logger.LogDebug("[QuickSwitch]   [{Index}] '{Title}' - Excluded: {Excluded}, Valid: {Valid}, AltTab: {AltTab}", 
@@ -863,7 +872,7 @@ namespace Pulsar.Services
                 
                 // [Optimization] 清理无效窗口（已关闭的窗口）
                 var validWindows = historyArray
-                    .Where(h => NativeMethods.IsWindow(h))
+                    .Where(h => PulsarNative.IsWindow(h))
                     .ToArray();
                 
                 if (validWindows.Length < historyArray.Length)
@@ -915,7 +924,7 @@ namespace Pulsar.Services
                         
                     case FocusRestoreMode.RestorePrevious:
                         if (_previousWindowHandle != IntPtr.Zero && 
-                            NativeMethods.IsWindow(_previousWindowHandle))
+                            PulsarNative.IsWindow(_previousWindowHandle))
                         {
                             // [Logging] Downgraded to Debug - success case, not critical
                             _logger.LogDebug("[FocusManager] Restoring to previous window: '{Title}'", 
@@ -931,7 +940,7 @@ namespace Pulsar.Services
                         
                     case FocusRestoreMode.RestoreTarget:
                         if (_focusRestoreTarget != IntPtr.Zero && 
-                            NativeMethods.IsWindow(_focusRestoreTarget))
+                            PulsarNative.IsWindow(_focusRestoreTarget))
                         {
                             // [Logging] Downgraded to Debug - success case
                             _logger.LogDebug("[FocusManager] Restoring to target window: '{Title}'", 
@@ -956,10 +965,10 @@ namespace Pulsar.Services
         private string GetWindowTitle(IntPtr hWnd)
         {
             if (hWnd == IntPtr.Zero) return "NULL";
-            int length = NativeMethods.GetWindowTextLength(hWnd);
+            int length = PulsarNative.GetWindowTextLength(hWnd);
             if (length == 0) return "Empty/Hidden";
             StringBuilder sb = new StringBuilder(length + 1);
-            NativeMethods.GetWindowText(hWnd, sb, sb.Capacity);
+            PulsarNative.GetWindowText(hWnd, sb, sb.Capacity);
             return sb.ToString();
         }
 
@@ -967,14 +976,14 @@ namespace Pulsar.Services
         {
             if (current == IntPtr.Zero) return IntPtr.Zero;
 
-            IntPtr next = NativeMethods.GetWindow(current, NativeMethods.GW_HWNDNEXT);
+            IntPtr next = PulsarNative.GetWindow(current, PulsarNative.GW_HWNDNEXT);
             int scanLimit = 50; // Safety limit
             int scanned = 0;
             
             while (next != IntPtr.Zero && scanned < scanLimit)
             {
                 if (IsAltTabWindow(next)) return next;
-                next = NativeMethods.GetWindow(next, NativeMethods.GW_HWNDNEXT);
+                next = PulsarNative.GetWindow(next, PulsarNative.GW_HWNDNEXT);
                 scanned++;
             }
             return IntPtr.Zero;
@@ -983,30 +992,30 @@ namespace Pulsar.Services
         private bool IsAltTabWindow(IntPtr hWnd)
         {
             // 排除自身（虽然 SwitchToPreviousWindow 通常在关闭后调用，但 Z-Order 可能还有残留）
-            NativeMethods.GetWindowThreadProcessId(hWnd, out uint processId);
+            PulsarNative.GetWindowThreadProcessId(hWnd, out uint processId);
             if (processId == _currentProcessId) return false;
 
             // 排除不可见窗口
-            if (!NativeMethods.IsWindowVisible(hWnd)) return false;
+            if (!PulsarNative.IsWindowVisible(hWnd)) return false;
             
             // [Fix] Allow minimized windows (Alt-Tab includes them)
-            // if (NativeMethods.IsIconic(hWnd)) return false; 
+            // if (PulsarNative.IsIconic(hWnd)) return false; 
 
             // [Fix] Check for Cloaked (Virtual Desktop / UWP Suspended)
             // Cloaked windows should NOT appear in Alt-Tab list
-            if (NativeMethods.DwmGetWindowAttribute(hWnd, NativeMethods.DWMWA_CLOAKED, out int isCloakedVal, sizeof(int)) == 0 && isCloakedVal != 0)
+            if (PulsarNative.DwmGetWindowAttribute(hWnd, PulsarNative.DWMWA_CLOAKED, out int isCloakedVal, sizeof(int)) == 0 && isCloakedVal != 0)
             {
                 // Window is cloaked (on another virtual desktop or suspended)
                 return false;  // [Fix] Changed from true to false
             }
             
             // Check for Tool Window
-            long exStyle = NativeMethods.GetWindowLong(hWnd, NativeMethods.GWL_EXSTYLE);
-            if ((exStyle & NativeMethods.WS_EX_TOOLWINDOW) != 0) return false;
+            long exStyle = PulsarNative.GetWindowLong(hWnd, PulsarNative.GWL_EXSTYLE);
+            if ((exStyle & PulsarNative.WS_EX_TOOLWINDOW) != 0) return false;
             
             // Check for Owner
-            IntPtr owner = NativeMethods.GetWindow(hWnd, NativeMethods.GW_OWNER);
-            if (owner != IntPtr.Zero && (exStyle & NativeMethods.WS_EX_APPWINDOW) == 0) return false;
+            IntPtr owner = PulsarNative.GetWindow(hWnd, PulsarNative.GW_OWNER);
+            if (owner != IntPtr.Zero && (exStyle & PulsarNative.WS_EX_APPWINDOW) == 0) return false;
 
             return true;
         }
@@ -1015,7 +1024,7 @@ namespace Pulsar.Services
         {
             return await Task.Run(() =>
             {
-                if (hWnd == IntPtr.Zero || !NativeMethods.IsWindow(hWnd)) 
+                if (hWnd == IntPtr.Zero || !PulsarNative.IsWindow(hWnd)) 
                 {
                     // [Logging] Sample capture failures (1 in 20) - happens frequently
                     if (_captureLogSampler.ShouldLog())
@@ -1028,7 +1037,7 @@ namespace Pulsar.Services
                 try
                 {
                     // 1. Get Dimensions
-                    if (!NativeMethods.GetWindowRect(hWnd, out var rect)) 
+                    if (!PulsarNative.GetWindowRect(hWnd, out var rect)) 
                     {
                         // [Logging] Sample GetWindowRect failures (1 in 20)
                         if (_captureLogSampler.ShouldLog())
@@ -1064,7 +1073,7 @@ namespace Pulsar.Services
                                 // PW_CLIENTONLY = 1
                                 // PW_RENDERFULLCONTENT = 0x00000002 (Windows 8.1+) - Captures layered windows/Chrome/WPF
                                 // Try RenderFullContent first
-                                success = NativeMethods.PrintWindow(hWnd, hdc, 0x00000002);
+                                success = PulsarNative.PrintWindow(hWnd, hdc, 0x00000002);
                                 if (!success)
                                 {
                                     // Fallback to default
@@ -1074,7 +1083,7 @@ namespace Pulsar.Services
                                         _logger.LogDebug("[CaptureWindow] PrintWindow(Full) failed for {Hwnd}, retrying with default flags (sampled 1/{Rate})", 
                                             hWnd, _captureLogSampler.Rate);
                                     }
-                                    success = NativeMethods.PrintWindow(hWnd, hdc, 0);
+                                    success = PulsarNative.PrintWindow(hWnd, hdc, 0);
                                 }
                                 
                                 if (!success)
@@ -1141,7 +1150,7 @@ namespace Pulsar.Services
                             }
                             finally
                             {
-                                NativeMethods.DeleteObject(hBitmap);
+                                PulsarNative.DeleteObject(hBitmap);
                             }
                         }
                     }
@@ -1175,7 +1184,7 @@ namespace Pulsar.Services
             IntPtr previousWindow = _previousWindowHandle;
             
             // Filter out invalid windows
-            var validWindows = windows.Where(w => NativeMethods.IsWindow(w.Handle)).ToList();
+            var validWindows = windows.Where(w => PulsarNative.IsWindow(w.Handle)).ToList();
             
             if (validWindows.Count == 0)
             {
@@ -1248,7 +1257,7 @@ namespace Pulsar.Services
             try
             {
                 var deadHandles = _windowRegistry
-                    .Where(kvp => !NativeMethods.IsWindow(kvp.Key))
+                    .Where(kvp => !PulsarNative.IsWindow(kvp.Key))
                     .Select(kvp => kvp.Key)
                     .ToList();
                 
@@ -1265,70 +1274,6 @@ namespace Pulsar.Services
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "[WindowRegistry] Cleanup failed");
-            }
-        }
-        
-        private const int GWL_EXSTYLE_CONST = -20;
-        private const long WS_EX_TOOLWINDOW_CONST = 0x00000080L;
-        private const long WS_EX_APPWINDOW_CONST = 0x00040000L;
-        private const int DWMWA_CLOAKED_CONST = 14;
-        private const uint GW_HWNDNEXT_CONST = 2;
-        private const uint GW_OWNER_CONST = 4;
-        private const uint GW_CHILD_CONST = 5;
-
-        // [New] System blacklist for known problematic processes (always excluded)
-        private static readonly HashSet<string> _systemBlacklist = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            "applicationframehost", // UWP shell
-            "systemsettings",       // Settings (when suspended)
-            "searchapp",            // Search
-            "textinputhost",        // Input Method / Emoji Panel
-            "shellexperiencehost",  // Start Menu etc.
-            "lockapp",              // Lock Screen
-            "video.ui",             // Xbox Game Bar / Video Overlay
-            "gamebar",              // Game Bar
-            "yourphone",            // Phone Link background
-            "calc"                  // Calculator often stays suspended
-        };
-
-        internal static class NativeMethods
-        {
-            // Constants exposed for service logic
-            internal const int DWMWA_CLOAKED = 14;
-            internal const int GWL_EXSTYLE = -20;
-            internal const long WS_EX_TOOLWINDOW = 0x00000080L;
-            internal const long WS_EX_APPWINDOW = 0x00040000L;
-            internal const uint GW_HWNDNEXT = 2;
-            internal const uint GW_OWNER = 4;
-            internal const uint GW_CHILD = 5;
-
-            // [New] GetWindow
-            [DllImport("user32.dll")] internal static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
-
-            public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
-            [DllImport("user32.dll")] internal static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
-            [DllImport("user32.dll")] internal static extern bool IsWindowVisible(IntPtr hWnd);
-            [DllImport("user32.dll")] internal static extern bool IsWindow(IntPtr hWnd); // Added
-            [DllImport("user32.dll", CharSet = CharSet.Auto)] internal static extern int GetWindowTextLength(IntPtr hWnd);
-            [DllImport("user32.dll", CharSet = CharSet.Auto)] internal static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
-            [DllImport("user32.dll")] internal static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
-            [DllImport("user32.dll", SetLastError = true)][return: MarshalAs(UnmanagedType.Bool)] internal static extern bool DestroyIcon(IntPtr hIcon);
-            [DllImport("gdi32.dll", EntryPoint = "DeleteObject")] [return: MarshalAs(UnmanagedType.Bool)] internal static extern bool DeleteObject([In] IntPtr hObject); // Added
-            
-            // [New] DWM & Window Style API
-            // [Fix] Correct P/Invoke signature for DWMWA_CLOAKED (expects int, not bool)
-            [DllImport("dwmapi.dll")] internal static extern int DwmGetWindowAttribute(IntPtr hwnd, int dwAttribute, out int pvAttribute, int cbAttribute);
-            [DllImport("user32.dll")] internal static extern long GetWindowLong(IntPtr hWnd, int nIndex);
-            [DllImport("user32.dll")] internal static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
-            [DllImport("user32.dll")] internal static extern bool PrintWindow(IntPtr hwnd, IntPtr hdcBlt, uint nFlags);
-            
-            [StructLayout(LayoutKind.Sequential)]
-            internal struct RECT
-            {
-                public int Left;
-                public int Top;
-                public int Right;
-                public int Bottom;
             }
         }
     }

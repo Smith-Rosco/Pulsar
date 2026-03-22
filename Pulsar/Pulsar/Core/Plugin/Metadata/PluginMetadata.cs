@@ -31,5 +31,11 @@ namespace Pulsar.Core.Plugin.Metadata
         /// 插件能力声明
         /// </summary>
         public required Metadata.PluginCapabilities Capabilities { get; init; }
+
+        /// <summary>
+        /// 槽位动作元数据定义
+        /// </summary>
+        public IReadOnlyDictionary<string, SlotActionMetadata> Actions { get; init; } =
+            new Dictionary<string, SlotActionMetadata>(System.StringComparer.OrdinalIgnoreCase);
     }
 }

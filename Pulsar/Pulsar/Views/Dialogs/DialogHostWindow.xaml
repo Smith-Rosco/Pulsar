@@ -76,6 +76,10 @@
             <DataTemplate DataType="{x:Type dialogs:QuickSecretsViewModel}">
                 <contents:QuickSecretsContent/>
             </DataTemplate>
+
+            <DataTemplate DataType="{x:Type dialogs:SlotConfigurationDialogViewModel}">
+                <contents:SlotConfigurationDialogContent/>
+            </DataTemplate>
         </ResourceDictionary>
     </Window.Resources>
 

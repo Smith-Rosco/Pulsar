@@ -447,7 +447,7 @@ namespace Pulsar.ViewModels
                 _windowPreviewCache.Clear();
 
                 // 1. 捕获上下文
-                IntPtr foregroundHandle = WindowHelper.GetForegroundWindow();
+                IntPtr foregroundHandle = PulsarNative.GetForegroundWindow();
                 _logger?.LogDebug("[Show] Foreground Handle: {Hwnd}", foregroundHandle);
                 
                 _windowService.SetPreviousWindow(foregroundHandle);
@@ -757,8 +757,8 @@ namespace Pulsar.ViewModels
             if (targetHwnd != IntPtr.Zero)
             {
                 // Verify window validity
-                bool isWindow = WindowHelper.IsWindow(targetHwnd);
-                bool isIconic = WindowHelper.IsIconic(targetHwnd);
+                bool isWindow = PulsarNative.IsWindow(targetHwnd);
+                bool isIconic = PulsarNative.IsIconic(targetHwnd);
 
                 if (isWindow && !isIconic)
                 {
@@ -973,7 +973,7 @@ namespace Pulsar.ViewModels
             ActionExecuted = true;
                 
             // Safety Check: Is window still valid?
-            if (!WindowHelper.IsWindow(winInfo.Handle))
+            if (!PulsarNative.IsWindow(winInfo.Handle))
             {
                 // Window is gone.
                 System.Media.SystemSounds.Exclamation.Play();
@@ -981,10 +981,10 @@ namespace Pulsar.ViewModels
                 return;
             }
 
-            // Use WindowHelper instead of ambiguous NativeMethods
-            WindowHelper.SetForegroundWindow(winInfo.Handle);
-            if (WindowHelper.IsIconic(winInfo.Handle))
-                    WindowHelper.ShowWindow(winInfo.Handle, 9); // SW_RESTORE
+            // Use PulsarNative instead of ambiguous NativeMethods
+            PulsarNative.SetForegroundWindow(winInfo.Handle);
+            if (PulsarNative.IsIconic(winInfo.Handle))
+                    PulsarNative.ShowWindow(winInfo.Handle, PulsarNative.SW_RESTORE);
 
             IsVisible = false;
         }

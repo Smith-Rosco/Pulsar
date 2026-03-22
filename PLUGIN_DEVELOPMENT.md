@@ -146,6 +146,52 @@ public class PulsarContext
 
 ## 📚 接口参考
 
+### IPluginMetadataProvider 与 Slot 参数元数据
+
+如果插件需要在 Slots 页面中提供可配置动作，推荐实现 `IPluginMetadataProvider` 并在 `GetMetadata()` 中返回 `PluginMetadata`、`SlotActionMetadata` 与 `SlotParameterMetadata`。
+
+对于每个会出现在 slot 编辑器中的参数，现在除了 `Key`、`Type`、`Label`、`IsRequired`、`Group`、`Validators` 这些基础字段外，还应补充分层编辑所需的展示提示：
+
+```csharp
+new SlotParameterMetadata
+{
+    Key = "path",
+    Type = "string",
+    Label = "Executable Path",
+    IsRequired = true,
+    Group = SlotParameterGroup.Required,
+    SummaryLabel = "App",
+    SummaryMode = SlotParameterSummaryMode.SafeStateOnly,
+    ConfiguredSummaryText = "path ready",
+    MissingSummaryText = "path missing",
+    PresentationHint = SlotParameterPresentationHint.QuickEdit,
+    QuickEditPriority = 100,
+    PickerIntent = SlotPickerIntent.Process,
+    Validators = new List<ValidationRule> { new RequiredValidator() }
+}
+```
+
+分层编辑字段约定：
+
+- `SummaryLabel`: 列表摘要里显示的短标签，尽量比表单标签更短。
+- `SummaryMode`: 决定摘要是显示原始值(`RawValue`)还是只显示安全状态(`SafeStateOnly`)；敏感值、长路径、脚本内容建议使用安全状态。
+- `ConfiguredSummaryText` / `MissingSummaryText`: 为摘要提供稳定的已配置/未配置文案，例如 `selected`、`missing`、`args set`。
+- `PresentationHint`: 使用 `QuickEdit` 将字段优先放入卡片内联编辑；使用 `DialogOnly` 将字段限制到完整配置对话框；`Auto` 交给通用回退规则。
+- `QuickEditPriority`: 当有多个 quick-edit 候选字段时，用于稳定排序，值越大越靠前。
+
+建议规则：
+
+- 高频、低风险、单步可编辑字段放进 `QuickEdit`，例如标签、主目标路径、简单布尔开关。
+- 需要长说明、依赖关系、复杂选择器或高级行为的字段使用 `DialogOnly`。
+- 密钥、令牌、长脚本、冗长文件路径不要直接暴露原始摘要；优先使用 `SafeStateOnly`。
+
+回退行为：
+
+- 如果未提供 `PresentationHint`，设置页会优先选择非 `Advanced` 且非复杂字段作为 quick edit，并将其余字段保留在完整配置对话框。
+- 如果未提供 `SummaryLabel`，UI 会回退到 `Label`。
+- 如果未提供摘要文本，UI 会回退到通用状态文本，例如 `configured`、`missing`、`on`、`off`。
+- 如果第三方插件元数据不完整，插件仍然可配置，只是摘要会更保守，更多字段会落入完整配置对话框。
+
 ### IPulsarPlugin (必须实现)
 
 所有插件必须实现此接口：
