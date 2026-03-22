@@ -277,56 +277,67 @@
                                                       Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Page}}"
                                                       Loaded="ExpandedPanel_Loaded">
 
-                                              <!-- Type + Health + SummaryTokens badges row -->
+                                              <!-- Type + Health + SummaryTokens info row -->
                                               <WrapPanel Margin="0,0,0,10">
-                                                  <!-- Type badge -->
-                                                  <Border CornerRadius="999"
-                                                          Padding="8,2"
-                                                          Margin="0,0,6,0"
-                                                          BorderBrush="{DynamicResource ControlElevationBorderBrush}"
-                                                          BorderThickness="1"
-                                                          Background="{DynamicResource ControlFillColorSecondaryBrush}"
-                                                          Visibility="{Binding TypeBadge, Converter={StaticResource StringEmptyToVis}, FallbackValue=Collapsed}">
-                                                      <TextBlock Text="{Binding TypeBadge}"
-                                                                 FontSize="11" FontWeight="SemiBold"
-                                                                 Foreground="{Binding TypeColor}"/>
-                                                  </Border>
-                                                  <!-- Health badge -->
-                                                  <Border CornerRadius="999"
-                                                          Padding="8,2"
-                                                          Margin="0,0,6,0"
-                                                          BorderBrush="{DynamicResource ControlElevationBorderBrush}"
-                                                          BorderThickness="1"
-                                                          Background="{DynamicResource ControlFillColorSecondaryBrush}">
-                                                      <TextBlock Text="{Binding HealthBadgeText}"
-                                                                 FontSize="11"
-                                                                 Foreground="{Binding HealthBadgeColor}"/>
-                                                  </Border>
-                                                  <!-- Summary tokens -->
-                                                  <ItemsControl ItemsSource="{Binding SummaryTokens}"
-                                                                Visibility="{Binding HasSummaryTokens, Converter={StaticResource BoolToVis}}">
-                                                      <ItemsControl.ItemsPanel>
-                                                          <ItemsPanelTemplate>
-                                                              <WrapPanel Orientation="Horizontal"/>
-                                                          </ItemsPanelTemplate>
-                                                      </ItemsControl.ItemsPanel>
-                                                      <ItemsControl.ItemTemplate>
-                                                          <DataTemplate>
-                                                              <Border CornerRadius="999"
-                                                                      Padding="8,2"
-                                                                      Margin="0,0,6,0"
-                                                                      BorderBrush="{DynamicResource ControlElevationBorderBrush}"
-                                                                      BorderThickness="1"
-                                                                      Background="{DynamicResource ControlFillColorSecondaryBrush}">
-                                                                  <TextBlock Text="{Binding}" FontSize="11"
-                                                                             Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                                                             MaxWidth="120"
-                                                                             TextTrimming="CharacterEllipsis"/>
-                                                              </Border>
-                                                          </DataTemplate>
-                                                      </ItemsControl.ItemTemplate>
-                                                  </ItemsControl>
-                                              </WrapPanel>
+                                                   <!-- Type badge -->
+                                                   <Border CornerRadius="4"
+                                                           Padding="6,2"
+                                                           Margin="0,0,6,0"
+                                                           BorderBrush="{DynamicResource ControlElevationBorderBrush}"
+                                                           BorderThickness="1"
+                                                           Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                                           Visibility="{Binding TypeBadge, Converter={StaticResource StringEmptyToVis}, FallbackValue=Collapsed}"
+                                                           ToolTip="Plugin type">
+                                                       <StackPanel Orientation="Horizontal">
+                                                           <TextBlock Text="Type · " FontSize="11"
+                                                                      Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                                           <TextBlock Text="{Binding TypeBadge}"
+                                                                      FontSize="11" FontWeight="SemiBold"
+                                                                      Foreground="{Binding TypeColor}"/>
+                                                       </StackPanel>
+                                                   </Border>
+                                                   <!-- Health badge -->
+                                                   <Border CornerRadius="4"
+                                                           Padding="6,2"
+                                                           Margin="0,0,6,0"
+                                                           BorderBrush="{DynamicResource ControlElevationBorderBrush}"
+                                                           BorderThickness="1"
+                                                           Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                                           ToolTip="Configuration health status">
+                                                       <StackPanel Orientation="Horizontal">
+                                                           <TextBlock Text="Health · " FontSize="11"
+                                                                      Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                                           <TextBlock Text="{Binding HealthBadgeText}"
+                                                                      FontSize="11" FontWeight="SemiBold"
+                                                                      Foreground="{Binding HealthBadgeColor}"/>
+                                                       </StackPanel>
+                                                   </Border>
+                                                   <!-- Summary tokens -->
+                                                   <ItemsControl ItemsSource="{Binding SummaryTokens}"
+                                                                 Visibility="{Binding HasSummaryTokens, Converter={StaticResource BoolToVis}}"
+                                                                 ToolTip="Configuration summary">
+                                                       <ItemsControl.ItemsPanel>
+                                                           <ItemsPanelTemplate>
+                                                               <WrapPanel Orientation="Horizontal"/>
+                                                           </ItemsPanelTemplate>
+                                                       </ItemsControl.ItemsPanel>
+                                                       <ItemsControl.ItemTemplate>
+                                                           <DataTemplate>
+                                                               <Border CornerRadius="4"
+                                                                       Padding="6,2"
+                                                                       Margin="0,0,6,0"
+                                                                       BorderBrush="{DynamicResource ControlElevationBorderBrush}"
+                                                                       BorderThickness="1"
+                                                                       Background="{DynamicResource ControlFillColorSecondaryBrush}">
+                                                                   <TextBlock Text="{Binding}" FontSize="11"
+                                                                              Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                                              MaxWidth="120"
+                                                                              TextTrimming="CharacterEllipsis"/>
+                                                               </Border>
+                                                           </DataTemplate>
+                                                       </ItemsControl.ItemTemplate>
+                                                   </ItemsControl>
+                                               </WrapPanel>
 
                                               <!-- Divider -->
                                               <Border Background="{DynamicResource ControlStrokeColorSecondaryBrush}"
