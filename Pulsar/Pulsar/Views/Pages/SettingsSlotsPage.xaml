@@ -29,24 +29,6 @@
 
         <!-- SlotParameterFieldTemplate and SystemCommandFieldsTemplate removed: Quick Edit layer eliminated -->
 
-        <!-- Slot Item Context Menu (three-dot button) -->
-        <ContextMenu x:Key="SlotItemContextMenu">
-            <ContextMenu.Resources>
-                <ResourceDictionary>
-                    <ResourceDictionary.MergedDictionaries>
-                        <ui:ControlsDictionary />
-                    </ResourceDictionary.MergedDictionaries>
-                </ResourceDictionary>
-            </ContextMenu.Resources>
-            <MenuItem Header="Edit Details"
-                      Icon="{ui:SymbolIcon Settings24}"
-                      Click="SlotContextMenu_EditDetails_Click"/>
-            <Separator/>
-            <MenuItem Header="Remove Slot"
-                      Icon="{ui:SymbolIcon Delete24}"
-                      Click="SlotContextMenu_RemoveSlot_Click"/>
-        </ContextMenu>
-
         <!-- Custom Drag Adorner Template for Slot Cards -->
         <DataTemplate x:Key="SlotCardDragAdornerTemplate">
             <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
@@ -277,7 +259,7 @@
                                                            PrimaryActionVisibility="Collapsed"
                                                            PageDataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Page}}">
                                      
-                                      <!-- Header Content: Position + Three-dot menu (compact) -->
+                                      <!-- Header Content: Position (compact) -->
                                        <controls:ExpandableCard.HeaderContent>
                                             <WrapPanel>
                                                       <TextBlock Text="{Binding Slot, StringFormat='#{0}'}"
@@ -285,19 +267,14 @@
                                                                  FontSize="12"
                                                                 Margin="0,0,8,0"
                                                                 VerticalAlignment="Center"/>
-                                                      <!-- Three-dot context menu button -->
-                                                      <ui:Button Style="{StaticResource PulsarIconButtonStyle}"
-                                                                 Icon="{ui:SymbolIcon MoreHorizontal24}"
-                                                                 ToolTip="More options"
-                                                                 Padding="4"
-                                                                 Click="SlotMoreButton_Click"
-                                                                 Tag="{Binding}"/>
                                             </WrapPanel>
                                          </controls:ExpandableCard.HeaderContent>
 
-                                      <!-- Expanded Content: read-only info panel -->
+                                      <!-- Expanded Content: read-only info panel + action buttons -->
                                       <controls:ExpandableCard.ExpandedContent>
-                                          <StackPanel Margin="0,4,0,8">
+                                          <StackPanel Margin="0,4,0,8"
+                                                      Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                      Loaded="ExpandedPanel_Loaded">
                                               <!-- Type + Health badges row -->
                                               <WrapPanel Margin="0,0,0,8">
                                                   <Border Background="{DynamicResource ControlFillColorSecondaryBrush}"
@@ -341,13 +318,20 @@
                                                   </ItemsControl.ItemTemplate>
                                               </ItemsControl>
 
-                                              <!-- Edit button -->
-                                              <ui:Button Content="Edit"
-                                                         Icon="{ui:SymbolIcon Edit24}"
-                                                         Style="{StaticResource PulsarSecondaryButtonStyle}"
-                                                         Command="{Binding DataContext.OpenSlotConfigurationCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                         CommandParameter="{Binding}"
-                                                         HorizontalAlignment="Left"/>
+                                              <!-- Action buttons row: Edit + Remove -->
+                                              <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                  <ui:Button Content="Edit"
+                                                             Icon="{ui:SymbolIcon Edit24}"
+                                                             Style="{StaticResource PulsarSecondaryButtonStyle}"
+                                                             Margin="0,0,8,0"
+                                                             Click="ExpandedEdit_Click"
+                                                             Tag="{Binding}"/>
+                                                  <ui:Button Content="Remove"
+                                                             Icon="{ui:SymbolIcon Delete24}"
+                                                             Style="{StaticResource PulsarDangerButtonStyle}"
+                                                             Click="ExpandedRemove_Click"
+                                                             Tag="{Binding}"/>
+                                              </StackPanel>
                                           </StackPanel>
                                        </controls:ExpandableCard.ExpandedContent>
                                  </controls:ExpandableCard>

@@ -1,9 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using Pulsar.Models;
 using Pulsar.ViewModels;
-using Wpf.Ui.Controls;
 
 namespace Pulsar.Views.Pages
 {
@@ -16,28 +14,22 @@ namespace Pulsar.Views.Pages
         }
 
         /// <summary>
-        /// Opens the slot item context menu from the three-dot button.
+        /// Bridges the Page DataContext into the ExpandedContent StackPanel's Tag,
+        /// so buttons inside the DataTemplate can access SettingsViewModel.
         /// </summary>
-        private void SlotMoreButton_Click(object sender, RoutedEventArgs e)
+        private void ExpandedPanel_Loaded(object sender, RoutedEventArgs e)
         {
-            if (sender is Wpf.Ui.Controls.Button btn && btn.Tag is PluginSlot)
-            {
-                var menu = (System.Windows.Controls.ContextMenu)FindResource("SlotItemContextMenu");
-                menu.DataContext = btn.Tag;
-                menu.PlacementTarget = btn;
-                menu.Placement = PlacementMode.Bottom;
-                menu.IsOpen = true;
-            }
+            if (sender is StackPanel panel)
+                panel.Tag = DataContext;
         }
 
         /// <summary>
-        /// Handles Edit Details from the slot item context menu.
+        /// Edit button inside expanded panel - opens full configuration dialog.
         /// </summary>
-        private async void SlotContextMenu_EditDetails_Click(object sender, RoutedEventArgs e)
+        private async void ExpandedEdit_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is System.Windows.Controls.MenuItem menuItem
-                && menuItem.Parent is System.Windows.Controls.ContextMenu contextMenu
-                && contextMenu.DataContext is PluginSlot slot
+            if (sender is Wpf.Ui.Controls.Button btn
+                && btn.Tag is PluginSlot slot
                 && DataContext is SettingsViewModel viewModel)
             {
                 await viewModel.OpenSlotConfiguration(slot);
@@ -45,38 +37,17 @@ namespace Pulsar.Views.Pages
         }
 
         /// <summary>
-        /// Handles Remove Slot from the slot item context menu.
-        /// Delegates to ViewModel which shows Pulsar confirmation dialog.
+        /// Remove button inside expanded panel - shows Pulsar confirmation dialog.
         /// </summary>
-        private async void SlotContextMenu_RemoveSlot_Click(object sender, RoutedEventArgs e)
+        private async void ExpandedRemove_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is System.Windows.Controls.MenuItem menuItem
-                && menuItem.Parent is System.Windows.Controls.ContextMenu contextMenu
-                && contextMenu.DataContext is PluginSlot slot
+            if (sender is Wpf.Ui.Controls.Button btn
+                && btn.Tag is PluginSlot slot
                 && DataContext is SettingsViewModel viewModel)
             {
                 await viewModel.RemoveSlot(slot);
             }
         }
-
-        private static T? FindVisualParent<T>(DependencyObject child) where T : DependencyObject
-        {
-            var parent = System.Windows.Media.VisualTreeHelper.GetParent(child);
-            if (parent == null) return null;
-            if (parent is T typedParent) return typedParent;
-            return FindVisualParent<T>(parent);
-        }
-
-        private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
-        {
-            for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
-            {
-                var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
-                if (child is T typedChild) return typedChild;
-                var result = FindVisualChild<T>(child);
-                if (result != null) return result;
-            }
-            return null;
-        }
     }
 }
+
