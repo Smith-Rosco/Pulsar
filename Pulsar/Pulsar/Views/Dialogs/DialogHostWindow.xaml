@@ -80,6 +80,10 @@
             <DataTemplate DataType="{x:Type dialogs:SlotConfigurationDialogViewModel}">
                 <contents:SlotConfigurationDialogContent/>
             </DataTemplate>
+
+            <DataTemplate DataType="{x:Type dialogs:AddSlotViewModel}">
+                <contents:AddSlotContent/>
+            </DataTemplate>
         </ResourceDictionary>
     </Window.Resources>
 

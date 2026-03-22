@@ -41,6 +41,9 @@ namespace Pulsar.Views.Controls
         public static readonly DependencyProperty PrimaryActionCommandProperty =
             DependencyProperty.Register(nameof(PrimaryActionCommand), typeof(ICommand), typeof(ExpandableCard), new PropertyMetadata(null));
 
+        public static readonly DependencyProperty PrimaryActionCommandParameterProperty =
+            DependencyProperty.Register(nameof(PrimaryActionCommandParameter), typeof(object), typeof(ExpandableCard), new PropertyMetadata(null));
+
         public static readonly DependencyProperty PrimaryActionIconProperty =
             DependencyProperty.Register(nameof(PrimaryActionIcon), typeof(string), typeof(ExpandableCard), new PropertyMetadata(string.Empty));
 
@@ -75,6 +78,13 @@ namespace Pulsar.Views.Controls
         // Context Menu
         public static readonly DependencyProperty CardContextMenuProperty =
             DependencyProperty.Register(nameof(CardContextMenu), typeof(ContextMenu), typeof(ExpandableCard), new PropertyMetadata(null));
+
+        // Click-through mode: when set, header click fires this command instead of expanding
+        public static readonly DependencyProperty ClickCommandProperty =
+            DependencyProperty.Register(nameof(ClickCommand), typeof(ICommand), typeof(ExpandableCard), new PropertyMetadata(null));
+
+        public static readonly DependencyProperty ClickCommandParameterProperty =
+            DependencyProperty.Register(nameof(ClickCommandParameter), typeof(object), typeof(ExpandableCard), new PropertyMetadata(null));
 
         // Expansion State
         public static readonly DependencyProperty IsExpandedProperty =
@@ -134,6 +144,12 @@ namespace Pulsar.Views.Controls
         {
             get => (ICommand)GetValue(PrimaryActionCommandProperty);
             set => SetValue(PrimaryActionCommandProperty, value);
+        }
+
+        public object PrimaryActionCommandParameter
+        {
+            get => GetValue(PrimaryActionCommandParameterProperty);
+            set => SetValue(PrimaryActionCommandParameterProperty, value);
         }
 
         public string PrimaryActionIcon
@@ -202,6 +218,18 @@ namespace Pulsar.Views.Controls
             set => SetValue(CardContextMenuProperty, value);
         }
 
+        public ICommand ClickCommand
+        {
+            get => (ICommand)GetValue(ClickCommandProperty);
+            set => SetValue(ClickCommandProperty, value);
+        }
+
+        public object ClickCommandParameter
+        {
+            get => GetValue(ClickCommandParameterProperty);
+            set => SetValue(ClickCommandParameterProperty, value);
+        }
+
         public bool IsExpanded
         {
             get => (bool)GetValue(IsExpandedProperty);
@@ -219,6 +247,32 @@ namespace Pulsar.Views.Controls
         public ExpandableCard()
         {
             InitializeComponent();
+            // Intercept header toggle click when ClickCommand is set
+            this.PreviewMouseLeftButtonDown += OnPreviewMouseLeftButtonDown;
+        }
+
+        private void OnPreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (ClickCommand == null) return;
+
+            // Only intercept clicks on the CardExpander toggle area (not on buttons inside header)
+            var hit = e.OriginalSource as DependencyObject;
+            // Walk up visual tree: if click landed on a Button, let it through
+            var element = hit;
+            while (element != null)
+            {
+                if (element is System.Windows.Controls.Button || element is System.Windows.Controls.Primitives.ToggleButton)
+                    return;
+                if (element == this)
+                    break;
+                element = System.Windows.Media.VisualTreeHelper.GetParent(element);
+            }
+
+            if (ClickCommand.CanExecute(ClickCommandParameter))
+            {
+                ClickCommand.Execute(ClickCommandParameter);
+                e.Handled = true;
+            }
         }
     }
 }

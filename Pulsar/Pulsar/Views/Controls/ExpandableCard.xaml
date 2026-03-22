@@ -65,6 +65,7 @@
                 <ui:Button Grid.Column="2"
                            Style="{StaticResource PulsarIconButtonStyle}"
                            Command="{Binding PrimaryActionCommand, ElementName=Root}"
+                           CommandParameter="{Binding PrimaryActionCommandParameter, ElementName=Root}"
                            ToolTip="{Binding PrimaryActionTooltip, ElementName=Root}"
                            Visibility="{Binding PrimaryActionVisibility, ElementName=Root}"
                            VerticalAlignment="Center"

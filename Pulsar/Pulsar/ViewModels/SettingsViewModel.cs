@@ -485,6 +485,22 @@ namespace Pulsar.ViewModels
         }
 
         [RelayCommand]
+        public async Task AddSlotDialog()
+        {
+            var vm = new AddSlotViewModel();
+            var result = await _dialogService.ShowCustomAsync(
+                "Add Slot",
+                vm,
+                DialogButtons.OkCancel,
+                DialogSizeConstraints.Medium);
+
+            if (result == DialogResult.Confirmed && vm.SelectedPluginId != null)
+            {
+                AddSlotOfType(vm.SelectedPluginId);
+            }
+        }
+
+        [RelayCommand]
         public void AddSlotOfType(string pluginId)
         {
             if (CurrentSlots == null) return;

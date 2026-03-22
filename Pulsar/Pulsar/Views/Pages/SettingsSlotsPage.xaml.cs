@@ -15,35 +15,6 @@ namespace Pulsar.Views.Pages
             DataContext = viewModel;
         }
 
-        private async void SlotParameterPicker_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Wpf.Ui.Controls.Button button && button.Tag is SlotParameterEditorField field && DataContext is SettingsViewModel viewModel)
-            {
-                await viewModel.PickSlotParameterValue(field);
-            }
-        }
-
-        private void ActionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (sender is System.Windows.Controls.ComboBox comboBox
-                && comboBox.DataContext is PluginSlot slot
-                && comboBox.SelectedValue is string action
-                && DataContext is SettingsViewModel viewModel)
-            {
-                viewModel.SetSlotAction(slot, action);
-            }
-        }
-
-        private void AddSlotButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Wpf.Ui.Controls.Button btn && btn.ContextMenu != null)
-            {
-                btn.ContextMenu.PlacementTarget = btn;
-                btn.ContextMenu.Placement = PlacementMode.Bottom;
-                btn.ContextMenu.IsOpen = true;
-            }
-        }
-
         /// <summary>
         /// Opens the slot item context menu from the three-dot button.
         /// </summary>
@@ -60,7 +31,22 @@ namespace Pulsar.Views.Pages
         }
 
         /// <summary>
-        /// Handles Remove Slot from the slot item context menu, with confirmation.
+        /// Handles Edit Details from the slot item context menu.
+        /// </summary>
+        private async void SlotContextMenu_EditDetails_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.MenuItem menuItem
+                && menuItem.Parent is System.Windows.Controls.ContextMenu contextMenu
+                && contextMenu.DataContext is PluginSlot slot
+                && DataContext is SettingsViewModel viewModel)
+            {
+                await viewModel.OpenSlotConfiguration(slot);
+            }
+        }
+
+        /// <summary>
+        /// Handles Remove Slot from the slot item context menu.
+        /// Delegates to ViewModel which shows Pulsar confirmation dialog.
         /// </summary>
         private async void SlotContextMenu_RemoveSlot_Click(object sender, RoutedEventArgs e)
         {
@@ -69,85 +55,7 @@ namespace Pulsar.Views.Pages
                 && contextMenu.DataContext is PluginSlot slot
                 && DataContext is SettingsViewModel viewModel)
             {
-                var result = System.Windows.MessageBox.Show(
-                    $"Remove slot '{slot.Label}'? This cannot be undone.",
-                    "Remove Slot",
-                    System.Windows.MessageBoxButton.OKCancel,
-                    System.Windows.MessageBoxImage.Warning);
-
-                if (result == System.Windows.MessageBoxResult.OK)
-                {
-                    await viewModel.RemoveSlot(slot);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Workaround for UserControl breaking visual tree binding.
-        /// Manually sets StackPanel.Tag to ExpandableCard.PageDataContext when loaded.
-        /// </summary>
-        private void StackPanel_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (sender is StackPanel stackPanel)
-            {
-                var expandableCard = FindVisualParent<Pulsar.Views.Controls.ExpandableCard>(stackPanel);
-                if (expandableCard != null && expandableCard.PageDataContext != null)
-                {
-                    stackPanel.Tag = expandableCard.PageDataContext;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Workaround for DataTemplate StackPanels inside ContentPresenter.
-        /// </summary>
-        private void DataTemplateStackPanel_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (sender is StackPanel innerStackPanel)
-            {
-                var outerStackPanel = FindVisualParent<StackPanel>(innerStackPanel);
-
-                while (outerStackPanel != null && outerStackPanel == innerStackPanel)
-                {
-                    outerStackPanel = FindVisualParent<StackPanel>(System.Windows.Media.VisualTreeHelper.GetParent(outerStackPanel));
-                }
-
-                if (outerStackPanel != null && outerStackPanel.Tag != null)
-                {
-                    innerStackPanel.Tag = outerStackPanel.Tag;
-                }
-                else
-                {
-                    var expandableCard = FindVisualParent<Pulsar.Views.Controls.ExpandableCard>(innerStackPanel);
-                    if (expandableCard != null && expandableCard.PageDataContext != null)
-                    {
-                        innerStackPanel.Tag = expandableCard.PageDataContext;
-                    }
-                }
-            }
-        }
-
-        // Accordion effect: Only one CardExpander can be expanded at a time
-        private void CardExpander_Expanded(object sender, RoutedEventArgs e)
-        {
-            if (sender is CardExpander expandedCard)
-            {
-                var itemsControl = FindVisualParent<ItemsControl>(expandedCard);
-                if (itemsControl != null)
-                {
-                    foreach (var item in itemsControl.Items)
-                    {
-                        var container = itemsControl.ItemContainerGenerator.ContainerFromItem(item) as ContentPresenter;
-                        if (container != null)
-                        {
-                            var card = FindVisualChild<CardExpander>(container);
-                            if (card != null && card != expandedCard && card.IsExpanded)
-                            {
-                                card.IsExpanded = false;
-                            }
-                        }
-                    }
-                }
+                await viewModel.RemoveSlot(slot);
             }
         }
 

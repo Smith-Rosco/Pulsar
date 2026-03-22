@@ -99,7 +99,7 @@
         </Grid.RowDefinitions>
 
         <!-- ═══════════════════════════════════════════
-             SECTION 1: Identity Header
+             SECTION 1: Identity Header (Label + Appearance)
              ═══════════════════════════════════════════ -->
         <StackPanel Grid.Row="0" Margin="0,0,0,12">
             <!-- Title -->
@@ -107,16 +107,55 @@
                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                        Margin="0,0,0,12"/>
 
-            <!-- Label -->
+            <!-- Label + Appearance in a single header row -->
             <Grid Margin="0,0,0,8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="90"/>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="28"/>
+                    <ColumnDefinition Width="8"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="28"/>
                 </Grid.ColumnDefinitions>
+
+                <!-- Label -->
                 <TextBlock Text="Label" FontWeight="SemiBold" VerticalAlignment="Center" FontSize="13"/>
                 <ui:TextBox Grid.Column="1"
                             Text="{Binding Slot.Label, UpdateSourceTrigger=PropertyChanged}"
                             PlaceholderText="Display Label"/>
+
+                <!-- Color swatch + picker -->
+                <Border Grid.Column="2"
+                        Width="28" Height="28"
+                        CornerRadius="4"
+                        Margin="8,0,4,0"
+                        BorderBrush="{DynamicResource ControlElevationBorderBrush}"
+                        BorderThickness="1"
+                        Background="{Binding Slot.Color, Converter={StaticResource HexToBrush}}"
+                        VerticalAlignment="Center"
+                        ToolTip="Slot Color"/>
+                <ui:Button Grid.Column="3"
+                           Icon="{ui:SymbolIcon Drop24}"
+                           Style="{StaticResource PulsarIconButtonStyle}"
+                           Click="PickColor_Click"
+                           ToolTip="Pick color"/>
+
+                <!-- Spacer -->
+                <Border Grid.Column="4"/>
+
+                <!-- Icon text + picker -->
+                <ui:TextBox Grid.Column="5"
+                            Text="{Binding Slot.IconKey}"
+                            Icon="{ui:SymbolIcon Image24}"
+                            PlaceholderText="Icon or image"
+                            Width="130"/>
+                <ui:Button Grid.Column="6"
+                           Icon="{ui:SymbolIcon FolderOpen16}"
+                           Style="{StaticResource PulsarIconButtonStyle}"
+                           Click="PickIcon_Click"
+                           ToolTip="Browse icon file"
+                           Margin="4,0,0,0"/>
             </Grid>
 
             <!-- Divider -->
@@ -129,7 +168,8 @@
         <ScrollViewer Grid.Row="1"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
-                      Padding="0,0,4,0">
+                      Padding="0,0,4,0"
+                      PreviewMouseWheel="ScrollViewer_PreviewMouseWheel">
             <StackPanel Margin="0,12,0,0">
 
                 <!-- Action section: single action label -->
@@ -279,72 +319,10 @@
         </ScrollViewer>
 
         <!-- ═══════════════════════════════════════════
-             SECTION 3: Footer (Appearance + Delete)
+             SECTION 3: Footer (Delete)
              ═══════════════════════════════════════════ -->
         <StackPanel Grid.Row="2" Margin="0,12,0,0">
             <Border Background="{DynamicResource ControlStrokeColorSecondaryBrush}" Height="1" Margin="0,0,0,12"/>
-
-            <!-- Appearance (collapsed by default) -->
-            <Expander Background="Transparent"
-                      BorderThickness="0"
-                      Padding="0"
-                      Margin="0,0,0,12">
-                <Expander.Header>
-                    <TextBlock Text="Appearance" FontSize="12" FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                </Expander.Header>
-                <StackPanel Margin="0,10,0,0">
-
-                    <!-- Icon row -->
-                    <Grid Margin="0,0,0,8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="110"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Icon" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        <ui:TextBox Grid.Column="1"
-                                    Text="{Binding Slot.IconKey}"
-                                    Icon="{ui:SymbolIcon Image24}"
-                                    PlaceholderText="Icon or image"/>
-                        <ui:Button Grid.Column="2"
-                                   Margin="8,0,0,0"
-                                   Icon="{ui:SymbolIcon FolderOpen16}"
-                                   Style="{StaticResource PulsarIconButtonStyle}"
-                                   Click="PickIcon_Click"
-                                   ToolTip="Browse icon file"/>
-                    </Grid>
-
-                    <!-- Color row -->
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="110"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Color" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        <Border Grid.Column="1"
-                                Width="28" Height="28"
-                                CornerRadius="4"
-                                Margin="0,0,8,0"
-                                BorderBrush="{DynamicResource ControlElevationBorderBrush}"
-                                BorderThickness="1"
-                                Background="{Binding Slot.Color, Converter={StaticResource HexToBrush}}"
-                                VerticalAlignment="Center"/>
-                        <ui:TextBox Grid.Column="2"
-                                    Text="{Binding Slot.Color}"
-                                    Icon="{ui:SymbolIcon Color24}"
-                                    PlaceholderText="#RRGGBB"/>
-                        <ui:Button Grid.Column="3"
-                                   Margin="8,0,0,0"
-                                   Icon="{ui:SymbolIcon Drop24}"
-                                   Style="{StaticResource PulsarIconButtonStyle}"
-                                   Click="PickColor_Click"
-                                   ToolTip="Pick color"/>
-                    </Grid>
-                </StackPanel>
-            </Expander>
 
             <!-- Delete Slot: danger, left-aligned -->
             <ui:Button Content="Delete Slot"
