@@ -298,6 +298,8 @@ namespace Pulsar.Models
             set => SetProperty(ref _color, value);
         }
 
+        private SlotPresentation _presentation = SlotPresentation.Empty;
+
         // [Deprecated] Order 属性已废弃，保留仅用于向后兼容的数据迁移
         // 新代码应使用 Slot 属性作为唯一的位置标识
         [JsonPropertyName("order")]
@@ -316,32 +318,17 @@ namespace Pulsar.Models
 
         // [UI Support] 徽章与颜色
         [JsonIgnore]
-        public string TypeBadge
+        public SlotPresentation Presentation
         {
-            get
-            {
-                if (PluginId == "com.pulsar.pki") return "Secret";
-                if (PluginId == "com.pulsar.winswitcher") return "App";
-                if (PluginId == "com.pulsar.command") return "Cmd";
-                if (PluginId == "com.pulsar.bookmarklet") return "JS Script";
-                if (PluginId == "com.pulsar.vbarunner") return "VBA Script";
-                return "Plugin";
-            }
+            get => _presentation;
+            private set => SetProperty(ref _presentation, value);
         }
 
         [JsonIgnore]
-        public string TypeColor
-        {
-            get
-            {
-                if (PluginId == "com.pulsar.pki") return "#FFD700"; // Gold
-                if (PluginId == "com.pulsar.winswitcher") return "#00BFFF"; // DeepSkyBlue
-                if (PluginId == "com.pulsar.command") return "#32CD32"; // LimeGreen
-                if (PluginId == "com.pulsar.bookmarklet") return "#FF6B6B"; // Coral Red
-                if (PluginId == "com.pulsar.vbarunner") return "#FF8C00"; // DarkOrange
-                return "#FFFFFF";
-            }
-        }
+        public string TypeBadge => Presentation.TypeBadge;
+
+        [JsonIgnore]
+        public string TypeToneKey => Presentation.TypeToneKey;
 
         // [Indexer] 安全的索引器绑定，避免 KeyNotFoundException
         public string this[string key]
@@ -417,20 +404,10 @@ namespace Pulsar.Models
         public bool HasSummaryTokens => SummaryTokens.Count > 0;
 
         [JsonIgnore]
-        public string HealthBadgeText => ValidationSeverity switch
-        {
-            ValidationSeverity.Error => "Error",
-            ValidationSeverity.Warning => "Warning",
-            _ => "Ready"
-        };
+        public string HealthBadgeText => Presentation.HealthBadgeText;
 
         [JsonIgnore]
-        public string HealthBadgeColor => ValidationSeverity switch
-        {
-            ValidationSeverity.Error => "#DC2626",
-            ValidationSeverity.Warning => "#D97706",
-            _ => "#15803D"
-        };
+        public string HealthToneKey => Presentation.HealthToneKey;
 
         [JsonIgnore]
         public string QuickEditBadgeText => HasQuickEditParameters ? $"{QuickEditParameters.Count} quick edits" : "Quick edits in dialog";
@@ -455,7 +432,6 @@ namespace Pulsar.Models
             SummaryTokens = new ObservableCollection<string>(summaryTokens.Where(token => !string.IsNullOrWhiteSpace(token)).Take(3));
             ActionLabel = actionMetadata?.Label ?? Action;
             ActionDescription = actionMetadata?.Description ?? string.Empty;
-
             OnPropertyChanged(nameof(AvailableActions));
             OnPropertyChanged(nameof(RequiredParameters));
             OnPropertyChanged(nameof(OptionalParameters));
@@ -472,7 +448,7 @@ namespace Pulsar.Models
             OnPropertyChanged(nameof(HasInlineQuickEditContent));
             OnPropertyChanged(nameof(HasSummaryTokens));
             OnPropertyChanged(nameof(HealthBadgeText));
-            OnPropertyChanged(nameof(HealthBadgeColor));
+            OnPropertyChanged(nameof(HealthToneKey));
             OnPropertyChanged(nameof(QuickEditBadgeText));
             OnPropertyChanged(nameof(SummaryFallbackText));
         }
@@ -496,8 +472,19 @@ namespace Pulsar.Models
             OnPropertyChanged(nameof(HasValidationSummary));
             OnPropertyChanged(nameof(ValidationSeverity));
             OnPropertyChanged(nameof(HealthBadgeText));
-            OnPropertyChanged(nameof(HealthBadgeColor));
+            OnPropertyChanged(nameof(HealthToneKey));
             OnPropertyChanged(nameof(SummaryFallbackText));
+        }
+
+        public void SetPresentation(SlotPresentation presentation)
+        {
+            Presentation = presentation;
+
+            OnPropertyChanged(nameof(TypeBadge));
+            OnPropertyChanged(nameof(TypeToneKey));
+            OnPropertyChanged(nameof(HealthBadgeText));
+            OnPropertyChanged(nameof(HealthToneKey));
+            OnPropertyChanged(nameof(Presentation));
         }
     }
 

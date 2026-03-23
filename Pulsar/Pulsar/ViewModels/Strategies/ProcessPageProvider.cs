@@ -85,9 +85,11 @@ namespace Pulsar.ViewModels.Strategies
                         slotViewModel.IconImage = first.AppIcon;
                     }
 
-                    if (slotItem.Config != null && !string.IsNullOrEmpty(slotItem.Config.Color))
+                    if (slotItem.Config != null)
                     {
-                        slotViewModel.SetColor(slotItem.Config.Color);
+                        var presentation = SlotPresentationBuilder.Build(slotItem.Config);
+                        slotItem.Config.SetPresentation(presentation);
+                        slotViewModel.ApplyPresentation(presentation);
                     }
 
                     string baseLabel = !string.IsNullOrEmpty(slotItem.Config?.Label) 
@@ -117,10 +119,9 @@ namespace Pulsar.ViewModels.Strategies
                         slotViewModel.LoadIconData(slotItem.Config.IconKey);
                     }
 
-                    if (!string.IsNullOrEmpty(slotItem.Config.Color))
-                    {
-                        slotViewModel.SetColor(slotItem.Config.Color);
-                    }
+                    var presentation = SlotPresentationBuilder.Build(slotItem.Config);
+                    slotItem.Config.SetPresentation(presentation);
+                    slotViewModel.ApplyPresentation(presentation);
 
                     string baseLabel = !string.IsNullOrEmpty(slotItem.Config.Label) 
                         ? slotItem.Config.Label 

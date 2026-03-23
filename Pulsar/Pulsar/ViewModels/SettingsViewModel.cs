@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
@@ -294,7 +295,21 @@ namespace Pulsar.ViewModels
                 UpdateSlotPresentation(slot);
             }
 
+            if (sender is PluginSlot presentationSlot
+                && (e.PropertyName == nameof(PluginSlot.Label)
+                    || e.PropertyName == nameof(PluginSlot.Color)
+                    || e.PropertyName == nameof(PluginSlot.PluginId)
+                    || e.PropertyName == nameof(PluginSlot.Slot)))
+            {
+                RefreshSlotPresentationModel(presentationSlot);
+            }
+
             MarkDirty();
+        }
+
+        private static void RefreshSlotPresentationModel(PluginSlot slot)
+        {
+            slot.SetPresentation(SlotPresentationBuilder.Build(slot));
         }
 
         private void UpdateCurrentContextVisuals()
@@ -1039,7 +1054,7 @@ namespace Pulsar.ViewModels
             await _dialogService.ShowCustomAsync(
                 $"Configure Slot {slot.Slot}",
                 vm,
-                DialogButtons.OkCancel,
+                DialogButtons.None,
                 DialogSizeConstraints.LargeResizable);
         }
 
@@ -1463,6 +1478,8 @@ namespace Pulsar.ViewModels
                 slot.AdvancedParameters,
                 SlotParameterPresentationHelper.BuildQuickEditParameters(parameters),
                 SlotParameterPresentationHelper.BuildSummaryTokens(parameters, slot.ValidationSummary));
+
+            RefreshSlotPresentationModel(slot);
         }
 
         public AppTheme LauncherTheme
@@ -1652,8 +1669,51 @@ namespace Pulsar.ViewModels
 
         // ===== IDropTarget Implementation for Drag & Drop Reordering =====
         
+        /// <summary>
+        /// Walks up the visual tree from a given element to find the first ScrollViewer ancestor.
+        /// </summary>
+        private static System.Windows.Controls.ScrollViewer? FindScrollViewer(System.Windows.DependencyObject? element)
+        {
+            while (element != null)
+            {
+                if (element is System.Windows.Controls.ScrollViewer sv) return sv;
+                element = VisualTreeHelper.GetParent(element);
+            }
+            return null;
+        }
+
         void GongSolutions.Wpf.DragDrop.IDropTarget.DragOver(GongSolutions.Wpf.DragDrop.IDropInfo dropInfo)
         {
+            // ===== Auto-scroll when dragging near top/bottom edge =====
+            if (dropInfo.VisualTarget is System.Windows.UIElement visualTarget)
+            {
+                var scrollViewer = FindScrollViewer(visualTarget);
+                if (scrollViewer != null)
+                {
+                    // Get mouse position relative to the ScrollViewer
+                    var mousePos = dropInfo.DropPosition;
+                    var svHeight = scrollViewer.ActualHeight;
+                    const double scrollZone = 40.0;  // px from edge that triggers scroll
+                    const double scrollStep = 16.0;  // px to scroll per event
+
+                    // Get position relative to ScrollViewer
+                    var posInSv = visualTarget.TranslatePoint(mousePos, scrollViewer);
+
+                    if (posInSv.Y < scrollZone)
+                    {
+                        // Near top - scroll up
+                        scrollViewer.ScrollToVerticalOffset(
+                            Math.Max(0, scrollViewer.VerticalOffset - scrollStep));
+                    }
+                    else if (posInSv.Y > svHeight - scrollZone)
+                    {
+                        // Near bottom - scroll down
+                        scrollViewer.ScrollToVerticalOffset(
+                            Math.Min(scrollViewer.ScrollableHeight, scrollViewer.VerticalOffset + scrollStep));
+                    }
+                }
+            }
+
             // ✅ Throttle: Limit processing frequency to reduce UI flicker
             var now = DateTime.UtcNow;
             if ((now - _lastDragOverTime).TotalMilliseconds < DragOverThrottleMs)
@@ -1666,7 +1726,7 @@ namespace Pulsar.ViewModels
                 return;
             }
             _lastDragOverTime = now;
-            
+
             if (dropInfo.Data is PluginSlot && dropInfo.TargetCollection != null)
             {
                 dropInfo.DropTargetAdorner = GongSolutions.Wpf.DragDrop.DropTargetAdorners.Insert;

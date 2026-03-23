@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using Pulsar.Models;
 using Pulsar.ViewModels.Strategies;
 using System;
 using System.Threading.Tasks;
@@ -49,7 +50,13 @@ namespace Pulsar.ViewModels
         public double Size
         {
             get => _size;
-            set => SetProperty(ref _size, value);
+            set
+            {
+                if (SetProperty(ref _size, value))
+                {
+                    OnPropertyChanged(nameof(ShowTypeBadge));
+                }
+            }
         }
 
         public string Label
@@ -79,6 +86,8 @@ namespace Pulsar.ViewModels
         // [New] Helper for Badge Visibility
         public bool HasBadge => BadgeCount > 1;
 
+        public bool ShowTypeBadge => !string.IsNullOrWhiteSpace(TypeBadge) && Size >= 52;
+
         public void LoadIconData(string iconKey)
         {
             IconKey = iconKey;
@@ -107,6 +116,18 @@ namespace Pulsar.ViewModels
 
         [ObservableProperty]
         private System.Windows.Media.Brush? _customForegroundBrush;
+
+        [ObservableProperty]
+        private string _typeBadge = string.Empty;
+
+        [ObservableProperty]
+        private string _typeToneKey = "SlotTypeBrushDefault";
+
+        [ObservableProperty]
+        private string _healthBadgeText = "Ready";
+
+        [ObservableProperty]
+        private string _healthToneKey = "SlotHealthBrushReady";
 
         public void SetColor(string? hexColor)
         {
@@ -153,6 +174,22 @@ namespace Pulsar.ViewModels
                 CustomStrokeBrush = null;
                 CustomForegroundBrush = null;
             }
+        }
+
+        public void ApplyPresentation(SlotPresentation? presentation)
+        {
+            var resolved = presentation ?? SlotPresentation.Empty;
+            TypeBadge = resolved.TypeBadge;
+            TypeToneKey = resolved.TypeToneKey;
+            HealthBadgeText = resolved.HealthBadgeText;
+            HealthToneKey = resolved.HealthToneKey;
+            SetColor(resolved.ColorHex);
+            OnPropertyChanged(nameof(ShowTypeBadge));
+        }
+
+        public void ClearPresentation()
+        {
+            ApplyPresentation(SlotPresentation.Empty);
         }
 
         /// <summary>

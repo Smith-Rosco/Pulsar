@@ -416,7 +416,7 @@ namespace Pulsar.ViewModels
             CenterSlot.Label = "";
             CenterSlot.LoadIconData(string.Empty);
             CenterSlot.IsActive = false;
-            CenterSlot.SetColor(null); // [Fix] Clear center slot color
+            CenterSlot.ClearPresentation(); // [Fix] Clear center slot presentation
 
             foreach (var slot in Slots)
             {
@@ -425,7 +425,7 @@ namespace Pulsar.ViewModels
                 slot.IsActive = false;
                 slot.IsRecommended = false;
                 slot.BadgeCount = 0; // [Fix] Clear badge state
-                slot.SetColor(null); // [Fix] Clear custom color to prevent pollution in Switcher mode
+                slot.ClearPresentation(); // [Fix] Clear presentation to prevent pollution in Switcher mode
             }
         }
 

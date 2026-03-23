@@ -13,6 +13,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/SlotStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVisibilityConverter"/>
             <BooleanToVisibilityConverter x:Key="BoolToVis"/>
@@ -34,13 +35,18 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Icon (JellyOrb) -->
-                <controls:JellyOrb Grid.Column="0"
-                                   IconKey="{Binding IconKey, ElementName=Root}" 
-                                   Size="28" 
-                                   Width="28" Height="28" 
-                                   IsTransparent="True"
-                                   ShowActiveGlow="False"
-                                   Margin="0,0,10,0"/>
+                <Border Grid.Column="0"
+                        Style="{StaticResource SlotOrbContainerStyle}"
+                        Margin="0,0,10,0"
+                        Background="{Binding OrbBackground, ElementName=Root}">
+                    <controls:JellyOrb IconKey="{Binding IconKey, ElementName=Root}"
+                                       Size="28"
+                                       Width="28"
+                                       Height="28"
+                                       Margin="5"
+                                       IsTransparent="True"
+                                       ShowActiveGlow="False"/>
+                </Border>
 
                 <!-- Title Area -->
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">

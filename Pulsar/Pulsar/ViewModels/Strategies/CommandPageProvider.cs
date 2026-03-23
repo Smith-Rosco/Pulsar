@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Pulsar.Models;
+using Pulsar.Helpers;
 using Pulsar.Core.Plugin;
 using Pulsar.Services; // Added
 using Pulsar.Services.Interfaces;
@@ -60,7 +61,9 @@ namespace Pulsar.ViewModels.Strategies
                 
                 slot.Label = item.Label;
                 slot.LoadIconData(item.IconKey);
-                slot.SetColor(item.Color);
+                var presentation = SlotPresentationBuilder.Build(item);
+                item.SetPresentation(presentation);
+                slot.ApplyPresentation(presentation);
                 slot.Type = SlotType.Action;
                 slot.DataContext = item;
 

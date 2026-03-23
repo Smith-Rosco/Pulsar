@@ -19,6 +19,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/SlotStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
             <BooleanToVisibilityConverter x:Key="BoolToVis"/>
@@ -26,54 +27,52 @@
             <converters:IsImagePathConverter x:Key="IsImagePath"/>
             <converters:StringPathToImageSourceConverter x:Key="PathToImage"/>
             <converters:HexToBrushConverter x:Key="HexToBrush"/>
+            <converters:SlotBrushConverter x:Key="SlotBrushConverter"/>
 
-        <!-- SlotParameterFieldTemplate and SystemCommandFieldsTemplate removed: Quick Edit layer eliminated -->
+            <!-- SlotParameterFieldTemplate and SystemCommandFieldsTemplate removed: Quick Edit layer eliminated -->
 
-        <!-- Custom Drag Adorner Template for Slot Cards -->
-        <DataTemplate x:Key="SlotCardDragAdornerTemplate">
-            <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{DynamicResource AccentFillColorDefaultBrush}"
-                    BorderThickness="2"
-                    CornerRadius="8"
-                    Padding="12"
-                    Opacity="0.9"
-                    MinWidth="300">
-                <Border.Effect>
-                    <DropShadowEffect Color="Black" 
-                                    Opacity="0.3" 
-                                    BlurRadius="20" 
-                                    ShadowDepth="4"/>
-                </Border.Effect>
-                <Border.RenderTransform>
-                    <ScaleTransform ScaleX="1.05" ScaleY="1.05"/>
-                </Border.RenderTransform>
-                
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    
-                    <controls:JellyOrb Grid.Column="0"
-                                     IconKey="{Binding IconKey}"
-                                     Size="32"
-                                     Width="32" Height="32"
-                                     IsTransparent="True"
-                                     ShowActiveGlow="False"
-                                     Margin="0,0,12,0"/>
-                    
-                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding Label}" 
-                                 FontSize="14" 
-                                 FontWeight="SemiBold"
-                                 Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                        <TextBlock Text="{Binding Slot, StringFormat='Position {0}'}" 
-                                 FontSize="12"
-                                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
-        </DataTemplate>
+            <!-- Custom Drag Adorner Template for Slot Cards -->
+            <DataTemplate x:Key="SlotCardDragAdornerTemplate">
+                <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{DynamicResource AccentFillColorDefaultBrush}"
+                        BorderThickness="2"
+                        CornerRadius="8"
+                        Padding="12"
+                        Opacity="0.9"
+                        MinWidth="300">
+                    <Border.Effect>
+                        <DropShadowEffect Color="Black" 
+                                          Opacity="0.3" 
+                                          BlurRadius="20" 
+                                          ShadowDepth="4"/>
+                    </Border.Effect>
+                    <Border.RenderTransform>
+                        <ScaleTransform ScaleX="1.05" ScaleY="1.05"/>
+                    </Border.RenderTransform>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <controls:JellyOrb Grid.Column="0"
+                                           IconKey="{Binding IconKey}"
+                                           Size="32"
+                                           Width="32" Height="32"
+                                           IsTransparent="True"
+                                           ShowActiveGlow="False"
+                                           Margin="0,0,12,0"/>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Label}" 
+                                       FontSize="14" 
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                            <TextBlock Text="{Binding Slot, StringFormat='Position {0}'}" 
+                                       FontSize="12"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </DataTemplate>
 
         </ResourceDictionary>
     </Page.Resources>
@@ -84,18 +83,25 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Unified Page Header -->
+        <!-- Unified Page Header: Title + Context Switcher + Profile Actions all in one row -->
         <controls:SettingsPageHeader Grid.Row="0"
-                                     Title="{Binding CurrentContext.DisplayName, FallbackValue='Slots'}"
-                                     Description="Configure actions for this context">
+                                     Title="Slots"
+                                     Description="Configure actions for each context">
             <controls:SettingsPageHeader.ActionsContent>
-                <StackPanel Orientation="Horizontal">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+
                     <!-- Context Switcher -->
-                    <ComboBox ItemsSource="{Binding AvailableContexts}" 
-                              SelectedItem="{Binding CurrentContext}"
-                              Width="220"
-                              ToolTip="Switch Menu Context"
-                              Margin="0,0,8,0">
+                    <ui:SymbolIcon Symbol="Globe24"
+                                   FontSize="16"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   Margin="0,0,6,0"
+                                   VerticalAlignment="Center"/>
+                    <ComboBox ItemsSource="{Binding AvailableContexts}"
+                              SelectedItem="{Binding CurrentContext, Mode=TwoWay}"
+                              MinWidth="160"
+                              MaxWidth="240"
+                              VerticalAlignment="Center"
+                              Margin="0,0,12,0">
                         <ComboBox.ItemContainerStyle>
                             <Style TargetType="ComboBoxItem">
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -110,7 +116,6 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    
                                     <controls:JellyOrb Grid.Column="0"
                                                        IconKey="{Binding Icon}"
                                                        Size="20"
@@ -119,68 +124,59 @@
                                                        ShowActiveGlow="False"
                                                        Margin="0,0,8,0"
                                                        VerticalAlignment="Center"/>
-                                    
-                                    <TextBlock Grid.Column="1" 
-                                               Text="{Binding DisplayName}" 
-                                               FontFamily="Segoe UI, Microsoft YaHei UI"
-                                               VerticalAlignment="Center"
-                                               Margin="0,0,16,0"/>
-                                               
-                                    <Border Grid.Column="2" 
-                                            Background="{DynamicResource ControlFillColorSecondaryBrush}" 
-                                            CornerRadius="4" 
-                                            Padding="6,2"
-                                            VerticalAlignment="Center">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{Binding SlotCount}" 
-                                                       FontWeight="SemiBold"
-                                                       FontSize="12"/>
-                                            <TextBlock Text=" slots" 
-                                                       FontSize="12" 
-                                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                                        </StackPanel>
-                                    </Border>
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding DisplayName}"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="2"
+                                               Text="{Binding SlotCount, StringFormat='{}{0} slots'}"
+                                               FontSize="11"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                               Margin="8,0,0,0"
+                                               VerticalAlignment="Center"/>
                                 </Grid>
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
 
-                    <!-- Edit Profile Button -->
+                    <!-- Divider -->
+                    <Rectangle Width="1" Height="18"
+                               Fill="{DynamicResource SurfaceStrokeColorDefaultBrush}"
+                               Margin="0,0,12,0"
+                               VerticalAlignment="Center"/>
+
+                    <!-- Edit Profile -->
                     <ui:Button Style="{StaticResource PulsarIconButtonStyle}"
                                Icon="{ui:SymbolIcon Edit20}"
                                Command="{Binding EditProfileCommand}"
                                Visibility="{Binding CanEditProfile, Converter={StaticResource BoolToVis}}"
-                               ToolTip="Edit Profile Alias &amp; Icon"
-                               Margin="0,0,8,0"/>
+                               ToolTip="Edit Profile"
+                               Margin="0,0,6,0"/>
 
-                    <!-- Add Profile Button -->
+                    <!-- Add Profile -->
                     <ui:Button Content="New Profile"
                                Icon="{ui:SymbolIcon Add24}"
                                Style="{StaticResource PulsarSecondaryButtonStyle}"
                                ToolTip="Add New Profile"
                                Command="{Binding AddProfileDialogCommand}"
-                               Margin="0,0,16,0"/>
+                               Margin="0,0,6,0"/>
 
-                    <!-- Delete Profile: visually separated from Add -->
+                    <!-- Delete Profile -->
                     <ui:Button Style="{StaticResource PulsarIconButtonStyle}"
                                Icon="{ui:SymbolIcon Delete24}"
                                Command="{Binding DeleteProfileCommand}"
                                ToolTip="Delete Current Profile"
                                Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                                Visibility="{Binding CanDeleteProfile, Converter={StaticResource BoolToVis}}"/>
+
                 </StackPanel>
             </controls:SettingsPageHeader.ActionsContent>
         </controls:SettingsPageHeader>
 
-        <!-- Slots List -->
+        <!-- Slots Area: ScrollViewer + FAB overlay -->
         <Grid Grid.Row="1">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
 
             <!-- Empty State -->
-            <StackPanel Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,32">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,64">
                 <StackPanel.Style>
                     <Style TargetType="StackPanel">
                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -204,7 +200,10 @@
                            HorizontalAlignment="Center"/>
             </StackPanel>
 
-            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,16,0">
+            <!-- Slot List -->
+            <ScrollViewer x:Name="SlotsScrollViewer"
+                          VerticalScrollBarVisibility="Auto"
+                          Padding="0,0,16,0">
                 <ScrollViewer.Style>
                     <Style TargetType="ScrollViewer" BasedOn="{StaticResource OverlayScrollViewerStyle}">
                         <Style.Triggers>
@@ -219,6 +218,7 @@
                 </ScrollViewer.Style>
                 <ItemsControl ItemsSource="{Binding CurrentSlots}" 
                               AlternationCount="2"
+                              Padding="0,0,0,60"
                               dd:DragDrop.IsDragSource="True"
                               dd:DragDrop.IsDropTarget="True"
                               dd:DragDrop.DropHandler="{Binding}"
@@ -226,163 +226,134 @@
                               dd:DragDrop.DragAdornerTemplate="{StaticResource SlotCardDragAdornerTemplate}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type models:PluginSlot}">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                
-                                <!-- Drag Handle (outside card for better UX) -->
-                                <Border Grid.Column="0"
-                                        Background="Transparent"
-                                        Padding="4"
-                                        Margin="0,0,8,0"
-                                        CornerRadius="4"
-                                        Cursor="SizeAll"
-                                        ToolTip="Drag to reorder">
-                                    <Border.Style>
-                                        <Style TargetType="Border">
-                                            <Setter Property="Opacity" Value="0"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Grid}}" Value="True">
-                                                    <Setter Property="Opacity" Value="1"/>
-                                                    <Setter Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Border.Style>
-                                    
-                                    <ui:SymbolIcon Symbol="Navigation24" 
-                                                   FontSize="20"
-                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                                   VerticalAlignment="Center"/>
-                                </Border>
-                                
-                                 <controls:ExpandableCard Grid.Column="1"
-                                                           x:Name="SlotCard"
-                                                           IconKey="{Binding IconKey}"
-                                                           Title="{Binding Label}"
-                                                           Subtitle="{Binding ActionLabel}"
-                                                           IsToggleVisible="False"
-                                                           PrimaryActionVisibility="Collapsed"
-                                                           PageDataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Page}}">
-                                     
-                                      <!-- Header Content: Position badge inline with subtitle -->
-                                       <controls:ExpandableCard.HeaderContent>
-                                           <Border Background="{DynamicResource ControlFillColorSecondaryBrush}"
-                                                   CornerRadius="4"
-                                                   Padding="5,1"
-                                                   VerticalAlignment="Center">
-                                               <TextBlock Text="{Binding Slot, StringFormat='#{0}'}"
-                                                          Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                                          FontSize="10"/>
-                                           </Border>
-                                        </controls:ExpandableCard.HeaderContent>
+                            <!-- Drag Handle removed: whole card is draggable via Cursor=SizeAll -->
+                            <controls:ExpandableCard
+                                             x:Name="SlotCard"
+                                             IconKey="{Binding IconKey}"
+                                             OrbBackground="{Binding Color, Converter={StaticResource HexToBrush}}"
+                                             Title="{Binding Label}"
+                                             Subtitle="{Binding ActionLabel}"
+                                             Cursor="SizeAll"
+                                            IsToggleVisible="False"
+                                            PrimaryActionVisibility="Collapsed"
+                                            PageDataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Page}}">
+                                <controls:ExpandableCard.CardContextMenu>
+                                    <ContextMenu Tag="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                        <ContextMenu.Resources>
+                                            <ResourceDictionary>
+                                                <ResourceDictionary.MergedDictionaries>
+                                                    <ui:ControlsDictionary/>
+                                                </ResourceDictionary.MergedDictionaries>
+                                            </ResourceDictionary>
+                                        </ContextMenu.Resources>
+                                        <MenuItem Header="Edit Slot"
+                                                  Click="ContextEdit_Click"
+                                                  Tag="{Binding Tag, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                        <Separator/>
+                                        <MenuItem Header="Remove Slot"
+                                                  Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                                                  Click="ContextRemove_Click"
+                                                  Tag="{Binding Tag, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                    </ContextMenu>
+                                </controls:ExpandableCard.CardContextMenu>
 
-                                      <!-- Expanded Content: read-only info panel + action buttons -->
-                                      <controls:ExpandableCard.ExpandedContent>
-                                          <StackPanel Margin="0,4,0,6"
-                                                      Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                      Loaded="ExpandedPanel_Loaded">
+                                <!-- Header Content: Position badge -->
+                                <controls:ExpandableCard.HeaderContent>
+                                     <Border Style="{StaticResource SlotChipBorderStyle}"
+                                             Padding="5,1"
+                                             VerticalAlignment="Center">
+                                         <TextBlock Text="{Binding Slot, StringFormat='#{0}'}"
+                                                    Style="{StaticResource SlotCaptionChipTextStyle}"
+                                                    FontSize="10"/>
+                                     </Border>
+                                 </controls:ExpandableCard.HeaderContent>
 
-                                              <!-- Type + Health + SummaryTokens info row -->
-                                              <WrapPanel Margin="0,0,0,8">
-                                                   <!-- Type badge -->
-                                                   <Border CornerRadius="4"
-                                                           Padding="6,2"
-                                                           Margin="0,0,6,0"
-                                                           BorderBrush="{DynamicResource ControlElevationBorderBrush}"
-                                                           BorderThickness="1"
-                                                           Background="{DynamicResource ControlFillColorSecondaryBrush}"
-                                                           Visibility="{Binding TypeBadge, Converter={StaticResource StringEmptyToVis}, FallbackValue=Collapsed}"
-                                                           ToolTip="Plugin type">
-                                                       <StackPanel Orientation="Horizontal">
-                                                           <TextBlock Text="Type · " FontSize="11"
-                                                                      Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                                                           <TextBlock Text="{Binding TypeBadge}"
-                                                                      FontSize="11" FontWeight="SemiBold"
-                                                                      Foreground="{Binding TypeColor}"/>
-                                                       </StackPanel>
-                                                   </Border>
-                                                   <!-- Health badge -->
-                                                   <Border CornerRadius="4"
-                                                           Padding="6,2"
-                                                           Margin="0,0,6,0"
-                                                           BorderBrush="{DynamicResource ControlElevationBorderBrush}"
-                                                           BorderThickness="1"
-                                                           Background="{DynamicResource ControlFillColorSecondaryBrush}"
-                                                           ToolTip="Configuration health status">
-                                                       <StackPanel Orientation="Horizontal">
-                                                           <TextBlock Text="Health · " FontSize="11"
-                                                                      Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                                                           <TextBlock Text="{Binding HealthBadgeText}"
-                                                                      FontSize="11" FontWeight="SemiBold"
-                                                                      Foreground="{Binding HealthBadgeColor}"/>
-                                                       </StackPanel>
-                                                   </Border>
-                                                   <!-- Summary tokens -->
-                                                   <ItemsControl ItemsSource="{Binding SummaryTokens}"
-                                                                 Visibility="{Binding HasSummaryTokens, Converter={StaticResource BoolToVis}}"
-                                                                 ToolTip="Configuration summary">
-                                                       <ItemsControl.ItemsPanel>
-                                                           <ItemsPanelTemplate>
-                                                               <WrapPanel Orientation="Horizontal"/>
-                                                           </ItemsPanelTemplate>
-                                                       </ItemsControl.ItemsPanel>
-                                                       <ItemsControl.ItemTemplate>
-                                                           <DataTemplate>
-                                                               <Border CornerRadius="4"
-                                                                       Padding="6,2"
-                                                                       Margin="0,0,6,0"
-                                                                       BorderBrush="{DynamicResource ControlElevationBorderBrush}"
-                                                                       BorderThickness="1"
-                                                                       Background="{DynamicResource ControlFillColorSecondaryBrush}">
-                                                                   <TextBlock Text="{Binding}" FontSize="11"
-                                                                              Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                                                              MaxWidth="120"
-                                                                              TextTrimming="CharacterEllipsis"/>
-                                                               </Border>
-                                                           </DataTemplate>
-                                                       </ItemsControl.ItemTemplate>
-                                                   </ItemsControl>
-                                               </WrapPanel>
+                                <!-- Expanded Content -->
+                                <controls:ExpandableCard.ExpandedContent>
+                                    <StackPanel Margin="0,4,0,6"
+                                                Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                Loaded="ExpandedPanel_Loaded">
 
-                                              <!-- Action buttons row -->
-                                              <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
-                                                  <ui:Button Content="Edit Slot"
-                                                             Icon="{ui:SymbolIcon Edit24}"
-                                                             Style="{StaticResource PulsarSecondaryButtonStyle}"
-                                                             Margin="0,0,8,0"
-                                                             Click="ExpandedEdit_Click"
-                                                             Tag="{Binding}"/>
-                                                  <ui:Button Icon="{ui:SymbolIcon Delete24}"
-                                                             Style="{StaticResource PulsarIconButtonStyle}"
-                                                             Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                                             ToolTip="Remove Slot"
-                                                             Click="ExpandedRemove_Click"
-                                                             Tag="{Binding}"/>
-                                              </StackPanel>
+                                        <!-- Type + Health + SummaryTokens info row -->
+                                        <WrapPanel Margin="0,0,0,8">
+                                            <!-- Type badge -->
+                                             <Border Style="{StaticResource SlotChipBorderStyle}"
+                                                     Visibility="{Binding TypeBadge, Converter={StaticResource StringEmptyToVis}, FallbackValue=Collapsed}"
+                                                     ToolTip="Plugin type">
+                                                 <StackPanel Orientation="Horizontal">
+                                                     <TextBlock Text="Type · " Style="{StaticResource SlotCaptionChipTextStyle}"/>
+                                                     <TextBlock Text="{Binding TypeBadge}"
+                                                                Style="{StaticResource SlotValueChipTextStyle}"
+                                                                Foreground="{Binding TypeToneKey, Converter={StaticResource SlotBrushConverter}, ConverterParameter=Type}"/>
+                                                 </StackPanel>
+                                             </Border>
+                                             <!-- Health badge -->
+                                             <Border Style="{StaticResource SlotChipBorderStyle}"
+                                                     ToolTip="Configuration health status">
+                                                 <StackPanel Orientation="Horizontal">
+                                                     <TextBlock Text="Health · " Style="{StaticResource SlotCaptionChipTextStyle}"/>
+                                                     <TextBlock Text="{Binding HealthBadgeText}"
+                                                                Style="{StaticResource SlotValueChipTextStyle}"
+                                                                Foreground="{Binding HealthToneKey, Converter={StaticResource SlotBrushConverter}, ConverterParameter=Health}"/>
+                                                 </StackPanel>
+                                             </Border>
+                                            <!-- Summary tokens -->
+                                            <ItemsControl ItemsSource="{Binding SummaryTokens}"
+                                                          Visibility="{Binding HasSummaryTokens, Converter={StaticResource BoolToVis}}"
+                                                          ToolTip="Configuration summary">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel Orientation="Horizontal"/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Style="{StaticResource SlotSummaryTokenBorderStyle}">
+                                                            <TextBlock Text="{Binding}"
+                                                                       Style="{StaticResource SlotCaptionChipTextStyle}"
+                                                                       MaxWidth="120"
+                                                                       TextTrimming="CharacterEllipsis"/>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </WrapPanel>
 
-                                          </StackPanel>
-                                       </controls:ExpandableCard.ExpandedContent>
-                                 </controls:ExpandableCard>
-                             </Grid>
-                         </DataTemplate>
-                     </ItemsControl.ItemTemplate>
-                 </ItemsControl>
-             </ScrollViewer>
+                                        <!-- Action buttons row -->
+                                        <StackPanel Orientation="Horizontal">
+                                            <ui:Button Content="Edit Slot"
+                                                       Icon="{ui:SymbolIcon Edit24}"
+                                                       Style="{StaticResource PulsarSecondaryButtonStyle}"
+                                                       Margin="0,0,8,0"
+                                                       Click="ExpandedEdit_Click"
+                                                       Tag="{Binding}"/>
+                                            <ui:Button Icon="{ui:SymbolIcon Delete24}"
+                                                       Style="{StaticResource PulsarIconButtonStyle}"
+                                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                       ToolTip="Remove Slot"
+                                                       Click="ExpandedRemove_Click"
+                                                       Tag="{Binding}"/>
+                                        </StackPanel>
 
-            <!-- Footer: Add Slot Button -->
-            <Grid Grid.Row="1" Margin="0,16,0,0">
-            <ui:Button x:Name="AddSlotButton"
-                       Content="Add Slot" 
-                       Style="{StaticResource PulsarSecondaryButtonStyle}"
+                                    </StackPanel>
+                                </controls:ExpandableCard.ExpandedContent>
+                            </controls:ExpandableCard>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <!-- FAB: Add Slot (floating, bottom-right) -->
+            <ui:Button x:Name="AddSlotFab"
                        Icon="{ui:SymbolIcon Add24}"
-                       HorizontalAlignment="Stretch"
-                       Height="40"
+                       Content="Add Slot"
+                       Style="{StaticResource PulsarPrimaryButtonStyle}"
+                       HorizontalAlignment="Right"
+                       VerticalAlignment="Bottom"
+                       Margin="0,0,24,20"
                        Command="{Binding AddSlotDialogCommand}"
                        tutorial:TutorialMarker.Id="AddSlotButton"/>
-            </Grid>
+
         </Grid>
     </Grid>
 </Page>

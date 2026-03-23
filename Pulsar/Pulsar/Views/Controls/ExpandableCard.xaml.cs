@@ -16,6 +16,9 @@ namespace Pulsar.Views.Controls
         public static readonly DependencyProperty IconKeyProperty =
             DependencyProperty.Register(nameof(IconKey), typeof(string), typeof(ExpandableCard), new PropertyMetadata(string.Empty));
 
+        public static readonly DependencyProperty OrbBackgroundProperty =
+            DependencyProperty.Register(nameof(OrbBackground), typeof(object), typeof(ExpandableCard), new PropertyMetadata(null));
+
         // Title and Subtitle
         public static readonly DependencyProperty TitleProperty =
             DependencyProperty.Register(nameof(Title), typeof(string), typeof(ExpandableCard), new PropertyMetadata(string.Empty));
@@ -102,6 +105,12 @@ namespace Pulsar.Views.Controls
         {
             get => (string)GetValue(IconKeyProperty);
             set => SetValue(IconKeyProperty, value);
+        }
+
+        public object OrbBackground
+        {
+            get => GetValue(OrbBackgroundProperty);
+            set => SetValue(OrbBackgroundProperty, value);
         }
 
         public string Title
