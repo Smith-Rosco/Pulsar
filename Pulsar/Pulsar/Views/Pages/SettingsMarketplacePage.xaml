@@ -248,7 +248,7 @@
                                         </Grid.ColumnDefinitions>
 
                                         <!-- Plugin Icon -->
-                                        <controls:JellyOrb Grid.Column="0"
+                                        <controls:SlotOrb Grid.Column="0"
                                                            IconKey="{Binding Icon}"
                                                            Size="48"
                                                            Width="48" Height="48"

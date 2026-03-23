@@ -318,9 +318,9 @@ namespace Pulsar.ViewModels
             CenterSlot.Size = _currentCenterSize;
             CenterSlot.X = CenterX - _currentCenterSize / 2;
             CenterSlot.Y = CenterY - _currentCenterSize / 2;
-            CenterSlot.TargetOffsetX = 0; // [Fix] Anchor center - no magnetic drift
-            CenterSlot.TargetOffsetY = 0;
-            CenterSlot.UpdatePhysics(); // Keep physics loop running for consistency
+            CenterSlot.DesiredOffsetX = 0;
+            CenterSlot.DesiredOffsetY = 0;
+            CenterSlot.UpdateMagneticOffset();
             
             // 2. Update Title Position (Dynamic based on radius to avoid overlap)
             // CenterY (250) + Radius + HalfItem (25) + Padding (20)
@@ -328,8 +328,6 @@ namespace Pulsar.ViewModels
 
             // [New] Entrance & Physics Loop
             double magnetRadius = 150.0;
-            double elapsedMs = (DateTime.Now - _showStartTime).TotalMilliseconds;
-
             // 3. Update Satellite Slots with dynamic sizing
             for (int i = 0; i < Slots.Count; i++)
             {
@@ -356,17 +354,16 @@ namespace Pulsar.ViewModels
                     strength = Math.Pow(strength, 2); // Non-linear falloff
                     
                     // Pull towards mouse
-                    slot.TargetOffsetX = dx * strength * 0.3; 
-                    slot.TargetOffsetY = dy * strength * 0.3;
+                    slot.DesiredOffsetX = dx * strength * 0.18;
+                    slot.DesiredOffsetY = dy * strength * 0.18;
                 }
                 else
                 {
-                    slot.TargetOffsetX = 0;
-                    slot.TargetOffsetY = 0;
+                    slot.DesiredOffsetX = 0;
+                    slot.DesiredOffsetY = 0;
                 }
-                
-                // [Physics] Update Spring Dynamics
-                slot.UpdatePhysics();
+
+                slot.UpdateMagneticOffset();
             }
         }
 

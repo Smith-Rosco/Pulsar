@@ -18,7 +18,7 @@ namespace Pulsar.Core.Plugin.Metadata
         public required string Description { get; init; }
 
         /// <summary>
-        /// 图标键 (JellyOrb 支持的图标标识符，如 Emoji "🔐" 或 Fluent Icon)
+        /// 图标键 (SlotOrb 支持的图标标识符，如 Emoji "🔐" 或 Fluent Icon)
         /// </summary>
         public required string IconKey { get; init; }
 

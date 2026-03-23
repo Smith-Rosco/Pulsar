@@ -10,7 +10,7 @@ using Point = System.Windows.Point;
 
 namespace Pulsar.Views.Controls
 {
-    public partial class JellyOrb : UserControl
+    public partial class SlotOrb : UserControl
     {
         // ============================
         // �˶��㷨���� (�Ѹ�Ϊ Lerp ��ֵģʽ)
@@ -30,7 +30,7 @@ namespace Pulsar.Views.Controls
         // ���λ������ (����): �������Χ
         private const double MaxOffsetLimit = 12.0;
 
-        public JellyOrb()
+        public SlotOrb()
         {
             InitializeComponent();
             this.Loaded += (s, e) => CompositionTarget.Rendering += OnRenderFrame;
@@ -59,42 +59,42 @@ namespace Pulsar.Views.Controls
         // �������� (���ֲ���)
         // ============================
         public static readonly DependencyProperty IconKeyProperty =
-            DependencyProperty.Register(nameof(IconKey), typeof(string), typeof(JellyOrb), new PropertyMetadata(string.Empty, OnIconKeyChanged));
+            DependencyProperty.Register(nameof(IconKey), typeof(string), typeof(SlotOrb), new PropertyMetadata(string.Empty, OnIconKeyChanged));
         public static readonly DependencyProperty LabelProperty =
-            DependencyProperty.Register(nameof(Label), typeof(string), typeof(JellyOrb), new PropertyMetadata(string.Empty));
+            DependencyProperty.Register(nameof(Label), typeof(string), typeof(SlotOrb), new PropertyMetadata(string.Empty));
         public static readonly DependencyProperty SizeProperty =
-            DependencyProperty.Register(nameof(Size), typeof(double), typeof(JellyOrb), new PropertyMetadata(50.0));
+            DependencyProperty.Register(nameof(Size), typeof(double), typeof(SlotOrb), new PropertyMetadata(50.0));
         public static readonly DependencyProperty IsActiveProperty =
-            DependencyProperty.Register(nameof(IsActive), typeof(bool), typeof(JellyOrb), new PropertyMetadata(false));
+            DependencyProperty.Register(nameof(IsActive), typeof(bool), typeof(SlotOrb), new PropertyMetadata(false));
         public static readonly DependencyProperty IsRecommendedProperty =
-            DependencyProperty.Register(nameof(IsRecommended), typeof(bool), typeof(JellyOrb), new PropertyMetadata(false));
+            DependencyProperty.Register(nameof(IsRecommended), typeof(bool), typeof(SlotOrb), new PropertyMetadata(false));
         public static readonly DependencyProperty IsTransparentProperty =
-            DependencyProperty.Register(nameof(IsTransparent), typeof(bool), typeof(JellyOrb), new PropertyMetadata(false));
+            DependencyProperty.Register(nameof(IsTransparent), typeof(bool), typeof(SlotOrb), new PropertyMetadata(false));
         public static readonly DependencyProperty ShowActiveGlowProperty =
-            DependencyProperty.Register(nameof(ShowActiveGlow), typeof(bool), typeof(JellyOrb), new PropertyMetadata(true));
+            DependencyProperty.Register(nameof(ShowActiveGlow), typeof(bool), typeof(SlotOrb), new PropertyMetadata(true));
         
         // [New] Custom Fill/Stroke Color (Overrides Theme)
         public static readonly DependencyProperty CustomFillProperty =
-            DependencyProperty.Register(nameof(CustomFill), typeof(System.Windows.Media.Brush), typeof(JellyOrb), new PropertyMetadata(null));
+            DependencyProperty.Register(nameof(CustomFill), typeof(System.Windows.Media.Brush), typeof(SlotOrb), new PropertyMetadata(null));
 
         public static readonly DependencyProperty CustomStrokeProperty =
-            DependencyProperty.Register(nameof(CustomStroke), typeof(System.Windows.Media.Brush), typeof(JellyOrb), new PropertyMetadata(null));
+            DependencyProperty.Register(nameof(CustomStroke), typeof(System.Windows.Media.Brush), typeof(SlotOrb), new PropertyMetadata(null));
 
         // [New] Controls visibility of the inner content (Image/Text) without affecting the Orb shape/glow
         public static readonly DependencyProperty IsContentVisibleProperty =
-            DependencyProperty.Register(nameof(IsContentVisible), typeof(bool), typeof(JellyOrb), new PropertyMetadata(true));
+            DependencyProperty.Register(nameof(IsContentVisible), typeof(bool), typeof(SlotOrb), new PropertyMetadata(true));
 
         // [New] Custom Foreground (For Adaptive Contrast)
         public static readonly DependencyProperty CustomForegroundProperty =
-            DependencyProperty.Register(nameof(CustomForeground), typeof(System.Windows.Media.Brush), typeof(JellyOrb), new PropertyMetadata(null));
+            DependencyProperty.Register(nameof(CustomForeground), typeof(System.Windows.Media.Brush), typeof(SlotOrb), new PropertyMetadata(null));
 
         // [New] Badge Count
         public static readonly DependencyProperty BadgeCountProperty =
-            DependencyProperty.Register(nameof(BadgeCount), typeof(int), typeof(JellyOrb), new PropertyMetadata(0));
+            DependencyProperty.Register(nameof(BadgeCount), typeof(int), typeof(SlotOrb), new PropertyMetadata(0));
             
         // [New] Allow external binding of ImageSource (e.g. from ProcessWindowInfo)
         public static readonly DependencyProperty OrbImageProperty =
-            DependencyProperty.Register(nameof(OrbImage), typeof(ImageSource), typeof(JellyOrb), new PropertyMetadata(null, OnOrbImageChanged));
+            DependencyProperty.Register(nameof(OrbImage), typeof(ImageSource), typeof(SlotOrb), new PropertyMetadata(null, OnOrbImageChanged));
 
         public string IconKey { get => (string)GetValue(IconKeyProperty); set => SetValue(IconKeyProperty, value); }
         public string Label { get => (string)GetValue(LabelProperty); set => SetValue(LabelProperty, value); }
@@ -164,35 +164,35 @@ namespace Pulsar.Views.Controls
 
         private static void OnOrbImageChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is JellyOrb orb) orb.RefreshIcon(orb.IconKey); 
+            if (d is SlotOrb orb) orb.RefreshIcon(orb.IconKey); 
         }
 
         private static void OnIconKeyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is JellyOrb orb) orb.RefreshIcon(e.NewValue as string);
+            if (d is SlotOrb orb) orb.RefreshIcon(e.NewValue as string);
         }
         
         // ============================
         // Internal Rendering Properties (Read-Only)
         // ============================
         private static readonly DependencyPropertyKey RenderImagePropertyKey = 
-            DependencyProperty.RegisterReadOnly(nameof(RenderImage), typeof(ImageSource), typeof(JellyOrb), new PropertyMetadata(null));
+            DependencyProperty.RegisterReadOnly(nameof(RenderImage), typeof(ImageSource), typeof(SlotOrb), new PropertyMetadata(null));
         
         public static readonly DependencyProperty RenderImageProperty = RenderImagePropertyKey.DependencyProperty;
 
         private static readonly DependencyPropertyKey RenderGlyphPropertyKey = 
-            DependencyProperty.RegisterReadOnly(nameof(RenderGlyph), typeof(string), typeof(JellyOrb), new PropertyMetadata(string.Empty));
+            DependencyProperty.RegisterReadOnly(nameof(RenderGlyph), typeof(string), typeof(SlotOrb), new PropertyMetadata(string.Empty));
         
         public static readonly DependencyProperty RenderGlyphProperty = RenderGlyphPropertyKey.DependencyProperty;
 
         private static readonly DependencyPropertyKey ShowImagePropertyKey = 
-            DependencyProperty.RegisterReadOnly(nameof(ShowImage), typeof(bool), typeof(JellyOrb), new PropertyMetadata(false));
+            DependencyProperty.RegisterReadOnly(nameof(ShowImage), typeof(bool), typeof(SlotOrb), new PropertyMetadata(false));
         
         public static readonly DependencyProperty ShowImageProperty = ShowImagePropertyKey.DependencyProperty;
 
         // [Fix] Dynamic Font Family Support
         private static readonly DependencyPropertyKey GlyphFontFamilyPropertyKey = 
-            DependencyProperty.RegisterReadOnly(nameof(GlyphFontFamily), typeof(System.Windows.Media.FontFamily), typeof(JellyOrb), 
+            DependencyProperty.RegisterReadOnly(nameof(GlyphFontFamily), typeof(System.Windows.Media.FontFamily), typeof(SlotOrb), 
                 new PropertyMetadata(new System.Windows.Media.FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets, Segoe UI Emoji")));
 
         public static readonly DependencyProperty GlyphFontFamilyProperty = GlyphFontFamilyPropertyKey.DependencyProperty;
@@ -219,6 +219,32 @@ namespace Pulsar.Views.Controls
         {
             get => (bool)GetValue(ShowImageProperty);
             private set => SetValue(ShowImagePropertyKey, value);
+        }
+
+        // ============================
+        // Circular HitTest Override
+        // ============================
+        protected override HitTestResult HitTestCore(PointHitTestParameters hitTestParameters)
+        {
+            double radius = ActualWidth / 2.0;
+            Point center = new Point(ActualWidth / 2.0, ActualHeight / 2.0);
+            Point pt = hitTestParameters.HitPoint;
+            double dx = pt.X - center.X;
+            double dy = pt.Y - center.Y;
+            if (dx * dx + dy * dy <= radius * radius)
+                return new PointHitTestResult(this, pt);
+            return null!;
+        }
+
+        protected override GeometryHitTestResult HitTestCore(GeometryHitTestParameters hitTestParameters)
+        {
+            double radius = ActualWidth / 2.0;
+            Point center = new Point(ActualWidth / 2.0, ActualHeight / 2.0);
+            EllipseGeometry circle = new EllipseGeometry(center, radius, radius);
+            IntersectionDetail detail = circle.FillContainsWithDetail(hitTestParameters.HitGeometry);
+            if (detail != IntersectionDetail.Empty)
+                return new GeometryHitTestResult(this, detail);
+            return null!;
         }
 
         private void RefreshIcon(string? key)

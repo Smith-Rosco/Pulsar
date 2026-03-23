@@ -54,7 +54,7 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <controls:JellyOrb Grid.Column="0"
+                        <controls:SlotOrb Grid.Column="0"
                                            IconKey="{Binding IconKey}"
                                            Size="32"
                                            Width="32" Height="32"
@@ -116,7 +116,7 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <controls:JellyOrb Grid.Column="0"
+                                    <controls:SlotOrb Grid.Column="0"
                                                        IconKey="{Binding Icon}"
                                                        Size="20"
                                                        Width="20" Height="20"

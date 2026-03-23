@@ -61,14 +61,7 @@
                                 </TransformGroup>
                             </Grid.RenderTransform>
 
-                            <Border Width="{Binding Size}"
-                                    Height="{Binding Size}"
-                                    CornerRadius="999"
-                                    Background="#330B1220"
-                                    BorderBrush="#40FFFFFF"
-                                    BorderThickness="1"/>
-
-                            <controls:JellyOrb RenderTransformOrigin="0.5,0.5"
+                            <controls:SlotOrb RenderTransformOrigin="0.5,0.5"
                                                IconKey="{Binding IconKey}"
                                                OrbImage="{Binding IconImage}"
                                                Label="{Binding Label}"
@@ -110,8 +103,8 @@
                             <ScaleTransform ScaleX="1" ScaleY="1"/>
                         </Grid.RenderTransform>
                         
-                        <!-- Normal JellyOrb (Overlay/Fallback) -->
-                        <controls:JellyOrb 
+                        <!-- Normal slot orb (overlay/fallback) -->
+                        <controls:SlotOrb 
                             DataContext="{Binding CenterSlot}"
                             Size="{Binding Size}"
                             IsActive="{Binding IsActive}"
@@ -122,9 +115,9 @@
                             BadgeCount="{Binding BadgeCount}"
                             CustomFill="{Binding CustomFillBrush}"
                             CustomStroke="{Binding CustomStrokeBrush}"
-                            CustomForeground="{Binding CustomForegroundBrush}">
-                             <controls:JellyOrb.Style>
-                                <Style TargetType="controls:JellyOrb">
+                             CustomForeground="{Binding CustomForegroundBrush}">
+                              <controls:SlotOrb.Style>
+                                <Style TargetType="controls:SlotOrb">
                                     <!-- Default: Transparent (Preview Visible) -->
                                     <Setter Property="IsTransparent" Value="True"/>
                                     <!-- [New] Hide Content if Preview is Visible -->
@@ -139,8 +132,8 @@
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                             </controls:JellyOrb.Style>
-                        </controls:JellyOrb>
+                              </controls:SlotOrb.Style>
+                        </controls:SlotOrb>
 
                         <!-- [New] Center Preview Layers (Fade & Scale) -->
                         <Grid IsHitTestVisible="False">

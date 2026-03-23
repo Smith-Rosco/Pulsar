@@ -213,9 +213,10 @@ namespace Pulsar.ViewModels
         [ObservableProperty]
         private bool _isEnabled = true;
 
-        // [New] Magnetic Animation Offset (from physics)
-        private double _magneticOffsetX;
-        private double _magneticOffsetY;
+        private const double MagneticSmoothFactor = 0.22;
+
+        private double _currentMagneticOffsetX;
+        private double _currentMagneticOffsetY;
 
         // [New] Combined Offset (Magnetic only) - Bound to XAML
         [ObservableProperty]
@@ -224,58 +225,38 @@ namespace Pulsar.ViewModels
         [ObservableProperty]
         private double _offsetY;
 
-        // [New] Physics Logic
-        private const double Stiffness = 0.2;  // Spring constant (How strong is the spring?)
-        private const double Damping = 0.75;   // Friction (How fast does it stop?)
-        
-        // Target offset driven by Mouse Magnetism
-        public double TargetOffsetX { get; set; }
-        public double TargetOffsetY { get; set; }
-
-        // [New] Physics Velocity for Spring Animation
-        public double VelocityX { get; set; }
-        public double VelocityY { get; set; }
+        public double DesiredOffsetX { get; set; }
+        public double DesiredOffsetY { get; set; }
 
         public void ResetAnimation()
         {
             CurrentScale = 1.0;   // [Fix] Start fully visible for instant response
             CurrentOpacity = 1.0; // [Fix] Start fully visible
-            _magneticOffsetX = 0;
-            _magneticOffsetY = 0;
+            _currentMagneticOffsetX = 0;
+            _currentMagneticOffsetY = 0;
             OffsetX = 0;
             OffsetY = 0;
-            VelocityX = 0;
-            VelocityY = 0;
-            TargetOffsetX = 0;
-            TargetOffsetY = 0;
+            DesiredOffsetX = 0;
+            DesiredOffsetY = 0;
         }
 
-        public void UpdatePhysics()
+        public void UpdateMagneticOffset()
         {
-            // 1. Spring Force (Hooke's Law: F = -k * x)
-            // Calculate force pulling towards TargetOffset
-            double forceX = (TargetOffsetX - _magneticOffsetX) * Stiffness;
-            double forceY = (TargetOffsetY - _magneticOffsetY) * Stiffness;
+            _currentMagneticOffsetX += (DesiredOffsetX - _currentMagneticOffsetX) * MagneticSmoothFactor;
+            _currentMagneticOffsetY += (DesiredOffsetY - _currentMagneticOffsetY) * MagneticSmoothFactor;
 
-            // 2. Apply Force to Velocity
-            VelocityX += forceX;
-            VelocityY += forceY;
+            if (Math.Abs(DesiredOffsetX - _currentMagneticOffsetX) < 0.05)
+            {
+                _currentMagneticOffsetX = DesiredOffsetX;
+            }
 
-            // 3. Apply Damping (Friction)
-            VelocityX *= Damping;
-            VelocityY *= Damping;
+            if (Math.Abs(DesiredOffsetY - _currentMagneticOffsetY) < 0.05)
+            {
+                _currentMagneticOffsetY = DesiredOffsetY;
+            }
 
-            // 4. Update Position
-            _magneticOffsetX += VelocityX;
-            _magneticOffsetY += VelocityY;
-
-            // Snap to zero if very close to stop jitter
-            if (Math.Abs(VelocityX) < 0.01 && Math.Abs(TargetOffsetX - _magneticOffsetX) < 0.01) _magneticOffsetX = TargetOffsetX;
-            if (Math.Abs(VelocityY) < 0.01 && Math.Abs(TargetOffsetY - _magneticOffsetY) < 0.01) _magneticOffsetY = TargetOffsetY;
-
-            // 5. Set final offset (magnetic only)
-            OffsetX = _magneticOffsetX;
-            OffsetY = _magneticOffsetY;
+            OffsetX = _currentMagneticOffsetX;
+            OffsetY = _currentMagneticOffsetY;
         }
     }
 

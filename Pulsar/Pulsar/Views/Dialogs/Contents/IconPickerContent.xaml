@@ -27,7 +27,7 @@
             <RowDefinition Height="Auto"/> 
         </Grid.RowDefinitions>
 
-        <!-- Search and Browse Section -->
+        <!-- Search Section (primary - always visible) -->
         <Grid Grid.Row="0" Margin="0,0,0,16">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -36,13 +36,15 @@
 
             <ui:TextBox x:Name="SearchBox" 
                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                        PlaceholderText="Filter system icons (e.g. 'settings', 'user')..." 
+                        PlaceholderText="Search icons..." 
                         Icon="{ui:SymbolIcon Search24}"/>
 
+            <!-- Upload Custom: secondary action, lower visual weight -->
             <ui:Button Grid.Column="1" Command="{Binding BrowseFileCommand}" Margin="12,0,0,0"
-                       Icon="{ui:SymbolIcon FolderOpen24}"
-                       Content="Browse File" 
-                       Style="{StaticResource PulsarSecondaryButtonStyle}"/>
+                       Icon="{ui:SymbolIcon ArrowUpload24}"
+                       Content="Upload Custom" 
+                       Style="{StaticResource PulsarSecondaryButtonStyle}"
+                       ToolTip="Use a custom image file as icon"/>
         </Grid>
 
         <!-- Icons Grid with Virtualization -->
@@ -122,7 +124,7 @@
         <Grid Grid.Row="2" Margin="0,20,0,0">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <TextBlock Text="Preview:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,12,0" VerticalAlignment="Center"/>
-                <controls:JellyOrb Size="42" IsActive="False" Margin="0,0,12,0" IconKey="{Binding SelectedKey}"/>
+                <controls:SlotOrb Size="42" IsActive="False" Margin="0,0,12,0" IconKey="{Binding SelectedKey}"/>
                 <StackPanel VerticalAlignment="Center">
                      <TextBlock Text="Selected Icon" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                      <TextBlock Text="{Binding SelectedKey}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxWidth="300"/>

@@ -34,12 +34,12 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Icon (JellyOrb) -->
+                <!-- Icon (slot orb) -->
                 <Border Grid.Column="0"
                         Style="{StaticResource SlotOrbContainerStyle}"
                         Margin="0,0,10,0"
                         Background="{Binding OrbBackground, ElementName=Root}">
-                    <controls:JellyOrb IconKey="{Binding IconKey, ElementName=Root}"
+                    <controls:SlotOrb IconKey="{Binding IconKey, ElementName=Root}"
                                        Size="28"
                                        Width="28"
                                        Height="28"

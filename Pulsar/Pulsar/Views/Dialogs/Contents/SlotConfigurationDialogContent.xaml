@@ -316,7 +316,7 @@
 
                         <Border Style="{StaticResource SlotOrbContainerStyle}"
                                 Background="{Binding Slot.Color, Converter={StaticResource HexToBrush}}">
-                            <controls:JellyOrb Size="28"
+                            <controls:SlotOrb Size="28"
                                                Width="28"
                                                Height="28"
                                                Margin="5"

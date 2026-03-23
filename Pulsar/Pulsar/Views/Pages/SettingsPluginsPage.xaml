@@ -196,7 +196,7 @@
                                      Description="Manage plugin lifecycle, health, and configuration">
             <controls:SettingsPageHeader.ActionsContent>
                 <StackPanel Orientation="Horizontal">
-                    <!-- Search Box -->
+                    <!-- Search Box (only visible on Built-in tab) -->
                     <ui:TextBox PlaceholderText="Search plugins..."
                                 Icon="{ui:SymbolIcon Search24}"
                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
@@ -227,8 +227,19 @@
             </controls:SettingsPageHeader.ActionsContent>
         </controls:SettingsPageHeader>
 
+        <!-- Tab Control: Built-in / External -->
+        <TabControl Grid.Row="1"
+                    x:Name="PluginsTabControl"
+                    SelectionChanged="OnPluginTabChanged"
+                    Margin="0,8,0,0"
+                    Background="Transparent"
+                    BorderThickness="0">
+
+            <!-- Built-in Plugins Tab -->
+            <TabItem Header="Built-in">
+
         <!-- Grouped List with Sticky Header Support -->
-        <Grid Grid.Row="1">
+        <Grid>
             <ScrollViewer x:Name="PluginsScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,16,0" Style="{StaticResource OverlayScrollViewerStyle}">
                 <Grid Width="{Binding ElementName=PluginsScroll, Path=ViewportWidth}">
                     <ItemsControl x:Name="PluginsItemsControl" ItemsSource="{Binding GroupedPlugins}">
@@ -435,5 +446,132 @@
             </Grid>
         </ScrollViewer>
     </Grid>
+            </TabItem>
+
+            <!-- External Plugins Tab -->
+            <TabItem Header="External">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- External: Install Button Row -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,8,0,8">
+                        <ui:Button Content="Install from File"
+                                   Command="{Binding ExternalPluginManager.InstallFromFileCommand}"
+                                   Icon="{ui:SymbolIcon FolderOpen24}"
+                                   Style="{StaticResource PulsarPrimaryButtonStyle}"
+                                   ToolTip="Install a plugin from a local ZIP file"/>
+                    </StackPanel>
+
+                    <!-- External: Scrollable List -->
+                    <ScrollViewer Grid.Row="1"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  Padding="0,8,16,0">
+                        <StackPanel>
+                            <!-- Loading -->
+                            <StackPanel Visibility="{Binding ExternalPluginManager.IsLoading, Converter={StaticResource BoolToVis}}"
+                                        HorizontalAlignment="Center" Margin="0,48,0,0">
+                                <ui:ProgressRing IsIndeterminate="True" Width="48" Height="48"/>
+                                <TextBlock Text="Loading external plugins..."
+                                           FontSize="14"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,16,0,0"/>
+                            </StackPanel>
+
+                            <!-- Plugin Cards -->
+                            <StackPanel Visibility="{Binding ExternalPluginManager.IsLoading, Converter={StaticResource InverseBoolToVisConverter}}">
+                                <TextBlock Text="{Binding ExternalPluginManager.InstalledPlugins.Count, StringFormat='Installed External Plugins ({0})'}"
+                                           FontSize="16" FontWeight="SemiBold" Margin="0,0,0,16"/>
+
+                                <ItemsControl ItemsSource="{Binding ExternalPluginManager.InstalledPlugins}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="{DynamicResource ControlFillColorDefaultBrush}"
+                                                    BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}"
+                                                    BorderThickness="1" CornerRadius="8"
+                                                    Padding="16" Margin="0,0,0,12">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <controls:SlotOrb Grid.Column="0" IconKey="{Binding Icon}" Size="48"
+                                                                       Width="48" Height="48" IsTransparent="True"
+                                                                       ShowActiveGlow="False" Margin="0,0,16,0"
+                                                                       VerticalAlignment="Top"/>
+                                                    <StackPanel Grid.Column="1">
+                                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                                            <TextBlock Text="{Binding Name}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{Binding Version, StringFormat='v{0}'}" FontSize="12"
+                                                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                                       VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                                        </StackPanel>
+                                                        <TextBlock Text="{Binding Author, StringFormat='by {0}'}" FontSize="12"
+                                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,8"/>
+                                                        <TextBlock Text="{Binding Description}" FontSize="13"
+                                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                                   TextWrapping="Wrap" Margin="0,0,0,8"/>
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                                        <ui:Button Content="Uninstall"
+                                                                   Command="{Binding DataContext.ExternalPluginManager.UninstallPluginCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                   CommandParameter="{Binding}"
+                                                                   Icon="{ui:SymbolIcon Delete24}"
+                                                                   Style="{StaticResource PulsarDangerButtonStyle}"
+                                                                   MinWidth="100"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- Empty State -->
+                                <Border Background="{DynamicResource ControlFillColorDefaultBrush}"
+                                        BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}"
+                                        BorderThickness="1" CornerRadius="8" Padding="48"
+                                        Visibility="{Binding ExternalPluginManager.InstalledPlugins.Count, Converter={StaticResource CollectionEmptyToVisibilityConverter}}">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <ui:SymbolIcon Symbol="Apps24" FontSize="64"
+                                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                       HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                                        <TextBlock Text="No external plugins installed" FontSize="18" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                   HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                        <TextBlock Text="Click 'Install from File' to add plugins from ZIP packages"
+                                                   FontSize="13" Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                   HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"
+                                                   MaxWidth="400" Margin="0,0,0,16"/>
+                                        <ui:Button Content="Install from File"
+                                                   Command="{Binding ExternalPluginManager.InstallFromFileCommand}"
+                                                   Icon="{ui:SymbolIcon FolderOpen24}"
+                                                   Style="{StaticResource PulsarPrimaryButtonStyle}"
+                                                   HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Status Bar -->
+                    <Border Grid.Row="2"
+                            Background="{DynamicResource ControlFillColorDefaultBrush}"
+                            BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}"
+                            BorderThickness="0,1,0,0" Padding="16,8">
+                        <TextBlock Text="{Binding ExternalPluginManager.StatusMessage}"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+        </TabControl>
     </Grid>
 </Page>
