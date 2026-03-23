@@ -8,17 +8,50 @@ using System.Windows.Media.Animation;
 
 namespace Pulsar.Views.Pages
 {
+    /// <summary>
+    /// Composite DataContext that exposes both plugin manager ViewModels.
+    /// </summary>
+    public class PluginsPageViewModel
+    {
+        public PluginManagerViewModel BuiltIn { get; }
+        public ExternalPluginManagerViewModel? ExternalPluginManager { get; }
+
+        // Forward commonly-bound properties from BuiltIn for existing XAML bindings
+        public System.Collections.ObjectModel.ObservableCollection<PluginGroup> GroupedPlugins => BuiltIn.GroupedPlugins;
+        public System.ComponentModel.ICollectionView FilteredPlugins => BuiltIn.FilteredPlugins;
+        public string SearchText { get => BuiltIn.SearchText; set => BuiltIn.SearchText = value; }
+        public System.Windows.Input.ICommand ClearSearchCommand => BuiltIn.ClearSearchCommand;
+        public System.Windows.Input.ICommand RefreshAllCommand => BuiltIn.RefreshAllCommand;
+
+        public PluginsPageViewModel(PluginManagerViewModel builtIn, ExternalPluginManagerViewModel? external)
+        {
+            BuiltIn = builtIn;
+            ExternalPluginManager = external;
+        }
+    }
+
     public partial class SettingsPluginsPage : Page
     {
-        public SettingsPluginsPage(PluginManagerViewModel viewModel, IThemeService themeService)
+        private readonly ExternalPluginManagerViewModel? _externalPluginManager;
+
+        public SettingsPluginsPage(PluginManagerViewModel viewModel, IThemeService themeService,
+            ExternalPluginManagerViewModel? externalPluginManager = null)
         {
             InitializeComponent();
-            DataContext = viewModel;
+            _externalPluginManager = externalPluginManager;
+
+            DataContext = new PluginsPageViewModel(viewModel, externalPluginManager);
 
             // Apply theme AFTER InitializeComponent().
-            // If applied before, the XAML-defined <Page.Resources> replaces the ResourceDictionary
-            // instance and discards injected dictionaries (ControlsDictionaries / ThemesDictionary / Pulsar Theme.*).
             themeService.ApplyTheme(this, themeService.CurrentTheme, updateGlobal: false);
+        }
+
+        private void OnPluginTabChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.TabControl tc && tc.SelectedIndex == 1 && _externalPluginManager != null)
+            {
+                _ = _externalPluginManager.InitializeAsync();
+            }
         }
 
         /// <summary>

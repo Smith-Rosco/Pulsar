@@ -31,7 +31,6 @@ namespace Pulsar.ViewModels.Dialogs
         public string DisplayProcessName => ProcessNameFormatter.ToDisplayName(ProcessName);
 
         public Action<DialogResult>? RequestClose { get; set; }
-        public bool IsScrollable => true;
 
         public EditProfileViewModel(IDialogService dialogService, IFuzzySearchService<IconItem> searchService, string processName, string alias, string iconKey)
         {

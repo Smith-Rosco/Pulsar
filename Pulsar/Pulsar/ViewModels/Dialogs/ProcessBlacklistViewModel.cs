@@ -24,7 +24,6 @@ namespace Pulsar.ViewModels.Dialogs
         private bool _isLoading;
 
         public Action<DialogResult>? RequestClose { get; set; }
-        public bool IsScrollable => true;
 
         public string Result { get; private set; } = string.Empty;
 

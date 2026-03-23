@@ -73,7 +73,6 @@ namespace Pulsar.ViewModels.Dialogs
 
         public string PluginName { get; }
         public Action<DialogResult>? RequestClose { get; set; }
-        public bool IsScrollable => false;
         public ObservableCollection<FilterOption<PluginLogLevel?>> LevelOptions { get; } = new()
         {
             new FilterOption<PluginLogLevel?>("All", null),

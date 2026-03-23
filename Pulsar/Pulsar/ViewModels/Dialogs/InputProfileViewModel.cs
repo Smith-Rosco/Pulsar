@@ -37,7 +37,6 @@ namespace Pulsar.ViewModels.Dialogs
         private bool _hasError;
 
         public Action<DialogResult>? RequestClose { get; set; }
-        public bool IsScrollable => true;
 
         public InputProfileViewModel(IWindowService windowService, IDialogService dialogService, IFuzzySearchService<IconItem> searchService, IEnumerable<string> existingProfiles)
         {

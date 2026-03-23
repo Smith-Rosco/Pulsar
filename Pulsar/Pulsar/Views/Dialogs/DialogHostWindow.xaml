@@ -105,86 +105,14 @@
                          ShowMinimize="{Binding ShowMaximizeButton, RelativeSource={RelativeSource AncestorType=Window}}"/>
 
             <!-- Content -->
-            <ScrollViewer Grid.Row="1"
-                          HorizontalScrollBarVisibility="Disabled"
-                          Padding="20,15,20,20">
-                <ScrollViewer.Style>
-                    <Style TargetType="ScrollViewer">
-                        <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsScrollable}" Value="False">
-                                <Setter Property="VerticalScrollBarVisibility" Value="Disabled"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </ScrollViewer.Style>
-                
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    
-                    <!-- Icon Area (only for string content with DialogType) -->
-                    <ui:SymbolIcon Grid.Column="0" 
-                                   FontSize="24" 
-                                   Margin="0,0,15,0"
-                                   VerticalAlignment="Top">
-                        <ui:SymbolIcon.Style>
-                            <Style TargetType="ui:SymbolIcon">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                                <Style.Triggers>
-                                    <!-- Show icon only for string content -->
-                                    <MultiDataTrigger>
-                                        <MultiDataTrigger.Conditions>
-                                            <Condition Binding="{Binding Content, Converter={StaticResource TypeConverter}, ConverterParameter={x:Type sys:String}}" Value="True"/>
-                                            <Condition Binding="{Binding DialogType}" Value="Info"/>
-                                        </MultiDataTrigger.Conditions>
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                        <Setter Property="Symbol" Value="Info24"/>
-                                        <Setter Property="Foreground" Value="#0078D4"/>
-                                    </MultiDataTrigger>
-                                    <MultiDataTrigger>
-                                        <MultiDataTrigger.Conditions>
-                                            <Condition Binding="{Binding Content, Converter={StaticResource TypeConverter}, ConverterParameter={x:Type sys:String}}" Value="True"/>
-                                            <Condition Binding="{Binding DialogType}" Value="Warning"/>
-                                        </MultiDataTrigger.Conditions>
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                        <Setter Property="Symbol" Value="Warning24"/>
-                                        <Setter Property="Foreground" Value="#FFA500"/>
-                                    </MultiDataTrigger>
-                                    <MultiDataTrigger>
-                                        <MultiDataTrigger.Conditions>
-                                            <Condition Binding="{Binding Content, Converter={StaticResource TypeConverter}, ConverterParameter={x:Type sys:String}}" Value="True"/>
-                                            <Condition Binding="{Binding DialogType}" Value="Error"/>
-                                        </MultiDataTrigger.Conditions>
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                        <Setter Property="Symbol" Value="ErrorCircle24"/>
-                                        <Setter Property="Foreground" Value="#D13438"/>
-                                    </MultiDataTrigger>
-                                    <MultiDataTrigger>
-                                        <MultiDataTrigger.Conditions>
-                                            <Condition Binding="{Binding Content, Converter={StaticResource TypeConverter}, ConverterParameter={x:Type sys:String}}" Value="True"/>
-                                            <Condition Binding="{Binding DialogType}" Value="Success"/>
-                                        </MultiDataTrigger.Conditions>
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                        <Setter Property="Symbol" Value="CheckmarkCircle24"/>
-                                        <Setter Property="Foreground" Value="#107C10"/>
-                                    </MultiDataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ui:SymbolIcon.Style>
-                    </ui:SymbolIcon>
-                    
-                    <!-- Content Area -->
-                    <ContentPresenter Grid.Column="1" Content="{Binding Content}"/>
-                </Grid>
-            </ScrollViewer>
+            <ContentPresenter Grid.Row="1"
+                              Margin="18,12,18,14"
+                              Content="{Binding Content}"/>
 
             <!-- Footer -->
             <Border Grid.Row="2"
                     Background="{DynamicResource Theme.Control.Background}"
-                    Padding="20,15"
+                    Padding="16,10"
                     CornerRadius="0,0,8,8">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <!-- Tertiary Button (e.g., "Don't Save" or "No" in 3-button dialogs) -->
@@ -218,27 +146,25 @@
                         </ui:Button.CommandParameter>
                     </ui:Button>
 
-                    <!-- Secondary Button (e.g., "Cancel") -->
+                    <!-- Secondary Button (e.g., "Cancel" or "Back" in wizard mode) -->
                     <ui:Button Content="{Binding SecondaryButtonText}"
                                Visibility="{Binding IsSecondaryButtonVisible, Converter={StaticResource BoolToVis}}"
                                Style="{StaticResource PulsarSecondaryButtonStyle}"
-                               Command="{Binding CloseCommand}"
                                Margin="0,0,10,0">
-                        <ui:Button.CommandParameter>
-                            <enums:DialogResult>Cancelled</enums:DialogResult>
-                        </ui:Button.CommandParameter>
+                        <ui:Button.Command>
+                            <Binding>
+                                <Binding.Path>WizardSecondaryCommand</Binding.Path>
+                            </Binding>
+                        </ui:Button.Command>
                     </ui:Button>
+                    <!-- (non-wizard secondary handled via WizardSecondaryCommand delegating to Close) -->
 
-                    <!-- Primary Button (e.g., "Save" or "OK") -->
+                    <!-- Primary Button (e.g., "OK"/"Next"/"Confirm" in wizard mode) -->
                     <ui:Button Content="{Binding PrimaryButtonText}"
                                Visibility="{Binding IsPrimaryButtonVisible, Converter={StaticResource BoolToVis}}"
                                Style="{StaticResource PulsarPrimaryButtonStyle}"
-                               Command="{Binding CloseCommand}"
-                               IsDefault="True">
-                        <ui:Button.CommandParameter>
-                            <enums:DialogResult>Confirmed</enums:DialogResult>
-                        </ui:Button.CommandParameter>
-                    </ui:Button>
+                               Command="{Binding WizardPrimaryCommand}"
+                               IsDefault="True"/>
                 </StackPanel>
             </Border>
         </Grid>

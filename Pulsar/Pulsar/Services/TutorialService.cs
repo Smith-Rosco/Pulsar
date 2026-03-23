@@ -19,6 +19,7 @@ namespace Pulsar.Services
         private readonly ILogger<TutorialService> _logger;
         private readonly TutorialOrchestrator _orchestrator;
         private bool _isTutorialActive;
+        private TutorialStep? _previousStep;
 
         public bool IsTutorialActive => _isTutorialActive;
         public bool HasCompletedTutorial { get; private set; }
@@ -62,13 +63,15 @@ namespace Pulsar.Services
         private void OnOrchestratorStepChanged(object? sender, TutorialStep step)
         {
             _isTutorialActive = true;
-            StepChanged?.Invoke(this, new TutorialStepChangedEventArgs(step, null));
+            StepChanged?.Invoke(this, new TutorialStepChangedEventArgs(step, _previousStep));
+            _previousStep = step;
         }
 
         private void OnOrchestratorCompleted(object? sender, EventArgs e)
         {
             _isTutorialActive = false;
             HasCompletedTutorial = true;
+            _previousStep = null;
             TutorialCompleted?.Invoke(this, EventArgs.Empty);
         }
 
@@ -76,6 +79,7 @@ namespace Pulsar.Services
         {
             _isTutorialActive = false;
             HasCompletedTutorial = true;
+            _previousStep = null;
             TutorialSkipped?.Invoke(this, EventArgs.Empty);
         }
 
@@ -103,6 +107,7 @@ namespace Pulsar.Services
 
             _logger.LogInformation("Starting tutorial");
             _isTutorialActive = true;
+            _previousStep = null;
 
             // Start the orchestrator
             try
@@ -156,6 +161,7 @@ namespace Pulsar.Services
             // Best-effort state sync (orchestrator also raises TutorialSkipped).
             _isTutorialActive = false;
             HasCompletedTutorial = true;
+            _previousStep = null;
         }
 
         public async Task CompleteTutorialAsync()
@@ -172,6 +178,7 @@ namespace Pulsar.Services
             // Best-effort state sync (orchestrator also raises TutorialCompleted).
             _isTutorialActive = false;
             HasCompletedTutorial = true;
+            _previousStep = null;
         }
 
         public async Task GoToStepAsync(string stepId)

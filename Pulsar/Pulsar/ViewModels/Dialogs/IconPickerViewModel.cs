@@ -34,7 +34,6 @@ namespace Pulsar.ViewModels.Dialogs
         private bool _isLoading = true;
 
         public Action<DialogResult>? RequestClose { get; set; }
-        public bool IsScrollable => false; 
 
         public IconPickerViewModel(IFuzzySearchService<IconItem> searchService, string initialKey = "")
         {

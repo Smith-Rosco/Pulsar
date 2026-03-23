@@ -7,6 +7,5 @@ namespace Pulsar.ViewModels.Base
     {
         Task<bool> CanCloseAsync(Pulsar.Models.Enums.DialogResult result);
         Action<Pulsar.Models.Enums.DialogResult>? RequestClose { get; set; }
-        bool IsScrollable { get; }
     }
 }

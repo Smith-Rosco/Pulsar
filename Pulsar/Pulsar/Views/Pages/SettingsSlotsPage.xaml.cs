@@ -48,6 +48,33 @@ namespace Pulsar.Views.Pages
                 await viewModel.RemoveSlot(slot);
             }
         }
+
+        /// <summary>
+        /// Context menu Edit item - opens slot configuration dialog.
+        /// PlacementTarget is the ExpandableCard's CardExpander, whose DataContext is the PluginSlot.
+        /// </summary>
+        private async void ContextEdit_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem mi
+                && mi.Tag is PluginSlot slot
+                && DataContext is SettingsViewModel viewModel)
+            {
+                await viewModel.OpenSlotConfiguration(slot);
+            }
+        }
+
+        /// <summary>
+        /// Context menu Remove item - shows Pulsar confirmation dialog.
+        /// </summary>
+        private async void ContextRemove_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem mi
+                && mi.Tag is PluginSlot slot
+                && DataContext is SettingsViewModel viewModel)
+            {
+                await viewModel.RemoveSlot(slot);
+            }
+        }
     }
 }
 

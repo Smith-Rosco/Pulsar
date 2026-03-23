@@ -69,17 +69,17 @@ namespace Pulsar.Services
             {
                 var vm = new DialogHostViewModel
                 {
-                    Title = title,
-                    Content = content
+                    Title = title
                 };
                 
                 if (content is IDialogViewModel dialogVm)
                 {
                     dialogVm.RequestClose = (result) => vm.CloseCommand.Execute(result);
-                    vm.IsScrollable = dialogVm.IsScrollable;
                 }
 
+                // ConfigureButtons first so wizard SyncFromWizard (triggered by Content setter) wins
                 vm.ConfigureButtons(buttons);
+                vm.Content = content;
 
                 return ShowDialogInternal(vm, DialogPlacement.CenterOwner, sizeConstraints);
             });
@@ -102,7 +102,7 @@ namespace Pulsar.Services
                 };
 
                 inputVm.RequestClose = (result) => vm.CloseCommand.Execute(result);
-                vm.IsScrollable = false;
+
 
                 var dialogResult = ShowDialogInternal(vm, DialogPlacement.CenterOwner, DialogSizeConstraints.Small);
 
@@ -370,7 +370,7 @@ namespace Pulsar.Services
                 };
 
                 colorPickerVm.RequestClose = (result) => vm.CloseCommand.Execute(result);
-                vm.IsScrollable = false;
+
 
                 var dialogResult = ShowDialogInternal(vm, DialogPlacement.CenterOwner, DialogSizeConstraints.Medium);
 

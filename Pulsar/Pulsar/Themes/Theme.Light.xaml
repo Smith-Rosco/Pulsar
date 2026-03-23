@@ -31,4 +31,16 @@
 
     <sys:Double x:Key="Theme.Orb.BlurOpacity">0.0</sys:Double>
 
+    <!-- Spacing Tokens (4px grid) -->
+    <sys:Double x:Key="Pulsar.Spacing.XS">4.0</sys:Double>
+    <sys:Double x:Key="Pulsar.Spacing.SM">8.0</sys:Double>
+    <sys:Double x:Key="Pulsar.Spacing.MD">16.0</sys:Double>
+    <sys:Double x:Key="Pulsar.Spacing.LG">24.0</sys:Double>
+    <sys:Double x:Key="Pulsar.Spacing.XL">32.0</sys:Double>
+
+    <!-- Animation Duration Tokens (milliseconds) -->
+    <sys:Double x:Key="Pulsar.Animation.Duration.Fast">120.0</sys:Double>
+    <sys:Double x:Key="Pulsar.Animation.Duration.Normal">220.0</sys:Double>
+    <sys:Double x:Key="Pulsar.Animation.Duration.Slow">380.0</sys:Double>
+
 </ResourceDictionary>

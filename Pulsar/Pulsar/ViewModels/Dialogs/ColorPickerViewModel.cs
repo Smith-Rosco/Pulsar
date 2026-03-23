@@ -38,7 +38,6 @@ namespace Pulsar.ViewModels.Dialogs
 
         public Action<Pulsar.Models.Enums.DialogResult>? RequestClose { get; set; }
 
-        public bool IsScrollable => false;
 
         public string SelectedHex => CurrentColor.ToString();
 
@@ -117,21 +116,16 @@ namespace Pulsar.ViewModels.Dialogs
             _isUpdating = false;
         }
 
-        public void SelectPreset(PresetItem preset)
+        [RelayCommand]
+        private void SelectPreset(PresetItem preset)
         {
-            CurrentColor = preset.Color;
             _isUpdating = true;
+            CurrentColor = preset.Color;
             R = preset.Color.R;
             G = preset.Color.G;
             B = preset.Color.B;
             HexInput = preset.Color.ToString();
             _isUpdating = false;
-        }
-
-        [RelayCommand]
-        private void SelectPresetCommand(PresetItem preset)
-        {
-            SelectPreset(preset);
         }
 
         private void InitializePresets()

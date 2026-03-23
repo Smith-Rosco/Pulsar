@@ -30,7 +30,6 @@ namespace Pulsar.ViewModels.Dialogs
         private bool _isLoading;
 
         public Action<DialogResult>? RequestClose { get; set; }
-        public bool IsScrollable => false; // ListBox handles scrolling
 
         public ProcessPickerViewModel(IWindowService windowService)
         {

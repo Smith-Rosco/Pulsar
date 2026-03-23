@@ -126,13 +126,12 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <ui:Button x:Name="RetryButton"
-                               Grid.Column="0"
-                               Content="重新定位"
-                               Style="{StaticResource PulsarSecondaryButtonStyle}"
-                               Click="OnRetryButtonClick"
-                               Visibility="Collapsed"
-                               Margin="0,0,12,0"/>
+                    <ui:Button x:Name="BackButton"
+                                Grid.Column="0"
+                                Content="上一步"
+                                Style="{StaticResource PulsarSecondaryButtonStyle}"
+                                Click="OnBackButtonClick"
+                                Margin="0,0,12,0"/>
 
                     <StackPanel x:Name="ButtonPanel"
                                Grid.Column="2"

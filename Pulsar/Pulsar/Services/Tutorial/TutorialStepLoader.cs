@@ -209,8 +209,8 @@ namespace Pulsar.Services.Tutorial
                 new TutorialStep
                 {
                     Id = "step1_welcome",
-                    Title = "欢迎使用 Pulsar",
-                    Description = "Pulsar 是一个基于肌肉记忆的快速启动器\n让我们用 30 秒了解核心功能\n\n核心特性：\n• 全局热键触发，无需鼠标\n• 两种模式：切换窗口 & 执行命令\n• 空间定位，盲操作友好",
+                    Title = "欢迎使用 Pulsar！",
+                    Description = "Pulsar 是一个以肌肉记忆为核心的径向启动器。首次上手先掌握这三件事：\n\n1. 任务模式 `Ctrl+Q`：快速切换或启动常用应用\n2. 动作模式 `Ctrl+Shift+Q`：执行当前上下文里的命令槽位\n3. Settings > Slots：所有槽位都在这里配置\n\n这一轮教程会优先带你走完最短闭环：打开设置、添加一个切换槽位、再添加一个动作槽位。",
                     Type = TutorialStepType.Instruction,
                     FocusMode = TutorialFocusMode.AlwaysFocused,
                     Layout = new TutorialLayout
@@ -231,8 +231,11 @@ namespace Pulsar.Services.Tutorial
                 {
                     Id = "step2_open_settings",
                     Title = "打开设置界面",
-                    Description = "请左键单击任务栏托盘中的 Pulsar 图标\n（或右键选择\"设置\"）\n\n💡 提示：托盘图标通常在屏幕右下角",
+                    Description = "先进入设置界面。后续的教程都会围绕 Settings 中的 Slots 页面完成。\n\n你可以直接点击下方“打开设置”，也可以从系统托盘里的 Pulsar 图标进入设置。",
                     Type = TutorialStepType.WaitForAction,
+                    PrimaryAction = TutorialPrimaryAction.OpenSettingsWindow,
+                    PrimaryButtonText = "打开设置",
+                    WaitHintText = "点击“打开设置”后会自动进入下一步；如果没有响应，也可以通过托盘图标打开设置。",
                     FocusMode = TutorialFocusMode.AlwaysObserving,
                     Target = new TutorialTarget
                     {
@@ -254,8 +257,8 @@ namespace Pulsar.Services.Tutorial
                 new TutorialStep
                 {
                     Id = "step3_settings_overview",
-                    Title = "设置界面导览",
-                    Description = "这里可以配置 Pulsar 的所有功能：\n\n• 常规 - 热键、主题、启动项\n• 槽位配置 - 为不同应用配置快捷操作\n• 插件 - 管理功能扩展\n\n每个 Profile 可配置不同的槽位：\n• 通过顶部下拉框切换 Profile\n• 每个 Profile 的槽位独立配置",
+                    Title = "先认识设置结构",
+                    Description = "Pulsar 的配置入口主要有三块：\n\n• General：热键、主题和启动行为\n• Slots：配置任务模式 / 动作模式的槽位\n• Plugins：查看和管理已安装插件\n\n本次教程只聚焦最关键的 Slots 页面，因为它决定径向菜单里真正会出现什么。",
                     Type = TutorialStepType.Instruction,
                     FocusMode = TutorialFocusMode.AlwaysObserving,
                     Target = new TutorialTarget

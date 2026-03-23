@@ -20,7 +20,6 @@
 
             <BooleanToVisibilityConverter x:Key="BoolToVis"/>
             <converters:HexToBrushConverter x:Key="HexToBrush"/>
-            <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVis"/>
             <converters:SlotBrushConverter x:Key="SlotBrushConverter"/>
 
             <DataTemplate x:Key="DialogSlotParameterFieldTemplate" DataType="{x:Type models:SlotParameterEditorField}">
@@ -34,7 +33,6 @@
                         <Grid Margin="0,0,0,8">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
@@ -50,28 +48,22 @@
                                            Visibility="{Binding IsRequired, Converter={StaticResource BoolToVis}}"/>
                             </StackPanel>
 
-                            <Border Grid.Column="1"
-                                    Background="{DynamicResource ControlFillColorSecondaryBrush}"
-                                    CornerRadius="999"
-                                    Padding="8,2"
-                                    Margin="8,0,0,0"
-                                    VerticalAlignment="Center"
-                                    Visibility="{Binding IsOptional, Converter={StaticResource BoolToVis}}">
-                                <TextBlock Text="Optional"
-                                           FontSize="10"
-                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                            </Border>
-
-                            <ui:Button Grid.Column="2"
+                            <ui:Button Grid.Column="1"
                                        Width="28"
                                        Height="28"
-                                       Margin="6,0,0,0"
+                                       Margin="8,0,0,0"
                                        Icon="{ui:SymbolIcon Info24}"
                                        Style="{StaticResource PulsarIconButtonStyle}"
                                        ToolTip="{Binding HelpTooltipText}"
-                                       Visibility="{Binding HasHelpContent, Converter={StaticResource BoolToVis}}"
-                                       Focusable="True"/>
+                                       Visibility="{Binding HasHelpContent, Converter={StaticResource BoolToVis}}"/>
                         </Grid>
+
+                        <TextBlock Text="{Binding Description}"
+                                   Margin="0,0,0,8"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   TextWrapping="Wrap"
+                                   Visibility="{Binding HasDescription, Converter={StaticResource BoolToVis}}"/>
 
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -91,13 +83,6 @@
                                        Visibility="{Binding HasPicker, Converter={StaticResource BoolToVis}}"
                                        Style="{StaticResource PulsarSecondaryButtonStyle}"/>
                         </Grid>
-
-                        <TextBlock Text="{Binding ValidationMessage}"
-                                   Margin="0,6,0,0"
-                                   Foreground="{DynamicResource SystemFillColorCautionBrush}"
-                                   FontSize="11"
-                                   TextWrapping="Wrap"
-                                   Visibility="{Binding HasValidationMessage, Converter={StaticResource BoolToVis}}"/>
                     </StackPanel>
                 </Border>
             </DataTemplate>
@@ -107,7 +92,9 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*" MinHeight="100" MaxHeight="480"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*" MinHeight="360"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <Border Grid.Row="0"
@@ -116,274 +103,199 @@
                 BorderThickness="1"
                 CornerRadius="10"
                 Padding="12,10"
-                Margin="0,0,0,10">
-            <StackPanel>
-                <Grid Margin="0,0,0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <TextBlock Text="{Binding StepTitle}"
-                               FontSize="11"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-
-                    <Border Grid.Column="1"
-                            Background="{DynamicResource ControlFillColorDefaultBrush}"
-                            BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
-                            BorderThickness="1"
-                            CornerRadius="999"
-                            Padding="8,2">
-                        <TextBlock Text="{Binding StepShortLabel}"
-                                   FontSize="10"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                    </Border>
-                </Grid>
-
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="12"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="12"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-
-                    <Border Grid.Column="0"
-                            Background="Transparent"
-                            CornerRadius="8"
-                            Padding="8,6">
-                        <Border.Style>
-                            <Style TargetType="Border">
-                                <Setter Property="Background" Value="Transparent"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsStep0}" Value="True">
-                                        <Setter Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-                        <StackPanel>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Width="22"
-                                Height="22"
-                                CornerRadius="11"
-                                VerticalAlignment="Center">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Setter Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsStep0}" Value="False">
-                                            <Setter Property="Background" Value="{DynamicResource SystemFillColorSuccessBrush}"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
-                            <TextBlock Text="1"
-                                       Foreground="White"
-                                       FontWeight="SemiBold"
-                                       FontSize="11"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"/>
-                        </Border>
-                        <TextBlock Text="Identity"
-                                   FontSize="12"
-                                   FontWeight="SemiBold"
-                                   Margin="8,0,0,0"
-                                   VerticalAlignment="Center"
-                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                        </StackPanel>
-                        </StackPanel>
-                    </Border>
-
-                    <Rectangle Grid.Column="1"
-                               Height="1"
-                               VerticalAlignment="Center"
-                               Fill="{DynamicResource ControlStrokeColorSecondaryBrush}"/>
-
-                    <Border Grid.Column="2"
-                            Background="Transparent"
-                            CornerRadius="8"
-                            Padding="8,6">
-                        <Border.Style>
-                            <Style TargetType="Border">
-                                <Setter Property="Background" Value="Transparent"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsStep1}" Value="True">
-                                        <Setter Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-                        <StackPanel>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Width="22"
-                                Height="22"
-                                CornerRadius="11"
-                                VerticalAlignment="Center">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Setter Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsStep1}" Value="True">
-                                            <Setter Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding IsStep2}" Value="True">
-                                            <Setter Property="Background" Value="{DynamicResource SystemFillColorSuccessBrush}"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
-                            <TextBlock Text="2"
-                                       Foreground="White"
-                                       FontWeight="SemiBold"
-                                       FontSize="11"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"/>
-                        </Border>
-                        <TextBlock Text="Behavior"
-                                   FontSize="12"
-                                   FontWeight="SemiBold"
-                                   Margin="8,0,0,0"
-                                   VerticalAlignment="Center"
-                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                        </StackPanel>
-                        </StackPanel>
-                    </Border>
-
-                    <Rectangle Grid.Column="3"
-                               Height="1"
-                               VerticalAlignment="Center"
-                               Fill="{DynamicResource ControlStrokeColorSecondaryBrush}"/>
-
-                    <Border Grid.Column="4"
-                            Background="Transparent"
-                            CornerRadius="8"
-                            Padding="8,6">
-                        <Border.Style>
-                            <Style TargetType="Border">
-                                <Setter Property="Background" Value="Transparent"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsStep2}" Value="True">
-                                        <Setter Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-                        <StackPanel>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Width="22"
-                                Height="22"
-                                CornerRadius="11"
-                                VerticalAlignment="Center">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Setter Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsStep2}" Value="True">
-                                            <Setter Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
-                            <TextBlock Text="3"
-                                       Foreground="White"
-                                       FontWeight="SemiBold"
-                                       FontSize="11"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"/>
-                        </Border>
-                        <TextBlock Text="Review"
-                                   FontSize="12"
-                                   FontWeight="SemiBold"
-                                   Margin="8,0,0,0"
-                                   VerticalAlignment="Center"
-                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                        </StackPanel>
-                        </StackPanel>
-                    </Border>
-                </Grid>
-
-                <Border Style="{StaticResource SlotPreviewPanelStyle}">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="48"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-
-                        <Border Style="{StaticResource SlotOrbContainerStyle}"
-                                Background="{Binding Slot.Color, Converter={StaticResource HexToBrush}}">
-                            <controls:SlotOrb Size="28"
-                                               Width="28"
-                                               Height="28"
-                                               Margin="5"
-                                               IsActive="False"
-                                               IsHitTestVisible="False"
-                                               ShowActiveGlow="False"
-                                               IsTransparent="True"
-                                               IconKey="{Binding Slot.IconKey}"/>
-                        </Border>
-
-                        <StackPanel Grid.Column="1" Margin="12,0,0,0">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="{Binding PreviewTitle}"
-                                           FontSize="13"
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                                <Border Style="{StaticResource SlotChipBorderStyle}">
-                                    <TextBlock Text="{Binding PreviewTypeBadge}"
-                                               Style="{StaticResource SlotValueChipTextStyle}"
-                                               FontSize="10"
-                                               Foreground="{Binding Slot.TypeToneKey, Converter={StaticResource SlotBrushConverter}, ConverterParameter=Type}"/>
-                                </Border>
-                            </StackPanel>
-
-                            <TextBlock Text="{Binding PreviewActionText}"
-                                       FontSize="11"
-                                       Margin="0,3,0,0"
-                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                        </StackPanel>
-
-                        <TextBlock Grid.Column="2"
-                                   Text="{Binding PreviewStepHint}"
-                                   Width="120"
-                                   Margin="12,0,0,0"
-                                   VerticalAlignment="Center"
-                                   TextAlignment="Right"
-                                   TextTrimming="CharacterEllipsis"
-                                   FontSize="10"
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                    </Grid>
-                </Border>
-            </StackPanel>
-        </Border>
-
-        <ScrollViewer Grid.Row="1"
-                      Visibility="{Binding IsStep0, Converter={StaticResource BoolToVis}}"
-                      VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled"
-                      Padding="0,0,4,0">
+                Margin="0,0,0,8">
             <StackPanel>
                 <TextBlock Text="{Binding HeaderText}"
                            FontSize="15"
                            FontWeight="SemiBold"
-                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                           Margin="0,0,0,4"/>
-                <TextBlock Text="Set the essentials that help this slot feel distinct in the radial menu."
+                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                <TextBlock Text="{Binding HeaderDescription}"
+                           Margin="0,2,0,0"
                            FontSize="11"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                           Margin="0,0,0,10"/>
+                           TextWrapping="Wrap"/>
+            </StackPanel>
+        </Border>
 
-                <Border Background="{DynamicResource ControlFillColorDefaultBrush}"
+        <Border Grid.Row="1"
+                Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                BorderThickness="1"
+                CornerRadius="10"
+                Padding="10,8"
+                Margin="0,0,0,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="40"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Style="{StaticResource SlotOrbContainerStyle}"
+                        Background="{Binding Slot.Color, Converter={StaticResource HexToBrush}}">
+                    <controls:SlotOrb Size="24"
+                                       Width="24"
+                                       Height="24"
+                                       Margin="4"
+                                       IsActive="False"
+                                       IsHitTestVisible="False"
+                                       ShowActiveGlow="False"
+                                       IsTransparent="True"
+                                       IconKey="{Binding Slot.IconKey}"/>
+                </Border>
+
+                <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding PreviewTitle}"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                        <Border Style="{StaticResource SlotChipBorderStyle}">
+                            <TextBlock Text="{Binding PreviewTypeBadge}"
+                                       Style="{StaticResource SlotValueChipTextStyle}"
+                                       FontSize="9"
+                                       Foreground="{Binding Slot.TypeToneKey, Converter={StaticResource SlotBrushConverter}, ConverterParameter=Type}"/>
+                        </Border>
+                    </StackPanel>
+
+                    <TextBlock Text="{Binding PreviewActionText}"
+                               Margin="0,2,0,0"
+                               FontSize="10"
+                               TextTrimming="CharacterEllipsis"
+                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                </StackPanel>
+
+                <Border Grid.Column="2"
+                        Style="{StaticResource SlotBadgeBorderStyle}">
+                    <TextBlock Text="{Binding PreviewHealthBadge}"
+                               FontSize="9"
+                               FontWeight="SemiBold"
+                               Foreground="{Binding PreviewHealthToneKey, Converter={StaticResource SlotBrushConverter}, ConverterParameter=Health}"/>
+                </Border>
+            </Grid>
+        </Border>
+
+        <ScrollViewer Grid.Row="2"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <StackPanel>
+                <Border Background="{DynamicResource ControlFillColorSecondaryBrush}"
                         BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
                         BorderThickness="1"
                         CornerRadius="10"
-                        Padding="14">
+                        Padding="12"
+                        Margin="0,0,0,8">
                     <StackPanel>
-                        <TextBlock Text="Basic identity"
+                        <TextBlock Text="Behavior"
+                                   FontSize="13"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                   Margin="0,0,0,10"/>
+
+                        <StackPanel Visibility="{Binding HasSingleAction, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="{Binding Slot.ActionLabel}"
+                                       FontSize="13"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                            <TextBlock Text="{Binding Slot.ActionDescription}"
+                                       Margin="0,4,0,0"
+                                       FontSize="12"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                        </StackPanel>
+
+                        <StackPanel Visibility="{Binding UseRadioActions, Converter={StaticResource BoolToVis}}">
+                            <ItemsControl ItemsSource="{Binding AvailableActions}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{DynamicResource ControlFillColorDefaultBrush}"
+                                                BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="8"
+                                                Padding="10,8"
+                                                Margin="0,0,0,8">
+                                            <RadioButton Content="{Binding Label}"
+                                                         ToolTip="{Binding Description}"
+                                                         IsChecked="{Binding IsSelected}"
+                                                         GroupName="EditSlotActionGroup"
+                                                         Click="ActionRadio_Click"
+                                                         Tag="{Binding Value}"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+
+                        <StackPanel Visibility="{Binding UseComboActions, Converter={StaticResource BoolToVis}}">
+                            <ComboBox ItemsSource="{Binding AvailableActions}"
+                                      SelectedValuePath="Value"
+                                      DisplayMemberPath="Label"
+                                      SelectedValue="{Binding Slot.Action}"
+                                      SelectionChanged="ActionComboBox_SelectionChanged"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border CornerRadius="8"
+                        Padding="12,10"
+                        Margin="0,0,0,8"
+                        Visibility="{Binding HasValidationSummary, Converter={StaticResource BoolToVis}}">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBackgroundBrush}"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCautionBrush}"/>
+                            <Setter Property="BorderThickness" Value="1"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ValidationSeverity}" Value="Error">
+                                    <Setter Property="Background" Value="{DynamicResource SystemFillColorCriticalBackgroundBrush}"/>
+                                    <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <TextBlock Text="{Binding ValidationSummary}"
+                               FontSize="12"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                </Border>
+
+                <StackPanel Visibility="{Binding HasRequiredParameters, Converter={StaticResource BoolToVis}}"
+                            Margin="0,0,0,4">
+                    <TextBlock Text="Required details"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                               Margin="0,0,0,10"/>
+                    <ItemsControl ItemsSource="{Binding RequiredParameters}"
+                                  ItemTemplate="{StaticResource DialogSlotParameterFieldTemplate}"/>
+                </StackPanel>
+
+                <StackPanel Visibility="{Binding HasOptionalParameters, Converter={StaticResource BoolToVis}}"
+                            Margin="0,8,0,4">
+                    <Expander Header="Optional details" IsExpanded="False">
+                        <ItemsControl Margin="0,10,0,0"
+                                      ItemsSource="{Binding OptionalParameters}"
+                                      ItemTemplate="{StaticResource DialogSlotParameterFieldTemplate}"/>
+                    </Expander>
+                </StackPanel>
+
+                <StackPanel Visibility="{Binding HasAdvancedParameters, Converter={StaticResource BoolToVis}}"
+                            Margin="0,8,0,12">
+                    <Expander Header="Advanced" IsExpanded="False">
+                        <ItemsControl Margin="0,10,0,0"
+                                      ItemsSource="{Binding AdvancedParameters}"
+                                      ItemTemplate="{StaticResource DialogSlotParameterFieldTemplate}"/>
+                    </Expander>
+                </StackPanel>
+
+                <Border Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                        BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                        BorderThickness="1"
+                        CornerRadius="10"
+                        Padding="12"
+                        Margin="0,0,0,8">
+                    <StackPanel>
+                        <TextBlock Text="Appearance"
                                    FontSize="13"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
@@ -426,7 +338,7 @@
                             </Border>
 
                             <TextBlock Grid.Column="1"
-                                       Text="Use a distinct color to help the slot stand out in the ring."
+                                       Text="Adjust the ring color only when the default no longer fits the slot's role."
                                        Margin="12,0,0,0"
                                        VerticalAlignment="Center"
                                        FontSize="12"
@@ -459,232 +371,77 @@
                         </Grid>
                     </StackPanel>
                 </Border>
-            </StackPanel>
-        </ScrollViewer>
 
-        <ScrollViewer Grid.Row="1"
-                      Visibility="{Binding IsStep1, Converter={StaticResource BoolToVis}}"
-                      VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled"
-                      Padding="0,0,4,0">
-            <StackPanel>
-                <TextBlock Text="Configure behavior"
-                           FontSize="15"
-                           FontWeight="SemiBold"
-                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                           Margin="0,0,0,4"/>
-                <TextBlock Text="Define what happens when this slot is triggered and provide any required parameters."
-                           FontSize="11"
-                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                           Margin="0,0,0,10"/>
-
-                <Border Background="{DynamicResource ControlFillColorDefaultBrush}"
+                <Border Background="{DynamicResource ControlFillColorSecondaryBrush}"
                         BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
                         BorderThickness="1"
                         CornerRadius="10"
-                        Padding="14"
-                        Margin="0,0,0,12">
+                        Padding="12">
                     <StackPanel>
-                        <TextBlock Text="Action"
+                        <TextBlock Text="Summary"
                                    FontSize="13"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                    Margin="0,0,0,10"/>
 
-                        <StackPanel Visibility="{Binding HasSingleAction, Converter={StaticResource BoolToVis}}">
-                            <TextBlock Text="{Binding Slot.ActionLabel}"
-                                       FontSize="13"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                            <TextBlock Text="{Binding Slot.ActionDescription}"
-                                       Margin="0,4,0,0"
-                                       FontSize="12"
-                                       TextWrapping="Wrap"
-                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                       Visibility="{Binding HasActionDescription, Converter={StaticResource BoolToVis}}"/>
-                        </StackPanel>
-
-                        <StackPanel Visibility="{Binding UseRadioActions, Converter={StaticResource BoolToVis}}">
-                            <ItemsControl ItemsSource="{Binding AvailableActions}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Background="{DynamicResource ControlFillColorSecondaryBrush}"
-                                                BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
-                                                BorderThickness="1"
-                                                CornerRadius="8"
-                                                Padding="10,8"
-                                                Margin="0,0,0,8">
-                                            <RadioButton Content="{Binding Label}"
-                                                         ToolTip="{Binding Description}"
-                                                         IsChecked="{Binding IsSelected}"
-                                                         GroupName="SlotActionGroup"
-                                                         Click="ActionRadio_Click"
-                                                         Tag="{Binding Value}"/>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </StackPanel>
-
-                        <StackPanel Visibility="{Binding UseComboActions, Converter={StaticResource BoolToVis}}">
-                            <ComboBox ItemsSource="{Binding AvailableActions}"
-                                      SelectedValuePath="Value"
-                                      DisplayMemberPath="Label"
-                                      SelectedValue="{Binding Slot.Action}"
-                                      SelectionChanged="ActionComboBox_SelectionChanged"/>
-                        </StackPanel>
+                        <ItemsControl ItemsSource="{Binding SummaryTokens}"
+                                      Visibility="{Binding HasSummaryTokens, Converter={StaticResource BoolToVis}}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource SlotSummaryTokenBorderStyle}">
+                                        <TextBlock Text="{Binding}"
+                                                   Style="{StaticResource SlotSummaryTokenTextStyle}"/>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </StackPanel>
                 </Border>
-
-                <Border CornerRadius="8"
-                        Padding="12,10"
-                        Margin="0,0,0,12"
-                        Visibility="{Binding HasValidationSummary, Converter={StaticResource BoolToVis}}">
-                    <Border.Style>
-                        <Style TargetType="Border">
-                            <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBackgroundBrush}"/>
-                            <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCautionBrush}"/>
-                            <Setter Property="BorderThickness" Value="1"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding ValidationSeverity}" Value="Error">
-                                    <Setter Property="Background" Value="{DynamicResource SystemFillColorCriticalBackgroundBrush}"/>
-                                    <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <ui:SymbolIcon Symbol="Warning24"
-                                       FontSize="16"
-                                       Margin="0,0,8,0"
-                                       VerticalAlignment="Top">
-                            <ui:SymbolIcon.Style>
-                                <Style TargetType="ui:SymbolIcon">
-                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding ValidationSeverity}" Value="Error">
-                                            <Setter Property="Symbol" Value="ErrorCircle24"/>
-                                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </ui:SymbolIcon.Style>
-                        </ui:SymbolIcon>
-
-                        <TextBlock Grid.Column="1"
-                                   Text="{Binding ValidationSummary}"
-                                   FontSize="12"
-                                   TextWrapping="Wrap"
-                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                    </Grid>
-                </Border>
-
-                <StackPanel Visibility="{Binding HasRequiredParameters, Converter={StaticResource BoolToVis}}"
-                            Margin="0,0,0,4">
-                    <TextBlock Text="Configuration"
-                               FontSize="12"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                               Margin="0,0,0,10"/>
-                    <ItemsControl ItemsSource="{Binding RequiredParameters}"
-                                  ItemTemplate="{StaticResource DialogSlotParameterFieldTemplate}"/>
-                </StackPanel>
-
-                <StackPanel Visibility="{Binding HasOptionalParameters, Converter={StaticResource BoolToVis}}"
-                            Margin="0,8,0,4">
-                    <TextBlock Text="Options"
-                               FontSize="12"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                               Margin="0,0,0,10"/>
-                    <ItemsControl ItemsSource="{Binding OptionalParameters}"
-                                  ItemTemplate="{StaticResource DialogSlotParameterFieldTemplate}"/>
-                </StackPanel>
-
-                <StackPanel Visibility="{Binding HasAdvancedParameters, Converter={StaticResource BoolToVis}}"
-                            Margin="0,8,0,0">
-                    <TextBlock Text="Advanced"
-                               FontSize="12"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                               Margin="0,0,0,10"/>
-                    <ItemsControl ItemsSource="{Binding AdvancedParameters}"
-                                  ItemTemplate="{StaticResource DialogSlotParameterFieldTemplate}"/>
-                </StackPanel>
             </StackPanel>
         </ScrollViewer>
 
-        <ScrollViewer Grid.Row="1"
-                      Visibility="{Binding IsStep2, Converter={StaticResource BoolToVis}}"
-                      VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled"
-                      Padding="0,0,4,0">
-            <StackPanel>
-                <TextBlock Text="Finalize slot"
-                           FontSize="15"
-                           FontWeight="SemiBold"
-                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                           Margin="0,0,0,4"/>
-                <TextBlock Text="Review the final label and manage this slot if you no longer need it."
-                           FontSize="11"
-                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                           Margin="0,0,0,10"/>
+        <Expander Grid.Row="3"
+                  Header="More actions"
+                  Margin="0,8,0,0"
+                  HorizontalAlignment="Stretch">
+            <Border Background="{DynamicResource SystemFillColorCriticalBackgroundBrush}"
+                    BorderBrush="{DynamicResource SystemFillColorCriticalBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="12,10"
+                    Margin="0,8,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                <Border Background="{DynamicResource ControlFillColorDefaultBrush}"
-                        BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
-                        BorderThickness="1"
-                        CornerRadius="10"
-                        Padding="14"
-                        Margin="0,0,0,12">
-                    <StackPanel>
-                        <TextBlock Text="Display label"
-                                   FontSize="12"
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Danger zone"
                                    FontWeight="SemiBold"
-                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                   Margin="0,0,0,6"/>
-                        <ui:TextBox Text="{Binding Slot.Label, UpdateSourceTrigger=PropertyChanged}"
-                                    PlaceholderText="Display label"/>
+                                   FontSize="12"
+                                   Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                        <TextBlock Text="Delete this slot permanently when it is no longer needed."
+                                   FontSize="11"
+                                   Margin="0,3,0,0"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                     </StackPanel>
-                </Border>
 
-                <Border Background="{DynamicResource SystemFillColorCriticalBackgroundBrush}"
-                        BorderBrush="{DynamicResource SystemFillColorCriticalBrush}"
-                        BorderThickness="1"
-                        CornerRadius="10"
-                        Padding="14,12">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="Danger zone"
-                                       FontWeight="SemiBold"
-                                       FontSize="13"
-                                       Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
-                            <TextBlock Text="Delete this slot permanently. This action cannot be undone."
-                                       FontSize="12"
-                                       Margin="0,4,0,0"
-                                       TextWrapping="Wrap"
-                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                        </StackPanel>
-
-                        <ui:Button Grid.Column="1"
-                                   Content="Delete Slot"
-                                   Icon="{ui:SymbolIcon Delete24}"
-                                   Style="{StaticResource PulsarDangerButtonStyle}"
-                                   Click="RemoveSlot_Click"
-                                   ToolTip="Permanently remove this slot"
-                                   Margin="12,0,0,0"/>
-                    </Grid>
-                </Border>
-            </StackPanel>
-        </ScrollViewer>
+                    <ui:Button Grid.Column="1"
+                               Content="Delete Slot"
+                               Icon="{ui:SymbolIcon Delete24}"
+                               Style="{StaticResource PulsarDangerButtonStyle}"
+                               Click="RemoveSlot_Click"
+                               ToolTip="Permanently remove this slot"
+                               Margin="12,0,0,0"/>
+                </Grid>
+            </Border>
+        </Expander>
     </Grid>
 </UserControl>

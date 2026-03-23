@@ -82,7 +82,7 @@ namespace Pulsar.Views
             // Initialize Pages with the shared ViewModel
             _generalPage = new SettingsGeneralPage(viewModel);
             _slotsPage = new SettingsSlotsPage(viewModel);
-            _pluginsPage = new SettingsPluginsPage(_pluginManager, _themeService); // [New]
+            _pluginsPage = new SettingsPluginsPage(_pluginManager, _themeService, _externalPluginManager); // [Merged]
             _externalPluginsPage = new SettingsExternalPluginsPage(_externalPluginManager, _themeService); // [External Plugins]
             _aboutPage = new SettingsAboutPage(new AboutViewModel()); // [New]
 
@@ -109,15 +109,15 @@ namespace Pulsar.Views
                         RootFrame.Navigate(_pluginsPage);
                         if (RootNavigation.MenuItems[2] is NavigationViewItem navItem) navItem.IsActive = true;
                     }
-                    else if (_viewModel.CurrentView == "ExternalPlugins")
+                    else if (_viewModel.CurrentView == "ExternalPlugins" || _viewModel.CurrentView == "Plugins")
                     {
-                        RootFrame.Navigate(_externalPluginsPage);
-                        if (RootNavigation.MenuItems[3] is NavigationViewItem navItem) navItem.IsActive = true;
+                        RootFrame.Navigate(_pluginsPage);
+                        if (RootNavigation.MenuItems[2] is NavigationViewItem navItem) navItem.IsActive = true;
                     }
                     else if (_viewModel.CurrentView == "About")
                     {
                         RootFrame.Navigate(_aboutPage);
-                        if (RootNavigation.MenuItems[4] is NavigationViewItem navItem) navItem.IsActive = true;
+                        if (RootNavigation.MenuItems[3] is NavigationViewItem navItem) navItem.IsActive = true;
                     }
                     else
                     {
@@ -176,8 +176,9 @@ namespace Pulsar.Views
                  // ViewModel: "Settings", "Slots", "Plugins", "About"
                  // UI Tags: "General", "Slots", "Plugins", "About"
                  
-                 string targetTag = _viewModel.CurrentView;
-                 if (targetTag == "Settings") targetTag = "General";
+                  string targetTag = _viewModel.CurrentView;
+                  if (targetTag == "Settings") targetTag = "General";
+                  if (targetTag == "ExternalPlugins") targetTag = "Plugins";
 
                  bool found = false;
 
@@ -193,10 +194,9 @@ namespace Pulsar.Views
                              navItem.IsActive = true; 
                               // Perform actual navigation
                                if (targetTag == "General") RootFrame.Navigate(_generalPage);
-                               else if (targetTag == "Slots") RootFrame.Navigate(_slotsPage);
-                               else if (targetTag == "Plugins") RootFrame.Navigate(_pluginsPage);
-                               else if (targetTag == "ExternalPlugins") RootFrame.Navigate(_externalPluginsPage);
-                               else if (targetTag == "About") RootFrame.Navigate(_aboutPage);
+                                else if (targetTag == "Slots") RootFrame.Navigate(_slotsPage);
+                                else if (targetTag == "Plugins") RootFrame.Navigate(_pluginsPage);
+                                else if (targetTag == "About") RootFrame.Navigate(_aboutPage);
                                found = true;
                          }
 
@@ -222,7 +222,7 @@ namespace Pulsar.Views
             if (_generalPage != null) _themeService.ApplyTheme(_generalPage, theme, updateGlobal: false);
             if (_slotsPage != null) _themeService.ApplyTheme(_slotsPage, theme, updateGlobal: false);
             if (_pluginsPage != null) _themeService.ApplyTheme(_pluginsPage, theme, updateGlobal: false); // [New]
-            if (_externalPluginsPage != null) _themeService.ApplyTheme(_externalPluginsPage, theme, updateGlobal: false); // [External Plugins]
+            if (_externalPluginsPage != null) _themeService.ApplyTheme(_externalPluginsPage, theme, updateGlobal: false); // [kept for compat, page now embedded in PluginsPage tab]
             if (_aboutPage != null) _themeService.ApplyTheme(_aboutPage, theme, updateGlobal: false); // [New]
         }
 
@@ -241,16 +241,11 @@ namespace Pulsar.Views
                      _viewModel.CurrentView = "Slots";
                  }
                    else if (item.Tag?.ToString() == "Plugins")
-                   {
-                       RootFrame.Navigate(_pluginsPage);
-                       _viewModel.CurrentView = "Plugins";
-                   }
-                   else if (item.Tag?.ToString() == "ExternalPlugins")
-                   {
-                       RootFrame.Navigate(_externalPluginsPage);
-                       _viewModel.CurrentView = "ExternalPlugins";
-                   }
-                   else if (item.Tag?.ToString() == "About")
+                    {
+                        RootFrame.Navigate(_pluginsPage);
+                        _viewModel.CurrentView = "Plugins";
+                    }
+                    else if (item.Tag?.ToString() == "About")
                   {
                       RootFrame.Navigate(_aboutPage);
                       _viewModel.CurrentView = "About";

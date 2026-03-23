@@ -53,6 +53,43 @@ namespace Pulsar.Models.Tutorial
         /// 焦点模式（推荐使用 AlwaysObserving 避免闪烁）
         /// </summary>
         public TutorialFocusMode FocusMode { get; set; } = TutorialFocusMode.AlwaysObserving;
+
+        /// <summary>
+        /// 主按钮点击时执行的动作
+        /// </summary>
+        public TutorialPrimaryAction PrimaryAction { get; set; } = TutorialPrimaryAction.NextStep;
+
+        /// <summary>
+        /// 主按钮自定义文案（为空时按步骤类型使用默认值）
+        /// </summary>
+        public string? PrimaryButtonText { get; set; }
+
+        /// <summary>
+        /// 等待步骤的辅助提示文案
+        /// </summary>
+        public string? WaitHintText { get; set; }
+
+    }
+
+    /// <summary>
+    /// 教程步骤主按钮动作
+    /// </summary>
+    public enum TutorialPrimaryAction
+    {
+        /// <summary>
+        /// 进入下一步
+        /// </summary>
+        NextStep,
+
+        /// <summary>
+        /// 打开设置窗口，并等待相关触发器推进
+        /// </summary>
+        OpenSettingsWindow,
+
+        /// <summary>
+        /// 直接完成教程
+        /// </summary>
+        CompleteTutorial
     }
 
     /// <summary>

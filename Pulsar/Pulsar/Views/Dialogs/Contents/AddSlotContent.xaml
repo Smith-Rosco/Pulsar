@@ -5,79 +5,568 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:viewmodels="clr-namespace:Pulsar.ViewModels.Dialogs"
+             xmlns:models="clr-namespace:Pulsar.Models"
+             xmlns:converters="clr-namespace:Pulsar.Core.Converters"
+             xmlns:controls="clr-namespace:Pulsar.Views.Controls"
              mc:Ignorable="d"
+             MinWidth="760"
+             MinHeight="520"
              d:DataContext="{d:DesignInstance Type=viewmodels:AddSlotViewModel}">
 
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/SlotStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+            <converters:HexToBrushConverter x:Key="HexToBrush"/>
+            <converters:SlotBrushConverter x:Key="SlotBrushConverter"/>
+
+            <DataTemplate x:Key="CreateSlotParameterFieldTemplate" DataType="{x:Type models:SlotParameterEditorField}">
+                <Border Background="{DynamicResource ControlFillColorDefaultBrush}"
+                        BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="12"
+                        Margin="0,0,0,12">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Label}"
+                                           FontSize="13"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                                <TextBlock Text=" *"
+                                           FontSize="13"
+                                           FontWeight="Bold"
+                                           Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                                           Visibility="{Binding IsRequired, Converter={StaticResource BoolToVis}}"/>
+                            </StackPanel>
+
+                            <ui:Button Grid.Column="1"
+                                       Width="28"
+                                       Height="28"
+                                       Margin="8,0,0,0"
+                                       Icon="{ui:SymbolIcon Info24}"
+                                       Style="{StaticResource PulsarIconButtonStyle}"
+                                       ToolTip="{Binding HelpTooltipText}"
+                                       Visibility="{Binding HasHelpContent, Converter={StaticResource BoolToVis}}"/>
+                        </Grid>
+
+                        <TextBlock Text="{Binding Description}"
+                                   Margin="0,0,0,8"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   Visibility="{Binding HasDescription, Converter={StaticResource BoolToVis}}"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <ui:TextBox Grid.Column="0"
+                                        Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                        PlaceholderText="{Binding Placeholder}"/>
+
+                            <ui:Button Grid.Column="1"
+                                       Margin="8,0,0,0"
+                                       Content="{Binding PickerButtonLabel}"
+                                       Style="{StaticResource PulsarSecondaryButtonStyle}"
+                                       Click="SlotParameterPicker_Click"
+                                       Tag="{Binding}"
+                                       Visibility="{Binding HasPicker, Converter={StaticResource BoolToVis}}"/>
+                        </Grid>
+
+                        <TextBlock Text="{Binding ValidationHint}"
+                                   Margin="0,6,0,0"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   Visibility="{Binding HasValidationHint, Converter={StaticResource BoolToVis}}"/>
+                    </StackPanel>
+                </Border>
+            </DataTemplate>
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <StackPanel>
-        <TextBlock Text="Choose a slot type to add."
-                   FontSize="13"
-                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                   Margin="0,0,0,16"/>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*" MinHeight="360"/>
+        </Grid.RowDefinitions>
 
-        <ItemsControl ItemsSource="{Binding PluginTypes}">
-            <ItemsControl.ItemTemplate>
-                <DataTemplate DataType="{x:Type viewmodels:AddSlotViewModel+PluginTypeOption}">
-                    <Button Padding="12,10"
-                            Margin="0,0,0,6"
-                            HorizontalContentAlignment="Left"
-                            Command="{Binding DataContext.SelectAndConfirmCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                            CommandParameter="{Binding}"
-                            Background="{DynamicResource ControlFillColorDefaultBrush}"
-                            BorderBrush="{DynamicResource ControlElevationBorderBrush}"
-                            BorderThickness="1">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border Background="{TemplateBinding Background}"
-                                        BorderBrush="{TemplateBinding BorderBrush}"
-                                        BorderThickness="{TemplateBinding BorderThickness}"
-                                        CornerRadius="8"
-                                        Padding="{TemplateBinding Padding}">
-                                    <Border.Style>
-                                        <Style TargetType="Border">
-                                            <Style.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}"/>
-                                                </Trigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Border.Style>
-                                    <ContentPresenter/>
-                                </Border>
-                            </ControlTemplate>
-                        </Button.Template>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="36"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="{Binding Icon}"
-                                       FontFamily="Segoe MDL2 Assets"
-                                       FontSize="20"
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Center"
+        <Border Grid.Row="0"
+                Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                BorderThickness="1"
+                CornerRadius="10"
+                Padding="12,10"
+                Margin="0,0,0,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel>
+                    <TextBlock Text="{Binding StepTitle}"
+                               FontSize="15"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                    <TextBlock Text="{Binding StepDescription}"
+                               Margin="0,2,0,0"
+                               FontSize="11"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <Border Grid.Column="1"
+                        Style="{StaticResource SlotBadgeBorderStyle}"
+                        VerticalAlignment="Top">
+                    <TextBlock Text="1 of 2"
+                               FontSize="10"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               Visibility="{Binding IsStep0, Converter={StaticResource BoolToVis}}"/>
+                </Border>
+
+                <Border Grid.Column="1"
+                        Style="{StaticResource SlotBadgeBorderStyle}"
+                        VerticalAlignment="Top"
+                        Visibility="{Binding IsStep1, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="2 of 2"
+                               FontSize="10"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                </Border>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="1"
+                Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                BorderThickness="1"
+                CornerRadius="10"
+                Padding="10,8"
+                Margin="0,0,0,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="40"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Style="{StaticResource SlotOrbContainerStyle}"
+                        Background="{Binding Slot.Color, Converter={StaticResource HexToBrush}}">
+                    <controls:SlotOrb Size="24"
+                                       Width="24"
+                                       Height="24"
+                                       Margin="4"
+                                       IsActive="False"
+                                       IsHitTestVisible="False"
+                                       ShowActiveGlow="False"
+                                       IsTransparent="True"
+                                       IconKey="{Binding Slot.IconKey}"/>
+                </Border>
+
+                <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding PreviewTitle}"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                        <Border Style="{StaticResource SlotChipBorderStyle}">
+                            <TextBlock Text="{Binding PreviewTypeBadge}"
+                                       Style="{StaticResource SlotValueChipTextStyle}"
+                                       FontSize="9"
+                                       Foreground="{Binding Slot.TypeToneKey, Converter={StaticResource SlotBrushConverter}, ConverterParameter=Type}"/>
+                        </Border>
+                    </StackPanel>
+
+                    <TextBlock Text="{Binding PreviewActionText}"
+                               Margin="0,2,0,0"
+                               FontSize="10"
+                               TextTrimming="CharacterEllipsis"
+                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                </StackPanel>
+
+                <Border Grid.Column="2"
+                        Style="{StaticResource SlotBadgeBorderStyle}">
+                    <TextBlock Text="{Binding PreviewHealthBadge}"
+                               FontSize="9"
+                               FontWeight="SemiBold"
+                               Foreground="{Binding PreviewHealthToneKey, Converter={StaticResource SlotBrushConverter}, ConverterParameter=Health}"/>
+                </Border>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2">
+            <Grid Visibility="{Binding IsStep0, Converter={StaticResource BoolToVis}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="280"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0"
+                        Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                        BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                        BorderThickness="1"
+                        CornerRadius="10"
+                        Padding="12">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <TextBlock Text="Slot types"
+                                       FontSize="13"
+                                       FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding DisplayName}"
-                                           FontWeight="SemiBold"
-                                           FontSize="13"
+                            <TextBlock Text="Choose the primary job for this slot."
+                                       Margin="0,4,0,12"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                       TextWrapping="Wrap"/>
+
+                            <ItemsControl ItemsSource="{Binding PluginTypes}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Padding="0"
+                                                Margin="0,0,0,10"
+                                                HorizontalContentAlignment="Stretch"
+                                                VerticalContentAlignment="Stretch"
+                                                Command="{Binding DataContext.SelectPluginTypeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="CardBorder"
+                                                            Background="{DynamicResource ControlFillColorDefaultBrush}"
+                                                            BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                                                            BorderThickness="1"
+                                                            CornerRadius="10"
+                                                            Padding="12">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                            </Grid.ColumnDefinitions>
+
+                                                            <Border Width="40"
+                                                                    Height="40"
+                                                                    CornerRadius="10"
+                                                                    Background="{Binding AccentColor, Converter={StaticResource HexToBrush}}"
+                                                                    Opacity="0.9">
+                                                                <TextBlock Text="{Binding Icon}"
+                                                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                                           FontSize="18"
+                                                                           HorizontalAlignment="Center"
+                                                                           VerticalAlignment="Center"
+                                                                           Foreground="White"/>
+                                                            </Border>
+
+                                                            <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                                                                <TextBlock Text="{Binding DisplayName}"
+                                                                           FontSize="13"
+                                                                           FontWeight="SemiBold"
+                                                                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                                                           TextWrapping="Wrap"/>
+                                                                <TextBlock Text="{Binding Description}"
+                                                                           Margin="0,4,0,0"
+                                                                           FontSize="11"
+                                                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                                           TextWrapping="Wrap"/>
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="CardBorder" Property="Background" Value="{DynamicResource ControlFillColorTertiaryBrush}"/>
+                                                            <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsPressed" Value="True">
+                                                            <Setter TargetName="CardBorder" Property="Background" Value="{DynamicResource ControlFillColorTertiaryBrush}"/>
+                                                            <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+                                                            <Setter TargetName="CardBorder" Property="BorderThickness" Value="2"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+
+                <Border Grid.Column="2"
+                        Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                        BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                        BorderThickness="1"
+                        CornerRadius="10"
+                        Padding="12">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <TextBlock Text="Configuration"
+                                       FontSize="13"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                            <TextBlock Text="{Binding SelectedPluginDescription}"
+                                       Margin="0,4,0,12"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                       TextWrapping="Wrap"/>
+
+                            <Border CornerRadius="8"
+                                    Padding="12,10"
+                                    Margin="0,0,0,12"
+                                    Visibility="{Binding HasValidationSummary, Converter={StaticResource BoolToVis}}">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBackgroundBrush}"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCautionBrush}"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ValidationSeverity}" Value="Error">
+                                                <Setter Property="Background" Value="{DynamicResource SystemFillColorCriticalBackgroundBrush}"/>
+                                                <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="{Binding ValidationSummary}"
+                                           FontSize="12"
+                                           TextWrapping="Wrap"
                                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                                <TextBlock Text="{Binding Description}"
-                                           FontSize="11"
-                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                           Margin="0,2,0,0"/>
+                            </Border>
+
+                            <Border Background="{DynamicResource ControlFillColorDefaultBrush}"
+                                    BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="10"
+                                    Padding="14"
+                                    Margin="0,0,0,12"
+                                    Visibility="{Binding HasSelectedPlugin, Converter={StaticResource BoolToVis}}">
+                                <StackPanel>
+                                    <TextBlock Text="Action"
+                                               FontSize="13"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                               Margin="0,0,0,10"/>
+
+                                    <StackPanel Visibility="{Binding HasSingleAction, Converter={StaticResource BoolToVis}}">
+                                        <TextBlock Text="{Binding Slot.ActionLabel}"
+                                                   FontSize="13"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                                        <TextBlock Text="{Binding Slot.ActionDescription}"
+                                                   Margin="0,4,0,0"
+                                                   FontSize="12"
+                                                   TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                    </StackPanel>
+
+                                    <StackPanel Visibility="{Binding UseRadioActions, Converter={StaticResource BoolToVis}}">
+                                        <ItemsControl ItemsSource="{Binding AvailableActions}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                                            BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                                                            BorderThickness="1"
+                                                            CornerRadius="8"
+                                                            Padding="10,8"
+                                                            Margin="0,0,0,8">
+                                                        <RadioButton Content="{Binding Label}"
+                                                                     ToolTip="{Binding Description}"
+                                                                     IsChecked="{Binding IsSelected}"
+                                                                     GroupName="CreateSlotActionGroup"
+                                                                     Click="ActionRadio_Click"
+                                                                     Tag="{Binding Value}"/>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+
+                                    <StackPanel Visibility="{Binding UseComboActions, Converter={StaticResource BoolToVis}}">
+                                        <ComboBox ItemsSource="{Binding AvailableActions}"
+                                                  SelectedValuePath="Value"
+                                                  DisplayMemberPath="Label"
+                                                  SelectedValue="{Binding Slot.Action}"
+                                                  SelectionChanged="ActionComboBox_SelectionChanged"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <StackPanel Visibility="{Binding HasRequiredParameters, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="Required details"
+                                           FontSize="12"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                           Margin="0,0,0,10"/>
+                                <ItemsControl ItemsSource="{Binding RequiredParameters}"
+                                              ItemTemplate="{StaticResource CreateSlotParameterFieldTemplate}"/>
                             </StackPanel>
-                        </Grid>
-                    </Button>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
-    </StackPanel>
+
+                            <StackPanel Visibility="{Binding HasOptionalParameters, Converter={StaticResource BoolToVis}}"
+                                        Margin="0,8,0,0">
+                                <Expander Header="Optional details"
+                                          IsExpanded="False">
+                                    <ItemsControl Margin="0,10,0,0"
+                                                  ItemsSource="{Binding OptionalParameters}"
+                                                  ItemTemplate="{StaticResource CreateSlotParameterFieldTemplate}"/>
+                                </Expander>
+                            </StackPanel>
+
+                            <StackPanel Visibility="{Binding HasAdvancedParameters, Converter={StaticResource BoolToVis}}"
+                                        Margin="0,8,0,0">
+                                <Expander Header="Advanced"
+                                          IsExpanded="False">
+                                    <ItemsControl Margin="0,10,0,0"
+                                                  ItemsSource="{Binding AdvancedParameters}"
+                                                  ItemTemplate="{StaticResource CreateSlotParameterFieldTemplate}"/>
+                                </Expander>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+            </Grid>
+
+            <ScrollViewer Visibility="{Binding IsStep1, Converter={StaticResource BoolToVis}}"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <StackPanel>
+                    <Border Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                            BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="12"
+                            Margin="0,0,0,8">
+                        <StackPanel>
+                            <TextBlock Text="Appearance"
+                                       FontSize="13"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                       Margin="0,0,0,12"/>
+
+                            <TextBlock Text="Label"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                       Margin="0,0,0,6"/>
+                            <ui:TextBox Text="{Binding Slot.Label, UpdateSourceTrigger=PropertyChanged}"
+                                        PlaceholderText="Display label"
+                                        Margin="0,0,0,12"/>
+
+                            <TextBlock Text="Color"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                       Margin="0,0,0,6"/>
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Border Width="56"
+                                        Height="36"
+                                        CornerRadius="8"
+                                        BorderBrush="{DynamicResource ControlElevationBorderBrush}"
+                                        BorderThickness="1"
+                                        Background="{Binding Slot.Color, Converter={StaticResource HexToBrush}}"
+                                        Cursor="Hand"
+                                        ToolTip="Pick color"
+                                        MouseLeftButtonDown="ColorSwatch_MouseLeftButtonDown">
+                                    <ui:SymbolIcon Symbol="Drop24"
+                                                   FontSize="16"
+                                                   Foreground="White"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"/>
+                                </Border>
+
+                                <TextBlock Grid.Column="1"
+                                           Text="Pick a ring color only if the default does not fit this slot."
+                                           Margin="12,0,0,0"
+                                           VerticalAlignment="Center"
+                                           FontSize="12"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                            </Grid>
+
+                            <TextBlock Text="Icon"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                       Margin="0,0,0,6"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <ui:TextBox Grid.Column="0"
+                                            Text="{Binding Slot.IconKey}"
+                                            Icon="{ui:SymbolIcon Image24}"
+                                            PlaceholderText="e.g. Settings24 or C:\icon.png"/>
+
+                                <ui:Button Grid.Column="1"
+                                           Icon="{ui:SymbolIcon FolderOpen16}"
+                                           Style="{StaticResource PulsarIconButtonStyle}"
+                                           Click="PickIcon_Click"
+                                           ToolTip="Browse icon file"
+                                           Margin="8,0,0,0"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                            BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="12">
+                        <StackPanel>
+                            <TextBlock Text="Summary"
+                                       FontSize="13"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                       Margin="0,0,0,10"/>
+
+                            <ItemsControl ItemsSource="{Binding SummaryTokens}"
+                                          Visibility="{Binding HasSummaryTokens, Converter={StaticResource BoolToVis}}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource SlotSummaryTokenBorderStyle}">
+                                            <TextBlock Text="{Binding}"
+                                                       Style="{StaticResource SlotSummaryTokenTextStyle}"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock Text="{Binding ValidationSummary}"
+                                       FontSize="12"
+                                       Margin="0,8,0,0"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                       Visibility="{Binding HasValidationSummary, Converter={StaticResource BoolToVis}}"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
 </UserControl>

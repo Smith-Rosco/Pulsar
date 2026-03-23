@@ -23,7 +23,6 @@ namespace Pulsar.ViewModels.Dialogs
 
         public Action<Pulsar.Models.Enums.DialogResult>? RequestClose { get; set; }
 
-        public bool IsScrollable => false;
 
         public InputDialogViewModel(string message, string defaultValue = "", string placeholder = "")
         {

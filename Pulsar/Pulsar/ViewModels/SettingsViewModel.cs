@@ -502,104 +502,31 @@ namespace Pulsar.ViewModels
         [RelayCommand]
         public async Task AddSlotDialog()
         {
-            var vm = new AddSlotViewModel();
-            var result = await _dialogService.ShowCustomAsync(
-                "Add Slot",
-                vm,
-                DialogButtons.OkCancel,
-                DialogSizeConstraints.Medium);
+            var vm = new AddSlotViewModel(
+                BuildAddSlotOptions(),
+                CreateSlotDraft,
+                SetSlotDraftAction,
+                PickSlotParameterValue,
+                PickIcon,
+                PickColor);
 
-            if (result == DialogResult.Confirmed && vm.SelectedPluginId != null)
+            var result = await _dialogService.ShowCustomAsync(
+                "Create Slot",
+                vm,
+                DialogButtons.None,
+                DialogSizeConstraints.LargeResizable);
+
+            if (result == DialogResult.Confirmed && vm.CreatedSlot != null)
             {
-                AddSlotOfType(vm.SelectedPluginId);
+                CommitCreatedSlot(vm.CreatedSlot);
             }
         }
 
         [RelayCommand]
         public void AddSlotOfType(string pluginId)
         {
-            if (CurrentSlots == null) return;
-            
-            // [Refactor] 统一使用 Slot 作为位置标识
-            int nextSlot = 1;
-            
-            if (CurrentSlots.Count > 0)
-            {
-                nextSlot = CurrentSlots.Max(s => s.Slot) + 1;
-            }
-
-            var newItem = new PluginSlot 
-            { 
-                Slot = nextSlot
-            };
-
-            switch (pluginId)
-            {
-                case "com.pulsar.winswitcher":
-                    newItem.PluginId = "com.pulsar.winswitcher";
-                    newItem.Action = "switch"; // Changed from "activate" to support auto-launch
-                    newItem.Args["app"] = "chrome";
-                    newItem.Args["path"] = ""; // Add path parameter for launch capability
-                    newItem.Label = "New App";
-                    newItem.IconKey = "E710";
-                    break;
-
-                case "com.pulsar.command":
-                    newItem.PluginId = "com.pulsar.command";
-                    newItem.Action = "run";
-                    newItem.Args["path"] = "cmd.exe";
-                    newItem.Label = "New Command";
-                    newItem.IconKey = "E756";
-                    break;
-
-                case "com.pulsar.bookmarklet":
-                    newItem.PluginId = "com.pulsar.bookmarklet";
-                    newItem.Action = "run";
-                    newItem.Args["scriptPath"] = "%APPDATA%\\Pulsar\\Scripts\\example.js";
-                    newItem.Label = "New Script";
-                    newItem.IconKey = "E943"; // Code
-                    break;
-
-                case "com.pulsar.vbarunner":
-                    newItem.PluginId = "com.pulsar.vbarunner";
-                    newItem.Action = "run";
-                    newItem.Args["scriptPath"] = "%USERPROFILE%\\Documents\\Pulsar\\Scripts\\example.txt";
-                    newItem.Label = "New VBA Script";
-                    newItem.IconKey = "E8C4"; // DocumentData
-                    break;
-
-                case "com.pulsar.pki":
-                    // Call existing AddSecret logic
-                    _ = AddSecret();
-                    return;
-
-                case "com.pulsar.system":
-                    newItem.PluginId = "com.pulsar.system";
-                    newItem.Action = "pulsar.system.open_settings";
-                    newItem.Label = "Open Settings";
-                    newItem.IconKey = "E713"; // Settings Icon
-                    break;
-
-                default:
-                    SendNotification("Error", $"Unknown plugin type: {pluginId}", ControlAppearance.Danger);
-                    return;
-            }
-
-            CurrentSlots.Add(newItem);
-            InitializeSlotMetadata(newItem);
-            MarkDirty(); // [Phase 2]
-            
-            // Provide helpful notification based on plugin type
-            string notificationMessage = pluginId switch
-            {
-                "com.pulsar.winswitcher" => "Slot added. Remember to configure both 'app' and 'path' parameters.",
-                "com.pulsar.command" => "Slot added. Configure the 'path' parameter to specify the executable.",
-                "com.pulsar.bookmarklet" => "Slot added. Set the 'scriptPath' to your JavaScript file.",
-                "com.pulsar.vbarunner" => "Slot added. Set the 'scriptPath' to your VBA script file.",
-                _ => "Slot added."
-            };
-            
-            SendNotification("Success", notificationMessage, ControlAppearance.Success);
+            var draft = CreateSlotDraft(pluginId);
+            CommitCreatedSlot(draft);
         }
 
         [RelayCommand(CanExecute = nameof(CanAddSecrets))]
@@ -886,6 +813,134 @@ namespace Pulsar.ViewModels
             AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.system", "⚙️ System", "Internal Pulsar commands"));
         }
 
+        private IReadOnlyList<AddSlotViewModel.PluginTypeOption> BuildAddSlotOptions()
+        {
+            return new List<AddSlotViewModel.PluginTypeOption>
+            {
+                new("com.pulsar.winswitcher", "E8A7", "Switch App", "Switch to an existing window or launch the app if it is not open.", "#2196F3"),
+                new("com.pulsar.command", "E756", "Run Command", "Launch an executable, open a file or URL, or send a key sequence.", "#32CD32"),
+                new("com.pulsar.bookmarklet", "E8A4", "Browser Script", "Run JavaScript from a saved script file in the browser.", "#FF8C00"),
+                new("com.pulsar.vbarunner", "E8F4", "Run VBA", "Execute a VBA or automation script for Excel and WPS.", "#2E8B57"),
+                new("com.pulsar.pki", "E72E", "Fill Secret", "Inject a saved credential into the active application.", "#4CAF50"),
+                new("com.pulsar.system", "E713", "System Action", "Trigger built-in Pulsar system commands.", "#607D8B")
+            };
+        }
+
+        private PluginSlot CreateSlotDraft(string pluginId)
+        {
+            var slot = BuildSlotTemplate(pluginId, GetNextSlotNumber());
+            InitializeSlotMetadata(slot);
+            RefreshSlotValidationSummary(slot);
+            UpdateSlotPresentation(slot);
+            return slot;
+        }
+
+        private void SetSlotDraftAction(PluginSlot slot, string? action)
+        {
+            if (slot == null || string.IsNullOrWhiteSpace(action) || string.Equals(slot.Action, action, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            slot.Action = action;
+            InitializeSlotMetadata(slot);
+            RefreshSlotValidationSummary(slot);
+            UpdateSlotPresentation(slot);
+        }
+
+        private void CommitCreatedSlot(PluginSlot slot)
+        {
+            if (CurrentSlots == null || slot == null)
+            {
+                return;
+            }
+
+            slot.Slot = GetNextSlotNumber();
+            InitializeSlotMetadata(slot);
+            RefreshSlotValidationSummary(slot);
+            UpdateSlotPresentation(slot);
+
+            CurrentSlots.Add(slot);
+            MarkDirty();
+            SendNotification("Success", $"Slot '{slot.Label}' added.", ControlAppearance.Success);
+        }
+
+        private int GetNextSlotNumber()
+        {
+            if (CurrentSlots == null || CurrentSlots.Count == 0)
+            {
+                return 1;
+            }
+
+            return CurrentSlots.Max(slot => slot.Slot) + 1;
+        }
+
+        private static PluginSlot BuildSlotTemplate(string pluginId, int slotNumber)
+        {
+            var newItem = new PluginSlot
+            {
+                Slot = slotNumber,
+                PluginId = pluginId
+            };
+
+            switch (pluginId)
+            {
+                case "com.pulsar.winswitcher":
+                    newItem.Action = "switch";
+                    newItem.Args["app"] = string.Empty;
+                    newItem.Args["path"] = string.Empty;
+                    newItem.Label = "Switch App";
+                    newItem.IconKey = "E8A7";
+                    newItem.Color = "#2196F3";
+                    break;
+
+                case "com.pulsar.command":
+                    newItem.Action = "run";
+                    newItem.Args["path"] = string.Empty;
+                    newItem.Label = "Run Command";
+                    newItem.IconKey = "E756";
+                    newItem.Color = "#32CD32";
+                    break;
+
+                case "com.pulsar.bookmarklet":
+                    newItem.Action = "run";
+                    newItem.Args["scriptPath"] = string.Empty;
+                    newItem.Label = "Run Script";
+                    newItem.IconKey = "E943";
+                    newItem.Color = "#FF8C00";
+                    break;
+
+                case "com.pulsar.vbarunner":
+                    newItem.Action = "run";
+                    newItem.Args["scriptPath"] = string.Empty;
+                    newItem.Label = "Run VBA";
+                    newItem.IconKey = "E8C4";
+                    newItem.Color = "#2E8B57";
+                    break;
+
+                case "com.pulsar.pki":
+                    newItem.Action = "fill";
+                    newItem.Args["secretId"] = string.Empty;
+                    newItem.Args["autoEnter"] = bool.FalseString;
+                    newItem.Label = "Fill Secret";
+                    newItem.IconKey = "E72E";
+                    newItem.Color = "#4CAF50";
+                    break;
+
+                case "com.pulsar.system":
+                    newItem.Action = "pulsar.system.open_settings";
+                    newItem.Label = "Open Settings";
+                    newItem.IconKey = "E713";
+                    newItem.Color = "#607D8B";
+                    break;
+
+                default:
+                    throw new InvalidOperationException($"Unknown plugin type: {pluginId}");
+            }
+
+            return newItem;
+        }
+
         public void RefreshContexts()
         {
             var previousKey = CurrentContext?.Key;
@@ -1052,9 +1107,9 @@ namespace Pulsar.ViewModels
                 RemoveSlot);
 
             await _dialogService.ShowCustomAsync(
-                $"Configure Slot {slot.Slot}",
+                $"Edit Slot {slot.Slot}",
                 vm,
-                DialogButtons.None,
+                DialogButtons.OkCancel,
                 DialogSizeConstraints.LargeResizable);
         }
 

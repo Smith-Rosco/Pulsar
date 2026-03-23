@@ -1,6 +1,5 @@
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 using Pulsar.Models;
 using Pulsar.ViewModels.Dialogs;
 
@@ -11,19 +10,6 @@ namespace Pulsar.Views.Dialogs.Contents
         public SlotConfigurationDialogContent()
         {
             InitializeComponent();
-        }
-
-        /// <summary>
-        /// Ensures mouse wheel scrolling works anywhere over the ScrollViewer content,
-        /// not just when the cursor is near the scrollbar track.
-        /// </summary>
-        private void ScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
-        {
-            if (sender is ScrollViewer sv)
-            {
-                sv.ScrollToVerticalOffset(sv.VerticalOffset - e.Delta / 3.0);
-                e.Handled = true;
-            }
         }
 
         private async void SlotParameterPicker_Click(object sender, RoutedEventArgs e)

@@ -33,7 +33,6 @@ namespace Pulsar.ViewModels.Dialogs
         public string ResultEncryptedData { get; private set; } = string.Empty;
 
         public Action<DialogResult>? RequestClose { get; set; }
-        public bool IsScrollable => true;
 
         public QuickSecretsViewModel()
         {

@@ -57,7 +57,6 @@ namespace Pulsar.ViewModels.Dialogs
         /// <summary>
         /// 是否可滚动
         /// </summary>
-        public bool IsScrollable => false;
 
         public PermissionRequestViewModel()
         {

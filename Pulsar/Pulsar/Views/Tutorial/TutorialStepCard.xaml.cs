@@ -13,22 +13,22 @@ namespace Pulsar.Views.Tutorial
     /// </summary>
     public partial class TutorialStepCard : UserControl
     {
+        public event EventHandler? BackClicked;
         public event EventHandler? NextClicked;
         public event EventHandler? SkipClicked;
-        public event EventHandler? RetryLocateClicked;
         
-        private TutorialStep? _currentStep;  // [Fix] 保存当前步骤引用
+        private TutorialStep? _currentStep;
 
         // Some XAML fields may not be available until generated; keep a safe runtime reference.
         private TextBlock? _waitHintText;
-        private System.Windows.Controls.Button? _retryButton;
+        private System.Windows.Controls.Button? _backButton;
 
         public TutorialStepCard()
         {
             InitializeComponent();
 
             _waitHintText = FindName("WaitHintText") as TextBlock;
-            _retryButton = FindName("RetryButton") as System.Windows.Controls.Button;
+            _backButton = FindName("BackButton") as System.Windows.Controls.Button;
 
             Loaded += OnLoaded;
         }
@@ -41,7 +41,7 @@ namespace Pulsar.Views.Tutorial
 
             // Ensure hint reference is resolved (XAML generator edge-cases).
             _waitHintText ??= FindName("WaitHintText") as TextBlock;
-            _retryButton ??= FindName("RetryButton") as System.Windows.Controls.Button;
+            _backButton ??= FindName("BackButton") as System.Windows.Controls.Button;
         }
 
         public void SetWaitHintText(string text)
@@ -58,74 +58,68 @@ namespace Pulsar.Views.Tutorial
         /// </summary>
         public void SetStep(TutorialStep step, int currentIndex, int totalSteps)
         {
-            _currentStep = step;  // [Fix] 保存步骤引用
-             
+            _currentStep = step;
+
             StepCounter.Text = $"步骤 {currentIndex + 1}/{totalSteps}";
             TitleText.Text = step.Title;
             DescriptionText.Text = step.Description;
+            NextButton.Content = ResolvePrimaryButtonText(step);
 
-            // Reset hint visibility by default
-            if (_waitHintText != null)
-            {
-                _waitHintText.Visibility = Visibility.Collapsed;
-            }
-
-            if (_retryButton != null)
-            {
-                _retryButton.Visibility = Visibility.Collapsed;
-            }
-
-            // [Fix] 根据步骤 ID 自定义按钮文本
-            // Step2 is a special case: even if it's modeled as a wait step, the primary action is "open settings".
-            if (step.Id == "step2_open_settings")
-            {
-                NextButton.Visibility = Visibility.Visible;
-                NextButton.Content = "打开设置";
-
-                if (_waitHintText != null)
-                {
-                    _waitHintText.Visibility = Visibility.Visible;
-                }
-
-                if (_retryButton != null)
-                {
-                    _retryButton.Visibility = Visibility.Visible;
-                }
-
-                return;
-            }
+            ApplyWaitHint(step);
+            ApplyBackButtonVisibility(currentIndex);
 
             if (step.Type == TutorialStepType.Instruction)
             {
                 NextButton.Visibility = Visibility.Visible;
-
-                // [Fix] 最后一步显示"完成"而非"下一步"
-                if (step.Id == "step9_completion")
-                {
-                    NextButton.Content = "完成";
-                }
-                else
-                {
-                    NextButton.Content = "下一步";
-                }
             }
             else
             {
-                // For WaitForAction steps, we normally auto-advance via triggers.
-                // Still provide a visible manual "Continue" path to reduce dead-ends when triggers fail.
-                if (_waitHintText != null)
-                {
-                    _waitHintText.Visibility = Visibility.Visible;
-                }
-
-                // Allow user to re-attempt detection/target location when something fails.
-                if (_retryButton != null)
-                {
-                    _retryButton.Visibility = Visibility.Visible;
-                }
                 NextButton.Visibility = Visibility.Visible;
-                NextButton.Content = "继续";
             }
+        }
+
+        private string ResolvePrimaryButtonText(TutorialStep step)
+        {
+            if (!string.IsNullOrWhiteSpace(step.PrimaryButtonText))
+            {
+                return step.PrimaryButtonText;
+            }
+
+            if (step.PrimaryAction == TutorialPrimaryAction.CompleteTutorial)
+            {
+                return "完成";
+            }
+
+            return step.Type == TutorialStepType.Instruction ? "下一步" : "继续";
+        }
+
+        private void ApplyWaitHint(TutorialStep step)
+        {
+            if (_waitHintText == null)
+            {
+                return;
+            }
+
+            if (step.Type == TutorialStepType.Instruction && string.IsNullOrWhiteSpace(step.WaitHintText))
+            {
+                _waitHintText.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            _waitHintText.Text = string.IsNullOrWhiteSpace(step.WaitHintText)
+                ? "完成操作后会自动继续；如未自动继续，可点击“继续”。"
+                : step.WaitHintText;
+            _waitHintText.Visibility = Visibility.Visible;
+        }
+
+        private void ApplyBackButtonVisibility(int currentIndex)
+        {
+            if (_backButton == null)
+            {
+                return;
+            }
+
+            _backButton.Visibility = currentIndex > 0 ? Visibility.Visible : Visibility.Collapsed;
         }
 
         /// <summary>
@@ -202,24 +196,15 @@ namespace Pulsar.Views.Tutorial
             SkipClicked?.Invoke(this, EventArgs.Empty);
         }
 
-        private void OnRetryButtonClick(object sender, RoutedEventArgs e)
+        private void OnBackButtonClick(object sender, RoutedEventArgs e)
         {
-            RetryLocateClicked?.Invoke(this, EventArgs.Empty);
+            BackClicked?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>
         /// 获取当前步骤
         /// </summary>
         public TutorialStep? GetCurrentStep() => _currentStep;
-
-        /// <summary>
-        /// 显示"继续"按钮（用于 WaitForAction 步骤完成后）
-        /// </summary>
-        public void ShowContinueButton()
-        {
-            NextButton.Visibility = Visibility.Visible;
-            NextButton.Content = "继续";
-        }
     }
 
     /// <summary>

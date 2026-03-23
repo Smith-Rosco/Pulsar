@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pulsar.Helpers.Tutorial;
 using Pulsar.Models.Tutorial;
@@ -18,6 +19,8 @@ namespace Pulsar.Services.Tutorial
     /// </summary>
     public class TutorialOrchestrator
     {
+        private const string DefaultWaitHintText = "未检测到操作也没关系：你可以点击“继续”跳过，或点击“上一步”返回后重试。";
+
         private readonly IConfigService _configService;
         private readonly ILogger<TutorialOrchestrator> _logger;
         private readonly TutorialStepLoader _stepLoader;
@@ -243,9 +246,9 @@ namespace Pulsar.Services.Tutorial
                 // 创建并显示步骤卡片
                 _stepCard = new TutorialStepCard();
                 _stepCard.SetStep(step, _currentStepIndex, _steps.Count);
+                _stepCard.BackClicked += OnStepCardBackClicked;
                 _stepCard.NextClicked += OnStepCardNextClicked;
                 _stepCard.SkipClicked += OnStepCardSkipClicked;
-                _stepCard.RetryLocateClicked += OnStepCardRetryLocateClicked;
 
                 _overlayManager.SetCardContent(_stepCard);
 
@@ -288,9 +291,7 @@ namespace Pulsar.Services.Tutorial
                             return;
                         }
 
-                        _stepCard?.SetWaitHintText(
-                            "未检测到操作也没关系：你可以点击“继续”跳过，或点“重新定位”再试一次。"
-                        );
+                        _stepCard?.SetWaitHintText(DefaultWaitHintText);
                     }).Task);
 
                 // 触发事件
@@ -412,9 +413,9 @@ namespace Pulsar.Services.Tutorial
                 if (_stepCard != null)
                 {
                     // [P0-1 Fix] 取消订阅事件，防止内存泄漏
+                    _stepCard.BackClicked -= OnStepCardBackClicked;
                     _stepCard.NextClicked -= OnStepCardNextClicked;
                     _stepCard.SkipClicked -= OnStepCardSkipClicked;
-                    _stepCard.RetryLocateClicked -= OnStepCardRetryLocateClicked;
                     _stepCard = null;
                     
                     _logger.LogDebug("[TutorialOrchestrator] Step card cleaned up");
@@ -480,56 +481,27 @@ namespace Pulsar.Services.Tutorial
         {
             try
             {
-                // [P0-2 Fix] 异步事件处理器的错误边界
-
-                // [Fix] 步骤二：打开设置按钮
-                if (CurrentStep?.Id == "step2_open_settings")
+                var step = CurrentStep;
+                if (step == null)
                 {
-                    _logger.LogInformation("[TutorialOrchestrator] Opening settings window from tutorial");
-                    
-                    // 检查是否已经打开
-                    var settingsWindow = GetSettingsWindow();
-                    if (settingsWindow != null)
-                    {
-                        _logger.LogInformation("[TutorialOrchestrator] Settings window already open, activating");
-                        settingsWindow.Activate();
-                    }
-                    else
-                    {
-                        _logger.LogInformation("[TutorialOrchestrator] Creating new settings window");
-                        
-                        // 通过 DI 容器获取 SettingsWindow
-                        var app = System.Windows.Application.Current as App;
-                        if (app?.Services != null)
-                        {
-                            try
-                            {
-                                var window = app.Services.GetService(typeof(Views.SettingsWindow)) as Views.SettingsWindow;
-                                if (window != null)
-                                {
-                                    window.Show();
-                                    window.Activate();
-                                    _logger.LogInformation("[TutorialOrchestrator] Settings window opened successfully");
-                                }
-                                else
-                                {
-                                    _logger.LogError("[TutorialOrchestrator] Failed to get SettingsWindow from DI container");
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger.LogError(ex, "[TutorialOrchestrator] Error opening settings window");
-                            }
-                        }
-                    }
-                    
-                    // 不调用 NextStepAsync，等待 WindowOpened 触发器自动推进
                     return;
                 }
 
-                _waitStepHintTimeout.Cancel();
-                 
-                await NextStepAsync();
+                switch (step.PrimaryAction)
+                {
+                    case TutorialPrimaryAction.OpenSettingsWindow:
+                        await OpenSettingsWindowAsync();
+                        return;
+
+                    case TutorialPrimaryAction.CompleteTutorial:
+                        await CompleteAsync();
+                        return;
+
+                    default:
+                        _waitStepHintTimeout.Cancel();
+                        await NextStepAsync();
+                        return;
+                }
             }
             catch (Exception ex)
             {
@@ -572,30 +544,22 @@ namespace Pulsar.Services.Tutorial
             }
         }
 
-        private void OnStepCardRetryLocateClicked(object? sender, EventArgs e)
+        private async void OnStepCardBackClicked(object? sender, EventArgs e)
         {
             try
             {
-                var step = CurrentStep;
-                if (step == null)
+                if (_currentStepIndex <= 0)
                 {
                     return;
                 }
 
-                _logger.LogInformation("[TutorialOrchestrator] Retry requested for step: {StepId}", step.Id);
-
-                // Restart trigger detection to recover from missed subscriptions.
-                _triggerEngine.Cleanup();
-                _triggerEngine.Setup(step, OnTriggerFired);
-
-                // Refresh spotlight when focused.
-                _spotlightController.RefreshIfFocused(step);
-
-                _stepCard?.SetWaitHintText("已重新开始检测。你也可以直接点击“继续”。");
+                _waitStepHintTimeout.Cancel();
+                await GoToStepAsync(_currentStepIndex - 1);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "[TutorialOrchestrator] Retry failed");
+                _logger.LogError(ex, "[TutorialOrchestrator] Error in back button handler");
+                await HandleErrorAsync(ex);
             }
         }
 
@@ -699,6 +663,48 @@ namespace Pulsar.Services.Tutorial
             _isTransitioning = false;
             
             _logger.LogInformation("[TutorialOrchestrator] Force cleanup completed");
+        }
+
+        private Task OpenSettingsWindowAsync()
+        {
+            _logger.LogInformation("[TutorialOrchestrator] Opening settings window from tutorial");
+
+            var settingsWindow = GetSettingsWindow();
+            if (settingsWindow != null)
+            {
+                _logger.LogInformation("[TutorialOrchestrator] Settings window already open, activating");
+                settingsWindow.Activate();
+                return Task.CompletedTask;
+            }
+
+            _logger.LogInformation("[TutorialOrchestrator] Creating new settings window");
+
+            var app = System.Windows.Application.Current as App;
+            if (app?.Services == null)
+            {
+                _logger.LogError("[TutorialOrchestrator] App services are unavailable while opening settings window");
+                return Task.CompletedTask;
+            }
+
+            try
+            {
+                var window = app.Services.GetService<Views.SettingsWindow>();
+                if (window == null)
+                {
+                    _logger.LogError("[TutorialOrchestrator] Failed to resolve SettingsWindow from DI container");
+                    return Task.CompletedTask;
+                }
+
+                window.Show();
+                window.Activate();
+                _logger.LogInformation("[TutorialOrchestrator] Settings window opened successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[TutorialOrchestrator] Error opening settings window");
+            }
+
+            return Task.CompletedTask;
         }
     }
 }

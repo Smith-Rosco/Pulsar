@@ -62,11 +62,6 @@
                                            TargetPageType="{x:Type TypeName=Page}" 
                                            Tag="Plugins"/>
 
-                    <ui:NavigationViewItem Content="External Plugins" 
-                                           Icon="{ui:SymbolIcon FolderOpen24}" 
-                                           TargetPageType="{x:Type TypeName=Page}" 
-                                           Tag="ExternalPlugins"/>
-
                     <ui:NavigationViewItem Content="About" 
                                            Icon="{ui:SymbolIcon Info24}" 
                                            TargetPageType="{x:Type TypeName=Page}" 
@@ -81,7 +76,7 @@
                         Command="{Binding SaveCommand}"
                         ToolTip="Save all changes (Ctrl+S)">
                         
-                        <!-- [Phase 4] Red Dot Indicator using InfoBadge with forced style -->
+                        <!-- Red Dot Indicator using InfoBadge -->
                         <ui:NavigationViewItem.InfoBadge>
                             <ui:InfoBadge>
                                 <ui:InfoBadge.Template>
