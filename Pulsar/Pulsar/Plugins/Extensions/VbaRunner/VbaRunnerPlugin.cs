@@ -167,6 +167,12 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
                 return PluginResult.Error("Plugin initialization failed");
             }
 
+            if (string.IsNullOrEmpty(action))
+            {
+                _logger?.LogWarning("[VbaRunnerPlugin] Action parameter is missing or null");
+                return PluginResult.Error("Missing action parameter. Please configure the slot with an action (e.g., 'run').");
+            }
+
             return action.ToLowerInvariant() switch
             {
                 "run" => await RunScriptAsync(args, context),

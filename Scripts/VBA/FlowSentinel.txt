@@ -1,10 +1,10 @@
 ' ==========================================
-' 项目: FlowSentinel v5.0 (UX Pro Max)
+' 项目: FlowSentinel v5.1 (UX Pro Max)
 ' 核心: Needleman-Wunsch 算法 + 视觉合并引擎
 ' 更新:
-'   1. 视觉合并: 自动合并相同的 Call/Stage 单元格，提升层级感
-'   2. 字段扩展: 新增 DCOP 字段比对 (与 PPID/Mask 同级)
-'   3. 乱码修复: 使用 ChrW() 彻底解决图标显示为 "?" 的问题
+'   1. 表头重构: Dashboard 4行 → 2行，新增 Sheet Banner 行，总行数 5→4
+'   2. 语义修正: "版本升级"→"版本偏差"，"升级且差异"→"偏差+参数差异"
+'   3. Sheet Banner: Row 3 合并单元格显示表名，清晰区分当前/基准表
 ' ==========================================
 
 Option Explicit
@@ -143,7 +143,7 @@ Sub Main(Optional RefSheetName As Variant)
     Application.StatusBar = "🎨 正在绘制可视化报告..."
     Dim stats As AuditStats
     Dim wsRpt As Worksheet
-    Set wsRpt = CreateReportSheet()
+    Set wsRpt = CreateReportSheet(ws1.Name, ws2.Name)
     
     Dim currI As Long, currJ As Long
     Dim path() As Long, pStep As Long
@@ -169,7 +169,7 @@ Sub Main(Optional RefSheetName As Variant)
 
     ' 5. 渲染行数据
     Dim rRpt As Long
-    rRpt = 6 ' Dashboard 占用前4行 (压缩模式)，表头在第5行，数据从第6行开始
+    rRpt = 5 ' Dashboard 2行 + Sheet Banner 1行 + Header 1行 = Row 4，数据从第5行开始
     
     Dim k As Long, idx1 As Long, idx2 As Long
     Dim fp1 As String, fp2 As String
@@ -202,12 +202,12 @@ Sub Main(Optional RefSheetName As Variant)
                 pDiff = CheckParamDiff(ws1, r1, dict1, ws2, r2, dict2)
                 
                 If pDiff <> "" Then
-                    status = "升级且差异": icon = ChrW(&H26A0): rowColor = COLOR_STATUS_WARN
+                    status = "偏差+参数差异": icon = ChrW(&H26A0): rowColor = COLOR_STATUS_WARN
                     note = pDiff
                     stats.ParamDiff = stats.ParamDiff + 1
                 Else
                     ' Icon: Refresh/Cycle (U+21BB)
-                    status = "版本升级": icon = ChrW(&H21BB): rowColor = COLOR_STATUS_INFO
+                    status = "版本偏差": icon = ChrW(&H21BB): rowColor = COLOR_STATUS_INFO
                     note = "Call: " & GetSuffix(c1) & " -> " & GetSuffix(c2)
                     stats.LevelMatch = stats.LevelMatch + 1
                 End If
@@ -232,7 +232,7 @@ Sub Main(Optional RefSheetName As Variant)
 
     ' 6. 视觉后处理 (绘制层级边框)
     Application.StatusBar = "🧹 正在绘制层级边框..."
-    Call ApplyBlockBorders(wsRpt, 6, rRpt - 1)
+    Call ApplyBlockBorders(wsRpt, 5, rRpt - 1)
     
     ' 7. 渲染 Dashboard
     Call RenderDashboard(wsRpt, stats, Timer - tStart)
@@ -260,11 +260,11 @@ Sub Main(Optional RefSheetName As Variant)
         .Columns("N").ColumnWidth = W_G_MASK
         .Columns("O").ColumnWidth = W_H_DCOP
         
-        ' 冻结窗格 (只冻结前5行: Dashboard 4 + Header 1)
-        .Rows(5).AutoFilter
+        ' 冻结窗格 (只冻结前4行: Dashboard 2 + Banner 1 + Header 1)
+        .Rows(4).AutoFilter
         .Activate
         ActiveWindow.DisplayGridlines = False
-        .Range("A6").Select
+        .Range("A5").Select
         ActiveWindow.FreezePanes = True
         
         ' 全局字体设置
@@ -329,46 +329,43 @@ Sub ApplyBlockBorders(ws As Worksheet, startRow As Long, endRow As Long)
     Next c
 End Sub
 
-' --- 渲染 Dashboard ---
+' --- 渲染 Dashboard (压缩模式: 2行) ---
 Sub RenderDashboard(ws As Worksheet, s As AuditStats, duration As Double)
-    ' 压缩模式：只用前4行
-    ws.Range("A1:O4").Interior.Color = COLOR_BG_DASHBOARD
+    ' Row 1-2: Dashboard 区域
+    ws.Range("A1:O2").Interior.Color = COLOR_BG_DASHBOARD
     
+    ' Row 1: 标题 + 时间
     With ws.Range("A1")
         .Value = "FlowSentinel 审计概览"
         .Font.Name = "Segoe UI"
-        .Font.Size = 14 ' 稍微调小一点，显得精致
+        .Font.Size = 13
         .Font.Bold = True
         .Font.Color = RGB(50, 60, 80)
     End With
     
-    ' 时间放 A2
-    ws.Range("A2").Value = "Time: " & Format(duration, "0.00") & "s | " & Format(Now, "hh:mm:ss")
-    ws.Range("A2").Font.Color = RGB(100, 100, 100)
-    ws.Range("A2").Font.Size = 9
+    ' 时间紧跟标题后面
+    ws.Range("B1").Value = Format(duration, "0.00") & "s | " & Format(Now, "hh:mm:ss")
+    ws.Range("B1").Font.Color = RGB(120, 120, 120)
+    ws.Range("B1").Font.Size = 9
     
-    ' 卡片放在第 3 行 (Value) 和 第 4 行 (Title)
-    ' B, D, F, H, J, L
-    DrawCardCompact ws, "B3", "Total", s.TotalRows, RGB(80, 80, 80)
-    DrawCardCompact ws, "D3", "Exact", s.ExactMatch, RGB(46, 204, 113)
-    DrawCardCompact ws, "F3", "Upgrade", s.LevelMatch, RGB(52, 152, 219)
-    DrawCardCompact ws, "H3", "Diff", s.ParamDiff, RGB(241, 196, 15)
-    DrawCardCompact ws, "J3", "Deleted", s.MissingT1, RGB(231, 76, 60)
-    DrawCardCompact ws, "L3", "Added", s.MissingT2, RGB(230, 126, 34)
+    ' Row 2: 紧凑计数卡片 (值+标签并排)
+    ' B: Total, D: Exact, F: Revise, H: Diff, J: Del, L: Add
+    DrawCardInline ws, "B2", "Total", s.TotalRows, RGB(80, 80, 80)
+    DrawCardInline ws, "D2", "Exact", s.ExactMatch, RGB(46, 204, 113)
+    DrawCardInline ws, "F2", "Revise", s.LevelMatch, RGB(52, 152, 219)
+    DrawCardInline ws, "H2", "Diff", s.ParamDiff, RGB(241, 196, 15)
+    DrawCardInline ws, "J2", "Del", s.MissingT1, RGB(231, 76, 60)
+    DrawCardInline ws, "L2", "Add", s.MissingT2, RGB(230, 126, 34)
 End Sub
 
-Sub DrawCardCompact(ws As Worksheet, cellAddr As String, title As String, val As Long, color As Long)
+Sub DrawCardInline(ws As Worksheet, cellAddr As String, title As String, val As Long, color As Long)
     With ws.Range(cellAddr)
-        .Value = val
-        .Font.Size = 14
+        .Value = val & " " & title
+        .Font.Name = "Segoe UI"
+        .Font.Size = 11
         .Font.Bold = True
         .Font.Color = color
         .HorizontalAlignment = xlCenter
-        
-        .Offset(1, 0).Value = title
-        .Offset(1, 0).Font.Size = 9
-        .Offset(1, 0).Font.Color = RGB(100, 100, 100)
-        .Offset(1, 0).HorizontalAlignment = xlCenter
     End With
 End Sub
 
@@ -460,7 +457,7 @@ Sub RenderRow(ws As Worksheet, r As Long, icon As String, status As String, ws1 
 End Sub
 
 ' --- 初始化报表 ---
-Function CreateReportSheet() As Worksheet
+Function CreateReportSheet(sheetName1 As String, sheetName2 As String) As Worksheet
     On Error Resume Next
     Application.DisplayAlerts = False
     Worksheets("Audit_Dashboard").Delete
@@ -471,11 +468,11 @@ Function CreateReportSheet() As Worksheet
     Set ws = Worksheets.Add(Before:=Worksheets(1))
     ws.Name = "Audit_Dashboard"
     
-    ' 更新表头 (加入 DCOP) - 移动到第5行
+    ' Row 4: 列表头 (加入 DCOP)
     Dim headers As Variant
     headers = Array("Status", "Note", "[当前] Call", "Stage", "Recipe", "PPID", "Mask", "DCOP", "║", "[基准] Call", "Stage", "Recipe", "PPID", "Mask", "DCOP")
     
-    With ws.Range("A5:O5")
+    With ws.Range("A4:O4")
         .Value = headers
         .Font.Bold = True
         .Font.Color = RGB(255, 255, 255)
@@ -490,6 +487,50 @@ Function CreateReportSheet() As Worksheet
         .Cells(1, 9).Interior.Color = RGB(60, 70, 85)
         ' [基准] 区 - 灰色系
         .Offset(0, 9).Resize(1, 6).Interior.Color = RGB(100, 100, 100)
+    End With
+    
+    ' Row 3: Sheet Banner - 两个合并单元格区分左右两侧
+    ' 当前表名称 (D~H)
+    With ws.Range("D3:H3")
+        .MergeCells = False
+        .UnMerge
+        .Merge
+        .Value = "当前表: " & sheetName1
+        .Font.Name = "Segoe UI"
+        .Font.Size = 10
+        .Font.Bold = True
+        .Font.Color = RGB(0, 82, 147)
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlCenter
+        .RowHeight = 20
+        .Interior.Color = RGB(220, 230, 242)
+    End With
+    
+    ' 基准表名称 (J~N)
+    With ws.Range("J3:N3")
+        .MergeCells = False
+        .UnMerge
+        .Merge
+        .Value = "基准表: " & sheetName2
+        .Font.Name = "Segoe UI"
+        .Font.Size = 10
+        .Font.Bold = True
+        .Font.Color = RGB(80, 80, 80)
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlCenter
+        .RowHeight = 20
+        .Interior.Color = RGB(235, 235, 235)
+    End With
+    
+    ' 左侧说明区 (A~C) 和分隔符区 (I)
+    With ws.Range("A3:C3")
+        .Interior.Color = COLOR_BG_DASHBOARD
+    End With
+    With ws.Range("I3:I3")
+        .Interior.Color = COLOR_BG_DASHBOARD
+    End With
+    With ws.Range("O3:O3")
+        .Interior.Color = COLOR_BG_DASHBOARD
     End With
     
     Set CreateReportSheet = ws

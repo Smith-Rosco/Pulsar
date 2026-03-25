@@ -25,6 +25,7 @@ namespace Pulsar.Services
         private readonly string _configPath;
         private ProfilesConfig? _cachedConfig;
         private readonly ILogger<ConfigService> _logger;
+        private readonly IPluginMetadataRegistry? _metadataRegistry;
         private ConfigValidationPipeline? _validationPipeline;
 
         public event Action? ConfigUpdated;
@@ -36,9 +37,10 @@ namespace Pulsar.Services
         /// </summary>
         public ValidationResult? LastValidationResult { get; private set; }
 
-        public ConfigService(ILogger<ConfigService> logger)
+        public ConfigService(ILogger<ConfigService> logger, IPluginMetadataRegistry? metadataRegistry = null)
         {
             _logger = logger;
+            _metadataRegistry = metadataRegistry;
             string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Pulsar");
             Directory.CreateDirectory(folder);
             _configPath = Path.Combine(folder, ConfigFileName);
@@ -80,6 +82,12 @@ namespace Pulsar.Services
                 if (loaded?.Profiles != null)
                 {
                     loaded.Profiles = new Dictionary<string, ProcessProfile>(loaded.Profiles, StringComparer.OrdinalIgnoreCase);
+
+                    foreach (var profile in loaded.Profiles.Values)
+                    {
+                        NormalizeSlotActions(profile.CommandMode);
+                        NormalizeSlotActions(profile.SwitchMode);
+                    }
                 }
 
                 // [Architectural Fix] Normalize all JsonElement values in plugin configs to concrete types
@@ -596,6 +604,25 @@ namespace Pulsar.Services
             }
 
             return normalized;
+        }
+
+        private void NormalizeSlotActions(IList<PluginSlot>? slots)
+        {
+            if (slots == null) return;
+
+            foreach (var slot in slots)
+            {
+                if (slot == null) continue;
+
+                if (string.IsNullOrEmpty(slot.Action))
+                {
+                    var metadata = _metadataRegistry?.GetMetadata(slot.PluginId);
+                    if (metadata?.Actions?.Count > 0)
+                    {
+                        slot.Action = metadata.Actions.Keys.First();
+                    }
+                }
+            }
         }
 
         private static object NormalizeNumber(JsonElement element)

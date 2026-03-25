@@ -264,7 +264,7 @@ namespace Pulsar.Models
         [JsonPropertyName("action")]
         public string Action
         {
-            get => _action;
+            get => _action ?? string.Empty;
             set => SetProperty(ref _action, value);
         }
 

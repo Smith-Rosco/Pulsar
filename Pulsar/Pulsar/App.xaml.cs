@@ -101,6 +101,7 @@ namespace Pulsar
             serviceCollection.AddSingleton<ILoggingConfigService, LoggingConfigService>();
 
             // 1. Core Services
+            serviceCollection.AddSingleton<IPluginMetadataRegistry, PluginMetadataRegistry>();
             serviceCollection.AddSingleton<IConfigService, ConfigService>();
             serviceCollection.AddSingleton<IProcessRegistryService, ProcessRegistryService>();
             serviceCollection.AddSingleton<IWindowService, WindowService>();
@@ -137,7 +138,6 @@ namespace Pulsar
             
             // 2. Plugin System (New Architecture)
             serviceCollection.AddSingleton<PluginRegistry>();
-            serviceCollection.AddSingleton<IPluginMetadataRegistry, PluginMetadataRegistry>();
             
             // [New] Plugin Monitoring & Analytics Services
             serviceCollection.AddSingleton<IPluginUsageTracker, PluginUsageTracker>();

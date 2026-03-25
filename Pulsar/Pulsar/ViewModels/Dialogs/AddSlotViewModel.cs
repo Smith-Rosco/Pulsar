@@ -286,6 +286,12 @@ namespace Pulsar.ViewModels.Dialogs
                 return;
             }
 
+            // Action 变更由 SetAction/_setAction 统一管理，不在此处二次触发
+            if (string.Equals(e.PropertyName, nameof(PluginSlot.Action), StringComparison.Ordinal))
+            {
+                return;
+            }
+
             ApplySuggestions();
             NotifyStateChanged();
         }

@@ -384,11 +384,10 @@
                                                             CornerRadius="8"
                                                             Padding="10,8"
                                                             Margin="0,0,0,8">
-                                                        <RadioButton Content="{Binding Label}"
+                                                         <RadioButton Content="{Binding Label}"
                                                                      ToolTip="{Binding Description}"
-                                                                     IsChecked="{Binding IsSelected}"
-                                                                     GroupName="CreateSlotActionGroup"
-                                                                     Click="ActionRadio_Click"
+                                                                     IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                                                     Checked="ActionRadio_Checked"
                                                                      Tag="{Binding Value}"/>
                                                     </Border>
                                                 </DataTemplate>
@@ -396,11 +395,11 @@
                                         </ItemsControl>
                                     </StackPanel>
 
-                                    <StackPanel Visibility="{Binding UseComboActions, Converter={StaticResource BoolToVis}}">
+                                     <StackPanel Visibility="{Binding UseComboActions, Converter={StaticResource BoolToVis}}">
                                         <ComboBox ItemsSource="{Binding AvailableActions}"
                                                   SelectedValuePath="Value"
                                                   DisplayMemberPath="Label"
-                                                  SelectedValue="{Binding Slot.Action}"
+                                                  SelectedValue="{Binding Slot.Action, Mode=OneWay}"
                                                   SelectionChanged="ActionComboBox_SelectionChanged"/>
                                     </StackPanel>
                                 </StackPanel>

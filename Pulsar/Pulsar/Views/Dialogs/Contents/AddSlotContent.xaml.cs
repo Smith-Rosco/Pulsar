@@ -7,6 +7,8 @@ namespace Pulsar.Views.Dialogs.Contents
 {
     public partial class AddSlotContent : UserControl
     {
+        private bool _isSettingAction;
+
         public AddSlotContent()
         {
             InitializeComponent();
@@ -32,13 +34,27 @@ namespace Pulsar.Views.Dialogs.Contents
             }
         }
 
-        private void ActionRadio_Click(object sender, RoutedEventArgs e)
+        private void ActionRadio_Checked(object sender, RoutedEventArgs e)
         {
+            if (_isSettingAction)
+            {
+                return;
+            }
+
             if (sender is System.Windows.Controls.RadioButton radio
                 && radio.Tag is string action
+                && !string.IsNullOrWhiteSpace(action)
                 && DataContext is AddSlotViewModel viewModel)
             {
-                viewModel.SetAction(action);
+                _isSettingAction = true;
+                try
+                {
+                    viewModel.SetAction(action);
+                }
+                finally
+                {
+                    _isSettingAction = false;
+                }
             }
         }
 

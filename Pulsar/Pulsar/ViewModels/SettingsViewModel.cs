@@ -837,7 +837,7 @@ namespace Pulsar.ViewModels
 
         private void SetSlotDraftAction(PluginSlot slot, string? action)
         {
-            if (slot == null || string.IsNullOrWhiteSpace(action) || string.Equals(slot.Action, action, StringComparison.OrdinalIgnoreCase))
+            if (slot == null || string.IsNullOrWhiteSpace(action))
             {
                 return;
             }
@@ -1436,23 +1436,29 @@ namespace Pulsar.ViewModels
         private void InitializeSlotMetadata(PluginSlot slot)
         {
             var metadata = _pluginMetadataRegistry.GetMetadata(slot.PluginId);
+
+            // 先确定有效的 actionMetadata（回退到第一个可用 action）
+            var actionMetadata = _pluginMetadataRegistry.GetActionMetadata(slot.PluginId, slot.Action)
+                ?? metadata?.Actions.Values.FirstOrDefault();
+
+            // 如果 slot.Action 为空或在注册表中找不到对应的 action，回退到第一个可用 action
+            if (actionMetadata != null && (string.IsNullOrWhiteSpace(slot.Action)
+                || _pluginMetadataRegistry.GetActionMetadata(slot.PluginId, slot.Action) == null))
+            {
+                slot.Action = actionMetadata.Name;
+            }
+
+            // 在 slot.Action 确定后再构建 IsSelected 状态
             var actionOptions = metadata?.Actions
                 .Select(action => new SlotActionOption
                 {
                     Value = action.Key,
                     Label = action.Value.Label ?? action.Key,
-                    Description = action.Value.Description
+                    Description = action.Value.Description,
+                    IsSelected = string.Equals(action.Key, slot.Action, StringComparison.OrdinalIgnoreCase)
                 })
                 .OrderBy(action => action.Label)
                 .ToList() ?? new List<SlotActionOption>();
-
-            var actionMetadata = _pluginMetadataRegistry.GetActionMetadata(slot.PluginId, slot.Action)
-                ?? metadata?.Actions.Values.FirstOrDefault();
-
-            if (actionMetadata != null && string.IsNullOrWhiteSpace(slot.Action))
-            {
-                slot.Action = actionMetadata.Name;
-            }
 
             var parameters = actionMetadata?.Parameters
                 .Select(parameter => new SlotParameterEditorField(slot, parameter))
