@@ -29,6 +29,10 @@ namespace Pulsar.ViewModels.Dialogs
         private readonly Func<PluginSlot, Task> _pickIconAsync;
         private readonly Func<PluginSlot, Task> _pickColorAsync;
 
+        private static readonly ObservableCollection<SlotActionOption> _emptyActions = new();
+        private static readonly ObservableCollection<SlotParameterEditorField> _emptyFields = new();
+        private static readonly ObservableCollection<string> _emptyTokens = new();
+
         private PluginSlot? _slot;
         private string _lastSuggestedLabel = string.Empty;
         private string _lastSuggestedIcon = string.Empty;
@@ -140,15 +144,15 @@ namespace Pulsar.ViewModels.Dialogs
 
         public string PreviewHealthToneKey => Slot?.Presentation.HealthToneKey ?? "SlotHealthBrushReady";
 
-        public ObservableCollection<SlotActionOption> AvailableActions => Slot?.AvailableActions ?? new ObservableCollection<SlotActionOption>();
+        public ObservableCollection<SlotActionOption> AvailableActions => Slot?.AvailableActions ?? _emptyActions;
 
-        public ObservableCollection<SlotParameterEditorField> RequiredParameters => Slot?.RequiredParameters ?? new ObservableCollection<SlotParameterEditorField>();
+        public ObservableCollection<SlotParameterEditorField> RequiredParameters => Slot?.RequiredParameters ?? _emptyFields;
 
-        public ObservableCollection<SlotParameterEditorField> OptionalParameters => Slot?.OptionalParameters ?? new ObservableCollection<SlotParameterEditorField>();
+        public ObservableCollection<SlotParameterEditorField> OptionalParameters => Slot?.OptionalParameters ?? _emptyFields;
 
-        public ObservableCollection<SlotParameterEditorField> AdvancedParameters => Slot?.AdvancedParameters ?? new ObservableCollection<SlotParameterEditorField>();
+        public ObservableCollection<SlotParameterEditorField> AdvancedParameters => Slot?.AdvancedParameters ?? _emptyFields;
 
-        public ObservableCollection<string> SummaryTokens => Slot?.SummaryTokens ?? new ObservableCollection<string>();
+        public ObservableCollection<string> SummaryTokens => Slot?.SummaryTokens ?? _emptyTokens;
 
         public bool HasSingleAction => Slot?.AvailableActions.Count == 1;
 
@@ -244,7 +248,8 @@ namespace Pulsar.ViewModels.Dialogs
         {
             await _pickParameterValueAsync(field);
             ApplySuggestions();
-            NotifyStateChanged();
+            // Parameter value changes don't affect structural layout; preview and validation only.
+            NotifyPreviewChanged();
         }
 
         public async Task PickIconAsync()
@@ -255,7 +260,7 @@ namespace Pulsar.ViewModels.Dialogs
             }
 
             await _pickIconAsync(Slot);
-            NotifyStateChanged();
+            NotifyPreviewChanged();
         }
 
         public async Task PickColorAsync()
@@ -266,7 +271,7 @@ namespace Pulsar.ViewModels.Dialogs
             }
 
             await _pickColorAsync(Slot);
-            NotifyStateChanged();
+            NotifyPreviewChanged();
         }
 
         public Task<bool> CanCloseAsync(DialogResult result)
@@ -292,21 +297,22 @@ namespace Pulsar.ViewModels.Dialogs
                 return;
             }
 
+            // Parameter value edits don't change structural layout (actions list, parameter list);
+            // only preview and validation output need refreshing.
             ApplySuggestions();
-            NotifyStateChanged();
+            NotifyPreviewChanged();
         }
 
+        /// <summary>
+        /// Full refresh: structure has changed (plugin type selected, action changed, wizard step changed).
+        /// Refreshes all derived properties including layout-affecting ones.
+        /// </summary>
         private void NotifyStateChanged()
         {
             SyncSelectedActionStates();
             OnPropertyChanged(nameof(HasSelectedPlugin));
             OnPropertyChanged(nameof(SelectedPluginDescription));
             OnPropertyChanged(nameof(HeaderText));
-            OnPropertyChanged(nameof(PreviewTitle));
-            OnPropertyChanged(nameof(PreviewTypeBadge));
-            OnPropertyChanged(nameof(PreviewActionText));
-            OnPropertyChanged(nameof(PreviewHealthBadge));
-            OnPropertyChanged(nameof(PreviewHealthToneKey));
             OnPropertyChanged(nameof(AvailableActions));
             OnPropertyChanged(nameof(RequiredParameters));
             OnPropertyChanged(nameof(OptionalParameters));
@@ -319,17 +325,31 @@ namespace Pulsar.ViewModels.Dialogs
             OnPropertyChanged(nameof(HasOptionalParameters));
             OnPropertyChanged(nameof(HasAdvancedParameters));
             OnPropertyChanged(nameof(HasSummaryTokens));
-            OnPropertyChanged(nameof(HasBlockingIssue));
-            OnPropertyChanged(nameof(BlockingIssueText));
-            OnPropertyChanged(nameof(HasValidationSummary));
-            OnPropertyChanged(nameof(ValidationSeverity));
-            OnPropertyChanged(nameof(ValidationSummary));
             OnPropertyChanged(nameof(PrimaryButtonText));
             OnPropertyChanged(nameof(SecondaryButtonText));
             OnPropertyChanged(nameof(StepTitle));
             OnPropertyChanged(nameof(StepDescription));
             OnPropertyChanged(nameof(IsStep0));
             OnPropertyChanged(nameof(IsStep1));
+            NotifyPreviewChanged();
+        }
+
+        /// <summary>
+        /// Lightweight refresh: only preview panel and validation output changed.
+        /// Use when slot parameters change but structure (actions/parameters list) is stable.
+        /// </summary>
+        private void NotifyPreviewChanged()
+        {
+            OnPropertyChanged(nameof(PreviewTitle));
+            OnPropertyChanged(nameof(PreviewTypeBadge));
+            OnPropertyChanged(nameof(PreviewActionText));
+            OnPropertyChanged(nameof(PreviewHealthBadge));
+            OnPropertyChanged(nameof(PreviewHealthToneKey));
+            OnPropertyChanged(nameof(HasBlockingIssue));
+            OnPropertyChanged(nameof(BlockingIssueText));
+            OnPropertyChanged(nameof(HasValidationSummary));
+            OnPropertyChanged(nameof(ValidationSeverity));
+            OnPropertyChanged(nameof(ValidationSummary));
         }
 
         private void SyncSelectedActionStates()

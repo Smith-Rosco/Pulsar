@@ -424,6 +424,12 @@ namespace Pulsar.Models
             IEnumerable<SlotParameterEditorField> quickEdit,
             IEnumerable<string> summaryTokens)
         {
+            // Dispose old fields before replacing to unsubscribe from slot.PropertyChanged.
+            DisposeFields(RequiredParameters);
+            DisposeFields(OptionalParameters);
+            DisposeFields(AdvancedParameters);
+            DisposeFields(QuickEditParameters);
+
             AvailableActions = new ObservableCollection<SlotActionOption>(availableActions);
             RequiredParameters = new ObservableCollection<SlotParameterEditorField>(required);
             OptionalParameters = new ObservableCollection<SlotParameterEditorField>(optional);
@@ -451,6 +457,19 @@ namespace Pulsar.Models
             OnPropertyChanged(nameof(HealthToneKey));
             OnPropertyChanged(nameof(QuickEditBadgeText));
             OnPropertyChanged(nameof(SummaryFallbackText));
+        }
+
+        private static void DisposeFields(ObservableCollection<SlotParameterEditorField>? fields)
+        {
+            if (fields == null)
+            {
+                return;
+            }
+
+            foreach (var field in fields)
+            {
+                field.Dispose();
+            }
         }
 
         public void SetValidationSummary(string summary)

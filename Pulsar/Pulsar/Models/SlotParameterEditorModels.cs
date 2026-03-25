@@ -21,9 +21,10 @@ namespace Pulsar.Models
         private bool _isSelected;
     }
 
-    public partial class SlotParameterEditorField : ObservableObject
+    public partial class SlotParameterEditorField : ObservableObject, IDisposable
     {
         private readonly PluginSlot _slot;
+        private bool _disposed;
 
         public SlotParameterEditorField(PluginSlot slot, SlotParameterMetadata metadata)
         {
@@ -141,6 +142,17 @@ namespace Pulsar.Models
                 OnPropertyChanged(nameof(SummaryValue));
                 OnPropertyChanged(nameof(SummaryToken));
             }
+        }
+
+        public void Dispose()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _slot.PropertyChanged -= OnSlotPropertyChanged;
+            _disposed = true;
         }
 
         private string BuildSummaryValue()

@@ -7,8 +7,6 @@ namespace Pulsar.Views.Dialogs.Contents
 {
     public partial class AddSlotContent : UserControl
     {
-        private bool _isSettingAction;
-
         public AddSlotContent()
         {
             InitializeComponent();
@@ -26,6 +24,8 @@ namespace Pulsar.Views.Dialogs.Contents
 
         private void ActionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            // Binding on SelectedValue MUST remain Mode=OneWay to avoid a feedback loop.
+            // See: Docs/lessons/WPF_RADIOBUTTON_PROPERTYCHANGED_FEEDBACK_LOOP.md
             if (sender is System.Windows.Controls.ComboBox comboBox
                 && comboBox.SelectedValue is string action
                 && DataContext is AddSlotViewModel viewModel)
@@ -36,25 +36,15 @@ namespace Pulsar.Views.Dialogs.Contents
 
         private void ActionRadio_Checked(object sender, RoutedEventArgs e)
         {
-            if (_isSettingAction)
-            {
-                return;
-            }
-
+            // No re-entrancy guard needed: IsChecked is bound Mode=OneWay, so SyncSelectedActionStates()
+            // writing IsSelected will not re-fire this event.
+            // See: Docs/lessons/WPF_RADIOBUTTON_PROPERTYCHANGED_FEEDBACK_LOOP.md
             if (sender is System.Windows.Controls.RadioButton radio
                 && radio.Tag is string action
                 && !string.IsNullOrWhiteSpace(action)
                 && DataContext is AddSlotViewModel viewModel)
             {
-                _isSettingAction = true;
-                try
-                {
-                    viewModel.SetAction(action);
-                }
-                finally
-                {
-                    _isSettingAction = false;
-                }
+                viewModel.SetAction(action);
             }
         }
 
