@@ -252,8 +252,16 @@ public class MyService
 
 ---
 
-## 8. Agent Behavior Rules
+## 8. Agent Behavior Rules & AI-First Development Paradigm
 
+### AI-First Workflow (TDD & Headless Simulator)
+When tasked with developing a new feature or plugin, **you must use the following workflow**:
+1. **Understand & Contract**: Define the logic without touching UI. Write unit tests in `Pulsar.Tests` first.
+2. **Headless Execution**: Use `dotnet run --project Pulsar/Pulsar.Simulator/Pulsar.Simulator.csproj` to test the plugin logic. Pass necessary JSON arguments via `--args "{\"key\":\"value\"}"`.
+3. **Self-Correction**: Parse the structured JSON output from the simulator. If `"Success": false`, read the error message and fix the logic until the simulator reports `"Success": true`.
+4. **UI Binding**: Only after tests and the simulator verify the core logic is sound, proceed to modify XAML/ViewModels to bind the UI.
+
+### General Agent Rules
 - **Proactiveness**: Fix obvious issues (missing null checks, etc.) when spotted
 - **Context**: Always read files before editing to preserve local conventions
 - **Safety**: Never commit secrets or API keys
