@@ -1108,10 +1108,10 @@ namespace Pulsar.ViewModels
                 slot.Args["secretId"] = pickerVm.SelectedSecretId.Value.ToString();
 
                 // 若 label 仍是默认值，更新为 secret 的 label
-                if (pickerVm.SelectedSecret?.Label is { Length: > 0 } secretLabel
-                    && (string.IsNullOrWhiteSpace(slot.Label) || slot.Label == "Fill Secret"))
+                if (pickerVm.SelectedSecret != null && !string.IsNullOrWhiteSpace(pickerVm.SelectedSecret.Label) &&
+                    (string.IsNullOrWhiteSpace(slot.Label) || slot.Label == "Fill Secret"))
                 {
-                    slot.Label = secretLabel;
+                    slot.Label = pickerVm.SelectedSecret.Label;
                 }
 
                 InitializeSlotMetadata(slot);
