@@ -519,6 +519,14 @@ namespace Pulsar.ViewModels
             if (result == DialogResult.Confirmed && vm.CreatedSlot != null)
             {
                 CommitCreatedSlot(vm.CreatedSlot);
+
+                // P2 Fix: If the newly created slot is a PKI slot and secretId is still empty,
+                // immediately open the secret picker so the user can link a secret.
+                if (vm.CreatedSlot.PluginId == "com.pulsar.pki"
+                    && (!vm.CreatedSlot.Args.TryGetValue("secretId", out var sid) || string.IsNullOrEmpty(sid)))
+                {
+                    await PickSecret(vm.CreatedSlot);
+                }
             }
         }
 
@@ -1041,6 +1049,79 @@ namespace Pulsar.ViewModels
             }
         }
 
+        /// <summary>
+        /// 打开 SecretPicker 对话框，供用户选择已有密码或新建密码。
+        /// 新建 slot 时 secretId 尚未存在，直接弹出新建流程。
+        /// </summary>
+        private async Task PickSecret(PluginSlot slot)
+        {
+            if (slot == null || slot.PluginId != "com.pulsar.pki") return;
+
+            // 构建 labelMap（slot label -> secretId 反查）
+            var labelMap = new Dictionary<Guid, string>();
+            if (CurrentSlots != null)
+            {
+                foreach (var s in CurrentSlots)
+                {
+                    if (s.Args.TryGetValue("secretId", out var idStr) && Guid.TryParse(idStr, out var gid))
+                        labelMap[gid] = s.Label;
+                }
+            }
+
+            var pickerVm = new SecretPickerViewModel(_secretRepo, _pendingSecrets, labelMap, _dialogService);
+            await pickerVm.LoadAsync();
+
+            await _dialogService.ShowCustomAsync("Select Secret", pickerVm, Models.Enums.DialogButtons.None, DialogSizeConstraints.Medium);
+
+            if (pickerVm.AddNewRequested)
+            {
+                // 新建密码
+                var vm = new QuickSecretsViewModel();
+                bool autoEnter = slot.Args.TryGetValue("autoEnter", out var ae) && bool.TryParse(ae, out var aeb) && aeb;
+                vm.LoadForEdit(slot.Label, string.Empty, string.Empty, autoEnter);
+
+                var addResult = await _dialogService.ShowCustomAsync("Add Secret", vm, DialogButtons.OkCancel);
+                if (addResult == DialogResult.Confirmed)
+                {
+                    var secretId = Guid.NewGuid();
+                    var payload = new Plugins.Core.Pki.Models.SecretPayload
+                    {
+                        Account = vm.Account,
+                        EncryptedData = vm.ResultEncryptedData
+                    };
+                    _pendingSecrets[secretId] = payload;
+
+                    slot.Label = vm.Label;
+                    slot.Args["secretId"] = secretId.ToString();
+                    slot.Args["autoEnter"] = vm.AutoEnter.ToString();
+
+                    InitializeSlotMetadata(slot);
+                    RefreshSlotValidationSummary(slot);
+                    UpdateSlotPresentation(slot);
+                    MarkDirty();
+                    SendNotification("Success", "Secret added (pending save).", ControlAppearance.Success);
+                }
+            }
+            else if (pickerVm.SelectedSecretId.HasValue)
+            {
+                // 选择了已有密码
+                slot.Args["secretId"] = pickerVm.SelectedSecretId.Value.ToString();
+
+                // 若 label 仍是默认值，更新为 secret 的 label
+                if (pickerVm.SelectedSecret?.Label is { Length: > 0 } secretLabel
+                    && (string.IsNullOrWhiteSpace(slot.Label) || slot.Label == "Fill Secret"))
+                {
+                    slot.Label = secretLabel;
+                }
+
+                InitializeSlotMetadata(slot);
+                RefreshSlotValidationSummary(slot);
+                UpdateSlotPresentation(slot);
+                MarkDirty();
+                SendNotification("Success", "Secret linked.", ControlAppearance.Success);
+            }
+        }
+
         [RelayCommand]
         private void OpenLogsFolder()
         {
@@ -1413,7 +1494,7 @@ namespace Pulsar.ViewModels
                     break;
 
                 case Pulsar.Core.Plugin.Metadata.SlotPickerIntent.Secret:
-                    await EditSecret(field.Slot);
+                    await PickSecret(field.Slot);
                     break;
             }
         }
