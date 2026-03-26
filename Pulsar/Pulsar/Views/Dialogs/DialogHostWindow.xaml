@@ -84,6 +84,10 @@
             <DataTemplate DataType="{x:Type dialogs:AddSlotViewModel}">
                 <contents:AddSlotContent/>
             </DataTemplate>
+
+            <DataTemplate DataType="{x:Type dialogs:SecretPickerViewModel}">
+                <contents:SecretPickerContent/>
+            </DataTemplate>
         </ResourceDictionary>
     </Window.Resources>
 
