@@ -75,6 +75,25 @@ namespace Pulsar.Native
                     return false;
                 }
 
+                try
+                {
+                    string className = focusedElement.CurrentClassName.ToString();
+                    if (!string.IsNullOrEmpty(className))
+                    {
+                        if (className == "native-edit-context" ||
+                            className.StartsWith("Chrome_") ||
+                            className == "MozillaWindowClass")
+                        {
+                            _logger.LogDebug("UIA bypassed due to blacklisted class name: {ClassName}", className);
+                            return false;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug(ex, "Failed to check class name");
+                }
+
                 // Check for ValuePattern (for Edit controls like Address Bar)
                 // UIA_ValuePatternId = 10002
                 int valuePatternId = 10002;
@@ -102,6 +121,30 @@ namespace Pulsar.Native
                                 finally
                                 {
                                     PInvoke.SysFreeString(bstr);
+                                }
+
+                                // 验证机制 (Validation Check)
+                                bool isPassword = false;
+                                try
+                                {
+                                    isPassword = focusedElement.CurrentIsPassword != 0;
+                                }
+                                catch (Exception) { }
+
+                                if (!isPassword)
+                                {
+                                    string actualValue = string.Empty;
+                                    try
+                                    {
+                                        actualValue = valuePattern.CurrentValue.ToString();
+                                    }
+                                    catch (Exception) { }
+
+                                    if (actualValue != text)
+                                    {
+                                        _logger.LogDebug("UIA silent failure detected. Expected: {Text}, Actual: {ActualValue}", text, actualValue);
+                                        return false;
+                                    }
                                 }
                             }
                         }

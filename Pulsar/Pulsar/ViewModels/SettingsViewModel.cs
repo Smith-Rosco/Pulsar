@@ -15,6 +15,8 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Pulsar.Core.Messages;
 using Pulsar.Core.Plugin.Metadata;
+using Pulsar.Plugins.Core.Pki.Contracts;
+using Pulsar.Plugins.Core.Pki.Models;
 using Pulsar.Plugins.Core.Pki.Services;
 using Pulsar.Helpers;
 using Pulsar.Models;
@@ -100,7 +102,9 @@ namespace Pulsar.ViewModels
         private readonly IDialogService _dialogService;
         private readonly IFuzzySearchService<IconItem> _searchService;
         private readonly IProcessRegistryService? _processRegistryService;
-        private readonly SecretRepository _secretRepo;
+        private readonly IPkiSecretStore _secretStore;
+        private readonly ISecretProtector _secretProtector;
+        private readonly IPkiSecretMetadataResolver _secretMetadataResolver;
         private readonly IPluginMetadataRegistry _pluginMetadataRegistry;
         private readonly ILogger<SettingsViewModel> _logger;
         private ProfilesConfig _config;
@@ -326,7 +330,9 @@ namespace Pulsar.ViewModels
             IHotkeyService hotkeyService,
             IDialogService dialogService,
             IFuzzySearchService<IconItem> searchService,
-            SecretRepository secretRepo,
+            IPkiSecretStore secretStore,
+            ISecretProtector secretProtector,
+            IPkiSecretMetadataResolver secretMetadataResolver,
             IPluginMetadataRegistry pluginMetadataRegistry,
             ILogger<SettingsViewModel> logger,
             IProcessRegistryService? processRegistryService = null)
@@ -337,7 +343,9 @@ namespace Pulsar.ViewModels
             _hotkeyService = hotkeyService;
             _dialogService = dialogService;
             _searchService = searchService;
-            _secretRepo = secretRepo;
+            _secretStore = secretStore;
+            _secretProtector = secretProtector;
+            _secretMetadataResolver = secretMetadataResolver;
             _pluginMetadataRegistry = pluginMetadataRegistry;
             _logger = logger;
             _processRegistryService = processRegistryService;
@@ -409,6 +417,7 @@ namespace Pulsar.ViewModels
                 };
                 var json = System.Text.Json.JsonSerializer.Serialize(sharedConfig, options);
                 _config = System.Text.Json.JsonSerializer.Deserialize<ProfilesConfig>(json, options) ?? new ProfilesConfig();
+                _persistedSecrets = await _secretStore.LoadAsync();
 
                 GeneralSettings = _config.Settings;
                 InitializePluginTypes();
@@ -543,7 +552,7 @@ namespace Pulsar.ViewModels
             if (CurrentSlots == null) return;
             // [Refactor] Removed 8-slot limit
 
-            var vm = new QuickSecretsViewModel();
+            var vm = new QuickSecretsViewModel(_secretProtector);
             var result = await _dialogService.ShowCustomAsync("Secret Configuration", vm, DialogButtons.OkCancel);
 
             if (result == DialogResult.Confirmed)
@@ -554,6 +563,7 @@ namespace Pulsar.ViewModels
                 var secretId = Guid.NewGuid();
                 var payload = new Plugins.Core.Pki.Models.SecretPayload
                 {
+                    Label = vm.Label,
                     Account = vm.Account,
                     EncryptedData = vm.ResultEncryptedData
                 };
@@ -733,13 +743,17 @@ namespace Pulsar.ViewModels
                 // [Fix] Ensure current modifications are committed before saving
                 SyncSlotsToConfig();
                 
-                var allSecrets = await _secretRepo.LoadAsync();
+                // [Fix] Refresh slot metadata BEFORE saving to ensure valid actions are persisted
+                RefreshSlotParameterMetadata();
+
+                var allSecrets = await _secretStore.LoadAsync();
                 foreach (var kvp in _pendingSecrets)
                 {
                     allSecrets[kvp.Key] = kvp.Value;
                 }
                 
-                await _secretRepo.SaveAsync(allSecrets);
+                await _secretStore.SaveAsync(allSecrets);
+                _persistedSecrets = new Dictionary<Guid, Plugins.Core.Pki.Models.SecretPayload>(allSecrets);
                 _pendingSecrets.Clear();
                 
                 await _configService.SaveAsync(_config);
@@ -1005,6 +1019,7 @@ namespace Pulsar.ViewModels
 
 
         private Dictionary<Guid, Plugins.Core.Pki.Models.SecretPayload> _pendingSecrets = new();
+        private Dictionary<Guid, Plugins.Core.Pki.Models.SecretPayload> _persistedSecrets = new();
 
         [RelayCommand]
         public async Task EditSecret(PluginSlot slot)
@@ -1019,8 +1034,7 @@ namespace Pulsar.ViewModels
 
             if (!_pendingSecrets.TryGetValue(secretId, out var payload))
             {
-                var existingSecrets = await _secretRepo.LoadAsync();
-                existingSecrets.TryGetValue(secretId, out payload);
+                _persistedSecrets.TryGetValue(secretId, out payload);
             }
 
             if (payload == null) 
@@ -1029,21 +1043,23 @@ namespace Pulsar.ViewModels
                 return;
             }
 
-            var vm = new QuickSecretsViewModel();
+            var vm = new QuickSecretsViewModel(_secretProtector);
             bool autoEnter = slot.Args.TryGetValue("autoEnter", out var ae) && bool.Parse(ae);
-            vm.LoadForEdit(slot.Label, payload.Account, payload.EncryptedData, autoEnter);
+            var secretDisplay = ResolveSecretDisplay(secretId.ToString(), BuildLegacySecretLabelMap());
+            vm.LoadForEdit(secretDisplay?.Label ?? slot.Label, payload.Account, payload.EncryptedData, autoEnter);
 
             var result = await _dialogService.ShowCustomAsync("Edit Secret", vm, DialogButtons.OkCancel);
 
             if (result == DialogResult.Confirmed)
             {
-                slot.Label = vm.Label;
-                slot.Args["autoEnter"] = vm.AutoEnter.ToString();
+                payload.Label = vm.Label;
+                slot.SetArgument("autoEnter", vm.AutoEnter.ToString());
                 
                 payload.Account = vm.Account;
                 payload.EncryptedData = vm.ResultEncryptedData;
                 _pendingSecrets[secretId] = payload;
 
+                RefreshSlotParameterMetadata();
                 MarkDirty(); // [Phase 2]
                 SendNotification("Success", "Secret updated.", ControlAppearance.Success);
             }
@@ -1051,74 +1067,27 @@ namespace Pulsar.ViewModels
 
         /// <summary>
         /// 打开 SecretPicker 对话框，供用户选择已有密码或新建密码。
-        /// 新建 slot 时 secretId 尚未存在，直接弹出新建流程。
+        /// 用户可以在对话框内直接创建新Secret，创建后会自动选中。
         /// </summary>
         private async Task PickSecret(PluginSlot slot)
         {
             if (slot == null || slot.PluginId != "com.pulsar.pki") return;
 
-            // 构建 labelMap（slot label -> secretId 反查）
-            var labelMap = new Dictionary<Guid, string>();
-            if (CurrentSlots != null)
-            {
-                foreach (var s in CurrentSlots)
-                {
-                    if (s.Args.TryGetValue("secretId", out var idStr) && Guid.TryParse(idStr, out var gid))
-                        labelMap[gid] = s.Label;
-                }
-            }
+            var labelMap = BuildLegacySecretLabelMap();
 
-            var pickerVm = new SecretPickerViewModel(_secretRepo, _pendingSecrets, labelMap, _dialogService);
+            var pickerVm = new SecretPickerViewModel(_secretStore, _secretProtector, _secretMetadataResolver, _pendingSecrets, labelMap, _dialogService);
             await pickerVm.LoadAsync();
 
             await _dialogService.ShowCustomAsync("Select Secret", pickerVm, Models.Enums.DialogButtons.None, DialogSizeConstraints.Medium);
 
-            if (pickerVm.AddNewRequested)
+            if (pickerVm.SelectedSecretId.HasValue)
             {
-                // 新建密码
-                var vm = new QuickSecretsViewModel();
-                bool autoEnter = slot.Args.TryGetValue("autoEnter", out var ae) && bool.TryParse(ae, out var aeb) && aeb;
-                vm.LoadForEdit(slot.Label, string.Empty, string.Empty, autoEnter);
-
-                var addResult = await _dialogService.ShowCustomAsync("Add Secret", vm, DialogButtons.OkCancel);
-                if (addResult == DialogResult.Confirmed)
-                {
-                    var secretId = Guid.NewGuid();
-                    var payload = new Plugins.Core.Pki.Models.SecretPayload
-                    {
-                        Account = vm.Account,
-                        EncryptedData = vm.ResultEncryptedData
-                    };
-                    _pendingSecrets[secretId] = payload;
-
-                    slot.Label = vm.Label;
-                    slot.Args["secretId"] = secretId.ToString();
-                    slot.Args["autoEnter"] = vm.AutoEnter.ToString();
-
-                    InitializeSlotMetadata(slot);
-                    RefreshSlotValidationSummary(slot);
-                    UpdateSlotPresentation(slot);
-                    MarkDirty();
-                    SendNotification("Success", "Secret added (pending save).", ControlAppearance.Success);
-                }
-            }
-            else if (pickerVm.SelectedSecretId.HasValue)
-            {
-                // 选择了已有密码
-                slot.Args["secretId"] = pickerVm.SelectedSecretId.Value.ToString();
-
-                // 若 label 仍是默认值，更新为 secret 的 label
-                if (pickerVm.SelectedSecret != null && !string.IsNullOrWhiteSpace(pickerVm.SelectedSecret.Label) &&
-                    (string.IsNullOrWhiteSpace(slot.Label) || slot.Label == "Fill Secret"))
-                {
-                    slot.Label = pickerVm.SelectedSecret.Label;
-                }
+                slot.SetArgument("secretId", pickerVm.SelectedSecretId.Value.ToString());
 
                 InitializeSlotMetadata(slot);
                 RefreshSlotValidationSummary(slot);
                 UpdateSlotPresentation(slot);
                 MarkDirty();
-                SendNotification("Success", "Secret linked.", ControlAppearance.Success);
             }
         }
 
@@ -1517,6 +1486,7 @@ namespace Pulsar.ViewModels
         private void InitializeSlotMetadata(PluginSlot slot)
         {
             var metadata = _pluginMetadataRegistry.GetMetadata(slot.PluginId);
+            var originalAction = slot.Action;
 
             // 先确定有效的 actionMetadata（回退到第一个可用 action）
             var actionMetadata = _pluginMetadataRegistry.GetActionMetadata(slot.PluginId, slot.Action)
@@ -1526,6 +1496,7 @@ namespace Pulsar.ViewModels
             if (actionMetadata != null && (string.IsNullOrWhiteSpace(slot.Action)
                 || _pluginMetadataRegistry.GetActionMetadata(slot.PluginId, slot.Action) == null))
             {
+                System.Diagnostics.Debug.WriteLine($"[InitializeSlotMetadata] Slot {slot.Slot}: action '{originalAction}' is empty/invalid, setting to '{actionMetadata.Name}'");
                 slot.Action = actionMetadata.Name;
             }
 
@@ -1542,7 +1513,7 @@ namespace Pulsar.ViewModels
                 .ToList() ?? new List<SlotActionOption>();
 
             var parameters = actionMetadata?.Parameters
-                .Select(parameter => new SlotParameterEditorField(slot, parameter))
+                .Select(parameter => new SlotParameterEditorField(slot, parameter, rawSecretId => ResolveSecretDisplay(rawSecretId, BuildLegacySecretLabelMap())))
                 .ToList() ?? new List<SlotParameterEditorField>();
 
             var quickEditParameters = SlotParameterPresentationHelper.BuildQuickEditParameters(parameters);
@@ -1593,6 +1564,33 @@ namespace Pulsar.ViewModels
 
                 slot.SetValidationSummary(summary);
                 UpdateSlotPresentation(slot);
+        }
+
+        private Dictionary<Guid, string> BuildLegacySecretLabelMap()
+        {
+            var labelMap = new Dictionary<Guid, string>();
+
+            if (CurrentSlots == null)
+            {
+                return labelMap;
+            }
+
+            foreach (var slot in CurrentSlots)
+            {
+                if (slot.Args.TryGetValue("secretId", out var idStr)
+                    && Guid.TryParse(idStr, out var secretId)
+                    && !string.IsNullOrWhiteSpace(slot.Label))
+                {
+                    labelMap[secretId] = slot.Label;
+                }
+            }
+
+            return labelMap;
+        }
+
+        private SecretDisplayMetadata? ResolveSecretDisplay(string rawSecretId, IReadOnlyDictionary<Guid, string>? legacyLabels = null)
+        {
+            return _secretMetadataResolver.Resolve(rawSecretId, _persistedSecrets, _pendingSecrets, legacyLabels);
         }
 
         private void UpdateSlotPresentation(PluginSlot slot)

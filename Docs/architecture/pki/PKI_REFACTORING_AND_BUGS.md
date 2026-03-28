@@ -93,4 +93,15 @@ UIA `SetValue` is fundamentally incompatible with rapid sequential multi-field i
 2. **UIA Semantics**: UIA `SetValue` is a "Replace All" operation, not a "Type Text" operation. It should only be used for single-field targeted injections, never in a rapid sequence involving focus changes (`TAB`).
 3. **SendKeys Reliability**: Despite its reputation, `SendKeys` remains the most reliable method for cross-application, multi-field macro injection because it respects the OS input queue.
 
-*Document updated: 2026-03-26*
+## 6. Current Architectural Baseline
+
+As of the current PKI architecture refactor, the repository standardizes on:
+
+- `PkiPlugin` as a thin adapter over `IPkiExecutionService`
+- shared PKI contracts for storage, protection, metadata resolution, focus restoration, and injection execution
+- a deterministic `InjectionPlan` model for SendKeys-based credential fill
+- shared secret-management services used by both runtime and settings flows
+
+This report remains useful as historical context for why UIA-first credential fill was retired from the PKI path.
+
+*Document updated: 2026-03-27*

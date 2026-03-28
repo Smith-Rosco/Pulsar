@@ -10,6 +10,9 @@ using Moq;
 using Pulsar.Core;
 using Pulsar.Core.Plugin;
 using Pulsar.Models;
+using Pulsar.Plugins.Core.Pki.Contracts;
+using Pulsar.Plugins.Core.Pki.Services;
+using Pulsar.Plugins.Core.Pki.Services.Input;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Serilog;
@@ -73,8 +76,20 @@ namespace Pulsar.Simulator
             var mockWindow = new Mock<IWindowService>();
             mockWindow.Setup(w => w.GetPreviousWindow()).Returns(IntPtr.Zero);
             mockWindow.Setup(w => w.GetProcessWindowsAsync(It.IsAny<int>())).ReturnsAsync(new List<ProcessWindowInfo>());
+            mockWindow.Setup(w => w.HideMainWindow());
             
             services.AddSingleton(mockWindow.Object);
+
+            services.AddSingleton<ISecretProtector, CredentialsManager>();
+            services.AddSingleton<IPkiSecretStore, SecretRepository>();
+            services.AddSingleton<IPkiSecretMetadataResolver, PkiSecretMetadataResolver>();
+            services.AddSingleton<IFocusRestorer, WindowsFocusRestorer>();
+            services.AddSingleton<IInjectionExecutor, SendKeysInjectionExecutor>();
+            services.AddSingleton<IPkiExecutionService, PkiExecutionService>();
+            services.AddSingleton<IWindowFocusSimulator, WindowsFocusSimulator>();
+            services.AddSingleton<IUiaTextWriter, WindowsUiaTextWriter>();
+            services.AddSingleton<ISendKeysWriter, WindowsSendKeysWriter>();
+            services.AddSingleton<IInputSimulator, WindowsInputSimulator>();
 
             // Add actual registry
             services.AddSingleton<PluginRegistry>();

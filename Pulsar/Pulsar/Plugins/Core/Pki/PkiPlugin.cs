@@ -3,79 +3,57 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Plugin.Metadata;
-using Pulsar.Plugins.Core.Pki.Services;
-using Pulsar.Native;
-using Pulsar.Services.Interfaces;
+using Pulsar.Plugins.Core.Pki.Contracts;
+using Pulsar.Plugins.Core.Pki.Models.Execution;
 
 namespace Pulsar.Plugins.Core.Pki
 {
     /// <summary>
-    /// PKI 插件 - 处理密码自动填充和凭据注入
+    /// PKI plugin adapter for credential injection.
     /// </summary>
-    public class PkiPlugin : IPulsarPlugin, IPluginTiered, IPluginMetadataProvider
+    public class PkiPlugin : PluginBase<PkiPlugin>, IPluginMetadataProvider
     {
-        private CredentialsManager? _credentialsManager;
-        private IWindowService? _windowService;
-        private SecretRepository? _secretRepository;
-        private ILogger<PkiPlugin>? _logger;
+        private readonly IPkiExecutionService _executionService;
 
-        public string Id => "com.pulsar.pki";
-        public string DisplayName => "PKI Credentials Manager";
-        public string Version => "1.0.0";
-        public string Author => "Pulsar Team";
-        public string Description => "Securely manages and injects credentials into applications.";
-        public string Icon => "\uE72E"; // Lock Icon
-        public bool CanDisable => false; // Core Plugin
-        public PluginTier Tier => PluginTier.Core;
-        
-        // 新增元数据属性
-        public IEnumerable<string> Tags => new[] { "Security", "Credentials", "Core" };
-        public string? DocumentationUrl => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Docs", "Plugins", "PkiPlugin.md");
-
-        public void Initialize(IServiceProvider services)
+        public PkiPlugin(
+            ILogger<PkiPlugin> logger,
+            IPkiExecutionService executionService)
+            : base(logger)
         {
-            _credentialsManager = services.GetService(typeof(CredentialsManager)) as CredentialsManager;
-            _windowService = services.GetService(typeof(IWindowService)) as IWindowService;
-            _secretRepository = services.GetService(typeof(SecretRepository)) as SecretRepository;
-            _logger = services.GetService(typeof(ILogger<PkiPlugin>)) as ILogger<PkiPlugin>;
-
-            if (_credentialsManager == null)
-            {
-                throw new InvalidOperationException("CredentialsManager service is not available");
-            }
-            if (_windowService == null)
-            {
-                throw new InvalidOperationException("IWindowService service is not available");
-            }
-            if (_secretRepository == null)
-            {
-                throw new InvalidOperationException("SecretRepository service is not available");
-            }
-
-            _logger?.LogInformation("[PkiPlugin] Initialized successfully");
+            _executionService = executionService;
         }
 
-        public async Task<PluginResult> ExecuteAsync(
+        public override string Id => "com.pulsar.pki";
+        public override string DisplayName => "PKI Credentials Manager";
+        public override string Version => "1.0.0";
+        public override string Author => "Pulsar Team";
+        public override string Description => "Securely manages and injects credentials into applications.";
+        public override string Icon => "\uE72E";
+        public override bool CanDisable => false;
+        public override PluginTier Tier => PluginTier.Core;
+
+        public override IEnumerable<string> Tags => new[] { "Security", "Credentials", "Core" };
+
+        public override string? DocumentationUrl => Path.Combine(
+            AppDomain.CurrentDomain.BaseDirectory,
+            "Docs",
+            "Plugins",
+            "PkiPlugin.md");
+
+        public override async Task<PluginResult> ExecuteAsync(
             string action,
             IReadOnlyDictionary<string, string> args,
             PulsarContext context)
         {
-            if (_credentialsManager == null || _windowService == null)
-            {
-                return PluginResult.Error("Plugin not initialized");
-            }
-
             return action.ToLowerInvariant() switch
             {
                 "fill" => await FillCredentialsAsync(args, context),
-                "inject" => await FillCredentialsAsync(args, context), // 别名
-                _ => PluginResult.Error($"Unknown action: {action}")
+                "inject" => await FillCredentialsAsync(args, context),
+                _ => UnknownActionError(action, "fill", "inject")
             };
         }
 
@@ -83,132 +61,21 @@ namespace Pulsar.Plugins.Core.Pki
             IReadOnlyDictionary<string, string> args,
             PulsarContext context)
         {
-            if (_credentialsManager == null || _windowService == null)
+            PkiExecutionResult result = await _executionService.ExecuteAsync(args, context);
+
+            if (result.Success)
             {
-                return PluginResult.Error("Services not initialized");
+                return PluginResult.Ok(result.Message);
             }
 
-            if (_secretRepository == null)
-            {
-                return PluginResult.Error("Secret repository not initialized");
-            }
+            Logger.LogWarning(
+                "[PkiPlugin] PKI execution failed at stage {Stage}: {Message}",
+                result.Stage,
+                result.Message);
 
-            // 1. 验证参数
-            if (!args.TryGetValue("secretId", out var secretId) || string.IsNullOrEmpty(secretId))
-            {
-                return PluginResult.Error("Missing required parameter: secretId");
-            }
-
-            _logger?.LogInformation("[PkiPlugin] Starting injection for secret: {SecretId}", secretId);
-
-            try
-            {
-                // 2. 加载并解密凭据
-                if (!Guid.TryParse(secretId, out var secretGuid))
-                {
-                    _logger?.LogWarning("[PkiPlugin] Invalid secret ID format: {SecretId}", secretId);
-                    return PluginResult.Error($"Invalid secret ID format: {secretId}");
-                }
-
-                var secrets = await _secretRepository.LoadAsync();
-
-                if (!secrets.TryGetValue(secretGuid, out var payload))
-                {
-                    _logger?.LogWarning("[PkiPlugin] Secret not found: {SecretId}", secretId);
-                    return PluginResult.Error($"Secret not found: {secretId}");
-                }
-
-                if (string.IsNullOrEmpty(payload.EncryptedData))
-                {
-                    _logger?.LogWarning("[PkiPlugin] EncryptedData is empty for: {SecretId}", secretId);
-                    return PluginResult.Error("Secret data is empty");
-                }
-
-                string password = _credentialsManager.Decrypt(payload.EncryptedData);
-                if (string.IsNullOrEmpty(password))
-                {
-                    _logger?.LogWarning("[PkiPlugin] Decryption failed");
-                    return PluginResult.Error("Decryption failed");
-                }
-
-                // 3. 隐藏 Pulsar 窗口
-                _windowService.HideMainWindow();
-
-                // 4. 归还焦点到目标窗口 (使用上下文中捕获的句柄)
-                var targetHwnd = context.TargetWindowHandle;
-                if (targetHwnd != IntPtr.Zero)
-                {
-                    PulsarNative.SetForegroundWindow(targetHwnd);
-                    _logger?.LogDebug("[PkiPlugin] Focus returned to window: {Hwnd}", targetHwnd);
-                }
-                else
-                {
-                    _logger?.LogWarning("[PkiPlugin] TargetWindowHandle is Zero");
-                }
-
-                // 5. 等待窗口切换缓冲
-                await Task.Delay(100);
-
-                // 6. 注入序列 (UIA -> SendKeys fallback)
-                // Try UIA first: set text into the currently focused element without touching clipboard.
-                if (!string.IsNullOrEmpty(payload.Account))
-                {
-                    if (!UiaHelper.TrySetFocusedElementText(payload.Account))
-                    {
-                        SendKeys.SendWait(EscapeSendKeys(payload.Account));
-                    }
-
-                    await Task.Delay(10);
-                    SendKeys.SendWait("{TAB}");
-                    await Task.Delay(10);
-                }
-
-                if (!UiaHelper.TrySetFocusedElementText(password))
-                {
-                    SendKeys.SendWait(EscapeSendKeys(password));
-                }
-
-                // 7. 自动回车 (从 args 读取，默认为 false)
-                bool autoEnter = args.TryGetValue("autoEnter", out var autoEnterStr) 
-                    && bool.TryParse(autoEnterStr, out var result) && result;
-
-                if (autoEnter)
-                {
-                    await Task.Delay(10);
-                    SendKeys.SendWait("{ENTER}");
-                }
-
-                _logger?.LogInformation("[PkiPlugin] Injection sequence finished");
-                return PluginResult.Ok("Credentials injected successfully");
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "[PkiPlugin] Injection failed");
-                return PluginResult.Error($"Injection failed: {ex.Message}");
-            }
+            return PluginResult.Error(result.Message);
         }
 
-        private string EscapeSendKeys(string input)
-        {
-            if (string.IsNullOrEmpty(input)) return input;
-            
-            // SendKeys 特殊字符转义
-            return input
-                .Replace("{", "{{}}")
-                .Replace("}", "{}}")
-                .Replace("[", "{[}")
-                .Replace("]", "]}")
-                .Replace("+", "{+}")
-                .Replace("^", "{^}")
-                .Replace("%", "{%}")
-                .Replace("~", "{~}")
-                .Replace("(", "{(}")
-                .Replace(")", "{)}");
-        }
-
-        /// <summary>
-        /// 获取插件元数据
-        /// </summary>
         public PluginMetadata GetMetadata()
         {
             return new PluginMetadata
@@ -218,7 +85,7 @@ namespace Pulsar.Plugins.Core.Pki
                 {
                     Name = DisplayName,
                     Description = Description,
-                    IconKey = "🔐", // Emoji for better visual
+                    IconKey = "\uD83D\uDD10",
                     Category = "Security",
                     Version = Version,
                     Author = Author,
@@ -257,13 +124,11 @@ namespace Pulsar.Plugins.Core.Pki
                     Badge = "Secret",
                     AccentColor = "#4CAF50",
                     ShowInQuickAccess = true,
-                    SortOrder = 10, // High priority
+                    SortOrder = 10,
                     IsFeatured = true
                 },
                 Capabilities = new PluginCapabilities
                 {
-                    // "inject" is kept as a runtime alias in ExecuteAsync but is not exposed
-                    // as a separate metadata entry to prevent duplicate UI options.
                     SupportedActions = new List<string> { "fill" },
                     RequiresForegroundWindow = true,
                     Dependencies = new List<string>(),
@@ -303,7 +168,11 @@ namespace Pulsar.Plugins.Core.Pki
                                 ValidationHint = "Required for credential injection.",
                                 PickerIntent = SlotPickerIntent.Secret,
                                 IsSensitive = true,
-                                Validators = new List<ValidationRule> { new RequiredValidator(), new RegexValidator("^[0-9a-fA-F-]{36}$", "Secret must be a valid GUID.") }
+                                Validators = new List<ValidationRule>
+                                {
+                                    new RequiredValidator(),
+                                    new RegexValidator("^[0-9a-fA-F-]{36}$", "Secret must be a valid GUID.")
+                                }
                             },
                             new()
                             {

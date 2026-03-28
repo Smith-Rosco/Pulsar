@@ -16,12 +16,35 @@ namespace Pulsar.ViewModels.Dialogs
 {
     public partial class AddSlotViewModel : ObservableObject, IWizardDialogViewModel
     {
-        public record PluginTypeOption(
-            string PluginId,
-            string Icon,
-            string DisplayName,
-            string Description,
-            string AccentColor);
+        public partial class PluginTypeOption : ObservableObject
+        {
+            public PluginTypeOption(
+                string pluginId,
+                string icon,
+                string displayName,
+                string description,
+                string accentColor)
+            {
+                PluginId = pluginId;
+                Icon = icon;
+                DisplayName = displayName;
+                Description = description;
+                AccentColor = accentColor;
+            }
+
+            public string PluginId { get; }
+
+            public string Icon { get; }
+
+            public string DisplayName { get; }
+
+            public string Description { get; }
+
+            public string AccentColor { get; }
+
+            [ObservableProperty]
+            private bool _isSelected;
+        }
 
         private readonly Func<string, PluginSlot> _createSlotDraft;
         private readonly Action<PluginSlot, string?> _setAction;
@@ -40,17 +63,11 @@ namespace Pulsar.ViewModels.Dialogs
         private bool _isApplyingSuggestions;
 
         [ObservableProperty]
-        [NotifyPropertyChangedFor(nameof(IsStep0))]
-        [NotifyPropertyChangedFor(nameof(IsStep1))]
-        [NotifyPropertyChangedFor(nameof(PrimaryButtonText))]
-        [NotifyPropertyChangedFor(nameof(SecondaryButtonText))]
-        [NotifyPropertyChangedFor(nameof(StepTitle))]
-        [NotifyPropertyChangedFor(nameof(StepDescription))]
-        private int _wizardStep;
-
-        [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(HasSelectedPlugin))]
         [NotifyPropertyChangedFor(nameof(SelectedPluginDescription))]
+        [NotifyPropertyChangedFor(nameof(HeaderDescription))]
+        [NotifyPropertyChangedFor(nameof(PreviewMetadataText))]
+        [NotifyPropertyChangedFor(nameof(AppearanceDisclosureDescription))]
         private PluginTypeOption? _selectedType;
 
         public AddSlotViewModel(
@@ -100,35 +117,29 @@ namespace Pulsar.ViewModels.Dialogs
             }
         }
 
-        public bool IsStep0 => WizardStep == 0;
-
-        public bool IsStep1 => WizardStep == 1;
-
         public bool HasSelectedPlugin => SelectedType != null && Slot != null;
 
-        public string StepTitle => WizardStep == 0
-            ? "Choose what this slot does"
-            : "Polish and save";
+        public bool IsAwaitingPluginSelection => !HasSelectedPlugin;
 
-        public string StepDescription => WizardStep == 0
-            ? "Pick a slot type, then fill the required details before moving on."
-            : "Fine-tune the name, icon, and color, then confirm the final result.";
+        public string PrimaryButtonText => "Save Slot";
 
-        public string PrimaryButtonText => WizardStep == 0 ? "Continue" : "Save Slot";
-
-        public string SecondaryButtonText => WizardStep == 0 ? "Cancel" : "Back";
+        public string SecondaryButtonText => "Cancel";
 
         public bool IsPrimaryButtonVisible => true;
 
         public bool IsSecondaryButtonVisible => true;
 
-        public ICommand PrimaryCommand => WizardStep == 0 ? ContinueCommand : SaveCommand;
+        public ICommand PrimaryCommand => SaveCommand;
 
-        public ICommand SecondaryCommand => WizardStep == 0 ? CancelCommand : BackCommand;
+        public ICommand SecondaryCommand => CancelCommand;
 
-        public string SelectedPluginDescription => SelectedType?.Description ?? "Select a slot type to start configuring behavior.";
+        public string SelectedPluginDescription => SelectedType?.Description ?? "Choose the primary behavior for this slot, then fill in the details that make it work.";
 
-        public string HeaderText => Slot == null ? "New slot" : $"Slot {Slot.Slot}";
+        public string HeaderText => Slot == null ? "Create slot" : $"Create slot {Slot.Slot}";
+
+        public string HeaderDescription => Slot == null
+            ? "Start with a slot type. Required setup stays visible, while optional polish can wait until the end."
+            : "Set the behavior first, then refine the label, icon, or color only if the defaults need a nudge.";
 
         public string PreviewTitle => Slot?.Presentation.Title ?? "New slot";
 
@@ -143,6 +154,10 @@ namespace Pulsar.ViewModels.Dialogs
         public string PreviewHealthBadge => Slot?.Presentation.HealthBadgeText ?? "Draft";
 
         public string PreviewHealthToneKey => Slot?.Presentation.HealthToneKey ?? "SlotHealthBrushReady";
+
+        public string PreviewMetadataText => HasSummaryTokens
+            ? string.Join("  •  ", SummaryTokens)
+            : "Type, action, and validation updates appear here as you shape the slot.";
 
         public ObservableCollection<SlotActionOption> AvailableActions => Slot?.AvailableActions ?? _emptyActions;
 
@@ -168,6 +183,14 @@ namespace Pulsar.ViewModels.Dialogs
 
         public bool HasSummaryTokens => Slot?.HasSummaryTokens == true;
 
+        public bool HasAppearanceOptions => Slot != null;
+
+        public string AppearanceDisclosureTitle => "Appearance and polish";
+
+        public string AppearanceDisclosureDescription => Slot == null
+            ? "Select a slot type before adjusting the label, icon, or color."
+            : "Keep the suggested presentation or make small adjustments once the behavior is ready.";
+
         public bool HasBlockingIssue => !string.IsNullOrWhiteSpace(BlockingIssueText);
 
         public string BlockingIssueText => GetBlockingIssueText();
@@ -188,30 +211,6 @@ namespace Pulsar.ViewModels.Dialogs
         private void SelectPluginType(PluginTypeOption option)
         {
             SelectedType = option;
-            Slot = _createSlotDraft(option.PluginId);
-            ResetSuggestionState();
-            ApplySuggestions();
-            NotifyStateChanged();
-        }
-
-        [RelayCommand]
-        private void Continue()
-        {
-            if (Slot == null || HasBlockingIssue)
-            {
-                NotifyStateChanged();
-                return;
-            }
-
-            WizardStep = 1;
-            NotifyStateChanged();
-        }
-
-        [RelayCommand]
-        private void Back()
-        {
-            WizardStep = 0;
-            NotifyStateChanged();
         }
 
         [RelayCommand]
@@ -248,8 +247,9 @@ namespace Pulsar.ViewModels.Dialogs
         {
             await _pickParameterValueAsync(field);
             ApplySuggestions();
-            // Parameter value changes don't affect structural layout; preview and validation only.
-            NotifyPreviewChanged();
+            // Parameter value changes may replace the parameter collection (via InitializeSlotMetadata),
+            // so we need to refresh the full state to ensure UI bindings are updated.
+            NotifyStateChanged();
         }
 
         public async Task PickIconAsync()
@@ -291,26 +291,26 @@ namespace Pulsar.ViewModels.Dialogs
                 return;
             }
 
-            // Action 变更由 SetAction/_setAction 统一管理，不在此处二次触发
+            // Action changes are coordinated through SetAction/_setAction, so we skip re-processing here.
             if (string.Equals(e.PropertyName, nameof(PluginSlot.Action), StringComparison.Ordinal))
             {
                 return;
             }
 
-            // Parameter value edits don't change structural layout (actions list, parameter list);
-            // only preview and validation output need refreshing.
+            // Parameter value edits do not change the surrounding editor structure, only the live preview.
             ApplySuggestions();
             NotifyPreviewChanged();
         }
 
         /// <summary>
-        /// Full refresh: structure has changed (plugin type selected, action changed, wizard step changed).
+        /// Full refresh: structure has changed (plugin type selected or action changed).
         /// Refreshes all derived properties including layout-affecting ones.
         /// </summary>
         private void NotifyStateChanged()
         {
             SyncSelectedActionStates();
             OnPropertyChanged(nameof(HasSelectedPlugin));
+            OnPropertyChanged(nameof(IsAwaitingPluginSelection));
             OnPropertyChanged(nameof(SelectedPluginDescription));
             OnPropertyChanged(nameof(HeaderText));
             OnPropertyChanged(nameof(AvailableActions));
@@ -325,12 +325,13 @@ namespace Pulsar.ViewModels.Dialogs
             OnPropertyChanged(nameof(HasOptionalParameters));
             OnPropertyChanged(nameof(HasAdvancedParameters));
             OnPropertyChanged(nameof(HasSummaryTokens));
+            OnPropertyChanged(nameof(HasAppearanceOptions));
             OnPropertyChanged(nameof(PrimaryButtonText));
             OnPropertyChanged(nameof(SecondaryButtonText));
-            OnPropertyChanged(nameof(StepTitle));
-            OnPropertyChanged(nameof(StepDescription));
-            OnPropertyChanged(nameof(IsStep0));
-            OnPropertyChanged(nameof(IsStep1));
+            OnPropertyChanged(nameof(HeaderDescription));
+            OnPropertyChanged(nameof(PreviewMetadataText));
+            OnPropertyChanged(nameof(AppearanceDisclosureTitle));
+            OnPropertyChanged(nameof(AppearanceDisclosureDescription));
             NotifyPreviewChanged();
         }
 
@@ -345,6 +346,7 @@ namespace Pulsar.ViewModels.Dialogs
             OnPropertyChanged(nameof(PreviewActionText));
             OnPropertyChanged(nameof(PreviewHealthBadge));
             OnPropertyChanged(nameof(PreviewHealthToneKey));
+            OnPropertyChanged(nameof(PreviewMetadataText));
             OnPropertyChanged(nameof(HasBlockingIssue));
             OnPropertyChanged(nameof(BlockingIssueText));
             OnPropertyChanged(nameof(HasValidationSummary));
@@ -354,6 +356,11 @@ namespace Pulsar.ViewModels.Dialogs
 
         private void SyncSelectedActionStates()
         {
+            foreach (var pluginType in PluginTypes)
+            {
+                pluginType.IsSelected = string.Equals(pluginType.PluginId, SelectedType?.PluginId, StringComparison.OrdinalIgnoreCase);
+            }
+
             if (Slot == null)
             {
                 return;
@@ -374,7 +381,7 @@ namespace Pulsar.ViewModels.Dialogs
 
             if (string.IsNullOrWhiteSpace(Slot.Action))
             {
-                return "Select an action before continuing.";
+                return "Select an action before saving.";
             }
 
             var missingRequired = RequiredParameters
@@ -395,6 +402,22 @@ namespace Pulsar.ViewModels.Dialogs
             _lastSuggestedLabel = string.Empty;
             _lastSuggestedIcon = string.Empty;
             _lastSuggestedColor = string.Empty;
+        }
+
+        partial void OnSelectedTypeChanged(PluginTypeOption? value)
+        {
+            if (value == null)
+            {
+                Slot = null;
+                ResetSuggestionState();
+                NotifyStateChanged();
+                return;
+            }
+
+            Slot = _createSlotDraft(value.PluginId);
+            ResetSuggestionState();
+            ApplySuggestions();
+            NotifyStateChanged();
         }
 
         private void ApplySuggestions()

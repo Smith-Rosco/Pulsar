@@ -5,8 +5,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Pulsar.Helpers;
+using Pulsar.Plugins.Core.Pki.Contracts;
 using Pulsar.Plugins.Core.Pki.Models;
-using Pulsar.Plugins.Core.Pki.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels.Base;
 using DialogResult = Pulsar.Models.Enums.DialogResult;
@@ -22,12 +23,15 @@ namespace Pulsar.ViewModels.Dialogs
 
     public partial class SecretPickerViewModel : ObservableObject, IDialogViewModel
     {
-        private readonly SecretRepository _secretRepo;
+        private readonly IPkiSecretStore _secretStore;
+        private readonly ISecretProtector _secretProtector;
+        private readonly IPkiSecretMetadataResolver _metadataResolver;
         private readonly Dictionary<Guid, SecretPayload> _pendingSecrets;
         private readonly Dictionary<Guid, string> _labelMap;
         private readonly IDialogService? _dialogService;
 
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(HasNoSecrets))]
         private ObservableCollection<SecretEntry> _secrets = new();
 
         [ObservableProperty]
@@ -44,6 +48,8 @@ namespace Pulsar.ViewModels.Dialogs
         /// </summary>
         public Guid? SelectedSecretId => SelectedSecret?.Id;
 
+        public bool HasNoSecrets => Secrets.Count == 0;
+
         /// <summary>
         /// True if user clicked "Add New Secret" button.
         /// </summary>
@@ -51,14 +57,18 @@ namespace Pulsar.ViewModels.Dialogs
 
         public Action<DialogResult>? RequestClose { get; set; }
 
-        /// <param name="labelMap">Map of secretId -> slot label (fallback for legacy data without payload.Label)</param>
+        /// <param name="labelMap">Map of secretId -> legacy slot label for secrets created before labels were stored.</param>
         public SecretPickerViewModel(
-            SecretRepository secretRepo,
+            IPkiSecretStore secretStore,
+            ISecretProtector secretProtector,
+            IPkiSecretMetadataResolver metadataResolver,
             Dictionary<Guid, SecretPayload> pendingSecrets,
             Dictionary<Guid, string> labelMap,
             IDialogService? dialogService = null)
         {
-            _secretRepo = secretRepo;
+            _secretStore = secretStore;
+            _secretProtector = secretProtector;
+            _metadataResolver = metadataResolver;
             _pendingSecrets = pendingSecrets;
             _labelMap = labelMap;
             _dialogService = dialogService;
@@ -69,25 +79,19 @@ namespace Pulsar.ViewModels.Dialogs
             IsLoading = true;
             try
             {
-                var saved = await _secretRepo.LoadAsync();
-
-                // Merge: saved + pending overrides
-                var merged = new Dictionary<Guid, SecretPayload>(saved);
-                foreach (var kv in _pendingSecrets)
-                    merged[kv.Key] = kv.Value;
+                var saved = await _secretStore.LoadAsync();
+                var merged = _metadataResolver.Merge(saved, _pendingSecrets);
 
                 Secrets = new ObservableCollection<SecretEntry>(
                     merged.Select(kv =>
                     {
-                        var label = _labelMap.TryGetValue(kv.Key, out var lbl) && !string.IsNullOrEmpty(lbl)
-                            ? lbl
-                            : kv.Key.ToString();
+                        var display = _metadataResolver.Resolve(kv.Key, saved, _pendingSecrets, _labelMap);
 
                         return new SecretEntry
                         {
                             Id = kv.Key,
-                            Label = label,
-                            Account = kv.Value.Account ?? string.Empty
+                            Label = display?.Label ?? kv.Key.ToString(),
+                            Account = display?.Account ?? string.Empty
                         };
                     })
                     .OrderBy(e => e.Label));
@@ -111,10 +115,37 @@ namespace Pulsar.ViewModels.Dialogs
         }
 
         [RelayCommand]
-        private void AddNew()
+        private async Task AddNew()
         {
-            AddNewRequested = true;
-            RequestClose?.Invoke(DialogResult.Confirmed);
+            if (_dialogService == null)
+            {
+                AddNewRequested = true;
+                RequestClose?.Invoke(DialogResult.Confirmed);
+                return;
+            }
+
+            var vm = new QuickSecretsViewModel(_secretProtector);
+            vm.LoadForCreate(string.Empty, string.Empty, false);
+
+            var addResult = await _dialogService.ShowCustomAsync("Add Secret", vm, Pulsar.Models.Enums.DialogButtons.OkCancel);
+
+            if (addResult == DialogResult.Confirmed)
+            {
+                var secretId = Guid.NewGuid();
+                var payload = new Plugins.Core.Pki.Models.SecretPayload
+                {
+                    Label = vm.Label,
+                    Account = vm.Account,
+                    EncryptedData = vm.ResultEncryptedData
+                };
+
+                _pendingSecrets[secretId] = payload;
+                _labelMap[secretId] = vm.Label;
+
+                await LoadAsync();
+
+                SelectedSecret = Secrets.FirstOrDefault(s => s.Id == secretId);
+            }
         }
 
         [RelayCommand(CanExecute = nameof(HasSelection))]
@@ -128,13 +159,13 @@ namespace Pulsar.ViewModels.Dialogs
                 payload = pending;
             else
             {
-                var saved = await _secretRepo.LoadAsync();
+                var saved = await _secretStore.LoadAsync();
                 saved.TryGetValue(entry.Id, out payload);
             }
 
             if (payload == null) return;
 
-            var vm = new QuickSecretsViewModel();
+            var vm = new QuickSecretsViewModel(_secretProtector);
             bool autoEnter = false;
             vm.LoadForEdit(entry.Label, payload.Account, payload.EncryptedData, autoEnter);
 
@@ -142,6 +173,7 @@ namespace Pulsar.ViewModels.Dialogs
 
             if (result == DialogResult.Confirmed)
             {
+                payload.Label = vm.Label;
                 payload.Account = vm.Account;
                 payload.EncryptedData = vm.ResultEncryptedData;
                 _pendingSecrets[entry.Id] = payload;
@@ -171,9 +203,9 @@ namespace Pulsar.ViewModels.Dialogs
             _pendingSecrets.Remove(entry.Id);
 
             // Remove from persisted store
-            var saved = await _secretRepo.LoadAsync();
+            var saved = await _secretStore.LoadAsync();
             if (saved.Remove(entry.Id))
-                await _secretRepo.SaveAsync(saved);
+                await _secretStore.SaveAsync(saved);
 
             // Refresh list
             await LoadAsync();

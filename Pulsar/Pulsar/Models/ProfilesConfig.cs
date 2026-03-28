@@ -325,10 +325,14 @@ namespace Pulsar.Models
         }
 
         [JsonIgnore]
-        public string TypeBadge => Presentation.TypeBadge;
+        public string TypeBadge => string.IsNullOrWhiteSpace(Presentation.TypeBadge)
+            ? SlotPresentation.ResolveTypeBadge(PluginId)
+            : Presentation.TypeBadge;
 
         [JsonIgnore]
-        public string TypeToneKey => Presentation.TypeToneKey;
+        public string TypeToneKey => string.IsNullOrWhiteSpace(Presentation.TypeToneKey)
+            ? SlotPresentation.ResolveTypeToneKey(PluginId)
+            : Presentation.TypeToneKey;
 
         // [Indexer] 安全的索引器绑定，避免 KeyNotFoundException
         public string this[string key]
@@ -340,12 +344,36 @@ namespace Pulsar.Models
             }
             set
             {
-                if (Args == null) Args = new Dictionary<string, string>();
-                if (!Args.TryGetValue(key, out var current) || current != value)
-                {
-                    Args[key] = value;
-                    OnPropertyChanged("Item[]"); // 通知 UI 索引器属性已变更
-                }
+                SetArgument(key, value);
+            }
+        }
+
+        public void SetArgument(string key, string? value)
+        {
+            if (Args == null)
+            {
+                Args = new Dictionary<string, string>();
+            }
+
+            string normalizedValue = value ?? string.Empty;
+            if (!Args.TryGetValue(key, out var current) || current != normalizedValue)
+            {
+                Args[key] = normalizedValue;
+                OnPropertyChanged("Item[]");
+            }
+        }
+
+        public void RemoveArgument(string key)
+        {
+            if (Args == null)
+            {
+                Args = new Dictionary<string, string>();
+                return;
+            }
+
+            if (Args.Remove(key))
+            {
+                OnPropertyChanged("Item[]");
             }
         }
 

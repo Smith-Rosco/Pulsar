@@ -5,6 +5,8 @@ namespace Pulsar.Plugins.Core.Pki.Models
     /// </summary>
     public class SecretPayload
     {
+        public string Label { get; set; } = string.Empty;
+
         public string Account { get; set; } = string.Empty;
         public string EncryptedData { get; set; } = string.Empty;
     }

@@ -1,8 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
+using System;
 using FluentAssertions;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Helpers;
+using Pulsar.Plugins.Core.Pki.Models;
 using Pulsar.Models;
 using Xunit;
 
@@ -62,6 +64,58 @@ namespace Pulsar.Tests.Config
 
             tokens.Should().Contain("1 required field missing");
             tokens.Should().Contain("Secret: not selected");
+        }
+
+        [Fact]
+        public void SecretSelector_ShouldExposeResolvedDisplayMetadata()
+        {
+            var slot = CreateSlot();
+            var secretId = Guid.NewGuid();
+            slot.SetArgument("secretId", secretId.ToString());
+
+            var field = new SlotParameterEditorField(
+                slot,
+                new SlotParameterMetadata
+                {
+                    Key = "secretId",
+                    Type = "guid",
+                    Label = "Secret",
+                    IsRequired = true,
+                    PickerIntent = SlotPickerIntent.Secret,
+                    SummaryMode = SlotParameterSummaryMode.SafeStateOnly,
+                    MissingSummaryText = "not selected",
+                    ConfiguredSummaryText = "selected"
+                },
+                _ => new SecretDisplayMetadata(secretId, "Payroll Vault", "ops@example.com"));
+
+            field.IsReadOnlySelector.Should().BeTrue();
+            field.DisplayValue.Should().Be("Payroll Vault");
+            field.SecondaryDisplayValue.Should().Be("ops@example.com");
+            field.SelectorActionLabel.Should().Be("Change");
+        }
+
+        [Fact]
+        public void SecretMetadataResolver_ShouldPreferPendingSecretsAndFallbackLegacyLabel()
+        {
+            var secretId = Guid.NewGuid();
+            var persisted = new Dictionary<Guid, SecretPayload>
+            {
+                [secretId] = new() { Label = "Old Label", Account = "saved@example.com", EncryptedData = "one" }
+            };
+            var pending = new Dictionary<Guid, SecretPayload>
+            {
+                [secretId] = new() { Label = string.Empty, Account = "draft@example.com", EncryptedData = "two" }
+            };
+            var legacyLabels = new Dictionary<Guid, string>
+            {
+                [secretId] = "Legacy Slot Label"
+            };
+
+            var display = SecretMetadataResolver.Resolve(secretId, persisted, pending, legacyLabels);
+
+            display.Should().NotBeNull();
+            display!.Label.Should().Be("Legacy Slot Label");
+            display.Account.Should().Be("draft@example.com");
         }
 
         private static PluginSlot CreateSlot()
