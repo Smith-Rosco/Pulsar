@@ -861,39 +861,40 @@ namespace Pulsar.ViewModels
         public async Task ResetConfig()
         {
             var result = await _dialogService.ShowConfirmationAsync("Reset Configuration", 
-                "This will reset all settings and profiles to default values.\n\nA backup of your current configuration will be created.\nAre you sure you want to proceed?");
+                "This will restore Pulsar to its first-launch state, recreate the default profiles, and restart onboarding eligibility.\n\nA backup of your current configuration will be created before reset.\nAre you sure you want to proceed?",
+                "Restore First Launch",
+                "Cancel");
             
             if (result == Pulsar.Models.Enums.DialogResult.Confirmed)
             {
-                // 1. Create Backup
-                try 
+                try
                 {
+                    // 1. Create Backup
                     var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
                     var configPath = Path.Combine(appData, "Pulsar", "Profiles.json");
                     if (File.Exists(configPath))
                     {
                         var backupPath = configPath + ".bak";
                         File.Copy(configPath, backupPath, true);
+                        _logger.LogInformation("[SettingsViewModel] Backed up configuration to {BackupPath} before reset", backupPath);
                     }
+
+                    // 2. Reset via ConfigService unified first-launch path
+                    await _configService.ResetToFirstLaunchAsync();
+
+                    // 3. Force reload UI so current session reflects regenerated fallback config immediately
+                    await LoadSettings();
+
+                    SendNotification(
+                        "Reset Complete",
+                        "Pulsar has been restored to its first-launch defaults. Default profiles were recreated and onboarding can start again.",
+                        ControlAppearance.Success);
                 }
                 catch (Exception ex)
                 {
-                    SendNotification("Warning", $"Backup failed: {ex.Message}", ControlAppearance.Caution);
+                    _logger.LogError(ex, "[SettingsViewModel] Failed to reset configuration");
+                    SendNotification("Reset Failed", $"Unable to restore first-launch defaults: {ex.Message}", ControlAppearance.Danger);
                 }
-
-                // 2. Create Default Config
-                var defaultConfig = new ProfilesConfig();
-                
-                // Add default profiles/slots if desired (optional)
-                // For now, clean slate is safer to fix corruption
-                
-                // 3. Save & Reload
-                await _configService.SaveAsync(defaultConfig);
-                
-                // 4. Force Reload UI
-                await LoadSettings();
-                
-                SendNotification("Reset Complete", "Configuration has been reset to defaults.", ControlAppearance.Success);
             }
         }
 

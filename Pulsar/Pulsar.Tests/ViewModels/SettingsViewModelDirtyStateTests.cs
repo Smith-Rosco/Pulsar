@@ -129,6 +129,42 @@ namespace Pulsar.Tests.ViewModels
             viewModel.HasUnsavedChanges.Should().BeTrue();
         }
 
+        [Fact]
+        public async Task ResetConfig_UsesUnifiedResetPathAndReloadsRegeneratedDefaults()
+        {
+            EnsureApplication();
+            var harness = CreateHarness();
+
+            var fallbackConfig = CreateResetFallbackConfig();
+            harness.ConfigService
+                .Setup(service => service.ResetToFirstLaunchAsync())
+                .ReturnsAsync(CloneConfig(fallbackConfig));
+            harness.ConfigService
+                .Setup(service => service.LoadAsync())
+                .ReturnsAsync(() => CloneConfig(fallbackConfig));
+
+            harness.DialogService
+                .Setup(service => service.ShowConfirmationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(DialogResult.Confirmed);
+
+            var viewModel = harness.ViewModel;
+            await WaitForInitializationAsync(viewModel);
+
+            // Act
+            await viewModel.ResetConfig();
+
+            // Assert
+            harness.ConfigService.Verify(service => service.ResetToFirstLaunchAsync(), Times.Once);
+            harness.ConfigService.Verify(service => service.SaveAsync(It.IsAny<ProfilesConfig>()), Times.Never);
+
+            var reloadedConfig = await viewModel.GetConfigAsync();
+            reloadedConfig.Profiles.Should().ContainKey("Global");
+            reloadedConfig.Profiles["Global"].SwitchMode.Should().NotBeEmpty();
+            reloadedConfig.Settings.HasCompletedTutorial.Should().BeFalse();
+            reloadedConfig.Settings.LastTutorialStep.Should().BeNull();
+            reloadedConfig.Settings.HasCompletedInitialDetection.Should().BeFalse();
+        }
+
         private static async Task WaitForInitializationAsync(SettingsViewModel viewModel)
         {
             for (int attempt = 0; attempt < 50; attempt++)
@@ -220,7 +256,7 @@ namespace Pulsar.Tests.ViewModels
                 NullLogger<SettingsViewModel>.Instance,
                 processRegistryService.Object);
 
-            return new SettingsViewModelHarness(viewModel, configService);
+            return new SettingsViewModelHarness(viewModel, configService, dialogService);
         }
 
         private static Mock<IThemeService> CreateThemeServiceMock()
@@ -294,6 +330,38 @@ namespace Pulsar.Tests.ViewModels
             return System.Text.Json.JsonSerializer.Deserialize<ProfilesConfig>(json, options) ?? new ProfilesConfig();
         }
 
+        private static ProfilesConfig CreateResetFallbackConfig()
+        {
+            var config = new ProfilesConfig
+            {
+                Settings = new ProfileSettings
+                {
+                    HasCompletedTutorial = false,
+                    LastTutorialStep = null,
+                    HasCompletedInitialDetection = false,
+                    LauncherTheme = "Light",
+                    SettingsTheme = "Light",
+                    SlotsPerPage = 8
+                },
+                Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["Global"] = new ProcessProfile
+                    {
+                        SwitchMode = new List<PluginSlot>
+                        {
+                            CreateSlot(1, "Notepad")
+                        },
+                        CommandMode = new List<PluginSlot>
+                        {
+                            CreateSlot(1, "Command Prompt")
+                        }
+                    }
+                }
+            };
+
+            return config;
+        }
+
         private static PluginMetadata CreateCommandMetadata()
         {
             return new PluginMetadata
@@ -354,6 +422,7 @@ namespace Pulsar.Tests.ViewModels
 
         private sealed record SettingsViewModelHarness(
             SettingsViewModel ViewModel,
-            Mock<IConfigService> ConfigService);
+            Mock<IConfigService> ConfigService,
+            Mock<IDialogService> DialogService);
     }
 }

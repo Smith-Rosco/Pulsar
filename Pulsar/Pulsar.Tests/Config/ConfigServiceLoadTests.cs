@@ -183,6 +183,68 @@ namespace Pulsar.Tests.Config
         }
 
         [Fact]
+        public async Task ResetToFirstLaunchAsync_ShouldRegenerateFallbackConfiguration()
+        {
+            // Arrange
+            var existingConfig = new ProfilesConfig
+            {
+                Settings = new ProfileSettings
+                {
+                    HasCompletedTutorial = true,
+                    LastTutorialStep = "step3_settings_overview",
+                    HasCompletedInitialDetection = true,
+                    LauncherTheme = "Dark"
+                },
+                Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["Custom"] = new ProcessProfile
+                    {
+                        Alias = "Custom App"
+                    }
+                }
+            };
+
+            await File.WriteAllTextAsync(_configPath, JsonSerializer.Serialize(existingConfig, new JsonSerializerOptions { WriteIndented = true }));
+            var service = CreateConfigService();
+
+            // Act
+            var resetConfig = await service.ResetToFirstLaunchAsync();
+
+            // Assert
+            File.Exists(_configPath).Should().BeTrue("reset should recreate the persisted configuration file");
+            resetConfig.Profiles.Should().ContainKey("Global");
+            resetConfig.Profiles.Should().NotContainKey("Custom");
+            resetConfig.Profiles["Global"].SwitchMode.Should().NotBeEmpty();
+            resetConfig.Profiles["Global"].CommandMode.Should().NotBeEmpty();
+            resetConfig.Settings.HasCompletedTutorial.Should().BeFalse();
+            resetConfig.Settings.LastTutorialStep.Should().BeNull();
+            resetConfig.Settings.HasCompletedInitialDetection.Should().BeFalse();
+            resetConfig.Settings.ConfigCreatedAt.Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task ResetToFirstLaunchAsync_ShouldNotPersistBareEmptyProfilesConfig()
+        {
+            // Arrange
+            var existingConfig = new ProfilesConfig();
+            existingConfig.Profiles["Custom"] = new ProcessProfile();
+            await File.WriteAllTextAsync(_configPath, JsonSerializer.Serialize(existingConfig, new JsonSerializerOptions { WriteIndented = true }));
+            var service = CreateConfigService();
+
+            // Act
+            await service.ResetToFirstLaunchAsync();
+            var persistedJson = await File.ReadAllTextAsync(_configPath);
+            var persistedConfig = JsonSerializer.Deserialize<ProfilesConfig>(persistedJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            // Assert
+            persistedConfig.Should().NotBeNull();
+            persistedConfig!.Profiles.Should().ContainKey("Global");
+            persistedConfig.Profiles["Global"].SwitchMode.Should().NotBeEmpty();
+            persistedConfig.Settings.HasCompletedTutorial.Should().BeFalse();
+            persistedConfig.Settings.LastTutorialStep.Should().BeNull();
+        }
+
+        [Fact]
         public void Current_ShouldReturnDefaultConfig_WhenNotLoaded()
         {
             // Arrange

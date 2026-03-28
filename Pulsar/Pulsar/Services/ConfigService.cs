@@ -21,6 +21,7 @@ namespace Pulsar.Services
         private const int MIN_SLOTS_PER_PAGE = 4;
         private const int MAX_SLOTS_PER_PAGE = 12;
         private const int DEFAULT_SLOTS_PER_PAGE = 8;
+        private const string ResetReloadReason = "reset";
         
         private readonly string _configPath;
         private ProfilesConfig? _cachedConfig;
@@ -56,11 +57,46 @@ namespace Pulsar.Services
 
         public async Task<ProfilesConfig> LoadAsync()
         {
+            return await LoadInternalAsync();
+        }
+
+        public async Task<ProfilesConfig> ResetToFirstLaunchAsync()
+        {
+            _logger.LogInformation("[ConfigService] Reset requested; clearing cached configuration and re-entering first-launch flow");
+
+            _cachedConfig = null;
+
+            if (File.Exists(_configPath))
+            {
+                File.Delete(_configPath);
+                _logger.LogInformation("[ConfigService] Deleted active configuration file at {Path} before reset reload", _configPath);
+            }
+            else
+            {
+                _logger.LogInformation("[ConfigService] No persisted configuration file found; reset will regenerate defaults in-memory and on disk");
+            }
+
+            return await LoadInternalAsync(ResetReloadReason);
+        }
+
+        private async Task<ProfilesConfig> LoadInternalAsync(string? reloadReason = null)
+        {
             if (_cachedConfig != null) return _cachedConfig;
 
             if (!File.Exists(_configPath))
             {
-                _cachedConfig = CreateDefaultConfig();
+                bool isResetReload = string.Equals(reloadReason, ResetReloadReason, StringComparison.OrdinalIgnoreCase);
+
+                if (isResetReload)
+                {
+                    _logger.LogInformation("[ConfigService] Reloading configuration after reset via first-launch path");
+                }
+                else
+                {
+                    _logger.LogInformation("[ConfigService] No persisted configuration found; entering first-launch path");
+                }
+
+                _cachedConfig = CreateDefaultConfig(isResetReload);
                 await SaveAsync(_cachedConfig);
                 return _cachedConfig;
             }
@@ -213,11 +249,7 @@ namespace Pulsar.Services
             }
             
             _cachedConfig = config;
-            var options = new JsonSerializerOptions 
-            { 
-                WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            };
+            var options = CreatePersistenceJsonOptions();
 
             // [Fix] 使用重试逻辑处理文件访问冲突
             // 教程系统可能会快速连续保存配置，需要重试机制
@@ -273,18 +305,23 @@ namespace Pulsar.Services
         /// <summary>
         /// 创建默认配置 - 使用 Fallback 配置并启动后台检测
         /// </summary>
-        private ProfilesConfig CreateDefaultConfig()
+        private ProfilesConfig CreateDefaultConfig(bool isResetReload = false)
         {
-            _logger.LogInformation("[ConfigService] Creating default configuration");
+            _logger.LogInformation(
+                "[ConfigService] Creating default configuration ({Source})",
+                isResetReload ? "reset" : "first-launch");
             
             // 1. 生成 Fallback 配置 (Windows 内置应用)
-            var config = CreateFallbackConfig();
+            var config = CreateFallbackConfig(isResetReload);
+            string expectedPersistedFallback = SerializeForPersistence(config);
             
             // 2. [Fix] 只在配置文件不存在时启动后台检测
             // 这避免了在配置加载失败时意外覆盖现有配置
             if (!File.Exists(_configPath))
             {
-                _logger.LogInformation("[ConfigService] First launch detected, scheduling background app detection");
+                _logger.LogInformation(
+                    "[ConfigService] {Reason} detected, scheduling background app detection",
+                    isResetReload ? "Reset reload" : "First launch");
                 
                 // 启动后台检测任务 (异步,不阻塞启动)
                 _ = Task.Run(async () =>
@@ -293,30 +330,30 @@ namespace Pulsar.Services
                     {
                         // 等待 1 秒,确保 UI 已初始化
                         await Task.Delay(1000);
-                        
-                        // [Fix] 防护 2：重新检查配置文件是否已存在
-                        // 用户可能在这 1 秒内手动创建了配置
-                        if (File.Exists(_configPath))
+
+                        if (!await IsExpectedPersistedFallbackAsync(expectedPersistedFallback, isResetReload))
                         {
-                            _logger.LogInformation("[ConfigService] Config file created during detection delay, aborting auto-detection");
                             return;
                         }
                         
-                        _logger.LogInformation("[ConfigService] Starting background application detection...");
+                        _logger.LogInformation(
+                            "[ConfigService] Starting background application detection ({Source})...",
+                            isResetReload ? "reset" : "first-launch");
                         
                         var detector = new ApplicationDetector(_logger);
                         var installedApps = await detector.DetectInstalledApplicationsAsync();
                         
                         // 3. 生成智能配置
-                        var smartConfig = CreateSmartConfig(installedApps);
+                        var smartConfig = CreateSmartConfig(installedApps, isResetReload);
                         
                         // 4. 更新配置
                         await SaveAsync(smartConfig);
                         
                         _logger.LogInformation(
-                            "[ConfigService] Smart configuration loaded with {SwitchCount} Switch Mode apps and {CommandCount} Command Mode slots",
+                            "[ConfigService] Smart configuration loaded with {SwitchCount} Switch Mode apps and {CommandCount} Command Mode slots ({Source})",
                             smartConfig.Profiles["Global"].SwitchMode.Count,
-                            smartConfig.Profiles["Global"].CommandMode.Count);
+                            smartConfig.Profiles["Global"].CommandMode.Count,
+                            isResetReload ? "reset" : "first-launch");
                     }
                     catch (Exception ex)
                     {
@@ -336,7 +373,7 @@ namespace Pulsar.Services
         /// 创建 Fallback 配置 (Windows 内置应用)
         /// 用于首次启动时立即可用,后台检测完成后会被智能配置替换
         /// </summary>
-        private ProfilesConfig CreateFallbackConfig()
+        private ProfilesConfig CreateFallbackConfig(bool isResetReload = false)
         {
             return new ProfilesConfig
             {
@@ -347,7 +384,11 @@ namespace Pulsar.Services
                     LauncherTheme = "Light",
                     HoverScale = 1.2,
                     Springiness = 6.0,
-                    MaxDisplacement = 20.0
+                    MaxDisplacement = 20.0,
+                    HasCompletedTutorial = false,
+                    LastTutorialStep = null,
+                    ConfigCreatedAt = DateTime.UtcNow,
+                    HasCompletedInitialDetection = false
                 },
                 Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
                 {
@@ -416,21 +457,12 @@ namespace Pulsar.Services
         /// <summary>
         /// 创建智能配置 (基于检测到的应用)
         /// </summary>
-        private ProfilesConfig CreateSmartConfig(List<AppDefinition> installedApps)
+        private ProfilesConfig CreateSmartConfig(List<AppDefinition> installedApps, bool isResetReload = false)
         {
-            _logger.LogInformation("[ConfigService] Creating smart configuration from {Count} detected apps", installedApps.Count);
-            
-            // [Fix] 尝试保留现有配置的重要状态
-            bool hasCompletedTutorial = false;
-            string? lastTutorialStep = null;
-            
-            if (_cachedConfig != null)
-            {
-                hasCompletedTutorial = _cachedConfig.Settings.HasCompletedTutorial;
-                lastTutorialStep = _cachedConfig.Settings.LastTutorialStep;
-                _logger.LogDebug("[ConfigService] Preserving tutorial state: HasCompleted={HasCompleted}, LastStep={LastStep}", 
-                    hasCompletedTutorial, lastTutorialStep ?? "null");
-            }
+            _logger.LogInformation(
+                "[ConfigService] Creating smart configuration from {Count} detected apps ({Source})",
+                installedApps.Count,
+                isResetReload ? "reset" : "first-launch");
             
             // 1. 按优先级排序,取前 6 个 (预留 Slot 7-8 给教程)
             var topApps = CommonApplicationDatabase.GetTopApplications(installedApps, maxCount: 6);
@@ -505,12 +537,8 @@ namespace Pulsar.Services
                     HoverScale = 1.2,
                     Springiness = 6.0,
                     MaxDisplacement = 20.0,
-                    
-                    // [Fix] 保留 Tutorial 状态，避免重复启动教程
-                    HasCompletedTutorial = hasCompletedTutorial,
-                    LastTutorialStep = lastTutorialStep,
-                    
-                    // [Fix] 设置配置元数据
+                    HasCompletedTutorial = false,
+                    LastTutorialStep = null,
                     ConfigCreatedAt = DateTime.UtcNow,
                     HasCompletedInitialDetection = true
                 },
@@ -522,6 +550,53 @@ namespace Pulsar.Services
                         CommandMode = commandModeSlots
                     }
                 }
+            };
+        }
+
+        private async Task<bool> IsExpectedPersistedFallbackAsync(string expectedPersistedFallback, bool isResetReload)
+        {
+            try
+            {
+                if (!File.Exists(_configPath))
+                {
+                    _logger.LogInformation(
+                        "[ConfigService] Expected fallback configuration file was missing before background detection ({Source}); aborting auto-detection",
+                        isResetReload ? "reset" : "first-launch");
+                    return false;
+                }
+
+                string persistedConfig = await File.ReadAllTextAsync(_configPath);
+                if (!string.Equals(persistedConfig, expectedPersistedFallback, StringComparison.Ordinal))
+                {
+                    _logger.LogInformation(
+                        "[ConfigService] Persisted fallback configuration changed before background detection ({Source}); aborting auto-detection",
+                        isResetReload ? "reset" : "first-launch");
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "[ConfigService] Failed to verify persisted fallback state before background detection ({Source})",
+                    isResetReload ? "reset" : "first-launch");
+                return false;
+            }
+        }
+
+        private static string SerializeForPersistence(ProfilesConfig config)
+        {
+            return JsonSerializer.Serialize(config, CreatePersistenceJsonOptions());
+        }
+
+        private static JsonSerializerOptions CreatePersistenceJsonOptions()
+        {
+            return new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             };
         }
 
