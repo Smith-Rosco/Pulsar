@@ -20,13 +20,13 @@ namespace Pulsar.Tests.ViewModels
             viewModel.PrimaryButtonText.Should().Be("Save Slot");
             viewModel.SecondaryButtonText.Should().Be("Cancel");
             viewModel.IsAwaitingPluginSelection.Should().BeTrue();
-            viewModel.HeaderDescription.Should().Contain("Required setup stays visible");
+            viewModel.HeaderDescription.Should().Contain("Required setup stays in view");
 
             viewModel.SelectPluginTypeCommand.Execute(viewModel.PluginTypes[0]);
 
             viewModel.HasSelectedPlugin.Should().BeTrue();
             viewModel.HasAppearanceOptions.Should().BeTrue();
-            viewModel.PreviewMetadataText.Should().Contain("Action: Run");
+            viewModel.PreviewMetadataText.Should().Contain("Action: Open Target");
             viewModel.PreviewMetadataText.Should().Contain("Path: missing");
         }
 
@@ -86,9 +86,11 @@ namespace Pulsar.Tests.ViewModels
                     new AddSlotViewModel.PluginTypeOption(
                         "com.pulsar.command",
                         "E756",
-                        "Run Command",
-                        "Launch an executable, open a file or URL, or send a key sequence.",
-                        "#32CD32")
+                        "Command Runner",
+                        "Open apps, files, folders, or URLs, or send a key sequence.",
+                        "#32CD32",
+                        "automation",
+                        "Automation")
                 },
                 _ => CreateDraftSlot(),
                 (slot, action) =>
@@ -121,7 +123,7 @@ namespace Pulsar.Tests.ViewModels
                 Slot = 3,
                 PluginId = "com.pulsar.command",
                 Action = "run",
-                Label = "Run Command",
+                Label = "Open Target",
                 IconKey = "E756",
                 Color = "#32CD32",
                 Args = new Dictionary<string, string>()
@@ -130,8 +132,8 @@ namespace Pulsar.Tests.ViewModels
             slot.AvailableActions.Add(new SlotActionOption
             {
                 Value = "run",
-                Label = "Run",
-                Description = "Launch a path or URL.",
+                Label = "Open Target",
+                Description = "Open a path or URL.",
                 IsSelected = true
             });
 

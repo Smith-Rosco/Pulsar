@@ -156,6 +156,8 @@ namespace Pulsar.Models
             : $"{SummaryLabel}: {SummaryValue}";
 
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(HasValidationMessage))]
+        [NotifyPropertyChangedFor(nameof(UseCompactRowLayout))]
         private string _validationMessage = string.Empty;
 
         private void OnSlotPropertyChanged(object? sender, PropertyChangedEventArgs e)

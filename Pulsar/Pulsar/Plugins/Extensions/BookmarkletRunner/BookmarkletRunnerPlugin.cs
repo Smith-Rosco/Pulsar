@@ -108,7 +108,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
                                 Placeholder = "%APPDATA%\\Pulsar\\Scripts\\example.js",
                                 Example = "%APPDATA%\\Pulsar\\Scripts\\bookmarklet.js",
                                 InputHint = "Choose a .js or supported text file.",
-                                ValidationHint = "Required and must point to a readable local file.",
+                                ValidationHint = "Choose a local .js or text file that contains the bookmarklet.",
                                 PickerIntent = SlotPickerIntent.File,
                                 Validators = new List<ValidationRule> { new RequiredValidator() }
                             }

@@ -53,6 +53,20 @@ namespace Pulsar.Tests.Plugins.Core.Pki
         }
 
         [Fact]
+        public void GetMetadata_ShouldExposeCanonicalActionOnlyAndKeepInjectAsAlias()
+        {
+            var executionService = new Mock<IPkiExecutionService>();
+            var plugin = new PkiPlugin(NullLogger<PkiPlugin>.Instance, executionService.Object);
+
+            var metadata = plugin.GetMetadata();
+
+            metadata.Display.Name.Should().Be("Secret Fill");
+            metadata.Capabilities.SupportedActions.Should().Equal("fill");
+            metadata.Actions.Keys.Should().Equal("fill");
+            metadata.Actions["fill"].Aliases.Should().Contain("inject");
+        }
+
+        [Fact]
         public async Task ExecuteAsync_ShouldReturnUnknownActionError_WhenActionIsUnsupported()
         {
             var executionService = new Mock<IPkiExecutionService>();

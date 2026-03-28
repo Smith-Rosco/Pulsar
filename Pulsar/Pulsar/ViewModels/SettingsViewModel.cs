@@ -165,6 +165,11 @@ namespace Pulsar.ViewModels
         /// </summary>
         private void MarkDirty()
         {
+            if (_suppressDirty)
+            {
+                return;
+            }
+
             _logger.LogDebug("MarkDirty called, HasUnsavedChanges: {Current} -> true", HasUnsavedChanges);
             HasUnsavedChanges = true;
             
@@ -396,6 +401,37 @@ namespace Pulsar.ViewModels
         public void ResumeHotkeys() => _hotkeyService.Resume();
 
         private bool _suppressSlotSync = false;
+        private bool _suppressDirty = false;
+
+        private void WithSuppressedDirty(Action action)
+        {
+            bool wasSuppressed = _suppressDirty;
+            _suppressDirty = true;
+
+            try
+            {
+                action();
+            }
+            finally
+            {
+                _suppressDirty = wasSuppressed;
+            }
+        }
+
+        private async Task WithSuppressedDirtyAsync(Func<Task> action)
+        {
+            bool wasSuppressed = _suppressDirty;
+            _suppressDirty = true;
+
+            try
+            {
+                await action();
+            }
+            finally
+            {
+                _suppressDirty = wasSuppressed;
+            }
+        }
 
         public async Task<ProfilesConfig> GetConfigAsync()
         {
@@ -405,43 +441,47 @@ namespace Pulsar.ViewModels
 
         private async Task LoadSettings()
         {
-            _suppressSlotSync = true;
-            try
+            await WithSuppressedDirtyAsync(async () =>
             {
-                var sharedConfig = await _configService.LoadAsync();
-                // [Transactional] Deep Clone to work on a draft
-                var options = new System.Text.Json.JsonSerializerOptions 
-                { 
-                    PropertyNameCaseInsensitive = true,
-                    WriteIndented = true 
-                };
-                var json = System.Text.Json.JsonSerializer.Serialize(sharedConfig, options);
-                _config = System.Text.Json.JsonSerializer.Deserialize<ProfilesConfig>(json, options) ?? new ProfilesConfig();
-                _persistedSecrets = await _secretStore.LoadAsync();
+                _suppressSlotSync = true;
 
-                GeneralSettings = _config.Settings;
-                InitializePluginTypes();
-                RefreshContexts();
+                try
+                {
+                    var sharedConfig = await _configService.LoadAsync();
+                    // [Transactional] Deep Clone to work on a draft
+                    var options = new System.Text.Json.JsonSerializerOptions 
+                    { 
+                        PropertyNameCaseInsensitive = true,
+                        WriteIndented = true 
+                    };
+                    var json = System.Text.Json.JsonSerializer.Serialize(sharedConfig, options);
+                    _config = System.Text.Json.JsonSerializer.Deserialize<ProfilesConfig>(json, options) ?? new ProfilesConfig();
+                    _persistedSecrets = await _secretStore.LoadAsync();
 
-                // Notify properties to trigger bindings/theme updates
-                OnPropertyChanged(nameof(LauncherTheme));
-                OnPropertyChanged(nameof(SettingsTheme));
-                OnPropertyChanged(nameof(SettingsThemeString));
-                
-                // [New] Notify Hotkeys
-                OnPropertyChanged(nameof(ShowGridHotkey));
-                OnPropertyChanged(nameof(ShowSwitcherHotkey));
-                
-                // [New] Notify Radial Menu Layout
-                OnPropertyChanged(nameof(SlotsPerPagePreview));
-                
-                // [Phase 2] Reset dirty flag after loading
-                HasUnsavedChanges = false;
-            }
-            finally
-            {
-                _suppressSlotSync = false;
-            }
+                    GeneralSettings = _config.Settings;
+                    InitializePluginTypes();
+                    RefreshContexts();
+
+                    // Notify properties to trigger bindings/theme updates
+                    OnPropertyChanged(nameof(LauncherTheme));
+                    OnPropertyChanged(nameof(SettingsTheme));
+                    OnPropertyChanged(nameof(SettingsThemeString));
+                    
+                    // [New] Notify Hotkeys
+                    OnPropertyChanged(nameof(ShowGridHotkey));
+                    OnPropertyChanged(nameof(ShowSwitcherHotkey));
+                    
+                    // [New] Notify Radial Menu Layout
+                    OnPropertyChanged(nameof(SlotsPerPagePreview));
+                    
+                    // [Phase 2] Reset dirty flag after loading
+                    HasUnsavedChanges = false;
+                }
+                finally
+                {
+                    _suppressSlotSync = false;
+                }
+            });
         }
 
         private void UpdateContextStats(ContextInfo ctx)
@@ -478,34 +518,57 @@ namespace Pulsar.ViewModels
             if (value == null || _config == null) return;
             AddSecretCommand.NotifyCanExecuteChanged();
 
-            List<PluginSlot> sourceList = new List<PluginSlot>();
-
-            if (value.Key == "Launcher")
+            WithSuppressedDirty(() =>
             {
-                if (_config.Profiles.TryGetValue("Global", out var globalProfile) && globalProfile.SwitchMode != null)
-                {
-                    sourceList = globalProfile.SwitchMode;
-                }
-            }
-            else if (value.Key == "Global")
-            {
-                 if (_config.Profiles.TryGetValue("Global", out var globalProfile) && globalProfile.CommandMode != null)
-                {
-                    sourceList = globalProfile.CommandMode;
-                }
-            }
-            else
-            {
-                if (_config.Profiles.TryGetValue(value.Key, out var profile) && profile.CommandMode != null)
-                {
-                    sourceList = profile.CommandMode;
-                }
-            }
+                List<PluginSlot> sourceList = new List<PluginSlot>();
 
-            // [Refactor] 统一使用 Slot 作为排序依据
-            CurrentSlots = new ObservableCollection<PluginSlot>(sourceList.OrderBy(s => s.Slot));
+                if (value.Key == "Launcher")
+                {
+                    if (_config.Profiles.TryGetValue("Global", out var globalProfile) && globalProfile.SwitchMode != null)
+                    {
+                        sourceList = globalProfile.SwitchMode;
+                    }
+                }
+                else if (value.Key == "Global")
+                {
+                     if (_config.Profiles.TryGetValue("Global", out var globalProfile) && globalProfile.CommandMode != null)
+                    {
+                        sourceList = globalProfile.CommandMode;
+                    }
+                }
+                else
+                {
+                    if (_config.Profiles.TryGetValue(value.Key, out var profile) && profile.CommandMode != null)
+                    {
+                        sourceList = profile.CommandMode;
+                    }
+                }
 
-            RefreshSlotParameterMetadata();
+                CurrentSlots.CollectionChanged -= OnCurrentSlotsCollectionChanged;
+
+                foreach (var slot in CurrentSlots)
+                {
+                    slot.PropertyChanged -= OnSlotPropertyChanged;
+                }
+
+                CurrentSlots.Clear();
+
+                foreach (var slot in sourceList.OrderBy(s => s.Slot))
+                {
+                    CurrentSlots.Add(slot);
+                }
+
+                CurrentSlots.CollectionChanged += OnCurrentSlotsCollectionChanged;
+
+                foreach (var slot in CurrentSlots)
+                {
+                    slot.PropertyChanged -= OnSlotPropertyChanged;
+                    slot.PropertyChanged += OnSlotPropertyChanged;
+                }
+
+                UpdateCurrentContextVisuals();
+                RefreshSlotParameterMetadata();
+            });
         }
 
         [RelayCommand]
@@ -523,7 +586,17 @@ namespace Pulsar.ViewModels
                 "Create Slot",
                 vm,
                 DialogButtons.None,
-                DialogSizeConstraints.LargeResizable);
+                new DialogSizeConstraints
+                {
+                    Width = 860,
+                    Height = 700,
+                    MinWidth = 760,
+                    MinHeight = 620,
+                    MaxWidth = 1280,
+                    MaxHeight = 920,
+                    AllowResize = true,
+                    ShowMaximizeButton = true
+                });
 
             if (result == DialogResult.Confirmed && vm.CreatedSlot != null)
             {
@@ -827,24 +900,24 @@ namespace Pulsar.ViewModels
         private void InitializePluginTypes()
         {
             AvailablePluginTypes.Clear();
-            AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.winswitcher", "🚀 Window Switcher", "Switch to or launch applications"));
-            AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.command", "⚡ Command", "Run executable or script"));
+            AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.winswitcher", "🚀 App Switcher", "Switch to an existing app, launch one directly, or switch first and launch only when needed"));
+            AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.command", "⚡ Command Runner", "Open apps, files, folders, or URLs, or send key sequences"));
             AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.bookmarklet", "🔖 Bookmarklet", "Run JavaScript in browser"));
             AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.vbarunner", "📊 VBA Runner", "Run VBA scripts in Excel/WPS"));
-            AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.pki", "🔒 Secret (PKI)", "Auto-fill encrypted credentials"));
-            AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.system", "⚙️ System", "Internal Pulsar commands"));
+            AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.pki", "🔒 Secret Fill", "Fill a saved credential into the active application"));
+            AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.system", "⚙️ Pulsar Control", "Open settings or quick-add slots for the current app"));
         }
 
         private IReadOnlyList<AddSlotViewModel.PluginTypeOption> BuildAddSlotOptions()
         {
             return new List<AddSlotViewModel.PluginTypeOption>
             {
-                new("com.pulsar.winswitcher", "E8A7", "Switch App", "Switch to an existing window or launch the app if it is not open.", "#2196F3"),
-                new("com.pulsar.command", "E756", "Run Command", "Launch an executable, open a file or URL, or send a key sequence.", "#32CD32"),
-                new("com.pulsar.bookmarklet", "E8A4", "Browser Script", "Run JavaScript from a saved script file in the browser.", "#FF8C00"),
-                new("com.pulsar.vbarunner", "E8F4", "Run VBA", "Execute a VBA or automation script for Excel and WPS.", "#2E8B57"),
-                new("com.pulsar.pki", "E72E", "Fill Secret", "Inject a saved credential into the active application.", "#4CAF50"),
-                new("com.pulsar.system", "E713", "System Action", "Trigger built-in Pulsar system commands.", "#607D8B")
+                new("com.pulsar.winswitcher", "E8A7", "App Switcher", "Switch to an existing app, launch one directly, or switch first and launch only when needed.", "#2196F3", "apps", "Apps"),
+                new("com.pulsar.command", "E756", "Command Runner", "Open apps, files, folders, or URLs, or send a key sequence.", "#32CD32", "automation", "Automation"),
+                new("com.pulsar.bookmarklet", "E8A4", "Browser Script", "Run JavaScript from a saved script file in the browser.", "#FF8C00", "automation", "Automation"),
+                new("com.pulsar.vbarunner", "E8F4", "Run VBA", "Execute a VBA or automation script for Excel and WPS.", "#2E8B57", "automation", "Automation"),
+                new("com.pulsar.pki", "E72E", "Secret Fill", "Fill a saved credential into the active application.", "#4CAF50", "security", "Security"),
+                new("com.pulsar.system", "E713", "Pulsar Control", "Open settings or quick-add slots for the current app.", "#607D8B", "system", "System")
             };
         }
 
@@ -911,7 +984,7 @@ namespace Pulsar.ViewModels
                     newItem.Action = "switch";
                     newItem.Args["app"] = string.Empty;
                     newItem.Args["path"] = string.Empty;
-                    newItem.Label = "Switch App";
+                    newItem.Label = "Switch Or Launch App";
                     newItem.IconKey = "E8A7";
                     newItem.Color = "#2196F3";
                     break;
@@ -919,7 +992,7 @@ namespace Pulsar.ViewModels
                 case "com.pulsar.command":
                     newItem.Action = "run";
                     newItem.Args["path"] = string.Empty;
-                    newItem.Label = "Run Command";
+                    newItem.Label = "Open Target";
                     newItem.IconKey = "E756";
                     newItem.Color = "#32CD32";
                     break;
@@ -950,7 +1023,7 @@ namespace Pulsar.ViewModels
                     break;
 
                 case "com.pulsar.system":
-                    newItem.Action = "pulsar.system.open_settings";
+                    newItem.Action = "open-settings";
                     newItem.Label = "Open Settings";
                     newItem.IconKey = "E713";
                     newItem.Color = "#607D8B";
@@ -1485,6 +1558,11 @@ namespace Pulsar.ViewModels
 
         private void InitializeSlotMetadata(PluginSlot slot)
         {
+            if (string.Equals(slot.PluginId, "com.pulsar.system", StringComparison.OrdinalIgnoreCase))
+            {
+                slot.Action = Plugins.Core.SystemCommand.SystemCommandPlugin.ResolveCanonicalAction(slot.Action, slot.Args);
+            }
+
             var metadata = _pluginMetadataRegistry.GetMetadata(slot.PluginId);
             var originalAction = slot.Action;
 
@@ -1494,7 +1572,8 @@ namespace Pulsar.ViewModels
 
             // 如果 slot.Action 为空或在注册表中找不到对应的 action，回退到第一个可用 action
             if (actionMetadata != null && (string.IsNullOrWhiteSpace(slot.Action)
-                || _pluginMetadataRegistry.GetActionMetadata(slot.PluginId, slot.Action) == null))
+                || _pluginMetadataRegistry.GetActionMetadata(slot.PluginId, slot.Action) == null
+                || !string.Equals(slot.Action, actionMetadata.Name, StringComparison.OrdinalIgnoreCase)))
             {
                 System.Diagnostics.Debug.WriteLine($"[InitializeSlotMetadata] Slot {slot.Slot}: action '{originalAction}' is empty/invalid, setting to '{actionMetadata.Name}'");
                 slot.Action = actionMetadata.Name;

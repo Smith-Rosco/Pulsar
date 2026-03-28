@@ -33,15 +33,15 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
         #region 插件元数据
 
         public override string Id => "com.pulsar.command";
-        public override string DisplayName => "Simple Command";
+        public override string DisplayName => "Command Runner";
         public override string Version => "1.0.0";
         public override string Author => "Pulsar Team";
-        public override string Description => "Execute shell commands or simulate keystrokes.";
+        public override string Description => "Open apps, files, folders, or URLs, or send a key sequence to the active window.";
         public override string Icon => "\uE756"; // Command Prompt Icon
         public override bool CanDisable => true;
         public override PluginTier Tier => PluginTier.Extension;
         
-        public override IEnumerable<string> Tags => new[] { "Command", "Utility", "General" };
+        public override IEnumerable<string> Tags => new[] { "Automation", "Launcher", "Utility" };
         public override string? DocumentationUrl => Path.Combine(
             AppDomain.CurrentDomain.BaseDirectory, 
             "Docs", "Plugins", "BasicCommand.md"
@@ -59,7 +59,7 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
                     Name = DisplayName,
                     Description = Description,
                     IconKey = Icon,
-                    Category = "General",
+                    Category = "Automation",
                     Version = Version,
                     Author = Author,
                     DocumentationUrl = DocumentationUrl,
@@ -88,8 +88,8 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
                     ["run"] = new SlotActionMetadata
                     {
                         Name = "run",
-                        Label = "Run Command",
-                        Description = "Launch an executable, file, or URL.",
+                        Label = "Open Target",
+                        Description = "Open an app, document, folder, or URL through Windows shell execution.",
                         Parameters = new List<SlotParameterMetadata>
                         {
                             new()
@@ -109,7 +109,7 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
                                 Placeholder = "cmd.exe",
                                 Example = "C:\\Windows\\System32\\cmd.exe",
                                 InputHint = "You can use an executable path or shell-openable target.",
-                                ValidationHint = "Required for run.",
+                                ValidationHint = "Pick an executable, document, folder, or URL to open.",
                                 PickerIntent = SlotPickerIntent.Process,
                                 Validators = new List<ValidationRule> { new RequiredValidator() }
                             },
@@ -171,7 +171,7 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
                                 Placeholder = "^v",
                                 Example = "{ENTER}",
                                 InputHint = "Use SendKeys syntax such as ^ for Ctrl.",
-                                ValidationHint = "Required for sendkeys.",
+                                ValidationHint = "Use SendKeys syntax such as ^ for Ctrl and {ENTER} for Enter.",
                                 Validators = new List<ValidationRule> { new RequiredValidator() }
                             },
                             new()
@@ -191,7 +191,7 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
                                 Placeholder = "50",
                                 Example = "100",
                                 InputHint = "Milliseconds.",
-                                ValidationHint = "Optional; defaults to 50ms.",
+                                ValidationHint = "Leave empty to use the default 50 ms delay.",
                                 DefaultValue = 50,
                                 Validators = new List<ValidationRule> { new RangeValidator(0, 10000) }
                             }

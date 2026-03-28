@@ -1,4 +1,4 @@
-# WinSwitcher Plugin
+# App Switcher Plugin
 
 **插件 ID**: `com.pulsar.winswitcher`  
 **版本**: 1.0.0  
@@ -7,7 +7,7 @@
 
 ## 概述
 
-WinSwitcher 是 Pulsar 的核心窗口管理插件，提供智能窗口切换和应用程序启动功能。
+App Switcher 是 Pulsar 的核心应用控制插件，用来切换到已运行的应用、直接启动应用，或先尝试切换再在缺失时启动。
 
 ## 功能特性
 
@@ -18,7 +18,7 @@ WinSwitcher 是 Pulsar 的核心窗口管理插件，提供智能窗口切换和
 
 ## 支持的动作
 
-### 1. `activate` - 激活窗口
+### 1. `activate` - Switch Existing App
 
 切换到指定进程的窗口。
 
@@ -36,7 +36,7 @@ WinSwitcher 是 Pulsar 的核心窗口管理插件，提供智能窗口切换和
 }
 ```
 
-### 2. `launch` - 启动应用
+### 2. `launch` - Launch App
 
 启动指定路径的应用程序。
 
@@ -56,7 +56,7 @@ WinSwitcher 是 Pulsar 的核心窗口管理插件，提供智能窗口切换和
 }
 ```
 
-### 3. `switch` - 智能切换
+### 3. `switch` - Switch Or Launch
 
 如果进程正在运行则切换，否则启动。
 
@@ -91,6 +91,13 @@ WinSwitcher 是 Pulsar 的核心窗口管理插件，提供智能窗口切换和
 ## 依赖服务
 
 - `IWindowService`: 窗口管理服务
+
+## Recommended Usage
+
+- Use `activate` when the app must already be running and no new instance should be launched.
+- Use `switch` when the preferred workflow is "go to this app, or launch it if it is missing".
+- Use `launch` when you always want a fresh process launch from an explicit path.
+- Use `com.pulsar.command` + `run` instead when the target is a file, folder, URL, or generic shell-open target rather than app-window control.
 
 ## 注意事项
 

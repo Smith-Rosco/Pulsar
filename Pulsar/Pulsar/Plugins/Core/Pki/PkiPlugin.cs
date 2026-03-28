@@ -28,15 +28,15 @@ namespace Pulsar.Plugins.Core.Pki
         }
 
         public override string Id => "com.pulsar.pki";
-        public override string DisplayName => "PKI Credentials Manager";
+        public override string DisplayName => "Secret Fill";
         public override string Version => "1.0.0";
         public override string Author => "Pulsar Team";
-        public override string Description => "Securely manages and injects credentials into applications.";
+        public override string Description => "Fill a saved credential into the active application with secure runtime injection.";
         public override string Icon => "\uE72E";
         public override bool CanDisable => false;
         public override PluginTier Tier => PluginTier.Core;
 
-        public override IEnumerable<string> Tags => new[] { "Security", "Credentials", "Core" };
+        public override IEnumerable<string> Tags => new[] { "Security", "Credentials", "Secrets" };
 
         public override string? DocumentationUrl => Path.Combine(
             AppDomain.CurrentDomain.BaseDirectory,
@@ -141,8 +141,9 @@ namespace Pulsar.Plugins.Core.Pki
                     ["fill"] = new SlotActionMetadata
                     {
                         Name = "fill",
-                        Label = "Fill Credentials",
-                        Description = "Inject a saved secret into the active application.",
+                        Label = "Fill Secret",
+                        Description = "Fill a saved secret into the active application.",
+                        Aliases = new List<string> { "inject" },
                         ParameterAliases = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                         {
                             ["autoSubmit"] = "autoEnter"
@@ -165,7 +166,7 @@ namespace Pulsar.Plugins.Core.Pki
                                 QuickEditPriority = 100,
                                 Placeholder = "Select a saved secret",
                                 InputHint = "Choose a secret from the secure store.",
-                                ValidationHint = "Required for credential injection.",
+                                ValidationHint = "Choose a saved secret from the secure store.",
                                 PickerIntent = SlotPickerIntent.Secret,
                                 IsSensitive = true,
                                 Validators = new List<ValidationRule>
@@ -190,7 +191,7 @@ namespace Pulsar.Plugins.Core.Pki
                                 QuickEditPriority = 90,
                                 Example = "true",
                                 InputHint = "Use true or false.",
-                                ValidationHint = "Legacy name autoSubmit is also accepted.",
+                                ValidationHint = "Turn this on if the target form should submit right after filling.",
                                 DefaultValue = false,
                                 Aliases = new List<string> { "autoSubmit" }
                             }

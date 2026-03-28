@@ -1,4 +1,4 @@
-# PKI Plugin
+# Secret Fill Plugin
 
 **Plugin ID**: `com.pulsar.pki`
 **Version**: `1.0.0`
@@ -7,17 +7,17 @@
 
 ## Overview
 
-The PKI plugin is Pulsar's core credential-injection plugin. It keeps the Pulsar-facing plugin contract thin and delegates runtime work to layered PKI services that validate requests, load secrets, decrypt them, build an injection plan, and execute the plan through Windows-specific adapters.
+Secret Fill is Pulsar's core credential-fill plugin. It keeps the Pulsar-facing plugin contract thin and delegates runtime work to layered PKI services that validate requests, load secrets, decrypt them, build an injection plan, and execute the plan through Windows-specific adapters.
 
 ## Supported Actions
 
 ### `fill`
 
-Inject a saved secret into the currently focused external application.
+Fill a saved secret into the currently focused external application.
 
 ### `inject`
 
-Legacy runtime alias for `fill`. It stays supported for compatibility but is not exposed as a separate UI action.
+Legacy runtime alias for `fill`. It stays supported for compatibility but is not exposed as a separate authoring action.
 
 ## Parameters
 

@@ -26,16 +26,16 @@ namespace Pulsar.Plugins.Core.WinSwitcher
         private HashSet<string> _excludedProcesses = new();
 
         public string Id => "com.pulsar.winswitcher";
-        public string DisplayName => "Window Switcher";
+        public string DisplayName => "App Switcher";
         public string Version => "1.0.0";
         public string Author => "Pulsar Team";
-        public string Description => "Switch to running windows or launch new application instances.";
+        public string Description => "Switch to an existing app, launch one directly, or switch first and launch only when needed.";
         public string Icon => "\uE8B8"; // Window/Switch Icon
         public bool CanDisable => false; // Core plugin
         public PluginTier Tier => PluginTier.Core;
         
         // 新增元数据属性
-        public IEnumerable<string> Tags => new[] { "Window Management", "Core", "Productivity" };
+        public IEnumerable<string> Tags => new[] { "Apps", "Window Management", "Core" };
         public string? DocumentationUrl => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Docs", "Plugins", "WinSwitcher.md");
 
         public void Initialize(IServiceProvider services)
@@ -319,7 +319,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                     Name = DisplayName,
                     Description = Description,
                     IconKey = "🪟", // Window emoji
-                    Category = "Productivity",
+                    Category = "Apps",
                     Version = Version,
                     Author = Author,
                     DocumentationUrl = DocumentationUrl,
@@ -362,7 +362,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                     ["switch"] = new SlotActionMetadata
                     {
                         Name = "switch",
-                        Label = "Switch or Launch",
+                        Label = "Switch Or Launch",
                         Description = "Switch to a running app window, or launch it when no matching window is found.",
                         Parameters = new List<SlotParameterMetadata>
                         {
@@ -383,7 +383,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                                 Placeholder = "chrome",
                                 Example = "chrome",
                                 InputHint = "Use the process name without .exe.",
-                                ValidationHint = "Required for switching to an existing window.",
+                                ValidationHint = "Pick the running app by process name, without .exe.",
                                 PickerIntent = SlotPickerIntent.Process,
                                 Validators = new List<ValidationRule> { new RequiredValidator() }
                             },
@@ -403,7 +403,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                                 Placeholder = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
                                 Example = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
                                 InputHint = "Use an absolute path for reliable launching.",
-                                ValidationHint = "Leave empty if this slot should only switch.",
+                                ValidationHint = "Add a fallback executable only if this slot should launch when no window is found.",
                                 PickerIntent = SlotPickerIntent.Process
                             },
                             new()
@@ -422,15 +422,15 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                                 Placeholder = "--profile-directory=Default",
                                 Example = "--new-window https://example.com",
                                 InputHint = "Applied only when a new process is launched.",
-                                ValidationHint = "Optional advanced launch behavior."
+                                ValidationHint = "Applied only when a new process is launched."
                             }
                         }
                     },
                     ["launch"] = new SlotActionMetadata
                     {
                         Name = "launch",
-                        Label = "Launch Application",
-                        Description = "Always launch an application using an explicit executable path.",
+                        Label = "Launch App",
+                        Description = "Always launch an app using an explicit executable path.",
                         Parameters = new List<SlotParameterMetadata>
                         {
                             new()
@@ -450,7 +450,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                                 Placeholder = "C:\\Windows\\System32\\notepad.exe",
                                 Example = "C:\\Windows\\System32\\notepad.exe",
                                 InputHint = "Use a full path to an executable, shortcut, or script.",
-                                ValidationHint = "Must point to an existing supported file.",
+                                ValidationHint = "Pick an executable, shortcut, or script to launch.",
                                 PickerIntent = SlotPickerIntent.Process,
                                 Validators = new List<ValidationRule> { new RequiredValidator() }
                             },
@@ -475,8 +475,8 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                     ["activate"] = new SlotActionMetadata
                     {
                         Name = "activate",
-                        Label = "Switch Only",
-                        Description = "Switch to an already running application window without launching a new instance.",
+                        Label = "Switch Existing App",
+                        Description = "Switch to an already running app window without launching a new instance.",
                         Parameters = new List<SlotParameterMetadata>
                         {
                             new()
@@ -496,7 +496,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                                 Placeholder = "chrome",
                                 Example = "chrome",
                                 InputHint = "Use the process name without .exe.",
-                                ValidationHint = "This action only works if the app is already running.",
+                                ValidationHint = "Pick the running app by process name, without .exe.",
                                 PickerIntent = SlotPickerIntent.Process,
                                 Validators = new List<ValidationRule> { new RequiredValidator() }
                             }

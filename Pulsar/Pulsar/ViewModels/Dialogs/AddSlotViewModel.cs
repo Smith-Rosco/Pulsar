@@ -20,27 +20,56 @@ namespace Pulsar.ViewModels.Dialogs
         {
             public PluginTypeOption(
                 string pluginId,
-                string icon,
+                string iconKey,
                 string displayName,
                 string description,
-                string accentColor)
+                string accentColor,
+                string categoryKey,
+                string categoryLabel)
             {
                 PluginId = pluginId;
-                Icon = icon;
+                IconKey = iconKey;
                 DisplayName = displayName;
                 Description = description;
                 AccentColor = accentColor;
+                CategoryKey = categoryKey;
+                CategoryLabel = categoryLabel;
             }
 
             public string PluginId { get; }
 
-            public string Icon { get; }
+            public string IconKey { get; }
 
             public string DisplayName { get; }
 
             public string Description { get; }
 
             public string AccentColor { get; }
+
+            public string CategoryKey { get; }
+
+            public string CategoryLabel { get; }
+
+            [ObservableProperty]
+            private bool _isSelected;
+        }
+
+        public partial class PluginTypeCategoryOption : ObservableObject
+        {
+            public PluginTypeCategoryOption(string key, string label, int count)
+            {
+                Key = key;
+                Label = label;
+                Count = count;
+            }
+
+            public string Key { get; }
+
+            public string Label { get; }
+
+            public int Count { get; }
+
+            public string DisplayLabel => Count > 0 ? $"{Label} ({Count})" : Label;
 
             [ObservableProperty]
             private bool _isSelected;
@@ -61,13 +90,22 @@ namespace Pulsar.ViewModels.Dialogs
         private string _lastSuggestedIcon = string.Empty;
         private string _lastSuggestedColor = string.Empty;
         private bool _isApplyingSuggestions;
+        private bool _shouldShowFieldValidation;
+        private int _validationRequestId;
+        private string _validationFocusTarget = string.Empty;
+        private SlotParameterEditorField? _validationFocusField;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(HasPickerCategories))]
+        private PluginTypeCategoryOption? _selectedCategory;
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(HasSelectedPlugin))]
         [NotifyPropertyChangedFor(nameof(SelectedPluginDescription))]
+        [NotifyPropertyChangedFor(nameof(SelectedPluginContextTitle))]
         [NotifyPropertyChangedFor(nameof(HeaderDescription))]
         [NotifyPropertyChangedFor(nameof(PreviewMetadataText))]
-        [NotifyPropertyChangedFor(nameof(AppearanceDisclosureDescription))]
+        [NotifyPropertyChangedFor(nameof(AppearanceDisclosureTooltip))]
         private PluginTypeOption? _selectedType;
 
         public AddSlotViewModel(
@@ -84,9 +122,18 @@ namespace Pulsar.ViewModels.Dialogs
             _pickParameterValueAsync = pickParameterValueAsync;
             _pickIconAsync = pickIconAsync;
             _pickColorAsync = pickColorAsync;
+
+            PluginTypeCategories = new ObservableCollection<PluginTypeCategoryOption>(BuildCategories(PluginTypes));
+            FilteredPluginTypes = new ObservableCollection<PluginTypeOption>();
+            SelectedCategory = PluginTypeCategories.FirstOrDefault();
+            RefreshFilteredPluginTypes();
         }
 
         public ObservableCollection<PluginTypeOption> PluginTypes { get; }
+
+        public ObservableCollection<PluginTypeCategoryOption> PluginTypeCategories { get; }
+
+        public ObservableCollection<PluginTypeOption> FilteredPluginTypes { get; }
 
         public PluginSlot? CreatedSlot => Slot;
 
@@ -121,6 +168,34 @@ namespace Pulsar.ViewModels.Dialogs
 
         public bool IsAwaitingPluginSelection => !HasSelectedPlugin;
 
+        public bool HasActionValidationError => _shouldShowFieldValidation
+            && Slot != null
+            && string.IsNullOrWhiteSpace(Slot.Action);
+
+        public string ActionValidationMessage => HasActionValidationError
+            ? "Select an action before saving."
+            : string.Empty;
+
+        public int ValidationRequestId
+        {
+            get => _validationRequestId;
+            private set => SetProperty(ref _validationRequestId, value);
+        }
+
+        public string ValidationFocusTarget
+        {
+            get => _validationFocusTarget;
+            private set => SetProperty(ref _validationFocusTarget, value);
+        }
+
+        public SlotParameterEditorField? ValidationFocusField
+        {
+            get => _validationFocusField;
+            private set => SetProperty(ref _validationFocusField, value);
+        }
+
+        public bool HasPickerCategories => PluginTypeCategories.Count > 1;
+
         public string PrimaryButtonText => "Save Slot";
 
         public string SecondaryButtonText => "Cancel";
@@ -135,11 +210,33 @@ namespace Pulsar.ViewModels.Dialogs
 
         public string SelectedPluginDescription => SelectedType?.Description ?? "Choose the primary behavior for this slot, then fill in the details that make it work.";
 
+        public string SelectedPluginContextTitle => SelectedType?.DisplayName ?? "Choose a slot type";
+
         public string HeaderText => Slot == null ? "Create slot" : $"Create slot {Slot.Slot}";
 
         public string HeaderDescription => Slot == null
-            ? "Start with a slot type. Required setup stays visible, while optional polish can wait until the end."
-            : "Set the behavior first, then refine the label, icon, or color only if the defaults need a nudge.";
+            ? "Pick a slot type to start the workflow. Required setup stays in view, while optional polish can wait."
+            : "Set the behavior first, complete any required details, then polish the presentation if needed.";
+
+        public string HeaderStatusText => Slot == null
+            ? "Choose a type to begin"
+            : HasBlockingIssue
+                ? "Needs required setup"
+                : ValidationSeverity == ValidationSeverity.Warning
+                    ? "Draft in progress"
+                    : "Ready to save";
+
+        public bool HasCriticalValidationState => Slot != null && (HasBlockingIssue || ValidationSeverity == ValidationSeverity.Error);
+
+        public bool HasSupportingStatusText => !string.IsNullOrWhiteSpace(SupportingStatusText);
+
+        public string SupportingStatusText => HasCriticalValidationState
+            ? ValidationSummary
+            : HasValidationSummary
+                ? ValidationSummary
+                : Slot == null
+                    ? "Choose a slot type to unlock actions and required details."
+                    : "Complete the required setup, then adjust label, icon, or color if you want extra polish.";
 
         public string PreviewTitle => Slot?.Presentation.Title ?? "New slot";
 
@@ -157,7 +254,11 @@ namespace Pulsar.ViewModels.Dialogs
 
         public string PreviewMetadataText => HasSummaryTokens
             ? string.Join("  •  ", SummaryTokens)
-            : "Type, action, and validation updates appear here as you shape the slot.";
+            : "Preview badges and setup status update as you shape the slot.";
+
+        public string PluginPickerHint => SelectedCategory == null || string.Equals(SelectedCategory.Key, "all", StringComparison.OrdinalIgnoreCase)
+            ? "Scan the available slot types, then choose the behavior you want to set up."
+            : $"Showing {SelectedCategory.Label.ToLowerInvariant()} slot types.";
 
         public ObservableCollection<SlotActionOption> AvailableActions => Slot?.AvailableActions ?? _emptyActions;
 
@@ -181,15 +282,18 @@ namespace Pulsar.ViewModels.Dialogs
 
         public bool HasAdvancedParameters => Slot?.HasAdvancedParameters == true;
 
+        public bool HasOptionalSettings => Slot != null
+            && (HasOptionalParameters || HasAdvancedParameters || HasAppearanceOptions);
+
         public bool HasSummaryTokens => Slot?.HasSummaryTokens == true;
 
         public bool HasAppearanceOptions => Slot != null;
 
-        public string AppearanceDisclosureTitle => "Appearance and polish";
+        public string AppearanceDisclosureTitle => "Appearance";
 
-        public string AppearanceDisclosureDescription => Slot == null
+        public string AppearanceDisclosureTooltip => Slot == null
             ? "Select a slot type before adjusting the label, icon, or color."
-            : "Keep the suggested presentation or make small adjustments once the behavior is ready.";
+            : "Keep the suggested presentation or make small adjustments after the behavior is ready.";
 
         public bool HasBlockingIssue => !string.IsNullOrWhiteSpace(BlockingIssueText);
 
@@ -214,11 +318,21 @@ namespace Pulsar.ViewModels.Dialogs
         }
 
         [RelayCommand]
+        private void SelectCategory(PluginTypeCategoryOption option)
+        {
+            SelectedCategory = option;
+        }
+
+        [RelayCommand]
         private void Save()
         {
+            _shouldShowFieldValidation = true;
+            ValidateFieldStates();
+
             if (Slot == null || HasBlockingIssue)
             {
                 NotifyStateChanged();
+                QueueValidationFocusRequest();
                 return;
             }
 
@@ -240,6 +354,10 @@ namespace Pulsar.ViewModels.Dialogs
 
             _setAction(Slot, action);
             ApplySuggestions();
+            if (_shouldShowFieldValidation)
+            {
+                ValidateFieldStates();
+            }
             NotifyStateChanged();
         }
 
@@ -247,6 +365,10 @@ namespace Pulsar.ViewModels.Dialogs
         {
             await _pickParameterValueAsync(field);
             ApplySuggestions();
+            if (_shouldShowFieldValidation)
+            {
+                ValidateFieldStates();
+            }
             // Parameter value changes may replace the parameter collection (via InitializeSlotMetadata),
             // so we need to refresh the full state to ensure UI bindings are updated.
             NotifyStateChanged();
@@ -309,10 +431,15 @@ namespace Pulsar.ViewModels.Dialogs
         private void NotifyStateChanged()
         {
             SyncSelectedActionStates();
+            ValidateFieldStates();
             OnPropertyChanged(nameof(HasSelectedPlugin));
             OnPropertyChanged(nameof(IsAwaitingPluginSelection));
             OnPropertyChanged(nameof(SelectedPluginDescription));
+            OnPropertyChanged(nameof(SelectedPluginContextTitle));
             OnPropertyChanged(nameof(HeaderText));
+            OnPropertyChanged(nameof(HeaderStatusText));
+            OnPropertyChanged(nameof(HasActionValidationError));
+            OnPropertyChanged(nameof(ActionValidationMessage));
             OnPropertyChanged(nameof(AvailableActions));
             OnPropertyChanged(nameof(RequiredParameters));
             OnPropertyChanged(nameof(OptionalParameters));
@@ -324,14 +451,19 @@ namespace Pulsar.ViewModels.Dialogs
             OnPropertyChanged(nameof(HasRequiredParameters));
             OnPropertyChanged(nameof(HasOptionalParameters));
             OnPropertyChanged(nameof(HasAdvancedParameters));
+            OnPropertyChanged(nameof(HasOptionalSettings));
             OnPropertyChanged(nameof(HasSummaryTokens));
             OnPropertyChanged(nameof(HasAppearanceOptions));
             OnPropertyChanged(nameof(PrimaryButtonText));
             OnPropertyChanged(nameof(SecondaryButtonText));
             OnPropertyChanged(nameof(HeaderDescription));
+            OnPropertyChanged(nameof(HasCriticalValidationState));
+            OnPropertyChanged(nameof(HasSupportingStatusText));
+            OnPropertyChanged(nameof(SupportingStatusText));
             OnPropertyChanged(nameof(PreviewMetadataText));
+            OnPropertyChanged(nameof(PluginPickerHint));
             OnPropertyChanged(nameof(AppearanceDisclosureTitle));
-            OnPropertyChanged(nameof(AppearanceDisclosureDescription));
+            OnPropertyChanged(nameof(AppearanceDisclosureTooltip));
             NotifyPreviewChanged();
         }
 
@@ -341,6 +473,10 @@ namespace Pulsar.ViewModels.Dialogs
         /// </summary>
         private void NotifyPreviewChanged()
         {
+            ValidateFieldStates();
+            OnPropertyChanged(nameof(HeaderStatusText));
+            OnPropertyChanged(nameof(HasActionValidationError));
+            OnPropertyChanged(nameof(ActionValidationMessage));
             OnPropertyChanged(nameof(PreviewTitle));
             OnPropertyChanged(nameof(PreviewTypeBadge));
             OnPropertyChanged(nameof(PreviewActionText));
@@ -352,6 +488,47 @@ namespace Pulsar.ViewModels.Dialogs
             OnPropertyChanged(nameof(HasValidationSummary));
             OnPropertyChanged(nameof(ValidationSeverity));
             OnPropertyChanged(nameof(ValidationSummary));
+            OnPropertyChanged(nameof(HasCriticalValidationState));
+            OnPropertyChanged(nameof(HasSupportingStatusText));
+            OnPropertyChanged(nameof(SupportingStatusText));
+        }
+
+        private static IEnumerable<PluginTypeCategoryOption> BuildCategories(IEnumerable<PluginTypeOption> pluginTypes)
+        {
+            var categories = pluginTypes
+                .GroupBy(option => option.CategoryKey, StringComparer.OrdinalIgnoreCase)
+                .OrderBy(group => group.First().CategoryLabel, StringComparer.OrdinalIgnoreCase)
+                .Select(group => new PluginTypeCategoryOption(group.Key, group.First().CategoryLabel, group.Count()))
+                .ToList();
+
+            categories.Insert(0, new PluginTypeCategoryOption("all", "All", pluginTypes.Count()));
+            return categories;
+        }
+
+        private void RefreshFilteredPluginTypes()
+        {
+            FilteredPluginTypes.Clear();
+
+            var selectedKey = SelectedCategory?.Key;
+            IEnumerable<PluginTypeOption> filtered = string.IsNullOrWhiteSpace(selectedKey)
+                || string.Equals(selectedKey, "all", StringComparison.OrdinalIgnoreCase)
+                ? PluginTypes
+                : PluginTypes.Where(option => string.Equals(option.CategoryKey, selectedKey, StringComparison.OrdinalIgnoreCase));
+
+            foreach (var option in filtered)
+            {
+                FilteredPluginTypes.Add(option);
+            }
+
+            SyncCategoryStates();
+        }
+
+        private void SyncCategoryStates()
+        {
+            foreach (var category in PluginTypeCategories)
+            {
+                category.IsSelected = string.Equals(category.Key, SelectedCategory?.Key, StringComparison.OrdinalIgnoreCase);
+            }
         }
 
         private void SyncSelectedActionStates()
@@ -397,6 +574,46 @@ namespace Pulsar.ViewModels.Dialogs
             return string.Empty;
         }
 
+        private void ValidateFieldStates()
+        {
+            foreach (var field in RequiredParameters)
+            {
+                field.ValidationMessage = _shouldShowFieldValidation && !field.HasValue
+                    ? $"{field.Label} is required."
+                    : string.Empty;
+            }
+
+            foreach (var field in OptionalParameters)
+            {
+                field.ValidationMessage = string.Empty;
+            }
+
+            foreach (var field in AdvancedParameters)
+            {
+                field.ValidationMessage = string.Empty;
+            }
+        }
+
+        private void QueueValidationFocusRequest()
+        {
+            if (HasActionValidationError)
+            {
+                ValidationFocusField = null;
+                ValidationFocusTarget = "action";
+                ValidationRequestId++;
+                return;
+            }
+
+            var firstMissingField = RequiredParameters
+                .Concat(OptionalParameters)
+                .Concat(AdvancedParameters)
+                .FirstOrDefault(field => field.IsRequired && !field.HasValue);
+
+            ValidationFocusField = firstMissingField;
+            ValidationFocusTarget = firstMissingField == null ? string.Empty : "field";
+            ValidationRequestId++;
+        }
+
         private void ResetSuggestionState()
         {
             _lastSuggestedLabel = string.Empty;
@@ -408,16 +625,25 @@ namespace Pulsar.ViewModels.Dialogs
         {
             if (value == null)
             {
+                _shouldShowFieldValidation = false;
                 Slot = null;
                 ResetSuggestionState();
                 NotifyStateChanged();
                 return;
             }
 
+            _shouldShowFieldValidation = false;
             Slot = _createSlotDraft(value.PluginId);
             ResetSuggestionState();
             ApplySuggestions();
             NotifyStateChanged();
+        }
+
+        partial void OnSelectedCategoryChanged(PluginTypeCategoryOption? value)
+        {
+            RefreshFilteredPluginTypes();
+            OnPropertyChanged(nameof(PluginPickerHint));
+            OnPropertyChanged(nameof(HasPickerCategories));
         }
 
         private void ApplySuggestions()
@@ -470,7 +696,7 @@ namespace Pulsar.ViewModels.Dialogs
                 "com.pulsar.bookmarklet" => BuildScriptLabel(slot, "Run Script"),
                 "com.pulsar.vbarunner" => BuildScriptLabel(slot, "Run VBA"),
                 "com.pulsar.pki" => "Fill Secret",
-                "com.pulsar.system" => "System Action",
+                "com.pulsar.system" => BuildSystemLabel(slot),
                 _ => string.IsNullOrWhiteSpace(slot.ActionLabel) ? $"Slot {slot.Slot}" : slot.ActionLabel
             };
         }
@@ -487,9 +713,12 @@ namespace Pulsar.ViewModels.Dialogs
                 return $"Launch {ExtractName(slot["path"], "App")}";
             }
 
-            return string.Equals(slot.Action, "launch", StringComparison.OrdinalIgnoreCase)
-                ? "Launch App"
-                : "Switch App";
+            return slot.Action?.ToLowerInvariant() switch
+            {
+                "activate" => "Switch Existing App",
+                "launch" => "Launch App",
+                _ => "Switch Or Launch App"
+            };
         }
 
         private static string BuildCommandLabel(PluginSlot slot)
@@ -502,8 +731,17 @@ namespace Pulsar.ViewModels.Dialogs
             }
 
             return !string.IsNullOrWhiteSpace(slot["path"])
-                ? $"Launch {ExtractName(slot["path"], "Command")}"
-                : "Run Command";
+                ? $"Open {ExtractName(slot["path"], "Target")}"
+                : "Open Target";
+        }
+
+        private static string BuildSystemLabel(PluginSlot slot)
+        {
+            return slot.Action?.ToLowerInvariant() switch
+            {
+                "quick-add-profile" or "pulsar.system.quick_add_profile" => "Quick Add Current App",
+                _ => "Open Settings"
+            };
         }
 
         private static string BuildScriptLabel(PluginSlot slot, string fallback)

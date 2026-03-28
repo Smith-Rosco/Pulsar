@@ -150,6 +150,20 @@ public class PulsarContext
 
 如果插件需要在 Slots 页面中提供可配置动作，推荐实现 `IPluginMetadataProvider` 并在 `GetMetadata()` 中返回 `PluginMetadata`、`SlotActionMetadata` 与 `SlotParameterMetadata`。
 
+对内建插件和新插件，动作命名应遵循以下模型：
+
+- `DisplayName` 使用用户意图驱动的规范名称，并与文档标题保持一致。
+- `Actions` 只暴露规范的主要动作，供新的 slot 编辑流程展示。
+- 兼容旧配置时，把旧动作保留为运行时别名，不要把别名也暴露成新的首选动作。
+- 参数别名可以通过 `SlotActionMetadata.ParameterAliases` 与 `SlotParameterMetadata.Aliases` 保持兼容。
+
+当前内建插件的规范示例：
+
+- `com.pulsar.command` -> `Command Runner` -> primary actions: `run`, `sendkeys`
+- `com.pulsar.winswitcher` -> `App Switcher` -> primary actions: `activate`, `switch`, `launch`
+- `com.pulsar.pki` -> `Secret Fill` -> primary action: `fill`, legacy alias: `inject`
+- `com.pulsar.system` -> `Pulsar Control` -> primary actions: `open-settings`, `quick-add-profile`, legacy namespaced aliases supported only for compatibility
+
 对于每个会出现在 slot 编辑器中的参数，现在除了 `Key`、`Type`、`Label`、`IsRequired`、`Group`、`Validators` 这些基础字段外，还应补充分层编辑所需的展示提示：
 
 ```csharp
