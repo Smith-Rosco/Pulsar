@@ -24,6 +24,17 @@
     <SolidColorBrush x:Key="Theme.Destructive" Color="#E81123"/>
     <SolidColorBrush x:Key="Theme.Destructive.Hover" Color="#FF5C2B"/>
 
+    <SolidColorBrush x:Key="SlotTypeBrushDefault" Color="#FF9CA3AF"/>
+    <SolidColorBrush x:Key="SlotTypeBrushSecret" Color="#FFF2C14E"/>
+    <SolidColorBrush x:Key="SlotTypeBrushApp" Color="#FF4FB3FF"/>
+    <SolidColorBrush x:Key="SlotTypeBrushCommand" Color="#FF4ADE80"/>
+    <SolidColorBrush x:Key="SlotTypeBrushScript" Color="#FFF87171"/>
+    <SolidColorBrush x:Key="SlotTypeBrushVba" Color="#FFF59E0B"/>
+
+    <SolidColorBrush x:Key="SlotHealthBrushReady" Color="#FF4ADE80"/>
+    <SolidColorBrush x:Key="SlotHealthBrushWarning" Color="#FFFBBF24"/>
+    <SolidColorBrush x:Key="SlotHealthBrushError" Color="#FFF87171"/>
+
     <SolidColorBrush x:Key="Theme.Orb.Fill" Color="#2D2D2D"/>
     <SolidColorBrush x:Key="Theme.Orb.Stroke" Color="#44FFFFFF"/>
     <SolidColorBrush x:Key="Theme.Orb.Active.Glow" Color="#CC00BFFF"/>

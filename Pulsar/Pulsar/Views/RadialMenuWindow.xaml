@@ -74,19 +74,25 @@
                                                CustomStroke="{Binding CustomStrokeBrush}"
                                                CustomForeground="{Binding CustomForegroundBrush}"/>
 
-                            <Border HorizontalAlignment="Right"
-                                    VerticalAlignment="Top"
-                                    Margin="0,-6,-6,0"
-                                    Style="{StaticResource SlotChipBorderStyle}"
-                                    Background="#B20B1220"
-                                    Padding="6,2"
-                                    Visibility="{Binding ShowTypeBadge, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
+                             <Border HorizontalAlignment="Right"
+                                     VerticalAlignment="Top"
+                                     Margin="0,-6,-6,0"
+                                     Style="{StaticResource SlotChipBorderStyle}"
+                                     Background="#B20B1220"
+                                     Padding="6,2"
+                                     Visibility="{Binding ShowTypeBadge, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
                                 <TextBlock Text="{Binding TypeBadge}"
                                            Style="{StaticResource SlotValueChipTextStyle}"
-                                           FontSize="9"
-                                           Foreground="{Binding TypeToneKey, Converter={StaticResource SlotBrushConverter}, ConverterParameter=Type}"/>
-                            </Border>
-                        </Grid>
+                                           FontSize="9">
+                                    <TextBlock.Foreground>
+                                        <MultiBinding Converter="{StaticResource SlotBrushConverter}" ConverterParameter="Type">
+                                            <Binding Path="TypeToneKey"/>
+                                            <Binding RelativeSource="{RelativeSource Self}"/>
+                                        </MultiBinding>
+                                    </TextBlock.Foreground>
+                                </TextBlock>
+                             </Border>
+                         </Grid>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
