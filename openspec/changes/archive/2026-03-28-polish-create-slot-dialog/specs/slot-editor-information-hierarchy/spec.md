@@ -1,29 +1,4 @@
-# slot-editor-information-hierarchy
-
-## Purpose
-Define the information hierarchy for collapsed slot cards, expanded quick edit, and full configuration surfaces.
-## Requirements
-### Requirement: Collapsed slot cards SHALL remain prose-free scan surfaces
-The system SHALL present collapsed slot cards as compact scan surfaces that communicate slot identity and health state without explanatory or instructional prose.
-
-#### Scenario: User scans multiple configured slots
-- **WHEN** the slots page renders several collapsed slot cards
-- **THEN** each card SHALL expose the slot's identity and health state in a compact form without showing helper sentences about editing or configuration flow
-
-#### Scenario: Slot is incomplete
-- **WHEN** a collapsed slot has missing required configuration
-- **THEN** the collapsed card SHALL communicate the warning state through status styling or compact state text rather than a long explanatory message
-
-### Requirement: Expanded quick edit SHALL communicate editing intent immediately
-The system SHALL make it visually clear that the expanded inline layer is for direct editing rather than for summary reading.
-
-#### Scenario: User expands a slot card
-- **WHEN** the inline quick-edit surface opens
-- **THEN** the visible controls SHALL dominate the layout and summary-only presentation blocks SHALL NOT appear ahead of the editable controls
-
-#### Scenario: User returns to a previously expanded slot
-- **WHEN** the user reopens a slot card they edited recently
-- **THEN** the expanded content SHALL present the same editing structure consistently so the user can reorient quickly
+## MODIFIED Requirements
 
 ### Requirement: Full configuration SHALL establish a deeper editing hierarchy
 The system SHALL present full configuration and slot creation as deeper editing layers with a typography-led hierarchy, making slot identity, validation state, and grouped fields easy to understand without relying on repeated card-style containers for every section, and SHALL keep slot identity and health indicators readable in every supported theme. In the Create Slot dialog specifically, the visible hierarchy SHALL keep the primary creation flow dominant, with slot type selection and active configuration work reading as the main path while preview content remains supportive rather than competing for first attention. The Create Slot header SHALL behave as a lightweight workflow/status anchor rather than a broad explanatory content region.

@@ -1,9 +1,4 @@
-# slot-editor-progressive-disclosure
-
-## Purpose
-Define how lower-priority slot field guidance is disclosed without hiding critical validation and accessibility information.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Low-priority field guidance SHALL use progressive disclosure
 The system SHALL move descriptions, examples, and other low-priority instructional guidance into tooltip-style or comparable secondary disclosure patterns when that content is not required for immediate comprehension, and SHALL apply the same approach to low-priority appearance customization and summary support in slot creation/configuration surfaces. In the Create Slot dialog, plugin-type descriptions, appearance coaching copy, and parameter help that is not required to complete the current step SHALL NOT permanently occupy primary layout space. Draft-state orientation copy and non-critical validation hints SHALL also avoid occupying the most prominent header region once the user can proceed through the active authoring flow.
