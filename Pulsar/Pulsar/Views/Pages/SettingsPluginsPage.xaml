@@ -458,8 +458,12 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- External: Install Button Row -->
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,8,0,8">
+                    <!-- External: Title + Install Button Row -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,8,0,8" VerticalAlignment="Center">
+                        <TextBlock Text="External Plugins"
+                                   FontSize="18" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,12,0"/>
                         <ui:Button Content="Install from File"
                                    Command="{Binding ExternalPluginManager.InstallFromFileCommand}"
                                    Icon="{ui:SymbolIcon FolderOpen24}"
@@ -486,9 +490,6 @@
 
                             <!-- Plugin Cards -->
                             <StackPanel Visibility="{Binding ExternalPluginManager.IsLoading, Converter={StaticResource InverseBoolToVisConverter}}">
-                                <TextBlock Text="{Binding ExternalPluginManager.InstalledPlugins.Count, StringFormat='Installed External Plugins ({0})'}"
-                                           FontSize="16" FontWeight="SemiBold" Margin="0,0,0,16"/>
-
                                 <ItemsControl ItemsSource="{Binding ExternalPluginManager.InstalledPlugins}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>

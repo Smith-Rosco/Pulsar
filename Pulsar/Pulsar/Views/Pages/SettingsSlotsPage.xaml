@@ -91,11 +91,6 @@
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
 
                     <!-- Context Switcher -->
-                    <ui:SymbolIcon Symbol="Globe24"
-                                   FontSize="16"
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                   Margin="0,0,6,0"
-                                   VerticalAlignment="Center"/>
                     <ComboBox ItemsSource="{Binding AvailableContexts}"
                               SelectedItem="{Binding CurrentContext, Mode=TwoWay}"
                               MinWidth="160"

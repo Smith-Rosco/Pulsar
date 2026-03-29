@@ -56,16 +56,13 @@ namespace Pulsar.ViewModels.Settings
 
             try
             {
-                await Task.Run(() =>
+                var plugins = await Task.Run(() => _scanner.ScanInstalledPlugins());
+
+                InstalledPlugins.Clear();
+                foreach (var plugin in plugins)
                 {
-                    var plugins = _scanner.ScanInstalledPlugins();
-                    
-                    InstalledPlugins.Clear();
-                    foreach (var plugin in plugins)
-                    {
-                        InstalledPlugins.Add(plugin);
-                    }
-                });
+                    InstalledPlugins.Add(plugin);
+                }
 
                 StatusMessage = $"Found {InstalledPlugins.Count} external plugins";
                 _logger?.LogInformation("[ExternalPluginManagerViewModel] Loaded {Count} external plugins", InstalledPlugins.Count);
