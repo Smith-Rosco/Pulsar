@@ -1,6 +1,8 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
 using Wpf.Ui.Controls;
 using Pulsar.ViewModels;
 using Pulsar.ViewModels.Settings; // Added
@@ -101,27 +103,27 @@ namespace Pulsar.Views
                 {
                     if (_viewModel.CurrentView == "Slots")
                     {
-                        RootFrame.Navigate(_slotsPage);
+                        NavigateWithAnimation(_slotsPage);
                         if (RootNavigation.MenuItems[1] is NavigationViewItem navItem) navItem.IsActive = true;
                     }
                     else if (_viewModel.CurrentView == "Plugins")
                     {
-                        RootFrame.Navigate(_pluginsPage);
+                        NavigateWithAnimation(_pluginsPage);
                         if (RootNavigation.MenuItems[2] is NavigationViewItem navItem) navItem.IsActive = true;
                     }
                     else if (_viewModel.CurrentView == "ExternalPlugins" || _viewModel.CurrentView == "Plugins")
                     {
-                        RootFrame.Navigate(_pluginsPage);
+                        NavigateWithAnimation(_pluginsPage);
                         if (RootNavigation.MenuItems[2] is NavigationViewItem navItem) navItem.IsActive = true;
                     }
                     else if (_viewModel.CurrentView == "About")
                     {
-                        RootFrame.Navigate(_aboutPage);
+                        NavigateWithAnimation(_aboutPage);
                         if (RootNavigation.MenuItems[3] is NavigationViewItem navItem) navItem.IsActive = true;
                     }
                     else
                     {
-                        RootFrame.Navigate(_generalPage);
+                        NavigateWithAnimation(_generalPage);
                         if (RootNavigation.MenuItems[0] is NavigationViewItem navItem) navItem.IsActive = true;
                     }
                 }
@@ -135,6 +137,26 @@ namespace Pulsar.Views
             this.PreviewKeyDown += OnPreviewKeyDown;
             
             RootNavigation.SelectionChanged += RootNavigation_SelectionChanged;
+        }
+
+        private void NavigateWithAnimation(Page? page)
+        {
+            if (page == null) return;
+            RootFrame.Navigate(page);
+
+            // Entrance animation: slide up from below + fade in
+            page.Opacity = 0;
+            page.RenderTransform = new TranslateTransform(0, 20);
+            page.RenderTransformOrigin = new System.Windows.Point(0.5, 0.5);
+
+            var duration = new Duration(TimeSpan.FromMilliseconds(250));
+            var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+
+            var fadeIn = new DoubleAnimation(0, 1, duration);
+            var slideUp = new DoubleAnimation(20, 0, duration) { EasingFunction = ease };
+
+            page.BeginAnimation(UIElement.OpacityProperty, fadeIn);
+            ((TranslateTransform)page.RenderTransform).BeginAnimation(TranslateTransform.YProperty, slideUp);
         }
 
         private void DisableScrollViewers(DependencyObject depObj)
@@ -193,10 +215,10 @@ namespace Pulsar.Views
                              // Activate visual state
                              navItem.IsActive = true; 
                               // Perform actual navigation
-                               if (targetTag == "General") RootFrame.Navigate(_generalPage);
-                                else if (targetTag == "Slots") RootFrame.Navigate(_slotsPage);
-                                else if (targetTag == "Plugins") RootFrame.Navigate(_pluginsPage);
-                                else if (targetTag == "About") RootFrame.Navigate(_aboutPage);
+                               if (targetTag == "General") NavigateWithAnimation(_generalPage);
+                                else if (targetTag == "Slots") NavigateWithAnimation(_slotsPage);
+                                else if (targetTag == "Plugins") NavigateWithAnimation(_pluginsPage);
+                                else if (targetTag == "About") NavigateWithAnimation(_aboutPage);
                                found = true;
                          }
 
@@ -232,22 +254,22 @@ namespace Pulsar.Views
              {
                  if (item.Tag?.ToString() == "General")
                  {
-                     RootFrame.Navigate(_generalPage);
+                     NavigateWithAnimation(_generalPage);
                      _viewModel.CurrentView = "Settings";
                  }
                  else if (item.Tag?.ToString() == "Slots")
                  {
-                     RootFrame.Navigate(_slotsPage);
+                     NavigateWithAnimation(_slotsPage);
                      _viewModel.CurrentView = "Slots";
                  }
                    else if (item.Tag?.ToString() == "Plugins")
                     {
-                        RootFrame.Navigate(_pluginsPage);
+                        NavigateWithAnimation(_pluginsPage);
                         _viewModel.CurrentView = "Plugins";
                     }
                     else if (item.Tag?.ToString() == "About")
                   {
-                      RootFrame.Navigate(_aboutPage);
+                      NavigateWithAnimation(_aboutPage);
                       _viewModel.CurrentView = "About";
                   }
              }

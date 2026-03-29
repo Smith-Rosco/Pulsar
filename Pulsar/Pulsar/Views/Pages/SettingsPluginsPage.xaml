@@ -25,6 +25,27 @@
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
+            <!-- Tab content entrance animation style -->
+            <Style x:Key="TabSlideInStyle" TargetType="Grid">
+                <Style.Triggers>
+                    <EventTrigger RoutedEvent="Loaded">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                 From="0" To="1" Duration="0:0:0.2"/>
+                                <ThicknessAnimation Storyboard.TargetProperty="Margin"
+                                                    From="0,20,0,-20" To="0,0,0,0"
+                                                    Duration="0:0:0.25">
+                                    <ThicknessAnimation.EasingFunction>
+                                        <CubicEase EasingMode="EaseOut"/>
+                                    </ThicknessAnimation.EasingFunction>
+                                </ThicknessAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                </Style.Triggers>
+            </Style>
+
             <!-- Plugin Context Menu -->
         <ContextMenu x:Key="PluginContextMenu">
             <ContextMenu.Resources>
@@ -239,7 +260,7 @@
             <TabItem Header="Built-in">
 
         <!-- Grouped List with Sticky Header Support -->
-        <Grid>
+        <Grid Style="{StaticResource TabSlideInStyle}">
             <ScrollViewer x:Name="PluginsScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,16,0" Style="{StaticResource OverlayScrollViewerStyle}">
                 <Grid Width="{Binding ElementName=PluginsScroll, Path=ViewportWidth}">
                     <ItemsControl x:Name="PluginsItemsControl" ItemsSource="{Binding GroupedPlugins}">
@@ -451,7 +472,7 @@
 
             <!-- External Plugins Tab -->
             <TabItem Header="External">
-                <Grid>
+                <Grid Style="{StaticResource TabSlideInStyle}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
