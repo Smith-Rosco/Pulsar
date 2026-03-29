@@ -280,23 +280,35 @@
                                              <Border Style="{StaticResource SlotChipBorderStyle}"
                                                      Visibility="{Binding TypeBadge, Converter={StaticResource StringEmptyToVis}, FallbackValue=Collapsed}"
                                                      ToolTip="Plugin type">
-                                                 <StackPanel Orientation="Horizontal">
-                                                     <TextBlock Text="Type · " Style="{StaticResource SlotCaptionChipTextStyle}"/>
-                                                     <TextBlock Text="{Binding TypeBadge}"
-                                                                Style="{StaticResource SlotValueChipTextStyle}"
-                                                                Foreground="{Binding TypeToneKey, Converter={StaticResource SlotBrushConverter}, ConverterParameter=Type}"/>
-                                                 </StackPanel>
-                                             </Border>
+                                                  <StackPanel Orientation="Horizontal">
+                                                      <TextBlock Text="Type · " Style="{StaticResource SlotCaptionChipTextStyle}"/>
+                                                      <TextBlock Text="{Binding TypeBadge}"
+                                                                 Style="{StaticResource SlotValueChipTextStyle}">
+                                                          <TextBlock.Foreground>
+                                                              <MultiBinding Converter="{StaticResource SlotBrushConverter}" ConverterParameter="Type">
+                                                                  <Binding Path="TypeToneKey"/>
+                                                                  <Binding RelativeSource="{RelativeSource Self}"/>
+                                                              </MultiBinding>
+                                                          </TextBlock.Foreground>
+                                                      </TextBlock>
+                                                  </StackPanel>
+                                              </Border>
                                              <!-- Health badge -->
                                              <Border Style="{StaticResource SlotChipBorderStyle}"
                                                      ToolTip="Configuration health status">
-                                                 <StackPanel Orientation="Horizontal">
-                                                     <TextBlock Text="Health · " Style="{StaticResource SlotCaptionChipTextStyle}"/>
-                                                     <TextBlock Text="{Binding HealthBadgeText}"
-                                                                Style="{StaticResource SlotValueChipTextStyle}"
-                                                                Foreground="{Binding HealthToneKey, Converter={StaticResource SlotBrushConverter}, ConverterParameter=Health}"/>
-                                                 </StackPanel>
-                                             </Border>
+                                                  <StackPanel Orientation="Horizontal">
+                                                      <TextBlock Text="Health · " Style="{StaticResource SlotCaptionChipTextStyle}"/>
+                                                      <TextBlock Text="{Binding HealthBadgeText}"
+                                                                 Style="{StaticResource SlotValueChipTextStyle}">
+                                                          <TextBlock.Foreground>
+                                                              <MultiBinding Converter="{StaticResource SlotBrushConverter}" ConverterParameter="Health">
+                                                                  <Binding Path="HealthToneKey"/>
+                                                                  <Binding RelativeSource="{RelativeSource Self}"/>
+                                                              </MultiBinding>
+                                                          </TextBlock.Foreground>
+                                                      </TextBlock>
+                                                  </StackPanel>
+                                              </Border>
                                             <!-- Summary tokens -->
                                             <ItemsControl ItemsSource="{Binding SummaryTokens}"
                                                           Visibility="{Binding HasSummaryTokens, Converter={StaticResource BoolToVis}}"

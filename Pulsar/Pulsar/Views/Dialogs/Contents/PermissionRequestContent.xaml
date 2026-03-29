@@ -123,13 +123,13 @@
                        Content="拒绝"
                        Command="{Binding DenyCommand}"
                        HorizontalAlignment="Stretch"
-                       Appearance="Secondary"/>
+                       Style="{StaticResource PulsarSecondaryButtonStyle}"/>
 
             <ui:Button Grid.Column="2"
                        Content="授予权限"
                        Command="{Binding GrantCommand}"
                        HorizontalAlignment="Stretch"
-                       Appearance="Primary"/>
+                       Style="{StaticResource PulsarPrimaryButtonStyle}"/>
         </Grid>
     </Grid>
 </UserControl>

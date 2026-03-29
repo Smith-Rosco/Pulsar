@@ -169,5 +169,18 @@ namespace Pulsar.Helpers
                 return k.Trim();
             });
         }
+
+        public static System.Windows.Media.FontFamily GetGlyphFontFamily(string glyph)
+        {
+            if (string.IsNullOrEmpty(glyph))
+            {
+                return new System.Windows.Media.FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets, Segoe UI Emoji");
+            }
+
+            char first = glyph[0];
+            return first >= 0xE000 && first <= 0xF8FF
+                ? new System.Windows.Media.FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets")
+                : new System.Windows.Media.FontFamily("Segoe UI, Segoe UI Emoji, Microsoft YaHei UI");
+        }
     }
 }

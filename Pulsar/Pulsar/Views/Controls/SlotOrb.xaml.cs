@@ -298,20 +298,7 @@ namespace Pulsar.Views.Controls
                 SetValue(RenderGlyphPropertyKey, newGlyph);
 
                 // [Fix] Determine correct font family
-                if (!string.IsNullOrEmpty(newGlyph))
-                {
-                    char first = newGlyph[0];
-                    // Segoe Fluent Icons PUA range (roughly E700-F8FF, but we use E000+ to be safe for MDL2 too)
-                    if (first >= 0xE000 && first <= 0xF8FF)
-                    {
-                        SetValue(GlyphFontFamilyPropertyKey, new System.Windows.Media.FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"));
-                    }
-                    else
-                    {
-                        // Text, Emoji, Standard Chars -> Use UI Font + Emoji
-                        SetValue(GlyphFontFamilyPropertyKey, new System.Windows.Media.FontFamily("Segoe UI, Segoe UI Emoji, Microsoft YaHei UI"));
-                    }
-                }
+                SetValue(GlyphFontFamilyPropertyKey, IconHelper.GetGlyphFontFamily(newGlyph));
             }
         }
     }

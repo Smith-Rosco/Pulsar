@@ -17,6 +17,7 @@ namespace Pulsar.Services.Interfaces
         event Action? ConfigUpdated;
         
         Task<ProfilesConfig> LoadAsync();
+        Task<ProfilesConfig> ResetToFirstLaunchAsync();
         Task SaveAsync(ProfilesConfig config);
         
         /// <summary>

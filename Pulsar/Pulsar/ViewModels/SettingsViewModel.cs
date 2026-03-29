@@ -15,6 +15,8 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Pulsar.Core.Messages;
 using Pulsar.Core.Plugin.Metadata;
+using Pulsar.Plugins.Core.Pki.Contracts;
+using Pulsar.Plugins.Core.Pki.Models;
 using Pulsar.Plugins.Core.Pki.Services;
 using Pulsar.Helpers;
 using Pulsar.Models;
@@ -24,6 +26,7 @@ using Pulsar.Services.Validation;
 using Microsoft.Extensions.Logging;
 using Wpf.Ui.Controls;
 using Pulsar.ViewModels.Dialogs;
+using Pulsar.ViewModels.Settings;
 using DialogResult = Pulsar.Models.Enums.DialogResult;
 using DialogButtons = Pulsar.Models.Enums.DialogButtons;
 using GongSolutions.Wpf.DragDrop;
@@ -31,23 +34,6 @@ using DragDropEffects = System.Windows.DragDropEffects;
 
 namespace Pulsar.ViewModels
 {
-    /// <summary>
-    /// Helper class for plugin type information in UI
-    /// </summary>
-    public class PluginTypeInfo
-    {
-        public string PluginId { get; }
-        public string DisplayName { get; }
-        public string Description { get; }
-        
-        public PluginTypeInfo(string id, string name, string desc)
-        {
-            PluginId = id;
-            DisplayName = name;
-            Description = desc;
-        }
-    }
-
     /// <summary>
     /// Enhanced ContextInfo with slot count display
     /// </summary>
@@ -100,7 +86,9 @@ namespace Pulsar.ViewModels
         private readonly IDialogService _dialogService;
         private readonly IFuzzySearchService<IconItem> _searchService;
         private readonly IProcessRegistryService? _processRegistryService;
-        private readonly SecretRepository _secretRepo;
+        private readonly IPkiSecretStore _secretStore;
+        private readonly ISecretProtector _secretProtector;
+        private readonly IPkiSecretMetadataResolver _secretMetadataResolver;
         private readonly IPluginMetadataRegistry _pluginMetadataRegistry;
         private readonly ILogger<SettingsViewModel> _logger;
         private ProfilesConfig _config;
@@ -128,8 +116,6 @@ namespace Pulsar.ViewModels
         }
 
         public ObservableCollection<ContextInfo> AvailableContexts { get; } = new();
-
-        public ObservableCollection<PluginTypeInfo> AvailablePluginTypes { get; } = new();
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(CanDeleteProfile))]
@@ -161,6 +147,11 @@ namespace Pulsar.ViewModels
         /// </summary>
         private void MarkDirty()
         {
+            if (_suppressDirty)
+            {
+                return;
+            }
+
             _logger.LogDebug("MarkDirty called, HasUnsavedChanges: {Current} -> true", HasUnsavedChanges);
             HasUnsavedChanges = true;
             
@@ -326,7 +317,9 @@ namespace Pulsar.ViewModels
             IHotkeyService hotkeyService,
             IDialogService dialogService,
             IFuzzySearchService<IconItem> searchService,
-            SecretRepository secretRepo,
+            IPkiSecretStore secretStore,
+            ISecretProtector secretProtector,
+            IPkiSecretMetadataResolver secretMetadataResolver,
             IPluginMetadataRegistry pluginMetadataRegistry,
             ILogger<SettingsViewModel> logger,
             IProcessRegistryService? processRegistryService = null)
@@ -337,7 +330,9 @@ namespace Pulsar.ViewModels
             _hotkeyService = hotkeyService;
             _dialogService = dialogService;
             _searchService = searchService;
-            _secretRepo = secretRepo;
+            _secretStore = secretStore;
+            _secretProtector = secretProtector;
+            _secretMetadataResolver = secretMetadataResolver;
             _pluginMetadataRegistry = pluginMetadataRegistry;
             _logger = logger;
             _processRegistryService = processRegistryService;
@@ -388,6 +383,37 @@ namespace Pulsar.ViewModels
         public void ResumeHotkeys() => _hotkeyService.Resume();
 
         private bool _suppressSlotSync = false;
+        private bool _suppressDirty = false;
+
+        private void WithSuppressedDirty(Action action)
+        {
+            bool wasSuppressed = _suppressDirty;
+            _suppressDirty = true;
+
+            try
+            {
+                action();
+            }
+            finally
+            {
+                _suppressDirty = wasSuppressed;
+            }
+        }
+
+        private async Task WithSuppressedDirtyAsync(Func<Task> action)
+        {
+            bool wasSuppressed = _suppressDirty;
+            _suppressDirty = true;
+
+            try
+            {
+                await action();
+            }
+            finally
+            {
+                _suppressDirty = wasSuppressed;
+            }
+        }
 
         public async Task<ProfilesConfig> GetConfigAsync()
         {
@@ -397,42 +423,46 @@ namespace Pulsar.ViewModels
 
         private async Task LoadSettings()
         {
-            _suppressSlotSync = true;
-            try
+            await WithSuppressedDirtyAsync(async () =>
             {
-                var sharedConfig = await _configService.LoadAsync();
-                // [Transactional] Deep Clone to work on a draft
-                var options = new System.Text.Json.JsonSerializerOptions 
-                { 
-                    PropertyNameCaseInsensitive = true,
-                    WriteIndented = true 
-                };
-                var json = System.Text.Json.JsonSerializer.Serialize(sharedConfig, options);
-                _config = System.Text.Json.JsonSerializer.Deserialize<ProfilesConfig>(json, options) ?? new ProfilesConfig();
+                _suppressSlotSync = true;
 
-                GeneralSettings = _config.Settings;
-                InitializePluginTypes();
-                RefreshContexts();
+                try
+                {
+                    var sharedConfig = await _configService.LoadAsync();
+                    // [Transactional] Deep Clone to work on a draft
+                    var options = new System.Text.Json.JsonSerializerOptions 
+                    { 
+                        PropertyNameCaseInsensitive = true,
+                        WriteIndented = true 
+                    };
+                    var json = System.Text.Json.JsonSerializer.Serialize(sharedConfig, options);
+                    _config = System.Text.Json.JsonSerializer.Deserialize<ProfilesConfig>(json, options) ?? new ProfilesConfig();
+                    _persistedSecrets = await _secretStore.LoadAsync();
 
-                // Notify properties to trigger bindings/theme updates
-                OnPropertyChanged(nameof(LauncherTheme));
-                OnPropertyChanged(nameof(SettingsTheme));
-                OnPropertyChanged(nameof(SettingsThemeString));
-                
-                // [New] Notify Hotkeys
-                OnPropertyChanged(nameof(ShowGridHotkey));
-                OnPropertyChanged(nameof(ShowSwitcherHotkey));
-                
-                // [New] Notify Radial Menu Layout
-                OnPropertyChanged(nameof(SlotsPerPagePreview));
-                
-                // [Phase 2] Reset dirty flag after loading
-                HasUnsavedChanges = false;
-            }
-            finally
-            {
-                _suppressSlotSync = false;
-            }
+                    GeneralSettings = _config.Settings;
+                    RefreshContexts();
+
+                    // Notify properties to trigger bindings/theme updates
+                    OnPropertyChanged(nameof(LauncherTheme));
+                    OnPropertyChanged(nameof(SettingsTheme));
+                    OnPropertyChanged(nameof(SettingsThemeString));
+                    
+                    // [New] Notify Hotkeys
+                    OnPropertyChanged(nameof(ShowGridHotkey));
+                    OnPropertyChanged(nameof(ShowSwitcherHotkey));
+                    
+                    // [New] Notify Radial Menu Layout
+                    OnPropertyChanged(nameof(SlotsPerPagePreview));
+                    
+                    // [Phase 2] Reset dirty flag after loading
+                    HasUnsavedChanges = false;
+                }
+                finally
+                {
+                    _suppressSlotSync = false;
+                }
+            });
         }
 
         private void UpdateContextStats(ContextInfo ctx)
@@ -469,34 +499,57 @@ namespace Pulsar.ViewModels
             if (value == null || _config == null) return;
             AddSecretCommand.NotifyCanExecuteChanged();
 
-            List<PluginSlot> sourceList = new List<PluginSlot>();
-
-            if (value.Key == "Launcher")
+            WithSuppressedDirty(() =>
             {
-                if (_config.Profiles.TryGetValue("Global", out var globalProfile) && globalProfile.SwitchMode != null)
-                {
-                    sourceList = globalProfile.SwitchMode;
-                }
-            }
-            else if (value.Key == "Global")
-            {
-                 if (_config.Profiles.TryGetValue("Global", out var globalProfile) && globalProfile.CommandMode != null)
-                {
-                    sourceList = globalProfile.CommandMode;
-                }
-            }
-            else
-            {
-                if (_config.Profiles.TryGetValue(value.Key, out var profile) && profile.CommandMode != null)
-                {
-                    sourceList = profile.CommandMode;
-                }
-            }
+                List<PluginSlot> sourceList = new List<PluginSlot>();
 
-            // [Refactor] 统一使用 Slot 作为排序依据
-            CurrentSlots = new ObservableCollection<PluginSlot>(sourceList.OrderBy(s => s.Slot));
+                if (value.Key == "Launcher")
+                {
+                    if (_config.Profiles.TryGetValue("Global", out var globalProfile) && globalProfile.SwitchMode != null)
+                    {
+                        sourceList = globalProfile.SwitchMode;
+                    }
+                }
+                else if (value.Key == "Global")
+                {
+                     if (_config.Profiles.TryGetValue("Global", out var globalProfile) && globalProfile.CommandMode != null)
+                    {
+                        sourceList = globalProfile.CommandMode;
+                    }
+                }
+                else
+                {
+                    if (_config.Profiles.TryGetValue(value.Key, out var profile) && profile.CommandMode != null)
+                    {
+                        sourceList = profile.CommandMode;
+                    }
+                }
 
-            RefreshSlotParameterMetadata();
+                CurrentSlots.CollectionChanged -= OnCurrentSlotsCollectionChanged;
+
+                foreach (var slot in CurrentSlots)
+                {
+                    slot.PropertyChanged -= OnSlotPropertyChanged;
+                }
+
+                CurrentSlots.Clear();
+
+                foreach (var slot in sourceList.OrderBy(s => s.Slot))
+                {
+                    CurrentSlots.Add(slot);
+                }
+
+                CurrentSlots.CollectionChanged += OnCurrentSlotsCollectionChanged;
+
+                foreach (var slot in CurrentSlots)
+                {
+                    slot.PropertyChanged -= OnSlotPropertyChanged;
+                    slot.PropertyChanged += OnSlotPropertyChanged;
+                }
+
+                UpdateCurrentContextVisuals();
+                RefreshSlotParameterMetadata();
+            });
         }
 
         [RelayCommand]
@@ -514,11 +567,29 @@ namespace Pulsar.ViewModels
                 "Create Slot",
                 vm,
                 DialogButtons.None,
-                DialogSizeConstraints.LargeResizable);
+                new DialogSizeConstraints
+                {
+                    Width = 860,
+                    Height = 700,
+                    MinWidth = 760,
+                    MinHeight = 620,
+                    MaxWidth = 1280,
+                    MaxHeight = 920,
+                    AllowResize = true,
+                    ShowMaximizeButton = true
+                });
 
             if (result == DialogResult.Confirmed && vm.CreatedSlot != null)
             {
                 CommitCreatedSlot(vm.CreatedSlot);
+
+                // P2 Fix: If the newly created slot is a PKI slot and secretId is still empty,
+                // immediately open the secret picker so the user can link a secret.
+                if (vm.CreatedSlot.PluginId == "com.pulsar.pki"
+                    && (!vm.CreatedSlot.Args.TryGetValue("secretId", out var sid) || string.IsNullOrEmpty(sid)))
+                {
+                    await PickSecret(vm.CreatedSlot);
+                }
             }
         }
 
@@ -535,7 +606,7 @@ namespace Pulsar.ViewModels
             if (CurrentSlots == null) return;
             // [Refactor] Removed 8-slot limit
 
-            var vm = new QuickSecretsViewModel();
+            var vm = new QuickSecretsViewModel(_secretProtector);
             var result = await _dialogService.ShowCustomAsync("Secret Configuration", vm, DialogButtons.OkCancel);
 
             if (result == DialogResult.Confirmed)
@@ -546,6 +617,7 @@ namespace Pulsar.ViewModels
                 var secretId = Guid.NewGuid();
                 var payload = new Plugins.Core.Pki.Models.SecretPayload
                 {
+                    Label = vm.Label,
                     Account = vm.Account,
                     EncryptedData = vm.ResultEncryptedData
                 };
@@ -725,13 +797,17 @@ namespace Pulsar.ViewModels
                 // [Fix] Ensure current modifications are committed before saving
                 SyncSlotsToConfig();
                 
-                var allSecrets = await _secretRepo.LoadAsync();
+                // [Fix] Refresh slot metadata BEFORE saving to ensure valid actions are persisted
+                RefreshSlotParameterMetadata();
+
+                var allSecrets = await _secretStore.LoadAsync();
                 foreach (var kvp in _pendingSecrets)
                 {
                     allSecrets[kvp.Key] = kvp.Value;
                 }
                 
-                await _secretRepo.SaveAsync(allSecrets);
+                await _secretStore.SaveAsync(allSecrets);
+                _persistedSecrets = new Dictionary<Guid, Plugins.Core.Pki.Models.SecretPayload>(allSecrets);
                 _pendingSecrets.Clear();
                 
                 await _configService.SaveAsync(_config);
@@ -766,64 +842,52 @@ namespace Pulsar.ViewModels
         public async Task ResetConfig()
         {
             var result = await _dialogService.ShowConfirmationAsync("Reset Configuration", 
-                "This will reset all settings and profiles to default values.\n\nA backup of your current configuration will be created.\nAre you sure you want to proceed?");
+                "This will restore Pulsar to its first-launch state, recreate the default profiles, and restart onboarding eligibility.\n\nA backup of your current configuration will be created before reset.\nAre you sure you want to proceed?",
+                "Restore First Launch",
+                "Cancel");
             
             if (result == Pulsar.Models.Enums.DialogResult.Confirmed)
             {
-                // 1. Create Backup
-                try 
+                try
                 {
+                    // 1. Create Backup
                     var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
                     var configPath = Path.Combine(appData, "Pulsar", "Profiles.json");
                     if (File.Exists(configPath))
                     {
                         var backupPath = configPath + ".bak";
                         File.Copy(configPath, backupPath, true);
+                        _logger.LogInformation("[SettingsViewModel] Backed up configuration to {BackupPath} before reset", backupPath);
                     }
+
+                    // 2. Reset via ConfigService unified first-launch path
+                    await _configService.ResetToFirstLaunchAsync();
+
+                    // 3. Force reload UI so current session reflects regenerated fallback config immediately
+                    await LoadSettings();
+
+                    SendNotification(
+                        "Reset Complete",
+                        "Pulsar has been restored to its first-launch defaults. Default profiles were recreated and onboarding can start again.",
+                        ControlAppearance.Success);
                 }
                 catch (Exception ex)
                 {
-                    SendNotification("Warning", $"Backup failed: {ex.Message}", ControlAppearance.Caution);
+                    _logger.LogError(ex, "[SettingsViewModel] Failed to reset configuration");
+                    SendNotification("Reset Failed", $"Unable to restore first-launch defaults: {ex.Message}", ControlAppearance.Danger);
                 }
-
-                // 2. Create Default Config
-                var defaultConfig = new ProfilesConfig();
-                
-                // Add default profiles/slots if desired (optional)
-                // For now, clean slate is safer to fix corruption
-                
-                // 3. Save & Reload
-                await _configService.SaveAsync(defaultConfig);
-                
-                // 4. Force Reload UI
-                await LoadSettings();
-                
-                SendNotification("Reset Complete", "Configuration has been reset to defaults.", ControlAppearance.Success);
             }
-        }
-
-        private void InitializePluginTypes()
-        {
-            AvailablePluginTypes.Clear();
-            AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.winswitcher", "🚀 Window Switcher", "Switch to or launch applications"));
-            AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.command", "⚡ Command", "Run executable or script"));
-            AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.bookmarklet", "🔖 Bookmarklet", "Run JavaScript in browser"));
-            AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.vbarunner", "📊 VBA Runner", "Run VBA scripts in Excel/WPS"));
-            AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.pki", "🔒 Secret (PKI)", "Auto-fill encrypted credentials"));
-            AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.system", "⚙️ System", "Internal Pulsar commands"));
         }
 
         private IReadOnlyList<AddSlotViewModel.PluginTypeOption> BuildAddSlotOptions()
         {
-            return new List<AddSlotViewModel.PluginTypeOption>
-            {
-                new("com.pulsar.winswitcher", "E8A7", "Switch App", "Switch to an existing window or launch the app if it is not open.", "#2196F3"),
-                new("com.pulsar.command", "E756", "Run Command", "Launch an executable, open a file or URL, or send a key sequence.", "#32CD32"),
-                new("com.pulsar.bookmarklet", "E8A4", "Browser Script", "Run JavaScript from a saved script file in the browser.", "#FF8C00"),
-                new("com.pulsar.vbarunner", "E8F4", "Run VBA", "Execute a VBA or automation script for Excel and WPS.", "#2E8B57"),
-                new("com.pulsar.pki", "E72E", "Fill Secret", "Inject a saved credential into the active application.", "#4CAF50"),
-                new("com.pulsar.system", "E713", "System Action", "Trigger built-in Pulsar system commands.", "#607D8B")
-            };
+            return _pluginMetadataRegistry
+                .GetAllMetadata()
+                .Where(metadata => metadata.Actions.Count > 0)
+                .OrderBy(metadata => metadata.UI.SortOrder)
+                .ThenBy(metadata => metadata.Display.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(metadata => new AddSlotViewModel.PluginTypeOption(BuiltInPluginDisplayModel.FromMetadata(metadata)))
+                .ToList();
         }
 
         private PluginSlot CreateSlotDraft(string pluginId)
@@ -875,7 +939,7 @@ namespace Pulsar.ViewModels
             return CurrentSlots.Max(slot => slot.Slot) + 1;
         }
 
-        private static PluginSlot BuildSlotTemplate(string pluginId, int slotNumber)
+        private PluginSlot BuildSlotTemplate(string pluginId, int slotNumber)
         {
             var newItem = new PluginSlot
             {
@@ -889,33 +953,25 @@ namespace Pulsar.ViewModels
                     newItem.Action = "switch";
                     newItem.Args["app"] = string.Empty;
                     newItem.Args["path"] = string.Empty;
-                    newItem.Label = "Switch App";
-                    newItem.IconKey = "E8A7";
-                    newItem.Color = "#2196F3";
+                    newItem.Label = "Switch Or Launch App";
                     break;
 
                 case "com.pulsar.command":
                     newItem.Action = "run";
                     newItem.Args["path"] = string.Empty;
-                    newItem.Label = "Run Command";
-                    newItem.IconKey = "E756";
-                    newItem.Color = "#32CD32";
+                    newItem.Label = "Open Target";
                     break;
 
                 case "com.pulsar.bookmarklet":
                     newItem.Action = "run";
                     newItem.Args["scriptPath"] = string.Empty;
                     newItem.Label = "Run Script";
-                    newItem.IconKey = "E943";
-                    newItem.Color = "#FF8C00";
                     break;
 
                 case "com.pulsar.vbarunner":
                     newItem.Action = "run";
                     newItem.Args["scriptPath"] = string.Empty;
                     newItem.Label = "Run VBA";
-                    newItem.IconKey = "E8C4";
-                    newItem.Color = "#2E8B57";
                     break;
 
                 case "com.pulsar.pki":
@@ -923,19 +979,21 @@ namespace Pulsar.ViewModels
                     newItem.Args["secretId"] = string.Empty;
                     newItem.Args["autoEnter"] = bool.FalseString;
                     newItem.Label = "Fill Secret";
-                    newItem.IconKey = "E72E";
-                    newItem.Color = "#4CAF50";
                     break;
 
                 case "com.pulsar.system":
-                    newItem.Action = "pulsar.system.open_settings";
+                    newItem.Action = "open-settings";
                     newItem.Label = "Open Settings";
-                    newItem.IconKey = "E713";
-                    newItem.Color = "#607D8B";
                     break;
 
                 default:
                     throw new InvalidOperationException($"Unknown plugin type: {pluginId}");
+            }
+
+            string? iconKey = _pluginMetadataRegistry.GetMetadata(pluginId)?.Display.IconKey;
+            if (!string.IsNullOrWhiteSpace(iconKey))
+            {
+                newItem.IconKey = iconKey;
             }
 
             return newItem;
@@ -997,6 +1055,7 @@ namespace Pulsar.ViewModels
 
 
         private Dictionary<Guid, Plugins.Core.Pki.Models.SecretPayload> _pendingSecrets = new();
+        private Dictionary<Guid, Plugins.Core.Pki.Models.SecretPayload> _persistedSecrets = new();
 
         [RelayCommand]
         public async Task EditSecret(PluginSlot slot)
@@ -1011,8 +1070,7 @@ namespace Pulsar.ViewModels
 
             if (!_pendingSecrets.TryGetValue(secretId, out var payload))
             {
-                var existingSecrets = await _secretRepo.LoadAsync();
-                existingSecrets.TryGetValue(secretId, out payload);
+                _persistedSecrets.TryGetValue(secretId, out payload);
             }
 
             if (payload == null) 
@@ -1021,23 +1079,51 @@ namespace Pulsar.ViewModels
                 return;
             }
 
-            var vm = new QuickSecretsViewModel();
+            var vm = new QuickSecretsViewModel(_secretProtector);
             bool autoEnter = slot.Args.TryGetValue("autoEnter", out var ae) && bool.Parse(ae);
-            vm.LoadForEdit(slot.Label, payload.Account, payload.EncryptedData, autoEnter);
+            var secretDisplay = ResolveSecretDisplay(secretId.ToString(), BuildLegacySecretLabelMap());
+            vm.LoadForEdit(secretDisplay?.Label ?? slot.Label, payload.Account, payload.EncryptedData, autoEnter);
 
             var result = await _dialogService.ShowCustomAsync("Edit Secret", vm, DialogButtons.OkCancel);
 
             if (result == DialogResult.Confirmed)
             {
-                slot.Label = vm.Label;
-                slot.Args["autoEnter"] = vm.AutoEnter.ToString();
+                payload.Label = vm.Label;
+                slot.SetArgument("autoEnter", vm.AutoEnter.ToString());
                 
                 payload.Account = vm.Account;
                 payload.EncryptedData = vm.ResultEncryptedData;
                 _pendingSecrets[secretId] = payload;
 
+                RefreshSlotParameterMetadata();
                 MarkDirty(); // [Phase 2]
                 SendNotification("Success", "Secret updated.", ControlAppearance.Success);
+            }
+        }
+
+        /// <summary>
+        /// 打开 SecretPicker 对话框，供用户选择已有密码或新建密码。
+        /// 用户可以在对话框内直接创建新Secret，创建后会自动选中。
+        /// </summary>
+        private async Task PickSecret(PluginSlot slot)
+        {
+            if (slot == null || slot.PluginId != "com.pulsar.pki") return;
+
+            var labelMap = BuildLegacySecretLabelMap();
+
+            var pickerVm = new SecretPickerViewModel(_secretStore, _secretProtector, _secretMetadataResolver, _pendingSecrets, labelMap, _dialogService);
+            await pickerVm.LoadAsync();
+
+            await _dialogService.ShowCustomAsync("Select Secret", pickerVm, Models.Enums.DialogButtons.None, DialogSizeConstraints.Medium);
+
+            if (pickerVm.SelectedSecretId.HasValue)
+            {
+                slot.SetArgument("secretId", pickerVm.SelectedSecretId.Value.ToString());
+
+                InitializeSlotMetadata(slot);
+                RefreshSlotValidationSummary(slot);
+                UpdateSlotPresentation(slot);
+                MarkDirty();
             }
         }
 
@@ -1413,7 +1499,7 @@ namespace Pulsar.ViewModels
                     break;
 
                 case Pulsar.Core.Plugin.Metadata.SlotPickerIntent.Secret:
-                    await EditSecret(field.Slot);
+                    await PickSecret(field.Slot);
                     break;
             }
         }
@@ -1435,7 +1521,13 @@ namespace Pulsar.ViewModels
 
         private void InitializeSlotMetadata(PluginSlot slot)
         {
+            if (string.Equals(slot.PluginId, "com.pulsar.system", StringComparison.OrdinalIgnoreCase))
+            {
+                slot.Action = Plugins.Core.SystemCommand.SystemCommandPlugin.ResolveCanonicalAction(slot.Action, slot.Args);
+            }
+
             var metadata = _pluginMetadataRegistry.GetMetadata(slot.PluginId);
+            var originalAction = slot.Action;
 
             // 先确定有效的 actionMetadata（回退到第一个可用 action）
             var actionMetadata = _pluginMetadataRegistry.GetActionMetadata(slot.PluginId, slot.Action)
@@ -1443,8 +1535,10 @@ namespace Pulsar.ViewModels
 
             // 如果 slot.Action 为空或在注册表中找不到对应的 action，回退到第一个可用 action
             if (actionMetadata != null && (string.IsNullOrWhiteSpace(slot.Action)
-                || _pluginMetadataRegistry.GetActionMetadata(slot.PluginId, slot.Action) == null))
+                || _pluginMetadataRegistry.GetActionMetadata(slot.PluginId, slot.Action) == null
+                || !string.Equals(slot.Action, actionMetadata.Name, StringComparison.OrdinalIgnoreCase)))
             {
+                System.Diagnostics.Debug.WriteLine($"[InitializeSlotMetadata] Slot {slot.Slot}: action '{originalAction}' is empty/invalid, setting to '{actionMetadata.Name}'");
                 slot.Action = actionMetadata.Name;
             }
 
@@ -1461,7 +1555,7 @@ namespace Pulsar.ViewModels
                 .ToList() ?? new List<SlotActionOption>();
 
             var parameters = actionMetadata?.Parameters
-                .Select(parameter => new SlotParameterEditorField(slot, parameter))
+                .Select(parameter => new SlotParameterEditorField(slot, parameter, rawSecretId => ResolveSecretDisplay(rawSecretId, BuildLegacySecretLabelMap())))
                 .ToList() ?? new List<SlotParameterEditorField>();
 
             var quickEditParameters = SlotParameterPresentationHelper.BuildQuickEditParameters(parameters);
@@ -1512,6 +1606,33 @@ namespace Pulsar.ViewModels
 
                 slot.SetValidationSummary(summary);
                 UpdateSlotPresentation(slot);
+        }
+
+        private Dictionary<Guid, string> BuildLegacySecretLabelMap()
+        {
+            var labelMap = new Dictionary<Guid, string>();
+
+            if (CurrentSlots == null)
+            {
+                return labelMap;
+            }
+
+            foreach (var slot in CurrentSlots)
+            {
+                if (slot.Args.TryGetValue("secretId", out var idStr)
+                    && Guid.TryParse(idStr, out var secretId)
+                    && !string.IsNullOrWhiteSpace(slot.Label))
+                {
+                    labelMap[secretId] = slot.Label;
+                }
+            }
+
+            return labelMap;
+        }
+
+        private SecretDisplayMetadata? ResolveSecretDisplay(string rawSecretId, IReadOnlyDictionary<Guid, string>? legacyLabels = null)
+        {
+            return _secretMetadataResolver.Resolve(rawSecretId, _persistedSecrets, _pendingSecrets, legacyLabels);
         }
 
         private void UpdateSlotPresentation(PluginSlot slot)

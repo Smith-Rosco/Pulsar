@@ -3,21 +3,29 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Pulsar.Plugins.Core.Pki.Contracts;
 using Pulsar.Plugins.Core.Pki.Models;
 
 namespace Pulsar.Plugins.Core.Pki.Services
 {
-    public class SecretRepository
+    public class SecretRepository : IPkiSecretStore
     {
         private const string FileName = "secrets.json";
         private readonly string _filePath;
 
         public SecretRepository()
+            : this(Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "Pulsar",
+                FileName))
         {
-            // 存储在 AppData 目录，与 appsettings.json 同级
-            string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Pulsar");
+        }
+
+        public SecretRepository(string filePath)
+        {
+            string folder = Path.GetDirectoryName(filePath) ?? throw new InvalidOperationException("Secret repository path must have a parent directory.");
             Directory.CreateDirectory(folder);
-            _filePath = Path.Combine(folder, FileName);
+            _filePath = filePath;
         }
 
         public async Task<Dictionary<Guid, SecretPayload>> LoadAsync()

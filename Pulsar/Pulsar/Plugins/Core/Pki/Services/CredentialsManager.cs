@@ -2,12 +2,14 @@ using System;
 using System.Security.Cryptography;
 using System.Text;
 
+using Pulsar.Plugins.Core.Pki.Contracts;
+
 namespace Pulsar.Plugins.Core.Pki.Services
 {
     /// <summary>
     /// 负责凭据的安全存储与读取 (基于 Windows DPAPI)
     /// </summary>
-    public class CredentialsManager
+    public class CredentialsManager : ISecretProtector
     {
         // 使用 CurrentUser 作用域，这样只有当前登录的 Windows 用户才能解密
         private const DataProtectionScope Scope = DataProtectionScope.CurrentUser;

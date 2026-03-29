@@ -55,8 +55,14 @@ namespace Pulsar.Services
             _orchestrator.StepChanged += OnOrchestratorStepChanged;
             _orchestrator.TutorialCompleted += OnOrchestratorCompleted;
             _orchestrator.TutorialSkipped += OnOrchestratorSkipped;
+            _configService.ConfigUpdated += OnConfigUpdated;
 
             // Load tutorial completion status
+            LoadTutorialStatus();
+        }
+
+        private void OnConfigUpdated()
+        {
             LoadTutorialStatus();
         }
 

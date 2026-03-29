@@ -252,8 +252,33 @@ public class MyService
 
 ---
 
-## 8. Agent Behavior Rules
+## 8. Agent Behavior Rules & AI-First Development Paradigm
 
+### The "AI Programming Triangle" (AI-First Workflow)
+To achieve a 100% autonomous debugging loop and avoid the "blind AI" problem, agents **MUST** follow these three architectural pillars when developing any new feature or fixing bugs:
+
+**1. Isolate Side-Effects (Everything is Mockable)**
+- **Rule**: Never couple code directly to OS APIs (`SendKeys`, `Process.Start`, `File.Write`, `Registry`, UI Automation).
+- **Action**: Always define an Interface (e.g., `IInputSimulator`, `IClipboardMonitor`, `IProcessLauncher`) and implement a concrete Windows-specific class.
+- **Verification**: Use the `Moq` library in `Pulsar.Tests` to verify that your plugin calls the interface correctly without triggering actual OS side-effects.
+
+**2. ViewModel Unit Testing (State over UI)**
+- **Rule**: UI logic and state transitions (e.g., "What happens when I select an item?", "Does the label update?", "Is this button disabled?") must be verifiable **without touching XAML**.
+- **Action**: Write comprehensive xUnit tests for ViewModels in `Pulsar.Tests/ViewModels/`.
+- **Verification**: Instantiate the ViewModel, invoke commands programmatically (e.g., `vm.SelectCommand.Execute()`), and assert the state changes (e.g., `vm.SelectedSecretId.Should().NotBeNull()`).
+
+**3. Headless Execution & Self-Correction**
+- **Rule**: Core plugin execution logic must be runnable without the WPF application shell.
+- **Action**: Use `dotnet run --project Pulsar/Pulsar.Simulator/Pulsar.Simulator.csproj -- --plugin "com.your.plugin" --args "{...}"`
+- **Verification**: Parse the structured JSON output. If `"Success": false`, read the error message, read the logs, and fix the code autonomously until the simulator reports `"Success": true`.
+
+**The Standard Execution Sequence**:
+1. **Understand & Contract**: Define Interfaces. Write tests in `Pulsar.Tests` -> Run `dotnet test` (It should fail).
+2. **Implement**: Write the ViewModels or Plugins.
+3. **Self-Correct**: Run `dotnet test` & `Pulsar.Simulator` -> Fix code autonomously until green.
+4. **Bind UI**: Only after tests pass, write XAML to bind the UI -> Ask human for visual QA.
+
+### General Agent Rules
 - **Proactiveness**: Fix obvious issues (missing null checks, etc.) when spotted
 - **Context**: Always read files before editing to preserve local conventions
 - **Safety**: Never commit secrets or API keys

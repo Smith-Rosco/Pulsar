@@ -54,6 +54,7 @@ Stable conceptual truths about system design:
 ### Guides (Docs/guides/)
 How-to playbooks for common tasks:
 - **[UI_BEST_PRACTICES.md](./guides/UI_BEST_PRACTICES.md)** - UI/UX design patterns
+- **[CREATE_SLOT_DIALOG_GUIDELINES.md](./guides/CREATE_SLOT_DIALOG_GUIDELINES.md)** - Create Slot dialog structure and validation rules
 - **[COMPONENT_LIBRARY.md](./guides/COMPONENT_LIBRARY.md)** - Reusable UI components (ExpandableCard, JellyOrb)
 - **[VBARUNNER_AI_SCRIPTING.md](./guides/VBARUNNER_AI_SCRIPTING.md)** - AI guide for generating VBA scripts with Smart Directives
 

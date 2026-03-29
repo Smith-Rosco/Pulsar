@@ -116,9 +116,13 @@ namespace Pulsar.Services
                 return null;
             }
 
-            return metadata.Actions.TryGetValue(action, out var actionMetadata)
-                ? actionMetadata
-                : null;
+            if (metadata.Actions.TryGetValue(action, out var actionMetadata))
+            {
+                return actionMetadata;
+            }
+
+            return metadata.Actions.Values.FirstOrDefault(candidate =>
+                candidate.Aliases.Any(alias => string.Equals(alias, action, StringComparison.OrdinalIgnoreCase)));
         }
 
         /// <summary>

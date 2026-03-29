@@ -262,11 +262,12 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <!-- Plugin Card using ExpandableCard -->
-                                        <controls:ExpandableCard 
-                                            IconKey="{Binding Icon}"
-                                            Title="{Binding Name}"
-                                            IsToggleEnabled="{Binding IsEnabled, Mode=TwoWay}"
-                                            CanToggle="{Binding CanDisable}"
+                                         <controls:ExpandableCard 
+                                             IconKey="{Binding Icon}"
+                                             Title="{Binding Name}"
+                                             Subtitle="{Binding Category}"
+                                             IsToggleEnabled="{Binding IsEnabled, Mode=TwoWay}"
+                                             CanToggle="{Binding CanDisable}"
                                             PrimaryActionCommand="{Binding ConfigureCommand}"
                                             PrimaryActionIcon="Settings24"
                                             PrimaryActionTooltip="Configure"

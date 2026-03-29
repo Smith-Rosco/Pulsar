@@ -59,6 +59,7 @@ namespace Pulsar.ViewModels.Strategies
             // which would otherwise re-trigger the hotkey hook while the menu is still visible.
             context.IsVisible = false;
 
+            System.Diagnostics.Debug.WriteLine($"[PluginActionStrategy] Executing: PluginId={_pluginSlot.PluginId}, Action='{_pluginSlot.Action}', Args={string.Join(", ", _pluginSlot.Args.Select(kv => $"{kv.Key}={kv.Value}"))}");
             var result = await _registry.ExecuteAsync(_pluginSlot.PluginId, _pluginSlot.Action, _pluginSlot.Args, _pulsarContext);
 
             // [New] Elegant Error Handling

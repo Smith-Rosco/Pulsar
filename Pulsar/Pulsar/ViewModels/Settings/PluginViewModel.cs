@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Pulsar.Core.Plugin;
+using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Models;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
@@ -24,6 +25,8 @@ namespace Pulsar.ViewModels.Settings
         private readonly IPluginLogService? _logService;
         private readonly IDialogService? _dialogService;
         private readonly IServiceProvider? _serviceProvider;
+        private readonly PluginMetadata? _metadata;
+        private readonly BuiltInPluginDisplayModel _displayModel;
 
         [ObservableProperty]
         private bool _isEnabled;
@@ -41,11 +44,13 @@ namespace Pulsar.ViewModels.Settings
         private int _recentErrorCount;
 
         public string Id => _plugin.Id;
-        public string Name => _plugin.DisplayName;
-        public string Description => _plugin.Description;
+        public string Name => _displayModel.DisplayName;
+        public string Description => _displayModel.Description;
         public string Version => _plugin.Version;
         public string Author => _plugin.Author;
-        public string Icon => _plugin.Icon;
+        public string Icon => _displayModel.IconKey;
+        public string Category => _displayModel.CategoryLabel;
+        public string AccentColor => _displayModel.AccentColor;
         public bool CanDisable => _plugin.CanDisable;
 
         public ObservableCollection<PluginSettingViewModel> Settings { get; } = new();
@@ -81,7 +86,8 @@ namespace Pulsar.ViewModels.Settings
 
         public PluginViewModel(IPulsarPlugin plugin, PluginRegistry registry, IConfigService configService,
             IPluginUsageTracker? usageTracker = null, IPluginHealthMonitor? healthMonitor = null,
-            IPluginLogService? logService = null, IDialogService? dialogService = null, IServiceProvider? serviceProvider = null)
+            IPluginLogService? logService = null, IDialogService? dialogService = null, IServiceProvider? serviceProvider = null,
+            IPluginMetadataRegistry? metadataRegistry = null)
         {
             _plugin = plugin;
             _registry = registry;
@@ -91,6 +97,17 @@ namespace Pulsar.ViewModels.Settings
             _logService = logService;
             _dialogService = dialogService;
             _serviceProvider = serviceProvider;
+            _metadata = metadataRegistry?.GetMetadata(plugin.Id);
+            _displayModel = _metadata != null
+                ? BuiltInPluginDisplayModel.FromMetadata(_metadata)
+                : new BuiltInPluginDisplayModel(
+                    plugin.Id,
+                    plugin.Icon,
+                    plugin.DisplayName,
+                    plugin.Description,
+                    plugin.Tags.FirstOrDefault()?.Replace(" ", string.Empty, StringComparison.Ordinal).ToLowerInvariant() ?? "general",
+                    plugin.Tags.FirstOrDefault() ?? "General",
+                    "");
 
             // Load Initial State
             _isEnabled = _registry.IsPluginEnabled(plugin.Id);

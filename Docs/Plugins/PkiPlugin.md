@@ -1,98 +1,112 @@
-# PKI Plugin
+# Secret Fill Plugin
 
-**插件 ID**: `com.pulsar.pki`  
-**版本**: 1.0.0  
-**类型**: Core Plugin  
-**作者**: Pulsar Team
+**Plugin ID**: `com.pulsar.pki`
+**Version**: `1.0.0`
+**Type**: Core Plugin
+**Author**: Pulsar Team
 
-## 概述
+## Overview
 
-PKI (Public Key Infrastructure) 插件是 Pulsar 的核心安全组件，负责安全地管理和注入用户凭据（用户名/密码）到目标应用程序。
+Secret Fill is Pulsar's core credential-fill plugin. It keeps the Pulsar-facing plugin contract thin and delegates runtime work to layered PKI services that validate requests, load secrets, decrypt them, build an injection plan, and execute the plan through Windows-specific adapters.
 
-## 功能特性
+## Supported Actions
 
-- **加密存储**: 使用 Windows DPAPI 加密存储凭据
-- **智能注入**: 优先使用 UI Automation，回退到 SendKeys
-- **无剪贴板污染**: UIA 模式不会覆盖用户剪贴板
-- **自动 Tab 切换**: 自动在用户名和密码字段间切换
-- **可选自动回车**: 支持填充后自动提交
+### `fill`
 
-## 支持的动作
+Fill a saved secret into the currently focused external application.
 
-### `fill` / `inject` - 填充凭据
+### `inject`
 
-将存储的凭据注入到当前焦点窗口。
+Legacy runtime alias for `fill`. It stays supported for compatibility but is not exposed as a separate authoring action.
 
-**参数**:
-- `secretId` (必需): 凭据的 GUID 标识符
-- `autoEnter` (可选): 是否在填充后自动按回车，默认 `false`
+## Parameters
 
-**示例**:
-```json
-{
-  "PluginId": "com.pulsar.pki",
-  "Action": "fill",
-  "Args": {
-    "secretId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "autoEnter": "true"
-  }
-}
-```
+- `secretId` (required): GUID of the saved secret to inject
+- `autoEnter` (optional): whether Enter is pressed after the password is injected; defaults to `false`
+- `autoSubmit` (legacy alias): accepted as a compatibility alias for `autoEnter`
 
-## 注入流程
+## Runtime Architecture
 
-1. **加载凭据**: 从加密存储中读取并解密凭据
-2. **隐藏 Pulsar**: 隐藏径向菜单窗口
-3. **恢复焦点**: 将焦点返回到目标窗口
-4. **注入用户名**: 
-   - 尝试使用 UI Automation 直接设置文本
-   - 失败则使用 SendKeys 模拟输入
-5. **切换字段**: 发送 Tab 键
-6. **注入密码**: 同上
-7. **可选提交**: 如果 `autoEnter=true`，发送回车键
+The PKI runtime is split into four layers:
 
-## 安全特性
+1. `PkiPlugin`
+   - exposes plugin metadata
+   - preserves action compatibility (`fill` + `inject`)
+   - delegates execution to `IPkiExecutionService`
+2. `PkiExecutionService`
+   - validates slot arguments and `PulsarContext`
+   - loads the secret from the shared store
+   - decrypts the secret
+   - converts the request into a deterministic `InjectionPlan`
+3. Shared PKI domain/application services
+   - `IPkiSecretStore`
+   - `ISecretProtector`
+   - `IPkiSecretMetadataResolver`
+   - `IInjectionExecutor`
+   - `IFocusRestorer`
+4. Windows adapters
+   - `SecretRepository`
+   - `CredentialsManager`
+   - `SendKeysInjectionExecutor`
+   - `WindowsFocusRestorer`
+   - input/focus helper adapters under `Plugins/Core/Pki/Services/Input/`
 
-### 加密机制
-- 使用 Windows DPAPI (Data Protection API)
-- 密钥绑定到当前用户账户
-- 无法在其他用户或机器上解密
+## Injection Policy
 
-### 注入安全
-- 优先使用 UI Automation（不经过剪贴板）
-- SendKeys 模式会转义特殊字符
-- 密码不会记录到日志
+PKI credential fill is explicitly SendKeys-first.
 
-## 依赖服务
+For multi-field credential injection, the supported path is:
 
-- `CredentialsManager`: 凭据加密/解密服务
-- `SecretRepository`: 凭据存储服务
-- `IWindowService`: 窗口管理服务
+1. hide the Pulsar launcher
+2. restore focus to the captured target window
+3. wait for a short stabilization delay
+4. type the account value when present
+5. press Tab
+6. type the password value
+7. optionally press Enter
 
-## 配置文件
+UI Automation helpers may still exist in infrastructure for non-PKI scenarios, but PKI credential fill does not depend on UIA-first behavior.
 
-凭据存储在 `%AppData%\Pulsar\secrets.json`（加密格式）。
+## Shared Secret Management
 
-**不要手动编辑此文件！** 请使用 Pulsar 设置界面管理凭据。
+Runtime and settings flows use the same PKI secret contracts:
 
-## 注意事项
+- the same `secrets.json` payload shape is preserved
+- the same DPAPI protection service is used for edit-time encryption and runtime decryption
+- the same metadata resolver is used to merge persisted secrets, pending edits, and legacy label fallbacks
 
-1. **焦点要求**: 目标输入框必须已获得焦点
-2. **字段顺序**: 假设用户名字段在密码字段之前
-3. **特殊字符**: SendKeys 模式会自动转义 `{}[]()^%~+` 等字符
-4. **浏览器兼容性**: 现代浏览器（Chrome/Edge/Firefox）完全支持 UIA 模式
+Secrets remain stored at `%AppData%\Pulsar\secrets.json`.
 
-## 故障排除
+## Failure Boundaries
 
-**问题**: 注入失败，提示 "Secret not found"  
-**解决**: 检查 `secretId` 是否正确，或在设置中重新创建凭据
+PKI execution distinguishes these stages internally:
 
-**问题**: 密码字段未填充  
-**解决**: 确保目标窗口的输入框已获得焦点，尝试手动点击输入框后再触发
+- validation
+- secret lookup
+- decryption
+- launcher hiding
+- focus restoration
+- injection execution
 
-**问题**: 特殊字符显示错误  
-**解决**: 这是 SendKeys 回退模式的已知限制，尝试在支持 UIA 的应用中使用
+Errors are reported without logging plaintext account or password values.
 
----
+## Security Notes
 
-**最后更新**: 2026-03-01
+- secret encryption uses Windows DPAPI bound to the current user
+- plaintext secret material is not persisted in logs
+- `secretId` remains the stable slot reference; legacy display labels do not mutate stored identity
+
+## Validation Coverage
+
+PKI validation is covered by layered tests for:
+
+- request validation and compatibility aliases
+- secret lookup and decryption failures
+- deterministic injection-plan generation
+- SendKeys execution-stage failures
+- secret store compatibility with existing payloads
+- pending and persisted secret metadata resolution
+
+## Last Updated
+
+`2026-03-27`

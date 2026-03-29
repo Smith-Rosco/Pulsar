@@ -38,7 +38,7 @@ namespace Pulsar.ViewModels.Dialogs
 
         public string HeaderText => $"Slot {Slot.Slot} · {Slot.Label}";
 
-        public string HeaderDescription => "Update behavior, appearance, and advanced options for this slot.";
+        public string HeaderDescription => "Update the slot's behavior first, then adjust the label, icon, or color only if the defaults need refinement.";
 
         public string PreviewTitle => Slot.Presentation.Title;
 
@@ -51,6 +51,10 @@ namespace Pulsar.ViewModels.Dialogs
         public string PreviewHealthBadge => Slot.Presentation.HealthBadgeText;
 
         public string PreviewHealthToneKey => Slot.Presentation.HealthToneKey;
+
+        public string PreviewMetadataText => HasSummaryTokens
+            ? string.Join("  •  ", SummaryTokens)
+            : "Action, validation, and summary details stay anchored here while you edit.";
 
         public ObservableCollection<SlotActionOption> AvailableActions => Slot.AvailableActions;
 
@@ -81,6 +85,12 @@ namespace Pulsar.ViewModels.Dialogs
         public bool HasAdvancedParameters => Slot.HasAdvancedParameters;
 
         public bool HasSummaryTokens => Slot.HasSummaryTokens;
+
+        public string AppearanceDisclosureTitle => "Appearance and polish";
+
+        public string AppearanceDisclosureDescription => "Keep the suggested presentation or make small refinements once the slot behavior looks right.";
+
+        public string DangerZoneDescription => "Delete this slot permanently when it is no longer needed.";
 
         public Action<DialogResult>? RequestClose { get; set; }
 
@@ -130,6 +140,7 @@ namespace Pulsar.ViewModels.Dialogs
             OnPropertyChanged(nameof(PreviewActionText));
             OnPropertyChanged(nameof(PreviewHealthBadge));
             OnPropertyChanged(nameof(PreviewHealthToneKey));
+            OnPropertyChanged(nameof(PreviewMetadataText));
             OnPropertyChanged(nameof(AvailableActions));
             OnPropertyChanged(nameof(RequiredParameters));
             OnPropertyChanged(nameof(OptionalParameters));
@@ -145,6 +156,9 @@ namespace Pulsar.ViewModels.Dialogs
             OnPropertyChanged(nameof(HasOptionalParameters));
             OnPropertyChanged(nameof(HasAdvancedParameters));
             OnPropertyChanged(nameof(HasSummaryTokens));
+            OnPropertyChanged(nameof(AppearanceDisclosureTitle));
+            OnPropertyChanged(nameof(AppearanceDisclosureDescription));
+            OnPropertyChanged(nameof(DangerZoneDescription));
         }
 
         private void SyncSelectedActionStates()

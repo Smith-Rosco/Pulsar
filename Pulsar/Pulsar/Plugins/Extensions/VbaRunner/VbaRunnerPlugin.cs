@@ -108,7 +108,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
                                 Placeholder = "%USERPROFILE%\\Documents\\Pulsar\\Scripts\\example.txt",
                                 Example = "%USERPROFILE%\\Documents\\Pulsar\\Scripts\\macro.bas",
                                 InputHint = "Choose a .txt, .vbs, or .bas file.",
-                                ValidationHint = "Required and must point to a readable local file.",
+                                ValidationHint = "Choose a local .txt, .vbs, or .bas file.",
                                 PickerIntent = SlotPickerIntent.File,
                                 Validators = new List<ValidationRule> { new RequiredValidator() }
                             },
@@ -128,7 +128,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
                                 Placeholder = "Main",
                                 Example = "SetupWorkbook",
                                 InputHint = "Leave empty to use the macro declared in the script file.",
-                                ValidationHint = "Optional advanced override."
+                                ValidationHint = "Leave empty to auto-detect the macro entry point."
                             }
                         }
                     }

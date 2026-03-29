@@ -12,6 +12,8 @@ namespace Pulsar.Core.Plugin.Metadata
 
         public string? Description { get; init; }
 
+        public IReadOnlyList<string> Aliases { get; init; } = Array.Empty<string>();
+
         public IReadOnlyList<SlotParameterMetadata> Parameters { get; init; } = Array.Empty<SlotParameterMetadata>();
 
         public IReadOnlyDictionary<string, string> ParameterAliases { get; init; } =

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Pulsar.Core.Plugin;
 using Pulsar.Plugins.Core.Pki;
+using Pulsar.Plugins.Core.Pki.Contracts;
 using Pulsar.Plugins.Core.Pki.Services;
 using Pulsar.Models;
 using Pulsar.Native;
@@ -149,8 +150,18 @@ namespace Pulsar
             serviceCollection.AddSingleton<Services.Validation.ConfigValidationPipeline>();
 
             // 3. PKI Service
-            serviceCollection.AddSingleton<CredentialsManager>();
-            serviceCollection.AddSingleton<SecretRepository>();
+            serviceCollection.AddSingleton<ISecretProtector, CredentialsManager>();
+            serviceCollection.AddSingleton<IPkiSecretStore, SecretRepository>();
+            serviceCollection.AddSingleton<IPkiSecretMetadataResolver, PkiSecretMetadataResolver>();
+            serviceCollection.AddSingleton<IFocusRestorer, WindowsFocusRestorer>();
+            serviceCollection.AddSingleton<IInjectionExecutor, SendKeysInjectionExecutor>();
+            serviceCollection.AddSingleton<IPkiExecutionService, PkiExecutionService>();
+
+            // PKI Input Simulators
+            serviceCollection.AddSingleton<Pulsar.Plugins.Core.Pki.Services.Input.IWindowFocusSimulator, Pulsar.Plugins.Core.Pki.Services.Input.WindowsFocusSimulator>();
+            serviceCollection.AddSingleton<Pulsar.Plugins.Core.Pki.Services.Input.IUiaTextWriter, Pulsar.Plugins.Core.Pki.Services.Input.WindowsUiaTextWriter>();
+            serviceCollection.AddSingleton<Pulsar.Plugins.Core.Pki.Services.Input.ISendKeysWriter, Pulsar.Plugins.Core.Pki.Services.Input.WindowsSendKeysWriter>();
+            serviceCollection.AddSingleton<Pulsar.Plugins.Core.Pki.Services.Input.IInputSimulator, Pulsar.Plugins.Core.Pki.Services.Input.WindowsInputSimulator>();
 
             // 4. UI Services
             serviceCollection.AddSingleton<RadialMenuViewModel>();
