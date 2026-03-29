@@ -15,11 +15,12 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
     /// <summary>
     /// VBA Runner Plugin - Executes VBA scripts in Excel/WPS with interactive support
     /// </summary>
-    public class VbaRunnerPlugin : IPulsarPlugin, IPluginTiered, IPluginLifecycle, IPluginMetadataProvider
+    public class VbaRunnerPlugin : IPulsarPlugin, IPluginTiered, IPluginLifecycle, IPluginMetadataProvider, IPluginConfigurable
     {
         private IWindowService? _windowService;
         private ScriptEngine? _scriptEngine;
         private ILogger<VbaRunnerPlugin>? _logger;
+        private readonly VbaRunnerSettings _settings = new();
 
         public string Id => "com.pulsar.vbarunner";
         public string DisplayName => "VBA Script Runner";
@@ -357,6 +358,30 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
             }
 
             return PluginResult.Ok(successMessage);
+        }
+
+        public IEnumerable<PluginSettingDefinition> GetSettingsDefinition()
+        {
+            return new List<PluginSettingDefinition>
+            {
+                new PluginSettingDefinition
+                {
+                    Key = "defaultTargetApp",
+                    Label = "Default Target Application",
+                    Type = PluginSettingType.Selection,
+                    DefaultValue = "Auto",
+                    Description = "Default target application for VBA scripts",
+                    Options = new List<string> { "Auto", "Excel", "WPS" }
+                }
+            };
+        }
+
+        public void UpdateSettings(Dictionary<string, object> settings)
+        {
+            if (settings.TryGetValue("defaultTargetApp", out var targetApp))
+            {
+                _settings.DefaultTargetApp = targetApp?.ToString() ?? "Auto";
+            }
         }
     }
 }

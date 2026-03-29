@@ -1,16 +1,16 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Models;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
-using System;
+using Pulsar.ViewModels.Dialogs;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Pulsar.ViewModels.Settings
 {
@@ -117,6 +117,12 @@ namespace Pulsar.ViewModels.Settings
             {
                 HasSettings = true;
                 LoadSettings(configurable);
+
+                var currentConfig = GetCurrentConfig();
+                if (currentConfig.Count > 0)
+                {
+                    configurable.UpdateSettings(currentConfig);
+                }
             }
 
             // Load Statistics and Health Data
@@ -169,7 +175,12 @@ namespace Pulsar.ViewModels.Settings
 
         private void LoadSettings(IPluginConfigurable configurable)
         {
-            var defs = configurable.GetSettingsDefinition();
+            var schema = _metadata?.Schema;
+            var optionsProvider = GetOptionsProvider();
+            var defs = schema != null && schema.Properties.Count > 0
+                ? SchemaToSettingAdapter.Convert(schema, optionsProvider)
+                : configurable.GetSettingsDefinition();
+
             var currentConfig = GetCurrentConfig();
 
             foreach (var def in defs)
@@ -178,10 +189,15 @@ namespace Pulsar.ViewModels.Settings
                 
                 if (currentConfig.TryGetValue(def.Key, out var rawValue))
                 {
-                    // JSON deserialization handling
                     if (rawValue is JsonElement element)
                     {
                         value = ConvertJsonElement(element, def.Type);
+                    }
+                    else if (rawValue is string str && def.Type == PluginSettingType.MultiSelect)
+                    {
+                        value = string.IsNullOrEmpty(str) 
+                            ? new List<string>() 
+                            : str.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
                     }
                     else
                     {
@@ -195,6 +211,34 @@ namespace Pulsar.ViewModels.Settings
             }
         }
 
+        private OptionsProviderDelegate? GetOptionsProvider()
+        {
+            if (Id == "com.pulsar.winswitcher")
+            {
+                var processRegistryService = _serviceProvider?.GetService<IProcessRegistryService>();
+                if (processRegistryService != null)
+                {
+                    return (string propertyKey) =>
+                    {
+                        if (propertyKey == "ExcludeProcesses")
+                        {
+                            try
+                            {
+                                var processes = processRegistryService.GetAllProcessesAsync().GetAwaiter().GetResult();
+                                return processes.Select(p => p.ProcessName).OrderBy(n => n).ToList();
+                            }
+                            catch
+                            {
+                                return Enumerable.Empty<string>();
+                            }
+                        }
+                        return Enumerable.Empty<string>();
+                    };
+                }
+            }
+            return null;
+        }
+
         private object? ConvertJsonElement(JsonElement element, PluginSettingType type)
         {
             try
@@ -203,6 +247,9 @@ namespace Pulsar.ViewModels.Settings
                 {
                     PluginSettingType.Boolean => element.GetBoolean(),
                     PluginSettingType.Integer => element.GetInt32(),
+                    PluginSettingType.MultiSelect => element.ValueKind == JsonValueKind.Array
+                        ? element.EnumerateArray().Select(e => e.GetString() ?? "").ToList()
+                        : element.ToString().Split(',', StringSplitOptions.RemoveEmptyEntries).ToList(),
                     _ => element.ToString()
                 };
             }
@@ -223,6 +270,16 @@ namespace Pulsar.ViewModels.Settings
 
         private void OnSettingChanged(string key, object? newValue)
         {
+            var setting = Settings.FirstOrDefault(s => s.Key == key);
+            if (setting != null)
+            {
+                setting.Validate();
+                if (!setting.IsValid)
+                {
+                    return;
+                }
+            }
+
             // Update Config in Memory
             var config = _configService.Current;
             if (!config.Plugins.TryGetValue(Id, out var profile))
@@ -298,75 +355,55 @@ namespace Pulsar.ViewModels.Settings
                 return;
             }
 
-            // Special handling for WinSwitcher blacklist configuration
             if (Id == "com.pulsar.winswitcher")
             {
-                // Get services from DI container
                 var windowService = _serviceProvider?.GetService<IWindowService>();
                 var processRegistryService = _serviceProvider?.GetService<IProcessRegistryService>();
 
                 if (windowService != null && processRegistryService != null)
                 {
-                    // Get current configuration values
                     var currentConfig = GetCurrentConfig();
                     var currentBlacklist = currentConfig.TryGetValue("ExcludeProcesses", out var val) 
                         ? val?.ToString() ?? string.Empty 
                         : string.Empty;
 
-                    var vm = new Pulsar.ViewModels.Dialogs.ProcessBlacklistViewModel(
-                        windowService, 
-                        processRegistryService, 
-                        currentBlacklist);
+                    var vm = new ProcessBlacklistViewModel(windowService, processRegistryService, currentBlacklist);
                     var result = await _dialogService.ShowCustomAsync(
-                        "Window Switcher Configuration", 
-                        vm, 
-                        Models.Enums.DialogButtons.OkCancel,
-                        Models.DialogSizeConstraints.Large);
+                        "Process Blacklist",
+                        vm,
+                        Models.Enums.DialogButtons.OkCancel);
 
                     if (result == Models.Enums.DialogResult.Confirmed)
                     {
-                        // Update plugin configuration with new blacklist
-                        var config = _configService.Current;
-                        if (!config.Plugins.TryGetValue(Id, out var profile))
-                        {
-                            profile = new PluginProfile();
-                            config.Plugins[Id] = profile;
-                        }
-                        
-                        // Update blacklist setting
-                        profile.Config["ExcludeProcesses"] = vm.Result ?? string.Empty;
-                        
-                        // Notify plugin to update WindowService
+                        var blacklist = vm.Result;
+                        OnSettingChanged("ExcludeProcesses", blacklist);
+                        HasSettings = false;
                         if (_plugin is IPluginConfigurable configurable)
                         {
-                            configurable.UpdateSettings(profile.Config);
-                        }
-                        
-                        // Save to disk
-                        await _configService.SaveAsync(config);
-                        
-                        // Refresh the settings display
-                        Settings.Clear();
-                        if (_plugin is IPluginConfigurable configurableForDisplay)
-                        {
-                            LoadSettings(configurableForDisplay);
+                            LoadSettings(configurable);
+                            HasSettings = Settings.Count > 0;
                         }
                     }
+                    return;
                 }
-                return;
             }
 
-            // Default behavior for other plugins
             if (!HasSettings)
             {
                 return;
             }
 
-            await _dialogService.ShowMessageAsync(
-                "Plugin Configuration",
-                $"Configuration UI for {Name} will be implemented in Phase 3.",
-                Models.Enums.DialogType.Info,
-                Models.Enums.DialogButtons.Ok);
+            var dialogVm = new Pulsar.ViewModels.Dialogs.PluginSettingsDialogViewModel(this, _configService);
+            var dialogResult = await _dialogService.ShowCustomAsync(
+                $"Configure {Name}",
+                dialogVm,
+                Models.Enums.DialogButtons.None,
+                new Models.DialogSizeConstraints { Width = 550, Height = 500, MinWidth = 400, MinHeight = 300 });
+
+            if (dialogResult == Models.Enums.DialogResult.Confirmed)
+            {
+                LoadAnalytics();
+            }
         }
     }
 }

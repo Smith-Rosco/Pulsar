@@ -88,6 +88,10 @@
             <DataTemplate DataType="{x:Type dialogs:SecretPickerViewModel}">
                 <contents:SecretPickerContent/>
             </DataTemplate>
+            
+            <DataTemplate DataType="{x:Type dialogs:PluginSettingsDialogViewModel}">
+                <contents:PluginSettingsDialogContent/>
+            </DataTemplate>
         </ResourceDictionary>
     </Window.Resources>
 

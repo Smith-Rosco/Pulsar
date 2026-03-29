@@ -10,7 +10,8 @@ namespace Pulsar.Core.Plugin
         Path,       // File/Folder Picker
         Integer,    // Numeric Up/Down
         Selection,  // ComboBox (requires Options)
-        Secret      // PasswordBox (masked)
+        Secret,     // PasswordBox (masked)
+        MultiSelect // ListBox with multiple selection
     }
 
     /// <summary>
@@ -52,6 +53,36 @@ namespace Pulsar.Core.Plugin
         /// Is this setting read-only? (e.g., version info exposed as setting)
         /// </summary>
         public bool IsReadOnly { get; set; }
+
+        /// <summary>
+        /// Is this setting required? Cannot be empty/null.
+        /// </summary>
+        public bool IsRequired { get; set; }
+
+        /// <summary>
+        /// Minimum string length (for String type).
+        /// </summary>
+        public int? MinLength { get; set; }
+
+        /// <summary>
+        /// Maximum string length (for String type).
+        /// </summary>
+        public int? MaxLength { get; set; }
+
+        /// <summary>
+        /// Regex pattern for validation (for String type).
+        /// </summary>
+        public string? Pattern { get; set; }
+
+        /// <summary>
+        /// Minimum value (for Integer type).
+        /// </summary>
+        public int? MinValue { get; set; }
+
+        /// <summary>
+        /// Maximum value (for Integer type).
+        /// </summary>
+        public int? MaxValue { get; set; }
 
         // Fluent helper for cleaner definition
         public static PluginSettingDefinition Create(string key, string label, PluginSettingType type, object? defaultValue = null, string description = "")

@@ -25,6 +25,7 @@
             <converters:HexToBrushConverter x:Key="HexToBrush"/>
             <converters:SlotBrushConverter x:Key="SlotBrushConverter"/>
             <converters:InverseBoolToVisibilityConverter x:Key="BoolToVisInverse"/>
+            <converters:StringToBoolConverter x:Key="StringToBool"/>
 
             <Style x:Key="SectionEyebrowTextStyle" TargetType="TextBlock">
                 <Setter Property="FontSize" Value="11"/>
@@ -220,18 +221,19 @@
             <DataTemplate x:Key="CreateSlotParameterFieldTemplate" DataType="{x:Type models:SlotParameterEditorField}">
                 <Grid Margin="0,0,0,8">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="90"/>
+                        <ColumnDefinition Width="Auto" MinWidth="80"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- Left: Label -->
-                    <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
+                    <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{Binding Label}"
                                        FontSize="13"
                                        FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                       TextWrapping="Wrap"
+                                       TextTrimming="CharacterEllipsis"
+                                       ToolTip="{Binding Label}"
                                        VerticalAlignment="Center"/>
                             <TextBlock Text=" *"
                                        FontSize="13"
@@ -261,21 +263,16 @@
                                    Tag="{Binding}"
                                    Visibility="{Binding HasPicker, Converter={StaticResource BoolToVis}}"/>
 
-                        <!-- QuickEdit: editable TextBox -->
+                        <!-- Bool type: ToggleSwitch -->
+                        <ui:ToggleSwitch Grid.Column="1"
+                                         IsChecked="{Binding Value, Mode=TwoWay, Converter={StaticResource StringToBool}}"
+                                         Visibility="{Binding IsBoolType, Converter={StaticResource BoolToVis}}"/>
+
+                        <!-- Other types: Editable TextBox -->
                         <ui:TextBox Grid.Column="1"
                                     Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                     PlaceholderText="{Binding Placeholder}"
-                                    Visibility="{Binding PreferQuickEdit, Converter={StaticResource BoolToVis}}"/>
-
-                        <!-- Picker: read-only display -->
-                        <TextBlock Grid.Column="1"
-                                   Text="{Binding DisplayValue}"
-                                   FontSize="13"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                   TextTrimming="CharacterEllipsis"
-                                   VerticalAlignment="Center"
-                                   Visibility="{Binding PreferQuickEdit, Converter={StaticResource BoolToVisInverse}}"/>
+                                    Visibility="{Binding IsBoolType, Converter={StaticResource BoolToVisInverse}}"/>
                     </Grid>
                 </Grid>
             </DataTemplate>
@@ -531,99 +528,84 @@
                                 </Grid>
                             </Grid>
 
-                            <!-- Required details -->
                             <StackPanel Margin="0,16,0,0"
                                         Visibility="{Binding HasRequiredParameters, Converter={StaticResource BoolToVis}}">
-                                <TextBlock Text="Required details"
-                                           Style="{StaticResource CompactSectionTitleTextStyle}"
-                                           Margin="0,0,0,10"/>
                                 <ItemsControl ItemsSource="{Binding RequiredParameters}"
                                               ItemTemplate="{StaticResource CreateSlotParameterFieldTemplate}"/>
                             </StackPanel>
-                            <ui:CardExpander Header="Optional settings"
-                                             IsExpanded="False"
+                            <ui:CardExpander Header="Appearance"
+                                             IsExpanded="True"
                                              Margin="0,16,0,0"
                                              HorizontalContentAlignment="Stretch"
                                              Visibility="{Binding HasOptionalSettings, Converter={StaticResource BoolToVis}}">
                                 <StackPanel Margin="0,4,0,0">
+                                    <Grid Margin="0,0,0,12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="90"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="Color"
+                                                   FontSize="13"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                                   VerticalAlignment="Center"/>
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                            <Border Width="56"
+                                                    Height="36"
+                                                    CornerRadius="8"
+                                                    BorderBrush="{DynamicResource ControlElevationBorderBrush}"
+                                                    BorderThickness="1"
+                                                    Background="{Binding Slot.Color, Converter={StaticResource HexToBrush}}"
+                                                    Cursor="Hand"
+                                                    ToolTip="Pick color"
+                                                    MouseLeftButtonDown="ColorSwatch_MouseLeftButtonDown">
+                                                <Grid>
+                                                    <ui:SymbolIcon Symbol="Drop24"
+                                                                   FontSize="16"
+                                                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </Border>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="90"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="Icon"
+                                                   FontSize="13"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                                   VerticalAlignment="Center"/>
+                                        <ui:TextBox Grid.Column="1"
+                                                    Text="{Binding Slot.IconKey}"
+                                                    Icon="{ui:SymbolIcon Image24}"
+                                                    PlaceholderText="e.g. Settings24 or C:\icon.png"/>
+                                        <ui:Button Grid.Column="2"
+                                                   Icon="{ui:SymbolIcon FolderOpen16}"
+                                                   Style="{StaticResource PulsarIconButtonStyle}"
+                                                   Click="PickIcon_Click"
+                                                   ToolTip="Browse icon file"
+                                                   Margin="8,0,0,0"/>
+                                    </Grid>
+                                </StackPanel>
+                            </ui:CardExpander>
+
+                            <ui:CardExpander Header="Optional"
+                                             IsExpanded="False"
+                                             Margin="0,10,0,0"
+                                             HorizontalContentAlignment="Stretch"
+                                             Visibility="{Binding HasOptionalSettings, Converter={StaticResource BoolToVis}}">
+                                <StackPanel Margin="0,4,0,0">
                                     <StackPanel Visibility="{Binding HasOptionalParameters, Converter={StaticResource BoolToVis}}">
-                                        <TextBlock Text="Optional details"
-                                                   Style="{StaticResource CompactSectionTitleTextStyle}"
-                                                   Margin="0,0,0,10"/>
                                         <ItemsControl ItemsSource="{Binding OptionalParameters}"
                                                       ItemTemplate="{StaticResource CreateSlotParameterFieldTemplate}"/>
-                                    </StackPanel>
-
-                                    <StackPanel Margin="0,16,0,0">
-                                        <TextBlock Text="Appearance"
-                                                   Style="{StaticResource CompactSectionTitleTextStyle}"
-                                                   Margin="0,0,0,10"/>
-
-                                        <!-- Color row: left/right layout -->
-                                        <Grid Margin="0,0,0,12">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="90"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0"
-                                                       Text="Color"
-                                                       FontSize="13"
-                                                       FontWeight="SemiBold"
-                                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                                       VerticalAlignment="Center"/>
-                                            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                                <Border Width="56"
-                                                        Height="36"
-                                                        CornerRadius="8"
-                                                        BorderBrush="{DynamicResource ControlElevationBorderBrush}"
-                                                        BorderThickness="1"
-                                                        Background="{DynamicResource ControlFillColorSecondaryBrush}"
-                                                        Cursor="Hand"
-                                                        ToolTip="Pick color"
-                                                        MouseLeftButtonDown="ColorSwatch_MouseLeftButtonDown">
-                                                    <Grid>
-                                                        <Border Width="20"
-                                                                Height="20"
-                                                                CornerRadius="6"
-                                                                Background="{Binding Slot.Color, Converter={StaticResource HexToBrush}}"
-                                                                BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
-                                                                BorderThickness="1"
-                                                                HorizontalAlignment="Center"
-                                                                VerticalAlignment="Center"/>
-                                                        <ui:SymbolIcon Symbol="Drop24"
-                                                                       FontSize="16"
-                                                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                                                       HorizontalAlignment="Center"
-                                                                       VerticalAlignment="Center"/>
-                                                    </Grid>
-                                                </Border>
-                                            </StackPanel>
-                                        </Grid>
-
-                                        <!-- Icon row: left/right layout -->
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="90"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0"
-                                                       Text="Icon"
-                                                       FontSize="13"
-                                                       FontWeight="SemiBold"
-                                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                                       VerticalAlignment="Center"/>
-                                            <ui:TextBox Grid.Column="1"
-                                                        Text="{Binding Slot.IconKey}"
-                                                        Icon="{ui:SymbolIcon Image24}"
-                                                        PlaceholderText="e.g. Settings24 or C:\icon.png"/>
-                                            <ui:Button Grid.Column="2"
-                                                       Icon="{ui:SymbolIcon FolderOpen16}"
-                                                       Style="{StaticResource PulsarIconButtonStyle}"
-                                                       Click="PickIcon_Click"
-                                                       ToolTip="Browse icon file"
-                                                       Margin="8,0,0,0"/>
-                                        </Grid>
                                     </StackPanel>
 
                                     <StackPanel Margin="0,16,0,0"

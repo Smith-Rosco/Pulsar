@@ -76,16 +76,11 @@ namespace Pulsar.ViewModels.Dialogs
         {
             if (result == DialogResult.Confirmed)
             {
-                // 获取所有被勾选的进程
                 var blacklisted = Processes
                     .Where(p => p.IsBlacklisted)
                     .Select(p => p.ProcessName)
                     .ToList();
 
-                // 更新注册表（会自动同步到 Profiles.json）
-                await _processRegistryService.UpdateBlacklistAsync(blacklisted);
-
-                // 返回逗号分隔的字符串（用于向后兼容）
                 Result = string.Join(",", blacklisted);
             }
             return true;

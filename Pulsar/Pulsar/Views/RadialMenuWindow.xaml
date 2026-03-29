@@ -56,8 +56,8 @@
                               Opacity="{Binding CurrentOpacity}">
                             <Grid.RenderTransform>
                                 <TransformGroup>
-                                    <ScaleTransform ScaleX="{Binding CurrentScale}" ScaleY="{Binding CurrentScale}"/>
-                                    <TranslateTransform X="{Binding OffsetX}" Y="{Binding OffsetY}"/>
+                                    <ScaleTransform ScaleX="{Binding CurrentScale, FallbackValue=1}" ScaleY="{Binding CurrentScale, FallbackValue=1}"/>
+                                    <TranslateTransform X="{Binding OffsetX, FallbackValue=0}" Y="{Binding OffsetY, FallbackValue=0}"/>
                                 </TransformGroup>
                             </Grid.RenderTransform>
 

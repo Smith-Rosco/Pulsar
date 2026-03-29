@@ -162,6 +162,7 @@ namespace Pulsar.Services.Validation
                 "bool" => value is bool,
                 "enum" => value is string, // 枚举值存储为字符串
                 "object" => true, // object 可以是任何类型
+                "multiselect" => value is List<string> or IEnumerable<string> or string,
                 _ => false
             };
         }

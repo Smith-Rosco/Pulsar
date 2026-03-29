@@ -53,13 +53,17 @@ namespace Pulsar.Plugins.Core.WinSwitcher
 
         public IEnumerable<PluginSettingDefinition> GetSettingsDefinition()
         {
-            yield return PluginSettingDefinition.Create(
-                key: "ExcludeProcesses",
-                label: "Blacklist (Exclude from Window List)",
-                type: PluginSettingType.String,
-                defaultValue: "",
-                description: "Comma-separated list of process names to exclude from automatic window discovery (e.g., in Switch Mode). Does not affect explicit switching via Profiles.json."
-            );
+            yield return new PluginSettingDefinition
+            {
+                Key = "ExcludeProcesses",
+                Label = "Blacklist (Exclude from Window List)",
+                Type = PluginSettingType.String,
+                DefaultValue = "",
+                Description = "Comma-separated list of process names to exclude from automatic window discovery (e.g., in Switch Mode). Does not affect explicit switching via Profiles.json.",
+                MinLength = 0,
+                MaxLength = 10000,
+                Pattern = @"^[a-zA-Z0-9_,.\s\-]*$"
+            };
         }
 
         public void UpdateSettings(Dictionary<string, object> settings)
@@ -332,10 +336,10 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                     {
                         ["ExcludeProcesses"] = new PropertySchema
                         {
-                            Type = "string",
-                            Description = "Comma-separated list of process names to exclude from automatic window discovery",
+                            Type = "multiselect",
+                            Description = "Process names to exclude from automatic window discovery",
                             DefaultValue = "",
-                            Placeholder = "e.g., notepad,calc"
+                            Placeholder = "Select processes to exclude..."
                         }
                     },
                     RequiredProperties = Array.Empty<string>()

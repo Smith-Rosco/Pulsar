@@ -71,6 +71,26 @@ namespace Pulsar.Views.Pages
         }
 
         /// <summary>
+        /// Browse for a file path
+        /// </summary>
+        private void BrowsePathButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.Button button && button.Tag is PathSettingViewModel vm)
+            {
+                var dialog = new Microsoft.Win32.OpenFileDialog
+                {
+                    Title = "Select File",
+                    Filter = "All files (*.*)|*.*"
+                };
+
+                if (dialog.ShowDialog() == true)
+                {
+                    vm.PathValue = dialog.FileName;
+                }
+            }
+        }
+
+        /// <summary>
         /// Smoothly scrolls to a specific group by name
         /// </summary>
         private void ScrollToGroup(string groupName)

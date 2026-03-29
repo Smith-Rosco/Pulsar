@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Plugins.Core.Pki.Contracts;
+using Pulsar.Plugins.Core.Pki.Models;
 using Pulsar.Plugins.Core.Pki.Models.Execution;
 
 namespace Pulsar.Plugins.Core.Pki
@@ -15,9 +16,10 @@ namespace Pulsar.Plugins.Core.Pki
     /// <summary>
     /// PKI plugin adapter for credential injection.
     /// </summary>
-    public class PkiPlugin : PluginBase<PkiPlugin>, IPluginMetadataProvider
+    public class PkiPlugin : PluginBase<PkiPlugin>, IPluginMetadataProvider, IPluginConfigurable
     {
         private readonly IPkiExecutionService _executionService;
+        private readonly PkiPluginSettings _settings = new();
 
         public PkiPlugin(
             ILogger<PkiPlugin> logger,
@@ -49,10 +51,27 @@ namespace Pulsar.Plugins.Core.Pki
             IReadOnlyDictionary<string, string> args,
             PulsarContext context)
         {
+            var enrichedArgs = new Dictionary<string, string>(args);
+
+            if (!enrichedArgs.ContainsKey("autoSubmit") && _settings.AutoSubmit)
+            {
+                enrichedArgs["autoSubmit"] = "true";
+            }
+
+            if (!enrichedArgs.ContainsKey("injectionDelay") && _settings.InjectionDelay > 0)
+            {
+                enrichedArgs["injectionDelay"] = _settings.InjectionDelay.ToString();
+            }
+
+            if (!enrichedArgs.ContainsKey("useUiaFirst"))
+            {
+                enrichedArgs["useUiaFirst"] = _settings.UseUiaFirst.ToString().ToLower();
+            }
+
             return action.ToLowerInvariant() switch
             {
-                "fill" => await FillCredentialsAsync(args, context),
-                "inject" => await FillCredentialsAsync(args, context),
+                "fill" => await FillCredentialsAsync(enrichedArgs, context),
+                "inject" => await FillCredentialsAsync(enrichedArgs, context),
                 _ => UnknownActionError(action, "fill", "inject")
             };
         }
@@ -199,6 +218,29 @@ namespace Pulsar.Plugins.Core.Pki
                     }
                 }
             };
+        }
+
+        public IEnumerable<PluginSettingDefinition> GetSettingsDefinition()
+        {
+            return SchemaToSettingAdapter.Convert(GetMetadata().Schema);
+        }
+
+        public void UpdateSettings(Dictionary<string, object> settings)
+        {
+            if (settings.TryGetValue("autoSubmit", out var autoSubmit))
+            {
+                _settings.AutoSubmit = autoSubmit is bool b ? b : Convert.ToBoolean(autoSubmit);
+            }
+
+            if (settings.TryGetValue("injectionDelay", out var injectionDelay))
+            {
+                _settings.InjectionDelay = injectionDelay is int i ? i : Convert.ToInt32(injectionDelay);
+            }
+
+            if (settings.TryGetValue("useUiaFirst", out var useUiaFirst))
+            {
+                _settings.UseUiaFirst = useUiaFirst is bool b2 ? b2 : Convert.ToBoolean(useUiaFirst);
+            }
         }
     }
 }

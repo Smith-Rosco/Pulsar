@@ -171,6 +171,12 @@
                                    FontSize="12" 
                                    TextWrapping="Wrap"
                                    Visibility="{Binding Description, Converter={StaticResource StringEmptyToVisibilityConverter}}"/>
+                        <TextBlock Text="{Binding ValidationMessage}"
+                                   Foreground="#dc3545"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"
+                                   Visibility="{Binding HasValidation, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                   Margin="0,2,0,0"/>
                     </StackPanel>
                 </ui:CardControl.Header>
                 <ui:TextBox Text="{Binding StringValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
@@ -189,6 +195,12 @@
                                    FontSize="12" 
                                    TextWrapping="Wrap"
                                    Visibility="{Binding Description, Converter={StaticResource StringEmptyToVisibilityConverter}}"/>
+                        <TextBlock Text="{Binding ValidationMessage}"
+                                   Foreground="#dc3545"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"
+                                   Visibility="{Binding HasValidation, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                   Margin="0,2,0,0"/>
                     </StackPanel>
                 </ui:CardControl.Header>
                 <ComboBox ItemsSource="{Binding Options}" 
@@ -198,10 +210,103 @@
             </ui:CardControl>
         </DataTemplate>
 
+        <DataTemplate x:Key="PathSettingTemplate" DataType="{x:Type vm:PathSettingViewModel}">
+            <ui:CardControl Margin="0,4" Icon="{Binding Icon}">
+                <ui:CardControl.Header>
+                    <StackPanel>
+                        <TextBlock Text="{Binding Label}" FontWeight="Medium"/>
+                        <TextBlock Text="{Binding Description}" 
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
+                                   FontSize="12" 
+                                   TextWrapping="Wrap"
+                                   Visibility="{Binding Description, Converter={StaticResource StringEmptyToVisibilityConverter}}"/>
+                        <TextBlock Text="{Binding ValidationMessage}"
+                                   Foreground="#dc3545"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"
+                                   Visibility="{Binding HasValidation, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                   Margin="0,2,0,0"/>
+                    </StackPanel>
+                </ui:CardControl.Header>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="180"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <ui:TextBox Grid.Column="0" 
+                                Text="{Binding PathValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                PlaceholderText="Enter or browse path..."
+                                HorizontalAlignment="Right"/>
+                    <ui:Button Grid.Column="1"
+                               Icon="{ui:SymbolIcon FolderOpen24}"
+                               ToolTip="Browse"
+                               Appearance="Secondary"
+                               Margin="4,0,0,0"
+                               Click="BrowsePathButton_Click"
+                               Tag="{Binding}"/>
+                </Grid>
+            </ui:CardControl>
+        </DataTemplate>
+
+        <DataTemplate x:Key="IntegerSettingTemplate" DataType="{x:Type vm:IntegerSettingViewModel}">
+            <ui:CardControl Margin="0,4" Icon="{Binding Icon}">
+                <ui:CardControl.Header>
+                    <StackPanel>
+                        <TextBlock Text="{Binding Label}" FontWeight="Medium"/>
+                        <TextBlock Text="{Binding Description}" 
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
+                                   FontSize="12" 
+                                   TextWrapping="Wrap"
+                                   Visibility="{Binding Description, Converter={StaticResource StringEmptyToVisibilityConverter}}"/>
+                        <TextBlock Text="{Binding ValidationMessage}"
+                                   Foreground="#dc3545"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"
+                                   Visibility="{Binding HasValidation, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                   Margin="0,2,0,0"/>
+                    </StackPanel>
+                </ui:CardControl.Header>
+                <ui:NumberBox Value="{Binding IntValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                              SpinButtonPlacementMode="Compact"
+                              Width="140"
+                              HorizontalAlignment="Right"
+                              Minimum="{Binding Definition.MinValue}"
+                              Maximum="{Binding Definition.MaxValue}"/>
+            </ui:CardControl>
+        </DataTemplate>
+
+        <DataTemplate x:Key="SecretSettingTemplate" DataType="{x:Type vm:SecretSettingViewModel}">
+            <ui:CardControl Margin="0,4" Icon="{Binding Icon}">
+                <ui:CardControl.Header>
+                    <StackPanel>
+                        <TextBlock Text="{Binding Label}" FontWeight="Medium"/>
+                        <TextBlock Text="{Binding Description}" 
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
+                                   FontSize="12" 
+                                   TextWrapping="Wrap"
+                                   Visibility="{Binding Description, Converter={StaticResource StringEmptyToVisibilityConverter}}"/>
+                        <TextBlock Text="{Binding ValidationMessage}"
+                                   Foreground="#dc3545"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"
+                                   Visibility="{Binding HasValidation, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                   Margin="0,2,0,0"/>
+                    </StackPanel>
+                </ui:CardControl.Header>
+                <ui:PasswordBox Password="{Binding SecretValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                Width="220"
+                                HorizontalAlignment="Right"
+                                PlaceholderText="Enter secret value..."/>
+            </ui:CardControl>
+        </DataTemplate>
+
         <ts:PluginSettingTemplateSelector x:Key="SettingSelector"
                                           BooleanTemplate="{StaticResource BooleanSettingTemplate}"
                                           StringTemplate="{StaticResource StringSettingTemplate}"
-                                          SelectionTemplate="{StaticResource SelectionSettingTemplate}"/>
+                                          SelectionTemplate="{StaticResource SelectionSettingTemplate}"
+                                          PathTemplate="{StaticResource PathSettingTemplate}"
+                                          IntegerTemplate="{StaticResource IntegerSettingTemplate}"
+                                          SecretTemplate="{StaticResource SecretSettingTemplate}"/>
         </ResourceDictionary>
     </Page.Resources>
 

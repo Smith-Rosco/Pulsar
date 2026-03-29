@@ -16,10 +16,11 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
     /// 书签脚本运行器插件 - 在浏览器中执行 Bookmarklet JavaScript 脚本
     /// Refactored to use UI Automation for instant, clipboard-free injection.
     /// </summary>
-    public class BookmarkletRunnerPlugin : IPulsarPlugin, IPluginTiered, IPluginMetadataProvider
+    public class BookmarkletRunnerPlugin : IPulsarPlugin, IPluginTiered, IPluginMetadataProvider, IPluginConfigurable
     {
         private IWindowService? _windowService;
         private ILogger<BookmarkletRunnerPlugin>? _logger;
+        private readonly BookmarkletRunnerSettings _settings = new();
 
         public string Id => "com.pulsar.bookmarklet";
         public string DisplayName => "Bookmarklet Runner";
@@ -318,6 +319,30 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
             {
                 _logger?.LogError(ex, "[BookmarkletRunner] Smart sequence error");
                 return false;
+            }
+        }
+
+        public IEnumerable<PluginSettingDefinition> GetSettingsDefinition()
+        {
+            return new List<PluginSettingDefinition>
+            {
+                new PluginSettingDefinition
+                {
+                    Key = "inputMethod",
+                    Label = "Input Method",
+                    Type = PluginSettingType.Selection,
+                    DefaultValue = "UIA",
+                    Description = "Method to use for input injection",
+                    Options = new List<string> { "UIA", "Clipboard", "Fallback" }
+                }
+            };
+        }
+
+        public void UpdateSettings(Dictionary<string, object> settings)
+        {
+            if (settings.TryGetValue("inputMethod", out var inputMethod))
+            {
+                _settings.InputMethod = inputMethod?.ToString() ?? "UIA";
             }
         }
     }

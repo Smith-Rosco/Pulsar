@@ -22,6 +22,7 @@
             <converters:HexToBrushConverter x:Key="HexToBrush"/>
             <converters:SlotBrushConverter x:Key="SlotBrushConverter"/>
             <converters:InverseBoolToVisibilityConverter x:Key="BoolToVisInverse"/>
+            <converters:StringToBoolConverter x:Key="StringToBool"/>
 
             <Style x:Key="SectionEyebrowTextStyle" TargetType="TextBlock">
                 <Setter Property="FontSize" Value="11"/>
@@ -45,18 +46,19 @@
             <DataTemplate x:Key="DialogSlotParameterFieldTemplate" DataType="{x:Type models:SlotParameterEditorField}">
                 <Grid Margin="0,0,0,8">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="140"/>
+                        <ColumnDefinition Width="Auto" MinWidth="100"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- Left: Label -->
-                    <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
+                    <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{Binding Label}"
                                        FontWeight="SemiBold"
                                        FontSize="13"
                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                       TextWrapping="Wrap"
+                                       TextTrimming="CharacterEllipsis"
+                                       ToolTip="{Binding Label}"
                                        VerticalAlignment="Center"/>
                             <TextBlock Text=" *"
                                        FontWeight="Bold"
@@ -86,21 +88,16 @@
                                    Tag="{Binding}"
                                    Visibility="{Binding HasPicker, Converter={StaticResource BoolToVis}}"/>
 
-                        <!-- QuickEdit: editable TextBox -->
+                        <!-- Bool type: ToggleSwitch -->
+                        <ui:ToggleSwitch Grid.Column="1"
+                                         IsChecked="{Binding Value, Mode=TwoWay, Converter={StaticResource StringToBool}}"
+                                         Visibility="{Binding IsBoolType, Converter={StaticResource BoolToVis}}"/>
+
+                        <!-- Other types: Editable TextBox -->
                         <ui:TextBox Grid.Column="1"
                                     Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                     PlaceholderText="{Binding Placeholder}"
-                                    Visibility="{Binding PreferQuickEdit, Converter={StaticResource BoolToVis}}"/>
-
-                        <!-- Picker: read-only display -->
-                        <TextBlock Grid.Column="1"
-                                   Text="{Binding DisplayValue}"
-                                   FontSize="13"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                   TextTrimming="CharacterEllipsis"
-                                   VerticalAlignment="Center"
-                                   Visibility="{Binding PreferQuickEdit, Converter={StaticResource BoolToVisInverse}}"/>
+                                    Visibility="{Binding IsBoolType, Converter={StaticResource BoolToVisInverse}}"/>
                     </Grid>
                 </Grid>
             </DataTemplate>
@@ -398,7 +395,7 @@
                                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                            VerticalAlignment="Center"
                                            Margin="0,0,12,0"/>
-                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                                     <Border Width="56"
                                             Height="36"
                                             CornerRadius="8"
@@ -410,7 +407,7 @@
                                             MouseLeftButtonDown="ColorSwatch_MouseLeftButtonDown">
                                         <ui:SymbolIcon Symbol="Drop24"
                                                        FontSize="16"
-                                                       Foreground="White"
+                                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center"/>
                                     </Border>

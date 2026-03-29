@@ -64,6 +64,8 @@ namespace Pulsar.Models
 
         public bool PreferQuickEdit => Metadata.PresentationHint == SlotParameterPresentationHint.QuickEdit;
 
+        public bool IsBoolType => string.Equals(Metadata.Type, "bool", StringComparison.OrdinalIgnoreCase);
+
         public int QuickEditPriority => Metadata.QuickEditPriority;
 
         public string SummaryLabel => Metadata.SummaryLabel ?? Label;

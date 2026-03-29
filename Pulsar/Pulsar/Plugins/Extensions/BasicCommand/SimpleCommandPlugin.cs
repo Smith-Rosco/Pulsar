@@ -21,8 +21,10 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
     /// - 使用构造函数注入替代 Service Locator
     /// - 使用基类辅助方法简化参数验证
     /// </summary>
-    public class SimpleCommandPlugin : PluginBase<SimpleCommandPlugin>, IPluginMetadataProvider
+    public class SimpleCommandPlugin : PluginBase<SimpleCommandPlugin>, IPluginMetadataProvider, IPluginConfigurable
     {
+        private readonly SimpleCommandSettings _settings = new();
+
         // 构造函数注入 - 编译时依赖检查
         public SimpleCommandPlugin(ILogger<SimpleCommandPlugin> logger) 
             : base(logger)
@@ -201,6 +203,31 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
             };
         }
 
+        public IEnumerable<PluginSettingDefinition> GetSettingsDefinition()
+        {
+            return new List<PluginSettingDefinition>
+            {
+                new PluginSettingDefinition
+                {
+                    Key = "defaultDelay",
+                    Label = "Default Delay",
+                    Type = PluginSettingType.Integer,
+                    DefaultValue = 50,
+                    Description = "Default delay in milliseconds before sending keys (0-10000)",
+                    MinValue = 0,
+                    MaxValue = 10000
+                }
+            };
+        }
+
+        public void UpdateSettings(Dictionary<string, object> settings)
+        {
+            if (settings.TryGetValue("defaultDelay", out var delay))
+            {
+                _settings.DefaultDelay = delay is int i ? i : Convert.ToInt32(delay);
+            }
+        }
+
         #region 插件执行逻辑
 
         public override async Task<PluginResult> ExecuteAsync(
@@ -268,8 +295,8 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
             if (!TryGetRequiredArg(args, "keys", out var keys))
                 return MissingParameterError("keys");
 
-            // 获取延迟参数（默认 50ms）
-            int delay = 50;
+            // 获取延迟参数（使用设置中的默认值）
+            int delay = _settings.DefaultDelay;
             if (args.TryGetValue("delay", out var delayStr))
             {
                 int.TryParse(delayStr, out delay);
