@@ -287,6 +287,8 @@ namespace Pulsar.ViewModels.Dialogs
 
         public bool HasSingleAction => Slot?.AvailableActions.Count == 1;
 
+        public bool HasMultipleActions => Slot?.AvailableActions.Count > 1;
+
         public bool UseRadioActions => Slot?.AvailableActions.Count is > 1 and <= 4;
 
         public bool UseComboActions => Slot?.AvailableActions.Count > 4;
@@ -461,6 +463,7 @@ namespace Pulsar.ViewModels.Dialogs
             OnPropertyChanged(nameof(AdvancedParameters));
             OnPropertyChanged(nameof(SummaryTokens));
             OnPropertyChanged(nameof(HasSingleAction));
+            OnPropertyChanged(nameof(HasMultipleActions));
             OnPropertyChanged(nameof(UseRadioActions));
             OnPropertyChanged(nameof(UseComboActions));
             OnPropertyChanged(nameof(HasRequiredParameters));

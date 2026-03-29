@@ -96,7 +96,7 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
                             {
                                 Key = "path",
                                 Type = "string",
-                                Label = "Path or Command",
+                                Label = "Path",
                                 Description = "Executable path, file path, or URL to open.",
                                 IsRequired = true,
                                 Group = SlotParameterGroup.Required,
@@ -133,7 +133,7 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
                             {
                                 Key = "workingDir",
                                 Type = "string",
-                                Label = "Working Directory",
+                                Label = "Folder",
                                 Description = "Optional starting directory for the process.",
                                 IsRequired = false,
                                 Group = SlotParameterGroup.Advanced,
