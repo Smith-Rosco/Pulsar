@@ -9,6 +9,7 @@ using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Pulsar.Models;
+using Pulsar.ViewModels.Settings;
 using Pulsar.ViewModels.Base;
 using DialogResult = Pulsar.Models.Enums.DialogResult;
 
@@ -34,6 +35,18 @@ namespace Pulsar.ViewModels.Dialogs
                 AccentColor = accentColor;
                 CategoryKey = categoryKey;
                 CategoryLabel = categoryLabel;
+            }
+
+            public PluginTypeOption(BuiltInPluginDisplayModel displayModel)
+                : this(
+                    displayModel.PluginId,
+                    displayModel.IconKey,
+                    displayModel.DisplayName,
+                    displayModel.Description,
+                    displayModel.AccentColor,
+                    displayModel.CategoryKey,
+                    displayModel.CategoryLabel)
+            {
             }
 
             public string PluginId { get; }
@@ -80,6 +93,7 @@ namespace Pulsar.ViewModels.Dialogs
         private readonly Func<SlotParameterEditorField, Task> _pickParameterValueAsync;
         private readonly Func<PluginSlot, Task> _pickIconAsync;
         private readonly Func<PluginSlot, Task> _pickColorAsync;
+        private readonly IReadOnlyDictionary<string, PluginTypeOption> _pluginTypeLookup;
 
         private static readonly ObservableCollection<SlotActionOption> _emptyActions = new();
         private static readonly ObservableCollection<SlotParameterEditorField> _emptyFields = new();
@@ -122,6 +136,7 @@ namespace Pulsar.ViewModels.Dialogs
             _pickParameterValueAsync = pickParameterValueAsync;
             _pickIconAsync = pickIconAsync;
             _pickColorAsync = pickColorAsync;
+            _pluginTypeLookup = PluginTypes.ToDictionary(option => option.PluginId, StringComparer.OrdinalIgnoreCase);
 
             PluginTypeCategories = new ObservableCollection<PluginTypeCategoryOption>(BuildCategories(PluginTypes));
             FilteredPluginTypes = new ObservableCollection<PluginTypeOption>();
@@ -751,7 +766,7 @@ namespace Pulsar.ViewModels.Dialogs
                 : fallback;
         }
 
-        private static string BuildSuggestedIcon(PluginSlot slot)
+        private string BuildSuggestedIcon(PluginSlot slot)
         {
             if (string.Equals(slot.PluginId, "com.pulsar.command", StringComparison.OrdinalIgnoreCase)
                 && string.Equals(slot.Action, "sendkeys", StringComparison.OrdinalIgnoreCase))
@@ -759,30 +774,14 @@ namespace Pulsar.ViewModels.Dialogs
                 return "E765";
             }
 
-            return slot.PluginId switch
-            {
-                "com.pulsar.winswitcher" => "E8A7",
-                "com.pulsar.command" => "E756",
-                "com.pulsar.bookmarklet" => "E943",
-                "com.pulsar.vbarunner" => "E8C4",
-                "com.pulsar.pki" => "E72E",
-                "com.pulsar.system" => "E713",
-                _ => string.Empty
-            };
+            return _pluginTypeLookup.TryGetValue(slot.PluginId, out var pluginType)
+                ? pluginType.IconKey
+                : string.Empty;
         }
 
         private static string BuildSuggestedColor(PluginSlot slot)
         {
-            return slot.PluginId switch
-            {
-                "com.pulsar.winswitcher" => "#2196F3",
-                "com.pulsar.command" => "#32CD32",
-                "com.pulsar.bookmarklet" => "#FF8C00",
-                "com.pulsar.vbarunner" => "#2E8B57",
-                "com.pulsar.pki" => "#4CAF50",
-                "com.pulsar.system" => "#607D8B",
-                _ => string.Empty
-            };
+            return string.Empty;
         }
 
         private static string ExtractName(string rawValue, string fallback)

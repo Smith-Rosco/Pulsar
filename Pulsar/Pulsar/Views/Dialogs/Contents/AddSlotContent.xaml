@@ -67,7 +67,9 @@
             <Style x:Key="PickerSelectedBadgeStyle" TargetType="Border">
                 <Setter Property="Padding" Value="6,1"/>
                 <Setter Property="CornerRadius" Value="6"/>
-                <Setter Property="Background" Value="{DynamicResource AccentFillColorSecondaryBrush}"/>
+                <Setter Property="Background" Value="{DynamicResource ControlFillColorTertiaryBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="Margin" Value="10,0,0,0"/>
                 <Setter Property="VerticalAlignment" Value="Center"/>
             </Style>
@@ -75,8 +77,10 @@
             <Style x:Key="PickerSelectedBadgeTextStyle" TargetType="TextBlock">
                 <Setter Property="FontSize" Value="10"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
-                <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
             </Style>
+
+
 
             <Style x:Key="ParameterCardBorderStyle" TargetType="Border">
                 <Setter Property="Margin" Value="0,8,0,0"/>
@@ -410,19 +414,24 @@
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
 
-                                            <controls:SlotOrb Grid.Row="0"
-                                                              Grid.Column="0"
-                                                              Size="28"
-                                                              Width="28"
-                                                              Height="28"
-                                                              Opacity="1"
-                                                              IsActive="False"
-                                                              IsHitTestVisible="False"
-                                                              ShowActiveGlow="False"
-                                                              IconKey="{Binding IconKey}"
-                                                              CustomFill="{Binding AccentColor, Converter={StaticResource HexToBrush}}"
-                                                              CustomStroke="{Binding AccentColor, Converter={StaticResource HexToBrush}}"
-                                                              CustomForeground="White"/>
+                                            <Border Grid.Row="0"
+                                                    Grid.Column="0"
+                                                    Width="36"
+                                                    Height="36"
+                                                    CornerRadius="10"
+                                                    BorderBrush="{DynamicResource ControlElevationBorderBrush}"
+                                                    BorderThickness="1"
+                                                    Background="{DynamicResource ControlFillColorSecondaryBrush}">
+                                                <controls:SlotOrb Size="28"
+                                                                  Width="28"
+                                                                  Height="28"
+                                                                  Opacity="1"
+                                                                  IsActive="False"
+                                                                  IsHitTestVisible="False"
+                                                                  ShowActiveGlow="False"
+                                                                  IsTransparent="True"
+                                                                  IconKey="{Binding IconKey}"/>
+                                            </Border>
 
                                             <Border Grid.Row="0"
                                                     Grid.Column="1"
@@ -627,21 +636,31 @@
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
 
-                                            <Border Width="56"
-                                                    Height="36"
-                                                    CornerRadius="8"
-                                                    BorderBrush="{DynamicResource ControlElevationBorderBrush}"
-                                                    BorderThickness="1"
-                                                    Background="{Binding Slot.Color, Converter={StaticResource HexToBrush}}"
-                                                    Cursor="Hand"
-                                                    ToolTip="Pick color"
-                                                    MouseLeftButtonDown="ColorSwatch_MouseLeftButtonDown">
-                                                <ui:SymbolIcon Symbol="Drop24"
-                                                               FontSize="16"
-                                                               Foreground="White"
-                                                               HorizontalAlignment="Center"
-                                                               VerticalAlignment="Center"/>
-                                            </Border>
+                                             <Border Width="56"
+                                                     Height="36"
+                                                     CornerRadius="8"
+                                                     BorderBrush="{DynamicResource ControlElevationBorderBrush}"
+                                                     BorderThickness="1"
+                                                     Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                                     Cursor="Hand"
+                                                     ToolTip="Pick color"
+                                                     MouseLeftButtonDown="ColorSwatch_MouseLeftButtonDown">
+                                                <Grid>
+                                                    <Border Width="20"
+                                                            Height="20"
+                                                            CornerRadius="6"
+                                                            Background="{Binding Slot.Color, Converter={StaticResource HexToBrush}}"
+                                                            BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                                                            BorderThickness="1"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center"/>
+                                                    <ui:SymbolIcon Symbol="Drop24"
+                                                                   FontSize="16"
+                                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center"/>
+                                                </Grid>
+                                             </Border>
 
                                             <TextBlock Grid.Column="1"
                                                        Text="Color is optional polish once the slot behavior feels right."

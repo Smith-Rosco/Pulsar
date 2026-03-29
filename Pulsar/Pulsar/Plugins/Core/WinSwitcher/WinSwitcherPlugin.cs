@@ -30,7 +30,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
         public string Version => "1.0.0";
         public string Author => "Pulsar Team";
         public string Description => "Switch to an existing app, launch one directly, or switch first and launch only when needed.";
-        public string Icon => "\uE8B8"; // Window/Switch Icon
+        public string Icon => "\uE8A7"; // Open in new window icon
         public bool CanDisable => false; // Core plugin
         public PluginTier Tier => PluginTier.Core;
         
@@ -318,7 +318,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                 {
                     Name = DisplayName,
                     Description = Description,
-                    IconKey = "🪟", // Window emoji
+                    IconKey = Icon,
                     Category = "Apps",
                     Version = Version,
                     Author = Author,

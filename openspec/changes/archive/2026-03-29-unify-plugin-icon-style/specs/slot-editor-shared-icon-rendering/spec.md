@@ -1,8 +1,5 @@
-# slot-editor-shared-icon-rendering
+## MODIFIED Requirements
 
-## Purpose
-Define how Create Slot and related picker surfaces interpret icon keys through the shared icon rendering pipeline.
-## Requirements
 ### Requirement: Create Slot picker SHALL render icon keys through the shared icon pipeline
 The system SHALL render plugin and slot-type icons in the Create Slot dialog through the shared icon interpretation pipeline used by slot surfaces elsewhere in Pulsar, so values representing Fluent/MDL2 hex glyphs, emoji, or file-backed icon paths are interpreted as semantic icon keys instead of drawn as raw text. The icon SHALL be rendered directly by `SlotOrb` without an outer `Border` container wrapper, eliminating double-border artifacts.
 
@@ -28,4 +25,3 @@ The system SHALL avoid maintaining a Create Slot-specific raw glyph rendering pa
 #### Scenario: Shared icon interpretation changes in the future
 - **WHEN** Pulsar updates its shared icon parsing or font-selection behavior
 - **THEN** Create Slot plugin type rendering SHALL inherit the same interpretation rules without requiring a separate update to the picker surface
-

@@ -111,6 +111,8 @@ namespace Pulsar.Tests.ViewModels
 
             InvokePrivate(viewModel, "SetSlotDraftAction", draft, "run");
 
+            draft.IconKey.Should().Be("E756");
+            draft.Color.Should().BeEmpty();
             viewModel.HasUnsavedChanges.Should().BeFalse();
             viewModel.CurrentSlots.Should().NotContain(draft);
         }
@@ -241,6 +243,7 @@ namespace Pulsar.Tests.ViewModels
 
             var pluginMetadataRegistry = new PluginMetadataRegistry(NullLogger<PluginMetadataRegistry>.Instance);
             pluginMetadataRegistry.Register(CreateCommandMetadata());
+            pluginMetadataRegistry.Register(CreateWinSwitcherMetadata());
 
             var viewModel = new SettingsViewModel(
                 configService.Object,
@@ -415,6 +418,50 @@ namespace Pulsar.Tests.ViewModels
                                 MissingSummaryText = "missing"
                             }
                         }
+                    }
+                }
+            };
+        }
+
+        private static PluginMetadata CreateWinSwitcherMetadata()
+        {
+            return new PluginMetadata
+            {
+                Id = "com.pulsar.winswitcher",
+                Display = new DisplayInfo
+                {
+                    Name = "App Switcher",
+                    Description = "Switch to an existing app, launch one directly, or switch first and launch only when needed.",
+                    IconKey = "E8A7",
+                    Category = "Apps",
+                    Version = "1.0.0",
+                    Author = "Tests",
+                    License = "MIT"
+                },
+                UI = new UIHints
+                {
+                    Badge = "App",
+                    AccentColor = "#2196F3",
+                    ShowInQuickAccess = true,
+                    SortOrder = 2,
+                    IsFeatured = true
+                },
+                Capabilities = new PluginCapabilities
+                {
+                    SupportedActions = new List<string> { "switch" },
+                    RequiresForegroundWindow = false,
+                    Dependencies = new List<string>(),
+                    CanDisable = false,
+                    Tier = PluginTier.Core,
+                    MinPulsarVersion = "1.0.0"
+                },
+                Actions = new Dictionary<string, SlotActionMetadata>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["switch"] = new SlotActionMetadata
+                    {
+                        Name = "switch",
+                        Label = "Switch Or Launch",
+                        Description = "Switch to a running app window, or launch it when no matching window is found."
                     }
                 }
             };

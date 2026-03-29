@@ -85,7 +85,7 @@ namespace Pulsar.Plugins.Core.Pki
                 {
                     Name = DisplayName,
                     Description = Description,
-                    IconKey = "\uD83D\uDD10",
+                    IconKey = Icon,
                     Category = "Security",
                     Version = Version,
                     Author = Author,

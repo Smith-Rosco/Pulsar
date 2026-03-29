@@ -26,6 +26,7 @@ using Pulsar.Services.Validation;
 using Microsoft.Extensions.Logging;
 using Wpf.Ui.Controls;
 using Pulsar.ViewModels.Dialogs;
+using Pulsar.ViewModels.Settings;
 using DialogResult = Pulsar.Models.Enums.DialogResult;
 using DialogButtons = Pulsar.Models.Enums.DialogButtons;
 using GongSolutions.Wpf.DragDrop;
@@ -33,23 +34,6 @@ using DragDropEffects = System.Windows.DragDropEffects;
 
 namespace Pulsar.ViewModels
 {
-    /// <summary>
-    /// Helper class for plugin type information in UI
-    /// </summary>
-    public class PluginTypeInfo
-    {
-        public string PluginId { get; }
-        public string DisplayName { get; }
-        public string Description { get; }
-        
-        public PluginTypeInfo(string id, string name, string desc)
-        {
-            PluginId = id;
-            DisplayName = name;
-            Description = desc;
-        }
-    }
-
     /// <summary>
     /// Enhanced ContextInfo with slot count display
     /// </summary>
@@ -132,8 +116,6 @@ namespace Pulsar.ViewModels
         }
 
         public ObservableCollection<ContextInfo> AvailableContexts { get; } = new();
-
-        public ObservableCollection<PluginTypeInfo> AvailablePluginTypes { get; } = new();
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(CanDeleteProfile))]
@@ -459,7 +441,6 @@ namespace Pulsar.ViewModels
                     _persistedSecrets = await _secretStore.LoadAsync();
 
                     GeneralSettings = _config.Settings;
-                    InitializePluginTypes();
                     RefreshContexts();
 
                     // Notify properties to trigger bindings/theme updates
@@ -898,28 +879,15 @@ namespace Pulsar.ViewModels
             }
         }
 
-        private void InitializePluginTypes()
-        {
-            AvailablePluginTypes.Clear();
-            AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.winswitcher", "🚀 App Switcher", "Switch to an existing app, launch one directly, or switch first and launch only when needed"));
-            AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.command", "⚡ Command Runner", "Open apps, files, folders, or URLs, or send key sequences"));
-            AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.bookmarklet", "🔖 Bookmarklet", "Run JavaScript in browser"));
-            AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.vbarunner", "📊 VBA Runner", "Run VBA scripts in Excel/WPS"));
-            AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.pki", "🔒 Secret Fill", "Fill a saved credential into the active application"));
-            AvailablePluginTypes.Add(new PluginTypeInfo("com.pulsar.system", "⚙️ Pulsar Control", "Open settings or quick-add slots for the current app"));
-        }
-
         private IReadOnlyList<AddSlotViewModel.PluginTypeOption> BuildAddSlotOptions()
         {
-            return new List<AddSlotViewModel.PluginTypeOption>
-            {
-                new("com.pulsar.winswitcher", "E8A7", "App Switcher", "Switch to an existing app, launch one directly, or switch first and launch only when needed.", "#2196F3", "apps", "Apps"),
-                new("com.pulsar.command", "E756", "Command Runner", "Open apps, files, folders, or URLs, or send a key sequence.", "#32CD32", "automation", "Automation"),
-                new("com.pulsar.bookmarklet", "E8A4", "Browser Script", "Run JavaScript from a saved script file in the browser.", "#FF8C00", "automation", "Automation"),
-                new("com.pulsar.vbarunner", "E8F4", "Run VBA", "Execute a VBA or automation script for Excel and WPS.", "#2E8B57", "automation", "Automation"),
-                new("com.pulsar.pki", "E72E", "Secret Fill", "Fill a saved credential into the active application.", "#4CAF50", "security", "Security"),
-                new("com.pulsar.system", "E713", "Pulsar Control", "Open settings or quick-add slots for the current app.", "#607D8B", "system", "System")
-            };
+            return _pluginMetadataRegistry
+                .GetAllMetadata()
+                .Where(metadata => metadata.Actions.Count > 0)
+                .OrderBy(metadata => metadata.UI.SortOrder)
+                .ThenBy(metadata => metadata.Display.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(metadata => new AddSlotViewModel.PluginTypeOption(BuiltInPluginDisplayModel.FromMetadata(metadata)))
+                .ToList();
         }
 
         private PluginSlot CreateSlotDraft(string pluginId)
@@ -971,7 +939,7 @@ namespace Pulsar.ViewModels
             return CurrentSlots.Max(slot => slot.Slot) + 1;
         }
 
-        private static PluginSlot BuildSlotTemplate(string pluginId, int slotNumber)
+        private PluginSlot BuildSlotTemplate(string pluginId, int slotNumber)
         {
             var newItem = new PluginSlot
             {
@@ -986,32 +954,24 @@ namespace Pulsar.ViewModels
                     newItem.Args["app"] = string.Empty;
                     newItem.Args["path"] = string.Empty;
                     newItem.Label = "Switch Or Launch App";
-                    newItem.IconKey = "E8A7";
-                    newItem.Color = "#2196F3";
                     break;
 
                 case "com.pulsar.command":
                     newItem.Action = "run";
                     newItem.Args["path"] = string.Empty;
                     newItem.Label = "Open Target";
-                    newItem.IconKey = "E756";
-                    newItem.Color = "#32CD32";
                     break;
 
                 case "com.pulsar.bookmarklet":
                     newItem.Action = "run";
                     newItem.Args["scriptPath"] = string.Empty;
                     newItem.Label = "Run Script";
-                    newItem.IconKey = "E943";
-                    newItem.Color = "#FF8C00";
                     break;
 
                 case "com.pulsar.vbarunner":
                     newItem.Action = "run";
                     newItem.Args["scriptPath"] = string.Empty;
                     newItem.Label = "Run VBA";
-                    newItem.IconKey = "E8C4";
-                    newItem.Color = "#2E8B57";
                     break;
 
                 case "com.pulsar.pki":
@@ -1019,19 +979,21 @@ namespace Pulsar.ViewModels
                     newItem.Args["secretId"] = string.Empty;
                     newItem.Args["autoEnter"] = bool.FalseString;
                     newItem.Label = "Fill Secret";
-                    newItem.IconKey = "E72E";
-                    newItem.Color = "#4CAF50";
                     break;
 
                 case "com.pulsar.system":
                     newItem.Action = "open-settings";
                     newItem.Label = "Open Settings";
-                    newItem.IconKey = "E713";
-                    newItem.Color = "#607D8B";
                     break;
 
                 default:
                     throw new InvalidOperationException($"Unknown plugin type: {pluginId}");
+            }
+
+            string? iconKey = _pluginMetadataRegistry.GetMetadata(pluginId)?.Display.IconKey;
+            if (!string.IsNullOrWhiteSpace(iconKey))
+            {
+                newItem.IconKey = iconKey;
             }
 
             return newItem;

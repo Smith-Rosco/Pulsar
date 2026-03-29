@@ -6,6 +6,7 @@ using FluentAssertions;
 using Pulsar.Helpers;
 using Pulsar.Models;
 using Pulsar.ViewModels.Dialogs;
+using Pulsar.ViewModels.Settings;
 using Xunit;
 
 namespace Pulsar.Tests.ViewModels
@@ -42,6 +43,21 @@ namespace Pulsar.Tests.ViewModels
             viewModel.PreviewMetadataText.Should().Contain("Path: selected");
             viewModel.BlockingIssueText.Should().BeEmpty();
             viewModel.PrimaryCommand.Should().BeSameAs(viewModel.SaveCommand);
+        }
+
+        [Fact]
+        public void AddSlotViewModel_ShouldPreserveCanonicalMetadataAndOptionalColor()
+        {
+            var viewModel = CreateAddSlotViewModel();
+
+            viewModel.PluginTypes[0].IconKey.Should().Be("E756");
+            viewModel.PluginTypes[0].DisplayName.Should().Be("Command Runner");
+
+            viewModel.SelectPluginTypeCommand.Execute(viewModel.PluginTypes[0]);
+
+            viewModel.Slot.Should().NotBeNull();
+            viewModel.Slot!.IconKey.Should().Be("E756");
+            viewModel.Slot.Color.Should().BeEmpty();
         }
 
         [Fact]
@@ -84,13 +100,14 @@ namespace Pulsar.Tests.ViewModels
                 new[]
                 {
                     new AddSlotViewModel.PluginTypeOption(
-                        "com.pulsar.command",
-                        "E756",
-                        "Command Runner",
-                        "Open apps, files, folders, or URLs, or send a key sequence.",
-                        "#32CD32",
-                        "automation",
-                        "Automation")
+                        new BuiltInPluginDisplayModel(
+                            "com.pulsar.command",
+                            "E756",
+                            "Command Runner",
+                            "Open apps, files, folders, or URLs, or send a key sequence.",
+                            "automation",
+                            "Automation",
+                            "#32CD32"))
                 },
                 _ => CreateDraftSlot(),
                 (slot, action) =>
@@ -125,7 +142,7 @@ namespace Pulsar.Tests.ViewModels
                 Action = "run",
                 Label = "Open Target",
                 IconKey = "E756",
-                Color = "#32CD32",
+                Color = string.Empty,
                 Args = new Dictionary<string, string>()
             };
 
