@@ -56,23 +56,5 @@ namespace Pulsar.Views.Dialogs.Contents
                 await viewModel.PickColorAsync();
             }
         }
-
-        private async void RemoveSlot_Click(object sender, RoutedEventArgs e)
-        {
-            if (DataContext is SlotConfigurationDialogViewModel viewModel)
-            {
-                await viewModel.RemoveSlotAsync();
-            }
-        }
-
-        private void ActionRadio_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is System.Windows.Controls.RadioButton radio
-                && radio.Tag is string action
-                && DataContext is SlotConfigurationDialogViewModel viewModel)
-            {
-                viewModel.SetAction(action);
-            }
-        }
     }
 }

@@ -1189,8 +1189,7 @@ namespace Pulsar.ViewModels
                 SetSlotAction,
                 PickSlotParameterValue,
                 PickIcon,
-                PickColor,
-                RemoveSlot);
+                PickColor);
 
             await _dialogService.ShowCustomAsync(
                 $"Edit Slot {slot.Slot}",

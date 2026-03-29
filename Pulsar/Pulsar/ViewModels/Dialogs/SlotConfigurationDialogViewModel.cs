@@ -15,22 +15,19 @@ namespace Pulsar.ViewModels.Dialogs
         private readonly Func<SlotParameterEditorField, Task> _pickParameterValueAsync;
         private readonly Func<PluginSlot, Task> _pickIconAsync;
         private readonly Func<PluginSlot, Task> _pickColorAsync;
-        private readonly Func<PluginSlot, Task> _removeSlotAsync;
 
         public SlotConfigurationDialogViewModel(
             PluginSlot slot,
             Action<PluginSlot, string?> setAction,
             Func<SlotParameterEditorField, Task> pickParameterValueAsync,
             Func<PluginSlot, Task> pickIconAsync,
-            Func<PluginSlot, Task> pickColorAsync,
-            Func<PluginSlot, Task> removeSlotAsync)
+            Func<PluginSlot, Task> pickColorAsync)
         {
             Slot = slot;
             _setAction = setAction;
             _pickParameterValueAsync = pickParameterValueAsync;
             _pickIconAsync = pickIconAsync;
             _pickColorAsync = pickColorAsync;
-            _removeSlotAsync = removeSlotAsync;
             Slot.PropertyChanged += OnSlotPropertyChanged;
         }
 
@@ -39,6 +36,14 @@ namespace Pulsar.ViewModels.Dialogs
         public string HeaderText => $"Slot {Slot.Slot} · {Slot.Label}";
 
         public string HeaderDescription => "Update the slot's behavior first, then adjust the label, icon, or color only if the defaults need refinement.";
+
+        public string HeaderStatusText => HasBlockingIssue
+            ? "Needs required setup"
+            : ValidationSeverity == ValidationSeverity.Warning
+                ? "Draft in progress"
+                : "Ready to save";
+
+        public bool HasBlockingIssue => Slot.ValidationSeverity == ValidationSeverity.Error;
 
         public string PreviewTitle => Slot.Presentation.Title;
 
@@ -68,10 +73,6 @@ namespace Pulsar.ViewModels.Dialogs
 
         public bool HasSingleAction => Slot.AvailableActions.Count == 1;
 
-        public bool UseRadioActions => Slot.AvailableActions.Count is > 1 and <= 4;
-
-        public bool UseComboActions => Slot.AvailableActions.Count > 4;
-
         public ValidationSeverity ValidationSeverity => Slot.ValidationSeverity;
 
         public bool HasValidationSummary => Slot.HasValidationSummary;
@@ -89,8 +90,6 @@ namespace Pulsar.ViewModels.Dialogs
         public string AppearanceDisclosureTitle => "Appearance and polish";
 
         public string AppearanceDisclosureDescription => "Keep the suggested presentation or make small refinements once the slot behavior looks right.";
-
-        public string DangerZoneDescription => "Delete this slot permanently when it is no longer needed.";
 
         public Action<DialogResult>? RequestClose { get; set; }
 
@@ -119,12 +118,6 @@ namespace Pulsar.ViewModels.Dialogs
             NotifyPresentationChanged();
         }
 
-        public async Task RemoveSlotAsync()
-        {
-            await _removeSlotAsync(Slot);
-            RequestClose?.Invoke(DialogResult.Confirmed);
-        }
-
         public Task<bool> CanCloseAsync(DialogResult result)
         {
             return Task.FromResult(true);
@@ -135,6 +128,8 @@ namespace Pulsar.ViewModels.Dialogs
             SyncSelectedActionStates();
             OnPropertyChanged(nameof(HeaderText));
             OnPropertyChanged(nameof(HeaderDescription));
+            OnPropertyChanged(nameof(HeaderStatusText));
+            OnPropertyChanged(nameof(HasBlockingIssue));
             OnPropertyChanged(nameof(PreviewTitle));
             OnPropertyChanged(nameof(PreviewTypeBadge));
             OnPropertyChanged(nameof(PreviewActionText));
@@ -147,8 +142,6 @@ namespace Pulsar.ViewModels.Dialogs
             OnPropertyChanged(nameof(AdvancedParameters));
             OnPropertyChanged(nameof(SummaryTokens));
             OnPropertyChanged(nameof(HasSingleAction));
-            OnPropertyChanged(nameof(UseRadioActions));
-            OnPropertyChanged(nameof(UseComboActions));
             OnPropertyChanged(nameof(ValidationSeverity));
             OnPropertyChanged(nameof(HasValidationSummary));
             OnPropertyChanged(nameof(ValidationSummary));
@@ -158,7 +151,6 @@ namespace Pulsar.ViewModels.Dialogs
             OnPropertyChanged(nameof(HasSummaryTokens));
             OnPropertyChanged(nameof(AppearanceDisclosureTitle));
             OnPropertyChanged(nameof(AppearanceDisclosureDescription));
-            OnPropertyChanged(nameof(DangerZoneDescription));
         }
 
         private void SyncSelectedActionStates()
@@ -171,6 +163,11 @@ namespace Pulsar.ViewModels.Dialogs
 
         private void OnSlotPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            if (string.Equals(e.PropertyName, nameof(PluginSlot.Action), StringComparison.Ordinal))
+            {
+                return;
+            }
+
             NotifyPresentationChanged();
         }
     }
