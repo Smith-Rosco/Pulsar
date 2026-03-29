@@ -194,10 +194,11 @@
             </Style>
 
             <Style x:Key="PluginTypeCardButtonStyle" TargetType="Button">
-                <Setter Property="Width" Value="148"/>
-                <Setter Property="Height" Value="96"/>
-                <Setter Property="Margin" Value="0,0,10,10"/>
-                <Setter Property="Padding" Value="12"/>
+                <Setter Property="Width" Value="200"/>
+                <Setter Property="Height" Value="Auto"/>
+                <Setter Property="MinHeight" Value="48"/>
+                <Setter Property="Margin" Value="0,0,8,8"/>
+                <Setter Property="Padding" Value="10,8"/>
                 <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                 <Setter Property="VerticalContentAlignment" Value="Stretch"/>
                 <Setter Property="Background" Value="Transparent"/>
@@ -406,27 +407,17 @@
                                             <ToolTip Content="{Binding Description}"
                                                      MaxWidth="260"/>
                                         </Button.ToolTip>
-                                        <Grid>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="*"/>
-                                            </Grid.RowDefinitions>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-
-                                            <Border Grid.Row="0"
-                                                    Grid.Column="0"
-                                                    Width="36"
-                                                    Height="36"
-                                                    CornerRadius="10"
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Border Width="32"
+                                                    Height="32"
+                                                    CornerRadius="8"
                                                     BorderBrush="{DynamicResource ControlElevationBorderBrush}"
                                                     BorderThickness="1"
-                                                    Background="{DynamicResource ControlFillColorSecondaryBrush}">
-                                                <controls:SlotOrb Size="28"
-                                                                  Width="28"
-                                                                  Height="28"
+                                                    Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                                    Margin="0,0,10,0">
+                                                <controls:SlotOrb Size="24"
+                                                                  Width="24"
+                                                                  Height="24"
                                                                   Opacity="1"
                                                                   IsActive="False"
                                                                   IsHitTestVisible="False"
@@ -434,24 +425,10 @@
                                                                   IsTransparent="True"
                                                                   IconKey="{Binding IconKey}"/>
                                             </Border>
-
-                                            <Border Grid.Row="0"
-                                                    Grid.Column="1"
-                                                    HorizontalAlignment="Right"
-                                                    Style="{StaticResource PickerSelectedBadgeStyle}"
-                                                    Margin="6,0,0,0"
-                                                    Visibility="{Binding IsSelected, Converter={StaticResource BoolToVis}}">
-                                                <TextBlock Text="Selected"
-                                                           Style="{StaticResource PickerSelectedBadgeTextStyle}"/>
-                                            </Border>
-
-                                            <TextBlock Grid.Row="1"
-                                                       Grid.ColumnSpan="2"
-                                                       Margin="0,12,0,0"
-                                                       Text="{Binding DisplayName}"
+                                            <TextBlock Text="{Binding DisplayName}"
                                                        Style="{StaticResource PickerItemNameTextStyle}"
-                                                       VerticalAlignment="Top"/>
-                                        </Grid>
+                                                       VerticalAlignment="Center"/>
+                                        </StackPanel>
                                     </Button>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
