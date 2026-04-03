@@ -109,7 +109,9 @@ namespace Pulsar
             serviceCollection.AddSingleton<ITrayService, TrayIconService>();
             serviceCollection.AddSingleton<IThemeService, ThemeService>();
             serviceCollection.AddSingleton<GlobalKeyboardHook>();
+            serviceCollection.AddSingleton<GlobalMouseWheelHook>();
             serviceCollection.AddSingleton<IHotkeyService, HotkeyService>();
+            serviceCollection.AddSingleton<IGlobalMouseWheelService, GlobalMouseWheelService>();
             serviceCollection.AddSingleton<IDialogService, DialogService>();
             
             // Tutorial Service
@@ -293,6 +295,10 @@ namespace Pulsar
             var hotkeyService = Services.GetRequiredService<IHotkeyService>();
             hotkeyService.Initialize();
 
+            // 8.1 Initialize Global Mouse Wheel Service
+            var globalMouseWheelService = Services.GetRequiredService<IGlobalMouseWheelService>();
+            globalMouseWheelService.Initialize();
+
             // [RDP Fix] Apply input configuration to GlobalKeyboardHook
             var keyboardHook = Services.GetRequiredService<GlobalKeyboardHook>();
             Task.Run(async () =>
@@ -366,6 +372,12 @@ namespace Pulsar
                 var trayService = Services.GetService<ITrayService>();
                 trayService?.Dispose();
 
+                var mouseWheelHook = Services.GetService<GlobalMouseWheelHook>();
+                mouseWheelHook?.Dispose();
+
+                var keyboardHook = Services.GetService<GlobalKeyboardHook>();
+                keyboardHook?.Dispose();
+
             }
 
             Log.CloseAndFlush();
@@ -397,9 +409,9 @@ namespace Pulsar
                  Log.Fatal(ex, "Unhandled AppDomain Exception (IsTerminating={IsTerminating})", e.IsTerminating);
                  
                  // [New] Emergency restore system settings before crash
-                 PulsarNative.EmergencyRestore();
-                 
-                 Log.CloseAndFlush();
+                  PulsarNative.EmergencyRestore();
+                  
+                  Log.CloseAndFlush();
              }
         }
     }

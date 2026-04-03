@@ -31,6 +31,7 @@ namespace Pulsar.ViewModels
         private readonly IWindowService _windowService;
         private readonly PluginRegistry _pluginRegistry;
         private readonly IHotkeyService _hotkeyService; // [Clean] Make explicit
+        private readonly IGlobalMouseWheelService _globalMouseWheelService;
         private readonly ITrayService _trayService; // [New]
         private readonly System.IServiceProvider _serviceProvider;
         private readonly ILogger<RadialMenuViewModel>? _logger;
@@ -191,6 +192,7 @@ namespace Pulsar.ViewModels
             IWindowService windowService,
             PluginRegistry pluginRegistry,
             IHotkeyService hotkeyService,
+            IGlobalMouseWheelService globalMouseWheelService,
             ITrayService trayService, // [New]
             System.IServiceProvider serviceProvider,
             ILogger<RadialMenuViewModel>? logger = null)
@@ -199,6 +201,7 @@ namespace Pulsar.ViewModels
             _windowService = windowService;
             _pluginRegistry = pluginRegistry;
             _hotkeyService = hotkeyService;
+            _globalMouseWheelService = globalMouseWheelService;
             _trayService = trayService;
             _serviceProvider = serviceProvider;
             _logger = logger;
@@ -225,6 +228,7 @@ namespace Pulsar.ViewModels
             hotkeyService.RegisterAction("ShowGrid", () => Show(RadialMenuMode.Action));
             hotkeyService.RegisterAction("ShowSwitcher", () => Show(RadialMenuMode.Task));
             hotkeyService.OnGlobalKeyUp += HandleKeyUp;
+            _globalMouseWheelService.OnMouseWheel += HandleGlobalMouseWheel;
 
             _configService.ConfigUpdated += OnConfigUpdated;
             LoadConfigAsync();
@@ -549,8 +553,14 @@ namespace Pulsar.ViewModels
         
         public void HandleMouseWheel(int delta)
         {
-            if (_menuState != MenuState.Root) return;
-            if (_pageProvider == null) return;
+            HandleMouseWheel(delta, treatFeedbackAsHandled: false);
+        }
+
+        public bool HandleMouseWheel(int delta, bool treatFeedbackAsHandled)
+        {
+            if (!IsVisible) return false;
+            if (_menuState != MenuState.Root) return false;
+            if (_pageProvider == null) return false;
 
             // [New] Direction: delta < 0 = scroll down = next page
             int direction = delta < 0 ? 1 : -1;
@@ -564,26 +574,48 @@ namespace Pulsar.ViewModels
             if (totalPages <= 1)
             {
                 ShowSinglePageHint();
-                return;
+                return treatFeedbackAsHandled;
             }
 
             // [New] Handle boundary bounce
             if (targetPage < 0)
             {
                 AnimateBounce(true);  // First page
-                return;
+                return treatFeedbackAsHandled;
             }
             if (targetPage >= totalPages)
             {
                 AnimateBounce(false);  // Last page
-                return;
+                return treatFeedbackAsHandled;
             }
 
             // [Original] Instant page switch (no animation)
             if (direction > 0) _pageProvider.NextPage();
             else _pageProvider.PrevPage();
 
+            _hasShownSinglePageHint = false;
             _pageProvider.RefreshVisuals(Slots, CenterSlot);
+            return true;
+        }
+
+        private void HandleGlobalMouseWheel(ref GlobalMouseWheelEvent e)
+        {
+            bool handled = false;
+            int delta = e.Delta;
+
+            if (System.Windows.Application.Current.Dispatcher.CheckAccess())
+            {
+                handled = HandleMouseWheel(delta, treatFeedbackAsHandled: true);
+            }
+            else
+            {
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    handled = HandleMouseWheel(delta, treatFeedbackAsHandled: true);
+                });
+            }
+
+            e.Handled = handled;
         }
 
         // [New] Mouse Tracking for Physics

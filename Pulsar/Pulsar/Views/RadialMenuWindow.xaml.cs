@@ -77,9 +77,6 @@ namespace Pulsar.Views
             // 4. [New] Handle Mouse Clicks for Drill-Down
             this.MouseLeftButtonUp += (s, e) => _viewModel.HandleLeftClick();
             
-            // 5. [New] Handle Mouse Wheel for Paging
-            this.PreviewMouseWheel += (s, e) => _viewModel.HandleMouseWheel(e.Delta);
-
             // ====================================================
             // 👻 [驻留模式初始化] (Resident Mode Init)
             // ====================================================
