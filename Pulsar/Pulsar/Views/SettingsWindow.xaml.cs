@@ -1,150 +1,173 @@
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using Wpf.Ui.Controls;
-using Pulsar.ViewModels;
-using Pulsar.ViewModels.Settings; // Added
-using Pulsar.Views.Pages;
-using Pulsar.Services.Interfaces;
-using Pulsar.Models;
-using Microsoft.Extensions.Logging;
-
 using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.Extensions.Logging;
 using Pulsar.Core.Messages;
-using System.Windows.Input;
+using Pulsar.Helpers.Tutorial;
+using Pulsar.Models;
+using Pulsar.Models.Settings;
 using Pulsar.Native;
+using Pulsar.Services;
+using Pulsar.Services.Interfaces;
+using Pulsar.ViewModels;
+using Pulsar.ViewModels.Settings;
+using Wpf.Ui.Controls;
 
 namespace Pulsar.Views
 {
     public partial class SettingsWindow : FluentWindow
     {
         private readonly SettingsViewModel _viewModel;
-        private readonly PluginManagerViewModel _pluginManager; // [New]
-        private readonly ExternalPluginManagerViewModel _externalPluginManager; // [External Plugins]
+        private readonly SettingsShellViewModel _shellViewModel;
+        private readonly SettingsPageCatalog _pageCatalog;
+        private readonly SettingsPageFactory _pageFactory;
         private readonly IThemeService _themeService;
         private readonly ILogger<SettingsWindow> _logger;
-        
-        // Manual Page Cache
-        private SettingsGeneralPage? _generalPage;
-        private SettingsSlotsPage? _slotsPage;
-        private SettingsPluginsPage? _pluginsPage; // [New]
-        private SettingsExternalPluginsPage? _externalPluginsPage; // [External Plugins]
-        private SettingsAboutPage? _aboutPage; // [New]
+        private readonly Dictionary<string, Page> _pages = new(StringComparer.OrdinalIgnoreCase);
+        private bool _isClosingProgrammatically;
+        private bool _isApplyingSelection;
 
-        // [Phase 3] Flag to prevent re-entry during programmatic close
-        private bool _isClosingProgrammatically = false;
-
-        // [Tutorial] Expose NavigationView for tutorial system
         public NavigationView GetNavigationView() => RootNavigation;
 
         public SettingsWindow(
             SettingsViewModel viewModel,
-            PluginManagerViewModel pluginManager,
-            ExternalPluginManagerViewModel externalPluginManager,
+            SettingsShellViewModel shellViewModel,
+            SettingsPageCatalog pageCatalog,
+            SettingsPageFactory pageFactory,
+            ISettingsNavigationGuard navigationGuard,
             IThemeService themeService,
             ILogger<SettingsWindow> logger)
         {
             InitializeComponent();
             _viewModel = viewModel;
-            _pluginManager = pluginManager;
-            _externalPluginManager = externalPluginManager;
+            _shellViewModel = shellViewModel;
+            _pageCatalog = pageCatalog;
+            _pageFactory = pageFactory;
             _themeService = themeService;
             _logger = logger;
+
+            if (navigationGuard is SettingsNavigationGuard concreteNavigationGuard)
+            {
+                concreteNavigationGuard.AttachEditor(_viewModel);
+            }
+
             DataContext = viewModel;
 
-            // Subscribe to theme changes
+            BuildNavigationItems();
+
             _themeService.ThemeChanged += OnThemeChanged;
+            _shellViewModel.PropertyChanged += ShellViewModel_PropertyChanged;
 
-            // Subscribe to ViewModel changes for Navigation
-            _viewModel.PropertyChanged += ViewModel_PropertyChanged;
-
-
-            // Subscribe to Snackbar messages
             WeakReferenceMessenger.Default.Register<SnackbarMessage>(this, (r, m) =>
             {
-                // Ensure UI thread
-                System.Windows.Application.Current.Dispatcher.Invoke(() => 
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
                 {
                     var snackbar = new Snackbar(MainSnackbarPresenter)
                     {
-                         Title = m.Title,
-                         Content = m.Content,
-                         Appearance = m.Appearance,
-                         Icon = new SymbolIcon(m.Icon)
+                        Title = m.Title,
+                        Content = m.Content,
+                        Appearance = m.Appearance,
+                        Icon = new SymbolIcon(m.Icon)
                     };
                     snackbar.Show();
                 });
             });
 
-            // [Refactor] Apply Theme immediately to ensure isolation
             _themeService.ApplyTheme(this, _viewModel.SettingsTheme, WindowBackdropType.Mica, updateGlobal: true);
 
-            // Initialize Pages with the shared ViewModel
-            _generalPage = new SettingsGeneralPage(viewModel);
-            _slotsPage = new SettingsSlotsPage(viewModel);
-            _pluginsPage = new SettingsPluginsPage(_pluginManager, _themeService, _externalPluginManager); // [Merged]
-            _externalPluginsPage = new SettingsExternalPluginsPage(_externalPluginManager, _themeService); // [External Plugins]
-            _aboutPage = new SettingsAboutPage(new AboutViewModel()); // [New]
-
-            // [Fix] Apply theme explicitly to pages to fix inheritance issues
-            _themeService.ApplyTheme(_generalPage, _viewModel.SettingsTheme, updateGlobal: false);
-            _themeService.ApplyTheme(_slotsPage, _viewModel.SettingsTheme, updateGlobal: false);
-            _themeService.ApplyTheme(_pluginsPage, _viewModel.SettingsTheme, updateGlobal: false);
-            _themeService.ApplyTheme(_externalPluginsPage, _viewModel.SettingsTheme, updateGlobal: false); // [External Plugins]
-            _themeService.ApplyTheme(_aboutPage, _viewModel.SettingsTheme, updateGlobal: false); // [New]
-
-            this.Loaded += (s, e) =>
-            {
-                // [Fix] Respect ViewModel state on load instead of forcing General
-                // If Frame is empty, perform initial navigation based on current VM state
-                if (RootFrame.Content == null)
-                {
-                    if (_viewModel.CurrentView == "Slots")
-                    {
-                        NavigateWithAnimation(_slotsPage);
-                        if (RootNavigation.MenuItems[1] is NavigationViewItem navItem) navItem.IsActive = true;
-                    }
-                    else if (_viewModel.CurrentView == "Plugins")
-                    {
-                        NavigateWithAnimation(_pluginsPage);
-                        if (RootNavigation.MenuItems[2] is NavigationViewItem navItem) navItem.IsActive = true;
-                    }
-                    else if (_viewModel.CurrentView == "ExternalPlugins" || _viewModel.CurrentView == "Plugins")
-                    {
-                        NavigateWithAnimation(_pluginsPage);
-                        if (RootNavigation.MenuItems[2] is NavigationViewItem navItem) navItem.IsActive = true;
-                    }
-                    else if (_viewModel.CurrentView == "About")
-                    {
-                        NavigateWithAnimation(_aboutPage);
-                        if (RootNavigation.MenuItems[3] is NavigationViewItem navItem) navItem.IsActive = true;
-                    }
-                    else
-                    {
-                        NavigateWithAnimation(_generalPage);
-                        if (RootNavigation.MenuItems[0] is NavigationViewItem navItem) navItem.IsActive = true;
-                    }
-                }
-
-                // [Fix] Force hide scrollbars in NavigationView using VisualTreeHelper
-
-                DisableScrollViewers(RootNavigation);
-            };
-            
-            // [New] Ctrl+S Keyboard Shortcut for Save
-            this.PreviewKeyDown += OnPreviewKeyDown;
-            
-            RootNavigation.SelectionChanged += RootNavigation_SelectionChanged;
+            Loaded += OnLoaded;
+            PreviewKeyDown += OnPreviewKeyDown;
         }
 
-        private void NavigateWithAnimation(Page? page)
+        private void BuildNavigationItems()
         {
-            if (page == null) return;
+            RootNavigation.MenuItems.Clear();
+
+            foreach (var registration in _pageCatalog.Pages)
+            {
+                var item = new NavigationViewItem
+                {
+                    Content = registration.Title,
+                    Tag = registration.Id,
+                    Icon = new SymbolIcon(registration.Icon)
+                };
+
+                item.PreviewMouseLeftButtonUp += NavigationItem_PreviewMouseLeftButtonUp;
+                item.KeyUp += NavigationItem_KeyUp;
+
+                if (!string.IsNullOrWhiteSpace(registration.TutorialMarkerId))
+                {
+                    TutorialMarker.SetId(item, registration.TutorialMarkerId);
+                }
+
+                RootNavigation.MenuItems.Add(item);
+            }
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            NavigateToCurrentShellPage();
+            DisableScrollViewers(RootNavigation);
+        }
+
+        private void ShellViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(SettingsShellViewModel.CurrentPageId))
+            {
+                NavigateToCurrentShellPage();
+            }
+        }
+
+        private void NavigateToCurrentShellPage()
+        {
+            var pageId = _shellViewModel.CurrentPageId;
+            if (!_pageCatalog.TryGetRegistration(pageId, out var registration))
+            {
+                _logger.LogWarning("[SettingsWindow] No registration found for shell page '{PageId}'", pageId);
+                return;
+            }
+
+            if (!_pages.TryGetValue(registration.Id, out var page))
+            {
+                page = _pageFactory.CreatePage(registration.Id);
+                _pages[registration.Id] = page;
+                _themeService.ApplyTheme(page, _viewModel.SettingsTheme, updateGlobal: false);
+            }
+
+            NavigateWithAnimation(page);
+            ApplySelectedNavigationItem(registration.Id);
+        }
+
+        private void ApplySelectedNavigationItem(string pageId)
+        {
+            _isApplyingSelection = true;
+            try
+            {
+                foreach (var item in RootNavigation.MenuItems.OfType<NavigationViewItem>())
+                {
+                    item.IsActive = string.Equals(item.Tag?.ToString(), pageId, StringComparison.OrdinalIgnoreCase);
+                    if (item.IsActive)
+                    {
+                    }
+                }
+            }
+            finally
+            {
+                _isApplyingSelection = false;
+            }
+        }
+
+        private void NavigateWithAnimation(Page page)
+        {
             RootFrame.Navigate(page);
 
-            // Entrance animation: slide up from below + fade in
             page.Opacity = 0;
             page.RenderTransform = new TranslateTransform(0, 20);
             page.RenderTransformOrigin = new System.Windows.Point(0.5, 0.5);
@@ -161,189 +184,107 @@ namespace Pulsar.Views
 
         private void DisableScrollViewers(DependencyObject depObj)
         {
-            if (depObj == null) return;
-
-            for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(depObj); i++)
+            if (depObj == null)
             {
-                var child = System.Windows.Media.VisualTreeHelper.GetChild(depObj, i);
+                return;
+            }
+
+            for (var i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++)
+            {
+                var child = VisualTreeHelper.GetChild(depObj, i);
                 if (child is ScrollViewer scrollViewer)
                 {
                     scrollViewer.VerticalScrollBarVisibility = ScrollBarVisibility.Hidden;
                     scrollViewer.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
                 }
+
                 DisableScrollViewers(child);
             }
         }
 
-        // [New] Keyboard Shortcut Handler
-        private void OnPreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        private void OnPreviewKeyDown(object sender, KeyEventArgs e)
         {
-            // Ctrl+S: Save
-            if (e.Key == System.Windows.Input.Key.S && System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.Control)
+            if (e.Key == Key.S && Keyboard.Modifiers == ModifierKeys.Control && _viewModel.SaveCommand.CanExecute(null))
             {
-                if (_viewModel.SaveCommand.CanExecute(null))
-                {
-                    _viewModel.SaveCommand.Execute(null);
-                    e.Handled = true;
-                }
+                _viewModel.SaveCommand.Execute(null);
+                e.Handled = true;
             }
         }
 
-        private void ViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        private async void NavigationItem_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-             if (e.PropertyName == nameof(SettingsViewModel.CurrentView))
-             {
-                 // [Fix] Robust Navigation State Synchronization
-                 // Map ViewModel ViewName to UI Tag
-                 // ViewModel: "Settings", "Slots", "Plugins", "About"
-                 // UI Tags: "General", "Slots", "Plugins", "About"
-                 
-                  string targetTag = _viewModel.CurrentView;
-                  if (targetTag == "Settings") targetTag = "General";
-                  if (targetTag == "ExternalPlugins") targetTag = "Plugins";
+            if (_isApplyingSelection)
+            {
+                return;
+            }
 
-                 bool found = false;
+            if (sender is NavigationViewItem item)
+            {
+                await _shellViewModel.NavigateAsync(item.Tag?.ToString(), userInitiated: true);
+            }
+        }
 
-                 // 1. Iterate Main Menu Items
-                 foreach (var item in RootNavigation.MenuItems)
-                 {
-                     if (item is NavigationViewItem navItem)
-                     {
-                         bool isMatch = navItem.Tag?.ToString() == targetTag;
-                         if (isMatch)
-                         {
-                             // Activate visual state
-                             navItem.IsActive = true; 
-                              // Perform actual navigation
-                               if (targetTag == "General") NavigateWithAnimation(_generalPage);
-                                else if (targetTag == "Slots") NavigateWithAnimation(_slotsPage);
-                                else if (targetTag == "Plugins") NavigateWithAnimation(_pluginsPage);
-                                else if (targetTag == "About") NavigateWithAnimation(_aboutPage);
-                               found = true;
-                         }
+        private async void NavigationItem_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (_isApplyingSelection)
+            {
+                return;
+            }
 
-                         else
-                         {
-                             // Deactivate others to prevent "double selection" ghosting
-                             navItem.IsActive = false;
-                         }
-                     }
-                 }
-                 
-                   if (!found)
-                  {
-                      // Fallback safety
-                      _logger.LogWarning("[SettingsWindow] Target view '{TargetTag}' not found in menu items.", targetTag);
-                  }
-              }
+            if (e.Key != Key.Enter && e.Key != Key.Space)
+            {
+                return;
+            }
+
+            if (sender is NavigationViewItem item)
+            {
+                await _shellViewModel.NavigateAsync(item.Tag?.ToString(), userInitiated: true);
+                e.Handled = true;
+            }
         }
 
         private void OnThemeChanged(object? sender, AppTheme theme)
         {
-            // Re-apply theme to pages when global theme changes
-            if (_generalPage != null) _themeService.ApplyTheme(_generalPage, theme, updateGlobal: false);
-            if (_slotsPage != null) _themeService.ApplyTheme(_slotsPage, theme, updateGlobal: false);
-            if (_pluginsPage != null) _themeService.ApplyTheme(_pluginsPage, theme, updateGlobal: false); // [New]
-            if (_externalPluginsPage != null) _themeService.ApplyTheme(_externalPluginsPage, theme, updateGlobal: false); // [kept for compat, page now embedded in PluginsPage tab]
-            if (_aboutPage != null) _themeService.ApplyTheme(_aboutPage, theme, updateGlobal: false); // [New]
+            foreach (var page in _pages.Values)
+            {
+                _themeService.ApplyTheme(page, theme, updateGlobal: false);
+            }
         }
 
-        private void RootNavigation_SelectionChanged(NavigationView sender, RoutedEventArgs args)
-        {
-             if (sender.SelectedItem is NavigationViewItem item)
-             {
-                 if (item.Tag?.ToString() == "General")
-                 {
-                     NavigateWithAnimation(_generalPage);
-                     _viewModel.CurrentView = "Settings";
-                 }
-                 else if (item.Tag?.ToString() == "Slots")
-                 {
-                     NavigateWithAnimation(_slotsPage);
-                     _viewModel.CurrentView = "Slots";
-                 }
-                   else if (item.Tag?.ToString() == "Plugins")
-                    {
-                        NavigateWithAnimation(_pluginsPage);
-                        _viewModel.CurrentView = "Plugins";
-                    }
-                    else if (item.Tag?.ToString() == "About")
-                  {
-                      NavigateWithAnimation(_aboutPage);
-                      _viewModel.CurrentView = "About";
-                  }
-             }
-        }
-
-        // [Fix] Lifecycle Management: Allow Close to reset state (Transient behavior)
         protected override void OnClosed(EventArgs e)
         {
-            // Unsubscribe from events to prevent memory leaks in Singleton services
-            if (_themeService != null)
+            _themeService.ThemeChanged -= OnThemeChanged;
+            _shellViewModel.PropertyChanged -= ShellViewModel_PropertyChanged;
+
+            foreach (var item in RootNavigation.MenuItems.OfType<NavigationViewItem>())
             {
-                _themeService.ThemeChanged -= OnThemeChanged;
+                item.PreviewMouseLeftButtonUp -= NavigationItem_PreviewMouseLeftButtonUp;
+                item.KeyUp -= NavigationItem_KeyUp;
             }
-            
-            // Clean up resources
-            _generalPage = null;
-            _slotsPage = null;
-            _pluginsPage = null;
-            _externalPluginsPage = null;
-            _aboutPage = null;
-            
-            // Trigger GC to clean up the Transient ViewModel and Pages
+
+            _pages.Clear();
             TrimMemory();
-            
             base.OnClosed(e);
         }
 
-        // [Phase 3] Intercept window closing to check for unsaved changes
-        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        protected override void OnClosing(CancelEventArgs e)
         {
-            // Prevent re-entry if we're closing programmatically
             if (_isClosingProgrammatically)
             {
                 base.OnClosing(e);
                 return;
             }
 
-            if (_viewModel.HasUnsavedChanges)
+            e.Cancel = true;
+            _ = System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
             {
-                // Cancel the close temporarily
-                e.Cancel = true;
-
-                // Show confirmation dialog asynchronously without blocking
-                System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                if (await _shellViewModel.CanCloseAsync())
                 {
-                    var result = await _viewModel.ShowUnsavedChangesDialogAsync();
-
-                    if (result == Pulsar.Models.Enums.DialogResult.Confirmed)
-                    {
-                        // User chose "Save" - save and then close
-                        await _viewModel.SaveCommand.ExecuteAsync(null);
-                        // Close programmatically
-                        _isClosingProgrammatically = true;
-                        _viewModel.HasUnsavedChanges = false;
-                        this.Close();
-                    }
-                    else if (result == Pulsar.Models.Enums.DialogResult.No)
-                    {
-                        // User chose "Don't Save" - discard changes and close
-                        _isClosingProgrammatically = true;
-                        _viewModel.HasUnsavedChanges = false;
-                        this.Close();
-                    }
-                    // else: User chose "Cancel" - do nothing (window stays open)
-                });
-            }
-            else
-            {
-                base.OnClosing(e);
-            }
+                    _isClosingProgrammatically = true;
+                    Close();
+                }
+            });
         }
-
-        // Removed OnClosing override that forced Hide()
-        // protected override void OnClosing(System.ComponentModel.CancelEventArgs e) ...
 
         private void TrimMemory()
         {
@@ -351,16 +292,14 @@ namespace Pulsar.Views
             {
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
-                
-                // -1, -1 tells the OS to swap out the process memory to disk
+
                 if (Environment.OSVersion.Platform == PlatformID.Win32NT)
                 {
                     PulsarNative.SetProcessWorkingSetSize(PulsarNative.GetCurrentProcess(), new IntPtr(-1), new IntPtr(-1));
                 }
             }
-            catch 
+            catch
             {
-                // Optimization only - ignore failures
             }
         }
     }

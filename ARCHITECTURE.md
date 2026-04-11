@@ -210,6 +210,14 @@ SendKeys.SendWait(password);
 
 Configuration is static to ensure muscle memory.
 
+### 4.1 Business Config vs Local UI Preferences
+
+Pulsar now separates business configuration from device-local shell preferences.
+
+- `Profiles.json` remains the source of truth for business configuration such as profiles, slots, themes, hotkeys, and runtime behavior.
+- `LocalUiPreferences.json` stores best-effort UI-only state such as the last-opened settings page.
+- Missing or invalid local UI preference data must never block startup or settings navigation; the application falls back to safe defaults.
+
 ### Profiles.json Structure
 
 ```json
@@ -238,6 +246,46 @@ Configuration is static to ensure muscle memory.
 ---
 
 ## 5. Key Architectural Decisions
+
+### ADR-003: Dedicated Settings Shell
+
+**Decision**: Settings navigation is owned by a dedicated shell layer built from `SettingsPageCatalog`, `SettingsShellViewModel`, and `SettingsWindow`, while `SettingsViewModel` remains focused on configuration editing state and workflows.
+
+**Rationale**:
+- Removes page-selection responsibilities from the main editor ViewModel.
+- Centralizes page identifiers and metadata in one registration source.
+- Allows shell-driven restoration of the last-opened page without expanding `Profiles.json`.
+
+**Consequences**:
+- New settings pages must be added through the centralized page catalog.
+- `SettingsWindow` navigates by stable page IDs instead of scattered XAML tags.
+- Dirty-state enforcement is coordinated by the shell, but truth remains inside `SettingsViewModel`.
+
+### ADR-004: Staged Startup Coordination
+
+**Decision**: Application startup is coordinated through `IAppStartupCoordinator`, with conservative blocking initialization and isolated deferred warm-up work.
+
+**Blocking startup responsibilities**:
+- plugin loading
+- configuration validation pipeline setup
+- logging level application
+- process registry initialization
+- tray initialization
+- radial menu window creation
+- hotkey and mouse wheel service readiness
+- keyboard hook input-mode configuration
+
+**Deferred startup responsibilities**:
+- tutorial resume/start checks after the core shell is already ready
+
+**Rationale**:
+- Makes startup policy explicit instead of leaving it implicit in `App.xaml.cs` ordering.
+- Preserves readiness for plugins, tray services, hotkeys, and input hooks.
+- Keeps deferred failures isolated to logging rather than startup failure.
+
+**Consequences**:
+- `App.xaml.cs` remains the composition root, but not the detailed startup sequencer.
+- New startup work must be classified as blocking or deferred before being added.
 
 ### ADR-001: Plugin Metadata System
 

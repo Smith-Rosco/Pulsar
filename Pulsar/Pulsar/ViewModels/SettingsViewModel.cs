@@ -90,6 +90,7 @@ namespace Pulsar.ViewModels
         private readonly ISecretProtector _secretProtector;
         private readonly IPkiSecretMetadataResolver _secretMetadataResolver;
         private readonly IPluginMetadataRegistry _pluginMetadataRegistry;
+        private readonly SettingsShellViewModel _settingsShell;
         private readonly ILogger<SettingsViewModel> _logger;
         private ProfilesConfig _config;
 
@@ -98,20 +99,17 @@ namespace Pulsar.ViewModels
         private const int DragOverThrottleMs = 50; // Throttle DragOver to max 20 times per second
         private CancellationTokenSource? _notificationDebounceToken;
 
-        [ObservableProperty]
-        [NotifyPropertyChangedFor(nameof(IsSettingsView))]
-        [NotifyPropertyChangedFor(nameof(IsSlotsView))]
-        private string _currentView = "Settings";
+        public string CurrentView => _settingsShell.CurrentLegacyViewName;
 
-        public bool IsSettingsView => CurrentView == "Settings";
-        public bool IsSlotsView => CurrentView == "Slots";
+        public bool IsSettingsView => string.Equals(CurrentView, "Settings", StringComparison.OrdinalIgnoreCase);
+        public bool IsSlotsView => string.Equals(CurrentView, "Slots", StringComparison.OrdinalIgnoreCase);
 
         [RelayCommand]
-        public void SwitchView(string viewName)
+        public async Task SwitchView(string viewName)
         {
-            if (CurrentView != viewName)
+            if (_settingsShell.TryResolvePageIdFromLegacyViewName(viewName, out var pageId))
             {
-                CurrentView = viewName;
+                await _settingsShell.NavigateAsync(pageId, userInitiated: true);
             }
         }
 
@@ -180,6 +178,11 @@ namespace Pulsar.ViewModels
                 Models.Enums.DialogButtons.SaveDontSaveCancel
             );
             return result;
+        }
+
+        public Task DiscardUnsavedChangesAsync()
+        {
+            return LoadSettings();
         }
 
         private ProfileSettings _generalSettings = new ProfileSettings();
@@ -321,6 +324,7 @@ namespace Pulsar.ViewModels
             ISecretProtector secretProtector,
             IPkiSecretMetadataResolver secretMetadataResolver,
             IPluginMetadataRegistry pluginMetadataRegistry,
+            SettingsShellViewModel settingsShell,
             ILogger<SettingsViewModel> logger,
             IProcessRegistryService? processRegistryService = null)
         {
@@ -334,9 +338,11 @@ namespace Pulsar.ViewModels
             _secretProtector = secretProtector;
             _secretMetadataResolver = secretMetadataResolver;
             _pluginMetadataRegistry = pluginMetadataRegistry;
+            _settingsShell = settingsShell;
             _logger = logger;
             _processRegistryService = processRegistryService;
             _config = new ProfilesConfig();
+            _settingsShell.PropertyChanged += OnSettingsShellPropertyChanged;
             Initialize();
 
             // Load cache statistics
@@ -346,7 +352,7 @@ namespace Pulsar.ViewModels
             WeakReferenceMessenger.Default.Register<OpenSettingsMessage>(this, (r, m) =>
             {
                 // Ensure UI Thread
-                System.Windows.Application.Current.Dispatcher.Invoke(async () =>
+                _ = System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
                 {
                     // 0. RELOAD SETTINGS (Discard previous unsaved changes)
                     await LoadSettings();
@@ -367,10 +373,20 @@ namespace Pulsar.ViewModels
                     // 3. Switch View
                     if (!string.IsNullOrEmpty(m.ViewName))
                     {
-                        SwitchView(m.ViewName);
+                        await SwitchView(m.ViewName);
                     }
                 });
             });
+        }
+
+        private void OnSettingsShellPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(SettingsShellViewModel.CurrentPageId))
+            {
+                OnPropertyChanged(nameof(CurrentView));
+                OnPropertyChanged(nameof(IsSettingsView));
+                OnPropertyChanged(nameof(IsSlotsView));
+            }
         }
 
         private async void Initialize()

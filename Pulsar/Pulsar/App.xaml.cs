@@ -20,9 +20,9 @@ using Serilog.Core;
 using Serilog.Events;
 using Microsoft.Extensions.Logging;
 
-using System.Windows.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Windows.Threading;
 
 namespace Pulsar
 {
@@ -108,6 +108,10 @@ namespace Pulsar
             serviceCollection.AddSingleton<IWindowService, WindowService>();
             serviceCollection.AddSingleton<ITrayService, TrayIconService>();
             serviceCollection.AddSingleton<IThemeService, ThemeService>();
+            serviceCollection.AddSingleton<ILocalUiPreferencesService, LocalUiPreferencesService>();
+            serviceCollection.AddSingleton<ISettingsNavigationGuard, SettingsNavigationGuard>();
+            serviceCollection.AddSingleton<SettingsPageCatalog>();
+            serviceCollection.AddSingleton<IAppStartupCoordinator, AppStartupCoordinator>();
             serviceCollection.AddSingleton<GlobalKeyboardHook>();
             serviceCollection.AddSingleton<GlobalMouseWheelHook>();
             serviceCollection.AddSingleton<IHotkeyService, HotkeyService>();
@@ -170,7 +174,10 @@ namespace Pulsar
             serviceCollection.AddSingleton<RadialMenuWindow>();
             
             // [Fix] Register SettingsViewModel as Transient for fresh state on every open
+            serviceCollection.AddTransient<AboutViewModel>();
+            serviceCollection.AddTransient<SettingsShellViewModel>();
             serviceCollection.AddTransient<SettingsViewModel>();
+            serviceCollection.AddTransient<SettingsPageFactory>();
             
             // [New] Plugin Management UI
             serviceCollection.AddTransient<PluginManagerViewModel>();
@@ -233,119 +240,20 @@ namespace Pulsar
             Pulsar.Plugins.Extensions.VbaRunner.ComConnectionManager.Initialize(loggerFactory);
             Pulsar.Plugins.Extensions.VbaRunner.VbaModuleInjector.Initialize(loggerFactory);
 
-            // ================================================
-            // 5. Initialize Plugin System
-            // ================================================
-            var pluginRegistry = Services.GetRequiredService<PluginRegistry>();
-            
-            // Load plugins asynchronously (blocks startup, but ensures plugins are ready)
-            Task.Run(async () => await pluginRegistry.LoadAllAsync()).GetAwaiter().GetResult();
-
-            // [New] Setup validation pipeline for ConfigService
-            var configService = Services.GetRequiredService<IConfigService>();
-            var validationPipeline = Services.GetRequiredService<Services.Validation.ConfigValidationPipeline>();
-            if (configService is ConfigService concreteConfigService)
-            {
-                concreteConfigService.SetValidationPipeline(validationPipeline);
-                Log.Information("Validation pipeline configured for ConfigService");
-            }
-
-            // [New] Apply logging configuration from Profiles.json
-            Task.Run(async () =>
+            var startupCoordinator = Services.GetRequiredService<IAppStartupCoordinator>();
+            Dispatcher.BeginInvoke(async () =>
             {
                 try
                 {
-                    var config = await configService.LoadAsync();
-                    if (config?.Settings?.Logging != null)
-                    {
-                        var loggingSettings = config.Settings.Logging;
-                        
-                        // Update log level
-                        if (Enum.TryParse<LogEventLevel>(loggingSettings.MinimumLevel, true, out var logLevel))
-                        {
-                            levelSwitch.MinimumLevel = logLevel;
-                            Log.Information("Log level updated from config: {Level}", logLevel);
-                        }
-                        
-                        // Note: Retention days and file size limits are applied at logger creation time
-                        // To change them dynamically would require recreating the logger
-                        // For now, they will take effect on next application restart
-                    }
+                    await startupCoordinator.RunBlockingInitializationAsync();
+                    startupCoordinator.StartDeferredInitialization();
                 }
                 catch (Exception ex)
                 {
-                    Log.Warning(ex, "Failed to apply logging configuration from Profiles.json, using defaults");
+                    Log.Fatal(ex, "Blocking startup initialization failed");
+                    Shutdown();
                 }
-            }).GetAwaiter().GetResult();
-
-            // [New] Initialize ProcessRegistryService (migrate from legacy config)
-            var processRegistryService = Services.GetRequiredService<IProcessRegistryService>();
-            Task.Run(async () => await processRegistryService.InitializeAsync()).GetAwaiter().GetResult();
-            Log.Information("ProcessRegistryService initialized");
-
-            // 6. Start Services
-            var trayService = Services.GetRequiredService<ITrayService>();
-            trayService.Initialize();
-
-            // 7. Warm up Main Window
-            var mainWindow = Services.GetRequiredService<RadialMenuWindow>();
-            mainWindow.Show();
-
-            // 8. Initialize Hotkey Service
-            var hotkeyService = Services.GetRequiredService<IHotkeyService>();
-            hotkeyService.Initialize();
-
-            // 8.1 Initialize Global Mouse Wheel Service
-            var globalMouseWheelService = Services.GetRequiredService<IGlobalMouseWheelService>();
-            globalMouseWheelService.Initialize();
-
-            // [RDP Fix] Apply input configuration to GlobalKeyboardHook
-            var keyboardHook = Services.GetRequiredService<GlobalKeyboardHook>();
-            Task.Run(async () =>
-            {
-                var config = await configService.LoadAsync();
-                if (config?.Settings?.Input != null)
-                {
-                    keyboardHook.UseHybridMode = config.Settings.Input.IsHybridMode;
-                    Log.Information("GlobalKeyboardHook configured: ModifierStateMode={Mode}", 
-                        config.Settings.Input.ModifierStateMode);
-                }
-                else
-                {
-                    // Default to Hybrid mode if no config
-                    keyboardHook.UseHybridMode = true;
-                    Log.Information("GlobalKeyboardHook using default Hybrid mode");
-                }
-            }).GetAwaiter().GetResult();
-
-            // 9. Check for first launch and start tutorial (must run on UI thread)
-            Dispatcher.InvokeAsync(async () =>
-            {
-                try
-                {
-                    var config = await configService.LoadAsync();
-                    if (!config.Settings.HasCompletedTutorial)
-                    {
-                        Log.Information("First launch detected, starting tutorial");
-                        
-                        // Wait for UI to initialize
-                        await Task.Delay(1500);
-                        
-                         var tutorialService = Services.GetRequiredService<ITutorialService>();
-                         // Prefer resuming an incomplete tutorial when possible.
-                         await tutorialService.CheckResumeAsync();
-
-                         if (!tutorialService.IsTutorialActive)
-                         {
-                             await tutorialService.StartTutorialAsync();
-                         }
-                     }
-                 }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Failed to start tutorial");
-                }
-            });
+            }, DispatcherPriority.Loaded);
 
         }
 

@@ -1,5 +1,6 @@
 using Pulsar.ViewModels.Settings;
 using Pulsar.Services.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Windows;
 using System.Windows.Controls;
@@ -33,6 +34,14 @@ namespace Pulsar.Views.Pages
     public partial class SettingsPluginsPage : Page
     {
         private readonly ExternalPluginManagerViewModel? _externalPluginManager;
+
+        public SettingsPluginsPage()
+            : this(
+                App.Current.Services.GetRequiredService<PluginManagerViewModel>(),
+                App.Current.Services.GetRequiredService<IThemeService>(),
+                App.Current.Services.GetRequiredService<ExternalPluginManagerViewModel>())
+        {
+        }
 
         public SettingsPluginsPage(PluginManagerViewModel viewModel, IThemeService themeService,
             ExternalPluginManagerViewModel? externalPluginManager = null)
