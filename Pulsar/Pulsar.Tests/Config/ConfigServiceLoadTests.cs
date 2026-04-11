@@ -218,6 +218,7 @@ namespace Pulsar.Tests.Config
             resetConfig.Profiles["Global"].CommandMode.Should().NotBeEmpty();
             resetConfig.Settings.HasCompletedTutorial.Should().BeFalse();
             resetConfig.Settings.LastTutorialStep.Should().BeNull();
+            resetConfig.Settings.OnboardingState.Should().Be("NotStarted");
             resetConfig.Settings.HasCompletedInitialDetection.Should().BeFalse();
             resetConfig.Settings.ConfigCreatedAt.Should().NotBeNull();
         }
@@ -242,6 +243,7 @@ namespace Pulsar.Tests.Config
             persistedConfig.Profiles["Global"].SwitchMode.Should().NotBeEmpty();
             persistedConfig.Settings.HasCompletedTutorial.Should().BeFalse();
             persistedConfig.Settings.LastTutorialStep.Should().BeNull();
+            persistedConfig.Settings.OnboardingState.Should().Be("NotStarted");
         }
 
         [Fact]

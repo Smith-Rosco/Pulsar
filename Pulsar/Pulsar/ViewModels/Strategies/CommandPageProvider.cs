@@ -7,6 +7,7 @@ using Pulsar.Models;
 using Pulsar.Helpers;
 using Pulsar.Core.Plugin;
 using Pulsar.Services; // Added
+using Pulsar.Services.ActionFeedback;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels;
 
@@ -18,6 +19,7 @@ namespace Pulsar.ViewModels.Strategies
         private readonly PluginRegistry _pluginRegistry;
         private readonly PulsarContext _context;
         private readonly ITrayService _trayService;
+        private readonly IActionFeedbackService _feedbackService;
 
         private readonly IServiceProvider _serviceProvider;
 
@@ -36,6 +38,7 @@ namespace Pulsar.ViewModels.Strategies
             _pluginRegistry = pluginRegistry;
             _context = context;
             _trayService = trayService;
+            _feedbackService = (IActionFeedbackService)serviceProvider.GetService(typeof(IActionFeedbackService))!;
             _serviceProvider = serviceProvider;
         }
 
@@ -88,7 +91,7 @@ namespace Pulsar.ViewModels.Strategies
                     
                     if (isEnabled)
                     {
-                        slot.ActionStrategy = new PluginActionStrategy(item, _pluginRegistry, _context, _trayService);
+                        slot.ActionStrategy = new PluginActionStrategy(item, _pluginRegistry, _context, _trayService, _feedbackService);
                     }
                     else
                     {

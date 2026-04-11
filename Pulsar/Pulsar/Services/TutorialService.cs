@@ -84,7 +84,7 @@ namespace Pulsar.Services
         private void OnOrchestratorSkipped(object? sender, EventArgs e)
         {
             _isTutorialActive = false;
-            HasCompletedTutorial = true;
+            HasCompletedTutorial = false;
             _previousStep = null;
             TutorialSkipped?.Invoke(this, EventArgs.Empty);
         }
@@ -166,7 +166,7 @@ namespace Pulsar.Services
 
             // Best-effort state sync (orchestrator also raises TutorialSkipped).
             _isTutorialActive = false;
-            HasCompletedTutorial = true;
+            HasCompletedTutorial = false;
             _previousStep = null;
         }
 
@@ -210,7 +210,8 @@ namespace Pulsar.Services
             var config = _configService.Current;
             
             if (!config.Settings.HasCompletedTutorial 
-                && !string.IsNullOrEmpty(config.Settings.LastTutorialStep))
+                && !string.IsNullOrEmpty(config.Settings.LastTutorialStep)
+                && !string.Equals(config.Settings.LastTutorialStep, "Skipped", StringComparison.OrdinalIgnoreCase))
             {
                 _logger.LogInformation("Detected incomplete tutorial: {StepId}", 
                     config.Settings.LastTutorialStep);

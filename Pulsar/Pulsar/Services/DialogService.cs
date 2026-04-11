@@ -65,6 +65,16 @@ namespace Pulsar.Services
             DialogButtons buttons,
             DialogSizeConstraints sizeConstraints)
         {
+            return await ShowCustomAsync(title, content, buttons, sizeConstraints, null);
+        }
+
+        public async Task<Pulsar.Models.Enums.DialogResult> ShowCustomAsync<TViewModel>(
+            string title, 
+            TViewModel content, 
+            DialogButtons buttons,
+            DialogSizeConstraints sizeConstraints,
+            AppTheme? themeOverride)
+        {
             return await RunOnUi(() =>
             {
                 var vm = new DialogHostViewModel
@@ -77,11 +87,10 @@ namespace Pulsar.Services
                     dialogVm.RequestClose = (result) => vm.CloseCommand.Execute(result);
                 }
 
-                // ConfigureButtons first so wizard SyncFromWizard (triggered by Content setter) wins
                 vm.ConfigureButtons(buttons);
                 vm.Content = content;
 
-                return ShowDialogInternal(vm, DialogPlacement.CenterOwner, sizeConstraints);
+                return ShowDialogInternal(vm, DialogPlacement.CenterOwner, sizeConstraints, WindowBackdropType.Mica, themeOverride);
             });
         }
 
@@ -306,13 +315,14 @@ namespace Pulsar.Services
             DialogHostWindow window, 
             DialogPlacement placement = DialogPlacement.CenterOwner,
             DialogSizeConstraints? sizeConstraints = null,
-            WindowBackdropType backdrop = WindowBackdropType.Mica)
+            WindowBackdropType backdrop = WindowBackdropType.Mica,
+            AppTheme? themeOverride = null)
         {
             // Use default constraints if none provided
             var constraints = sizeConstraints ?? DialogSizeConstraints.Default;
 
-            // 1. Apply theme (inferred from context)
-            var theme = InferThemeFromContext();
+            // 1. Apply theme (use override if provided, otherwise infer from context)
+            var theme = themeOverride ?? InferThemeFromContext();
             _themeService.ApplyTheme(window, theme, backdrop, updateGlobal: false);
 
             // 2. Apply size constraints
@@ -330,7 +340,8 @@ namespace Pulsar.Services
             DialogHostViewModel viewModel,
             DialogPlacement placement = DialogPlacement.CenterOwner,
             DialogSizeConstraints? sizeConstraints = null,
-            WindowBackdropType backdrop = WindowBackdropType.Mica)
+            WindowBackdropType backdrop = WindowBackdropType.Mica,
+            AppTheme? themeOverride = null)
         {
             // Create window without DI (no longer needs IThemeService injection)
             var window = new DialogHostWindow();
@@ -346,7 +357,7 @@ namespace Pulsar.Services
             };
 
             // Apply all window configurations (theme, placement, size, resize behavior)
-            PrepareWindow(window, placement, sizeConstraints, backdrop);
+            PrepareWindow(window, placement, sizeConstraints, backdrop, themeOverride);
 
             window.ShowDialog();
 

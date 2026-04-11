@@ -223,12 +223,4 @@ namespace Pulsar.Services
         private static double Lerp(double start, double end, double t) => start + (end - start) * t;
     }
 
-    public class SlotAnimationTarget
-    {
-        public double CenterX { get; set; }
-        public double CenterY { get; set; }
-        public double DesiredOffsetX { get; set; }
-        public double DesiredOffsetY { get; set; }
-        public Action<double, double>? ApplyOffset { get; set; }
-    }
 }

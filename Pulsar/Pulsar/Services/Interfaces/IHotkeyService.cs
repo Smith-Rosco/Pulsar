@@ -5,7 +5,7 @@ namespace Pulsar.Services.Interfaces
 {
     public interface IHotkeyService
     {
-        void Initialize();
+        Task InitializeAsync();
         void RegisterAction(string actionId, Action callback);
         void UnregisterAction(string actionId);
         void UpdateHotkey(string actionId, HotkeyConfig newHotkey);

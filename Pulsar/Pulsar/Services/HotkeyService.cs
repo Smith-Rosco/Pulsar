@@ -40,7 +40,7 @@ namespace Pulsar.Services
             _pressedKeys.Clear();
         }
 
-        public async void Initialize()
+        public async Task InitializeAsync()
         {
             _config = await _configService.LoadAsync();
             if (_config == null) return;

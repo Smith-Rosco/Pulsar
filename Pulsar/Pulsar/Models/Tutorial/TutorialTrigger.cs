@@ -20,6 +20,7 @@ namespace Pulsar.Models.Tutorial
         /// - PageNavigated: 页面类型名称 (e.g., "SettingsSlotsPage")
         /// - NavigationItemClicked: 导航项 Tag (e.g., "Slots")
         /// - RadialMenuShown: 模式类型 ("Task" 或 "Action")
+        /// - ActionExecuted: 动作类型 ("Switch" 或 "Command")
         /// - SlotAdded: JSON 格式的匹配条件（支持部分匹配）
         ///   示例：{"PluginId":"com.pulsar.winswitcher","Profile":"Global"}
         ///   可选字段：PluginId, Profile, Mode, Parameters
@@ -57,6 +58,11 @@ namespace Pulsar.Models.Tutorial
         /// 热键按下
         /// </summary>
         HotkeyPressed,
+
+        /// <summary>
+        /// 成功执行了一个用户动作
+        /// </summary>
+        ActionExecuted,
 
         /// <summary>
         /// 轮盘菜单显示

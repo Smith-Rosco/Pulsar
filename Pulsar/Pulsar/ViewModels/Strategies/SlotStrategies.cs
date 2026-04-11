@@ -2,10 +2,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using CommunityToolkit.Mvvm.Messaging;
 using Pulsar.Core.Plugin;
+using Pulsar.Core.Messages;
 using Pulsar.Models;
 using Pulsar.Native;
 using Pulsar.Services;
+using Pulsar.Services.ActionFeedback;
 using Pulsar.Services.Interfaces; // [New]
 using System.Windows.Forms; // [New] For ToolTipIcon
 
@@ -37,17 +40,20 @@ namespace Pulsar.ViewModels.Strategies
         private readonly PluginRegistry _registry;
         private readonly PulsarContext _pulsarContext;
         private readonly ITrayService _trayService; // [New]
+        private readonly IActionFeedbackService _feedbackService;
 
         public PluginActionStrategy(
             PluginSlot pluginSlot, 
             PluginRegistry registry, 
             PulsarContext pulsarContext,
-            ITrayService trayService) // [New]
+            ITrayService trayService,
+            IActionFeedbackService feedbackService)
         {
             _pluginSlot = pluginSlot;
             _registry = registry;
             _pulsarContext = pulsarContext;
             _trayService = trayService;
+            _feedbackService = feedbackService;
         }
 
         public async Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context)
@@ -62,14 +68,33 @@ namespace Pulsar.ViewModels.Strategies
             System.Diagnostics.Debug.WriteLine($"[PluginActionStrategy] Executing: PluginId={_pluginSlot.PluginId}, Action='{_pluginSlot.Action}', Args={string.Join(", ", _pluginSlot.Args.Select(kv => $"{kv.Key}={kv.Value}"))}");
             var result = await _registry.ExecuteAsync(_pluginSlot.PluginId, _pluginSlot.Action, _pluginSlot.Args, _pulsarContext);
 
+            if (result.Success)
+            {
+                WeakReferenceMessenger.Default.Send(new ActionExecutionMessage(
+                    TutorialActionKind.Command,
+                    _pluginSlot.PluginId,
+                    _pluginSlot.Action,
+                    success: true));
+            }
+
             // [New] Elegant Error Handling
             if (!result.Success)
             {
+                var feedback = _feedbackService.Create(_pluginSlot.PluginId, _pluginSlot.Action, result);
+
                 // Audio Feedback
-                System.Media.SystemSounds.Hand.Play();
+                if (feedback.Kind == ActionFeedbackKind.ConfigurationError
+                    || feedback.Kind == ActionFeedbackKind.TemporaryUnavailable)
+                {
+                    System.Media.SystemSounds.Exclamation.Play();
+                }
+                else
+                {
+                    System.Media.SystemSounds.Hand.Play();
+                }
 
                 // Visual Feedback (Notification)
-                _trayService.ShowNotification("操作失败", result.Message ?? "未知错误", ToolTipIcon.Error);
+                _trayService.ShowNotification(feedback.Title, feedback.ToNotificationMessage(), feedback.Icon);
             }
         }
     }
@@ -131,6 +156,11 @@ namespace Pulsar.ViewModels.Strategies
                 }
 
                 success = true;
+                WeakReferenceMessenger.Default.Send(new ActionExecutionMessage(
+                    TutorialActionKind.Switch,
+                    "com.pulsar.winswitcher",
+                    "switch",
+                    success: true));
                 return Task.CompletedTask;
             }
             finally
@@ -271,6 +301,15 @@ namespace Pulsar.ViewModels.Strategies
                 };
 
                 Process.Start(startInfo);
+
+                if (string.Equals(_config.PluginId, "com.pulsar.winswitcher", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    WeakReferenceMessenger.Default.Send(new ActionExecutionMessage(
+                        TutorialActionKind.Switch,
+                        _config.PluginId,
+                        _config.Action,
+                        success: true));
+                }
             }
             catch
             {

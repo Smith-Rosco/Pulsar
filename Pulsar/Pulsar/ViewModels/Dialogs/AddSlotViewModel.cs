@@ -17,6 +17,40 @@ namespace Pulsar.ViewModels.Dialogs
 {
     public partial class AddSlotViewModel : ObservableObject, IWizardDialogViewModel
     {
+        public partial class ScenarioOption : ObservableObject
+        {
+            public ScenarioOption(
+                string key,
+                string title,
+                string description,
+                string pluginId,
+                string action,
+                string iconKey)
+            {
+                Key = key;
+                Title = title;
+                Description = description;
+                PluginId = pluginId;
+                Action = action;
+                IconKey = iconKey;
+            }
+
+            public string Key { get; }
+
+            public string Title { get; }
+
+            public string Description { get; }
+
+            public string PluginId { get; }
+
+            public string Action { get; }
+
+            public string IconKey { get; }
+
+            [ObservableProperty]
+            private bool _isSelected;
+        }
+
         public partial class PluginTypeOption : ObservableObject
         {
             public PluginTypeOption(
@@ -94,6 +128,7 @@ namespace Pulsar.ViewModels.Dialogs
         private readonly Func<PluginSlot, Task> _pickIconAsync;
         private readonly Func<PluginSlot, Task> _pickColorAsync;
         private readonly IReadOnlyDictionary<string, PluginTypeOption> _pluginTypeLookup;
+        private readonly IReadOnlyDictionary<string, ScenarioOption> _scenarioLookup;
 
         private static readonly ObservableCollection<SlotActionOption> _emptyActions = new();
         private static readonly ObservableCollection<SlotParameterEditorField> _emptyFields = new();
@@ -122,6 +157,21 @@ namespace Pulsar.ViewModels.Dialogs
         [NotifyPropertyChangedFor(nameof(AppearanceDisclosureTooltip))]
         private PluginTypeOption? _selectedType;
 
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(HasSelectedScenario))]
+        [NotifyPropertyChangedFor(nameof(SelectedPluginDescription))]
+        [NotifyPropertyChangedFor(nameof(SelectedPluginContextTitle))]
+        [NotifyPropertyChangedFor(nameof(HeaderDescription))]
+        [NotifyPropertyChangedFor(nameof(PluginPickerHint))]
+        private ScenarioOption? _selectedScenario;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsScenarioMode))]
+        [NotifyPropertyChangedFor(nameof(IsAwaitingPluginSelection))]
+        [NotifyPropertyChangedFor(nameof(HeaderDescription))]
+        [NotifyPropertyChangedFor(nameof(PluginPickerHint))]
+        private bool _isAdvancedMode;
+
         public AddSlotViewModel(
             IEnumerable<PluginTypeOption> pluginTypes,
             Func<string, PluginSlot> createSlotDraft,
@@ -137,6 +187,8 @@ namespace Pulsar.ViewModels.Dialogs
             _pickIconAsync = pickIconAsync;
             _pickColorAsync = pickColorAsync;
             _pluginTypeLookup = PluginTypes.ToDictionary(option => option.PluginId, StringComparer.OrdinalIgnoreCase);
+            ScenarioOptions = new ObservableCollection<ScenarioOption>(BuildScenarios());
+            _scenarioLookup = ScenarioOptions.ToDictionary(option => option.Key, StringComparer.OrdinalIgnoreCase);
 
             PluginTypeCategories = new ObservableCollection<PluginTypeCategoryOption>(BuildCategories(PluginTypes));
             FilteredPluginTypes = new ObservableCollection<PluginTypeOption>();
@@ -145,6 +197,8 @@ namespace Pulsar.ViewModels.Dialogs
         }
 
         public ObservableCollection<PluginTypeOption> PluginTypes { get; }
+
+        public ObservableCollection<ScenarioOption> ScenarioOptions { get; }
 
         public ObservableCollection<PluginTypeCategoryOption> PluginTypeCategories { get; }
 
@@ -179,9 +233,13 @@ namespace Pulsar.ViewModels.Dialogs
             }
         }
 
-        public bool HasSelectedPlugin => SelectedType != null && Slot != null;
+        public bool HasSelectedPlugin => Slot != null;
 
-        public bool IsAwaitingPluginSelection => !HasSelectedPlugin;
+        public bool HasSelectedScenario => SelectedScenario != null && Slot != null;
+
+        public bool IsScenarioMode => !IsAdvancedMode;
+
+        public bool IsAwaitingPluginSelection => Slot == null;
 
         public bool HasActionValidationError => _shouldShowFieldValidation
             && Slot != null
@@ -223,14 +281,20 @@ namespace Pulsar.ViewModels.Dialogs
 
         public ICommand SecondaryCommand => CancelCommand;
 
-        public string SelectedPluginDescription => SelectedType?.Description ?? "Choose the primary behavior for this slot, then fill in the details that make it work.";
+        public string SelectedPluginDescription => SelectedScenario?.Description
+            ?? SelectedType?.Description
+            ?? "Choose the primary behavior for this slot, then fill in the details that make it work.";
 
-        public string SelectedPluginContextTitle => SelectedType?.DisplayName ?? "Choose a slot type";
+        public string SelectedPluginContextTitle => SelectedScenario?.Title
+            ?? SelectedType?.DisplayName
+            ?? (IsAdvancedMode ? "Choose a slot type" : "Choose a common scenario");
 
         public string HeaderText => Slot == null ? "Create slot" : $"Create slot {Slot.Slot}";
 
         public string HeaderDescription => Slot == null
-            ? "Pick a slot type to start the workflow. Required setup stays in view, while optional polish can wait."
+            ? IsAdvancedMode
+                ? "Pick a slot type to start the workflow. Required setup stays in view, while optional polish can wait."
+                : "Start with what you want to do. Pulsar maps the common scenarios to the right plugin action, while keeping advanced editing available."
             : "Set the behavior first, complete any required details, then polish the presentation if needed.";
 
         public string HeaderStatusText => Slot == null
@@ -272,7 +336,9 @@ namespace Pulsar.ViewModels.Dialogs
             : "Preview badges and setup status update as you shape the slot.";
 
         public string PluginPickerHint => SelectedCategory == null || string.Equals(SelectedCategory.Key, "all", StringComparison.OrdinalIgnoreCase)
-            ? "Scan the available slot types, then choose the behavior you want to set up."
+            ? IsAdvancedMode
+                ? "Scan the available slot types, then choose the behavior you want to set up."
+                : "Choose the outcome you want. Each scenario creates a standard editable slot using the existing plugin model."
             : $"Showing {SelectedCategory.Label.ToLowerInvariant()} slot types.";
 
         public ObservableCollection<SlotActionOption> AvailableActions => Slot?.AvailableActions ?? _emptyActions;
@@ -331,7 +397,47 @@ namespace Pulsar.ViewModels.Dialogs
         [RelayCommand]
         private void SelectPluginType(PluginTypeOption option)
         {
+            if (!IsAdvancedMode)
+            {
+                IsAdvancedMode = true;
+            }
+
             SelectedType = option;
+        }
+
+        [RelayCommand]
+        private void SelectScenario(ScenarioOption option)
+        {
+            IsAdvancedMode = false;
+            SelectedScenario = option;
+        }
+
+        [RelayCommand]
+        private void ShowScenarioFlow()
+        {
+            IsAdvancedMode = false;
+            SelectedType = null;
+
+            if (SelectedScenario == null)
+            {
+                ResetSuggestionState();
+                Slot = null;
+                NotifyStateChanged();
+            }
+        }
+
+        [RelayCommand]
+        private void ShowAdvancedFlow()
+        {
+            IsAdvancedMode = true;
+            SelectedScenario = null;
+
+            if (SelectedType == null)
+            {
+                ResetSuggestionState();
+                Slot = null;
+                NotifyStateChanged();
+            }
         }
 
         [RelayCommand]
@@ -523,6 +629,41 @@ namespace Pulsar.ViewModels.Dialogs
             return categories;
         }
 
+        private static IEnumerable<ScenarioOption> BuildScenarios()
+        {
+            return new[]
+            {
+                new ScenarioOption(
+                    "switch-app",
+                    "Switch App",
+                    "Switch to a running app, or launch it when no window is open yet.",
+                    "com.pulsar.winswitcher",
+                    "switch",
+                    "E8AB"),
+                new ScenarioOption(
+                    "open-target",
+                    "Open Program, File, Folder, or URL",
+                    "Open something through the normal Windows shell path using the canonical Command Runner open action.",
+                    "com.pulsar.command",
+                    "run",
+                    "E756"),
+                new ScenarioOption(
+                    "send-keys",
+                    "Send Keys or Insert Text",
+                    "Send a key sequence or plain text to the active window using the canonical Command Runner send keys action.",
+                    "com.pulsar.command",
+                    "sendkeys",
+                    "E765"),
+                new ScenarioOption(
+                    "fill-credential",
+                    "Fill Credential",
+                    "Fill a saved credential into the active app using the canonical PKI fill action.",
+                    "com.pulsar.pki",
+                    "fill",
+                    "E72E")
+            };
+        }
+
         private void RefreshFilteredPluginTypes()
         {
             FilteredPluginTypes.Clear();
@@ -551,6 +692,11 @@ namespace Pulsar.ViewModels.Dialogs
 
         private void SyncSelectedActionStates()
         {
+            foreach (var scenario in ScenarioOptions)
+            {
+                scenario.IsSelected = string.Equals(scenario.Key, SelectedScenario?.Key, StringComparison.OrdinalIgnoreCase);
+            }
+
             foreach (var pluginType in PluginTypes)
             {
                 pluginType.IsSelected = string.Equals(pluginType.PluginId, SelectedType?.PluginId, StringComparison.OrdinalIgnoreCase);
@@ -569,9 +715,11 @@ namespace Pulsar.ViewModels.Dialogs
 
         private string GetBlockingIssueText()
         {
-            if (SelectedType == null || Slot == null)
+            if (Slot == null)
             {
-                return "Choose a slot type to begin.";
+                return IsAdvancedMode
+                    ? "Choose a slot type to begin."
+                    : "Choose a scenario to begin.";
             }
 
             if (string.IsNullOrWhiteSpace(Slot.Action))
@@ -641,6 +789,11 @@ namespace Pulsar.ViewModels.Dialogs
 
         partial void OnSelectedTypeChanged(PluginTypeOption? value)
         {
+            if (!IsAdvancedMode)
+            {
+                return;
+            }
+
             if (value == null)
             {
                 _shouldShowFieldValidation = false;
@@ -654,6 +807,35 @@ namespace Pulsar.ViewModels.Dialogs
             Slot = _createSlotDraft(value.PluginId);
             ResetSuggestionState();
             ApplySuggestions();
+            NotifyStateChanged();
+        }
+
+        partial void OnSelectedScenarioChanged(ScenarioOption? value)
+        {
+            if (IsAdvancedMode)
+            {
+                return;
+            }
+
+            if (value == null)
+            {
+                _shouldShowFieldValidation = false;
+                Slot = null;
+                ResetSuggestionState();
+                NotifyStateChanged();
+                return;
+            }
+
+            _shouldShowFieldValidation = false;
+            Slot = _createSlotDraft(value.PluginId);
+            _setAction(Slot, value.Action);
+            ResetSuggestionState();
+            ApplySuggestions();
+            NotifyStateChanged();
+        }
+
+        partial void OnIsAdvancedModeChanged(bool value)
+        {
             NotifyStateChanged();
         }
 

@@ -92,10 +92,14 @@
             <DataTemplate DataType="{x:Type dialogs:PluginSettingsDialogViewModel}">
                 <contents:PluginSettingsDialogContent/>
             </DataTemplate>
+
+            <DataTemplate DataType="{x:Type dialogs:FirstLaunchSetupWizardViewModel}">
+                <contents:FirstLaunchSetupWizardContent/>
+            </DataTemplate>
         </ResourceDictionary>
     </Window.Resources>
 
-    <Border Background="{DynamicResource Theme.Background}"
+    <Border Background="{DynamicResource Theme.Window.Background}"
             BorderBrush="{DynamicResource Theme.Border.Brush}"
             BorderThickness="1"
             CornerRadius="8">
@@ -107,10 +111,11 @@
             </Grid.RowDefinitions>
 
             <!-- Header -->
-            <ui:TitleBar Title="{Binding Title}" 
-                         Grid.Row="0"
-                         ShowMaximize="{Binding ShowMaximizeButton, RelativeSource={RelativeSource AncestorType=Window}}"
-                         ShowMinimize="{Binding ShowMaximizeButton, RelativeSource={RelativeSource AncestorType=Window}}"/>
+            <ui:TitleBar Title="{Binding Title}"
+                         Foreground="{DynamicResource Theme.Window.Foreground}"
+                          Grid.Row="0"
+                          ShowMaximize="{Binding ShowMaximizeButton, RelativeSource={RelativeSource AncestorType=Window}}"
+                          ShowMinimize="{Binding ShowMaximizeButton, RelativeSource={RelativeSource AncestorType=Window}}"/>
 
             <!-- Content -->
             <ContentPresenter Grid.Row="1"

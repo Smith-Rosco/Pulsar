@@ -318,6 +318,7 @@ namespace Pulsar.Services.Tutorial
                 await UpdateConfigAsync(s =>
                 {
                     s.HasCompletedTutorial = true;
+                    s.OnboardingState = "Complete";
                     s.LastTutorialStep = null;
                 });
 
@@ -380,8 +381,8 @@ namespace Pulsar.Services.Tutorial
 
                 await UpdateConfigAsync(s =>
                 {
-                    s.HasCompletedTutorial = true;
-                    s.LastTutorialStep = null;
+                    s.HasCompletedTutorial = false;
+                    s.LastTutorialStep = "Skipped";
                 });
 
                 _triggerEngine.Cleanup();
@@ -525,8 +526,8 @@ namespace Pulsar.Services.Tutorial
 
                 await UpdateConfigAsync(s =>
                 {
-                    s.HasCompletedTutorial = true;
-                    s.LastTutorialStep = null;
+                    s.HasCompletedTutorial = false;
+                    s.LastTutorialStep = "Skipped";
                 });
 
                 _triggerEngine.Cleanup();

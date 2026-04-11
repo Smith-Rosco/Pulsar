@@ -29,7 +29,11 @@ namespace Pulsar.Tests.Plugins.Core.Pki
 
             result.Success.Should().BeTrue();
             result.Message.Should().Be("Credentials injected successfully");
-            executionService.Verify(x => x.ExecuteAsync(args, It.IsAny<Pulsar.Core.Plugin.PulsarContext>()), Times.Once);
+            executionService.Verify(x => x.ExecuteAsync(
+                It.Is<IReadOnlyDictionary<string, string>>(actual =>
+                    actual.ContainsKey("secretId")
+                    && actual["secretId"] == args["secretId"]),
+                It.IsAny<Pulsar.Core.Plugin.PulsarContext>()), Times.Once);
         }
 
         [Fact]

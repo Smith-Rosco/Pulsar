@@ -3,6 +3,7 @@ using Pulsar.Core.Plugin;
 using Pulsar.Plugins.Core.Pki;
 using Pulsar.Plugins.Core.Pki.Contracts;
 using Pulsar.Plugins.Core.Pki.Services;
+using Pulsar.Services.ActionFeedback;
 using Pulsar.Models;
 using Pulsar.Native;
 using Pulsar.Services;
@@ -107,7 +108,13 @@ namespace Pulsar
             serviceCollection.AddSingleton<IProcessRegistryService, ProcessRegistryService>();
             serviceCollection.AddSingleton<IWindowService, WindowService>();
             serviceCollection.AddSingleton<ITrayService, TrayIconService>();
+            serviceCollection.AddSingleton<IActionFeedbackService, ActionFeedbackService>();
             serviceCollection.AddSingleton<IThemeService, ThemeService>();
+            serviceCollection.AddSingleton<IAnimationController, AnimationController>();
+            serviceCollection.AddSingleton<ISlotLayoutEngine, SlotLayoutEngine>();
+            serviceCollection.AddSingleton<IMouseTrackingService, MouseTrackingService>();
+            serviceCollection.AddSingleton<IPagingController, PagingController>();
+            serviceCollection.AddSingleton<IPreviewService, PreviewService>();
             serviceCollection.AddSingleton<ILocalUiPreferencesService, LocalUiPreferencesService>();
             serviceCollection.AddSingleton<ISettingsNavigationGuard, SettingsNavigationGuard>();
             serviceCollection.AddSingleton<SettingsPageCatalog>();
@@ -117,6 +124,9 @@ namespace Pulsar
             serviceCollection.AddSingleton<IHotkeyService, HotkeyService>();
             serviceCollection.AddSingleton<IGlobalMouseWheelService, GlobalMouseWheelService>();
             serviceCollection.AddSingleton<IDialogService, DialogService>();
+            serviceCollection.AddSingleton<Pulsar.Services.Tutorial.IOnboardingTemplateService, Pulsar.Services.Tutorial.OnboardingTemplateService>();
+            serviceCollection.AddSingleton<Pulsar.Services.Tutorial.IOnboardingStateService, Pulsar.Services.Tutorial.OnboardingStateService>();
+            serviceCollection.AddSingleton<Pulsar.Services.Tutorial.StartupCoordinator>();
             
             // Tutorial Service
             serviceCollection.AddSingleton<Pulsar.Services.Tutorial.TutorialStepLoader>();
@@ -222,6 +232,7 @@ namespace Pulsar
 #pragma warning restore CS0618
             serviceCollection.AddTransient<PluginMarketViewModel>();
             serviceCollection.AddTransient<SettingsMarketplacePage>();
+            serviceCollection.AddTransient<Pulsar.ViewModels.Dialogs.FirstLaunchSetupWizardViewModel>();
 
             serviceCollection.AddTransient<SettingsWindow>();
             

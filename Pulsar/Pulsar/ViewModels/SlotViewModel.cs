@@ -215,9 +215,6 @@ namespace Pulsar.ViewModels
 
         private const double MagneticSmoothFactor = 0.22;
 
-        private double _currentMagneticOffsetX;
-        private double _currentMagneticOffsetY;
-
         // [New] Combined Offset (Magnetic only) - Bound to XAML
         [ObservableProperty]
         private double _offsetX;
@@ -225,38 +222,31 @@ namespace Pulsar.ViewModels
         [ObservableProperty]
         private double _offsetY;
 
-        public double DesiredOffsetX { get; set; }
-        public double DesiredOffsetY { get; set; }
-
         public void ResetAnimation()
         {
             CurrentScale = 1.0;   // [Fix] Start fully visible for instant response
             CurrentOpacity = 1.0; // [Fix] Start fully visible
-            _currentMagneticOffsetX = 0;
-            _currentMagneticOffsetY = 0;
             OffsetX = 0;
             OffsetY = 0;
-            DesiredOffsetX = 0;
-            DesiredOffsetY = 0;
         }
 
-        public void UpdateMagneticOffset()
+        public void UpdateMagneticOffset(double desiredOffsetX, double desiredOffsetY)
         {
-            _currentMagneticOffsetX += (DesiredOffsetX - _currentMagneticOffsetX) * MagneticSmoothFactor;
-            _currentMagneticOffsetY += (DesiredOffsetY - _currentMagneticOffsetY) * MagneticSmoothFactor;
+            var nextOffsetX = OffsetX + (desiredOffsetX - OffsetX) * MagneticSmoothFactor;
+            var nextOffsetY = OffsetY + (desiredOffsetY - OffsetY) * MagneticSmoothFactor;
 
-            if (Math.Abs(DesiredOffsetX - _currentMagneticOffsetX) < 0.05)
+            if (Math.Abs(desiredOffsetX - nextOffsetX) < 0.05)
             {
-                _currentMagneticOffsetX = DesiredOffsetX;
+                nextOffsetX = desiredOffsetX;
             }
 
-            if (Math.Abs(DesiredOffsetY - _currentMagneticOffsetY) < 0.05)
+            if (Math.Abs(desiredOffsetY - nextOffsetY) < 0.05)
             {
-                _currentMagneticOffsetY = DesiredOffsetY;
+                nextOffsetY = desiredOffsetY;
             }
 
-            OffsetX = _currentMagneticOffsetX;
-            OffsetY = _currentMagneticOffsetY;
+            OffsetX = nextOffsetX;
+            OffsetY = nextOffsetY;
         }
     }
 

@@ -1,6 +1,7 @@
 using Pulsar.Models;
 using Pulsar.Models.Enums;
 using System.Threading.Tasks;
+using Wpf.Ui.Appearance;
 
 namespace Pulsar.Services.Interfaces
 {
@@ -11,6 +12,8 @@ namespace Pulsar.Services.Interfaces
         Task<Pulsar.Models.Enums.DialogResult> ShowCustomAsync<TViewModel>(string title, TViewModel content, DialogButtons buttons = DialogButtons.OkCancel);
         
         Task<Pulsar.Models.Enums.DialogResult> ShowCustomAsync<TViewModel>(string title, TViewModel content, DialogButtons buttons, DialogSizeConstraints sizeConstraints);
+        
+        Task<Pulsar.Models.Enums.DialogResult> ShowCustomAsync<TViewModel>(string title, TViewModel content, DialogButtons buttons, DialogSizeConstraints sizeConstraints, AppTheme? themeOverride);
         
         Task<string?> ShowInputAsync(string title, string message, string defaultValue = "");
 

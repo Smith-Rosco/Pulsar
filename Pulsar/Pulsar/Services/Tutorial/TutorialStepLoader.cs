@@ -205,80 +205,121 @@ namespace Pulsar.Services.Tutorial
 
             return new List<TutorialStep>
             {
-                // Step 1: Welcome
                 new TutorialStep
                 {
-                    Id = "step1_welcome",
-                    Title = "欢迎使用 Pulsar！",
-                    Description = "Pulsar 是一个以肌肉记忆为核心的径向启动器。首次上手先掌握这三件事：\n\n1. 任务模式 `Ctrl+Q`：快速切换或启动常用应用\n2. 动作模式 `Ctrl+Shift+Q`：执行当前上下文里的命令槽位\n3. Settings > Slots：所有槽位都在这里配置\n\n这一轮教程会优先带你走完最短闭环：打开设置、添加一个切换槽位、再添加一个动作槽位。",
+                    Id = "step1_onboarding_welcome",
+                    Title = "Welcome to Pulsar",
+                    Description = "Your setup wizard already created a starter configuration. This tutorial now focuses on one successful Switch Mode action and one successful Command Mode action.",
                     Type = TutorialStepType.Instruction,
                     FocusMode = TutorialFocusMode.AlwaysFocused,
                     Layout = new TutorialLayout
                     {
-                        CardPosition = CardPosition.Center,
+                        CardPosition = CardPosition.TopRight,
                         CardSizeMode = CardSizeMode.Fixed,
-                        FixedCardWidth = 500,
-                        FixedCardHeight = 400
+                        FixedCardWidth = 450,
+                        FixedCardHeight = 320
                     },
                     CompletionTrigger = new TutorialTrigger
                     {
                         Type = TutorialTriggerType.ButtonClick
                     }
                 },
-
-                // Step 2: Open Settings
                 new TutorialStep
                 {
-                    Id = "step2_open_settings",
-                    Title = "打开设置界面",
-                    Description = "先进入设置界面。后续的教程都会围绕 Settings 中的 Slots 页面完成。\n\n你可以直接点击下方“打开设置”，也可以从系统托盘里的 Pulsar 图标进入设置。",
+                    Id = "step2_switch_mode_intro",
+                    Title = "Switch Mode: app switching and launching",
+                    Description = "Press Ctrl+Q to open Switch Mode and preview the app slots created during setup.",
                     Type = TutorialStepType.WaitForAction,
-                    PrimaryAction = TutorialPrimaryAction.OpenSettingsWindow,
-                    PrimaryButtonText = "打开设置",
-                    WaitHintText = "点击“打开设置”后会自动进入下一步；如果没有响应，也可以通过托盘图标打开设置。",
+                    WaitHintText = "Open Switch Mode with Ctrl+Q.",
                     FocusMode = TutorialFocusMode.AlwaysObserving,
-                    Target = new TutorialTarget
-                    {
-                        Type = TutorialTargetType.TrayIcon
-                    },
                     Layout = new TutorialLayout
                     {
-                        CardPosition = CardPosition.BottomRight,
-                        CardSizeMode = CardSizeMode.Auto
-                    },
-                    CompletionTrigger = new TutorialTrigger
-                    {
-                        Type = TutorialTriggerType.WindowOpened,
-                        TargetValue = "SettingsWindow"
-                    }
-                },
-
-                // Step 3: Settings Overview
-                new TutorialStep
-                {
-                    Id = "step3_settings_overview",
-                    Title = "先认识设置结构",
-                    Description = "Pulsar 的配置入口主要有三块：\n\n• General：热键、主题和启动行为\n• Slots：配置任务模式 / 动作模式的槽位\n• Plugins：查看和管理已安装插件\n\n本次教程只聚焦最关键的 Slots 页面，因为它决定径向菜单里真正会出现什么。",
-                    Type = TutorialStepType.Instruction,
-                    FocusMode = TutorialFocusMode.AlwaysObserving,
-                    Target = new TutorialTarget
-                    {
-                        Type = TutorialTargetType.Window,
-                        ElementName = "SettingsWindow"
-                    },
-                    Layout = new TutorialLayout
-                    {
-                        TargetWindow = new WindowLayout
-                        {
-                            Left = 0.25,
-                            Top = 0.15,
-                            Width = 0.5,
-                            Height = 0.7,
-                            IsRelative = true
-                        },
                         CardPosition = CardPosition.TopRight,
                         CardSizeMode = CardSizeMode.Fixed,
                         FixedCardWidth = 450,
+                        FixedCardHeight = 320
+                    },
+                    CompletionTrigger = new TutorialTrigger
+                    {
+                        Type = TutorialTriggerType.RadialMenuShown,
+                        TargetValue = "Task"
+                    }
+                },
+                new TutorialStep
+                {
+                    Id = "step3_switch_mode_success",
+                    Title = "First switch success",
+                    Description = "Choose any generated app slot from Switch Mode. This step completes only after Pulsar reports one successful switch or launch action.",
+                    Type = TutorialStepType.WaitForAction,
+                    FocusMode = TutorialFocusMode.AlwaysObserving,
+                    Layout = new TutorialLayout
+                    {
+                        CardPosition = CardPosition.TopRight,
+                        CardSizeMode = CardSizeMode.Fixed,
+                        FixedCardWidth = 450,
+                        FixedCardHeight = 320
+                    },
+                    CompletionTrigger = new TutorialTrigger
+                    {
+                        Type = TutorialTriggerType.ActionExecuted,
+                        TargetValue = "Switch"
+                    }
+                },
+                new TutorialStep
+                {
+                    Id = "step4_command_mode_intro",
+                    Title = "Command Mode: run an action",
+                    Description = "Press Ctrl+Shift+Q to open Command Mode and preview the starter command slot created during setup.",
+                    Type = TutorialStepType.WaitForAction,
+                    WaitHintText = "Open Command Mode with Ctrl+Shift+Q.",
+                    FocusMode = TutorialFocusMode.AlwaysObserving,
+                    Layout = new TutorialLayout
+                    {
+                        CardPosition = CardPosition.TopRight,
+                        CardSizeMode = CardSizeMode.Fixed,
+                        FixedCardWidth = 460,
+                        FixedCardHeight = 300
+                    },
+                    CompletionTrigger = new TutorialTrigger
+                    {
+                        Type = TutorialTriggerType.RadialMenuShown,
+                        TargetValue = "Action"
+                    }
+                },
+                new TutorialStep
+                {
+                    Id = "step5_command_mode_success",
+                    Title = "First command success",
+                    Description = "Choose any generated command slot from Command Mode. This step completes only after Pulsar reports one successful command execution.",
+                    Type = TutorialStepType.WaitForAction,
+                    FocusMode = TutorialFocusMode.AlwaysObserving,
+                    Layout = new TutorialLayout
+                    {
+                        CardPosition = CardPosition.TopRight,
+                        CardSizeMode = CardSizeMode.Fixed,
+                        FixedCardWidth = 480,
+                        FixedCardHeight = 320
+                    },
+                    CompletionTrigger = new TutorialTrigger
+                    {
+                        Type = TutorialTriggerType.ActionExecuted,
+                        TargetValue = "Command"
+                    }
+                },
+                new TutorialStep
+                {
+                    Id = "step6_completion",
+                    Title = "Onboarding complete",
+                    Description = "You completed the minimum onboarding path: one successful Switch Mode action and one successful Command Mode action.",
+                    Type = TutorialStepType.Instruction,
+                    FocusMode = TutorialFocusMode.AlwaysObserving,
+                    PrimaryAction = TutorialPrimaryAction.CompleteTutorial,
+                    PrimaryButtonText = "Finish",
+                    Layout = new TutorialLayout
+                    {
+                        CardPosition = CardPosition.TopRight,
+                        CardSizeMode = CardSizeMode.Fixed,
+                        FixedCardWidth = 480,
                         FixedCardHeight = 300
                     },
                     CompletionTrigger = new TutorialTrigger

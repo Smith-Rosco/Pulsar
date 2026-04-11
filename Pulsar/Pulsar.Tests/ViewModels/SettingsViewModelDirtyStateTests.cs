@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -18,6 +19,7 @@ using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.Services.Validation;
 using Pulsar.ViewModels;
+using Pulsar.ViewModels.Settings;
 
 namespace Pulsar.Tests.ViewModels
 {
@@ -164,7 +166,65 @@ namespace Pulsar.Tests.ViewModels
             reloadedConfig.Profiles["Global"].SwitchMode.Should().NotBeEmpty();
             reloadedConfig.Settings.HasCompletedTutorial.Should().BeFalse();
             reloadedConfig.Settings.LastTutorialStep.Should().BeNull();
+            reloadedConfig.Settings.OnboardingState.Should().Be("NotStarted");
             reloadedConfig.Settings.HasCompletedInitialDetection.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task ResetConfig_WhenProfilesExist_CreatesBackupBeforeReset()
+        {
+            EnsureApplication();
+            var harness = CreateHarness();
+
+            var fallbackConfig = CreateResetFallbackConfig();
+            harness.ConfigService
+                .Setup(service => service.ResetToFirstLaunchAsync())
+                .ReturnsAsync(CloneConfig(fallbackConfig));
+            harness.ConfigService
+                .Setup(service => service.LoadAsync())
+                .ReturnsAsync(() => CloneConfig(fallbackConfig));
+
+            harness.DialogService
+                .Setup(service => service.ShowConfirmationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(DialogResult.Confirmed);
+
+            var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            var pulsarDirectory = Path.Combine(appData, "Pulsar");
+            var configPath = Path.Combine(pulsarDirectory, "Profiles.json");
+            var backupPath = configPath + ".bak";
+
+            Directory.CreateDirectory(pulsarDirectory);
+            await File.WriteAllTextAsync(configPath, "{\"profiles\":{\"Custom\":{}}}");
+            if (File.Exists(backupPath))
+            {
+                File.Delete(backupPath);
+            }
+
+            try
+            {
+                var originalConfigContents = await File.ReadAllTextAsync(configPath);
+                var viewModel = harness.ViewModel;
+                await WaitForInitializationAsync(viewModel);
+
+                await viewModel.ResetConfig();
+
+                harness.ConfigService.Verify(service => service.ResetToFirstLaunchAsync(), Times.Once);
+                File.Exists(backupPath).Should().BeTrue("reset should preserve a recoverable backup of the previous configuration");
+                var backupContents = await File.ReadAllTextAsync(backupPath);
+                backupContents.Should().Be(originalConfigContents);
+            }
+            finally
+            {
+                if (File.Exists(configPath))
+                {
+                    File.Delete(configPath);
+                }
+
+                if (File.Exists(backupPath))
+                {
+                    File.Delete(backupPath);
+                }
+            }
         }
 
         private static async Task WaitForInitializationAsync(SettingsViewModel viewModel)
@@ -245,6 +305,12 @@ namespace Pulsar.Tests.ViewModels
             pluginMetadataRegistry.Register(CreateCommandMetadata());
             pluginMetadataRegistry.Register(CreateWinSwitcherMetadata());
 
+            var settingsShell = new SettingsShellViewModel(
+                new SettingsPageCatalog(),
+                new Mock<ILocalUiPreferencesService>().Object,
+                new Mock<ISettingsNavigationGuard>().Object,
+                NullLogger<SettingsShellViewModel>.Instance);
+
             var viewModel = new SettingsViewModel(
                 configService.Object,
                 new Mock<IWindowService>().Object,
@@ -256,6 +322,7 @@ namespace Pulsar.Tests.ViewModels
                 new Mock<ISecretProtector>().Object,
                 secretMetadataResolver.Object,
                 pluginMetadataRegistry,
+                settingsShell,
                 NullLogger<SettingsViewModel>.Instance,
                 processRegistryService.Object);
 
@@ -341,6 +408,7 @@ namespace Pulsar.Tests.ViewModels
                 {
                     HasCompletedTutorial = false,
                     LastTutorialStep = null,
+                    OnboardingState = "NotStarted",
                     HasCompletedInitialDetection = false,
                     LauncherTheme = "Light",
                     SettingsTheme = "Light",

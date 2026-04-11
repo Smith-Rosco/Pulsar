@@ -218,6 +218,43 @@
                 </Setter>
             </Style>
 
+            <Style x:Key="FlowToggleButtonStyle" TargetType="Button">
+                <Setter Property="Margin" Value="0,0,8,8"/>
+                <Setter Property="Padding" Value="12,8"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="FlowBorder"
+                                    Padding="{TemplateBinding Padding}"
+                                    Background="{DynamicResource ControlFillColorDefaultBrush}"
+                                    BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="14">
+                                <ContentPresenter/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="FlowBorder" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}"/>
+                                    <Setter TargetName="FlowBorder" Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="FlowBorder" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}"/>
+                                    <Setter TargetName="FlowBorder" Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="ScenarioCardButtonStyle" TargetType="Button" BasedOn="{StaticResource PluginTypeCardButtonStyle}">
+                <Setter Property="Width" Value="316"/>
+                <Setter Property="MinHeight" Value="88"/>
+                <Setter Property="Padding" Value="12,12"/>
+            </Style>
+
             <DataTemplate x:Key="CreateSlotParameterFieldTemplate" DataType="{x:Type models:SlotParameterEditorField}">
                 <Grid Margin="0,0,0,8">
                     <Grid.ColumnDefinitions>
@@ -324,8 +361,109 @@
                                    Style="{StaticResource SectionBodyTextStyle}"
                                    Margin="0,0,0,10"/>
 
+                        <WrapPanel Margin="0,0,0,12">
+                            <Button Style="{StaticResource FlowToggleButtonStyle}"
+                                    Command="{Binding ShowScenarioFlowCommand}">
+                                <StackPanel>
+                                    <TextBlock Text="Scenario-Based"
+                                               FontSize="12"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                                    <TextBlock Text="Start from common intent"
+                                               FontSize="11"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource FlowToggleButtonStyle}"
+                                    Command="{Binding ShowAdvancedFlowCommand}">
+                                <StackPanel>
+                                    <TextBlock Text="Advanced"
+                                               FontSize="12"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                                    <TextBlock Text="Choose plugin and action manually"
+                                               FontSize="11"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                </StackPanel>
+                            </Button>
+                        </WrapPanel>
+
+                        <StackPanel Visibility="{Binding IsScenarioMode, Converter={StaticResource BoolToVis}}">
+                            <ItemsControl ItemsSource="{Binding ScenarioOptions}"
+                                          Margin="0,0,0,8">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Style="{StaticResource ScenarioCardButtonStyle}"
+                                                Command="{Binding DataContext.SelectScenarioCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <Border Width="36"
+                                                        Height="36"
+                                                        CornerRadius="9"
+                                                        BorderBrush="{DynamicResource ControlElevationBorderBrush}"
+                                                        BorderThickness="1"
+                                                        Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                                        Margin="0,0,12,0">
+                                                    <controls:SlotOrb Size="28"
+                                                                      Width="28"
+                                                                      Height="28"
+                                                                      Opacity="1"
+                                                                      IsActive="False"
+                                                                      IsHitTestVisible="False"
+                                                                      ShowActiveGlow="False"
+                                                                      IsTransparent="True"
+                                                                      IconKey="{Binding IconKey}"/>
+                                                </Border>
+
+                                                <StackPanel Grid.Column="1">
+                                                    <TextBlock Text="{Binding Title}"
+                                                               Style="{StaticResource PickerItemNameTextStyle}"/>
+                                                    <TextBlock Text="{Binding Description}"
+                                                               Style="{StaticResource SectionBodyTextStyle}"
+                                                               Margin="0,4,0,0"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <Border Padding="12,10"
+                                    Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                    BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="10">
+                                <TextBlock Text="Need something else? Switch to Advanced to pick any plugin and full parameter model manually."
+                                           Style="{StaticResource SectionBodyTextStyle}"/>
+                            </Border>
+                        </StackPanel>
+
                         <ItemsControl ItemsSource="{Binding PluginTypeCategories}"
-                                      Visibility="{Binding HasPickerCategories, Converter={StaticResource BoolToVis}}">
+                                      Margin="0,0,0,0">
+                            <ItemsControl.Style>
+                                <Style TargetType="ItemsControl">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding IsAdvancedMode}" Value="True"/>
+                                                <Condition Binding="{Binding HasPickerCategories}" Value="True"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ItemsControl.Style>
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <WrapPanel/>
@@ -342,7 +480,8 @@
                         </ItemsControl>
 
                         <ItemsControl ItemsSource="{Binding FilteredPluginTypes}"
-                                      Margin="0,4,0,0">
+                                      Margin="0,4,0,0"
+                                      Visibility="{Binding IsAdvancedMode, Converter={StaticResource BoolToVis}}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <WrapPanel/>
@@ -626,8 +765,8 @@
                                 BorderThickness="1"
                                 CornerRadius="10"
                                 Visibility="{Binding IsAwaitingPluginSelection, Converter={StaticResource BoolToVis}}">
-                            <TextBlock Text="Select a slot type to configure the label, action, required details, and optional settings."
-                                        Style="{StaticResource SectionBodyTextStyle}"/>
+                            <TextBlock Text="Select a scenario or switch to Advanced to configure the label, action, required details, and optional settings."
+                                         Style="{StaticResource SectionBodyTextStyle}"/>
                         </Border>
                     </StackPanel>
                 </Grid>

@@ -387,6 +387,7 @@ namespace Pulsar.Services
                     MaxDisplacement = 20.0,
                     HasCompletedTutorial = false,
                     LastTutorialStep = null,
+                    OnboardingState = "NotStarted",
                     ConfigCreatedAt = DateTime.UtcNow,
                     HasCompletedInitialDetection = false
                 },
@@ -539,6 +540,7 @@ namespace Pulsar.Services
                     MaxDisplacement = 20.0,
                     HasCompletedTutorial = false,
                     LastTutorialStep = null,
+                    OnboardingState = "NotStarted",
                     ConfigCreatedAt = DateTime.UtcNow,
                     HasCompletedInitialDetection = true
                 },
@@ -620,25 +622,13 @@ namespace Pulsar.Services
             
             _logger.LogDebug("[ConfigService] Added Command Prompt to Command Mode Slot 1");
             
-            // Slot 2: VBA 示例 (如果检测到 Excel)
+            // Slot 2: avoid auto-injecting invalid VBA samples.
+            // The VBA runner requires a real scriptPath, so a generated demo slot
+            // would fail config validation on first-launch smart config save.
             var hasExcel = installedApps.Any(a => a.ProcessName.Equals("EXCEL", StringComparison.OrdinalIgnoreCase));
             if (hasExcel)
             {
-                slots.Add(new PluginSlot
-                {
-                    Slot = 2,
-                    PluginId = "com.pulsar.vbarunner",
-                    Action = "run",
-                    Args = new Dictionary<string, string>
-                    {
-                        ["target"] = "excel",
-                        ["script"] = "MsgBox \"Hello from Pulsar VBA!\", vbInformation, \"Pulsar Demo\""
-                    },
-                    Label = "Excel VBA Demo",
-                    IconKey = "\uE8A5"
-                });
-                
-                _logger.LogDebug("[ConfigService] Added Excel VBA Demo to Command Mode Slot 2");
+                _logger.LogDebug("[ConfigService] Excel detected, but skipped auto-generated VBA demo because VbaRunner requires a valid scriptPath");
             }
             
             return slots;

@@ -62,6 +62,8 @@ namespace Pulsar.Services.Tutorial.TriggerHandlers
                 return null!; // 需要在 orchestrator 中特殊处理
             });
 
+            RegisterHandler(TutorialTriggerType.ActionExecuted, () => new ActionExecutedTriggerHandler());
+
             // SlotAdded - 需要 IConfigService 和 ILogger
             RegisterHandler(TutorialTriggerType.SlotAdded, () =>
             {

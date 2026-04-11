@@ -92,6 +92,7 @@ namespace Pulsar.Views
             base.OnSourceInitialized(e);
             // 1. 获取窗口句柄
             var hwnd = new WindowInteropHelper(this).Handle;
+            _viewModel.SetWindowHandle(hwnd);
             // 2. 获取当前扩展样式
             long currentStyle = PulsarNative.GetWindowLong(hwnd, PulsarNative.GWL_EXSTYLE);
             // 3. 注入 ToolWindow 样式 (使其在 Alt+Tab 中不可见)
@@ -182,16 +183,10 @@ namespace Pulsar.Views
 
             this.Focus();
             this.UpdateLayout();
-            
-            // [Fix] Resume Global Polling
-            CompositionTarget.Rendering += UpdateLoop;
         }
 
         private void Dismiss()
         {
-            // 1. [冻结] 停止计算循环
-            CompositionTarget.Rendering -= UpdateLoop;
-            
             // [Refactor] Release Capture
             MenuCanvas.ReleaseMouseCapture();
             
@@ -226,32 +221,6 @@ namespace Pulsar.Views
             _themeService.EnforceTransparency(this);
         }
 
-        // ==========================================
-        // 🎮 游戏循环 & 坐标计算 (Game Loop & Math)
-        // ==========================================
-
-        private void UpdateLoop(object? sender, EventArgs e)
-        {
-            if (this.Opacity < 0.1) return;
-
-            // [Fix] Use Global Cursor Position directly to avoid WPF clamping/capture issues outside window bounds.
-            var screenPoint = Forms.Cursor.Position;
-
-            // Convert Screen Pixels to WPF Logical Units
-            // Note: _dpiScaleX/Y are updated in UpdateWindowPosition()
-            double wpfGlobalX = screenPoint.X / _dpiScaleX;
-            double wpfGlobalY = screenPoint.Y / _dpiScaleY;
-
-            // Calculate relative to the MenuCanvas (Window)
-            // RelX = GlobalMouse - WindowLeft
-            // Since MenuCanvas is at 0,0 of the Window
-            double relX = wpfGlobalX - this.Left;
-            double relY = wpfGlobalY - this.Top;
-
-            // 4. Send to ViewModel (0..500 relative coordinates)
-            _viewModel.HandleMouseMove(relX, relY);
-        }
-
         private void UpdateWindowPosition()
         {
             // Update DPI Scale
@@ -280,8 +249,6 @@ namespace Pulsar.Views
 
         protected override void OnClosed(EventArgs e)
         {
-            CompositionTarget.Rendering -= UpdateLoop; 
-            
             if (_viewModel != null)
             {
                 _viewModel.PropertyChanged -= OnViewModelPropertyChanged;

@@ -6,8 +6,13 @@ using Serilog;
 using Serilog.Core;
 using Serilog.Events;
 using Pulsar.Native;
+using Pulsar.Models;
+using Pulsar.Models.Enums;
 using Pulsar.Services.Interfaces;
+using Pulsar.Services.Tutorial;
+using Pulsar.ViewModels.Dialogs;
 using Pulsar.Views;
+using Wpf.Ui.Appearance;
 
 namespace Pulsar.Services
 {
@@ -50,6 +55,8 @@ namespace Pulsar.Services
             mainWindow.Show();
             _logger.LogInformation("[Startup] Radial menu window shown");
 
+            await RunOnboardingStartupAsync();
+
             var hotkeyService = _services.GetRequiredService<IHotkeyService>();
             await hotkeyService.InitializeAsync();
             _logger.LogInformation("[Startup] Hotkey service initialized");
@@ -72,7 +79,9 @@ namespace Pulsar.Services
                 {
                     var configService = _services.GetRequiredService<IConfigService>();
                     var config = await configService.LoadAsync();
-                    if (config.Settings.HasCompletedTutorial)
+                    if (config.Settings.HasCompletedTutorial
+                        || string.Equals(config.Settings.LastTutorialStep, "Skipped", StringComparison.OrdinalIgnoreCase)
+                        || !string.Equals(config.Settings.OnboardingState, "SetupWizardComplete", StringComparison.OrdinalIgnoreCase))
                     {
                         return;
                     }
@@ -140,6 +149,22 @@ namespace Pulsar.Services
 
             keyboardHook.UseHybridMode = true;
             Log.Information("GlobalKeyboardHook using default Hybrid mode");
+        }
+
+        private async Task RunOnboardingStartupAsync()
+        {
+            var startupCoordinator = _services.GetRequiredService<StartupCoordinator>();
+            var action = await startupCoordinator.HandleStartupAsync();
+
+            if (action != StartupAction.ShowWizard)
+            {
+                return;
+            }
+
+            _logger.LogInformation("[Startup] Launching first-run setup wizard");
+            var dialogService = _services.GetRequiredService<IDialogService>();
+            var wizard = _services.GetRequiredService<FirstLaunchSetupWizardViewModel>();
+            await dialogService.ShowCustomAsync("欢迎使用 Pulsar", wizard, DialogButtons.None, DialogSizeConstraints.LargeResizable, AppTheme.Light);
         }
     }
 }
