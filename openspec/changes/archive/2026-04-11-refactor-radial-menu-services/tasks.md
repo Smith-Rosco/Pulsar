@@ -49,45 +49,48 @@
 
 ## 6. Implement PreviewService
 
-- [ ] 6.1 Create `Services/PreviewService.cs` implementing IPreviewService
-- [ ] 6.2 Implement CaptureAsync with IWindowService.CaptureWindowAsync
-- [ ] 6.3 Implement cache dictionary with IntPtr keys
-- [ ] 6.4 Implement InvalidateCache and ClearCache
-- [ ] 6.5 Verify build succeeds
+- [x] 6.1 Create `Services/PreviewService.cs` implementing IPreviewService
+- [x] 6.2 Implement CaptureAsync with IWindowService.CaptureWindowAsync
+- [x] 6.3 Implement cache dictionary with IntPtr keys
+- [x] 6.4 Implement InvalidateCache and ClearCache
+- [x] 6.5 Verify build succeeds
 
 ## 7. Register Services in DI
 
-- [ ] 7.1 Register all new services in App.xaml.cs ConfigureServices
-- [ ] 7.2 Update RadialMenuViewModel constructor to accept new services
-- [ ] 7.3 Verify build succeeds
+- [x] 7.1 Register all new services in App.xaml.cs ConfigureServices
+- [x] 7.2 Update RadialMenuViewModel constructor to accept new services
+- [x] 7.3 Verify build succeeds
+- [x] 7.4 Expose animation callback/target registration methods on `IAnimationController`
+- [x] 7.5 Verify build succeeds after interface update
 
 ## 8. Refactor RadialMenuViewModel
 
-- [ ] 8.1 Remove animation timer and UpdateLayoutAnimation method
-- [ ] 8.2 Remove mouse tracking fields and HandleMouseMove logic
-- [ ] 8.3 Remove magnetism calculation logic
-- [ ] 8.4 Remove bounce animation methods (AnimateBounce, ShowTemporaryHint, ShowSinglePageHint)
-- [ ] 8.5 Remove layout calculation fields (CanvasSize, CenterX, CenterY, RadiusNormal, etc.)
-- [ ] 8.6 Remove layout helper calls - use ISlotLayoutEngine instead
-- [ ] 8.7 Wire up IAnimationController for all animations
-- [ ] 8.8 Wire up IMouseTrackingService for mouse input
-- [ ] 8.9 Wire up IPagingController for page navigation
-- [ ] 8.10 Wire up IPreviewService for window captures
+- [x] 8.1 Remove animation timer and UpdateLayoutAnimation method
+- [x] 8.2 Remove mouse tracking fields and HandleMouseMove logic
+- [x] 8.3 Remove magnetism calculation logic
+- [x] 8.4 Remove bounce animation methods (AnimateBounce, ShowTemporaryHint, ShowSinglePageHint)
+- [x] 8.5 Remove layout calculation fields (CanvasSize, CenterX, CenterY, RadiusNormal, etc.)
+- [x] 8.6 Remove layout helper calls - use ISlotLayoutEngine instead
+- [x] 8.7 Wire up IAnimationController for all animations
+- [x] 8.8 Wire up IMouseTrackingService for mouse input
+- [x] 8.9 Wire up IPagingController for page navigation
+- [x] 8.10 Wire up IPreviewService for window captures
 - [ ] 8.11 Verify RadialMenuViewModel is reduced to ~400 lines
-- [ ] 8.12 Verify build succeeds
+- [x] 8.12 Verify build succeeds
 
 ## 9. Simplify SlotViewModel
 
-- [ ] 9.1 Remove magnetism-related fields (_currentMagneticOffsetX, _currentMagneticOffsetY)
-- [ ] 9.2 Keep UpdateMagneticOffset method but have it called by AnimationController
-- [ ] 9.3 Keep ResetAnimation method
-- [ ] 9.4 Verify build succeeds
+- [x] 9.1 Remove magnetism-related fields (_currentMagneticOffsetX, _currentMagneticOffsetY)
+- [x] 9.2 Keep UpdateMagneticOffset method but have it called by AnimationController
+- [x] 9.3 Keep ResetAnimation method
+- [x] 9.4 Verify build succeeds
 
 ## 10. Testing
 
-- [ ] 10.1 Run full build: `dotnet build Pulsar/Pulsar/Pulsar.csproj`
+- [x] 10.1 Run full build: `dotnet build Pulsar/Pulsar/Pulsar.csproj`
+- [x] 10.1a Add automated regression coverage for radial sector hit testing in `Pulsar.Tests/Services/SlotLayoutEngineTests.cs`
 - [ ] 10.2 Run application and verify radial menu displays correctly
 - [ ] 10.3 Test mouse hover - slots should activate with magnetism effect
 - [ ] 10.4 Test mouse wheel - pagination should work with bounce at boundaries
-- [ ] 10.5 Test Ctrl+Space to dismiss - verify animation is smooth
+- [ ] 10.5 Test dismiss on `Ctrl+Q` / `Ctrl+Shift+Q` modifier release - verify animation is smooth
 - [ ] 10.6 Test SubMenu navigation - verify layout expansion animation

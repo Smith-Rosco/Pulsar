@@ -88,6 +88,32 @@ private void OnRender(object? sender, EventArgs e)
 - `DispatcherTimer` at 16ms intervals → Less precise, runs even when hidden
 - `requestAnimationFrame` → Not available in WPF, requires interop
 
+### 3a. Animation Controller Integration Contract
+
+**Decision:** `IAnimationController` must expose the configuration surface needed to bind animation output back to the radial menu state, rather than relying on concrete `AnimationController` methods only available on the implementation type.
+
+The current implementation already contains callback-based integration points such as layout updates, bounce updates, magnetism updates, and slot target registration, but they are not part of the interface contract. That makes the service difficult to consume through DI during the `RadialMenuViewModel` migration because the ViewModel can inject `IAnimationController` but cannot legally configure it.
+
+**Required contract additions:**
+
+```csharp
+void SetLayoutUpdateCallback(Action<LayoutTarget> callback);
+void SetBounceUpdateCallback(Action<double> callback);
+void SetMagnetismUpdateCallback(Action<Vector, IList<SlotAnimationTarget>> callback);
+void SetSlotTargets(IList<SlotAnimationTarget> targets);
+```
+
+**Rationale:**
+- Preserves DI-friendly usage through the interface
+- Avoids leaking implementation-specific casts into `RadialMenuViewModel`
+- Makes the service extraction complete rather than nominal
+- Creates an explicit seam for tests to verify animation wiring
+
+**Alternatives Considered:**
+- Cast `IAnimationController` to `AnimationController` in the ViewModel → Couples ViewModel to concrete type and undermines extraction
+- Keep animation state updates in the ViewModel while only delegating timing → Leaves the hardest responsibility in the ViewModel and weakens the refactor
+- Push callbacks into a separate adapter service → Extra indirection without solving the missing contract problem
+
 ### 4. Mouse Tracking Architecture
 
 **Decision:** MouseTrackingService subscribes to global cursor position via composition target
@@ -170,3 +196,6 @@ public interface ISlotLayoutEngine
 
 3. **Backwards Compatibility**: SlotViewModel.UpdateMagneticOffset() is called by RadialMenuViewModel. Should SlotViewModel call IAnimationController directly?
    - *Tentative answer*: No - SlotViewModel remains passive (data only). AnimationController drives property changes.
+
+4. **Interface Completeness**: Should the callback/target registration methods live on `IAnimationController` or a dedicated companion interface?
+   - *Current direction*: Keep them on `IAnimationController` for now because the change goal is a small internal refactor, not a broader animation architecture split.

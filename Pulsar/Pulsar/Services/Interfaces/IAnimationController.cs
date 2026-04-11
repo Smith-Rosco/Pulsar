@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -16,10 +17,23 @@ namespace Pulsar.Services.Interfaces
         Task AnimateLayoutAsync(LayoutTarget target, AnimationOptions? options = null, CancellationToken ct = default);
         Task BounceAsync(BounceDirection direction, CancellationToken ct = default);
         void UpdateMagnetism(Vector cursorPosition);
+        void SetLayoutUpdateCallback(Action<LayoutTarget> callback);
+        void SetBounceUpdateCallback(Action<double> callback);
+        void SetMagnetismUpdateCallback(Action<Vector, IList<SlotAnimationTarget>> callback);
+        void SetSlotTargets(IList<SlotAnimationTarget> targets);
         void Pause();
         void Resume();
         Task QueueAsync(Func<CancellationToken, Task> animation, CancellationToken ct = default);
         bool IsPaused { get; }
+    }
+
+    public class SlotAnimationTarget
+    {
+        public double CenterX { get; set; }
+        public double CenterY { get; set; }
+        public double DesiredOffsetX { get; set; }
+        public double DesiredOffsetY { get; set; }
+        public Action<double, double>? ApplyOffset { get; set; }
     }
 
     public readonly record struct LayoutTarget(
@@ -37,6 +51,16 @@ namespace Pulsar.Services.Interfaces
         public static readonly AnimationOptions Smooth = new(
             Duration: TimeSpan.FromMilliseconds(300),
             EasingFunction: EasingFunctions.EaseOutCubic,
+            EnableMagnetism: true);
+
+        public static readonly AnimationOptions SubMenuEnter = new(
+            Duration: TimeSpan.FromMilliseconds(360),
+            EasingFunction: EasingFunctions.EaseInOutCubic,
+            EnableMagnetism: true);
+
+        public static readonly AnimationOptions SubMenuExit = new(
+            Duration: TimeSpan.FromMilliseconds(280),
+            EasingFunction: EasingFunctions.EaseInOutCubic,
             EnableMagnetism: true);
 
         public static readonly AnimationOptions Bounce = new(

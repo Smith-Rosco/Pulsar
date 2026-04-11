@@ -66,7 +66,9 @@ namespace Pulsar.Services
             var relativePos = ScreenToRelative(screenPos);
             RelativePosition = relativePos;
 
-            IsInDeadZone = relativePos.Length < _layoutParameters.DeadZoneRadius;
+            var dx = relativePos.X - _layoutParameters.CenterX;
+            var dy = relativePos.Y - _layoutParameters.CenterY;
+            IsInDeadZone = Math.Sqrt(dx * dx + dy * dy) < _layoutParameters.DeadZoneRadius;
             HoveredSlotIndex = IsInDeadZone ? 0 : _layoutEngine.HitTest(relativePos, _layoutParameters);
 
             MousePositionChanged?.Invoke(this, relativePos);
@@ -81,12 +83,25 @@ namespace Pulsar.Services
         private Vector ScreenToRelative(System.Windows.Point screenPoint)
         {
             if (_windowHandle == IntPtr.Zero)
+            {
                 return new Vector();
+            }
 
             var windowRect = GetWindowRect(_windowHandle);
-            return new Vector(
+            var devicePoint = new System.Windows.Point(
                 screenPoint.X - windowRect.Left,
                 screenPoint.Y - windowRect.Top);
+
+            var source = HwndSource.FromHwnd(_windowHandle);
+            var transform = source?.CompositionTarget?.TransformFromDevice;
+
+            if (transform.HasValue)
+            {
+                var logicalPoint = transform.Value.Transform(devicePoint);
+                return new Vector(logicalPoint.X, logicalPoint.Y);
+            }
+
+            return new Vector(devicePoint.X, devicePoint.Y);
         }
 
         private Rect GetWindowRect(IntPtr hwnd)
