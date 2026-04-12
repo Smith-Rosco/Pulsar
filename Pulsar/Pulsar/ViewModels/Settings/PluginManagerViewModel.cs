@@ -83,7 +83,7 @@ namespace Pulsar.ViewModels.Settings
         private void LoadPlugins()
         {
             Plugins.Clear();
-            var allPlugins = _registry.GetAllPlugins();
+            var allPlugins = _registry.GetAllPluginDescriptors();
 
             foreach (var plugin in allPlugins)
             {

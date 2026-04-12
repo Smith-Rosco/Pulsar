@@ -7,6 +7,8 @@ using Pulsar.Models;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels.Dialogs;
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.Json;
@@ -17,7 +19,8 @@ namespace Pulsar.ViewModels.Settings
     public partial class PluginViewModel : ObservableObject
     {
         private const int ViewLogsPreviewCount = 2;
-        private readonly IPulsarPlugin _plugin;
+        private IPulsarPlugin? _plugin;
+        private readonly PluginDescriptor _descriptor;
         private readonly PluginRegistry _registry;
         private readonly IConfigService _configService;
         private readonly IPluginUsageTracker? _usageTracker;
@@ -43,24 +46,21 @@ namespace Pulsar.ViewModels.Settings
         [ObservableProperty]
         private int _recentErrorCount;
 
-        public string Id => _plugin.Id;
+        public string Id => _descriptor.Id;
         public string Name => _displayModel.DisplayName;
         public string Description => _displayModel.Description;
-        public string Version => _plugin.Version;
-        public string Author => _plugin.Author;
+        public string Version => _descriptor.Version;
+        public string Author => _descriptor.Author;
         public string Icon => _displayModel.IconKey;
         public string Category => _displayModel.CategoryLabel;
         public string AccentColor => _displayModel.AccentColor;
-        public bool CanDisable => _plugin.CanDisable;
+        public bool CanDisable => _descriptor.CanDisable;
 
         public ObservableCollection<PluginSettingViewModel> Settings { get; } = new();
 
-        // [New] UI-friendly properties
         public string UsageSummary => $"{UsageStats.TotalExecutions} uses";
         public string ProfilesSummary => $"{UsageStats.UsedInProfiles.Count} profiles";
-        public string LastUsedSummary => UsageStats.LastUsed.HasValue 
-            ? FormatTimeAgo(UsageStats.LastUsed.Value) 
-            : "Never used";
+        public string LastUsedSummary => UsageStats.LastUsed.HasValue ? FormatTimeAgo(UsageStats.LastUsed.Value) : "Never used";
         public string HealthBadge => HealthReport.Status switch
         {
             PluginHealthStatus.Healthy => "✅",
@@ -70,26 +70,35 @@ namespace Pulsar.ViewModels.Settings
             PluginHealthStatus.Disabled => "🚫",
             _ => ""
         };
+
         public string HealthScoreText => $"{HealthReport.HealthScore}/100";
         public string HealthScoreColor => HealthReport.HealthScore switch
         {
-            >= 90 => "#28a745",  // Green
-            >= 70 => "#ffc107",  // Orange/Yellow
-            _ => "#dc3545"       // Red
+            >= 90 => "#28a745",
+            >= 70 => "#ffc107",
+            _ => "#dc3545"
         };
+
         public string SuccessRateText => UsageStats.TotalExecutions > 0
             ? $"{(double)UsageStats.SuccessCount / UsageStats.TotalExecutions * 100:F1}%"
             : "N/A";
+
         public string AvgExecutionTimeText => $"{UsageStats.AverageExecutionTimeMs:F0}ms";
         public bool IsViewLogsVisible => RecentErrorCount > 0;
         public string ViewLogsLabel => RecentErrorCount > 0 ? $"View Logs ({RecentErrorCount} errors)" : "View Logs";
 
-        public PluginViewModel(IPulsarPlugin plugin, PluginRegistry registry, IConfigService configService,
-            IPluginUsageTracker? usageTracker = null, IPluginHealthMonitor? healthMonitor = null,
-            IPluginLogService? logService = null, IDialogService? dialogService = null, IServiceProvider? serviceProvider = null,
+        public PluginViewModel(
+            PluginDescriptor descriptor,
+            PluginRegistry registry,
+            IConfigService configService,
+            IPluginUsageTracker? usageTracker = null,
+            IPluginHealthMonitor? healthMonitor = null,
+            IPluginLogService? logService = null,
+            IDialogService? dialogService = null,
+            IServiceProvider? serviceProvider = null,
             IPluginMetadataRegistry? metadataRegistry = null)
         {
-            _plugin = plugin;
+            _descriptor = descriptor;
             _registry = registry;
             _configService = configService;
             _usageTracker = usageTracker;
@@ -97,60 +106,39 @@ namespace Pulsar.ViewModels.Settings
             _logService = logService;
             _dialogService = dialogService;
             _serviceProvider = serviceProvider;
-            _metadata = metadataRegistry?.GetMetadata(plugin.Id);
-            _displayModel = _metadata != null
-                ? BuiltInPluginDisplayModel.FromMetadata(_metadata)
-                : new BuiltInPluginDisplayModel(
-                    plugin.Id,
-                    plugin.Icon,
-                    plugin.DisplayName,
-                    plugin.Description,
-                    plugin.Tags.FirstOrDefault()?.Replace(" ", string.Empty, StringComparison.Ordinal).ToLowerInvariant() ?? "general",
-                    plugin.Tags.FirstOrDefault() ?? "General",
-                    "");
+            _plugin = _registry.GetPlugin(descriptor.Id);
+            _metadata = metadataRegistry?.GetMetadata(descriptor.Id) ?? descriptor.Metadata;
+            _displayModel = BuiltInPluginDisplayModel.FromMetadata(_metadata);
 
-            // Load Initial State
-            _isEnabled = _registry.IsPluginEnabled(plugin.Id);
+            _isEnabled = _registry.IsPluginEnabled(descriptor.Id);
+            HasSettings = descriptor.IsConfigurable;
 
-            // Load Settings if Configurable
-            if (plugin is IPluginConfigurable configurable)
+            if (_metadata?.Schema != null)
             {
-                HasSettings = true;
-                LoadSettings(configurable);
-
-                var currentConfig = GetCurrentConfig();
-                if (currentConfig.Count > 0)
-                {
-                    configurable.UpdateSettings(currentConfig);
-                }
+                LoadSettingsFromSchema(_metadata.Schema);
             }
 
-            // Load Statistics and Health Data
             LoadAnalytics();
         }
 
         private void LoadAnalytics()
         {
-            // Load Usage Stats
             if (_usageTracker != null)
             {
                 UsageStats = _usageTracker.GetStats(Id);
             }
 
-            // Load Health Report
             if (_healthMonitor != null)
             {
                 HealthReport = _healthMonitor.GetHealthReport(Id);
             }
 
-            // Load Recent Errors Count
             if (_logService != null)
             {
                 var recentErrors = _logService.GetRecentErrors(Id, ViewLogsPreviewCount);
                 RecentErrorCount = recentErrors.Count;
             }
 
-            // Notify UI properties
             OnPropertyChanged(nameof(UsageSummary));
             OnPropertyChanged(nameof(ProfilesSummary));
             OnPropertyChanged(nameof(LastUsedSummary));
@@ -173,20 +161,26 @@ namespace Pulsar.ViewModels.Settings
             return dateTime.ToLocalTime().ToString("yyyy-MM-dd");
         }
 
+        private void LoadSettingsFromSchema(ConfigSchema schema)
+        {
+            var defs = SchemaToSettingAdapter.Convert(schema, GetOptionsProvider());
+            LoadSettingDefinitions(defs);
+        }
+
         private void LoadSettings(IPluginConfigurable configurable)
         {
-            var schema = _metadata?.Schema;
-            var optionsProvider = GetOptionsProvider();
-            var defs = schema != null && schema.Properties.Count > 0
-                ? SchemaToSettingAdapter.Convert(schema, optionsProvider)
-                : configurable.GetSettingsDefinition();
+            LoadSettingDefinitions(configurable.GetSettingsDefinition());
+        }
 
+        private void LoadSettingDefinitions(IEnumerable<PluginSettingDefinition> defs)
+        {
+            Settings.Clear();
             var currentConfig = GetCurrentConfig();
 
             foreach (var def in defs)
             {
                 object? value = null;
-                
+
                 if (currentConfig.TryGetValue(def.Key, out var rawValue))
                 {
                     if (rawValue is JsonElement element)
@@ -195,8 +189,8 @@ namespace Pulsar.ViewModels.Settings
                     }
                     else if (rawValue is string str && def.Type == PluginSettingType.MultiSelect)
                     {
-                        value = string.IsNullOrEmpty(str) 
-                            ? new List<string>() 
+                        value = string.IsNullOrEmpty(str)
+                            ? new List<string>()
                             : str.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
                     }
                     else
@@ -218,7 +212,7 @@ namespace Pulsar.ViewModels.Settings
                 var processRegistryService = _serviceProvider?.GetService<IProcessRegistryService>();
                 if (processRegistryService != null)
                 {
-                    return (string propertyKey) =>
+                    return propertyKey =>
                     {
                         if (propertyKey == "ExcludeProcesses")
                         {
@@ -232,10 +226,12 @@ namespace Pulsar.ViewModels.Settings
                                 return Enumerable.Empty<string>();
                             }
                         }
+
                         return Enumerable.Empty<string>();
                     };
                 }
             }
+
             return null;
         }
 
@@ -265,10 +261,22 @@ namespace Pulsar.ViewModels.Settings
             {
                 return profile.Config;
             }
+
             return new Dictionary<string, object>();
         }
 
-        private void OnSettingChanged(string key, object? newValue)
+        private async Task<IPluginConfigurable?> EnsureConfigurablePluginAsync()
+        {
+            if (_plugin is IPluginConfigurable configurable)
+            {
+                return configurable;
+            }
+
+            _plugin = await _registry.GetOrActivatePluginAsync(Id);
+            return _plugin as IPluginConfigurable;
+        }
+
+        private async void OnSettingChanged(string key, object? newValue)
         {
             var setting = Settings.FirstOrDefault(s => s.Key == key);
             if (setting != null)
@@ -280,7 +288,6 @@ namespace Pulsar.ViewModels.Settings
                 }
             }
 
-            // Update Config in Memory
             var config = _configService.Current;
             if (!config.Plugins.TryGetValue(Id, out var profile))
             {
@@ -290,9 +297,6 @@ namespace Pulsar.ViewModels.Settings
 
             if (newValue != null)
             {
-                // [Architectural Note] No need to convert JsonElement here anymore.
-                // ConfigService.LoadAsync() now normalizes all JsonElement values at load time.
-                // This ensures type consistency throughout the application lifecycle.
                 profile.Config[key] = newValue;
             }
             else
@@ -300,32 +304,21 @@ namespace Pulsar.ViewModels.Settings
                 profile.Config.Remove(key);
             }
 
-            // Notify Plugin
-            if (_plugin is IPluginConfigurable configurable)
-            {
-                configurable.UpdateSettings(profile.Config);
-            }
+            var configurable = await EnsureConfigurablePluginAsync();
+            configurable?.UpdateSettings(profile.Config);
 
-            // Save to Disk (Debounced ideally, but direct for now)
             _ = _configService.SaveAsync(config);
         }
 
         [RelayCommand]
         private async Task ToggleStateAsync()
         {
-            IsEnabled = !IsEnabled; // Optimistic UI update handled by two-way binding or property setter logic?
-            // Actually, IsEnabled is bound to ToggleSwitch.
-            // But we need to sync with Registry.
-            
-            // Wait, the property setter updates _isEnabled. 
-            // We need to call Registry to persist.
+            IsEnabled = !IsEnabled;
             await _registry.SetPluginStateAsync(Id, IsEnabled);
         }
 
-        // Custom setter logic to handle UI toggle
         partial void OnIsEnabledChanged(bool value)
         {
-            // Fire and forget save
             _ = _registry.SetPluginStateAsync(Id, value);
         }
 
@@ -363,8 +356,8 @@ namespace Pulsar.ViewModels.Settings
                 if (windowService != null && processRegistryService != null)
                 {
                     var currentConfig = GetCurrentConfig();
-                    var currentBlacklist = currentConfig.TryGetValue("ExcludeProcesses", out var val) 
-                        ? val?.ToString() ?? string.Empty 
+                    var currentBlacklist = currentConfig.TryGetValue("ExcludeProcesses", out var val)
+                        ? val?.ToString() ?? string.Empty
                         : string.Empty;
 
                     var vm = new ProcessBlacklistViewModel(windowService, processRegistryService, currentBlacklist);
@@ -375,15 +368,15 @@ namespace Pulsar.ViewModels.Settings
 
                     if (result == Models.Enums.DialogResult.Confirmed)
                     {
-                        var blacklist = vm.Result;
-                        OnSettingChanged("ExcludeProcesses", blacklist);
-                        HasSettings = false;
-                        if (_plugin is IPluginConfigurable configurable)
+                        OnSettingChanged("ExcludeProcesses", vm.Result);
+                        var configurable = await EnsureConfigurablePluginAsync();
+                        if (configurable != null)
                         {
                             LoadSettings(configurable);
                             HasSettings = Settings.Count > 0;
                         }
                     }
+
                     return;
                 }
             }
@@ -391,6 +384,18 @@ namespace Pulsar.ViewModels.Settings
             if (!HasSettings)
             {
                 return;
+            }
+
+            if (Settings.Count == 0 && _metadata?.Schema == null)
+            {
+                var configurable = await EnsureConfigurablePluginAsync();
+                if (configurable == null)
+                {
+                    return;
+                }
+
+                LoadSettings(configurable);
+                HasSettings = Settings.Count > 0;
             }
 
             var dialogVm = new Pulsar.ViewModels.Dialogs.PluginSettingsDialogViewModel(this, _configService);

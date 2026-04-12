@@ -153,10 +153,10 @@ namespace Pulsar.Core.Plugin.Examples
             // 创建 PluginLoader (自动启用依赖分析)
             var pluginLoader = new PluginLoader(services, pluginDirectory);
 
-            // 加载插件 (自动分析依赖)
-            var plugins = pluginLoader.LoadAll();
+            // 发现插件描述符 (自动分析依赖)
+            var plugins = pluginLoader.DiscoverDescriptors(includeCore: true, includeExtensions: true, analyzeDependencies: true);
 
-            Console.WriteLine($"✓ Loaded {plugins.Count} plugins");
+            Console.WriteLine($"✓ Discovered {plugins.Count} plugins");
 
             // 检查是否存在严重冲突
             if (pluginLoader.HasCriticalDependencyConflicts())

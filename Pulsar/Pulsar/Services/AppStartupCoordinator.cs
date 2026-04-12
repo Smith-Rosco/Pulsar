@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -34,13 +35,10 @@ namespace Pulsar.Services
 
         public async Task RunBlockingInitializationAsync()
         {
+            var startupStopwatch = Stopwatch.StartNew();
             _logger.LogInformation("[Startup] Running blocking startup responsibilities");
 
-            var pluginRegistry = _services.GetRequiredService<PluginRegistry>();
-            await pluginRegistry.LoadAllAsync();
-
             var configService = _services.GetRequiredService<IConfigService>();
-            ConfigureValidationPipeline(configService);
             await ApplyLoggingConfigurationAsync(configService);
 
             var processRegistryService = _services.GetRequiredService<IProcessRegistryService>();
@@ -51,11 +49,13 @@ namespace Pulsar.Services
             trayService.Initialize();
             _logger.LogInformation("[Startup] Tray service initialized");
 
+            var pluginRegistry = _services.GetRequiredService<PluginRegistry>();
+            await pluginRegistry.LoadCoreAsync();
+            _logger.LogInformation("[Startup] Core plugins activated");
+
             var mainWindow = _services.GetRequiredService<RadialMenuWindow>();
             mainWindow.Show();
             _logger.LogInformation("[Startup] Radial menu window shown");
-
-            await RunOnboardingStartupAsync();
 
             var hotkeyService = _services.GetRequiredService<IHotkeyService>();
             await hotkeyService.InitializeAsync();
@@ -66,7 +66,8 @@ namespace Pulsar.Services
             _logger.LogInformation("[Startup] Global mouse wheel service initialized");
 
             await ConfigureKeyboardHookAsync(configService);
-            _logger.LogInformation("[Startup] Blocking startup responsibilities complete");
+            startupStopwatch.Stop();
+            _logger.LogInformation("[Startup] Blocking startup responsibilities complete in {ElapsedMs}ms", startupStopwatch.ElapsedMilliseconds);
         }
 
         public void StartDeferredInitialization()
@@ -75,9 +76,22 @@ namespace Pulsar.Services
 
             System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
             {
+                var deferredStopwatch = Stopwatch.StartNew();
                 try
                 {
+                    var pluginRegistry = _services.GetRequiredService<PluginRegistry>();
+                    await pluginRegistry.DiscoverDeferredAsync();
+
                     var configService = _services.GetRequiredService<IConfigService>();
+                    ConfigureValidationPipeline(configService);
+
+                    if (configService.Current != null)
+                    {
+                        await configService.SaveAsync(configService.Current);
+                    }
+
+                    await RunOnboardingStartupAsync();
+
                     var config = await configService.LoadAsync();
                     if (config.Settings.HasCompletedTutorial
                         || string.Equals(config.Settings.LastTutorialStep, "Skipped", StringComparison.OrdinalIgnoreCase)
@@ -96,9 +110,13 @@ namespace Pulsar.Services
                     {
                         await tutorialService.StartTutorialAsync();
                     }
+
+                    deferredStopwatch.Stop();
+                    _logger.LogInformation("[Startup] Deferred startup responsibilities complete in {ElapsedMs}ms", deferredStopwatch.ElapsedMilliseconds);
                 }
                 catch (Exception ex)
                 {
+                    deferredStopwatch.Stop();
                     _logger.LogError(ex, "[Startup] Deferred startup task failed");
                 }
             });
