@@ -15,66 +15,26 @@ using Pulsar.Services.Interfaces;
 using Pulsar.Models; // 确保引用了 WindowInfo 等模型
 using Pulsar.Native; // [New] Use centralized Native helper
 using Pulsar.Helpers; // [Logging] For LogSampler
+using Pulsar.Services.WindowSwitching;
 
 namespace Pulsar.Services
 {
-    /// <summary>
-    /// 窗口注册表条目 - 追踪窗口的生命周期和激活历史
-    /// </summary>
-    internal class WindowRegistryEntry
-    {
-        public IntPtr Handle { get; set; }
-        public DateTime FirstSeenTime { get; set; }
-        public DateTime LastActivationTime { get; set; }
-        public string ProcessName { get; set; } = string.Empty;
-    }
-    
-    /// <summary>
-    /// 切换对快照 (不可变) - 用于稳定的双向窗口切换
-    /// 一旦建立，在超时前保持不变，避免状态污染
-    /// </summary>
-    internal class SwitchPairSnapshot
-    {
-        public IntPtr SourceWindow { get; }
-        public IntPtr TargetWindow { get; }
-        public DateTime CreatedAt { get; }
-        
-        public SwitchPairSnapshot(IntPtr source, IntPtr target)
-        {
-            SourceWindow = source;
-            TargetWindow = target;
-            CreatedAt = DateTime.Now;
-        }
-        
-        public bool IsExpired(int timeoutMs) => 
-            (DateTime.Now - CreatedAt).TotalMilliseconds > timeoutMs;
-        
-        public bool IsValid(Func<IntPtr, bool> validator) =>
-            PulsarNative.IsWindow(SourceWindow) && 
-            PulsarNative.IsWindow(TargetWindow) &&
-            validator(SourceWindow) && 
-            validator(TargetWindow);
-    }
-
     public class WindowService : IWindowService
     {
         private readonly ILogger<WindowService> _logger;
         private readonly IProcessRegistryService? _processRegistryService;
         private readonly ILoggerFactory? _loggerFactory;
+        private readonly WindowSelectionEngine _selectionEngine = new();
+        private readonly WindowActivator _windowActivator = new();
+        private readonly WindowInventoryService _inventoryService = new();
+        private readonly WindowTrackingService _trackingService = new();
+        private readonly QuickSwitchEngine _quickSwitchEngine = new();
 
         // [New] 状态管理字段
-        private IntPtr _previousWindowHandle = IntPtr.Zero;
         private Action? _hideMainWindowAction;
         private readonly int _currentProcessId;
         
-        // [New] Window History Stack for Quick Switch (方案 A)
-        private Stack<IntPtr> _windowHistory = new Stack<IntPtr>();
         private const int MaxHistorySize = 10;
-        private readonly object _historyLock = new object();
-        
-        // [Refactor] Switch Pair Management - 使用不可变快照避免状态污染
-        private SwitchPairSnapshot? _activeSwitchPair = null;
-        private readonly object _switchPairLock = new object();
         private const int QuickSwitchTimeoutMs = 5000; // 5秒内的连续切换视为同一对
         
         // [New] Focus Restore State Machine
@@ -106,10 +66,6 @@ namespace Pulsar.Services
         private readonly LogSampler _captureLogSampler = new LogSampler(20);     // Sample 1 in 20 for capture failures
         private readonly LogSampler _switchDebugSampler = new LogSampler(3);     // Sample 1 in 3 for switch debug logs
         
-        // [Refactor] Global Window Registry - 全局窗口注册表
-        // 追踪窗口的首次出现时间和真实激活时间，提供稳定的排序基准
-        private readonly System.Collections.Concurrent.ConcurrentDictionary<IntPtr, WindowRegistryEntry> _windowRegistry = new();
-        private readonly object _registryLock = new object();
         private System.Threading.Timer? _cleanupTimer;
         
         // [Fix] Global Window Activation Monitor - 全局窗口激活监听器
@@ -222,7 +178,7 @@ namespace Pulsar.Services
             PulsarNative.GetWindowThreadProcessId(handle, out uint processId);
             if (processId == _currentProcessId) return;
 
-            _previousWindowHandle = handle;
+            _trackingService.SetPreviousWindow(handle);
             
             // [New] Also record to history stack
             RecordWindowActivation(handle);
@@ -249,32 +205,13 @@ namespace Pulsar.Services
             
             string title = GetWindowTitle(hwnd);
             
-            lock (_historyLock)
-            {
-                // 去重：如果栈顶已经是这个窗口，不重复记录
-                if (_windowHistory.Count > 0 && _windowHistory.Peek() == hwnd)
-                {
-                    _logger.LogDebug("[WindowHistory] ❌ Skipped: Already at top of stack. Title: '{Title}'", title);
-                    return;
-                }
-                
-                _windowHistory.Push(hwnd);
-                _logger.LogInformation("[WindowHistory] ✅ Recorded window: '{Title}' (Stack size: {Size}/{Max})", 
-                    title, _windowHistory.Count, MaxHistorySize);
-                
-                // 限制栈大小
-                if (_windowHistory.Count > MaxHistorySize)
-                {
-                    var temp = _windowHistory.ToArray();
-                    _windowHistory = new Stack<IntPtr>(temp.Take(MaxHistorySize).Reverse());
-                    _logger.LogDebug("[WindowHistory] Trimmed stack to {MaxSize} entries", MaxHistorySize);
-                }
-            }
+            _quickSwitchEngine.RecordWindowActivation(hwnd, MaxHistorySize);
+            _logger.LogInformation("[WindowHistory] ✅ Recorded window: '{Title}'", title);
         }
 
         public IntPtr GetPreviousWindow()
         {
-            return _previousWindowHandle;
+            return _trackingService.PreviousWindowHandle;
         }
 
         public void RegisterHideAction(Action hideAction)
@@ -364,37 +301,30 @@ namespace Pulsar.Services
                     return false;
                 }
                 
-                // [Refactor] Smart Window Switching for Multi-Window Processes
-                // Uses Window Registry to track real activation times (via WindowActivationMonitor)
-                
-                // Get current foreground window
-                IntPtr currentForeground = PulsarNative.GetForegroundWindow();
-                
-                // Collect all valid windows from target process with real activation times
-                var targetWindows = new List<(IntPtr Handle, DateTime LastActivation, string Title)>();
+                var targetWindows = new List<ProcessWindowInfo>();
+                var seenHandles = new HashSet<IntPtr>();
                 
                 foreach (var proc in processes)
                 {
-                    if (proc.MainWindowHandle != IntPtr.Zero)
+                    List<ProcessWindowInfo> processWindows;
+                    try
                     {
-                        IntPtr hwnd = proc.MainWindowHandle;
-                        
-                        // Query registry for real activation time
-                        DateTime lastActivation;
-                        if (_windowRegistry.TryGetValue(hwnd, out var entry))
+                        processWindows = GetProcessWindowsAsync(proc.Id).GetAwaiter().GetResult();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.LogDebug(ex, "[SwitchToProcess] Failed to enumerate windows for process {ProcessName} ({ProcessId})",
+                            proc.ProcessName,
+                            proc.Id);
+                        continue;
+                    }
+
+                    foreach (var window in processWindows)
+                    {
+                        if (seenHandles.Add(window.Handle))
                         {
-                            lastActivation = entry.LastActivationTime;
+                            targetWindows.Add(window);
                         }
-                        else
-                        {
-                            // Fallback: window not in registry yet (newly created)
-                            // Use DateTime.MinValue to deprioritize
-                            lastActivation = DateTime.MinValue;
-                            _logger?.LogDebug("[SwitchToProcess] Window not in registry (newly created): {Title}", 
-                                GetWindowTitle(hwnd));
-                        }
-                        
-                        targetWindows.Add((hwnd, lastActivation, GetWindowTitle(hwnd)));
                     }
                 }
                 
@@ -404,242 +334,68 @@ namespace Pulsar.Services
                     return false;
                 }
                 
-                // Sort by LastActivation descending (most recent first)
-                // Then filter out current foreground window
-                var sortedWindows = targetWindows.OrderByDescending(w => w.LastActivation).ToList();
-                
                 // Log all candidate windows for debugging
                 if (targetWindows.Count > 1)
                 {
                     _logger?.LogInformation("[SwitchToProcess] Multi-window process detected: {ProcessName} ({Count} windows)", 
                         processName, targetWindows.Count);
+
+                    IntPtr currentForeground = PulsarNative.GetForegroundWindow();
+                    var sortedWindows = targetWindows
+                        .OrderByDescending(w => w.RealActivationTime > DateTime.MinValue)
+                        .ThenByDescending(w => w.RealActivationTime)
+                        .ThenByDescending(w => w.LastActivationTime)
+                        .ThenBy(w => w.FirstSeenTime)
+                        .ToList();
                     
                     for (int i = 0; i < sortedWindows.Count; i++)
                     {
                         var w = sortedWindows[i];
                         bool isCurrent = (w.Handle == currentForeground);
-                        _logger?.LogDebug("[SwitchToProcess]   [{Index}] '{Title}' - LastActivation: {Time}, IsCurrent: {IsCurrent}", 
-                            i, w.Title, w.LastActivation, isCurrent);
+                        _logger?.LogDebug("[SwitchToProcess]   [{Index}] '{Title}' - RealActivation: {Time}, IsCurrent: {IsCurrent}", 
+                            i, w.Title, w.RealActivationTime, isCurrent);
                     }
                 }
                 
-                // Select target: most recent window that is NOT current foreground
-                var targetWindow = sortedWindows.FirstOrDefault(w => w.Handle != currentForeground);
-                
-                // Fallback: if all windows are current (single window case), use most recent
-                if (targetWindow.Handle == IntPtr.Zero)
+                var targetWindow = SelectTargetWindowOrDefault(
+                    targetWindows,
+                    new WindowSelectionRequest
+                    {
+                        Intent = WindowSelectionIntent.ProcessActivation,
+                        SkipMode = WindowSelectionSkipMode.SkipCurrentForeground,
+                        CurrentForegroundHandle = PulsarNative.GetForegroundWindow(),
+                        PreviousWindowHandle = _trackingService.PreviousWindowHandle
+                    });
+
+                if (targetWindow == null)
                 {
-                    targetWindow = sortedWindows.First();
-                    _logger?.LogDebug("[SwitchToProcess] Single window process, switching to same window: '{Title}'", 
-                        targetWindow.Title);
-                }
-                else
-                {
-                    _logger?.LogInformation("[SwitchToProcess] Smart switch: {ProcessName} -> '{Title}' (LastActivation: {Time})", 
-                        processName, targetWindow.Title, targetWindow.LastActivation);
+                    _logger?.LogWarning("[SwitchToProcess] No valid target selected for process: {ProcessName}", processName);
+                    return false;
                 }
                 
-                ForceForegroundWindow(targetWindow.Handle);
+                if (!ActivateWindow(targetWindow))
+                {
+                    _logger?.LogWarning("[SwitchToProcess] Failed to activate selected window '{Title}' for process '{ProcessName}'",
+                        targetWindow.Title,
+                        processName);
+                    return false;
+                }
+
+                _logger?.LogInformation("[SwitchToProcess] Smart switch: {ProcessName} -> '{Title}'", 
+                    processName, targetWindow.Title);
+
                 return true;
             });
         }
 
         public Task<List<ProcessWindowInfo>> GetActiveWindowsAsync()
         {
-            return Task.Run(() =>
-            {
-                var results = new List<ProcessWindowInfo>();
-                int zOrderIndex = 0; // Track Z-Order position (lower = more recent)
-
-                PulsarNative.EnumWindows((hWnd, lParam) =>
-                {
-                        // 1. 基础过滤
-                    if (!PulsarNative.IsWindowVisible(hWnd)) return true;
-
-                    // [Fix] Enhanced filtering: DWMWA_CLOAKED (using correct P/Invoke signature with int)
-                    // sizeof(int) is 4 bytes. DWM API returns S_OK (0) on success.
-                    if (PulsarNative.DwmGetWindowAttribute(hWnd, PulsarNative.DWMWA_CLOAKED, out int isCloakedVal, sizeof(int)) == 0)
-                    {
-                        if (isCloakedVal != 0) return true; // Window is cloaked (e.g. suspended UWP app)
-                    }
-
-                    // [Fix] Enhanced filtering: Tool Windows & Ownership Check (Alt-Tab heuristic)
-                    long exStyle = PulsarNative.GetWindowLong(hWnd, PulsarNative.GWL_EXSTYLE);
-                    if ((exStyle & PulsarNative.WS_EX_TOOLWINDOW) != 0) return true;
-
-                    // Check for Owner window
-                    IntPtr owner = PulsarNative.GetWindow(hWnd, PulsarNative.GW_OWNER);
-                    if (owner != IntPtr.Zero)
-                    {
-                        // If window has an owner, it must be an AppWindow to be shown
-                        if ((exStyle & PulsarNative.WS_EX_APPWINDOW) == 0) return true;
-                    }
-
-                    // 2. Title Filtering
-                    int length = PulsarNative.GetWindowTextLength(hWnd);
-                    if (length == 0) return true;
-
-                    StringBuilder sb = new StringBuilder(length + 1);
-                    PulsarNative.GetWindowText(hWnd, sb, sb.Capacity);
-                    string title = sb.ToString();
-
-                    if (string.IsNullOrWhiteSpace(title) || title == "Program Manager") return true;
-
-                        // 3. 获取进程信息
-                        PulsarNative.GetWindowThreadProcessId(hWnd, out uint processId);
-                        try
-                        {
-                            using (var proc = Process.GetProcessById((int)processId))
-                            {
-                                if (proc.HasExited) return true;
-
-                                // [Blacklist Filter] Check against dynamic blacklist (system + user)
-                                bool isBlacklisted;
-                                lock (_blacklistLock)
-                                {
-                                    isBlacklisted = _dynamicBlacklist.Contains(proc.ProcessName);
-                                }
-                                if (isBlacklisted) return true;
-
-                                string fullPath = "";
-                                try { fullPath = proc.MainModule?.FileName ?? ""; } catch { }
-
-                            // 提取图标
-                            ImageSource? iconSource = null;
-                            if (!string.IsNullOrEmpty(fullPath))
-                            {
-                                iconSource = ExtractIcon(fullPath);
-                            }
-
-                            DateTime startTime = DateTime.MinValue;
-                            try { startTime = proc.StartTime; } catch { }
-
-                            // [New] Calculate LastActivationTime based on Z-Order
-                            // EnumWindows returns windows in Z-Order (top to bottom)
-                            // Lower zOrderIndex = more recently activated
-                            // We use a synthetic timestamp: Now - (zOrderIndex * 1 second)
-                            // This ensures proper sorting while being deterministic
-                            DateTime lastActivationTime = DateTime.Now.AddSeconds(-zOrderIndex);
-                            
-                            // [Refactor] Register or update window in global registry
-                            var registryEntry = RegisterOrUpdateWindow(hWnd, proc.ProcessName);
-
-                            results.Add(new ProcessWindowInfo
-                            {
-                                Title = title,
-                                ProcessName = proc.ProcessName,
-                                ExePath = fullPath,
-                                Handle = hWnd,
-                                AppIcon = iconSource,
-                                StartTime = startTime,
-                                LastActivationTime = lastActivationTime, // Z-Order synthetic (legacy)
-                                FirstSeenTime = registryEntry.FirstSeenTime, // [NEW] Stable sort key
-                                RealActivationTime = registryEntry.LastActivationTime // [NEW] Real activation time
-                            });
-                            
-                            zOrderIndex++; // Increment for next window
-                        }
-                    }
-                    catch { /* 忽略系统进程 */ }
-
-                    return true;
-                }, IntPtr.Zero);
-
-                // [Fix] 移除强制去重逻辑，直接返回所有有效窗口
-                // 这允许 ViewModel 识别同一进程的多个窗口并进行分组
-                
-                // [New] 批量注册进程到注册表（异步，不阻塞）
-                if (_processRegistryService != null && results.Count > 0)
-                {
-                    _ = Task.Run(() => _processRegistryService.RegisterProcessesAsync(results));
-                }
-                
-                return results;
-            });
+            return _inventoryService.GetActiveWindowsAsync(IsDiscoveryBlacklisted, RegisterOrUpdateWindow, ExtractIcon, _processRegistryService);
         }
 
         public Task<List<ProcessWindowInfo>> GetProcessWindowsAsync(int targetProcessId)
         {
-            return Task.Run(() =>
-            {
-                var results = new List<ProcessWindowInfo>();
-                int zOrderIndex = 0; // Track Z-Order position
-
-                PulsarNative.EnumWindows((hWnd, lParam) =>
-                {
-                    // 1. 基础过滤
-                    if (!PulsarNative.IsWindowVisible(hWnd)) return true;
-
-                    // 2. 进程过滤
-                    PulsarNative.GetWindowThreadProcessId(hWnd, out uint processId);
-                    if (processId != targetProcessId) return true;
-
-                    // 3. 标题过滤 (可选，如果不想要无标题窗口)
-                    int length = PulsarNative.GetWindowTextLength(hWnd);
-                    StringBuilder sb = new StringBuilder(length + 1);
-                    if (length > 0)
-                    {
-                        PulsarNative.GetWindowText(hWnd, sb, sb.Capacity);
-                    }
-                    string title = sb.ToString();
-
-                        // 4. 获取进程信息
-                        try
-                        {
-                            using (var proc = Process.GetProcessById((int)processId))
-                            {
-                                if (proc.HasExited) return true;
-
-                                // [Blacklist Filter] Check against dynamic blacklist (system + user)
-                                bool isBlacklisted;
-                                lock (_blacklistLock)
-                                {
-                                    isBlacklisted = _dynamicBlacklist.Contains(proc.ProcessName);
-                                }
-                                if (isBlacklisted) return true;
-
-                                string fullPath = "";
-                                try { fullPath = proc.MainModule?.FileName ?? ""; } catch { }
-
-                            // 提取图标
-                            ImageSource? iconSource = null;
-                            if (!string.IsNullOrEmpty(fullPath))
-                            {
-                                iconSource = ExtractIcon(fullPath);
-                            }
-
-                            DateTime startTime = DateTime.MinValue;
-                            try { startTime = proc.StartTime; } catch { }
-
-                            // [New] Calculate LastActivationTime based on Z-Order
-                            DateTime lastActivationTime = DateTime.Now.AddSeconds(-zOrderIndex);
-                            
-                            // [Refactor] Register or update window in global registry
-                            var registryEntry = RegisterOrUpdateWindow(hWnd, proc.ProcessName);
-
-                            results.Add(new ProcessWindowInfo
-                            {
-                                Title = string.IsNullOrEmpty(title) ? "Window" : title,
-                                ProcessName = proc.ProcessName,
-                                ExePath = fullPath,
-                                Handle = hWnd,
-                                AppIcon = iconSource,
-                                StartTime = startTime,
-                                LastActivationTime = lastActivationTime, // Z-Order synthetic (legacy)
-                                FirstSeenTime = registryEntry.FirstSeenTime, // [NEW] Stable sort key
-                                RealActivationTime = registryEntry.LastActivationTime // [NEW] Real activation time
-                            });
-                            
-                            zOrderIndex++;
-                        }
-                    }
-                    catch { /* 忽略系统进程 */ }
-
-                    return true;
-                }, IntPtr.Zero);
-
-                return results;
-            });
+            return _inventoryService.GetProcessWindowsAsync(targetProcessId, IsDiscoveryBlacklisted, RegisterOrUpdateWindow, ExtractIcon);
         }
 
         // [New] Icon Cache to prevent redundant IO/GDI operations
@@ -690,199 +446,54 @@ namespace Pulsar.Services
             PulsarNative.SetForegroundWindow(hWnd);
         }
 
+        internal static WindowSelectionResult SelectTargetWindow(
+            IEnumerable<ProcessWindowInfo> windows,
+            WindowSelectionRequest request,
+            Func<IntPtr, bool>? isWindow = null)
+        {
+            return new WindowSelectionEngine().SelectTargetWindow(windows, request, isWindow);
+        }
+
+        internal static WindowActivationResult ActivateWindow(ProcessWindowInfo window, Func<IntPtr, bool>? isWindow = null)
+        {
+            return new WindowActivator().ActivateWindow(window, isWindow);
+        }
+
         // 补充实现 IWindowService.RecordPreviousWindow()
         public void RecordPreviousWindow()
         {
-            _previousWindowHandle = PulsarNative.GetForegroundWindow();
+            _trackingService.SetPreviousWindow(PulsarNative.GetForegroundWindow());
         }
 
         public void SwitchToPreviousWindow()
         {
-            _logger.LogInformation("[QuickSwitch] ========== SwitchToPreviousWindow START ==========");
-            
             IntPtr current = PulsarNative.GetForegroundWindow();
             PulsarNative.GetWindowThreadProcessId(current, out uint currentPid);
             bool currentIsPulsar = (currentPid == _currentProcessId);
-            
-            _logger.LogInformation("[QuickSwitch] Current foreground: '{Title}' (HWND: {Hwnd}, PID: {Pid}, IsPulsar: {IsPulsar})", 
-                GetWindowTitle(current), current, currentPid, currentIsPulsar);
-            
-            // 确定"真实当前窗口" (如果当前是 Pulsar，使用 _previousWindowHandle)
-            IntPtr realCurrentWindow = currentIsPulsar ? _previousWindowHandle : current;
-            
-            _logger.LogInformation("[QuickSwitch] Real current window: '{Title}' (HWND: {Hwnd})", 
-                GetWindowTitle(realCurrentWindow), realCurrentWindow);
-            
-            // 记录历史栈状态
-            lock (_historyLock)
+            IntPtr realCurrentWindow = currentIsPulsar ? _trackingService.PreviousWindowHandle : current;
+            var resolution = _quickSwitchEngine.ResolveTarget(
+                realCurrentWindow,
+                _trackingService.PreviousWindowHandle,
+                QuickSwitchTimeoutMs,
+                IsAltTabWindow,
+                PulsarNative.IsWindow);
+
+            if (resolution.TargetWindow == IntPtr.Zero)
             {
-                _logger.LogInformation("[QuickSwitch] History stack size: {Size}", _windowHistory.Count);
-                if (_windowHistory.Count > 0)
-                {
-                    var historyArray = _windowHistory.ToArray();
-                    for (int i = 0; i < Math.Min(5, historyArray.Length); i++)
-                    {
-                        _logger.LogInformation("[QuickSwitch]   [{Index}] '{Title}' (HWND: {Hwnd})", 
-                            i, GetWindowTitle(historyArray[i]), historyArray[i]);
-                    }
-                }
-                else
-                {
-                    _logger.LogWarning("[QuickSwitch] ⚠️ History stack is EMPTY!");
-                }
+                _logger.LogWarning("[QuickSwitch] ❌ No valid previous window found");
+                return;
             }
-            
-            lock (_switchPairLock)
+
+            var activation = ActivateWindowDetailed(new ProcessWindowInfo
             {
-                // [Refactor] 1. 检查是否有有效的切换对
-                if (_activeSwitchPair != null && 
-                    !_activeSwitchPair.IsExpired(QuickSwitchTimeoutMs) && 
-                    _activeSwitchPair.IsValid(IsAltTabWindow))
-                {
-                    // 判断当前在切换对的哪一侧
-                    IntPtr switchTo = IntPtr.Zero;
-                    
-                    if (realCurrentWindow == _activeSwitchPair.TargetWindow)
-                    {
-                        switchTo = _activeSwitchPair.SourceWindow;
-                        if (_switchDebugSampler.ShouldLog())
-                        {
-                            _logger.LogDebug("[QuickSwitch] Pair: Target -> Source '{Title}' (sampled 1/{Rate})", 
-                                GetWindowTitle(switchTo), _switchDebugSampler.Rate);
-                        }
-                    }
-                    else if (realCurrentWindow == _activeSwitchPair.SourceWindow)
-                    {
-                        switchTo = _activeSwitchPair.TargetWindow;
-                        if (_switchDebugSampler.ShouldLog())
-                        {
-                            _logger.LogDebug("[QuickSwitch] Pair: Source -> Target '{Title}' (sampled 1/{Rate})", 
-                                GetWindowTitle(switchTo), _switchDebugSampler.Rate);
-                        }
-                    }
-                    else
-                    {
-                        // 当前窗口不在切换对中，说明用户手动切换了其他窗口
-                        _logger.LogDebug("[QuickSwitch] Current window outside pair, resetting");
-                        _activeSwitchPair = null;
-                        goto FALLBACK_TO_HISTORY;
-                    }
-                    
-                    if (switchTo != IntPtr.Zero)
-                    {
-                        ForceForegroundWindow(switchTo);
-                        SetFocusRestoreMode(FocusRestoreMode.NoRestore);
-                        
-                        // [CRITICAL] 不修改 _previousWindowHandle
-                        // 切换对在超时前保持不变
-                        
-                        return;
-                    }
-                }
-                
-                FALLBACK_TO_HISTORY:
-                
-                _logger.LogInformation("[QuickSwitch] Entering FALLBACK_TO_HISTORY mode");
-                
-                // [Refactor] 2. 从历史栈查找目标窗口
-                IntPtr targetWindow = FindValidHistoryWindow(realCurrentWindow);
-                
-                _logger.LogInformation("[QuickSwitch] FindValidHistoryWindow returned: '{Title}' (HWND: {Hwnd})", 
-                    GetWindowTitle(targetWindow), targetWindow);
-                
-                if (targetWindow != IntPtr.Zero)
-                {
-                    // 建立新的切换对 (使用不可变快照)
-                    if (realCurrentWindow != IntPtr.Zero && realCurrentWindow != targetWindow)
-                    {
-                        _activeSwitchPair = new SwitchPairSnapshot(realCurrentWindow, targetWindow);
-                        _logger.LogInformation("[QuickSwitch] New Pair: '{Source}' <-> '{Target}'", 
-                            GetWindowTitle(realCurrentWindow), GetWindowTitle(targetWindow));
-                    }
-                    
-                    ForceForegroundWindow(targetWindow);
-                    SetFocusRestoreMode(FocusRestoreMode.NoRestore);
-                    
-                    // [CRITICAL] 不修改 _previousWindowHandle
-                    // 让 SetPreviousWindow() 在下次 Pulsar 显示时更新
-                    
-                    return;
-                }
-                
-                // [Refactor] 3. Fallback: 使用 _previousWindowHandle
-                if (_previousWindowHandle != IntPtr.Zero && 
-                    PulsarNative.IsWindow(_previousWindowHandle) && 
-                    IsAltTabWindow(_previousWindowHandle))
-                {
-                    _logger.LogInformation("[QuickSwitch] Fallback to previous window: '{Title}'", 
-                        GetWindowTitle(_previousWindowHandle));
-                    
-                    if (realCurrentWindow != IntPtr.Zero && realCurrentWindow != _previousWindowHandle)
-                    {
-                        _activeSwitchPair = new SwitchPairSnapshot(realCurrentWindow, _previousWindowHandle);
-                    }
-                    
-                    ForceForegroundWindow(_previousWindowHandle);
-                    SetFocusRestoreMode(FocusRestoreMode.NoRestore);
-                }
-                else
-                {
-                    _logger.LogWarning("[QuickSwitch] ❌ No valid previous window found");
-                }
-            }
-            
-            _logger.LogInformation("[QuickSwitch] ========== SwitchToPreviousWindow END ==========");
-        }
-        
-        /// <summary>
-        /// 从历史栈查找有效窗口 (辅助方法)
-        /// [Fix] 使用非破坏性查找，保留历史栈完整性
-        /// </summary>
-        private IntPtr FindValidHistoryWindow(IntPtr excludeWindow)
-        {
-            lock (_historyLock)
+                Handle = resolution.TargetWindow,
+                Title = GetWindowTitle(resolution.TargetWindow),
+                ProcessName = string.Empty
+            });
+
+            if (activation.Success)
             {
-                _logger.LogDebug("[QuickSwitch] FindValidHistoryWindow: Searching for valid window (exclude: '{Title}')", 
-                    GetWindowTitle(excludeWindow));
-                
-                // [Fix] 非破坏性查找：转换为数组进行遍历
-                var historyArray = _windowHistory.ToArray();
-                
-                _logger.LogDebug("[QuickSwitch] FindValidHistoryWindow: Checking {Count} candidates", historyArray.Length);
-                
-                // 查找第一个有效的历史窗口（跳过当前窗口）
-                int index = 0;
-                foreach (var candidate in historyArray)
-                {
-                    bool isExcluded = (candidate == excludeWindow);
-                    bool isValidWindow = PulsarNative.IsWindow(candidate);
-                    bool isAltTab = isValidWindow && IsAltTabWindow(candidate);
-                    
-                    _logger.LogDebug("[QuickSwitch]   [{Index}] '{Title}' - Excluded: {Excluded}, Valid: {Valid}, AltTab: {AltTab}", 
-                        index++, GetWindowTitle(candidate), isExcluded, isValidWindow, isAltTab);
-                    
-                    if (!isExcluded && isValidWindow && isAltTab)
-                    {
-                        _logger.LogInformation("[QuickSwitch] ✅ Found valid history window: '{Title}'", GetWindowTitle(candidate));
-                        return candidate;
-                    }
-                }
-                
-                _logger.LogWarning("[QuickSwitch] ❌ No valid history window found");
-                
-                // [Optimization] 清理无效窗口（已关闭的窗口）
-                var validWindows = historyArray
-                    .Where(h => PulsarNative.IsWindow(h))
-                    .ToArray();
-                
-                if (validWindows.Length < historyArray.Length)
-                {
-                    _windowHistory = new Stack<IntPtr>(validWindows.Reverse());
-                    _logger.LogDebug("[QuickSwitch] Cleaned up history: {Removed} invalid windows removed", 
-                        historyArray.Length - validWindows.Length);
-                }
-                
-                return IntPtr.Zero;
+                SetFocusRestoreMode(FocusRestoreMode.NoRestore);
             }
         }
         
@@ -923,13 +534,13 @@ namespace Pulsar.Services
                         break;
                         
                     case FocusRestoreMode.RestorePrevious:
-                        if (_previousWindowHandle != IntPtr.Zero && 
-                            PulsarNative.IsWindow(_previousWindowHandle))
+                        if (_trackingService.PreviousWindowHandle != IntPtr.Zero && 
+                            PulsarNative.IsWindow(_trackingService.PreviousWindowHandle))
                         {
                             // [Logging] Downgraded to Debug - success case, not critical
                             _logger.LogDebug("[FocusManager] Restoring to previous window: '{Title}'", 
-                                GetWindowTitle(_previousWindowHandle));
-                            ForceForegroundWindow(_previousWindowHandle);
+                                GetWindowTitle(_trackingService.PreviousWindowHandle));
+                            ForceForegroundWindow(_trackingService.PreviousWindowHandle);
                         }
                         else
                         {
@@ -1171,52 +782,84 @@ namespace Pulsar.Services
         /// 智能选择目标窗口：从窗口列表中选择最合适的窗口进行切换
         /// 如果之前记录的窗口（Pulsar 唤起前的窗口）在列表中，则跳过它，选择次最近激活的窗口
         /// </summary>
-        public ProcessWindowInfo? SelectTargetWindow(List<ProcessWindowInfo> windows)
+        public WindowSelectionResult SelectTargetWindow(List<ProcessWindowInfo> windows, WindowSelectionRequest? request = null)
         {
             if (windows == null || windows.Count == 0)
             {
                 _logger.LogWarning("[SelectTargetWindow] Empty window list provided");
-                return null;
+                return new WindowSelectionResult
+                {
+                    Request = request ?? new WindowSelectionRequest(),
+                    DecisionReason = "No candidates provided"
+                };
             }
-            
-            // [Fix] Use _previousWindowHandle (window before Pulsar was invoked) instead of current foreground
-            // Current foreground is always Pulsar itself, which is not useful for smart switching
-            IntPtr previousWindow = _previousWindowHandle;
-            
-            // Filter out invalid windows
-            var validWindows = windows.Where(w => PulsarNative.IsWindow(w.Handle)).ToList();
-            
-            if (validWindows.Count == 0)
+
+            request ??= new WindowSelectionRequest
+            {
+                Intent = WindowSelectionIntent.GroupedSwitch,
+                SkipMode = WindowSelectionSkipMode.SkipPreviousWindow,
+                CurrentForegroundHandle = PulsarNative.GetForegroundWindow(),
+                PreviousWindowHandle = _trackingService.PreviousWindowHandle
+            };
+
+            var result = _selectionEngine.SelectTargetWindow(
+                windows,
+                request,
+                PulsarNative.IsWindow);
+
+            if (!result.HasSelection)
             {
                 _logger.LogWarning("[SelectTargetWindow] No valid windows in list");
-                return null;
+                return result;
             }
-            
-            // Sort by LastActivationTime descending (most recent first)
-            var sortedWindows = validWindows.OrderByDescending(w => w.LastActivationTime).ToList();
-            
-            // Find the first window that is NOT the previous window
-            ProcessWindowInfo? target = null;
-            foreach (var win in sortedWindows)
+
+            _logger.LogInformation("[SelectTargetWindow] Selected '{Title}' (Process: {ProcessName}, Intent: {Intent}, SkipMode: {SkipMode}, Reason: {Reason})",
+                result.SelectedWindow!.Title,
+                result.SelectedWindow.ProcessName,
+                result.Request.Intent,
+                result.Request.SkipMode,
+                result.DecisionReason);
+
+            return result;
+        }
+
+        public ProcessWindowInfo? SelectTargetWindowOrDefault(List<ProcessWindowInfo> windows, WindowSelectionRequest? request = null)
+        {
+            return SelectTargetWindow(windows, request).SelectedWindow;
+        }
+
+        public WindowActivationResult ActivateWindowDetailed(ProcessWindowInfo window)
+        {
+            if (window == null)
             {
-                if (win.Handle != previousWindow)
+                _logger.LogWarning("[ActivateWindow] Null window provided");
+                return new WindowActivationResult
                 {
-                    target = win;
-                    _logger.LogInformation("[SelectTargetWindow] Smart switch: Skipping previous window, selected '{Title}' (Process: {ProcessName})", 
-                        win.Title, win.ProcessName);
-                    break;
-                }
+                    Window = new ProcessWindowInfo(),
+                    Success = false,
+                    FailureReason = WindowActivationFailureReason.InvalidHandle
+                };
             }
-            
-            // Fallback: if all windows are the previous window (single window case), use the most recent one
-            if (target == null)
+
+            var result = _windowActivator.ActivateWindow(window, PulsarNative.IsWindow);
+            if (!result.Success)
             {
-                target = sortedWindows.First();
-                _logger.LogDebug("[SelectTargetWindow] Single window process, using most recent: '{Title}'", 
-                    target.Title);
+                _logger.LogWarning("[ActivateWindow] Failed to activate '{Title}' (Handle: {Handle}, Reason: {Reason})",
+                    window.Title,
+                    window.Handle,
+                    result.FailureReason);
+                return result;
             }
-            
-            return target;
+
+            _logger.LogInformation("[ActivateWindow] Activated '{Title}' (Process: {ProcessName})",
+                window.Title,
+                window.ProcessName);
+            return result;
+        }
+
+        public bool ActivateWindow(ProcessWindowInfo window)
+        {
+            return ActivateWindowDetailed(window).Success;
         }
         
         // ==========================================
@@ -1227,25 +870,17 @@ namespace Pulsar.Services
         /// 注册或更新窗口到全局注册表
         /// 首次出现时记录 FirstSeenTime，后续更新仅更新 LastActivationTime
         /// </summary>
-        private WindowRegistryEntry RegisterOrUpdateWindow(IntPtr hwnd, string processName)
+        private bool IsDiscoveryBlacklisted(string processName)
         {
-            return _windowRegistry.AddOrUpdate(
-                hwnd,
-                // 新窗口：记录首次出现时间
-                (h) => new WindowRegistryEntry
-                {
-                    Handle = h,
-                    FirstSeenTime = DateTime.Now,
-                    LastActivationTime = DateTime.Now,
-                    ProcessName = processName
-                },
-                // 已存在窗口：仅更新激活时间
-                (h, existing) =>
-                {
-                    existing.LastActivationTime = DateTime.Now;
-                    return existing;
-                }
-            );
+            lock (_blacklistLock)
+            {
+                return _dynamicBlacklist.Contains(processName);
+            }
+        }
+
+        private WindowTrackingSnapshot RegisterOrUpdateWindow(IntPtr hwnd)
+        {
+            return _trackingService.RegisterOrUpdateWindow(hwnd);
         }
         
         /// <summary>
@@ -1256,19 +891,11 @@ namespace Pulsar.Services
         {
             try
             {
-                var deadHandles = _windowRegistry
-                    .Where(kvp => !PulsarNative.IsWindow(kvp.Key))
-                    .Select(kvp => kvp.Key)
-                    .ToList();
-                
-                foreach (var handle in deadHandles)
+                int deadHandles = _trackingService.CleanupDeadEntries();
+
+                if (deadHandles > 0)
                 {
-                    _windowRegistry.TryRemove(handle, out _);
-                }
-                
-                if (deadHandles.Count > 0)
-                {
-                    _logger.LogDebug("[WindowRegistry] Cleaned up {Count} dead window entries", deadHandles.Count);
+                    _logger.LogDebug("[WindowRegistry] Cleaned up {Count} dead window entries", deadHandles);
                 }
             }
             catch (Exception ex)

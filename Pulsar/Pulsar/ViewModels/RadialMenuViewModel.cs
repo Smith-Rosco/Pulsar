@@ -200,14 +200,15 @@ namespace Pulsar.ViewModels
             _previewService = previewService;
             _serviceProvider = serviceProvider;
             _logger = logger;
-            _visualStateCoordinator = new RadialMenuVisualStateCoordinator(previewService, logger);
-            _inputCoordinator = new RadialMenuInputCoordinator(windowService, logger);
-            _subMenuCoordinator = new RadialMenuSubMenuCoordinator(_usageTracker, _healthMonitor, logger);
-            _layoutCoordinator = new RadialMenuLayoutCoordinator(slotLayoutEngine, animationController, logger);
-            
-            // [New] Resolve analytics services
+
+            // [New] Resolve analytics services before building collaborators that depend on them.
             _usageTracker = serviceProvider.GetService(typeof(IPluginUsageTracker)) as IPluginUsageTracker;
             _healthMonitor = serviceProvider.GetService(typeof(IPluginHealthMonitor)) as IPluginHealthMonitor;
+
+            _visualStateCoordinator = new RadialMenuVisualStateCoordinator(previewService, logger);
+            _inputCoordinator = new RadialMenuInputCoordinator(windowService, logger);
+            _subMenuCoordinator = new RadialMenuSubMenuCoordinator(windowService, _usageTracker, _healthMonitor, logger);
+            _layoutCoordinator = new RadialMenuLayoutCoordinator(slotLayoutEngine, animationController, logger);
 
             // [New] Load slots per page from config
             _slotsPerPage = _configService.GetValidatedSlotsPerPage();

@@ -56,10 +56,10 @@ namespace Pulsar.Plugins.Core.WinSwitcher
             yield return new PluginSettingDefinition
             {
                 Key = "ExcludeProcesses",
-                Label = "Blacklist (Exclude from Window List)",
+                Label = "Discovery Blacklist",
                 Type = PluginSettingType.String,
                 DefaultValue = "",
-                Description = "Comma-separated list of process names to exclude from automatic window discovery (e.g., in Switch Mode). Does not affect explicit switching via Profiles.json.",
+                Description = "Comma-separated process names excluded from automatic window discovery. Explicit activate/switch actions still resolve those processes when targeted directly.",
                 MinLength = 0,
                 MaxLength = 10000,
                 Pattern = @"^[a-zA-Z0-9_,.\s\-]*$"
@@ -337,7 +337,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                         ["ExcludeProcesses"] = new PropertySchema
                         {
                             Type = "multiselect",
-                            Description = "Process names to exclude from automatic window discovery",
+                            Description = "Process names to exclude from automatic window discovery only",
                             DefaultValue = "",
                             Placeholder = "Select processes to exclude..."
                         }

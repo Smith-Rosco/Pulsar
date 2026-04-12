@@ -6,7 +6,6 @@ using CommunityToolkit.Mvvm.Messaging;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Messages;
 using Pulsar.Models;
-using Pulsar.Native;
 using Pulsar.Services;
 using Pulsar.Services.ActionFeedback;
 using Pulsar.Services.Interfaces; // [New]
@@ -105,16 +104,19 @@ namespace Pulsar.ViewModels.Strategies
     public class WindowSwitchStrategy : IActionStrategy
     {
         private readonly ProcessWindowInfo _window;
+        private readonly IWindowService _windowService;
         private readonly IPluginUsageTracker? _usageTracker;
         private readonly IPluginHealthMonitor? _healthMonitor;
         private readonly IPluginLogService? _logService;
 
-        public WindowSwitchStrategy(ProcessWindowInfo window, 
+        public WindowSwitchStrategy(ProcessWindowInfo window,
+            IWindowService windowService,
             IPluginUsageTracker? usageTracker = null, 
             IPluginHealthMonitor? healthMonitor = null,
             IPluginLogService? logService = null)
         {
             _window = window;
+            _windowService = windowService;
             _usageTracker = usageTracker;
             _healthMonitor = healthMonitor;
             _logService = logService;
@@ -129,12 +131,14 @@ namespace Pulsar.ViewModels.Strategies
 
             try
             {
-                if (!PulsarNative.IsWindow(_window.Handle))
+                // Hide first to avoid focus-steal and visual glitches while switching foreground windows.
+                context.IsVisible = false;
+
+                if (!_windowService.ActivateWindow(_window))
                 {
                     System.Media.SystemSounds.Exclamation.Play();
-                    context.IsVisible = false;
                     _logService?.Log("com.pulsar.winswitcher", PluginLogLevel.Warning,
-                        "Window handle is no longer valid",
+                        "Window activation failed",
                         null,
                         "switch",
                         new Dictionary<string, string>
@@ -144,15 +148,6 @@ namespace Pulsar.ViewModels.Strategies
                         },
                         stopwatch.ElapsedMilliseconds);
                     return Task.CompletedTask;
-                }
-
-                // [Fix] Hide first to prevent focus stealing issues or visual glitches
-                context.IsVisible = false;
-
-                PulsarNative.SetForegroundWindow(_window.Handle);
-                if (PulsarNative.IsIconic(_window.Handle))
-                {
-                    PulsarNative.ShowWindow(_window.Handle, PulsarNative.SW_RESTORE);
                 }
 
                 success = true;
@@ -215,7 +210,14 @@ namespace Pulsar.ViewModels.Strategies
         public async Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context)
         {
             // [Enhancement] Use WindowService's smart window selection
-            var target = _windowService.SelectTargetWindow(_windows);
+            var target = _windowService.SelectTargetWindow(
+                _windows,
+                new WindowSelectionRequest
+                {
+                    Intent = WindowSelectionIntent.GroupedSwitch,
+                    SkipMode = WindowSelectionSkipMode.SkipPreviousWindow,
+                    PreviousWindowHandle = _windowService.GetPreviousWindow()
+                }).SelectedWindow;
             
             if (target == null)
             {
@@ -224,7 +226,7 @@ namespace Pulsar.ViewModels.Strategies
                 return;
             }
 
-            await new WindowSwitchStrategy(target, _usageTracker, _healthMonitor, _logService).ExecuteAsync(slot, context);
+            await new WindowSwitchStrategy(target, _windowService, _usageTracker, _healthMonitor, _logService).ExecuteAsync(slot, context);
         }
         
         // Helper for the View Model to call explicitly for drill down

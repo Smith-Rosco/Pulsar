@@ -2,7 +2,7 @@
 
 **日期**: 2026-03-21  
 **版本**: 1.0.0  
-**状态**: 待执行  
+**状态**: 已落地（持续演进）  
 **范围**: WindowService, WindowActivationMonitor, WindowHelper, PulsarContext, ProcessPageProvider
 
 ---
@@ -12,7 +12,7 @@
 窗口切换系统经历多次迭代后，积累了以下问题：
 
 1. **Native API 重复定义** — Win32 方法被定义了 3-6 次，分散在 4 个位置
-2. **WindowService 职责膨胀** — 1335 行的类承担了 8 种不同职责
+2. **WindowService 职责膨胀** — 旧实现把枚举、跟踪、选择、激活、Quick Switch、焦点恢复和黑名单管理压在同一个门面里
 3. **ProcessPageProvider 职责混合** — 数据加载和 UI 绑定混在一起
 4. **静默的炸弹** — 重复的 API 可能在不同 Windows 版本上表现不一致
 
@@ -63,7 +63,7 @@
 
 ---
 
-## 目标架构
+## 当前目标架构
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -97,16 +97,14 @@
              │
              ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  Services/WindowService.cs  (结构化, ~1100 行)                             │
+│  Services/WindowService.cs  (Facade)                                       │
 │                                                                             │
-│  #region Window Enumeration                                                │
-│  #region QuickSwitch State                                                 │
-│  #region Window Registry                                                   │
-│  #region Focus Restore                                                     │
-│  #region Icon Management                                                   │
-│  #region Blacklist Management                                              │
-│  #region Window Capture                                                    │
-│  #region Launch & Switch                                                   │
+│  委派给:                                                                    │
+│  ├── WindowInventoryService   ← 枚举与候选构建                             │
+│  ├── WindowTrackingService    ← PreviousWindow / 激活跟踪 / 注册表         │
+│  ├── WindowSelectionEngine    ← 显式选择请求与决策元数据                   │
+│  ├── WindowActivator          ← 共享激活路径与结果                         │
+│  └── QuickSwitchEngine        ← 配对、超时、历史回退                       │
 └─────────────────────────────────────────────────────────────────────────────┘
              │
              ▼
@@ -901,3 +899,43 @@ namespace Pulsar.Native
 | 日期 | 版本 | 变更 |
 |------|------|------|
 | 2026-03-21 | 1.0.0 | 初始文档 |
+## 2026-04 Explicit Selection Architecture
+
+当前窗口切换路径已经采用显式契约而不是旧的 `WindowSelectionContext`：
+
+- `WindowSelectionRequest`
+  - 表达调用意图: `ProcessActivation`, `GroupedSwitch`, `SubMenuDefault`, `QuickSwitch`
+  - 表达跳过规则: `SkipCurrentForeground`, `SkipPreviousWindow`, `None`
+  - 显式携带 `CurrentForegroundHandle` 与 `PreviousWindowHandle`
+- `WindowSelectionResult`
+  - 返回最终选中的窗口
+  - 返回 `DecisionReason`
+  - 返回 `SkippedHandle` 与排序后的 `RankedHandles`
+- `WindowActivationResult`
+  - 区分无效句柄和前台切换失败
+
+这让测试和日志可以直接解释“为什么选中了这个窗口”，而不是再依赖隐式排序副作用。
+
+## Ordering Semantics
+
+窗口排序现在明确区分三种语义：
+
+- `RealActivationTime`: 真实激活顺序，是用户可感知切换的首选排序信号
+- `LastActivationTime`: 基于当前 Z-order 的回退排序信号
+- `FirstSeenTime`: 稳定显示顺序，用于 submenu 展示和肌肉记忆
+
+产品语义:
+
+- submenu 的展示顺序保持稳定，优先 `FirstSeenTime`
+- submenu 的默认目标独立通过共享选择引擎决定
+- 显式切换目标优先真实激活顺序，而不是把稳定展示顺序误当成“最近使用”
+
+## Blacklist Semantics
+
+`WinSwitcher.ExcludeProcesses` 现在明确是 discovery blacklist：
+
+- 影响自动发现的窗口候选列表
+- 不作为 activation denylist
+- 不阻止显式 `activate` / `switch` 通过进程名进行解析
+
+这与 WinSwitcher 设置文本、插件元数据和用户文档保持一致。

@@ -1,5 +1,28 @@
 # Quick Switch 修复总结
 
+## 2026-04 架构更新
+
+Quick Switch 逻辑不再作为 `WindowService` 里的偶发状态块存在，而是迁移为独立的 `QuickSwitchEngine`。
+
+新的结构有几个关键点：
+
+- Quick Switch 的 history、pair、timeout 由 `QuickSwitchEngine` 单独拥有
+- 目标解析后统一走共享激活路径 `WindowActivator`
+- `WindowService` 只保留 facade 职责，对外集成点不变
+- 回退到 previous window 的逻辑仍保留，但现在是显式 resolution 结果，而不是隐式副作用
+
+这次更新的目标不是改变肌肉记忆，而是把行为语义钉死：
+
+- 有有效 pair 时，在 pair 两端之间来回切换
+- pair 超时或失效时，退回历史栈
+- 历史栈无效时，再退回 previous window
+
+对应测试已补齐：
+
+- pair 反向切换
+- timeout 失效
+- tracked window 无效时回退 previous window
+
 **日期**: 2026-03-08  
 **问题**: 第一次 Quick Switch 在当前窗口闪烁  
 **修复**: 一行代码的优雅解决方案

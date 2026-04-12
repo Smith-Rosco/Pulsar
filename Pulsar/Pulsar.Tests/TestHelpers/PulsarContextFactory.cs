@@ -39,6 +39,18 @@ namespace Pulsar.Tests.TestHelpers
             mockWindowService.Setup(x => x.GetPreviousWindow()).Returns(hwnd);
             mockWindowService.Setup(x => x.GetProcessWindowsAsync(It.IsAny<int>()))
                 .ReturnsAsync(new List<ProcessWindowInfo>());
+            mockWindowService.Setup(x => x.SelectTargetWindow(It.IsAny<List<ProcessWindowInfo>>(), It.IsAny<WindowSelectionRequest?>()))
+                .Returns((List<ProcessWindowInfo> windows, WindowSelectionRequest? request) => new WindowSelectionResult
+                {
+                    Request = request ?? new WindowSelectionRequest(),
+                    SelectedWindow = windows.Count > 0 ? windows[0] : null,
+                    DecisionReason = "Test default"
+                });
+            mockWindowService.Setup(x => x.SelectTargetWindowOrDefault(It.IsAny<List<ProcessWindowInfo>>(), It.IsAny<WindowSelectionRequest?>()))
+                .Returns((List<ProcessWindowInfo> windows, WindowSelectionRequest? _) => windows.Count > 0 ? windows[0] : null);
+            mockWindowService.Setup(x => x.ActivateWindow(It.IsAny<ProcessWindowInfo>())).Returns(true);
+            mockWindowService.Setup(x => x.ActivateWindowDetailed(It.IsAny<ProcessWindowInfo>()))
+                .Returns((ProcessWindowInfo window) => new WindowActivationResult { Window = window, Success = true, FailureReason = WindowActivationFailureReason.None });
             
             // 使用 Capture 方法创建上下文
             return PulsarContext.Capture(mockWindowService.Object, logger: null, permissionInterceptor: null);
@@ -61,6 +73,18 @@ namespace Pulsar.Tests.TestHelpers
             mockWindowService.Setup(x => x.GetPreviousWindow()).Returns(hwnd);
             mockWindowService.Setup(x => x.GetProcessWindowsAsync(pid))
                 .ReturnsAsync(windows);
+            mockWindowService.Setup(x => x.SelectTargetWindow(It.IsAny<List<ProcessWindowInfo>>(), It.IsAny<WindowSelectionRequest?>()))
+                .Returns((List<ProcessWindowInfo> candidates, WindowSelectionRequest? request) => new WindowSelectionResult
+                {
+                    Request = request ?? new WindowSelectionRequest(),
+                    SelectedWindow = candidates.Count > 0 ? candidates[0] : null,
+                    DecisionReason = "Test default"
+                });
+            mockWindowService.Setup(x => x.SelectTargetWindowOrDefault(It.IsAny<List<ProcessWindowInfo>>(), It.IsAny<WindowSelectionRequest?>()))
+                .Returns((List<ProcessWindowInfo> candidates, WindowSelectionRequest? _) => candidates.Count > 0 ? candidates[0] : null);
+            mockWindowService.Setup(x => x.ActivateWindow(It.IsAny<ProcessWindowInfo>())).Returns(true);
+            mockWindowService.Setup(x => x.ActivateWindowDetailed(It.IsAny<ProcessWindowInfo>()))
+                .Returns((ProcessWindowInfo window) => new WindowActivationResult { Window = window, Success = true, FailureReason = WindowActivationFailureReason.None });
             
             return PulsarContext.Capture(mockWindowService.Object, logger: null, permissionInterceptor: null);
         }

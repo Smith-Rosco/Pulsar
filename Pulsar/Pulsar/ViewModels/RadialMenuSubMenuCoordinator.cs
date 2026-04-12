@@ -14,13 +14,16 @@ namespace Pulsar.ViewModels
     {
         private readonly IPluginUsageTracker? _usageTracker;
         private readonly IPluginHealthMonitor? _healthMonitor;
+        private readonly IWindowService _windowService;
         private readonly ILogger<RadialMenuViewModel>? _logger;
 
         public RadialMenuSubMenuCoordinator(
+            IWindowService windowService,
             IPluginUsageTracker? usageTracker,
             IPluginHealthMonitor? healthMonitor,
             ILogger<RadialMenuViewModel>? logger)
         {
+            _windowService = windowService;
             _usageTracker = usageTracker;
             _healthMonitor = healthMonitor;
             _logger = logger;
@@ -55,7 +58,7 @@ namespace Pulsar.ViewModels
                     slot.Type = SlotType.Window;
                     slot.DataContext = win;
                     slot.BadgeCount = 0;
-                    slot.ActionStrategy = new WindowSwitchStrategy(win, _usageTracker, _healthMonitor);
+                    slot.ActionStrategy = new WindowSwitchStrategy(win, _windowService, _usageTracker, _healthMonitor);
                     slot.ResetAnimation();
                 }
                 else
@@ -71,7 +74,14 @@ namespace Pulsar.ViewModels
             int maxWindowsToShow = Math.Min(slotsPerPage, sortedWindows.Count);
             _logger?.LogDebug("[EnterSubMenuAsync] Displaying {WindowCount} windows across {SlotCount} slots", maxWindowsToShow, slotsPerPage);
 
-            return windows.OrderByDescending(w => w.RealActivationTime).FirstOrDefault();
+            return _windowService.SelectTargetWindow(
+                windows,
+                new WindowSelectionRequest
+                {
+                    Intent = WindowSelectionIntent.SubMenuDefault,
+                    SkipMode = WindowSelectionSkipMode.SkipPreviousWindow,
+                    PreviousWindowHandle = _windowService.GetPreviousWindow()
+                }).SelectedWindow;
         }
 
         public void RestoreRootMenu(

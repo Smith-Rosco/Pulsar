@@ -1,4 +1,4 @@
-## ADDED Requirements
+## MODIFIED Requirements
 
 ### Requirement: Built-in plugins SHALL define primary user-facing actions in metadata
 Each built-in plugin that exposes configurable slot behavior SHALL define its primary user-facing actions explicitly in metadata so authoring flows can present a consistent action list.
