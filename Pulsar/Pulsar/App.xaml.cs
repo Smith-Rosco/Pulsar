@@ -101,6 +101,7 @@ namespace Pulsar
             serviceCollection.AddLogging(loggingBuilder => loggingBuilder.AddSerilog(dispose: true));
             serviceCollection.AddSingleton(levelSwitch);
             serviceCollection.AddSingleton<ILoggingConfigService, LoggingConfigService>();
+            serviceCollection.AddSingleton<IBackgroundWorkScheduler, BackgroundWorkScheduler>();
 
             // 1. Core Services
             serviceCollection.AddSingleton<IPluginMetadataRegistry, PluginMetadataRegistry>();
@@ -287,6 +288,9 @@ namespace Pulsar
                 {
                     Task.Run(async () => await pluginRegistry.UnloadAllAsync()).GetAwaiter().GetResult();
                 }
+
+                var backgroundWorkScheduler = Services.GetService<IBackgroundWorkScheduler>();
+                backgroundWorkScheduler?.CancelAll();
                 
                 var trayService = Services.GetService<ITrayService>();
                 trayService?.Dispose();

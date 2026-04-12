@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
+using System.Threading;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 using Pulsar.Core.Plugin.Security;
@@ -19,7 +20,7 @@ namespace Pulsar.Core.Plugin
         public IntPtr TargetWindowHandle { get; }
         public string TargetProcessName { get; }  // 大写，如 "EXCEL"
         public int TargetProcessId { get; }
-        public string TargetExePath { get; } // [New]
+        public string TargetExePath => _resolvedExePath ?? string.Empty;
         
         // === 权限管理 ===
         /// <summary>
@@ -46,22 +47,28 @@ namespace Pulsar.Core.Plugin
         private readonly Lazy<Task<IReadOnlyList<ProcessWindowInfo>>> _windowsLazy;
         private readonly Lazy<Task<string?>> _clipboardLazy;
         private readonly Lazy<Task<string?>> _selectedTextLazy;
+        private readonly Lazy<Task<string>> _targetExePathLazy;
+        private string? _resolvedExePath;
 
         // 私有构造函数
         private PulsarContext(
             IntPtr hwnd, 
             string processName,
-            string exePath, // [New]
             int pid,
+            Func<Task<string>> exePathFactory,
             Func<Task<IReadOnlyList<ProcessWindowInfo>>> windowsFactory,
             Func<Task<string?>> clipboardFactory,
             Func<Task<string?>> selectionFactory)
         {
             TargetWindowHandle = hwnd;
             TargetProcessName = processName;
-            TargetExePath = exePath; // [New]
             TargetProcessId = pid;
             
+            _targetExePathLazy = new Lazy<Task<string>>(async () =>
+            {
+                _resolvedExePath = await exePathFactory();
+                return _resolvedExePath;
+            }, LazyThreadSafetyMode.ExecutionAndPublication);
             _windowsLazy = new Lazy<Task<IReadOnlyList<ProcessWindowInfo>>>(windowsFactory);
             _clipboardLazy = new Lazy<Task<string?>>(clipboardFactory);
             _selectedTextLazy = new Lazy<Task<string?>>(selectionFactory);
@@ -99,6 +106,11 @@ namespace Pulsar.Core.Plugin
             return _selectedTextLazy.Value;
         }
 
+        public Task<string> GetTargetExePathAsync()
+        {
+            return _targetExePathLazy.Value;
+        }
+
         /// <summary>
         /// 检查权限
         /// </summary>
@@ -131,7 +143,6 @@ namespace Pulsar.Core.Plugin
         {
             var hwnd = windowService.GetPreviousWindow();
             string processName = string.Empty;
-            string exePath = string.Empty; // [New]
             int pid = 0;
             
             try
@@ -146,11 +157,6 @@ namespace Pulsar.Core.Plugin
                     using (var process = Process.GetProcessById(pid))
                     {
                         processName = process.ProcessName.ToUpperInvariant();
-                        try 
-                        {
-                             exePath = process.MainModule?.FileName ?? string.Empty;
-                        }
-                        catch { /* Ignore access denied */ }
                     }
                 }
             }
@@ -160,6 +166,28 @@ namespace Pulsar.Core.Plugin
             }
 
             // 定义 Lazy 工厂
+
+            var exePathFactory = new Func<Task<string>>(async () =>
+            {
+                if (pid <= 0)
+                {
+                    return string.Empty;
+                }
+
+                try
+                {
+                    return await Task.Run(() =>
+                    {
+                        using var process = Process.GetProcessById(pid);
+                        return process.MainModule?.FileName ?? string.Empty;
+                    });
+                }
+                catch (Exception ex)
+                {
+                    logger?.LogWarning(ex, "[PulsarContext] Failed to resolve target executable path");
+                    return string.Empty;
+                }
+            });
             
             // 1. 窗口列表工厂
             var windowsFactory = new Func<Task<IReadOnlyList<ProcessWindowInfo>>>(async () => 
@@ -192,7 +220,7 @@ namespace Pulsar.Core.Plugin
             // 3. 选中文本工厂 (占位)
             var selectionFactory = new Func<Task<string?>>(() => Task.FromResult<string?>(null));
 
-            var context = new PulsarContext(hwnd, processName, exePath, pid, windowsFactory, clipboardFactory, selectionFactory);
+            var context = new PulsarContext(hwnd, processName, pid, exePathFactory, windowsFactory, clipboardFactory, selectionFactory);
             context.PermissionInterceptor = permissionInterceptor;
             return context;
         }

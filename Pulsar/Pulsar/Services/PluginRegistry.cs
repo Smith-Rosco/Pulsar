@@ -34,6 +34,11 @@ namespace Pulsar.Services
         private readonly Services.Interfaces.IPluginLogService? _logService;
 
         public PluginRegistry(IServiceProvider serviceProvider, ILogger<PluginRegistry> logger)
+            : this(serviceProvider, logger, null)
+        {
+        }
+
+        public PluginRegistry(IServiceProvider serviceProvider, ILogger<PluginRegistry> logger, PluginLoader? loader)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
@@ -44,7 +49,7 @@ namespace Pulsar.Services
             _logService = _serviceProvider.GetService(typeof(Services.Interfaces.IPluginLogService)) as Services.Interfaces.IPluginLogService;
 
             string pluginDir = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Plugins");
-            _loader = new PluginLoader(serviceProvider, pluginDir);
+            _loader = loader ?? new PluginLoader(serviceProvider, pluginDir);
         }
 
         public async Task LoadCoreAsync()

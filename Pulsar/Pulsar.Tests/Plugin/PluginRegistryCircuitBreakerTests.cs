@@ -49,9 +49,7 @@ namespace Pulsar.Tests.Plugin
             var plugin = new FaultyTestPlugin(shouldThrow: true);
             
             // Manually register plugin (bypass LoadAllAsync)
-            typeof(PluginRegistry)
-                .GetField("_plugins", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                ?.SetValue(registry, new Dictionary<string, IPulsarPlugin> { [plugin.Id] = plugin });
+            RegisterPlugin(registry, plugin);
             
             var context = PulsarContextFactory.CreateTestContext();
             var args = new Dictionary<string, string>().AsReadOnly();
@@ -77,9 +75,7 @@ namespace Pulsar.Tests.Plugin
             var registry = new PluginRegistry(_serviceProvider, _mockLogger.Object);
             var plugin = new FaultyTestPlugin(shouldThrow: true, canDisable: false); // Core plugin
             
-            typeof(PluginRegistry)
-                .GetField("_plugins", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                ?.SetValue(registry, new Dictionary<string, IPulsarPlugin> { [plugin.Id] = plugin });
+            RegisterPlugin(registry, plugin);
             
             var context = PulsarContextFactory.CreateTestContext();
             var args = new Dictionary<string, string>().AsReadOnly();
@@ -101,9 +97,7 @@ namespace Pulsar.Tests.Plugin
             var registry = new PluginRegistry(_serviceProvider, _mockLogger.Object);
             var plugin = new FaultyTestPlugin(shouldThrow: false); // Can control failure
             
-            typeof(PluginRegistry)
-                .GetField("_plugins", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                ?.SetValue(registry, new Dictionary<string, IPulsarPlugin> { [plugin.Id] = plugin });
+            RegisterPlugin(registry, plugin);
             
             var context = PulsarContextFactory.CreateTestContext();
             var args = new Dictionary<string, string>().AsReadOnly();
@@ -135,9 +129,7 @@ namespace Pulsar.Tests.Plugin
             var registry = new PluginRegistry(_serviceProvider, _mockLogger.Object);
             var plugin = new FaultyTestPlugin(shouldThrow: false, returnCriticalError: true);
             
-            typeof(PluginRegistry)
-                .GetField("_plugins", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                ?.SetValue(registry, new Dictionary<string, IPulsarPlugin> { [plugin.Id] = plugin });
+            RegisterPlugin(registry, plugin);
             
             var context = PulsarContextFactory.CreateTestContext();
             var args = new Dictionary<string, string>().AsReadOnly();
@@ -191,6 +183,39 @@ namespace Pulsar.Tests.Plugin
                 }
 
                 return Task.FromResult(PluginResult.Ok("Success"));
+            }
+        }
+
+        private static void RegisterPlugin(PluginRegistry registry, IPulsarPlugin plugin)
+        {
+            var descriptorsField = typeof(PluginRegistry)
+                .GetField("_descriptors", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var descriptors = descriptorsField?.GetValue(registry) as Dictionary<string, PluginDescriptor>;
+            if (descriptors != null)
+            {
+                descriptors[plugin.Id] = new PluginDescriptor
+                {
+                    Id = plugin.Id,
+                    DisplayName = plugin.DisplayName,
+                    Version = plugin.Version,
+                    Author = plugin.Author,
+                    Description = plugin.Description,
+                    Icon = plugin.Icon,
+                    CanDisable = plugin.CanDisable,
+                    Tier = plugin.CanDisable ? PluginTier.Extension : PluginTier.Core,
+                    ImplementationType = plugin.GetType(),
+                    Dependencies = new List<string>(),
+                    Metadata = null!,
+                    IsConfigurable = false
+                };
+            }
+
+            var pluginsField = typeof(PluginRegistry)
+                .GetField("_plugins", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var plugins = pluginsField?.GetValue(registry) as Dictionary<string, IPulsarPlugin>;
+            if (plugins != null)
+            {
+                plugins[plugin.Id] = plugin;
             }
         }
     }

@@ -1,7 +1,4 @@
-## Purpose
-Define the staged startup contract so Pulsar distinguishes blocking initialization from deferred warm-up without compromising runtime readiness or resilience.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Staged Startup Classification
 The system SHALL classify startup work into blocking initialization and deferred warm-up so that required runtime readiness is preserved while non-critical work can be postponed, and deferred work SHALL be submitted through explicit startup scheduling rather than ad hoc background dispatch.

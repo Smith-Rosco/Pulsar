@@ -21,7 +21,10 @@ namespace Pulsar.Core.Plugin
         private readonly IPluginMetadataRegistry? _metadataRegistry;
         private readonly DependencyIsolationManager? _dependencyManager;
         private readonly PluginFactory _pluginFactory;
+        private readonly object _discoveryLock = new();
         private DependencyIsolationResult? _dependencyAnalysisResult;
+        private DiscoveryCache? _fullDiscoveryCache;
+        private DiscoveryCache? _coreDiscoveryCache;
 
         public PluginLoader(IServiceProvider services, string pluginDir)
         {
@@ -37,8 +40,14 @@ namespace Pulsar.Core.Plugin
             }
         }
 
-        public List<PluginDescriptor> DiscoverDescriptors(bool includeCore, bool includeExtensions, bool analyzeDependencies)
+        public virtual List<PluginDescriptor> DiscoverDescriptors(bool includeCore, bool includeExtensions, bool analyzeDependencies)
         {
+            var cachedDescriptors = TryGetCachedDescriptors(includeCore, includeExtensions, analyzeDependencies);
+            if (cachedDescriptors != null)
+            {
+                return cachedDescriptors;
+            }
+
             var descriptors = new List<PluginDescriptor>();
 
             if (includeExtensions && analyzeDependencies && _dependencyManager != null)
@@ -89,10 +98,11 @@ namespace Pulsar.Core.Plugin
                 _logger?.LogError(ex, "[PluginLoader] Failed to sort plugins by dependencies");
             }
 
+            CacheDescriptors(includeCore, includeExtensions, analyzeDependencies, descriptors);
             return descriptors;
         }
 
-        public IPulsarPlugin ActivatePlugin(PluginDescriptor descriptor)
+        public virtual IPulsarPlugin ActivatePlugin(PluginDescriptor descriptor)
         {
             var plugin = _pluginFactory.CreatePlugin(descriptor.ImplementationType);
             plugin.Initialize(_services);
@@ -100,7 +110,16 @@ namespace Pulsar.Core.Plugin
             return plugin;
         }
 
-        private void DiscoverBuiltinDescriptors(List<PluginDescriptor> descriptors, bool includeCore, bool includeExtensions)
+        public void InvalidateDiscoveryCache()
+        {
+            lock (_discoveryLock)
+            {
+                _coreDiscoveryCache = null;
+                _fullDiscoveryCache = null;
+            }
+        }
+
+        protected virtual void DiscoverBuiltinDescriptors(List<PluginDescriptor> descriptors, bool includeCore, bool includeExtensions)
         {
             try
             {
@@ -384,6 +403,62 @@ namespace Pulsar.Core.Plugin
         public bool HasCriticalDependencyConflicts()
         {
             return _dependencyManager?.HasCriticalConflicts() ?? false;
+        }
+
+        private List<PluginDescriptor>? TryGetCachedDescriptors(bool includeCore, bool includeExtensions, bool analyzeDependencies)
+        {
+            lock (_discoveryLock)
+            {
+                DiscoveryCache? cache = includeCore switch
+                {
+                    true when !includeExtensions && !analyzeDependencies => _coreDiscoveryCache,
+                    true when includeExtensions && analyzeDependencies => _fullDiscoveryCache,
+                    false when includeExtensions && analyzeDependencies => _fullDiscoveryCache,
+                    _ => null
+                };
+
+                if (cache == null)
+                {
+                    return null;
+                }
+
+                _logger?.LogDebug("[PluginLoader] Reusing cached plugin descriptors ({Count})", cache.Descriptors.Count);
+                return FilterDescriptors(cache.Descriptors, includeCore, includeExtensions);
+            }
+        }
+
+        private void CacheDescriptors(bool includeCore, bool includeExtensions, bool analyzeDependencies, List<PluginDescriptor> descriptors)
+        {
+            lock (_discoveryLock)
+            {
+                var snapshot = descriptors.ToList();
+                if (includeCore && !includeExtensions && !analyzeDependencies)
+                {
+                    _coreDiscoveryCache = new DiscoveryCache(snapshot);
+                }
+
+                if (includeExtensions && analyzeDependencies)
+                {
+                    _fullDiscoveryCache = new DiscoveryCache(snapshot);
+                }
+            }
+        }
+
+        private static List<PluginDescriptor> FilterDescriptors(IEnumerable<PluginDescriptor> descriptors, bool includeCore, bool includeExtensions)
+        {
+            return descriptors
+                .Where(descriptor => ShouldInclude(descriptor, includeCore, includeExtensions))
+                .ToList();
+        }
+
+        private sealed class DiscoveryCache
+        {
+            public DiscoveryCache(List<PluginDescriptor> descriptors)
+            {
+                Descriptors = descriptors;
+            }
+
+            public List<PluginDescriptor> Descriptors { get; }
         }
     }
 }

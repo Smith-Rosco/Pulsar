@@ -9,6 +9,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace Pulsar.Services
 {
@@ -27,6 +28,7 @@ namespace Pulsar.Services
         private ProfilesConfig? _cachedConfig;
         private readonly ILogger<ConfigService> _logger;
         private readonly IPluginMetadataRegistry? _metadataRegistry;
+        private readonly IBackgroundWorkScheduler? _backgroundWorkScheduler;
         private ConfigValidationPipeline? _validationPipeline;
 
         public event Action? ConfigUpdated;
@@ -38,10 +40,14 @@ namespace Pulsar.Services
         /// </summary>
         public ValidationResult? LastValidationResult { get; private set; }
 
-        public ConfigService(ILogger<ConfigService> logger, IPluginMetadataRegistry? metadataRegistry = null)
+        public ConfigService(
+            ILogger<ConfigService> logger,
+            IPluginMetadataRegistry? metadataRegistry = null,
+            IBackgroundWorkScheduler? backgroundWorkScheduler = null)
         {
             _logger = logger;
             _metadataRegistry = metadataRegistry;
+            _backgroundWorkScheduler = backgroundWorkScheduler;
             string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Pulsar");
             Directory.CreateDirectory(folder);
             _configPath = Path.Combine(folder, ConfigFileName);
@@ -324,42 +330,42 @@ namespace Pulsar.Services
                     isResetReload ? "Reset reload" : "First launch");
                 
                 // 启动后台检测任务 (异步,不阻塞启动)
-                _ = Task.Run(async () =>
-                {
-                    try
+                ScheduleBackgroundWork(
+                    workId: isResetReload ? "config.smart-detection.reset" : "config.smart-detection.first-launch",
+                    work: async cancellationToken =>
                     {
                         // 等待 1 秒,确保 UI 已初始化
-                        await Task.Delay(1000);
+                        await Task.Delay(1000, cancellationToken);
 
                         if (!await IsExpectedPersistedFallbackAsync(expectedPersistedFallback, isResetReload))
                         {
                             return;
                         }
-                        
+
                         _logger.LogInformation(
                             "[ConfigService] Starting background application detection ({Source})...",
                             isResetReload ? "reset" : "first-launch");
-                        
+
                         var detector = new ApplicationDetector(_logger);
                         var installedApps = await detector.DetectInstalledApplicationsAsync();
-                        
+
                         // 3. 生成智能配置
                         var smartConfig = CreateSmartConfig(installedApps, isResetReload);
-                        
+
                         // 4. 更新配置
                         await SaveAsync(smartConfig);
-                        
+
                         _logger.LogInformation(
                             "[ConfigService] Smart configuration loaded with {SwitchCount} Switch Mode apps and {CommandCount} Command Mode slots ({Source})",
                             smartConfig.Profiles["Global"].SwitchMode.Count,
                             smartConfig.Profiles["Global"].CommandMode.Count,
                             isResetReload ? "reset" : "first-launch");
-                    }
-                    catch (Exception ex)
+                    },
+                    new BackgroundWorkOptions
                     {
-                        _logger.LogError(ex, "[ConfigService] Failed to generate smart configuration");
-                    }
-                });
+                        Priority = BackgroundWorkPriority.Low,
+                        DuplicateBehavior = BackgroundWorkDuplicateBehavior.ReuseExisting
+                    });
             }
             else
             {
@@ -745,18 +751,39 @@ namespace Pulsar.Services
             Current.Settings.SlotsPerPage = clampedValue;
             
             // 异步保存，但不等待（避免阻塞 UI）
-            _ = Task.Run(async () =>
-            {
-                try
+            ScheduleBackgroundWork(
+                workId: "config.save.slots-per-page",
+                work: async _ =>
                 {
                     await SaveAsync(Current);
                     _logger.LogInformation(
                         "[ConfigService] SlotsPerPage updated to {Value}",
                         clampedValue);
+                },
+                new BackgroundWorkOptions
+                {
+                    Priority = BackgroundWorkPriority.Low,
+                    DuplicateBehavior = BackgroundWorkDuplicateBehavior.SkipIfRunning
+                });
+        }
+
+        private void ScheduleBackgroundWork(string workId, Func<CancellationToken, Task> work, BackgroundWorkOptions options)
+        {
+            if (_backgroundWorkScheduler != null)
+            {
+                _ = _backgroundWorkScheduler.ScheduleAsync(workId, work, options);
+                return;
+            }
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await work(CancellationToken.None);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "[ConfigService] Failed to save SlotsPerPage configuration");
+                    _logger.LogError(ex, "[ConfigService] Background work failed: {WorkId}", workId);
                 }
             });
         }

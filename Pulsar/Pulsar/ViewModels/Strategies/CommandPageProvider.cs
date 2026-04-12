@@ -77,7 +77,7 @@ namespace Pulsar.ViewModels.Strategies
                     
                     slot.ActionStrategy = new CreateProfileStrategy(
                         _context.TargetProcessName, 
-                        _context.TargetExePath, 
+                        _context.GetTargetExePathAsync,
                         configService, 
                         _serviceProvider);
                     

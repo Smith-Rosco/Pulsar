@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -20,15 +21,18 @@ namespace Pulsar.Services
     public class AppStartupCoordinator : IAppStartupCoordinator
     {
         private readonly IServiceProvider _services;
+        private readonly IBackgroundWorkScheduler _backgroundWorkScheduler;
         private readonly LoggingLevelSwitch _levelSwitch;
         private readonly ILogger<AppStartupCoordinator> _logger;
 
         public AppStartupCoordinator(
             IServiceProvider services,
+            IBackgroundWorkScheduler backgroundWorkScheduler,
             LoggingLevelSwitch levelSwitch,
             ILogger<AppStartupCoordinator> logger)
         {
             _services = services;
+            _backgroundWorkScheduler = backgroundWorkScheduler;
             _levelSwitch = levelSwitch;
             _logger = logger;
         }
@@ -74,7 +78,9 @@ namespace Pulsar.Services
         {
             _logger.LogInformation("[Startup] Starting deferred warm-up responsibilities");
 
-            System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+            _ = _backgroundWorkScheduler.ScheduleAsync(
+                "startup.deferred-warmup",
+                async cancellationToken =>
             {
                 var deferredStopwatch = Stopwatch.StartNew();
                 try
@@ -90,7 +96,7 @@ namespace Pulsar.Services
                         await configService.SaveAsync(configService.Current);
                     }
 
-                    await RunOnboardingStartupAsync();
+                    await RunOnboardingStartupAsync(cancellationToken);
 
                     var config = await configService.LoadAsync();
                     if (config.Settings.HasCompletedTutorial
@@ -101,7 +107,7 @@ namespace Pulsar.Services
                     }
 
                     Log.Information("First launch detected, starting tutorial");
-                    await Task.Delay(1500);
+                    await Task.Delay(1500, cancellationToken);
 
                     var tutorialService = _services.GetRequiredService<ITutorialService>();
                     await tutorialService.CheckResumeAsync();
@@ -119,7 +125,12 @@ namespace Pulsar.Services
                     deferredStopwatch.Stop();
                     _logger.LogError(ex, "[Startup] Deferred startup task failed");
                 }
-            });
+            },
+                new BackgroundWorkOptions
+                {
+                    Priority = BackgroundWorkPriority.Normal,
+                    DuplicateBehavior = BackgroundWorkDuplicateBehavior.ReuseExisting
+                });
         }
 
         private void ConfigureValidationPipeline(IConfigService configService)
@@ -169,7 +180,7 @@ namespace Pulsar.Services
             Log.Information("GlobalKeyboardHook using default Hybrid mode");
         }
 
-        private async Task RunOnboardingStartupAsync()
+        private async Task RunOnboardingStartupAsync(CancellationToken cancellationToken)
         {
             var startupCoordinator = _services.GetRequiredService<StartupCoordinator>();
             var action = await startupCoordinator.HandleStartupAsync();
@@ -182,7 +193,10 @@ namespace Pulsar.Services
             _logger.LogInformation("[Startup] Launching first-run setup wizard");
             var dialogService = _services.GetRequiredService<IDialogService>();
             var wizard = _services.GetRequiredService<FirstLaunchSetupWizardViewModel>();
-            await dialogService.ShowCustomAsync("欢迎使用 Pulsar", wizard, DialogButtons.None, DialogSizeConstraints.LargeResizable, AppTheme.Light);
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(
+                () => dialogService.ShowCustomAsync("欢迎使用 Pulsar", wizard, DialogButtons.None, DialogSizeConstraints.LargeResizable, AppTheme.Light),
+                System.Windows.Threading.DispatcherPriority.Normal,
+                cancellationToken);
         }
     }
 }

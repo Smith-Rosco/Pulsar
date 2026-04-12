@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System;
 using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,17 +13,17 @@ using Pulsar.Helpers; // [New] For IconHelper
 
 namespace Pulsar.ViewModels.Strategies
 {
-    public class CreateProfileStrategy : IActionStrategy
-    {
-        private readonly string _processName;
-        private readonly string _exePath; // [New]
+        public class CreateProfileStrategy : IActionStrategy
+        {
+            private readonly string _processName;
+        private readonly Func<Task<string>> _exePathFactory;
         private readonly IConfigService _configService;
         private readonly System.IServiceProvider _serviceProvider;
 
-        public CreateProfileStrategy(string processName, string exePath, IConfigService configService, System.IServiceProvider serviceProvider)
+        public CreateProfileStrategy(string processName, Func<Task<string>> exePathFactory, IConfigService configService, System.IServiceProvider serviceProvider)
         {
             _processName = processName;
-            _exePath = exePath; // [New]
+            _exePathFactory = exePathFactory;
             _configService = configService;
             _serviceProvider = serviceProvider;
         }
@@ -38,11 +39,12 @@ namespace Pulsar.ViewModels.Strategies
             {
                 // [New] Try Extract Icon
                 string iconKey = "\uE71D"; // Default AppGeneric
-                if (!string.IsNullOrEmpty(_exePath))
+                string exePath = await _exePathFactory();
+                if (!string.IsNullOrEmpty(exePath))
                 {
                     try
                     {
-                        var iconSource = IconHelper.GetIconFromPath(_exePath);
+                        var iconSource = IconHelper.GetIconFromPath(exePath);
                         if (iconSource != null)
                         {
                             var cachePath = IconHelper.SaveIconToCache(iconSource, _processName);

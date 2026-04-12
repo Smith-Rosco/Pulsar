@@ -218,6 +218,28 @@ namespace Pulsar.Tests.Plugin
         /// </summary>
         private void RegisterPlugin(PluginRegistry registry, IPulsarPlugin plugin)
         {
+            var descriptorsField = typeof(PluginRegistry)
+                .GetField("_descriptors", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var descriptors = descriptorsField?.GetValue(registry) as Dictionary<string, PluginDescriptor>;
+            if (descriptors != null)
+            {
+                descriptors[plugin.Id] = new PluginDescriptor
+                {
+                    Id = plugin.Id,
+                    DisplayName = plugin.DisplayName,
+                    Version = plugin.Version,
+                    Author = plugin.Author,
+                    Description = plugin.Description,
+                    Icon = plugin.Icon,
+                    CanDisable = plugin.CanDisable,
+                    Tier = plugin.CanDisable ? PluginTier.Extension : PluginTier.Core,
+                    ImplementationType = plugin.GetType(),
+                    Dependencies = new List<string>(),
+                    Metadata = null!,
+                    IsConfigurable = false
+                };
+            }
+
             var pluginsField = typeof(PluginRegistry)
                 .GetField("_plugins", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             
