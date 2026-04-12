@@ -194,7 +194,7 @@ namespace Pulsar.Views
             this.IsHitTestVisible = false;
 
             // 3. [隐身] 优雅退出 (Ghost Mode)
-            _viewModel.CenterPreviewImage = null;
+            _viewModel.ClearPreviewPresentation();
 
             // 显式停止之前的动画并播放淡出动画
             var fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(100));

@@ -31,8 +31,9 @@ namespace Pulsar.ViewModels
             string centerText,
             IReadOnlyCollection<SlotViewModel> slots,
             SlotViewModel centerSlot,
+            Func<PreviewHostContext> getPreviewHostContext,
             Action<string> setDynamicTitle,
-            Action<ImageSource?> setCenterPreviewImage)
+            Action<ResolvedWindowPreview> setCenterPreview)
         {
             _previewCts?.Cancel();
             _previewCts = new CancellationTokenSource();
@@ -40,7 +41,8 @@ namespace Pulsar.ViewModels
 
             if (activeSlotIndex == 0)
             {
-                setCenterPreviewImage(null);
+                _previewService.ClearLivePreview();
+                setCenterPreview(ResolvedWindowPreview.Icon(null));
                 setDynamicTitle(menuState == MenuState.SubMenu ? "Back" : "Cancel");
                 centerSlot.Label = menuState == MenuState.SubMenu ? "Back" : "Cancel";
                 centerSlot.LoadIconData(string.Empty);
@@ -51,7 +53,8 @@ namespace Pulsar.ViewModels
 
             if (activeSlotIndex == -1)
             {
-                setCenterPreviewImage(null);
+                _previewService.ClearLivePreview();
+                setCenterPreview(ResolvedWindowPreview.Icon(null));
                 setDynamicTitle("Pulsar");
                 centerSlot.Label = centerText;
                 centerSlot.LoadIconData(string.Empty);
@@ -63,7 +66,8 @@ namespace Pulsar.ViewModels
             var slot = slots.FirstOrDefault(s => s.SlotIndex == activeSlotIndex);
             if (slot == null || slot.Type == SlotType.None)
             {
-                setCenterPreviewImage(null);
+                _previewService.ClearLivePreview();
+                setCenterPreview(ResolvedWindowPreview.Icon(null));
                 setDynamicTitle(string.Empty);
                 return;
             }
@@ -100,49 +104,56 @@ namespace Pulsar.ViewModels
             else
             {
                 setDynamicTitle(slot.Label);
-                setCenterPreviewImage(null);
+                _previewService.ClearLivePreview();
+                setCenterPreview(ResolvedWindowPreview.Icon(slot.IconImage));
             }
 
             if (targetHwnd == IntPtr.Zero)
             {
-                setCenterPreviewImage(null);
+                _previewService.ClearLivePreview();
+                setCenterPreview(ResolvedWindowPreview.Icon(slot.IconImage));
                 return;
             }
 
-            if (PulsarNative.IsWindow(targetHwnd) && !PulsarNative.IsIconic(targetHwnd))
+            if (PulsarNative.IsWindow(targetHwnd))
             {
-                _ = CapturePreviewAsync(targetHwnd, token, setCenterPreviewImage);
+                _ = CapturePreviewAsync(targetHwnd, slot.IconImage, getPreviewHostContext, token, setCenterPreview);
             }
             else
             {
-                setCenterPreviewImage(null);
+                _previewService.InvalidateCache(targetHwnd);
+                _previewService.ClearLivePreview();
+                setCenterPreview(ResolvedWindowPreview.Icon(slot.IconImage));
             }
         }
 
         public void PrimeSubMenuPreview(
             ProcessWindowInfo? mostRecentWindow,
             Func<bool> shouldCapture,
-            Action<ImageSource?> setCenterPreviewImage)
+            Func<PreviewHostContext> getPreviewHostContext,
+            Action<ResolvedWindowPreview> setCenterPreview)
         {
             if (mostRecentWindow == null)
             {
                 return;
             }
 
-            setCenterPreviewImage(mostRecentWindow.AppIcon);
+            setCenterPreview(ResolvedWindowPreview.Icon(mostRecentWindow.AppIcon));
 
             _previewCts?.Cancel();
             _previewCts = new CancellationTokenSource();
             var token = _previewCts.Token;
 
-            _ = DelayAndCaptureAsync(mostRecentWindow.Handle, shouldCapture, token, setCenterPreviewImage);
+            _ = DelayAndCaptureAsync(mostRecentWindow.Handle, mostRecentWindow.AppIcon, shouldCapture, getPreviewHostContext, token, setCenterPreview);
         }
 
         private async Task DelayAndCaptureAsync(
             IntPtr hwnd,
+            ImageSource? icon,
             Func<bool> shouldCapture,
+            Func<PreviewHostContext> getPreviewHostContext,
             CancellationToken token,
-            Action<ImageSource?> setCenterPreviewImage)
+            Action<ResolvedWindowPreview> setCenterPreview)
         {
             try
             {
@@ -152,7 +163,7 @@ namespace Pulsar.ViewModels
                     return;
                 }
 
-                await CapturePreviewAsync(hwnd, token, setCenterPreviewImage);
+                await CapturePreviewAsync(hwnd, icon, getPreviewHostContext, token, setCenterPreview);
             }
             catch (TaskCanceledException)
             {
@@ -165,8 +176,10 @@ namespace Pulsar.ViewModels
 
         private async Task CapturePreviewAsync(
             IntPtr hwnd,
+            ImageSource? icon,
+            Func<PreviewHostContext> getPreviewHostContext,
             CancellationToken token,
-            Action<ImageSource?> setCenterPreviewImage)
+            Action<ResolvedWindowPreview> setCenterPreview)
         {
             try
             {
@@ -177,14 +190,14 @@ namespace Pulsar.ViewModels
                     return;
                 }
 
-                var snapshot = await _previewService.CaptureAsync(hwnd);
+                var preview = await _previewService.ResolvePreviewAsync(hwnd, icon, getPreviewHostContext());
 
                 if (token.IsCancellationRequested)
                 {
                     return;
                 }
 
-                setCenterPreviewImage(snapshot);
+                setCenterPreview(preview);
             }
             catch (TaskCanceledException)
             {
@@ -192,7 +205,8 @@ namespace Pulsar.ViewModels
             catch (Exception ex)
             {
                 _logger?.LogDebug(ex, "Preview capture failed");
-                setCenterPreviewImage(null);
+                _previewService.ClearLivePreview();
+                setCenterPreview(ResolvedWindowPreview.Icon(icon));
             }
         }
     }

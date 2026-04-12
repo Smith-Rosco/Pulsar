@@ -48,6 +48,7 @@ namespace Pulsar.ViewModels
         private readonly RadialMenuInputCoordinator _inputCoordinator;
         private readonly RadialMenuSubMenuCoordinator _subMenuCoordinator;
         private readonly RadialMenuLayoutCoordinator _layoutCoordinator;
+        private IntPtr _windowHandle;
 
         // [Logging] Sampling counter for high-frequency logs (1/10 sampling)
         private int _logSampleCounter = 0;
@@ -145,7 +146,23 @@ namespace Pulsar.ViewModels
             }
         }
 
-        public bool HasPreview => _centerPreviewImage != null;
+        public bool HasPreview => HasLivePreview || _centerPreviewImage != null;
+
+        private WindowPreviewKind _centerPreviewKind = WindowPreviewKind.Icon;
+        public WindowPreviewKind CenterPreviewKind
+        {
+            get => _centerPreviewKind;
+            set
+            {
+                if (SetProperty(ref _centerPreviewKind, value))
+                {
+                    OnPropertyChanged(nameof(HasPreview));
+                    OnPropertyChanged(nameof(HasLivePreview));
+                }
+            }
+        }
+
+        public bool HasLivePreview => _centerPreviewKind == WindowPreviewKind.Live;
 
         // [New] Dynamic Title & Thumbnail
         private string _dynamicTitle = "";
@@ -404,9 +421,6 @@ namespace Pulsar.ViewModels
             {
                 var sw = System.Diagnostics.Stopwatch.StartNew();
                 
-                // [Optimization] Clear preview cache for new session
-                _previewService.ClearCache();
-
                 // 1. 捕获上下文
                 IntPtr foregroundHandle = PulsarNative.GetForegroundWindow();
                 _logger?.LogDebug("[Show] Foreground Handle: {Hwnd}", foregroundHandle);
@@ -628,8 +642,16 @@ namespace Pulsar.ViewModels
 
         public void SetWindowHandle(IntPtr handle)
         {
+            _windowHandle = handle;
             _mouseTrackingService.SetWindowHandle(handle);
             UpdateMouseTrackingLayout();
+        }
+
+        public PreviewHostContext GetPreviewHostContext()
+        {
+            return new PreviewHostContext(
+                _windowHandle,
+                new Rect(CenterSlot.X, CenterSlot.Y, CenterSlot.Size, CenterSlot.Size));
         }
 
         private void UpdateActiveSlot(int index)
@@ -681,8 +703,9 @@ namespace Pulsar.ViewModels
                 _centerText,
                 Slots,
                 CenterSlot,
+                GetPreviewHostContext,
                 title => DynamicTitle = title,
-                preview => CenterPreviewImage = preview);
+                ApplyCenterPreview);
         }
 
         private void HandleKeyUp(object? sender, GlobalKeyStruct e)
@@ -787,7 +810,8 @@ namespace Pulsar.ViewModels
             _visualStateCoordinator.PrimeSubMenuPreview(
                 mostRecentWin,
                 () => _menuState == MenuState.SubMenu,
-                preview => CenterPreviewImage = preview);
+                GetPreviewHostContext,
+                ApplyCenterPreview);
         }
 
         public void RestoreRootMenu()
@@ -805,11 +829,23 @@ namespace Pulsar.ViewModels
                  normalCenterSize,
                  normalSlotSize,
                  AnimationOptionsDefaults.SubMenuExit);
-             
-             // Clear Preview
-             CenterPreviewImage = null;
+              
+              // Clear Preview
+              ApplyCenterPreview(ResolvedWindowPreview.Icon(CenterSlot.IconImage));
 
-             _subMenuCoordinator.RestoreRootMenu(_pageProvider, _pagingController, Slots, CenterSlot);
+              _subMenuCoordinator.RestoreRootMenu(_pageProvider, _pagingController, Slots, CenterSlot);
+         }
+
+        private void ApplyCenterPreview(ResolvedWindowPreview preview)
+        {
+            CenterPreviewKind = preview.Kind;
+            CenterPreviewImage = preview.Image;
+        }
+
+        public void ClearPreviewPresentation()
+        {
+            _previewService.ClearLivePreview();
+            ApplyCenterPreview(ResolvedWindowPreview.Icon(null));
         }
 
         /// <summary>

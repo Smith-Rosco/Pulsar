@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:controls="clr-namespace:Pulsar.Views.Controls"
         xmlns:converters="clr-namespace:Pulsar.Core.Converters"
         xmlns:vm="clr-namespace:Pulsar.ViewModels"
@@ -28,6 +29,7 @@
             </ResourceDictionary.MergedDictionaries>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             <converters:SlotBrushConverter x:Key="SlotBrushConverter"/>
+            <sys:Boolean x:Key="FalseValue">False</sys:Boolean>
         </ResourceDictionary>
     </Window.Resources>
 
@@ -128,11 +130,9 @@
                                     <Setter Property="IsTransparent" Value="True"/>
                                     <!-- [New] Hide Content if Preview is Visible -->
                                     <Setter Property="IsContentVisible" Value="False"/>
-                                    
-                                    <Style.Triggers>
-                                        <!-- Revert to Opaque & Visible Content if Preview is Hidden (Both Ellipses Opacity 0?) 
-                                             Actually, simpler to bind to VM property directly since View knows about VM -->
-                                        <DataTrigger Binding="{Binding DataContext.CenterPreviewImage, RelativeSource={RelativeSource AncestorType=Window}}" Value="{x:Null}">
+                                     
+                                     <Style.Triggers>
+                                        <DataTrigger Binding="{Binding DataContext.HasPreview, RelativeSource={RelativeSource AncestorType=Window}}" Value="False">
                                             <Setter Property="IsTransparent" Value="False"/>
                                             <Setter Property="IsContentVisible" Value="True"/>
                                         </DataTrigger>
@@ -180,6 +180,9 @@
                                                     </Storyboard>
                                                 </BeginStoryboard>
                                             </DataTrigger.ExitActions>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding HasLivePreview}" Value="True">
+                                            <Setter Property="Opacity" Value="0"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
