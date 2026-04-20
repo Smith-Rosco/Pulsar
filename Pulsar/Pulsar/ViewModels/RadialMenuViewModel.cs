@@ -33,7 +33,7 @@ namespace Pulsar.ViewModels
         private readonly IWindowService _windowService;
         private readonly PluginRegistry _pluginRegistry;
         private readonly IHotkeyService _hotkeyService; // [Clean] Make explicit
-        private readonly IGlobalMouseWheelService _globalMouseWheelService;
+        private readonly IGlobalMouseService _globalMouseService;
         private readonly ITrayService _trayService; // [New]
         private readonly IAnimationController _animationController;
         private readonly IMouseTrackingService _mouseTrackingService;
@@ -194,7 +194,7 @@ namespace Pulsar.ViewModels
             IWindowService windowService,
             PluginRegistry pluginRegistry,
             IHotkeyService hotkeyService,
-            IGlobalMouseWheelService globalMouseWheelService,
+            IGlobalMouseService globalMouseService,
             ITrayService trayService, // [New]
             IAnimationController animationController,
             IMouseTrackingService mouseTrackingService,
@@ -208,7 +208,7 @@ namespace Pulsar.ViewModels
             _windowService = windowService;
             _pluginRegistry = pluginRegistry;
             _hotkeyService = hotkeyService;
-            _globalMouseWheelService = globalMouseWheelService;
+            _globalMouseService = globalMouseService;
             _trayService = trayService;
             _animationController = animationController;
             _mouseTrackingService = mouseTrackingService;
@@ -237,7 +237,7 @@ namespace Pulsar.ViewModels
             hotkeyService.RegisterAction("ShowGrid", () => Show(RadialMenuMode.Action));
             hotkeyService.RegisterAction("ShowSwitcher", () => Show(RadialMenuMode.Task));
             hotkeyService.OnGlobalKeyUp += HandleKeyUp;
-            _globalMouseWheelService.OnMouseWheel += HandleGlobalMouseWheel;
+            _globalMouseService.OnMouseEvent += HandleGlobalMouseEvent;
 
             _configService.ConfigUpdated += OnConfigUpdated;
             LoadConfigAsync();
@@ -598,24 +598,78 @@ namespace Pulsar.ViewModels
             });
         }
 
-        private void HandleGlobalMouseWheel(ref GlobalMouseWheelEvent e)
+        public event Action? OnRootBounceRequested;
+
+        private void TriggerRootBounceAnimation()
         {
-            bool handled = false;
-            int delta = e.Delta;
+            OnRootBounceRequested?.Invoke();
+        }
 
-            if (System.Windows.Application.Current.Dispatcher.CheckAccess())
+        private async void HandleGlobalMouseEvent(object? sender, GlobalMouseEventArgs e)
+        {
+            if (!IsVisible) return;
+
+            // Handle Wheel
+            if (e.Action == GlobalMouseAction.Wheel)
             {
-                handled = HandleMouseWheel(delta, treatFeedbackAsHandled: true);
-            }
-            else
-            {
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                bool handled = false;
+                if (System.Windows.Application.Current.Dispatcher.CheckAccess())
                 {
-                    handled = HandleMouseWheel(delta, treatFeedbackAsHandled: true);
-                });
+                    handled = HandleMouseWheel(e.Delta, treatFeedbackAsHandled: true);
+                }
+                else
+                {
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        handled = HandleMouseWheel(e.Delta, treatFeedbackAsHandled: true);
+                    });
+                }
+                e.Handled = handled;
+                return;
             }
 
-            e.Handled = handled;
+            // Handle Clicks
+            if (e.Action == GlobalMouseAction.Up)
+            {
+                e.Handled = true;
+
+                if (System.Windows.Application.Current.Dispatcher.CheckAccess())
+                {
+                    await _inputCoordinator.HandleGlobalMouseClickAsync(
+                        e.Button,
+                        IsVisible,
+                        _activeSlotIndex,
+                        _menuState,
+                        CenterSlot,
+                        Slots,
+                        this,
+                        RestoreRootMenu,
+                        TriggerRootBounceAnimation,
+                        () => IsVisible = false);
+                }
+                else
+                {
+                    System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                    {
+                        await _inputCoordinator.HandleGlobalMouseClickAsync(
+                            e.Button,
+                            IsVisible,
+                            _activeSlotIndex,
+                            _menuState,
+                            CenterSlot,
+                            Slots,
+                            this,
+                            RestoreRootMenu,
+                            TriggerRootBounceAnimation,
+                            () => IsVisible = false);
+                    });
+                }
+            }
+            else if (e.Action == GlobalMouseAction.Down)
+            {
+                // Swallow mousedown so it doesn't fall through
+                e.Handled = true;
+            }
         }
 
         // [New] Mouse Tracking for Physics
@@ -767,16 +821,7 @@ namespace Pulsar.ViewModels
             }
         }
 
-        public async void HandleLeftClick()
-        {
-            await _inputCoordinator.HandleLeftClickAsync(
-                IsVisible,
-                _activeSlotIndex,
-                _menuState,
-                Slots,
-                this,
-                RestoreRootMenu);
-        }
+
 
         public async Task EnterSubMenuAsync(List<ProcessWindowInfo> windows, string processName)
         {

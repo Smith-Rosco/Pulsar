@@ -114,38 +114,71 @@ namespace Pulsar.ViewModels
             await slot.ExecuteAsync(context);
         }
 
-        public async Task HandleLeftClickAsync(
+        public async Task HandleGlobalMouseClickAsync(
+            GlobalMouseButton button,
             bool isVisible,
             int activeSlotIndex,
             MenuState menuState,
+            SlotViewModel centerSlot,
             IReadOnlyCollection<SlotViewModel> slots,
             RadialMenuViewModel context,
-            Action restoreRootMenu)
+            Action restoreRootMenu,
+            Action triggerRootBounceAnimation,
+            Action hideMenu)
         {
             if (!isVisible)
             {
                 return;
             }
 
-            if (activeSlotIndex == 0)
+            if (button == GlobalMouseButton.Left)
+            {
+                if (activeSlotIndex < 0)
+                {
+                    return;
+                }
+
+                if (activeSlotIndex == 0)
+                {
+                    if (centerSlot.ActionStrategy is NoOpStrategy)
+                    {
+                        if (menuState == MenuState.SubMenu)
+                        {
+                            restoreRootMenu();
+                        }
+                        else
+                        {
+                            hideMenu();
+                        }
+                        return;
+                    }
+
+                    await centerSlot.ExecuteAsync(context);
+                    hideMenu();
+                    return;
+                }
+
+                var slot = slots.FirstOrDefault(s => s.SlotIndex == activeSlotIndex);
+                if (slot == null || !slot.IsEnabled)
+                {
+                    return;
+                }
+
+                if (slot.ActionStrategy is ProcessGroupStrategy pgStrategy && slot.DataContext is List<ProcessWindowInfo> windows && windows.Count(w => !string.IsNullOrWhiteSpace(w.Title)) > 1)
+                {
+                    await pgStrategy.EnterSubMenuAsync(context, slot.Label);
+                }
+            }
+            else if (button == GlobalMouseButton.Right)
             {
                 if (menuState == MenuState.SubMenu)
                 {
                     restoreRootMenu();
                 }
-
-                return;
-            }
-
-            var slot = slots.FirstOrDefault(s => s.SlotIndex == activeSlotIndex);
-            if (slot == null || !slot.IsEnabled)
-            {
-                return;
-            }
-
-            if (slot.ActionStrategy is ProcessGroupStrategy pgStrategy && slot.DataContext is List<ProcessWindowInfo> windows && windows.Count > 1)
-            {
-                await pgStrategy.EnterSubMenuAsync(context, slot.Label);
+                else if (menuState == MenuState.Root)
+                {
+                    triggerRootBounceAnimation();
+                }
             }
         }
 

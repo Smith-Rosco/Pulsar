@@ -65,7 +65,7 @@ namespace Pulsar.Services
             await hotkeyService.InitializeAsync();
             _logger.LogInformation("[Startup] Hotkey service initialized");
 
-            var globalMouseWheelService = _services.GetRequiredService<IGlobalMouseWheelService>();
+            var globalMouseWheelService = _services.GetRequiredService<IGlobalMouseService>();
             globalMouseWheelService.Initialize();
             _logger.LogInformation("[Startup] Global mouse wheel service initialized");
 

@@ -74,8 +74,8 @@ namespace Pulsar.Views
                 });
             });
 
-            // 4. [New] Handle Mouse Clicks for Drill-Down
-            this.MouseLeftButtonUp += (s, e) => _viewModel.HandleLeftClick();
+            // [New] Subscribe to bounce animation event from ViewModel
+            _viewModel.OnRootBounceRequested += HandleRootBounceRequested;
             
             // ====================================================
             // 👻 [驻留模式初始化] (Resident Mode Init)
@@ -154,10 +154,6 @@ namespace Pulsar.Views
             // Bring to foreground and Activate
             this.Activate();
             
-            // Critical: Capture mouse to track gestures outside the 500x500 bounds
-            bool captured = MenuCanvas.CaptureMouse();
-            _logger.LogDebug("[RadialMenuWindow] Summon - CaptureMouse: {Captured}", captured);
-
             // [New] Restore Interaction
             this.IsHitTestVisible = true; 
             
@@ -187,10 +183,7 @@ namespace Pulsar.Views
 
         private void Dismiss()
         {
-            // [Refactor] Release Capture
-            MenuCanvas.ReleaseMouseCapture();
-            
-            // 2. [穿透] 立即关闭交互，防止在淡出过程中误触
+            // 2. [͸] رսֹڵ
             this.IsHitTestVisible = false;
 
             // 3. [隐身] 优雅退出 (Ghost Mode)
@@ -252,8 +245,37 @@ namespace Pulsar.Views
             if (_viewModel != null)
             {
                 _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+                _viewModel.OnRootBounceRequested -= HandleRootBounceRequested;
             }
             base.OnClosed(e);
+        }
+
+        private void HandleRootBounceRequested()
+        {
+            if (!this.Dispatcher.CheckAccess())
+            {
+                this.Dispatcher.Invoke(HandleRootBounceRequested);
+                return;
+            }
+
+            // Implement a "shake" or "bounce" animation on the center slot.
+            // Wait, we need a reference to the center slot visual.
+            // If we don't have direct access, we can animate the MenuCanvas, or trigger the physics engine.
+            // Let's animate the whole MenuCanvas with a quick shake.
+            var shakeAnim = new DoubleAnimation(0.9, 1.0, TimeSpan.FromMilliseconds(200));
+            shakeAnim.EasingFunction = new ElasticEase { EasingMode = EasingMode.EaseOut, Oscillations = 2, Springiness = 5 };
+
+            var trans = MenuCanvas.RenderTransform as ScaleTransform;
+            if (trans == null)
+            {
+                trans = new ScaleTransform(1, 1);
+                MenuCanvas.RenderTransform = trans;
+                MenuCanvas.RenderTransformOrigin = new System.Windows.Point(0.5, 0.5);
+            }
+
+            trans.BeginAnimation(ScaleTransform.ScaleXProperty, shakeAnim);
+            trans.BeginAnimation(ScaleTransform.ScaleYProperty, shakeAnim);
+            System.Media.SystemSounds.Hand.Play();
         }
     }
 }

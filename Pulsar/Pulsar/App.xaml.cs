@@ -121,9 +121,9 @@ namespace Pulsar
             serviceCollection.AddSingleton<SettingsPageCatalog>();
             serviceCollection.AddSingleton<IAppStartupCoordinator, AppStartupCoordinator>();
             serviceCollection.AddSingleton<GlobalKeyboardHook>();
-            serviceCollection.AddSingleton<GlobalMouseWheelHook>();
+            serviceCollection.AddSingleton<GlobalMouseHook>();
             serviceCollection.AddSingleton<IHotkeyService, HotkeyService>();
-            serviceCollection.AddSingleton<IGlobalMouseWheelService, GlobalMouseWheelService>();
+            serviceCollection.AddSingleton<IGlobalMouseService, GlobalMouseService>();
             serviceCollection.AddSingleton<IDialogService, DialogService>();
             serviceCollection.AddSingleton<Pulsar.Services.Tutorial.IOnboardingTemplateService, Pulsar.Services.Tutorial.OnboardingTemplateService>();
             serviceCollection.AddSingleton<Pulsar.Services.Tutorial.IOnboardingStateService, Pulsar.Services.Tutorial.OnboardingStateService>();
@@ -295,7 +295,7 @@ namespace Pulsar
                 var trayService = Services.GetService<ITrayService>();
                 trayService?.Dispose();
 
-                var mouseWheelHook = Services.GetService<GlobalMouseWheelHook>();
+                var mouseWheelHook = Services.GetService<GlobalMouseHook>();
                 mouseWheelHook?.Dispose();
 
                 var keyboardHook = Services.GetService<GlobalKeyboardHook>();
