@@ -7,6 +7,7 @@ using Pulsar.Models;        // AppTheme
 using Microsoft.Extensions.Logging;
 using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Interop;
@@ -76,6 +77,7 @@ namespace Pulsar.Views
 
             // [New] Subscribe to bounce animation event from ViewModel
             _viewModel.OnRootBounceRequested += HandleRootBounceRequested;
+            _viewModel.OnPagingBoundaryFeedbackRequested += HandlePagingBoundaryFeedbackRequested;
             
             // ====================================================
             // 👻 [驻留模式初始化] (Resident Mode Init)
@@ -246,6 +248,7 @@ namespace Pulsar.Views
             {
                 _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
                 _viewModel.OnRootBounceRequested -= HandleRootBounceRequested;
+                _viewModel.OnPagingBoundaryFeedbackRequested -= HandlePagingBoundaryFeedbackRequested;
             }
             base.OnClosed(e);
         }
@@ -276,6 +279,65 @@ namespace Pulsar.Views
             trans.BeginAnimation(ScaleTransform.ScaleXProperty, shakeAnim);
             trans.BeginAnimation(ScaleTransform.ScaleYProperty, shakeAnim);
             System.Media.SystemSounds.Hand.Play();
+        }
+
+        private void HandlePagingBoundaryFeedbackRequested(BoundaryDirection direction)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.Invoke(() => HandlePagingBoundaryFeedbackRequested(direction));
+                return;
+            }
+
+            ScaleTransform scaleTransform;
+            TranslateTransform translateTransform;
+
+            if (MenuCanvas.RenderTransform is TransformGroup existingTransformGroup)
+            {
+                scaleTransform = existingTransformGroup.Children.OfType<ScaleTransform>().FirstOrDefault() ?? new ScaleTransform(1, 1);
+                translateTransform = existingTransformGroup.Children.OfType<TranslateTransform>().FirstOrDefault() ?? new TranslateTransform(0, 0);
+
+                if (!existingTransformGroup.Children.Contains(scaleTransform))
+                {
+                    existingTransformGroup.Children.Insert(0, scaleTransform);
+                }
+
+                if (!existingTransformGroup.Children.Contains(translateTransform))
+                {
+                    existingTransformGroup.Children.Add(translateTransform);
+                }
+            }
+            else
+            {
+                scaleTransform = new ScaleTransform(1, 1);
+                translateTransform = new TranslateTransform(0, 0);
+                var newTransformGroup = new TransformGroup();
+                newTransformGroup.Children.Add(scaleTransform);
+                newTransformGroup.Children.Add(translateTransform);
+                MenuCanvas.RenderTransform = newTransformGroup;
+                MenuCanvas.RenderTransformOrigin = new System.Windows.Point(0.5, 0.5);
+            }
+
+            double offset = direction == BoundaryDirection.FirstPage ? 14 : -14;
+            var duration = TimeSpan.FromMilliseconds(260);
+            var nudgeEase = new CubicEase { EasingMode = EasingMode.EaseOut };
+            var settleEase = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.35 };
+
+            var scaleXAnimation = new DoubleAnimationUsingKeyFrames();
+            scaleXAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(0.985, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(70))));
+            scaleXAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(duration)) { EasingFunction = settleEase });
+
+            var scaleYAnimation = new DoubleAnimationUsingKeyFrames();
+            scaleYAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(0.985, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(70))));
+            scaleYAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(duration)) { EasingFunction = settleEase });
+
+            var translateAnimation = new DoubleAnimationUsingKeyFrames();
+            translateAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(offset, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(90))) { EasingFunction = nudgeEase });
+            translateAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(duration)) { EasingFunction = settleEase });
+
+            scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, scaleXAnimation);
+            scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, scaleYAnimation);
+            translateTransform.BeginAnimation(TranslateTransform.YProperty, translateAnimation);
         }
     }
 }

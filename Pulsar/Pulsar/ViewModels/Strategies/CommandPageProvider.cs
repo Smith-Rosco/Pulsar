@@ -109,6 +109,9 @@ namespace Pulsar.ViewModels.Strategies
                 ? $"Page {_currentPage + 1}/{TotalPages}" 
                 : (string.IsNullOrEmpty(_context.TargetProcessName) ? "Global" : _context.DisplayProcessName);
             centerSlot.Label = centerText;
+            centerSlot.ActionStrategy = NoOpStrategy.Instance;
+            centerSlot.Type = SlotType.Action;
+            centerSlot.BadgeCount = 0;
         }
     }
 }

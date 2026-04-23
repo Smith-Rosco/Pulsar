@@ -140,21 +140,19 @@ namespace Pulsar.ViewModels
 
                 if (activeSlotIndex == 0)
                 {
+                    if (menuState == MenuState.Root)
+                    {
+                        triggerRootBounceAnimation();
+                        return;
+                    }
+
                     if (centerSlot.ActionStrategy is NoOpStrategy)
                     {
-                        if (menuState == MenuState.SubMenu)
-                        {
-                            restoreRootMenu();
-                        }
-                        else
-                        {
-                            hideMenu();
-                        }
+                        restoreRootMenu();
                         return;
                     }
 
                     await centerSlot.ExecuteAsync(context);
-                    hideMenu();
                     return;
                 }
 

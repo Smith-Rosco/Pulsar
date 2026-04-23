@@ -328,6 +328,13 @@ namespace Pulsar.ViewModels
             _layoutCoordinator.RefreshAnimationTargets(Slots);
         }
 
+        private void ResetCenterSlotForRootMenu()
+        {
+            CenterSlot.ActionStrategy = NoOpStrategy.Instance;
+            CenterSlot.Type = SlotType.Action;
+            CenterSlot.BadgeCount = 0;
+        }
+
         private void ApplyLayoutTarget(LayoutTarget target)
         {
             _currentRadius = target.Radius;
@@ -506,6 +513,7 @@ namespace Pulsar.ViewModels
                 await _pageProvider.LoadAsync();
                 _pagingController.SetTotalPages(_pageProvider.TotalPages);
                 await _pagingController.GoToPageAsync(_pageProvider.CurrentPage);
+                ResetCenterSlotForRootMenu();
                 _pageProvider.RefreshVisuals(Slots, CenterSlot);
 
                 IsVisible = true;
@@ -586,6 +594,8 @@ namespace Pulsar.ViewModels
 
         private void OnPagingBoundaryReached(object? sender, BoundaryReachedEventArgs e)
         {
+            OnPagingBoundaryFeedbackRequested?.Invoke(e.Direction);
+
             var originalText = CenterText;
             CenterText = e.Direction == BoundaryDirection.FirstPage ? "已是第一页" : "已是最后一页";
 
@@ -599,6 +609,7 @@ namespace Pulsar.ViewModels
         }
 
         public event Action? OnRootBounceRequested;
+        public event Action<BoundaryDirection>? OnPagingBoundaryFeedbackRequested;
 
         private void TriggerRootBounceAnimation()
         {
@@ -649,7 +660,7 @@ namespace Pulsar.ViewModels
                 }
                 else
                 {
-                    System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                    _ = System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
                     {
                         await _inputCoordinator.HandleGlobalMouseClickAsync(
                             e.Button,
@@ -862,6 +873,7 @@ namespace Pulsar.ViewModels
         public void RestoreRootMenu()
         {
              _menuState = MenuState.Root;
+             ResetCenterSlotForRootMenu();
 
              // [UX Enhancement] Trigger smooth contraction animation back to dynamic normal sizes
              var layout = _layoutCoordinator.GetLayoutMetrics(_slotsPerPage, _currentCenterSize, _currentSlotSize);

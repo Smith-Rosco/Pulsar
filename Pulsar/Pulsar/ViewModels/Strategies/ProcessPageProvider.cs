@@ -53,7 +53,9 @@ namespace Pulsar.ViewModels.Strategies
             string centerText = _currentPage == 0 ? "Switch" : $"Page {_currentPage + 1}";
             centerSlot.Label = centerText;
             centerSlot.LoadIconData(string.Empty);
-            centerSlot.ActionStrategy = new NoOpStrategy();
+            centerSlot.ActionStrategy = NoOpStrategy.Instance;
+            centerSlot.Type = SlotType.Action;
+            centerSlot.BadgeCount = 0;
 
             // Calculate which slots to display on current page (use dynamic ItemsPerPage)
             int startIndex = _currentPage * ItemsPerPage;
