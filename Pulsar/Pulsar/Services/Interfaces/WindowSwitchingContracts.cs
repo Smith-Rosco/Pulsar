@@ -15,6 +15,7 @@ namespace Pulsar.Services.Interfaces
     {
         ProcessActivation,
         GroupedSwitch,
+        GroupedRootDirectTrigger,
         SubMenuDefault,
         QuickSwitch
     }

@@ -19,20 +19,30 @@ namespace Pulsar.Core.Plugin
         /// 已加载（就绪）
         /// </summary>
         Loaded = 2,
-        
+
+        /// <summary>
+        /// 已启用（允许运行）
+        /// </summary>
+        Enabled = 3,
+
+        /// <summary>
+        /// 已禁用（已加载但不可执行）
+        /// </summary>
+        Disabled = 4,
+
         /// <summary>
         /// 正在运行
         /// </summary>
-        Running = 3,
-        
+        Running = 5,
+
         /// <summary>
         /// 正在卸载
         /// </summary>
-        Unloading = 4,
-        
+        Unloading = 6,
+
         /// <summary>
         /// 故障状态（加载失败或运行时崩溃）
         /// </summary>
-        Faulted = 5
+        Faulted = 7
     }
 }

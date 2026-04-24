@@ -5,6 +5,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Pulsar.Core.Plugin;
+using Pulsar.Core.Plugin.Metadata;
+using Pulsar.Core.Plugin.Runtime;
 using Pulsar.Core.Plugin.Versioning;
 using Pulsar.Core.Plugin.Security;
 using Pulsar.Models;
@@ -28,11 +30,6 @@ namespace Pulsar.Services
     public class PluginRegistryV2
     {
         private readonly Dictionary<string, PluginHost> _hosts = new();
-        private readonly Dictionary<string, int> _failureCounts = new();
-        private readonly Dictionary<string, DateTime> _brokenCircuits = new();
-        
-        private const int MaxFailures = 3;
-        private readonly TimeSpan ResetTimeout = TimeSpan.FromMinutes(1);
 
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<PluginRegistryV2> _logger;
@@ -45,6 +42,7 @@ namespace Pulsar.Services
         private readonly PluginManifestLoader _manifestLoader;
         private HotReloadManager? _hotReloadManager;
         private readonly PermissionInterceptor _permissionInterceptor;
+        private readonly IPluginBreakerPolicy _breakerPolicy;
 
         /// <summary>
         /// 权限拦截器 - 用于管理插件权限
@@ -61,6 +59,10 @@ namespace Pulsar.Services
             
             _versionResolver = new PluginVersionResolver(logger);
             _manifestLoader = new PluginManifestLoader(logger);
+            _breakerPolicy = new PluginCircuitBreakerPolicy(
+                _serviceProvider.GetService(typeof(ILogger<PluginCircuitBreakerPolicy>)) as ILogger<PluginCircuitBreakerPolicy>,
+                _healthMonitor,
+                _trayService);
             
             // 创建权限拦截器
             var permissionLogger = _serviceProvider.GetService(typeof(ILogger<PermissionInterceptor>)) as ILogger<PermissionInterceptor>;
@@ -229,6 +231,52 @@ namespace Pulsar.Services
             }
 
             var tier = GetTier(host);
+            var descriptor = new PluginDescriptor
+            {
+                Id = pluginId,
+                DisplayName = host.DisplayName,
+                Version = host.Version,
+                Author = host.Author,
+                Description = host.DisplayName,
+                Icon = string.Empty,
+                CanDisable = tier != PluginTier.Core,
+                Tier = tier,
+                ImplementationType = host.GetPluginInstance()?.GetType() ?? typeof(object),
+                Dependencies = Array.Empty<string>(),
+                Metadata = host.GetPluginInstance() is IPluginMetadataProvider metadataProvider
+                    ? metadataProvider.GetMetadata()
+                    : new PluginMetadata
+                    {
+                        Id = pluginId,
+                        Display = new DisplayInfo
+                        {
+                            Name = host.DisplayName,
+                            Description = host.DisplayName,
+                            IconKey = string.Empty,
+                            Category = "Runtime",
+                            Version = host.Version,
+                            Author = host.Author,
+                            License = string.Empty
+                        },
+                        Schema = null,
+                        UI = new UIHints
+                        {
+                            Badge = "Plugin",
+                            AccentColor = "#4A90E2",
+                            ShowInQuickAccess = false,
+                            SortOrder = 0
+                        },
+                        Capabilities = new PluginCapabilities
+                        {
+                            SupportedActions = new List<string>(),
+                            Dependencies = new List<string>(),
+                            Tier = tier,
+                            MinPulsarVersion = host.Version
+                        },
+                        Actions = new Dictionary<string, SlotActionMetadata>(StringComparer.OrdinalIgnoreCase)
+                    },
+                IsConfigurable = host.GetPluginInstance() is IPluginConfigurable
+            };
 
             // Extension 插件检查
             if (tier == PluginTier.Extension)
@@ -243,19 +291,10 @@ namespace Pulsar.Services
                     }
                 }
 
-                // 熔断器检查
-                if (_brokenCircuits.TryGetValue(pluginId, out var breakTime))
+                var availability = _breakerPolicy.CheckAvailability(descriptor, pluginId);
+                if (!availability.Allowed)
                 {
-                    if (DateTime.UtcNow - breakTime < ResetTimeout)
-                    {
-                        var remaining = (int)(ResetTimeout - (DateTime.UtcNow - breakTime)).TotalSeconds;
-                        _logger.LogWarning("[PluginRegistryV2] Circuit Open: {PluginId} disabled for {Remaining}s", 
-                            pluginId, remaining);
-                        return PluginResult.Error($"Plugin disabled for safety. Try again in {remaining}s.");
-                    }
-
-                    _brokenCircuits.Remove(pluginId);
-                    _logger.LogInformation("[PluginRegistryV2] Circuit Half-Open: Retrying {PluginId}...", pluginId);
+                    return PluginResult.Error(availability.Message ?? "Plugin unavailable.");
                 }
             }
 
@@ -281,19 +320,17 @@ namespace Pulsar.Services
                 
                 success = result.Success;
 
-                // 成功执行 - 重置失败计数
-                if (tier == PluginTier.Extension && _failureCounts.ContainsKey(pluginId))
-                {
-                    _failureCounts.Remove(pluginId);
-                }
-
                 if (result.Success)
                 {
+                    _breakerPolicy.RecordSuccess(descriptor, pluginId);
                     _logger.LogInformation("[PluginRegistryV2] Plugin execution succeeded: {Message}", 
                         result.Message ?? "OK");
+                    host.SetRuntimeState(PluginState.Enabled);
+                    _healthMonitor?.RecordSuccess(pluginId);
                 }
                 else
                 {
+                    host.SetRuntimeState(PluginState.Enabled);
                     _logger.LogWarning("[PluginRegistryV2] Plugin execution failed: {Message}", 
                         result.Message ?? "Unknown error");
                     
@@ -301,7 +338,7 @@ namespace Pulsar.Services
                     if (tier == PluginTier.Extension && result.Severity == PluginErrorSeverity.Critical)
                     {
                         _logger.LogWarning("[PluginRegistryV2] Critical error detected");
-                        HandlePluginCrash(pluginId, new InvalidOperationException(result.Message ?? "Critical error"));
+                        _breakerPolicy.RecordFailure(descriptor, pluginId, new InvalidOperationException(result.Message ?? "Critical error"));
                     }
                 }
                 
@@ -316,8 +353,10 @@ namespace Pulsar.Services
                 // Extension 插件触发熔断器
                 if (tier == PluginTier.Extension)
                 {
-                    HandlePluginCrash(pluginId, ex);
+                    _breakerPolicy.RecordFailure(descriptor, pluginId, ex);
                 }
+
+                host.SetRuntimeState(PluginState.Faulted, ex);
 
                 return PluginResult.Error($"Plugin execution failed: {ex.Message}");
             }
@@ -328,12 +367,7 @@ namespace Pulsar.Services
                 // 记录统计
                 _usageTracker?.RecordExecution(pluginId, success, stopwatch.ElapsedMilliseconds, context.TargetProcessName);
 
-                // 记录健康监控
-                if (success)
-                {
-                    _healthMonitor?.RecordSuccess(pluginId);
-                }
-                else if (exception != null)
+                if (exception != null)
                 {
                     _healthMonitor?.RecordError(pluginId, exception, action);
                 }
@@ -515,35 +549,6 @@ namespace Pulsar.Services
             }
 
             return plugin?.CanDisable == false ? PluginTier.Core : PluginTier.Extension;
-        }
-
-        private void HandlePluginCrash(string pluginId, Exception ex)
-        {
-            if (!_failureCounts.ContainsKey(pluginId))
-            {
-                _failureCounts[pluginId] = 0;
-            }
-            
-            _failureCounts[pluginId]++;
-            int count = _failureCounts[pluginId];
-
-            _logger.LogWarning("[PluginRegistryV2] Plugin crashed ({Count}/{MaxFailures})", count, MaxFailures);
-
-            if (count >= MaxFailures)
-            {
-                _brokenCircuits[pluginId] = DateTime.UtcNow;
-                _failureCounts.Remove(pluginId);
-                _logger.LogCritical("[PluginRegistryV2] Circuit Breaker Tripped! Plugin disabled for {Timeout}s", 
-                    ResetTimeout.TotalSeconds);
-                
-                _healthMonitor?.RecordCircuitBreakerTrip(pluginId);
-
-                _trayService?.ShowNotification(
-                    "插件已自动禁用", 
-                    $"插件 '{pluginId}' 因多次崩溃已被暂时禁用 {ResetTimeout.TotalSeconds} 秒。", 
-                    System.Windows.Forms.ToolTipIcon.Error
-                );
-            }
         }
 
         private string? GetPluginPath(string pluginId)

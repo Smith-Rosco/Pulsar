@@ -390,12 +390,12 @@ namespace Pulsar.Services
 
         public Task<List<ProcessWindowInfo>> GetActiveWindowsAsync()
         {
-            return _inventoryService.GetActiveWindowsAsync(IsDiscoveryBlacklisted, RegisterOrUpdateWindow, ExtractIcon, _processRegistryService);
+            return _inventoryService.GetActiveWindowsAsync(IsDiscoveryBlacklisted, _trackingService.SnapshotWindow, ExtractIcon, _processRegistryService);
         }
 
         public Task<List<ProcessWindowInfo>> GetProcessWindowsAsync(int targetProcessId)
         {
-            return _inventoryService.GetProcessWindowsAsync(targetProcessId, IsDiscoveryBlacklisted, RegisterOrUpdateWindow, ExtractIcon);
+            return _inventoryService.GetProcessWindowsAsync(targetProcessId, IsDiscoveryBlacklisted, _trackingService.SnapshotWindow, ExtractIcon);
         }
 
         // [New] Icon Cache to prevent redundant IO/GDI operations
@@ -449,9 +449,10 @@ namespace Pulsar.Services
         internal static WindowSelectionResult SelectTargetWindow(
             IEnumerable<ProcessWindowInfo> windows,
             WindowSelectionRequest request,
-            Func<IntPtr, bool>? isWindow = null)
+            Func<IntPtr, bool>? isWindow = null,
+            Action<string>? logDebug = null)
         {
-            return new WindowSelectionEngine().SelectTargetWindow(windows, request, isWindow);
+            return new WindowSelectionEngine(logDebug).SelectTargetWindow(windows, request, isWindow);
         }
 
         internal static WindowActivationResult ActivateWindow(ProcessWindowInfo window, Func<IntPtr, bool>? isWindow = null)
@@ -802,10 +803,33 @@ namespace Pulsar.Services
                 PreviousWindowHandle = _trackingService.PreviousWindowHandle
             };
 
-            var result = _selectionEngine.SelectTargetWindow(
+            _logger.LogDebug(
+                "[SelectTargetWindow] Incoming request Intent={Intent}, SkipMode={SkipMode}, CurrentForeground={CurrentForeground}, PreviousWindow={PreviousWindow}, CandidateCount={CandidateCount}",
+                request.Intent,
+                request.SkipMode,
+                request.CurrentForegroundHandle,
+                request.PreviousWindowHandle,
+                windows.Count);
+
+            for (int i = 0; i < windows.Count; i++)
+            {
+                var candidate = windows[i];
+                _logger.LogDebug(
+                    "[SelectTargetWindow] Input[{Index}] Hwnd={Handle} Title='{Title}' Process='{ProcessName}' RealActivation={RealActivation} LastActivation={LastActivation} FirstSeen={FirstSeen}",
+                    i,
+                    candidate.Handle,
+                    candidate.Title,
+                    candidate.ProcessName,
+                    candidate.RealActivationTime,
+                    candidate.LastActivationTime,
+                    candidate.FirstSeenTime);
+            }
+
+            var result = SelectTargetWindow(
                 windows,
                 request,
-                PulsarNative.IsWindow);
+                PulsarNative.IsWindow,
+                message => _logger.LogDebug(message));
 
             if (!result.HasSelection)
             {

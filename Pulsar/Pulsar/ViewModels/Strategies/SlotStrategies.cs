@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Messages;
 using Pulsar.Models;
@@ -193,30 +194,40 @@ namespace Pulsar.ViewModels.Strategies
         private readonly IPluginUsageTracker? _usageTracker;
         private readonly IPluginHealthMonitor? _healthMonitor;
         private readonly IPluginLogService? _logService;
+        private readonly ILogger<ProcessGroupStrategy>? _logger;
 
         public ProcessGroupStrategy(List<ProcessWindowInfo> windows,
             IWindowService windowService,
             IPluginUsageTracker? usageTracker = null, 
             IPluginHealthMonitor? healthMonitor = null,
-            IPluginLogService? logService = null)
+            IPluginLogService? logService = null,
+            ILogger<ProcessGroupStrategy>? logger = null)
         {
             _windows = windows;
             _windowService = windowService;
             _usageTracker = usageTracker;
             _healthMonitor = healthMonitor;
             _logService = logService;
+            _logger = logger;
         }
 
         public async Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context)
         {
             // [Enhancement] Use WindowService's smart window selection
+            var currentForegroundHandle = _windowService.GetPreviousWindow();
+            _logger?.LogDebug(
+                "[ProcessGroupStrategy] Direct trigger for '{Label}' with {WindowCount} candidates. CurrentForegroundHandle={CurrentForeground}",
+                slot.Label,
+                _windows.Count,
+                currentForegroundHandle);
+
             var target = _windowService.SelectTargetWindow(
                 _windows,
                 new WindowSelectionRequest
                 {
-                    Intent = WindowSelectionIntent.GroupedSwitch,
-                    SkipMode = WindowSelectionSkipMode.SkipPreviousWindow,
-                    PreviousWindowHandle = _windowService.GetPreviousWindow()
+                    Intent = WindowSelectionIntent.GroupedRootDirectTrigger,
+                    SkipMode = WindowSelectionSkipMode.None,
+                    CurrentForegroundHandle = currentForegroundHandle
                 }).SelectedWindow;
             
             if (target == null)

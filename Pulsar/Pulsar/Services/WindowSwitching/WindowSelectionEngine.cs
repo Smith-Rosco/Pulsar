@@ -9,6 +9,13 @@ namespace Pulsar.Services.WindowSwitching
 {
     public sealed class WindowSelectionEngine
     {
+        private readonly Action<string>? _logDebug;
+
+        public WindowSelectionEngine(Action<string>? logDebug = null)
+        {
+            _logDebug = logDebug;
+        }
+
         public WindowSelectionResult SelectTargetWindow(
             IEnumerable<ProcessWindowInfo> windows,
             WindowSelectionRequest request,
@@ -26,6 +33,8 @@ namespace Pulsar.Services.WindowSwitching
 
             if (orderedCandidates.Count == 0)
             {
+                _logDebug?.Invoke($"[WindowSelectionEngine] No valid candidates. Intent={request.Intent}, SkipMode={request.SkipMode}, CurrentForeground={request.CurrentForegroundHandle}, PreviousWindow={request.PreviousWindowHandle}");
+
                 return new WindowSelectionResult
                 {
                     Request = request,
@@ -34,12 +43,15 @@ namespace Pulsar.Services.WindowSwitching
                 };
             }
 
-            IntPtr skippedHandle = request.SkipMode switch
+            IntPtr skippedHandle = ResolveSkippedHandle(orderedCandidates, request);
+
+            _logDebug?.Invoke($"[WindowSelectionEngine] Request Intent={request.Intent}, SkipMode={request.SkipMode}, CurrentForeground={request.CurrentForegroundHandle}, PreviousWindow={request.PreviousWindowHandle}, SkippedHandle={skippedHandle}, CandidateCount={orderedCandidates.Count}");
+
+            for (int i = 0; i < orderedCandidates.Count; i++)
             {
-                WindowSelectionSkipMode.SkipCurrentForeground => request.CurrentForegroundHandle,
-                WindowSelectionSkipMode.SkipPreviousWindow => request.PreviousWindowHandle,
-                _ => IntPtr.Zero
-            };
+                var candidate = orderedCandidates[i];
+                _logDebug?.Invoke($"[WindowSelectionEngine] Candidate[{i}] Hwnd={candidate.Handle} Title='{candidate.Title}' Process='{candidate.ProcessName}' RealActivation={candidate.RealActivationTime:O} LastActivation={candidate.LastActivationTime:O} FirstSeen={candidate.FirstSeenTime:O}");
+            }
 
             var selected = orderedCandidates.FirstOrDefault(candidate => candidate.Handle != skippedHandle)
                 ?? orderedCandidates[0];
@@ -50,7 +62,13 @@ namespace Pulsar.Services.WindowSwitching
                     ? "Selected by fallback Z-order recency"
                     : "Selected by stable display order";
 
-            if (skippedHandle != IntPtr.Zero && selected.Handle != skippedHandle)
+            if (request.Intent == WindowSelectionIntent.GroupedRootDirectTrigger)
+            {
+                decisionReason = skippedHandle != IntPtr.Zero
+                    ? $"{decisionReason}; grouped root direct trigger skipped current in-process foreground"
+                    : $"{decisionReason}; grouped root direct trigger returned MRU target";
+            }
+            else if (skippedHandle != IntPtr.Zero && selected.Handle != skippedHandle)
             {
                 decisionReason = $"{decisionReason}; applied {request.SkipMode}";
             }
@@ -62,6 +80,25 @@ namespace Pulsar.Services.WindowSwitching
                 DecisionReason = decisionReason,
                 SkippedHandle = skippedHandle,
                 RankedHandles = orderedCandidates.Select(candidate => candidate.Handle).ToList()
+            };
+        }
+
+        private static IntPtr ResolveSkippedHandle(
+            IReadOnlyCollection<ProcessWindowInfo> orderedCandidates,
+            WindowSelectionRequest request)
+        {
+            if (request.Intent == WindowSelectionIntent.GroupedRootDirectTrigger)
+            {
+                return orderedCandidates.Any(candidate => candidate.Handle == request.CurrentForegroundHandle)
+                    ? request.CurrentForegroundHandle
+                    : IntPtr.Zero;
+            }
+
+            return request.SkipMode switch
+            {
+                WindowSelectionSkipMode.SkipCurrentForeground => request.CurrentForegroundHandle,
+                WindowSelectionSkipMode.SkipPreviousWindow => request.PreviousWindowHandle,
+                _ => IntPtr.Zero
             };
         }
     }

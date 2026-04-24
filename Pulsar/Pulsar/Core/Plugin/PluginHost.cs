@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Pulsar.Core.Plugin.Runtime;
 
 namespace Pulsar.Core.Plugin
 {
@@ -45,7 +46,7 @@ namespace Pulsar.Core.Plugin
         /// 插件是否可以执行
         /// </summary>
         public bool CanExecute => 
-            State == PluginState.Loaded && 
+            (State == PluginState.Loaded || State == PluginState.Enabled) && 
             IsAlive;
 
         public PluginHost(string pluginPath, IServiceProvider services, ILogger? logger = null)
@@ -115,13 +116,6 @@ namespace Pulsar.Core.Plugin
                 _logger?.LogDebug("[PluginHost] Initializing plugin: {PluginId}", PluginId);
                 plugin.Initialize(_services);
 
-                // 7. 调用生命周期钩子
-                if (plugin is IPluginLifecycle lifecycle)
-                {
-                    await lifecycle.OnEnableAsync();
-                    _logger?.LogDebug("[PluginHost] Called OnEnableAsync for {PluginId}", PluginId);
-                }
-
                 State = PluginState.Loaded;
                 _logger?.LogInformation("[PluginHost] ✓ Successfully loaded plugin: {PluginId} v{Version}", 
                     PluginId, Version);
@@ -162,7 +156,7 @@ namespace Pulsar.Core.Plugin
                 _logger?.LogDebug("[PluginHost] Executing {PluginId}.{Action}", PluginId, action);
                 var result = await plugin.ExecuteAsync(action, args, context);
                 
-                State = PluginState.Loaded; // 恢复到就绪状态
+                State = PluginState.Enabled;
                 return result;
             }
             catch (Exception ex)
@@ -251,6 +245,12 @@ namespace Pulsar.Core.Plugin
                 return plugin;
             }
             return null;
+        }
+
+        public void SetRuntimeState(PluginState state, Exception? error = null)
+        {
+            State = state;
+            LastError = error;
         }
 
         /// <summary>

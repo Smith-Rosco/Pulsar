@@ -136,7 +136,7 @@ namespace Pulsar.Views
 
             if (!_pages.TryGetValue(registration.Id, out var page))
             {
-                page = _pageFactory.CreatePage(registration.Id);
+                page = _pageFactory.CreatePage(registration.Id, _viewModel);
                 _pages[registration.Id] = page;
                 _themeService.ApplyTheme(page, _viewModel.SettingsTheme, updateGlobal: false);
             }

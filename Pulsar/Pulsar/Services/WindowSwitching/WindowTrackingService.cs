@@ -31,6 +31,32 @@ namespace Pulsar.Services.WindowSwitching
             PreviousWindowHandle = handle;
         }
 
+        public WindowTrackingSnapshot SnapshotWindow(IntPtr hwnd)
+        {
+            if (_windowRegistry.TryGetValue(hwnd, out var existing))
+            {
+                return new WindowTrackingSnapshot
+                {
+                    FirstSeenTime = existing.FirstSeenTime,
+                    ActivationTime = existing.LastActivationTime
+                };
+            }
+
+            var entry = _windowRegistry.GetOrAdd(
+                hwnd,
+                _ => new WindowRegistryEntry
+                {
+                    FirstSeenTime = DateTime.Now,
+                    LastActivationTime = DateTime.MinValue
+                });
+
+            return new WindowTrackingSnapshot
+            {
+                FirstSeenTime = entry.FirstSeenTime,
+                ActivationTime = entry.LastActivationTime
+            };
+        }
+
         public WindowTrackingSnapshot RegisterOrUpdateWindow(IntPtr hwnd)
         {
             var entry = _windowRegistry.AddOrUpdate(

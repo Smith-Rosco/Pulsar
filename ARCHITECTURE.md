@@ -34,7 +34,7 @@ Pulsar triggers two independent modes via different hotkeys, with strictly isola
 
 ---
 
-### 2.2 Plugin System v4.0
+### 2.2 Plugin System v4.1
 
 **Architecture**: Pulsar core no longer contains specific business logic, only responsible for: **Capture Context** → **Dispatch Tasks** → **Render Feedback**
 
@@ -49,6 +49,29 @@ Pulsar triggers two independent modes via different hotkeys, with strictly isola
 - **Core plugins**: Loaded at startup, critical for basic functionality, no Circuit Breaker (crashes are fatal)
 - **Extension plugins**: Optional features, isolated failures, automatic recovery via Circuit Breaker
 
+#### Runtime Kernel
+
+The plugin runtime is now organized around an internal runtime kernel instead of concentrating all policy in `PluginRegistry`.
+
+- `PluginCatalog`: owns descriptor discovery, metadata registration, and dependency ordering
+- `PluginRuntimeStateStore`: owns authoritative lifecycle state for loaded plugin instances
+- `PluginExecutionPipeline`: enforces deterministic execution ordering for availability checks, activation readiness, execution scope, outcome classification, and telemetry
+- `PluginCircuitBreakerPolicy`: owns extension-plugin breaker counters, cooldown windows, and recovery transitions
+- `PluginHost`: remains an instance-hosting primitive for isolated load/unload concerns and host-local state bridging
+- `PluginRegistry`: remains the external compatibility facade used by the rest of the application
+
+#### Lifecycle Model
+
+The runtime kernel defines one shared lifecycle vocabulary across registry-managed and host-managed execution paths:
+
+`Unloaded` -> `Loaded` -> `Enabled` / `Disabled` -> `Running` -> `Enabled`
+
+Fault and recovery transitions are explicit:
+
+- Unhandled activation or execution failures move the plugin to `Faulted`
+- Extension-plugin cooldown expiry moves the plugin through `Recovering` before execution is retried
+- Unload transitions return the plugin to `Unloaded`
+
 #### Circuit Breaker Mechanism
 
 Extension plugins are protected by Circuit Breaker:
@@ -57,12 +80,14 @@ Extension plugins are protected by Circuit Breaker:
 - **Breaker Duration**: 60 seconds
 - **Recovery Strategy**: Half-Open state, allows single retry
 
-**State Transitions**:
+**Breaker State Transitions**:
 ```
 Closed (Normal) → Open (Breaker) → Half-Open (Test) → Closed (Recovered)
      ↑                                                    ↓
      └──────────────── Successful Execution ─────────────┘
 ```
+
+The breaker is implemented as a dedicated runtime policy service and is no longer stored as field-level dictionaries in `PluginRegistry`.
 
 #### Supported Plugin Forms
 

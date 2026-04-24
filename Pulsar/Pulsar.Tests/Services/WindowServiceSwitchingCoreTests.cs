@@ -102,6 +102,67 @@ namespace Pulsar.Tests.Services
         }
 
         [Fact]
+        public void SelectTargetWindow_GroupedRootDirectTrigger_ShouldReturnMruTarget_WhenForegroundIsOutsideGroup()
+        {
+            var mostRecent = CreateWindow(new IntPtr(11), realActivationTime: new DateTime(2026, 1, 1, 11, 0, 0));
+            var older = CreateWindow(new IntPtr(22), realActivationTime: new DateTime(2026, 1, 1, 10, 0, 0));
+
+            var result = WindowService.SelectTargetWindow(
+                new[] { older, mostRecent },
+                new WindowSelectionRequest
+                {
+                    Intent = WindowSelectionIntent.GroupedRootDirectTrigger,
+                    SkipMode = WindowSelectionSkipMode.None,
+                    CurrentForegroundHandle = new IntPtr(999)
+                },
+                _ => true);
+
+            result.SelectedWindow.Should().BeSameAs(mostRecent);
+            result.SkippedHandle.Should().Be(IntPtr.Zero);
+            result.DecisionReason.Should().Contain("returned MRU target");
+        }
+
+        [Fact]
+        public void SelectTargetWindow_GroupedRootDirectTrigger_ShouldRotateToNextWindow_WhenForegroundIsInGroup()
+        {
+            var current = CreateWindow(new IntPtr(11), realActivationTime: new DateTime(2026, 1, 1, 11, 0, 0));
+            var next = CreateWindow(new IntPtr(22), realActivationTime: new DateTime(2026, 1, 1, 10, 0, 0));
+
+            var result = WindowService.SelectTargetWindow(
+                new[] { current, next },
+                new WindowSelectionRequest
+                {
+                    Intent = WindowSelectionIntent.GroupedRootDirectTrigger,
+                    SkipMode = WindowSelectionSkipMode.None,
+                    CurrentForegroundHandle = current.Handle
+                },
+                _ => true);
+
+            result.SelectedWindow.Should().BeSameAs(next);
+            result.SkippedHandle.Should().Be(current.Handle);
+            result.DecisionReason.Should().Contain("skipped current in-process foreground");
+        }
+
+        [Fact]
+        public void SelectTargetWindow_GroupedRootDirectTrigger_ShouldFallbackToOnlyCandidate_WhenNoAlternateExists()
+        {
+            var onlyCandidate = CreateWindow(new IntPtr(11), realActivationTime: new DateTime(2026, 1, 1, 11, 0, 0));
+
+            var result = WindowService.SelectTargetWindow(
+                new[] { onlyCandidate },
+                new WindowSelectionRequest
+                {
+                    Intent = WindowSelectionIntent.GroupedRootDirectTrigger,
+                    SkipMode = WindowSelectionSkipMode.None,
+                    CurrentForegroundHandle = onlyCandidate.Handle
+                },
+                _ => true);
+
+            result.SelectedWindow.Should().BeSameAs(onlyCandidate);
+            result.SkippedHandle.Should().Be(onlyCandidate.Handle);
+        }
+
+        [Fact]
         public void SelectTargetWindow_ShouldUseStableOrder_WhenCandidatesLackRecency()
         {
             var laterDisplay = CreateWindow(new IntPtr(11), firstSeenTime: new DateTime(2026, 1, 1, 10, 0, 0));

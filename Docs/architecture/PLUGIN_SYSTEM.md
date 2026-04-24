@@ -3,7 +3,7 @@
 **Status**: Published  
 **Scope**: Architecture  
 **Applies To**: All Pulsar plugins  
-**Last Updated**: 2026-03-03
+**Last Updated**: 2026-04-24
 
 ---
 
@@ -44,7 +44,21 @@ Closed (Normal) → Open (Breaker) → Half-Open (Test) → Closed (Recovered)
      └──────────────── Successful Execution ─────────────┘
 ```
 
-**User Feedback**: When a plugin is disabled, `PluginRegistry` invokes `ITrayService.ShowNotification` to alert the user via a Windows Toast/Balloon tip.
+**User Feedback**: When a plugin is disabled, the runtime breaker policy invokes `ITrayService.ShowNotification` to alert the user via a Windows Toast/Balloon tip.
+
+---
+
+## Runtime Kernel
+
+Pulsar now separates plugin runtime responsibilities into explicit internal services:
+
+- `PluginCatalog`: discovery, descriptor registration, metadata, dependency ordering
+- `PluginRuntimeStateStore`: authoritative lifecycle state and runtime snapshots for loaded plugins
+- `PluginExecutionPipeline`: deterministic execution ordering for enablement, breaker availability, activation, execution scope, outcome classification, and telemetry
+- `PluginCircuitBreakerPolicy`: crash counters, cooldown windows, and recovery signaling for extension plugins
+- `PluginHost`: isolated instance hosting, unload behavior, and host-local state bridging
+
+`PluginRegistry` remains the compatibility-facing entry point used by the application, but it now delegates orchestration to the runtime kernel instead of owning all runtime policy itself.
 
 ---
 
@@ -151,11 +165,37 @@ public class PulsarContext
 
 ## Plugin Lifecycle
 
-1. **Discovery**: `PluginLoader` scans both built-in assembly and external DLLs
-2. **Registration**: `PluginRegistry` registers plugins and validates metadata
-3. **Initialization**: Plugins receive `IServiceProvider` for dependency injection
-4. **Execution**: Plugins execute actions via `ExecuteAsync()`
-5. **Circuit Breaker**: Extension plugins are monitored for crashes and auto-disabled if threshold exceeded
+### Lifecycle States
+
+- `Unloaded`: no live plugin instance is attached to runtime state
+- `Loaded`: instance exists and settings have been applied, but enablement is not yet assumed implicitly by the host
+- `Enabled`: plugin is ready to execute
+- `Disabled`: plugin instance may remain loaded, but execution is blocked by user state
+- `Running`: plugin action is actively executing through the runtime pipeline
+- `Faulted`: activation or execution failed with an unhandled exception or a critical outcome
+- `Recovering`: extension plugin cooldown has expired and the runtime is allowing a retry path
+
+### Lifecycle Flow
+
+1. **Discovery**: `PluginLoader` scans built-in assemblies and external plugin folders.
+2. **Catalog Registration**: `PluginCatalog` stores descriptors and metadata ordering independently from activation.
+3. **Activation**: `PluginRuntimeKernel` activates instances on demand and applies persisted settings.
+4. **Enablement**: lifecycle hooks such as `OnEnableAsync()` and `OnDisableAsync()` are triggered by runtime state transitions rather than by `PluginHost` load alone.
+5. **Execution**: `PluginExecutionPipeline` evaluates enablement and breaker availability before invoking plugin business logic.
+6. **Outcome Handling**: success, handled failure, and exception outcomes are classified in one place and drive telemetry plus breaker updates.
+7. **Unload**: `PluginHost` and registry shutdown flows call `OnUnloadAsync()` and return the plugin to `Unloaded`.
+
+### Execution Ordering
+
+Every plugin execution follows the same ordered stages:
+
+1. Resolve descriptor and current runtime state.
+2. Evaluate user enablement and extension breaker availability.
+3. Ensure an activated plugin instance exists.
+4. Open `PluginExecutionContext` scope for logging correlation.
+5. Invoke plugin business logic.
+6. Classify the outcome as success, handled failure, exception, or blocked.
+7. Update breaker policy, usage tracking, and health monitoring from that unified outcome.
 
 ---
 

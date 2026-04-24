@@ -14,7 +14,7 @@ namespace Pulsar.Services.WindowSwitching
     {
         public Task<List<ProcessWindowInfo>> GetActiveWindowsAsync(
             Func<string, bool> isBlacklisted,
-            Func<IntPtr, WindowTrackingSnapshot> registerOrUpdateWindow,
+            Func<IntPtr, WindowTrackingSnapshot> snapshotWindow,
             Func<string, ImageSource?> extractIcon,
             IProcessRegistryService? processRegistryService)
         {
@@ -23,7 +23,7 @@ namespace Pulsar.Services.WindowSwitching
                 List<ProcessWindowInfo> results = EnumerateWindows(
                     processIdFilter: null,
                     isBlacklisted,
-                    registerOrUpdateWindow,
+                    snapshotWindow,
                     extractIcon);
 
                 if (processRegistryService != null && results.Count > 0)
@@ -38,20 +38,20 @@ namespace Pulsar.Services.WindowSwitching
         public Task<List<ProcessWindowInfo>> GetProcessWindowsAsync(
             int targetProcessId,
             Func<string, bool> isBlacklisted,
-            Func<IntPtr, WindowTrackingSnapshot> registerOrUpdateWindow,
+            Func<IntPtr, WindowTrackingSnapshot> snapshotWindow,
             Func<string, ImageSource?> extractIcon)
         {
             return Task.Run(() => EnumerateWindows(
                 targetProcessId,
                 isBlacklisted,
-                registerOrUpdateWindow,
+                snapshotWindow,
                 extractIcon));
         }
 
         private static List<ProcessWindowInfo> EnumerateWindows(
             int? processIdFilter,
             Func<string, bool> isBlacklisted,
-            Func<IntPtr, WindowTrackingSnapshot> registerOrUpdateWindow,
+            Func<IntPtr, WindowTrackingSnapshot> snapshotWindow,
             Func<string, ImageSource?> extractIcon)
         {
             List<ProcessWindowInfo> results = new();
@@ -102,7 +102,7 @@ namespace Pulsar.Services.WindowSwitching
                     try { startTime = proc.StartTime; } catch { }
 
                     DateTime zOrderActivationTime = DateTime.Now.AddSeconds(-zOrderIndex);
-                    WindowTrackingSnapshot tracking = registerOrUpdateWindow(hWnd);
+                    WindowTrackingSnapshot tracking = snapshotWindow(hWnd);
 
                     results.Add(new ProcessWindowInfo
                     {
