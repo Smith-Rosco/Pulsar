@@ -22,6 +22,16 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
         private ILogger<BookmarkletRunnerPlugin>? _logger;
         private readonly BookmarkletRunnerSettings _settings = new();
 
+        internal Func<string, string> ReadScriptFile { get; set; } = File.ReadAllText;
+        internal Func<IntPtr, string, IntPtr> ResolveTargetBrowserWindow { get; set; } = BrowserHelper.GetTargetBrowserWindow;
+        internal Func<IntPtr, bool> IsBrowserWindowMinimized { get; set; } = PulsarNative.IsIconic;
+        internal Func<IntPtr, int, bool> RestoreBrowserWindow { get; set; } = PulsarNative.ShowWindow;
+        internal Func<IntPtr, bool> FocusBrowserWindow { get; set; } = PulsarNative.SetForegroundWindow;
+        internal Action<ushort[]> SendKeyCombination { get; set; } = InputHelper.SendKeyCombination;
+        internal Func<string, bool> TrySetFocusedElementText { get; set; } = UiaHelper.TrySetFocusedElementText;
+        internal Action<int> Sleep { get; set; } = Thread.Sleep;
+        internal Func<int, Task> DelayAsync { get; set; } = Task.Delay;
+
         public string Id => "com.pulsar.bookmarklet";
         public string DisplayName => "Bookmarklet Runner";
         public string Version => "1.0.0";
@@ -162,7 +172,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
             ScriptPreprocessor.ValidationResult validationResult;
             try
             {
-                string rawContent = File.ReadAllText(scriptPath);
+                string rawContent = ReadScriptFile(scriptPath);
                 validationResult = ScriptPreprocessor.ProcessScriptContent(rawContent, _logger);
 
                 if (!validationResult.IsValid)
@@ -209,7 +219,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
             string scriptContent = validationResult.ProcessedScript;
 
             // 4. 智能选择目标浏览器窗口
-            IntPtr browserHandle = BrowserHelper.GetTargetBrowserWindow(
+            IntPtr browserHandle = ResolveTargetBrowserWindow(
                 context.TargetWindowHandle,
                 context.TargetProcessName
             );
@@ -228,12 +238,12 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
             try
             {
                 // Only restore if minimized to preserve maximized state
-                if (PulsarNative.IsIconic(browserHandle))
+                if (IsBrowserWindowMinimized(browserHandle))
                 {
-                    PulsarNative.ShowWindow(browserHandle, PulsarNative.SW_RESTORE);
+                    RestoreBrowserWindow(browserHandle, PulsarNative.SW_RESTORE);
                 }
                 
-                PulsarNative.SetForegroundWindow(browserHandle);
+                FocusBrowserWindow(browserHandle);
                 _logger?.LogDebug("[BookmarkletRunner] Browser window focused");
             }
             catch (Exception ex)
@@ -243,16 +253,16 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
             }
 
             // 7. 等待窗口切换动画完成
-            await Task.Delay(200);
+            await DelayAsync(200);
 
             // 8. 执行智能输入模式 (Smart Input Mode via UIA)
             try
             {
-                bool success = ExecuteSmartInput(scriptContent);
-                
-                if (!success)
+                PluginResult executionResult = ExecuteSmartInput(scriptContent);
+
+                if (!executionResult.Success)
                 {
-                    return PluginResult.Error("脚本输入失败。请重试。");
+                    return executionResult;
                 }
 
                 _logger?.LogInformation("[BookmarkletRunner] Bookmarklet executed successfully");
@@ -267,10 +277,9 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
 
         /// <summary>
         /// Executes the bookmarklet using UI Automation for instant injection.
-        /// Falls back to simulated typing if UIA fails.
-        /// No clipboard pollution!
+        /// Fails fast if the browser address bar is not ready for UIA injection.
         /// </summary>
-        private bool ExecuteSmartInput(string scriptContent)
+        internal PluginResult ExecuteSmartInput(string scriptContent)
         {
             try
             {
@@ -283,42 +292,34 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
 
                 // --- Step 1: Focus Address Bar ---
                 _logger?.LogDebug("[BookmarkletRunner] Sending Ctrl+L...");
-                InputHelper.SendKeyCombination(InputHelper.VK_CONTROL, InputHelper.VK_L);
+                SendKeyCombination(new[] { InputHelper.VK_CONTROL, InputHelper.VK_L });
                 
                 // Wait for address bar to gain focus and select all text
-                Thread.Sleep(200);
+                Sleep(200);
 
                 // --- Step 2: Try UI Automation Injection ---
                 _logger?.LogDebug("[BookmarkletRunner] Attempting UIA injection...");
-                bool uiaSuccess = UiaHelper.TrySetFocusedElementText(fullScript);
+                bool uiaSuccess = TrySetFocusedElementText(fullScript);
 
                 if (uiaSuccess)
                 {
                     _logger?.LogDebug("[BookmarkletRunner] UIA injection success. Executing...");
                     
                     // Small delay to ensure browser UI updates
-                    Thread.Sleep(50);
+                    Sleep(50);
                     
                     // Send Enter to execute
-                    InputHelper.SendKeyCombination(InputHelper.VK_RETURN);
-                    return true;
+                    SendKeyCombination(new[] { InputHelper.VK_RETURN });
+                    return PluginResult.Ok();
                 }
 
-                // --- Step 3: Fallback (Simulated Typing) ---
-                _logger?.LogWarning("[BookmarkletRunner] UIA failed. Fallback to simulated typing.");
-                
-                // Note: SendText uses SendInput which is fast, but browser might render it slowly.
-                // But it's reliable and doesn't touch clipboard.
-                InputHelper.SendText(fullScript);
-                Thread.Sleep(50);
-                InputHelper.SendKeyCombination(InputHelper.VK_RETURN);
-                
-                return true;
+                _logger?.LogWarning("[BookmarkletRunner] UIA injection failed; aborting bookmarklet execution.");
+                return PluginResult.Error("浏览器地址栏暂时未准备好接受书签脚本。请等待页面或浏览器完成加载后重试。");
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "[BookmarkletRunner] Smart sequence error");
-                return false;
+                return PluginResult.Error($"执行书签脚本时出错: {ex.Message}");
             }
         }
 

@@ -38,6 +38,11 @@ namespace Pulsar.Services.ActionFeedback
                 return CreatePkiFailure(result.Message);
             }
 
+            if (string.Equals(pluginId, "com.pulsar.bookmarklet", StringComparison.OrdinalIgnoreCase))
+            {
+                return CreateBookmarkletFailure(result.Message);
+            }
+
             return new ActionFeedback(
                 ActionFeedbackKind.RecoverableFailure,
                 "Action failed",
@@ -179,6 +184,36 @@ namespace Pulsar.Services.ActionFeedback
                 "Credential fill failed",
                 "Pulsar could not complete the credential action.",
                 "Try again after the target app is ready.",
+                ToolTipIcon.Error);
+        }
+
+        private static ActionFeedback CreateBookmarkletFailure(string? message)
+        {
+            if (ContainsAny(message, "缺少必要参数: scriptPath", "找不到脚本文件", "脚本验证失败", "脚本内容为空", "脚本路径包含不安全字符"))
+            {
+                return new ActionFeedback(
+                    ActionFeedbackKind.ConfigurationError,
+                    "Fix bookmarklet slot",
+                    "This bookmarklet slot needs a valid script file before it can run.",
+                    "Open the slot and verify the configured script path.",
+                    ToolTipIcon.Warning);
+            }
+
+            if (ContainsAny(message, "浏览器地址栏", "browser address bar", "未检测到运行中的浏览器", "Failed to focus browser"))
+            {
+                return new ActionFeedback(
+                    ActionFeedbackKind.RecoverableFailure,
+                    "Bookmarklet failed",
+                    "Pulsar could not inject the bookmarklet into the browser.",
+                    "Wait for the page or browser address bar to finish loading, then try again.",
+                    ToolTipIcon.Error);
+            }
+
+            return new ActionFeedback(
+                ActionFeedbackKind.RecoverableFailure,
+                "Bookmarklet failed",
+                "Pulsar could not complete the bookmarklet action.",
+                "Make sure the browser is ready, then try again.",
                 ToolTipIcon.Error);
         }
 

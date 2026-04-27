@@ -75,5 +75,18 @@ namespace Pulsar.Tests.Services
             feedback.ToNotificationMessage().Should().NotContain("01234567-89ab-cdef-0123-456789abcdef");
             feedback.Message.Should().NotContain("Secret not found:");
         }
+
+        [Fact]
+        public void Create_ShouldReturnRetryGuidance_ForBookmarkletBrowserReadinessFailures()
+        {
+            var feedback = _service.Create(
+                "com.pulsar.bookmarklet",
+                "run",
+                PluginResult.Error("浏览器地址栏暂时未准备好接受书签脚本。请等待页面或浏览器完成加载后重试。"));
+
+            feedback.Kind.Should().Be(ActionFeedbackKind.RecoverableFailure);
+            feedback.Title.Should().Be("Bookmarklet failed");
+            feedback.ToNotificationMessage().Should().Contain("finish loading");
+        }
     }
 }
