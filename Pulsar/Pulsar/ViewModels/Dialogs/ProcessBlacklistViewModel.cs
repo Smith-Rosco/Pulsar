@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Pulsar.Helpers;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels.Base;
@@ -15,7 +18,9 @@ namespace Pulsar.ViewModels.Dialogs
     {
         private readonly IWindowService _windowService;
         private readonly IProcessRegistryService _processRegistryService;
-        private readonly string _currentBlacklist;
+        private readonly HashSet<string> _currentBlacklist;
+
+        private static readonly ImageSource PlaceholderIcon = CreatePlaceholderIcon();
 
         [ObservableProperty]
         private ObservableCollection<ProcessItemViewModel> _processes = new();
@@ -31,7 +36,11 @@ namespace Pulsar.ViewModels.Dialogs
         {
             _windowService = windowService;
             _processRegistryService = processRegistryService;
-            _currentBlacklist = currentBlacklist;
+            _currentBlacklist = currentBlacklist
+                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(value => value.Trim())
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
             LoadProcessesAsync();
         }
 
@@ -40,36 +49,113 @@ namespace Pulsar.ViewModels.Dialogs
             IsLoading = true;
             try
             {
-                // 1. 从注册表获取所有已知进程
                 var allProcesses = await _processRegistryService.GetAllProcessesAsync();
-
-                // 2. 获取正在运行的进程（用于标记"运行中"状态）
-                var windows = await _windowService.GetActiveWindowsAsync();
-                var runningNames = windows
-                    .Select(w => w.ProcessName)
+                var runningProcesses = await _windowService.GetRunningProcessesAsync();
+                var runningNames = runningProcesses
+                    .Select(process => process.ProcessName)
                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var runningPaths = runningProcesses
+                    .GroupBy(process => process.ProcessName, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(
+                        group => group.Key,
+                        group => group.Select(process => process.ExePath).FirstOrDefault(path => !string.IsNullOrWhiteSpace(path)) ?? string.Empty,
+                        StringComparer.OrdinalIgnoreCase);
 
-                // 3. 构建 UI 列表
-                foreach (var entry in allProcesses)
+                Dictionary<string, ProcessRegistryEntry> entriesByName = allProcesses
+                    .GroupBy(entry => entry.ProcessName, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
+
+                foreach (var processName in runningNames)
                 {
-                    // 加载图标（三级缓存）
-                    var icon = await _processRegistryService.GetIconAsync(entry.ProcessName);
+                    if (!entriesByName.ContainsKey(processName))
+                    {
+                        entriesByName[processName] = new ProcessRegistryEntry
+                        {
+                            ProcessName = processName,
+                            DisplayName = processName,
+                            LastSeen = DateTime.MinValue,
+                            IsBlacklisted = false
+                        };
+                    }
+                }
 
-                    Processes.Add(new ProcessItemViewModel
+                foreach (var processName in _currentBlacklist)
+                {
+                    if (!entriesByName.ContainsKey(processName))
+                    {
+                        entriesByName[processName] = new ProcessRegistryEntry
+                        {
+                            ProcessName = processName,
+                            DisplayName = processName,
+                            LastSeen = DateTime.MinValue,
+                            IsBlacklisted = true
+                        };
+                    }
+                }
+
+                var items = entriesByName.Values
+                    .Select(entry => new ProcessItemViewModel
                     {
                         ProcessName = entry.ProcessName,
                         DisplayName = entry.DisplayName ?? entry.ProcessName,
-                        Icon = icon,
-                        IsBlacklisted = entry.IsBlacklisted,
+                        Icon = PlaceholderIcon,
+                        HasResolvedIcon = false,
+                        ExecutablePath = entry.ExecutablePath ?? runningPaths.GetValueOrDefault(entry.ProcessName, string.Empty),
+                        IsBlacklisted = entry.IsBlacklisted || _currentBlacklist.Contains(entry.ProcessName),
                         IsRunning = runningNames.Contains(entry.ProcessName),
                         LastSeen = entry.LastSeen
-                    });
-                }
+                    })
+                    .OrderByDescending(item => item.IsBlacklisted)
+                    .ThenByDescending(item => item.IsRunning)
+                    .ThenBy(item => item.DisplayName, StringComparer.CurrentCultureIgnoreCase)
+                    .ToList();
+
+                Processes = new ObservableCollection<ProcessItemViewModel>(items);
+                IsLoading = false;
+                _ = LoadIconsAsync(items);
+                return;
             }
             finally
             {
                 IsLoading = false;
             }
+        }
+
+        private async Task LoadIconsAsync(IReadOnlyList<ProcessItemViewModel> items)
+        {
+            foreach (var item in items)
+            {
+                var icon = await _processRegistryService.GetIconAsync(item.ProcessName);
+                if (icon == null && !string.IsNullOrWhiteSpace(item.ExecutablePath))
+                {
+                    icon = IconHelper.GetIconFromPath(item.ExecutablePath);
+                }
+
+                if (icon == null)
+                {
+                    item.HasResolvedIcon = true;
+                    continue;
+                }
+
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    item.Icon = icon;
+                    item.HasResolvedIcon = true;
+                });
+            }
+        }
+
+        private static ImageSource CreatePlaceholderIcon()
+        {
+            var drawing = new GeometryDrawing(
+                new SolidColorBrush(System.Windows.Media.Color.FromRgb(0x8A, 0x8A, 0x8A)),
+                null,
+                Geometry.Parse("F1 M 6,4 L 18,4 18,20 6,20 Z M 8,7 L 16,7 16,9 8,9 Z M 8,11 L 16,11 16,13 8,13 Z M 8,15 L 13,15 13,17 8,17 Z"));
+            drawing.Freeze();
+
+            var image = new DrawingImage(drawing);
+            image.Freeze();
+            return image;
         }
 
         public async Task<bool> CanCloseAsync(DialogResult result)
@@ -96,7 +182,13 @@ namespace Pulsar.ViewModels.Dialogs
         private string _displayName = string.Empty;
 
         [ObservableProperty]
+        private string _executablePath = string.Empty;
+
+        [ObservableProperty]
         private System.Windows.Media.ImageSource? _icon;
+
+        [ObservableProperty]
+        private bool _hasResolvedIcon;
 
         [ObservableProperty]
         private bool _isBlacklisted;
@@ -113,5 +205,15 @@ namespace Pulsar.ViewModels.Dialogs
         public string StatusText => IsRunning 
             ? "Running" 
             : $"Last seen: {LastSeen:yyyy-MM-dd}";
+
+        partial void OnIsRunningChanged(bool value)
+        {
+            OnPropertyChanged(nameof(StatusText));
+        }
+
+        partial void OnLastSeenChanged(DateTime value)
+        {
+            OnPropertyChanged(nameof(StatusText));
+        }
     }
 }

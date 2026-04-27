@@ -310,6 +310,11 @@ namespace Pulsar.Services
                     try
                     {
                         processWindows = GetProcessWindowsAsync(proc.Id).GetAwaiter().GetResult();
+
+                        if (_processRegistryService != null && processWindows.Count > 0)
+                        {
+                            _ = Task.Run(() => _processRegistryService.RegisterProcessesAsync(processWindows));
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -393,9 +398,24 @@ namespace Pulsar.Services
             return _inventoryService.GetActiveWindowsAsync(IsDiscoveryBlacklisted, _trackingService.SnapshotWindow, ExtractIcon, _processRegistryService);
         }
 
+        public Task<HashSet<string>> GetRunningProcessNamesAsync()
+        {
+            return _inventoryService.GetRunningProcessNamesAsync(IsDiscoveryBlacklisted);
+        }
+
+        public Task<List<RunningProcessInfo>> GetRunningProcessesAsync()
+        {
+            return _inventoryService.GetRunningProcessesAsync(IsDiscoveryBlacklisted);
+        }
+
         public Task<List<ProcessWindowInfo>> GetProcessWindowsAsync(int targetProcessId)
         {
-            return _inventoryService.GetProcessWindowsAsync(targetProcessId, IsDiscoveryBlacklisted, _trackingService.SnapshotWindow, ExtractIcon);
+            return _inventoryService.GetProcessWindowsAsync(targetProcessId, GetProcessActivationBlacklistPredicate(), _trackingService.SnapshotWindow, ExtractIcon);
+        }
+
+        internal static Func<string, bool> GetProcessActivationBlacklistPredicate()
+        {
+            return static _ => false;
         }
 
         // [New] Icon Cache to prevent redundant IO/GDI operations

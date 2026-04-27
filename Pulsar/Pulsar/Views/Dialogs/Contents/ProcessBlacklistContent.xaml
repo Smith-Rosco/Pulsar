@@ -5,9 +5,12 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:viewmodels="clr-namespace:Pulsar.ViewModels.Dialogs"
-             d:DataContext="{d:DesignInstance Type=viewmodels:ProcessBlacklistViewModel}"
-             mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="400">
+              d:DataContext="{d:DesignInstance Type=viewmodels:ProcessBlacklistViewModel}"
+              mc:Ignorable="d" 
+              d:DesignHeight="450" d:DesignWidth="400">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -44,21 +47,8 @@
 
                         <!-- Icon with running indicator -->
                         <Grid Grid.Column="0" Width="32" Height="32" Margin="0,0,10,0">
-                            <Border Background="{DynamicResource ControlFillColorDefaultBrush}" CornerRadius="4">
-                                <ui:SymbolIcon Symbol="AppGeneric24" FontSize="16" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                            </Border>
-                            <Image Source="{Binding Icon}" RenderOptions.BitmapScalingMode="HighQuality">
-                                <Image.Style>
-                                    <Style TargetType="Image">
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Icon}" Value="{x:Null}">
-                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Image.Style>
-                            </Image>
+                            <Border Background="{DynamicResource ControlFillColorDefaultBrush}" CornerRadius="4"/>
+                            <Image Source="{Binding Icon}" RenderOptions.BitmapScalingMode="HighQuality"/>
                             <!-- Running indicator (green dot) -->
                             <Ellipse Width="8" Height="8" 
                                      Fill="LimeGreen" 
@@ -106,10 +96,18 @@
             </ListBox.ItemTemplate>
         </ListBox>
         
-        <Grid Grid.Row="1" 
-              Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}" 
-              Background="{DynamicResource ApplicationBackgroundBrush}">
-            <ui:ProgressRing IsIndeterminate="True" Width="40" Height="40"/>
-        </Grid>
+        <Border Grid.Row="1"
+                VerticalAlignment="Top"
+                HorizontalAlignment="Right"
+                Margin="0,8,8,0"
+                Padding="8,4"
+                CornerRadius="12"
+                Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
+            <StackPanel Orientation="Horizontal">
+                <ui:ProgressRing IsIndeterminate="True" Width="16" Height="16" Margin="0,0,8,0"/>
+                <TextBlock Text="Loading process list..." VerticalAlignment="Center" FontSize="11"/>
+            </StackPanel>
+        </Border>
     </Grid>
 </UserControl>
