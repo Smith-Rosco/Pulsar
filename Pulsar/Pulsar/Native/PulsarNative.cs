@@ -45,6 +45,11 @@ namespace Pulsar.Native
             IntPtr hWinEventHook, uint eventType, IntPtr hwnd,
             int idObject, int idChild, uint dwEventThread, uint dwmsEventTime);
 
+        // --- FlashWindowEx constants ---
+        public const uint FLASHW_CAPTION = 0x00000001;
+        public const uint FLASHW_TRAY = 0x00000002;
+        public const uint FLASHW_ALL = 0x00000003;
+
         // --- Cursor / Monitor constants ---
         public const uint MONITOR_DEFAULTTONEAREST = 0x00000002;
 
@@ -78,6 +83,16 @@ namespace Pulsar.Native
         public struct RECT
         {
             public int Left, Top, Right, Bottom;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct FLASHWINFO
+        {
+            public uint cbSize;
+            public IntPtr hwnd;
+            public uint dwFlags;
+            public uint uCount;
+            public uint dwTimeout;
         }
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
@@ -173,6 +188,10 @@ namespace Pulsar.Native
 
         [DllImport("user32.dll")]
         public static extern bool PrintWindow(IntPtr hwnd, IntPtr hdcBlt, uint nFlags);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool FlashWindowEx(ref FLASHWINFO pfwi);
 
         [DllImport("user32.dll", EntryPoint = "SetForegroundWindow")]
         private static extern bool SetForegroundWindowNative(IntPtr hWnd);

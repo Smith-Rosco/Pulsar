@@ -19,6 +19,7 @@ namespace Pulsar.ViewModels.Strategies
         private readonly IPluginUsageTracker? _usageTracker;
         private readonly IPluginHealthMonitor? _healthMonitor;
         private readonly IPluginLogService? _logService;
+        private readonly ITrayService? _trayService;
         private readonly ProcessWindowMatcher _matcher;
 
         private List<MatchedWindowGroup> _matchedSlots = new();
@@ -37,6 +38,7 @@ namespace Pulsar.ViewModels.Strategies
             _usageTracker = serviceProvider.GetService(typeof(IPluginUsageTracker)) as IPluginUsageTracker;
             _healthMonitor = serviceProvider.GetService(typeof(IPluginHealthMonitor)) as IPluginHealthMonitor;
             _logService = serviceProvider.GetService(typeof(IPluginLogService)) as IPluginLogService;
+            _trayService = serviceProvider.GetService(typeof(ITrayService)) as ITrayService;
         }
 
         public override async Task LoadAsync()
@@ -132,7 +134,7 @@ namespace Pulsar.ViewModels.Strategies
 
                     slotViewModel.Type = SlotType.Process;
                     slotViewModel.DataContext = slotItem.Config;
-                    slotViewModel.ActionStrategy = new LaunchApplicationStrategy(slotItem.Config);
+                    slotViewModel.ActionStrategy = new LaunchApplicationStrategy(slotItem.Config, _trayService);
                     slotViewModel.CurrentOpacity = 0.5;
                 }
             }

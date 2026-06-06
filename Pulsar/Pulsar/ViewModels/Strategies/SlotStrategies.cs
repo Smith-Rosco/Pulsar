@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Messages;
 using Pulsar.Models;
+using Pulsar.Native;
 using Pulsar.Services;
 using Pulsar.Services.ActionFeedback;
 using Pulsar.Services.Interfaces; // [New]
@@ -226,7 +227,8 @@ namespace Pulsar.ViewModels.Strategies
                 {
                     Intent = WindowSelectionIntent.GroupedRootDirectTrigger,
                     SkipMode = WindowSelectionSkipMode.None,
-                    CurrentForegroundHandle = currentForegroundHandle
+                    CurrentForegroundHandle = currentForegroundHandle,
+                    PreferredMonitorRect = GetCursorMonitorRect()
                 }).SelectedWindow;
             
             if (target == null)
@@ -243,6 +245,32 @@ namespace Pulsar.ViewModels.Strategies
         public async Task EnterSubMenuAsync(RadialMenuViewModel context, string processName)
         {
              await context.EnterSubMenuAsync(_windows, processName);
+        }
+
+        private static PulsarNative.RECT? GetCursorMonitorRect()
+        {
+            if (!PulsarNative.GetCursorPos(out var cursorPos))
+            {
+                return null;
+            }
+
+            var hMonitor = PulsarNative.MonitorFromPoint(cursorPos, PulsarNative.MONITOR_DEFAULTTONEAREST);
+            if (hMonitor == IntPtr.Zero)
+            {
+                return null;
+            }
+
+            var monitorInfo = new PulsarNative.MONITORINFO
+            {
+                cbSize = System.Runtime.InteropServices.Marshal.SizeOf<PulsarNative.MONITORINFO>()
+            };
+
+            if (!PulsarNative.GetMonitorInfo(hMonitor, ref monitorInfo))
+            {
+                return null;
+            }
+
+            return monitorInfo.rcWork;
         }
     }
     
@@ -271,10 +299,12 @@ namespace Pulsar.ViewModels.Strategies
     public class LaunchApplicationStrategy : IActionStrategy
     {
         private readonly PluginSlot _config;
+        private readonly ITrayService? _trayService;
 
-        public LaunchApplicationStrategy(PluginSlot config)
+        public LaunchApplicationStrategy(PluginSlot config, ITrayService? trayService = null)
         {
             _config = config;
+            _trayService = trayService;
         }
 
         public Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context)
@@ -302,6 +332,12 @@ namespace Pulsar.ViewModels.Strategies
                 {
                     System.Media.SystemSounds.Hand.Play();
                     return Task.CompletedTask;
+                }
+
+                // Show launch toast before Process.Start
+                if (_trayService != null && _config.Args.TryGetValue("app", out var processName) && !string.IsNullOrEmpty(processName))
+                {
+                    _trayService.ShowNotification("Launching", $"Starting {processName}...", Models.PulsarNotificationIcon.Info);
                 }
 
                 // Launch the application

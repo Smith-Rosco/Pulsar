@@ -53,7 +53,8 @@ namespace Pulsar.ViewModels
                 if (i < sortedWindows.Count)
                 {
                     var win = sortedWindows[i];
-                    slot.Label = win.Title.Length > 15 ? win.Title.Substring(0, 12) + "..." : win.Title;
+                    var label = !string.IsNullOrWhiteSpace(win.Title) ? win.Title : win.ProcessName;
+                    slot.Label = label.Length > 40 ? label.Substring(0, 37) + "..." : label;
                     slot.IconImage = win.AppIcon;
                     slot.Type = SlotType.Window;
                     slot.DataContext = win;

@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Plugin.Metadata;
+using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 
 namespace Pulsar.Plugins.Core.WinSwitcher
@@ -23,6 +24,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
         // Initialized in Initialize() method with null check - guaranteed non-null after initialization
         private IWindowService _windowService = null!;
         private ILogger<WinSwitcherPlugin>? _logger;
+        private ITrayService? _trayService;
         private HashSet<string> _excludedProcesses = new();
 
         public string Id => "com.pulsar.winswitcher";
@@ -42,6 +44,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
         {
             _windowService = (services.GetService(typeof(IWindowService)) as IWindowService)!;
             _logger = services.GetService(typeof(ILogger<WinSwitcherPlugin>)) as ILogger<WinSwitcherPlugin>;
+            _trayService = services.GetService(typeof(ITrayService)) as ITrayService;
 
             if (_windowService == null)
             {
@@ -299,7 +302,9 @@ namespace Pulsar.Plugins.Core.WinSwitcher
             // 2. 切换失败，尝试启动
             if (args.TryGetValue("path", out var exePath) && !string.IsNullOrEmpty(exePath))
             {
-                // 调用 LaunchApplicationAsync (已包含完整验证和错误处理)
+                System.Diagnostics.Debug.WriteLine($"{LogPrefix} SmartSwitch - no window found for '{processName}', showing launch toast. _trayService={(_trayService != null ? "exists" : "NULL")}");
+                _trayService?.ShowNotification("Launching", $"Starting {processName}...", PulsarNotificationIcon.Info);
+                System.Diagnostics.Debug.WriteLine($"{LogPrefix} SmartSwitch - toast returned, launching app...");
                 return await LaunchApplicationAsync(args, context);
             }
             else

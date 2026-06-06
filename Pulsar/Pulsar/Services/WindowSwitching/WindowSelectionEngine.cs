@@ -29,6 +29,7 @@ namespace Pulsar.Services.WindowSwitching
                 .ThenByDescending(w => w.RealActivationTime)
                 .ThenByDescending(w => w.LastActivationTime)
                 .ThenBy(w => w.FirstSeenTime)
+                .ThenByDescending(w => request.PreferredMonitorRect.HasValue && IntersectsPreferredMonitor(w.Handle, request.PreferredMonitorRect.Value))
                 .ToList();
 
             if (orderedCandidates.Count == 0)
@@ -81,6 +82,19 @@ namespace Pulsar.Services.WindowSwitching
                 SkippedHandle = skippedHandle,
                 RankedHandles = orderedCandidates.Select(candidate => candidate.Handle).ToList()
             };
+        }
+
+        private static bool IntersectsPreferredMonitor(IntPtr hWnd, PulsarNative.RECT preferredRect)
+        {
+            if (!PulsarNative.GetWindowRect(hWnd, out var windowRect))
+            {
+                return false;
+            }
+
+            return !(windowRect.Right <= preferredRect.Left
+                  || windowRect.Left >= preferredRect.Right
+                  || windowRect.Bottom <= preferredRect.Top
+                  || windowRect.Top >= preferredRect.Bottom);
         }
 
         private static IntPtr ResolveSkippedHandle(

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Pulsar.Models;
+using Pulsar.Native;
 
 namespace Pulsar.Services.Interfaces
 {
@@ -29,6 +30,8 @@ namespace Pulsar.Services.Interfaces
         public IntPtr CurrentForegroundHandle { get; init; }
 
         public IntPtr PreviousWindowHandle { get; init; }
+
+        public PulsarNative.RECT? PreferredMonitorRect { get; init; }
     }
 
     public sealed class WindowSelectionResult

@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using Pulsar.Models;
 using Pulsar.Native;
 using Pulsar.Services.Interfaces;
@@ -7,7 +8,7 @@ namespace Pulsar.Services.WindowSwitching
 {
     internal sealed class WindowActivator
     {
-        public WindowActivationResult ActivateWindow(ProcessWindowInfo window, Func<IntPtr, bool>? isWindow = null)
+        public WindowActivationResult ActivateWindow(ProcessWindowInfo window, Func<IntPtr, bool>? isWindow = null, bool flashAfterActivation = true)
         {
             isWindow ??= PulsarNative.IsWindow;
 
@@ -27,6 +28,20 @@ namespace Pulsar.Services.WindowSwitching
             }
 
             bool activated = PulsarNative.SetForegroundWindow(window.Handle);
+
+            if (activated && flashAfterActivation)
+            {
+                var flashInfo = new PulsarNative.FLASHWINFO
+                {
+                    cbSize = (uint)Marshal.SizeOf<PulsarNative.FLASHWINFO>(),
+                    hwnd = window.Handle,
+                    dwFlags = PulsarNative.FLASHW_CAPTION | PulsarNative.FLASHW_TRAY,
+                    uCount = 3,
+                    dwTimeout = 0
+                };
+                PulsarNative.FlashWindowEx(ref flashInfo);
+            }
+
             return new WindowActivationResult
             {
                 Window = window,
