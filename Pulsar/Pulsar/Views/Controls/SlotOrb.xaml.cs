@@ -1,9 +1,9 @@
 using Pulsar.Helpers;
 using System;
+using System.Drawing;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media; // VisualTreeHelper, CompositionTarget
-using Forms = System.Windows.Forms;
 
 // [����] ǿ��ָ�� Point Ϊ WPF ����
 using Point = System.Windows.Point;
@@ -127,7 +127,8 @@ namespace Pulsar.Views.Controls
                 try
                 {
                     Point orbCenterScreen = this.PointToScreen(new Point(ActualWidth / 2, ActualHeight / 2));
-                    var mouseScreen = Forms.Cursor.Position;
+                    Pulsar.Native.PulsarNative.GetCursorPos(out var cursorPt);
+                    var mouseScreen = new System.Drawing.Point(cursorPt.X, cursorPt.Y);
 
                     double diffX = (mouseScreen.X - orbCenterScreen.X);
                     double diffY = (mouseScreen.Y - orbCenterScreen.Y);

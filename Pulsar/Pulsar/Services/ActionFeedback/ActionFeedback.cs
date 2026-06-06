@@ -1,4 +1,4 @@
-using System.Windows.Forms;
+using Pulsar.Models;
 
 namespace Pulsar.Services.ActionFeedback
 {
@@ -9,7 +9,7 @@ namespace Pulsar.Services.ActionFeedback
             string title,
             string message,
             string? recoveryHint,
-            ToolTipIcon icon)
+            PulsarNotificationIcon icon)
         {
             Kind = kind;
             Title = title;
@@ -26,7 +26,7 @@ namespace Pulsar.Services.ActionFeedback
 
         public string? RecoveryHint { get; }
 
-        public ToolTipIcon Icon { get; }
+        public PulsarNotificationIcon Icon { get; }
 
         public string ToNotificationMessage()
         {

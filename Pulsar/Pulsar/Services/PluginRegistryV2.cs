@@ -517,7 +517,7 @@ namespace Pulsar.Services
                         _trayService?.ShowNotification(
                             "插件已重载",
                             $"插件 '{e.PluginId}' 已自动重载。",
-                            System.Windows.Forms.ToolTipIcon.Info
+                            PulsarNotificationIcon.Info
                         );
 
                         _logger.LogInformation("[PluginRegistryV2] ✓ Plugin auto-reloaded: {PluginId}", e.PluginId);
@@ -527,7 +527,7 @@ namespace Pulsar.Services
                         _trayService?.ShowNotification(
                             "插件重载失败",
                             $"插件 '{e.PluginId}' 重载失败，请查看日志。",
-                            System.Windows.Forms.ToolTipIcon.Warning
+                            PulsarNotificationIcon.Warning
                         );
 
                         _logger.LogError("[PluginRegistryV2] Failed to auto-reload plugin: {PluginId}", e.PluginId);

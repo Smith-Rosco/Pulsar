@@ -313,7 +313,7 @@ namespace Pulsar.Core.Plugin.Runtime
             _trayService?.ShowNotification(
                 "插件已自动禁用",
                 $"插件 '{pluginId}' 因多次崩溃已被暂时禁用 {ResetTimeout.TotalSeconds} 秒，以保护主程序运行。",
-                System.Windows.Forms.ToolTipIcon.Error);
+                PulsarNotificationIcon.Error);
         }
     }
 

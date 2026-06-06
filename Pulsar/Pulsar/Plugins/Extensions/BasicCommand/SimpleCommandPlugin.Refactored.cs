@@ -7,10 +7,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin;
+using Pulsar.Native;
 
 namespace Pulsar.Plugins.Extensions.BasicCommand
 {
@@ -118,7 +119,7 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
         }
 
         /// <summary>
-        /// 发送键盘按键序列
+        /// 发送键盘按键序列 (using native SendInput)
         /// </summary>
         private async Task<PluginResult> SendKeysAsync(
             IReadOnlyDictionary<string, string> args,
@@ -149,9 +150,9 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
             {
                 // 等待窗口切换
                 await Task.Delay(delay);
-                
-                SendKeys.SendWait(keys);
-                
+
+                ParseAndSendKeys(keys);
+
                 Logger.LogInformation("Keys sent successfully");
                 return PluginResult.Ok("Keys sent");
             }
@@ -162,6 +163,101 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
                     $"SendKeys failed: {ex.Message}",
                     PluginErrorSeverity.Recoverable
                 );
+            }
+        }
+
+        private static void ParseAndSendKeys(string keys)
+        {
+            var sb = new StringBuilder();
+            int i = 0;
+
+            while (i < keys.Length)
+            {
+                char c = keys[i];
+
+                if (c == '{')
+                {
+                    FlushTextBuffer(sb);
+                    int close = keys.IndexOf('}', i + 1);
+                    if (close < 0)
+                    {
+                        sb.Append(c);
+                        i++;
+                        continue;
+                    }
+
+                    string token = keys.Substring(i + 1, close - i - 1);
+                    i = close + 1;
+
+                    if (InputHelper.GetNamedKey(token) is ushort vk)
+                    {
+                        InputHelper.SendKeyCombination(vk);
+                        continue;
+                    }
+
+                    sb.Append('{').Append(token).Append('}');
+                    continue;
+                }
+
+                if (c == '^' || c == '+' || c == '%')
+                {
+                    FlushTextBuffer(sb);
+                    var modifiers = new List<ushort>();
+                    while (i < keys.Length && (keys[i] == '^' || keys[i] == '+' || keys[i] == '%'))
+                    {
+                        switch (keys[i])
+                        {
+                            case '^': modifiers.Add(InputHelper.VK_CONTROL); break;
+                            case '+': modifiers.Add(InputHelper.VK_SHIFT); break;
+                            case '%': modifiers.Add(InputHelper.VK_MENU); break;
+                        }
+                        i++;
+                    }
+
+                    if (i < keys.Length)
+                    {
+                        if (keys[i] == '{')
+                        {
+                            int close = keys.IndexOf('}', i + 1);
+                            if (close >= 0)
+                            {
+                                string token = keys.Substring(i + 1, close - i - 1);
+                                i = close + 1;
+                                if (InputHelper.GetNamedKey(token) is ushort namedVk)
+                                {
+                                    modifiers.Add(namedVk);
+                                    InputHelper.SendKeyCombination(modifiers.ToArray());
+                                    continue;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            char keyChar = keys[i];
+                            i++;
+                            var vk = InputHelper.CharToVkCode(keyChar);
+                            modifiers.Add(vk);
+                            InputHelper.SendKeyCombination(modifiers.ToArray());
+                            continue;
+                        }
+                    }
+
+                    continue;
+                }
+
+                sb.Append(c);
+                i++;
+            }
+
+            FlushTextBuffer(sb);
+        }
+
+        private static void FlushTextBuffer(StringBuilder sb)
+        {
+            if (sb.Length > 0)
+            {
+                InputHelper.SendText(sb.ToString());
+                sb.Clear();
             }
         }
     }

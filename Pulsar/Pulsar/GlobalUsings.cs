@@ -13,7 +13,6 @@ global using System.Windows.Input;
 global using WpfApplication = System.Windows.Application;
 // 显式区分两种 Button，避免 XAML/Code-behind 里的歧义
 global using WpfButton = System.Windows.Controls.Button;
-global using FormsButton = System.Windows.Forms.Button;
 // 显式指定 UserControl 为 WPF 版本
 global using UserControl = System.Windows.Controls.UserControl;
 // 显式指定 KeyEventArgs (通常 WPF 用 System.Windows.Input)

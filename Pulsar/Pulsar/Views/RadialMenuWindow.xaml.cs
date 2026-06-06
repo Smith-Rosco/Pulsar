@@ -13,8 +13,6 @@ using System.Windows.Media;
 using System.Windows.Interop;
 using System.Windows.Media.Animation;
 using Wpf.Ui.Controls;
-// 引用 WinForms 获取全局鼠标坐标
-using Forms = System.Windows.Forms;
 using System.Windows.Input; // For Mouse.Capture
 
 namespace Pulsar.Views
@@ -224,11 +222,9 @@ namespace Pulsar.Views
             _dpiScaleY = dpi.DpiScaleY;
 
             // Get Global Cursor Position (Physical Pixels)
-            var screenPoint = Forms.Cursor.Position;
-            
-            // Convert to WPF Logical Units
-            double wpfMouseX = screenPoint.X / _dpiScaleX;
-            double wpfMouseY = screenPoint.Y / _dpiScaleY;
+            PulsarNative.GetCursorPos(out var pt);
+            double wpfMouseX = pt.X / _dpiScaleX;
+            double wpfMouseY = pt.Y / _dpiScaleY;
 
             // Center window on cursor
             // Window Width/Height is fixed at 500 in XAML

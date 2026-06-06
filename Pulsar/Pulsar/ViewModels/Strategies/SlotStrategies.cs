@@ -10,7 +10,6 @@ using Pulsar.Models;
 using Pulsar.Services;
 using Pulsar.Services.ActionFeedback;
 using Pulsar.Services.Interfaces; // [New]
-using System.Windows.Forms; // [New] For ToolTipIcon
 
 namespace Pulsar.ViewModels.Strategies
 {

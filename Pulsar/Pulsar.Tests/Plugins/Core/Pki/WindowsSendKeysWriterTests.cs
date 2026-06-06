@@ -15,31 +15,29 @@ namespace Pulsar.Tests.Plugins.Core.Pki
         }
 
         [Theory]
-        [InlineData("test", "test")]
-        [InlineData("t{e}st", "t{{}e{}}st")]
-        [InlineData("t[e]st", "t{[}e{]}st")]
-        [InlineData("t+e^s%t~", "t{+}e{^}s{%}t{~}")]
-        [InlineData("(test)", "{(}test{)}")]
-        [InlineData("}}{{", "{}}{}}{{}{{}")]
-        [InlineData("test ", "test ")]
-        [InlineData("++", "{+}{+}")]
-        [InlineData("^^", "{^}{^}")]
-        [InlineData("%%", "{%}{%}")]
-        [InlineData("~~", "{~}{~}")]
-        [InlineData("((", "{(}{(}")]
-        [InlineData("))", "{)}{)}")]
-        [InlineData("[[", "{[}{[}")]
-        [InlineData("]]", "{]}{]}")]
-        [InlineData("{{", "{{}{{}")]
-        [InlineData("}}", "{}}{}}")]
-        [InlineData("", "")]
-        public void EscapeForSendKeys_ShouldEscapeSpecialCharactersCorrectly(string? input, string? expected)
+        [InlineData("test")]
+        [InlineData("t{e}st")]
+        [InlineData("t[e]st")]
+        [InlineData("t+e^s%t~")]
+        [InlineData("(test)")]
+        [InlineData("}}{{")]
+        [InlineData("test ")]
+        [InlineData("++")]
+        [InlineData("^^")]
+        [InlineData("%%")]
+        [InlineData("~~")]
+        [InlineData("((")]
+        [InlineData("))")]
+        [InlineData("[[")]
+        [InlineData("]]")]
+        [InlineData("{{")]
+        [InlineData("}}")]
+        [InlineData("")]
+        public void EscapeForSendKeys_ShouldReturnInputUnchanged(string? input)
         {
-            // Act
             string result = _writer.EscapeForSendKeys(input);
 
-            // Assert
-            result.Should().Be(expected);
+            result.Should().Be(input ?? string.Empty);
         }
 
         [Fact]

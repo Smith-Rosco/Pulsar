@@ -1,11 +1,12 @@
 using System;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using Pulsar.Models;
 using Pulsar.Models.Enums;
+using Pulsar.Native;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels;
 using Pulsar.ViewModels.Base;
@@ -243,32 +244,31 @@ namespace Pulsar.Services
         /// </summary>
         private void PositionNearMouse(Window window)
         {
-            // Get mouse position
-            var mousePos = System.Windows.Forms.Control.MousePosition;
-            
-            // Get screen working area (excludes taskbar)
-            var screen = Screen.FromPoint(mousePos);
-            var workingArea = screen.WorkingArea;
+            PulsarNative.GetCursorPos(out var pt);
+            var monitor = PulsarNative.MonitorFromPoint(pt, PulsarNative.MONITOR_DEFAULTTONEAREST);
+            var monitorInfo = new PulsarNative.MONITORINFO();
+            monitorInfo.cbSize = Marshal.SizeOf(monitorInfo);
+            PulsarNative.GetMonitorInfo(monitor, ref monitorInfo);
 
             // Offset from cursor (avoid covering cursor)
             const int offsetX = 20;
             const int offsetY = 20;
 
-            double left = mousePos.X + offsetX;
-            double top = mousePos.Y + offsetY;
+            double left = pt.X + offsetX;
+            double top = pt.Y + offsetY;
 
-            // Ensure window stays within screen bounds
-            if (left + window.Width > workingArea.Right)
-                left = workingArea.Right - window.Width;
-            
-            if (top + window.Height > workingArea.Bottom)
-                top = workingArea.Bottom - window.Height;
+            // Ensure window stays within monitor working area (excludes taskbar)
+            if (left + window.Width > monitorInfo.rcWork.Right)
+                left = monitorInfo.rcWork.Right - window.Width;
 
-            if (left < workingArea.Left)
-                left = workingArea.Left;
-            
-            if (top < workingArea.Top)
-                top = workingArea.Top;
+            if (top + window.Height > monitorInfo.rcWork.Bottom)
+                top = monitorInfo.rcWork.Bottom - window.Height;
+
+            if (left < monitorInfo.rcWork.Left)
+                left = monitorInfo.rcWork.Left;
+
+            if (top < monitorInfo.rcWork.Top)
+                top = monitorInfo.rcWork.Top;
 
             window.Left = left;
             window.Top = top;

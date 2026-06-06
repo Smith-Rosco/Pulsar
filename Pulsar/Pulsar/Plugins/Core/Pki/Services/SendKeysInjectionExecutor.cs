@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Pulsar.Native;
 using Pulsar.Plugins.Core.Pki.Contracts;
 using Pulsar.Plugins.Core.Pki.Models.Execution;
 using Pulsar.Plugins.Core.Pki.Services.Input;
@@ -70,8 +71,7 @@ namespace Pulsar.Plugins.Core.Pki.Services
                         case InjectionStepType.SendText:
                             try
                             {
-                                string escaped = _sendKeysWriter.EscapeForSendKeys(step.Value ?? string.Empty);
-                                _sendKeysWriter.SendWait(escaped);
+                                _sendKeysWriter.SendWait(step.Value ?? string.Empty);
                             }
                             catch (Exception ex)
                             {
@@ -83,7 +83,7 @@ namespace Pulsar.Plugins.Core.Pki.Services
                         case InjectionStepType.SendKey:
                             try
                             {
-                                _sendKeysWriter.SendWait(step.Value ?? string.Empty);
+                                ExecuteSendKey(step.Value ?? string.Empty);
                             }
                             catch (Exception ex)
                             {
@@ -102,6 +102,22 @@ namespace Pulsar.Plugins.Core.Pki.Services
                 _logger.LogError(ex, "[SendKeysInjectionExecutor] Unexpected injection failure");
                 return PkiExecutionResult.Fail(PkiExecutionStage.Injection, "Credential injection failed", plan);
             }
+        }
+
+        private static void ExecuteSendKey(string value)
+        {
+            // Parse SendKeys-format named keys like {TAB}, {ENTER}
+            if (value.Length >= 2 && value[0] == '{' && value[^1] == '}')
+            {
+                string token = value[1..^1];
+                if (InputHelper.GetNamedKey(token) is ushort vk)
+                {
+                    InputHelper.SendKeyCombination(vk);
+                    return;
+                }
+            }
+
+            InputHelper.SendText(value);
         }
     }
 }

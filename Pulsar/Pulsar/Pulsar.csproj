@@ -6,7 +6,6 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <UseWindowsForms>true</UseWindowsForms>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     
     <ApplicationIcon>Pulsar.ico</ApplicationIcon>
@@ -33,9 +32,8 @@
     
     <PublishReadyToRun>true</PublishReadyToRun>
     
-    <!-- Trimming currently incompatible with WinForms usage (NETSDK1175).
-         Keep disabled until we remove System.Windows.Forms dependencies (NotifyIcon/SendKeys, etc). -->
-    <PublishTrimmed>false</PublishTrimmed>
+    <!-- Trimming enabled after removing System.Windows.Forms dependencies -->
+    <PublishTrimmed>true</PublishTrimmed>
     <TrimMode>partial</TrimMode>
     
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
@@ -71,9 +69,11 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1" />
     <PackageReference Include="WPF-UI" Version="4.2.0" />
     <PackageReference Include="NuGet.Versioning" Version="7.3.0" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.0" />
+    <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
     <PackageReference Include="OpenTelemetry" Version="1.9.0" />
     <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.9.0" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.9.0" />

@@ -1,6 +1,6 @@
 using System;
-using System.Windows.Forms;
 using Pulsar.Core.Plugin;
+using Pulsar.Models;
 
 namespace Pulsar.Services.ActionFeedback
 {
@@ -20,7 +20,7 @@ namespace Pulsar.Services.ActionFeedback
                     "Action unavailable",
                     "This action is temporarily unavailable.",
                     "Wait a moment and try again.",
-                    ToolTipIcon.Warning);
+                    PulsarNotificationIcon.Warning);
             }
 
             if (string.Equals(pluginId, "com.pulsar.winswitcher", StringComparison.OrdinalIgnoreCase))
@@ -48,7 +48,7 @@ namespace Pulsar.Services.ActionFeedback
                 "Action failed",
                 "The action did not complete.",
                 "Try again or review the slot settings.",
-                ToolTipIcon.Error);
+                PulsarNotificationIcon.Error);
         }
 
         private static ActionFeedback CreateSuccessFeedback(string pluginId, string action)
@@ -63,7 +63,7 @@ namespace Pulsar.Services.ActionFeedback
                     ? "The app was launched successfully."
                     : "The app was brought to the front successfully.";
 
-                return new ActionFeedback(ActionFeedbackKind.Success, title, message, null, ToolTipIcon.Info);
+                return new ActionFeedback(ActionFeedbackKind.Success, title, message, null, PulsarNotificationIcon.Info);
             }
 
             if (string.Equals(pluginId, "com.pulsar.command", StringComparison.OrdinalIgnoreCase))
@@ -76,7 +76,7 @@ namespace Pulsar.Services.ActionFeedback
                     ? "The keys or text were sent to the active app."
                     : "The target opened successfully.";
 
-                return new ActionFeedback(ActionFeedbackKind.Success, title, message, null, ToolTipIcon.Info);
+                return new ActionFeedback(ActionFeedbackKind.Success, title, message, null, PulsarNotificationIcon.Info);
             }
 
             if (string.Equals(pluginId, "com.pulsar.pki", StringComparison.OrdinalIgnoreCase))
@@ -86,7 +86,7 @@ namespace Pulsar.Services.ActionFeedback
                     "Credential filled",
                     "The saved credential was sent to the active app.",
                     null,
-                    ToolTipIcon.Info);
+                    PulsarNotificationIcon.Info);
             }
 
             return new ActionFeedback(
@@ -94,7 +94,7 @@ namespace Pulsar.Services.ActionFeedback
                 "Action complete",
                 "The action completed successfully.",
                 null,
-                ToolTipIcon.Info);
+                PulsarNotificationIcon.Info);
         }
 
         private static ActionFeedback CreateWinSwitcherFailure(string? message)
@@ -106,7 +106,7 @@ namespace Pulsar.Services.ActionFeedback
                     "Fix slot setup",
                     "This app slot needs updated settings before it can run.",
                     "Open the slot and verify the app name or launch path.",
-                    ToolTipIcon.Warning);
+                    PulsarNotificationIcon.Warning);
             }
 
             if (ContainsAny(message, "is not running and no launch path specified", "is not running"))
@@ -116,7 +116,7 @@ namespace Pulsar.Services.ActionFeedback
                     "App not available",
                     "Pulsar could not find a running app to switch to.",
                     "Open the app first or add a launch path to this slot.",
-                    ToolTipIcon.Warning);
+                    PulsarNotificationIcon.Warning);
             }
 
             return new ActionFeedback(
@@ -124,7 +124,7 @@ namespace Pulsar.Services.ActionFeedback
                 "Switch failed",
                 "Pulsar could not switch to that app.",
                 "Try again after the app is ready.",
-                ToolTipIcon.Error);
+                PulsarNotificationIcon.Error);
         }
 
         private static ActionFeedback CreateCommandFailure(string action, string? message)
@@ -136,7 +136,7 @@ namespace Pulsar.Services.ActionFeedback
                     "Fix slot setup",
                     "This command slot is missing required settings.",
                     "Open the slot and fill in the missing value.",
-                    ToolTipIcon.Warning);
+                    PulsarNotificationIcon.Warning);
             }
 
             if (string.Equals(action, "sendkeys", StringComparison.OrdinalIgnoreCase))
@@ -146,7 +146,7 @@ namespace Pulsar.Services.ActionFeedback
                     "Input failed",
                     "Pulsar could not send the keys or text to the active app.",
                     "Make sure the target app is focused, then try again.",
-                    ToolTipIcon.Error);
+                    PulsarNotificationIcon.Error);
             }
 
             return new ActionFeedback(
@@ -154,7 +154,7 @@ namespace Pulsar.Services.ActionFeedback
                 "Open failed",
                 "Pulsar could not open the configured target.",
                 "Check that the target exists and try again.",
-                ToolTipIcon.Error);
+                PulsarNotificationIcon.Error);
         }
 
         private static ActionFeedback CreatePkiFailure(string? message)
@@ -166,7 +166,7 @@ namespace Pulsar.Services.ActionFeedback
                     "Fix credential slot",
                     "This credential action needs an updated saved secret before it can run.",
                     "Open the slot and choose a valid saved credential.",
-                    ToolTipIcon.Warning);
+                    PulsarNotificationIcon.Warning);
             }
 
             if (ContainsAny(message, "restore focus", "text entry", "key entry", "injection failed", "hide launcher"))
@@ -176,7 +176,7 @@ namespace Pulsar.Services.ActionFeedback
                     "Credential fill failed",
                     "Pulsar could not send the saved credential to the active app.",
                     "Focus the target field and try again.",
-                    ToolTipIcon.Error);
+                    PulsarNotificationIcon.Error);
             }
 
             return new ActionFeedback(
@@ -184,7 +184,7 @@ namespace Pulsar.Services.ActionFeedback
                 "Credential fill failed",
                 "Pulsar could not complete the credential action.",
                 "Try again after the target app is ready.",
-                ToolTipIcon.Error);
+                PulsarNotificationIcon.Error);
         }
 
         private static ActionFeedback CreateBookmarkletFailure(string? message)
@@ -196,7 +196,7 @@ namespace Pulsar.Services.ActionFeedback
                     "Fix bookmarklet slot",
                     "This bookmarklet slot needs a valid script file before it can run.",
                     "Open the slot and verify the configured script path.",
-                    ToolTipIcon.Warning);
+                    PulsarNotificationIcon.Warning);
             }
 
             if (ContainsAny(message, "浏览器地址栏", "browser address bar", "未检测到运行中的浏览器", "Failed to focus browser"))
@@ -206,7 +206,7 @@ namespace Pulsar.Services.ActionFeedback
                     "Bookmarklet failed",
                     "Pulsar could not inject the bookmarklet into the browser.",
                     "Wait for the page or browser address bar to finish loading, then try again.",
-                    ToolTipIcon.Error);
+                    PulsarNotificationIcon.Error);
             }
 
             return new ActionFeedback(
@@ -214,7 +214,7 @@ namespace Pulsar.Services.ActionFeedback
                 "Bookmarklet failed",
                 "Pulsar could not complete the bookmarklet action.",
                 "Make sure the browser is ready, then try again.",
-                ToolTipIcon.Error);
+                PulsarNotificationIcon.Error);
         }
 
         private static bool IsTemporaryUnavailable(string? message)

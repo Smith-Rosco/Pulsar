@@ -76,8 +76,8 @@ namespace Pulsar.Services
 
         private System.Windows.Point GetGlobalCursorPosition()
         {
-            var screenPoint = System.Windows.Forms.Cursor.Position;
-            return new System.Windows.Point(screenPoint.X, screenPoint.Y);
+            Pulsar.Native.PulsarNative.GetCursorPos(out var pt);
+            return new System.Windows.Point(pt.X, pt.Y);
         }
 
         private Vector ScreenToRelative(System.Windows.Point screenPoint)
