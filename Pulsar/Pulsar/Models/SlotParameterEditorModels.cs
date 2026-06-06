@@ -21,6 +21,18 @@ namespace Pulsar.Models
 
         [ObservableProperty]
         private bool _isSelected;
+
+        public override bool Equals(object? obj)
+        {
+            if (obj is SlotActionOption other)
+                return string.Equals(Value, other.Value, StringComparison.OrdinalIgnoreCase);
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return Value != null ? StringComparer.OrdinalIgnoreCase.GetHashCode(Value) : 0;
+        }
     }
 
     public partial class SlotParameterEditorField : ObservableObject, IDisposable

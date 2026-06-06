@@ -202,7 +202,7 @@
                                   ItemsSource="{Binding AvailableActions}"
                                   SelectedValuePath="Value"
                                   DisplayMemberPath="Label"
-                                  SelectedValue="{Binding Slot.Action, Mode=OneWay}"
+                                  SelectedValue="{Binding Slot.Action}"
                                   SelectionChanged="ActionComboBox_SelectionChanged"
                                   Visibility="{Binding HasSingleAction, Converter={StaticResource BoolToVisInverse}}"/>
                     </Grid>
