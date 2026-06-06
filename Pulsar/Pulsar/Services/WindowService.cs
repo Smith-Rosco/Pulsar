@@ -16,6 +16,7 @@ using Pulsar.Models; // 确保引用了 WindowInfo 等模型
 using Pulsar.Native; // [New] Use centralized Native helper
 using Pulsar.Helpers; // [Logging] For LogSampler
 using Pulsar.Services.WindowSwitching;
+using Pulsar.Core.Focus;
 
 namespace Pulsar.Services
 {
@@ -24,8 +25,8 @@ namespace Pulsar.Services
         private readonly ILogger<WindowService> _logger;
         private readonly IProcessRegistryService? _processRegistryService;
         private readonly ILoggerFactory? _loggerFactory;
+        private readonly IFocusManager _focusManager;
         private readonly WindowSelectionEngine _selectionEngine = new();
-        private readonly WindowActivator _windowActivator = new();
         private readonly WindowInventoryService _inventoryService = new();
         private readonly WindowTrackingService _trackingService = new();
         private readonly QuickSwitchEngine _quickSwitchEngine = new();
@@ -36,11 +37,6 @@ namespace Pulsar.Services
         
         private const int MaxHistorySize = 10;
         private const int QuickSwitchTimeoutMs = 5000; // 5秒内的连续切换视为同一对
-        
-        // [New] Focus Restore State Machine
-        private FocusRestoreMode _focusRestoreMode = FocusRestoreMode.RestorePrevious;
-        private IntPtr _focusRestoreTarget = IntPtr.Zero;
-        private readonly object _focusLock = new object();
         
         // [New] Dynamic blacklist - can be updated by plugins
         private HashSet<string> _dynamicBlacklist = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -72,9 +68,10 @@ namespace Pulsar.Services
         // 实时追踪所有窗口激活事件，解决手动切换窗口后 Quick Switch 失效的问题
         private WindowActivationMonitor? _activationMonitor;
 
-        public WindowService(ILogger<WindowService> logger, IProcessRegistryService? processRegistryService = null, ILoggerFactory? loggerFactory = null)
+        public WindowService(ILogger<WindowService> logger, IFocusManager focusManager, IProcessRegistryService? processRegistryService = null, ILoggerFactory? loggerFactory = null)
         {
             _logger = logger;
+            _focusManager = focusManager;
             _processRegistryService = processRegistryService;
             _loggerFactory = loggerFactory;
             using (var currentProcess = Process.GetCurrentProcess())
@@ -259,7 +256,7 @@ namespace Pulsar.Services
             {
                 if (proc.MainWindowHandle != IntPtr.Zero)
                 {
-                    ForceForegroundWindow(proc.MainWindowHandle);
+                    _ = _focusManager.ActivateWindowAsync(proc.MainWindowHandle);
                     return true;
                 }
             }
@@ -459,11 +456,9 @@ namespace Pulsar.Services
 
         // --- Native Helpers ---
 
-        private void ForceForegroundWindow(IntPtr hWnd)
+        private async Task ForceForegroundWindowAsync(IntPtr hWnd)
         {
-            // Use WindowHelper which handles minimized windows and bypasses foreground lock
-            // This prevents "Background Restore" flashing
-            PulsarNative.SetForegroundWindow(hWnd);
+            await _focusManager.ActivateWindowAsync(hWnd);
         }
 
         internal static WindowSelectionResult SelectTargetWindow(
@@ -475,9 +470,9 @@ namespace Pulsar.Services
             return new WindowSelectionEngine(logDebug).SelectTargetWindow(windows, request, isWindow);
         }
 
-        internal static WindowActivationResult ActivateWindow(ProcessWindowInfo window, Func<IntPtr, bool>? isWindow = null)
+        internal static async Task<WindowActivationResult> ActivateWindowAsync(IFocusManager focusManager, ProcessWindowInfo window, Func<IntPtr, bool>? isWindow = null)
         {
-            return new WindowActivator().ActivateWindow(window, isWindow);
+            return await new WindowActivator(focusManager).ActivateWindowAsync(window, isWindow);
         }
 
         // 补充实现 IWindowService.RecordPreviousWindow()
@@ -486,7 +481,7 @@ namespace Pulsar.Services
             _trackingService.SetPreviousWindow(PulsarNative.GetForegroundWindow());
         }
 
-        public void SwitchToPreviousWindow()
+        public async void SwitchToPreviousWindow()
         {
             IntPtr current = PulsarNative.GetForegroundWindow();
             PulsarNative.GetWindowThreadProcessId(current, out uint currentPid);
@@ -505,7 +500,7 @@ namespace Pulsar.Services
                 return;
             }
 
-            var activation = ActivateWindowDetailed(new ProcessWindowInfo
+            var activation = await ActivateWindowDetailedAsync(new ProcessWindowInfo
             {
                 Handle = resolution.TargetWindow,
                 Title = GetWindowTitle(resolution.TargetWindow),
@@ -524,74 +519,17 @@ namespace Pulsar.Services
         
         public void SetFocusRestoreMode(FocusRestoreMode mode, IntPtr targetWindow = default)
         {
-            lock (_focusLock)
-            {
-                _focusRestoreMode = mode;
-                _focusRestoreTarget = targetWindow;
-                
-                // [Logging] Removed debug log - called very frequently, low diagnostic value
-            }
+            _focusManager.SetRestoreMode(mode, targetWindow);
         }
         
         public FocusRestoreMode GetFocusRestoreMode()
         {
-            lock (_focusLock)
-            {
-                return _focusRestoreMode;
-            }
+            return _focusManager.RestoreMode;
         }
         
         public void RestoreFocus()
         {
-            lock (_focusLock)
-            {
-                // [Logging] Downgraded to Debug - called frequently, only log failures
-                _logger.LogDebug("[FocusManager] Restoring focus. Mode: {Mode}", _focusRestoreMode);
-                
-                switch (_focusRestoreMode)
-                {
-                    case FocusRestoreMode.NoRestore:
-                        // [Logging] Removed debug log - too verbose
-                        break;
-                        
-                    case FocusRestoreMode.RestorePrevious:
-                        if (_trackingService.PreviousWindowHandle != IntPtr.Zero && 
-                            PulsarNative.IsWindow(_trackingService.PreviousWindowHandle))
-                        {
-                            // [Logging] Downgraded to Debug - success case, not critical
-                            _logger.LogDebug("[FocusManager] Restoring to previous window: '{Title}'", 
-                                GetWindowTitle(_trackingService.PreviousWindowHandle));
-                            ForceForegroundWindow(_trackingService.PreviousWindowHandle);
-                        }
-                        else
-                        {
-                            // [Logging] Keep Warning - indicates issue
-                            _logger.LogWarning("[FocusManager] Previous window handle is invalid");
-                        }
-                        break;
-                        
-                    case FocusRestoreMode.RestoreTarget:
-                        if (_focusRestoreTarget != IntPtr.Zero && 
-                            PulsarNative.IsWindow(_focusRestoreTarget))
-                        {
-                            // [Logging] Downgraded to Debug - success case
-                            _logger.LogDebug("[FocusManager] Restoring to target window: '{Title}'", 
-                                GetWindowTitle(_focusRestoreTarget));
-                            ForceForegroundWindow(_focusRestoreTarget);
-                        }
-                        else
-                        {
-                            // [Logging] Keep Warning - indicates issue
-                            _logger.LogWarning("[FocusManager] Target window invalid, falling back to previous");
-                            goto case FocusRestoreMode.RestorePrevious;
-                        }
-                        break;
-                }
-                
-                // 重置为默认模式
-                _focusRestoreMode = FocusRestoreMode.RestorePrevious;
-                _focusRestoreTarget = IntPtr.Zero;
-            }
+            _ = _focusManager.ReleaseAsync();
         }
 
         private string GetWindowTitle(IntPtr hWnd)
@@ -872,7 +810,7 @@ namespace Pulsar.Services
             return SelectTargetWindow(windows, request).SelectedWindow;
         }
 
-        public WindowActivationResult ActivateWindowDetailed(ProcessWindowInfo window)
+        public async Task<WindowActivationResult> ActivateWindowDetailedAsync(ProcessWindowInfo window)
         {
             if (window == null)
             {
@@ -885,7 +823,7 @@ namespace Pulsar.Services
                 };
             }
 
-            var result = _windowActivator.ActivateWindow(window, PulsarNative.IsWindow);
+            var result = await ActivateWindowAsync(_focusManager, window, PulsarNative.IsWindow);
             if (!result.Success)
             {
                 _logger.LogWarning("[ActivateWindow] Failed to activate '{Title}' (Handle: {Handle}, Reason: {Reason})",
@@ -899,6 +837,11 @@ namespace Pulsar.Services
                 window.Title,
                 window.ProcessName);
             return result;
+        }
+
+        public WindowActivationResult ActivateWindowDetailed(ProcessWindowInfo window)
+        {
+            return ActivateWindowDetailedAsync(window).GetAwaiter().GetResult();
         }
 
         public bool ActivateWindow(ProcessWindowInfo window)

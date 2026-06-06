@@ -2,7 +2,7 @@
 
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels;
-using Pulsar.Native;        // WindowHelper
+using Pulsar.Native;
 using Pulsar.Models;        // AppTheme
 using Microsoft.Extensions.Logging;
 using System;
@@ -26,6 +26,7 @@ namespace Pulsar.Views
 
         // [Fix] 添加 WindowService 字段以解决报错
         private readonly IWindowService _windowService;
+        private readonly IFocusManager _focusManager;
 
         // DPI 缩放比例缓存
         private double _dpiScaleX = 1.0;
@@ -36,7 +37,8 @@ namespace Pulsar.Views
             IConfigService configService,
             IWindowService windowService,
             IThemeService themeService,
-            ILogger<RadialMenuWindow> logger)
+            ILogger<RadialMenuWindow> logger,
+            IFocusManager focusManager)
         {
             // Initialize Fields First
             _viewModel = vm;
@@ -44,6 +46,7 @@ namespace Pulsar.Views
             _windowService = windowService;
             _themeService = themeService;
             _logger = logger;
+            _focusManager = focusManager;
 
             // [Theme Isolation] Apply Default Theme immediately before InitializeComponent
             _themeService.ApplyTheme(this, AppTheme.Dark, WindowBackdropType.None, updateGlobal: false);
@@ -151,11 +154,8 @@ namespace Pulsar.Views
                 this.Visibility = Visibility.Visible;
             }
 
-            // Bring to foreground and Activate
-            this.Activate();
-            
-            // [New] Restore Interaction
-            this.IsHitTestVisible = true; 
+            // Bring to foreground and Activate via FocusManager
+            _focusManager.ActivateMenu(this);
             
             // Clear any HoldEnd animations from Dismiss to prevent "flicker" from old values
             this.BeginAnimation(UIElement.OpacityProperty, null);
@@ -183,28 +183,20 @@ namespace Pulsar.Views
 
         private void Dismiss()
         {
-            // 2. [͸] رսֹڵ
             this.IsHitTestVisible = false;
 
-            // 3. [隐身] 优雅退出 (Ghost Mode)
             _viewModel.ClearPreviewPresentation();
 
-            // 显式停止之前的动画并播放淡出动画
             var fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(100));
             fadeOut.FillBehavior = FillBehavior.HoldEnd;
             
-            fadeOut.Completed += (s, e) =>
+            fadeOut.Completed += async (s, e) =>
             {
                 _viewModel.ClearVisuals();
-                // [Refactor] Never Hide() the window. 
-                // Just leave it transparent and non-hit-testable.
-                // this.Hide(); <--- REMOVED
+                await _focusManager.ReleaseAsync();
             };
             
             this.BeginAnimation(UIElement.OpacityProperty, fadeOut);
-            
-            // [重构] 使用焦点管理状态机（替代原有的条件判断）
-            _windowService.RestoreFocus();
         }
 
         private async void RefreshThemeOnShow()

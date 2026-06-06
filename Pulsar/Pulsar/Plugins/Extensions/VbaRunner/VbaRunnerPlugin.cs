@@ -18,6 +18,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
     public class VbaRunnerPlugin : IPulsarPlugin, IPluginTiered, IPluginLifecycle, IPluginMetadataProvider, IPluginConfigurable
     {
         private IWindowService? _windowService;
+        private IFocusManager? _focusManager;
         private ScriptEngine? _scriptEngine;
         private ILogger<VbaRunnerPlugin>? _logger;
         private readonly VbaRunnerSettings _settings = new();
@@ -39,6 +40,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
         public void Initialize(IServiceProvider services)
         {
             _windowService = services.GetService(typeof(IWindowService)) as IWindowService;
+            _focusManager = services.GetService(typeof(IFocusManager)) as IFocusManager;
             _logger = services.GetService(typeof(ILogger<VbaRunnerPlugin>)) as ILogger<VbaRunnerPlugin>;
 
             if (_windowService == null)
@@ -140,7 +142,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
         // IPluginLifecycle 实现
         public async Task OnEnableAsync()
         {
-            _scriptEngine = new ScriptEngine();
+            _scriptEngine = new ScriptEngine(_focusManager);
             _logger?.LogInformation("[VbaRunnerPlugin] Plugin enabled, ScriptEngine created");
             await Task.CompletedTask;
         }
@@ -232,9 +234,11 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
             // 4. 尝试恢复目标窗口焦点 (如果已知)
             if (context.TargetWindowHandle != IntPtr.Zero)
             {
-                _logger?.LogDebug("[VbaRunnerPlugin] Setting foreground window to: {Hwnd}", context.TargetWindowHandle);
-                bool success = PulsarNative.SetForegroundWindow(context.TargetWindowHandle);
-                _logger?.LogDebug("[VbaRunnerPlugin] SetForegroundWindow result: {Success}", success);
+                _logger?.LogDebug("[VbaRunnerPlugin] Activating target window: {Hwnd}", context.TargetWindowHandle);
+                if (_focusManager != null)
+                {
+                    await _focusManager.ActivateWindowAsync(context.TargetWindowHandle);
+                }
                 await Task.Delay(100); // 等待窗口切换
             }
             else
@@ -346,7 +350,10 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
             if (context.TargetWindowHandle != IntPtr.Zero)
             {
                 _logger?.LogDebug("[VbaRunnerPlugin] Restoring focus to original window: {Hwnd}", context.TargetWindowHandle);
-                PulsarNative.SetForegroundWindow(context.TargetWindowHandle);
+                if (_focusManager != null)
+                {
+                    await _focusManager.ActivateWindowAsync(context.TargetWindowHandle);
+                }
             }
 
             _logger?.LogDebug("[VbaRunnerPlugin] Dispatcher completed - Result: {Result}", errorMessage ?? successMessage);

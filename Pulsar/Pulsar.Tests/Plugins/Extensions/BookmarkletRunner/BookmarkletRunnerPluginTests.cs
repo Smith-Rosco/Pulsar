@@ -5,6 +5,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Pulsar.Core.Focus;
 using Pulsar.Core.Plugin;
 using Pulsar.Native;
 using Pulsar.Plugins.Extensions.BookmarkletRunner;
@@ -78,8 +79,12 @@ namespace Pulsar.Tests.Plugins.Extensions.BookmarkletRunner
         public async Task ExecuteAsync_ShouldReturnRecoverableErrorWithoutEnter_WhenUiaInjectionFails()
         {
             var windowService = new Mock<IWindowService>();
+            var focusManager = new Mock<IFocusManager>();
+            focusManager.Setup(x => x.ActivateWindowAsync(It.IsAny<IntPtr>(), null))
+                .ReturnsAsync(new Pulsar.Core.Focus.FocusActivationResult { Success = true });
             var services = new Mock<IServiceProvider>();
             services.Setup(x => x.GetService(typeof(IWindowService))).Returns(windowService.Object);
+            services.Setup(x => x.GetService(typeof(IFocusManager))).Returns(focusManager.Object);
             services.Setup(x => x.GetService(typeof(ILogger<BookmarkletRunnerPlugin>)))
                 .Returns(NullLogger<BookmarkletRunnerPlugin>.Instance);
 
@@ -88,7 +93,6 @@ namespace Pulsar.Tests.Plugins.Extensions.BookmarkletRunner
                 ReadScriptFile = _ => "alert('hi');",
                 ResolveTargetBrowserWindow = (_, _) => new IntPtr(123),
                 IsBrowserWindowMinimized = _ => false,
-                FocusBrowserWindow = _ => true,
                 DelayAsync = _ => Task.CompletedTask,
                 Sleep = _ => { },
                 TrySetFocusedElementText = _ => false

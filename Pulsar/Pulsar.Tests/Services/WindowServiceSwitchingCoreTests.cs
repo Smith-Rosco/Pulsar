@@ -1,9 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using FluentAssertions;
+using Moq;
+using Pulsar.Core.Focus;
 using Pulsar.Models;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
+using Pulsar.Services.WindowSwitching;
 
 namespace Pulsar.Tests.Services
 {
@@ -204,9 +208,12 @@ namespace Pulsar.Tests.Services
         }
 
         [Fact]
-        public void ActivateWindow_ShouldFailForInvalidHandle()
+        public async Task ActivateWindow_ShouldFailForInvalidHandle()
         {
-            var result = WindowService.ActivateWindow(
+            var focusManagerMock = new Mock<IFocusManager>();
+            var activator = new WindowActivator(focusManagerMock.Object);
+
+            var result = await activator.ActivateWindowAsync(
                 CreateWindow(new IntPtr(33)),
                 _ => false);
 

@@ -166,16 +166,20 @@ namespace Pulsar
             // [New] Configuration Validation
             serviceCollection.AddSingleton<Services.Validation.ConfigValidationPipeline>();
 
-            // 3. PKI Service
+            // 3. Focus Management
+            serviceCollection.AddSingleton<IFocusNativeAdapter, WindowsFocusNativeAdapter>();
+            serviceCollection.AddSingleton<IModifierStateTracker>(sp => sp.GetRequiredService<GlobalKeyboardHook>());
+            serviceCollection.AddSingleton<IFocusManager, Services.FocusManager>();
+            serviceCollection.AddSingleton<IFocusHistory>(sp => (IFocusHistory)sp.GetRequiredService<IFocusManager>());
+
+            // 4. PKI Service
             serviceCollection.AddSingleton<ISecretProtector, CredentialsManager>();
             serviceCollection.AddSingleton<IPkiSecretStore, SecretRepository>();
             serviceCollection.AddSingleton<IPkiSecretMetadataResolver, PkiSecretMetadataResolver>();
-            serviceCollection.AddSingleton<IFocusRestorer, WindowsFocusRestorer>();
             serviceCollection.AddSingleton<IInjectionExecutor, SendKeysInjectionExecutor>();
             serviceCollection.AddSingleton<IPkiExecutionService, PkiExecutionService>();
 
             // PKI Input Simulators
-            serviceCollection.AddSingleton<Pulsar.Plugins.Core.Pki.Services.Input.IWindowFocusSimulator, Pulsar.Plugins.Core.Pki.Services.Input.WindowsFocusSimulator>();
             serviceCollection.AddSingleton<Pulsar.Plugins.Core.Pki.Services.Input.IUiaTextWriter, Pulsar.Plugins.Core.Pki.Services.Input.WindowsUiaTextWriter>();
             serviceCollection.AddSingleton<Pulsar.Plugins.Core.Pki.Services.Input.ISendKeysWriter, Pulsar.Plugins.Core.Pki.Services.Input.WindowsSendKeysWriter>();
             serviceCollection.AddSingleton<Pulsar.Plugins.Core.Pki.Services.Input.IInputSimulator, Pulsar.Plugins.Core.Pki.Services.Input.WindowsInputSimulator>();
@@ -312,7 +316,9 @@ namespace Pulsar
             Log.Fatal(e.Exception, "Unhandled Dispatcher Exception");
             
             // [New] Emergency restore system settings
+#pragma warning disable CS0618
             PulsarNative.EmergencyRestore();
+#pragma warning restore CS0618
             
             // Optionally: Prevent crash if recoverable
             // e.Handled = true; 
@@ -332,7 +338,9 @@ namespace Pulsar
                  Log.Fatal(ex, "Unhandled AppDomain Exception (IsTerminating={IsTerminating})", e.IsTerminating);
                  
                  // [New] Emergency restore system settings before crash
+#pragma warning disable CS0618
                   PulsarNative.EmergencyRestore();
+#pragma warning restore CS0618
                   
                   Log.CloseAndFlush();
              }

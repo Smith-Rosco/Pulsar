@@ -1,10 +1,12 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Pulsar.Core.Focus;
 using Pulsar.Native;
 using Pulsar.Plugins.Core.Pki.Contracts;
 using Pulsar.Plugins.Core.Pki.Models.Execution;
 using Pulsar.Plugins.Core.Pki.Services.Input;
+using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 
 namespace Pulsar.Plugins.Core.Pki.Services
@@ -12,18 +14,18 @@ namespace Pulsar.Plugins.Core.Pki.Services
     public class SendKeysInjectionExecutor : IInjectionExecutor
     {
         private readonly IWindowService _windowService;
-        private readonly IFocusRestorer _focusRestorer;
+        private readonly IFocusManager _focusManager;
         private readonly ISendKeysWriter _sendKeysWriter;
         private readonly ILogger<SendKeysInjectionExecutor> _logger;
 
         public SendKeysInjectionExecutor(
             IWindowService windowService,
-            IFocusRestorer focusRestorer,
+            IFocusManager focusManager,
             ISendKeysWriter sendKeysWriter,
             ILogger<SendKeysInjectionExecutor> logger)
         {
             _windowService = windowService;
-            _focusRestorer = focusRestorer;
+            _focusManager = focusManager;
             _sendKeysWriter = sendKeysWriter;
             _logger = logger;
         }
@@ -51,9 +53,15 @@ namespace Pulsar.Plugins.Core.Pki.Services
                         case InjectionStepType.RestoreFocus:
                             try
                             {
-                                bool restored = await _focusRestorer.RestoreFocusAsync(step.TargetWindowHandle);
-                                if (!restored)
+                                var options = new FocusActivationOptions
                                 {
+                                    VerifyAfterActivation = true,
+                                    FlashAfterActivation = false
+                                };
+                                var result = await _focusManager.ActivateWindowAsync(step.TargetWindowHandle, options);
+                                if (!result.Success || !result.VerificationPassed)
+                                {
+                                    _logger.LogError("[SendKeysInjectionExecutor] Focus restore/verification failed for 0x{hWnd:X}", step.TargetWindowHandle.ToInt64());
                                     return PkiExecutionResult.Fail(PkiExecutionStage.FocusRestore, "Failed to restore focus to target window", plan);
                                 }
                             }
@@ -106,7 +114,6 @@ namespace Pulsar.Plugins.Core.Pki.Services
 
         private static void ExecuteSendKey(string value)
         {
-            // Parse SendKeys-format named keys like {TAB}, {ENTER}
             if (value.Length >= 2 && value[0] == '{' && value[^1] == '}')
             {
                 string token = value[1..^1];

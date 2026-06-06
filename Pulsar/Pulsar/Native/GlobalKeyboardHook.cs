@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 // 但为了保持简单，这里保留 Win32 原始码处理
 // using System.Windows.Input; 
 using Pulsar.Native;
+using Pulsar.Services.Interfaces;
 
 namespace Pulsar.Native
 {
@@ -28,7 +29,7 @@ namespace Pulsar.Native
         }
     }
 
-    public class GlobalKeyboardHook : IDisposable
+    public class GlobalKeyboardHook : IDisposable, IModifierStateTracker
     {
         // [Optimization] Use a delegate that passes the struct by reference to avoid copying
         public delegate void GlobalKeyEventHandler(ref GlobalKeyStruct e);
@@ -54,6 +55,11 @@ namespace Pulsar.Native
         // - Hybrid (default): Trust Hook events for modifier state (RDP-safe)
         // - Legacy: Use GetKeyState() for backward compatibility
         private bool _useHybridMode = true;
+
+        // [FocusManager] Synthetic event suppression flag
+        // When set, UpdateModifierTracker skips updates to prevent corruption
+        // from synthetic keyboard events injected during focus activation
+        private volatile bool _syntheticEventSuppression;
 
         /// <summary>
         /// Gets or sets the modifier state detection mode.
@@ -174,6 +180,8 @@ namespace Pulsar.Native
         /// <param name="isKeyUp">True if this is a key up event</param>
         private void UpdateModifierTracker(int vkCode, bool isKeyDown, bool isKeyUp)
         {
+            if (_syntheticEventSuppression) return;
+
             // Ctrl (both L/R variants + generic VK_CONTROL)
             if (vkCode == VK_LCONTROL || vkCode == VK_RCONTROL || vkCode == 0x11)
             {
@@ -255,6 +263,21 @@ namespace Pulsar.Native
                    _trackedShiftDown == getKeyStateShift &&
                    _trackedAltDown == getKeyStateAlt &&
                    _trackedWinDown == getKeyStateWin;
+        }
+
+        public void OnSyntheticEventBegin()
+        {
+            _syntheticEventSuppression = true;
+        }
+
+        public void OnSyntheticEventEnd()
+        {
+            _syntheticEventSuppression = false;
+        }
+
+        public void ResetAllModifiers()
+        {
+            ResetModifierState();
         }
 
         // --- P/Invoke ---

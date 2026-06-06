@@ -19,6 +19,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
     public class BookmarkletRunnerPlugin : IPulsarPlugin, IPluginTiered, IPluginMetadataProvider, IPluginConfigurable
     {
         private IWindowService? _windowService;
+        private IFocusManager? _focusManager;
         private ILogger<BookmarkletRunnerPlugin>? _logger;
         private readonly BookmarkletRunnerSettings _settings = new();
 
@@ -26,7 +27,6 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
         internal Func<IntPtr, string, IntPtr> ResolveTargetBrowserWindow { get; set; } = BrowserHelper.GetTargetBrowserWindow;
         internal Func<IntPtr, bool> IsBrowserWindowMinimized { get; set; } = PulsarNative.IsIconic;
         internal Func<IntPtr, int, bool> RestoreBrowserWindow { get; set; } = PulsarNative.ShowWindow;
-        internal Func<IntPtr, bool> FocusBrowserWindow { get; set; } = PulsarNative.SetForegroundWindow;
         internal Action<ushort[]> SendKeyCombination { get; set; } = InputHelper.SendKeyCombination;
         internal Func<string, bool> TrySetFocusedElementText { get; set; } = UiaHelper.TrySetFocusedElementText;
         internal Action<int> Sleep { get; set; } = Thread.Sleep;
@@ -49,6 +49,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
         public void Initialize(IServiceProvider services)
         {
             _windowService = services.GetService(typeof(IWindowService)) as IWindowService;
+            _focusManager = services.GetService(typeof(IFocusManager)) as IFocusManager;
             _logger = services.GetService(typeof(ILogger<BookmarkletRunnerPlugin>)) as ILogger<BookmarkletRunnerPlugin>;
 
             if (_windowService == null)
@@ -243,7 +244,10 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
                     RestoreBrowserWindow(browserHandle, PulsarNative.SW_RESTORE);
                 }
                 
-                FocusBrowserWindow(browserHandle);
+                if (_focusManager != null)
+                {
+                    await _focusManager.ActivateWindowAsync(browserHandle);
+                }
                 _logger?.LogDebug("[BookmarkletRunner] Browser window focused");
             }
             catch (Exception ex)

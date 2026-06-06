@@ -215,6 +215,7 @@ namespace Pulsar.Native
         private static int _fgLockCount = 0;
         private static uint _originalTimeout = 0;
 
+        [Obsolete("Use IFocusManager.ActivateWindowAsync() instead")]
         public static bool SetForegroundWindow(IntPtr hWnd)
         {
             if (hWnd == IntPtr.Zero) return false;
@@ -256,7 +257,6 @@ namespace Pulsar.Native
             GetWindowThreadProcessId(hWnd, out uint pid);
             try { AllowSetForegroundWindow((int)pid); } catch { }
             try { LockSetForegroundWindow(LSFW_UNLOCK); } catch { }
-            keybd_event(VK_MENU, 0, KEYEVENTF_KEYUP, 0);
 
             if (IsIconic(hWnd))
                 ShowWindow(hWnd, SW_RESTORE);
@@ -309,6 +309,7 @@ namespace Pulsar.Native
         {
         }
 
+        [Obsolete("Use IFocusManager instead")]
         public static void EmergencyRestore()
         {
             try
@@ -316,7 +317,9 @@ namespace Pulsar.Native
                 var hwnd = GetForegroundWindow();
                 if (hwnd != IntPtr.Zero)
                 {
+#pragma warning disable CS0618
                     SetForegroundWindow(hwnd);
+#pragma warning restore CS0618
                 }
             }
             catch

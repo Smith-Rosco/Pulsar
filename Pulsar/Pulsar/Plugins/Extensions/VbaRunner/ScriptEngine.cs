@@ -4,9 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Pulsar.Native;
+using Pulsar.Services.Interfaces;
 
 namespace Pulsar.Plugins.Extensions.VbaRunner
 {
@@ -24,15 +25,17 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
         private readonly ComConnectionManager _connectionManager;
         private readonly VbaModuleInjector _injector;
         private readonly PrerequisiteValidator _validator;
+        private readonly IFocusManager? _focusManager;
         
         private dynamic? _app;
         private dynamic? _workbook;
 
-        public ScriptEngine()
+        public ScriptEngine(IFocusManager? focusManager = null)
         {
             _connectionManager = new ComConnectionManager();
             _injector = new VbaModuleInjector();
             _validator = new PrerequisiteValidator(_logger);
+            _focusManager = focusManager;
         }
 
         /// <summary>
@@ -66,7 +69,10 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
                     try
                     {
                         IntPtr hwnd = (IntPtr)_app.Hwnd;
-                        PulsarNative.SetForegroundWindow(hwnd);
+                        if (_focusManager != null)
+                        {
+                            _ = _focusManager.ActivateWindowAsync(hwnd);
+                        }
                     }
                     catch { }
 

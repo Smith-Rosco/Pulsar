@@ -83,10 +83,8 @@ namespace Pulsar.Simulator
             services.AddSingleton<ISecretProtector, CredentialsManager>();
             services.AddSingleton<IPkiSecretStore, SecretRepository>();
             services.AddSingleton<IPkiSecretMetadataResolver, PkiSecretMetadataResolver>();
-            services.AddSingleton<IFocusRestorer, WindowsFocusRestorer>();
             services.AddSingleton<IInjectionExecutor, SendKeysInjectionExecutor>();
             services.AddSingleton<IPkiExecutionService, PkiExecutionService>();
-            services.AddSingleton<IWindowFocusSimulator, WindowsFocusSimulator>();
             services.AddSingleton<IUiaTextWriter, WindowsUiaTextWriter>();
             services.AddSingleton<ISendKeysWriter, WindowsSendKeysWriter>();
             services.AddSingleton<IInputSimulator, WindowsInputSimulator>();
