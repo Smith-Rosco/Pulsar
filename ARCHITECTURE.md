@@ -51,14 +51,14 @@ Pulsar triggers two independent modes via different hotkeys, with strictly isola
 
 #### Runtime Kernel
 
-The plugin runtime is now organized around an internal runtime kernel instead of concentrating all policy in `PluginRegistry`.
+The plugin runtime is now organized around an internal runtime kernel instead of concentrating all policy in `PluginRegistry`. All runtime components are composed via DI through `AddPluginRuntime()` extension method.
 
 - `PluginCatalog`: owns descriptor discovery, metadata registration, and dependency ordering
-- `PluginRuntimeStateStore`: owns authoritative lifecycle state for loaded plugin instances
+- `PluginRuntimeStateStore`: owns authoritative lifecycle state for loaded plugin instances; uses `ConcurrentDictionary` for thread-safe access
 - `PluginExecutionPipeline`: enforces deterministic execution ordering for availability checks, activation readiness, execution scope, outcome classification, and telemetry
-- `PluginCircuitBreakerPolicy`: owns extension-plugin breaker counters, cooldown windows, and recovery transitions
+- `PluginCircuitBreakerPolicy`: owns extension-plugin breaker counters and cooldown windows; uses `ConcurrentDictionary` with atomic `AddOrUpdate`/`TryRemove` operations
 - `PluginHost`: remains an instance-hosting primitive for isolated load/unload concerns and host-local state bridging
-- `PluginRegistry`: remains the external compatibility facade used by the rest of the application
+- `PluginRegistry` / `IPluginRegistry`: the external compatibility facade consumed by the rest of the application via DI
 
 #### Lifecycle Model
 
@@ -122,7 +122,7 @@ public class PulsarContext
 **Performance Optimization**:
 - **Lazy Loading**: Heavy properties (clipboard, window list) are only loaded when accessed
 - **Context Capture**: Captured once at radial menu invocation, avoiding repeated queries
-- **Immutability**: Context is read-only, preventing plugin side effects
+- **Immutability**: Context is fully read-only after construction — all fields are `{ get; }` or `Lazy<Task<...>>` with no setters (not even `internal`). Per-execution mutable data (plugin ID, permission interceptor) is stored in `PluginExecutionContext` (an `AsyncLocal`-based execution scope), not on `PulsarContext`.
 
 ---
 

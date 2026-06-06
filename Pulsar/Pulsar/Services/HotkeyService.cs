@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows;
 using System.Windows.Input;
 using Pulsar.Models;
 using Pulsar.Native;
@@ -199,7 +200,7 @@ namespace Pulsar.Services
                         item.ReqAlt == e.IsAlt &&
                         item.ReqWin == e.IsWin)
                     {
-                        item.Action.Invoke();
+                        Application.Current.Dispatcher.InvokeAsync(() => item.Action.Invoke());
                         e.Handled = true;
                         return true;
                     }

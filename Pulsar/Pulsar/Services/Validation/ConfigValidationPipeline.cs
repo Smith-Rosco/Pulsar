@@ -17,12 +17,12 @@ namespace Pulsar.Services.Validation
     /// </summary>
     public class ConfigValidationPipeline
     {
-        private readonly PluginRegistry _registry;
+        private readonly IPluginRegistry _registry;
         private readonly IPluginMetadataRegistry _metadataRegistry;
         private readonly ILogger<ConfigValidationPipeline> _logger;
 
         public ConfigValidationPipeline(
-            PluginRegistry registry,
+            IPluginRegistry registry,
             IPluginMetadataRegistry metadataRegistry,
             ILogger<ConfigValidationPipeline> logger)
         {

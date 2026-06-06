@@ -53,7 +53,7 @@ namespace Pulsar.Tests.TestHelpers
                 .Returns((ProcessWindowInfo window) => new WindowActivationResult { Window = window, Success = true, FailureReason = WindowActivationFailureReason.None });
             
             // 使用 Capture 方法创建上下文
-            return PulsarContext.Capture(mockWindowService.Object, logger: null, permissionInterceptor: null);
+            return PulsarContext.Capture(mockWindowService.Object, logger: null);
         }
         
         /// <summary>
@@ -86,7 +86,7 @@ namespace Pulsar.Tests.TestHelpers
             mockWindowService.Setup(x => x.ActivateWindowDetailed(It.IsAny<ProcessWindowInfo>()))
                 .Returns((ProcessWindowInfo window) => new WindowActivationResult { Window = window, Success = true, FailureReason = WindowActivationFailureReason.None });
             
-            return PulsarContext.Capture(mockWindowService.Object, logger: null, permissionInterceptor: null);
+            return PulsarContext.Capture(mockWindowService.Object, logger: null);
         }
     }
 }

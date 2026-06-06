@@ -287,7 +287,7 @@ namespace Pulsar.Services
 
         public Task<bool> SwitchToProcessAsync(string processName)
         {
-            return Task.Run(() =>
+            return Task.Run(async () =>
             {
                 string targetName = processName.ToLower().Replace(".exe", "");
                 var processes = Process.GetProcessesByName(targetName);
@@ -306,7 +306,7 @@ namespace Pulsar.Services
                     List<ProcessWindowInfo> processWindows;
                     try
                     {
-                        processWindows = GetProcessWindowsAsync(proc.Id).GetAwaiter().GetResult();
+                        processWindows = await GetProcessWindowsAsync(proc.Id);
 
                         if (_processRegistryService != null && processWindows.Count > 0)
                         {
@@ -375,7 +375,8 @@ namespace Pulsar.Services
                     return false;
                 }
                 
-                if (!ActivateWindow(targetWindow))
+                var result = await ActivateWindowDetailedAsync(targetWindow);
+                if (!result.Success)
                 {
                     _logger?.LogWarning("[SwitchToProcess] Failed to activate selected window '{Title}' for process '{ProcessName}'",
                         targetWindow.Title,

@@ -12,7 +12,7 @@ namespace Pulsar.Services
     /// </summary>
     public class PluginRecommendationEngine : IPluginRecommendationEngine
     {
-        private readonly PluginRegistry _registry;
+        private readonly IPluginRegistry _registry;
         private readonly IPluginUsageTracker _usageTracker;
         private readonly IPluginHealthMonitor _healthMonitor;
         private readonly ILogger<PluginRecommendationEngine> _logger;
@@ -23,7 +23,7 @@ namespace Pulsar.Services
         private const int MinExecutionsForRecommendation = 5;
 
         public PluginRecommendationEngine(
-            PluginRegistry registry,
+            IPluginRegistry registry,
             IPluginUsageTracker usageTracker,
             IPluginHealthMonitor healthMonitor,
             ILogger<PluginRecommendationEngine> logger)

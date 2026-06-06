@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -31,7 +32,7 @@ namespace Pulsar.ViewModels
     {
         private readonly IConfigService _configService;
         private readonly IWindowService _windowService;
-        private readonly PluginRegistry _pluginRegistry;
+        private readonly IPluginRegistry _pluginRegistry;
         private readonly IHotkeyService _hotkeyService; // [Clean] Make explicit
         private readonly IGlobalMouseService _globalMouseService;
         private readonly ITrayService _trayService; // [New]
@@ -192,7 +193,7 @@ namespace Pulsar.ViewModels
         public RadialMenuViewModel(
             IConfigService configService,
             IWindowService windowService,
-            PluginRegistry pluginRegistry,
+            IPluginRegistry pluginRegistry,
             IHotkeyService hotkeyService,
             IGlobalMouseService globalMouseService,
             ITrayService trayService, // [New]
@@ -417,12 +418,12 @@ namespace Pulsar.ViewModels
             }
         }
 
-        private bool _isLoading; // [New] Prevent double-trigger flickering
+        private int _isLoading; // 0 = idle, 1 = loading (atomic guard)
 
         private async void Show(RadialMenuMode mode)
         {
-            if (IsVisible || _isLoading) return;
-            _isLoading = true;
+            Debug.Assert(Application.Current.Dispatcher.CheckAccess(), "Show() must run on UI thread");
+            if (IsVisible || Interlocked.CompareExchange(ref _isLoading, 1, 0) != 0) return;
 
             try
             {
@@ -532,7 +533,7 @@ namespace Pulsar.ViewModels
             }
             finally
             {
-                _isLoading = false;
+                Interlocked.Exchange(ref _isLoading, 0);
             }
         }
         
@@ -789,7 +790,7 @@ namespace Pulsar.ViewModels
             if (!IsVisible)
             {
                 // [Fix] If loading and modifier released, mark for immediate execution upon show
-                if (_isLoading && isModifierRelease)
+                if (_isLoading != 0 && isModifierRelease)
                 {
                       _pendingQuickSwitch = true;
                       _logger?.LogDebug("[HandleKeyUp] Key released during loading. Pending Quick Switch set.");
@@ -809,7 +810,7 @@ namespace Pulsar.ViewModels
             {
                 _inputCoordinator.HandleModifierRelease(
                     IsVisible,
-                    _isLoading,
+                    _isLoading != 0,
                     _logSampleCounter,
                     _activeSlotIndex,
                     _menuState,

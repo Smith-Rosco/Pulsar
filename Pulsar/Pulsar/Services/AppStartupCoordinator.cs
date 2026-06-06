@@ -53,7 +53,7 @@ namespace Pulsar.Services
             trayService.Initialize();
             _logger.LogInformation("[Startup] Tray service initialized");
 
-            var pluginRegistry = _services.GetRequiredService<PluginRegistry>();
+            var pluginRegistry = _services.GetRequiredService<IPluginRegistry>();
             await pluginRegistry.LoadCoreAsync();
             _logger.LogInformation("[Startup] Core plugins activated");
 
@@ -85,7 +85,7 @@ namespace Pulsar.Services
                 var deferredStopwatch = Stopwatch.StartNew();
                 try
                 {
-                    var pluginRegistry = _services.GetRequiredService<PluginRegistry>();
+                    var pluginRegistry = _services.GetRequiredService<IPluginRegistry>();
                     await pluginRegistry.DiscoverDeferredAsync();
 
                     var configService = _services.GetRequiredService<IConfigService>();

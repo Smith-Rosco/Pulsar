@@ -27,6 +27,8 @@ This file provides essential context, conventions, and routing for AI agents wor
 
 **Rule**: Never query live window state inside plugins; always use `PulsarContext`.
 
+**Rule**: PulsarContext is fully immutable after construction. Per-execution mutable data (CurrentPluginId, PermissionInterceptor) lives in `PluginExecutionContext` (AsyncLocal scope), not on `PulsarContext`.
+
 **Rule**: Respect plugin tier semantics:
 - **Core plugins** (`Plugins/Core/`): Essential, cannot be disabled, crashes are fatal
 - **Extension plugins** (`Plugins/`): Optional, Circuit Breaker protected (3 crashes in 1 min = 60s disable)
@@ -126,6 +128,7 @@ This file provides essential context, conventions, and routing for AI agents wor
 | **WPF UI issues** | [Docs/lessons/](./Docs/lessons/) |
 | **Architectural decisions** | [Docs/decisions/](./Docs/decisions/) |
 | **Documentation standards** | [Docs/CONTRIBUTING.md](./Docs/CONTRIBUTING.md) |
+| **Thread safety & concurrency** | [Docs/architecture/PLUGIN_SYSTEM.md](./Docs/architecture/PLUGIN_SYSTEM.md), see `ConcurrentDictionary`, `Interlocked`, `Dispatcher.InvokeAsync` |
 
 ---
 
@@ -158,6 +161,10 @@ This file provides essential context, conventions, and routing for AI agents wor
 
 ### Coding Patterns
 - **Dependency Injection**: Constructor injection, register in `App.xaml.cs`
+- **Plugin Runtime DI**: Use `serviceCollection.AddPluginRuntime(pluginDir)` extension in `App.xaml.cs` instead of manual `new`
+- **Plugin Registry Access**: Inject `IPluginRegistry` interface, not concrete `PluginRegistry` class
+- **Plugin Execution Context**: Use `PluginExecutionContext.Current` to access per-execution data (plugin ID, permission interceptor)
+- **Thread Safety**: Plugin runtime dictionaries use `ConcurrentDictionary`; hotkey actions dispatch via `Dispatcher.InvokeAsync()`
 - **MVVM**: Use `[ObservableProperty]` and `[RelayCommand]` from CommunityToolkit
 - **Async/Await**: Use `async Task` for I/O operations. Avoid `async void` except event handlers.
 - **Error Handling**: Use `try/catch` around volatile operations. Use `ILogger<T>` for logging (not `Debug.WriteLine`).

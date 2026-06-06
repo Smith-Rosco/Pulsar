@@ -23,15 +23,8 @@ namespace Pulsar.Core.Plugin
         public string TargetExePath => _resolvedExePath ?? string.Empty;
         
         // === 权限管理 ===
-        /// <summary>
-        /// 当前执行的插件 ID (用于权限检查)
-        /// </summary>
-        public string? CurrentPluginId { get; internal set; }
-        
-        /// <summary>
-        /// 权限拦截器 (用于运行时权限检查)
-        /// </summary>
-        internal PermissionInterceptor? PermissionInterceptor { get; set; }
+        // CurrentPluginId and PermissionInterceptor moved to PluginExecutionContext
+        // for true immutability. See PluginExecutionContext.BeginScope().
         
         /// <summary>
         /// 显示用进程名 - 首字母大写格式 (如 "Excel")
@@ -116,20 +109,18 @@ namespace Pulsar.Core.Plugin
         /// </summary>
         private void CheckPermission(PluginPermission permission, string operation)
         {
-            // 如果没有设置插件 ID 或权限拦截器，跳过检查（向后兼容）
-            if (string.IsNullOrEmpty(CurrentPluginId) || PermissionInterceptor == null)
+            var executionCtx = PluginExecutionContext.Current;
+            if (executionCtx == null || string.IsNullOrEmpty(executionCtx.CurrentPluginId) || executionCtx.PermissionInterceptor == null)
             {
                 return;
             }
 
-            // 检查是否有绕过权限检查的权限（核心插件）
-            if (PermissionInterceptor.HasPermission(CurrentPluginId, PluginPermission.BypassPermissionCheck))
+            if (executionCtx.PermissionInterceptor.HasPermission(executionCtx.CurrentPluginId, PluginPermission.BypassPermissionCheck))
             {
                 return;
             }
 
-            // 执行权限检查
-            PermissionInterceptor.CheckPermission(CurrentPluginId, permission, operation);
+            executionCtx.PermissionInterceptor.CheckPermission(executionCtx.CurrentPluginId, permission, operation);
         }
 
         /// <summary>
@@ -139,7 +130,7 @@ namespace Pulsar.Core.Plugin
         /// <param name="logger">日志记录器</param>
         /// <param name="permissionInterceptor">权限拦截器（可选）</param>
         /// <returns>上下文实例</returns>
-        public static PulsarContext Capture(IWindowService windowService, ILogger? logger = null, PermissionInterceptor? permissionInterceptor = null)
+        public static PulsarContext Capture(IWindowService windowService, ILogger? logger = null)
         {
             var hwnd = windowService.GetPreviousWindow();
             string processName = string.Empty;
@@ -221,7 +212,6 @@ namespace Pulsar.Core.Plugin
             var selectionFactory = new Func<Task<string?>>(() => Task.FromResult<string?>(null));
 
             var context = new PulsarContext(hwnd, processName, pid, exePathFactory, windowsFactory, clipboardFactory, selectionFactory);
-            context.PermissionInterceptor = permissionInterceptor;
             return context;
         }
     }

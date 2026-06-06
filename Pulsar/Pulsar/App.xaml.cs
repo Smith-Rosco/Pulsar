@@ -155,7 +155,7 @@ namespace Pulsar
             });
             
             // 2. Plugin System (New Architecture)
-            serviceCollection.AddSingleton<PluginRegistry>();
+            serviceCollection.AddPluginRuntime(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Plugins"));
             
             // [New] Plugin Monitoring & Analytics Services
             serviceCollection.AddSingleton<IPluginUsageTracker, PluginUsageTracker>();
@@ -287,7 +287,7 @@ namespace Pulsar
                 }
                 
                 // Unload all plugins
-                var pluginRegistry = Services.GetService<PluginRegistry>();
+                var pluginRegistry = Services.GetService<IPluginRegistry>();
                 if (pluginRegistry != null)
                 {
                     Task.Run(async () => await pluginRegistry.UnloadAllAsync()).GetAwaiter().GetResult();

@@ -37,14 +37,14 @@ namespace Pulsar.ViewModels.Strategies
     public class PluginActionStrategy : IActionStrategy
     {
         private readonly PluginSlot _pluginSlot;
-        private readonly PluginRegistry _registry;
+        private readonly IPluginRegistry _registry;
         private readonly PulsarContext _pulsarContext;
         private readonly ITrayService _trayService; // [New]
         private readonly IActionFeedbackService _feedbackService;
 
         public PluginActionStrategy(
             PluginSlot pluginSlot, 
-            PluginRegistry registry, 
+            IPluginRegistry registry, 
             PulsarContext pulsarContext,
             ITrayService trayService,
             IActionFeedbackService feedbackService)

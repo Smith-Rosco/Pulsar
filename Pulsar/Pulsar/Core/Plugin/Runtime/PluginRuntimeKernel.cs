@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -59,7 +60,7 @@ namespace Pulsar.Core.Plugin.Runtime
 
     public interface IPluginCatalog
     {
-        IDictionary<string, PluginDescriptor> Descriptors { get; }
+        IReadOnlyDictionary<string, PluginDescriptor> Descriptors { get; }
 
         void RegisterDescriptors(IEnumerable<PluginDescriptor> descriptors);
 
@@ -70,7 +71,7 @@ namespace Pulsar.Core.Plugin.Runtime
 
     public interface IPluginRuntimeStateStore
     {
-        IDictionary<string, IPulsarPlugin> Plugins { get; }
+        IReadOnlyDictionary<string, IPulsarPlugin> Plugins { get; }
 
         PluginLifecycleState GetState(string pluginId);
 
@@ -128,7 +129,7 @@ namespace Pulsar.Core.Plugin.Runtime
     {
         private readonly Dictionary<string, PluginDescriptor> _descriptors = new(StringComparer.OrdinalIgnoreCase);
 
-        public IDictionary<string, PluginDescriptor> Descriptors => _descriptors;
+        public IReadOnlyDictionary<string, PluginDescriptor> Descriptors => _descriptors;
 
         public IEnumerable<PluginDescriptor> GetAll()
         {
@@ -151,10 +152,10 @@ namespace Pulsar.Core.Plugin.Runtime
 
     public sealed class PluginRuntimeStateStore : IPluginRuntimeStateStore
     {
-        private readonly Dictionary<string, IPulsarPlugin> _plugins = new(StringComparer.OrdinalIgnoreCase);
-        private readonly Dictionary<string, PluginRuntimeSnapshot> _snapshots = new(StringComparer.OrdinalIgnoreCase);
+        private readonly ConcurrentDictionary<string, IPulsarPlugin> _plugins = new(StringComparer.OrdinalIgnoreCase);
+        private readonly ConcurrentDictionary<string, PluginRuntimeSnapshot> _snapshots = new(StringComparer.OrdinalIgnoreCase);
 
-        public IDictionary<string, IPulsarPlugin> Plugins => _plugins;
+        public IReadOnlyDictionary<string, IPulsarPlugin> Plugins => _plugins;
 
         public PluginLifecycleState GetState(string pluginId)
         {
@@ -174,7 +175,7 @@ namespace Pulsar.Core.Plugin.Runtime
                 State = _plugins.ContainsKey(pluginId) ? PluginLifecycleState.Loaded : PluginLifecycleState.Unloaded
             };
 
-            _snapshots[pluginId] = snapshot;
+            _snapshots.TryAdd(pluginId, snapshot);
             return snapshot;
         }
 
@@ -204,7 +205,7 @@ namespace Pulsar.Core.Plugin.Runtime
 
         public void RemovePlugin(string pluginId)
         {
-            _plugins.Remove(pluginId);
+            _plugins.TryRemove(pluginId, out _);
             Transition(pluginId, PluginLifecycleState.Unloaded);
         }
     }
@@ -230,8 +231,8 @@ namespace Pulsar.Core.Plugin.Runtime
         private const int MaxFailures = 3;
         private static readonly TimeSpan ResetTimeout = TimeSpan.FromMinutes(1);
 
-        private readonly Dictionary<string, int> _failureCounts = new(StringComparer.OrdinalIgnoreCase);
-        private readonly Dictionary<string, DateTime> _brokenCircuits = new(StringComparer.OrdinalIgnoreCase);
+        private readonly ConcurrentDictionary<string, int> _failureCounts = new(StringComparer.OrdinalIgnoreCase);
+        private readonly ConcurrentDictionary<string, DateTime> _brokenCircuits = new(StringComparer.OrdinalIgnoreCase);
         private readonly ILogger<PluginCircuitBreakerPolicy> _logger;
         private readonly IPluginHealthMonitor? _healthMonitor;
         private readonly ITrayService? _trayService;
@@ -266,7 +267,7 @@ namespace Pulsar.Core.Plugin.Runtime
                 return new PluginBreakerAvailability(false, $"Plugin disabled for safety. Try again in {remaining}s.");
             }
 
-            _brokenCircuits.Remove(pluginId);
+            _brokenCircuits.TryRemove(pluginId, out _);
             _healthMonitor?.RecordCircuitBreakerRecovery(pluginId);
             _logger.LogInformation("Circuit Half-Open: Retrying {PluginId}...", pluginId);
             return new PluginBreakerAvailability(true, recovered: true);
@@ -279,10 +280,7 @@ namespace Pulsar.Core.Plugin.Runtime
                 return;
             }
 
-            if (_failureCounts.Remove(pluginId))
-            {
-                _logger.LogDebug("Reset failure count for {PluginId} after successful execution", pluginId);
-            }
+            _failureCounts.TryRemove(pluginId, out _);
         }
 
         public void RecordFailure(PluginDescriptor descriptor, string pluginId, Exception ex)
@@ -292,13 +290,7 @@ namespace Pulsar.Core.Plugin.Runtime
                 return;
             }
 
-            if (!_failureCounts.ContainsKey(pluginId))
-            {
-                _failureCounts[pluginId] = 0;
-            }
-
-            _failureCounts[pluginId]++;
-            var count = _failureCounts[pluginId];
+            var count = _failureCounts.AddOrUpdate(pluginId, 1, (_, existing) => existing + 1);
             _logger.LogWarning(ex, "Plugin crashed ({Count}/{MaxFailures})", count, MaxFailures);
 
             if (count < MaxFailures)
@@ -307,7 +299,7 @@ namespace Pulsar.Core.Plugin.Runtime
             }
 
             _brokenCircuits[pluginId] = DateTime.UtcNow;
-            _failureCounts.Remove(pluginId);
+            _failureCounts.TryRemove(pluginId, out _);
             _logger.LogCritical("Circuit Breaker Tripped! Plugin temporarily disabled for {Timeout}s", ResetTimeout.TotalSeconds);
             _healthMonitor?.RecordCircuitBreakerTrip(pluginId);
             _trayService?.ShowNotification(
@@ -339,19 +331,22 @@ namespace Pulsar.Core.Plugin.Runtime
         private readonly IPluginUsageTracker? _usageTracker;
         private readonly IPluginHealthMonitor? _healthMonitor;
         private readonly ILogger<PluginExecutionPipeline> _logger;
+        private readonly Security.PermissionInterceptor? _permissionInterceptor;
 
         public PluginExecutionPipeline(
             IPluginRuntimeStateStore runtimeStateStore,
             IPluginBreakerPolicy breakerPolicy,
             ILogger<PluginExecutionPipeline>? logger = null,
             IPluginUsageTracker? usageTracker = null,
-            IPluginHealthMonitor? healthMonitor = null)
+            IPluginHealthMonitor? healthMonitor = null,
+            Security.PermissionInterceptor? permissionInterceptor = null)
         {
             _runtimeStateStore = runtimeStateStore;
             _breakerPolicy = breakerPolicy;
             _usageTracker = usageTracker;
             _healthMonitor = healthMonitor;
             _logger = logger ?? NullLogger<PluginExecutionPipeline>.Instance;
+            _permissionInterceptor = permissionInterceptor;
         }
 
         public async Task<PluginExecutionOutcome> ExecuteAsync(PluginExecutionRequest request)
@@ -375,7 +370,7 @@ namespace Pulsar.Core.Plugin.Runtime
                 _runtimeStateStore.Transition(pluginId, PluginLifecycleState.Recovering);
             }
 
-            var plugin = await request.ActivateAsync();
+            var plugin = await request.ActivateAsync().ConfigureAwait(false);
             if (plugin == null)
             {
                 _logger.LogError("Plugin activation failed or plugin unavailable: {PluginId}", pluginId);
@@ -385,7 +380,8 @@ namespace Pulsar.Core.Plugin.Runtime
             using var executionScope = PluginExecutionContext.BeginScope(
                 pluginId,
                 request.Action,
-                targetProcessName: request.Context.TargetProcessName);
+                targetProcessName: request.Context.TargetProcessName,
+                permissionInterceptor: _permissionInterceptor);
 
             var stopwatch = Stopwatch.StartNew();
             var readyState = request.Descriptor.CanDisable ? PluginLifecycleState.Enabled : PluginLifecycleState.Enabled;
@@ -393,7 +389,7 @@ namespace Pulsar.Core.Plugin.Runtime
 
             try
             {
-                var result = await plugin.ExecuteAsync(request.Action, request.Args, request.Context);
+                var result = await plugin.ExecuteAsync(request.Action, request.Args, request.Context).ConfigureAwait(false);
 
                 if (result.Success)
                 {

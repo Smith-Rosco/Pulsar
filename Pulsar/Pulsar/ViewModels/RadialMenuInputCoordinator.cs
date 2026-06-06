@@ -66,7 +66,13 @@ namespace Pulsar.ViewModels
                 return true;
             }
 
-            _ = executeSelectionAsync();
+            _ = executeSelectionAsync().ContinueWith(t =>
+            {
+                if (t.IsFaulted && t.Exception != null)
+                {
+                    _logger?.LogError(t.Exception, "[HandleModifierRelease] Execution failed");
+                }
+            }, TaskScheduler.Default);
             hideMenu();
             return true;
         }

@@ -154,7 +154,7 @@ namespace Pulsar.Tests.Plugin
 
             var brokenAtField = typeof(PluginCircuitBreakerPolicy).GetField("_brokenCircuits", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             brokenAtField.Should().NotBeNull();
-            var brokenCircuits = brokenAtField!.GetValue(breakerPolicy).Should().BeAssignableTo<System.Collections.Generic.Dictionary<string, DateTime>>().Subject;
+            var brokenCircuits = brokenAtField!.GetValue(breakerPolicy).Should().BeAssignableTo<System.Collections.Concurrent.ConcurrentDictionary<string, DateTime>>().Subject;
             brokenCircuits[failingPlugin.Id] = DateTime.UtcNow - TimeSpan.FromMinutes(2);
 
             var recoveredPlugin = new RuntimeTestPlugin();

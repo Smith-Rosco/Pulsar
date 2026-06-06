@@ -1,4 +1,8 @@
-## ADDED Requirements
+## Purpose
+
+The plugin runtime kernel provides a decomposed, DI-composed set of services that separate plugin discovery, runtime state management, execution policy, circuit breaking, and instance hosting into distinct responsibilities, with thread-safe state stores and deterministic execution pipelines.
+
+## Requirements
 
 ### Requirement: Plugin runtime responsibilities are explicitly separated
 The plugin platform SHALL separate plugin discovery, runtime state management, execution policy, and instance hosting into distinct runtime responsibilities so no single registry class remains the authoritative owner of all plugin behavior.
@@ -54,3 +58,18 @@ The runtime refactor SHALL preserve existing plugin-facing contracts, persisted 
 #### Scenario: Existing callers continue to use registry entry points
 - **WHEN** application code invokes current plugin-registry APIs during migration
 - **THEN** those calls SHALL continue to function through a compatibility facade over the new runtime kernel
+
+### Requirement: Runtime kernel components SHALL be composed via dependency injection
+The plugin runtime kernel, catalog, state store, breaker policy, and execution pipeline SHALL be registered as DI services and composed through constructor injection rather than manual instantiation within a facade.
+
+#### Scenario: Each runtime component is independently replaceable
+- **WHEN** a unit test provides a mock `IPluginBreakerPolicy` to the DI container
+- **THEN** the execution pipeline SHALL use the mock implementation without requiring changes to any production code
+
+#### Scenario: PluginRegistry receives components through constructor injection
+- **WHEN** the DI container resolves `IPluginRegistry`
+- **THEN** the `PluginRegistry` implementation SHALL receive all runtime dependencies (catalog, state store, breaker, pipeline, kernel) via constructor parameters rather than calling `new` internally
+
+#### Scenario: Runtime components share the same DI service provider
+- **WHEN** a runtime component needs an optional service (e.g., `IPluginHealthMonitor`)
+- **THEN** it SHALL receive that service through constructor injection rather than calling `IServiceProvider.GetService()` internally

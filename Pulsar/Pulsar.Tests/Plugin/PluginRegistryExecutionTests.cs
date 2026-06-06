@@ -4,10 +4,11 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Pulsar.Core.Plugin;
+using Pulsar.Core.Plugin.Metadata;
+using Pulsar.Core.Plugin.Runtime;
 using Pulsar.Models;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
@@ -22,31 +23,19 @@ namespace Pulsar.Tests.Plugin
     /// </summary>
     public class PluginRegistryExecutionTests
     {
-        private readonly IServiceProvider _serviceProvider;
-        private readonly Mock<ILogger<PluginRegistry>> _mockLogger;
         private readonly Mock<IConfigService> _mockConfigService;
 
         public PluginRegistryExecutionTests()
         {
-            var services = new ServiceCollection();
-            
-            _mockLogger = new Mock<ILogger<PluginRegistry>>();
             _mockConfigService = new Mock<IConfigService>();
-            
-            services.AddSingleton(_mockLogger.Object);
-            services.AddSingleton(_mockConfigService.Object);
-            
-            _serviceProvider = services.BuildServiceProvider();
         }
 
         [Fact]
         public async Task ExecuteAsync_ShouldReturnSuccess_WhenPluginSucceeds()
         {
             // Arrange
-            var registry = new PluginRegistry(_serviceProvider, _mockLogger.Object);
             var plugin = new TestPlugin(shouldSucceed: true);
-            
-            RegisterPlugin(registry, plugin);
+            var registry = CreateRegistry(plugin);
             
             var context = PulsarContextFactory.CreateTestContext();
             var args = new Dictionary<string, string>().AsReadOnly();
@@ -63,10 +52,8 @@ namespace Pulsar.Tests.Plugin
         public async Task ExecuteAsync_ShouldReturnError_WhenPluginFails()
         {
             // Arrange
-            var registry = new PluginRegistry(_serviceProvider, _mockLogger.Object);
             var plugin = new TestPlugin(shouldSucceed: false);
-            
-            RegisterPlugin(registry, plugin);
+            var registry = CreateRegistry(plugin);
             
             var context = PulsarContextFactory.CreateTestContext();
             var args = new Dictionary<string, string>().AsReadOnly();
@@ -83,10 +70,8 @@ namespace Pulsar.Tests.Plugin
         public async Task ExecuteAsync_ShouldIsolateException_WhenPluginThrows()
         {
             // Arrange
-            var registry = new PluginRegistry(_serviceProvider, _mockLogger.Object);
             var plugin = new TestPlugin(shouldThrow: true);
-            
-            RegisterPlugin(registry, plugin);
+            var registry = CreateRegistry(plugin);
             
             var context = PulsarContextFactory.CreateTestContext();
             var args = new Dictionary<string, string>().AsReadOnly();
@@ -104,7 +89,7 @@ namespace Pulsar.Tests.Plugin
         public async Task ExecuteAsync_ShouldReturnError_WhenPluginNotFound()
         {
             // Arrange
-            var registry = new PluginRegistry(_serviceProvider, _mockLogger.Object);
+            var registry = CreateEmptyRegistry();
             var context = PulsarContextFactory.CreateTestContext();
             var args = new Dictionary<string, string>().AsReadOnly();
 
@@ -120,15 +105,14 @@ namespace Pulsar.Tests.Plugin
         public async Task ExecuteAsync_ShouldRespectDisabledState_ForExtensionPlugins()
         {
             // Arrange
-            var registry = new PluginRegistry(_serviceProvider, _mockLogger.Object);
             var plugin = new TestPlugin(shouldSucceed: true, canDisable: true);
-            
-            RegisterPlugin(registry, plugin);
             
             // Mock config service to return disabled state
             var config = new ProfilesConfig();
             config.Plugins[plugin.Id] = new PluginProfile { Enabled = false };
             _mockConfigService.Setup(x => x.Current).Returns(config);
+            
+            var registry = CreateRegistry(plugin, _mockConfigService.Object);
             
             var context = PulsarContextFactory.CreateTestContext();
             var args = new Dictionary<string, string>().AsReadOnly();
@@ -145,15 +129,14 @@ namespace Pulsar.Tests.Plugin
         public async Task ExecuteAsync_ShouldIgnoreDisabledState_ForCorePlugins()
         {
             // Arrange
-            var registry = new PluginRegistry(_serviceProvider, _mockLogger.Object);
             var plugin = new TestPlugin(shouldSucceed: true, canDisable: false); // Core plugin
-            
-            RegisterPlugin(registry, plugin);
             
             // Mock config service to return disabled state (should be ignored for core plugins)
             var config = new ProfilesConfig();
             config.Plugins[plugin.Id] = new PluginProfile { Enabled = false };
             _mockConfigService.Setup(x => x.Current).Returns(config);
+            
+            var registry = CreateRegistry(plugin, _mockConfigService.Object);
             
             var context = PulsarContextFactory.CreateTestContext();
             var args = new Dictionary<string, string>().AsReadOnly();
@@ -169,10 +152,8 @@ namespace Pulsar.Tests.Plugin
         public void GetPlugin_ShouldReturnPlugin_WhenExists()
         {
             // Arrange
-            var registry = new PluginRegistry(_serviceProvider, _mockLogger.Object);
             var plugin = new TestPlugin(shouldSucceed: true);
-            
-            RegisterPlugin(registry, plugin);
+            var registry = CreateRegistry(plugin);
 
             // Act
             var retrieved = registry.GetPlugin(plugin.Id);
@@ -186,7 +167,7 @@ namespace Pulsar.Tests.Plugin
         public void GetPlugin_ShouldReturnNull_WhenNotExists()
         {
             // Arrange
-            var registry = new PluginRegistry(_serviceProvider, _mockLogger.Object);
+            var registry = CreateEmptyRegistry();
 
             // Act
             var retrieved = registry.GetPlugin("nonexistent.plugin");
@@ -199,12 +180,9 @@ namespace Pulsar.Tests.Plugin
         public void GetAllPlugins_ShouldReturnAllRegisteredPlugins()
         {
             // Arrange
-            var registry = new PluginRegistry(_serviceProvider, _mockLogger.Object);
             var plugin1 = new TestPlugin(shouldSucceed: true) { TestId = "plugin1" };
             var plugin2 = new TestPlugin(shouldSucceed: true) { TestId = "plugin2" };
-            
-            RegisterPlugin(registry, plugin1);
-            RegisterPlugin(registry, plugin2);
+            var registry = CreateRegistryWithPlugins(null, plugin1, plugin2);
 
             // Act
             var allPlugins = registry.GetAllPlugins();
@@ -213,40 +191,117 @@ namespace Pulsar.Tests.Plugin
             allPlugins.Should().HaveCount(2);
         }
 
-        /// <summary>
-        /// Helper method to register plugin using reflection
-        /// </summary>
-        private void RegisterPlugin(PluginRegistry registry, IPulsarPlugin plugin)
+        private PluginRegistry CreateRegistry(IPulsarPlugin plugin, IConfigService? configService = null)
         {
-            var descriptorsField = typeof(PluginRegistry)
-                .GetField("_descriptors", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var descriptors = descriptorsField?.GetValue(registry) as Dictionary<string, PluginDescriptor>;
-            if (descriptors != null)
+            return CreateRegistryWithPlugins(configService, plugin);
+        }
+
+        private PluginRegistry CreateEmptyRegistry()
+        {
+            var catalog = new PluginCatalog();
+            var runtimeState = new PluginRuntimeStateStore();
+            var breakerPolicy = new PluginCircuitBreakerPolicy();
+            var pipeline = new PluginExecutionPipeline(runtimeState, breakerPolicy);
+
+            var loader = new FakeLoader(
+                new TestPlugin(shouldSucceed: true),
+                CreateDescriptor(new TestPlugin(shouldSucceed: true) { TestId = "stub" }));
+            var kernel = new PluginRuntimeKernel(
+                Mock.Of<IServiceProvider>(), loader, catalog, runtimeState, pipeline);
+            return new PluginRegistry(kernel, catalog, runtimeState);
+        }
+
+        private PluginRegistry CreateRegistryWithPlugins(IConfigService? configService, params IPulsarPlugin[] plugins)
+        {
+            var catalog = new PluginCatalog();
+            var runtimeState = new PluginRuntimeStateStore();
+            var breakerPolicy = new PluginCircuitBreakerPolicy();
+            var pipeline = new PluginExecutionPipeline(runtimeState, breakerPolicy);
+
+            var descriptors = new List<PluginDescriptor>();
+            foreach (var plugin in plugins)
             {
-                descriptors[plugin.Id] = new PluginDescriptor
+                var descriptor = CreateDescriptor(plugin);
+                descriptors.Add(descriptor);
+                runtimeState.SetPlugin(plugin, PluginLifecycleState.Enabled);
+            }
+            catalog.RegisterDescriptors(descriptors);
+
+            var loader = new FakeLoader(plugins[0], descriptors[0]);
+            var kernel = new PluginRuntimeKernel(
+                Mock.Of<IServiceProvider>(), loader, catalog, runtimeState, pipeline,
+                NullLogger<PluginRuntimeKernel>.Instance, configService);
+            return new PluginRegistry(kernel, catalog, runtimeState);
+        }
+
+        private static PluginDescriptor CreateDescriptor(IPulsarPlugin plugin)
+        {
+            return new PluginDescriptor
+            {
+                Id = plugin.Id,
+                DisplayName = plugin.DisplayName,
+                Version = plugin.Version,
+                Author = plugin.Author,
+                Description = plugin.Description,
+                Icon = plugin.Icon,
+                CanDisable = plugin.CanDisable,
+                Tier = plugin.CanDisable ? PluginTier.Extension : PluginTier.Core,
+                ImplementationType = plugin.GetType(),
+                Dependencies = new List<string>(),
+                Metadata = new PluginMetadata
                 {
                     Id = plugin.Id,
-                    DisplayName = plugin.DisplayName,
-                    Version = plugin.Version,
-                    Author = plugin.Author,
-                    Description = plugin.Description,
-                    Icon = plugin.Icon,
-                    CanDisable = plugin.CanDisable,
-                    Tier = plugin.CanDisable ? PluginTier.Extension : PluginTier.Core,
-                    ImplementationType = plugin.GetType(),
-                    Dependencies = new List<string>(),
-                    Metadata = null!,
-                    IsConfigurable = false
-                };
+                    Display = new DisplayInfo
+                    {
+                        Name = plugin.DisplayName,
+                        Description = plugin.Description,
+                        IconKey = plugin.Icon,
+                        Category = "Tests",
+                        Version = plugin.Version,
+                        Author = plugin.Author,
+                        License = "MIT"
+                    },
+                    Schema = null,
+                    UI = new UIHints
+                    {
+                        Badge = "Test",
+                        AccentColor = "#4A90E2",
+                        ShowInQuickAccess = false,
+                        SortOrder = 0
+                    },
+                    Capabilities = new PluginCapabilities
+                    {
+                        SupportedActions = new List<string> { "test" },
+                        Dependencies = new List<string>(),
+                        Tier = plugin.CanDisable ? PluginTier.Extension : PluginTier.Core,
+                        MinPulsarVersion = "1.0.0"
+                    },
+                    Actions = new Dictionary<string, SlotActionMetadata>(StringComparer.OrdinalIgnoreCase)
+                },
+                IsConfigurable = false
+            };
+        }
+
+        private sealed class FakeLoader : PluginLoader
+        {
+            private readonly IPulsarPlugin _plugin;
+            private readonly PluginDescriptor _descriptor;
+
+            public FakeLoader(IPulsarPlugin plugin, PluginDescriptor descriptor)
+                : base(Mock.Of<IServiceProvider>(), string.Empty)
+            {
+                _plugin = plugin;
+                _descriptor = descriptor;
             }
 
-            var pluginsField = typeof(PluginRegistry)
-                .GetField("_plugins", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            
-            var plugins = pluginsField?.GetValue(registry) as Dictionary<string, IPulsarPlugin>;
-            if (plugins != null)
+            public override List<PluginDescriptor> DiscoverDescriptors(bool includeCore, bool includeExtensions, bool analyzeDependencies)
             {
-                plugins[plugin.Id] = plugin;
+                return new List<PluginDescriptor> { _descriptor };
+            }
+
+            public override IPulsarPlugin ActivatePlugin(PluginDescriptor descriptor)
+            {
+                return _plugin;
             }
         }
 

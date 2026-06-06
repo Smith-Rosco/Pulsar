@@ -4,8 +4,11 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Pulsar.Core.Plugin;
+using Pulsar.Core.Plugin.Metadata;
+using Pulsar.Core.Plugin.Runtime;
 using Pulsar.Models;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
@@ -19,13 +22,17 @@ namespace Pulsar.Tests.Plugin
         [Fact]
         public async Task DiscoverDeferredAsync_ShouldRegisterDescriptorsWithoutActivatingPlugins()
         {
+            var catalog = new PluginCatalog();
+            var runtimeState = new PluginRuntimeStateStore();
+            var pipeline = new PluginExecutionPipeline(runtimeState, new PluginCircuitBreakerPolicy());
             var services = new ServiceCollection().BuildServiceProvider();
             var logger = Mock.Of<ILogger<PluginRegistry>>();
             var loader = new FakePluginLoader(services, BuildDescriptors())
             {
                 ActivationFactory = _ => new DeferredActivationPlugin()
             };
-            var registry = new PluginRegistry(services, logger, loader);
+            var kernel = new PluginRuntimeKernel(services, loader, catalog, runtimeState, pipeline);
+            var registry = new PluginRegistry(kernel, catalog, runtimeState);
 
             await registry.DiscoverDeferredAsync();
 
@@ -37,6 +44,9 @@ namespace Pulsar.Tests.Plugin
         [Fact]
         public async Task ExecuteAsync_ShouldActivateDeferredPluginOnFirstUse_AndReuseInstance()
         {
+            var catalog = new PluginCatalog();
+            var runtimeState = new PluginRuntimeStateStore();
+            var pipeline = new PluginExecutionPipeline(runtimeState, new PluginCircuitBreakerPolicy());
             var services = new ServiceCollection();
             var config = new ProfilesConfig();
             config.Plugins["test.deferred"] = new PluginProfile { Enabled = true };
@@ -51,7 +61,8 @@ namespace Pulsar.Tests.Plugin
             {
                 ActivationFactory = _ => new DeferredActivationPlugin()
             };
-            var registry = new PluginRegistry(provider, logger, loader);
+            var kernel = new PluginRuntimeKernel(provider, loader, catalog, runtimeState, pipeline, NullLogger<PluginRuntimeKernel>.Instance, configService.Object);
+            var registry = new PluginRegistry(kernel, catalog, runtimeState);
             await registry.DiscoverDeferredAsync();
 
             var context = PulsarContextFactory.CreateTestContext();

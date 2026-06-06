@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Pulsar.Core.Plugin.Metadata;
+using Pulsar.Core.Plugin.Runtime;
 using Pulsar.Models;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
@@ -21,8 +21,10 @@ namespace Pulsar.Tests.Config
             var registry = new PluginMetadataRegistry(Mock.Of<ILogger<PluginMetadataRegistry>>());
             registry.Register(CreateCommandMetadata());
 
-            var services = new ServiceCollection().BuildServiceProvider();
-            var pluginRegistry = new PluginRegistry(services, Mock.Of<ILogger<PluginRegistry>>());
+            var pluginRegistry = new PluginRegistry(
+                Mock.Of<IPluginRuntimeKernel>(),
+                Mock.Of<IPluginCatalog>(),
+                Mock.Of<IPluginRuntimeStateStore>());
 
             var pipeline = new ConfigValidationPipeline(
                 pluginRegistry,
@@ -57,8 +59,10 @@ namespace Pulsar.Tests.Config
             var registry = new PluginMetadataRegistry(Mock.Of<ILogger<PluginMetadataRegistry>>());
             registry.Register(CreatePkiMetadata());
 
-            var services = new ServiceCollection().BuildServiceProvider();
-            var pluginRegistry = new PluginRegistry(services, Mock.Of<ILogger<PluginRegistry>>());
+            var pluginRegistry = new PluginRegistry(
+                Mock.Of<IPluginRuntimeKernel>(),
+                Mock.Of<IPluginCatalog>(),
+                Mock.Of<IPluginRuntimeStateStore>());
 
             var pipeline = new ConfigValidationPipeline(
                 pluginRegistry,

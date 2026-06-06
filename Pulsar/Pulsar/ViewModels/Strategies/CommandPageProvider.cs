@@ -16,7 +16,7 @@ namespace Pulsar.ViewModels.Strategies
     public class CommandPageProvider : BasePageProvider
     {
         private readonly List<PluginSlot> _allSlots;
-        private readonly PluginRegistry _pluginRegistry;
+        private readonly IPluginRegistry _pluginRegistry;
         private readonly PulsarContext _context;
         private readonly ITrayService _trayService;
         private readonly IActionFeedbackService _feedbackService;
@@ -27,7 +27,7 @@ namespace Pulsar.ViewModels.Strategies
 
         public CommandPageProvider(
             List<PluginSlot> slots, 
-            PluginRegistry pluginRegistry, 
+            IPluginRegistry pluginRegistry, 
             PulsarContext context, 
             ITrayService trayService,
             IServiceProvider serviceProvider)

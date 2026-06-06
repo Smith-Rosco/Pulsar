@@ -21,7 +21,7 @@ namespace Pulsar.ViewModels.Settings
         private const int ViewLogsPreviewCount = 2;
         private IPulsarPlugin? _plugin;
         private readonly PluginDescriptor _descriptor;
-        private readonly PluginRegistry _registry;
+        private readonly IPluginRegistry _registry;
         private readonly IConfigService _configService;
         private readonly IPluginUsageTracker? _usageTracker;
         private readonly IPluginHealthMonitor? _healthMonitor;
@@ -89,7 +89,7 @@ namespace Pulsar.ViewModels.Settings
 
         public PluginViewModel(
             PluginDescriptor descriptor,
-            PluginRegistry registry,
+            IPluginRegistry registry,
             IConfigService configService,
             IPluginUsageTracker? usageTracker = null,
             IPluginHealthMonitor? healthMonitor = null,

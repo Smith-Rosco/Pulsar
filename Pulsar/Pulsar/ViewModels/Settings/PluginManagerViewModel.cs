@@ -22,7 +22,7 @@ namespace Pulsar.ViewModels.Settings
 
     public partial class PluginManagerViewModel : ObservableObject
     {
-        private readonly PluginRegistry _registry;
+        private readonly IPluginRegistry _registry;
         private readonly IConfigService _configService;
         private readonly IPluginUsageTracker? _usageTracker;
         private readonly IPluginHealthMonitor? _healthMonitor;
@@ -42,7 +42,7 @@ namespace Pulsar.ViewModels.Settings
         [ObservableProperty]
         private string _searchText = "";
 
-        public PluginManagerViewModel(PluginRegistry registry, IConfigService configService,
+        public PluginManagerViewModel(IPluginRegistry registry, IConfigService configService,
             IPluginUsageTracker? usageTracker = null, IPluginHealthMonitor? healthMonitor = null,
             IPluginLogService? logService = null, IDialogService? dialogService = null, IServiceProvider? serviceProvider = null,
             IPluginMetadataRegistry? metadataRegistry = null)
