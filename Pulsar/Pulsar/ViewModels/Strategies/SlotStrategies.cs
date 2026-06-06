@@ -109,22 +109,28 @@ namespace Pulsar.ViewModels.Strategies
         private readonly IPluginUsageTracker? _usageTracker;
         private readonly IPluginHealthMonitor? _healthMonitor;
         private readonly IPluginLogService? _logService;
+        private readonly ILogger<WindowSwitchStrategy>? _logger;
 
         public WindowSwitchStrategy(ProcessWindowInfo window,
             IWindowService windowService,
             IPluginUsageTracker? usageTracker = null, 
             IPluginHealthMonitor? healthMonitor = null,
-            IPluginLogService? logService = null)
+            IPluginLogService? logService = null,
+            ILogger<WindowSwitchStrategy>? logger = null)
         {
             _window = window;
             _windowService = windowService;
             _usageTracker = usageTracker;
             _healthMonitor = healthMonitor;
             _logService = logService;
+            _logger = logger;
         }
 
         public Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context)
         {
+            _logger?.LogInformation("[WinSwitch] ExecuteAsync START: hWnd=0x{Hwnd:X} title='{Title}' process='{Process}'",
+                _window.Handle.ToInt64(), _window.Title, _window.ProcessName);
+
             context.SetActionExecuted(true);
 
             var stopwatch = Stopwatch.StartNew();
@@ -132,11 +138,18 @@ namespace Pulsar.ViewModels.Strategies
 
             try
             {
+                // Prevent focus restore from undoing the switch after menu dismisses.
+                _windowService.SetFocusRestoreMode(FocusRestoreMode.NoRestore);
+                _logger?.LogInformation("[WinSwitch] SetFocusRestoreMode=NoRestore, hiding menu...");
+
                 // Hide first to avoid focus-steal and visual glitches while switching foreground windows.
                 context.IsVisible = false;
+                _logger?.LogInformation("[WinSwitch] Menu hidden, calling ActivateWindow(0x{Hwnd:X})...",
+                    _window.Handle.ToInt64());
 
                 if (!_windowService.ActivateWindow(_window))
                 {
+                    _logger?.LogWarning("[WinSwitch] ActivateWindow FAILED for 0x{Hwnd:X}", _window.Handle.ToInt64());
                     System.Media.SystemSounds.Exclamation.Play();
                     _logService?.Log("com.pulsar.winswitcher", PluginLogLevel.Warning,
                         "Window activation failed",
@@ -152,6 +165,8 @@ namespace Pulsar.ViewModels.Strategies
                 }
 
                 success = true;
+                _logger?.LogInformation("[WinSwitch] ActivateWindow SUCCESS for 0x{Hwnd:X} elapsed={Elapsed}ms",
+                    _window.Handle.ToInt64(), stopwatch.ElapsedMilliseconds);
                 WeakReferenceMessenger.Default.Send(new ActionExecutionMessage(
                     TutorialActionKind.Switch,
                     "com.pulsar.winswitcher",

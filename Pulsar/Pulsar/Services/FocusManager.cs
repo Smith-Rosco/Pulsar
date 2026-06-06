@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.Extensions.Logging;
@@ -18,6 +19,12 @@ namespace Pulsar.Services
         private IModifierStateTracker? _tracker;
 
         private readonly object _stateLock = new();
+
+        private const uint LSFW_LOCK = 1;
+        private const uint LSFW_UNLOCK = 2;
+
+        private const byte VK_MENU = 0x12;
+        private const uint KEYEVENTF_KEYUP = 0x0002;
 
         private FocusStateSnapshot? _capturedSnapshot;
         private FocusRestoreMode _restoreMode = FocusRestoreMode.RestorePrevious;
@@ -61,13 +68,14 @@ namespace Pulsar.Services
 
             if (hWnd == IntPtr.Zero)
             {
+                _logger.LogInformation("[FocusManager] Capture: no foreground window");
                 return new FocusCaptureResult { Success = false };
             }
 
             uint threadId = _native.GetWindowThreadProcessId(hWnd, out uint pid);
             if (pid == _ownProcessId)
             {
-                _logger.LogDebug("[FocusManager] Foreground window is Pulsar's own window, skipping capture");
+                _logger.LogInformation("[FocusManager] Capture: foreground is Pulsar's own window (pid={Pid}), skipping", pid);
                 return new FocusCaptureResult { Success = false, CapturedHandle = hWnd, ProcessId = pid };
             }
 
@@ -94,7 +102,7 @@ namespace Pulsar.Services
                 _capturedSnapshot = snapshot;
             }
 
-            _logger.LogDebug("[FocusManager] Captured foreground window: HWnd=0x{hWnd:X}, PID={pid}, Name={name}",
+            _logger.LogInformation("[FocusManager] Capture: HWnd=0x{hWnd:X} PID={Pid} Name={Name}",
                 hWnd.ToInt64(), pid, processName);
 
             return new FocusCaptureResult
@@ -132,7 +140,7 @@ namespace Pulsar.Services
             switch (effectiveMode)
             {
                 case FocusRestoreMode.NoRestore:
-                    _logger.LogDebug("[FocusManager] Release: NoRestore mode, skipping");
+                    _logger.LogInformation("[FocusManager] Release: NoRestore mode, skipping release");
                     break;
 
                 case FocusRestoreMode.RestorePrevious:
@@ -143,15 +151,32 @@ namespace Pulsar.Services
                             prev = _capturedSnapshot?.WindowHandle ?? IntPtr.Zero;
                         }
 
+                        _logger.LogInformation("[FocusManager] Release: RestorePrevious - captured=0x{Captured:X} ownPid={OwnPid}",
+                            prev.ToInt64(), _ownProcessId);
+
                         if (prev != IntPtr.Zero && _native.IsWindow(prev))
                         {
-                            _logger.LogDebug("[FocusManager] Release: restoring to captured window 0x{hWnd:X}", prev.ToInt64());
-                            var result = await ActivateWindowAsync(prev, new FocusActivationOptions { FlashAfterActivation = false });
-                            releasedTo = result.Success ? prev : IntPtr.Zero;
+                            var currentFg = _native.GetForegroundWindow();
+                            _native.GetWindowThreadProcessId(currentFg, out uint currentFgPid);
+                            _logger.LogInformation("[FocusManager] Release: currentForeground=0x{CurrentFg:X} currentFgPid={CurrentFgPid} ownPid={OwnPid}",
+                                currentFg.ToInt64(), currentFgPid, _ownProcessId);
+
+                            if (currentFgPid == _ownProcessId)
+                            {
+                                _logger.LogInformation("[FocusManager] Release: foreground still Pulsar, restoring to captured 0x{Captured:X}", prev.ToInt64());
+                                var result = await ActivateWindowAsync(prev, new FocusActivationOptions { FlashAfterActivation = false });
+                                _logger.LogInformation("[FocusManager] Release: restore result success={Success}", result.Success);
+                                releasedTo = result.Success ? prev : IntPtr.Zero;
+                            }
+                            else
+                            {
+                                _logger.LogInformation("[FocusManager] Release: foreground changed (pid={CurrentFgPid} != ownPid={OwnPid}), skipping restore",
+                                    currentFgPid, _ownProcessId);
+                            }
                         }
                         else
                         {
-                            _logger.LogWarning("[FocusManager] Release: captured window is invalid or null");
+                            _logger.LogWarning("[FocusManager] Release: captured window invalid or null (prev=0x{Prev:X})", prev.ToInt64());
                         }
                         break;
                     }
@@ -190,6 +215,7 @@ namespace Pulsar.Services
 
             if (hWnd == IntPtr.Zero || !_native.IsWindow(hWnd))
             {
+                _logger.LogWarning("[FocusManager] ActivateWindow: invalid handle 0x{hWnd:X}", hWnd.ToInt64());
                 return new FocusActivationResult
                 {
                     Success = false,
@@ -200,6 +226,7 @@ namespace Pulsar.Services
 
             if (_native.IsIconic(hWnd))
             {
+                _logger.LogInformation("[FocusManager] ActivateWindow: restoring minimized window 0x{hWnd:X}", hWnd.ToInt64());
                 _native.ShowWindow(hWnd, PulsarNative.SW_RESTORE);
             }
 
@@ -207,23 +234,42 @@ namespace Pulsar.Services
             uint targetThread = _native.GetWindowThreadProcessId(hWnd, out uint targetPid);
             var currentThread = _native.GetCurrentThreadId();
 
+            _logger.LogInformation("[FocusManager] ActivateWindow: hWnd=0x{hWnd:X} targetPid={TargetPid} targetThread={TargetThread} currentThread={CurrentThread} ownPid={OwnPid}",
+                hWnd.ToInt64(), targetPid, targetThread, currentThread, _ownProcessId);
+
             _tracker?.OnSyntheticEventBegin();
 
             try
             {
                 bool attached = _native.AttachThreadInput(currentThread, targetThread, true);
+                _logger.LogInformation("[FocusManager] ActivateWindow: AttachThreadInput result={Attached}", attached);
 
                 if (attached)
                 {
                     try
                     {
-                        _native.AllowSetForegroundWindow((int)targetPid);
-                        activated = _native.SetForegroundWindowNative(hWnd);
+                        _native.LockSetForegroundWindow(LSFW_UNLOCK);
+                        try
+                        {
+                            _native.AllowSetForegroundWindow((int)targetPid);
+                            activated = _native.SetForegroundWindowNative(hWnd);
+                            _logger.LogInformation("[FocusManager] ActivateWindow: SetForegroundWindow (primary) result={Activated}", activated);
+
+                            if (!activated)
+                            {
+                                _native.BringWindowToTop(hWnd);
+                                activated = _native.SetForegroundWindowNative(hWnd);
+                                _logger.LogInformation("[FocusManager] ActivateWindow: SetForegroundWindow (retry with BringWindowToTop) result={Activated}", activated);
+                            }
+                        }
+                        finally
+                        {
+                            _native.LockSetForegroundWindow(LSFW_LOCK);
+                        }
 
                         if (!activated)
                         {
-                            _native.BringWindowToTop(hWnd);
-                            activated = _native.SetForegroundWindowNative(hWnd);
+                            activated = ForceActivate(hWnd);
                         }
                     }
                     finally
@@ -233,7 +279,7 @@ namespace Pulsar.Services
                 }
                 else
                 {
-                    _logger.LogDebug("[FocusManager] AttachThreadInput failed, using fallback path");
+                    _logger.LogInformation("[FocusManager] ActivateWindow: AttachThreadInput failed, using fallback path");
                     activated = FallbackActivate(hWnd);
                 }
             }
@@ -241,6 +287,10 @@ namespace Pulsar.Services
             {
                 _tracker?.OnSyntheticEventEnd();
             }
+
+            var actualFgAfter = _native.GetForegroundWindow();
+            _logger.LogInformation("[FocusManager] ActivateWindow: final result activated={Activated} actualForeground=0x{ActualFg:X} target=0x{Target:X}",
+                activated, actualFgAfter.ToInt64(), hWnd.ToInt64());
 
             if (activated && options.FlashAfterActivation)
             {
@@ -314,14 +364,57 @@ namespace Pulsar.Services
             _native.LockForegroundTimeout();
             try
             {
-                _native.GetWindowThreadProcessId(hWnd, out uint pid);
-                _native.AllowSetForegroundWindow((int)pid);
-                return _native.SetForegroundWindowNative(hWnd);
+                _native.LockSetForegroundWindow(LSFW_UNLOCK);
+                try
+                {
+                    _native.GetWindowThreadProcessId(hWnd, out uint pid);
+                    _native.AllowSetForegroundWindow((int)pid);
+
+                    bool result = _native.SetForegroundWindowNative(hWnd);
+                    _logger.LogInformation("[FocusManager] FallbackActivate: SetForegroundWindow result={Result} hWnd=0x{hWnd:X} pid={Pid}",
+                        result, hWnd.ToInt64(), pid);
+                    if (!result)
+                    {
+                        _native.BringWindowToTop(hWnd);
+                        result = _native.SetForegroundWindowNative(hWnd);
+                        _logger.LogInformation("[FocusManager] FallbackActivate: SetForegroundWindow (retry) result={Result}", result);
+                    }
+                    if (!result)
+                    {
+                        result = ForceActivate(hWnd);
+                    }
+                    return result;
+                }
+                finally
+                {
+                    _native.LockSetForegroundWindow(LSFW_LOCK);
+                }
             }
             finally
             {
                 _native.UnlockForegroundTimeout();
             }
+        }
+
+        /// <summary>
+        /// Last-resort activation for stubborn windows (e.g. custom-skinned or self-locking apps).
+        /// Simulates Alt key press to grant Pulsar foreground input rights, then retries SetForegroundWindow.
+        /// </summary>
+        private bool ForceActivate(IntPtr hWnd)
+        {
+            _logger.LogInformation("[FocusManager] ForceActivate: trying aggressive approach for 0x{hWnd:X}", hWnd.ToInt64());
+
+            _native.AllowSetForegroundWindow(-1); // ASFW_ANY
+
+            _native.KeybdEvent(VK_MENU, 0, 0, 0);           // Alt press
+            _native.KeybdEvent(VK_MENU, 0, KEYEVENTF_KEYUP, 0); // Alt release
+
+            // Small delay to let input event propagate
+            Thread.Sleep(50);
+
+            bool result = _native.SetForegroundWindowNative(hWnd);
+            _logger.LogInformation("[FocusManager] ForceActivate: SetForegroundWindow result={Result}", result);
+            return result;
         }
 
         private async Task<bool> VerifyActivationAsync(IntPtr hWnd, FocusActivationOptions options)

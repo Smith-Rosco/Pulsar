@@ -824,17 +824,20 @@ namespace Pulsar.Services
                 };
             }
 
+            _logger.LogInformation("[ActivateWindow] Activating hWnd=0x{Hwnd:X} title='{Title}' process='{Process}'",
+                window.Handle.ToInt64(), window.Title, window.ProcessName);
+
             var result = await ActivateWindowAsync(_focusManager, window, PulsarNative.IsWindow);
             if (!result.Success)
             {
-                _logger.LogWarning("[ActivateWindow] Failed to activate '{Title}' (Handle: {Handle}, Reason: {Reason})",
+                _logger.LogWarning("[ActivateWindow] FAILED to activate '{Title}' (Handle: 0x{Hwnd:X}, Reason: {Reason})",
                     window.Title,
-                    window.Handle,
+                    window.Handle.ToInt64(),
                     result.FailureReason);
                 return result;
             }
 
-            _logger.LogInformation("[ActivateWindow] Activated '{Title}' (Process: {ProcessName})",
+            _logger.LogInformation("[ActivateWindow] SUCCESS: '{Title}' (Process: {ProcessName})",
                 window.Title,
                 window.ProcessName);
             return result;

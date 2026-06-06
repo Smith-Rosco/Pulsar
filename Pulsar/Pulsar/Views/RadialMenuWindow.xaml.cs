@@ -130,6 +130,7 @@ namespace Pulsar.Views
                 }
                 else
                 {
+                    _logger?.LogInformation("[RadialMenu] IsVisible=false, calling Dismiss...");
                     Dismiss();
                 }
             }
@@ -183,6 +184,9 @@ namespace Pulsar.Views
 
         private void Dismiss()
         {
+            _logger?.LogInformation("[RadialMenu] Dismiss START: actionExecuted={ActionExecuted} restoreMode={RestoreMode}",
+                _viewModel.ActionExecuted, _focusManager.RestoreMode);
+
             this.IsHitTestVisible = false;
 
             _viewModel.ClearPreviewPresentation();
@@ -192,8 +196,11 @@ namespace Pulsar.Views
             
             fadeOut.Completed += async (s, e) =>
             {
+                _logger?.LogInformation("[RadialMenu] Dismiss: fade complete, calling ReleaseAsync (mode={RestoreMode})",
+                    _focusManager.RestoreMode);
                 _viewModel.ClearVisuals();
                 await _focusManager.ReleaseAsync();
+                _logger?.LogInformation("[RadialMenu] Dismiss: ReleaseAsync complete");
             };
             
             this.BeginAnimation(UIElement.OpacityProperty, fadeOut);

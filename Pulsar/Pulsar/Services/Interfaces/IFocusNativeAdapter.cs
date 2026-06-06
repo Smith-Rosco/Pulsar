@@ -20,5 +20,7 @@ namespace Pulsar.Services.Interfaces
 
         void LockForegroundTimeout();
         void UnlockForegroundTimeout();
+
+        void LockSetForegroundWindow(uint uLockCode);
     }
 }

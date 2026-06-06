@@ -14,6 +14,9 @@ namespace Pulsar.Services
         private const uint SPI_SETFOREGROUNDLOCKTIMEOUT = 0x2001;
         private const uint SPIF_SENDCHANGE = 0x0002;
 
+        private const uint LSFW_LOCK = 1;
+        private const uint LSFW_UNLOCK = 2;
+
         [DllImport("user32.dll", EntryPoint = "GetForegroundWindow")]
         private static extern IntPtr GetForegroundWindowNative();
 
@@ -61,6 +64,9 @@ namespace Pulsar.Services
         [DllImport("user32.dll", EntryPoint = "FlashWindowEx")]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool FlashWindowExNative(ref Native.PulsarNative.FLASHWINFO pfwi);
+
+        [DllImport("user32.dll", EntryPoint = "LockSetForegroundWindow")]
+        private static extern uint LockSetForegroundWindowNative(uint uLockCode);
 
         [DllImport("user32.dll", EntryPoint = "SystemParametersInfoW", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -123,5 +129,7 @@ namespace Pulsar.Services
                 }
             }
         }
+
+        public void LockSetForegroundWindow(uint uLockCode) => LockSetForegroundWindowNative(uLockCode);
     }
 }
