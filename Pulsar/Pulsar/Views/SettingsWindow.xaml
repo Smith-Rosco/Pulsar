@@ -5,9 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:converters="clr-namespace:Pulsar.Core.Converters"
+        xmlns:lex="clr-namespace:Pulsar.Core.Localization"
         xmlns:tutorial="clr-namespace:Pulsar.Helpers.Tutorial"
         mc:Ignorable="d"
-        Title="Pulsar Configuration" Height="700" Width="1000"
+        Title="{lex:Locale SettingsWindow.Title}" Height="700" Width="1000"
         WindowStartupLocation="CenterScreen"
         ExtendsContentIntoTitleBar="True"
         WindowBackdropType="Mica"
@@ -25,7 +26,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <ui:TitleBar Title="Pulsar Configuration" Grid.Row="0"/>
+        <ui:TitleBar Title="{lex:Locale SettingsWindow.Title}" Grid.Row="0"/>
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
@@ -42,10 +43,10 @@
 
                 <ui:NavigationView.FooterMenuItems>
                     <ui:NavigationViewItem
-                        Content="Save Changes"
+                        Content="{lex:Locale SettingsWindow.SaveChanges}"
                         Icon="{ui:SymbolIcon Save24}"
                         Command="{Binding DataContext.SaveCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                        ToolTip="Save all changes (Ctrl+S)">
+                        ToolTip="{lex:Locale SettingsWindow.SaveChangesTooltip}">
                         <ui:NavigationViewItem.InfoBadge>
                             <ui:InfoBadge>
                                 <ui:InfoBadge.Template>

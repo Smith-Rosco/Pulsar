@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Media;
 using Microsoft.Extensions.Logging;
+using Pulsar.Core.Localization;
 using Pulsar.Models;
 using Pulsar.Native;
 using Pulsar.Services.Interfaces;
@@ -15,14 +16,17 @@ namespace Pulsar.ViewModels
     {
         private readonly IPreviewService _previewService;
         private readonly ILogger<RadialMenuViewModel>? _logger;
+        private readonly ILocalizationService? _loc;
         private CancellationTokenSource? _previewCts;
 
         public RadialMenuVisualStateCoordinator(
             IPreviewService previewService,
-            ILogger<RadialMenuViewModel>? logger)
+            ILogger<RadialMenuViewModel>? logger,
+            ILocalizationService? localizationService = null)
         {
             _previewService = previewService;
             _logger = logger;
+            _loc = localizationService;
         }
 
         public void UpdateVisuals(
@@ -43,8 +47,8 @@ namespace Pulsar.ViewModels
             {
                 _previewService.ClearLivePreview();
                 setCenterPreview(ResolvedWindowPreview.Icon(null));
-                setDynamicTitle(menuState == MenuState.SubMenu ? "Back" : "Cancel");
-                centerSlot.Label = menuState == MenuState.SubMenu ? "Back" : "Cancel";
+                setDynamicTitle(menuState == MenuState.SubMenu ? (_loc?["RadialMenu.Back"] ?? "Back") : (_loc?["Notification.Cancel"] ?? "Cancel"));
+                centerSlot.Label = menuState == MenuState.SubMenu ? (_loc?["RadialMenu.Back"] ?? "Back") : (_loc?["Notification.Cancel"] ?? "Cancel");
                 centerSlot.LoadIconData(string.Empty);
                 centerSlot.IconImage = null;
                 centerSlot.BadgeCount = 0;
@@ -55,7 +59,7 @@ namespace Pulsar.ViewModels
             {
                 _previewService.ClearLivePreview();
                 setCenterPreview(ResolvedWindowPreview.Icon(null));
-                setDynamicTitle("Pulsar");
+                setDynamicTitle(_loc?["RadialMenu.Pulsar"] ?? "Pulsar");
                 centerSlot.Label = centerText;
                 centerSlot.LoadIconData(string.Empty);
                 centerSlot.IconImage = null;

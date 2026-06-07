@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:vm="clr-namespace:Pulsar.ViewModels.Dialogs"
+             xmlns:lex="clr-namespace:Pulsar.Core.Localization"
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=vm:PermissionRequestViewModel}"
              d:DesignHeight="400" d:DesignWidth="500">
@@ -34,7 +35,7 @@
 
         <!-- Title -->
         <TextBlock Grid.Row="1" 
-                   Text="权限请求"
+                   Text="{lex:Locale Dialog.Permission.Title}"
                    FontSize="20"
                    FontWeight="SemiBold"
                    HorizontalAlignment="Center"
@@ -43,9 +44,9 @@
         <!-- Plugin Info -->
         <StackPanel Grid.Row="2" Margin="0,0,0,20">
             <TextBlock TextWrapping="Wrap" HorizontalAlignment="Center">
-                <Run Text="插件 "/>
+                <Run Text="{lex:Locale Dialog.Permission.PluginPrefix}"/>
                 <Run Text="{Binding PluginName, Mode=OneWay}" FontWeight="SemiBold"/>
-                <Run Text=" 请求以下权限："/>
+                <Run Text="{lex:Locale Dialog.Permission.RequestsPermissions}"/>
             </TextBlock>
         </StackPanel>
 
@@ -93,7 +94,7 @@
                 Margin="0,0,0,16"
                 Visibility="{Binding Reason, Converter={StaticResource BoolToVis}}">
             <StackPanel>
-                <TextBlock Text="请求原因：" 
+                <TextBlock Text="{lex:Locale Dialog.Permission.Reason}" 
                            FontWeight="SemiBold"
                            FontSize="12"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
@@ -106,7 +107,7 @@
 
         <!-- Remember Choice -->
         <CheckBox Grid.Row="5" 
-                  Content="记住我的选择（不再询问）"
+                  Content="{lex:Locale Dialog.Permission.RememberChoice}"
                   IsChecked="{Binding RememberChoice}"
                   VerticalAlignment="Bottom"
                   Margin="0,0,0,20"/>
@@ -120,13 +121,13 @@
             </Grid.ColumnDefinitions>
 
             <ui:Button Grid.Column="0"
-                       Content="拒绝"
+                       Content="{lex:Locale Dialog.Permission.Deny}"
                        Command="{Binding DenyCommand}"
                        HorizontalAlignment="Stretch"
                        Style="{StaticResource PulsarSecondaryButtonStyle}"/>
 
             <ui:Button Grid.Column="2"
-                       Content="授予权限"
+                       Content="{lex:Locale Dialog.Permission.Grant}"
                        Command="{Binding GrantCommand}"
                        HorizontalAlignment="Stretch"
                        Style="{StaticResource PulsarPrimaryButtonStyle}"/>

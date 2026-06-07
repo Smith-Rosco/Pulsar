@@ -3,6 +3,7 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Pulsar.Core.Localization;
 using Pulsar.Models.Tutorial;
 using Pulsar.Services.Interfaces;
 using Pulsar.Services.Tutorial;
@@ -37,12 +38,14 @@ namespace Pulsar.Services
             IOverlayManager overlayManager,
             ITutorialTriggerEngine triggerEngine,
             ITutorialSpotlightController spotlightController,
-            IWaitStepHintTimeout waitStepHintTimeout)
+            IWaitStepHintTimeout waitStepHintTimeout,
+            ILocalizationService loc)
         {
             _configService = configService;
             _logger = logger;
             
             _orchestrator = new TutorialOrchestrator(
+                loc,
                 configService,
                 orchestratorLogger,
                 stepLoader,

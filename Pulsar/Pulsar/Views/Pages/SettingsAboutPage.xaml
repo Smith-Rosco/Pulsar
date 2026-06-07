@@ -6,9 +6,10 @@
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:vm="clr-namespace:Pulsar.ViewModels"
       xmlns:controls="clr-namespace:Pulsar.Views.Controls"
+      xmlns:lex="clr-namespace:Pulsar.Core.Localization"
       mc:Ignorable="d" 
       d:DesignHeight="600" d:DesignWidth="800"
-      Title="About">
+      Title="{lex:Locale Settings.About.Title}">
 
     <Page.Resources>
         <ResourceDictionary>
@@ -26,8 +27,8 @@
 
         <!-- Unified Page Header -->
         <controls:SettingsPageHeader Grid.Row="0"
-                                     Title="About"
-                                     Description="Application information and system details"/>
+                                     Title="{lex:Locale Settings.About.Title}"
+                                     Description="{lex:Locale Settings.About.Description}"/>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="0,0,20,0" MaxWidth="700" HorizontalAlignment="Left">
@@ -79,7 +80,7 @@
                 </ui:CardControl>
 
                 <!-- Quick Actions -->
-                <ui:CardExpander Icon="Link24" Header="Links" Margin="0,0,0,12" IsExpanded="True">
+                <ui:CardExpander Icon="Link24" Header="{lex:Locale Settings.About.Links}" Margin="0,0,0,12" IsExpanded="True">
                     <StackPanel>
                         <Grid Margin="0,0,0,8">
                             <Grid.ColumnDefinitions>
@@ -87,13 +88,13 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock Text="GitHub Repository" FontWeight="Medium"/>
-                                <TextBlock Text="View source code and contribute" 
+                                <TextBlock Text="{lex:Locale Settings.About.GitHub}" FontWeight="Medium"/>
+                                <TextBlock Text="{lex:Locale Settings.About.GitHubDescription}" 
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
                                            FontSize="12"/>
                             </StackPanel>
                             <ui:Button Grid.Column="1" 
-                                       Content="Open"
+                                       Content="{lex:Locale Settings.About.Open}"
                                        Icon="{ui:SymbolIcon Open24}"
                                        Command="{Binding OpenGitHubCommand}"
                                        Style="{StaticResource PulsarSecondaryButtonStyle}"/>
@@ -107,13 +108,13 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock Text="Documentation" FontWeight="Medium"/>
-                                <TextBlock Text="Learn how to use Pulsar" 
+                                <TextBlock Text="{lex:Locale Settings.About.Documentation}" FontWeight="Medium"/>
+                                <TextBlock Text="{lex:Locale Settings.About.DocumentationDescription}" 
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
                                            FontSize="12"/>
                             </StackPanel>
                             <ui:Button Grid.Column="1" 
-                                       Content="Open"
+                                       Content="{lex:Locale Settings.About.Open}"
                                        Icon="{ui:SymbolIcon Book24}"
                                        Command="{Binding OpenDocumentationCommand}"
                                        Style="{StaticResource PulsarSecondaryButtonStyle}"/>
@@ -127,13 +128,13 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock Text="License" FontWeight="Medium"/>
-                                <TextBlock Text="View license information" 
+                                <TextBlock Text="{lex:Locale Settings.About.License}" FontWeight="Medium"/>
+                                <TextBlock Text="{lex:Locale Settings.About.LicenseDescription}" 
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
                                            FontSize="12"/>
                             </StackPanel>
                             <ui:Button Grid.Column="1" 
-                                       Content="Open"
+                                       Content="{lex:Locale Settings.About.Open}"
                                        Icon="{ui:SymbolIcon Document24}"
                                        Command="{Binding OpenLicenseCommand}"
                                        Style="{StaticResource PulsarSecondaryButtonStyle}"/>
@@ -142,7 +143,7 @@
                 </ui:CardExpander>
 
                 <!-- System Information -->
-                <ui:CardExpander Icon="Info24" Header="System Information" Margin="0,0,0,12" IsExpanded="False">
+                <ui:CardExpander Icon="Info24" Header="{lex:Locale Settings.About.SystemInfo}" Margin="0,0,0,12" IsExpanded="False">
                     <StackPanel>
                         <!-- Framework -->
                         <Grid Margin="0,0,0,12">
@@ -150,7 +151,7 @@
                                 <ColumnDefinition Width="140"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="Framework" 
+                            <TextBlock Text="{lex:Locale Settings.About.Framework}" 
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
                                        FontSize="12"/>
                             <TextBlock Grid.Column="1" 
@@ -165,7 +166,7 @@
                                 <ColumnDefinition Width="140"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="Architecture" 
+                            <TextBlock Text="{lex:Locale Settings.About.Architecture}" 
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
                                        FontSize="12"/>
                             <TextBlock Grid.Column="1" 
@@ -180,7 +181,7 @@
                                 <ColumnDefinition Width="140"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="Build" 
+                            <TextBlock Text="{lex:Locale Settings.About.Build}" 
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
                                        FontSize="12"/>
                             <TextBlock Grid.Column="1" 
@@ -195,7 +196,7 @@
                                 <ColumnDefinition Width="140"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="Copyright" 
+                            <TextBlock Text="{lex:Locale Settings.About.Copyright}" 
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
                                        FontSize="12"/>
                             <TextBlock Grid.Column="1" 
@@ -207,7 +208,7 @@
                         <Separator Margin="0,16"/>
 
                         <!-- Copy System Info Button -->
-                        <ui:Button Content="Copy System Information"
+                        <ui:Button Content="{lex:Locale Settings.About.CopySystemInfo}"
                                    Icon="{ui:SymbolIcon Copy24}"
                                    Command="{Binding CopySystemInfoCommand}"
                                    Style="{StaticResource PulsarSecondaryButtonStyle}"
@@ -216,41 +217,41 @@
                 </ui:CardExpander>
 
                 <!-- Credits -->
-                <ui:CardExpander Icon="People24" Header="Credits" Margin="0,0,0,12" IsExpanded="False">
+                <ui:CardExpander Icon="People24" Header="{lex:Locale Settings.About.Credits}" Margin="0,0,0,12" IsExpanded="False">
                     <StackPanel>
-                        <TextBlock Text="Built with" 
+                        <TextBlock Text="{lex:Locale Settings.About.BuiltWith}" 
                                    FontSize="12" 
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    Margin="0,0,0,8"/>
                         
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                             <TextBlock Text="•" Margin="0,0,8,0" FontSize="12"/>
-                            <TextBlock Text="WPF-UI" FontWeight="Medium" FontSize="12" Margin="0,0,4,0"/>
-                            <TextBlock Text="- Modern WPF controls" 
+                            <TextBlock Text="{lex:Locale Settings.About.WpfUi}" FontWeight="Medium" FontSize="12" Margin="0,0,4,0"/>
+                            <TextBlock Text="{lex:Locale Settings.About.WpfUiDescription}" 
                                        FontSize="12" 
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                             <TextBlock Text="•" Margin="0,0,8,0" FontSize="12"/>
-                            <TextBlock Text="CommunityToolkit.Mvvm" FontWeight="Medium" FontSize="12" Margin="0,0,4,0"/>
-                            <TextBlock Text="- MVVM framework" 
+                            <TextBlock Text="{lex:Locale Settings.About.CommunityToolkit}" FontWeight="Medium" FontSize="12" Margin="0,0,4,0"/>
+                            <TextBlock Text="{lex:Locale Settings.About.CommunityToolkitDescription}" 
                                        FontSize="12" 
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                             <TextBlock Text="•" Margin="0,0,8,0" FontSize="12"/>
-                            <TextBlock Text="Serilog" FontWeight="Medium" FontSize="12" Margin="0,0,4,0"/>
-                            <TextBlock Text="- Structured logging" 
+                            <TextBlock Text="{lex:Locale Settings.About.Serilog}" FontWeight="Medium" FontSize="12" Margin="0,0,4,0"/>
+                            <TextBlock Text="{lex:Locale Settings.About.SerilogDescription}" 
                                        FontSize="12" 
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="•" Margin="0,0,8,0" FontSize="12"/>
-                            <TextBlock Text="Tomlyn" FontWeight="Medium" FontSize="12" Margin="0,0,4,0"/>
-                            <TextBlock Text="- TOML configuration parser" 
+                            <TextBlock Text="{lex:Locale Settings.About.Tomlyn}" FontWeight="Medium" FontSize="12" Margin="0,0,4,0"/>
+                            <TextBlock Text="{lex:Locale Settings.About.TomlynDescription}" 
                                        FontSize="12" 
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                         </StackPanel>

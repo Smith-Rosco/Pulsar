@@ -1,4 +1,5 @@
 using System;
+using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin;
 using Pulsar.Models;
 
@@ -6,6 +7,13 @@ namespace Pulsar.Services.ActionFeedback
 {
     public sealed class ActionFeedbackService : IActionFeedbackService
     {
+        private readonly ILocalizationService _loc;
+
+        public ActionFeedbackService(ILocalizationService loc)
+        {
+            _loc = loc;
+        }
+
         public ActionFeedback Create(string pluginId, string action, PluginResult result)
         {
             if (result.Success)
@@ -17,9 +25,9 @@ namespace Pulsar.Services.ActionFeedback
             {
                 return new ActionFeedback(
                     ActionFeedbackKind.TemporaryUnavailable,
-                    "Action unavailable",
-                    "This action is temporarily unavailable.",
-                    "Wait a moment and try again.",
+                    _loc["Feedback.ActionUnavailable"],
+                    _loc["Feedback.ActionUnavailableBody"],
+                    _loc["Feedback.ActionUnavailableHelp"],
                     PulsarNotificationIcon.Warning);
             }
 
@@ -45,23 +53,23 @@ namespace Pulsar.Services.ActionFeedback
 
             return new ActionFeedback(
                 ActionFeedbackKind.RecoverableFailure,
-                "Action failed",
-                "The action did not complete.",
-                "Try again or review the slot settings.",
+                _loc["Feedback.ActionFailed"],
+                _loc["Feedback.ActionFailedBody"],
+                _loc["Feedback.ActionFailedHelp"],
                 PulsarNotificationIcon.Error);
         }
 
-        private static ActionFeedback CreateSuccessFeedback(string pluginId, string action)
+        private ActionFeedback CreateSuccessFeedback(string pluginId, string action)
         {
             if (string.Equals(pluginId, "com.pulsar.winswitcher", StringComparison.OrdinalIgnoreCase))
             {
                 string title = string.Equals(action, "launch", StringComparison.OrdinalIgnoreCase)
-                    ? "App launched"
-                    : "App switched";
+                    ? _loc["Feedback.AppLaunched"]
+                    : _loc["Feedback.AppSwitched"];
 
                 string message = string.Equals(action, "launch", StringComparison.OrdinalIgnoreCase)
-                    ? "The app was launched successfully."
-                    : "The app was brought to the front successfully.";
+                    ? _loc["Feedback.AppLaunchedBody"]
+                    : _loc["Feedback.AppSwitchedBody"];
 
                 return new ActionFeedback(ActionFeedbackKind.Success, title, message, null, PulsarNotificationIcon.Info);
             }
@@ -69,12 +77,12 @@ namespace Pulsar.Services.ActionFeedback
             if (string.Equals(pluginId, "com.pulsar.command", StringComparison.OrdinalIgnoreCase))
             {
                 string title = string.Equals(action, "sendkeys", StringComparison.OrdinalIgnoreCase)
-                    ? "Input sent"
-                    : "Target opened";
+                    ? _loc["Feedback.InputSent"]
+                    : _loc["Feedback.TargetOpened"];
 
                 string message = string.Equals(action, "sendkeys", StringComparison.OrdinalIgnoreCase)
-                    ? "The keys or text were sent to the active app."
-                    : "The target opened successfully.";
+                    ? _loc["Feedback.InputSentBody"]
+                    : _loc["Feedback.TargetOpenedBody"];
 
                 return new ActionFeedback(ActionFeedbackKind.Success, title, message, null, PulsarNotificationIcon.Info);
             }
@@ -83,29 +91,29 @@ namespace Pulsar.Services.ActionFeedback
             {
                 return new ActionFeedback(
                     ActionFeedbackKind.Success,
-                    "Credential filled",
-                    "The saved credential was sent to the active app.",
+                    _loc["Feedback.CredentialFilled"],
+                    _loc["Feedback.CredentialFilledBody"],
                     null,
                     PulsarNotificationIcon.Info);
             }
 
             return new ActionFeedback(
                 ActionFeedbackKind.Success,
-                "Action complete",
-                "The action completed successfully.",
+                _loc["Feedback.ActionComplete"],
+                _loc["Feedback.ActionCompleteBody"],
                 null,
                 PulsarNotificationIcon.Info);
         }
 
-        private static ActionFeedback CreateWinSwitcherFailure(string? message)
+        private ActionFeedback CreateWinSwitcherFailure(string? message)
         {
             if (ContainsAny(message, "Missing required parameter", "Path must be absolute", "Unsupported file type", "Application not found", "File not found"))
             {
                 return new ActionFeedback(
                     ActionFeedbackKind.ConfigurationError,
-                    "Fix slot setup",
-                    "This app slot needs updated settings before it can run.",
-                    "Open the slot and verify the app name or launch path.",
+                    _loc["Feedback.FixSlotSetup"],
+                    _loc["Feedback.FixSlotSetupBody"],
+                    _loc["Feedback.FixSlotSetupHelp"],
                     PulsarNotificationIcon.Warning);
             }
 
@@ -113,29 +121,29 @@ namespace Pulsar.Services.ActionFeedback
             {
                 return new ActionFeedback(
                     ActionFeedbackKind.RecoverableFailure,
-                    "App not available",
-                    "Pulsar could not find a running app to switch to.",
-                    "Open the app first or add a launch path to this slot.",
+                    _loc["Feedback.AppNotAvailable"],
+                    _loc["Feedback.AppNotAvailableBody"],
+                    _loc["Feedback.AppNotAvailableHelp"],
                     PulsarNotificationIcon.Warning);
             }
 
             return new ActionFeedback(
                 ActionFeedbackKind.RecoverableFailure,
-                "Switch failed",
-                "Pulsar could not switch to that app.",
-                "Try again after the app is ready.",
+                _loc["Feedback.SwitchFailed"],
+                _loc["Feedback.SwitchFailedBody"],
+                _loc["Feedback.SwitchFailedHelp"],
                 PulsarNotificationIcon.Error);
         }
 
-        private static ActionFeedback CreateCommandFailure(string action, string? message)
+        private ActionFeedback CreateCommandFailure(string action, string? message)
         {
             if (ContainsAny(message, "Missing required parameter: path", "Missing required parameter: keys"))
             {
                 return new ActionFeedback(
                     ActionFeedbackKind.ConfigurationError,
-                    "Fix slot setup",
-                    "This command slot is missing required settings.",
-                    "Open the slot and fill in the missing value.",
+                    _loc["Feedback.FixCommandSlot"],
+                    _loc["Feedback.FixCommandSlotBody"],
+                    _loc["Feedback.FixCommandSlotHelp"],
                     PulsarNotificationIcon.Warning);
             }
 
@@ -143,29 +151,29 @@ namespace Pulsar.Services.ActionFeedback
             {
                 return new ActionFeedback(
                     ActionFeedbackKind.RecoverableFailure,
-                    "Input failed",
-                    "Pulsar could not send the keys or text to the active app.",
-                    "Make sure the target app is focused, then try again.",
+                    _loc["Feedback.InputFailed"],
+                    _loc["Feedback.InputFailedBody"],
+                    _loc["Feedback.InputFailedHelp"],
                     PulsarNotificationIcon.Error);
             }
 
             return new ActionFeedback(
                 ActionFeedbackKind.RecoverableFailure,
-                "Open failed",
-                "Pulsar could not open the configured target.",
-                "Check that the target exists and try again.",
+                _loc["Feedback.OpenFailed"],
+                _loc["Feedback.OpenFailedBody"],
+                _loc["Feedback.OpenFailedHelp"],
                 PulsarNotificationIcon.Error);
         }
 
-        private static ActionFeedback CreatePkiFailure(string? message)
+        private ActionFeedback CreatePkiFailure(string? message)
         {
             if (ContainsAny(message, "Missing required parameter: secretId", "Secret not found", "Secret data is empty", "Decryption failed"))
             {
                 return new ActionFeedback(
                     ActionFeedbackKind.ConfigurationError,
-                    "Fix credential slot",
-                    "This credential action needs an updated saved secret before it can run.",
-                    "Open the slot and choose a valid saved credential.",
+                    _loc["Feedback.FixCredentialSlot"],
+                    _loc["Feedback.FixCredentialSlotBody"],
+                    _loc["Feedback.FixCredentialSlotHelp"],
                     PulsarNotificationIcon.Warning);
             }
 
@@ -173,47 +181,56 @@ namespace Pulsar.Services.ActionFeedback
             {
                 return new ActionFeedback(
                     ActionFeedbackKind.RecoverableFailure,
-                    "Credential fill failed",
-                    "Pulsar could not send the saved credential to the active app.",
-                    "Focus the target field and try again.",
+                    _loc["Feedback.CredentialFillFailed"],
+                    _loc["Feedback.CredentialFillFailedBody"],
+                    _loc["Feedback.CredentialFillFailedHelp"],
                     PulsarNotificationIcon.Error);
             }
 
             return new ActionFeedback(
                 ActionFeedbackKind.RecoverableFailure,
-                "Credential fill failed",
-                "Pulsar could not complete the credential action.",
-                "Try again after the target app is ready.",
+                _loc["Feedback.CredentialFillFailed2"],
+                _loc["Feedback.CredentialFillFailed2Body"],
+                _loc["Feedback.CredentialFillFailed2Help"],
                 PulsarNotificationIcon.Error);
         }
 
-        private static ActionFeedback CreateBookmarkletFailure(string? message)
+        private ActionFeedback CreateBookmarkletFailure(string? message)
         {
-            if (ContainsAny(message, "缺少必要参数: scriptPath", "找不到脚本文件", "脚本验证失败", "脚本内容为空", "脚本路径包含不安全字符"))
+            if (ContainsAny(message,
+                "Missing required parameter: scriptPath", "缺少必要参数: scriptPath",
+                "Script path contains unsafe characters", "脚本路径包含不安全字符",
+                "Script validation failed", "脚本验证失败",
+                "Script content is empty", "脚本内容为空",
+                "Script file not found", "找不到脚本文件"))
             {
                 return new ActionFeedback(
                     ActionFeedbackKind.ConfigurationError,
-                    "Fix bookmarklet slot",
-                    "This bookmarklet slot needs a valid script file before it can run.",
-                    "Open the slot and verify the configured script path.",
+                    _loc["Feedback.FixBookmarkletSlot"],
+                    _loc["Feedback.FixBookmarkletSlotBody"],
+                    _loc["Feedback.FixBookmarkletSlotHelp"],
                     PulsarNotificationIcon.Warning);
             }
 
-            if (ContainsAny(message, "浏览器地址栏", "browser address bar", "未检测到运行中的浏览器", "Failed to focus browser"))
+            if (ContainsAny(message,
+                "browser address bar", "浏览器地址栏",
+                "No running browser detected", "未检测到运行中的浏览器",
+                "Failed to focus browser",
+                "Error executing bookmarklet script", "执行书签脚本时出错"))
             {
                 return new ActionFeedback(
                     ActionFeedbackKind.RecoverableFailure,
-                    "Bookmarklet failed",
-                    "Pulsar could not inject the bookmarklet into the browser.",
-                    "Wait for the page or browser address bar to finish loading, then try again.",
+                    _loc["Feedback.BookmarkletFailed"],
+                    _loc["Feedback.BookmarkletFailedBody"],
+                    _loc["Feedback.BookmarkletFailedHelp"],
                     PulsarNotificationIcon.Error);
             }
 
             return new ActionFeedback(
                 ActionFeedbackKind.RecoverableFailure,
-                "Bookmarklet failed",
-                "Pulsar could not complete the bookmarklet action.",
-                "Make sure the browser is ready, then try again.",
+                _loc["Feedback.BookmarkletFailed2"],
+                _loc["Feedback.BookmarkletFailed2Body"],
+                _loc["Feedback.BookmarkletFailed2Help"],
                 PulsarNotificationIcon.Error);
         }
 

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Pulsar.Core.Localization;
 using Pulsar.Helpers;
 using Pulsar.Plugins.Core.Pki.Contracts;
 using Pulsar.Plugins.Core.Pki.Models;
@@ -23,6 +24,7 @@ namespace Pulsar.ViewModels.Dialogs
 
     public partial class SecretPickerViewModel : ObservableObject, IDialogViewModel
     {
+        private readonly ILocalizationService _loc;
         private readonly IPkiSecretStore _secretStore;
         private readonly ISecretProtector _secretProtector;
         private readonly IPkiSecretMetadataResolver _metadataResolver;
@@ -62,6 +64,7 @@ namespace Pulsar.ViewModels.Dialogs
             IPkiSecretStore secretStore,
             ISecretProtector secretProtector,
             IPkiSecretMetadataResolver metadataResolver,
+            ILocalizationService localizationService,
             Dictionary<Guid, SecretPayload> pendingSecrets,
             Dictionary<Guid, string> labelMap,
             IDialogService? dialogService = null)
@@ -69,6 +72,7 @@ namespace Pulsar.ViewModels.Dialogs
             _secretStore = secretStore;
             _secretProtector = secretProtector;
             _metadataResolver = metadataResolver;
+            _loc = localizationService;
             _pendingSecrets = pendingSecrets;
             _labelMap = labelMap;
             _dialogService = dialogService;
@@ -127,7 +131,7 @@ namespace Pulsar.ViewModels.Dialogs
             var vm = new QuickSecretsViewModel(_secretProtector);
             vm.LoadForCreate(string.Empty, string.Empty, false);
 
-            var addResult = await _dialogService.ShowCustomAsync("Add Secret", vm, Pulsar.Models.Enums.DialogButtons.OkCancel);
+            var addResult = await _dialogService.ShowCustomAsync(_loc["Dialog.SecretPicker.AddSecret"], vm, Pulsar.Models.Enums.DialogButtons.OkCancel);
 
             if (addResult == DialogResult.Confirmed)
             {
@@ -169,7 +173,7 @@ namespace Pulsar.ViewModels.Dialogs
             bool autoEnter = false;
             vm.LoadForEdit(entry.Label, payload.Account, payload.EncryptedData, autoEnter);
 
-            var result = await _dialogService.ShowCustomAsync("Edit Secret", vm, Pulsar.Models.Enums.DialogButtons.OkCancel);
+            var result = await _dialogService.ShowCustomAsync(_loc["Dialog.SecretPicker.EditSecret"], vm, Pulsar.Models.Enums.DialogButtons.OkCancel);
 
             if (result == DialogResult.Confirmed)
             {
@@ -192,10 +196,10 @@ namespace Pulsar.ViewModels.Dialogs
             if (entry == null || _dialogService == null) return;
 
             var result = await _dialogService.ShowConfirmationAsync(
-                "Delete Secret",
-                $"Are you sure you want to delete '{entry.Label}'? This cannot be undone.",
-                "Delete",
-                "Cancel");
+                _loc["Dialog.SecretPicker.DeleteSecret"],
+                string.Format(_loc["Dialog.SecretPicker.DeleteConfirmFormat"], entry.Label),
+                _loc["Dialog.SecretPicker.ConfirmDelete"],
+                _loc["Notification.Cancel"]);
 
             if (result != DialogResult.Confirmed) return;
 

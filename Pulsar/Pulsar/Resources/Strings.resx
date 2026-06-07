@@ -1,0 +1,1940 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <!-- ==================== SettingsWindow ==================== -->
+  <data name="SettingsWindow.Title" xml:space="preserve">
+    <value>Pulsar Configuration</value>
+  </data>
+  <data name="SettingsWindow.SaveChanges" xml:space="preserve">
+    <value>Save Changes</value>
+  </data>
+  <data name="SettingsWindow.SaveChangesTooltip" xml:space="preserve">
+    <value>Save all changes (Ctrl+S)</value>
+  </data>
+  <!-- ==================== Settings.General ==================== -->
+  <data name="Settings.General.Title" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="Settings.General.Description" xml:space="preserve">
+    <value>Configure application behavior and appearance</value>
+  </data>
+  <data name="Settings.General.OpenAppLogs" xml:space="preserve">
+    <value>Open App Logs</value>
+  </data>
+  <data name="Settings.General.OpenPluginLogs" xml:space="preserve">
+    <value>Open Plugin Logs</value>
+  </data>
+  <data name="Settings.General.ResetDefaults" xml:space="preserve">
+    <value>Reset to Defaults</value>
+  </data>
+  <data name="Settings.General.Appearance" xml:space="preserve">
+    <value>Appearance</value>
+  </data>
+  <data name="Settings.General.LauncherTheme" xml:space="preserve">
+    <value>Launcher Theme</value>
+  </data>
+  <data name="Settings.General.LauncherThemeDescription" xml:space="preserve">
+    <value>Visual style of the radial menu</value>
+  </data>
+  <data name="Settings.General.SettingsTheme" xml:space="preserve">
+    <value>Settings Theme</value>
+  </data>
+  <data name="Settings.General.SettingsThemeDescription" xml:space="preserve">
+    <value>Visual style of this configuration window</value>
+  </data>
+  <data name="Settings.General.Dark" xml:space="preserve">
+    <value>Dark</value>
+  </data>
+  <data name="Settings.General.Light" xml:space="preserve">
+    <value>Light</value>
+  </data>
+  <data name="Settings.General.RadialMenuLayout" xml:space="preserve">
+    <value>Radial Menu Layout</value>
+  </data>
+  <data name="Settings.General.SlotsPerPage" xml:space="preserve">
+    <value>Slots Per Page</value>
+  </data>
+  <data name="Settings.General.SlotsPerPageDescription" xml:space="preserve">
+    <value>Adjust the number of action slots displayed per page. Higher values allow more actions but create smaller trigger regions. Changes take effect after saving.</value>
+  </data>
+  <data name="Settings.General.GlobalHotkeys" xml:space="preserve">
+    <value>Global Hotkeys</value>
+  </data>
+  <data name="Settings.General.ShowMenu" xml:space="preserve">
+    <value>Show Menu</value>
+  </data>
+  <data name="Settings.General.ShowMenuDescription" xml:space="preserve">
+    <value>Trigger the radial menu (Action Mode)</value>
+  </data>
+  <data name="Settings.General.PressKeysPlaceholder" xml:space="preserve">
+    <value>Press keys...</value>
+  </data>
+  <data name="Settings.General.ShowSwitcher" xml:space="preserve">
+    <value>Show Switcher</value>
+  </data>
+  <data name="Settings.General.ShowSwitcherDescription" xml:space="preserve">
+    <value>Trigger the window switcher (Launcher Mode)</value>
+  </data>
+  <data name="Settings.General.CacheManagement" xml:space="preserve">
+    <value>Cache Management</value>
+  </data>
+  <data name="Settings.General.IconCacheStatistics" xml:space="preserve">
+    <value>Icon Cache Statistics</value>
+  </data>
+  <data name="Settings.General.CleanCache" xml:space="preserve">
+    <value>Clean Cache</value>
+  </data>
+  <data name="Settings.General.CleanCacheDescription" xml:space="preserve">
+    <value>Removes icon cache for processes not seen in the last 30 days (blacklisted processes are never removed).</value>
+  </data>
+  <data name="Settings.General.Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <!-- ==================== Settings.Slots ==================== -->
+  <data name="Settings.Slots.Title" xml:space="preserve">
+    <value>Slots Manager</value>
+  </data>
+  <data name="Settings.Slots.Description" xml:space="preserve">
+    <value>Configure actions for each context</value>
+  </data>
+  <data name="Settings.Slots.PositionFormat" xml:space="preserve">
+    <value>Position {0}</value>
+  </data>
+  <data name="Settings.Slots.Slots" xml:space="preserve">
+    <value>Slots</value>
+  </data>
+  <data name="Settings.Slots.SlotCountFormat" xml:space="preserve">
+    <value>{0} slots</value>
+  </data>
+  <data name="Settings.Slots.EditProfile" xml:space="preserve">
+    <value>Edit Profile</value>
+  </data>
+  <data name="Settings.Slots.NewProfile" xml:space="preserve">
+    <value>New Profile</value>
+  </data>
+  <data name="Settings.Slots.NewProfileTooltip" xml:space="preserve">
+    <value>Add New Profile</value>
+  </data>
+  <data name="Settings.Slots.DeleteProfileTooltip" xml:space="preserve">
+    <value>Delete Current Profile</value>
+  </data>
+  <data name="Settings.Slots.NoSlotsConfigured" xml:space="preserve">
+    <value>No Slots Configured</value>
+  </data>
+  <data name="Settings.Slots.AddSlotHint" xml:space="preserve">
+    <value>Add a slot to start customizing this menu.</value>
+  </data>
+  <data name="Settings.Slots.AddFirstSlot" xml:space="preserve">
+    <value>Add First Slot</value>
+  </data>
+  <data name="Settings.Slots.EditSlot" xml:space="preserve">
+    <value>Edit Slot</value>
+  </data>
+  <data name="Settings.Slots.RemoveSlot" xml:space="preserve">
+    <value>Remove Slot</value>
+  </data>
+  <data name="Settings.Slots.PluginType" xml:space="preserve">
+    <value>Plugin type</value>
+  </data>
+  <data name="Settings.Slots.HealthStatus" xml:space="preserve">
+    <value>Configuration health status</value>
+  </data>
+  <data name="Settings.Slots.ConfigurationSummary" xml:space="preserve">
+    <value>Configuration summary</value>
+  </data>
+  <data name="Settings.Slots.AddSlot" xml:space="preserve">
+    <value>Add Slot</value>
+  </data>
+  <data name="Settings.Slots.TypePrefix" xml:space="preserve">
+    <value>Type · </value>
+  </data>
+  <data name="Settings.Slots.HealthPrefix" xml:space="preserve">
+    <value>Health · </value>
+  </data>
+  <!-- ==================== Settings.Plugins ==================== -->
+  <data name="Settings.Plugins.Title" xml:space="preserve">
+    <value>Plugins</value>
+  </data>
+  <data name="Settings.Plugins.Description" xml:space="preserve">
+    <value>Manage plugin lifecycle, health, and configuration</value>
+  </data>
+  <data name="Settings.Plugins.SearchPlugins" xml:space="preserve">
+    <value>Search plugins...</value>
+  </data>
+  <data name="Settings.Plugins.Core" xml:space="preserve">
+    <value>Core</value>
+  </data>
+  <data name="Settings.Plugins.CoreTabTooltip" xml:space="preserve">
+    <value>Jump to Core Plugins</value>
+  </data>
+  <data name="Settings.Plugins.Extensions" xml:space="preserve">
+    <value>Extensions</value>
+  </data>
+  <data name="Settings.Plugins.ExtensionsTabTooltip" xml:space="preserve">
+    <value>Jump to Extension Plugins</value>
+  </data>
+  <data name="Settings.Plugins.Refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="Settings.Plugins.BuiltIn" xml:space="preserve">
+    <value>Built-in</value>
+  </data>
+  <data name="Settings.Plugins.Configure" xml:space="preserve">
+    <value>Configure</value>
+  </data>
+  <data name="Settings.Plugins.ViewLogs" xml:space="preserve">
+    <value>View Logs</value>
+  </data>
+  <data name="Settings.Plugins.RefreshAnalytics" xml:space="preserve">
+    <value>Refresh Analytics</value>
+  </data>
+  <data name="Settings.Plugins.HealthLabel" xml:space="preserve">
+    <value>Health:</value>
+  </data>
+  <data name="Settings.Plugins.NoPluginsFound" xml:space="preserve">
+    <value>No plugins found</value>
+  </data>
+  <data name="Settings.Plugins.AdjustSearch" xml:space="preserve">
+    <value>Try adjusting your search criteria</value>
+  </data>
+  <data name="Settings.Plugins.ClearSearch" xml:space="preserve">
+    <value>Clear Search</value>
+  </data>
+  <data name="Settings.Plugins.External" xml:space="preserve">
+    <value>External</value>
+  </data>
+  <data name="Settings.Plugins.ExternalPlugins" xml:space="preserve">
+    <value>External Plugins</value>
+  </data>
+  <data name="Settings.Plugins.InstallFromFile" xml:space="preserve">
+    <value>Install from File</value>
+  </data>
+  <data name="Settings.Plugins.InstallFromFileTooltip" xml:space="preserve">
+    <value>Install a plugin from a local ZIP file</value>
+  </data>
+  <data name="Settings.Plugins.LoadingPlugins" xml:space="preserve">
+    <value>Loading plugins...</value>
+  </data>
+  <data name="Settings.Plugins.Uninstall" xml:space="preserve">
+    <value>Uninstall</value>
+  </data>
+  <data name="Settings.Plugins.NoExternalPlugins" xml:space="preserve">
+    <value>No external plugins installed</value>
+  </data>
+  <data name="Settings.Plugins.InstallHint" xml:space="preserve">
+    <value>Click 'Install from File' to add plugins from ZIP packages</value>
+  </data>
+  <data name="Settings.Plugins.ViewLogsErrorsFormat" xml:space="preserve">
+    <value>View Logs ({0} errors)</value>
+  </data>
+  <data name="Settings.Plugins.ViewLogsDefault" xml:space="preserve">
+    <value>View Logs</value>
+  </data>
+  <data name="Settings.Plugins.EnterPathPlaceholder" xml:space="preserve">
+    <value>Enter or browse path...</value>
+  </data>
+  <data name="Settings.Plugins.EnterSecretPlaceholder" xml:space="preserve">
+    <value>Enter secret value...</value>
+  </data>
+  <data name="Settings.Plugins.Browse" xml:space="preserve">
+    <value>Browse</value>
+  </data>
+  <data name="Settings.Plugins.ConfigureTooltip" xml:space="preserve">
+    <value>Configure</value>
+  </data>
+  <data name="Settings.Plugins.ViewLogsTooltip" xml:space="preserve">
+    <value>View Logs</value>
+  </data>
+  <!-- ==================== Settings.About ==================== -->
+  <data name="Settings.About.Title" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="Settings.About.Description" xml:space="preserve">
+    <value>Application information and system details</value>
+  </data>
+  <data name="Settings.About.Links" xml:space="preserve">
+    <value>Links</value>
+  </data>
+  <data name="Settings.About.GitHub" xml:space="preserve">
+    <value>GitHub Repository</value>
+  </data>
+  <data name="Settings.About.GitHubDescription" xml:space="preserve">
+    <value>View source code and contribute</value>
+  </data>
+  <data name="Settings.About.Documentation" xml:space="preserve">
+    <value>Documentation</value>
+  </data>
+  <data name="Settings.About.DocumentationDescription" xml:space="preserve">
+    <value>Learn how to use Pulsar</value>
+  </data>
+  <data name="Settings.About.License" xml:space="preserve">
+    <value>License</value>
+  </data>
+  <data name="Settings.About.LicenseDescription" xml:space="preserve">
+    <value>View license information</value>
+  </data>
+  <data name="Settings.About.Open" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="Settings.About.SystemInfo" xml:space="preserve">
+    <value>System Information</value>
+  </data>
+  <data name="Settings.About.Framework" xml:space="preserve">
+    <value>Framework</value>
+  </data>
+  <data name="Settings.About.Architecture" xml:space="preserve">
+    <value>Architecture</value>
+  </data>
+  <data name="Settings.About.Build" xml:space="preserve">
+    <value>Build</value>
+  </data>
+  <data name="Settings.About.Copyright" xml:space="preserve">
+    <value>Copyright</value>
+  </data>
+  <data name="Settings.About.CopySystemInfo" xml:space="preserve">
+    <value>Copy System Information</value>
+  </data>
+  <data name="Settings.About.Credits" xml:space="preserve">
+    <value>Credits</value>
+  </data>
+  <data name="Settings.About.BuiltWith" xml:space="preserve">
+    <value>Built with</value>
+  </data>
+  <data name="Settings.About.WpfUi" xml:space="preserve">
+    <value>WPF-UI</value>
+  </data>
+  <data name="Settings.About.WpfUiDescription" xml:space="preserve">
+    <value>- Modern WPF controls</value>
+  </data>
+  <data name="Settings.About.CommunityToolkit" xml:space="preserve">
+    <value>CommunityToolkit.Mvvm</value>
+  </data>
+  <data name="Settings.About.CommunityToolkitDescription" xml:space="preserve">
+    <value>- MVVM framework</value>
+  </data>
+  <data name="Settings.About.Serilog" xml:space="preserve">
+    <value>Serilog</value>
+  </data>
+  <data name="Settings.About.SerilogDescription" xml:space="preserve">
+    <value>- Structured logging</value>
+  </data>
+  <data name="Settings.About.Tomlyn" xml:space="preserve">
+    <value>Tomlyn</value>
+  </data>
+  <data name="Settings.About.TomlynDescription" xml:space="preserve">
+    <value>- TOML configuration parser</value>
+  </data>
+  <!-- ==================== Settings.Marketplace ==================== -->
+  <data name="Settings.Marketplace.Title" xml:space="preserve">
+    <value>Plugin Marketplace</value>
+  </data>
+  <data name="Settings.Marketplace.Description" xml:space="preserve">
+    <value>Discover and install plugins to extend Pulsar's functionality</value>
+  </data>
+  <data name="Settings.Marketplace.InstallFromFile" xml:space="preserve">
+    <value>Install from File</value>
+  </data>
+  <data name="Settings.Marketplace.InstallFromFileTooltip" xml:space="preserve">
+    <value>Install a plugin from a local ZIP file</value>
+  </data>
+  <data name="Settings.Marketplace.Refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="Settings.Marketplace.InstalledOnly" xml:space="preserve">
+    <value>Installed Only</value>
+  </data>
+  <data name="Settings.Marketplace.SearchPlaceholder" xml:space="preserve">
+    <value>Search plugins by name, author, or tags...</value>
+  </data>
+  <data name="Settings.Marketplace.ClearFilters" xml:space="preserve">
+    <value>Clear Filters</value>
+  </data>
+  <data name="Settings.Marketplace.Categories" xml:space="preserve">
+    <value>Categories</value>
+  </data>
+  <data name="Settings.Marketplace.AllPlugins" xml:space="preserve">
+    <value>All Plugins</value>
+  </data>
+  <data name="Settings.Marketplace.Statistics" xml:space="preserve">
+    <value>Statistics</value>
+  </data>
+  <data name="Settings.Marketplace.LoadingPlugins" xml:space="preserve">
+    <value>Loading plugins...</value>
+  </data>
+  <data name="Settings.Marketplace.Installed" xml:space="preserve">
+    <value>Installed</value>
+  </data>
+  <data name="Settings.Marketplace.UpdateAvailable" xml:space="preserve">
+    <value>Update Available</value>
+  </data>
+  <data name="Settings.Marketplace.Install" xml:space="preserve">
+    <value>Install</value>
+  </data>
+  <data name="Settings.Marketplace.Update" xml:space="preserve">
+    <value>Update</value>
+  </data>
+  <data name="Settings.Marketplace.Uninstall" xml:space="preserve">
+    <value>Uninstall</value>
+  </data>
+  <data name="Settings.Marketplace.NoPluginsFound" xml:space="preserve">
+    <value>No plugins found</value>
+  </data>
+  <data name="Settings.Marketplace.AdjustSearch" xml:space="preserve">
+    <value>Try adjusting your search or filters</value>
+  </data>
+  <data name="Settings.Marketplace.ClearAllFilters" xml:space="preserve">
+    <value>Clear All Filters</value>
+  </data>
+  <!-- ==================== Settings.ExternalPlugins ==================== -->
+  <data name="Settings.ExternalPlugins.Title" xml:space="preserve">
+    <value>External Plugins</value>
+  </data>
+  <data name="Settings.ExternalPlugins.Description" xml:space="preserve">
+    <value>Install and manage plugins from local ZIP files</value>
+  </data>
+  <data name="Settings.ExternalPlugins.InstallFromFile" xml:space="preserve">
+    <value>Install from File</value>
+  </data>
+  <data name="Settings.ExternalPlugins.InstallFromFileTooltip" xml:space="preserve">
+    <value>Install a plugin from a local ZIP file</value>
+  </data>
+  <data name="Settings.ExternalPlugins.LoadingPlugins" xml:space="preserve">
+    <value>Loading external plugins...</value>
+  </data>
+  <data name="Settings.ExternalPlugins.Installed" xml:space="preserve">
+    <value>Installed</value>
+  </data>
+  <data name="Settings.ExternalPlugins.Uninstall" xml:space="preserve">
+    <value>Uninstall</value>
+  </data>
+  <data name="Settings.ExternalPlugins.NoPlugins" xml:space="preserve">
+    <value>No external plugins installed</value>
+  </data>
+  <data name="Settings.ExternalPlugins.InstallHint" xml:space="preserve">
+    <value>Click 'Install from File' to add plugins from ZIP packages</value>
+  </data>
+  <data name="Settings.ExternalPlugins.AboutTitle" xml:space="preserve">
+    <value>About External Plugins</value>
+  </data>
+  <data name="Settings.ExternalPlugins.AboutLine1" xml:space="preserve">
+    <value>• External plugins are loaded from ZIP files and installed to your local AppData folder</value>
+  </data>
+  <data name="Settings.ExternalPlugins.AboutLine2" xml:space="preserve">
+    <value>• Built-in plugins (PKI, WinSwitcher, etc.) are managed in the</value>
+  </data>
+  <data name="Settings.ExternalPlugins.AboutLine3" xml:space="preserve">
+    <value>Plugins</value>
+  </data>
+  <data name="Settings.ExternalPlugins.AboutLine4" xml:space="preserve">
+    <value> tab</value>
+  </data>
+  <data name="Settings.ExternalPlugins.AboutLine5" xml:space="preserve">
+    <value>• After installation, restart Pulsar to load the new plugin</value>
+  </data>
+  <data name="Settings.ExternalPlugins.AboutLine6" xml:space="preserve">
+    <value>• Uninstalling a plugin requires a restart to complete removal</value>
+  </data>
+  <!-- ==================== RadialMenu ==================== -->
+  <data name="RadialMenu.Title" xml:space="preserve">
+    <value>Pulsar Overlay</value>
+  </data>
+  <data name="RadialMenu.Back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="RadialMenu.Pulsar" xml:space="preserve">
+    <value>Pulsar</value>
+  </data>
+  <data name="RadialMenu.AddProfileFormat" xml:space="preserve">
+    <value>Add {0}</value>
+  </data>
+  <data name="RadialMenu.SinglePage" xml:space="preserve">
+    <value>Only 1 page, no paging needed</value>
+  </data>
+  <data name="RadialMenu.FirstPage" xml:space="preserve">
+    <value>Already on first page</value>
+  </data>
+  <data name="RadialMenu.LastPage" xml:space="preserve">
+    <value>Already on last page</value>
+  </data>
+  <!-- ==================== Dialog.AddSlot ==================== -->
+  <data name="Dialog.AddSlot.ChooseBehavior" xml:space="preserve">
+    <value>Choose behavior</value>
+  </data>
+  <data name="Dialog.AddSlot.ScenarioBased" xml:space="preserve">
+    <value>Scenario-Based</value>
+  </data>
+  <data name="Dialog.AddSlot.ScenarioBasedDesc" xml:space="preserve">
+    <value>Start from common intent</value>
+  </data>
+  <data name="Dialog.AddSlot.Advanced" xml:space="preserve">
+    <value>Advanced</value>
+  </data>
+  <data name="Dialog.AddSlot.AdvancedDesc" xml:space="preserve">
+    <value>Choose plugin and action manually</value>
+  </data>
+  <data name="Dialog.AddSlot.SwitchHint" xml:space="preserve">
+    <value>Need something else? Switch to Advanced to pick any plugin and full parameter model manually.</value>
+  </data>
+  <data name="Dialog.AddSlot.ConfigureSlot" xml:space="preserve">
+    <value>Configure slot</value>
+  </data>
+  <data name="Dialog.AddSlot.CreateSlot" xml:space="preserve">
+    <value>Create slot</value>
+  </data>
+  <data name="Dialog.AddSlot.CreateSlotFormat" xml:space="preserve">
+    <value>Create slot {0}</value>
+  </data>
+  <data name="Dialog.AddSlot.Label" xml:space="preserve">
+    <value>Label</value>
+  </data>
+  <data name="Dialog.AddSlot.DisplayLabelPlaceholder" xml:space="preserve">
+    <value>Display label</value>
+  </data>
+  <data name="Dialog.AddSlot.Action" xml:space="preserve">
+    <value>Action</value>
+  </data>
+  <data name="Dialog.AddSlot.Appearance" xml:space="preserve">
+    <value>Appearance</value>
+  </data>
+  <data name="Dialog.AddSlot.Color" xml:space="preserve">
+    <value>Color</value>
+  </data>
+  <data name="Dialog.AddSlot.PickColor" xml:space="preserve">
+    <value>Pick color</value>
+  </data>
+  <data name="Dialog.AddSlot.Icon" xml:space="preserve">
+    <value>Icon</value>
+  </data>
+  <data name="Dialog.AddSlot.IconPlaceholder" xml:space="preserve">
+    <value>e.g. Settings24 or C:\icon.png</value>
+  </data>
+  <data name="Dialog.AddSlot.BrowseIcon" xml:space="preserve">
+    <value>Browse icon file</value>
+  </data>
+  <data name="Dialog.AddSlot.Optional" xml:space="preserve">
+    <value>Optional</value>
+  </data>
+  <data name="Dialog.AddSlot.SaveSlot" xml:space="preserve">
+    <value>Save Slot</value>
+  </data>
+  <data name="Dialog.AddSlot.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Dialog.AddSlot.SelectActionValidation" xml:space="preserve">
+    <value>Select an action before saving.</value>
+  </data>
+  <data name="Dialog.AddSlot.ChooseBehaviorDesc" xml:space="preserve">
+    <value>Choose the primary behavior for this slot, then fill in the details that make it work.</value>
+  </data>
+  <data name="Dialog.AddSlot.ChooseSlotType" xml:space="preserve">
+    <value>Choose a slot type</value>
+  </data>
+  <data name="Dialog.AddSlot.ChooseScenario" xml:space="preserve">
+    <value>Choose a common scenario</value>
+  </data>
+  <data name="Dialog.AddSlot.AdvancedDesc2" xml:space="preserve">
+    <value>Start from common intent and refine manually.</value>
+  </data>
+  <data name="Dialog.AddSlot.AdvancedDesc3" xml:space="preserve">
+    <value>Choose a plugin type and action directly.</value>
+  </data>
+  <data name="Dialog.AddSlot.TypeBegin" xml:space="preserve">
+    <value>Choose a type to begin</value>
+  </data>
+  <data name="Dialog.AddSlot.NeedsSetup" xml:space="preserve">
+    <value>Needs required setup</value>
+  </data>
+  <data name="Dialog.AddSlot.DraftProgress" xml:space="preserve">
+    <value>Draft in progress</value>
+  </data>
+  <data name="Dialog.AddSlot.ReadyToSave" xml:space="preserve">
+    <value>Ready to save</value>
+  </data>
+  <data name="Dialog.AddSlot.ChooseTypeHint" xml:space="preserve">
+    <value>Choose a slot type to unlock actions and required details.</value>
+  </data>
+  <data name="Dialog.AddSlot.CompleteSetupHint" xml:space="preserve">
+    <value>Complete the required setup, then adjust label, icon, or color if you want extra polish.</value>
+  </data>
+  <data name="Dialog.AddSlot.NewSlot" xml:space="preserve">
+    <value>New slot</value>
+  </data>
+  <data name="Dialog.AddSlot.Plugin" xml:space="preserve">
+    <value>Plugin</value>
+  </data>
+  <data name="Dialog.AddSlot.Draft" xml:space="preserve">
+    <value>Draft</value>
+  </data>
+  <data name="Dialog.AddSlot.PreviewHint" xml:space="preserve">
+    <value>Preview badges and setup status update as you shape the slot.</value>
+  </data>
+  <data name="Dialog.AddSlot.ScanTypes" xml:space="preserve">
+    <value>Scan the available slot types to find the behavior you need.</value>
+  </data>
+  <data name="Dialog.AddSlot.ChooseOutcome" xml:space="preserve">
+    <value>Choose the outcome you want, and we'll guide you through the required details.</value>
+  </data>
+  <data name="Dialog.AddSlot.ShowingCategoryFormat" xml:space="preserve">
+    <value>Showing {0} slot types.</value>
+  </data>
+  <data name="Dialog.AddSlot.DisclosureTitle" xml:space="preserve">
+    <value>Appearance</value>
+  </data>
+  <data name="Dialog.AddSlot.DisclosureHint1" xml:space="preserve">
+    <value>Select a slot type before adjusting appearance.</value>
+  </data>
+  <data name="Dialog.AddSlot.DisclosureHint2" xml:space="preserve">
+    <value>Keep the suggested presentation or make small refinements to the label, color, and icon.</value>
+  </data>
+  <data name="Dialog.AddSlot.ScenarioSwitchApp" xml:space="preserve">
+    <value>Switch App</value>
+  </data>
+  <data name="Dialog.AddSlot.ScenarioSwitchAppDesc" xml:space="preserve">
+    <value>Switch to a running app without typing its name.</value>
+  </data>
+  <data name="Dialog.AddSlot.ScenarioOpen" xml:space="preserve">
+    <value>Open Program, File, Folder, or URL</value>
+  </data>
+  <data name="Dialog.AddSlot.ScenarioOpenDesc" xml:space="preserve">
+    <value>Open something through the default handler.</value>
+  </data>
+  <data name="Dialog.AddSlot.ScenarioSendKeys" xml:space="preserve">
+    <value>Send Keys or Insert Text</value>
+  </data>
+  <data name="Dialog.AddSlot.ScenarioSendKeysDesc" xml:space="preserve">
+    <value>Send a key sequence or paste text into the active window.</value>
+  </data>
+  <data name="Dialog.AddSlot.ScenarioFillCredential" xml:space="preserve">
+    <value>Fill Credential</value>
+  </data>
+  <data name="Dialog.AddSlot.ScenarioFillCredentialDesc" xml:space="preserve">
+    <value>Fill a saved credential into the active field.</value>
+  </data>
+  <data name="Dialog.AddSlot.CategoryAll" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="Dialog.AddSlot.ChooseTypeBegin" xml:space="preserve">
+    <value>Choose a slot type to begin.</value>
+  </data>
+  <data name="Dialog.AddSlot.ChooseScenarioBegin" xml:space="preserve">
+    <value>Choose a scenario to begin.</value>
+  </data>
+  <data name="Dialog.AddSlot.SelectActionBlock" xml:space="preserve">
+    <value>Select an action before saving.</value>
+  </data>
+  <data name="Dialog.AddSlot.CompleteRequiredFormat" xml:space="preserve">
+    <value>Complete the required fields: {0}.</value>
+  </data>
+  <data name="Dialog.AddSlot.FieldRequiredFormat" xml:space="preserve">
+    <value>{0} is required.</value>
+  </data>
+  <data name="Dialog.AddSlot.RunScript" xml:space="preserve">
+    <value>Run Script</value>
+  </data>
+  <data name="Dialog.AddSlot.RunVba" xml:space="preserve">
+    <value>Run VBA</value>
+  </data>
+  <data name="Dialog.AddSlot.SwitchOrLaunch" xml:space="preserve">
+    <value>Switch Or Launch App</value>
+  </data>
+  <data name="Dialog.AddSlot.App" xml:space="preserve">
+    <value>App</value>
+  </data>
+  <data name="Dialog.AddSlot.SendKeys" xml:space="preserve">
+    <value>Send Keys</value>
+  </data>
+  <data name="Dialog.AddSlot.Target" xml:space="preserve">
+    <value>Target</value>
+  </data>
+  <data name="Dialog.AddSlot.OpenTarget" xml:space="preserve">
+    <value>Open Target</value>
+  </data>
+  <data name="Dialog.AddSlot.QuickAdd" xml:space="preserve">
+    <value>Quick Add Current App</value>
+  </data>
+  <data name="Dialog.AddSlot.OpenSettings" xml:space="preserve">
+    <value>Open Settings</value>
+  </data>
+  <data name="Dialog.AddSlot.Script" xml:space="preserve">
+    <value>Script</value>
+  </data>
+  <!-- ==================== Dialog.SlotConfig ==================== -->
+  <data name="Dialog.SlotConfig.UpdateBehavior" xml:space="preserve">
+    <value>Update the slot's behavior first to refresh the preview.</value>
+  </data>
+  <data name="Dialog.SlotConfig.NeedsSetup" xml:space="preserve">
+    <value>Needs required setup</value>
+  </data>
+  <data name="Dialog.SlotConfig.DraftProgress" xml:space="preserve">
+    <value>Draft in progress</value>
+  </data>
+  <data name="Dialog.SlotConfig.ReadyToSave" xml:space="preserve">
+    <value>Ready to save</value>
+  </data>
+  <data name="Dialog.SlotConfig.NoAction" xml:space="preserve">
+    <value>No action selected yet</value>
+  </data>
+  <data name="Dialog.SlotConfig.MetadataHint" xml:space="preserve">
+    <value>Action, validation, and summary details stay anchored here while you edit.</value>
+  </data>
+  <data name="Dialog.SlotConfig.Appearance" xml:space="preserve">
+    <value>Appearance and polish</value>
+  </data>
+  <data name="Dialog.SlotConfig.AppearanceHint" xml:space="preserve">
+    <value>Keep the suggested presentation or make small refinements to the label, color, or icon.</value>
+  </data>
+  <data name="Dialog.SlotConfig.Behavior" xml:space="preserve">
+    <value>Behavior</value>
+  </data>
+  <!-- ==================== Dialog.SecretPicker ==================== -->
+  <data name="Dialog.SecretPicker.SelectSecret" xml:space="preserve">
+    <value>Select a secret to inject</value>
+  </data>
+  <data name="Dialog.SecretPicker.PickHint" xml:space="preserve">
+    <value>Pick an existing credential or create a new one for this PKI slot.</value>
+  </data>
+  <data name="Dialog.SecretPicker.DoubleClickHint" xml:space="preserve">
+    <value>Double-click to use</value>
+  </data>
+  <data name="Dialog.SecretPicker.NoSecrets" xml:space="preserve">
+    <value>No secrets available</value>
+  </data>
+  <data name="Dialog.SecretPicker.CreateHint" xml:space="preserve">
+    <value>Create your first secret now, then link it to this slot immediately.</value>
+  </data>
+  <data name="Dialog.SecretPicker.CreateSecret" xml:space="preserve">
+    <value>Create Secret</value>
+  </data>
+  <data name="Dialog.SecretPicker.CreateNew" xml:space="preserve">
+    <value>Create New</value>
+  </data>
+  <data name="Dialog.SecretPicker.Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="Dialog.SecretPicker.Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Dialog.SecretPicker.UseSelected" xml:space="preserve">
+    <value>Use Selected</value>
+  </data>
+  <data name="Dialog.SecretPicker.AddSecret" xml:space="preserve">
+    <value>Add Secret</value>
+  </data>
+  <data name="Dialog.SecretPicker.EditSecret" xml:space="preserve">
+    <value>Edit Secret</value>
+  </data>
+  <data name="Dialog.SecretPicker.DeleteSecret" xml:space="preserve">
+    <value>Delete Secret</value>
+  </data>
+  <data name="Dialog.SecretPicker.DeleteConfirmFormat" xml:space="preserve">
+    <value>Are you sure you want to delete '{0}'? This cannot be undone.</value>
+  </data>
+  <data name="Dialog.SecretPicker.ConfirmDelete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <!-- ==================== Dialog.PluginSettings ==================== -->
+  <data name="Dialog.PluginSettings.ResetDefaults" xml:space="preserve">
+    <value>Reset to Defaults</value>
+  </data>
+  <data name="Dialog.PluginSettings.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Dialog.PluginSettings.Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Dialog.PluginSettings.EnterPathPlaceholder" xml:space="preserve">
+    <value>Enter or browse path...</value>
+  </data>
+  <data name="Dialog.PluginSettings.EnterSecretPlaceholder" xml:space="preserve">
+    <value>Enter secret value...</value>
+  </data>
+  <data name="Dialog.PluginSettings.Browse" xml:space="preserve">
+    <value>Browse</value>
+  </data>
+  <data name="Dialog.PluginSettings.ClickToggle" xml:space="preserve">
+    <value>Click to toggle selection:</value>
+  </data>
+  <data name="Dialog.PluginSettings.EnterManually" xml:space="preserve">
+    <value>Or enter manually:</value>
+  </data>
+  <data name="Dialog.PluginSettings.CommaSeparatedPlaceholder" xml:space="preserve">
+    <value>Comma-separated values...</value>
+  </data>
+  <!-- ==================== Dialog.PluginLogViewer ==================== -->
+  <data name="Dialog.PluginLogViewer.SearchPlaceholder" xml:space="preserve">
+    <value>Search logs...</value>
+  </data>
+  <data name="Dialog.PluginLogViewer.Export" xml:space="preserve">
+    <value>Export</value>
+  </data>
+  <data name="Dialog.PluginLogViewer.OpenFolder" xml:space="preserve">
+    <value>Open Folder</value>
+  </data>
+  <data name="Dialog.PluginLogViewer.NoLogs" xml:space="preserve">
+    <value>No logs for selected filters</value>
+  </data>
+  <data name="Dialog.PluginLogViewer.ExpandRange" xml:space="preserve">
+    <value>Try expanding the time range or clearing search.</value>
+  </data>
+  <data name="Dialog.PluginLogViewer.LoadMore" xml:space="preserve">
+    <value>Load More</value>
+  </data>
+  <!-- ==================== Dialog.ProcessPicker ==================== -->
+  <data name="Dialog.ProcessPicker.SearchPlaceholder" xml:space="preserve">
+    <value>Search running apps...</value>
+  </data>
+  <!-- ==================== Dialog.QuickSecrets ==================== -->
+  <data name="Dialog.QuickSecrets.LabelRequired" xml:space="preserve">
+    <value>Label / Alias (Required)</value>
+  </data>
+  <data name="Dialog.QuickSecrets.LabelPlaceholder" xml:space="preserve">
+    <value>e.g. GitHub Token</value>
+  </data>
+  <data name="Dialog.QuickSecrets.UsernameOptional" xml:space="preserve">
+    <value>Username / Account (Optional)</value>
+  </data>
+  <data name="Dialog.QuickSecrets.UsernamePlaceholder" xml:space="preserve">
+    <value>user@example.com</value>
+  </data>
+  <data name="Dialog.QuickSecrets.Password" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="Dialog.QuickSecrets.PasswordPlaceholder" xml:space="preserve">
+    <value>••••••••</value>
+  </data>
+  <data name="Dialog.QuickSecrets.LeaveBlankHint" xml:space="preserve">
+    <value>Leave blank to keep current password</value>
+  </data>
+  <!-- ==================== Dialog.Permission ==================== -->
+  <data name="Dialog.Permission.Title" xml:space="preserve">
+    <value>Permission Request</value>
+  </data>
+  <data name="Dialog.Permission.PluginPrefix" xml:space="preserve">
+    <value>Plugin </value>
+  </data>
+  <data name="Dialog.Permission.RequestsPermissions" xml:space="preserve">
+    <value> requests the following permissions:</value>
+  </data>
+  <data name="Dialog.Permission.Reason" xml:space="preserve">
+    <value>Reason for request:</value>
+  </data>
+  <data name="Dialog.Permission.RememberChoice" xml:space="preserve">
+    <value>Remember my choice (don't ask again)</value>
+  </data>
+  <data name="Dialog.Permission.Deny" xml:space="preserve">
+    <value>Deny</value>
+  </data>
+  <data name="Dialog.Permission.Grant" xml:space="preserve">
+    <value>Grant Permission</value>
+  </data>
+  <!-- ==================== Dialog.InputProfile ==================== -->
+  <data name="Dialog.InputProfile.AppProcess" xml:space="preserve">
+    <value>Application Process</value>
+  </data>
+  <data name="Dialog.InputProfile.ProcessPlaceholder" xml:space="preserve">
+    <value>e.g., chrome, notepad, code</value>
+  </data>
+  <data name="Dialog.InputProfile.PickProcess" xml:space="preserve">
+    <value>Pick from running process</value>
+  </data>
+  <data name="Dialog.InputProfile.AliasOptional" xml:space="preserve">
+    <value>Alias (Optional)</value>
+  </data>
+  <data name="Dialog.InputProfile.AliasPlaceholder" xml:space="preserve">
+    <value>Custom display name</value>
+  </data>
+  <data name="Dialog.InputProfile.ProfileIcon" xml:space="preserve">
+    <value>Profile Icon</value>
+  </data>
+  <data name="Dialog.InputProfile.SelectedIcon" xml:space="preserve">
+    <value>Selected Icon</value>
+  </data>
+  <data name="Dialog.InputProfile.Change" xml:space="preserve">
+    <value>Change</value>
+  </data>
+  <!-- ==================== Dialog.EditProfile ==================== -->
+  <data name="Dialog.EditProfile.ProcessName" xml:space="preserve">
+    <value>Process Name</value>
+  </data>
+  <data name="Dialog.EditProfile.Alias" xml:space="preserve">
+    <value>Alias (Display Name)</value>
+  </data>
+  <data name="Dialog.EditProfile.AliasPlaceholder" xml:space="preserve">
+    <value>Custom display name</value>
+  </data>
+  <data name="Dialog.EditProfile.ProfileIcon" xml:space="preserve">
+    <value>Profile Icon</value>
+  </data>
+  <data name="Dialog.EditProfile.SelectedIcon" xml:space="preserve">
+    <value>Selected Icon</value>
+  </data>
+  <data name="Dialog.EditProfile.Change" xml:space="preserve">
+    <value>Change</value>
+  </data>
+  <!-- ==================== Dialog.ColorPicker ==================== -->
+  <data name="Dialog.ColorPicker.HexCode" xml:space="preserve">
+    <value>Hex Code</value>
+  </data>
+  <data name="Dialog.ColorPicker.HexPlaceholder" xml:space="preserve">
+    <value>#RRGGBB</value>
+  </data>
+  <data name="Dialog.ColorPicker.InvalidHex" xml:space="preserve">
+    <value>Invalid Hex Code</value>
+  </data>
+  <data name="Dialog.ColorPicker.R" xml:space="preserve">
+    <value>R</value>
+  </data>
+  <data name="Dialog.ColorPicker.G" xml:space="preserve">
+    <value>G</value>
+  </data>
+  <data name="Dialog.ColorPicker.B" xml:space="preserve">
+    <value>B</value>
+  </data>
+  <data name="Dialog.ColorPicker.Presets" xml:space="preserve">
+    <value>Presets</value>
+  </data>
+  <!-- ==================== Dialog.ProcessBlacklist ==================== -->
+  <data name="Dialog.ProcessBlacklist.SelectProcesses" xml:space="preserve">
+    <value>Select processes to exclude from the window switcher:</value>
+  </data>
+  <data name="Dialog.ProcessBlacklist.Loading" xml:space="preserve">
+    <value>Loading process list...</value>
+  </data>
+  <!-- ==================== Dialog.IconPicker ==================== -->
+  <data name="Dialog.IconPicker.SearchPlaceholder" xml:space="preserve">
+    <value>Search icons...</value>
+  </data>
+  <data name="Dialog.IconPicker.UploadCustom" xml:space="preserve">
+    <value>Upload Custom</value>
+  </data>
+  <data name="Dialog.IconPicker.UploadCustomTooltip" xml:space="preserve">
+    <value>Use a custom image file as icon</value>
+  </data>
+  <data name="Dialog.IconPicker.Loading" xml:space="preserve">
+    <value>Loading icons...</value>
+  </data>
+  <data name="Dialog.IconPicker.Preview" xml:space="preserve">
+    <value>Preview:</value>
+  </data>
+  <data name="Dialog.IconPicker.SelectedIcon" xml:space="preserve">
+    <value>Selected Icon</value>
+  </data>
+  <!-- ==================== Notification ==================== -->
+  <data name="Notification.Saved" xml:space="preserve">
+    <value>Saved</value>
+  </data>
+  <data name="Notification.ConfigSaved" xml:space="preserve">
+    <value>Configuration saved successfully.</value>
+  </data>
+  <data name="Notification.FailedToSave" xml:space="preserve">
+    <value>Failed to save changes.</value>
+  </data>
+  <data name="Notification.ValidationError" xml:space="preserve">
+    <value>Validation Error</value>
+  </data>
+  <data name="Notification.SaveError" xml:space="preserve">
+    <value>Failed to save changes. Please try again.</value>
+  </data>
+  <data name="Notification.Success" xml:space="preserve">
+    <value>Success</value>
+  </data>
+  <data name="Notification.Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="Notification.SecretAdded" xml:space="preserve">
+    <value>Secret added (pending save).</value>
+  </data>
+  <data name="Notification.ProfileCreatedFormat" xml:space="preserve">
+    <value>Profile '{0}' created.</value>
+  </data>
+  <data name="Notification.ProfileUpdated" xml:space="preserve">
+    <value>Profile updated.</value>
+  </data>
+  <data name="Notification.ProfileAlreadyExistsFormat" xml:space="preserve">
+    <value>Profile '{0}' already exists.</value>
+  </data>
+  <data name="Notification.ResetConfiguration" xml:space="preserve">
+    <value>Reset Configuration</value>
+  </data>
+  <data name="Notification.ResetConfirmBody" xml:space="preserve">
+    <value>This will restore Pulsar to its first-launch state, recreate the default profiles, and restart onboarding eligibility.\n\nA backup of your current configuration will be created before reset.\nAre you sure you want to proceed?</value>
+  </data>
+  <data name="Notification.RestoreFirstLaunch" xml:space="preserve">
+    <value>Restore First Launch</value>
+  </data>
+  <data name="Notification.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Notification.ResetComplete" xml:space="preserve">
+    <value>Reset Complete</value>
+  </data>
+  <data name="Notification.ResetCompleteBody" xml:space="preserve">
+    <value>Pulsar has been restored to its first-launch defaults. Saved profiles and custom configuration have been removed. A backup has been created in the user data folder.\n\nThe application needs to restart to complete the reset.</value>
+  </data>
+  <data name="Notification.ResetFailed" xml:space="preserve">
+    <value>Reset Failed</value>
+  </data>
+  <data name="Notification.ResetFailedFormat" xml:space="preserve">
+    <value>Unable to restore first-launch defaults: {0}</value>
+  </data>
+  <data name="Notification.InvalidSecretId" xml:space="preserve">
+    <value>Invalid secret ID.</value>
+  </data>
+  <data name="Notification.SecretNotFound" xml:space="preserve">
+    <value>Secret data not found.</value>
+  </data>
+  <data name="Notification.SecretUpdated" xml:space="preserve">
+    <value>Secret updated.</value>
+  </data>
+  <data name="Notification.LogsOpenFailed" xml:space="preserve">
+    <value>Failed to open logs folder.</value>
+  </data>
+  <data name="Notification.PluginLogsOpenFailed" xml:space="preserve">
+    <value>Failed to open plugin logs folder.</value>
+  </data>
+  <data name="Notification.SlotAddedFormat" xml:space="preserve">
+    <value>Slot '{0}' added.</value>
+  </data>
+  <data name="Notification.EditSlotFormat" xml:space="preserve">
+    <value>Edit Slot {0}</value>
+  </data>
+  <data name="Notification.ConfirmDeletion" xml:space="preserve">
+    <value>Confirm Deletion</value>
+  </data>
+  <data name="Notification.ConfirmDeleteSlotFormat" xml:space="preserve">
+    <value>Are you sure you want to remove '{0}' from Slot {1}?</value>
+  </data>
+  <data name="Notification.Deleted" xml:space="preserve">
+    <value>Deleted</value>
+  </data>
+  <data name="Notification.SlotRemoved" xml:space="preserve">
+    <value>Slot removed.</value>
+  </data>
+  <data name="Notification.Moved" xml:space="preserve">
+    <value>Moved</value>
+  </data>
+  <data name="Notification.MovedUpFormat" xml:space="preserve">
+    <value>'{0}' moved up.</value>
+  </data>
+  <data name="Notification.MovedDownFormat" xml:space="preserve">
+    <value>'{0}' moved down.</value>
+  </data>
+  <data name="Notification.DeleteProfile" xml:space="preserve">
+    <value>Delete Profile</value>
+  </data>
+  <data name="Notification.ConfirmDeleteProfileFormat" xml:space="preserve">
+    <value>Are you sure you want to delete profile '{0}'?</value>
+  </data>
+  <data name="Notification.ProfileDeletedFormat" xml:space="preserve">
+    <value>Profile '{0}' deleted.</value>
+  </data>
+  <data name="Notification.SelectSecret" xml:space="preserve">
+    <value>Select Secret</value>
+  </data>
+  <data name="Notification.SelectApplication" xml:space="preserve">
+    <value>Select Application</value>
+  </data>
+  <data name="Notification.SelectIcon" xml:space="preserve">
+    <value>Select Icon</value>
+  </data>
+  <data name="Notification.PickColor" xml:space="preserve">
+    <value>Pick a Color</value>
+  </data>
+  <data name="Notification.SelectVbaScript" xml:space="preserve">
+    <value>Select VBA Script</value>
+  </data>
+  <data name="Notification.SelectBookmarklet" xml:space="preserve">
+    <value>Select Bookmarklet Script</value>
+  </data>
+  <data name="Notification.SelectPluginPackage" xml:space="preserve">
+    <value>Select Plugin Package</value>
+  </data>
+  <data name="Notification.SecretConfiguration" xml:space="preserve">
+    <value>Secret Configuration</value>
+  </data>
+  <data name="Notification.CreateSlot" xml:space="preserve">
+    <value>Create Slot</value>
+  </data>
+  <data name="Notification.NewProfile" xml:space="preserve">
+    <value>New Profile</value>
+  </data>
+  <data name="Notification.EditProfile" xml:space="preserve">
+    <value>Edit Profile</value>
+  </data>
+  <data name="Notification.EditSecret" xml:space="preserve">
+    <value>Edit Secret</value>
+  </data>
+  <data name="Notification.UnsavedChanges" xml:space="preserve">
+    <value>Unsaved Changes</value>
+  </data>
+  <data name="Notification.UnsavedChangesBody" xml:space="preserve">
+    <value>You have unsaved changes. Do you want to save before closing?</value>
+  </data>
+  <data name="Notification.SwitchApp" xml:space="preserve">
+    <value>Switch App</value>
+  </data>
+  <data name="Notification.OpenProgram" xml:space="preserve">
+    <value>Open Program</value>
+  </data>
+  <data name="Notification.SendKeysAction" xml:space="preserve">
+    <value>Send Keys</value>
+  </data>
+  <data name="Notification.FillCredential" xml:space="preserve">
+    <value>Fill Credential</value>
+  </data>
+  <data name="Notification.RunScript" xml:space="preserve">
+    <value>Run Script</value>
+  </data>
+  <data name="Notification.RunVba" xml:space="preserve">
+    <value>Run VBA</value>
+  </data>
+  <data name="Notification.CleanIconCache" xml:space="preserve">
+    <value>Clean Icon Cache</value>
+  </data>
+  <data name="Notification.CleanCacheBody" xml:space="preserve">
+    <value>This will remove cached icons for processes not seen in the last 30 days (blacklisted processes are never removed).\n\nAre you sure you want to proceed?</value>
+  </data>
+  <data name="Notification.CacheCleaned" xml:space="preserve">
+    <value>Cache Cleaned</value>
+  </data>
+  <data name="Notification.CacheCleanedBody" xml:space="preserve">
+    <value>Expired icon cache has been removed.</value>
+  </data>
+  <data name="Notification.CacheCleanFailed" xml:space="preserve">
+    <value>Failed to clean cache.</value>
+  </data>
+  <data name="Notification.CacheNotAvailable" xml:space="preserve">
+    <value>Cache service not available</value>
+  </data>
+  <data name="Notification.StatsLoadFailed" xml:space="preserve">
+    <value>Failed to load statistics</value>
+  </data>
+  <data name="Notification.Reordered" xml:space="preserve">
+    <value>Reordered</value>
+  </data>
+  <data name="Notification.ReorderedFormat" xml:space="preserve">
+    <value>'{0}' moved to position {1}.</value>
+  </data>
+  <data name="Notification.InstallComplete" xml:space="preserve">
+    <value>Installation Complete</value>
+  </data>
+  <data name="Notification.InstallCompleteBody" xml:space="preserve">
+    <value>Plugin has been installed successfully.\n\nPlease restart Pulsar to load the plugin.</value>
+  </data>
+  <data name="Notification.InstallFailed" xml:space="preserve">
+    <value>Installation Failed</value>
+  </data>
+  <data name="Notification.InstallFailedFormat" xml:space="preserve">
+    <value>Failed to install plugin from file:\n\n{0}</value>
+  </data>
+  <data name="Notification.InstallError" xml:space="preserve">
+    <value>Installation Error</value>
+  </data>
+  <data name="Notification.InstallErrorFormat" xml:space="preserve">
+    <value>An error occurred while installing the plugin:\n\n{0}</value>
+  </data>
+  <data name="Notification.ConfirmUninstall" xml:space="preserve">
+    <value>Confirm Uninstall</value>
+  </data>
+  <data name="Notification.ConfirmUninstallFormat" xml:space="preserve">
+    <value>Are you sure you want to uninstall {0}?\n\nThis will remove all plugin files.</value>
+  </data>
+  <data name="Notification.UninstallComplete" xml:space="preserve">
+    <value>Uninstall Complete</value>
+  </data>
+  <data name="Notification.UninstallCompleteFormat" xml:space="preserve">
+    <value>{0} has been uninstalled successfully.\n\nPlease restart Pulsar to complete the removal.</value>
+  </data>
+  <data name="Notification.UninstallFailed" xml:space="preserve">
+    <value>Uninstall Failed</value>
+  </data>
+  <data name="Notification.UninstallFailedFormat" xml:space="preserve">
+    <value>Failed to uninstall {0}:\n\n{1}</value>
+  </data>
+  <data name="Notification.SuccessfullyInstalled" xml:space="preserve">
+    <value>Successfully installed plugin from file</value>
+  </data>
+  <data name="Notification.SuccessfullyUninstalledFormat" xml:space="preserve">
+    <value>Successfully uninstalled {0}</value>
+  </data>
+  <data name="Notification.FeatureDeprecated" xml:space="preserve">
+    <value>Feature Deprecated</value>
+  </data>
+  <data name="Notification.OnlinePluginsDeprecated" xml:space="preserve">
+    <value>Online plugin installation is not implemented.\n\nPlease use 'External Plugins' page to install plugins from ZIP files.</value>
+  </data>
+  <data name="Notification.OnlineUpdatesDeprecated" xml:space="preserve">
+    <value>Online plugin updates are not implemented.\n\nPlease manually download and install the latest version from 'External Plugins' page.</value>
+  </data>
+  <data name="Notification.LoadingPlugins" xml:space="preserve">
+    <value>Loading plugins...</value>
+  </data>
+  <data name="Notification.LoadedPluginsFormat" xml:space="preserve">
+    <value>Loaded {0} plugins</value>
+  </data>
+  <data name="Notification.FailedLoadPluginsFormat" xml:space="preserve">
+    <value>Failed to load plugins: {0}</value>
+  </data>
+  <data name="Notification.ScanningPlugins" xml:space="preserve">
+    <value>Scanning installed plugins...</value>
+  </data>
+  <data name="Notification.FoundPluginsFormat" xml:space="preserve">
+    <value>Found {0} external plugins</value>
+  </data>
+  <data name="Notification.PluginLogsTitleFormat" xml:space="preserve">
+    <value>Plugin Logs: {0}</value>
+  </data>
+  <data name="Notification.ConfigureTitleFormat" xml:space="preserve">
+    <value>Configure {0}</value>
+  </data>
+  <data name="Notification.NewAppDefault" xml:space="preserve">
+    <value>New App</value>
+  </data>
+  <data name="Notification.NewCmdDefault" xml:space="preserve">
+    <value>New Cmd</value>
+  </data>
+  <data name="Notification.FileFilterVba" xml:space="preserve">
+    <value>VBA Scripts (*.txt;*.vbs;*.bas)|*.txt;*.vbs;*.bas|All Files (*.*)|*.*</value>
+  </data>
+  <data name="Notification.FileFilterJs" xml:space="preserve">
+    <value>JavaScript Files (*.js;*.txt)|*.js;*.txt|All Files (*.*)|*.*</value>
+  </data>
+  <data name="Notification.FileFilterZip" xml:space="preserve">
+    <value>Plugin Package (*.zip)|*.zip|All Files (*.*)|*.*</value>
+  </data>
+  <data name="Notification.DeprecatedMessage" xml:space="preserve">
+    <value>This feature is deprecated. Please use 'External Plugins' page to install plugins from files.</value>
+  </data>
+  <data name="Notification.DeprecatedManageMessage" xml:space="preserve">
+    <value>This feature is deprecated. Please use 'External Plugins' page to manage plugins.</value>
+  </data>
+  <data name="Notification.ProcessBlacklistTitle" xml:space="preserve">
+    <value>Process Blacklist</value>
+  </data>
+  <!-- ==================== Validation ==================== -->
+  <data name="Validation.Required" xml:space="preserve">
+    <value>This setting is required.</value>
+  </data>
+  <data name="Validation.MinLengthFormat" xml:space="preserve">
+    <value>Minimum length is {0} characters.</value>
+  </data>
+  <data name="Validation.MaxLengthFormat" xml:space="preserve">
+    <value>Maximum length is {0} characters.</value>
+  </data>
+  <data name="Validation.FormatMismatch" xml:space="preserve">
+    <value>Value does not match the required format.</value>
+  </data>
+  <data name="Validation.SelectOption" xml:space="preserve">
+    <value>Please select an option.</value>
+  </data>
+  <data name="Validation.PathRequired" xml:space="preserve">
+    <value>A path is required.</value>
+  </data>
+  <data name="Validation.PathMinLengthFormat" xml:space="preserve">
+    <value>Path must be at least {0} characters.</value>
+  </data>
+  <data name="Validation.PathMaxLengthFormat" xml:space="preserve">
+    <value>Path must be at most {0} characters.</value>
+  </data>
+  <data name="Validation.ValueRequired" xml:space="preserve">
+    <value>A value is required.</value>
+  </data>
+  <data name="Validation.MinValueFormat" xml:space="preserve">
+    <value>Minimum value is {0}.</value>
+  </data>
+  <data name="Validation.MaxValueFormat" xml:space="preserve">
+    <value>Maximum value is {0}.</value>
+  </data>
+  <data name="Validation.SelectAtLeastOne" xml:space="preserve">
+    <value>Please select at least one option.</value>
+  </data>
+  <data name="Validation.MaxItemsFormat" xml:space="preserve">
+    <value>Maximum {0} items allowed.</value>
+  </data>
+  <data name="Validation.InvalidOptionsFormat" xml:space="preserve">
+    <value>Invalid options: {0}</value>
+  </data>
+  <data name="Validation.ProfileExistsFormat" xml:space="preserve">
+    <value>Profile '{0}' already exists</value>
+  </data>
+  <!-- ==================== Tray ==================== -->
+  <data name="Tray.Tooltip" xml:space="preserve">
+    <value>Pulsar (Ctrl+Q)</value>
+  </data>
+  <data name="Tray.Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Tray.Exit" xml:space="preserve">
+    <value>Exit Pulsar</value>
+  </data>
+  <!-- ==================== Tutorial ==================== -->
+  <data name="Tutorial.Welcome" xml:space="preserve">
+    <value>Welcome to Pulsar</value>
+  </data>
+  <data name="Tutorial.WelcomeDesc" xml:space="preserve">
+    <value>Your setup wizard already created a starter configuration. Now let's learn the two modes that make Pulsar fast.</value>
+  </data>
+  <data name="Tutorial.SwitchMode" xml:space="preserve">
+    <value>Switch Mode: app switching and launching</value>
+  </data>
+  <data name="Tutorial.SwitchModeDesc" xml:space="preserve">
+    <value>Press Ctrl+Q to open Switch Mode. Pick any app tile to jump straight to it — no alt-tabbing, no typing.</value>
+  </data>
+  <data name="Tutorial.SwitchModeHint" xml:space="preserve">
+    <value>Open Switch Mode with Ctrl+Q.</value>
+  </data>
+  <data name="Tutorial.FirstSwitch" xml:space="preserve">
+    <value>First switch success</value>
+  </data>
+  <data name="Tutorial.FirstSwitchDesc" xml:space="preserve">
+    <value>Choose any generated app slot from Switch Mode. Pulsar activates that app and tracks that you know how to navigate.</value>
+  </data>
+  <data name="Tutorial.CommandMode" xml:space="preserve">
+    <value>Command Mode: run an action</value>
+  </data>
+  <data name="Tutorial.CommandModeDesc" xml:space="preserve">
+    <value>Press Ctrl+Shift+Q to open Command Mode. Here you'll find quick actions like opening settings or running scripts.</value>
+  </data>
+  <data name="Tutorial.CommandModeHint" xml:space="preserve">
+    <value>Open Command Mode with Ctrl+Shift+Q.</value>
+  </data>
+  <data name="Tutorial.FirstCommand" xml:space="preserve">
+    <value>First command success</value>
+  </data>
+  <data name="Tutorial.FirstCommandDesc" xml:space="preserve">
+    <value>Choose any generated command slot from Command Mode. Pulsar executes the action and unlocks the next step.</value>
+  </data>
+  <data name="Tutorial.OnboardingComplete" xml:space="preserve">
+    <value>Onboarding complete</value>
+  </data>
+  <data name="Tutorial.OnboardingCompleteDesc" xml:space="preserve">
+    <value>You completed the minimum onboarding path. Pulsar is now set up and ready to accelerate your daily workflow.</value>
+  </data>
+  <data name="Tutorial.Finish" xml:space="preserve">
+    <value>Finish</value>
+  </data>
+  <!-- ==================== Slot ==================== -->
+  <data name="Slot.Ready" xml:space="preserve">
+    <value>Ready</value>
+  </data>
+  <data name="Slot.Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="Slot.Warning" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="Slot.TypeSecret" xml:space="preserve">
+    <value>Secret</value>
+  </data>
+  <data name="Slot.TypeApp" xml:space="preserve">
+    <value>App</value>
+  </data>
+  <data name="Slot.TypeCmd" xml:space="preserve">
+    <value>Cmd</value>
+  </data>
+  <data name="Slot.TypeJsScript" xml:space="preserve">
+    <value>JS Script</value>
+  </data>
+  <data name="Slot.TypeVbaScript" xml:space="preserve">
+    <value>VBA Script</value>
+  </data>
+  <data name="Slot.TypePlugin" xml:space="preserve">
+    <value>Plugin</value>
+  </data>
+  <data name="Slot.FallbackTitleFormat" xml:space="preserve">
+    <value>Slot {0}</value>
+  </data>
+  <!-- ==================== Feedback ==================== -->
+  <data name="Feedback.ActionUnavailable" xml:space="preserve">
+    <value>Action unavailable</value>
+  </data>
+  <data name="Feedback.ActionUnavailableBody" xml:space="preserve">
+    <value>This action is temporarily unavailable.</value>
+  </data>
+  <data name="Feedback.ActionUnavailableHelp" xml:space="preserve">
+    <value>Wait a moment and try again.</value>
+  </data>
+  <data name="Feedback.ActionFailed" xml:space="preserve">
+    <value>Action failed</value>
+  </data>
+  <data name="Feedback.ActionFailedBody" xml:space="preserve">
+    <value>The action did not complete.</value>
+  </data>
+  <data name="Feedback.ActionFailedHelp" xml:space="preserve">
+    <value>Try again or review the slot settings.</value>
+  </data>
+  <data name="Feedback.AppLaunched" xml:space="preserve">
+    <value>App launched</value>
+  </data>
+  <data name="Feedback.AppLaunchedBody" xml:space="preserve">
+    <value>The app was launched successfully.</value>
+  </data>
+  <data name="Feedback.AppSwitched" xml:space="preserve">
+    <value>App switched</value>
+  </data>
+  <data name="Feedback.AppSwitchedBody" xml:space="preserve">
+    <value>The app was brought to the front successfully.</value>
+  </data>
+  <data name="Feedback.InputSent" xml:space="preserve">
+    <value>Input sent</value>
+  </data>
+  <data name="Feedback.InputSentBody" xml:space="preserve">
+    <value>The keys or text were sent to the active app.</value>
+  </data>
+  <data name="Feedback.TargetOpened" xml:space="preserve">
+    <value>Target opened</value>
+  </data>
+  <data name="Feedback.TargetOpenedBody" xml:space="preserve">
+    <value>The target opened successfully.</value>
+  </data>
+  <data name="Feedback.CredentialFilled" xml:space="preserve">
+    <value>Credential filled</value>
+  </data>
+  <data name="Feedback.CredentialFilledBody" xml:space="preserve">
+    <value>The saved credential was sent to the active app.</value>
+  </data>
+  <data name="Feedback.ActionComplete" xml:space="preserve">
+    <value>Action complete</value>
+  </data>
+  <data name="Feedback.ActionCompleteBody" xml:space="preserve">
+    <value>The action completed successfully.</value>
+  </data>
+  <data name="Feedback.FixSlotSetup" xml:space="preserve">
+    <value>Fix slot setup</value>
+  </data>
+  <data name="Feedback.FixSlotSetupBody" xml:space="preserve">
+    <value>This app slot needs updated settings before it can run.</value>
+  </data>
+  <data name="Feedback.FixSlotSetupHelp" xml:space="preserve">
+    <value>Open the slot and verify the app name or launch path.</value>
+  </data>
+  <data name="Feedback.AppNotAvailable" xml:space="preserve">
+    <value>App not available</value>
+  </data>
+  <data name="Feedback.AppNotAvailableBody" xml:space="preserve">
+    <value>Pulsar could not find a running app to switch to.</value>
+  </data>
+  <data name="Feedback.AppNotAvailableHelp" xml:space="preserve">
+    <value>Open the app first or add a launch path to this slot.</value>
+  </data>
+  <data name="Feedback.SwitchFailed" xml:space="preserve">
+    <value>Switch failed</value>
+  </data>
+  <data name="Feedback.SwitchFailedBody" xml:space="preserve">
+    <value>Pulsar could not switch to that app.</value>
+  </data>
+  <data name="Feedback.SwitchFailedHelp" xml:space="preserve">
+    <value>Try again after the app is ready.</value>
+  </data>
+  <data name="Feedback.FixCommandSlot" xml:space="preserve">
+    <value>Fix slot setup</value>
+  </data>
+  <data name="Feedback.FixCommandSlotBody" xml:space="preserve">
+    <value>This command slot is missing required settings.</value>
+  </data>
+  <data name="Feedback.FixCommandSlotHelp" xml:space="preserve">
+    <value>Open the slot and fill in the missing value.</value>
+  </data>
+  <data name="Feedback.InputFailed" xml:space="preserve">
+    <value>Input failed</value>
+  </data>
+  <data name="Feedback.InputFailedBody" xml:space="preserve">
+    <value>Pulsar could not send the keys or text to the active app.</value>
+  </data>
+  <data name="Feedback.InputFailedHelp" xml:space="preserve">
+    <value>Make sure the target app is focused, then try again.</value>
+  </data>
+  <data name="Feedback.OpenFailed" xml:space="preserve">
+    <value>Open failed</value>
+  </data>
+  <data name="Feedback.OpenFailedBody" xml:space="preserve">
+    <value>Pulsar could not open the configured target.</value>
+  </data>
+  <data name="Feedback.OpenFailedHelp" xml:space="preserve">
+    <value>Check that the target exists and try again.</value>
+  </data>
+  <data name="Feedback.FixCredentialSlot" xml:space="preserve">
+    <value>Fix credential slot</value>
+  </data>
+  <data name="Feedback.FixCredentialSlotBody" xml:space="preserve">
+    <value>This credential action needs an updated saved secret before it can run.</value>
+  </data>
+  <data name="Feedback.FixCredentialSlotHelp" xml:space="preserve">
+    <value>Open the slot and choose a valid saved credential.</value>
+  </data>
+  <data name="Feedback.CredentialFillFailed" xml:space="preserve">
+    <value>Credential fill failed</value>
+  </data>
+  <data name="Feedback.CredentialFillFailedBody" xml:space="preserve">
+    <value>Pulsar could not send the saved credential to the active app.</value>
+  </data>
+  <data name="Feedback.CredentialFillFailedHelp" xml:space="preserve">
+    <value>Focus the target field and try again.</value>
+  </data>
+  <data name="Feedback.CredentialFillFailed2" xml:space="preserve">
+    <value>Credential fill failed</value>
+  </data>
+  <data name="Feedback.CredentialFillFailed2Body" xml:space="preserve">
+    <value>Pulsar could not complete the credential action.</value>
+  </data>
+  <data name="Feedback.CredentialFillFailed2Help" xml:space="preserve">
+    <value>Try again after the target app is ready.</value>
+  </data>
+  <data name="Feedback.FixBookmarkletSlot" xml:space="preserve">
+    <value>Fix bookmarklet slot</value>
+  </data>
+  <data name="Feedback.FixBookmarkletSlotBody" xml:space="preserve">
+    <value>This bookmarklet slot needs a valid script file to run. Pulsar can only inject scripts that are saved as files.</value>
+  </data>
+  <data name="Feedback.FixBookmarkletSlotHelp" xml:space="preserve">
+    <value>Open the slot and verify the configured script path.</value>
+  </data>
+  <data name="Feedback.BookmarkletFailed" xml:space="preserve">
+    <value>Bookmarklet failed</value>
+  </data>
+  <data name="Feedback.BookmarkletFailedBody" xml:space="preserve">
+    <value>Pulsar could not inject the bookmarklet into the browser.</value>
+  </data>
+  <data name="Feedback.BookmarkletFailedHelp" xml:space="preserve">
+    <value>Wait for the page or browser address bar to finish loading, then try again.</value>
+  </data>
+  <data name="Feedback.BookmarkletFailed2" xml:space="preserve">
+    <value>Bookmarklet failed</value>
+  </data>
+  <data name="Feedback.BookmarkletFailed2Body" xml:space="preserve">
+    <value>Pulsar could not complete the bookmarklet action.</value>
+  </data>
+  <data name="Feedback.BookmarkletFailed2Help" xml:space="preserve">
+    <value>Make sure the browser is ready, then try again.</value>
+  </data>
+  <!-- ==================== Plugin ==================== -->
+  <data name="Plugin.NeverUsed" xml:space="preserve">
+    <value>Never used</value>
+  </data>
+  <data name="Plugin.NA" xml:space="preserve">
+    <value>N/A</value>
+  </data>
+  <data name="Plugin.JustNow" xml:space="preserve">
+    <value>Just now</value>
+  </data>
+  <data name="Plugin.MinutesAgoFormat" xml:space="preserve">
+    <value>{0} minutes ago</value>
+  </data>
+  <data name="Plugin.HoursAgoFormat" xml:space="preserve">
+    <value>{0} hours ago</value>
+  </data>
+  <data name="Plugin.DaysAgoFormat" xml:space="preserve">
+    <value>{0} days ago</value>
+  </data>
+  <data name="Plugin.ViewLogsErrorFormat" xml:space="preserve">
+    <value>View Logs ({0} errors)</value>
+  </data>
+  <!-- ==================== Profile ==================== -->
+  <data name="Profile.ConfigurationIssues" xml:space="preserve">
+    <value>Configuration issues detected</value>
+  </data>
+  <data name="Profile.OpenConfiguration" xml:space="preserve">
+    <value>Open full configuration for details</value>
+  </data>
+  <!-- ==================== Plugin.HealthIcons ==================== -->
+  <data name="Plugin.HealthIcons" xml:space="preserve">
+    <value>⚡ ✓ ⚠ 💤 🚫 ✅ ⚠️ 🔴 💤 🚫</value>
+  </data>
+  <!-- ==================== FirstLaunchSetupWizard ==================== -->
+  <data name="FirstLaunch.GeneralProductivity" xml:space="preserve">
+    <value>General Productivity</value>
+  </data>
+  <data name="FirstLaunch.GeneralProductivityDesc" xml:space="preserve">
+    <value>Start with everyday apps and simple command examples.</value>
+  </data>
+  <data name="FirstLaunch.DeveloperWorkflow" xml:space="preserve">
+    <value>Developer Workflow</value>
+  </data>
+  <data name="FirstLaunch.DeveloperWorkflowDesc" xml:space="preserve">
+    <value>Editor and terminal-oriented defaults.</value>
+  </data>
+  <data name="FirstLaunch.BrowserDocs" xml:space="preserve">
+    <value>Browser &amp; Documents</value>
+  </data>
+  <data name="FirstLaunch.BrowserDocsDesc" xml:space="preserve">
+    <value>Focused on browsing, note-taking, and quick lookups.</value>
+  </data>
+  <data name="FirstLaunch.SetupTitle" xml:space="preserve">
+    <value>Setup Pulsar</value>
+  </data>
+  <data name="FirstLaunch.SetupDescription" xml:space="preserve">
+    <value>Choose how you plan to use Pulsar, and we'll create the right starter configuration for you.</value>
+  </data>
+  <data name="FirstLaunch.SetupHint" xml:space="preserve">
+    <value>Select at least one app. Up to six apps will be used as Switch Mode starter slots.</value>
+  </data>
+  <data name="FirstLaunch.UsageScenario" xml:space="preserve">
+    <value>Usage Scenario</value>
+  </data>
+  <data name="FirstLaunch.LaunchApps" xml:space="preserve">
+    <value>Launch Apps</value>
+  </data>
+  <data name="FirstLaunch.Selected" xml:space="preserve">
+    <value>Selected</value>
+  </data>
+  <data name="FirstLaunch.SelectedApps" xml:space="preserve">
+    <value>Selected Apps: </value>
+  </data>
+  <data name="FirstLaunch.CreateConfig" xml:space="preserve">
+    <value>Create Initial Configuration</value>
+  </data>
+  <data name="FirstLaunch.Skip" xml:space="preserve">
+    <value>Skip for Now</value>
+  </data>
+  <data name="FirstLaunch.Footer" xml:space="preserve">
+    <value>Generated defaults create standard editable slots in your global profile. You can change everything later.</value>
+  </data>
+  <data name="FirstLaunch.SelectScenarioError" xml:space="preserve">
+    <value>Please select a usage scenario first.</value>
+  </data>
+  <data name="FirstLaunch.SelectAppError" xml:space="preserve">
+    <value>Please select at least one launch app to generate defaults.</value>
+  </data>
+  <!-- ==================== Dialog.Permission ==================== -->
+  <data name="Dialog.Permission.LowRisk" xml:space="preserve">
+    <value>Low Risk</value>
+  </data>
+  <data name="Dialog.Permission.MediumRisk" xml:space="preserve">
+    <value>Medium Risk</value>
+  </data>
+  <data name="Dialog.Permission.HighRisk" xml:space="preserve">
+    <value>High Risk</value>
+  </data>
+  <data name="Dialog.Permission.CriticalRisk" xml:space="preserve">
+    <value>Critical Risk</value>
+  </data>
+  <data name="Dialog.Permission.UnknownRisk" xml:space="preserve">
+    <value>Unknown Risk</value>
+  </data>
+  <!-- ==================== Dialog.SlotConfig ==================== -->
+  <data name="Dialog.SlotConfig.HeaderFormat" xml:space="preserve">
+    <value>Slot {0} · {1}</value>
+  </data>
+  <!-- ==================== TutorialStepCard ==================== -->
+  <data name="Tutorial.StepFormat" xml:space="preserve">
+    <value>Step {0}/{1}</value>
+  </data>
+  <data name="Tutorial.DescriptionPlaceholder" xml:space="preserve">
+    <value>This is the tutorial description text</value>
+  </data>
+  <data name="Tutorial.AutoContinue" xml:space="preserve">
+    <value>It will continue automatically after completing the action. If it doesn't continue automatically, you can click "Continue".</value>
+  </data>
+  <data name="Tutorial.Previous" xml:space="preserve">
+    <value>Previous</value>
+  </data>
+  <data name="Tutorial.SkipTutorial" xml:space="preserve">
+    <value>Skip Tutorial</value>
+  </data>
+  <data name="Tutorial.Next" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="Tutorial.OverlayTitle" xml:space="preserve">
+    <value>Tutorial Overlay</value>
+  </data>
+  <data name="Tutorial.Complete" xml:space="preserve">
+    <value>Complete</value>
+  </data>
+  <data name="Tutorial.Continue" xml:space="preserve">
+    <value>Continue</value>
+  </data>
+  <data name="Tutorial.WaitHintDefault" xml:space="preserve">
+    <value>It will continue automatically after completing the action. If it doesn't continue automatically, you can click "Continue".</value>
+  </data>
+  <!-- ==================== PluginPermission ==================== -->
+  <data name="PluginPermission.ReadWindowInfo" xml:space="preserve">
+    <value>Read Window Information</value>
+  </data>
+  <data name="PluginPermission.ReadWindowInfoDesc" xml:space="preserve">
+    <value>Allows plugin to read basic window information (process name, PID, window handle)</value>
+  </data>
+  <data name="PluginPermission.ReadProcessPath" xml:space="preserve">
+    <value>Read Process Path</value>
+  </data>
+  <data name="PluginPermission.ReadProcessPathDesc" xml:space="preserve">
+    <value>Allows plugin to read the full path of the target process</value>
+  </data>
+  <data name="PluginPermission.ShowNotification" xml:space="preserve">
+    <value>Show Notification</value>
+  </data>
+  <data name="PluginPermission.ShowNotificationDesc" xml:space="preserve">
+    <value>Allows plugin to display system notification messages</value>
+  </data>
+  <data name="PluginPermission.ReadClipboard" xml:space="preserve">
+    <value>Read Clipboard</value>
+  </data>
+  <data name="PluginPermission.ReadClipboardDesc" xml:space="preserve">
+    <value>Allows plugin to read clipboard content</value>
+  </data>
+  <data name="PluginPermission.WriteClipboard" xml:space="preserve">
+    <value>Write Clipboard</value>
+  </data>
+  <data name="PluginPermission.WriteClipboardDesc" xml:space="preserve">
+    <value>Allows plugin to modify clipboard content</value>
+  </data>
+  <data name="PluginPermission.ReadSelectedText" xml:space="preserve">
+    <value>Read Selected Text</value>
+  </data>
+  <data name="PluginPermission.ReadSelectedTextDesc" xml:space="preserve">
+    <value>Allows plugin to read currently selected text</value>
+  </data>
+  <data name="PluginPermission.ReadProcessWindows" xml:space="preserve">
+    <value>Read Process Windows</value>
+  </data>
+  <data name="PluginPermission.ReadProcessWindowsDesc" xml:space="preserve">
+    <value>Allows plugin to get the list of all windows for the target process</value>
+  </data>
+  <data name="PluginPermission.SimulateKeyboard" xml:space="preserve">
+    <value>Simulate Keyboard</value>
+  </data>
+  <data name="PluginPermission.SimulateKeyboardDesc" xml:space="preserve">
+    <value>Allows plugin to simulate keyboard input</value>
+  </data>
+  <data name="PluginPermission.SimulateMouse" xml:space="preserve">
+    <value>Simulate Mouse</value>
+  </data>
+  <data name="PluginPermission.SimulateMouseDesc" xml:space="preserve">
+    <value>Allows plugin to simulate mouse operations</value>
+  </data>
+  <data name="PluginPermission.StartProcess" xml:space="preserve">
+    <value>Start Process</value>
+  </data>
+  <data name="PluginPermission.StartProcessDesc" xml:space="preserve">
+    <value>Allows plugin to start external programs</value>
+  </data>
+  <data name="PluginPermission.KillProcess" xml:space="preserve">
+    <value>Kill Process</value>
+  </data>
+  <data name="PluginPermission.KillProcessDesc" xml:space="preserve">
+    <value>Allows plugin to terminate processes (dangerous operation)</value>
+  </data>
+  <data name="PluginPermission.ReadFileSystem" xml:space="preserve">
+    <value>Read File System</value>
+  </data>
+  <data name="PluginPermission.ReadFileSystemDesc" xml:space="preserve">
+    <value>Allows plugin to read the file system</value>
+  </data>
+  <data name="PluginPermission.WriteFileSystem" xml:space="preserve">
+    <value>Write File System</value>
+  </data>
+  <data name="PluginPermission.WriteFileSystemDesc" xml:space="preserve">
+    <value>Allows plugin to write to the file system (dangerous operation)</value>
+  </data>
+  <data name="PluginPermission.AccessRegistry" xml:space="preserve">
+    <value>Access Registry</value>
+  </data>
+  <data name="PluginPermission.AccessRegistryDesc" xml:space="preserve">
+    <value>Allows plugin to access the Windows Registry (dangerous operation)</value>
+  </data>
+  <data name="PluginPermission.AccessEnvironment" xml:space="preserve">
+    <value>Access Environment</value>
+  </data>
+  <data name="PluginPermission.AccessEnvironmentDesc" xml:space="preserve">
+    <value>Allows plugin to access environment variables</value>
+  </data>
+  <data name="PluginPermission.AccessCredentials" xml:space="preserve">
+    <value>Access Credentials</value>
+  </data>
+  <data name="PluginPermission.AccessCredentialsDesc" xml:space="preserve">
+    <value>Allows plugin to read passwords from the PKI credential manager (sensitive operation)</value>
+  </data>
+  <data name="PluginPermission.ModifyCredentials" xml:space="preserve">
+    <value>Modify Credentials</value>
+  </data>
+  <data name="PluginPermission.ModifyCredentialsDesc" xml:space="preserve">
+    <value>Allows plugin to add/delete credentials (sensitive operation)</value>
+  </data>
+  <data name="PluginPermission.AccessNetwork" xml:space="preserve">
+    <value>Access Network</value>
+  </data>
+  <data name="PluginPermission.AccessNetworkDesc" xml:space="preserve">
+    <value>Allows plugin to initiate network requests</value>
+  </data>
+  <data name="PluginPermission.ExecuteNativeCode" xml:space="preserve">
+    <value>Execute Native Code</value>
+  </data>
+  <data name="PluginPermission.ExecuteNativeCodeDesc" xml:space="preserve">
+    <value>Allows plugin to execute native code (dangerous operation)</value>
+  </data>
+  <data name="PluginPermission.LoadAssembly" xml:space="preserve">
+    <value>Load Assembly</value>
+  </data>
+  <data name="PluginPermission.LoadAssemblyDesc" xml:space="preserve">
+    <value>Allows plugin to dynamically load external assemblies (dangerous operation)</value>
+  </data>
+  <data name="PluginPermission.ModifyConfiguration" xml:space="preserve">
+    <value>Modify Configuration</value>
+  </data>
+  <data name="PluginPermission.ModifyConfigurationDesc" xml:space="preserve">
+    <value>Allows plugin to modify Pulsar configuration</value>
+  </data>
+  <data name="PluginPermission.RegisterHotkey" xml:space="preserve">
+    <value>Register Hotkey</value>
+  </data>
+  <data name="PluginPermission.RegisterHotkeyDesc" xml:space="preserve">
+    <value>Allows plugin to register global hotkeys (system-level operation)</value>
+  </data>
+  <data name="PluginPermission.ModifyPluginRegistry" xml:space="preserve">
+    <value>Modify Plugin Registry</value>
+  </data>
+  <data name="PluginPermission.ModifyPluginRegistryDesc" xml:space="preserve">
+    <value>Allows plugin to modify the plugin registry (system-level operation)</value>
+  </data>
+  <data name="PluginPermission.AccessAllServices" xml:space="preserve">
+    <value>Access All Services</value>
+  </data>
+  <data name="PluginPermission.AccessAllServicesDesc" xml:space="preserve">
+    <value>Allows plugin to access all dependency injection services (system-level operation)</value>
+  </data>
+  <data name="PluginPermission.BypassPermissionCheck" xml:space="preserve">
+    <value>Bypass Permission Check</value>
+  </data>
+  <data name="PluginPermission.BypassPermissionCheckDesc" xml:space="preserve">
+    <value>Allows plugin to bypass permission checks (core plugins only)</value>
+  </data>
+  <data name="PluginPermission.UnknownPermission" xml:space="preserve">
+    <value>Unknown Permission</value>
+  </data>
+  <!-- ==================== VbaRunner ==================== -->
+  <data name="VbaRunner.SelectorTitle" xml:space="preserve">
+    <value>Pulsar - Select Worksheet</value>
+  </data>
+  <data name="VbaRunner.SelectTargetWorksheet" xml:space="preserve">
+    <value>Select Target Worksheet</value>
+  </data>
+  <!-- ==================== SlotParam (Parameter Label Localization) ==================== -->
+  <data name="SlotParam.ProcessName" xml:space="preserve">
+    <value>Process Name</value>
+  </data>
+  <data name="SlotParam.LaunchPath" xml:space="preserve">
+    <value>Launch Path</value>
+  </data>
+  <data name="SlotParam.LaunchArguments" xml:space="preserve">
+    <value>Launch Arguments</value>
+  </data>
+  <data name="SlotParam.ExecutablePath" xml:space="preserve">
+    <value>Executable Path</value>
+  </data>
+  <data name="SlotParam.Arguments" xml:space="preserve">
+    <value>Arguments</value>
+  </data>
+  <data name="SlotParam.Path" xml:space="preserve">
+    <value>Path</value>
+  </data>
+  <data name="SlotParam.Keys" xml:space="preserve">
+    <value>Keys</value>
+  </data>
+  <data name="SlotParam.Delayms" xml:space="preserve">
+    <value>Delay (ms)</value>
+  </data>
+  <data name="SlotParam.Folder" xml:space="preserve">
+    <value>Folder</value>
+  </data>
+  <data name="SlotParam.Secret" xml:space="preserve">
+    <value>Secret</value>
+  </data>
+  <data name="SlotParam.PressEnterAfterFill" xml:space="preserve">
+    <value>Press Enter After Fill</value>
+  </data>
+  <data name="SlotParam.ScriptFile" xml:space="preserve">
+    <value>Script File</value>
+  </data>
+  <data name="SlotParam.MacroOverride" xml:space="preserve">
+    <value>Macro Override</value>
+  </data>
+  <!-- ==================== SlotAction (Action Label Localization) ==================== -->
+  <data name="SlotAction.SwitchOrLaunch" xml:space="preserve">
+    <value>Switch Or Launch</value>
+  </data>
+  <data name="SlotAction.LaunchApp" xml:space="preserve">
+    <value>Launch App</value>
+  </data>
+  <data name="SlotAction.SwitchExistingApp" xml:space="preserve">
+    <value>Switch Existing App</value>
+  </data>
+  <data name="SlotAction.FillSecret" xml:space="preserve">
+    <value>Fill Secret</value>
+  </data>
+  <data name="SlotAction.SendKeys" xml:space="preserve">
+    <value>Send Keys</value>
+  </data>
+  <data name="SlotAction.OpenTarget" xml:space="preserve">
+    <value>Open Target</value>
+  </data>
+  <data name="SlotAction.RunScript" xml:space="preserve">
+    <value>Run Script</value>
+  </data>
+  <data name="SlotAction.RunBookmarklet" xml:space="preserve">
+    <value>Run Bookmarklet</value>
+  </data>
+  <data name="SlotAction.RunVBAScript" xml:space="preserve">
+    <value>Run VBA Script</value>
+  </data>
+  <data name="SlotAction.QuickAddCurrentApp" xml:space="preserve">
+    <value>Quick Add Current App</value>
+  </data>
+  <data name="SlotAction.OpenSettings" xml:space="preserve">
+    <value>Open Settings</value>
+  </data>
+  <!-- ==================== Plugin.CircuitBreaker ==================== -->
+  <data name="Plugin.CircuitBreakerTitle" xml:space="preserve">
+    <value>Plugin Auto-Disabled</value>
+  </data>
+  <data name="Plugin.CircuitBreakerBody" xml:space="preserve">
+    <value>Plugin '{0}' has been temporarily disabled for {1} seconds due to repeated crashes to protect the main program.</value>
+  </data>
+  <!-- ==================== Tutorial ==================== -->
+  <data name="Tutorial.NoActionDetectedHint" xml:space="preserve">
+    <value>No action detected — you can click "Continue" to skip, or "Previous" to go back and try again.</value>
+  </data>
+  <!-- ==================== BookmarkletRunner ==================== -->
+  <data name="Bookmarklet.Error.MissingScriptPath" xml:space="preserve">
+    <value>Missing required parameter: scriptPath. Please check plugin configuration.</value>
+  </data>
+  <data name="Bookmarklet.Error.UnsafePath" xml:space="preserve">
+    <value>Script path contains unsafe characters or attempts to access restricted directories.</value>
+  </data>
+  <data name="Bookmarklet.Error.ValidationFailed" xml:space="preserve">
+    <value>Script validation failed:</value>
+  </data>
+  <data name="Bookmarklet.Error.EmptyScript" xml:space="preserve">
+    <value>Script content is empty. Please check if the file is correct.</value>
+  </data>
+  <data name="Bookmarklet.Error.FileNotFound" xml:space="preserve">
+    <value>Script file not found: {0}. Please confirm the file exists.</value>
+  </data>
+  <data name="Bookmarklet.Error.ReadFailed" xml:space="preserve">
+    <value>Failed to read script: {0}</value>
+  </data>
+  <data name="Bookmarklet.Error.NoBrowser" xml:space="preserve">
+    <value>No running browser detected. Please open a browser window first.</value>
+  </data>
+  <data name="Bookmarklet.Success.Executed" xml:space="preserve">
+    <value>Script executed successfully</value>
+  </data>
+  <data name="Bookmarklet.Error.ExecutionFailed" xml:space="preserve">
+    <value>Execution error: {0}</value>
+  </data>
+  <data name="Bookmarklet.Error.AddressBarNotReady" xml:space="preserve">
+    <value>Browser address bar temporarily not ready to accept bookmarklet script. Please wait for the page or browser to finish loading and try again.</value>
+  </data>
+  <data name="Bookmarklet.Error.InjectionFailed" xml:space="preserve">
+    <value>Error executing bookmarklet script: {0}</value>
+  </data>
+</root>

@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using Pulsar.Core.Localization;
 using Pulsar.Models;
 using Pulsar.ViewModels.Strategies;
 using System;
@@ -16,6 +17,7 @@ namespace Pulsar.ViewModels
         private string _label = string.Empty;
         private bool _isActive;
         private string _iconKey = string.Empty;
+        private readonly ILocalizationService? _loc;
 
         // [New] Strategy Pattern
         public IActionStrategy ActionStrategy { get; set; } = new NoOpStrategy();
@@ -28,12 +30,14 @@ namespace Pulsar.ViewModels
             }
         }
 
-        public SlotViewModel(int index, double x, double y, double size)
+        public SlotViewModel(int index, double x, double y, double size, ILocalizationService? localizationService = null)
         {
             SlotIndex = index;
             X = x;
             Y = y;
             Size = size;
+            _loc = localizationService;
+            HealthBadgeText = _loc?["Slot.Ready"] ?? "Ready";
         }
 
         public double X

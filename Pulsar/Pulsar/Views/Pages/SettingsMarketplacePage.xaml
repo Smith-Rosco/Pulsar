@@ -7,6 +7,7 @@
       xmlns:vm="clr-namespace:Pulsar.ViewModels.Settings"
       xmlns:converters="clr-namespace:Pulsar.Core.Converters"
       xmlns:controls="clr-namespace:Pulsar.Views.Controls"
+      xmlns:lex="clr-namespace:Pulsar.Core.Localization"
       mc:Ignorable="d" 
       d:DesignHeight="600" d:DesignWidth="900"
       d:DataContext="{d:DesignInstance Type=vm:PluginMarketViewModel}"
@@ -82,27 +83,27 @@
 
         <!-- Page Header -->
         <controls:SettingsPageHeader Grid.Row="0"
-                                     Title="Plugin Marketplace"
-                                     Description="Discover and install plugins to extend Pulsar's functionality">
+                                     Title="{lex:Locale Settings.Marketplace.Title}"
+                                     Description="{lex:Locale Settings.Marketplace.Description}">
             <controls:SettingsPageHeader.ActionsContent>
                 <StackPanel Orientation="Horizontal">
                     <!-- Install from File Button -->
-                    <ui:Button Content="Install from File"
+                    <ui:Button Content="{lex:Locale Settings.Marketplace.InstallFromFile}"
                                Command="{Binding InstallFromFileCommand}"
                                Icon="{ui:SymbolIcon FolderOpen24}"
                                Style="{StaticResource PulsarPrimaryButtonStyle}"
                                Margin="0,0,8,0"
-                               ToolTip="Install a plugin from a local ZIP file"/>
+                               ToolTip="{lex:Locale Settings.Marketplace.InstallFromFileTooltip}"/>
                     
                     <!-- Refresh Button -->
-                    <ui:Button Content="Refresh"
+                    <ui:Button Content="{lex:Locale Settings.Marketplace.Refresh}"
                                Command="{Binding RefreshPluginsCommand}"
                                Icon="{ui:SymbolIcon ArrowClockwise24}"
                                Style="{StaticResource PulsarSecondaryButtonStyle}"
                                Margin="0,0,8,0"/>
                     
                     <!-- Show Installed Only Toggle -->
-                    <ui:ToggleSwitch Content="Installed Only"
+                    <ui:ToggleSwitch Content="{lex:Locale Settings.Marketplace.InstalledOnly}"
                                      IsChecked="{Binding ShowInstalledOnly, Mode=TwoWay}"
                                      Margin="0,0,8,0"/>
                 </StackPanel>
@@ -118,7 +119,7 @@
 
             <!-- Search Box -->
             <ui:TextBox Grid.Column="0"
-                        PlaceholderText="Search plugins by name, author, or tags..."
+                        PlaceholderText="{lex:Locale Settings.Marketplace.SearchPlaceholder}"
                         Icon="{ui:SymbolIcon Search24}"
                         Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                         ClearButtonEnabled="True"
@@ -126,7 +127,7 @@
 
             <!-- Filter Dropdown -->
             <ui:Button Grid.Column="1"
-                       Content="Clear Filters"
+                       Content="{lex:Locale Settings.Marketplace.ClearFilters}"
                        Command="{Binding ClearFilterCommand}"
                        Icon="{ui:SymbolIcon DismissCircle24}"
                        Style="{StaticResource PulsarSecondaryButtonStyle}"
@@ -151,13 +152,13 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
                         <!-- Tags Header -->
-                        <TextBlock Text="Categories"
+                        <TextBlock Text="{lex:Locale Settings.Marketplace.Categories}"
                                    FontSize="14"
                                    FontWeight="SemiBold"
                                    Margin="0,0,0,12"/>
 
                         <!-- All Plugins -->
-                        <ui:Button Content="All Plugins"
+                        <ui:Button Content="{lex:Locale Settings.Marketplace.AllPlugins}"
                                    Command="{Binding FilterByTagCommand}"
                                    CommandParameter="{x:Null}"
                                    Style="{StaticResource PulsarSecondaryButtonStyle}"
@@ -183,7 +184,7 @@
                         <!-- Statistics Section -->
                         <Separator Margin="0,16,0,12"/>
                         
-                        <TextBlock Text="Statistics"
+                        <TextBlock Text="{lex:Locale Settings.Marketplace.Statistics}"
                                    FontSize="14"
                                    FontWeight="SemiBold"
                                    Margin="0,0,0,12"/>
@@ -225,7 +226,7 @@
                                 VerticalAlignment="Center"
                                 Margin="0,48,0,0">
                         <ui:ProgressRing IsIndeterminate="True" Width="48" Height="48"/>
-                        <TextBlock Text="Loading plugins..."
+                        <TextBlock Text="{lex:Locale Settings.Marketplace.LoadingPlugins}"
                                    FontSize="14"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    HorizontalAlignment="Center"
@@ -278,7 +279,7 @@
                                                         Padding="6,2"
                                                         Margin="8,0,0,0"
                                                         Visibility="{Binding IsInstalled, Converter={StaticResource BoolToVis}}">
-                                                    <TextBlock Text="Installed"
+                                                    <TextBlock Text="{lex:Locale Settings.Marketplace.Installed}"
                                                                FontSize="10"
                                                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                                                 </Border>
@@ -289,7 +290,7 @@
                                                         Padding="6,2"
                                                         Margin="8,0,0,0"
                                                         Visibility="{Binding HasUpdate, Converter={StaticResource BoolToVis}}">
-                                                    <TextBlock Text="Update Available"
+                                                    <TextBlock Text="{lex:Locale Settings.Marketplace.UpdateAvailable}"
                                                                FontSize="10"
                                                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                                                 </Border>
@@ -365,7 +366,7 @@
                                         <!-- Action Buttons -->
                                         <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                             <!-- Install Button -->
-                                            <ui:Button Content="Install"
+                                            <ui:Button Content="{lex:Locale Settings.Marketplace.Install}"
                                                        Command="{Binding DataContext.InstallPluginCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                        CommandParameter="{Binding}"
                                                        Icon="{ui:SymbolIcon ArrowDownload24}"
@@ -375,7 +376,7 @@
                                                        Margin="0,0,0,4"/>
 
                                             <!-- Update Button -->
-                                            <ui:Button Content="Update"
+                                            <ui:Button Content="{lex:Locale Settings.Marketplace.Update}"
                                                        Command="{Binding DataContext.UpdatePluginCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                        CommandParameter="{Binding}"
                                                        Icon="{ui:SymbolIcon ArrowSync24}"
@@ -385,7 +386,7 @@
                                                        Margin="0,0,0,4"/>
 
                                             <!-- Uninstall Button -->
-                                            <ui:Button Content="Uninstall"
+                                            <ui:Button Content="{lex:Locale Settings.Marketplace.Uninstall}"
                                                        Command="{Binding DataContext.UninstallPluginCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                        CommandParameter="{Binding}"
                                                        Icon="{ui:SymbolIcon Delete24}"
@@ -409,18 +410,18 @@
                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                        HorizontalAlignment="Center"
                                        Margin="0,0,0,16"/>
-                        <TextBlock Text="No plugins found"
+                        <TextBlock Text="{lex:Locale Settings.Marketplace.NoPluginsFound}"
                                    FontSize="18"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    HorizontalAlignment="Center"
                                    Margin="0,0,0,8"/>
-                        <TextBlock Text="Try adjusting your search or filters"
+                        <TextBlock Text="{lex:Locale Settings.Marketplace.AdjustSearch}"
                                    FontSize="13"
                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                    HorizontalAlignment="Center"
                                    Margin="0,0,0,16"/>
-                        <ui:Button Content="Clear All Filters"
+                        <ui:Button Content="{lex:Locale Settings.Marketplace.ClearAllFilters}"
                                    Command="{Binding ClearFilterCommand}"
                                    Icon="{ui:SymbolIcon DismissCircle24}"
                                    Style="{StaticResource PulsarSecondaryButtonStyle}"

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Pulsar.Core.Localization;
 using Pulsar.Services.Interfaces;
 using Pulsar.Services.Tutorial;
 using Pulsar.ViewModels.Base;
@@ -45,6 +46,7 @@ namespace Pulsar.ViewModels.Dialogs
         private readonly IOnboardingTemplateService _templateService;
         private readonly IConfigService _configService;
         private readonly IOnboardingStateService _onboardingStateService;
+        private readonly ILocalizationService _loc;
 
         [ObservableProperty]
         private string _errorMessage = string.Empty;
@@ -59,17 +61,19 @@ namespace Pulsar.ViewModels.Dialogs
         public FirstLaunchSetupWizardViewModel(
             IOnboardingTemplateService templateService,
             IConfigService configService,
-            IOnboardingStateService onboardingStateService)
+            IOnboardingStateService onboardingStateService,
+            ILocalizationService localizationService)
         {
             _templateService = templateService;
             _configService = configService;
             _onboardingStateService = onboardingStateService;
+            _loc = localizationService;
 
             UsageProfiles = new ObservableCollection<UsageProfileOption>
             {
-                new() { Value = OnboardingUsageProfile.GeneralProductivity, Title = "通用效率", Description = "从日常应用开始，配以简单的命令示例。" },
-                new() { Value = OnboardingUsageProfile.DeveloperWorkflow, Title = "开发者工作流", Description = "偏好编辑器和终端导向的默认配置。" },
-                new() { Value = OnboardingUsageProfile.BrowserAndDocs, Title = "浏览器与文档", Description = "专注于浏览、笔记和快速查阅任务。" }
+                new() { Value = OnboardingUsageProfile.GeneralProductivity, Title = _loc["FirstLaunch.GeneralProductivity"], Description = _loc["FirstLaunch.GeneralProductivityDesc"] },
+                new() { Value = OnboardingUsageProfile.DeveloperWorkflow, Title = _loc["FirstLaunch.DeveloperWorkflow"], Description = _loc["FirstLaunch.DeveloperWorkflowDesc"] },
+                new() { Value = OnboardingUsageProfile.BrowserAndDocs, Title = _loc["FirstLaunch.BrowserDocs"], Description = _loc["FirstLaunch.BrowserDocsDesc"] }
             };
 
             CommonApps = new ObservableCollection<AppOption>(
@@ -103,33 +107,33 @@ namespace Pulsar.ViewModels.Dialogs
 
         public ObservableCollection<AppOption> CommonApps { get; }
 
-        public string Title => "设置 Pulsar";
+        public string Title => _loc["FirstLaunch.SetupTitle"];
 
-        public string Description => "选择您计划如何使用 Pulsar，然后选择几个启动应用。生成的配置位可以在设置中随时修改。";
+        public string Description => _loc["FirstLaunch.SetupDescription"];
 
-        public string SelectionHint => "至少选择一个应用。最多六个应用将作为 Switch Mode 启动配置位。";
+        public string SelectionHint => _loc["FirstLaunch.SetupHint"];
 
-        public string UsageProfileLabel => "使用场景";
+        public string UsageProfileLabel => _loc["FirstLaunch.UsageScenario"];
 
-        public string StarterAppsLabel => "启动应用";
+        public string StarterAppsLabel => _loc["FirstLaunch.LaunchApps"];
 
-        public string SelectedLabel => "已选择";
+        public string SelectedLabel => _loc["FirstLaunch.Selected"];
 
-        public string SelectedAppCountLabel => "已选择应用: ";
+        public string SelectedAppCountLabel => _loc["FirstLaunch.SelectedApps"];
 
         public int SelectedAppCount => CommonApps.Count(app => app.IsSelected);
 
         public bool CanFinish => SelectedProfile != null && SelectedAppCount > 0;
 
-        public string PrimaryButtonText => "创建初始配置";
+        public string PrimaryButtonText => _loc["FirstLaunch.CreateConfig"];
 
-        public string SecondaryButtonText => "暂时跳过";
+        public string SecondaryButtonText => _loc["FirstLaunch.Skip"];
 
-        public string FooterDescription => "生成的默认值将在全局配置文件中创建标准的可编辑配置位，涵盖 Switch Mode 和 Command Mode。";
+        public string FooterDescription => _loc["FirstLaunch.Footer"];
 
-        public string ErrorChooseProfile => "请先选择一个使用场景。";
+        public string ErrorChooseProfile => _loc["FirstLaunch.SelectScenarioError"];
 
-        public string ErrorSelectApp => "请至少选择一个启动应用以生成默认配置。";
+        public string ErrorSelectApp => _loc["FirstLaunch.SelectAppError"];
 
         public bool IsPrimaryButtonVisible => true;
 

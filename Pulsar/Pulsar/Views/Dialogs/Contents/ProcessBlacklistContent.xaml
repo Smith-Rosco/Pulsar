@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:viewmodels="clr-namespace:Pulsar.ViewModels.Dialogs"
+             xmlns:lex="clr-namespace:Pulsar.Core.Localization"
               d:DataContext="{d:DesignInstance Type=viewmodels:ProcessBlacklistViewModel}"
               mc:Ignorable="d" 
               d:DesignHeight="450" d:DesignWidth="400">
@@ -18,7 +19,7 @@
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" 
-                   Text="Select processes to exclude from the window switcher:" 
+                   Text="{lex:Locale Dialog.ProcessBlacklist.SelectProcesses}" 
                    TextWrapping="Wrap"
                    Margin="0,0,0,15"
                    Opacity="0.8"/>
@@ -106,7 +107,7 @@
                 Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
             <StackPanel Orientation="Horizontal">
                 <ui:ProgressRing IsIndeterminate="True" Width="16" Height="16" Margin="0,0,8,0"/>
-                <TextBlock Text="Loading process list..." VerticalAlignment="Center" FontSize="11"/>
+                <TextBlock Text="{lex:Locale Dialog.ProcessBlacklist.Loading}" VerticalAlignment="Center" FontSize="11"/>
             </StackPanel>
         </Border>
     </Grid>

@@ -82,10 +82,10 @@ namespace Pulsar.Tests.Plugin.Security
         }
 
         [Theory]
-        [InlineData(PluginPermission.ReadWindowInfo, "读取窗口信息")]
-        [InlineData(PluginPermission.ReadClipboard, "读取剪贴板")]
-        [InlineData(PluginPermission.WriteClipboard, "写入剪贴板")]
-        [InlineData(PluginPermission.StartProcess, "启动外部进程")]
+        [InlineData(PluginPermission.ReadWindowInfo, "Read Window Information")]
+        [InlineData(PluginPermission.ReadClipboard, "Read Clipboard")]
+        [InlineData(PluginPermission.WriteClipboard, "Write Clipboard")]
+        [InlineData(PluginPermission.StartProcess, "Start Process")]
         public void GetDisplayName_ShouldReturnCorrectName(PluginPermission permission, string expectedName)
         {
             // Act
@@ -120,7 +120,7 @@ namespace Pulsar.Tests.Plugin.Security
 
             // Assert
             description.Should().NotBeNullOrEmpty();
-            description.Should().Contain("剪贴板");
+            description.Should().Contain("clipboard");
         }
 
         [Fact]

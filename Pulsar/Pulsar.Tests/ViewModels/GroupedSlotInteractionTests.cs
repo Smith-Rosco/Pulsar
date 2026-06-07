@@ -151,6 +151,7 @@ namespace Pulsar.Tests.ViewModels
             SetField(context, "_currentSlotSize", 50d);
             SetField(context, "_currentRadius", 120d);
             SetField(context, "_isVisible", true);
+            SetField(context, "_loc", new Pulsar.Core.Localization.LocalizationService(new Mock<Microsoft.Extensions.Logging.ILogger<Pulsar.Core.Localization.LocalizationService>>().Object));
 
             return context;
         }

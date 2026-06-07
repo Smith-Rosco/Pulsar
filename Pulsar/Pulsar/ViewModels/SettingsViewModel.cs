@@ -24,6 +24,7 @@ using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.Services.Validation;
 using Microsoft.Extensions.Logging;
+using Pulsar.Core.Localization;
 using Wpf.Ui.Controls;
 using Pulsar.ViewModels.Dialogs;
 using Pulsar.ViewModels.Settings;
@@ -92,6 +93,7 @@ namespace Pulsar.ViewModels
         private readonly IPluginMetadataRegistry _pluginMetadataRegistry;
         private readonly SettingsShellViewModel _settingsShell;
         private readonly ILogger<SettingsViewModel> _logger;
+        private readonly ILocalizationService _loc;
         private ProfilesConfig _config;
 
         // ===== Drag & Drop Debounce Fields =====
@@ -129,6 +131,19 @@ namespace Pulsar.ViewModels
         [ObservableProperty]
         [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
         private bool _hasUnsavedChanges;
+
+        public ObservableCollection<LanguageDisplayModel> SupportedLanguages { get; } = new();
+
+        [ObservableProperty]
+        private LanguageDisplayModel? _selectedLanguage;
+
+        partial void OnSelectedLanguageChanged(LanguageDisplayModel? value)
+        {
+            if (value == null) return;
+            _loc.SetLanguage(value.Code);
+            _config.Settings.Language = value.Code;
+            MarkDirty();
+        }
 
         /// <summary>
         /// CanExecute method for SaveCommand
@@ -173,8 +188,8 @@ namespace Pulsar.ViewModels
         public async Task<DialogResult> ShowUnsavedChangesDialogAsync()
         {
             var result = await _dialogService.ShowMessageAsync(
-                "Unsaved Changes",
-                "You have unsaved changes. Do you want to save before closing?",
+                _loc["Notification.UnsavedChanges"],
+                _loc["Notification.UnsavedChangesBody"],
                 Models.Enums.DialogType.Warning,
                 Models.Enums.DialogButtons.SaveDontSaveCancel
             );
@@ -327,6 +342,7 @@ namespace Pulsar.ViewModels
             IPluginMetadataRegistry pluginMetadataRegistry,
             SettingsShellViewModel settingsShell,
             ILogger<SettingsViewModel> logger,
+            ILocalizationService localizationService,
             IProcessRegistryService? processRegistryService = null)
         {
             _configService = configService;
@@ -341,9 +357,24 @@ namespace Pulsar.ViewModels
             _pluginMetadataRegistry = pluginMetadataRegistry;
             _settingsShell = settingsShell;
             _logger = logger;
+            _loc = localizationService;
             _processRegistryService = processRegistryService;
             _config = new ProfilesConfig();
             _settingsShell.PropertyChanged += OnSettingsShellPropertyChanged;
+
+            foreach (var code in _loc.SupportedLanguages)
+            {
+                SupportedLanguages.Add(new LanguageDisplayModel
+                {
+                    Code = code,
+                    DisplayName = code switch
+                    {
+                        "en" => "English",
+                        "zh-CN" => "中文 (Chinese)",
+                        _ => code
+                    }
+                });
+            }
 
             // Load cache statistics
             _ = LoadCacheStatisticsAsync();
@@ -452,6 +483,7 @@ namespace Pulsar.ViewModels
                     _persistedSecrets = await _secretStore.LoadAsync();
 
                     GeneralSettings = _config.Settings;
+                    SelectedLanguage = SupportedLanguages.FirstOrDefault(l => l.Code == _config.Settings.Language) ?? SupportedLanguages.FirstOrDefault();
                     RefreshContexts();
 
                     // Notify properties to trigger bindings/theme updates
@@ -572,10 +604,11 @@ namespace Pulsar.ViewModels
                 SetSlotDraftAction,
                 PickSlotParameterValue,
                 PickIcon,
-                PickColor);
+                PickColor,
+                _loc);
 
             var result = await _dialogService.ShowCustomAsync(
-                "Create Slot",
+                _loc["Notification.CreateSlot"],
                 vm,
                 DialogButtons.None,
                 new DialogSizeConstraints
@@ -618,7 +651,7 @@ namespace Pulsar.ViewModels
             // [Refactor] Removed 8-slot limit
 
             var vm = new QuickSecretsViewModel(_secretProtector);
-            var result = await _dialogService.ShowCustomAsync("Secret Configuration", vm, DialogButtons.OkCancel);
+            var result = await _dialogService.ShowCustomAsync(_loc["Notification.SecretConfiguration"], vm, DialogButtons.OkCancel);
 
             if (result == DialogResult.Confirmed)
             {
@@ -651,7 +684,7 @@ namespace Pulsar.ViewModels
                 CurrentSlots.Add(newItem);
                 InitializeSlotMetadata(newItem);
                 MarkDirty(); // [Phase 2]
-                SendNotification("Success", "Secret added (pending save).", ControlAppearance.Success);
+                SendNotification(_loc["Notification.Success"], _loc["Notification.SecretAdded"], ControlAppearance.Success);
             }
         }
 
@@ -660,8 +693,8 @@ namespace Pulsar.ViewModels
         {
             var existingKeys = _config.Profiles.Keys.ToList();
             
-            var vm = new InputProfileViewModel(_windowService, _dialogService, _searchService, existingKeys);
-            var result = await _dialogService.ShowCustomAsync("New Profile", vm, DialogButtons.OkCancel);
+            var vm = new InputProfileViewModel(_windowService, _dialogService, _searchService, _loc, existingKeys);
+            var result = await _dialogService.ShowCustomAsync(_loc["Notification.NewProfile"], vm, DialogButtons.OkCancel);
 
             if (result == DialogResult.Confirmed)
             {
@@ -678,7 +711,7 @@ namespace Pulsar.ViewModels
                 
                 if (_config.Profiles.ContainsKey(processName))
                 {
-                    SendNotification("Error", $"Profile '{processName}' already exists.", ControlAppearance.Danger);
+                    SendNotification(_loc["Notification.Error"], string.Format(_loc["Notification.ProfileAlreadyExistsFormat"], processName), ControlAppearance.Danger);
                     return;
                 }
 
@@ -692,7 +725,7 @@ namespace Pulsar.ViewModels
                 CurrentContext = AvailableContexts.FirstOrDefault(c => c.Key == processName);
                 
                 MarkDirty(); // [Phase 2]
-                SendNotification("Success", $"Profile '{ProcessNameFormatter.ToDisplayName(processName)}' created.", ControlAppearance.Success);
+                SendNotification(_loc["Notification.Success"], string.Format(_loc["Notification.ProfileCreatedFormat"], ProcessNameFormatter.ToDisplayName(processName)), ControlAppearance.Success);
             }
         }
 
@@ -737,8 +770,8 @@ namespace Pulsar.ViewModels
             var profileKey = CurrentContext.Key;
             if (!_config.Profiles.TryGetValue(profileKey, out var profileData)) return;
 
-            var vm = new EditProfileViewModel(_dialogService, _searchService, profileKey, profileData.Alias ?? string.Empty, profileData.Icon ?? string.Empty);
-            var result = await _dialogService.ShowCustomAsync("Edit Profile", vm, DialogButtons.OkCancel);
+            var vm = new EditProfileViewModel(_dialogService, _searchService, _loc, profileKey, profileData.Alias ?? string.Empty, profileData.Icon ?? string.Empty);
+            var result = await _dialogService.ShowCustomAsync(_loc["Notification.EditProfile"], vm, DialogButtons.OkCancel);
 
             if (result == DialogResult.Confirmed)
             {
@@ -750,7 +783,7 @@ namespace Pulsar.ViewModels
                 CurrentContext = AvailableContexts.FirstOrDefault(c => c.Key == profileKey);
                 
                 MarkDirty(); // [Phase 2]
-                SendNotification("Success", "Profile updated.", ControlAppearance.Success);
+                SendNotification(_loc["Notification.Success"], _loc["Notification.ProfileUpdated"], ControlAppearance.Success);
             }
         }
 
@@ -830,7 +863,7 @@ namespace Pulsar.ViewModels
                 // [Phase 2] Reset dirty flag after successful save
                 HasUnsavedChanges = false;
                 
-                SendNotification("Saved", "Configuration saved successfully.", ControlAppearance.Success);
+                SendNotification(_loc["Notification.Saved"], _loc["Notification.ConfigSaved"], ControlAppearance.Success);
             }
             catch (Exception ex)
             {
@@ -839,12 +872,12 @@ namespace Pulsar.ViewModels
                 if (_configService.LastValidationResult is { IsValid: false } validationResult)
                 {
                     RefreshSlotValidationSummaries(validationResult);
-                    var firstError = validationResult.Errors.FirstOrDefault()?.Message ?? "Failed to save changes.";
-                    SendNotification("Validation Error", firstError, ControlAppearance.Danger);
+                    var firstError = validationResult.Errors.FirstOrDefault()?.Message ?? _loc["Notification.FailedToSave"];
+                    SendNotification(_loc["Notification.ValidationError"], firstError, ControlAppearance.Danger);
                 }
                 else
                 {
-                    SendNotification("Error", "Failed to save changes. Please try again.", ControlAppearance.Danger);
+                    SendNotification(_loc["Notification.Error"], _loc["Notification.SaveError"], ControlAppearance.Danger);
                 }
             }
         }
@@ -852,10 +885,10 @@ namespace Pulsar.ViewModels
         [RelayCommand]
         public async Task ResetConfig()
         {
-            var result = await _dialogService.ShowConfirmationAsync("Reset Configuration", 
-                "This will restore Pulsar to its first-launch state, recreate the default profiles, and restart onboarding eligibility.\n\nA backup of your current configuration will be created before reset.\nAre you sure you want to proceed?",
-                "Restore First Launch",
-                "Cancel");
+            var result = await _dialogService.ShowConfirmationAsync(_loc["Notification.ResetConfiguration"], 
+                _loc["Notification.ResetConfirmBody"],
+                _loc["Notification.RestoreFirstLaunch"],
+                _loc["Notification.Cancel"]);
             
             if (result == Pulsar.Models.Enums.DialogResult.Confirmed)
             {
@@ -878,14 +911,14 @@ namespace Pulsar.ViewModels
                     await LoadSettings();
 
                     SendNotification(
-                        "Reset Complete",
-                        "Pulsar has been restored to its first-launch defaults. Default profiles were recreated and onboarding can start again.",
+                        _loc["Notification.ResetComplete"],
+                        _loc["Notification.ResetCompleteBody"],
                         ControlAppearance.Success);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "[SettingsViewModel] Failed to reset configuration");
-                    SendNotification("Reset Failed", $"Unable to restore first-launch defaults: {ex.Message}", ControlAppearance.Danger);
+                    SendNotification(_loc["Notification.ResetFailed"], string.Format(_loc["Notification.ResetFailedFormat"], ex.Message), ControlAppearance.Danger);
                 }
             }
         }
@@ -937,7 +970,7 @@ namespace Pulsar.ViewModels
 
             CurrentSlots.Add(slot);
             MarkDirty();
-            SendNotification("Success", $"Slot '{slot.Label}' added.", ControlAppearance.Success);
+            SendNotification(_loc["Notification.Success"], string.Format(_loc["Notification.SlotAddedFormat"], slot.Label), ControlAppearance.Success);
         }
 
         private int GetNextSlotNumber()
@@ -964,25 +997,25 @@ namespace Pulsar.ViewModels
                     newItem.Action = "switch";
                     newItem.Args["app"] = string.Empty;
                     newItem.Args["path"] = string.Empty;
-                    newItem.Label = "Switch Or Launch App";
+                    newItem.Label = _loc["Dialog.AddSlot.SwitchOrLaunch"];
                     break;
 
                 case "com.pulsar.command":
                     newItem.Action = "run";
                     newItem.Args["path"] = string.Empty;
-                    newItem.Label = "Open Target";
+                    newItem.Label = _loc["Dialog.AddSlot.OpenTarget"];
                     break;
 
                 case "com.pulsar.bookmarklet":
                     newItem.Action = "run";
                     newItem.Args["scriptPath"] = string.Empty;
-                    newItem.Label = "Run Script";
+                    newItem.Label = _loc["Dialog.AddSlot.RunScript"];
                     break;
 
                 case "com.pulsar.vbarunner":
                     newItem.Action = "run";
                     newItem.Args["scriptPath"] = string.Empty;
-                    newItem.Label = "Run VBA";
+                    newItem.Label = _loc["Dialog.AddSlot.RunVba"];
                     break;
 
                 case "com.pulsar.pki":
@@ -1075,7 +1108,7 @@ namespace Pulsar.ViewModels
 
             if (!slot.Args.TryGetValue("secretId", out var secretIdStr) || !Guid.TryParse(secretIdStr, out var secretId))
             {
-                SendNotification("Error", "Invalid secret ID.", ControlAppearance.Danger);
+                SendNotification(_loc["Notification.Error"], _loc["Notification.InvalidSecretId"], ControlAppearance.Danger);
                 return;
             }
 
@@ -1086,7 +1119,7 @@ namespace Pulsar.ViewModels
 
             if (payload == null) 
             {
-                SendNotification("Error", "Secret data not found.", ControlAppearance.Danger);
+                SendNotification(_loc["Notification.Error"], _loc["Notification.SecretNotFound"], ControlAppearance.Danger);
                 return;
             }
 
@@ -1095,7 +1128,7 @@ namespace Pulsar.ViewModels
             var secretDisplay = ResolveSecretDisplay(secretId.ToString(), BuildLegacySecretLabelMap());
             vm.LoadForEdit(secretDisplay?.Label ?? slot.Label, payload.Account, payload.EncryptedData, autoEnter);
 
-            var result = await _dialogService.ShowCustomAsync("Edit Secret", vm, DialogButtons.OkCancel);
+            var result = await _dialogService.ShowCustomAsync(_loc["Notification.EditSecret"], vm, DialogButtons.OkCancel);
 
             if (result == DialogResult.Confirmed)
             {
@@ -1108,7 +1141,7 @@ namespace Pulsar.ViewModels
 
                 RefreshSlotParameterMetadata();
                 MarkDirty(); // [Phase 2]
-                SendNotification("Success", "Secret updated.", ControlAppearance.Success);
+                SendNotification(_loc["Notification.Success"], _loc["Notification.SecretUpdated"], ControlAppearance.Success);
             }
         }
 
@@ -1122,10 +1155,10 @@ namespace Pulsar.ViewModels
 
             var labelMap = BuildLegacySecretLabelMap();
 
-            var pickerVm = new SecretPickerViewModel(_secretStore, _secretProtector, _secretMetadataResolver, _pendingSecrets, labelMap, _dialogService);
+            var pickerVm = new SecretPickerViewModel(_secretStore, _secretProtector, _secretMetadataResolver, _loc, _pendingSecrets, labelMap, _dialogService);
             await pickerVm.LoadAsync();
 
-            await _dialogService.ShowCustomAsync("Select Secret", pickerVm, Models.Enums.DialogButtons.None, DialogSizeConstraints.Medium);
+            await _dialogService.ShowCustomAsync(_loc["Notification.SelectSecret"], pickerVm, Models.Enums.DialogButtons.None, DialogSizeConstraints.Medium);
 
             if (pickerVm.SelectedSecretId.HasValue)
             {
@@ -1158,7 +1191,7 @@ namespace Pulsar.ViewModels
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[SettingsViewModel] Failed to open logs folder");
-                SendNotification("Error", "Failed to open logs folder.", ControlAppearance.Danger);
+                SendNotification(_loc["Notification.Error"], _loc["Notification.LogsOpenFailed"], ControlAppearance.Danger);
             }
         }
 
@@ -1183,7 +1216,7 @@ namespace Pulsar.ViewModels
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[SettingsViewModel] Failed to open plugin logs folder");
-                SendNotification("Error", "Failed to open plugin logs folder.", ControlAppearance.Danger);
+                SendNotification(_loc["Notification.Error"], _loc["Notification.PluginLogsOpenFailed"], ControlAppearance.Danger);
             }
         }
 
@@ -1197,13 +1230,14 @@ namespace Pulsar.ViewModels
 
             var vm = new SlotConfigurationDialogViewModel(
                 slot,
+                _loc,
                 SetSlotAction,
                 PickSlotParameterValue,
                 PickIcon,
                 PickColor);
 
             await _dialogService.ShowCustomAsync(
-                $"Edit Slot {slot.Slot}",
+                string.Format(_loc["Notification.EditSlotFormat"], slot.Slot),
                 vm,
                 DialogButtons.OkCancel,
                 DialogSizeConstraints.LargeResizable);
@@ -1215,15 +1249,15 @@ namespace Pulsar.ViewModels
             if (CurrentSlots == null || !CurrentSlots.Contains(item)) return;
             
             // Show confirmation dialog
-            var result = await _dialogService.ShowConfirmationAsync("Confirm Deletion", 
-                $"Are you sure you want to remove '{item.Label}' from Slot {item.Slot}?");
+            var result = await _dialogService.ShowConfirmationAsync(_loc["Notification.ConfirmDeletion"], 
+                string.Format(_loc["Notification.ConfirmDeleteSlotFormat"], item.Label, item.Slot));
             
             if (result == Pulsar.Models.Enums.DialogResult.Confirmed)
             {
                 CurrentSlots.Remove(item);
                 MarkDirty(); // [Phase 2]
                 
-                SendNotification("Deleted", "Slot removed.", ControlAppearance.Info);
+                SendNotification(_loc["Notification.Deleted"], _loc["Notification.SlotRemoved"], ControlAppearance.Info);
             }
         }
 
@@ -1245,7 +1279,7 @@ namespace Pulsar.ViewModels
             }
             
             MarkDirty();
-            SendDebouncedNotification("Moved", $"'{item.Label}' moved up.", ControlAppearance.Info);
+            SendDebouncedNotification(_loc["Notification.Moved"], string.Format(_loc["Notification.MovedUpFormat"], item.Label), ControlAppearance.Info);
             _logger.LogInformation("Slot '{Label}' moved up from position {OldPos} to {NewPos}", 
                 item.Label, index + 1, index);
         }
@@ -1277,7 +1311,7 @@ namespace Pulsar.ViewModels
             }
             
             MarkDirty();
-            SendDebouncedNotification("Moved", $"'{item.Label}' moved down.", ControlAppearance.Info);
+            SendDebouncedNotification(_loc["Notification.Moved"], string.Format(_loc["Notification.MovedDownFormat"], item.Label), ControlAppearance.Info);
             _logger.LogInformation("Slot '{Label}' moved down from position {OldPos} to {NewPos}", 
                 item.Label, index + 1, index + 2);
         }
@@ -1295,7 +1329,7 @@ namespace Pulsar.ViewModels
         public async Task PickProcess(object parameter)
         {
              var vm = new ProcessPickerViewModel(_windowService);
-             var result = await _dialogService.ShowCustomAsync("Select Application", vm, DialogButtons.OkCancel, DialogSizeConstraints.LargeResizable);
+             var result = await _dialogService.ShowCustomAsync(_loc["Notification.SelectApplication"], vm, DialogButtons.OkCancel, DialogSizeConstraints.LargeResizable);
              
              if (result == DialogResult.Confirmed && vm.SelectedProcess != null)
              {
@@ -1313,15 +1347,15 @@ namespace Pulsar.ViewModels
                             // [Fix] Use indexer to ensure PropertyChanged notification updates the UI
                             slot["app"] = selected.ProcessName.ToUpperInvariant();
                             slot["path"] = selected.ExePath;
-                            if (string.IsNullOrWhiteSpace(slot.Label) || slot.Label == "New App")
-                                slot.Label = selected.Title;
+                         if (string.IsNullOrWhiteSpace(slot.Label) || slot.Label == _loc["Notification.NewAppDefault"])
+                             slot.Label = selected.Title;
                         }
                       else if (slot.PluginId == "com.pulsar.command")
                       {
                          // [Fix] Use indexer here too
                          slot["path"] = selected.ExePath;
-                         if (string.IsNullOrWhiteSpace(slot.Label) || slot.Label == "New Cmd")
-                             slot.Label = selected.Title;
+                      if (string.IsNullOrWhiteSpace(slot.Label) || slot.Label == _loc["Notification.NewCmdDefault"])
+                          slot.Label = selected.Title;
                       }
 
                       RefreshSlotValidationSummary(slot);
@@ -1340,8 +1374,8 @@ namespace Pulsar.ViewModels
             var profileName = CurrentContext.Key;
 
             // [Fix] Confirm before deleting
-            var confirm = await _dialogService.ShowConfirmationAsync("Delete Profile", 
-                $"Are you sure you want to delete profile '{profileName}'?");
+            var confirm = await _dialogService.ShowConfirmationAsync(_loc["Notification.DeleteProfile"], 
+                string.Format(_loc["Notification.ConfirmDeleteProfileFormat"], profileName));
             
             if (confirm != DialogResult.Confirmed) return;
 
@@ -1354,7 +1388,7 @@ namespace Pulsar.ViewModels
                     // [Fix] Save changes to disk
                     await _configService.SaveAsync(_config);
                     
-                    SendNotification("Deleted", $"Profile '{profileName}' deleted.", ControlAppearance.Info);
+                    SendNotification(_loc["Notification.Deleted"], string.Format(_loc["Notification.ProfileDeletedFormat"], profileName), ControlAppearance.Info);
                     
                     // [Fix] Refresh contexts and fallback to Global or first available
                     RefreshContexts();
@@ -1381,7 +1415,7 @@ namespace Pulsar.ViewModels
         {
             if (item == null) return;
             var vm = new IconPickerViewModel(_searchService, item.IconKey);
-            var result = await _dialogService.ShowCustomAsync("Select Icon", vm, DialogButtons.OkCancel, DialogSizeConstraints.LargeResizable);
+            var result = await _dialogService.ShowCustomAsync(_loc["Notification.SelectIcon"], vm, DialogButtons.OkCancel, DialogSizeConstraints.LargeResizable);
 
             if (result == DialogResult.Confirmed)
             {
@@ -1394,7 +1428,7 @@ namespace Pulsar.ViewModels
         {
             if (item == null) return;
             
-            var selectedColor = await _dialogService.ShowColorPickerAsync("Pick a Color", item.Color);
+            var selectedColor = await _dialogService.ShowColorPickerAsync(_loc["Notification.PickColor"], item.Color);
             
             if (selectedColor != null)
             {
@@ -1417,8 +1451,8 @@ namespace Pulsar.ViewModels
             if (item == null) return;
             
             var dialog = new Microsoft.Win32.OpenFileDialog();
-            dialog.Filter = "VBA Scripts (*.txt;*.vbs;*.bas)|*.txt;*.vbs;*.bas|All Files (*.*)|*.*";
-            dialog.Title = "Select VBA Script";
+            dialog.Filter = _loc["Notification.FileFilterVba"];
+            dialog.Title = _loc["Notification.SelectVbaScript"];
             
             if (item.Args.TryGetValue("scriptPath", out var currentPath) && !string.IsNullOrEmpty(currentPath))
             {
@@ -1447,8 +1481,8 @@ namespace Pulsar.ViewModels
             
             var dialog = new Microsoft.Win32.OpenFileDialog();
             // [Fix] Added *.txt support
-            dialog.Filter = "JavaScript Files (*.js;*.txt)|*.js;*.txt|All Files (*.*)|*.*"; 
-            dialog.Title = "Select Bookmarklet Script";
+            dialog.Filter = _loc["Notification.FileFilterJs"]; 
+            dialog.Title = _loc["Notification.SelectBookmarklet"];
             
             // Try to set initial directory if current path is valid
             if (item.Args.TryGetValue("scriptPath", out var currentPath) && !string.IsNullOrEmpty(currentPath))
@@ -1772,7 +1806,7 @@ namespace Pulsar.ViewModels
         {
             if (_processRegistryService == null)
             {
-                CacheStatistics = "Cache service not available";
+                CacheStatistics = _loc["Notification.CacheNotAvailable"];
                 return;
             }
 
@@ -1784,7 +1818,7 @@ namespace Pulsar.ViewModels
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[SettingsViewModel] Failed to load cache statistics");
-                CacheStatistics = "Failed to load statistics";
+                CacheStatistics = _loc["Notification.StatsLoadFailed"];
             }
         }
 
@@ -1796,21 +1830,21 @@ namespace Pulsar.ViewModels
             try
             {
                 var result = await _dialogService.ShowConfirmationAsync(
-                    "Clean Icon Cache",
-                    "This will remove cached icons for processes not seen in the last 30 days. Blacklisted processes will not be affected.\n\nContinue?");
+                    _loc["Notification.CleanIconCache"],
+                    _loc["Notification.CleanCacheBody"]);
 
                 if (result == DialogResult.Confirmed)
                 {
                     await _processRegistryService.CleanupExpiredCacheAsync(30);
                     await LoadCacheStatisticsAsync();
                     
-                    SendNotification("Cache Cleaned", "Expired icon cache has been removed", ControlAppearance.Success);
+                    SendNotification(_loc["Notification.CacheCleaned"], _loc["Notification.CacheCleanedBody"], ControlAppearance.Success);
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[SettingsViewModel] Failed to clean cache");
-                SendNotification("Error", "Failed to clean cache", ControlAppearance.Danger);
+                SendNotification(_loc["Notification.Error"], _loc["Notification.CacheCleanFailed"], ControlAppearance.Danger);
             }
         }
 
@@ -1966,7 +2000,7 @@ namespace Pulsar.ViewModels
                 
                 // ✅ Use debounced notification to prevent spam during rapid dragging
                 SendDebouncedNotification("Reordered", 
-                    $"'{sourceSlot.Label}' moved to position {insertIndex + 1}.", 
+                    string.Format(_loc["Notification.ReorderedFormat"], sourceSlot.Label, insertIndex + 1), 
                     ControlAppearance.Info);
                     
                 _logger.LogInformation("Slot '{Label}' moved from position {OldPos} to {NewPos}", 

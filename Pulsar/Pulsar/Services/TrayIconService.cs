@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using Hardcodet.Wpf.TaskbarNotification;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Pulsar.Core.Localization;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 using Pulsar.Views;
@@ -17,11 +18,13 @@ namespace Pulsar.Services
     {
         private TaskbarIcon? _taskbarIcon;
         private readonly IServiceProvider _serviceProvider;
+        private readonly ILocalizationService _loc;
         private readonly ILogger<TrayIconService>? _logger;
 
-        public TrayIconService(IServiceProvider serviceProvider, ILogger<TrayIconService>? logger = null)
+        public TrayIconService(IServiceProvider serviceProvider, ILocalizationService loc, ILogger<TrayIconService>? logger = null)
         {
             _serviceProvider = serviceProvider;
+            _loc = loc;
             _logger = logger;
         }
 
@@ -29,7 +32,7 @@ namespace Pulsar.Services
         {
             _taskbarIcon = new TaskbarIcon
             {
-                ToolTipText = "Pulsar (Ctrl+Q)",
+                ToolTipText = _loc["Tray.Tooltip"],
                 Visibility = Visibility.Visible
             };
 
@@ -76,13 +79,13 @@ namespace Pulsar.Services
         {
             var contextMenu = new ContextMenu();
 
-            var settingsItem = new MenuItem { Header = "Settings" };
+            var settingsItem = new MenuItem { Header = _loc["Tray.Settings"] };
             settingsItem.Click += OnSettingsClicked;
             contextMenu.Items.Add(settingsItem);
 
             contextMenu.Items.Add(new Separator());
 
-            var exitItem = new MenuItem { Header = "Exit Pulsar" };
+            var exitItem = new MenuItem { Header = _loc["Tray.Exit"] };
             exitItem.Click += (s, e) =>
             {
                 Dispose();

@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
@@ -8,6 +9,7 @@ namespace Pulsar.ViewModels.Settings
 {
     public abstract class PluginSettingViewModel : ObservableObject
     {
+        protected readonly ILocalizationService _loc;
         private object? _value;
         private string _validationMessage = string.Empty;
 
@@ -48,10 +50,11 @@ namespace Pulsar.ViewModels.Settings
 
         public event System.Action<string, object?>? ValueChanged;
 
-        protected PluginSettingViewModel(PluginSettingDefinition definition, object? initialValue)
+        protected PluginSettingViewModel(PluginSettingDefinition definition, object? initialValue, ILocalizationService localizationService)
         {
             Definition = definition;
             _value = initialValue;
+            _loc = localizationService;
         }
 
         protected virtual void OnValueChanged()
@@ -71,18 +74,18 @@ namespace Pulsar.ViewModels.Settings
         }
 
         // Factory method to create specific view models based on type
-        public static PluginSettingViewModel Create(PluginSettingDefinition def, object? currentValue)
+        public static PluginSettingViewModel Create(PluginSettingDefinition def, object? currentValue, ILocalizationService localizationService)
         {
             return def.Type switch
             {
-                PluginSettingType.Boolean => new BooleanSettingViewModel(def, currentValue),
-                PluginSettingType.String => new StringSettingViewModel(def, currentValue),
-                PluginSettingType.Path => new PathSettingViewModel(def, currentValue),
-                PluginSettingType.Integer => new IntegerSettingViewModel(def, currentValue),
-                PluginSettingType.Selection => new SelectionSettingViewModel(def, currentValue),
-                PluginSettingType.Secret => new SecretSettingViewModel(def, currentValue),
-                PluginSettingType.MultiSelect => new MultiSelectSettingViewModel(def, currentValue),
-                _ => new StringSettingViewModel(def, currentValue)
+                PluginSettingType.Boolean => new BooleanSettingViewModel(def, currentValue, localizationService),
+                PluginSettingType.String => new StringSettingViewModel(def, currentValue, localizationService),
+                PluginSettingType.Path => new PathSettingViewModel(def, currentValue, localizationService),
+                PluginSettingType.Integer => new IntegerSettingViewModel(def, currentValue, localizationService),
+                PluginSettingType.Selection => new SelectionSettingViewModel(def, currentValue, localizationService),
+                PluginSettingType.Secret => new SecretSettingViewModel(def, currentValue, localizationService),
+                PluginSettingType.MultiSelect => new MultiSelectSettingViewModel(def, currentValue, localizationService),
+                _ => new StringSettingViewModel(def, currentValue, localizationService)
             };
         }
     }
@@ -95,14 +98,14 @@ namespace Pulsar.ViewModels.Settings
             set => Value = value;
         }
 
-        public BooleanSettingViewModel(PluginSettingDefinition def, object? value) : base(def, value) { }
+        public BooleanSettingViewModel(PluginSettingDefinition def, object? value, ILocalizationService localizationService) : base(def, value, localizationService) { }
 
         public override void Validate()
         {
             base.Validate();
             if (Definition.IsRequired && Value == null)
             {
-                ValidationMessage = "This setting is required.";
+                ValidationMessage = _loc["Validation.Required"];
             }
         }
     }
@@ -115,7 +118,7 @@ namespace Pulsar.ViewModels.Settings
             set => Value = value;
         }
 
-        public StringSettingViewModel(PluginSettingDefinition def, object? value) : base(def, value) { }
+        public StringSettingViewModel(PluginSettingDefinition def, object? value, ILocalizationService localizationService) : base(def, value, localizationService) { }
 
         public override void Validate()
         {
@@ -124,7 +127,7 @@ namespace Pulsar.ViewModels.Settings
 
             if (Definition.IsRequired && string.IsNullOrWhiteSpace(strValue))
             {
-                ValidationMessage = "This setting is required.";
+                ValidationMessage = _loc["Validation.Required"];
                 return;
             }
 
@@ -132,13 +135,13 @@ namespace Pulsar.ViewModels.Settings
             {
                 if (Definition.MinLength.HasValue && strValue.Length < Definition.MinLength.Value)
                 {
-                    ValidationMessage = $"Minimum length is {Definition.MinLength.Value} characters.";
+                    ValidationMessage = string.Format(_loc["Validation.MinLengthFormat"], Definition.MinLength.Value);
                     return;
                 }
 
                 if (Definition.MaxLength.HasValue && strValue.Length > Definition.MaxLength.Value)
                 {
-                    ValidationMessage = $"Maximum length is {Definition.MaxLength.Value} characters.";
+                    ValidationMessage = string.Format(_loc["Validation.MaxLengthFormat"], Definition.MaxLength.Value);
                     return;
                 }
 
@@ -148,7 +151,7 @@ namespace Pulsar.ViewModels.Settings
                     {
                         if (!Regex.IsMatch(strValue, Definition.Pattern))
                         {
-                            ValidationMessage = "Value does not match the required format.";
+                            ValidationMessage = _loc["Validation.FormatMismatch"];
                             return;
                         }
                     }
@@ -170,14 +173,14 @@ namespace Pulsar.ViewModels.Settings
             set => Value = value;
         }
 
-        public SelectionSettingViewModel(PluginSettingDefinition def, object? value) : base(def, value) { }
+        public SelectionSettingViewModel(PluginSettingDefinition def, object? value, ILocalizationService localizationService) : base(def, value, localizationService) { }
 
         public override void Validate()
         {
             base.Validate();
             if (Definition.IsRequired && string.IsNullOrEmpty(SelectedOption))
             {
-                ValidationMessage = "Please select an option.";
+                ValidationMessage = _loc["Validation.SelectOption"];
             }
         }
     }
@@ -190,7 +193,7 @@ namespace Pulsar.ViewModels.Settings
             set => Value = value;
         }
 
-        public PathSettingViewModel(PluginSettingDefinition def, object? value) : base(def, value) { }
+        public PathSettingViewModel(PluginSettingDefinition def, object? value, ILocalizationService localizationService) : base(def, value, localizationService) { }
 
         public override void Validate()
         {
@@ -199,7 +202,7 @@ namespace Pulsar.ViewModels.Settings
 
             if (Definition.IsRequired && string.IsNullOrWhiteSpace(pathValue))
             {
-                ValidationMessage = "A path is required.";
+                ValidationMessage = _loc["Validation.PathRequired"];
                 return;
             }
 
@@ -207,13 +210,13 @@ namespace Pulsar.ViewModels.Settings
             {
                 if (Definition.MinLength.HasValue && pathValue.Length < Definition.MinLength.Value)
                 {
-                    ValidationMessage = $"Path must be at least {Definition.MinLength.Value} characters.";
+                    ValidationMessage = string.Format(_loc["Validation.PathMinLengthFormat"], Definition.MinLength.Value);
                     return;
                 }
 
                 if (Definition.MaxLength.HasValue && pathValue.Length > Definition.MaxLength.Value)
                 {
-                    ValidationMessage = $"Path must be at most {Definition.MaxLength.Value} characters.";
+                    ValidationMessage = string.Format(_loc["Validation.PathMaxLengthFormat"], Definition.MaxLength.Value);
                     return;
                 }
             }
@@ -228,7 +231,7 @@ namespace Pulsar.ViewModels.Settings
             set => Value = value;
         }
 
-        public IntegerSettingViewModel(PluginSettingDefinition def, object? value) : base(def, value) { }
+        public IntegerSettingViewModel(PluginSettingDefinition def, object? value, ILocalizationService localizationService) : base(def, value, localizationService) { }
 
         public override void Validate()
         {
@@ -236,7 +239,7 @@ namespace Pulsar.ViewModels.Settings
 
             if (Definition.IsRequired && Value == null)
             {
-                ValidationMessage = "A value is required.";
+                ValidationMessage = _loc["Validation.ValueRequired"];
                 return;
             }
 
@@ -244,13 +247,13 @@ namespace Pulsar.ViewModels.Settings
             {
                 if (Definition.MinValue.HasValue && intVal < Definition.MinValue.Value)
                 {
-                    ValidationMessage = $"Minimum value is {Definition.MinValue.Value}.";
+                    ValidationMessage = string.Format(_loc["Validation.MinValueFormat"], Definition.MinValue.Value);
                     return;
                 }
 
                 if (Definition.MaxValue.HasValue && intVal > Definition.MaxValue.Value)
                 {
-                    ValidationMessage = $"Maximum value is {Definition.MaxValue.Value}.";
+                    ValidationMessage = string.Format(_loc["Validation.MaxValueFormat"], Definition.MaxValue.Value);
                     return;
                 }
             }
@@ -265,7 +268,7 @@ namespace Pulsar.ViewModels.Settings
             set => Value = value;
         }
 
-        public SecretSettingViewModel(PluginSettingDefinition def, object? value) : base(def, value) { }
+        public SecretSettingViewModel(PluginSettingDefinition def, object? value, ILocalizationService localizationService) : base(def, value, localizationService) { }
 
         public override void Validate()
         {
@@ -274,7 +277,7 @@ namespace Pulsar.ViewModels.Settings
 
             if (Definition.IsRequired && string.IsNullOrWhiteSpace(secretVal))
             {
-                ValidationMessage = "This setting is required.";
+                ValidationMessage = _loc["Validation.Required"];
                 return;
             }
 
@@ -282,13 +285,13 @@ namespace Pulsar.ViewModels.Settings
             {
                 if (Definition.MinLength.HasValue && secretVal.Length < Definition.MinLength.Value)
                 {
-                    ValidationMessage = $"Minimum length is {Definition.MinLength.Value} characters.";
+                    ValidationMessage = string.Format(_loc["Validation.MinLengthFormat"], Definition.MinLength.Value);
                     return;
                 }
 
                 if (Definition.MaxLength.HasValue && secretVal.Length > Definition.MaxLength.Value)
                 {
-                    ValidationMessage = $"Maximum length is {Definition.MaxLength.Value} characters.";
+                    ValidationMessage = string.Format(_loc["Validation.MaxLengthFormat"], Definition.MaxLength.Value);
                     return;
                 }
 
@@ -298,7 +301,7 @@ namespace Pulsar.ViewModels.Settings
                     {
                         if (!Regex.IsMatch(secretVal, Definition.Pattern))
                         {
-                            ValidationMessage = "Value does not match the required format.";
+                            ValidationMessage = _loc["Validation.FormatMismatch"];
                             return;
                         }
                     }
@@ -417,7 +420,7 @@ namespace Pulsar.ViewModels.Settings
             }
         }
 
-        public MultiSelectSettingViewModel(PluginSettingDefinition def, object? value) : base(def, value) { }
+        public MultiSelectSettingViewModel(PluginSettingDefinition def, object? value, ILocalizationService localizationService) : base(def, value, localizationService) { }
 
         public override void Validate()
         {
@@ -426,13 +429,13 @@ namespace Pulsar.ViewModels.Settings
 
             if (Definition.IsRequired && items.Count == 0)
             {
-                ValidationMessage = "Please select at least one option.";
+                ValidationMessage = _loc["Validation.SelectAtLeastOne"];
                 return;
             }
 
             if (Definition.MaxValue.HasValue && items.Count > Definition.MaxValue.Value)
             {
-                ValidationMessage = $"Maximum {Definition.MaxValue.Value} items allowed.";
+                ValidationMessage = string.Format(_loc["Validation.MaxItemsFormat"], Definition.MaxValue.Value);
                 return;
             }
 
@@ -441,7 +444,7 @@ namespace Pulsar.ViewModels.Settings
                 var invalidItems = items.Where(i => !Definition.Options.Contains(i, StringComparer.OrdinalIgnoreCase)).ToList();
                 if (invalidItems.Count > 0)
                 {
-                    ValidationMessage = $"Invalid options: {string.Join(", ", invalidItems)}";
+                    ValidationMessage = string.Format(_loc["Validation.InvalidOptionsFormat"], string.Join(", ", invalidItems));
                     return;
                 }
             }

@@ -7,9 +7,10 @@
       xmlns:vm="clr-namespace:Pulsar.ViewModels"
       xmlns:models="clr-namespace:Pulsar.Models"
       xmlns:controls="clr-namespace:Pulsar.Views.Controls"
+      xmlns:lex="clr-namespace:Pulsar.Core.Localization"
       mc:Ignorable="d" 
       d:DesignHeight="600" d:DesignWidth="800"
-      Title="General">
+      Title="{lex:Locale Settings.General.Title}">
 
     <Page.Resources>
         <ResourceDictionary>
@@ -27,21 +28,21 @@
 
         <!-- Unified Page Header -->
         <controls:SettingsPageHeader Grid.Row="0"
-                                     Title="General"
-                                     Description="Configure application behavior and appearance">
+                                     Title="{lex:Locale Settings.General.Title}"
+                                     Description="{lex:Locale Settings.General.Description}">
             <controls:SettingsPageHeader.ActionsContent>
                 <StackPanel Orientation="Horizontal">
-                    <ui:Button Content="Open App Logs"
+                    <ui:Button Content="{lex:Locale Settings.General.OpenAppLogs}"
                                Icon="{ui:SymbolIcon DocumentText24}"
                                Command="{Binding OpenLogsFolderCommand}"
                                Style="{StaticResource PulsarSecondaryButtonStyle}"
                                Margin="0,0,8,0"/>
-                    <ui:Button Content="Open Plugin Logs"
+                    <ui:Button Content="{lex:Locale Settings.General.OpenPluginLogs}"
                                Icon="{ui:SymbolIcon FolderOpen24}"
                                Command="{Binding OpenPluginLogsFolderCommand}"
                                Style="{StaticResource PulsarSecondaryButtonStyle}"
                                Margin="0,0,8,0"/>
-                    <ui:Button Content="Reset to Defaults"
+                    <ui:Button Content="{lex:Locale Settings.General.ResetDefaults}"
                                Icon="{ui:SymbolIcon ArrowReset24}"
                                Command="{Binding ResetConfigCommand}"
                                Style="{StaticResource PulsarDangerButtonStyle}"/>
@@ -53,7 +54,7 @@
             <StackPanel DataContext="{Binding GeneralSettings}" Margin="0,0,20,0">
                 
                 <!-- Appearance Section -->
-                <ui:CardExpander Icon="Color24" Header="Appearance" Margin="0,0,0,12" IsExpanded="False">
+                <ui:CardExpander Icon="Color24" Header="{lex:Locale Settings.General.Appearance}" Margin="0,0,0,12" IsExpanded="False">
                     <StackPanel>
                         <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
@@ -61,8 +62,8 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock Text="Launcher Theme" FontWeight="Medium"/>
-                                <TextBlock Text="Visual style of the radial menu" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                                <TextBlock Text="{lex:Locale Settings.General.LauncherTheme}" FontWeight="Medium"/>
+                                <TextBlock Text="{lex:Locale Settings.General.LauncherThemeDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"/>
                             </StackPanel>
                             <ComboBox Grid.Column="1" Width="140"
                                       SelectedValue="{Binding DataContext.LauncherTheme, RelativeSource={RelativeSource AncestorType=Page}}" 
@@ -80,8 +81,8 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock Text="Settings Theme" FontWeight="Medium"/>
-                                <TextBlock Text="Visual style of this configuration window" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                                <TextBlock Text="{lex:Locale Settings.General.SettingsTheme}" FontWeight="Medium"/>
+                                <TextBlock Text="{lex:Locale Settings.General.SettingsThemeDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"/>
                             </StackPanel>
                             <ComboBox Grid.Column="1" Width="140"
                                       SelectedValue="{Binding DataContext.SettingsThemeString, RelativeSource={RelativeSource AncestorType=Page}}" 
@@ -90,11 +91,27 @@
                                 <ComboBoxItem Content="Light"/>
                             </ComboBox>
                         </Grid>
+
+                        <Separator Margin="0,12"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="{lex:Locale Settings.General.Language}" FontWeight="Medium"/>
+                            </StackPanel>
+                            <ComboBox Grid.Column="1" Width="140"
+                                      ItemsSource="{Binding DataContext.SupportedLanguages, RelativeSource={RelativeSource AncestorType=Page}}"
+                                      SelectedItem="{Binding DataContext.SelectedLanguage, RelativeSource={RelativeSource AncestorType=Page}}"
+                                      DisplayMemberPath="DisplayName"/>
+                        </Grid>
                     </StackPanel>
                 </ui:CardExpander>
 
                 <!-- Radial Menu Layout Section -->
-                <ui:CardExpander Icon="Apps24" Header="Radial Menu Layout" Margin="0,0,0,12" IsExpanded="True">
+                <ui:CardExpander Icon="Apps24" Header="{lex:Locale Settings.General.RadialMenuLayout}" Margin="0,0,0,12" IsExpanded="True">
                     <StackPanel>
                         <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
@@ -102,7 +119,7 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock Text="Slots Per Page" FontWeight="Medium"/>
+                                <TextBlock Text="{lex:Locale Settings.General.SlotsPerPage}" FontWeight="Medium"/>
                                 <TextBlock Text="{Binding DataContext.SlotsPerPagePreview, RelativeSource={RelativeSource AncestorType=Page}}" 
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
                                            FontSize="12"
@@ -116,7 +133,7 @@
                                           Width="120"/>
                         </Grid>
                         
-                        <TextBlock Text="Adjust the number of action slots displayed per page. Higher values allow more actions but create smaller trigger regions. Changes take effect after saving." 
+                        <TextBlock Text="{lex:Locale Settings.General.SlotsPerPageDescription}" 
                                    TextWrapping="Wrap"
                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}" 
                                    FontSize="11"
@@ -125,7 +142,7 @@
                 </ui:CardExpander>
 
                 <!-- Hotkeys Section -->
-                <ui:CardExpander Icon="Keyboard24" Header="Global Hotkeys" Margin="0,0,0,12" IsExpanded="True">
+                <ui:CardExpander Icon="Keyboard24" Header="{lex:Locale Settings.General.GlobalHotkeys}" Margin="0,0,0,12" IsExpanded="True">
                     <StackPanel>
                         <!-- Grid Hotkey -->
                         <Grid Margin="0,0,0,12">
@@ -134,8 +151,8 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock Text="Show Menu" FontWeight="Medium"/>
-                                <TextBlock Text="Trigger the radial menu (Action Mode)" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                                <TextBlock Text="{lex:Locale Settings.General.ShowMenu}" FontWeight="Medium"/>
+                                <TextBlock Text="{lex:Locale Settings.General.ShowMenuDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"/>
                             </StackPanel>
                             <ui:TextBox Grid.Column="1" Width="200"
                                      Text="{Binding DataContext.ShowGridHotkey, RelativeSource={RelativeSource AncestorType=Page}, Mode=OneWay}"
@@ -145,7 +162,7 @@
                                      Tag="ShowGrid"
                                      IsReadOnly="True"
                                      Cursor="Hand"
-                                     PlaceholderText="Press keys..."/>
+                                     PlaceholderText="{lex:Locale Settings.General.PressKeysPlaceholder}"/>
                         </Grid>
                         
                         <Separator Margin="0,12"/>
@@ -157,8 +174,8 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock Text="Show Switcher" FontWeight="Medium"/>
-                                <TextBlock Text="Trigger the window switcher (Launcher Mode)" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                                <TextBlock Text="{lex:Locale Settings.General.ShowSwitcher}" FontWeight="Medium"/>
+                                <TextBlock Text="{lex:Locale Settings.General.ShowSwitcherDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"/>
                             </StackPanel>
                             <ui:TextBox Grid.Column="1" Width="200"
                                      Text="{Binding DataContext.ShowSwitcherHotkey, RelativeSource={RelativeSource AncestorType=Page}, Mode=OneWay}"
@@ -168,13 +185,13 @@
                                      Tag="ShowSwitcher"
                                      IsReadOnly="True"
                                      Cursor="Hand"
-                                     PlaceholderText="Press keys..."/>
+                                     PlaceholderText="{lex:Locale Settings.General.PressKeysPlaceholder}"/>
                         </Grid>
                     </StackPanel>
                 </ui:CardExpander>
 
                 <!-- Cache Management Section -->
-                <ui:CardExpander Icon="Database24" Header="Cache Management" Margin="0,0,0,12" IsExpanded="False">
+                <ui:CardExpander Icon="Database24" Header="{lex:Locale Settings.General.CacheManagement}" Margin="0,0,0,12" IsExpanded="False">
                     <StackPanel>
                         <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
@@ -182,19 +199,19 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock Text="Icon Cache Statistics" FontWeight="Medium"/>
+                                <TextBlock Text="{lex:Locale Settings.General.IconCacheStatistics}" FontWeight="Medium"/>
                                 <TextBlock Text="{Binding DataContext.CacheStatistics, RelativeSource={RelativeSource AncestorType=Page}}" 
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
                                            FontSize="12"/>
                             </StackPanel>
                             <ui:Button Grid.Column="1" 
-                                       Content="Clean Cache"
+                                       Content="{lex:Locale Settings.General.CleanCache}"
                                        Icon="{ui:SymbolIcon Delete24}"
                                        Command="{Binding DataContext.CleanCacheCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                        Style="{StaticResource PulsarSecondaryButtonStyle}"/>
                         </Grid>
                         
-                        <TextBlock Text="Removes icon cache for processes not seen in the last 30 days (blacklisted processes are never removed)." 
+                        <TextBlock Text="{lex:Locale Settings.General.CleanCacheDescription}" 
                                    TextWrapping="Wrap"
                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}" 
                                    FontSize="11"

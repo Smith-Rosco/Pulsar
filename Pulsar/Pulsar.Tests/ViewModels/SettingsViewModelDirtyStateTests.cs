@@ -7,7 +7,9 @@ using System.Windows;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Pulsar.Core.Localization;
 using Pulsar.Core.Messages;
+using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Helpers;
@@ -25,6 +27,11 @@ namespace Pulsar.Tests.ViewModels
 {
     public class SettingsViewModelDirtyStateTests
     {
+        private static ILocalizationService CreateLoc()
+        {
+            return new LocalizationService(new Mock<ILogger<LocalizationService>>().Object);
+        }
+
         [Fact]
         public async Task LoadSettings_DoesNotSetDirty()
         {
@@ -306,7 +313,7 @@ namespace Pulsar.Tests.ViewModels
             pluginMetadataRegistry.Register(CreateWinSwitcherMetadata());
 
             var settingsShell = new SettingsShellViewModel(
-                new SettingsPageCatalog(),
+                new SettingsPageCatalog(CreateLoc()),
                 new Mock<ILocalUiPreferencesService>().Object,
                 new Mock<ISettingsNavigationGuard>().Object,
                 NullLogger<SettingsShellViewModel>.Instance);
@@ -324,6 +331,7 @@ namespace Pulsar.Tests.ViewModels
                 pluginMetadataRegistry,
                 settingsShell,
                 NullLogger<SettingsViewModel>.Instance,
+                CreateLoc(),
                 processRegistryService.Object);
 
             return new SettingsViewModelHarness(viewModel, configService, dialogService);

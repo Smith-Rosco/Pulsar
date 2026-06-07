@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
+using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Models;
@@ -30,6 +31,7 @@ namespace Pulsar.ViewModels.Settings
         private readonly IServiceProvider? _serviceProvider;
         private readonly PluginMetadata? _metadata;
         private readonly BuiltInPluginDisplayModel _displayModel;
+        private readonly ILocalizationService? _loc;
 
         [ObservableProperty]
         private bool _isEnabled;
@@ -60,7 +62,7 @@ namespace Pulsar.ViewModels.Settings
 
         public string UsageSummary => $"{UsageStats.TotalExecutions} uses";
         public string ProfilesSummary => $"{UsageStats.UsedInProfiles.Count} profiles";
-        public string LastUsedSummary => UsageStats.LastUsed.HasValue ? FormatTimeAgo(UsageStats.LastUsed.Value) : "Never used";
+        public string LastUsedSummary => UsageStats.LastUsed.HasValue ? FormatTimeAgo(UsageStats.LastUsed.Value) : (_loc?["Plugin.NeverUsed"] ?? "Never used");
         public string HealthBadge => HealthReport.Status switch
         {
             PluginHealthStatus.Healthy => "✅",
@@ -81,11 +83,11 @@ namespace Pulsar.ViewModels.Settings
 
         public string SuccessRateText => UsageStats.TotalExecutions > 0
             ? $"{(double)UsageStats.SuccessCount / UsageStats.TotalExecutions * 100:F1}%"
-            : "N/A";
+            : (_loc?["Plugin.NA"] ?? "N/A");
 
         public string AvgExecutionTimeText => $"{UsageStats.AverageExecutionTimeMs:F0}ms";
         public bool IsViewLogsVisible => RecentErrorCount > 0;
-        public string ViewLogsLabel => RecentErrorCount > 0 ? $"View Logs ({RecentErrorCount} errors)" : "View Logs";
+        public string ViewLogsLabel => RecentErrorCount > 0 ? string.Format(_loc?["Settings.Plugins.ViewLogsErrorsFormat"] ?? "View Logs ({0} errors)", RecentErrorCount) : (_loc?["Settings.Plugins.ViewLogsDefault"] ?? "View Logs");
 
         public PluginViewModel(
             PluginDescriptor descriptor,
@@ -96,7 +98,8 @@ namespace Pulsar.ViewModels.Settings
             IPluginLogService? logService = null,
             IDialogService? dialogService = null,
             IServiceProvider? serviceProvider = null,
-            IPluginMetadataRegistry? metadataRegistry = null)
+            IPluginMetadataRegistry? metadataRegistry = null,
+            ILocalizationService? localizationService = null)
         {
             _descriptor = descriptor;
             _registry = registry;
@@ -106,6 +109,7 @@ namespace Pulsar.ViewModels.Settings
             _logService = logService;
             _dialogService = dialogService;
             _serviceProvider = serviceProvider;
+            _loc = localizationService;
             _plugin = _registry.GetPlugin(descriptor.Id);
             _metadata = metadataRegistry?.GetMetadata(descriptor.Id) ?? descriptor.Metadata;
             _displayModel = BuiltInPluginDisplayModel.FromMetadata(_metadata);
@@ -154,10 +158,10 @@ namespace Pulsar.ViewModels.Settings
         private string FormatTimeAgo(DateTime dateTime)
         {
             var span = DateTime.UtcNow - dateTime;
-            if (span.TotalMinutes < 1) return "Just now";
-            if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes} minutes ago";
-            if (span.TotalHours < 24) return $"{(int)span.TotalHours} hours ago";
-            if (span.TotalDays < 30) return $"{(int)span.TotalDays} days ago";
+            if (span.TotalMinutes < 1) return _loc?["Plugin.JustNow"] ?? "Just now";
+            if (span.TotalMinutes < 60) return string.Format(_loc?["Plugin.MinutesAgoFormat"] ?? "{0} minutes ago", (int)span.TotalMinutes);
+            if (span.TotalHours < 24) return string.Format(_loc?["Plugin.HoursAgoFormat"] ?? "{0} hours ago", (int)span.TotalHours);
+            if (span.TotalDays < 30) return string.Format(_loc?["Plugin.DaysAgoFormat"] ?? "{0} days ago", (int)span.TotalDays);
             return dateTime.ToLocalTime().ToString("yyyy-MM-dd");
         }
 
@@ -199,7 +203,7 @@ namespace Pulsar.ViewModels.Settings
                     }
                 }
 
-                var vm = PluginSettingViewModel.Create(def, value);
+                var vm = PluginSettingViewModel.Create(def, value, _loc!);
                 vm.ValueChanged += OnSettingChanged;
                 Settings.Add(vm);
             }
@@ -331,7 +335,7 @@ namespace Pulsar.ViewModels.Settings
             }
 
             var vm = new Pulsar.ViewModels.Dialogs.PluginLogViewerViewModel(_logService, Id, Name);
-            await _dialogService.ShowCustomAsync($"Plugin Logs: {Name}", vm, Models.Enums.DialogButtons.Ok, Models.DialogSizeConstraints.Large);
+            await _dialogService.ShowCustomAsync(string.Format(_loc?["Notification.PluginLogsTitleFormat"] ?? "Plugin Logs: {0}", Name), vm, Models.Enums.DialogButtons.Ok, Models.DialogSizeConstraints.Large);
         }
 
         [RelayCommand]
@@ -362,7 +366,7 @@ namespace Pulsar.ViewModels.Settings
 
                     var vm = new ProcessBlacklistViewModel(windowService, processRegistryService, currentBlacklist);
                     var result = await _dialogService.ShowCustomAsync(
-                        "Process Blacklist",
+                        _loc?["Notification.ProcessBlacklistTitle"] ?? "Process Blacklist",
                         vm,
                         Models.Enums.DialogButtons.OkCancel);
 
@@ -400,7 +404,7 @@ namespace Pulsar.ViewModels.Settings
 
             var dialogVm = new Pulsar.ViewModels.Dialogs.PluginSettingsDialogViewModel(this, _configService);
             var dialogResult = await _dialogService.ShowCustomAsync(
-                $"Configure {Name}",
+                string.Format(_loc?["Notification.ConfigureTitleFormat"] ?? "Configure {0}", Name),
                 dialogVm,
                 Models.Enums.DialogButtons.None,
                 new Models.DialogSizeConstraints { Width = 550, Height = 500, MinWidth = 400, MinHeight = 300 });

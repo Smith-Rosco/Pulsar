@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:lex="clr-namespace:Pulsar.Core.Localization"
              xmlns:converters="clr-namespace:Pulsar.Core.Converters"
              mc:Ignorable="d"
              d:DesignHeight="520" d:DesignWidth="760">
@@ -52,12 +53,12 @@
 
             <ui:TextBox Grid.Column="2"
                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                        PlaceholderText="Search logs..."
+                        PlaceholderText="{lex:Locale Dialog.PluginLogViewer.SearchPlaceholder}"
                         Icon="{ui:SymbolIcon Search24}"
                         Margin="0,0,12,0"/>
 
             <ui:Button Grid.Column="3"
-                       Content="Export"
+                       Content="{lex:Locale Dialog.PluginLogViewer.Export}"
                        Command="{Binding ExportLogsCommand}"
                        Style="{StaticResource PulsarSecondaryButtonStyle}"
                        Icon="{ui:SymbolIcon ArrowDownload24}"/>
@@ -93,7 +94,7 @@
 
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                 <TextBlock Text="{Binding TimeRangeLabel}" FontSize="11" Opacity="0.7" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                <ui:Button Content="Open Folder"
+                <ui:Button Content="{lex:Locale Dialog.PluginLogViewer.OpenFolder}"
                            Command="{Binding OpenLogFolderCommand}"
                            Style="{StaticResource PulsarSecondaryButtonStyle}"
                            Icon="{ui:SymbolIcon FolderOpen24}"/>
@@ -174,8 +175,8 @@
                             VerticalAlignment="Center"
                             Visibility="{Binding HasFilteredLogs, Converter={StaticResource InverseBoolToVisConverter}}">
                     <ui:SymbolIcon Symbol="DocumentText24" FontSize="44" Opacity="0.35" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                    <TextBlock Text="No logs for selected filters" FontSize="14" FontWeight="SemiBold" Opacity="0.8" HorizontalAlignment="Center" Margin="0,0,0,6"/>
-                    <TextBlock Text="Try expanding the time range or clearing search." FontSize="11" Opacity="0.6" HorizontalAlignment="Center"/>
+                    <TextBlock Text="{lex:Locale Dialog.PluginLogViewer.NoLogs}" FontSize="14" FontWeight="SemiBold" Opacity="0.8" HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                    <TextBlock Text="{lex:Locale Dialog.PluginLogViewer.ExpandRange}" FontSize="11" Opacity="0.6" HorizontalAlignment="Center"/>
                 </StackPanel>
 
                 <Grid Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
@@ -198,7 +199,7 @@
                        Opacity="0.7"
                        VerticalAlignment="Center"
                        Margin="0,0,12,0"/>
-            <ui:Button Content="Load More"
+            <ui:Button Content="{lex:Locale Dialog.PluginLogViewer.LoadMore}"
                         Command="{Binding LoadMoreCommand}"
                         IsEnabled="{Binding CanLoadMore}"
                         Style="{StaticResource PulsarSecondaryButtonStyle}"

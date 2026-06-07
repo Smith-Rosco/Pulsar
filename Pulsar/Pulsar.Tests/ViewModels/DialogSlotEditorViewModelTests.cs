@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Pulsar.Core.Localization;
 using Pulsar.Helpers;
 using Pulsar.Models;
 using Pulsar.ViewModels.Dialogs;
@@ -13,6 +16,11 @@ namespace Pulsar.Tests.ViewModels
 {
     public class DialogSlotEditorViewModelTests
     {
+        private static ILocalizationService CreateLoc()
+        {
+            var loc = new LocalizationService(new Mock<ILogger<LocalizationService>>().Object);
+            return loc;
+        }
         [Fact]
         public void AddSlotViewModel_ShouldExposeSingleSurfaceCopyAndPreviewMetadata()
         {
@@ -110,6 +118,7 @@ namespace Pulsar.Tests.ViewModels
             var slot = CreateConfiguredSlot();
             var viewModel = new SlotConfigurationDialogViewModel(
                 slot,
+                CreateLoc(),
                 (currentSlot, action) => currentSlot.Action = action ?? string.Empty,
                 field =>
                 {
@@ -184,7 +193,8 @@ namespace Pulsar.Tests.ViewModels
                 {
                     slot.Color = "#32CD32";
                     return Task.CompletedTask;
-                });
+                },
+                CreateLoc());
         }
 
         private static PluginSlot CreateDraftSlot(string pluginId)

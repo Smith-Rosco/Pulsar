@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Pulsar.Core.Localization;
 using Pulsar.Helpers.Tutorial;
 using Pulsar.Models.Tutorial;
 using Pulsar.Services.Interfaces;
@@ -19,7 +20,7 @@ namespace Pulsar.Services.Tutorial
     /// </summary>
     public class TutorialOrchestrator
     {
-        private const string DefaultWaitHintText = "未检测到操作也没关系：你可以点击“继续”跳过，或点击“上一步”返回后重试。";
+        private readonly ILocalizationService _loc;
 
         private readonly IConfigService _configService;
         private readonly ILogger<TutorialOrchestrator> _logger;
@@ -28,6 +29,8 @@ namespace Pulsar.Services.Tutorial
         private readonly ITutorialTriggerEngine _triggerEngine;
         private readonly ITutorialSpotlightController _spotlightController;
         private readonly IWaitStepHintTimeout _waitStepHintTimeout;
+
+        private string DefaultWaitHintText => _loc["Tutorial.NoActionDetectedHint"];
         
         private readonly List<TutorialStep> _steps;
         private int _currentStepIndex = -1;
@@ -45,6 +48,7 @@ namespace Pulsar.Services.Tutorial
         public event EventHandler? TutorialSkipped;
 
         public TutorialOrchestrator(
+            ILocalizationService loc,
             IConfigService configService,
             ILogger<TutorialOrchestrator> logger,
             TutorialStepLoader stepLoader,
@@ -53,6 +57,7 @@ namespace Pulsar.Services.Tutorial
             ITutorialSpotlightController spotlightController,
             IWaitStepHintTimeout waitStepHintTimeout)
         {
+            _loc = loc;
             _configService = configService;
             _logger = logger;
             _stepLoader = stepLoader;

@@ -6,6 +6,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:lex="clr-namespace:Pulsar.Core.Localization"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="400">
     
@@ -79,7 +80,7 @@
                 <!-- Step counter -->
                 <TextBlock x:Name="StepCounter"
                           Grid.Row="0"
-                          Text="步骤 1/9"
+                          Text="Step 1/9"
                           FontSize="12"
                           FontWeight="Medium"
                           Foreground="#666666"
@@ -88,7 +89,7 @@
                 <!-- Title -->
                 <TextBlock x:Name="TitleText"
                           Grid.Row="1"
-                          Text="欢迎使用 Pulsar"
+                          Text="{lex:Locale Tutorial.Welcome}"
                           FontSize="18"
                           FontWeight="SemiBold"
                           Foreground="#1A1A1A"
@@ -101,7 +102,7 @@
                               HorizontalScrollBarVisibility="Disabled"
                               Margin="0,0,0,20">
                     <TextBlock x:Name="DescriptionText"
-                              Text="这是教程描述文本"
+                              Text="{lex:Locale Tutorial.DescriptionPlaceholder}"
                               FontSize="14"
                               Foreground="#4A4A4A"
                               TextWrapping="Wrap"
@@ -111,7 +112,7 @@
                 <!-- Wait-for-action helper text -->
                 <TextBlock x:Name="WaitHintText"
                            Grid.Row="3"
-                           Text="完成操作后会自动继续；如未自动继续，可点击“继续”。"
+                           Text="{lex:Locale Tutorial.AutoContinue}"
                            FontSize="12"
                            Foreground="#6A6A6A"
                            TextWrapping="Wrap"
@@ -128,7 +129,7 @@
 
                     <ui:Button x:Name="BackButton"
                                 Grid.Column="0"
-                                Content="上一步"
+                                Content="{lex:Locale Tutorial.Previous}"
                                 Style="{StaticResource PulsarSecondaryButtonStyle}"
                                 Click="OnBackButtonClick"
                                 Margin="0,0,12,0"/>
@@ -139,13 +140,13 @@
                                HorizontalAlignment="Right">
                     
                     <ui:Button x:Name="SkipButton"
-                              Content="跳过教程"
+                              Content="{lex:Locale Tutorial.SkipTutorial}"
                               Style="{StaticResource PulsarSecondaryButtonStyle}"
                               Click="OnSkipButtonClick"
                               Margin="0,0,12,0"/>
                     
                      <ui:Button x:Name="NextButton"
-                               Content="下一步"
+                               Content="{lex:Locale Tutorial.Next}"
                                Style="{StaticResource PulsarPrimaryButtonStyle}"
                                Click="OnNextButtonClick"/>
                     </StackPanel>

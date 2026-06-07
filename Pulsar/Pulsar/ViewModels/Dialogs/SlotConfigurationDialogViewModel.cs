@@ -2,6 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Threading.Tasks;
+using Pulsar.Core.Localization;
 using Pulsar.Models;
 using Pulsar.ViewModels.Base;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -11,6 +12,7 @@ namespace Pulsar.ViewModels.Dialogs
 {
     public partial class SlotConfigurationDialogViewModel : ObservableObject, IDialogViewModel
     {
+        private readonly ILocalizationService _loc;
         private readonly Action<PluginSlot, string?> _setAction;
         private readonly Func<SlotParameterEditorField, Task> _pickParameterValueAsync;
         private readonly Func<PluginSlot, Task> _pickIconAsync;
@@ -18,12 +20,14 @@ namespace Pulsar.ViewModels.Dialogs
 
         public SlotConfigurationDialogViewModel(
             PluginSlot slot,
+            ILocalizationService localizationService,
             Action<PluginSlot, string?> setAction,
             Func<SlotParameterEditorField, Task> pickParameterValueAsync,
             Func<PluginSlot, Task> pickIconAsync,
             Func<PluginSlot, Task> pickColorAsync)
         {
             Slot = slot;
+            _loc = localizationService;
             _setAction = setAction;
             _pickParameterValueAsync = pickParameterValueAsync;
             _pickIconAsync = pickIconAsync;
@@ -33,15 +37,15 @@ namespace Pulsar.ViewModels.Dialogs
 
         public PluginSlot Slot { get; }
 
-        public string HeaderText => $"Slot {Slot.Slot} · {Slot.Label}";
+        public string HeaderText => string.Format(_loc["Dialog.SlotConfig.HeaderFormat"], Slot.Slot, Slot.Label);
 
-        public string HeaderDescription => "Update the slot's behavior first, then adjust the label, icon, or color only if the defaults need refinement.";
+        public string HeaderDescription => _loc["Dialog.SlotConfig.UpdateBehavior"];
 
         public string HeaderStatusText => HasBlockingIssue
-            ? "Needs required setup"
+            ? _loc["Dialog.SlotConfig.NeedsSetup"]
             : ValidationSeverity == ValidationSeverity.Warning
-                ? "Draft in progress"
-                : "Ready to save";
+                ? _loc["Dialog.SlotConfig.DraftProgress"]
+                : _loc["Dialog.SlotConfig.ReadyToSave"];
 
         public bool HasBlockingIssue => Slot.ValidationSeverity == ValidationSeverity.Error;
 
@@ -50,7 +54,7 @@ namespace Pulsar.ViewModels.Dialogs
         public string PreviewTypeBadge => Slot.Presentation.TypeBadge;
 
         public string PreviewActionText => string.IsNullOrWhiteSpace(Slot.Presentation.ActionText)
-            ? "No action selected yet"
+            ? _loc["Dialog.SlotConfig.NoAction"]
             : Slot.Presentation.ActionText;
 
         public string PreviewHealthBadge => Slot.Presentation.HealthBadgeText;
@@ -59,7 +63,7 @@ namespace Pulsar.ViewModels.Dialogs
 
         public string PreviewMetadataText => HasSummaryTokens
             ? string.Join("  •  ", SummaryTokens)
-            : "Action, validation, and summary details stay anchored here while you edit.";
+            : _loc["Dialog.SlotConfig.MetadataHint"];
 
         public ObservableCollection<SlotActionOption> AvailableActions => Slot.AvailableActions;
 
@@ -87,9 +91,9 @@ namespace Pulsar.ViewModels.Dialogs
 
         public bool HasSummaryTokens => Slot.HasSummaryTokens;
 
-        public string AppearanceDisclosureTitle => "Appearance and polish";
+        public string AppearanceDisclosureTitle => _loc["Dialog.SlotConfig.Appearance"];
 
-        public string AppearanceDisclosureDescription => "Keep the suggested presentation or make small refinements once the slot behavior looks right.";
+        public string AppearanceDisclosureDescription => _loc["Dialog.SlotConfig.AppearanceHint"];
 
         public Action<DialogResult>? RequestClose { get; set; }
 

@@ -57,7 +57,7 @@
 
             <!-- Basic Window Style Fallback -->
             <Style TargetType="Window">
-                <Setter Property="FontFamily" Value="Segoe UI"/>
+                <Setter Property="FontFamily" Value="Segoe UI, Microsoft YaHei UI"/>
             </Style>
 
         </ResourceDictionary>

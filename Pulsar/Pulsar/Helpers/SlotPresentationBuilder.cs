@@ -1,13 +1,18 @@
+using System.Windows;
+using Microsoft.Extensions.DependencyInjection;
+using Pulsar.Core.Localization;
 using Pulsar.Models;
 
 namespace Pulsar.Helpers
 {
     public static class SlotPresentationBuilder
     {
+        private static ILocalizationService? Loc => ((App)Application.Current).Services.GetService<ILocalizationService>();
+
         public static SlotPresentation Build(PluginSlot slot)
         {
             return new SlotPresentation(
-                string.IsNullOrWhiteSpace(slot.Label) ? $"Slot {slot.Slot}" : slot.Label,
+                string.IsNullOrWhiteSpace(slot.Label) ? string.Format(Loc?["Slot.FallbackTitleFormat"] ?? "Slot {0}", slot.Slot) : slot.Label,
                 slot.ActionLabel,
                 SlotPresentation.ResolveTypeBadge(slot.PluginId),
                 SlotPresentation.ResolveTypeToneKey(slot.PluginId),

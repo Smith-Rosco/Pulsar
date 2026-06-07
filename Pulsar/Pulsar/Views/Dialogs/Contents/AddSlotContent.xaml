@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:lex="clr-namespace:Pulsar.Core.Localization"
              xmlns:viewmodels="clr-namespace:Pulsar.ViewModels.Dialogs"
              xmlns:models="clr-namespace:Pulsar.Models"
              xmlns:converters="clr-namespace:Pulsar.Core.Converters"
@@ -295,7 +296,7 @@
                                    Margin="0,0,6,0"
                                    Icon="{ui:SymbolIcon FolderOpen16}"
                                    Style="{StaticResource PulsarIconButtonStyle}"
-                                   ToolTip="Browse"
+                                   ToolTip="{lex:Locale Dialog.AddSlot.BrowseIcon}"
                                    Click="SlotParameterPicker_Click"
                                    Tag="{Binding}"
                                    Visibility="{Binding HasPicker, Converter={StaticResource BoolToVis}}"/>
@@ -355,7 +356,7 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Choose behavior"
+                        <TextBlock Text="{lex:Locale Dialog.AddSlot.ChooseBehavior}"
                                    Style="{StaticResource SectionEyebrowTextStyle}"/>
                         <TextBlock Text="{Binding PluginPickerHint}"
                                    Style="{StaticResource SectionBodyTextStyle}"
@@ -365,11 +366,11 @@
                             <Button Style="{StaticResource FlowToggleButtonStyle}"
                                     Command="{Binding ShowScenarioFlowCommand}">
                                 <StackPanel>
-                                    <TextBlock Text="Scenario-Based"
+                                    <TextBlock Text="{lex:Locale Dialog.AddSlot.ScenarioBased}"
                                                FontSize="12"
                                                FontWeight="SemiBold"
                                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                                    <TextBlock Text="Start from common intent"
+                                    <TextBlock Text="{lex:Locale Dialog.AddSlot.ScenarioBasedDesc}"
                                                FontSize="11"
                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                                 </StackPanel>
@@ -377,11 +378,11 @@
                             <Button Style="{StaticResource FlowToggleButtonStyle}"
                                     Command="{Binding ShowAdvancedFlowCommand}">
                                 <StackPanel>
-                                    <TextBlock Text="Advanced"
+                                    <TextBlock Text="{lex:Locale Dialog.AddSlot.Advanced}"
                                                FontSize="12"
                                                FontWeight="SemiBold"
                                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                                    <TextBlock Text="Choose plugin and action manually"
+                                    <TextBlock Text="{lex:Locale Dialog.AddSlot.AdvancedDesc}"
                                                FontSize="11"
                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                                 </StackPanel>
@@ -443,7 +444,7 @@
                                     BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
                                     BorderThickness="1"
                                     CornerRadius="10">
-                                <TextBlock Text="Need something else? Switch to Advanced to pick any plugin and full parameter model manually."
+                                <TextBlock Text="{lex:Locale Dialog.AddSlot.SwitchHint}"
                                            Style="{StaticResource SectionBodyTextStyle}"/>
                             </Border>
                         </StackPanel>
@@ -525,7 +526,7 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="2">
-                        <TextBlock Text="Configure slot"
+                        <TextBlock Text="{lex:Locale Dialog.AddSlot.ConfigureSlot}"
                                    Style="{StaticResource SectionEyebrowTextStyle}"/>
 
                         <StackPanel Visibility="{Binding HasSelectedPlugin, Converter={StaticResource BoolToVis}}">
@@ -605,12 +606,12 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0"
-                                           Text="Label"
+                                           Text="{lex:Locale Dialog.AddSlot.Label}"
                                            Style="{StaticResource CompactSectionTitleTextStyle}"
                                            VerticalAlignment="Center"/>
                                 <ui:TextBox Grid.Column="1"
                                             Text="{Binding Slot.Label, UpdateSourceTrigger=PropertyChanged}"
-                                            PlaceholderText="Display label"/>
+                                            PlaceholderText="{lex:Locale Dialog.AddSlot.DisplayLabelPlaceholder}"/>
                             </Grid>
 
                             <!-- Action choice row: left/right layout + unified ComboBox -->
@@ -643,7 +644,7 @@
                                     </Grid.ColumnDefinitions>
 
                                     <TextBlock Grid.Column="0"
-                                               Text="Action"
+                                               Text="{lex:Locale Dialog.AddSlot.Action}"
                                                Style="{StaticResource CompactSectionTitleTextStyle}"
                                                VerticalAlignment="Center"/>
 
@@ -672,7 +673,7 @@
                                 <ItemsControl ItemsSource="{Binding RequiredParameters}"
                                               ItemTemplate="{StaticResource CreateSlotParameterFieldTemplate}"/>
                             </StackPanel>
-                            <ui:CardExpander Header="Appearance"
+                            <ui:CardExpander Header="{lex:Locale Dialog.AddSlot.Appearance}"
                                              IsExpanded="True"
                                              Margin="0,16,0,0"
                                              HorizontalContentAlignment="Stretch"
@@ -684,7 +685,7 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0"
-                                                   Text="Color"
+                                                   Text="{lex:Locale Dialog.AddSlot.Color}"
                                                    FontSize="13"
                                                    FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
@@ -697,7 +698,7 @@
                                                     BorderThickness="1"
                                                     Background="{Binding Slot.Color, Converter={StaticResource HexToBrush}}"
                                                     Cursor="Hand"
-                                                    ToolTip="Pick color"
+                                                    ToolTip="{lex:Locale Dialog.AddSlot.PickColor}"
                                                     MouseLeftButtonDown="ColorSwatch_MouseLeftButtonDown">
                                                 <Grid>
                                                     <ui:SymbolIcon Symbol="Drop24"
@@ -717,7 +718,7 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0"
-                                                   Text="Icon"
+                                                   Text="{lex:Locale Dialog.AddSlot.Icon}"
                                                    FontSize="13"
                                                    FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
@@ -725,18 +726,18 @@
                                         <ui:TextBox Grid.Column="1"
                                                     Text="{Binding Slot.IconKey}"
                                                     Icon="{ui:SymbolIcon Image24}"
-                                                    PlaceholderText="e.g. Settings24 or C:\icon.png"/>
+                                                    PlaceholderText="{lex:Locale Dialog.AddSlot.IconPlaceholder}"/>
                                         <ui:Button Grid.Column="2"
                                                    Icon="{ui:SymbolIcon FolderOpen16}"
                                                    Style="{StaticResource PulsarIconButtonStyle}"
                                                    Click="PickIcon_Click"
-                                                   ToolTip="Browse icon file"
+                                                   ToolTip="{lex:Locale Dialog.AddSlot.BrowseIcon}"
                                                    Margin="8,0,0,0"/>
                                     </Grid>
                                 </StackPanel>
                             </ui:CardExpander>
 
-                            <ui:CardExpander Header="Optional"
+                            <ui:CardExpander Header="{lex:Locale Dialog.AddSlot.Optional}"
                                              IsExpanded="False"
                                              Margin="0,10,0,0"
                                              HorizontalContentAlignment="Stretch"
@@ -749,7 +750,7 @@
 
                                     <StackPanel Margin="0,16,0,0"
                                                 Visibility="{Binding HasAdvancedParameters, Converter={StaticResource BoolToVis}}">
-                                        <TextBlock Text="Advanced"
+                                        <TextBlock Text="{lex:Locale Dialog.AddSlot.Advanced}"
                                                    Style="{StaticResource CompactSectionTitleTextStyle}"
                                                    Margin="0,0,0,10"/>
                                         <ItemsControl ItemsSource="{Binding AdvancedParameters}"
@@ -765,7 +766,7 @@
                                 BorderThickness="1"
                                 CornerRadius="10"
                                 Visibility="{Binding IsAwaitingPluginSelection, Converter={StaticResource BoolToVis}}">
-                            <TextBlock Text="Select a scenario or switch to Advanced to configure the label, action, required details, and optional settings."
+                            <TextBlock Text="{lex:Locale Dialog.AddSlot.PreviewHint}"
                                          Style="{StaticResource SectionBodyTextStyle}"/>
                         </Border>
                     </StackPanel>

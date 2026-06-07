@@ -1,4 +1,7 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin;
 using Pulsar.Services.ActionFeedback;
 
@@ -6,7 +9,9 @@ namespace Pulsar.Tests.Services
 {
     public class ActionFeedbackServiceTests
     {
-        private readonly ActionFeedbackService _service = new();
+        private readonly LocalizationService _loc = new(
+            new Mock<ILogger<LocalizationService>>().Object);
+        private ActionFeedbackService _service => new(_loc);
 
         [Fact]
         public void Create_ShouldReturnConfigurationError_ForWinSwitcherConfigProblems()

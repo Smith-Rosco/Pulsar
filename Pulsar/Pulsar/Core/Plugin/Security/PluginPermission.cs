@@ -1,6 +1,7 @@
 // [Path]: Pulsar/Pulsar/Core/Plugin/Security/PluginPermission.cs
 
 using System;
+using Pulsar.Core.Localization;
 
 namespace Pulsar.Core.Plugin.Security
 {
@@ -214,6 +215,20 @@ namespace Pulsar.Core.Plugin.Security
     /// </summary>
     public static class PluginPermissionExtensions
     {
+        private static ILocalizationService? Loc
+        {
+            get
+            {
+                try
+                {
+                    if (System.Windows.Application.Current is App app)
+                        return app.Services.GetService(typeof(ILocalizationService)) as ILocalizationService;
+                    return null;
+                }
+                catch { return null; }
+            }
+        }
+
         /// <summary>
         /// 检查是否拥有指定权限
         /// </summary>
@@ -229,31 +244,31 @@ namespace Pulsar.Core.Plugin.Security
         {
             return permission switch
             {
-                PluginPermission.ReadWindowInfo => "读取窗口信息",
-                PluginPermission.ReadProcessPath => "读取进程路径",
-                PluginPermission.ShowNotification => "显示通知",
-                PluginPermission.ReadClipboard => "读取剪贴板",
-                PluginPermission.WriteClipboard => "写入剪贴板",
-                PluginPermission.ReadSelectedText => "读取选中文本",
-                PluginPermission.ReadProcessWindows => "读取进程窗口列表",
-                PluginPermission.SimulateKeyboard => "模拟键盘输入",
-                PluginPermission.SimulateMouse => "模拟鼠标输入",
-                PluginPermission.StartProcess => "启动外部进程",
-                PluginPermission.KillProcess => "终止进程",
-                PluginPermission.ReadFileSystem => "读取文件系统",
-                PluginPermission.WriteFileSystem => "写入文件系统",
-                PluginPermission.AccessRegistry => "访问注册表",
-                PluginPermission.AccessEnvironment => "访问环境变量",
-                PluginPermission.AccessCredentials => "访问凭据",
-                PluginPermission.ModifyCredentials => "修改凭据",
-                PluginPermission.AccessNetwork => "访问网络",
-                PluginPermission.ExecuteNativeCode => "执行原生代码",
-                PluginPermission.LoadAssembly => "加载程序集",
-                PluginPermission.ModifyConfiguration => "修改配置",
-                PluginPermission.RegisterHotkey => "注册热键",
-                PluginPermission.ModifyPluginRegistry => "修改插件注册表",
-                PluginPermission.AccessAllServices => "访问所有服务",
-                PluginPermission.BypassPermissionCheck => "绕过权限检查",
+                PluginPermission.ReadWindowInfo => Loc?["PluginPermission.ReadWindowInfo"] ?? "Read Window Information",
+                PluginPermission.ReadProcessPath => Loc?["PluginPermission.ReadProcessPath"] ?? "Read Process Path",
+                PluginPermission.ShowNotification => Loc?["PluginPermission.ShowNotification"] ?? "Show Notification",
+                PluginPermission.ReadClipboard => Loc?["PluginPermission.ReadClipboard"] ?? "Read Clipboard",
+                PluginPermission.WriteClipboard => Loc?["PluginPermission.WriteClipboard"] ?? "Write Clipboard",
+                PluginPermission.ReadSelectedText => Loc?["PluginPermission.ReadSelectedText"] ?? "Read Selected Text",
+                PluginPermission.ReadProcessWindows => Loc?["PluginPermission.ReadProcessWindows"] ?? "Read Process Windows",
+                PluginPermission.SimulateKeyboard => Loc?["PluginPermission.SimulateKeyboard"] ?? "Simulate Keyboard",
+                PluginPermission.SimulateMouse => Loc?["PluginPermission.SimulateMouse"] ?? "Simulate Mouse",
+                PluginPermission.StartProcess => Loc?["PluginPermission.StartProcess"] ?? "Start Process",
+                PluginPermission.KillProcess => Loc?["PluginPermission.KillProcess"] ?? "Kill Process",
+                PluginPermission.ReadFileSystem => Loc?["PluginPermission.ReadFileSystem"] ?? "Read File System",
+                PluginPermission.WriteFileSystem => Loc?["PluginPermission.WriteFileSystem"] ?? "Write File System",
+                PluginPermission.AccessRegistry => Loc?["PluginPermission.AccessRegistry"] ?? "Access Registry",
+                PluginPermission.AccessEnvironment => Loc?["PluginPermission.AccessEnvironment"] ?? "Access Environment",
+                PluginPermission.AccessCredentials => Loc?["PluginPermission.AccessCredentials"] ?? "Access Credentials",
+                PluginPermission.ModifyCredentials => Loc?["PluginPermission.ModifyCredentials"] ?? "Modify Credentials",
+                PluginPermission.AccessNetwork => Loc?["PluginPermission.AccessNetwork"] ?? "Access Network",
+                PluginPermission.ExecuteNativeCode => Loc?["PluginPermission.ExecuteNativeCode"] ?? "Execute Native Code",
+                PluginPermission.LoadAssembly => Loc?["PluginPermission.LoadAssembly"] ?? "Load Assembly",
+                PluginPermission.ModifyConfiguration => Loc?["PluginPermission.ModifyConfiguration"] ?? "Modify Configuration",
+                PluginPermission.RegisterHotkey => Loc?["PluginPermission.RegisterHotkey"] ?? "Register Hotkey",
+                PluginPermission.ModifyPluginRegistry => Loc?["PluginPermission.ModifyPluginRegistry"] ?? "Modify Plugin Registry",
+                PluginPermission.AccessAllServices => Loc?["PluginPermission.AccessAllServices"] ?? "Access All Services",
+                PluginPermission.BypassPermissionCheck => Loc?["PluginPermission.BypassPermissionCheck"] ?? "Bypass Permission Check",
                 _ => permission.ToString()
             };
         }
@@ -265,32 +280,32 @@ namespace Pulsar.Core.Plugin.Security
         {
             return permission switch
             {
-                PluginPermission.ReadWindowInfo => "允许插件读取当前窗口的基础信息（进程名、PID、窗口句柄）",
-                PluginPermission.ReadProcessPath => "允许插件读取目标进程的完整路径",
-                PluginPermission.ShowNotification => "允许插件显示系统通知消息",
-                PluginPermission.ReadClipboard => "允许插件读取剪贴板内容",
-                PluginPermission.WriteClipboard => "允许插件修改剪贴板内容",
-                PluginPermission.ReadSelectedText => "允许插件读取当前选中的文本",
-                PluginPermission.ReadProcessWindows => "允许插件获取目标进程的所有窗口列表",
-                PluginPermission.SimulateKeyboard => "允许插件模拟键盘输入",
-                PluginPermission.SimulateMouse => "允许插件模拟鼠标操作",
-                PluginPermission.StartProcess => "允许插件启动外部程序",
-                PluginPermission.KillProcess => "允许插件终止进程（危险操作）",
-                PluginPermission.ReadFileSystem => "允许插件读取文件系统",
-                PluginPermission.WriteFileSystem => "允许插件写入文件系统（危险操作）",
-                PluginPermission.AccessRegistry => "允许插件访问 Windows 注册表（危险操作）",
-                PluginPermission.AccessEnvironment => "允许插件访问环境变量",
-                PluginPermission.AccessCredentials => "允许插件读取 PKI 凭据管理器中的密码（敏感操作）",
-                PluginPermission.ModifyCredentials => "允许插件添加/删除凭据（敏感操作）",
-                PluginPermission.AccessNetwork => "允许插件发起网络请求",
-                PluginPermission.ExecuteNativeCode => "允许插件执行原生代码（危险操作）",
-                PluginPermission.LoadAssembly => "允许插件动态加载外部程序集（危险操作）",
-                PluginPermission.ModifyConfiguration => "允许插件修改 Pulsar 配置",
-                PluginPermission.RegisterHotkey => "允许插件注册全局热键（系统级操作）",
-                PluginPermission.ModifyPluginRegistry => "允许插件修改插件注册表（系统级操作）",
-                PluginPermission.AccessAllServices => "允许插件访问所有依赖注入服务（系统级操作）",
-                PluginPermission.BypassPermissionCheck => "允许插件绕过权限检查（仅核心插件）",
-                _ => "未知权限"
+                PluginPermission.ReadWindowInfo => Loc?["PluginPermission.ReadWindowInfoDesc"] ?? "Allows plugin to read basic window information (process name, PID, window handle)",
+                PluginPermission.ReadProcessPath => Loc?["PluginPermission.ReadProcessPathDesc"] ?? "Allows plugin to read the full path of the target process",
+                PluginPermission.ShowNotification => Loc?["PluginPermission.ShowNotificationDesc"] ?? "Allows plugin to display system notification messages",
+                PluginPermission.ReadClipboard => Loc?["PluginPermission.ReadClipboardDesc"] ?? "Allows plugin to read clipboard content",
+                PluginPermission.WriteClipboard => Loc?["PluginPermission.WriteClipboardDesc"] ?? "Allows plugin to modify clipboard content",
+                PluginPermission.ReadSelectedText => Loc?["PluginPermission.ReadSelectedTextDesc"] ?? "Allows plugin to read currently selected text",
+                PluginPermission.ReadProcessWindows => Loc?["PluginPermission.ReadProcessWindowsDesc"] ?? "Allows plugin to get the list of all windows for the target process",
+                PluginPermission.SimulateKeyboard => Loc?["PluginPermission.SimulateKeyboardDesc"] ?? "Allows plugin to simulate keyboard input",
+                PluginPermission.SimulateMouse => Loc?["PluginPermission.SimulateMouseDesc"] ?? "Allows plugin to simulate mouse operations",
+                PluginPermission.StartProcess => Loc?["PluginPermission.StartProcessDesc"] ?? "Allows plugin to start external programs",
+                PluginPermission.KillProcess => Loc?["PluginPermission.KillProcessDesc"] ?? "Allows plugin to terminate processes (dangerous operation)",
+                PluginPermission.ReadFileSystem => Loc?["PluginPermission.ReadFileSystemDesc"] ?? "Allows plugin to read the file system",
+                PluginPermission.WriteFileSystem => Loc?["PluginPermission.WriteFileSystemDesc"] ?? "Allows plugin to write to the file system (dangerous operation)",
+                PluginPermission.AccessRegistry => Loc?["PluginPermission.AccessRegistryDesc"] ?? "Allows plugin to access the Windows Registry (dangerous operation)",
+                PluginPermission.AccessEnvironment => Loc?["PluginPermission.AccessEnvironmentDesc"] ?? "Allows plugin to access environment variables",
+                PluginPermission.AccessCredentials => Loc?["PluginPermission.AccessCredentialsDesc"] ?? "Allows plugin to read passwords from the PKI credential manager (sensitive operation)",
+                PluginPermission.ModifyCredentials => Loc?["PluginPermission.ModifyCredentialsDesc"] ?? "Allows plugin to add/delete credentials (sensitive operation)",
+                PluginPermission.AccessNetwork => Loc?["PluginPermission.AccessNetworkDesc"] ?? "Allows plugin to initiate network requests",
+                PluginPermission.ExecuteNativeCode => Loc?["PluginPermission.ExecuteNativeCodeDesc"] ?? "Allows plugin to execute native code (dangerous operation)",
+                PluginPermission.LoadAssembly => Loc?["PluginPermission.LoadAssemblyDesc"] ?? "Allows plugin to dynamically load external assemblies (dangerous operation)",
+                PluginPermission.ModifyConfiguration => Loc?["PluginPermission.ModifyConfigurationDesc"] ?? "Allows plugin to modify Pulsar configuration",
+                PluginPermission.RegisterHotkey => Loc?["PluginPermission.RegisterHotkeyDesc"] ?? "Allows plugin to register global hotkeys (system-level operation)",
+                PluginPermission.ModifyPluginRegistry => Loc?["PluginPermission.ModifyPluginRegistryDesc"] ?? "Allows plugin to modify the plugin registry (system-level operation)",
+                PluginPermission.AccessAllServices => Loc?["PluginPermission.AccessAllServicesDesc"] ?? "Allows plugin to access all dependency injection services (system-level operation)",
+                PluginPermission.BypassPermissionCheck => Loc?["PluginPermission.BypassPermissionCheckDesc"] ?? "Allows plugin to bypass permission checks (core plugins only)",
+                _ => Loc?["PluginPermission.UnknownPermission"] ?? "Unknown Permission"
             };
         }
 

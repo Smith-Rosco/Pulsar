@@ -8,6 +8,7 @@
       xmlns:ts="clr-namespace:Pulsar.Views.TemplateSelectors"
       xmlns:converters="clr-namespace:Pulsar.Core.Converters"
       xmlns:controls="clr-namespace:Pulsar.Views.Controls"
+      xmlns:lex="clr-namespace:Pulsar.Core.Localization"
       mc:Ignorable="d" 
       d:DesignHeight="600" d:DesignWidth="900"
       Title="SettingsPluginsPage">
@@ -55,21 +56,21 @@
                     </ResourceDictionary.MergedDictionaries>
                 </ResourceDictionary>
             </ContextMenu.Resources>
-            <MenuItem Header="Configure" 
+            <MenuItem Header="{lex:Locale Settings.Plugins.Configure}" 
                       Command="{Binding ConfigureCommand}"
                       Visibility="{Binding HasSettings, Converter={StaticResource BoolToVis}}">
                 <MenuItem.Icon>
                     <ui:SymbolIcon Symbol="Settings24"/>
                 </MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="View Logs" 
+            <MenuItem Header="{lex:Locale Settings.Plugins.ViewLogs}" 
                       Command="{Binding ViewLogsCommand}">
                 <MenuItem.Icon>
                     <ui:SymbolIcon Symbol="DocumentText24"/>
                 </MenuItem.Icon>
             </MenuItem>
             <Separator/>
-            <MenuItem Header="Refresh Analytics" 
+            <MenuItem Header="{lex:Locale Settings.Plugins.RefreshAnalytics}" 
                       Command="{Binding RefreshAnalyticsCommand}">
                 <MenuItem.Icon>
                     <ui:SymbolIcon Symbol="ArrowClockwise24"/>
@@ -235,11 +236,11 @@
                     </Grid.ColumnDefinitions>
                     <ui:TextBox Grid.Column="0" 
                                 Text="{Binding PathValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                PlaceholderText="Enter or browse path..."
+                                PlaceholderText="{lex:Locale Settings.Plugins.EnterPathPlaceholder}"
                                 HorizontalAlignment="Right"/>
                     <ui:Button Grid.Column="1"
                                Icon="{ui:SymbolIcon FolderOpen24}"
-                               ToolTip="Browse"
+                               ToolTip="{lex:Locale Settings.Plugins.Browse}"
                                Appearance="Secondary"
                                Margin="4,0,0,0"
                                Click="BrowsePathButton_Click"
@@ -296,7 +297,7 @@
                 <ui:PasswordBox Password="{Binding SecretValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                 Width="220"
                                 HorizontalAlignment="Right"
-                                PlaceholderText="Enter secret value..."/>
+                                PlaceholderText="{lex:Locale Settings.Plugins.EnterSecretPlaceholder}"/>
             </ui:CardControl>
         </DataTemplate>
 
@@ -318,12 +319,12 @@
 
         <!-- Unified Page Header -->
         <controls:SettingsPageHeader Grid.Row="0"
-                                     Title="Plugins"
-                                     Description="Manage plugin lifecycle, health, and configuration">
+                                     Title="{lex:Locale Settings.Plugins.Title}"
+                                     Description="{lex:Locale Settings.Plugins.Description}">
             <controls:SettingsPageHeader.ActionsContent>
                 <StackPanel Orientation="Horizontal">
                     <!-- Search Box (only visible on Built-in tab) -->
-                    <ui:TextBox PlaceholderText="Search plugins..."
+                    <ui:TextBox PlaceholderText="{lex:Locale Settings.Plugins.SearchPlugins}"
                                 Icon="{ui:SymbolIcon Search24}"
                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                 ClearButtonEnabled="True"
@@ -331,21 +332,21 @@
                                 Margin="0,0,8,0"/>
                     
                     <!-- Quick Navigation Buttons -->
-                    <ui:Button Content="Core"
+                    <ui:Button Content="{lex:Locale Settings.Plugins.Core}"
                                Icon="{ui:SymbolIcon Shield24}"
                                Style="{StaticResource PulsarSecondaryButtonStyle}"
                                Click="JumpToCoreButton_Click"
-                               ToolTip="Jump to Core Plugins"
+                               ToolTip="{lex:Locale Settings.Plugins.CoreTabTooltip}"
                                Margin="0,0,4,0"/>
-                    <ui:Button Content="Extensions"
+                    <ui:Button Content="{lex:Locale Settings.Plugins.Extensions}"
                                Icon="{ui:SymbolIcon PuzzlePiece24}"
                                Style="{StaticResource PulsarSecondaryButtonStyle}"
                                Click="JumpToExtensionButton_Click"
-                               ToolTip="Jump to Extension Plugins"
+                               ToolTip="{lex:Locale Settings.Plugins.ExtensionsTabTooltip}"
                                Margin="0,0,8,0"/>
                     
                     <!-- Refresh Button -->
-                    <ui:Button Content="Refresh"
+                    <ui:Button Content="{lex:Locale Settings.Plugins.Refresh}"
                                Command="{Binding RefreshAllCommand}"
                                Icon="{ui:SymbolIcon ArrowClockwise24}"
                                Style="{StaticResource PulsarSecondaryButtonStyle}"/>
@@ -362,7 +363,7 @@
                     BorderThickness="0">
 
             <!-- Built-in Plugins Tab -->
-            <TabItem Header="Built-in">
+            <TabItem Header="{lex:Locale Settings.Plugins.BuiltIn}">
 
         <!-- Grouped List with Sticky Header Support -->
         <Grid Style="{StaticResource TabSlideInStyle}">
@@ -396,11 +397,11 @@
                                              CanToggle="{Binding CanDisable}"
                                             PrimaryActionCommand="{Binding ConfigureCommand}"
                                             PrimaryActionIcon="Settings24"
-                                            PrimaryActionTooltip="Configure"
+                                            PrimaryActionTooltip="{lex:Locale Settings.Plugins.ConfigureTooltip}"
                                             PrimaryActionVisibility="{Binding HasSettings, Converter={StaticResource BoolToVis}}"
                                             SecondaryActionCommand="{Binding ViewLogsCommand}"
                                             SecondaryActionIcon="DocumentText24"
-                                            SecondaryActionTooltip="View Logs"
+                                            SecondaryActionTooltip="{lex:Locale Settings.Plugins.ViewLogsTooltip}"
                                             SecondaryActionVisibility="Visible"
                                             CardContextMenu="{StaticResource PluginContextMenu}">
                                             
@@ -414,7 +415,7 @@
                                                             Padding="4,1" 
                                                             Margin="0,0,8,0"
                                                             VerticalAlignment="Center">
-                                                        <TextBlock Text="Core" 
+                                                        <TextBlock Text="{lex:Locale Settings.Plugins.Core}" 
                                                                    FontSize="10" 
                                                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                                                     </Border>
@@ -428,7 +429,7 @@
                                                                VerticalAlignment="Center"/>
                                                     
                                                     <!-- Health Score with Progress Bar -->
-                                                    <TextBlock Text="Health:" 
+                                                    <TextBlock Text="{lex:Locale Settings.Plugins.HealthLabel}" 
                                                                FontSize="11" 
                                                                Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                                Margin="0,0,6,0"
@@ -552,18 +553,18 @@
                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                    HorizontalAlignment="Center"
                                    Margin="0,0,0,16"/>
-                    <TextBlock Text="No plugins found" 
+                    <TextBlock Text="{lex:Locale Settings.Plugins.NoPluginsFound}" 
                                FontSize="16" 
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                HorizontalAlignment="Center"
                                Margin="0,0,0,8"/>
-                    <TextBlock Text="Try adjusting your search criteria" 
+                    <TextBlock Text="{lex:Locale Settings.Plugins.AdjustSearch}" 
                                FontSize="12" 
                                Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                HorizontalAlignment="Center"
                                Margin="0,0,0,12"/>
-                    <ui:Button Content="Clear Search"
+                    <ui:Button Content="{lex:Locale Settings.Plugins.ClearSearch}"
                                Command="{Binding ClearSearchCommand}"
                                Icon="{ui:SymbolIcon Dismiss24}"
                                Style="{StaticResource PulsarSecondaryButtonStyle}"
@@ -576,7 +577,7 @@
             </TabItem>
 
             <!-- External Plugins Tab -->
-            <TabItem Header="External">
+            <TabItem Header="{lex:Locale Settings.Plugins.External}">
                 <Grid Style="{StaticResource TabSlideInStyle}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -586,15 +587,15 @@
 
                     <!-- External: Title + Install Button Row -->
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,8,0,8" VerticalAlignment="Center">
-                        <TextBlock Text="External Plugins"
+                        <TextBlock Text="{lex:Locale Settings.Plugins.ExternalPlugins}"
                                    FontSize="18" FontWeight="SemiBold"
                                    VerticalAlignment="Center"
                                    Margin="0,0,12,0"/>
-                        <ui:Button Content="Install from File"
+                        <ui:Button Content="{lex:Locale Settings.Plugins.InstallFromFile}"
                                    Command="{Binding ExternalPluginManager.InstallFromFileCommand}"
                                    Icon="{ui:SymbolIcon FolderOpen24}"
                                    Style="{StaticResource PulsarPrimaryButtonStyle}"
-                                   ToolTip="Install a plugin from a local ZIP file"/>
+                                   ToolTip="{lex:Locale Settings.Plugins.InstallFromFileTooltip}"/>
                     </StackPanel>
 
                     <!-- External: Scrollable List -->
@@ -607,7 +608,7 @@
                             <StackPanel Visibility="{Binding ExternalPluginManager.IsLoading, Converter={StaticResource BoolToVis}}"
                                         HorizontalAlignment="Center" Margin="0,48,0,0">
                                 <ui:ProgressRing IsIndeterminate="True" Width="48" Height="48"/>
-                                <TextBlock Text="Loading external plugins..."
+                                <TextBlock Text="{lex:Locale Settings.Plugins.LoadingPlugins}"
                                            FontSize="14"
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                            HorizontalAlignment="Center"
@@ -647,7 +648,7 @@
                                                                    TextWrapping="Wrap" Margin="0,0,0,8"/>
                                                     </StackPanel>
                                                     <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                                        <ui:Button Content="Uninstall"
+                                                        <ui:Button Content="{lex:Locale Settings.Plugins.Uninstall}"
                                                                    Command="{Binding DataContext.ExternalPluginManager.UninstallPluginCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                                    CommandParameter="{Binding}"
                                                                    Icon="{ui:SymbolIcon Delete24}"
@@ -669,14 +670,14 @@
                                         <ui:SymbolIcon Symbol="Apps24" FontSize="64"
                                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                        HorizontalAlignment="Center" Margin="0,0,0,16"/>
-                                        <TextBlock Text="No external plugins installed" FontSize="18" FontWeight="SemiBold"
+                                        <TextBlock Text="{lex:Locale Settings.Plugins.NoExternalPlugins}" FontSize="18" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                    HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                                        <TextBlock Text="Click 'Install from File' to add plugins from ZIP packages"
+                                        <TextBlock Text="{lex:Locale Settings.Plugins.InstallHint}"
                                                    FontSize="13" Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                    HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"
                                                    MaxWidth="400" Margin="0,0,0,16"/>
-                                        <ui:Button Content="Install from File"
+                                        <ui:Button Content="{lex:Locale Settings.Plugins.InstallFromFile}"
                                                    Command="{Binding ExternalPluginManager.InstallFromFileCommand}"
                                                    Icon="{ui:SymbolIcon FolderOpen24}"
                                                    Style="{StaticResource PulsarPrimaryButtonStyle}"

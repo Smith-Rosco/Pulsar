@@ -12,7 +12,9 @@ namespace Pulsar.Tests.Tutorial
         public void LoadSteps_ShouldUse_OnboardingDefaultFlow()
         {
             var logger = new Mock<ILogger<TutorialStepLoader>>();
-            var loader = new TutorialStepLoader(logger.Object);
+            var loc = new Mock<Pulsar.Core.Localization.ILocalizationService>();
+            loc.Setup(l => l.GetString(It.IsAny<string>())).Returns((string key) => key);
+            var loader = new TutorialStepLoader(logger.Object, loc.Object);
 
             var steps = loader.LoadSteps();
 

@@ -5,6 +5,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:vm="clr-namespace:Pulsar.ViewModels.Settings"
+      xmlns:lex="clr-namespace:Pulsar.Core.Localization"
       xmlns:converters="clr-namespace:Pulsar.Core.Converters"
       xmlns:controls="clr-namespace:Pulsar.Views.Controls"
       mc:Ignorable="d" 
@@ -49,14 +50,14 @@
 
         <!-- Page Header -->
         <controls:SettingsPageHeader Grid.Row="0"
-                                     Title="External Plugins"
-                                     Description="Install and manage plugins from local ZIP files">
+                                     Title="{lex:Locale Settings.ExternalPlugins.Title}"
+                                     Description="{lex:Locale Settings.ExternalPlugins.Description}">
             <controls:SettingsPageHeader.ActionsContent>
-                <ui:Button Content="Install from File"
+                <ui:Button Content="{lex:Locale Settings.ExternalPlugins.InstallFromFile}"
                            Command="{Binding InstallFromFileCommand}"
                            Icon="{ui:SymbolIcon FolderOpen24}"
                            Style="{StaticResource PulsarPrimaryButtonStyle}"
-                           ToolTip="Install a plugin from a local ZIP file"/>
+                           ToolTip="{lex:Locale Settings.ExternalPlugins.InstallFromFileTooltip}"/>
             </controls:SettingsPageHeader.ActionsContent>
         </controls:SettingsPageHeader>
 
@@ -72,7 +73,7 @@
                             VerticalAlignment="Center"
                             Margin="0,48,0,0">
                     <ui:ProgressRing IsIndeterminate="True" Width="48" Height="48"/>
-                    <TextBlock Text="Loading external plugins..."
+                    <TextBlock Text="{lex:Locale Settings.ExternalPlugins.LoadingPlugins}"
                                FontSize="14"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                HorizontalAlignment="Center"
@@ -129,7 +130,7 @@
                                                         CornerRadius="4"
                                                         Padding="6,2"
                                                         Margin="8,0,0,0">
-                                                    <TextBlock Text="Installed"
+                                                    <TextBlock Text="{lex:Locale Settings.ExternalPlugins.Installed}"
                                                                FontSize="10"
                                                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                                                 </Border>
@@ -160,7 +161,7 @@
                                         <!-- Action Buttons -->
                                         <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                             <!-- Uninstall Button -->
-                                            <ui:Button Content="Uninstall"
+                                            <ui:Button Content="{lex:Locale Settings.ExternalPlugins.Uninstall}"
                                                        Command="{Binding DataContext.UninstallPluginCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                        CommandParameter="{Binding}"
                                                        Icon="{ui:SymbolIcon Delete24}"
@@ -186,13 +187,13 @@
                                            Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                            HorizontalAlignment="Center"
                                            Margin="0,0,0,16"/>
-                            <TextBlock Text="No external plugins installed"
+                            <TextBlock Text="{lex:Locale Settings.ExternalPlugins.NoPlugins}"
                                        FontSize="18"
                                        FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                        HorizontalAlignment="Center"
                                        Margin="0,0,0,8"/>
-                            <TextBlock Text="Click 'Install from File' to add plugins from ZIP packages"
+                            <TextBlock Text="{lex:Locale Settings.ExternalPlugins.InstallHint}"
                                        FontSize="13"
                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                        HorizontalAlignment="Center"
@@ -200,7 +201,7 @@
                                        TextAlignment="Center"
                                        MaxWidth="400"
                                        Margin="0,0,0,16"/>
-                            <ui:Button Content="Install from File"
+                            <ui:Button Content="{lex:Locale Settings.ExternalPlugins.InstallFromFile}"
                                        Command="{Binding InstallFromFileCommand}"
                                        Icon="{ui:SymbolIcon FolderOpen24}"
                                        Style="{StaticResource PulsarPrimaryButtonStyle}"
@@ -221,7 +222,7 @@
                                                FontSize="16" 
                                                Foreground="{DynamicResource SystemAccentColorBrush}"
                                                Margin="0,0,8,0"/>
-                                <TextBlock Text="About External Plugins" 
+                                <TextBlock Text="{lex:Locale Settings.ExternalPlugins.AboutTitle}" 
                                            FontWeight="SemiBold"
                                            FontSize="14"/>
                             </StackPanel>
@@ -229,15 +230,15 @@
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                        FontSize="12"
                                        LineHeight="18">
-                                <Run Text="• External plugins are loaded from ZIP files and installed to your local AppData folder"/>
+                                <Run Text="{lex:Locale Settings.ExternalPlugins.AboutLine1}"/>
                                 <LineBreak/>
-                                <Run Text="• Built-in plugins (PKI, WinSwitcher, etc.) are managed in the "/>
-                                <Run Text="'Plugins'" FontWeight="SemiBold"/>
-                                <Run Text=" tab"/>
+                                <Run Text="{lex:Locale Settings.ExternalPlugins.AboutLine2}"/>
+                                <Run Text="{lex:Locale Settings.ExternalPlugins.AboutLine3}" FontWeight="SemiBold"/>
+                                <Run Text="{lex:Locale Settings.ExternalPlugins.AboutLine4}"/>
                                 <LineBreak/>
-                                <Run Text="• After installation, restart Pulsar to load the new plugin"/>
+                                <Run Text="{lex:Locale Settings.ExternalPlugins.AboutLine5}"/>
                                 <LineBreak/>
-                                <Run Text="• Uninstalling a plugin requires a restart to complete removal"/>
+                                <Run Text="{lex:Locale Settings.ExternalPlugins.AboutLine6}"/>
                             </TextBlock>
                         </StackPanel>
                     </Border>

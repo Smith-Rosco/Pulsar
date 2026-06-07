@@ -5,6 +5,7 @@ using System.IO;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Pulsar.Core.Localization;
 using Pulsar.Models.Tutorial;
 using Pulsar.Services.Tutorial;
 using Xunit;
@@ -13,11 +14,18 @@ namespace Pulsar.Tests.Tutorial
 {
     public class TutorialStepLoaderTests
     {
+        private static TutorialStepLoader CreateLoader()
+        {
+            var logger = new Mock<ILogger<TutorialStepLoader>>();
+            var loc = new Mock<ILocalizationService>();
+            loc.Setup(l => l.GetString(It.IsAny<string>())).Returns((string key) => key);
+            return new TutorialStepLoader(logger.Object, loc.Object);
+        }
+
         [Fact]
         public void LoadSteps_ShouldReturnFallback_WhenFileMissing()
         {
-            var logger = new Mock<ILogger<TutorialStepLoader>>();
-            var loader = new TutorialStepLoader(logger.Object);
+            var loader = CreateLoader();
 
             var steps = loader.LoadSteps(Path.Combine(Path.GetTempPath(), Guid.NewGuid() + "-missing.json"));
 
@@ -29,8 +37,7 @@ namespace Pulsar.Tests.Tutorial
         [Fact]
         public void LoadSteps_ShouldParseValidJsonConfig()
         {
-            var logger = new Mock<ILogger<TutorialStepLoader>>();
-            var loader = new TutorialStepLoader(logger.Object);
+            var loader = CreateLoader();
 
             var json = "{" +
                        "\"version\":\"1.0\"," +
@@ -67,8 +74,7 @@ namespace Pulsar.Tests.Tutorial
         [Fact]
         public void LoadSteps_ShouldFallback_WhenJsonHasDuplicateIds()
         {
-            var logger = new Mock<ILogger<TutorialStepLoader>>();
-            var loader = new TutorialStepLoader(logger.Object);
+            var loader = CreateLoader();
 
             var json = "{" +
                        "\"version\":\"1.0\"," +

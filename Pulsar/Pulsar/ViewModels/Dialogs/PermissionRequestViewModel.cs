@@ -2,6 +2,7 @@
 
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin.Security;
 using Pulsar.ViewModels.Base;
 using System;
@@ -16,6 +17,8 @@ namespace Pulsar.ViewModels.Dialogs
     /// </summary>
     public partial class PermissionRequestViewModel : ObservableObject, IDialogViewModel
     {
+        private readonly ILocalizationService _loc;
+
         [ObservableProperty]
         private string _pluginId = string.Empty;
 
@@ -58,8 +61,9 @@ namespace Pulsar.ViewModels.Dialogs
         /// 是否可滚动
         /// </summary>
 
-        public PermissionRequestViewModel()
+        public PermissionRequestViewModel(ILocalizationService localizationService)
         {
+            _loc = localizationService;
         }
 
         /// <summary>
@@ -79,11 +83,11 @@ namespace Pulsar.ViewModels.Dialogs
             // 设置风险等级文本和颜色
             (RiskLevelText, RiskLevelColor) = RiskLevel switch
             {
-                PermissionRiskLevel.Low => ("低风险", "#4CAF50"),      // Green
-                PermissionRiskLevel.Medium => ("中等风险", "#FF9800"), // Orange
-                PermissionRiskLevel.High => ("高风险", "#FF5722"),     // Deep Orange
-                PermissionRiskLevel.Critical => ("严重风险", "#F44336"), // Red
-                _ => ("未知风险", "#9E9E9E")                           // Grey
+                PermissionRiskLevel.Low => (_loc["Dialog.Permission.LowRisk"], "#4CAF50"),      // Green
+                PermissionRiskLevel.Medium => (_loc["Dialog.Permission.MediumRisk"], "#FF9800"), // Orange
+                PermissionRiskLevel.High => (_loc["Dialog.Permission.HighRisk"], "#FF5722"),     // Deep Orange
+                PermissionRiskLevel.Critical => (_loc["Dialog.Permission.CriticalRisk"], "#F44336"), // Red
+                _ => (_loc["Dialog.Permission.UnknownRisk"], "#9E9E9E")                           // Grey
             };
         }
 

@@ -52,6 +52,36 @@ This file provides essential context, conventions, and routing for AI agents wor
 
 ---
 
+### Localization Rules
+
+**Rule**: NEVER hardcode user-facing strings in C# or XAML. Always use the localization system.
+
+**Rule**: All user-visible text must go through `ILocalizationService` (`_loc["Key"]` in C#, `{lex:Locale Key}` in XAML) or plugin parameter label conventions.
+
+**Convention-based localization for plugin metadata**: Parameter/action labels defined in `SlotParameterMetadata.Label` and `SlotActionMetadata.Label` are automatically localized via convention key lookup:
+- Parameter labels → `SlotParam.{AlphaNumOnly(Label)}` (e.g., `SlotParam.ProcessName`)
+- Action labels → `SlotAction.{AlphaNumOnly(Label)}` (e.g., `SlotAction.SwitchOrLaunch`)
+- The lookup strips non-alphanumeric characters from the label text to form the key
+- If no translation exists, the original label text is used as fallback
+
+**Adding new translations**:
+1. Add `<data>` entry to `Resources/Strings.resx` (English) and `Resources/Strings.zh-CN.resx` (Chinese)
+2. Naming: `Category.SubCategory.Description` (e.g., `Plugin.CircuitBreakerTitle`)
+3. For formatted strings, use `{0}`, `{1}` placeholders; call with `string.Format(_loc["Key"], arg0, arg1)`
+
+**Error messages in plugins**: Plugin error/success messages (via `PluginResult.Error()` / `PluginResult.Ok()`) MUST use `ILocalizationService`. Hardcoding Chinese (or any language) creates bugs when the user switches languages. If error messages are matched by `ActionFeedbackService`, update both the plugin AND the pattern matching in `ActionFeedbackService` to support bilingual matching.
+
+**Key files**:
+- `Resources/Strings.resx` — English (base)
+- `Resources/Strings.zh-CN.resx` — Chinese
+- `Core/Localization/LocalizationService.cs` — resolution + fallback chain
+- `Core/Localization/LocExtension.cs` — WPF `{lex:Locale}` markup extension
+- `Models/SlotParameterEditorModels.cs` — convention-based loc lookup for plugin labels
+
+**Deep Dive**: [Docs/architecture/PLUGIN_SYSTEM.md](./Docs/architecture/PLUGIN_SYSTEM.md) (plugin metadata), `SlotParameterEditorModels.cs:48-58` (convention lookup)
+
+---
+
 ## 3. Critical Pitfalls (Blood & Tears Archive)
 
 ### Theme Injection Timing (Pages)

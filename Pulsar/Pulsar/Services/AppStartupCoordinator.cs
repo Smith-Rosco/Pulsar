@@ -14,6 +14,7 @@ using Pulsar.Services.Interfaces;
 using Pulsar.Services.Tutorial;
 using Pulsar.ViewModels.Dialogs;
 using Pulsar.Views;
+using Pulsar.Core.Localization;
 using Wpf.Ui.Appearance;
 
 namespace Pulsar.Services
@@ -44,6 +45,8 @@ namespace Pulsar.Services
 
             var configService = _services.GetRequiredService<IConfigService>();
             await ApplyLoggingConfigurationAsync(configService);
+
+            await ConfigureLocalizationAsync(configService);
 
             var processRegistryService = _services.GetRequiredService<IProcessRegistryService>();
             await processRegistryService.InitializeAsync();
@@ -165,6 +168,25 @@ namespace Pulsar.Services
             }
         }
 
+        private async Task ConfigureLocalizationAsync(IConfigService configService)
+        {
+            try
+            {
+                var localizationService = _services.GetRequiredService<ILocalizationService>();
+                var config = await configService.LoadAsync();
+                var language = config?.Settings?.Language;
+                if (!string.IsNullOrEmpty(language))
+                {
+                    localizationService.SetLanguage(language);
+                    Log.Information("Localization initialized with language: {Language}", language);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Failed to initialize localization from config, using default English");
+            }
+        }
+
         private async Task ConfigureKeyboardHookAsync(IConfigService configService)
         {
             var keyboardHook = _services.GetRequiredService<GlobalKeyboardHook>();
@@ -193,8 +215,9 @@ namespace Pulsar.Services
             _logger.LogInformation("[Startup] Launching first-run setup wizard");
             var dialogService = _services.GetRequiredService<IDialogService>();
             var wizard = _services.GetRequiredService<FirstLaunchSetupWizardViewModel>();
+            var loc = _services.GetRequiredService<ILocalizationService>();
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(
-                () => dialogService.ShowCustomAsync("欢迎使用 Pulsar", wizard, DialogButtons.None, DialogSizeConstraints.LargeResizable, AppTheme.Light),
+                () => dialogService.ShowCustomAsync(loc["FirstLaunch.SetupTitle"], wizard, DialogButtons.None, DialogSizeConstraints.LargeResizable, AppTheme.Light),
                 System.Windows.Threading.DispatcherPriority.Normal,
                 cancellationToken);
         }

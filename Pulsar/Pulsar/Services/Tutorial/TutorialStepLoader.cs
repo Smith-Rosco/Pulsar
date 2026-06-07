@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
+using Pulsar.Core.Localization;
 using Pulsar.Models.Tutorial;
 
 namespace Pulsar.Services.Tutorial
@@ -18,11 +19,13 @@ namespace Pulsar.Services.Tutorial
     public class TutorialStepLoader
     {
         private readonly ILogger<TutorialStepLoader> _logger;
+        private readonly ILocalizationService _loc;
         private readonly string _defaultConfigPath;
 
-        public TutorialStepLoader(ILogger<TutorialStepLoader> logger)
+        public TutorialStepLoader(ILogger<TutorialStepLoader> logger, ILocalizationService localizationService)
         {
             _logger = logger;
+            _loc = localizationService;
             
             // 默认配置文件路径 - 优先使用 Assets 目录
             var appDirectory = AppDomain.CurrentDomain.BaseDirectory;
@@ -208,8 +211,8 @@ namespace Pulsar.Services.Tutorial
                 new TutorialStep
                 {
                     Id = "step1_onboarding_welcome",
-                    Title = "Welcome to Pulsar",
-                    Description = "Your setup wizard already created a starter configuration. This tutorial now focuses on one successful Switch Mode action and one successful Command Mode action.",
+                    Title = _loc["Tutorial.Welcome"],
+                    Description = _loc["Tutorial.WelcomeDesc"],
                     Type = TutorialStepType.Instruction,
                     FocusMode = TutorialFocusMode.AlwaysFocused,
                     Layout = new TutorialLayout
@@ -227,10 +230,10 @@ namespace Pulsar.Services.Tutorial
                 new TutorialStep
                 {
                     Id = "step2_switch_mode_intro",
-                    Title = "Switch Mode: app switching and launching",
-                    Description = "Press Ctrl+Q to open Switch Mode and preview the app slots created during setup.",
+                    Title = _loc["Tutorial.SwitchMode"],
+                    Description = _loc["Tutorial.SwitchModeDesc"],
                     Type = TutorialStepType.WaitForAction,
-                    WaitHintText = "Open Switch Mode with Ctrl+Q.",
+                    WaitHintText = _loc["Tutorial.SwitchModeHint"],
                     FocusMode = TutorialFocusMode.AlwaysObserving,
                     Layout = new TutorialLayout
                     {
@@ -248,8 +251,8 @@ namespace Pulsar.Services.Tutorial
                 new TutorialStep
                 {
                     Id = "step3_switch_mode_success",
-                    Title = "First switch success",
-                    Description = "Choose any generated app slot from Switch Mode. This step completes only after Pulsar reports one successful switch or launch action.",
+                    Title = _loc["Tutorial.FirstSwitch"],
+                    Description = _loc["Tutorial.FirstSwitchDesc"],
                     Type = TutorialStepType.WaitForAction,
                     FocusMode = TutorialFocusMode.AlwaysObserving,
                     Layout = new TutorialLayout
@@ -268,10 +271,10 @@ namespace Pulsar.Services.Tutorial
                 new TutorialStep
                 {
                     Id = "step4_command_mode_intro",
-                    Title = "Command Mode: run an action",
-                    Description = "Press Ctrl+Shift+Q to open Command Mode and preview the starter command slot created during setup.",
+                    Title = _loc["Tutorial.CommandMode"],
+                    Description = _loc["Tutorial.CommandModeDesc"],
                     Type = TutorialStepType.WaitForAction,
-                    WaitHintText = "Open Command Mode with Ctrl+Shift+Q.",
+                    WaitHintText = _loc["Tutorial.CommandModeHint"],
                     FocusMode = TutorialFocusMode.AlwaysObserving,
                     Layout = new TutorialLayout
                     {
@@ -289,8 +292,8 @@ namespace Pulsar.Services.Tutorial
                 new TutorialStep
                 {
                     Id = "step5_command_mode_success",
-                    Title = "First command success",
-                    Description = "Choose any generated command slot from Command Mode. This step completes only after Pulsar reports one successful command execution.",
+                    Title = _loc["Tutorial.FirstCommand"],
+                    Description = _loc["Tutorial.FirstCommandDesc"],
                     Type = TutorialStepType.WaitForAction,
                     FocusMode = TutorialFocusMode.AlwaysObserving,
                     Layout = new TutorialLayout
@@ -309,12 +312,12 @@ namespace Pulsar.Services.Tutorial
                 new TutorialStep
                 {
                     Id = "step6_completion",
-                    Title = "Onboarding complete",
-                    Description = "You completed the minimum onboarding path: one successful Switch Mode action and one successful Command Mode action.",
+                    Title = _loc["Tutorial.OnboardingComplete"],
+                    Description = _loc["Tutorial.OnboardingCompleteDesc"],
                     Type = TutorialStepType.Instruction,
                     FocusMode = TutorialFocusMode.AlwaysObserving,
                     PrimaryAction = TutorialPrimaryAction.CompleteTutorial,
-                    PrimaryButtonText = "Finish",
+                    PrimaryButtonText = _loc["Tutorial.Finish"],
                     Layout = new TutorialLayout
                     {
                         CardPosition = CardPosition.TopRight,

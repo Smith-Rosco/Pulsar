@@ -32,7 +32,8 @@ namespace Pulsar.Tests.Tutorial
         {
             var service = new OnboardingTemplateService();
             var apps = service.GetAvailableApps().Where(app => app.Id is "notepad" or "explorer").ToList();
-            var loader = new TutorialStepLoader(Moq.Mock.Of<Microsoft.Extensions.Logging.ILogger<TutorialStepLoader>>());
+            var loc = Moq.Mock.Of<Pulsar.Core.Localization.ILocalizationService>();
+            var loader = new TutorialStepLoader(Moq.Mock.Of<Microsoft.Extensions.Logging.ILogger<TutorialStepLoader>>(), loc);
 
             var config = service.BuildInitialConfig(new OnboardingTemplateRequest
             {

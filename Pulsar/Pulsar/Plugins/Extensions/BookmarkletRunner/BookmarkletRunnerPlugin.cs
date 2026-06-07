@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Native;
@@ -21,6 +22,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
         private IWindowService? _windowService;
         private IFocusManager? _focusManager;
         private ILogger<BookmarkletRunnerPlugin>? _logger;
+        private ILocalizationService? _loc;
         private readonly BookmarkletRunnerSettings _settings = new();
 
         internal Func<string, string> ReadScriptFile { get; set; } = File.ReadAllText;
@@ -51,6 +53,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
             _windowService = services.GetService(typeof(IWindowService)) as IWindowService;
             _focusManager = services.GetService(typeof(IFocusManager)) as IFocusManager;
             _logger = services.GetService(typeof(ILogger<BookmarkletRunnerPlugin>)) as ILogger<BookmarkletRunnerPlugin>;
+            _loc = services.GetService(typeof(ILocalizationService)) as ILocalizationService;
 
             if (_windowService == null)
             {
@@ -158,7 +161,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
             // 1. 验证并获取脚本路径
             if (!args.TryGetValue("scriptPath", out var scriptPath) || string.IsNullOrEmpty(scriptPath))
             {
-                return PluginResult.Error("缺少必要参数: scriptPath。请检查插件配置。");
+                return PluginResult.Error(_loc?["Bookmarklet.Error.MissingScriptPath"] ?? "Missing required parameter: scriptPath. Please check plugin configuration.");
             }
 
             _logger?.LogDebug("[BookmarkletRunner] Script path: {ScriptPath}", scriptPath);
@@ -167,7 +170,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
             if (!ScriptPreprocessor.IsPathSafe(scriptPath))
             {
                 _logger?.LogWarning("[BookmarkletRunner] Unsafe script path detected");
-                return PluginResult.Error("脚本路径包含不安全字符或试图访问受限目录。");
+                return PluginResult.Error(_loc?["Bookmarklet.Error.UnsafePath"] ?? "Script path contains unsafe characters or attempts to access restricted directories.");
             }
 
             // 3. 读取并预处理脚本（使用新的验证系统）
@@ -183,7 +186,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
                     
                     // Build detailed error message
                     var errorMsg = new System.Text.StringBuilder();
-                    errorMsg.AppendLine("脚本验证失败:");
+                    errorMsg.AppendLine(_loc?["Bookmarklet.Error.ValidationFailed"] ?? "Script validation failed:");
                     foreach (var error in validationResult.Errors)
                     {
                         errorMsg.AppendLine($"  • {error}");
@@ -201,7 +204,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
                 if (string.IsNullOrEmpty(validationResult.ProcessedScript))
                 {
                     _logger?.LogWarning("[BookmarkletRunner] Script is empty after preprocessing");
-                    return PluginResult.Error("脚本内容为空。请检查文件是否正确。");
+                    return PluginResult.Error(_loc?["Bookmarklet.Error.EmptyScript"] ?? "Script content is empty. Please check if the file is correct.");
                 }
 
                 _logger?.LogDebug("[BookmarkletRunner] Script validated successfully ({Length} chars)", 
@@ -210,12 +213,12 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
             catch (FileNotFoundException ex)
             {
                 _logger?.LogWarning(ex, "[BookmarkletRunner] File not found");
-                return PluginResult.Error($"找不到脚本文件: {scriptPath}。请确认文件是否存在。");
+                return PluginResult.Error(string.Format(_loc?["Bookmarklet.Error.FileNotFound"] ?? "Script file not found: {0}. Please confirm the file exists.", scriptPath));
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "[BookmarkletRunner] Error reading script");
-                return PluginResult.Error($"读取脚本失败: {ex.Message}");
+                return PluginResult.Error(string.Format(_loc?["Bookmarklet.Error.ReadFailed"] ?? "Failed to read script: {0}", ex.Message));
             }
 
             string scriptContent = validationResult.ProcessedScript;
@@ -229,7 +232,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
             if (browserHandle == IntPtr.Zero)
             {
                 _logger?.LogWarning("[BookmarkletRunner] No browser window found");
-                return PluginResult.Error("未检测到运行中的浏览器。请先打开浏览器窗口。");
+                return PluginResult.Error(_loc?["Bookmarklet.Error.NoBrowser"] ?? "No running browser detected. Please open a browser window first.");
             }
 
             // 5. 隐藏 Pulsar 主窗口
@@ -271,12 +274,12 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
                 }
 
                 _logger?.LogInformation("[BookmarkletRunner] Bookmarklet executed successfully");
-                return PluginResult.Ok("脚本已执行");
+                return PluginResult.Ok(_loc?["Bookmarklet.Success.Executed"] ?? "Script executed successfully");
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "[BookmarkletRunner] Error during execution");
-                return PluginResult.Error($"执行出错: {ex.Message}");
+                return PluginResult.Error(string.Format(_loc?["Bookmarklet.Error.ExecutionFailed"] ?? "Execution error: {0}", ex.Message));
             }
         }
 
@@ -319,12 +322,12 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
                 }
 
                 _logger?.LogWarning("[BookmarkletRunner] UIA injection failed; aborting bookmarklet execution.");
-                return PluginResult.Error("浏览器地址栏暂时未准备好接受书签脚本。请等待页面或浏览器完成加载后重试。");
+                return PluginResult.Error(_loc?["Bookmarklet.Error.AddressBarNotReady"] ?? "Browser address bar temporarily not ready to accept bookmarklet script. Please wait for the page or browser to finish loading and try again.");
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "[BookmarkletRunner] Smart sequence error");
-                return PluginResult.Error($"执行书签脚本时出错: {ex.Message}");
+                return PluginResult.Error(string.Format(_loc?["Bookmarklet.Error.InjectionFailed"] ?? "Error executing bookmarklet script: {0}", ex.Message));
             }
         }
 

@@ -6,6 +6,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.Json.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Extensions.DependencyInjection;
 using Pulsar.Core.Converters; // Added
 using Pulsar.Core.Plugin.Metadata;
 
@@ -48,6 +49,7 @@ namespace Pulsar.Models
     /// </summary>
     public partial class ProfileSettings : ObservableObject
     {
+        public string Language { get; set; } = "en";
         public string CenterSlotBehavior { get; set; } = "MRU_Window";
         public double TriggerDistance { get; set; } = 100.0;
         
@@ -447,7 +449,21 @@ namespace Pulsar.Models
         public string QuickEditBadgeText => HasQuickEditParameters ? $"{QuickEditParameters.Count} quick edits" : "Quick edits in dialog";
 
         [JsonIgnore]
-        public string SummaryFallbackText => HasValidationSummary ? "Configuration issues detected" : "Open full configuration for details";
+        public string SummaryFallbackText => HasValidationSummary ? (GetLoc()?["Profile.ConfigurationIssues"] ?? "Configuration issues detected") : (GetLoc()?["Profile.OpenConfiguration"] ?? "Open full configuration for details");
+
+        private static Pulsar.Core.Localization.ILocalizationService? GetLoc()
+        {
+            try
+            {
+                if (System.Windows.Application.Current is App app)
+                    return app.Services.GetService<Pulsar.Core.Localization.ILocalizationService>();
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
 
         public void SetParameterMetadata(
             IEnumerable<SlotActionOption> availableActions,
@@ -470,7 +486,7 @@ namespace Pulsar.Models
             AdvancedParameters = new ObservableCollection<SlotParameterEditorField>(advanced);
             QuickEditParameters = new ObservableCollection<SlotParameterEditorField>(quickEdit);
             SummaryTokens = new ObservableCollection<string>(summaryTokens.Where(token => !string.IsNullOrWhiteSpace(token)).Take(3));
-            ActionLabel = actionMetadata?.Label ?? Action;
+            ActionLabel = actionMetadata?.Label is string label ? SlotActionOption.LocalizeLabel(label) : Action;
             ActionDescription = actionMetadata?.Description ?? string.Empty;
             OnPropertyChanged(nameof(AvailableActions));
             OnPropertyChanged(nameof(RequiredParameters));

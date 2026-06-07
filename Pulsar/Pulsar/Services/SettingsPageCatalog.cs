@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Pulsar.Core.Localization;
 using Pulsar.Models.Settings;
 using Pulsar.Views.Pages;
 using Wpf.Ui.Controls;
@@ -17,13 +18,21 @@ namespace Pulsar.Services
 
     public class SettingsPageCatalog
     {
-        private readonly IReadOnlyList<SettingsPageRegistration> _pages =
-        [
-            new SettingsPageRegistration(SettingsPageIds.General, "General", "Settings", SymbolRegular.Settings24, typeof(SettingsGeneralPage)),
-            new SettingsPageRegistration(SettingsPageIds.Slots, "Slots", "Slots", SymbolRegular.Grid24, typeof(SettingsSlotsPage), "SlotsNavigationItem"),
-            new SettingsPageRegistration(SettingsPageIds.Plugins, "Plugins", "Plugins", SymbolRegular.PuzzlePiece24, typeof(SettingsPluginsPage)),
-            new SettingsPageRegistration(SettingsPageIds.About, "About", "About", SymbolRegular.Info24, typeof(SettingsAboutPage))
-        ];
+        private readonly ILocalizationService _loc;
+        private readonly IReadOnlyList<SettingsPageRegistration> _pages;
+
+        public SettingsPageCatalog(ILocalizationService loc)
+        {
+            _loc = loc;
+
+            _pages =
+            [
+                new SettingsPageRegistration(SettingsPageIds.General, "Settings.General.Title", "Settings", SymbolRegular.Settings24, typeof(SettingsGeneralPage)),
+                new SettingsPageRegistration(SettingsPageIds.Slots, "Settings.Slots.Title", "Slots", SymbolRegular.Grid24, typeof(SettingsSlotsPage), "SlotsNavigationItem"),
+                new SettingsPageRegistration(SettingsPageIds.Plugins, "Settings.Plugins.Title", "Plugins", SymbolRegular.PuzzlePiece24, typeof(SettingsPluginsPage)),
+                new SettingsPageRegistration(SettingsPageIds.About, "Settings.About.Title", "About", SymbolRegular.Info24, typeof(SettingsAboutPage))
+            ];
+        }
 
         public IReadOnlyList<SettingsPageRegistration> Pages => _pages;
 

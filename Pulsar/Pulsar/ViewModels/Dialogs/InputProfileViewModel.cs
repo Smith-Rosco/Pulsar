@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Pulsar.Core.Localization;
 using Pulsar.Helpers;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
@@ -19,6 +20,7 @@ namespace Pulsar.ViewModels.Dialogs
         private readonly IDialogService _dialogService;
         private readonly IFuzzySearchService<IconItem> _searchService;
         private readonly HashSet<string> _existingProfiles;
+        private readonly ILocalizationService _loc;
 
         [ObservableProperty]
         [NotifyCanExecuteChangedFor(nameof(CreateCommand))]
@@ -38,11 +40,12 @@ namespace Pulsar.ViewModels.Dialogs
 
         public Action<DialogResult>? RequestClose { get; set; }
 
-        public InputProfileViewModel(IWindowService windowService, IDialogService dialogService, IFuzzySearchService<IconItem> searchService, IEnumerable<string> existingProfiles)
+        public InputProfileViewModel(IWindowService windowService, IDialogService dialogService, IFuzzySearchService<IconItem> searchService, ILocalizationService localizationService, IEnumerable<string> existingProfiles)
         {
             _windowService = windowService;
             _dialogService = dialogService;
             _searchService = searchService;
+            _loc = localizationService;
             _existingProfiles = new HashSet<string>(existingProfiles, StringComparer.OrdinalIgnoreCase);
         }
 
@@ -67,7 +70,7 @@ namespace Pulsar.ViewModels.Dialogs
             if (_existingProfiles.Contains(processed))
             {
                 HasError = true;
-                ErrorMessage = $"Profile '{processed}' already exists";
+                ErrorMessage = string.Format(_loc["Validation.ProfileExistsFormat"], processed);
             }
             else
             {
@@ -80,7 +83,7 @@ namespace Pulsar.ViewModels.Dialogs
         private async Task PickProcess()
         {
             var picker = new ProcessPickerViewModel(_windowService);
-            var result = await _dialogService.ShowCustomAsync("Select Application", picker, DialogButtons.OkCancel, DialogSizeConstraints.LargeResizable);
+            var result = await _dialogService.ShowCustomAsync(_loc["Notification.SelectApplication"], picker, DialogButtons.OkCancel, DialogSizeConstraints.LargeResizable);
             
             if (result == DialogResult.Confirmed && picker.SelectedProcess != null)
             {
@@ -102,7 +105,7 @@ namespace Pulsar.ViewModels.Dialogs
         private async Task PickIcon()
         {
             var picker = new IconPickerViewModel(_searchService, IconKey);
-            var result = await _dialogService.ShowCustomAsync("Select Icon", picker, DialogButtons.OkCancel, DialogSizeConstraints.LargeResizable);
+            var result = await _dialogService.ShowCustomAsync(_loc["Notification.SelectIcon"], picker, DialogButtons.OkCancel, DialogSizeConstraints.LargeResizable);
 
             if (result == DialogResult.Confirmed)
             {

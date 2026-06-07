@@ -8,6 +8,7 @@ using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using Pulsar.Core.Localization;
 using Pulsar.Models;
 using Pulsar.Models.Enums;
 using Pulsar.Services;
@@ -26,6 +27,7 @@ namespace Pulsar.ViewModels.Settings
         private readonly PluginPackageManager _packageManager;
         private readonly ILogger<PluginMarketViewModel>? _logger;
         private readonly IDialogService? _dialogService;
+        private readonly ILocalizationService _loc;
 
         [ObservableProperty]
         private ObservableCollection<PluginPackageInfo> _availablePlugins = new();
@@ -62,11 +64,13 @@ namespace Pulsar.ViewModels.Settings
             PluginRepository repository,
 #pragma warning restore CS0618 // Type or member is obsolete
             PluginPackageManager packageManager,
+            ILocalizationService localizationService,
             ILogger<PluginMarketViewModel>? logger = null,
             IDialogService? dialogService = null)
         {
             _repository = repository;
             _packageManager = packageManager;
+            _loc = localizationService;
             _logger = logger;
             _dialogService = dialogService;
 
@@ -80,7 +84,7 @@ namespace Pulsar.ViewModels.Settings
         public async Task InitializeAsync()
         {
             IsLoading = true;
-            StatusMessage = "Loading plugins...";
+            StatusMessage = _loc["Notification.LoadingPlugins"];
 
             try
             {
@@ -89,12 +93,12 @@ namespace Pulsar.ViewModels.Settings
                 RefreshTags();
                 RefreshStatistics();
 
-                StatusMessage = $"Loaded {AvailablePlugins.Count} plugins";
+                StatusMessage = string.Format(_loc["Notification.LoadedPluginsFormat"], AvailablePlugins.Count);
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "[PluginMarketViewModel] Failed to initialize");
-                StatusMessage = $"Failed to load plugins: {ex.Message}";
+                StatusMessage = string.Format(_loc["Notification.FailedLoadPluginsFormat"], ex.Message);
             }
             finally
             {
@@ -183,13 +187,13 @@ namespace Pulsar.ViewModels.Settings
 
                 // NOTE: InstallAsync method has been removed from PluginPackageManager
                 // This ViewModel is deprecated - use ExternalPluginManagerViewModel instead
-                StatusMessage = "This feature is deprecated. Please use 'External Plugins' page to install plugins from files.";
+                StatusMessage = _loc["Notification.DeprecatedMessage"];
 
                 if (_dialogService != null)
                 {
                     await _dialogService.ShowMessageAsync(
-                        "Feature Deprecated",
-                        "Online plugin installation is not implemented.\n\nPlease use 'External Plugins' page to install plugins from ZIP files.");
+                        _loc["Notification.FeatureDeprecated"],
+                        _loc["Notification.OnlinePluginsDeprecated"]);
                 }
             }
             catch (Exception ex)
@@ -213,13 +217,13 @@ namespace Pulsar.ViewModels.Settings
 
                 // NOTE: UpdateAsync method has been removed from PluginPackageManager
                 // This ViewModel is deprecated - use ExternalPluginManagerViewModel instead
-                StatusMessage = "This feature is deprecated. Please use 'External Plugins' page to manage plugins.";
+                StatusMessage = _loc["Notification.DeprecatedManageMessage"];
 
                 if (_dialogService != null)
                 {
                     await _dialogService.ShowMessageAsync(
-                        "Feature Deprecated",
-                        "Online plugin updates are not implemented.\n\nPlease manually download and install the latest version from 'External Plugins' page.");
+                        _loc["Notification.FeatureDeprecated"],
+                        _loc["Notification.OnlineUpdatesDeprecated"]);
                 }
             }
             catch (Exception ex)
@@ -243,8 +247,8 @@ namespace Pulsar.ViewModels.Settings
                 if (_dialogService != null)
                 {
                     var dialogResult = await _dialogService.ShowConfirmationAsync(
-                        "Confirm Uninstall",
-                        $"Are you sure you want to uninstall {plugin.Name}?\n\nThis will remove all plugin files.");
+                        _loc["Notification.ConfirmUninstall"],
+                        string.Format(_loc["Notification.ConfirmUninstallFormat"], plugin.Name));
 
                     if (dialogResult != Models.Enums.DialogResult.Confirmed)
                     {
@@ -258,28 +262,28 @@ namespace Pulsar.ViewModels.Settings
 
                 if (result.Success)
                 {
-                    StatusMessage = $"Successfully uninstalled {plugin.Name}";
+                    StatusMessage = string.Format(_loc["Notification.SuccessfullyUninstalledFormat"], plugin.Name);
                     plugin.IsInstalled = false;
                     plugin.InstalledVersion = null;
 
                     if (_dialogService != null)
                     {
                         await _dialogService.ShowMessageAsync(
-                            "Uninstall Complete",
-                            $"{plugin.Name} has been uninstalled successfully.\n\nPlease restart Pulsar to complete the removal.");
+                            _loc["Notification.UninstallComplete"],
+                            string.Format(_loc["Notification.UninstallCompleteFormat"], plugin.Name));
                     }
 
                     await RefreshPluginsAsync();
                 }
                 else
                 {
-                    StatusMessage = $"Failed to uninstall {plugin.Name}: {result.ErrorMessage}";
+                    StatusMessage = string.Format(_loc["Notification.UninstallFailedFormat"], plugin.Name, result.ErrorMessage);
 
                     if (_dialogService != null)
                     {
                         await _dialogService.ShowMessageAsync(
-                            "Uninstall Failed",
-                            $"Failed to uninstall {plugin.Name}:\n\n{result.ErrorMessage}");
+                            _loc["Notification.UninstallFailed"],
+                            string.Format(_loc["Notification.UninstallFailedFormat"], plugin.Name, result.ErrorMessage));
                     }
                 }
             }
@@ -310,8 +314,8 @@ namespace Pulsar.ViewModels.Settings
                 // 打开文件选择对话框
                 var openFileDialog = new Microsoft.Win32.OpenFileDialog
                 {
-                    Title = "Select Plugin Package",
-                    Filter = "Plugin Package (*.zip)|*.zip|All Files (*.*)|*.*",
+                    Title = _loc["Notification.SelectPluginPackage"],
+                    Filter = _loc["Notification.FileFilterZip"],
                     Multiselect = false
                 };
 
@@ -324,26 +328,26 @@ namespace Pulsar.ViewModels.Settings
 
                     if (result.Success)
                     {
-                        StatusMessage = $"Successfully installed plugin from file";
+                        StatusMessage = _loc["Notification.SuccessfullyInstalled"];
 
                         if (_dialogService != null)
                         {
                             await _dialogService.ShowMessageAsync(
-                                "Installation Complete",
-                                $"Plugin has been installed successfully.\n\nPlease restart Pulsar to load the plugin.");
+                                _loc["Notification.InstallComplete"],
+                                _loc["Notification.InstallCompleteBody"]);
                         }
 
                         await RefreshPluginsAsync();
                     }
                     else
                     {
-                        StatusMessage = $"Failed to install plugin: {result.ErrorMessage}";
+                        StatusMessage = string.Format(_loc["Notification.InstallFailedFormat"], result.ErrorMessage);
 
                         if (_dialogService != null)
                         {
                             await _dialogService.ShowMessageAsync(
-                                "Installation Failed",
-                                $"Failed to install plugin from file:\n\n{result.ErrorMessage}");
+                                _loc["Notification.InstallFailed"],
+                                string.Format(_loc["Notification.InstallFailedFormat"], result.ErrorMessage));
                         }
                     }
                 }
@@ -356,8 +360,8 @@ namespace Pulsar.ViewModels.Settings
                 if (_dialogService != null)
                 {
                     await _dialogService.ShowMessageAsync(
-                        "Installation Error",
-                        $"An error occurred while installing the plugin:\n\n{ex.Message}");
+                        _loc["Notification.InstallError"],
+                        string.Format(_loc["Notification.InstallErrorFormat"], ex.Message));
                 }
             }
         }

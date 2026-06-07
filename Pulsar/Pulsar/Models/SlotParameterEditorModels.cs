@@ -4,7 +4,10 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Extensions.DependencyInjection;
+using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Helpers;
 using Pulsar.Plugins.Core.Pki.Models;
@@ -13,11 +16,46 @@ namespace Pulsar.Models
 {
     public partial class SlotActionOption : ObservableObject
     {
+        private static ILocalizationService? _loc;
+
+        private static ILocalizationService? Loc
+        {
+            get
+            {
+                if (_loc == null)
+                {
+                    try
+                    {
+                        _loc = (System.Windows.Application.Current as App)?.Services.GetService<ILocalizationService>();
+                    }
+                    catch { }
+                }
+                return _loc;
+            }
+        }
+
         public required string Value { get; init; }
 
-        public required string Label { get; init; }
+        private string _label = string.Empty;
+        public required string Label
+        {
+            get => LocalizeLabel(_label);
+            init => _label = value;
+        }
 
         public string? Description { get; init; }
+
+        internal static string LocalizeLabel(string? label)
+        {
+            if (string.IsNullOrEmpty(label)) return label ?? string.Empty;
+            var loc = Loc;
+            if (loc == null) return label;
+
+            var safeKey = Regex.Replace(label, @"[^a-zA-Z0-9]", "");
+            var key = $"SlotAction.{safeKey}";
+            var localized = loc[key];
+            return localized != key ? localized : label;
+        }
 
         [ObservableProperty]
         private bool _isSelected;
@@ -41,6 +79,24 @@ namespace Pulsar.Models
         private readonly Func<string, SecretDisplayMetadata?>? _secretDisplayResolver;
         private bool _disposed;
 
+        private static ILocalizationService? _fieldLoc;
+
+        internal static ILocalizationService? FieldLoc
+        {
+            get
+            {
+                if (_fieldLoc == null)
+                {
+                    try
+                    {
+                        _fieldLoc = (System.Windows.Application.Current as App)?.Services.GetService<ILocalizationService>();
+                    }
+                    catch { }
+                }
+                return _fieldLoc;
+            }
+        }
+
         public SlotParameterEditorField(
             PluginSlot slot,
             SlotParameterMetadata metadata,
@@ -58,7 +114,21 @@ namespace Pulsar.Models
 
         public string Key => Metadata.Key;
 
-        public string Label => Metadata.Label;
+        public string Label
+        {
+            get
+            {
+                var text = Metadata.Label;
+                if (string.IsNullOrEmpty(text)) return text;
+                var loc = FieldLoc;
+                if (loc == null) return text;
+
+                var safeKey = Regex.Replace(text, @"[^a-zA-Z0-9]", "");
+                var key = $"SlotParam.{safeKey}";
+                var localized = loc[key];
+                return localized != key ? localized : text;
+            }
+        }
 
         public string Description => Metadata.Description ?? string.Empty;
 

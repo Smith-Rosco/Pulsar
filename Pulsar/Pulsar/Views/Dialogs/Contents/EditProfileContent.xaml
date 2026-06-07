@@ -6,6 +6,7 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:controls="clr-namespace:Pulsar.Views.Controls"
              xmlns:viewmodels="clr-namespace:Pulsar.ViewModels.Dialogs"
+             xmlns:lex="clr-namespace:Pulsar.Core.Localization"
              mc:Ignorable="d" 
              d:DesignHeight="400" d:DesignWidth="400">
 
@@ -18,17 +19,17 @@
     </UserControl.Resources>
 
     <StackPanel Margin="0">
-        <TextBlock Text="Process Name" FontWeight="Medium"/>
+        <TextBlock Text="{lex:Locale Dialog.EditProfile.ProcessName}" FontWeight="Medium"/>
         <TextBlock Text="{Binding DisplayProcessName}" Margin="0,4,0,16" Opacity="0.7" FontSize="14"/>
 
         <!-- Alias Input -->
-        <TextBlock Text="Alias (Display Name)" FontWeight="Medium" Margin="0,0,0,8"/>
+        <TextBlock Text="{lex:Locale Dialog.EditProfile.Alias}" FontWeight="Medium" Margin="0,0,0,8"/>
         <ui:TextBox Text="{Binding Alias, UpdateSourceTrigger=PropertyChanged}"
-                    PlaceholderText="Custom display name"
+                    PlaceholderText="{lex:Locale Dialog.EditProfile.AliasPlaceholder}"
                     Icon="{ui:SymbolIcon Rename24}"/>
 
         <!-- Icon Selection -->
-        <TextBlock Text="Profile Icon" FontWeight="Medium" Margin="0,20,0,8"/>
+        <TextBlock Text="{lex:Locale Dialog.EditProfile.ProfileIcon}" FontWeight="Medium" Margin="0,20,0,8"/>
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -46,12 +47,12 @@
 
             <!-- Info -->
             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                <TextBlock Text="Selected Icon" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                <TextBlock Text="{lex:Locale Dialog.EditProfile.SelectedIcon}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                 <TextBlock Text="{Binding IconKey}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
             </StackPanel>
 
             <!-- Change Button -->
-            <ui:Button Grid.Column="2" Content="Change" 
+            <ui:Button Grid.Column="2" Content="{lex:Locale Dialog.EditProfile.Change}" 
                        Style="{StaticResource PulsarSecondaryButtonStyle}" 
                        Command="{Binding PickIconCommand}"
                        VerticalAlignment="Center"/>

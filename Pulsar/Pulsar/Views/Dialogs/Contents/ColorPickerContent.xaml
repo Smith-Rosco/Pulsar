@@ -5,6 +5,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:vm="clr-namespace:Pulsar.ViewModels.Dialogs"
+             xmlns:lex="clr-namespace:Pulsar.Core.Localization"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:ColorPickerViewModel}">
     
@@ -36,11 +37,11 @@
             </Border>
 
             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                <TextBlock Text="Hex Code" Margin="0,0,0,4" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                <TextBlock Text="{lex:Locale Dialog.ColorPicker.HexCode}" Margin="0,0,0,4" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                 <ui:TextBox Text="{Binding HexInput, UpdateSourceTrigger=PropertyChanged}"
-                            PlaceholderText="#RRGGBB"
+                            PlaceholderText="{lex:Locale Dialog.ColorPicker.HexPlaceholder}"
                             Icon="{ui:SymbolIcon Color24}"/>
-                <TextBlock Text="Invalid Hex Code" 
+                <TextBlock Text="{lex:Locale Dialog.ColorPicker.InvalidHex}" 
                            Foreground="{DynamicResource PaletteRedBrush}" 
                            FontSize="12" 
                            Margin="0,4,0,0"
@@ -56,7 +57,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="40"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="R" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="#FF5555"/>
+                <TextBlock Text="{lex:Locale Dialog.ColorPicker.R}" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="#FF5555"/>
                 <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding R}" Margin="8,0"/>
                 <TextBlock Grid.Column="2" Text="{Binding R}" VerticalAlignment="Center" HorizontalAlignment="Right"/>
             </Grid>
@@ -67,7 +68,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="40"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="G" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="#55FF55"/>
+                <TextBlock Text="{lex:Locale Dialog.ColorPicker.G}" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="#55FF55"/>
                 <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding G}" Margin="8,0"/>
                 <TextBlock Grid.Column="2" Text="{Binding G}" VerticalAlignment="Center" HorizontalAlignment="Right"/>
             </Grid>
@@ -78,7 +79,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="40"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="B" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="#5555FF"/>
+                <TextBlock Text="{lex:Locale Dialog.ColorPicker.B}" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="#5555FF"/>
                 <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding B}" Margin="8,0"/>
                 <TextBlock Grid.Column="2" Text="{Binding B}" VerticalAlignment="Center" HorizontalAlignment="Right"/>
             </Grid>
@@ -92,7 +93,7 @@
             </Grid.RowDefinitions>
             
             <TextBlock Grid.Row="0" 
-                       Text="Presets" 
+                       Text="{lex:Locale Dialog.ColorPicker.Presets}" 
                        Margin="0,0,0,8" 
                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
             

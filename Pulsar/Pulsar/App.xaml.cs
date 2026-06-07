@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Pulsar.Core.Plugin;
+using Pulsar.Core.Localization;
 using Pulsar.Plugins.Core.Pki;
 using Pulsar.Plugins.Core.Pki.Contracts;
 using Pulsar.Plugins.Core.Pki.Services;
@@ -100,6 +101,7 @@ namespace Pulsar
             // 0. Logging Services
             serviceCollection.AddLogging(loggingBuilder => loggingBuilder.AddSerilog(dispose: true));
             serviceCollection.AddSingleton(levelSwitch);
+            serviceCollection.AddSingleton<ILocalizationService, LocalizationService>();
             serviceCollection.AddSingleton<ILoggingConfigService, LoggingConfigService>();
             serviceCollection.AddSingleton<IBackgroundWorkScheduler, BackgroundWorkScheduler>();
 

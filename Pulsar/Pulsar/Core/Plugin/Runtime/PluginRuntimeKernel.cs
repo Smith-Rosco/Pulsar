@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Pulsar.Core.Localization;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 using System;
@@ -237,15 +238,18 @@ namespace Pulsar.Core.Plugin.Runtime
         private readonly ILogger<PluginCircuitBreakerPolicy> _logger;
         private readonly IPluginHealthMonitor? _healthMonitor;
         private readonly ITrayService? _trayService;
+        private readonly ILocalizationService? _loc;
 
         public PluginCircuitBreakerPolicy(
             ILogger<PluginCircuitBreakerPolicy>? logger = null,
             IPluginHealthMonitor? healthMonitor = null,
-            ITrayService? trayService = null)
+            ITrayService? trayService = null,
+            ILocalizationService? loc = null)
         {
             _logger = logger ?? NullLogger<PluginCircuitBreakerPolicy>.Instance;
             _healthMonitor = healthMonitor;
             _trayService = trayService;
+            _loc = loc;
         }
 
         public PluginBreakerAvailability CheckAvailability(PluginDescriptor descriptor, string pluginId)
@@ -304,8 +308,8 @@ namespace Pulsar.Core.Plugin.Runtime
             _logger.LogCritical("Circuit Breaker Tripped! Plugin temporarily disabled for {Timeout}s", ResetTimeout.TotalSeconds);
             _healthMonitor?.RecordCircuitBreakerTrip(pluginId);
             _trayService?.ShowNotification(
-                "插件已自动禁用",
-                $"插件 '{pluginId}' 因多次崩溃已被暂时禁用 {ResetTimeout.TotalSeconds} 秒，以保护主程序运行。",
+                _loc?["Plugin.CircuitBreakerTitle"] ?? "Plugin Auto-Disabled",
+                string.Format(_loc?["Plugin.CircuitBreakerBody"] ?? "Plugin '{0}' has been temporarily disabled for {1} seconds due to repeated crashes to protect the main program.", pluginId, ResetTimeout.TotalSeconds),
                 PulsarNotificationIcon.Error);
         }
     }

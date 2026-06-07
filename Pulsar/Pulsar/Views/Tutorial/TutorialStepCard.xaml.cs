@@ -4,6 +4,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
+using Pulsar.Core.Localization;
 using Pulsar.Models.Tutorial;
 
 namespace Pulsar.Views.Tutorial
@@ -18,6 +19,7 @@ namespace Pulsar.Views.Tutorial
         public event EventHandler? SkipClicked;
         
         private TutorialStep? _currentStep;
+        private readonly ILocalizationService? _loc;
 
         // Some XAML fields may not be available until generated; keep a safe runtime reference.
         private TextBlock? _waitHintText;
@@ -27,6 +29,7 @@ namespace Pulsar.Views.Tutorial
         {
             InitializeComponent();
 
+            _loc = (System.Windows.Application.Current as App)?.Services.GetService(typeof(ILocalizationService)) as ILocalizationService;
             _waitHintText = FindName("WaitHintText") as TextBlock;
             _backButton = FindName("BackButton") as System.Windows.Controls.Button;
 
@@ -60,7 +63,7 @@ namespace Pulsar.Views.Tutorial
         {
             _currentStep = step;
 
-            StepCounter.Text = $"步骤 {currentIndex + 1}/{totalSteps}";
+            StepCounter.Text = string.Format(_loc?["Tutorial.StepFormat"] ?? "Step {0}/{1}", currentIndex + 1, totalSteps);
             TitleText.Text = step.Title;
             DescriptionText.Text = step.Description;
             NextButton.Content = ResolvePrimaryButtonText(step);
@@ -87,10 +90,12 @@ namespace Pulsar.Views.Tutorial
 
             if (step.PrimaryAction == TutorialPrimaryAction.CompleteTutorial)
             {
-                return "完成";
+                return _loc?["Tutorial.Complete"] ?? "Complete";
             }
 
-            return step.Type == TutorialStepType.Instruction ? "下一步" : "继续";
+            return step.Type == TutorialStepType.Instruction
+                ? _loc?["Tutorial.Next"] ?? "Next"
+                : _loc?["Tutorial.Continue"] ?? "Continue";
         }
 
         private void ApplyWaitHint(TutorialStep step)
@@ -107,7 +112,7 @@ namespace Pulsar.Views.Tutorial
             }
 
             _waitHintText.Text = string.IsNullOrWhiteSpace(step.WaitHintText)
-                ? "完成操作后会自动继续；如未自动继续，可点击“继续”。"
+                ? _loc?["Tutorial.WaitHintDefault"] ?? "It will continue automatically after completing the action. If it doesn't continue automatically, you can click \"Continue\"."
                 : step.WaitHintText;
             _waitHintText.Visibility = Visibility.Visible;
         }

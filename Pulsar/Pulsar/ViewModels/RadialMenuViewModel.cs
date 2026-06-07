@@ -10,6 +10,7 @@ using System.Windows.Media; // [New] For ImageSource
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging; // [Architecture] For SlotsPerPageChangedMessage
 using Pulsar.Core.Plugin;
+using Pulsar.Core.Localization;
 using Pulsar.Core.Messages; // [Architecture] For SlotsPerPageChangedMessage
 using Pulsar.Models;
 using Pulsar.Models.Enums;
@@ -45,6 +46,7 @@ namespace Pulsar.ViewModels
         private readonly ILogger<RadialMenuViewModel>? _logger;
         private readonly IPluginUsageTracker? _usageTracker; // [New]
         private readonly IPluginHealthMonitor? _healthMonitor; // [New]
+        private readonly ILocalizationService _loc;
         private readonly RadialMenuVisualStateCoordinator _visualStateCoordinator;
         private readonly RadialMenuInputCoordinator _inputCoordinator;
         private readonly RadialMenuSubMenuCoordinator _subMenuCoordinator;
@@ -203,6 +205,7 @@ namespace Pulsar.ViewModels
             IPagingController pagingController,
             IPreviewService previewService,
             System.IServiceProvider serviceProvider,
+            ILocalizationService localizationService,
             ILogger<RadialMenuViewModel>? logger = null)
         {
             _configService = configService;
@@ -218,12 +221,15 @@ namespace Pulsar.ViewModels
             _previewService = previewService;
             _serviceProvider = serviceProvider;
             _logger = logger;
+            _loc = localizationService;
+
+            _centerText = _loc["RadialMenu.Pulsar"];
 
             // [New] Resolve analytics services before building collaborators that depend on them.
             _usageTracker = serviceProvider.GetService(typeof(IPluginUsageTracker)) as IPluginUsageTracker;
             _healthMonitor = serviceProvider.GetService(typeof(IPluginHealthMonitor)) as IPluginHealthMonitor;
 
-            _visualStateCoordinator = new RadialMenuVisualStateCoordinator(previewService, logger);
+            _visualStateCoordinator = new RadialMenuVisualStateCoordinator(previewService, logger, _loc);
             _inputCoordinator = new RadialMenuInputCoordinator(windowService, logger);
             _subMenuCoordinator = new RadialMenuSubMenuCoordinator(windowService, _usageTracker, _healthMonitor, logger);
             _layoutCoordinator = new RadialMenuLayoutCoordinator(slotLayoutEngine, animationController, logger);
@@ -245,7 +251,7 @@ namespace Pulsar.ViewModels
 
             _mouseTrackingService.MousePositionChanged += OnMousePositionChanged;
             _pagingController.OnBoundaryReached += OnPagingBoundaryReached;
-              
+               
             // [Architecture] Register message handler for real-time slot count updates from Settings
             WeakReferenceMessenger.Default.Register<SlotsPerPageChangedMessage>(this, (r, m) =>
             {
@@ -499,7 +505,7 @@ namespace Pulsar.ViewModels
                         var creator = new PluginSlot 
                         { 
                             Slot = 0, // Slot = 0 ensures it appears first
-                            Label = $"Add {_lastContext.DisplayProcessName}",  // ✅ 使用格式化的进程名
+                            Label = string.Format(_loc["RadialMenu.AddProfileFormat"], _lastContext.DisplayProcessName),  // ✅ 使用格式化的进程名
                             IconKey = "\uE710", // Add Icon
                             PluginId = "internal:create_profile" 
                         };
@@ -558,7 +564,7 @@ namespace Pulsar.ViewModels
                 {
                     _hasShownSinglePageHint = true;
                     var originalText = CenterText;
-                    CenterText = "仅 1 页，无需翻页";
+                    CenterText = _loc["RadialMenu.SinglePage"];
                     Task.Delay(800).ContinueWith(_ =>
                     {
                         System.Windows.Application.Current.Dispatcher.Invoke(() =>
@@ -598,7 +604,7 @@ namespace Pulsar.ViewModels
             OnPagingBoundaryFeedbackRequested?.Invoke(e.Direction);
 
             var originalText = CenterText;
-            CenterText = e.Direction == BoundaryDirection.FirstPage ? "已是第一页" : "已是最后一页";
+            CenterText = e.Direction == BoundaryDirection.FirstPage ? _loc["RadialMenu.FirstPage"] : _loc["RadialMenu.LastPage"];
 
             Task.Delay(500).ContinueWith(_ =>
             {
@@ -857,7 +863,7 @@ namespace Pulsar.ViewModels
             await Task.Delay(120);
 
             ClearVisuals();
-            CenterText = "Back";
+            CenterText = _loc["RadialMenu.Back"];
             var mostRecentWin = _subMenuCoordinator.ConfigureSubMenu(
                 windows,
                 processName,
@@ -881,13 +887,13 @@ namespace Pulsar.ViewModels
              double normalSlotSize = layout.SlotSize;
              double normalCenterSize = layout.CenterSize;
              double normalRadius = layout.Radius;
-              
+               
              _ = AnimateToLayoutAsync(
                  normalRadius,
                  normalCenterSize,
                  normalSlotSize,
                  AnimationOptionsDefaults.SubMenuExit);
-              
+               
               // Clear Preview
               ApplyCenterPreview(ResolvedWindowPreview.Icon(CenterSlot.IconImage));
 

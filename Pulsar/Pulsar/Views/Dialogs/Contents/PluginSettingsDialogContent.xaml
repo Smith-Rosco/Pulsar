@@ -7,7 +7,8 @@
              xmlns:vm="clr-namespace:Pulsar.ViewModels.Settings"
              xmlns:ts="clr-namespace:Pulsar.Views.TemplateSelectors"
              xmlns:converters="clr-namespace:Pulsar.Core.Converters"
-             mc:Ignorable="d" 
+              xmlns:lex="clr-namespace:Pulsar.Core.Localization"
+              mc:Ignorable="d" 
              d:DesignHeight="500" d:DesignWidth="550">
     <UserControl.Resources>
         <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVisibilityConverter"/>
@@ -109,11 +110,11 @@
                     </Grid.ColumnDefinitions>
                     <ui:TextBox Grid.Column="0" 
                                 Text="{Binding PathValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                PlaceholderText="Enter or browse path..."
+                                PlaceholderText="{lex:Locale Dialog.PluginSettings.EnterPathPlaceholder}"
                                 HorizontalAlignment="Right"/>
                     <ui:Button Grid.Column="1"
                                Icon="{ui:SymbolIcon FolderOpen24}"
-                               ToolTip="Browse"
+                                ToolTip="{lex:Locale Dialog.PluginSettings.Browse}"
                                Appearance="Secondary"
                                Margin="4,0,0,0"
                                Tag="{Binding}"
@@ -170,7 +171,7 @@
                 <ui:PasswordBox Password="{Binding SecretValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                 Width="220"
                                 HorizontalAlignment="Right"
-                                PlaceholderText="Enter secret value..."/>
+                                PlaceholderText="{lex:Locale Dialog.PluginSettings.EnterSecretPlaceholder}"/>
             </ui:CardControl>
         </DataTemplate>
 
@@ -193,7 +194,7 @@
                     </StackPanel>
                 </ui:CardControl.Header>
                 <StackPanel Orientation="Vertical" HorizontalAlignment="Right" Width="260">
-                    <TextBlock Text="Click to toggle selection:" 
+                    <TextBlock Text="{lex:Locale Dialog.PluginSettings.ClickToggle}" 
                                FontSize="11" 
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                Margin="0,0,0,6"/>
@@ -227,12 +228,12 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                    <TextBlock Text="Or enter manually:" 
+                    <TextBlock Text="{lex:Locale Dialog.PluginSettings.EnterManually}" 
                                FontSize="11" 
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                Margin="0,8,0,2"/>
                     <ui:TextBox Text="{Binding CommaSeparatedValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                PlaceholderText="Comma-separated values..."/>
+                                PlaceholderText="{lex:Locale Dialog.PluginSettings.CommaSeparatedPlaceholder}"/>
                 </StackPanel>
             </ui:CardControl>
         </DataTemplate>
@@ -268,15 +269,15 @@
         </ScrollViewer>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
-            <ui:Button Content="Reset to Defaults"
+            <ui:Button Content="{lex:Locale Dialog.PluginSettings.ResetDefaults}"
                        Appearance="Secondary"
                        Command="{Binding ResetToDefaultsCommand}"
                        Margin="0,0,8,0"/>
-            <ui:Button Content="Cancel"
+            <ui:Button Content="{lex:Locale Dialog.PluginSettings.Cancel}"
                        Appearance="Secondary"
                        Command="{Binding CancelCommand}"
                        Margin="0,0,8,0"/>
-            <ui:Button Content="Save"
+            <ui:Button Content="{lex:Locale Dialog.PluginSettings.Save}"
                        Appearance="Primary"
                        Command="{Binding SaveCommand}"
                        IsEnabled="{Binding CanSave}"/>

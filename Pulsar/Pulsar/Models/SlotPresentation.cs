@@ -1,15 +1,34 @@
 using System;
+using Pulsar.Core.Localization;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Pulsar.Models
 {
     public sealed class SlotPresentation
     {
-        public static SlotPresentation Empty { get; } = new(
+        private static ILocalizationService? Loc
+        {
+            get
+            {
+                try
+                {
+                    if (System.Windows.Application.Current is App app)
+                        return app.Services.GetService<ILocalizationService>();
+                    return null;
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+        }
+
+        public static SlotPresentation Empty => new(
             string.Empty,
             string.Empty,
             string.Empty,
             "SlotTypeBrushDefault",
-            "Ready",
+            Loc?["Slot.Ready"] ?? "Ready",
             "SlotHealthBrushReady",
             string.Empty);
 
@@ -51,12 +70,12 @@ namespace Pulsar.Models
         {
             return pluginId switch
             {
-                "com.pulsar.pki" => "Secret",
-                "com.pulsar.winswitcher" => "App",
-                "com.pulsar.command" => "Cmd",
-                "com.pulsar.bookmarklet" => "JS Script",
-                "com.pulsar.vbarunner" => "VBA Script",
-                _ => "Plugin"
+                "com.pulsar.pki" => Loc?["Slot.TypeSecret"] ?? "Secret",
+                "com.pulsar.winswitcher" => Loc?["Slot.TypeApp"] ?? "App",
+                "com.pulsar.command" => Loc?["Slot.TypeCmd"] ?? "Cmd",
+                "com.pulsar.bookmarklet" => Loc?["Slot.TypeJsScript"] ?? "JS Script",
+                "com.pulsar.vbarunner" => Loc?["Slot.TypeVbaScript"] ?? "VBA Script",
+                _ => Loc?["Slot.TypePlugin"] ?? "Plugin"
             };
         }
 
@@ -77,9 +96,9 @@ namespace Pulsar.Models
         {
             return validationSeverity switch
             {
-                ValidationSeverity.Error => "Error",
-                ValidationSeverity.Warning => "Warning",
-                _ => "Ready"
+                ValidationSeverity.Error => Loc?["Slot.Error"] ?? "Error",
+                ValidationSeverity.Warning => Loc?["Slot.Warning"] ?? "Warning",
+                _ => Loc?["Slot.Ready"] ?? "Ready"
             };
         }
 

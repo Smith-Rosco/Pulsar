@@ -9,6 +9,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
+using Pulsar.Core.Localization;
 using Pulsar.Core.Messages;
 using Pulsar.Helpers.Tutorial;
 using Pulsar.Models;
@@ -30,6 +31,7 @@ namespace Pulsar.Views
         private readonly SettingsPageFactory _pageFactory;
         private readonly IThemeService _themeService;
         private readonly ILogger<SettingsWindow> _logger;
+        private readonly ILocalizationService _localizationService;
         private readonly Dictionary<string, Page> _pages = new(StringComparer.OrdinalIgnoreCase);
         private bool _isClosingProgrammatically;
         private bool _isApplyingSelection;
@@ -43,7 +45,8 @@ namespace Pulsar.Views
             SettingsPageFactory pageFactory,
             ISettingsNavigationGuard navigationGuard,
             IThemeService themeService,
-            ILogger<SettingsWindow> logger)
+            ILogger<SettingsWindow> logger,
+            ILocalizationService localizationService)
         {
             InitializeComponent();
             _viewModel = viewModel;
@@ -52,6 +55,7 @@ namespace Pulsar.Views
             _pageFactory = pageFactory;
             _themeService = themeService;
             _logger = logger;
+            _localizationService = localizationService;
 
             if (navigationGuard is SettingsNavigationGuard concreteNavigationGuard)
             {
@@ -64,6 +68,7 @@ namespace Pulsar.Views
 
             _themeService.ThemeChanged += OnThemeChanged;
             _shellViewModel.PropertyChanged += ShellViewModel_PropertyChanged;
+            _localizationService.LanguageChanged += OnLanguageChanged;
 
             WeakReferenceMessenger.Default.Register<SnackbarMessage>(this, (r, m) =>
             {
@@ -244,6 +249,16 @@ namespace Pulsar.Views
             }
         }
 
+        private void OnLanguageChanged(object? sender, string e)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                var activePageId = _shellViewModel.CurrentPageId;
+                BuildNavigationItems();
+                ApplySelectedNavigationItem(activePageId);
+            });
+        }
+
         private void OnThemeChanged(object? sender, AppTheme theme)
         {
             foreach (var page in _pages.Values)
@@ -256,6 +271,7 @@ namespace Pulsar.Views
         {
             _themeService.ThemeChanged -= OnThemeChanged;
             _shellViewModel.PropertyChanged -= ShellViewModel_PropertyChanged;
+            _localizationService.LanguageChanged -= OnLanguageChanged;
 
             foreach (var item in RootNavigation.MenuItems.OfType<NavigationViewItem>())
             {

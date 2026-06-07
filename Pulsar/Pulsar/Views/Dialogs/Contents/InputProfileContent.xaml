@@ -6,6 +6,7 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:controls="clr-namespace:Pulsar.Views.Controls"
              xmlns:viewmodels="clr-namespace:Pulsar.ViewModels.Dialogs"
+             xmlns:lex="clr-namespace:Pulsar.Core.Localization"
              mc:Ignorable="d" 
              d:DesignHeight="400" d:DesignWidth="400">
 
@@ -19,7 +20,7 @@
 
     <StackPanel Margin="0">
         <!-- Profile Name Input -->
-        <TextBlock Text="Application Process" FontWeight="Medium" Margin="0,0,0,8"/>
+        <TextBlock Text="{lex:Locale Dialog.InputProfile.AppProcess}" FontWeight="Medium" Margin="0,0,0,8"/>
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -27,13 +28,13 @@
             </Grid.ColumnDefinitions>
             
             <ui:TextBox Text="{Binding ProcessName, UpdateSourceTrigger=PropertyChanged}"
-                        PlaceholderText="e.g., chrome, notepad, code"
+                        PlaceholderText="{lex:Locale Dialog.InputProfile.ProcessPlaceholder}"
                         Icon="{ui:SymbolIcon Apps24}"/>
             
             <ui:Button Grid.Column="1" Margin="8,0,0,0"
                        Icon="{ui:SymbolIcon TargetEdit20}"
                        Command="{Binding PickProcessCommand}"
-                       ToolTip="Pick from running process"
+                       ToolTip="{lex:Locale Dialog.InputProfile.PickProcess}"
                        Style="{StaticResource PulsarSecondaryButtonStyle}"/>
         </Grid>
         
@@ -44,13 +45,13 @@
                    Visibility="{Binding HasError, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
         <!-- Alias Input -->
-        <TextBlock Text="Alias (Optional)" FontWeight="Medium" Margin="0,16,0,8"/>
+        <TextBlock Text="{lex:Locale Dialog.InputProfile.AliasOptional}" FontWeight="Medium" Margin="0,16,0,8"/>
         <ui:TextBox Text="{Binding Alias, UpdateSourceTrigger=PropertyChanged}"
-                    PlaceholderText="Custom display name"
+                    PlaceholderText="{lex:Locale Dialog.InputProfile.AliasPlaceholder}"
                     Icon="{ui:SymbolIcon Rename24}"/>
 
         <!-- Icon Selection -->
-        <TextBlock Text="Profile Icon" FontWeight="Medium" Margin="0,20,0,8"/>
+        <TextBlock Text="{lex:Locale Dialog.InputProfile.ProfileIcon}" FontWeight="Medium" Margin="0,20,0,8"/>
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -68,12 +69,12 @@
 
             <!-- Info -->
             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                <TextBlock Text="Selected Icon" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                <TextBlock Text="{lex:Locale Dialog.InputProfile.SelectedIcon}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                 <TextBlock Text="{Binding IconKey}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
             </StackPanel>
 
             <!-- Change Button -->
-            <ui:Button Grid.Column="2" Content="Change" 
+            <ui:Button Grid.Column="2" Content="{lex:Locale Dialog.InputProfile.Change}" 
                        Style="{StaticResource PulsarSecondaryButtonStyle}" 
                        Command="{Binding PickIconCommand}"
                        VerticalAlignment="Center"/>

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Pulsar.Core.Localization;
 using Pulsar.Models;
 using Pulsar.ViewModels.Settings;
 using Pulsar.ViewModels.Base;
@@ -127,6 +128,7 @@ namespace Pulsar.ViewModels.Dialogs
         private readonly Func<SlotParameterEditorField, Task> _pickParameterValueAsync;
         private readonly Func<PluginSlot, Task> _pickIconAsync;
         private readonly Func<PluginSlot, Task> _pickColorAsync;
+        private readonly ILocalizationService _loc;
         private readonly IReadOnlyDictionary<string, PluginTypeOption> _pluginTypeLookup;
         private readonly IReadOnlyDictionary<string, ScenarioOption> _scenarioLookup;
 
@@ -178,7 +180,8 @@ namespace Pulsar.ViewModels.Dialogs
             Action<PluginSlot, string?> setAction,
             Func<SlotParameterEditorField, Task> pickParameterValueAsync,
             Func<PluginSlot, Task> pickIconAsync,
-            Func<PluginSlot, Task> pickColorAsync)
+            Func<PluginSlot, Task> pickColorAsync,
+            ILocalizationService localizationService)
         {
             PluginTypes = new ObservableCollection<PluginTypeOption>(pluginTypes);
             _createSlotDraft = createSlotDraft;
@@ -186,6 +189,7 @@ namespace Pulsar.ViewModels.Dialogs
             _pickParameterValueAsync = pickParameterValueAsync;
             _pickIconAsync = pickIconAsync;
             _pickColorAsync = pickColorAsync;
+            _loc = localizationService;
             _pluginTypeLookup = PluginTypes.ToDictionary(option => option.PluginId, StringComparer.OrdinalIgnoreCase);
             ScenarioOptions = new ObservableCollection<ScenarioOption>(BuildScenarios());
             _scenarioLookup = ScenarioOptions.ToDictionary(option => option.Key, StringComparer.OrdinalIgnoreCase);
@@ -246,7 +250,7 @@ namespace Pulsar.ViewModels.Dialogs
             && string.IsNullOrWhiteSpace(Slot.Action);
 
         public string ActionValidationMessage => HasActionValidationError
-            ? "Select an action before saving."
+            ? _loc["Dialog.AddSlot.SelectActionValidation"]
             : string.Empty;
 
         public int ValidationRequestId
@@ -269,9 +273,9 @@ namespace Pulsar.ViewModels.Dialogs
 
         public bool HasPickerCategories => PluginTypeCategories.Count > 1;
 
-        public string PrimaryButtonText => "Save Slot";
+        public string PrimaryButtonText => _loc["Dialog.AddSlot.SaveSlot"];
 
-        public string SecondaryButtonText => "Cancel";
+        public string SecondaryButtonText => _loc["Dialog.AddSlot.Cancel"];
 
         public bool IsPrimaryButtonVisible => true;
 
@@ -283,13 +287,13 @@ namespace Pulsar.ViewModels.Dialogs
 
         public string SelectedPluginDescription => SelectedScenario?.Description
             ?? SelectedType?.Description
-            ?? "Choose the primary behavior for this slot, then fill in the details that make it work.";
+            ?? _loc["Dialog.AddSlot.ChooseBehaviorDesc"];
 
         public string SelectedPluginContextTitle => SelectedScenario?.Title
             ?? SelectedType?.DisplayName
-            ?? (IsAdvancedMode ? "Choose a slot type" : "Choose a common scenario");
+            ?? (IsAdvancedMode ? _loc["Dialog.AddSlot.ChooseSlotType"] : _loc["Dialog.AddSlot.ChooseScenario"]);
 
-        public string HeaderText => Slot == null ? "Create slot" : $"Create slot {Slot.Slot}";
+        public string HeaderText => Slot == null ? _loc["Dialog.AddSlot.CreateSlot"] : string.Format(_loc["Dialog.AddSlot.CreateSlotFormat"], Slot.Slot);
 
         public string HeaderDescription => Slot == null
             ? IsAdvancedMode
@@ -298,12 +302,12 @@ namespace Pulsar.ViewModels.Dialogs
             : "Set the behavior first, complete any required details, then polish the presentation if needed.";
 
         public string HeaderStatusText => Slot == null
-            ? "Choose a type to begin"
+            ? _loc["Dialog.AddSlot.TypeBegin"]
             : HasBlockingIssue
-                ? "Needs required setup"
+                ? _loc["Dialog.AddSlot.NeedsSetup"]
                 : ValidationSeverity == ValidationSeverity.Warning
-                    ? "Draft in progress"
-                    : "Ready to save";
+                    ? _loc["Dialog.AddSlot.DraftProgress"]
+                    : _loc["Dialog.AddSlot.ReadyToSave"];
 
         public bool HasCriticalValidationState => Slot != null && (HasBlockingIssue || ValidationSeverity == ValidationSeverity.Error);
 
@@ -314,12 +318,12 @@ namespace Pulsar.ViewModels.Dialogs
             : HasValidationSummary
                 ? ValidationSummary
                 : Slot == null
-                    ? "Choose a slot type to unlock actions and required details."
-                    : "Complete the required setup, then adjust label, icon, or color if you want extra polish.";
+                    ? _loc["Dialog.AddSlot.ChooseTypeHint"]
+                    : _loc["Dialog.AddSlot.CompleteSetupHint"];
 
-        public string PreviewTitle => Slot?.Presentation.Title ?? "New slot";
+        public string PreviewTitle => Slot?.Presentation.Title ?? _loc["Dialog.AddSlot.NewSlot"];
 
-        public string PreviewTypeBadge => Slot?.Presentation.TypeBadge ?? "Plugin";
+        public string PreviewTypeBadge => Slot?.Presentation.TypeBadge ?? _loc["Dialog.AddSlot.Plugin"];
 
         public string PreviewActionText => Slot == null
             ? "Choose a slot type to preview the behavior."
@@ -327,19 +331,19 @@ namespace Pulsar.ViewModels.Dialogs
                 ? "Choose an action and fill any required details."
                 : Slot.Presentation.ActionText;
 
-        public string PreviewHealthBadge => Slot?.Presentation.HealthBadgeText ?? "Draft";
+        public string PreviewHealthBadge => Slot?.Presentation.HealthBadgeText ?? _loc["Dialog.AddSlot.Draft"];
 
         public string PreviewHealthToneKey => Slot?.Presentation.HealthToneKey ?? "SlotHealthBrushReady";
 
         public string PreviewMetadataText => HasSummaryTokens
             ? string.Join("  •  ", SummaryTokens)
-            : "Preview badges and setup status update as you shape the slot.";
+            : _loc["Dialog.AddSlot.PreviewHint"];
 
         public string PluginPickerHint => SelectedCategory == null || string.Equals(SelectedCategory.Key, "all", StringComparison.OrdinalIgnoreCase)
             ? IsAdvancedMode
-                ? "Scan the available slot types, then choose the behavior you want to set up."
-                : "Choose the outcome you want. Each scenario creates a standard editable slot using the existing plugin model."
-            : $"Showing {SelectedCategory.Label.ToLowerInvariant()} slot types.";
+                ? _loc["Dialog.AddSlot.ScanTypes"]
+                : _loc["Dialog.AddSlot.ChooseOutcome"]
+            : string.Format(_loc["Dialog.AddSlot.ShowingCategoryFormat"], SelectedCategory.Label.ToLowerInvariant());
 
         public ObservableCollection<SlotActionOption> AvailableActions => Slot?.AvailableActions ?? _emptyActions;
 
@@ -372,11 +376,11 @@ namespace Pulsar.ViewModels.Dialogs
 
         public bool HasAppearanceOptions => Slot != null;
 
-        public string AppearanceDisclosureTitle => "Appearance";
+        public string AppearanceDisclosureTitle => _loc["Dialog.AddSlot.DisclosureTitle"];
 
         public string AppearanceDisclosureTooltip => Slot == null
-            ? "Select a slot type before adjusting the label, icon, or color."
-            : "Keep the suggested presentation or make small adjustments after the behavior is ready.";
+            ? _loc["Dialog.AddSlot.DisclosureHint1"]
+            : _loc["Dialog.AddSlot.DisclosureHint2"];
 
         public bool HasBlockingIssue => !string.IsNullOrWhiteSpace(BlockingIssueText);
 
@@ -617,7 +621,7 @@ namespace Pulsar.ViewModels.Dialogs
             OnPropertyChanged(nameof(SupportingStatusText));
         }
 
-        private static IEnumerable<PluginTypeCategoryOption> BuildCategories(IEnumerable<PluginTypeOption> pluginTypes)
+        private IEnumerable<PluginTypeCategoryOption> BuildCategories(IEnumerable<PluginTypeOption> pluginTypes)
         {
             var categories = pluginTypes
                 .GroupBy(option => option.CategoryKey, StringComparer.OrdinalIgnoreCase)
@@ -625,39 +629,39 @@ namespace Pulsar.ViewModels.Dialogs
                 .Select(group => new PluginTypeCategoryOption(group.Key, group.First().CategoryLabel, group.Count()))
                 .ToList();
 
-            categories.Insert(0, new PluginTypeCategoryOption("all", "All", pluginTypes.Count()));
+            categories.Insert(0, new PluginTypeCategoryOption("all", _loc["Dialog.AddSlot.CategoryAll"], pluginTypes.Count()));
             return categories;
         }
 
-        private static IEnumerable<ScenarioOption> BuildScenarios()
+        private IEnumerable<ScenarioOption> BuildScenarios()
         {
             return new[]
             {
                 new ScenarioOption(
                     "switch-app",
-                    "Switch App",
-                    "Switch to a running app, or launch it when no window is open yet.",
+                    _loc["Dialog.AddSlot.ScenarioSwitchApp"],
+                    _loc["Dialog.AddSlot.ScenarioSwitchAppDesc"],
                     "com.pulsar.winswitcher",
                     "switch",
                     "E8AB"),
                 new ScenarioOption(
                     "open-target",
-                    "Open Program, File, Folder, or URL",
-                    "Open something through the normal Windows shell path using the canonical Command Runner open action.",
+                    _loc["Dialog.AddSlot.ScenarioOpen"],
+                    _loc["Dialog.AddSlot.ScenarioOpenDesc"],
                     "com.pulsar.command",
                     "run",
                     "E756"),
                 new ScenarioOption(
                     "send-keys",
-                    "Send Keys or Insert Text",
-                    "Send a key sequence or plain text to the active window using the canonical Command Runner send keys action.",
+                    _loc["Dialog.AddSlot.ScenarioSendKeys"],
+                    _loc["Dialog.AddSlot.ScenarioSendKeysDesc"],
                     "com.pulsar.command",
                     "sendkeys",
                     "E765"),
                 new ScenarioOption(
                     "fill-credential",
-                    "Fill Credential",
-                    "Fill a saved credential into the active app using the canonical PKI fill action.",
+                    _loc["Dialog.AddSlot.ScenarioFillCredential"],
+                    _loc["Dialog.AddSlot.ScenarioFillCredentialDesc"],
                     "com.pulsar.pki",
                     "fill",
                     "E72E")
@@ -718,13 +722,13 @@ namespace Pulsar.ViewModels.Dialogs
             if (Slot == null)
             {
                 return IsAdvancedMode
-                    ? "Choose a slot type to begin."
-                    : "Choose a scenario to begin.";
+                    ? _loc["Dialog.AddSlot.ChooseTypeBegin"]
+                    : _loc["Dialog.AddSlot.ChooseScenarioBegin"];
             }
 
             if (string.IsNullOrWhiteSpace(Slot.Action))
             {
-                return "Select an action before saving.";
+                return _loc["Dialog.AddSlot.SelectActionValidation"];
             }
 
             var missingRequired = RequiredParameters
@@ -734,7 +738,7 @@ namespace Pulsar.ViewModels.Dialogs
 
             if (missingRequired.Count > 0)
             {
-                return $"Complete the required fields: {string.Join(", ", missingRequired)}.";
+                return string.Format(_loc["Dialog.AddSlot.CompleteRequiredFormat"], string.Join(", ", missingRequired));
             }
 
             return string.Empty;
@@ -745,7 +749,7 @@ namespace Pulsar.ViewModels.Dialogs
             foreach (var field in RequiredParameters)
             {
                 field.ValidationMessage = _shouldShowFieldValidation && !field.HasValue
-                    ? $"{field.Label} is required."
+                    ? string.Format(_loc["Dialog.AddSlot.FieldRequiredFormat"], field.Label)
                     : string.Empty;
             }
 
@@ -887,21 +891,21 @@ namespace Pulsar.ViewModels.Dialogs
             }
         }
 
-        private static string BuildSuggestedLabel(PluginSlot slot)
+        private string BuildSuggestedLabel(PluginSlot slot)
         {
             return slot.PluginId switch
             {
                 "com.pulsar.winswitcher" => BuildAppLabel(slot),
                 "com.pulsar.command" => BuildCommandLabel(slot),
-                "com.pulsar.bookmarklet" => BuildScriptLabel(slot, "Run Script"),
-                "com.pulsar.vbarunner" => BuildScriptLabel(slot, "Run VBA"),
+                "com.pulsar.bookmarklet" => BuildScriptLabel(slot, _loc["Dialog.AddSlot.RunScript"]),
+                "com.pulsar.vbarunner" => BuildScriptLabel(slot, _loc["Dialog.AddSlot.RunVba"]),
                 "com.pulsar.pki" => "Fill Secret",
                 "com.pulsar.system" => BuildSystemLabel(slot),
                 _ => string.IsNullOrWhiteSpace(slot.ActionLabel) ? $"Slot {slot.Slot}" : slot.ActionLabel
             };
         }
 
-        private static string BuildAppLabel(PluginSlot slot)
+        private string BuildAppLabel(PluginSlot slot)
         {
             if (!string.IsNullOrWhiteSpace(slot["app"]))
             {
@@ -910,44 +914,44 @@ namespace Pulsar.ViewModels.Dialogs
 
             if (!string.IsNullOrWhiteSpace(slot["path"]))
             {
-                return $"Launch {ExtractName(slot["path"], "App")}";
+                return $"Launch {ExtractName(slot["path"], _loc["Dialog.AddSlot.App"])}";
             }
 
             return slot.Action?.ToLowerInvariant() switch
             {
                 "activate" => "Switch Existing App",
                 "launch" => "Launch App",
-                _ => "Switch Or Launch App"
+                _ => _loc["Dialog.AddSlot.SwitchOrLaunch"]
             };
         }
 
-        private static string BuildCommandLabel(PluginSlot slot)
+        private string BuildCommandLabel(PluginSlot slot)
         {
             if (string.Equals(slot.Action, "sendkeys", StringComparison.OrdinalIgnoreCase))
             {
                 return string.IsNullOrWhiteSpace(slot["keys"])
-                    ? "Send Keys"
+                    ? _loc["Dialog.AddSlot.SendKeys"]
                     : $"Send {slot["keys"]}";
             }
 
             return !string.IsNullOrWhiteSpace(slot["path"])
-                ? $"Open {ExtractName(slot["path"], "Target")}"
-                : "Open Target";
+                ? $"Open {ExtractName(slot["path"], _loc["Dialog.AddSlot.Target"])}"
+                : _loc["Dialog.AddSlot.OpenTarget"];
         }
 
-        private static string BuildSystemLabel(PluginSlot slot)
+        private string BuildSystemLabel(PluginSlot slot)
         {
             return slot.Action?.ToLowerInvariant() switch
             {
-                "quick-add-profile" or "pulsar.system.quick_add_profile" => "Quick Add Current App",
-                _ => "Open Settings"
+                "quick-add-profile" or "pulsar.system.quick_add_profile" => _loc["Dialog.AddSlot.QuickAdd"],
+                _ => _loc["Dialog.AddSlot.OpenSettings"]
             };
         }
 
-        private static string BuildScriptLabel(PluginSlot slot, string fallback)
+        private string BuildScriptLabel(PluginSlot slot, string fallback)
         {
             return !string.IsNullOrWhiteSpace(slot["scriptPath"])
-                ? $"Run {ExtractName(slot["scriptPath"], "Script")}"
+                ? $"Run {ExtractName(slot["scriptPath"], _loc["Dialog.AddSlot.Script"])}"
                 : fallback;
         }
 
