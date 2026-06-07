@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,7 +29,7 @@ namespace Pulsar.ViewModels.Strategies
             _serviceProvider = serviceProvider;
         }
 
-        public async Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context)
+        public async Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context, CancellationToken cancellationToken = default)
         {
             // 1. Close Menu
             context.IsVisible = false;

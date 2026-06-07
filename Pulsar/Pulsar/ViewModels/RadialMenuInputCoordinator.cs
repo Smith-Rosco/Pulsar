@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Pulsar.Models;
@@ -84,7 +85,8 @@ namespace Pulsar.ViewModels
             IReadOnlyCollection<SlotViewModel> slots,
             RadialMenuViewModel context,
             Action restoreRootMenu,
-            Action hideMenu)
+            Action hideMenu,
+            CancellationToken cancellationToken = default)
         {
             if (activeSlotIndex < 0)
             {
@@ -107,7 +109,7 @@ namespace Pulsar.ViewModels
                     return;
                 }
 
-                await centerSlot.ExecuteAsync(context);
+                await centerSlot.ExecuteAsync(context, cancellationToken);
                 return;
             }
 
@@ -117,7 +119,7 @@ namespace Pulsar.ViewModels
                 return;
             }
 
-            await slot.ExecuteAsync(context);
+            await slot.ExecuteAsync(context, cancellationToken);
         }
 
         public async Task HandleGlobalMouseClickAsync(
@@ -130,7 +132,8 @@ namespace Pulsar.ViewModels
             RadialMenuViewModel context,
             Action restoreRootMenu,
             Action triggerRootBounceAnimation,
-            Action hideMenu)
+            Action hideMenu,
+            CancellationToken cancellationToken = default)
         {
             if (!isVisible)
             {
@@ -158,7 +161,7 @@ namespace Pulsar.ViewModels
                         return;
                     }
 
-                    await centerSlot.ExecuteAsync(context);
+                    await centerSlot.ExecuteAsync(context, cancellationToken);
                     return;
                 }
 

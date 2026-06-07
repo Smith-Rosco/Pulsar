@@ -133,7 +133,8 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
         public async Task<PluginResult> ExecuteAsync(
             string action,
             IReadOnlyDictionary<string, string> args,
-            PulsarContext context)
+            PulsarContext context,
+            CancellationToken cancellationToken = default)
         {
             if (_windowService == null)
             {

@@ -1,9 +1,7 @@
 ## Purpose
 
 The plugin runtime kernel provides a decomposed, DI-composed set of services that separate plugin discovery, runtime state management, execution policy, circuit breaking, and instance hosting into distinct responsibilities, with thread-safe state stores and deterministic execution pipelines.
-
 ## Requirements
-
 ### Requirement: Plugin runtime responsibilities are explicitly separated
 The plugin platform SHALL separate plugin discovery, runtime state management, execution policy, and instance hosting into distinct runtime responsibilities so no single registry class remains the authoritative owner of all plugin behavior.
 
@@ -27,7 +25,7 @@ The plugin runtime SHALL define one authoritative lifecycle state model for plug
 - **THEN** the runtime SHALL record the failure against the plugin lifecycle state and SHALL expose a deterministic next-step policy for recovery, disablement, or unload
 
 ### Requirement: Plugin execution passes through a deterministic policy pipeline
-The runtime SHALL process every plugin execution through a consistent sequence of policy stages that includes availability evaluation, activation readiness, execution scoping, result classification, and telemetry updates.
+The runtime SHALL process every plugin execution through a consistent sequence of policy stages that includes availability evaluation, activation readiness, execution scoping, result classification, and telemetry updates. The pipeline SHALL enforce a maximum execution duration (default 30 seconds) and SHALL propagate a `CancellationToken` through all stages.
 
 #### Scenario: Execution ordering is consistent
 - **WHEN** a plugin action is requested
@@ -37,16 +35,32 @@ The runtime SHALL process every plugin execution through a consistent sequence o
 - **WHEN** plugin execution succeeds, returns a handled error result, or throws an exception
 - **THEN** the runtime SHALL classify the outcome consistently and SHALL update monitoring and usage services according to the same execution policy rules
 
+#### Scenario: Execution timeout is enforced
+- **WHEN** a plugin execution exceeds the configured timeout duration
+- **THEN** the runtime SHALL cancel execution via `CancellationToken`
+- **AND** the runtime SHALL classify the outcome as a critical blocked execution
+- **AND** the runtime SHALL transition the plugin to `Faulted` and update breaker policy
+
+#### Scenario: CancellationToken is propagated to plugins
+- **WHEN** the pipeline invokes `plugin.ExecuteAsync()`
+- **THEN** the runtime SHALL pass a `CancellationToken` linked to the execution timeout
+- **AND** the plugin SHALL receive the token through its `ExecuteAsync` method signature
+
 ### Requirement: Circuit breaker state is a first-class runtime policy
-The plugin runtime SHALL manage extension-plugin circuit-breaker state through a dedicated runtime policy service rather than registry-local counters and timestamps.
+The plugin runtime SHALL manage extension-plugin circuit-breaker state through a dedicated runtime policy service rather than registry-local counters and timestamps. The breaker SHALL treat execution timeout as a failure event equivalent to an unhandled exception.
 
 #### Scenario: Breaker policy prevents unsafe execution
-- **WHEN** an extension plugin exceeds the configured crash threshold
+- **WHEN** an extension plugin exceeds the configured crash threshold (including timeouts)
 - **THEN** the runtime SHALL prevent further execution attempts for the configured cooldown period and SHALL expose the breaker state for diagnostics and user feedback
 
 #### Scenario: Breaker recovery is explicit
 - **WHEN** a plugin becomes eligible for retry after cooldown
 - **THEN** the runtime SHALL transition through an explicit recovery path instead of silently clearing hidden registry state
+
+#### Scenario: Timeout failure is treated as breaker event
+- **WHEN** a plugin execution times out
+- **THEN** the breaker policy SHALL record the failure with the same atomic increment as an unhandled exception
+- **AND** the timeout SHALL count toward the breaker's crash threshold
 
 ### Requirement: Compatibility facades preserve current plugin contracts during migration
 The runtime refactor SHALL preserve existing plugin-facing contracts, persisted plugin configuration, and current registry entry points while the internal runtime kernel is introduced.
@@ -73,3 +87,4 @@ The plugin runtime kernel, catalog, state store, breaker policy, and execution p
 #### Scenario: Runtime components share the same DI service provider
 - **WHEN** a runtime component needs an optional service (e.g., `IPluginHealthMonitor`)
 - **THEN** it SHALL receive that service through constructor injection rather than calling `IServiceProvider.GetService()` internally
+

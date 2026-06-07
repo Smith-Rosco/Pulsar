@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Pulsar.Models;
 using Pulsar.ViewModels.Strategies;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Pulsar.ViewModels
@@ -19,11 +20,11 @@ namespace Pulsar.ViewModels
         // [New] Strategy Pattern
         public IActionStrategy ActionStrategy { get; set; } = new NoOpStrategy();
         
-        public async Task ExecuteAsync(RadialMenuViewModel context)
+        public async Task ExecuteAsync(RadialMenuViewModel context, CancellationToken cancellationToken = default)
         {
             if (ActionStrategy != null)
             {
-                await ActionStrategy.ExecuteAsync(this, context);
+                await ActionStrategy.ExecuteAsync(this, context, cancellationToken);
             }
         }
 

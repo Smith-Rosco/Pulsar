@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin.Runtime;
@@ -135,7 +136,8 @@ namespace Pulsar.Core.Plugin
         public async Task<PluginResult> ExecuteAsync(
             string action, 
             IReadOnlyDictionary<string, string> args, 
-            PulsarContext context)
+            PulsarContext context,
+            CancellationToken cancellationToken = default)
         {
             if (!CanExecute)
             {
@@ -269,7 +271,13 @@ namespace Pulsar.Core.Plugin
         {
             if (State != PluginState.Unloaded)
             {
-                UnloadAsync().GetAwaiter().GetResult();
+                Task.Run(() => UnloadAsync()).ContinueWith(t =>
+                {
+                    if (t.IsFaulted && t.Exception != null)
+                    {
+                        _logger?.LogError(t.Exception, "[PluginHost] Dispose: UnloadAsync failed");
+                    }
+                }, TaskScheduler.Default);
             }
         }
     }

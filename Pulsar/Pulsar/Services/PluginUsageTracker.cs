@@ -282,7 +282,13 @@ namespace Pulsar.Services
             // 最后保存一次
             if (_isDirty)
             {
-                SaveAsync().GetAwaiter().GetResult();
+                Task.Run(() => SaveAsync()).ContinueWith(t =>
+                {
+                    if (t.IsFaulted && t.Exception != null)
+                    {
+                        _logger.LogError(t.Exception, "[PluginUsageTracker] Dispose: SaveAsync failed");
+                    }
+                }, TaskScheduler.Default);
             }
         }
     }

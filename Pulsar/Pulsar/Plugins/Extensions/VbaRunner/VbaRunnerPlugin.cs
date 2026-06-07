@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Plugin.Metadata;
@@ -163,7 +163,8 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
         public async Task<PluginResult> ExecuteAsync(
             string action,
             IReadOnlyDictionary<string, string> args,
-            PulsarContext context)
+            PulsarContext context,
+            CancellationToken cancellationToken = default)
         {
             if (_scriptEngine == null)
             {

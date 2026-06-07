@@ -7,6 +7,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Pulsar.Core.Plugin.Runtime
@@ -97,7 +98,7 @@ namespace Pulsar.Core.Plugin.Runtime
 
     public interface IPluginExecutionPipeline
     {
-        Task<PluginExecutionOutcome> ExecuteAsync(PluginExecutionRequest request);
+        Task<PluginExecutionOutcome> ExecuteAsync(PluginExecutionRequest request, CancellationToken cancellationToken = default);
     }
 
     public interface IPluginRuntimeKernel
@@ -116,7 +117,7 @@ namespace Pulsar.Core.Plugin.Runtime
 
         Task<IPulsarPlugin?> GetOrActivatePluginAsync(string pluginId);
 
-        Task<PluginResult> ExecuteAsync(string pluginId, string action, IReadOnlyDictionary<string, string> args, PulsarContext context);
+        Task<PluginResult> ExecuteAsync(string pluginId, string action, IReadOnlyDictionary<string, string> args, PulsarContext context, CancellationToken cancellationToken = default);
 
         Task SetPluginStateAsync(string pluginId, bool enabled);
 
@@ -322,6 +323,8 @@ namespace Pulsar.Core.Plugin.Runtime
         public required Func<bool> IsEnabled { get; init; }
 
         public required Func<Task<IPulsarPlugin?>> ActivateAsync { get; init; }
+
+        public CancellationToken CancellationToken { get; init; }
     }
 
     public sealed class PluginExecutionPipeline : IPluginExecutionPipeline
@@ -349,7 +352,7 @@ namespace Pulsar.Core.Plugin.Runtime
             _permissionInterceptor = permissionInterceptor;
         }
 
-        public async Task<PluginExecutionOutcome> ExecuteAsync(PluginExecutionRequest request)
+        public async Task<PluginExecutionOutcome> ExecuteAsync(PluginExecutionRequest request, CancellationToken cancellationToken = default)
         {
             var pluginId = request.Descriptor.Id;
 
@@ -384,12 +387,15 @@ namespace Pulsar.Core.Plugin.Runtime
                 permissionInterceptor: _permissionInterceptor);
 
             var stopwatch = Stopwatch.StartNew();
-            var readyState = request.Descriptor.CanDisable ? PluginLifecycleState.Enabled : PluginLifecycleState.Enabled;
+            var readyState = PluginLifecycleState.Enabled;
             _runtimeStateStore.Transition(pluginId, PluginLifecycleState.Running);
+
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, request.CancellationToken);
+            linkedCts.CancelAfter(TimeSpan.FromSeconds(30));
 
             try
             {
-                var result = await plugin.ExecuteAsync(request.Action, request.Args, request.Context).ConfigureAwait(false);
+                var result = await plugin.ExecuteAsync(request.Action, request.Args, request.Context, linkedCts.Token).ConfigureAwait(false);
 
                 if (result.Success)
                 {
@@ -408,6 +414,15 @@ namespace Pulsar.Core.Plugin.Runtime
 
                 _logger.LogWarning("Plugin execution failed (logic error): {Message}", result.Message ?? "Unknown error");
                 return Complete(pluginId, stopwatch, request.Context, request.Action, result, PluginExecutionOutcomeKind.HandledFailure);
+            }
+            catch (OperationCanceledException)
+            {
+                var timeoutException = new TimeoutException($"Plugin execution timed out after 30 seconds: {pluginId}");
+                _runtimeStateStore.Transition(pluginId, PluginLifecycleState.Faulted, timeoutException);
+                _breakerPolicy.RecordFailure(request.Descriptor, pluginId, timeoutException);
+                _logger.LogError(timeoutException, "Plugin execution timed out");
+                var timeoutResult = PluginResult.Error($"Plugin execution timed out: {pluginId}", PluginErrorSeverity.Critical);
+                return Complete(pluginId, stopwatch, request.Context, request.Action, timeoutResult, PluginExecutionOutcomeKind.Blocked, timeoutException);
             }
             catch (Exception ex)
             {
@@ -547,7 +562,7 @@ namespace Pulsar.Core.Plugin.Runtime
             }
         }
 
-        public async Task<PluginResult> ExecuteAsync(string pluginId, string action, IReadOnlyDictionary<string, string> args, PulsarContext context)
+        public async Task<PluginResult> ExecuteAsync(string pluginId, string action, IReadOnlyDictionary<string, string> args, PulsarContext context, CancellationToken cancellationToken = default)
         {
             var descriptor = GetDescriptor(pluginId);
             if (descriptor == null)
@@ -563,7 +578,8 @@ namespace Pulsar.Core.Plugin.Runtime
                 Args = args,
                 Context = context,
                 IsEnabled = () => IsPluginEnabled(pluginId),
-                ActivateAsync = () => GetOrActivatePluginAsync(pluginId)
+                ActivateAsync = () => GetOrActivatePluginAsync(pluginId),
+                CancellationToken = cancellationToken
             });
 
             return outcome.Result;
@@ -662,7 +678,7 @@ namespace Pulsar.Core.Plugin.Runtime
         {
             if (_configService == null)
             {
-                _runtimeStateStore.Transition(plugin.Id, descriptor.CanDisable ? PluginLifecycleState.Enabled : PluginLifecycleState.Enabled);
+                _runtimeStateStore.Transition(plugin.Id, PluginLifecycleState.Enabled);
                 return;
             }
 

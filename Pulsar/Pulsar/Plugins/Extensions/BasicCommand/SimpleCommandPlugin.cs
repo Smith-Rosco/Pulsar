@@ -5,7 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin;
@@ -234,7 +236,8 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
         public override async Task<PluginResult> ExecuteAsync(
             string action,
             IReadOnlyDictionary<string, string> args,
-            PulsarContext context)
+            PulsarContext context,
+            CancellationToken cancellationToken = default)
         {
             return action.ToLowerInvariant() switch
             {

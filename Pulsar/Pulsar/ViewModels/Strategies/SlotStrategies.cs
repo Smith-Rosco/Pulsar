@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.Messaging;
@@ -19,7 +20,7 @@ namespace Pulsar.ViewModels.Strategies
     /// </summary>
     public interface IActionStrategy
     {
-        Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context);
+        Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context, CancellationToken cancellationToken = default);
     }
 
     /// <summary>
@@ -28,7 +29,7 @@ namespace Pulsar.ViewModels.Strategies
     public class NoOpStrategy : IActionStrategy
     {
         public static readonly NoOpStrategy Instance = new();
-        public Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context) => Task.CompletedTask;
+        public Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context, CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 
     /// <summary>
@@ -56,7 +57,7 @@ namespace Pulsar.ViewModels.Strategies
             _feedbackService = feedbackService;
         }
 
-        public async Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context)
+        public async Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context, CancellationToken cancellationToken = default)
         {
             context.SetActionExecuted(true);
             
@@ -126,7 +127,7 @@ namespace Pulsar.ViewModels.Strategies
             _logger = logger;
         }
 
-        public Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context)
+        public Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context, CancellationToken cancellationToken = default)
         {
             _logger?.LogInformation("[WinSwitch] ExecuteAsync START: hWnd=0x{Hwnd:X} title='{Title}' process='{Process}'",
                 _window.Handle.ToInt64(), _window.Title, _window.ProcessName);
@@ -226,7 +227,7 @@ namespace Pulsar.ViewModels.Strategies
             _logger = logger;
         }
 
-        public async Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context)
+        public async Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context, CancellationToken cancellationToken = default)
         {
             // [Enhancement] Use WindowService's smart window selection
             var currentForegroundHandle = _windowService.GetPreviousWindow();
@@ -294,7 +295,7 @@ namespace Pulsar.ViewModels.Strategies
     /// </summary>
     public class BackActionStrategy : IActionStrategy
     {
-        public Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context)
+        public Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context, CancellationToken cancellationToken = default)
         {
             if (context.IsInSubMenu)
             {
@@ -322,7 +323,7 @@ namespace Pulsar.ViewModels.Strategies
             _trayService = trayService;
         }
 
-        public Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context)
+        public Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context, CancellationToken cancellationToken = default)
         {
             context.SetActionExecuted(true);
             context.IsVisible = false;

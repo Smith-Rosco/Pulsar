@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows; // Explicitly use WPF namespace
 using CommunityToolkit.Mvvm.Messaging;
@@ -43,7 +44,8 @@ namespace Pulsar.Plugins.Core.SystemCommand
         public async Task<PluginResult> ExecuteAsync(
             string action,
             IReadOnlyDictionary<string, string> args,
-            PulsarContext context)
+            PulsarContext context,
+            CancellationToken cancellationToken = default)
         {
             if (_services == null) return PluginResult.Error("System plugin not initialized");
 

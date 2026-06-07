@@ -24,9 +24,10 @@ namespace Pulsar.Services
         private const int DEFAULT_SLOTS_PER_PAGE = 8;
         private const string ResetReloadReason = "reset";
         
-        private readonly string _configPath;
-        private ProfilesConfig? _cachedConfig;
-        private readonly ILogger<ConfigService> _logger;
+    private readonly string _configPath;
+    private ProfilesConfig? _cachedConfig;
+    private readonly object _cacheLock = new();
+    private readonly ILogger<ConfigService> _logger;
         private readonly IPluginMetadataRegistry? _metadataRegistry;
         private readonly IBackgroundWorkScheduler? _backgroundWorkScheduler;
         private ConfigValidationPipeline? _validationPipeline;
@@ -87,7 +88,10 @@ namespace Pulsar.Services
 
         private async Task<ProfilesConfig> LoadInternalAsync(string? reloadReason = null)
         {
-            if (_cachedConfig != null) return _cachedConfig;
+            lock (_cacheLock)
+            {
+                if (_cachedConfig != null) return _cachedConfig;
+            }
 
             if (!File.Exists(_configPath))
             {
@@ -147,7 +151,10 @@ namespace Pulsar.Services
                     }
                 }
 
-                _cachedConfig = loaded;
+                lock (_cacheLock)
+                {
+                    _cachedConfig = loaded;
+                }
                 
                 // [New] Validate configuration after loading
                 if (_validationPipeline != null && _cachedConfig != null)
@@ -194,7 +201,10 @@ namespace Pulsar.Services
                 // [Fix] 加载失败时不覆盖现有文件
                 // 创建默认配置但不保存，避免覆盖用户数据
                 // 直接使用 CreateFallbackConfig() 而不是 CreateDefaultConfig()，避免触发后台检测
-                _cachedConfig = CreateFallbackConfig();
+                lock (_cacheLock)
+                {
+                    _cachedConfig = CreateFallbackConfig();
+                }
                 
                 _logger.LogWarning("[ConfigService] Using fallback configuration in memory only (not saving to disk to preserve existing file)");
             }
@@ -254,7 +264,6 @@ namespace Pulsar.Services
                 }
             }
             
-            _cachedConfig = config;
             var options = CreatePersistenceJsonOptions();
 
             // [Fix] 使用重试逻辑处理文件访问冲突
@@ -303,6 +312,11 @@ namespace Pulsar.Services
                     _logger.LogError(ex, "[ConfigService] Failed to save configuration after {MaxRetries} attempts", maxRetries);
                     throw;
                 }
+            }
+
+            lock (_cacheLock)
+            {
+                _cachedConfig = config;
             }
 
             ConfigUpdated?.Invoke();

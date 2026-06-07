@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
@@ -181,7 +182,8 @@ namespace Pulsar.Core.Plugin
         public abstract Task<PluginResult> ExecuteAsync(
             string action,
             IReadOnlyDictionary<string, string> args,
-            PulsarContext context
+            PulsarContext context,
+            CancellationToken cancellationToken = default
         );
 
         #endregion

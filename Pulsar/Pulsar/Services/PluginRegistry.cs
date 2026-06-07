@@ -7,6 +7,7 @@ using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Pulsar.Services
@@ -69,9 +70,10 @@ namespace Pulsar.Services
             string pluginId,
             string action,
             IReadOnlyDictionary<string, string> args,
-            PulsarContext context)
+            PulsarContext context,
+            CancellationToken cancellationToken = default)
         {
-            return await _runtimeKernel.ExecuteAsync(pluginId, action, args, context);
+            return await _runtimeKernel.ExecuteAsync(pluginId, action, args, context, cancellationToken);
         }
 
         public async Task SetPluginStateAsync(string pluginId, bool enabled)

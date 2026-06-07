@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Pulsar.Core.Plugin
@@ -92,7 +93,8 @@ namespace Pulsar.Core.Plugin
         Task<PluginResult> ExecuteAsync(
             string action,
             IReadOnlyDictionary<string, string> args,
-            PulsarContext context
+            PulsarContext context,
+            CancellationToken cancellationToken = default
         );
     }
 }
