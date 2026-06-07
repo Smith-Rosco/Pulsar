@@ -112,13 +112,19 @@ namespace Pulsar.Services
                     Log.Information("First launch detected, starting tutorial");
                     await Task.Delay(1500, cancellationToken);
 
-                    var tutorialService = _services.GetRequiredService<ITutorialService>();
-                    await tutorialService.CheckResumeAsync();
+                    await await System.Windows.Application.Current.Dispatcher.InvokeAsync(
+                        async () =>
+                        {
+                            var tutorialService = _services.GetRequiredService<ITutorialService>();
+                            await tutorialService.CheckResumeAsync();
 
-                    if (!tutorialService.IsTutorialActive)
-                    {
-                        await tutorialService.StartTutorialAsync();
-                    }
+                            if (!tutorialService.IsTutorialActive)
+                            {
+                                await tutorialService.StartTutorialAsync();
+                            }
+                        },
+                        System.Windows.Threading.DispatcherPriority.Normal,
+                        cancellationToken);
 
                     deferredStopwatch.Stop();
                     _logger.LogInformation("[Startup] Deferred startup responsibilities complete in {ElapsedMs}ms", deferredStopwatch.ElapsedMilliseconds);
@@ -216,10 +222,23 @@ namespace Pulsar.Services
             var dialogService = _services.GetRequiredService<IDialogService>();
             var wizard = _services.GetRequiredService<FirstLaunchSetupWizardViewModel>();
             var loc = _services.GetRequiredService<ILocalizationService>();
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(
-                () => dialogService.ShowCustomAsync(loc["FirstLaunch.SetupTitle"], wizard, DialogButtons.None, DialogSizeConstraints.LargeResizable, AppTheme.Light),
-                System.Windows.Threading.DispatcherPriority.Normal,
-                cancellationToken);
+
+            try
+            {
+                await await System.Windows.Application.Current.Dispatcher.InvokeAsync(
+                    () => dialogService.ShowCustomAsync(loc["FirstLaunch.SetupTitle"], wizard, DialogButtons.None, DialogSizeConstraints.LargeResizable, AppTheme.Light),
+                    System.Windows.Threading.DispatcherPriority.Normal,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[Startup] Failed to display first-run setup wizard");
+                var trayService = _services.GetRequiredService<ITrayService>();
+                trayService.ShowNotification(
+                    loc["Notification.OnboardingWizardFailedTitle"],
+                    loc["Notification.OnboardingWizardFailed"],
+                    PulsarNotificationIcon.Warning);
+            }
         }
     }
 }

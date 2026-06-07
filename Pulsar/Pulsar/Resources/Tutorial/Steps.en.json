@@ -1,0 +1,214 @@
+{
+  "version": "1.0.0",
+  "steps": [
+    {
+      "id": "step1_welcome",
+      "title": "Welcome to Pulsar!",
+      "description": "Pulsar is a radial launcher built around muscle memory. Here's what to learn first:\n\n1. Task Mode `Ctrl+Q`: Quickly switch or launch common apps\n2. Action Mode `Ctrl+Shift+Q`: Execute command slots in the current context\n3. Settings > Slots: All slots are configured here\n\nThis tutorial will guide you through the shortest loop: open settings, add a switch slot, then add an action slot.",
+      "type": "Instruction",
+      "target": null,
+      "completionTrigger": {
+        "type": "ButtonClick",
+        "targetValue": "StartButton"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Fixed",
+        "fixedCardWidth": 450,
+        "fixedCardHeight": 300
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step2_open_settings",
+      "title": "Open Settings",
+      "description": "First, open the settings window. The rest of the tutorial will focus on the Slots page inside Settings.\n\nYou can click \"Open Settings\" below, or open it from the Pulsar tray icon.",
+      "type": "Instruction",
+      "primaryAction": "OpenSettingsWindow",
+      "primaryButtonText": "Tutorial.OpenSettings",
+      "waitHintText": "After clicking \"Open Settings\", the tutorial will continue automatically. You can also open settings via the tray icon.",
+      "target": null,
+      "completionTrigger": {
+        "type": "WindowOpened",
+        "targetValue": "SettingsWindow"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Fixed",
+        "fixedCardWidth": 450,
+        "fixedCardHeight": 300
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step3_settings_overview",
+      "title": "Understanding Settings",
+      "description": "Pulsar's Settings has three main sections:\n\n\u2022 General: Hotkeys, themes, and startup behavior\n\u2022 Slots: Configure Task Mode / Action Mode slots\n\u2022 Plugins: View and manage installed plugins\n\nThis tutorial focuses on the Slots page, since it determines what appears in the radial menu.",
+      "type": "Instruction",
+      "target": {
+        "type": "Window",
+        "elementName": "SettingsWindow"
+      },
+      "completionTrigger": {
+        "type": "ButtonClick",
+        "targetValue": "NextButton"
+      },
+      "layout": {
+        "targetWindow": {
+          "left": 0.25,
+          "top": 0.15,
+          "width": 0.5,
+          "height": 0.7,
+          "isRelative": true
+        },
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Fixed",
+        "fixedCardWidth": 450,
+        "fixedCardHeight": 300
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step4_navigate_slots",
+      "title": "Go to Slots",
+      "description": "Click \"Slots\" in the left navigation.\n\nYou'll see a Context/Profile switcher at the top:\n\n\u2022 `Launcher`: Switch slots used in Task Mode\n\u2022 `Global`: Action slots visible in all applications\n\u2022 Other Profiles: Action slots visible only in specific apps\n\nStart with `Launcher` and `Global` \u2014 they're the most stable and easy to understand.",
+      "type": "WaitForNavigation",
+      "waitHintText": "Click \"Slots\" in the left nav and the tutorial will continue. You can also click \"Continue\" manually.",
+      "target": {
+        "type": "UIElement",
+        "elementName": "SlotsNavigationItem"
+      },
+      "completionTrigger": {
+        "type": "NavigationItemClicked",
+        "targetValue": "Slots"
+      },
+      "layout": {
+        "targetWindow": {
+          "left": 0.25,
+          "top": 0.15,
+          "width": 0.5,
+          "height": 0.7,
+          "isRelative": true
+        },
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Fixed",
+        "fixedCardWidth": 480,
+        "fixedCardHeight": 360
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step5_add_winswitcher_slot",
+      "title": "Create a Task Mode Slot",
+      "description": "Now add a `Window Switcher` slot under the `Launcher` context.\n\nRecommended values:\n\u2022 app: `notepad`\n\u2022 path: `C:\\Windows\\System32\\notepad.exe`\n\u2022 Display Label: `Notepad`\n\nWhy this first?\n\u2022 Easiest to verify: press `Ctrl+Q` to see it\n\u2022 Window Switcher handles both switching and launching\n\u2022 This is the most core Pulsar slot type\n\nSave your changes when done.",
+      "type": "WaitForAction",
+      "waitHintText": "After adding the slot, the tutorial will continue automatically. You can also click \"Continue\".",
+      "target": {
+        "type": "UIElement",
+        "elementName": "AddSlotButton"
+      },
+      "completionTrigger": {
+        "type": "SlotAdded",
+        "targetValue": "{\"PluginId\":\"com.pulsar.winswitcher\",\"Profile\":\"Global\"}"
+      },
+      "layout": {
+        "targetWindow": {
+          "left": 0.25,
+          "top": 0.15,
+          "width": 0.5,
+          "height": 0.7,
+          "isRelative": true
+        },
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Fixed",
+        "fixedCardWidth": 480,
+        "fixedCardHeight": 420
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step6_test_switch_mode",
+      "title": "Test Task Mode",
+      "description": "Now verify that your config actually appears in the radial menu.\n\nHow to test:\n1. Hold `Ctrl+Q` to open Task Mode\n2. Check if your \"Notepad\" slot appears in the ring\n3. Release onto the slot \u2014 Pulsar will switch to or launch Notepad\n\nThe key takeaway: the `Launcher` context = Task Mode content.",
+      "type": "WaitForAction",
+      "waitHintText": "Trigger Task Mode once and the tutorial will continue. If not detected, verify your hotkey, or click Continue.",
+      "target": null,
+      "completionTrigger": {
+        "type": "RadialMenuShown",
+        "targetValue": "Task"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Fixed",
+        "fixedCardWidth": 480,
+        "fixedCardHeight": 360
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step7_add_global_command_slot",
+      "title": "Create a Global Action Slot",
+      "description": "Back in the Slots page, switch the context to `Global` and add a `Command` slot.\n\nRecommended values:\n\u2022 path: `notepad.exe`\n\u2022 arguments: `C:\\Windows\\System32\\drivers\\etc\\hosts`\n\u2022 Display Label: `Open Hosts File`\n\nWhy `Global` instead of an app profile?\n\u2022 More stable for first-time setup, not dependent on active window\n\u2022 When you press `Ctrl+Shift+Q`, this slot appears in every app\n\u2022 Once you're comfortable, create app-specific profiles naturally",
+      "type": "WaitForAction",
+      "waitHintText": "Switch to Global context and add a Command slot to continue. You can also click Continue manually.",
+      "target": null,
+      "completionTrigger": {
+        "type": "SlotAdded",
+        "targetValue": "{\"PluginId\":\"com.pulsar.command\",\"Profile\":\"Global\",\"Mode\":\"CommandMode\"}"
+      },
+      "layout": {
+        "targetWindow": {
+          "left": 0.25,
+          "top": 0.15,
+          "width": 0.5,
+          "height": 0.7,
+          "isRelative": true
+        },
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Fixed",
+        "fixedCardWidth": 480,
+        "fixedCardHeight": 400
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step8_test_command_mode",
+      "title": "Test Action Mode",
+      "description": "Finally, verify Action Mode.\n\nHow to test:\n1. Hold `Ctrl+Shift+Q` to open Action Mode\n2. Check if your `Global` command slot appears\n3. Release onto the slot to execute the command\n\nKey understanding:\n\u2022 `Global` slots appear in every application\n\u2022 Later, if you create a profile for a specific app, Action Mode overlays or swaps its slots",
+      "type": "WaitForAction",
+      "waitHintText": "Trigger Action Mode once and the tutorial will continue. If not detected, verify your hotkey is still Ctrl+Shift+Q.",
+      "target": null,
+      "completionTrigger": {
+        "type": "RadialMenuShown",
+        "targetValue": "Action"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Fixed",
+        "fixedCardWidth": 480,
+        "fixedCardHeight": 380
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step9_completion",
+      "title": "🎉 Congratulations! Tutorial Complete",
+      "description": "You've completed Pulsar's minimum onboarding loop:\n\n✅ Configured a Task Mode slot in `Launcher`\n✅ Verified app switching/launching with `Ctrl+Q`\n✅ Configured an Action Mode slot in `Global`\n✅ Verified command execution with `Ctrl+Shift+Q`\n\nWhat's next:\n\u2022 Create dedicated profiles for your frequently used apps\n\u2022 Add clearer icons, names, and parameters to your slots\n\u2022 Explore PKI, VBA Runner, Bookmarklet, and other plugins\n\u2022 Adjust hotkeys and themes to your preference\n\nIf you remember one thing: start with `Launcher` and `Global`, and Pulsar is already production-ready.",
+      "type": "Instruction",
+      "primaryAction": "CompleteTutorial",
+      "primaryButtonText": "Tutorial.Finish",
+      "target": null,
+      "completionTrigger": {
+        "type": "ButtonClick",
+        "targetValue": "CompleteButton"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Fixed",
+        "fixedCardWidth": 480,
+        "fixedCardHeight": 420
+      },
+      "focusMode": "AlwaysObserving"
+    }
+  ]
+}

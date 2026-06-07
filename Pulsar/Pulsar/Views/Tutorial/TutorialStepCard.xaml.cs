@@ -19,9 +19,10 @@ namespace Pulsar.Views.Tutorial
         public event EventHandler? SkipClicked;
         
         private TutorialStep? _currentStep;
+        private int _currentIndex;
+        private int _totalSteps;
         private readonly ILocalizationService? _loc;
 
-        // Some XAML fields may not be available until generated; keep a safe runtime reference.
         private TextBlock? _waitHintText;
         private System.Windows.Controls.Button? _backButton;
 
@@ -33,42 +34,57 @@ namespace Pulsar.Views.Tutorial
             _waitHintText = FindName("WaitHintText") as TextBlock;
             _backButton = FindName("BackButton") as System.Windows.Controls.Button;
 
+            if (_loc != null)
+            {
+                _loc.LanguageChanged += OnLanguageChanged;
+            }
+
             Loaded += OnLoaded;
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            // Play entrance animation
             var storyboard = (Storyboard)Resources["CardEntranceAnimation"];
             storyboard?.Begin();
 
-            // Ensure hint reference is resolved (XAML generator edge-cases).
             _waitHintText ??= FindName("WaitHintText") as TextBlock;
             _backButton ??= FindName("BackButton") as System.Windows.Controls.Button;
+        }
+
+        private void OnLanguageChanged(object? sender, string e)
+        {
+            if (_currentStep == null) return;
+            RefreshStepContent();
+        }
+
+        private void RefreshStepContent()
+        {
+            if (_currentStep == null) return;
+
+            StepCounter.Text = string.Format(_loc?["Tutorial.StepFormat"] ?? "Step {0}/{1}", _currentIndex + 1, _totalSteps);
+            TitleText.Text = _loc?[_currentStep.Title] ?? _currentStep.Title;
+            DescriptionText.Text = _loc?[_currentStep.Description] ?? _currentStep.Description;
+            NextButton.Content = ResolvePrimaryButtonText(_currentStep);
+
+            ApplyWaitHint(_currentStep);
         }
 
         public void SetWaitHintText(string text)
         {
             if (_waitHintText != null)
             {
-                _waitHintText.Text = text;
+                _waitHintText.Text = _loc?[text] ?? text;
                 _waitHintText.Visibility = Visibility.Visible;
             }
         }
 
-        /// <summary>
-        /// 设置步骤信息
-        /// </summary>
         public void SetStep(TutorialStep step, int currentIndex, int totalSteps)
         {
             _currentStep = step;
+            _currentIndex = currentIndex;
+            _totalSteps = totalSteps;
 
-            StepCounter.Text = string.Format(_loc?["Tutorial.StepFormat"] ?? "Step {0}/{1}", currentIndex + 1, totalSteps);
-            TitleText.Text = step.Title;
-            DescriptionText.Text = step.Description;
-            NextButton.Content = ResolvePrimaryButtonText(step);
-
-            ApplyWaitHint(step);
+            RefreshStepContent();
             ApplyBackButtonVisibility(currentIndex);
 
             if (step.Type == TutorialStepType.Instruction)
@@ -85,7 +101,8 @@ namespace Pulsar.Views.Tutorial
         {
             if (!string.IsNullOrWhiteSpace(step.PrimaryButtonText))
             {
-                return step.PrimaryButtonText;
+                var resolved = _loc?[step.PrimaryButtonText] ?? step.PrimaryButtonText;
+                return resolved;
             }
 
             if (step.PrimaryAction == TutorialPrimaryAction.CompleteTutorial)
@@ -111,9 +128,11 @@ namespace Pulsar.Views.Tutorial
                 return;
             }
 
-            _waitHintText.Text = string.IsNullOrWhiteSpace(step.WaitHintText)
-                ? _loc?["Tutorial.WaitHintDefault"] ?? "It will continue automatically after completing the action. If it doesn't continue automatically, you can click \"Continue\"."
-                : step.WaitHintText;
+            var hintText = string.IsNullOrWhiteSpace(step.WaitHintText)
+                ? (_loc?["Tutorial.WaitHintDefault"] ?? "It will continue automatically after completing the action.")
+                : (_loc?[step.WaitHintText] ?? step.WaitHintText);
+
+            _waitHintText.Text = hintText;
             _waitHintText.Visibility = Visibility.Visible;
         }
 

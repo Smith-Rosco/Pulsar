@@ -67,6 +67,11 @@ namespace Pulsar.Services
             return await LoadInternalAsync();
         }
 
+        public async Task<ProfilesConfig> LoadAsync(bool forceReload)
+        {
+            return await LoadInternalAsync(forceReload: forceReload);
+        }
+
         public async Task<ProfilesConfig> ResetToFirstLaunchAsync()
         {
             _logger.LogInformation("[ConfigService] Reset requested; clearing cached configuration and re-entering first-launch flow");
@@ -86,11 +91,14 @@ namespace Pulsar.Services
             return await LoadInternalAsync(ResetReloadReason);
         }
 
-        private async Task<ProfilesConfig> LoadInternalAsync(string? reloadReason = null)
+        private async Task<ProfilesConfig> LoadInternalAsync(string? reloadReason = null, bool forceReload = false)
         {
-            lock (_cacheLock)
+            if (!forceReload)
             {
-                if (_cachedConfig != null) return _cachedConfig;
+                lock (_cacheLock)
+                {
+                    if (_cachedConfig != null) return _cachedConfig;
+                }
             }
 
             if (!File.Exists(_configPath))
@@ -323,70 +331,70 @@ namespace Pulsar.Services
         }
 
         /// <summary>
-        /// 创建默认配置 - 使用 Fallback 配置并启动后台检测
+        /// 创建默认配置 (仅负责生成默认结构，不再触发后台检测)
         /// </summary>
         private ProfilesConfig CreateDefaultConfig(bool isResetReload = false)
         {
             _logger.LogInformation(
                 "[ConfigService] Creating default configuration ({Source})",
                 isResetReload ? "reset" : "first-launch");
-            
-            // 1. 生成 Fallback 配置 (Windows 内置应用)
+
             var config = CreateFallbackConfig(isResetReload);
-            string expectedPersistedFallback = SerializeForPersistence(config);
-            
-            // 2. [Fix] 只在配置文件不存在时启动后台检测
-            // 这避免了在配置加载失败时意外覆盖现有配置
+
+            return config;
+        }
+
+        /// <summary>
+        /// 调度后台智能应用检测 (由外部触发点调用，如向导完成/跳过 或 正常启动路径)
+        /// </summary>
+        public void ScheduleSmartDetection(bool isResetReload = false)
+        {
             if (!File.Exists(_configPath))
             {
                 _logger.LogInformation(
-                    "[ConfigService] {Reason} detected, scheduling background app detection",
-                    isResetReload ? "Reset reload" : "First launch");
-                
-                // 启动后台检测任务 (异步,不阻塞启动)
-                ScheduleBackgroundWork(
-                    workId: isResetReload ? "config.smart-detection.reset" : "config.smart-detection.first-launch",
-                    work: async cancellationToken =>
-                    {
-                        // 等待 1 秒,确保 UI 已初始化
-                        await Task.Delay(1000, cancellationToken);
-
-                        if (!await IsExpectedPersistedFallbackAsync(expectedPersistedFallback, isResetReload))
-                        {
-                            return;
-                        }
-
-                        _logger.LogInformation(
-                            "[ConfigService] Starting background application detection ({Source})...",
-                            isResetReload ? "reset" : "first-launch");
-
-                        var detector = new ApplicationDetector(_logger);
-                        var installedApps = await detector.DetectInstalledApplicationsAsync();
-
-                        // 3. 生成智能配置
-                        var smartConfig = CreateSmartConfig(installedApps, isResetReload);
-
-                        // 4. 更新配置
-                        await SaveAsync(smartConfig);
-
-                        _logger.LogInformation(
-                            "[ConfigService] Smart configuration loaded with {SwitchCount} Switch Mode apps and {CommandCount} Command Mode slots ({Source})",
-                            smartConfig.Profiles["Global"].SwitchMode.Count,
-                            smartConfig.Profiles["Global"].CommandMode.Count,
-                            isResetReload ? "reset" : "first-launch");
-                    },
-                    new BackgroundWorkOptions
-                    {
-                        Priority = BackgroundWorkPriority.Low,
-                        DuplicateBehavior = BackgroundWorkDuplicateBehavior.ReuseExisting
-                    });
+                    "[ConfigService] No config file yet, deferring smart detection to later lifecycle stage");
+                return;
             }
-            else
-            {
-                _logger.LogWarning("[ConfigService] Config file exists but CreateDefaultConfig was called (likely due to load failure)");
-            }
-            
-            return config;
+
+            string expectedPersistedFallback = SerializeForPersistence(CreateFallbackConfig(isResetReload));
+
+            _logger.LogInformation(
+                "[ConfigService] {Reason} detected, scheduling background app detection",
+                isResetReload ? "Reset reload" : "First launch");
+
+            ScheduleBackgroundWork(
+                workId: isResetReload ? "config.smart-detection.reset" : "config.smart-detection.first-launch",
+                work: async cancellationToken =>
+                {
+                    await Task.Delay(1000, cancellationToken);
+
+                    if (!await IsExpectedPersistedFallbackAsync(expectedPersistedFallback, isResetReload))
+                    {
+                        return;
+                    }
+
+                    _logger.LogInformation(
+                        "[ConfigService] Starting background application detection ({Source})...",
+                        isResetReload ? "reset" : "first-launch");
+
+                    var detector = new ApplicationDetector(_logger);
+                    var installedApps = await detector.DetectInstalledApplicationsAsync();
+
+                    var smartConfig = CreateSmartConfig(installedApps, isResetReload);
+
+                    await SaveAsync(smartConfig);
+
+                    _logger.LogInformation(
+                        "[ConfigService] Smart configuration loaded with {SwitchCount} Switch Mode apps and {CommandCount} Command Mode slots ({Source})",
+                        smartConfig.Profiles["Global"].SwitchMode.Count,
+                        smartConfig.Profiles["Global"].CommandMode.Count,
+                        isResetReload ? "reset" : "first-launch");
+                },
+                new BackgroundWorkOptions
+                {
+                    Priority = BackgroundWorkPriority.Low,
+                    DuplicateBehavior = BackgroundWorkDuplicateBehavior.ReuseExisting
+                });
         }
 
         /// <summary>

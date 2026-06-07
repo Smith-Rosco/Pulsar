@@ -82,7 +82,7 @@ namespace Pulsar.Tests.Tutorial
         [Fact]
         public async Task HandleStartupAsync_CleanProfile_ShouldShowOnboarding()
         {
-            _mockOnboardingState.Setup(s => s.GetState()).Returns(new OnboardingState { IsFirstRun = true });
+            _mockOnboardingState.Setup(s => s.GetStateAsync()).ReturnsAsync(new OnboardingState { IsFirstRun = true });
             _mockConfigService.Setup(s => s.LoadAsync()).ReturnsAsync(CreateCleanFirstRunConfig());
 
             var coordinator = CreateCoordinator();
@@ -95,7 +95,7 @@ namespace Pulsar.Tests.Tutorial
         [Fact]
         public async Task HandleStartupAsync_SkippedOnboarding_ShouldUseNormalStartup()
         {
-            _mockOnboardingState.Setup(s => s.GetState()).Returns(new OnboardingState
+            _mockOnboardingState.Setup(s => s.GetStateAsync()).ReturnsAsync(new OnboardingState
             {
                 IsFirstRun = false,
                 HasSkippedOnboarding = true
@@ -112,7 +112,7 @@ namespace Pulsar.Tests.Tutorial
         [Fact]
         public async Task HandleStartupAsync_ExistingConfiguredUser_ShouldBypassAutomaticOnboarding()
         {
-            _mockOnboardingState.Setup(s => s.GetState()).Returns(new OnboardingState { IsFirstRun = true });
+            _mockOnboardingState.Setup(s => s.GetStateAsync()).ReturnsAsync(new OnboardingState { IsFirstRun = true });
             _mockConfigService.Setup(s => s.LoadAsync()).ReturnsAsync(CreateLegacyConfiguredUserConfig());
 
             var coordinator = CreateCoordinator();
@@ -126,7 +126,7 @@ namespace Pulsar.Tests.Tutorial
         [Fact]
         public async Task HandleStartupAsync_ResumedTutorial_ShouldResumeTutorial()
         {
-            _mockOnboardingState.Setup(s => s.GetState()).Returns(new OnboardingState
+            _mockOnboardingState.Setup(s => s.GetStateAsync()).ReturnsAsync(new OnboardingState
             {
                 IsFirstRun = false,
                 HasCompletedSetup = true,
@@ -145,7 +145,7 @@ namespace Pulsar.Tests.Tutorial
         [Fact]
         public async Task HandleStartupAsync_PartialSetup_ShouldShowOnboarding()
         {
-            _mockOnboardingState.Setup(s => s.GetState()).Returns(new OnboardingState
+            _mockOnboardingState.Setup(s => s.GetStateAsync()).ReturnsAsync(new OnboardingState
             {
                 IsFirstRun = false,
                 HasCompletedSetup = false,
@@ -164,7 +164,7 @@ namespace Pulsar.Tests.Tutorial
         [Fact]
         public async Task HandleStartupAsync_SkippedTutorial_ShouldNotResumeTutorial()
         {
-            _mockOnboardingState.Setup(s => s.GetState()).Returns(new OnboardingState
+            _mockOnboardingState.Setup(s => s.GetStateAsync()).ReturnsAsync(new OnboardingState
             {
                 IsFirstRun = false,
                 HasCompletedSetup = true,

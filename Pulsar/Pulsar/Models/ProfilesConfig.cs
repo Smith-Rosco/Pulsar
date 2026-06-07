@@ -88,6 +88,11 @@ namespace Pulsar.Models
         /// </summary>
         public string? LastTutorialStep { get; set; } = null;
 
+        /// <summary>
+        /// 教程崩溃时的步骤 ID（用于区分崩溃和正常完成）
+        /// </summary>
+        public string? TutorialCrashedAt { get; set; } = null;
+
         // [Onboarding] Onboarding System Configuration
         /// <summary>
         /// Onboarding completion status (e.g., NotStarted, SetupWizardComplete, Skipped, Complete)

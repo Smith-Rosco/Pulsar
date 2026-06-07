@@ -136,11 +136,40 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Margin="0,0,0,18">
+        <!-- Language Selection -->
+        <Border Grid.Row="0"
+                Padding="12,10"
+                Margin="0,0,0,12"
+                CornerRadius="8"
+                Background="{DynamicResource ControlFillColorDefaultBrush}"
+                BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                BorderThickness="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding LanguageLabel}"
+                           FontSize="13"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center"
+                           Margin="0,0,12,0"
+                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                <ComboBox Grid.Column="1"
+                          ItemsSource="{Binding SupportedLanguages}"
+                          SelectedItem="{Binding SelectedLanguage, Mode=TwoWay}"
+                          DisplayMemberPath="DisplayName"
+                          FontSize="13"
+                          HorizontalAlignment="Stretch"/>
+            </Grid>
+        </Border>
+
+        <StackPanel Grid.Row="1" Margin="0,0,0,18">
             <TextBlock Text="{Binding Title}"
                        FontSize="24"
                        FontWeight="SemiBold"
@@ -151,7 +180,7 @@
                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
         </StackPanel>
 
-        <ScrollViewer Grid.Row="1"
+        <ScrollViewer Grid.Row="2"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="24,24,24,50">

@@ -15,7 +15,7 @@ namespace Pulsar.Services.Tutorial
 
     public interface IOnboardingStateService
     {
-        OnboardingState GetState();
+        Task<OnboardingState> GetStateAsync();
         Task MarkOnboardingSkippedAsync();
         Task MarkSetupCompletedAsync();
         Task MarkTutorialCompletedAsync();
@@ -31,9 +31,9 @@ namespace Pulsar.Services.Tutorial
             _configService = configService;
         }
 
-        public OnboardingState GetState()
+        public async Task<OnboardingState> GetStateAsync()
         {
-            ProfilesConfig config = _configService.Current;
+            ProfilesConfig config = await _configService.LoadAsync(forceReload: true);
             string onboardingState = config.Settings.OnboardingState ?? "NotStarted";
 
             return new OnboardingState
@@ -67,6 +67,7 @@ namespace Pulsar.Services.Tutorial
             config.Settings.HasCompletedTutorial = true;
             config.Settings.OnboardingState = "Complete";
             config.Settings.LastTutorialStep = null;
+            config.Settings.TutorialCrashedAt = null;
             await _configService.SaveAsync(config);
         }
 

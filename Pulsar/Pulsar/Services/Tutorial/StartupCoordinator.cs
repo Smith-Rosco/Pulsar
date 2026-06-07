@@ -31,12 +31,16 @@ namespace Pulsar.Services.Tutorial
 
         public async Task<StartupAction> HandleStartupAsync()
         {
-            var state = _onboardingState.GetState();
+            var state = await _onboardingState.GetStateAsync();
             var config = await _configService.LoadAsync();
 
             if (state.HasSkippedOnboarding)
             {
                 _logger.LogInformation("Onboarding was skipped. Continuing with normal startup.");
+                if (!config.Settings.HasCompletedInitialDetection)
+                {
+                    _configService.ScheduleSmartDetection();
+                }
                 return StartupAction.NormalStartup;
             }
 

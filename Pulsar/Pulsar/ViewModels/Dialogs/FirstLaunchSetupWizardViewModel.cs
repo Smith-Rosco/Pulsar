@@ -6,6 +6,7 @@ using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Pulsar.Core.Localization;
+using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 using Pulsar.Services.Tutorial;
 using Pulsar.ViewModels.Base;
@@ -69,12 +70,26 @@ namespace Pulsar.ViewModels.Dialogs
             _onboardingStateService = onboardingStateService;
             _loc = localizationService;
 
-            UsageProfiles = new ObservableCollection<UsageProfileOption>
+            SupportedLanguages = new ObservableCollection<LanguageDisplayModel>();
+            foreach (var code in _loc.SupportedLanguages)
             {
-                new() { Value = OnboardingUsageProfile.GeneralProductivity, Title = _loc["FirstLaunch.GeneralProductivity"], Description = _loc["FirstLaunch.GeneralProductivityDesc"] },
-                new() { Value = OnboardingUsageProfile.DeveloperWorkflow, Title = _loc["FirstLaunch.DeveloperWorkflow"], Description = _loc["FirstLaunch.DeveloperWorkflowDesc"] },
-                new() { Value = OnboardingUsageProfile.BrowserAndDocs, Title = _loc["FirstLaunch.BrowserDocs"], Description = _loc["FirstLaunch.BrowserDocsDesc"] }
-            };
+                SupportedLanguages.Add(new LanguageDisplayModel
+                {
+                    Code = code,
+                    DisplayName = code switch
+                    {
+                        "en" => "English",
+                        "zh-CN" => "中文 (Chinese)",
+                        _ => code
+                    }
+                });
+            }
+
+            var currentLang = _loc.CurrentLanguage;
+            _selectedLanguage = SupportedLanguages.FirstOrDefault(l => l.Code == currentLang) ?? SupportedLanguages.FirstOrDefault();
+
+            UsageProfiles = new ObservableCollection<UsageProfileOption>();
+            BuildUsageProfiles();
 
             CommonApps = new ObservableCollection<AppOption>(
                 _templateService.GetAvailableApps().Select(app => new AppOption
@@ -103,11 +118,49 @@ namespace Pulsar.ViewModels.Dialogs
             SelectProfile(UsageProfiles[0]);
         }
 
+        public ObservableCollection<LanguageDisplayModel> SupportedLanguages { get; }
+
+        [ObservableProperty]
+        private LanguageDisplayModel? _selectedLanguage;
+
+        partial void OnSelectedLanguageChanged(LanguageDisplayModel? value)
+        {
+            if (value == null) return;
+            _loc.SetLanguage(value.Code);
+            BuildUsageProfiles();
+            RefreshLocalizedProperties();
+        }
+
+        private void BuildUsageProfiles()
+        {
+            UsageProfiles.Clear();
+            UsageProfiles.Add(new() { Value = OnboardingUsageProfile.GeneralProductivity, Title = _loc["FirstLaunch.GeneralProductivity"], Description = _loc["FirstLaunch.GeneralProductivityDesc"] });
+            UsageProfiles.Add(new() { Value = OnboardingUsageProfile.DeveloperWorkflow, Title = _loc["FirstLaunch.DeveloperWorkflow"], Description = _loc["FirstLaunch.DeveloperWorkflowDesc"] });
+            UsageProfiles.Add(new() { Value = OnboardingUsageProfile.BrowserAndDocs, Title = _loc["FirstLaunch.BrowserDocs"], Description = _loc["FirstLaunch.BrowserDocsDesc"] });
+        }
+
+        private void RefreshLocalizedProperties()
+        {
+            OnPropertyChanged(nameof(Title));
+            OnPropertyChanged(nameof(Description));
+            OnPropertyChanged(nameof(SelectionHint));
+            OnPropertyChanged(nameof(UsageProfileLabel));
+            OnPropertyChanged(nameof(StarterAppsLabel));
+            OnPropertyChanged(nameof(SelectedLabel));
+            OnPropertyChanged(nameof(SelectedAppCountLabel));
+            OnPropertyChanged(nameof(PrimaryButtonText));
+            OnPropertyChanged(nameof(SecondaryButtonText));
+            OnPropertyChanged(nameof(FooterDescription));
+            OnPropertyChanged(nameof(LanguageLabel));
+        }
+
         public ObservableCollection<UsageProfileOption> UsageProfiles { get; }
 
         public ObservableCollection<AppOption> CommonApps { get; }
 
         public string Title => _loc["FirstLaunch.SetupTitle"];
+
+        public string LanguageLabel => _loc["Settings.General.Language"];
 
         public string Description => _loc["FirstLaunch.SetupDescription"];
 
@@ -161,8 +214,14 @@ namespace Pulsar.ViewModels.Dialogs
                 SelectedApps = CommonApps.Where(app => app.IsSelected).Select(app => app.App).ToList()
             });
 
+            if (SelectedLanguage != null)
+            {
+                config.Settings.Language = SelectedLanguage.Code;
+            }
+
             await _configService.SaveAsync(config);
             await _onboardingStateService.MarkSetupCompletedAsync();
+            _configService.ScheduleSmartDetection();
             RequestClose?.Invoke(DialogResult.Confirmed);
         }
 
@@ -170,17 +229,24 @@ namespace Pulsar.ViewModels.Dialogs
         private async Task Skip()
         {
             await _onboardingStateService.MarkOnboardingSkippedAsync();
+            _configService.ScheduleSmartDetection();
             RequestClose?.Invoke(DialogResult.Cancelled);
         }
 
-        public Task<bool> CanCloseAsync(DialogResult result)
+        public async Task<bool> CanCloseAsync(DialogResult result)
         {
             if (result == DialogResult.Confirmed)
             {
-                return Task.FromResult(Validate());
+                return Validate();
             }
 
-            return Task.FromResult(true);
+            if (result == DialogResult.None)
+            {
+                await _onboardingStateService.MarkOnboardingSkippedAsync();
+                _configService.ScheduleSmartDetection();
+            }
+
+            return true;
         }
 
         private void SelectProfile(UsageProfileOption? profile)

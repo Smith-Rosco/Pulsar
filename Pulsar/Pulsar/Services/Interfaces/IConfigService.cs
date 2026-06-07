@@ -17,8 +17,14 @@ namespace Pulsar.Services.Interfaces
         event Action? ConfigUpdated;
         
         Task<ProfilesConfig> LoadAsync();
+        Task<ProfilesConfig> LoadAsync(bool forceReload);
         Task<ProfilesConfig> ResetToFirstLaunchAsync();
         Task SaveAsync(ProfilesConfig config);
+        
+        /// <summary>
+        /// 调度后台智能应用检测（向导完成/跳过 或 正常启动路径触发）
+        /// </summary>
+        void ScheduleSmartDetection(bool isResetReload = false);
         
         /// <summary>
         /// 获取经过验证的每页 slot 数量 (4-12)

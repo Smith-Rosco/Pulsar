@@ -98,6 +98,10 @@ namespace Pulsar.Services
             {
                 var config = _configService.Current;
                 HasCompletedTutorial = config.Settings.HasCompletedTutorial;
+                if (!string.IsNullOrEmpty(config.Settings.TutorialCrashedAt))
+                {
+                    _logger.LogInformation("Tutorial previously crashed at step: {StepId}", config.Settings.TutorialCrashedAt);
+                }
             }
             catch (Exception ex)
             {
@@ -211,15 +215,31 @@ namespace Pulsar.Services
         public async Task CheckResumeAsync()
         {
             var config = _configService.Current;
+
+            if (config.Settings.HasCompletedTutorial)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(config.Settings.TutorialCrashedAt))
+            {
+                _logger.LogInformation("Detected tutorial crash at step: {StepId}, resuming",
+                    config.Settings.TutorialCrashedAt);
+
+                var crashedStepId = config.Settings.TutorialCrashedAt;
+                config.Settings.TutorialCrashedAt = null;
+                await _configService.SaveAsync(config);
+
+                await GoToStepAsync(crashedStepId);
+                return;
+            }
             
-            if (!config.Settings.HasCompletedTutorial 
-                && !string.IsNullOrEmpty(config.Settings.LastTutorialStep)
+            if (!string.IsNullOrEmpty(config.Settings.LastTutorialStep)
                 && !string.Equals(config.Settings.LastTutorialStep, "Skipped", StringComparison.OrdinalIgnoreCase))
             {
                 _logger.LogInformation("Detected incomplete tutorial: {StepId}", 
                     config.Settings.LastTutorialStep);
                 
-                // 自动恢复到上次的步骤
                 await GoToStepAsync(config.Settings.LastTutorialStep);
             }
         }

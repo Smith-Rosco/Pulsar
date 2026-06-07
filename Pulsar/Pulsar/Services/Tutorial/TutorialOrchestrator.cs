@@ -32,7 +32,7 @@ namespace Pulsar.Services.Tutorial
 
         private string DefaultWaitHintText => _loc["Tutorial.NoActionDetectedHint"];
         
-        private readonly List<TutorialStep> _steps;
+        private List<TutorialStep> _steps;
         private int _currentStepIndex = -1;
         private TutorialStepCard? _stepCard;
         
@@ -90,7 +90,6 @@ namespace Pulsar.Services.Tutorial
         /// </summary>
         public async Task StartAsync()
         {
-            // [P0-3 Fix] 防止重入
             if (_isTransitioning)
             {
                 _logger.LogWarning("[TutorialOrchestrator] StartAsync called while transitioning, ignoring");
@@ -101,8 +100,8 @@ namespace Pulsar.Services.Tutorial
             {
                 _isTransitioning = true;
                 _logger.LogInformation("[TutorialOrchestrator] Starting tutorial");
-                
-                // 始终从第一步开始，清除上次进度
+
+                _steps = InitializeSteps();
                 _currentStepIndex = 0;
                 await UpdateConfigAsync(s => s.LastTutorialStep = null);
                 
@@ -325,6 +324,7 @@ namespace Pulsar.Services.Tutorial
                     s.HasCompletedTutorial = true;
                     s.OnboardingState = "Complete";
                     s.LastTutorialStep = null;
+                    s.TutorialCrashedAt = null;
                 });
 
                 _triggerEngine.Cleanup();
@@ -338,7 +338,7 @@ namespace Pulsar.Services.Tutorial
             {
                 _logger.LogError(ex, "[TutorialOrchestrator] Error completing tutorial");
                 // 即使出错也要强制清理
-                ForceCleanup();
+                await ForceCleanupAsync();
             }
         }
 
@@ -400,7 +400,7 @@ namespace Pulsar.Services.Tutorial
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[TutorialOrchestrator] Error while skipping tutorial");
-                ForceCleanup();
+                await ForceCleanupAsync();
             }
         }
 
@@ -546,7 +546,7 @@ namespace Pulsar.Services.Tutorial
             {
                 _logger.LogError(ex, "[TutorialOrchestrator] Error in skip button handler");
                 // 跳过时出错,强制清理
-                ForceCleanup();
+                await ForceCleanupAsync();
             }
         }
 
@@ -602,10 +602,10 @@ namespace Pulsar.Services.Tutorial
                 _triggerEngine.Cleanup();
                 CleanupStepCard();
                 
-                // 标记为已完成,避免重复触发
+                // 标记崩溃步骤,不标记为已完成
                 await UpdateConfigAsync(s =>
                 {
-                    s.HasCompletedTutorial = true;
+                    s.TutorialCrashedAt = CurrentStep?.Id;
                     s.LastTutorialStep = null;
                 });
                 
@@ -619,14 +619,14 @@ namespace Pulsar.Services.Tutorial
             {
                 _logger.LogError(cleanupEx, "[TutorialOrchestrator] Error during error handling, forcing cleanup");
                 // 如果优雅关闭失败，强制清理
-                ForceCleanup();
+                await ForceCleanupAsync();
             }
         }
 
         /// <summary>
         /// 强制清理所有资源
         /// </summary>
-        private void ForceCleanup()
+        private async Task ForceCleanupAsync()
         {
             _logger.LogWarning("[TutorialOrchestrator] Force cleanup initiated");
 
@@ -664,8 +664,19 @@ namespace Pulsar.Services.Tutorial
             {
                 _logger.LogError(ex, "[TutorialOrchestrator] Error closing overlay window during force cleanup");
             }
+
+            try
+            {
+                await UpdateConfigAsync(s =>
+                {
+                    s.TutorialCrashedAt = CurrentStep?.Id;
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[TutorialOrchestrator] Error setting crash marker during force cleanup");
+            }
             
-            // 重置转换标志，确保下次可以启动
             _isTransitioning = false;
             
             _logger.LogInformation("[TutorialOrchestrator] Force cleanup completed");

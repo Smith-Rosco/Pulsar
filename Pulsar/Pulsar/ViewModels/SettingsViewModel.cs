@@ -1977,5 +1977,33 @@ namespace Pulsar.ViewModels
             _lastDragOverTime = DateTime.MinValue;
             _logger.LogDebug("Drag operation left drop target");
         }
+
+        [RelayCommand]
+        private async Task RestartOnboardingAsync()
+        {
+            var result = await _dialogService.ShowConfirmationAsync(
+                _loc["Notification.RestartOnboarding"],
+                _loc["Settings.General.RestartOnboardingConfirm"]);
+
+            if (result != DialogResult.Confirmed)
+            {
+                return;
+            }
+
+            var config = await _configService.LoadAsync();
+            config.Settings.OnboardingState = "NotStarted";
+            config.Settings.HasCompletedTutorial = false;
+            config.Settings.TutorialCrashedAt = null;
+            config.Settings.LastTutorialStep = null;
+            await _configService.SaveAsync(config);
+
+            var exePath = Environment.ProcessPath;
+            if (!string.IsNullOrEmpty(exePath))
+            {
+                Process.Start(exePath);
+            }
+
+            Application.Current.Shutdown();
+        }
     }
 }

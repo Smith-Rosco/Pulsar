@@ -38,6 +38,15 @@
   <data name="Settings.General.ResetDefaults" xml:space="preserve">
     <value>Reset to Defaults</value>
   </data>
+  <data name="Settings.General.RestartOnboarding" xml:space="preserve">
+    <value>Restart Onboarding</value>
+  </data>
+  <data name="Settings.General.RestartOnboardingConfirm" xml:space="preserve">
+    <value>This will reset your onboarding state and restart Pulsar to show the setup wizard. Continue?</value>
+  </data>
+  <data name="Notification.RestartOnboarding" xml:space="preserve">
+    <value>Restart Onboarding</value>
+  </data>
   <data name="Settings.General.Appearance" xml:space="preserve">
     <value>Appearance</value>
   </data>
@@ -1222,6 +1231,12 @@
   <data name="Notification.ProcessBlacklistTitle" xml:space="preserve">
     <value>Process Blacklist</value>
   </data>
+  <data name="Notification.OnboardingWizardFailedTitle" xml:space="preserve">
+    <value>Setup Unavailable</value>
+  </data>
+  <data name="Notification.OnboardingWizardFailed" xml:space="preserve">
+    <value>The setup wizard could not be displayed. You can configure Pulsar manually in Settings or restart the app to try again.</value>
+  </data>
   <!-- ==================== Validation ==================== -->
   <data name="Validation.Required" xml:space="preserve">
     <value>This setting is required.</value>
@@ -1281,6 +1296,9 @@
   <!-- ==================== Tutorial ==================== -->
   <data name="Tutorial.Welcome" xml:space="preserve">
     <value>Welcome to Pulsar</value>
+  </data>
+  <data name="Tutorial.OpenSettings" xml:space="preserve">
+    <value>Open Settings</value>
   </data>
   <data name="Tutorial.WelcomeDesc" xml:space="preserve">
     <value>Your setup wizard already created a starter configuration. Now let's learn the two modes that make Pulsar fast.</value>

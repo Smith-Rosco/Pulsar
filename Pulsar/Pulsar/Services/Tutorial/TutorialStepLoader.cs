@@ -120,53 +120,60 @@ namespace Pulsar.Services.Tutorial
         }
 
         /// <summary>
-        /// 获取步骤文件路径 - 尝试多个可能的位置
+        /// 获取步骤文件路径 - 优先加载语言特定文件
         /// </summary>
         private string GetStepsFilePath(string? preferredPath = null)
         {
             var basePath = AppDomain.CurrentDomain.BaseDirectory;
-            
-            _logger.LogDebug("[TutorialStepLoader] Searching for tutorial steps file...");
-            _logger.LogDebug("[TutorialStepLoader] Base path: {BasePath}", basePath);
-            _logger.LogDebug("[TutorialStepLoader] Preferred path: {PreferredPath}", preferredPath ?? "null");
-            
-            var paths = new[]
+            var lang = _loc.CurrentLanguage;
+
+            _logger.LogDebug("[TutorialStepLoader] Searching for tutorial steps file (lang: {Lang})...", lang);
+
+            // 优先加载语言特定文件 (e.g. Steps.en.json, Steps.zh-CN.json)
+            // 然后回退到通用文件名
+            var fileNames = new[]
+            {
+                $"Steps.{lang}.json",
+                "Steps.json"
+            };
+
+            var searchDirs = new[]
             {
                 preferredPath,
-                Path.Combine(basePath, "Assets", "TutorialSteps.json"),
-                Path.Combine(basePath, "TutorialSteps.json"),
-                Path.Combine(Directory.GetCurrentDirectory(), "Assets", "TutorialSteps.json"),
-                Path.Combine(basePath, "Resources", "Tutorial", "Steps.json")
+                Path.Combine(basePath, "Assets"),
+                basePath,
+                Directory.GetCurrentDirectory(),
+                Path.Combine(basePath, "Resources", "Tutorial")
             };
-            
-            _logger.LogDebug("[TutorialStepLoader] Checking {Count} possible paths:", paths.Length);
-            
-            for (int i = 0; i < paths.Length; i++)
+
+            foreach (var dir in searchDirs)
             {
-                var path = paths[i];
-                if (!string.IsNullOrEmpty(path))
+                if (string.IsNullOrEmpty(dir)) continue;
+
+                // 如果 preferredPath 是完整文件路径，直接检查
+                if (dir == preferredPath && File.Exists(dir))
                 {
-                    var exists = File.Exists(path);
-                    _logger.LogDebug("[TutorialStepLoader]   [{Index}] {Status} {Path}", 
-                        i + 1, 
-                        exists ? "✓ FOUND" : "✗ Not found", 
-                        path);
-                    
-                    if (exists)
+                    var ext = Path.GetExtension(dir);
+                    if (ext.Equals(".json", StringComparison.OrdinalIgnoreCase))
                     {
-                        _logger.LogInformation("[TutorialStepLoader] Selected file: {Path}", path);
+                        _logger.LogInformation("[TutorialStepLoader] Using preferred path: {Path}", dir);
+                        return dir;
+                    }
+                }
+
+                foreach (var fileName in fileNames)
+                {
+                    var path = Path.Combine(dir, fileName);
+                    if (File.Exists(path))
+                    {
+                        _logger.LogInformation("[TutorialStepLoader] Found steps file: {Path}", path);
                         return path;
                     }
                 }
-                else
-                {
-                    _logger.LogDebug("[TutorialStepLoader]   [{Index}] ✗ Path is null/empty", i + 1);
-                }
             }
-            
-            // 返回默认路径（即使不存在）
+
             var defaultPath = Path.Combine(basePath, "Assets", "TutorialSteps.json");
-            _logger.LogWarning("[TutorialStepLoader] No tutorial steps file found, returning default path: {Path}", defaultPath);
+            _logger.LogWarning("[TutorialStepLoader] No tutorial steps file found, returning default: {Path}", defaultPath);
             return defaultPath;
         }
 

@@ -25,7 +25,7 @@
       "description": "先进入设置界面。后续的教程都会围绕 Settings 中的 Slots 页面完成。\n\n你可以直接点击下方“打开设置”，也可以从系统托盘里的 Pulsar 图标进入设置。",
       "type": "Instruction",
       "primaryAction": "OpenSettingsWindow",
-      "primaryButtonText": "打开设置",
+      "primaryButtonText": "Tutorial.OpenSettings",
       "waitHintText": "点击“打开设置”后会自动进入下一步；如果没有响应，也可以通过托盘图标打开设置。",
       "target": null,
       "completionTrigger": {
@@ -196,7 +196,7 @@
       "description": "你已经完成了 Pulsar 的最小上手闭环：\n\n✅ 在 `Launcher` 中配置了任务模式槽位\n✅ 用 `Ctrl+Q` 验证了应用切换 / 启动\n✅ 在 `Global` 中配置了动作模式槽位\n✅ 用 `Ctrl+Shift+Q` 验证了命令执行\n\n接下来可以继续扩展：\n• 为常用应用建立专属 Profile\n• 给槽位补上更清晰的图标、名称和参数\n• 继续探索 PKI、VBA Runner、Bookmarklet 等插件\n• 按自己的习惯调整热键与主题\n\n如果你只记住一句话，那就是：先从 `Launcher` 和 `Global` 开始，Pulsar 就已经能真正投入使用。",
       "type": "Instruction",
       "primaryAction": "CompleteTutorial",
-      "primaryButtonText": "完成",
+      "primaryButtonText": "Tutorial.Finish",
       "target": null,
       "completionTrigger": {
         "type": "ButtonClick",
