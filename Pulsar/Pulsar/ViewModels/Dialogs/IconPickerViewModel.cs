@@ -73,17 +73,15 @@ namespace Pulsar.ViewModels.Dialogs
 
         partial void OnSearchTextChanged(string value)
         {
-            // 取消并释放之前的搜索
             _searchCts?.Cancel();
             _searchCts?.Dispose();
             _searchCts = new CancellationTokenSource();
-            var currentCts = _searchCts;
+            var token = _searchCts.Token;
 
-            // 防抖动：延迟执行搜索
-            Task.Delay(DebounceMs, currentCts.Token)
+            Task.Delay(DebounceMs, token)
                 .ContinueWith(_ =>
                 {
-                    if (!currentCts.Token.IsCancellationRequested)
+                    if (!token.IsCancellationRequested)
                     {
                         PerformSearch(value);
                     }
