@@ -3,31 +3,28 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:controls="clr-namespace:Pulsar.Views.Controls"
              mc:Ignorable="d"
              x:Name="Root"
-             d:DesignHeight="42" d:DesignWidth="300">
+             Focusable="True"
+             Cursor="Hand"
+             MouseLeftButtonDown="Root_MouseLeftButtonDown"
+             ToolTip="Click to change icon"
+             d:DesignHeight="42" d:DesignWidth="280">
 
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
 
-        <!-- SlotOrb preview — clickable -->
         <controls:SlotOrb Grid.Column="0"
                           Size="40"
                           IsActive="False"
                           ShowActiveGlow="False"
-                          IsHitTestVisible="True"
-                          Cursor="Hand"
-                          IconKey="{Binding IconKey, ElementName=Root}"
-                          MouseLeftButtonDown="Orb_MouseLeftButtonDown"
-                          ToolTip="Click to browse icons"/>
+                          IsHitTestVisible="False"
+                          IconKey="{Binding IconKey, ElementName=Root}"/>
 
-        <!-- Resolved display name -->
         <TextBlock Grid.Column="1"
                    Text="{Binding DisplayText, ElementName=Root}"
                    VerticalAlignment="Center"
@@ -35,13 +32,5 @@
                    FontSize="13"
                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                    TextTrimming="CharacterEllipsis"/>
-
-        <!-- Browse button -->
-        <ui:Button Grid.Column="2"
-                   Icon="{ui:SymbolIcon FolderOpen16}"
-                   Click="Browse_Click"
-                   ToolTip="Browse icons"
-                   Margin="8,0,0,0"
-                   Padding="8,4"/>
     </Grid>
 </UserControl>

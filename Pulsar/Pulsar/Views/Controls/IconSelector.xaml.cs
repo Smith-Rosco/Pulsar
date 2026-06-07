@@ -59,15 +59,10 @@ namespace Pulsar.Views.Controls
             base.OnKeyDown(e);
         }
 
-        private void Orb_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void Root_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             BrowseClicked?.Invoke(this, EventArgs.Empty);
             e.Handled = true;
-        }
-
-        private void Browse_Click(object sender, RoutedEventArgs e)
-        {
-            BrowseClicked?.Invoke(this, EventArgs.Empty);
         }
     }
 }
