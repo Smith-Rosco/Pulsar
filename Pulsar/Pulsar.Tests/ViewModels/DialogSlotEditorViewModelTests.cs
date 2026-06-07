@@ -6,8 +6,10 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Pulsar.Core.Localization;
+using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Helpers;
 using Pulsar.Models;
+using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels.Dialogs;
 using Pulsar.ViewModels.Settings;
 using Xunit;
@@ -21,181 +23,333 @@ namespace Pulsar.Tests.ViewModels
             var loc = new LocalizationService(new Mock<ILogger<LocalizationService>>().Object);
             return loc;
         }
-        [Fact]
-        public void AddSlotViewModel_ShouldExposeSingleSurfaceCopyAndPreviewMetadata()
+
+        private static IPluginMetadataRegistry CreateMetadataRegistry()
         {
-            var viewModel = CreateAddSlotViewModel();
-
-            viewModel.PrimaryButtonText.Should().Be("Save Slot");
-            viewModel.SecondaryButtonText.Should().Be("Cancel");
-            viewModel.IsAwaitingPluginSelection.Should().BeTrue();
-            viewModel.IsScenarioMode.Should().BeTrue();
-            viewModel.HeaderDescription.Should().Contain("Start with what you want to do");
-
-            viewModel.SelectScenarioCommand.Execute(viewModel.ScenarioOptions[1]);
-
-            viewModel.HasSelectedPlugin.Should().BeTrue();
-            viewModel.HasAppearanceOptions.Should().BeTrue();
-            viewModel.PreviewMetadataText.Should().Contain("Action: Open Target");
-            viewModel.PreviewMetadataText.Should().Contain("Path: missing");
-        }
-
-        [Fact]
-        public async Task AddSlotViewModel_ShouldKeepSaveFlowAndRefreshPreviewMetadataAfterParameterPick()
-        {
-            var viewModel = CreateAddSlotViewModel();
-            viewModel.SelectScenarioCommand.Execute(viewModel.ScenarioOptions[1]);
-            var field = viewModel.RequiredParameters.Single();
-
-            await viewModel.PickParameterValueAsync(field);
-
-            viewModel.PreviewMetadataText.Should().Contain("Path: selected");
-            viewModel.BlockingIssueText.Should().BeEmpty();
-            viewModel.PrimaryCommand.Should().BeSameAs(viewModel.SaveCommand);
-        }
-
-        [Fact]
-        public void AddSlotViewModel_ShouldPreserveCanonicalMetadataAndOptionalColor()
-        {
-            var viewModel = CreateAddSlotViewModel();
-
-            var commandPlugin = viewModel.PluginTypes.Single(option => option.PluginId == "com.pulsar.command");
-
-            commandPlugin.IconKey.Should().Be("E756");
-            commandPlugin.DisplayName.Should().Be("Command Runner");
-
-            viewModel.SelectScenarioCommand.Execute(viewModel.ScenarioOptions[1]);
-
-            viewModel.Slot.Should().NotBeNull();
-            viewModel.Slot!.IconKey.Should().Be("E756");
-            viewModel.Slot.Color.Should().BeEmpty();
-        }
-
-        [Fact]
-        public void AddSlotViewModel_ShouldMapScenarioSelectionsToCanonicalPluginActions()
-        {
-            var viewModel = CreateAddSlotViewModel();
-
-            viewModel.SelectScenarioCommand.Execute(viewModel.ScenarioOptions.Single(option => option.Key == "switch-app"));
-            viewModel.Slot!.PluginId.Should().Be("com.pulsar.winswitcher");
-            viewModel.Slot.Action.Should().Be("switch");
-
-            viewModel.SelectScenarioCommand.Execute(viewModel.ScenarioOptions.Single(option => option.Key == "open-target"));
-            viewModel.Slot!.PluginId.Should().Be("com.pulsar.command");
-            viewModel.Slot.Action.Should().Be("run");
-
-            viewModel.SelectScenarioCommand.Execute(viewModel.ScenarioOptions.Single(option => option.Key == "send-keys"));
-            viewModel.Slot!.PluginId.Should().Be("com.pulsar.command");
-            viewModel.Slot.Action.Should().Be("sendkeys");
-
-            viewModel.SelectScenarioCommand.Execute(viewModel.ScenarioOptions.Single(option => option.Key == "fill-credential"));
-            viewModel.Slot!.PluginId.Should().Be("com.pulsar.pki");
-            viewModel.Slot.Action.Should().Be("fill");
-        }
-
-        [Fact]
-        public void AddSlotViewModel_ShouldAllowSwitchingToAdvancedPluginFirstFlow()
-        {
-            var viewModel = CreateAddSlotViewModel();
-            var commandPlugin = viewModel.PluginTypes.Single(option => option.PluginId == "com.pulsar.command");
-
-            viewModel.ShowAdvancedFlowCommand.Execute(null);
-
-            viewModel.IsAdvancedMode.Should().BeTrue();
-            viewModel.IsScenarioMode.Should().BeFalse();
-            viewModel.BlockingIssueText.Should().Be("Choose a slot type to begin.");
-
-            viewModel.SelectPluginTypeCommand.Execute(commandPlugin);
-
-            viewModel.Slot.Should().NotBeNull();
-            viewModel.Slot!.PluginId.Should().Be("com.pulsar.command");
-            viewModel.Slot.Action.Should().Be("run");
-        }
-
-        [Fact]
-        public async Task SlotConfigurationDialogViewModel_ShouldExposePreviewMetadataAndAppearanceCopy()
-        {
-            var slot = CreateConfiguredSlot();
-            var viewModel = new SlotConfigurationDialogViewModel(
-                slot,
-                CreateLoc(),
-                (currentSlot, action) => currentSlot.Action = action ?? string.Empty,
-                field =>
+            var mock = new Mock<IPluginMetadataRegistry>();
+            mock.Setup(m => m.GetActionMetadata("com.pulsar.command", "run"))
+                .Returns(new SlotActionMetadata
                 {
-                    field.Value = "updated-value";
-                    RefreshConfiguredSlot(slot);
-                    return Task.CompletedTask;
-                },
-                currentSlot =>
-                {
-                    currentSlot.IconKey = "E8A7";
-                    return Task.CompletedTask;
-                },
-                currentSlot =>
-                {
-                    currentSlot.Color = "#123456";
-                    return Task.CompletedTask;
+                    Name = "run",
+                    Label = "Open Target",
+                    SuggestedLabelTemplate = "Open {path}",
+                    SuggestedIconKey = "E756",
+                    SuggestedColorHex = "#32CD32"
                 });
-
-            viewModel.PreviewMetadataText.Should().Contain("Action: Fill");
-            viewModel.PreviewMetadataText.Should().Contain("Secret: selected");
-            viewModel.AppearanceDisclosureDescription.Should().Contain("suggested presentation");
-
-            await viewModel.PickParameterValueAsync(viewModel.RequiredParameters.Single());
-
-            viewModel.PreviewMetadataText.Should().Contain("Secret: selected");
+            mock.Setup(m => m.GetActionMetadata("com.pulsar.command", "sendkeys"))
+                .Returns(new SlotActionMetadata
+                {
+                    Name = "sendkeys",
+                    Label = "Send Keys",
+                    SuggestedLabelTemplate = "Send {keys}",
+                    SuggestedIconKey = "E765",
+                    SuggestedColorHex = "#32CD32"
+                });
+            mock.Setup(m => m.GetActionMetadata("com.pulsar.winswitcher", "switch"))
+                .Returns(new SlotActionMetadata
+                {
+                    Name = "switch",
+                    Label = "Switch Or Launch",
+                    SuggestedLabelTemplate = "Switch to {app}",
+                    SuggestedIconKey = "E8AB",
+                    SuggestedColorHex = "#2196F3"
+                });
+            mock.Setup(m => m.GetActionMetadata("com.pulsar.pki", "fill"))
+                .Returns(new SlotActionMetadata
+                {
+                    Name = "fill",
+                    Label = "Fill",
+                    SuggestedLabelTemplate = "Fill Secret",
+                    SuggestedIconKey = "E72E",
+                    SuggestedColorHex = "#4CAF50"
+                });
+            mock.Setup(m => m.GetMetadata("com.pulsar.command"))
+                .Returns(new PluginMetadata
+                {
+                    Id = "com.pulsar.command",
+                    Display = new DisplayInfo
+                    {
+                        Name = "Command Runner",
+                        Description = "Open apps, files, folders, or URLs.",
+                        IconKey = "E756",
+                        Category = "Automation"
+                    },
+                    UI = new UIHints { AccentColor = "#32CD32", SortOrder = 20, Badge = "Cmd" },
+                    Capabilities = new PluginCapabilities { SupportedActions = new List<string> { "run", "sendkeys" } },
+                    Actions = new Dictionary<string, SlotActionMetadata>()
+                });
+            mock.Setup(m => m.GetMetadata("com.pulsar.winswitcher"))
+                .Returns(new PluginMetadata
+                {
+                    Id = "com.pulsar.winswitcher",
+                    Display = new DisplayInfo
+                    {
+                        Name = "WinSwitcher",
+                        Description = "Switch to a running app.",
+                        IconKey = "E8AB",
+                        Category = "Apps"
+                    },
+                    UI = new UIHints { AccentColor = "#2196F3", SortOrder = 5, Badge = "App" },
+                    Capabilities = new PluginCapabilities { SupportedActions = new List<string> { "switch" } },
+                    Actions = new Dictionary<string, SlotActionMetadata>()
+                });
+            return mock.Object;
         }
 
-        private static AddSlotViewModel CreateAddSlotViewModel()
+        private static IReadOnlyList<SlotTypeCard> BuildTestCards(ILocalizationService loc)
         {
-            return new AddSlotViewModel(
-                new[]
-                {
-                    new AddSlotViewModel.PluginTypeOption(
-                        new BuiltInPluginDisplayModel(
-                            "com.pulsar.winswitcher",
-                            "E8AB",
-                            "WinSwitcher",
-                            "Switch to a running app window or launch it if needed.",
-                            "switching",
-                            "Switching",
-                            "#4F8CFF")),
-                    new AddSlotViewModel.PluginTypeOption(
-                        new BuiltInPluginDisplayModel(
-                            "com.pulsar.command",
-                            "E756",
-                            "Command Runner",
-                            "Open apps, files, folders, or URLs, or send a key sequence.",
-                            "automation",
-                            "Automation",
-                            "#32CD32"))
-                },
-                pluginId => CreateDraftSlot(pluginId),
-                (slot, action) =>
-                {
-                    slot.Action = action ?? string.Empty;
-                    RefreshSlot(slot);
-                },
-                field =>
-                {
-                    field.Value = string.Equals(field.Metadata.Key, "secretId", StringComparison.OrdinalIgnoreCase)
-                        ? Guid.NewGuid().ToString()
-                        : "selected.exe";
-                    RefreshSlot(field.Slot);
-                    return Task.CompletedTask;
-                },
-                slot =>
-                {
-                    slot.IconKey = "E8A7";
-                    return Task.CompletedTask;
-                },
-                slot =>
-                {
-                    slot.Color = "#32CD32";
-                    return Task.CompletedTask;
-                },
-                CreateLoc());
+            var pluginDisplayModels = new List<BuiltInPluginDisplayModel>
+            {
+                new BuiltInPluginDisplayModel("com.pulsar.winswitcher", "E8AB", "WinSwitcher",
+                    "Switch to a running app window or launch it if needed.",
+                    "apps", "Apps", "#2196F3"),
+                new BuiltInPluginDisplayModel("com.pulsar.command", "E756", "Command Runner",
+                    "Open apps, files, folders, or URLs, or send a key sequence.",
+                    "automation", "Automation", "#32CD32")
+            };
+            return SlotTypeCard.BuildAllCards(loc, pluginDisplayModels);
         }
+
+        [Fact]
+        public void SlotEditorViewModel_CreateMode_ShouldStartInPickerPhase()
+        {
+            var loc = CreateLoc();
+            var vm = new SlotEditorViewModel(
+                SlotEditorMode.Create,
+                BuildTestCards(loc),
+                CreateDraftSlot,
+                (slot, action) => { slot.Action = action ?? string.Empty; RefreshSlot(slot); },
+                field => { field.Value = "selected.exe"; RefreshSlot(field.Slot); return Task.CompletedTask; },
+                slot => { slot.IconKey = "E8A7"; return Task.CompletedTask; },
+                slot => { slot.Color = "#32CD32"; return Task.CompletedTask; },
+                loc,
+                metadataRegistry: CreateMetadataRegistry());
+
+            vm.IsPickerPhase.Should().BeTrue();
+            vm.IsConfigurationPhase.Should().BeFalse();
+            vm.PrimaryButtonText.Should().Be("Save Slot");
+            vm.SecondaryButtonText.Should().Be("Cancel");
+            vm.PrimaryCards.Should().HaveCountGreaterThan(0);
+        }
+
+        [Fact]
+        public void SlotEditorViewModel_CreateMode_SelectSlotTypeShouldTransitionToConfiguration()
+        {
+            var loc = CreateLoc();
+            var vm = new SlotEditorViewModel(
+                SlotEditorMode.Create,
+                BuildTestCards(loc),
+                CreateDraftSlot,
+                (slot, action) => { slot.Action = action ?? string.Empty; RefreshSlot(slot); },
+                field => { field.Value = "selected.exe"; RefreshSlot(field.Slot); return Task.CompletedTask; },
+                slot => { slot.IconKey = "E8A7"; return Task.CompletedTask; },
+                slot => { slot.Color = "#32CD32"; return Task.CompletedTask; },
+                loc,
+                metadataRegistry: CreateMetadataRegistry());
+
+            var card = vm.PrimaryCards.First(c => c.PluginId == "com.pulsar.winswitcher");
+            vm.SelectSlotTypeCommand.Execute(card);
+
+            vm.IsConfigurationActive.Should().BeTrue();
+            vm.IsConfigurationPhase.Should().BeTrue();
+            vm.HasSelectedSlot.Should().BeTrue();
+            vm.Slot!.PluginId.Should().Be("com.pulsar.winswitcher");
+            vm.Slot.Action.Should().Be("switch");
+        }
+
+        [Fact]
+        public void SlotEditorViewModel_CreateMode_GoBackToPickerShouldReturnToPicker()
+        {
+            var loc = CreateLoc();
+            var vm = new SlotEditorViewModel(
+                SlotEditorMode.Create,
+                BuildTestCards(loc),
+                CreateDraftSlot,
+                (slot, action) => { slot.Action = action ?? string.Empty; RefreshSlot(slot); },
+                field => { field.Value = "selected.exe"; RefreshSlot(field.Slot); return Task.CompletedTask; },
+                slot => { slot.IconKey = "E8A7"; return Task.CompletedTask; },
+                slot => { slot.Color = "#32CD32"; return Task.CompletedTask; },
+                loc,
+                metadataRegistry: CreateMetadataRegistry());
+
+            var card = vm.PrimaryCards.First(c => c.PluginId == "com.pulsar.winswitcher");
+            vm.SelectSlotTypeCommand.Execute(card);
+            vm.IsConfigurationActive.Should().BeTrue();
+
+            vm.GoBackToPickerCommand.Execute(null);
+            vm.IsPickerPhase.Should().BeTrue();
+            vm.IsConfigurationActive.Should().BeFalse();
+        }
+
+        [Fact]
+        public void SlotEditorViewModel_EditMode_ShouldStartInConfiguration()
+        {
+            var loc = CreateLoc();
+            var slot = CreateConfiguredSlot();
+            var vm = new SlotEditorViewModel(
+                SlotEditorMode.Edit,
+                BuildTestCards(loc),
+                CreateDraftSlot,
+                (s, action) => { s.Action = action ?? string.Empty; RefreshSlot(s); },
+                field => { field.Value = "updated-value"; RefreshConfiguredSlot(slot); return Task.CompletedTask; },
+                s => { s.IconKey = "E8A7"; return Task.CompletedTask; },
+                s => { s.Color = "#123456"; return Task.CompletedTask; },
+                loc,
+                existingSlot: slot,
+                metadataRegistry: CreateMetadataRegistry());
+
+            vm.IsConfigurationActive.Should().BeTrue();
+            vm.IsEditMode.Should().BeTrue();
+            vm.IsAppearanceExpanded.Should().BeTrue();
+            vm.Slot.Should().Be(slot);
+            vm.Slot!.PluginId.Should().Be("com.pulsar.pki");
+        }
+
+        [Fact]
+        public async Task SlotEditorViewModel_EditMode_ShouldExposePreviewMetadataAndAppearance()
+        {
+            var loc = CreateLoc();
+            var slot = CreateConfiguredSlot();
+            var vm = new SlotEditorViewModel(
+                SlotEditorMode.Edit,
+                BuildTestCards(loc),
+                CreateDraftSlot,
+                (s, action) => { s.Action = action ?? string.Empty; RefreshSlot(s); },
+                field => { field.Value = "updated-value"; RefreshConfiguredSlot(slot); return Task.CompletedTask; },
+                s => { s.IconKey = "E8A7"; return Task.CompletedTask; },
+                s => { s.Color = "#123456"; return Task.CompletedTask; },
+                loc,
+                existingSlot: slot,
+                metadataRegistry: CreateMetadataRegistry());
+
+            vm.HeaderStatusText.Should().NotBeNullOrEmpty();
+            vm.IsAppearanceExpanded.Should().BeTrue();
+            vm.IsAdvancedExpanded.Should().BeFalse();
+
+            await vm.PickParameterValueAsync(vm.RequiredParameters.Single());
+            vm.HeaderStatusText.Should().NotBeNullOrEmpty();
+        }
+
+        [Fact]
+        public void SlotTypeCard_BuildPrimaryCards_ShouldReturn6Cards()
+        {
+            var loc = CreateLoc();
+            var cards = SlotTypeCard.BuildPrimaryCards(loc);
+
+            cards.Should().HaveCount(6);
+            cards.All(c => c.IsPrimary).Should().BeTrue();
+
+            cards.Should().ContainSingle(c => c.Id == "switch-app" && c.PluginId == "com.pulsar.winswitcher" && c.DefaultAction == "switch");
+            cards.Should().ContainSingle(c => c.Id == "open-target" && c.PluginId == "com.pulsar.command" && c.DefaultAction == "run");
+            cards.Should().ContainSingle(c => c.Id == "send-keys" && c.PluginId == "com.pulsar.command" && c.DefaultAction == "sendkeys");
+            cards.Should().ContainSingle(c => c.Id == "fill-secret" && c.PluginId == "com.pulsar.pki" && c.DefaultAction == "fill");
+            cards.Should().ContainSingle(c => c.Id == "run-script" && c.PluginId == "com.pulsar.command" && c.DefaultAction == "run");
+            cards.Should().ContainSingle(c => c.Id == "system" && c.PluginId == "com.pulsar.system" && c.DefaultAction == "open-settings");
+        }
+
+        [Fact]
+        public void SlotTypeCard_BuildAllCards_ShouldMergePrimaryAndRegistry()
+        {
+            var loc = CreateLoc();
+            var pluginModels = new List<BuiltInPluginDisplayModel>
+            {
+                new BuiltInPluginDisplayModel("com.pulsar.winswitcher", "E8AB", "WinSwitcher",
+                    "Switch to a running app.", "apps", "Apps", "#2196F3"),
+                new BuiltInPluginDisplayModel("com.pulsar.command", "E756", "Command Runner",
+                    "Open apps and URLs.", "automation", "Automation", "#32CD32", true),
+                new BuiltInPluginDisplayModel("com.pulsar.bookmarklet", "E896", "Bookmarklet Runner",
+                    "Execute JavaScript.", "browser", "Browser", "#FF6B6B")
+            };
+
+            var cards = SlotTypeCard.BuildAllCards(loc, pluginModels);
+
+            cards.Should().Contain(c => c.PluginId == "com.pulsar.winswitcher" && c.IsPrimary);
+            cards.Should().Contain(c => c.PluginId == "com.pulsar.command" && c.IsPrimary);
+            cards.Should().Contain(c => c.PluginId == "com.pulsar.bookmarklet");
+        }
+
+        [Fact]
+        public void SlotEditorViewModel_CreateMode_AppearanceCollapsed()
+        {
+            var loc = CreateLoc();
+            var vm = new SlotEditorViewModel(
+                SlotEditorMode.Create,
+                BuildTestCards(loc),
+                CreateDraftSlot,
+                (slot, action) => { slot.Action = action ?? string.Empty; RefreshSlot(slot); },
+                field => { field.Value = "selected.exe"; return Task.CompletedTask; },
+                slot => { slot.IconKey = "E8A7"; return Task.CompletedTask; },
+                slot => { slot.Color = "#32CD32"; return Task.CompletedTask; },
+                loc,
+                metadataRegistry: CreateMetadataRegistry());
+
+            vm.IsAppearanceExpanded.Should().BeFalse();
+        }
+
+        [Fact]
+        public void SlotEditorViewModel_EditMode_AppearanceExpanded()
+        {
+            var loc = CreateLoc();
+            var slot = CreateConfiguredSlot();
+            var vm = new SlotEditorViewModel(
+                SlotEditorMode.Edit,
+                BuildTestCards(loc),
+                CreateDraftSlot,
+                (s, action) => { s.Action = action ?? string.Empty; RefreshSlot(s); },
+                field => { field.Value = "updated-value"; return Task.CompletedTask; },
+                s => { s.IconKey = "E8A7"; return Task.CompletedTask; },
+                s => { s.Color = "#123456"; return Task.CompletedTask; },
+                loc,
+                existingSlot: slot,
+                metadataRegistry: CreateMetadataRegistry());
+
+            vm.IsAppearanceExpanded.Should().BeTrue();
+        }
+
+        [Fact]
+        public void SlotEditorViewModel_SlotTypeCardMapsToCorrectAction()
+        {
+            var loc = CreateLoc();
+            var vm = new SlotEditorViewModel(
+                SlotEditorMode.Create,
+                BuildTestCards(loc),
+                CreateDraftSlot,
+                (slot, action) => { slot.Action = action ?? string.Empty; RefreshSlot(slot); },
+                field => { field.Value = "selected.exe"; RefreshSlot(field.Slot); return Task.CompletedTask; },
+                slot => { slot.IconKey = "E8A7"; return Task.CompletedTask; },
+                slot => { slot.Color = "#32CD32"; return Task.CompletedTask; },
+                loc,
+                metadataRegistry: CreateMetadataRegistry());
+
+            // Switch App → winswitcher + switch
+            var switchAppCard = vm.PrimaryCards.First(c => c.Id == "switch-app");
+            vm.SelectSlotTypeCommand.Execute(switchAppCard);
+            vm.Slot!.PluginId.Should().Be("com.pulsar.winswitcher");
+            vm.Slot.Action.Should().Be("switch");
+
+            // Open Target → command + run
+            vm.GoBackToPickerCommand.Execute(null);
+            var openTargetCard = vm.PrimaryCards.First(c => c.Id == "open-target");
+            vm.SelectSlotTypeCommand.Execute(openTargetCard);
+            vm.Slot!.PluginId.Should().Be("com.pulsar.command");
+            vm.Slot.Action.Should().Be("run");
+
+            // Send Keys → command + sendkeys
+            vm.GoBackToPickerCommand.Execute(null);
+            var sendKeysCard = vm.PrimaryCards.First(c => c.Id == "send-keys");
+            vm.SelectSlotTypeCommand.Execute(sendKeysCard);
+            vm.Slot!.PluginId.Should().Be("com.pulsar.command");
+            vm.Slot.Action.Should().Be("sendkeys");
+
+            // Fill Secret → pki + fill
+            vm.GoBackToPickerCommand.Execute(null);
+            var fillSecretCard = vm.PrimaryCards.First(c => c.Id == "fill-secret");
+            vm.SelectSlotTypeCommand.Execute(fillSecretCard);
+            vm.Slot!.PluginId.Should().Be("com.pulsar.pki");
+            vm.Slot.Action.Should().Be("fill");
+        }
+
+        // ---- Helper methods ----
 
         private static PluginSlot CreateDraftSlot(string pluginId)
         {
@@ -262,6 +416,25 @@ namespace Pulsar.Tests.ViewModels
                 yield break;
             }
 
+            if (string.Equals(pluginId, "com.pulsar.system", StringComparison.OrdinalIgnoreCase))
+            {
+                yield return new SlotActionOption
+                {
+                    Value = "open-settings",
+                    Label = "Open Settings",
+                    Description = "Open Pulsar settings.",
+                    IsSelected = true
+                };
+                yield return new SlotActionOption
+                {
+                    Value = "quick-add-profile",
+                    Label = "Quick Add",
+                    Description = "Quick add current app.",
+                    IsSelected = false
+                };
+                yield break;
+            }
+
             yield return new SlotActionOption
             {
                 Value = "run",
@@ -282,14 +455,14 @@ namespace Pulsar.Tests.ViewModels
         {
             if (string.Equals(pluginId, "com.pulsar.winswitcher", StringComparison.OrdinalIgnoreCase))
             {
-                yield return new SlotParameterEditorField(slot, new Pulsar.Core.Plugin.Metadata.SlotParameterMetadata
+                yield return new SlotParameterEditorField(slot, new SlotParameterMetadata
                 {
                     Key = "app",
                     Type = "string",
                     Label = "Process Name",
                     IsRequired = true,
                     SummaryLabel = "App",
-                    SummaryMode = Pulsar.Core.Plugin.Metadata.SlotParameterSummaryMode.SafeStateOnly,
+                    SummaryMode = SlotParameterSummaryMode.SafeStateOnly,
                     ConfiguredSummaryText = "selected",
                     MissingSummaryText = "missing"
                 });
@@ -298,29 +471,29 @@ namespace Pulsar.Tests.ViewModels
 
             if (string.Equals(pluginId, "com.pulsar.pki", StringComparison.OrdinalIgnoreCase))
             {
-                yield return new SlotParameterEditorField(slot, new Pulsar.Core.Plugin.Metadata.SlotParameterMetadata
+                yield return new SlotParameterEditorField(slot, new SlotParameterMetadata
                 {
                     Key = "secretId",
                     Type = "guid",
                     Label = "Secret",
                     IsRequired = true,
                     SummaryLabel = "Secret",
-                    SummaryMode = Pulsar.Core.Plugin.Metadata.SlotParameterSummaryMode.SafeStateOnly,
+                    SummaryMode = SlotParameterSummaryMode.SafeStateOnly,
                     ConfiguredSummaryText = "selected",
                     MissingSummaryText = "missing",
-                    PickerIntent = Pulsar.Core.Plugin.Metadata.SlotPickerIntent.Secret
+                    PickerIntent = SlotPickerIntent.Secret
                 });
                 yield break;
             }
 
-            yield return new SlotParameterEditorField(slot, new Pulsar.Core.Plugin.Metadata.SlotParameterMetadata
+            yield return new SlotParameterEditorField(slot, new SlotParameterMetadata
             {
                 Key = "path",
                 Type = "string",
                 Label = "Path",
                 IsRequired = true,
                 SummaryLabel = "Path",
-                SummaryMode = Pulsar.Core.Plugin.Metadata.SlotParameterSummaryMode.SafeStateOnly,
+                SummaryMode = SlotParameterSummaryMode.SafeStateOnly,
                 ConfiguredSummaryText = "configured",
                 MissingSummaryText = "missing"
             });
@@ -347,17 +520,17 @@ namespace Pulsar.Tests.ViewModels
                 IsSelected = true
             });
 
-            slot.RequiredParameters.Add(new SlotParameterEditorField(slot, new Pulsar.Core.Plugin.Metadata.SlotParameterMetadata
+            slot.RequiredParameters.Add(new SlotParameterEditorField(slot, new SlotParameterMetadata
             {
                 Key = "secretId",
                 Type = "guid",
                 Label = "Secret",
                 IsRequired = true,
                 SummaryLabel = "Secret",
-                SummaryMode = Pulsar.Core.Plugin.Metadata.SlotParameterSummaryMode.SafeStateOnly,
+                SummaryMode = SlotParameterSummaryMode.SafeStateOnly,
                 ConfiguredSummaryText = "selected",
                 MissingSummaryText = "missing",
-                PickerIntent = Pulsar.Core.Plugin.Metadata.SlotPickerIntent.Secret
+                PickerIntent = SlotPickerIntent.Secret
             }));
 
             slot.SetArgument("secretId", Guid.NewGuid().ToString());

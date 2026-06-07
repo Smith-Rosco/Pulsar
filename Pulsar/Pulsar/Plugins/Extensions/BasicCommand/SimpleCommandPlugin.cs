@@ -68,7 +68,8 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
                     Version = Version,
                     Author = Author,
                     DocumentationUrl = DocumentationUrl,
-                    License = License
+                        License = License,
+                        IsPrimary = true
                 },
                 Schema = null,
                 UI = new UIHints
@@ -95,6 +96,9 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
                         Name = "run",
                         Label = "Open Target",
                         Description = "Open an app, document, folder, or URL through Windows shell execution.",
+                        SuggestedLabelTemplate = "Open {path}",
+                        SuggestedIconKey = "E756",
+                        SuggestedColorHex = "#32CD32",
                         Parameters = new List<SlotParameterMetadata>
                         {
                             new()
@@ -157,6 +161,9 @@ namespace Pulsar.Plugins.Extensions.BasicCommand
                         Name = "sendkeys",
                         Label = "Send Keys",
                         Description = "Send a keystroke sequence to the active window.",
+                        SuggestedLabelTemplate = "Send {keys}",
+                        SuggestedIconKey = "E765",
+                        SuggestedColorHex = "#32CD32",
                         Parameters = new List<SlotParameterMetadata>
                         {
                             new()

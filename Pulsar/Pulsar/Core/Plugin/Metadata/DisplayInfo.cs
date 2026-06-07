@@ -28,6 +28,11 @@ namespace Pulsar.Core.Plugin.Metadata
         public string Category { get; init; } = "General";
 
         /// <summary>
+        /// Whether this plugin type is promoted to the curated primary card grid in the slot picker
+        /// </summary>
+        public bool IsPrimary { get; init; }
+
+        /// <summary>
         /// 插件版本
         /// </summary>
         public string Version { get; init; } = "1.0.0";

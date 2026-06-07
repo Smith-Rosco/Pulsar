@@ -598,14 +598,17 @@ namespace Pulsar.ViewModels
         [RelayCommand]
         public async Task AddSlotDialog()
         {
-            var vm = new AddSlotViewModel(
-                BuildAddSlotOptions(),
+            var cards = BuildSlotTypeCards();
+            var vm = new SlotEditorViewModel(
+                SlotEditorMode.Create,
+                cards,
                 CreateSlotDraft,
                 SetSlotDraftAction,
                 PickSlotParameterValue,
                 PickIcon,
                 PickColor,
-                _loc);
+                _loc,
+                metadataRegistry: _pluginMetadataRegistry);
 
             var result = await _dialogService.ShowCustomAsync(
                 _loc["Notification.CreateSlot"],
@@ -923,20 +926,33 @@ namespace Pulsar.ViewModels
             }
         }
 
-        private IReadOnlyList<AddSlotViewModel.PluginTypeOption> BuildAddSlotOptions()
+        private IReadOnlyList<SlotTypeCard> BuildSlotTypeCards()
         {
-            return _pluginMetadataRegistry
+            var pluginDisplayModels = _pluginMetadataRegistry
                 .GetAllMetadata()
                 .Where(metadata => metadata.Actions.Count > 0)
                 .OrderBy(metadata => metadata.UI.SortOrder)
                 .ThenBy(metadata => metadata.Display.Name, StringComparer.OrdinalIgnoreCase)
-                .Select(metadata => new AddSlotViewModel.PluginTypeOption(BuiltInPluginDisplayModel.FromMetadata(metadata)))
+                .Select(metadata => BuiltInPluginDisplayModel.FromMetadata(metadata))
                 .ToList();
+
+            return SlotTypeCard.BuildAllCards(_loc, pluginDisplayModels);
         }
 
         private PluginSlot CreateSlotDraft(string pluginId)
         {
-            var slot = BuildSlotTemplate(pluginId, GetNextSlotNumber());
+            var slot = new PluginSlot
+            {
+                Slot = GetNextSlotNumber(),
+                PluginId = pluginId
+            };
+
+            string? iconKey = _pluginMetadataRegistry.GetMetadata(pluginId)?.Display.IconKey;
+            if (!string.IsNullOrWhiteSpace(iconKey))
+            {
+                slot.IconKey = iconKey;
+            }
+
             InitializeSlotMetadata(slot);
             RefreshSlotValidationSummary(slot);
             UpdateSlotPresentation(slot);
@@ -981,66 +997,6 @@ namespace Pulsar.ViewModels
             }
 
             return CurrentSlots.Max(slot => slot.Slot) + 1;
-        }
-
-        private PluginSlot BuildSlotTemplate(string pluginId, int slotNumber)
-        {
-            var newItem = new PluginSlot
-            {
-                Slot = slotNumber,
-                PluginId = pluginId
-            };
-
-            switch (pluginId)
-            {
-                case "com.pulsar.winswitcher":
-                    newItem.Action = "switch";
-                    newItem.Args["app"] = string.Empty;
-                    newItem.Args["path"] = string.Empty;
-                    newItem.Label = _loc["Dialog.AddSlot.SwitchOrLaunch"];
-                    break;
-
-                case "com.pulsar.command":
-                    newItem.Action = "run";
-                    newItem.Args["path"] = string.Empty;
-                    newItem.Label = _loc["Dialog.AddSlot.OpenTarget"];
-                    break;
-
-                case "com.pulsar.bookmarklet":
-                    newItem.Action = "run";
-                    newItem.Args["scriptPath"] = string.Empty;
-                    newItem.Label = _loc["Dialog.AddSlot.RunScript"];
-                    break;
-
-                case "com.pulsar.vbarunner":
-                    newItem.Action = "run";
-                    newItem.Args["scriptPath"] = string.Empty;
-                    newItem.Label = _loc["Dialog.AddSlot.RunVba"];
-                    break;
-
-                case "com.pulsar.pki":
-                    newItem.Action = "fill";
-                    newItem.Args["secretId"] = string.Empty;
-                    newItem.Args["autoEnter"] = bool.FalseString;
-                    newItem.Label = "Fill Secret";
-                    break;
-
-                case "com.pulsar.system":
-                    newItem.Action = "open-settings";
-                    newItem.Label = "Open Settings";
-                    break;
-
-                default:
-                    throw new InvalidOperationException($"Unknown plugin type: {pluginId}");
-            }
-
-            string? iconKey = _pluginMetadataRegistry.GetMetadata(pluginId)?.Display.IconKey;
-            if (!string.IsNullOrWhiteSpace(iconKey))
-            {
-                newItem.IconKey = iconKey;
-            }
-
-            return newItem;
         }
 
         public void RefreshContexts()
@@ -1228,13 +1184,18 @@ namespace Pulsar.ViewModels
                 return;
             }
 
-            var vm = new SlotConfigurationDialogViewModel(
-                slot,
-                _loc,
+            var cards = BuildSlotTypeCards();
+            var vm = new SlotEditorViewModel(
+                SlotEditorMode.Edit,
+                cards,
+                CreateSlotDraft,
                 SetSlotAction,
                 PickSlotParameterValue,
                 PickIcon,
-                PickColor);
+                PickColor,
+                _loc,
+                existingSlot: slot,
+                metadataRegistry: _pluginMetadataRegistry);
 
             await _dialogService.ShowCustomAsync(
                 string.Format(_loc["Notification.EditSlotFormat"], slot.Slot),

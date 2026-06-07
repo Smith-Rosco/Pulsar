@@ -134,7 +134,8 @@ namespace Pulsar.Plugins.Core.SystemCommand
                     Version = Version,
                     Author = Author,
                     DocumentationUrl = DocumentationUrl,
-                    License = "MIT"
+                    License = "MIT",
+                    IsPrimary = true
                 },
                 Schema = null,
                 UI = new UIHints
@@ -161,6 +162,9 @@ namespace Pulsar.Plugins.Core.SystemCommand
                         Name = OpenSettingsAction,
                         Label = "Open Settings",
                         Description = "Open Pulsar settings and jump to the global settings view.",
+                        SuggestedLabelTemplate = "Open Settings",
+                        SuggestedIconKey = "E713",
+                        SuggestedColorHex = "#607D8B",
                         Aliases = new List<string> { LegacyOpenSettingsAction }
                     },
                     [QuickAddProfileAction] = new SlotActionMetadata
@@ -168,6 +172,9 @@ namespace Pulsar.Plugins.Core.SystemCommand
                         Name = QuickAddProfileAction,
                         Label = "Quick Add Current App",
                         Description = "Open the current app's slot configuration in Pulsar settings so you can add slots quickly.",
+                        SuggestedLabelTemplate = "Quick Add Current App",
+                        SuggestedIconKey = "E713",
+                        SuggestedColorHex = "#607D8B",
                         Aliases = new List<string> { LegacyQuickAddProfileAction }
                     }
                 }

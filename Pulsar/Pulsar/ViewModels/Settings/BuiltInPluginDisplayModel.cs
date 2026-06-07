@@ -12,7 +12,8 @@ namespace Pulsar.ViewModels.Settings
             string description,
             string categoryKey,
             string categoryLabel,
-            string accentColor)
+            string accentColor,
+            bool isPrimary = false)
         {
             PluginId = pluginId;
             IconKey = iconKey;
@@ -21,6 +22,7 @@ namespace Pulsar.ViewModels.Settings
             CategoryKey = categoryKey;
             CategoryLabel = categoryLabel;
             AccentColor = accentColor;
+            IsPrimary = isPrimary;
         }
 
         public string PluginId { get; }
@@ -36,6 +38,8 @@ namespace Pulsar.ViewModels.Settings
         public string CategoryLabel { get; }
 
         public string AccentColor { get; }
+
+        public bool IsPrimary { get; }
 
         public static BuiltInPluginDisplayModel FromMetadata(PluginMetadata metadata)
         {
@@ -54,7 +58,8 @@ namespace Pulsar.ViewModels.Settings
                 metadata.Display.Description,
                 categoryKey,
                 categoryLabel,
-                metadata.UI.AccentColor);
+                metadata.UI.AccentColor,
+                metadata.Display.IsPrimary);
         }
     }
 }

@@ -65,7 +65,8 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
                     Version = Version,
                     Author = Author,
                     DocumentationUrl = DocumentationUrl,
-                    License = "MIT"
+                    License = "MIT",
+                    IsPrimary = true
                 },
                 Schema = null,
                 UI = new UIHints
@@ -92,6 +93,9 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
                         Name = "run",
                         Label = "Run VBA Script",
                         Description = "Execute a VBA script file in the target spreadsheet application.",
+                        SuggestedLabelTemplate = "Run {path}",
+                        SuggestedIconKey = "E71D",
+                        SuggestedColorHex = "#FF8C00",
                         Parameters = new List<SlotParameterMetadata>
                         {
                             new()

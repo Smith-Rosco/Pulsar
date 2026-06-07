@@ -334,7 +334,8 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                     Version = Version,
                     Author = Author,
                     DocumentationUrl = DocumentationUrl,
-                    License = "MIT"
+                    License = "MIT",
+                    IsPrimary = true
                 },
                 Schema = new ConfigSchema
                 {
@@ -375,6 +376,9 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                         Name = "switch",
                         Label = "Switch Or Launch",
                         Description = "Switch to a running app window, or launch it when no matching window is found.",
+                        SuggestedLabelTemplate = "Switch to {app}",
+                        SuggestedIconKey = "E8AB",
+                        SuggestedColorHex = "#2196F3",
                         Parameters = new List<SlotParameterMetadata>
                         {
                             new()
@@ -442,6 +446,9 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                         Name = "launch",
                         Label = "Launch App",
                         Description = "Always launch an app using an explicit executable path.",
+                        SuggestedLabelTemplate = "Launch {path}",
+                        SuggestedIconKey = "E8AB",
+                        SuggestedColorHex = "#2196F3",
                         Parameters = new List<SlotParameterMetadata>
                         {
                             new()
@@ -488,6 +495,9 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                         Name = "activate",
                         Label = "Switch Existing App",
                         Description = "Switch to an already running app window without launching a new instance.",
+                        SuggestedLabelTemplate = "Switch to {app}",
+                        SuggestedIconKey = "E8AB",
+                        SuggestedColorHex = "#2196F3",
                         Parameters = new List<SlotParameterMetadata>
                         {
                             new()

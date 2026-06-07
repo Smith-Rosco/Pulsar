@@ -11,9 +11,139 @@ using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Helpers;
 using Pulsar.Plugins.Core.Pki.Models;
+using Pulsar.ViewModels.Settings;
 
 namespace Pulsar.Models
 {
+    public enum SlotEditorMode
+    {
+        Create,
+        Edit
+    }
+
+    public partial class SlotTypeCard : ObservableObject
+    {
+        public required string Id { get; init; }
+
+        public required string PluginId { get; init; }
+
+        public string? DefaultAction { get; init; }
+
+        public required string IconKey { get; init; }
+
+        public required string Title { get; init; }
+
+        public required string Description { get; init; }
+
+        public bool IsPrimary { get; init; }
+
+        public required string Category { get; init; }
+
+        [ObservableProperty]
+        private bool _isSelected;
+
+        public static IReadOnlyList<SlotTypeCard> BuildPrimaryCards(ILocalizationService loc)
+        {
+            return new List<SlotTypeCard>
+            {
+                new SlotTypeCard
+                {
+                    Id = "switch-app",
+                    PluginId = "com.pulsar.winswitcher",
+                    DefaultAction = "switch",
+                    IconKey = "E8F9",
+                    Title = loc["Dialog.AddSlot.CardSwitchApp"],
+                    Description = loc["Dialog.AddSlot.CardSwitchAppDesc"],
+                    IsPrimary = true,
+                    Category = "Productivity"
+                },
+                new SlotTypeCard
+                {
+                    Id = "open-target",
+                    PluginId = "com.pulsar.command",
+                    DefaultAction = "run",
+                    IconKey = "E8A7",
+                    Title = loc["Dialog.AddSlot.CardOpenTarget"],
+                    Description = loc["Dialog.AddSlot.CardOpenTargetDesc"],
+                    IsPrimary = true,
+                    Category = "Productivity"
+                },
+                new SlotTypeCard
+                {
+                    Id = "send-keys",
+                    PluginId = "com.pulsar.command",
+                    DefaultAction = "sendkeys",
+                    IconKey = "E765",
+                    Title = loc["Dialog.AddSlot.CardSendKeys"],
+                    Description = loc["Dialog.AddSlot.CardSendKeysDesc"],
+                    IsPrimary = true,
+                    Category = "Input"
+                },
+                new SlotTypeCard
+                {
+                    Id = "fill-secret",
+                    PluginId = "com.pulsar.pki",
+                    DefaultAction = "fill",
+                    IconKey = "E72E",
+                    Title = loc["Dialog.AddSlot.CardFillSecret"],
+                    Description = loc["Dialog.AddSlot.CardFillSecretDesc"],
+                    IsPrimary = true,
+                    Category = "Security"
+                },
+                new SlotTypeCard
+                {
+                    Id = "run-script",
+                    PluginId = "com.pulsar.command",
+                    DefaultAction = "run",
+                    IconKey = "E943",
+                    Title = loc["Dialog.AddSlot.CardRunScript"],
+                    Description = loc["Dialog.AddSlot.CardRunScriptDesc"],
+                    IsPrimary = true,
+                    Category = "Automation"
+                },
+                new SlotTypeCard
+                {
+                    Id = "system",
+                    PluginId = "com.pulsar.system",
+                    DefaultAction = "open-settings",
+                    IconKey = "E713",
+                    Title = loc["Dialog.AddSlot.CardSystem"],
+                    Description = loc["Dialog.AddSlot.CardSystemDesc"],
+                    IsPrimary = true,
+                    Category = "System"
+                }
+            };
+        }
+
+        public static IReadOnlyList<SlotTypeCard> BuildAllCards(
+            ILocalizationService loc,
+            IEnumerable<BuiltInPluginDisplayModel> pluginDisplayModels)
+        {
+            var primaryCards = BuildPrimaryCards(loc);
+            var cards = new List<SlotTypeCard>(primaryCards);
+
+            foreach (var plugin in pluginDisplayModels)
+            {
+                if (primaryCards.Any(c => c.PluginId == plugin.PluginId))
+                    continue;
+
+                cards.Add(new SlotTypeCard
+                {
+                    Id = $"plugin-{plugin.PluginId}",
+                    PluginId = plugin.PluginId,
+                    DefaultAction = null,
+                    IconKey = plugin.IconKey,
+                    Title = plugin.DisplayName,
+                    Description = plugin.Description,
+                    IsPrimary = plugin.IsPrimary,
+                    Category = plugin.CategoryLabel
+                });
+            }
+
+            return cards;
+        }
+    }
+
     public partial class SlotActionOption : ObservableObject
     {
         private static ILocalizationService? _loc;

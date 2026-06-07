@@ -1937,4 +1937,52 @@
   <data name="Bookmarklet.Error.InjectionFailed" xml:space="preserve">
     <value>Error executing bookmarklet script: {0}</value>
   </data>
+  <data name="Dialog.AddSlot.CardSwitchApp" xml:space="preserve">
+    <value>Switch App</value>
+  </data>
+  <data name="Dialog.AddSlot.CardSwitchAppDesc" xml:space="preserve">
+    <value>Switch to a running app without typing its name.</value>
+  </data>
+  <data name="Dialog.AddSlot.CardOpenTarget" xml:space="preserve">
+    <value>Open Target</value>
+  </data>
+  <data name="Dialog.AddSlot.CardOpenTargetDesc" xml:space="preserve">
+    <value>Open a program, file, folder, or URL.</value>
+  </data>
+  <data name="Dialog.AddSlot.CardSendKeys" xml:space="preserve">
+    <value>Send Keys</value>
+  </data>
+  <data name="Dialog.AddSlot.CardSendKeysDesc" xml:space="preserve">
+    <value>Send key sequences or paste text into the active window.</value>
+  </data>
+  <data name="Dialog.AddSlot.CardFillSecret" xml:space="preserve">
+    <value>Fill Secret</value>
+  </data>
+  <data name="Dialog.AddSlot.CardFillSecretDesc" xml:space="preserve">
+    <value>Fill a saved credential into the active field.</value>
+  </data>
+  <data name="Dialog.AddSlot.CardRunScript" xml:space="preserve">
+    <value>Run Script</value>
+  </data>
+  <data name="Dialog.AddSlot.CardRunScriptDesc" xml:space="preserve">
+    <value>Execute a script or automation routine.</value>
+  </data>
+  <data name="Dialog.AddSlot.CardSystem" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="Dialog.AddSlot.CardSystemDesc" xml:space="preserve">
+    <value>Open settings or manage quick-add profiles.</value>
+  </data>
+  <data name="Dialog.AddSlot.BrowseAll" xml:space="preserve">
+    <value>Browse all slot types...</value>
+  </data>
+  <data name="Dialog.AddSlot.SearchPlaceholder" xml:space="preserve">
+    <value>Search slot types...</value>
+  </data>
+  <data name="Dialog.AddSlot.Behavior" xml:space="preserve">
+    <value>Behavior</value>
+  </data>
+  <data name="Dialog.AddSlot.BackToPicker" xml:space="preserve">
+    <value>Back to picker</value>
+  </data>
 </root>

@@ -1,15 +1,15 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Media;
-using Pulsar.Models;
 using Pulsar.ViewModels.Dialogs;
 
 namespace Pulsar.Views.Dialogs.Contents
 {
-    public partial class AddSlotContent : UserControl
+    public partial class AddSlotContent
     {
-        private AddSlotViewModel? _viewModel;
+        private SlotEditorViewModel? _boundViewModel;
 
         public AddSlotContent()
         {
@@ -19,208 +19,129 @@ namespace Pulsar.Views.Dialogs.Contents
 
         private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            if (_viewModel != null)
+            if (_boundViewModel != null)
             {
-                _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+                _boundViewModel.PropertyChanged -= OnViewModelPropertyChanged;
             }
 
-            _viewModel = DataContext as AddSlotViewModel;
+            _boundViewModel = DataContext as SlotEditorViewModel;
 
-            if (_viewModel != null)
+            if (_boundViewModel != null)
             {
-                _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+                _boundViewModel.PropertyChanged += OnViewModelPropertyChanged;
             }
         }
 
         private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(AddSlotViewModel.ValidationRequestId))
+            if (e.PropertyName == nameof(SlotEditorViewModel.ValidationRequestId))
             {
-                Dispatcher.BeginInvoke(new Action(FocusFirstInvalidTarget));
+                Dispatcher.BeginInvoke(new System.Action(FocusFirstInvalidTarget), System.Windows.Threading.DispatcherPriority.Loaded);
             }
         }
 
         private void FocusFirstInvalidTarget()
         {
-            if (_viewModel == null)
-            {
+            if (_boundViewModel == null)
                 return;
-            }
 
-            var actionChoiceSection = FindName("ActionChoiceSection") as FrameworkElement;
-
-            if (string.Equals(_viewModel.ValidationFocusTarget, "action", System.StringComparison.Ordinal))
+            var target = _boundViewModel.ValidationFocusTarget;
+            if (string.Equals(target, "action", System.StringComparison.OrdinalIgnoreCase))
             {
-                if (actionChoiceSection == null)
+                var actionSection = FindChildByName<ItemsControl>(this, "ActionChoiceSection");
+                if (actionSection != null && actionSection.Items.Count > 0)
                 {
-                    return;
+                    if (actionSection.ItemContainerGenerator.ContainerFromIndex(0) is ContentPresenter firstPresenter)
+                    {
+                        if (firstPresenter.Content is FrameworkElement firstChild)
+                        {
+                            firstChild.Focus();
+                        }
+                    }
                 }
+                return;
+            }
 
-                ScrollTargetIntoView(actionChoiceSection);
-                if (TryFocusFirstRadioButton(actionChoiceSection) || TryFocusFirstComboBox(actionChoiceSection))
+            if (string.Equals(target, "field", System.StringComparison.OrdinalIgnoreCase))
+            {
+                var focusField = _boundViewModel.ValidationFocusField;
+                if (focusField == null)
+                    return;
+
+                var fieldContainers = FindVisualChildren<ContentPresenter>(this);
+                foreach (var container in fieldContainers)
                 {
-                    return;
+                    if (container.DataContext == focusField)
+                    {
+                        var btn = FindVisualChild<Button>(container);
+                        btn?.Focus();
+                        return;
+                    }
                 }
-
-                actionChoiceSection.Focus();
-                return;
             }
-
-            if (!string.Equals(_viewModel.ValidationFocusTarget, "field", System.StringComparison.Ordinal)
-                || _viewModel.ValidationFocusField == null)
-            {
-                return;
-            }
-
-            var container = FindFieldContainer(this, _viewModel.ValidationFocusField);
-            if (container == null)
-            {
-                return;
-            }
-
-            ScrollTargetIntoView(container);
-            if (TryFocusFirstButton(container))
-            {
-                return;
-            }
-
-            container.Focus();
         }
 
-        private static Border? FindFieldContainer(DependencyObject root, SlotParameterEditorField field)
+        private void SlotParameterPicker_Click(object sender, RoutedEventArgs e)
         {
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+            if (sender is FrameworkElement element && element.Tag is Models.SlotParameterEditorField field)
             {
-                var child = VisualTreeHelper.GetChild(root, i);
-
-                if (child is Border border && ReferenceEquals(border.DataContext, field))
-                {
-                    return border;
-                }
-
-                var nested = FindFieldContainer(child, field);
-                if (nested != null)
-                {
-                    return nested;
-                }
+                _ = _boundViewModel?.PickParameterValueAsync(field);
             }
+        }
 
+        private void ColorSwatch_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            _ = _boundViewModel?.PickColorAsync();
+        }
+
+        private void PickIcon_Click(object sender, System.EventArgs e)
+        {
+            _ = _boundViewModel?.PickIconAsync();
+        }
+
+        private static T? FindChildByName<T>(DependencyObject parent, string name) where T : DependencyObject
+        {
+            if (parent is FrameworkElement fe && fe.Name == name)
+                return parent as T;
+
+            int count = VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < count; i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                var result = FindChildByName<T>(child, name);
+                if (result != null)
+                    return result;
+            }
             return null;
         }
 
-        private static bool TryFocusFirstRadioButton(DependencyObject root)
+        private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
         {
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
             {
-                var child = VisualTreeHelper.GetChild(root, i);
-                if (child is System.Windows.Controls.RadioButton radio && radio.Focusable && radio.IsEnabled)
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T tChild)
+                    return tChild;
+
+                var result = FindVisualChild<T>(child);
+                if (result != null)
+                    return result;
+            }
+            return null;
+        }
+
+        private static IEnumerable<T> FindVisualChildren<T>(DependencyObject parent) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T tChild)
+                    yield return tChild;
+
+                foreach (var nested in FindVisualChildren<T>(child))
                 {
-                    return radio.Focus();
+                    yield return nested;
                 }
-
-                if (TryFocusFirstRadioButton(child))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static bool TryFocusFirstComboBox(DependencyObject root)
-        {
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
-            {
-                var child = VisualTreeHelper.GetChild(root, i);
-                if (child is System.Windows.Controls.ComboBox comboBox && comboBox.Focusable && comboBox.IsEnabled)
-                {
-                    return comboBox.Focus();
-                }
-
-                if (TryFocusFirstComboBox(child))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static bool TryFocusFirstButton(DependencyObject root)
-        {
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
-            {
-                var child = VisualTreeHelper.GetChild(root, i);
-                if (child is System.Windows.Controls.Button button && button.Focusable && button.IsEnabled)
-                {
-                    return button.Focus();
-                }
-
-                if (TryFocusFirstButton(child))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static void ScrollTargetIntoView(FrameworkElement element)
-        {
-            element.BringIntoView();
-            element.UpdateLayout();
-        }
-
-        private async void SlotParameterPicker_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Wpf.Ui.Controls.Button button
-                && button.Tag is SlotParameterEditorField field
-                && DataContext is AddSlotViewModel viewModel)
-            {
-                await viewModel.PickParameterValueAsync(field);
-            }
-        }
-
-        private void ActionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            // Binding on SelectedValue MUST remain Mode=OneWay to avoid a feedback loop.
-            // See: Docs/lessons/WPF_RADIOBUTTON_PROPERTYCHANGED_FEEDBACK_LOOP.md
-            if (sender is System.Windows.Controls.ComboBox comboBox
-                && comboBox.SelectedValue is string action
-                && DataContext is AddSlotViewModel viewModel)
-            {
-                viewModel.SetAction(action);
-            }
-        }
-
-        private void ActionRadio_Checked(object sender, RoutedEventArgs e)
-        {
-            // No re-entrancy guard needed: IsChecked is bound Mode=OneWay, so SyncSelectedActionStates()
-            // writing IsSelected will not re-fire this event.
-            // See: Docs/lessons/WPF_RADIOBUTTON_PROPERTYCHANGED_FEEDBACK_LOOP.md
-            if (sender is System.Windows.Controls.RadioButton radio
-                && radio.Tag is string action
-                && !string.IsNullOrWhiteSpace(action)
-                && DataContext is AddSlotViewModel viewModel)
-            {
-                viewModel.SetAction(action);
-            }
-        }
-
-        private async void PickIcon_Click(object? sender, EventArgs e)
-        {
-            if (DataContext is AddSlotViewModel viewModel)
-            {
-                await viewModel.PickIconAsync();
-            }
-        }
-
-        private async void ColorSwatch_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            if (DataContext is AddSlotViewModel viewModel)
-            {
-                await viewModel.PickColorAsync();
-                e.Handled = true;
             }
         }
     }

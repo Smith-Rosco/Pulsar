@@ -19,6 +19,12 @@ namespace Pulsar.Core.Plugin.Metadata
         public IReadOnlyDictionary<string, string> ParameterAliases { get; init; } =
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
+        public string? SuggestedLabelTemplate { get; init; }
+
+        public string? SuggestedIconKey { get; init; }
+
+        public string? SuggestedColorHex { get; init; }
+
         public IEnumerable<SlotParameterMetadata> GetParametersByGroup(SlotParameterGroup group)
         {
             return Parameters.Where(parameter => parameter.Group == group);

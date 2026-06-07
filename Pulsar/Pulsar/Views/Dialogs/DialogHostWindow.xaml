@@ -77,11 +77,7 @@
                 <contents:QuickSecretsContent/>
             </DataTemplate>
 
-            <DataTemplate DataType="{x:Type dialogs:SlotConfigurationDialogViewModel}">
-                <contents:SlotConfigurationDialogContent/>
-            </DataTemplate>
-
-            <DataTemplate DataType="{x:Type dialogs:AddSlotViewModel}">
+            <DataTemplate DataType="{x:Type dialogs:SlotEditorViewModel}">
                 <contents:AddSlotContent/>
             </DataTemplate>
 

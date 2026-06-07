@@ -4,15 +4,15 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-             xmlns:converters="clr-namespace:Pulsar.Core.Converters"
+             xmlns:lex="clr-namespace:Pulsar.Core.Localization"
              xmlns:viewmodels="clr-namespace:Pulsar.ViewModels.Dialogs"
              xmlns:models="clr-namespace:Pulsar.Models"
+             xmlns:converters="clr-namespace:Pulsar.Core.Converters"
              xmlns:controls="clr-namespace:Pulsar.Views.Controls"
-             xmlns:lex="clr-namespace:Pulsar.Core.Localization"
              mc:Ignorable="d"
              MinWidth="760"
              MinHeight="520"
-             d:DataContext="{d:DesignInstance Type=viewmodels:SlotConfigurationDialogViewModel}">
+             d:DataContext="{d:DesignInstance Type=viewmodels:SlotEditorViewModel}">
 
     <UserControl.Resources>
         <ResourceDictionary>
@@ -34,20 +34,23 @@
                 <Setter Property="Margin" Value="0,0,0,6"/>
             </Style>
 
-            <Style x:Key="SectionTitleTextStyle" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="17"/>
+            <Style x:Key="CompactSectionTitleTextStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="14"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
                 <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
             </Style>
 
-            <Style x:Key="SectionBodyTextStyle" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="12"/>
-                <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
-                <Setter Property="TextWrapping" Value="Wrap"/>
+            <Style x:Key="HeaderStatusBadgeBorderStyle" TargetType="Border">
+                <Setter Property="Padding" Value="10,5"/>
+                <Setter Property="CornerRadius" Value="10"/>
+                <Setter Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorSecondaryBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="VerticalAlignment" Value="Top"/>
             </Style>
 
-            <Style x:Key="CompactSectionTitleTextStyle" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="13"/>
+            <Style x:Key="HeaderStatusBadgeTextStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="11"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
                 <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
             </Style>
@@ -59,7 +62,7 @@
                 <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorSecondaryBrush}"/>
                 <Setter Property="BorderThickness" Value="1"/>
                 <Style.Triggers>
-                    <DataTrigger Binding="{Binding HasBlockingIssue}" Value="True">
+                    <DataTrigger Binding="{Binding HasCriticalValidationState}" Value="True">
                         <Setter Property="Background" Value="{DynamicResource SystemFillColorCriticalBackgroundBrush}"/>
                         <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
                     </DataTrigger>
@@ -71,16 +74,46 @@
                 <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
                 <Setter Property="TextWrapping" Value="Wrap"/>
                 <Style.Triggers>
-                    <DataTrigger Binding="{Binding HasBlockingIssue}" Value="True">
+                    <DataTrigger Binding="{Binding HasCriticalValidationState}" Value="True">
                         <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                     </DataTrigger>
                 </Style.Triggers>
             </Style>
 
+            <Style x:Key="SegmentedActionButtonStyle" TargetType="RadioButton">
+                <Setter Property="Margin" Value="0,0,4,0"/>
+                <Setter Property="Padding" Value="12,6"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="RadioButton">
+                            <Border x:Name="SegBorder"
+                                    Padding="{TemplateBinding Padding}"
+                                    Background="{DynamicResource ControlFillColorDefaultBrush}"
+                                    BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="6">
+                                <ContentPresenter/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="SegBorder" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}"/>
+                                </Trigger>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="SegBorder" Property="Background" Value="{DynamicResource AccentFillColorSecondaryBrush}"/>
+                                    <Setter TargetName="SegBorder" Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
             <DataTemplate x:Key="SlotParameterFieldTemplate" DataType="{x:Type models:SlotParameterEditorField}">
                 <Grid Margin="0,0,0,8">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" MinWidth="80"/>
+                        <ColumnDefinition Width="Auto" MinWidth="90"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
@@ -109,8 +142,7 @@
                         </Grid.ColumnDefinitions>
 
                         <ui:Button Grid.Column="0"
-                                   Width="26"
-                                   Height="26"
+                                   Width="26" Height="26"
                                    Padding="5"
                                    Margin="0,0,6,0"
                                    Icon="{ui:SymbolIcon FolderOpen16}"
@@ -137,171 +169,220 @@
     <Grid>
         <ScrollViewer VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
-                      Padding="20,0,20,0">
-            <StackPanel Margin="0,0,0,16">
+                      Padding="20,16,20,16">
+
+            <StackPanel>
+                <!-- Header: orb + label + status badge -->
                 <Border Padding="0,0,0,16"
-                        Margin="0,0,0,18"
+                        Margin="0,0,0,16"
                         BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
                         BorderThickness="0,0,0,1">
                     <Grid>
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="332"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <StackPanel Grid.Column="0">
-                            <WrapPanel VerticalAlignment="Center">
-                                <TextBlock Text="{Binding HeaderText}"
-                                           FontSize="22"
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                           VerticalAlignment="Center"/>
-                            </WrapPanel>
-                            <TextBlock Text="{Binding HeaderDescription}"
-                                       Style="{StaticResource SectionBodyTextStyle}"
-                                       Margin="0,6,0,0"/>
+                        <controls:SlotOrb Grid.Column="0"
+                                          Size="34" Width="34" Height="34"
+                                          Opacity="1" IsActive="False"
+                                          IsHitTestVisible="False"
+                                          ShowActiveGlow="False"
+                                          IsTransparent="True"
+                                          IconKey="{Binding Slot.IconKey}"
+                                          CustomFill="{Binding Slot.Color, Converter={StaticResource HexToBrush}}"
+                                          CustomStroke="{Binding Slot.Color, Converter={StaticResource HexToBrush}}"
+                                          Margin="0,0,10,0"/>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding HeaderText}"
+                                       FontSize="16" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                         </StackPanel>
 
-                        <Border Grid.Column="1"
-                                Style="{StaticResource CompactStatusBorderStyle}"
-                                Visibility="{Binding HasValidationSummary, Converter={StaticResource BoolToVis}}">
-                            <TextBlock Text="{Binding ValidationSummary}"
-                                       Style="{StaticResource CompactStatusTextStyle}"/>
+                        <Border Grid.Column="2"
+                                Style="{StaticResource HeaderStatusBadgeBorderStyle}"
+                                Margin="10,0,0,0">
+                            <TextBlock Text="{Binding HeaderStatusText}"
+                                       Style="{StaticResource HeaderStatusBadgeTextStyle}"/>
                         </Border>
                     </Grid>
                 </Border>
 
-                <StackPanel>
-                    <TextBlock Text="{lex:Locale Dialog.SlotConfig.Behavior}"
-                               Style="{StaticResource SectionEyebrowTextStyle}"/>
+                <!-- === BEHAVIOR SECTION === -->
+                <TextBlock Text="{lex:Locale Dialog.AddSlot.Behavior}"
+                           Style="{StaticResource SectionEyebrowTextStyle}"/>
 
-                    <Grid Margin="0,0,0,16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="90"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
+                <!-- Action selector -->
+                <Border Padding="0,0,0,10">
+                    <StackPanel>
+                        <!-- Single action: read-only label -->
+                        <TextBlock Text="{Binding Slot.ActionLabel}"
+                                   FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                   Visibility="{Binding HasSingleAction, Converter={StaticResource BoolToVis}}"
+                                   Margin="0,4,0,0"/>
 
-                        <TextBlock Grid.Column="0"
-                                   Text="{lex:Locale Dialog.AddSlot.Action}"
-                                   Style="{StaticResource CompactSectionTitleTextStyle}"
-                                   VerticalAlignment="Center"/>
+                        <!-- Segmented button group (2-4 actions) -->
+                        <Grid Visibility="{Binding UseSegmentedButtons, Converter={StaticResource BoolToVis}}">
+                            <ItemsControl ItemsSource="{Binding AvailableActions}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <RadioButton Style="{StaticResource SegmentedActionButtonStyle}"
+                                                     GroupName="SlotActions"
+                                                     IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                     Content="{Binding Label}"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Grid>
 
-                        <StackPanel Grid.Column="1"
-                                    Visibility="{Binding HasSingleAction, Converter={StaticResource BoolToVis}}">
-                            <TextBlock Text="{Binding Slot.ActionLabel}"
-                                       FontSize="13"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                            <TextBlock Text="{Binding Slot.ActionDescription}"
-                                       Margin="0,3,0,0"
-                                       FontSize="11"
-                                       TextWrapping="Wrap"
-                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                        </StackPanel>
-
-                        <ComboBox Grid.Column="1"
-                                  ItemsSource="{Binding AvailableActions}"
+                        <!-- ComboBox fallback (5+ actions) -->
+                        <ComboBox ItemsSource="{Binding AvailableActions}"
                                   SelectedValuePath="Value"
                                   DisplayMemberPath="Label"
                                   SelectedValue="{Binding Slot.Action}"
-                                  SelectionChanged="ActionComboBox_SelectionChanged"
-                                  Visibility="{Binding HasSingleAction, Converter={StaticResource BoolToVisInverse}}"/>
-                    </Grid>
-
-                    <StackPanel Visibility="{Binding HasRequiredParameters, Converter={StaticResource BoolToVis}}">
-                        <ItemsControl ItemsSource="{Binding RequiredParameters}"
-                                      ItemTemplate="{StaticResource SlotParameterFieldTemplate}"/>
+                                  Visibility="{Binding UseComboBox, Converter={StaticResource BoolToVis}}"/>
                     </StackPanel>
+                </Border>
 
-                    <ui:CardExpander Header="{lex:Locale Dialog.SlotConfig.Appearance}"
-                                     IsExpanded="True"
-                                     Margin="0,16,0,0"
-                                     HorizontalContentAlignment="Stretch">
-                        <StackPanel Margin="0,4,0,0">
-                            <Grid Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="90"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0"
-                                           Text="{lex:Locale Dialog.AddSlot.Label}"
-                                           Style="{StaticResource CompactSectionTitleTextStyle}"
-                                           VerticalAlignment="Center"/>
-                                <ui:TextBox Grid.Column="1"
-                                            Text="{Binding Slot.Label, UpdateSourceTrigger=PropertyChanged}"
-                                            PlaceholderText="{lex:Locale Dialog.AddSlot.DisplayLabelPlaceholder}"/>
-                            </Grid>
+                <!-- Summary tokens -->
+                <ItemsControl ItemsSource="{Binding SummaryTokens}"
+                              Visibility="{Binding HasSummaryTokens, Converter={StaticResource BoolToVis}}"
+                              Margin="0,0,0,12">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="6,2" CornerRadius="4"
+                                    Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                    BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                                    BorderThickness="1"
+                                    Margin="0,0,6,4">
+                                <TextBlock Text="{Binding}"
+                                           FontSize="11"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
 
-                            <Grid Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="90"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0"
-                                           Text="{lex:Locale Dialog.AddSlot.Color}"
-                                           FontSize="13"
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                           VerticalAlignment="Center"/>
-                                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                    <Border Width="56"
-                                            Height="36"
-                                            CornerRadius="8"
-                                            BorderBrush="{DynamicResource ControlElevationBorderBrush}"
-                                            BorderThickness="1"
-                                            Background="{Binding Slot.Color, Converter={StaticResource HexToBrush}}"
-                                            Cursor="Hand"
-                                            ToolTip="{lex:Locale Dialog.AddSlot.PickColor}"
-                                            MouseLeftButtonDown="ColorSwatch_MouseLeftButtonDown">
+                <!-- Required parameters -->
+                <ItemsControl ItemsSource="{Binding RequiredParameters}"
+                              ItemTemplate="{StaticResource SlotParameterFieldTemplate}"
+                              Visibility="{Binding HasRequiredParameters, Converter={StaticResource BoolToVis}}"/>
+
+                <Border Style="{StaticResource CompactStatusBorderStyle}"
+                        Margin="0,8,0,0"
+                        Visibility="{Binding HasValidationSummary, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="{Binding ValidationSummary}"
+                               Style="{StaticResource CompactStatusTextStyle}"/>
+                </Border>
+
+                <!-- === APPEARANCE SECTION === -->
+                <ui:CardExpander Header="{lex:Locale Dialog.AddSlot.Appearance}"
+                                 IsExpanded="{Binding IsAppearanceExpanded, Mode=OneWay}"
+                                 Margin="0,14,0,0"
+                                 HorizontalContentAlignment="Stretch"
+                                 Visibility="{Binding HasAppearanceOptions, Converter={StaticResource BoolToVis}}">
+                    <StackPanel Margin="0,4,0,0">
+                        <!-- Label -->
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="{lex:Locale Dialog.AddSlot.Label}"
+                                       FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                       VerticalAlignment="Center"/>
+                            <ui:TextBox Grid.Column="1"
+                                        Text="{Binding Slot.Label, UpdateSourceTrigger=PropertyChanged}"
+                                        PlaceholderText="{lex:Locale Dialog.AddSlot.DisplayLabelPlaceholder}"/>
+                        </Grid>
+
+                        <!-- Color -->
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="{lex:Locale Dialog.AddSlot.Color}"
+                                       FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                       VerticalAlignment="Center"/>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <Border Width="56" Height="36"
+                                        CornerRadius="8"
+                                        BorderBrush="{DynamicResource ControlElevationBorderBrush}"
+                                        BorderThickness="1"
+                                        Background="{Binding Slot.Color, Converter={StaticResource HexToBrush}}"
+                                        Cursor="Hand"
+                                        ToolTip="{lex:Locale Dialog.AddSlot.PickColor}"
+                                        MouseLeftButtonDown="ColorSwatch_MouseLeftButtonDown">
+                                    <Grid>
                                         <ui:SymbolIcon Symbol="Drop24"
                                                        FontSize="16"
                                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center"/>
-                                    </Border>
-                                </StackPanel>
-                            </Grid>
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
 
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="90"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0"
-                                           Text="{lex:Locale Dialog.AddSlot.Icon}"
-                                           FontSize="13"
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                           VerticalAlignment="Center"/>
-                                <controls:IconSelector Grid.Column="1"
-                                                        IconKey="{Binding Slot.IconKey}"
-                                                        BrowseClicked="PickIcon_Click"/>
-                            </Grid>
-                        </StackPanel>
-                    </ui:CardExpander>
+                        <!-- Icon -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="{lex:Locale Dialog.AddSlot.Icon}"
+                                       FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                       VerticalAlignment="Center"/>
+                            <controls:IconSelector Grid.Column="1"
+                                                    IconKey="{Binding Slot.IconKey}"
+                                                    BrowseClicked="PickIcon_Click"/>
+                        </Grid>
+                    </StackPanel>
+                </ui:CardExpander>
 
-                    <ui:CardExpander Header="{lex:Locale Dialog.AddSlot.Optional}"
-                                     IsExpanded="False"
-                                     Margin="0,10,0,0"
-                                     HorizontalContentAlignment="Stretch"
-                                     Visibility="{Binding HasOptionalParameters, Converter={StaticResource BoolToVis}}">
-                        <StackPanel Margin="0,4,0,0">
-                            <ItemsControl ItemsSource="{Binding OptionalParameters}"
-                                          ItemTemplate="{StaticResource SlotParameterFieldTemplate}"/>
-                        </StackPanel>
-                    </ui:CardExpander>
+                <!-- === ADVANCED SECTION === -->
+                <ui:CardExpander Header="{lex:Locale Dialog.AddSlot.Advanced}"
+                                 IsExpanded="{Binding IsAdvancedExpanded, Mode=OneWay}"
+                                 Margin="0,10,0,0"
+                                 HorizontalContentAlignment="Stretch"
+                                 Visibility="{Binding HasOptionalSettings, Converter={StaticResource BoolToVis}}">
+                    <StackPanel Margin="0,4,0,0">
+                        <ItemsControl ItemsSource="{Binding OptionalParameters}"
+                                      ItemTemplate="{StaticResource SlotParameterFieldTemplate}"
+                                      Visibility="{Binding HasOptionalParameters, Converter={StaticResource BoolToVis}}"/>
 
-                    <ui:CardExpander Header="{lex:Locale Dialog.AddSlot.Advanced}"
-                                     IsExpanded="False"
-                                     Margin="0,10,0,0"
-                                     HorizontalContentAlignment="Stretch"
-                                     Visibility="{Binding HasAdvancedParameters, Converter={StaticResource BoolToVis}}">
-                        <StackPanel Margin="0,4,0,0">
-                            <ItemsControl ItemsSource="{Binding AdvancedParameters}"
-                                          ItemTemplate="{StaticResource SlotParameterFieldTemplate}"/>
-                        </StackPanel>
-                    </ui:CardExpander>
-                </StackPanel>
+                        <Border Margin="0,14,0,0"
+                                Visibility="{Binding HasAdvancedParameters, Converter={StaticResource BoolToVis}}">
+                            <StackPanel>
+                                <TextBlock Text="{lex:Locale Dialog.AddSlot.Advanced}"
+                                           Style="{StaticResource CompactSectionTitleTextStyle}"
+                                           Margin="0,0,0,8"/>
+                                <ItemsControl ItemsSource="{Binding AdvancedParameters}"
+                                              ItemTemplate="{StaticResource SlotParameterFieldTemplate}"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ui:CardExpander>
             </StackPanel>
         </ScrollViewer>
     </Grid>

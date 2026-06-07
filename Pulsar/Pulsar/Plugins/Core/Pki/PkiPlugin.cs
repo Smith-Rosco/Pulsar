@@ -112,7 +112,8 @@ namespace Pulsar.Plugins.Core.Pki
                     Version = Version,
                     Author = Author,
                     DocumentationUrl = DocumentationUrl,
-                    License = "MIT"
+                    License = "MIT",
+                    IsPrimary = true
                 },
                 Schema = new ConfigSchema
                 {
@@ -165,6 +166,9 @@ namespace Pulsar.Plugins.Core.Pki
                         Name = "fill",
                         Label = "Fill Secret",
                         Description = "Fill a saved secret into the active application.",
+                        SuggestedLabelTemplate = "Fill Secret",
+                        SuggestedIconKey = "E72E",
+                        SuggestedColorHex = "#4CAF50",
                         Aliases = new List<string> { "inject" },
                         ParameterAliases = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                         {

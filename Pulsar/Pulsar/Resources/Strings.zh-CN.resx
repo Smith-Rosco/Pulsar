@@ -1900,4 +1900,52 @@
   <data name="Bookmarklet.Error.InjectionFailed" xml:space="preserve">
     <value>执行书签脚本时出错: {0}</value>
   </data>
+  <data name="Dialog.AddSlot.CardSwitchApp" xml:space="preserve">
+    <value>切换应用</value>
+  </data>
+  <data name="Dialog.AddSlot.CardSwitchAppDesc" xml:space="preserve">
+    <value>无需输入名称即可切换到正在运行的应用。</value>
+  </data>
+  <data name="Dialog.AddSlot.CardOpenTarget" xml:space="preserve">
+    <value>打开目标</value>
+  </data>
+  <data name="Dialog.AddSlot.CardOpenTargetDesc" xml:space="preserve">
+    <value>打开程序、文件、文件夹或URL。</value>
+  </data>
+  <data name="Dialog.AddSlot.CardSendKeys" xml:space="preserve">
+    <value>发送按键</value>
+  </data>
+  <data name="Dialog.AddSlot.CardSendKeysDesc" xml:space="preserve">
+    <value>向活动窗口发送按键序列或粘贴文本。</value>
+  </data>
+  <data name="Dialog.AddSlot.CardFillSecret" xml:space="preserve">
+    <value>填写凭证</value>
+  </data>
+  <data name="Dialog.AddSlot.CardFillSecretDesc" xml:space="preserve">
+    <value>将已保存的凭证填入活动字段。</value>
+  </data>
+  <data name="Dialog.AddSlot.CardRunScript" xml:space="preserve">
+    <value>运行脚本</value>
+  </data>
+  <data name="Dialog.AddSlot.CardRunScriptDesc" xml:space="preserve">
+    <value>执行脚本或自动化流程。</value>
+  </data>
+  <data name="Dialog.AddSlot.CardSystem" xml:space="preserve">
+    <value>系统</value>
+  </data>
+  <data name="Dialog.AddSlot.CardSystemDesc" xml:space="preserve">
+    <value>打开设置或管理快速添加配置。</value>
+  </data>
+  <data name="Dialog.AddSlot.BrowseAll" xml:space="preserve">
+    <value>浏览所有槽位类型...</value>
+  </data>
+  <data name="Dialog.AddSlot.SearchPlaceholder" xml:space="preserve">
+    <value>搜索槽位类型...</value>
+  </data>
+  <data name="Dialog.AddSlot.Behavior" xml:space="preserve">
+    <value>行为</value>
+  </data>
+  <data name="Dialog.AddSlot.BackToPicker" xml:space="preserve">
+    <value>返回选择器</value>
+  </data>
 </root>

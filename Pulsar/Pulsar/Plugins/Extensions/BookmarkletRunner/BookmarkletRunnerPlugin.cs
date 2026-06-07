@@ -77,7 +77,8 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
                     Version = Version,
                     Author = Author,
                     DocumentationUrl = DocumentationUrl,
-                    License = "MIT"
+                    License = "MIT",
+                    IsPrimary = true
                 },
                 Schema = null,
                 UI = new UIHints
@@ -104,6 +105,9 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
                         Name = "run",
                         Label = "Run Bookmarklet",
                         Description = "Load and execute a bookmarklet script file in the active browser.",
+                        SuggestedLabelTemplate = "Run {path}",
+                        SuggestedIconKey = "E896",
+                        SuggestedColorHex = "#FF6B6B",
                         Parameters = new List<SlotParameterMetadata>
                         {
                             new()

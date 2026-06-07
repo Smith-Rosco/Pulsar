@@ -1,60 +1,37 @@
 using System.Windows;
 using System.Windows.Controls;
-using Pulsar.Models;
 using Pulsar.ViewModels.Dialogs;
 
 namespace Pulsar.Views.Dialogs.Contents
 {
-    public partial class SlotConfigurationDialogContent : UserControl
+    public partial class SlotConfigurationDialogContent
     {
         public SlotConfigurationDialogContent()
         {
             InitializeComponent();
         }
 
-        private async void SlotParameterPicker_Click(object sender, RoutedEventArgs e)
+        private SlotEditorViewModel? GetViewModel()
         {
-            if (sender is Wpf.Ui.Controls.Button button
-                && button.Tag is SlotParameterEditorField field
-                && DataContext is SlotConfigurationDialogViewModel viewModel)
+            return DataContext as SlotEditorViewModel;
+        }
+
+        private void SlotParameterPicker_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement element && element.Tag is Models.SlotParameterEditorField field)
             {
-                await viewModel.PickParameterValueAsync(field);
+                _ = GetViewModel()?.PickParameterValueAsync(field);
             }
         }
 
-        private void ActionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void ColorSwatch_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            if (sender is System.Windows.Controls.ComboBox comboBox
-                && comboBox.SelectedValue is string action
-                && DataContext is SlotConfigurationDialogViewModel viewModel)
-            {
-                viewModel.SetAction(action);
-            }
+            _ = GetViewModel()?.PickColorAsync();
         }
 
-        private async void PickIcon_Click(object? sender, EventArgs e)
+        private void PickIcon_Click(object sender, System.EventArgs e)
         {
-            if (DataContext is SlotConfigurationDialogViewModel viewModel)
-            {
-                await viewModel.PickIconAsync();
-            }
-        }
-
-        private async void ColorSwatch_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            if (DataContext is SlotConfigurationDialogViewModel viewModel)
-            {
-                await viewModel.PickColorAsync();
-                e.Handled = true;
-            }
-        }
-
-        private async void PickColor_Click(object sender, RoutedEventArgs e)
-        {
-            if (DataContext is SlotConfigurationDialogViewModel viewModel)
-            {
-                await viewModel.PickColorAsync();
-            }
+            _ = GetViewModel()?.PickIconAsync();
         }
     }
 }
