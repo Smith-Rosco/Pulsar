@@ -10,9 +10,10 @@
       xmlns:controls="clr-namespace:Pulsar.Views.Controls"
       xmlns:tutorial="clr-namespace:Pulsar.Helpers.Tutorial"
       xmlns:sys="clr-namespace:System;assembly=mscorlib"
+      xmlns:lex="clr-namespace:Pulsar.Core.Localization"
       mc:Ignorable="d" 
       d:DesignHeight="800" d:DesignWidth="800"
-      Title="Slots Manager"
+      Title="{lex:Locale Settings.Slots.Title}"
       Foreground="{DynamicResource TextFillColorPrimaryBrush}">
 
     <Page.Resources>
@@ -66,7 +67,7 @@
                                        FontSize="14" 
                                        FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                            <TextBlock Text="{Binding Slot, StringFormat='Position {0}'}" 
+                            <TextBlock Text="{Binding Slot, StringFormat={lex:Locale Settings.Slots.PositionFormat}}" 
                                        FontSize="12"
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                         </StackPanel>
@@ -85,8 +86,8 @@
 
         <!-- Unified Page Header: Title + Context Switcher + Profile Actions all in one row -->
         <controls:SettingsPageHeader Grid.Row="0"
-                                     Title="Slots"
-                                     Description="Configure actions for each context">
+                                     Title="{lex:Locale Settings.Slots.Slots}"
+                                     Description="{lex:Locale Settings.Slots.Description}">
             <controls:SettingsPageHeader.ActionsContent>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
 
@@ -123,7 +124,7 @@
                                                Text="{Binding DisplayName}"
                                                VerticalAlignment="Center"/>
                                     <TextBlock Grid.Column="2"
-                                               Text="{Binding SlotCount, StringFormat='{}{0} slots'}"
+                                               Text="{Binding SlotCount, StringFormat={lex:Locale Settings.Slots.SlotCountFormat}}"
                                                FontSize="11"
                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                Margin="8,0,0,0"
@@ -144,14 +145,14 @@
                                Icon="{ui:SymbolIcon Edit20}"
                                Command="{Binding EditProfileCommand}"
                                Visibility="{Binding CanEditProfile, Converter={StaticResource BoolToVis}}"
-                               ToolTip="Edit Profile"
+                               ToolTip="{lex:Locale Settings.Slots.EditProfile}"
                                Margin="0,0,6,0"/>
 
                     <!-- Add Profile -->
-                    <ui:Button Content="New Profile"
+                    <ui:Button Content="{lex:Locale Settings.Slots.NewProfile}"
                                Icon="{ui:SymbolIcon Add24}"
                                Style="{StaticResource PulsarSecondaryButtonStyle}"
-                               ToolTip="Add New Profile"
+                               ToolTip="{lex:Locale Settings.Slots.NewProfileTooltip}"
                                Command="{Binding AddProfileDialogCommand}"
                                Margin="0,0,6,0"/>
 
@@ -159,7 +160,7 @@
                     <ui:Button Style="{StaticResource PulsarIconButtonStyle}"
                                Icon="{ui:SymbolIcon Delete24}"
                                Command="{Binding DeleteProfileCommand}"
-                               ToolTip="Delete Current Profile"
+                               ToolTip="{lex:Locale Settings.Slots.DeleteProfileTooltip}"
                                Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                                Visibility="{Binding CanDeleteProfile, Converter={StaticResource BoolToVis}}"/>
 
@@ -186,9 +187,9 @@
                     </Style>
                 </StackPanel.Style>
                 <ui:SymbolIcon Symbol="DialPadOff24" FontSize="64" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Margin="0,0,0,16"/>
-                <TextBlock Text="No Slots Configured" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,6"/>
-                <TextBlock Text="Add a slot to start customizing this menu." Foreground="{DynamicResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" Margin="0,0,0,20"/>
-                <ui:Button Content="Add First Slot"
+                <TextBlock Text="{lex:Locale Settings.Slots.NoSlotsConfigured}" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                <TextBlock Text="{lex:Locale Settings.Slots.AddSlotHint}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+                <ui:Button Content="{lex:Locale Settings.Slots.AddFirstSlot}"
                            Icon="{ui:SymbolIcon Add24}"
                            Style="{StaticResource PulsarPrimaryButtonStyle}"
                            Command="{Binding AddSlotDialogCommand}"
@@ -221,130 +222,88 @@
                               dd:DragDrop.DragAdornerTemplate="{StaticResource SlotCardDragAdornerTemplate}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type models:PluginSlot}">
-                            <!-- Drag Handle removed: whole card is draggable via Cursor=SizeAll -->
-                            <controls:ExpandableCard
-                                             x:Name="SlotCard"
-                                             IconKey="{Binding IconKey}"
-                                             OrbBackground="{Binding Color, Converter={StaticResource HexToBrush}}"
-                                             Title="{Binding Label}"
-                                             Subtitle="{Binding ActionLabel}"
-                                             Cursor="SizeAll"
-                                            IsToggleVisible="False"
-                                            PrimaryActionVisibility="Collapsed"
-                                            PageDataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Page}}">
-                                <controls:ExpandableCard.CardContextMenu>
-                                    <ContextMenu Tag="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
-                                        <ContextMenu.Resources>
-                                            <ResourceDictionary>
-                                                <ResourceDictionary.MergedDictionaries>
-                                                    <ui:ControlsDictionary/>
-                                                </ResourceDictionary.MergedDictionaries>
-                                            </ResourceDictionary>
-                                        </ContextMenu.Resources>
-                                        <MenuItem Header="Edit Slot"
-                                                  Click="ContextEdit_Click"
-                                                  Tag="{Binding Tag, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                                        <Separator/>
-                                        <MenuItem Header="Remove Slot"
-                                                  Foreground="{DynamicResource SystemFillColorCriticalBrush}"
-                                                  Click="ContextRemove_Click"
-                                                  Tag="{Binding Tag, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                                    </ContextMenu>
-                                </controls:ExpandableCard.CardContextMenu>
+                            <Border x:Name="SlotCard"
+                                    Margin="0,0,0,8"
+                                    Padding="12,10"
+                                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Cursor="SizeAll">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
 
-                                <!-- Header Content: Position badge -->
-                                <controls:ExpandableCard.HeaderContent>
-                                     <Border Style="{StaticResource SlotChipBorderStyle}"
-                                             Padding="5,1"
-                                             VerticalAlignment="Center">
-                                         <TextBlock Text="{Binding Slot, StringFormat='#{0}'}"
-                                                    Style="{StaticResource SlotCaptionChipTextStyle}"
-                                                    FontSize="10"/>
-                                     </Border>
-                                 </controls:ExpandableCard.HeaderContent>
+                                    <!-- Slot Orb -->
+                                    <Border Grid.Column="0"
+                                            Style="{StaticResource SlotOrbContainerStyle}"
+                                            Margin="0,0,10,0"
+                                            Background="{Binding Color, Converter={StaticResource HexToBrush}}">
+                                        <controls:SlotOrb IconKey="{Binding IconKey}"
+                                                           Size="28" Width="28" Height="28"
+                                                           Margin="5"
+                                                           IsTransparent="True"
+                                                           ShowActiveGlow="False"/>
+                                    </Border>
 
-                                <!-- Expanded Content -->
-                                <controls:ExpandableCard.ExpandedContent>
-                                    <StackPanel Margin="0,4,0,6"
-                                                Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                Loaded="ExpandedPanel_Loaded">
-
-                                        <!-- Type + Health + SummaryTokens info row -->
-                                        <WrapPanel Margin="0,0,0,8">
-                                            <!-- Type badge -->
-                                             <Border Style="{StaticResource SlotChipBorderStyle}"
-                                                     Visibility="{Binding TypeBadge, Converter={StaticResource StringEmptyToVis}, FallbackValue=Collapsed}"
-                                                     ToolTip="Plugin type">
-                                                  <StackPanel Orientation="Horizontal">
-                                                      <TextBlock Text="Type · " Style="{StaticResource SlotCaptionChipTextStyle}"/>
-                                                      <TextBlock Text="{Binding TypeBadge}"
-                                                                 Style="{StaticResource SlotValueChipTextStyle}">
-                                                          <TextBlock.Foreground>
-                                                              <MultiBinding Converter="{StaticResource SlotBrushConverter}" ConverterParameter="Type">
-                                                                  <Binding Path="TypeToneKey"/>
-                                                                  <Binding RelativeSource="{RelativeSource Self}"/>
-                                                              </MultiBinding>
-                                                          </TextBlock.Foreground>
-                                                      </TextBlock>
-                                                  </StackPanel>
-                                              </Border>
-                                             <!-- Health badge -->
-                                             <Border Style="{StaticResource SlotChipBorderStyle}"
-                                                     ToolTip="Configuration health status">
-                                                  <StackPanel Orientation="Horizontal">
-                                                      <TextBlock Text="Health · " Style="{StaticResource SlotCaptionChipTextStyle}"/>
-                                                      <TextBlock Text="{Binding HealthBadgeText}"
-                                                                 Style="{StaticResource SlotValueChipTextStyle}">
-                                                          <TextBlock.Foreground>
-                                                              <MultiBinding Converter="{StaticResource SlotBrushConverter}" ConverterParameter="Health">
-                                                                  <Binding Path="HealthToneKey"/>
-                                                                  <Binding RelativeSource="{RelativeSource Self}"/>
-                                                              </MultiBinding>
-                                                          </TextBlock.Foreground>
-                                                      </TextBlock>
-                                                  </StackPanel>
-                                              </Border>
-                                            <!-- Summary tokens -->
-                                            <ItemsControl ItemsSource="{Binding SummaryTokens}"
-                                                          Visibility="{Binding HasSummaryTokens, Converter={StaticResource BoolToVis}}"
-                                                          ToolTip="Configuration summary">
-                                                <ItemsControl.ItemsPanel>
-                                                    <ItemsPanelTemplate>
-                                                        <WrapPanel Orientation="Horizontal"/>
-                                                    </ItemsPanelTemplate>
-                                                </ItemsControl.ItemsPanel>
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <Border Style="{StaticResource SlotSummaryTokenBorderStyle}">
-                                                            <TextBlock Text="{Binding}"
-                                                                       Style="{StaticResource SlotCaptionChipTextStyle}"
-                                                                       MaxWidth="120"
-                                                                       TextTrimming="CharacterEllipsis"/>
-                                                        </Border>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-                                        </WrapPanel>
-
-                                        <!-- Action buttons row -->
+                                    <!-- Title + Subtitle + Position Badge -->
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                         <StackPanel Orientation="Horizontal">
-                                            <ui:Button Content="Edit Slot"
-                                                       Icon="{ui:SymbolIcon Edit24}"
-                                                       Style="{StaticResource PulsarSecondaryButtonStyle}"
-                                                       Margin="0,0,8,0"
-                                                       Click="ExpandedEdit_Click"
-                                                       Tag="{Binding}"/>
-                                            <ui:Button Icon="{ui:SymbolIcon Delete24}"
-                                                       Style="{StaticResource PulsarIconButtonStyle}"
-                                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                                       ToolTip="Remove Slot"
-                                                       Click="ExpandedRemove_Click"
-                                                       Tag="{Binding}"/>
+                                            <TextBlock Text="{Binding Label}"
+                                                       FontSize="14"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                                            <Border Style="{StaticResource SlotChipBorderStyle}"
+                                                    Padding="5,1"
+                                                    Margin="6,0,0,0"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Slot, StringFormat='#{0}'}"
+                                                           Style="{StaticResource SlotCaptionChipTextStyle}"
+                                                           FontSize="10"/>
+                                            </Border>
                                         </StackPanel>
-
+                                        <TextBlock Text="{Binding ActionLabel}"
+                                                   FontSize="12"
+                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                   Visibility="{Binding ActionLabel, Converter={StaticResource StringEmptyToVis}}"/>
                                     </StackPanel>
-                                </controls:ExpandableCard.ExpandedContent>
-                            </controls:ExpandableCard>
+
+                                    <!-- Edit Button -->
+                                    <ui:Button Grid.Column="2"
+                                               x:Name="EditButton"
+                                               Icon="{ui:SymbolIcon Edit24}"
+                                               Style="{StaticResource PulsarIconButtonStyle}"
+                                               ToolTip="{lex:Locale Settings.Slots.EditSlot}"
+                                               Click="SlotEdit_Click"
+                                               Tag="{Binding}"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,4,0"
+                                               Visibility="Collapsed"/>
+
+                                    <!-- Delete Button -->
+                                    <ui:Button Grid.Column="3"
+                                               x:Name="DeleteButton"
+                                               Icon="{ui:SymbolIcon Delete24}"
+                                               Style="{StaticResource PulsarIconButtonStyle}"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                               ToolTip="{lex:Locale Settings.Slots.RemoveSlot}"
+                                               Click="SlotRemove_Click"
+                                               Tag="{Binding}"
+                                               VerticalAlignment="Center"
+                                               Visibility="Collapsed"/>
+                                </Grid>
+                            </Border>
+
+                            <DataTemplate.Triggers>
+                                <Trigger SourceName="SlotCard" Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="EditButton" Property="Visibility" Value="Visible"/>
+                                    <Setter TargetName="DeleteButton" Property="Visibility" Value="Visible"/>
+                                </Trigger>
+                            </DataTemplate.Triggers>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
@@ -353,7 +312,7 @@
             <!-- FAB: Add Slot (floating, bottom-right) -->
             <ui:Button x:Name="AddSlotFab"
                        Icon="{ui:SymbolIcon Add24}"
-                       Content="Add Slot"
+                       Content="{lex:Locale Settings.Slots.AddSlot}"
                        Style="{StaticResource PulsarPrimaryButtonStyle}"
                        HorizontalAlignment="Right"
                        VerticalAlignment="Bottom"
