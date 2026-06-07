@@ -17,6 +17,7 @@
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ui:ControlsDictionary/>
                 <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/SlotStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
@@ -631,9 +632,6 @@
                         <Border Margin="0,14,0,0"
                                 Visibility="{Binding HasAdvancedParameters, Converter={StaticResource BoolToVis}}">
                             <StackPanel>
-                                <TextBlock Text="{lex:Locale Dialog.AddSlot.Advanced}"
-                                           Style="{StaticResource CompactSectionTitleTextStyle}"
-                                           Margin="0,0,0,8"/>
                                 <ItemsControl ItemsSource="{Binding AdvancedParameters}"
                                               ItemTemplate="{StaticResource SlotParameterFieldTemplate}"/>
                             </StackPanel>

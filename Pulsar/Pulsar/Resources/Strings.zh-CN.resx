@@ -1948,4 +1948,23 @@
   <data name="Dialog.AddSlot.BackToPicker" xml:space="preserve">
     <value>返回选择器</value>
   </data>
+  <!-- ==================== Plugin.Command ==================== -->
+  <data name="Plugin.Command.Success.Executed" xml:space="preserve">
+    <value>已执行 {0}</value>
+  </data>
+  <data name="Plugin.Command.Error.ExecutionFailed" xml:space="preserve">
+    <value>执行失败：{0}</value>
+  </data>
+  <data name="Plugin.Command.Success.KeysSent" xml:space="preserve">
+    <value>按键已发送</value>
+  </data>
+  <data name="Plugin.Command.Error.Cancelled" xml:space="preserve">
+    <value>SendKeys 已取消</value>
+  </data>
+  <data name="Plugin.Command.Error.SendKeysFailed" xml:space="preserve">
+    <value>SendKeys 失败：{0}</value>
+  </data>
+  <data name="Plugin.Command.UnknownAction" xml:space="preserve">
+    <value>未知操作：{0}</value>
+  </data>
 </root>

@@ -216,7 +216,7 @@ This file provides essential context, conventions, and routing for AI agents wor
 4. Implement `ExecuteAsync()` and required metadata properties
 5. Use `PulsarContext` for window information (never query live state)
 
-**Example**: `Pulsar/Pulsar/Plugins/Extensions/BasicCommand/SimpleCommandPlugin.cs` (146 lines)
+**Example**: `Pulsar/Pulsar/Plugins/Extensions/Command/CommandPlugin.cs` (~200 lines)
 
 **Deep Dive**: 
 - [PLUGIN_DEVELOPMENT.md](./PLUGIN_DEVELOPMENT.md) - Complete guide
@@ -379,13 +379,13 @@ dotnet restore Pulsar/Pulsar/Pulsar.csproj
 
 ### Code Examples
 - **Plugin Examples**:
-  - `Pulsar/Pulsar/Plugins/Extensions/BasicCommand/SimpleCommandPlugin.cs` - Modern plugin (146 lines)
-  - `Pulsar/Pulsar/Plugins/Extensions/BasicCommand/SimpleCommandPlugin.Refactored.cs` - Annotated example (168 lines)
+  - `Pulsar/Pulsar/Plugins/Extensions/Command/CommandPlugin.cs` - Modern plugin (~200 lines) with extracted metadata, key lexer, and localization
+  - `Pulsar/Pulsar/Plugins/Extensions/Command/CommandPluginMetadata.cs` - Extracted metadata factory
 - **Core Components**:
   - `Pulsar/Pulsar/Core/Plugin/PluginBase.cs` - Plugin base class (247 lines)
   - `Pulsar/Pulsar/Core/Plugin/PluginFactory.cs` - Plugin factory (213 lines)
 
 ---
 
-*Last Updated: 2026-03-17*  
-*Version: 2.1.0 (Updated with plugin refactoring documentation)*
+*Last Updated: 2026-06-07*  
+*Version: 2.2.0 (Updated with CommandPlugin refactoring)*

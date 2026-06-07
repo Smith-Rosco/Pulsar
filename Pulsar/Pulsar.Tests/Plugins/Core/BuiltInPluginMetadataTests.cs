@@ -1,11 +1,13 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Pulsar.Core.Localization;
+using Pulsar.Core.Plugin;
 using Pulsar.Plugins.Core.Pki;
 using Pulsar.Plugins.Core.Pki.Contracts;
 using Pulsar.Plugins.Core.SystemCommand;
 using Pulsar.Plugins.Core.WinSwitcher;
-using Pulsar.Plugins.Extensions.BasicCommand;
+using Pulsar.Plugins.Extensions.Command;
 
 namespace Pulsar.Tests.Plugins.Core
 {
@@ -14,7 +16,15 @@ namespace Pulsar.Tests.Plugins.Core
         [Fact]
         public void CommandRunnerMetadata_ShouldUseCanonicalDisplayIdentityAndActions()
         {
-            var plugin = new SimpleCommandPlugin(NullLogger<SimpleCommandPlugin>.Instance);
+            var keySender = new Mock<IKeySender>();
+            var processLauncher = new Mock<IProcessLauncher>();
+            var loc = new Mock<ILocalizationService>();
+            loc.Setup(l => l[It.IsAny<string>()]).Returns((string key) => key);
+            var plugin = new CommandPlugin(
+                NullLogger<CommandPlugin>.Instance,
+                keySender.Object,
+                processLauncher.Object,
+                loc.Object);
 
             var metadata = plugin.GetMetadata();
 

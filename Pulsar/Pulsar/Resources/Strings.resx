@@ -1985,4 +1985,23 @@
   <data name="Dialog.AddSlot.BackToPicker" xml:space="preserve">
     <value>Back to picker</value>
   </data>
+  <!-- ==================== Plugin.Command ==================== -->
+  <data name="Plugin.Command.Success.Executed" xml:space="preserve">
+    <value>Executed {0}</value>
+  </data>
+  <data name="Plugin.Command.Error.ExecutionFailed" xml:space="preserve">
+    <value>Execution failed: {0}</value>
+  </data>
+  <data name="Plugin.Command.Success.KeysSent" xml:space="preserve">
+    <value>Keys sent</value>
+  </data>
+  <data name="Plugin.Command.Error.Cancelled" xml:space="preserve">
+    <value>SendKeys cancelled</value>
+  </data>
+  <data name="Plugin.Command.Error.SendKeysFailed" xml:space="preserve">
+    <value>SendKeys failed: {0}</value>
+  </data>
+  <data name="Plugin.Command.UnknownAction" xml:space="preserve">
+    <value>Unknown action: {0}</value>
+  </data>
 </root>
