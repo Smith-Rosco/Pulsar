@@ -1393,7 +1393,9 @@ namespace Pulsar.ViewModels
             
             if (selectedColor != null)
             {
-                item.Color = selectedColor;
+                item.Color = string.Equals(selectedColor, "#FFFFFF", StringComparison.OrdinalIgnoreCase)
+                    ? string.Empty
+                    : selectedColor;
                 // [Fix] Ensure the Brush converter updates by notifying property changed on item if needed, 
                 // but PluginSlot implements INPC so setting property is enough.
                 // However, the SlotViewModel using this item needs to update its CustomColor.

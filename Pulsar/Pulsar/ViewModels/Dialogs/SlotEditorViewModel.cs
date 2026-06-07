@@ -547,12 +547,7 @@ namespace Pulsar.ViewModels.Dialogs
                 }
                 _lastSuggestedIcon = suggestedIcon;
 
-                string suggestedColor = BuildSuggestedColor(actionMeta);
-                if (string.IsNullOrWhiteSpace(Slot.Color) || string.Equals(Slot.Color, _lastSuggestedColor, StringComparison.OrdinalIgnoreCase))
-                {
-                    Slot.Color = suggestedColor;
-                }
-                _lastSuggestedColor = suggestedColor;
+                _lastSuggestedColor = BuildSuggestedColor(actionMeta);
             }
             finally
             {
