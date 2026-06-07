@@ -207,7 +207,7 @@ namespace Pulsar.Views.Dialogs.Contents
             }
         }
 
-        private async void PickIcon_Click(object sender, RoutedEventArgs e)
+        private async void PickIcon_Click(object? sender, EventArgs e)
         {
             if (DataContext is AddSlotViewModel viewModel)
             {

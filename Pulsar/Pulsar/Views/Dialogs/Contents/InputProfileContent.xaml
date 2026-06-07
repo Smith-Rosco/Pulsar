@@ -69,7 +69,7 @@
             <!-- Info -->
             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                 <TextBlock Text="Selected Icon" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                <TextBlock Text="{Binding IconKey}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                <TextBlock Text="{Binding IconDisplayText}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
             </StackPanel>
 
             <!-- Change Button -->

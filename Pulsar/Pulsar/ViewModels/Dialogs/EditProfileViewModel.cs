@@ -25,6 +25,13 @@ namespace Pulsar.ViewModels.Dialogs
         [ObservableProperty]
         private string _iconKey = "\uE945";
 
+        public string IconDisplayText => IconHelper.ResolveIconDisplay(IconKey);
+
+        partial void OnIconKeyChanged(string value)
+        {
+            OnPropertyChanged(nameof(IconDisplayText));
+        }
+
         /// <summary>
         /// 显示用的进程名 - 首字母大写格式
         /// </summary>

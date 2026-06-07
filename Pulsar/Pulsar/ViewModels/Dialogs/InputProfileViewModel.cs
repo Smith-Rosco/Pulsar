@@ -30,6 +30,13 @@ namespace Pulsar.ViewModels.Dialogs
         [ObservableProperty]
         private string _iconKey = "\uE945"; // Default App Icon
 
+        public string IconDisplayText => IconHelper.ResolveIconDisplay(IconKey);
+
+        partial void OnIconKeyChanged(string value)
+        {
+            OnPropertyChanged(nameof(IconDisplayText));
+        }
+
         [ObservableProperty]
         private string _errorMessage = string.Empty;
 
