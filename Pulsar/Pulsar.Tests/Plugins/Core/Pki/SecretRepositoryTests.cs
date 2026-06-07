@@ -62,6 +62,50 @@ namespace Pulsar.Tests.Plugins.Core.Pki
             parsed[secretId].EncryptedData.Should().Be("cipher");
         }
 
+        [Fact]
+        public async Task LoadAsync_ShouldRethrowAfterAllRetriesExhausted()
+        {
+            Directory.CreateDirectory(_tempDirectory);
+            await File.WriteAllTextAsync(_filePath, "{}");
+
+            using var lockStream = new FileStream(_filePath, FileMode.Open, FileAccess.Read, FileShare.None);
+
+            var repository = new SecretRepository(_filePath);
+
+            var act = async () => await repository.LoadAsync();
+
+            await act.Should().ThrowAsync<IOException>();
+        }
+
+        [Fact]
+        public async Task SaveAsync_ShouldRethrowAfterAllRetriesExhausted()
+        {
+            Directory.CreateDirectory(_tempDirectory);
+            var repository = new SecretRepository(_filePath);
+
+            await repository.SaveAsync(new Dictionary<Guid, SecretPayload>());
+
+            using var lockStream = new FileStream(_filePath, FileMode.Open, FileAccess.Read, FileShare.None);
+
+            var act = async () => await repository.SaveAsync(new Dictionary<Guid, SecretPayload>
+            {
+                [Guid.NewGuid()] = new() { Label = "Test" }
+            });
+
+            await act.Should().ThrowAsync<IOException>();
+        }
+
+        [Fact]
+        public async Task LoadAsync_ShouldReturnEmptyDictionary_WhenFileDoesNotExist()
+        {
+            var repository = new SecretRepository(_filePath);
+
+            var result = await repository.LoadAsync();
+
+            result.Should().NotBeNull();
+            result.Should().BeEmpty();
+        }
+
         public void Dispose()
         {
             if (Directory.Exists(_tempDirectory))

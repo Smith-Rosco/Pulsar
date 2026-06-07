@@ -18,9 +18,25 @@ namespace Pulsar.Plugins.Core.Pki.Services.Input
             InputHelper.SendText(keys);
         }
 
-        public string EscapeForSendKeys(string? input)
+        public string SanitizeInput(string? input)
         {
             return input ?? string.Empty;
+        }
+
+        public void SendKeyCombination(string key)
+        {
+            _logger.LogDebug("[WindowsSendKeysWriter] Sending key combination: {Key}", key);
+            if (key.Length >= 2 && key[0] == '{' && key[^1] == '}')
+            {
+                string token = key[1..^1];
+                if (InputHelper.GetNamedKey(token) is ushort vk)
+                {
+                    InputHelper.SendKeyCombination(vk);
+                    return;
+                }
+            }
+
+            InputHelper.SendText(key);
         }
     }
 }

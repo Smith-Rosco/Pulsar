@@ -30,47 +30,50 @@ namespace Pulsar.Plugins.Core.Pki.Services
 
         public async Task<Dictionary<Guid, SecretPayload>> LoadAsync()
         {
-            // [Fix] 增加重试逻辑
+            IOException? lastException = null;
+
             for (int i = 0; i < 3; i++)
             {
                 try
                 {
                     if (!File.Exists(_filePath)) return new Dictionary<Guid, SecretPayload>();
 
-                    // 使用 FileShare.Read 允许其他进程同时读取
                     using var stream = new FileStream(_filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
                     return await JsonSerializer.DeserializeAsync<Dictionary<Guid, SecretPayload>>(stream)
                            ?? new Dictionary<Guid, SecretPayload>();
                 }
-                catch (IOException)
+                catch (IOException ex)
                 {
-                    if (i == 2) throw; // 最后一次失败则抛出
-                    await Task.Delay(50); // 等待 50ms 后重试
+                    lastException = ex;
+                    if (i < 2) await Task.Delay(50);
                 }
             }
-            return new Dictionary<Guid, SecretPayload>();
+
+            throw lastException!;
         }
 
         public async Task SaveAsync(Dictionary<Guid, SecretPayload> secrets)
         {
             var options = new JsonSerializerOptions { WriteIndented = true };
 
-            // [Fix] 增加重试逻辑
+            IOException? lastException = null;
+
             for (int i = 0; i < 3; i++)
             {
                 try
                 {
-                    // Create 会请求独占访问权
                     using var stream = File.Create(_filePath);
                     await JsonSerializer.SerializeAsync(stream, secrets, options);
-                    return; // 成功则退出
+                    return;
                 }
-                catch (IOException)
+                catch (IOException ex)
                 {
-                    if (i == 2) throw;
-                    await Task.Delay(50);
+                    lastException = ex;
+                    if (i < 2) await Task.Delay(50);
                 }
             }
+
+            throw lastException!;
         }
     }
 }

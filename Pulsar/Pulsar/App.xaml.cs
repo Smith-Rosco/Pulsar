@@ -182,9 +182,11 @@ namespace Pulsar
             serviceCollection.AddSingleton<IPkiExecutionService, PkiExecutionService>();
 
             // PKI Input Simulators
-            serviceCollection.AddSingleton<Pulsar.Plugins.Core.Pki.Services.Input.IUiaTextWriter, Pulsar.Plugins.Core.Pki.Services.Input.WindowsUiaTextWriter>();
             serviceCollection.AddSingleton<Pulsar.Plugins.Core.Pki.Services.Input.ISendKeysWriter, Pulsar.Plugins.Core.Pki.Services.Input.WindowsSendKeysWriter>();
-            serviceCollection.AddSingleton<Pulsar.Plugins.Core.Pki.Services.Input.IInputSimulator, Pulsar.Plugins.Core.Pki.Services.Input.WindowsInputSimulator>();
+
+            // Command Plugin Abstractions
+            serviceCollection.AddTransient<Core.Plugin.IKeySender, Plugins.Extensions.Command.KeySender>();
+            serviceCollection.AddTransient<Core.Plugin.IProcessLauncher, Plugins.Extensions.Command.ProcessLauncher>();
 
             // 4. UI Services
             serviceCollection.AddSingleton<RadialMenuViewModel>();

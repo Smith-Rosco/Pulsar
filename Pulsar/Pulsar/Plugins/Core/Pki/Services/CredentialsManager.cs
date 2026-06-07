@@ -1,7 +1,7 @@
 using System;
 using System.Security.Cryptography;
 using System.Text;
-
+using Microsoft.Extensions.Logging;
 using Pulsar.Plugins.Core.Pki.Contracts;
 
 namespace Pulsar.Plugins.Core.Pki.Services
@@ -13,6 +13,13 @@ namespace Pulsar.Plugins.Core.Pki.Services
     {
         // 使用 CurrentUser 作用域，这样只有当前登录的 Windows 用户才能解密
         private const DataProtectionScope Scope = DataProtectionScope.CurrentUser;
+
+        private readonly ILogger<CredentialsManager> _logger;
+
+        public CredentialsManager(ILogger<CredentialsManager> logger)
+        {
+            _logger = logger;
+        }
 
         public string Encrypt(string plainText)
         {
@@ -33,9 +40,10 @@ namespace Pulsar.Plugins.Core.Pki.Services
                 byte[] plainBytes = ProtectedData.Unprotect(encryptedBytes, null, Scope);
                 return Encoding.UTF8.GetString(plainBytes);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // 解密失败（可能是换了机器或用户）
+                _logger.LogWarning(ex, "[CredentialsManager] Decryption failed ({ExceptionType}: {Message})",
+                    ex.GetType().Name, ex.Message);
                 return string.Empty;
             }
         }

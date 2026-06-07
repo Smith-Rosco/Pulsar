@@ -6,11 +6,12 @@ namespace Pulsar.Plugins.Core.Pki.Models.Execution
 {
     public sealed class InjectionRequest
     {
-        private InjectionRequest(Guid secretId, bool autoEnter, IntPtr targetWindowHandle)
+        private InjectionRequest(Guid secretId, bool autoEnter, IntPtr targetWindowHandle, int injectionDelay)
         {
             SecretId = secretId;
             AutoEnter = autoEnter;
             TargetWindowHandle = targetWindowHandle;
+            InjectionDelay = injectionDelay;
         }
 
         public Guid SecretId { get; }
@@ -18,6 +19,8 @@ namespace Pulsar.Plugins.Core.Pki.Models.Execution
         public bool AutoEnter { get; }
 
         public IntPtr TargetWindowHandle { get; }
+
+        public int InjectionDelay { get; }
 
         public static bool TryCreate(
             IReadOnlyDictionary<string, string> args,
@@ -40,8 +43,9 @@ namespace Pulsar.Plugins.Core.Pki.Models.Execution
             }
 
             bool autoEnter = TryReadBool(args, "autoEnter") || TryReadBool(args, "autoSubmit");
+            int injectionDelay = TryReadInt(args, "injectionDelay") ?? 50;
 
-            request = new InjectionRequest(secretId, autoEnter, context.TargetWindowHandle);
+            request = new InjectionRequest(secretId, autoEnter, context.TargetWindowHandle, injectionDelay);
             errorMessage = string.Empty;
             return true;
         }
@@ -51,6 +55,14 @@ namespace Pulsar.Plugins.Core.Pki.Models.Execution
             return args.TryGetValue(key, out var rawValue)
                 && bool.TryParse(rawValue, out var value)
                 && value;
+        }
+
+        private static int? TryReadInt(IReadOnlyDictionary<string, string> args, string key)
+        {
+            return args.TryGetValue(key, out var rawValue)
+                && int.TryParse(rawValue, out var value)
+                ? value
+                : null;
         }
     }
 }

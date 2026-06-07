@@ -1,29 +1,6 @@
-# pki-runtime-architecture
+# pki-runtime-architecture (delta)
 
-## Purpose
-Define the PKI runtime execution model, validation flow, and failure boundaries for credential fill operations.
-## Requirements
-### Requirement: PKI plugin delegates runtime execution to a dedicated service
-The PKI plugin SHALL act as a thin adapter that preserves Pulsar plugin metadata and action compatibility while delegating credential-fill execution to a dedicated PKI application service.
-
-#### Scenario: Fill action uses application service
-- **WHEN** Pulsar executes `com.pulsar.pki` with the `fill` action
-- **THEN** the plugin delegates the request to the PKI execution service instead of directly loading secrets, decrypting data, or performing keystroke injection inside the plugin class
-
-#### Scenario: Inject alias remains supported
-- **WHEN** Pulsar executes `com.pulsar.pki` with the legacy `inject` action
-- **THEN** the plugin maps the request to the same PKI execution flow used by `fill`
-
-### Requirement: PKI execution flow is expressed as a validated request and deterministic plan
-The PKI runtime SHALL translate slot arguments and `PulsarContext` into a validated execution request and a deterministic injection plan before side effects occur.
-
-#### Scenario: Missing secret identifier is rejected before execution
-- **WHEN** the PKI runtime receives a fill request without a valid `secretId`
-- **THEN** it returns a recoverable error result before attempting secret lookup, focus restoration, or input injection
-
-#### Scenario: Valid request produces ordered execution steps
-- **WHEN** the PKI runtime receives a valid secret reference and target window context
-- **THEN** it produces an ordered plan that includes hiding the launcher, restoring focus, waiting for stabilization, injecting the account when present, injecting the password, and optionally pressing Enter
+## MODIFIED Requirements
 
 ### Requirement: PKI runtime treats SendKeys-first multi-field injection as the supported execution policy
 The PKI runtime MUST use the SendKeys-based text injection path as the supported policy for multi-field credential injection. The PKI runtime SHALL NOT include, register, or depend on any UIA-first text injection pathway (`IUiaTextWriter`, `WindowsUiaTextWriter`, `IInputSimulator`, `WindowsInputSimulator`). The `useUiaFirst` setting SHALL be removed from the plugin schema and settings model.
@@ -44,31 +21,7 @@ The PKI runtime MUST use the SendKeys-based text injection path as the supported
 - **WHEN** a user or profile references plugin settings for `com.pulsar.pki`
 - **THEN** the `useUiaFirst` property does not appear in the settings schema, metadata, or `PkiPluginSettings` model
 
-### Requirement: PKI runtime surfaces structured execution outcomes across failure boundaries
-The PKI runtime SHALL distinguish validation, secret lookup, decryption, focus restoration, and injection-execution failures so tests and logs can identify the failing stage without exposing plaintext secrets.
-
-#### Scenario: Secret lookup failure stops execution before focus change
-- **WHEN** the requested secret does not exist in the secret store
-- **THEN** the PKI runtime returns an error result and does not hide the launcher or attempt input injection
-
-#### Scenario: Injection execution failure is reported without leaking secret material
-- **WHEN** the injection executor throws during credential fill
-- **THEN** the PKI runtime returns an error result that identifies the execution stage without including plaintext account or password values in logs or messages
-
-### Requirement: PKI focus restoration SHALL use IFocusManager with verification
-The PKI injection executor SHALL restore focus to the target window through `IFocusManager.ActivateWindowAsync()` with `VerifyAfterActivation = true` rather than through the removed `IFocusRestorer`/`IWindowFocusSimulator` chain. Focus verification SHALL be performed before any credential text is injected.
-
-#### Scenario: PKI RestoreFocus step uses IFocusManager
-- **WHEN** the PKI injection plan reaches the `RestoreFocus` step
-- **THEN** the executor SHALL call `IFocusManager.ActivateWindowAsync(step.TargetWindowHandle)` with verification enabled
-
-#### Scenario: PKI injection aborts if focus verification fails
-- **WHEN** `IFocusManager.ActivateWindowAsync` returns a failed verification result during PKI injection
-- **THEN** the executor SHALL return `PkiExecutionResult.Fail(PkiExecutionStage.FocusRestore, ...)` and SHALL NOT proceed to inject credentials
-
-#### Scenario: IFocusRestorer and IWindowFocusSimulator are removed
-- **WHEN** the PKI subsystem resolves its focus dependencies
-- **THEN** it SHALL depend on `IFocusManager` directly, and the `IFocusRestorer` and `IWindowFocusSimulator` interfaces and their implementations SHALL be removed from the codebase
+## ADDED Requirements
 
 ### Requirement: PKI injection plan respects injectionDelay setting
 The PKI runtime SHALL use the `injectionDelay` argument (milliseconds, 0–1000) as the inter-step delay between keystroke operations (account→TAB, TAB→password, password→ENTER) instead of a hardcoded value. The initial focus-stabilization delay (100ms after RestoreFocus) SHALL remain independent of `injectionDelay`.
@@ -92,6 +45,10 @@ The `SendKeysInjectionExecutor` SHALL route `SendKey` injection steps through th
 - **WHEN** the injection plan reaches a `SendKey` step with value `{TAB}`
 - **THEN** the executor calls `ISendKeysWriter.SendKeyCombination("{TAB}")` instead of calling `InputHelper.GetNamedKey` or `InputHelper.SendKeyCombination` directly
 
+#### Scenario: SendKeyCombination delegate can be mocked in tests
+- **WHEN** a unit test configures a mock `ISendKeysWriter`
+- **THEN** the test can verify that `SendKeyCombination` was called with the expected key string
+
 ### Requirement: PKI injection execution has an overall timeout
 The `SendKeysInjectionExecutor` SHALL enforce an overall timeout for the injection sequence (default 15 seconds). If the sequence exceeds the timeout, the executor SHALL abort and return a failure result.
 
@@ -110,3 +67,8 @@ The `ISendKeysWriter` method `EscapeForSendKeys` SHALL be renamed to `SanitizeIn
 - **WHEN** `SanitizeInput` is called with a string containing SendKeys special characters (`+`, `^`, `%`, `~`, `(`, `)`, `{`, `}`)
 - **THEN** the method returns the input unchanged (because `InputHelper.SendText` uses Unicode key events)
 
+## REMOVED Requirements
+
+### Requirement: UIA-first text injection pathway
+**Reason**: The `IInputSimulator` / `WindowsInputSimulator` / `IUiaTextWriter` / `WindowsUiaTextWriter` types were registered in DI but never invoked by any production code path. The spec already mandates SendKeys-first as the supported policy.
+**Migration**: No migration needed. These types had no production callers. Remove DI registrations and delete the source files.

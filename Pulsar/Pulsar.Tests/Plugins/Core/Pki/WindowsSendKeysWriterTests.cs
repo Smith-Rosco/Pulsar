@@ -33,17 +33,17 @@ namespace Pulsar.Tests.Plugins.Core.Pki
         [InlineData("{{")]
         [InlineData("}}")]
         [InlineData("")]
-        public void EscapeForSendKeys_ShouldReturnInputUnchanged(string? input)
+        public void SanitizeInput_ShouldReturnInputUnchanged(string? input)
         {
-            string result = _writer.EscapeForSendKeys(input);
+            string result = _writer.SanitizeInput(input);
 
             result.Should().Be(input ?? string.Empty);
         }
 
         [Fact]
-        public void EscapeForSendKeys_ShouldReturnEmptyString_WhenInputIsNull()
+        public void SanitizeInput_ShouldReturnEmptyString_WhenInputIsNull()
         {
-            string result = _writer.EscapeForSendKeys(null);
+            string result = _writer.SanitizeInput(null);
 
             result.Should().BeEmpty();
         }

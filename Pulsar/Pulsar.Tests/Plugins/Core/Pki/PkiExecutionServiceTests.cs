@@ -99,6 +99,9 @@ namespace Pulsar.Tests.Plugins.Core.Pki
                 InjectionStepType.SendKey);
             capturedPlan.Steps[3].Value.Should().Be("ops@example.com");
             capturedPlan.Steps[7].Value.Should().Be("p@ssw0rd");
+            capturedPlan.Steps[4].DelayMilliseconds.Should().Be(50);
+            capturedPlan.Steps[6].DelayMilliseconds.Should().Be(50);
+            capturedPlan.Steps[8].DelayMilliseconds.Should().Be(50);
         }
 
         [Fact]
@@ -127,6 +130,71 @@ namespace Pulsar.Tests.Plugins.Core.Pki
                 InjectionStepType.Delay,
                 InjectionStepType.SendText);
             capturedPlan.Steps.Last().Value.Should().Be("p@ssw0rd");
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_ShouldUseConfiguredInjectionDelay()
+        {
+            var secretId = Guid.NewGuid();
+            var service = CreateService(out var secretStore, out var protector, out var executor);
+            var capturedPlan = default(InjectionPlan);
+
+            secretStore.Setup(x => x.LoadAsync()).ReturnsAsync(new Dictionary<Guid, SecretPayload>
+            {
+                [secretId] = new() { Account = "ops@example.com", EncryptedData = "cipher" }
+            });
+            protector.Setup(x => x.Decrypt("cipher")).Returns("p@ssw0rd");
+            executor
+                .Setup(x => x.ExecuteAsync(It.IsAny<InjectionPlan>()))
+                .Callback<InjectionPlan>(plan => capturedPlan = plan)
+                .ReturnsAsync((InjectionPlan plan) => PkiExecutionResult.Ok("ok", plan));
+
+            await service.ExecuteAsync(
+                new Dictionary<string, string>
+                {
+                    ["secretId"] = secretId.ToString(),
+                    ["injectionDelay"] = "200"
+                },
+                PulsarContextFactory.CreateTestContext());
+
+            capturedPlan.Should().NotBeNull();
+            capturedPlan!.Steps[4].DelayMilliseconds.Should().Be(200);
+            capturedPlan.Steps[6].DelayMilliseconds.Should().Be(200);
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_ShouldOmitDelaySteps_WhenInjectionDelayIsZero()
+        {
+            var secretId = Guid.NewGuid();
+            var service = CreateService(out var secretStore, out var protector, out var executor);
+            var capturedPlan = default(InjectionPlan);
+
+            secretStore.Setup(x => x.LoadAsync()).ReturnsAsync(new Dictionary<Guid, SecretPayload>
+            {
+                [secretId] = new() { Account = "ops@example.com", EncryptedData = "cipher" }
+            });
+            protector.Setup(x => x.Decrypt("cipher")).Returns("p@ssw0rd");
+            executor
+                .Setup(x => x.ExecuteAsync(It.IsAny<InjectionPlan>()))
+                .Callback<InjectionPlan>(plan => capturedPlan = plan)
+                .ReturnsAsync((InjectionPlan plan) => PkiExecutionResult.Ok("ok", plan));
+
+            await service.ExecuteAsync(
+                new Dictionary<string, string>
+                {
+                    ["secretId"] = secretId.ToString(),
+                    ["injectionDelay"] = "0"
+                },
+                PulsarContextFactory.CreateTestContext());
+
+            capturedPlan.Should().NotBeNull();
+            capturedPlan!.Steps.Select(x => x.Type).Should().Equal(
+                InjectionStepType.HideLauncher,
+                InjectionStepType.RestoreFocus,
+                InjectionStepType.Delay,
+                InjectionStepType.SendText,
+                InjectionStepType.SendKey,
+                InjectionStepType.SendText);
         }
 
         private static PkiExecutionService CreateService(

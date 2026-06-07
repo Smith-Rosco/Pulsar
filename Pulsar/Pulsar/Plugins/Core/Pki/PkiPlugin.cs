@@ -66,11 +66,6 @@ namespace Pulsar.Plugins.Core.Pki
                 enrichedArgs["injectionDelay"] = _settings.InjectionDelay.ToString();
             }
 
-            if (!enrichedArgs.ContainsKey("useUiaFirst"))
-            {
-                enrichedArgs["useUiaFirst"] = _settings.UseUiaFirst.ToString().ToLower();
-            }
-
             return action.ToLowerInvariant() switch
             {
                 "fill" => await FillCredentialsAsync(enrichedArgs, context),
@@ -132,12 +127,6 @@ namespace Pulsar.Plugins.Core.Pki
                             Description = "Delay in milliseconds between keystrokes (0-1000)",
                             DefaultValue = 50,
                             Validators = new List<ValidationRule> { new RangeValidator(0, 1000) }
-                        },
-                        ["useUiaFirst"] = new PropertySchema
-                        {
-                            Type = "bool",
-                            Description = "Try UI Automation before SendKeys (faster but may not work in all apps)",
-                            DefaultValue = true
                         }
                     },
                     RequiredProperties = Array.Empty<string>()
@@ -244,10 +233,6 @@ namespace Pulsar.Plugins.Core.Pki
                 _settings.InjectionDelay = injectionDelay is int i ? i : Convert.ToInt32(injectionDelay);
             }
 
-            if (settings.TryGetValue("useUiaFirst", out var useUiaFirst))
-            {
-                _settings.UseUiaFirst = useUiaFirst is bool b2 ? b2 : Convert.ToBoolean(useUiaFirst);
-            }
         }
     }
 }

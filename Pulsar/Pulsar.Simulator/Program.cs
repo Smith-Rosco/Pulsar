@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Pulsar.Core;
+using Pulsar.Core.Focus;
 using Pulsar.Core.Plugin;
 using Pulsar.Models;
 using Pulsar.Plugins.Core.Pki.Contracts;
@@ -80,23 +81,27 @@ namespace Pulsar.Simulator
             
             services.AddSingleton(mockWindow.Object);
 
+            var mockFocusManager = new Mock<IFocusManager>();
+            mockFocusManager.Setup(f => f.ActivateWindowAsync(It.IsAny<IntPtr>(), It.IsAny<FocusActivationOptions>()))
+                .ReturnsAsync(new FocusActivationResult { Success = true, VerificationPassed = true });
+            services.AddSingleton(mockFocusManager.Object);
+
             services.AddSingleton<ISecretProtector, CredentialsManager>();
             services.AddSingleton<IPkiSecretStore, SecretRepository>();
             services.AddSingleton<IPkiSecretMetadataResolver, PkiSecretMetadataResolver>();
             services.AddSingleton<IInjectionExecutor, SendKeysInjectionExecutor>();
             services.AddSingleton<IPkiExecutionService, PkiExecutionService>();
-            services.AddSingleton<IUiaTextWriter, WindowsUiaTextWriter>();
             services.AddSingleton<ISendKeysWriter, WindowsSendKeysWriter>();
-            services.AddSingleton<IInputSimulator, WindowsInputSimulator>();
 
-            // Add actual registry
-            services.AddSingleton<PluginRegistry>();
+            // Plugin runtime
+            var pluginDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Plugins");
+            services.AddPluginRuntime(pluginDir);
 
             var serviceProvider = services.BuildServiceProvider();
 
             // Initialize PluginRegistry
-            var registry = serviceProvider.GetRequiredService<PluginRegistry>();
-            await registry.LoadAllAsync();
+            var registry = serviceProvider.GetRequiredService<IPluginRegistry>();
+            await registry.LoadCoreAsync();
 
             // Prepare Parameters
             var pluginArgs = new Dictionary<string, string>();

@@ -69,19 +69,21 @@ namespace Pulsar.Plugins.Core.Pki.Services
                 new(InjectionStepType.Delay, null, 100)
             };
 
+            int delay = request.InjectionDelay;
+
             if (!string.IsNullOrWhiteSpace(account))
             {
                 steps.Add(new InjectionStep(InjectionStepType.SendText, account));
-                steps.Add(new InjectionStep(InjectionStepType.Delay, null, 10));
+                if (delay > 0) steps.Add(new InjectionStep(InjectionStepType.Delay, null, delay));
                 steps.Add(new InjectionStep(InjectionStepType.SendKey, "{TAB}"));
-                steps.Add(new InjectionStep(InjectionStepType.Delay, null, 10));
+                if (delay > 0) steps.Add(new InjectionStep(InjectionStepType.Delay, null, delay));
             }
 
             steps.Add(new InjectionStep(InjectionStepType.SendText, password));
 
             if (request.AutoEnter)
             {
-                steps.Add(new InjectionStep(InjectionStepType.Delay, null, 10));
+                if (delay > 0) steps.Add(new InjectionStep(InjectionStepType.Delay, null, delay));
                 steps.Add(new InjectionStep(InjectionStepType.SendKey, "{ENTER}"));
             }
 

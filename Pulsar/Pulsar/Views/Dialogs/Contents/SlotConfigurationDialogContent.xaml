@@ -159,7 +159,39 @@
                         <ui:TextBox Grid.Column="1"
                                     Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                     PlaceholderText="{Binding Placeholder}"
-                                    Visibility="{Binding IsBoolType, Converter={StaticResource BoolToVisInverse}}"/>
+                                    Visibility="{Binding IsBoolType, Converter={StaticResource BoolToVisInverse}}">
+                            <ui:TextBox.Style>
+                                <Style TargetType="ui:TextBox" BasedOn="{StaticResource {x:Type ui:TextBox}}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSecretSelector}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ui:TextBox.Style>
+                        </ui:TextBox>
+
+                        <Border Grid.Column="1"
+                                Visibility="{Binding IsSecretSelector, Converter={StaticResource BoolToVis}}"
+                                Padding="10,7"
+                                CornerRadius="6"
+                                Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                                BorderThickness="1"
+                                VerticalAlignment="Center">
+                            <StackPanel>
+                                <TextBlock Text="{Binding DisplayValue}"
+                                           FontSize="13"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                           TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="{Binding SecondaryDisplayValue}"
+                                           FontSize="11"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                           TextTrimming="CharacterEllipsis"
+                                           Visibility="{Binding HasSecondaryDisplayValue, Converter={StaticResource BoolToVis}}"/>
+                            </StackPanel>
+                        </Border>
                     </Grid>
                 </Grid>
             </DataTemplate>
