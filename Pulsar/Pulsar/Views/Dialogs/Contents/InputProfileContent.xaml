@@ -70,7 +70,7 @@
             <!-- Info -->
             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                 <TextBlock Text="{lex:Locale Dialog.InputProfile.SelectedIcon}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                <TextBlock Text="{Binding IconKey}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                <TextBlock Text="{Binding IconDisplayText}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
             </StackPanel>
 
             <!-- Change Button -->

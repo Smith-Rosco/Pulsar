@@ -715,7 +715,6 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="90"/>
                                             <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0"
                                                    Text="{lex:Locale Dialog.AddSlot.Icon}"
@@ -723,16 +722,9 @@
                                                    FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                                    VerticalAlignment="Center"/>
-                                        <ui:TextBox Grid.Column="1"
-                                                    Text="{Binding Slot.IconKey}"
-                                                    Icon="{ui:SymbolIcon Image24}"
-                                                    PlaceholderText="{lex:Locale Dialog.AddSlot.IconPlaceholder}"/>
-                                        <ui:Button Grid.Column="2"
-                                                   Icon="{ui:SymbolIcon FolderOpen16}"
-                                                   Style="{StaticResource PulsarIconButtonStyle}"
-                                                   Click="PickIcon_Click"
-                                                   ToolTip="{lex:Locale Dialog.AddSlot.BrowseIcon}"
-                                                   Margin="8,0,0,0"/>
+                                        <controls:IconSelector Grid.Column="1"
+                                                                IconKey="{Binding Slot.IconKey}"
+                                                                BrowseClicked="PickIcon_Click"/>
                                     </Grid>
                                 </StackPanel>
                             </ui:CardExpander>

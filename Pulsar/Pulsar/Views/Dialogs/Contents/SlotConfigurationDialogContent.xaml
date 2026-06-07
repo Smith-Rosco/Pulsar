@@ -265,7 +265,6 @@
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="90"/>
-                                    <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0"
@@ -274,16 +273,9 @@
                                            FontWeight="SemiBold"
                                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                            VerticalAlignment="Center"/>
-                                <ui:Button Grid.Column="1"
-                                           Icon="{ui:SymbolIcon FolderOpen16}"
-                                           Style="{StaticResource PulsarIconButtonStyle}"
-                                           Click="PickIcon_Click"
-                                           ToolTip="{lex:Locale Dialog.AddSlot.BrowseIcon}"
-                                           Margin="0,0,8,0"/>
-                                <ui:TextBox Grid.Column="2"
-                                            Text="{Binding Slot.IconKey}"
-                                            Icon="{ui:SymbolIcon Image24}"
-                                            PlaceholderText="{lex:Locale Dialog.AddSlot.IconPlaceholder}"/>
+                                <controls:IconSelector Grid.Column="1"
+                                                        IconKey="{Binding Slot.IconKey}"
+                                                        BrowseClicked="PickIcon_Click"/>
                             </Grid>
                         </StackPanel>
                     </ui:CardExpander>

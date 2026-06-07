@@ -2,8 +2,10 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Drawing; // System.Drawing.Common
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -181,6 +183,120 @@ namespace Pulsar.Helpers
             return first >= 0xE000 && first <= 0xF8FF
                 ? new System.Windows.Media.FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets")
                 : new System.Windows.Media.FontFamily("Segoe UI, Segoe UI Emoji, Microsoft YaHei UI");
+        }
+
+        // ============================================================
+        // GlyphData reverse-lookup dictionaries (lazy-built)
+        // ============================================================
+        private static Dictionary<string, IconItem>? _byCode;
+        private static Dictionary<string, IconItem>? _byCharacter;
+
+        private static void EnsureLookups()
+        {
+            if (_byCode != null) return;
+            var byCode = new Dictionary<string, IconItem>(StringComparer.OrdinalIgnoreCase);
+            var byChar = new Dictionary<string, IconItem>(StringComparer.Ordinal);
+            foreach (var item in GlyphData.CommonIcons)
+            {
+                byCode[item.Code] = item;
+                if (!string.IsNullOrEmpty(item.Character))
+                    byChar[item.Character] = item;
+            }
+            _byCode = byCode;
+            _byCharacter = byChar;
+        }
+
+        /// <summary>
+        /// Resolve an IconKey to a human-readable display string.
+        /// "E756" → "E756 · CommandPrompt"
+        /// "C:\path\chrome.png" → "chrome.png"
+        /// PUA glyph → lookup Code then display
+        /// Empty → ""
+        /// </summary>
+        public static string ResolveIconDisplay(string? key)
+        {
+            if (string.IsNullOrWhiteSpace(key)) return string.Empty;
+
+            // File path → show filename
+            if (key.Contains('\\') || key.Contains('/') || key.Contains('.'))
+            {
+                try { return Path.GetFileName(key); }
+                catch { return key; }
+            }
+
+            EnsureLookups();
+
+            // Try lookup by Code (hex)
+            if (_byCode!.TryGetValue(key.Trim(), out var byCode))
+                return $"{byCode.Code} · {byCode.Name}";
+
+            // Try lookup by Character (PUA glyph)
+            if (_byCharacter!.TryGetValue(key, out var byChar))
+                return $"{byChar.Code} · {byChar.Name}";
+
+            // Try parsing as hex → then lookup
+            var glyph = GetGlyph(key);
+            if (!string.IsNullOrEmpty(glyph) && glyph != key.Trim())
+            {
+                if (_byCharacter.TryGetValue(glyph, out var byGlyph))
+                    return $"{byGlyph.Code} · {byGlyph.Name}";
+            }
+
+            // Fallback: raw key
+            return key.Trim();
+        }
+
+        /// <summary>
+        /// Normalize user-pasted input to a canonical IconKey.
+        /// "0xE756" → "E756"
+        /// "\uE756" → "E756"
+        /// "CommandPrompt" → "E756"
+        /// PUA glyph → "E756"
+        /// File path → path as-is
+        /// </summary>
+        public static string NormalizeIconKey(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+            input = input.Trim();
+
+            // File path
+            if (input.Contains('\\') || input.Contains('/') || (input.Contains('.') && input.Length < 260))
+                return input;
+
+            EnsureLookups();
+
+            // Explicit hex prefix → convert to plain uppercase hex
+            bool hasHexPrefix = input.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
+                             || input.StartsWith("u+", StringComparison.OrdinalIgnoreCase)
+                             || input.StartsWith("\\u", StringComparison.OrdinalIgnoreCase);
+            string clean = input.Replace("0x", "").Replace("u+", "").Replace("\\u", "").Replace("0X", "");
+            if (hasHexPrefix && int.TryParse(clean, System.Globalization.NumberStyles.HexNumber, null, out int cp))
+                return cp.ToString("X");
+
+            // Already a valid hex code known to GlyphData
+            if (_byCode!.ContainsKey(input))
+                return input.ToUpper();
+
+            // Single PUA character → lookup Code
+            if (input.Length <= 2 && input[0] >= 0xE000)
+            {
+                if (_byCharacter!.TryGetValue(input, out var byChar))
+                    return byChar.Code;
+                return ((int)input[0]).ToString("X");
+            }
+
+            // Name match → return Code
+            var byName = _byCode.Values.FirstOrDefault(i => string.Equals(i.Name, input, StringComparison.OrdinalIgnoreCase));
+            if (byName != null) return byName.Code;
+
+            // Try parsing as implicit hex (only if it looks like one and is in PUA range)
+            if (input.Length <= 6 && int.TryParse(input, System.Globalization.NumberStyles.HexNumber, null, out int codePoint))
+            {
+                if (codePoint >= 0xE000)
+                    return codePoint.ToString("X");
+            }
+
+            return input.ToUpper();
         }
     }
 }
