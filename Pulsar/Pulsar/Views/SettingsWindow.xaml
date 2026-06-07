@@ -44,7 +44,7 @@
                     <ui:NavigationViewItem
                         Content="Save Changes"
                         Icon="{ui:SymbolIcon Save24}"
-                        Command="{Binding SaveCommand}"
+                        Command="{Binding DataContext.SaveCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                         ToolTip="Save all changes (Ctrl+S)">
                         <ui:NavigationViewItem.InfoBadge>
                             <ui:InfoBadge>

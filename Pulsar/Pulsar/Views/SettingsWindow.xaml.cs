@@ -111,8 +111,9 @@ namespace Pulsar.Views
             }
         }
 
-        private void OnLoaded(object sender, RoutedEventArgs e)
+        private async void OnLoaded(object sender, RoutedEventArgs e)
         {
+            await _viewModel.LoadSettings();
             NavigateToCurrentShellPage();
             DisableScrollViewers(RootNavigation);
         }

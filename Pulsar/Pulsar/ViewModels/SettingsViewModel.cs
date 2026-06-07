@@ -147,6 +147,7 @@ namespace Pulsar.ViewModels
         {
             if (_suppressDirty)
             {
+                _logger.LogWarning("[MarkDirty] Skipped — _suppressDirty flag is still true (possible stale/incomplete initialization state)");
                 return;
             }
 
@@ -343,7 +344,6 @@ namespace Pulsar.ViewModels
             _processRegistryService = processRegistryService;
             _config = new ProfilesConfig();
             _settingsShell.PropertyChanged += OnSettingsShellPropertyChanged;
-            Initialize();
 
             // Load cache statistics
             _ = LoadCacheStatisticsAsync();
@@ -389,11 +389,6 @@ namespace Pulsar.ViewModels
             }
         }
 
-        private async void Initialize()
-        {
-            await LoadSettings();
-        }
-
         // [New] Pause/Resume Hotkeys
         public void PauseHotkeys() => _hotkeyService.Pause();
         public void ResumeHotkeys() => _hotkeyService.Resume();
@@ -437,7 +432,7 @@ namespace Pulsar.ViewModels
              return _config;
         }
 
-        private async Task LoadSettings()
+        public async Task LoadSettings()
         {
             await WithSuppressedDirtyAsync(async () =>
             {

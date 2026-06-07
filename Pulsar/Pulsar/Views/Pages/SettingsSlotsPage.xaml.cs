@@ -1,6 +1,5 @@
 using System.Windows;
 using System.Windows.Controls;
-using Microsoft.Extensions.DependencyInjection;
 using Pulsar.Models;
 using Pulsar.ViewModels;
 
@@ -8,11 +7,6 @@ namespace Pulsar.Views.Pages
 {
     public partial class SettingsSlotsPage : Page
     {
-        public SettingsSlotsPage()
-            : this(App.Current.Services.GetRequiredService<SettingsViewModel>())
-        {
-        }
-
         public SettingsSlotsPage(SettingsViewModel viewModel)
         {
             InitializeComponent();
