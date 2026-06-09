@@ -91,12 +91,14 @@ namespace Pulsar.ViewModels
                 {
                     if (!_isVisible)
                     {
+                        _hotkeyService.ResetModifierState();
                         _mouseTrackingService.StopTracking();
                         // Reset physics just in case
                         foreach(var slot in Slots) slot.ResetAnimation();
                     }
                     else
                     {
+                        _hotkeyService.ResetModifierState();
                         UpdateMouseTrackingLayout();
                         _mouseTrackingService.StartTracking();
                     }

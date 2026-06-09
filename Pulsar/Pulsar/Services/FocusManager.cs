@@ -23,9 +23,6 @@ namespace Pulsar.Services
         private const uint LSFW_LOCK = 1;
         private const uint LSFW_UNLOCK = 2;
 
-        private const byte VK_MENU = 0x12;
-        private const uint KEYEVENTF_KEYUP = 0x0002;
-
         private FocusStateSnapshot? _capturedSnapshot;
         private FocusRestoreMode _restoreMode = FocusRestoreMode.RestorePrevious;
         private IntPtr _restoreTarget;
@@ -398,7 +395,7 @@ namespace Pulsar.Services
 
         /// <summary>
         /// Last-resort activation for stubborn windows (e.g. custom-skinned or self-locking apps).
-        /// Simulates Alt key press to grant Pulsar foreground input rights, then retries SetForegroundWindow.
+        /// Uses AllowSetForegroundWindow(ASFW_ANY) to bypass foreground lock, then retries SetForegroundWindow.
         /// </summary>
         private bool ForceActivate(IntPtr hWnd)
         {
@@ -406,13 +403,13 @@ namespace Pulsar.Services
 
             _native.AllowSetForegroundWindow(-1); // ASFW_ANY
 
-            _native.KeybdEvent(VK_MENU, 0, 0, 0);           // Alt press
-            _native.KeybdEvent(VK_MENU, 0, KEYEVENTF_KEYUP, 0); // Alt release
-
-            // Small delay to let input event propagate
-            Thread.Sleep(50);
-
             bool result = _native.SetForegroundWindowNative(hWnd);
+            if (!result)
+            {
+                _native.BringWindowToTop(hWnd);
+                result = _native.SetForegroundWindowNative(hWnd);
+            }
+
             _logger.LogInformation("[FocusManager] ForceActivate: SetForegroundWindow result={Result}", result);
             return result;
         }

@@ -57,9 +57,12 @@ namespace Pulsar.Native
         private bool _useHybridMode = true;
 
         // [FocusManager] Synthetic event suppression flag
-        // When set, UpdateModifierTracker skips updates to prevent corruption
-        // from synthetic keyboard events injected during focus activation
+        // When set, UpdateModifierTracker skips updates for INJECTED events only.
+        // Physical events are always processed to prevent stuck modifier state.
         private volatile bool _syntheticEventSuppression;
+
+        // LLKHF_INJECTED flag bit (KBDLLHOOKSTRUCT.flags, bit 4)
+        private const int LLKHF_INJECTED = 0x10;
 
         /// <summary>
         /// Gets or sets the modifier state detection mode.
@@ -119,15 +122,20 @@ namespace Pulsar.Native
                 bool isKeyDown = (wParam == (IntPtr)WM_KEYDOWN || wParam == (IntPtr)WM_SYSKEYDOWN);
                 bool isKeyUp = (wParam == (IntPtr)WM_KEYUP || wParam == (IntPtr)WM_SYSKEYUP);
 
+                // Read KBDLLHOOKSTRUCT.flags (offset 8) to detect injected events
+                int kbdFlags = Marshal.ReadInt32(lParam + 8);
+                bool isInjected = (kbdFlags & LLKHF_INJECTED) != 0;
+
+                // [RDP Fix] Update internal modifier state tracker based on Hook events
+                // This must happen BEFORE we read the state AND before the pre-filter,
+                // to ensure modifier tracking is never skipped due to missing listeners.
+                UpdateModifierTracker(vkCode, isKeyDown, isKeyUp, isInjected);
+
                 // [Optimization] Pre-filter: Only process if we have listeners
                 if ((isKeyDown && OnKeyDown == null) || (isKeyUp && OnKeyUp == null))
                 {
                     return CallNextHookEx(_hookID, nCode, wParam, lParam);
                 }
-
-                // [RDP Fix] Update internal modifier state tracker based on Hook events
-                // This must happen BEFORE we read the state, to ensure consistency
-                UpdateModifierTracker(vkCode, isKeyDown, isKeyUp);
 
                 // [RDP Fix] Get modifier state using selected mode
                 bool isCtrl, isShift, isAlt, isWin;
@@ -178,9 +186,10 @@ namespace Pulsar.Native
         /// <param name="vkCode">Virtual key code from the hook event</param>
         /// <param name="isKeyDown">True if this is a key down event</param>
         /// <param name="isKeyUp">True if this is a key up event</param>
-        private void UpdateModifierTracker(int vkCode, bool isKeyDown, bool isKeyUp)
+        /// <param name="isInjected">True if this event was injected via SendInput/keybd_event (LLKHF_INJECTED flag)</param>
+        private void UpdateModifierTracker(int vkCode, bool isKeyDown, bool isKeyUp, bool isInjected = false)
         {
-            if (_syntheticEventSuppression) return;
+            if (_syntheticEventSuppression && isInjected) return;
 
             // Ctrl (both L/R variants + generic VK_CONTROL)
             if (vkCode == VK_LCONTROL || vkCode == VK_RCONTROL || vkCode == 0x11)

@@ -21,6 +21,12 @@ namespace Pulsar.Services.Interfaces
         /// </summary>
         void Resume();
 
+        /// <summary>
+        /// Resets all tracked modifier key states (Ctrl, Shift, Alt, Win) to released.
+        /// Call this when the radial menu is shown or hidden to clear any stale state.
+        /// </summary>
+        void ResetModifierState();
+
         event EventHandler<GlobalKeyStruct>? OnGlobalKeyUp;
     }
 }

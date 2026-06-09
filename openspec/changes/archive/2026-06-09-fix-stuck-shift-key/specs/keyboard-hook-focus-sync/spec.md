@@ -1,18 +1,4 @@
-# keyboard-hook-focus-sync Specification
-
-## Purpose
-TBD - created by archiving change unified-focus-management. Update Purpose after archive.
-## Requirements
-### Requirement: FocusManager SHALL coordinate synthetic key events with the keyboard hook
-When `IFocusManager` performs operations that inject synthetic keyboard events into the system input stream, it SHALL notify the registered `IModifierStateTracker` before and after the injection so the keyboard hook can protect its modifier state from corruption.
-
-#### Scenario: Synthetic event notification before activation
-- **WHEN** `IFocusManager` is about to inject a synthetic keyboard event as part of a focus activation operation
-- **THEN** it SHALL call `IModifierStateTracker.OnSyntheticEventBegin()` before the injection and `IModifierStateTracker.OnSyntheticEventEnd()` after
-
-#### Scenario: No tracker registered
-- **WHEN** `IFocusManager` performs a focus operation but no `IModifierStateTracker` has been registered
-- **THEN** the operation SHALL proceed normally without notification calls (tracker is optional)
+## MODIFIED Requirements
 
 ### Requirement: GlobalKeyboardHook SHALL implement IModifierStateTracker
 
@@ -54,6 +40,8 @@ The FocusManager SHALL use `AttachThreadInput` as the primary mechanism for enab
 - **WHEN** `ForceActivate()` is called
 - **THEN** it SHALL NOT call `Thread.Sleep` as a delay for synthetic event propagation, since no synthetic events are injected
 
+## ADDED Requirements
+
 ### Requirement: Radial menu SHALL reset modifier state on show and hide
 
 The radial menu SHALL call `IModifierStateTracker.ResetAllModifiers()` when it is shown and when it is hidden to clear any stale modifier state accumulated during menu transitions.
@@ -65,19 +53,3 @@ The radial menu SHALL call `IModifierStateTracker.ResetAllModifiers()` when it i
 #### Scenario: Modifier state cleared when menu hides
 - **WHEN** the radial menu is hidden (dismissed)
 - **THEN** `ResetAllModifiers()` SHALL be called to clear any stale state before the next hotkey invocation
-
-### Requirement: Hotkey actions SHALL dispatch to the UI thread before execution
-All hotkey action delegates registered with `IHotkeyService` SHALL be invoked on the WPF UI dispatcher thread, regardless of which thread the keyboard hook callback runs on. The keyboard hook thread SHALL NOT synchronously execute any UI or plugin code.
-
-#### Scenario: Hotkey action executes on UI thread
-- **WHEN** a registered hotkey action is triggered by a keyboard hook event on the OS hook thread
-- **THEN** the action delegate SHALL be dispatched to `Application.Current.Dispatcher` via `InvokeAsync()` before execution
-
-#### Scenario: Keyboard hook thread remains non-blocking
-- **WHEN** a hotkey action performs long-running work (async loading, context capture)
-- **THEN** the keyboard hook callback SHALL return immediately without waiting for the action to complete
-
-#### Scenario: Multiple hotkey actions are dispatched independently
-- **WHEN** two different hotkey combinations are pressed in sequence
-- **THEN** each action SHALL dispatch to the UI thread independently and SHALL NOT interfere with the other's dispatch
-

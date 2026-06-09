@@ -41,6 +41,12 @@ namespace Pulsar.Services
             _pressedKeys.Clear();
         }
 
+        public void ResetModifierState()
+        {
+            _hook.ResetModifierState();
+            _pressedKeys.Clear();
+        }
+
         public async Task InitializeAsync()
         {
             _config = await _configService.LoadAsync();
