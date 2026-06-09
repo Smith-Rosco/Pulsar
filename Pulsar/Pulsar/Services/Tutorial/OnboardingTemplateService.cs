@@ -108,8 +108,7 @@ namespace Pulsar.Services.Tutorial
                     HasCompletedTutorial = false,
                     LastTutorialStep = null,
                     OnboardingState = "SetupWizardComplete",
-                    ConfigCreatedAt = DateTime.UtcNow,
-                    HasCompletedInitialDetection = true
+                    ConfigCreatedAt = DateTime.UtcNow
                 },
                 Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
                 {

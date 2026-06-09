@@ -163,6 +163,11 @@ namespace Pulsar.Services
                 {
                     _cachedConfig = loaded;
                 }
+
+                if (_cachedConfig?.Settings is { } settings)
+                {
+                    ProfileSettings.ValidateOnboardingInvariants(settings, _logger);
+                }
                 
                 // [New] Validate configuration after loading
                 if (_validationPipeline != null && _cachedConfig != null)
@@ -344,58 +349,268 @@ namespace Pulsar.Services
             return config;
         }
 
-        /// <summary>
-        /// 调度后台智能应用检测 (由外部触发点调用，如向导完成/跳过 或 正常启动路径)
-        /// </summary>
-        public void ScheduleSmartDetection(bool isResetReload = false)
+    /// <summary>
+    /// 调度后台智能应用检测 (由外部触发点调用，如向导完成/跳过 或 正常启动路径)
+    /// </summary>
+    public void ScheduleSmartDetection(bool isResetReload = false)
+    {
+        if (!File.Exists(_configPath))
         {
-            if (!File.Exists(_configPath))
+            _logger.LogInformation(
+                "[ConfigService] No config file yet, deferring smart detection to later lifecycle stage");
+            return;
+        }
+
+        _logger.LogInformation(
+            "[ConfigService] {Reason} detected, scheduling background app detection",
+            isResetReload ? "Reset reload" : "First launch");
+
+        ScheduleBackgroundWork(
+            workId: isResetReload ? "config.smart-detection.reset" : "config.smart-detection.first-launch",
+            work: async cancellationToken =>
             {
+                await Task.Delay(1000, cancellationToken);
+
+                var latestConfig = await LoadAsync(forceReload: true);
+                if (!IsSmartDetectionEligible(latestConfig))
+                {
+                    return;
+                }
+
                 _logger.LogInformation(
-                    "[ConfigService] No config file yet, deferring smart detection to later lifecycle stage");
-                return;
+                    "[ConfigService] Starting background application detection ({Source})...",
+                    isResetReload ? "reset" : "first-launch");
+
+                var detector = new ApplicationDetector(_logger);
+                var installedApps = await detector.DetectInstalledApplicationsAsync();
+
+                ApplyDetectionResults(latestConfig, installedApps);
+
+                await SaveAsync(latestConfig);
+
+                _logger.LogInformation(
+                    "[ConfigService] Smart configuration applied with {SwitchCount} Switch Mode apps and {CommandCount} Command Mode slots ({Source})",
+                    latestConfig.Profiles["Global"].SwitchMode.Count,
+                    latestConfig.Profiles["Global"].CommandMode.Count,
+                    isResetReload ? "reset" : "first-launch");
+            },
+            new BackgroundWorkOptions
+            {
+                Priority = BackgroundWorkPriority.Low,
+                DuplicateBehavior = BackgroundWorkDuplicateBehavior.ReuseExisting
+            });
+    }
+
+    /// <summary>
+    /// 判断当前配置是否满足 smart detection 执行条件（语义检查，不用全量 JSON 比较）。
+    /// </summary>
+    private static bool IsSmartDetectionEligible(ProfilesConfig config)
+    {
+        if (config?.Settings == null) return false;
+
+        return !config.Settings.HasCompletedInitialDetection;
+    }
+
+    /// <summary>
+    /// 将检测到的应用结果应用到现有配置（窄 patch，不重置 Settings）。
+    /// 只替换 Global profile 中已知 fallback 签名的 slot 或未占用的 slot。
+    /// </summary>
+    private void ApplyDetectionResults(ProfilesConfig config, List<AppDefinition> installedApps)
+    {
+        if (!config.Profiles.TryGetValue("Global", out var globalProfile))
+        {
+            globalProfile = new ProcessProfile();
+            config.Profiles["Global"] = globalProfile;
+        }
+
+        var preOnboarding = config.Settings.OnboardingState;
+        var preTutorial = config.Settings.HasCompletedTutorial;
+        var preLastStep = config.Settings.LastTutorialStep;
+        var preCrashedAt = config.Settings.TutorialCrashedAt;
+        var preCreatedAt = config.Settings.ConfigCreatedAt;
+
+        _logger.LogInformation(
+            "[ConfigService] Applying detection results — preserving OnboardingState={OnboardingState}, HasCompletedTutorial={HasCompletedTutorial}",
+            preOnboarding, preTutorial);
+
+        // Generate detection-owned slots
+        var detectedSwitchSlots = BuildDetectedSwitchSlots(installedApps);
+        var detectedCommandSlots = BuildDetectedCommandSlots(installedApps);
+
+        if (globalProfile.SwitchMode == null)
+        {
+            globalProfile.SwitchMode = new List<PluginSlot>();
+        }
+
+        if (globalProfile.CommandMode == null)
+        {
+            globalProfile.CommandMode = new List<PluginSlot>();
+        }
+
+        var fallbackSignatures = BuildKnownFallbackSignatures();
+
+        // Replace only slots that match known fallback/default signatures
+        globalProfile.SwitchMode = ReplaceFallbackSlots(globalProfile.SwitchMode, detectedSwitchSlots, fallbackSignatures);
+        globalProfile.CommandMode = ReplaceFallbackSlots(globalProfile.CommandMode, detectedCommandSlots, fallbackSignatures);
+
+        // Mark detection complete
+        config.Settings.HasCompletedInitialDetection = true;
+
+        // Restore preserved fields (in case slot generation mutated them — it shouldn't, but defense in depth)
+        config.Settings.OnboardingState = preOnboarding;
+        config.Settings.HasCompletedTutorial = preTutorial;
+        config.Settings.LastTutorialStep = preLastStep;
+        config.Settings.TutorialCrashedAt = preCrashedAt;
+        config.Settings.ConfigCreatedAt = preCreatedAt;
+    }
+
+    /// <summary>
+    /// 构建已知 fallback 配置中槽位签名集合，用于识别哪些槽位可以被替换。
+    /// 签名格式: "pluginId|action|app-arg"
+    /// </summary>
+    private static HashSet<string> BuildKnownFallbackSignatures()
+    {
+        var sigs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        // Fallback Switch Mode slots
+        sigs.Add(SlotSignature("com.pulsar.winswitcher", "switch", "notepad"));
+        sigs.Add(SlotSignature("com.pulsar.winswitcher", "switch", "explorer"));
+        sigs.Add(SlotSignature("com.pulsar.winswitcher", "switch", "calc"));
+
+        // Fallback Command Mode slot
+        sigs.Add(SlotSignature("com.pulsar.command", "run", null));
+
+        return sigs;
+    }
+
+    private static string SlotSignature(string pluginId, string action, string? appArg)
+    {
+        return $"{pluginId}|{action}|{appArg ?? ""}";
+    }
+
+    private static string SlotSignature(PluginSlot slot)
+    {
+        var app = slot.Args.TryGetValue("app", out var val) ? val : "";
+        return $"{slot.PluginId}|{slot.Action}|{app}";
+    }
+
+    /// <summary>
+    /// 保留非 fallback 槽位，将 fallback 槽位替换为检测结果。
+    /// </summary>
+    private static List<PluginSlot> ReplaceFallbackSlots(
+        List<PluginSlot> existingSlots,
+        List<PluginSlot> detectedSlots,
+        HashSet<string> fallbackSignatures)
+    {
+        var userSlots = existingSlots
+            .Where(s => s != null && !fallbackSignatures.Contains(SlotSignature(s)))
+            .ToList();
+
+        var result = new List<PluginSlot>();
+
+        var usedSlots = new HashSet<int>();
+        var slotQueue = new Queue<PluginSlot>(detectedSlots);
+
+        int nextSlot = 1;
+        const int maxSlots = 8;
+
+        for (int i = 0; i < maxSlots; i++)
+        {
+            int targetSlot = nextSlot++;
+
+            var userSlot = userSlots.FirstOrDefault(s => s.Slot == targetSlot);
+            if (userSlot != null)
+            {
+                result.Add(userSlot);
+                usedSlots.Add(targetSlot);
+                continue;
             }
 
-            string expectedPersistedFallback = SerializeForPersistence(CreateFallbackConfig(isResetReload));
-
-            _logger.LogInformation(
-                "[ConfigService] {Reason} detected, scheduling background app detection",
-                isResetReload ? "Reset reload" : "First launch");
-
-            ScheduleBackgroundWork(
-                workId: isResetReload ? "config.smart-detection.reset" : "config.smart-detection.first-launch",
-                work: async cancellationToken =>
-                {
-                    await Task.Delay(1000, cancellationToken);
-
-                    if (!await IsExpectedPersistedFallbackAsync(expectedPersistedFallback, isResetReload))
-                    {
-                        return;
-                    }
-
-                    _logger.LogInformation(
-                        "[ConfigService] Starting background application detection ({Source})...",
-                        isResetReload ? "reset" : "first-launch");
-
-                    var detector = new ApplicationDetector(_logger);
-                    var installedApps = await detector.DetectInstalledApplicationsAsync();
-
-                    var smartConfig = CreateSmartConfig(installedApps, isResetReload);
-
-                    await SaveAsync(smartConfig);
-
-                    _logger.LogInformation(
-                        "[ConfigService] Smart configuration loaded with {SwitchCount} Switch Mode apps and {CommandCount} Command Mode slots ({Source})",
-                        smartConfig.Profiles["Global"].SwitchMode.Count,
-                        smartConfig.Profiles["Global"].CommandMode.Count,
-                        isResetReload ? "reset" : "first-launch");
-                },
-                new BackgroundWorkOptions
-                {
-                    Priority = BackgroundWorkPriority.Low,
-                    DuplicateBehavior = BackgroundWorkDuplicateBehavior.ReuseExisting
-                });
+            if (slotQueue.Count > 0)
+            {
+                var detectedSlot = slotQueue.Dequeue();
+                detectedSlot.Slot = targetSlot;
+                result.Add(detectedSlot);
+                usedSlots.Add(targetSlot);
+            }
         }
+
+        // Append remaining user slots that may be at higher slot numbers
+        foreach (var userSlot in userSlots.Where(s => !usedSlots.Contains(s.Slot)).OrderBy(s => s.Slot))
+        {
+            result.Add(userSlot);
+        }
+
+        return result;
+    }
+
+    private List<PluginSlot> BuildDetectedSwitchSlots(List<AppDefinition> installedApps)
+    {
+        var topApps = CommonApplicationDatabase.GetTopApplications(installedApps, maxCount: 6);
+        var slotIndex = 1;
+
+        var slots = new List<PluginSlot>();
+
+        foreach (var app in topApps)
+        {
+            slots.Add(new PluginSlot
+            {
+                Slot = slotIndex++,
+                PluginId = "com.pulsar.winswitcher",
+                Action = "switch",
+                Args = new Dictionary<string, string>
+                {
+                    ["app"] = app.ProcessName,
+                    ["path"] = $"{app.ProcessName}.exe"
+                },
+                Label = app.DisplayName,
+                IconKey = app.IconKey
+            });
+        }
+
+        if (!topApps.Any(a => a.ProcessName.Equals("notepad", StringComparison.OrdinalIgnoreCase)) && slotIndex <= 6)
+        {
+            var notepadApp = CommonApplicationDatabase.GetAllApplications()
+                .FirstOrDefault(a => a.ProcessName == "notepad");
+
+            if (notepadApp != null)
+            {
+                slots.Add(new PluginSlot
+                {
+                    Slot = slotIndex++,
+                    PluginId = "com.pulsar.winswitcher",
+                    Action = "switch",
+                    Args = new Dictionary<string, string>
+                    {
+                        ["app"] = notepadApp.ProcessName,
+                        ["path"] = "notepad.exe"
+                    },
+                    Label = notepadApp.DisplayName,
+                    IconKey = notepadApp.IconKey
+                });
+            }
+        }
+
+        return slots;
+    }
+
+    private static List<PluginSlot> BuildDetectedCommandSlots(List<AppDefinition> installedApps)
+    {
+        var slots = new List<PluginSlot>
+        {
+            new PluginSlot
+            {
+                Slot = 1,
+                PluginId = "com.pulsar.command",
+                Action = "run",
+                Args = new Dictionary<string, string> { ["path"] = "cmd.exe" },
+                Label = "Command Prompt",
+                IconKey = "\uE756"
+            }
+        };
+
+        return slots;
+    }
 
         /// <summary>
         /// 创建 Fallback 配置 (Windows 内置应用)
@@ -483,187 +698,17 @@ namespace Pulsar.Services
             };
         }
 
-        /// <summary>
-        /// 创建智能配置 (基于检测到的应用)
-        /// </summary>
-        private ProfilesConfig CreateSmartConfig(List<AppDefinition> installedApps, bool isResetReload = false)
+    private static JsonSerializerOptions CreatePersistenceJsonOptions()
+    {
+        return new JsonSerializerOptions
         {
-            _logger.LogInformation(
-                "[ConfigService] Creating smart configuration from {Count} detected apps ({Source})",
-                installedApps.Count,
-                isResetReload ? "reset" : "first-launch");
-            
-            // 1. 按优先级排序,取前 6 个 (预留 Slot 7-8 给教程)
-            var topApps = CommonApplicationDatabase.GetTopApplications(installedApps, maxCount: 6);
-            
-            // 2. 生成 Switch Mode 槽位
-            var switchModeSlots = new List<PluginSlot>();
-            int slotIndex = 1;
-            
-            foreach (var app in topApps)
-            {
-                // [Fix] 使用 switch 动作而不是 activate，支持自动启动
-                // 对于大多数应用，使用 processName.exe 作为启动路径
-                var args = new Dictionary<string, string> 
-                { 
-                    ["app"] = app.ProcessName,
-                    ["path"] = $"{app.ProcessName}.exe"
-                };
-                
-                switchModeSlots.Add(new PluginSlot
-                {
-                    Slot = slotIndex++,
-                    PluginId = "com.pulsar.winswitcher",
-                    Action = "switch",
-                    Args = args,
-                    Label = app.DisplayName,
-                    IconKey = app.IconKey
-                });
-                
-                _logger.LogDebug("[ConfigService] Added {AppName} to Slot {Slot}", app.DisplayName, slotIndex - 1);
-            }
-            
-            // 3. 确保至少有 Notepad (Fallback) - 用于教程演示
-            if (!topApps.Any(a => a.ProcessName.Equals("notepad", StringComparison.OrdinalIgnoreCase)) && slotIndex <= 6)
-            {
-                var notepadApp = CommonApplicationDatabase.GetAllApplications()
-                    .FirstOrDefault(a => a.ProcessName == "notepad");
-                    
-                if (notepadApp != null)
-                {
-                    switchModeSlots.Add(new PluginSlot
-                    {
-                        Slot = slotIndex++,
-                        PluginId = "com.pulsar.winswitcher",
-                        Action = "switch",
-                        Args = new Dictionary<string, string> 
-                        { 
-                            ["app"] = notepadApp.ProcessName,
-                            ["path"] = "notepad.exe"
-                        },
-                        Label = notepadApp.DisplayName,
-                        IconKey = notepadApp.IconKey
-                    });
-                    
-                    _logger.LogDebug("[ConfigService] Added Notepad as Fallback to Slot {Slot}", slotIndex - 1);
-                }
-            }
-            
-            // 4. Slot 7-8 预留给教程 (不填充)
-            _logger.LogInformation("[ConfigService] Slots 7-8 reserved for tutorial");
-            
-            // 5. 生成 Command Mode 槽位
-            var commandModeSlots = CreateCommandModeSlots(installedApps);
-            
-            // 6. 构建配置
-            return new ProfilesConfig
-            {
-                Settings = new ProfileSettings
-                {
-                    CenterSlotBehavior = "MRU_Window",
-                    TriggerDistance = 100.0,
-                    LauncherTheme = "Light",
-                    HoverScale = 1.2,
-                    Springiness = 6.0,
-                    MaxDisplacement = 20.0,
-                    HasCompletedTutorial = false,
-                    LastTutorialStep = null,
-                    OnboardingState = "NotStarted",
-                    ConfigCreatedAt = DateTime.UtcNow,
-                    HasCompletedInitialDetection = true
-                },
-                Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["Global"] = new ProcessProfile
-                    {
-                        SwitchMode = switchModeSlots,
-                        CommandMode = commandModeSlots
-                    }
-                }
-            };
-        }
+            WriteIndented = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+    }
 
-        private async Task<bool> IsExpectedPersistedFallbackAsync(string expectedPersistedFallback, bool isResetReload)
-        {
-            try
-            {
-                if (!File.Exists(_configPath))
-                {
-                    _logger.LogInformation(
-                        "[ConfigService] Expected fallback configuration file was missing before background detection ({Source}); aborting auto-detection",
-                        isResetReload ? "reset" : "first-launch");
-                    return false;
-                }
-
-                string persistedConfig = await File.ReadAllTextAsync(_configPath);
-                if (!string.Equals(persistedConfig, expectedPersistedFallback, StringComparison.Ordinal))
-                {
-                    _logger.LogInformation(
-                        "[ConfigService] Persisted fallback configuration changed before background detection ({Source}); aborting auto-detection",
-                        isResetReload ? "reset" : "first-launch");
-                    return false;
-                }
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(
-                    ex,
-                    "[ConfigService] Failed to verify persisted fallback state before background detection ({Source})",
-                    isResetReload ? "reset" : "first-launch");
-                return false;
-            }
-        }
-
-        private static string SerializeForPersistence(ProfilesConfig config)
-        {
-            return JsonSerializer.Serialize(config, CreatePersistenceJsonOptions());
-        }
-
-        private static JsonSerializerOptions CreatePersistenceJsonOptions()
-        {
-            return new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            };
-        }
-
-        /// <summary>
-        /// 创建 Command Mode 示例槽位
-        /// </summary>
-        private List<PluginSlot> CreateCommandModeSlots(List<AppDefinition> installedApps)
-        {
-            var slots = new List<PluginSlot>();
-            
-            // Slot 1: 基础命令 (CMD)
-            slots.Add(new PluginSlot
-            {
-                Slot = 1,
-                PluginId = "com.pulsar.command",
-                Action = "run",
-                Args = new Dictionary<string, string> { ["path"] = "cmd.exe" },
-                Label = "Command Prompt",
-                IconKey = "\uE756"
-            });
-            
-            _logger.LogDebug("[ConfigService] Added Command Prompt to Command Mode Slot 1");
-            
-            // Slot 2: avoid auto-injecting invalid VBA samples.
-            // The VBA runner requires a real scriptPath, so a generated demo slot
-            // would fail config validation on first-launch smart config save.
-            var hasExcel = installedApps.Any(a => a.ProcessName.Equals("EXCEL", StringComparison.OrdinalIgnoreCase));
-            if (hasExcel)
-            {
-                _logger.LogDebug("[ConfigService] Excel detected, but skipped auto-generated VBA demo because VbaRunner requires a valid scriptPath");
-            }
-            
-            return slots;
-        }
-
-        /// <summary>
-        /// Normalizes a configuration dictionary by converting all JsonElement values to concrete types.
+    /// <summary>
+    /// Normalizes a configuration dictionary by converting all JsonElement values to concrete types.
         /// This is the architectural solution to the JsonElement type mismatch problem.
         /// </summary>
         /// <param name="config">The configuration dictionary to normalize</param>

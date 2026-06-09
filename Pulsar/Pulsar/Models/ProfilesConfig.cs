@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text.Json.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Pulsar.Core.Converters; // Added
 using Pulsar.Core.Plugin.Metadata;
 
@@ -77,27 +78,45 @@ namespace Pulsar.Models
         // [RDP Fix] Input System Configuration
         public InputSettings Input { get; set; } = new();
 
-        // [Tutorial] Tutorial System Configuration
-        /// <summary>
-        /// 是否已完成教程
-        /// </summary>
-        public bool HasCompletedTutorial { get; set; } = false;
+    // [Tutorial] Tutorial System Configuration
+    /// <summary>
+    /// <para>是否已完成教程。</para>
+    /// <para>
+    /// Canonical interpretation with related fields:
+    /// </para>
+    /// <list type="bullet">
+    ///   <item><description><b>First Run / Reset</b>: HasCompletedTutorial=false, LastTutorialStep=null, TutorialCrashedAt=null, OnboardingState="NotStarted", HasCompletedInitialDetection=false</description></item>
+    ///   <item><description><b>Wizard Skipped</b>: HasCompletedTutorial=false, LastTutorialStep=null, TutorialCrashedAt=null, OnboardingState="Skipped", HasCompletedInitialDetection=false</description></item>
+    ///   <item><description><b>Wizard Complete (pending tutorial)</b>: HasCompletedTutorial=false, LastTutorialStep=null or step-id, TutorialCrashedAt=null, OnboardingState="SetupWizardComplete", HasCompletedInitialDetection=detection-policy-dependent</description></item>
+    ///   <item><description><b>Tutorial In Progress</b>: HasCompletedTutorial=false, LastTutorialStep=step-id, TutorialCrashedAt=null, OnboardingState="SetupWizardComplete"</description></item>
+    ///   <item><description><b>Tutorial Skipped</b>: HasCompletedTutorial=false, LastTutorialStep="Skipped", TutorialCrashedAt=null, OnboardingState="SetupWizardComplete"</description></item>
+    ///   <item><description><b>Tutorial Crashed</b>: HasCompletedTutorial=false, LastTutorialStep=null, TutorialCrashedAt=step-id, OnboardingState="SetupWizardComplete"</description></item>
+    ///   <item><description><b>Onboarding Complete</b>: HasCompletedTutorial=true, LastTutorialStep=null, TutorialCrashedAt=null, OnboardingState="Complete"</description></item>
+    /// </list>
+    /// </summary>
+    public bool HasCompletedTutorial { get; set; } = false;
 
-        /// <summary>
-        /// 最后完成的教程步骤 ID（用于断点续传）
-        /// </summary>
-        public string? LastTutorialStep { get; set; } = null;
+    /// <summary>
+    /// 最后完成的教程步骤 ID（用于断点续传）
+    /// </summary>
+    public string? LastTutorialStep { get; set; } = null;
 
-        /// <summary>
-        /// 教程崩溃时的步骤 ID（用于区分崩溃和正常完成）
-        /// </summary>
-        public string? TutorialCrashedAt { get; set; } = null;
+    /// <summary>
+    /// 教程崩溃时的步骤 ID（用于区分崩溃和正常完成）。置位后下次启动可从该步骤恢复。
+    /// </summary>
+    public string? TutorialCrashedAt { get; set; } = null;
 
-        // [Onboarding] Onboarding System Configuration
-        /// <summary>
-        /// Onboarding completion status (e.g., NotStarted, SetupWizardComplete, Skipped, Complete)
-        /// </summary>
-        public string OnboardingState { get; set; } = "NotStarted";
+    // [Onboarding] Onboarding System Configuration
+    /// <summary>
+    /// <para>Onboarding completion status.</para>
+    /// <para>Valid values: "NotStarted", "Skipped", "SetupWizardComplete", "Complete".</para>
+    /// <para>
+    /// This field is the primary lifecycle driver for startup coordination.
+    /// Other services (tutorial, smart detection) MUST preserve this field
+    /// when they write their own narrow changes.
+    /// </para>
+    /// </summary>
+    public string OnboardingState { get; set; } = "NotStarted";
 
         // [Logging] Logging System Configuration
         /// <summary>
@@ -105,16 +124,75 @@ namespace Pulsar.Models
         /// </summary>
         public LoggingSettings Logging { get; set; } = new();
 
-        // [Config Metadata] Configuration metadata for tracking and protection
-        /// <summary>
-        /// 配置文件创建时间戳
-        /// </summary>
-        public DateTime? ConfigCreatedAt { get; set; } = null;
+    // [Config Metadata] Configuration metadata for tracking and protection
+    /// <summary>
+    /// 配置文件创建时间戳。仅在新配置生成时设置，后续窄写入不得覆盖。
+    /// </summary>
+    public DateTime? ConfigCreatedAt { get; set; } = null;
 
-        /// <summary>
-        /// 是否已完成初始应用检测
-        /// </summary>
-        public bool HasCompletedInitialDetection { get; set; } = false;
+    /// <summary>
+    /// <para>是否已完成自动应用检测。</para>
+    /// <para>
+    /// This field SHALL mean that automatic app detection has completed
+    /// or has been intentionally considered complete by an explicit policy
+    /// (e.g., wizard finish marks it true because user-selected apps are sufficient).
+    /// It MUST NOT accidentally mean "the app has some usable initial profile."
+    /// </para>
+    /// <para>
+    /// Smart detection MUST NOT run when this is true.
+    /// Smart detection MUST set this to true upon successful completion.
+    /// </para>
+    /// </summary>
+    public bool HasCompletedInitialDetection { get; set; } = false;
+
+    /// <summary>
+    /// <para>Validates onboarding state field invariants and logs warnings for
+    /// illegal combinations. Non-blocking — does not throw.</para>
+    /// </summary>
+    public static void ValidateOnboardingInvariants(ProfileSettings settings, ILogger? logger = null)
+    {
+        if (settings == null) return;
+
+        var issues = new List<string>();
+
+        if (!string.IsNullOrEmpty(settings.TutorialCrashedAt)
+            && settings.HasCompletedTutorial)
+        {
+            issues.Add($"TutorialCrashedAt='{settings.TutorialCrashedAt}' but HasCompletedTutorial=true — crash marker should not coexist with completion.");
+        }
+
+        if (string.Equals(settings.LastTutorialStep, "Skipped", StringComparison.OrdinalIgnoreCase)
+            && settings.HasCompletedTutorial)
+        {
+            issues.Add("LastTutorialStep='Skipped' but HasCompletedTutorial=true — skip marker should not coexist with completion.");
+        }
+
+        if (string.Equals(settings.OnboardingState, "Complete", StringComparison.OrdinalIgnoreCase)
+            && !settings.HasCompletedTutorial)
+        {
+            issues.Add("OnboardingState='Complete' but HasCompletedTutorial=false — onboarding cannot be Complete without tutorial completion.");
+        }
+
+        if (string.Equals(settings.OnboardingState, "NotStarted", StringComparison.OrdinalIgnoreCase)
+            && (settings.HasCompletedTutorial || !string.IsNullOrEmpty(settings.LastTutorialStep)))
+        {
+            issues.Add($"OnboardingState='NotStarted' but tutorial progress exists (HasCompletedTutorial={settings.HasCompletedTutorial}, LastTutorialStep='{settings.LastTutorialStep}').");
+        }
+
+        if (string.Equals(settings.OnboardingState, "NotStarted", StringComparison.OrdinalIgnoreCase)
+            && settings.HasCompletedInitialDetection)
+        {
+            issues.Add("OnboardingState='NotStarted' but HasCompletedInitialDetection=true — onboarding has not started yet detection claims to be complete.");
+        }
+
+        if (issues.Count > 0 && logger != null)
+        {
+            foreach (var issue in issues)
+            {
+                logger.LogWarning("[ConfigInvariants] {Issue}", issue);
+            }
+        }
+    }
 
         // [Helper] 将字符串转换为 AppTheme 枚举
         [JsonIgnore]

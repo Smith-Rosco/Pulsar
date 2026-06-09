@@ -161,23 +161,69 @@ namespace Pulsar.Tests.Tutorial
             result.Should().Be(StartupAction.ShowWizard);
         }
 
-        [Fact]
-        public async Task HandleStartupAsync_SkippedTutorial_ShouldNotResumeTutorial()
+    [Fact]
+    public async Task HandleStartupAsync_SkippedTutorial_ShouldNotResumeTutorial()
+    {
+        _mockOnboardingState.Setup(s => s.GetStateAsync()).ReturnsAsync(new OnboardingState
         {
-            _mockOnboardingState.Setup(s => s.GetStateAsync()).ReturnsAsync(new OnboardingState
-            {
-                IsFirstRun = false,
-                HasCompletedSetup = true,
-                HasCompletedTutorial = false,
-                HasSkippedTutorial = true
-            });
-            _mockConfigService.Setup(s => s.LoadAsync()).ReturnsAsync(CreateCleanFirstRunConfig());
+            IsFirstRun = false,
+            HasCompletedSetup = true,
+            HasCompletedTutorial = false,
+            HasSkippedTutorial = true
+        });
+        _mockConfigService.Setup(s => s.LoadAsync()).ReturnsAsync(CreateCleanFirstRunConfig());
 
-            var coordinator = CreateCoordinator();
+        var coordinator = CreateCoordinator();
 
-            var result = await coordinator.HandleStartupAsync();
+        var result = await coordinator.HandleStartupAsync();
 
-            result.Should().Be(StartupAction.NormalStartup);
-        }
+        result.Should().Be(StartupAction.NormalStartup);
+    }
+
+    [Fact]
+    public async Task HandleStartupAsync_SkippedOnboarding_NotDetected_ShouldScheduleSmartDetection()
+    {
+        _mockOnboardingState.Setup(s => s.GetStateAsync()).ReturnsAsync(new OnboardingState
+        {
+            IsFirstRun = false,
+            HasSkippedOnboarding = true
+        });
+        _mockConfigService.Setup(s => s.LoadAsync()).ReturnsAsync(new ProfilesConfig
+        {
+            Settings = new ProfileSettings { HasCompletedInitialDetection = false },
+            Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
+        });
+
+        var coordinator = CreateCoordinator();
+
+        var result = await coordinator.HandleStartupAsync();
+
+        result.Should().Be(StartupAction.NormalStartup);
+        _mockConfigService.Verify(s => s.ScheduleSmartDetection(It.IsAny<bool>()), Times.Once,
+            "Smart detection should be scheduled when onboarding skipped and detection not yet completed");
+    }
+
+    [Fact]
+    public async Task HandleStartupAsync_SkippedOnboarding_AlreadyDetected_ShouldNotScheduleDetection()
+    {
+        _mockOnboardingState.Setup(s => s.GetStateAsync()).ReturnsAsync(new OnboardingState
+        {
+            IsFirstRun = false,
+            HasSkippedOnboarding = true
+        });
+        _mockConfigService.Setup(s => s.LoadAsync()).ReturnsAsync(new ProfilesConfig
+        {
+            Settings = new ProfileSettings { HasCompletedInitialDetection = true },
+            Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
+        });
+
+        var coordinator = CreateCoordinator();
+
+        var result = await coordinator.HandleStartupAsync();
+
+        result.Should().Be(StartupAction.NormalStartup);
+        _mockConfigService.Verify(s => s.ScheduleSmartDetection(It.IsAny<bool>()), Times.Never,
+            "Smart detection should NOT be scheduled when detection already completed");
+    }
     }
 }

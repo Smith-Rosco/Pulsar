@@ -200,30 +200,31 @@ namespace Pulsar.ViewModels.Dialogs
 
         public Action<DialogResult>? RequestClose { get; set; }
 
-        [RelayCommand]
-        private async Task Finish()
+    [RelayCommand]
+    private async Task Finish()
+    {
+        if (!Validate())
         {
-            if (!Validate())
-            {
-                return;
-            }
-
-            var config = _templateService.BuildInitialConfig(new OnboardingTemplateRequest
-            {
-                Profile = SelectedProfile!.Value,
-                SelectedApps = CommonApps.Where(app => app.IsSelected).Select(app => app.App).ToList()
-            });
-
-            if (SelectedLanguage != null)
-            {
-                config.Settings.Language = SelectedLanguage.Code;
-            }
-
-            await _configService.SaveAsync(config);
-            await _onboardingStateService.MarkSetupCompletedAsync();
-            _configService.ScheduleSmartDetection();
-            RequestClose?.Invoke(DialogResult.Confirmed);
+            return;
         }
+
+        var config = _templateService.BuildInitialConfig(new OnboardingTemplateRequest
+        {
+            Profile = SelectedProfile!.Value,
+            SelectedApps = CommonApps.Where(app => app.IsSelected).Select(app => app.App).ToList()
+        });
+
+        if (SelectedLanguage != null)
+        {
+            config.Settings.Language = SelectedLanguage.Code;
+        }
+
+        config.Settings.HasCompletedInitialDetection = true;
+
+        await _configService.SaveAsync(config);
+        await _onboardingStateService.MarkSetupCompletedAsync();
+        RequestClose?.Invoke(DialogResult.Confirmed);
+    }
 
         [RelayCommand]
         private async Task Skip()
