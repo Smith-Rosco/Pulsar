@@ -46,6 +46,9 @@ namespace Pulsar.Services
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool BringWindowToTopNative(IntPtr hWnd);
 
+        [DllImport("user32.dll", EntryPoint = "SwitchToThisWindow")]
+        private static extern void SwitchToThisWindowNative(IntPtr hWnd, bool fAltTab);
+
         [DllImport("user32.dll", EntryPoint = "SetForegroundWindow")]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool SetForegroundWindowNativeInternal(IntPtr hWnd);
@@ -92,6 +95,8 @@ namespace Pulsar.Services
         public bool ShowWindow(IntPtr hWnd, int nCmdShow) => ShowWindowNative(hWnd, nCmdShow);
 
         public bool BringWindowToTop(IntPtr hWnd) => BringWindowToTopNative(hWnd);
+
+        public void SwitchToThisWindow(IntPtr hWnd, bool fAltTab) => SwitchToThisWindowNative(hWnd, fAltTab);
 
         public bool SetForegroundWindowNative(IntPtr hWnd) => SetForegroundWindowNativeInternal(hWnd);
 

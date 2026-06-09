@@ -12,6 +12,7 @@ namespace Pulsar.Services.Interfaces
         bool IsWindowVisible(IntPtr hWnd);
         bool ShowWindow(IntPtr hWnd, int nCmdShow);
         bool BringWindowToTop(IntPtr hWnd);
+        void SwitchToThisWindow(IntPtr hWnd, bool fAltTab);
         bool SetForegroundWindowNative(IntPtr hWnd);
         bool AllowSetForegroundWindow(int dwProcessId);
         void KeybdEvent(byte bVk, byte bScan, uint dwFlags, int dwExtraInfo);

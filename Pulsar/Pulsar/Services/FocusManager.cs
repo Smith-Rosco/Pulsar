@@ -254,9 +254,24 @@ namespace Pulsar.Services
 
                             if (!activated)
                             {
-                                _native.BringWindowToTop(hWnd);
-                                activated = _native.SetForegroundWindowNative(hWnd);
-                                _logger.LogInformation("[FocusManager] ActivateWindow: SetForegroundWindow (retry with BringWindowToTop) result={Activated}", activated);
+                                _native.SwitchToThisWindow(hWnd, true);
+                                _logger.LogInformation("[FocusManager] ActivateWindow: SwitchToThisWindow called (first fallback)");
+
+                                var fgAfterSwitch = _native.GetForegroundWindow();
+                                if (fgAfterSwitch == hWnd)
+                                {
+                                    activated = true;
+                                    _logger.LogInformation("[FocusManager] ActivateWindow: SwitchToThisWindow succeeded, foreground verified");
+                                }
+                                else
+                                {
+                                    _logger.LogInformation("[FocusManager] ActivateWindow: SwitchToThisWindow failed, foreground=0x{ActualFg:X} != target=0x{Target:X}",
+                                        fgAfterSwitch.ToInt64(), hWnd.ToInt64());
+
+                                    _native.BringWindowToTop(hWnd);
+                                    activated = _native.SetForegroundWindowNative(hWnd);
+                                    _logger.LogInformation("[FocusManager] ActivateWindow: SetForegroundWindow (retry with BringWindowToTop) result={Activated}", activated);
+                                }
                             }
                         }
                         finally
@@ -370,12 +385,27 @@ namespace Pulsar.Services
                     bool result = _native.SetForegroundWindowNative(hWnd);
                     _logger.LogInformation("[FocusManager] FallbackActivate: SetForegroundWindow result={Result} hWnd=0x{hWnd:X} pid={Pid}",
                         result, hWnd.ToInt64(), pid);
-                    if (!result)
-                    {
-                        _native.BringWindowToTop(hWnd);
-                        result = _native.SetForegroundWindowNative(hWnd);
-                        _logger.LogInformation("[FocusManager] FallbackActivate: SetForegroundWindow (retry) result={Result}", result);
-                    }
+            if (!result)
+            {
+                _native.SwitchToThisWindow(hWnd, true);
+                _logger.LogInformation("[FocusManager] FallbackActivate: SwitchToThisWindow called (first fallback)");
+
+                var fgAfterSwitch = _native.GetForegroundWindow();
+                if (fgAfterSwitch == hWnd)
+                {
+                    result = true;
+                    _logger.LogInformation("[FocusManager] FallbackActivate: SwitchToThisWindow succeeded, foreground verified");
+                }
+                else
+                {
+                    _logger.LogInformation("[FocusManager] FallbackActivate: SwitchToThisWindow failed, foreground=0x{ActualFg:X} != target=0x{Target:X}",
+                        fgAfterSwitch.ToInt64(), hWnd.ToInt64());
+
+                    _native.BringWindowToTop(hWnd);
+                    result = _native.SetForegroundWindowNative(hWnd);
+                    _logger.LogInformation("[FocusManager] FallbackActivate: SetForegroundWindow (retry) result={Result}", result);
+                }
+            }
                     if (!result)
                     {
                         result = ForceActivate(hWnd);
