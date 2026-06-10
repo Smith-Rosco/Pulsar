@@ -238,61 +238,72 @@ namespace Pulsar.Services
 
             try
             {
-                bool attached = _native.AttachThreadInput(currentThread, targetThread, true);
-                _logger.LogInformation("[FocusManager] ActivateWindow: AttachThreadInput result={Attached}", attached);
+                uint sendInputResult = _native.SendInputMouse();
+                _logger.LogInformation("[FocusManager] ActivateWindow: SendInputMouse result={SendInputResult}", sendInputResult);
 
-                if (attached)
+                activated = _native.SetForegroundWindowNative(hWnd);
+                _logger.LogInformation("[FocusManager] ActivateWindow: SetForegroundWindow (simple) result={Activated}", activated);
+
+                if (!activated)
                 {
-                    try
+                    bool attached = _native.AttachThreadInput(currentThread, targetThread, true);
+                    _logger.LogInformation("[FocusManager] ActivateWindow: AttachThreadInput result={Attached}", attached);
+
+                    if (attached)
                     {
-                        _native.LockSetForegroundWindow(LSFW_UNLOCK);
                         try
                         {
-                            _native.AllowSetForegroundWindow((int)targetPid);
-                            activated = _native.SetForegroundWindowNative(hWnd);
-                            _logger.LogInformation("[FocusManager] ActivateWindow: SetForegroundWindow (primary) result={Activated}", activated);
+                            _native.LockSetForegroundWindow(LSFW_UNLOCK);
+                            try
+                            {
+                                _native.AllowSetForegroundWindow((int)targetPid);
+                                _native.SendInputMouse();
+                                activated = _native.SetForegroundWindowNative(hWnd);
+                                _logger.LogInformation("[FocusManager] ActivateWindow: SetForegroundWindow (primary) result={Activated}", activated);
+
+                                if (!activated)
+                                {
+                                    _native.SwitchToThisWindow(hWnd, true);
+                                    _logger.LogInformation("[FocusManager] ActivateWindow: SwitchToThisWindow called (first fallback)");
+
+                                    var fgAfterSwitch = _native.GetForegroundWindow();
+                                    if (fgAfterSwitch == hWnd)
+                                    {
+                                        activated = true;
+                                        _logger.LogInformation("[FocusManager] ActivateWindow: SwitchToThisWindow succeeded, foreground verified");
+                                    }
+                                    else
+                                    {
+                                        _logger.LogInformation("[FocusManager] ActivateWindow: SwitchToThisWindow failed, foreground=0x{ActualFg:X} != target=0x{Target:X}",
+                                            fgAfterSwitch.ToInt64(), hWnd.ToInt64());
+
+                                        _native.BringWindowToTop(hWnd);
+                                        _native.SendInputMouse();
+                                        activated = _native.SetForegroundWindowNative(hWnd);
+                                        _logger.LogInformation("[FocusManager] ActivateWindow: SetForegroundWindow (retry with BringWindowToTop) result={Activated}", activated);
+                                    }
+                                }
+                            }
+                            finally
+                            {
+                                _native.LockSetForegroundWindow(LSFW_LOCK);
+                            }
 
                             if (!activated)
                             {
-                                _native.SwitchToThisWindow(hWnd, true);
-                                _logger.LogInformation("[FocusManager] ActivateWindow: SwitchToThisWindow called (first fallback)");
-
-                                var fgAfterSwitch = _native.GetForegroundWindow();
-                                if (fgAfterSwitch == hWnd)
-                                {
-                                    activated = true;
-                                    _logger.LogInformation("[FocusManager] ActivateWindow: SwitchToThisWindow succeeded, foreground verified");
-                                }
-                                else
-                                {
-                                    _logger.LogInformation("[FocusManager] ActivateWindow: SwitchToThisWindow failed, foreground=0x{ActualFg:X} != target=0x{Target:X}",
-                                        fgAfterSwitch.ToInt64(), hWnd.ToInt64());
-
-                                    _native.BringWindowToTop(hWnd);
-                                    activated = _native.SetForegroundWindowNative(hWnd);
-                                    _logger.LogInformation("[FocusManager] ActivateWindow: SetForegroundWindow (retry with BringWindowToTop) result={Activated}", activated);
-                                }
+                                activated = ForceActivate(hWnd);
                             }
                         }
                         finally
                         {
-                            _native.LockSetForegroundWindow(LSFW_LOCK);
-                        }
-
-                        if (!activated)
-                        {
-                            activated = ForceActivate(hWnd);
+                            _native.AttachThreadInput(currentThread, targetThread, false);
                         }
                     }
-                    finally
+                    else
                     {
-                        _native.AttachThreadInput(currentThread, targetThread, false);
+                        _logger.LogInformation("[FocusManager] ActivateWindow: AttachThreadInput failed, using fallback path");
+                        activated = FallbackActivate(hWnd);
                     }
-                }
-                else
-                {
-                    _logger.LogInformation("[FocusManager] ActivateWindow: AttachThreadInput failed, using fallback path");
-                    activated = FallbackActivate(hWnd);
                 }
             }
             finally
@@ -382,6 +393,7 @@ namespace Pulsar.Services
                     _native.GetWindowThreadProcessId(hWnd, out uint pid);
                     _native.AllowSetForegroundWindow((int)pid);
 
+                    _native.SendInputMouse();
                     bool result = _native.SetForegroundWindowNative(hWnd);
                     _logger.LogInformation("[FocusManager] FallbackActivate: SetForegroundWindow result={Result} hWnd=0x{hWnd:X} pid={Pid}",
                         result, hWnd.ToInt64(), pid);
@@ -402,6 +414,7 @@ namespace Pulsar.Services
                         fgAfterSwitch.ToInt64(), hWnd.ToInt64());
 
                     _native.BringWindowToTop(hWnd);
+                    _native.SendInputMouse();
                     result = _native.SetForegroundWindowNative(hWnd);
                     _logger.LogInformation("[FocusManager] FallbackActivate: SetForegroundWindow (retry) result={Result}", result);
                 }
@@ -433,10 +446,12 @@ namespace Pulsar.Services
 
             _native.AllowSetForegroundWindow(-1); // ASFW_ANY
 
+            _native.SendInputMouse();
             bool result = _native.SetForegroundWindowNative(hWnd);
             if (!result)
             {
                 _native.BringWindowToTop(hWnd);
+                _native.SendInputMouse();
                 result = _native.SetForegroundWindowNative(hWnd);
             }
 

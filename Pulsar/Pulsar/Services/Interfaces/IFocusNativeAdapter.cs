@@ -23,5 +23,7 @@ namespace Pulsar.Services.Interfaces
         void UnlockForegroundTimeout();
 
         void LockSetForegroundWindow(uint uLockCode);
+
+        uint SendInputMouse();
     }
 }

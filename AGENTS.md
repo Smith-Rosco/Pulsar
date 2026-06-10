@@ -370,6 +370,8 @@ dotnet restore Pulsar/Pulsar/Pulsar.csproj
   - [CONTEXTMENU_RESOURCE_INHERITANCE.md](./Docs/lessons/CONTEXTMENU_RESOURCE_INHERITANCE.md)
   - [WPF_SCROLLVIEWER_VISIBILITY.md](./Docs/lessons/WPF_SCROLLVIEWER_VISIBILITY.md)
   - [WPF_RESOURCES_HYGIENE.md](./Docs/lessons/WPF_RESOURCES_HYGIENE.md)
+  - [FOREGROUND_WINDOW_ACTIVATION_RELIABILITY.md](./Docs/lessons/FOREGROUND_WINDOW_ACTIVATION_RELIABILITY.md)
+  - [SENDINPUT_FOREGROUND_ACTIVATION.md](./Docs/lessons/SENDINPUT_FOREGROUND_ACTIVATION.md)
 
 ### Operations & Decisions
 - **[Docs/decisions/](./Docs/decisions/)** - Architecture Decision Records (ADRs)
