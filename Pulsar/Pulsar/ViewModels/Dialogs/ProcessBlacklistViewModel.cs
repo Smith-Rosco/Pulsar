@@ -41,10 +41,10 @@ namespace Pulsar.ViewModels.Dialogs
                 .Select(value => value.Trim())
                 .Where(value => !string.IsNullOrWhiteSpace(value))
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            LoadProcessesAsync();
+            _ = LoadProcessesAsync();
         }
 
-        private async void LoadProcessesAsync()
+        private async Task LoadProcessesAsync()
         {
             IsLoading = true;
             try

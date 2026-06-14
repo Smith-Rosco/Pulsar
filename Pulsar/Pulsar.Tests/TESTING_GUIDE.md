@@ -24,11 +24,15 @@
 
 ### 测试覆盖范围
 
-当前测试套件包含 **91 个测试**，覆盖以下模块：
+当前测试套件包含 **331+ 个测试**，覆盖以下模块：
 
 - **配置管理** (`Config/`): 配置加载、保存、验证、默认值
 - **插件系统** (`Plugin/`): 插件注册、执行、断路器、热重载
 - **插件安全** (`Plugin/Security/`): 权限管理、权限拦截
+- **服务层** (`Services/`): 通知、补间动画、配置变更检测
+- **ViewModel** (`ViewModels/`): 窗口切换策略、分组槽交互、脏状态检测
+- **教程系统** (`Tutorial/`): 引导流程、状态机、触发器
+- **扩展插件** (`Plugins/`): 书签运行器、命令插件解析
 
 ---
 
@@ -36,20 +40,39 @@
 
 ```
 Pulsar.Tests/
-├── Config/                          # 配置服务测试
-│   ├── ConfigServiceLoadTests.cs   # 配置加载测试
-│   ├── ConfigServiceSaveTests.cs   # 配置保存测试
+├── Config/                             # 配置服务测试
+│   ├── ConfigServiceLoadTests.cs      # 配置加载测试
+│   ├── ConfigServiceSaveTests.cs      # 配置保存测试
 │   └── ProfilesConfigDefaultsTests.cs # 默认配置测试
-├── Plugin/                          # 插件系统测试
-│   ├── PluginRegistryExecutionTests.cs      # 插件执行测试
-│   ├── PluginRegistryCircuitBreakerTests.cs # 断路器测试
-│   ├── HotReloadTests.cs                    # 热重载测试
-│   └── Security/                            # 插件安全测试
-│       ├── PermissionInterceptorTests.cs    # 权限拦截器测试
-│       └── PluginPermissionTests.cs         # 权限系统测试
-├── TestHelpers/                     # 测试辅助工具
-│   └── PulsarContextFactory.cs      # PulsarContext 工厂类
-└── TESTING_GUIDE.md                 # 本文档
+├── Plugin/                             # 插件系统测试
+│   ├── PluginRegistryExecutionTests.cs           # 插件执行测试
+│   ├── PluginRegistryCircuitBreakerTests.cs      # 断路器测试
+│   ├── PluginExecutionPipelineTimeoutTests.cs    # 超时测试
+│   ├── HotReloadTests.cs                         # 热重载测试
+│   └── Security/                                 # 插件安全测试
+│       ├── PermissionInterceptorTests.cs         # 权限拦截器测试
+│       └── PluginPermissionTests.cs              # 权限系统测试
+├── Plugins/                            # 扩展插件测试
+│   ├── BookmarkletRunnerPluginTests.cs # 书签运行器测试
+│   └── Command/                        # 命令插件测试
+│       ├── CommandPluginTests.cs       # 命令执行测试
+│       └── KeysLexerTests.cs           # 按键解析测试
+├── Services/                           # 服务层测试
+│   └── (NotificationService, TweenService, ConfigChangeDetection)
+├── Tutorial/                           # 教程系统测试
+│   ├── TutorialStateMachineTests.cs    # 状态机测试
+│   ├── TutorialTriggerTests.cs         # 触发器测试
+│   ├── TutorialDataTests.cs            # 数据层测试
+│   └── (8+ 更多教程相关测试文件)
+├── ViewModels/                         # ViewModel 测试
+│   ├── WindowSwitchStrategyTests.cs    # 窗口切换策略测试
+│   ├── GroupedSlotInteractionTests.cs  # 分组槽交互测试
+│   ├── SettingsViewModelDirtyStateTests.cs # 脏状态测试
+│   └── DialogSlotEditorViewModelTests.cs   # 对话框槽编辑测试
+├── TestHelpers/                        # 测试辅助工具
+│   ├── PulsarContextFactory.cs         # PulsarContext 工厂类
+│   └── (其他辅助工具)
+└── TESTING_GUIDE.md                    # 本文档
 ```
 
 ---
@@ -328,7 +351,7 @@ public void CheckPermission_ShouldThrowException_WhenPermissionDenied()
 ### 运行所有测试
 
 ```bash
-dotnet test "G:\0_Playground\Pulsar_Project\Pulsar\Pulsar.Tests\Pulsar.Tests.csproj" --verbosity quiet
+dotnet test Pulsar/Pulsar.Tests/Pulsar.Tests.csproj --verbosity quiet
 ```
 
 ### 运行特定测试类
@@ -483,6 +506,7 @@ public async Task NewFeature_ShouldWork_WhenConditionMet()
 ## 更新日志
 
 - **2026-03-03**: 初始版本，91 个测试全部通过
+- **2026-06-14**: 更新为 331+ 测试，新增 Services / ViewModels / Tutorial / Plugins 测试目录
   - 添加 `PulsarContextFactory` 测试辅助类
   - 修复 `PluginRegistry` 构造函数中 `_configService` 初始化问题
   - 修复断路器重置逻辑
@@ -500,4 +524,4 @@ public async Task NewFeature_ShouldWork_WhenConditionMet()
 ---
 
 **维护者**: Pulsar 开发团队  
-**最后更新**: 2026-03-03
+**最后更新**: 2026-06-14

@@ -21,9 +21,6 @@ namespace Pulsar.ViewModels.Settings
     /// </summary>
     public partial class PluginMarketViewModel : ObservableObject
     {
-#pragma warning disable CS0618 // Type or member is obsolete
-        private readonly PluginRepository _repository;
-#pragma warning restore CS0618 // Type or member is obsolete
         private readonly PluginPackageManager _packageManager;
         private readonly ILogger<PluginMarketViewModel>? _logger;
         private readonly IDialogService? _dialogService;
@@ -60,15 +57,11 @@ namespace Pulsar.ViewModels.Settings
         private RepositoryStatistics? _statistics;
 
         public PluginMarketViewModel(
-#pragma warning disable CS0618 // Type or member is obsolete
-            PluginRepository repository,
-#pragma warning restore CS0618 // Type or member is obsolete
             PluginPackageManager packageManager,
             ILocalizationService localizationService,
             ILogger<PluginMarketViewModel>? logger = null,
             IDialogService? dialogService = null)
         {
-            _repository = repository;
             _packageManager = packageManager;
             _loc = localizationService;
             _logger = logger;
@@ -88,7 +81,6 @@ namespace Pulsar.ViewModels.Settings
 
             try
             {
-                await _repository.InitializeAsync();
                 await RefreshPluginsAsync();
                 RefreshTags();
                 RefreshStatistics();
@@ -114,28 +106,10 @@ namespace Pulsar.ViewModels.Settings
         {
             try
             {
-                var allPlugins = _repository.SearchPackages(SearchQuery, SelectedTag);
-
-                if (ShowInstalledOnly)
-                {
-                    allPlugins = allPlugins.Where(p => p.IsInstalled).ToList();
-                }
-
                 AvailablePlugins.Clear();
-                foreach (var plugin in allPlugins.OrderByDescending(p => p.Rating).ThenBy(p => p.Name))
-                {
-                    AvailablePlugins.Add(plugin);
-                }
-
-                // 更新已安装插件列表
                 InstalledPlugins.Clear();
-                foreach (var plugin in allPlugins.Where(p => p.IsInstalled))
-                {
-                    InstalledPlugins.Add(plugin);
-                }
 
-                _logger?.LogDebug("[PluginMarketViewModel] Refreshed plugins: {Count} available, {Installed} installed",
-                    AvailablePlugins.Count, InstalledPlugins.Count);
+                _logger?.LogDebug("[PluginMarketViewModel] Refreshed plugins (deprecated: no repository available)");
             }
             catch (Exception ex)
             {
@@ -371,12 +345,7 @@ namespace Pulsar.ViewModels.Settings
         /// </summary>
         private void RefreshTags()
         {
-            var tags = _repository.GetAllTags();
             AvailableTags.Clear();
-            foreach (var tag in tags)
-            {
-                AvailableTags.Add(tag);
-            }
         }
 
         /// <summary>
@@ -384,7 +353,7 @@ namespace Pulsar.ViewModels.Settings
         /// </summary>
         private void RefreshStatistics()
         {
-            Statistics = _repository.GetStatistics();
+            Statistics = null;
         }
 
         /// <summary>

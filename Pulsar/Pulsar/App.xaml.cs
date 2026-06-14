@@ -230,18 +230,6 @@ namespace Pulsar
             serviceCollection.AddTransient<ExternalPluginManagerViewModel>();
             serviceCollection.AddTransient<SettingsExternalPluginsPage>();
             
-            // [Deprecated] Keep old marketplace services for backward compatibility
-#pragma warning disable CS0618 // Type or member is obsolete
-            serviceCollection.AddSingleton<PluginRepository>(sp =>
-            {
-                var repositoryPath = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "Pulsar",
-                    "PluginRepository");
-                var logger = sp.GetService<ILogger<PluginRepository>>();
-                return new PluginRepository(repositoryPath, logger);
-            });
-#pragma warning restore CS0618
             serviceCollection.AddTransient<PluginMarketViewModel>();
             serviceCollection.AddTransient<SettingsMarketplacePage>();
             serviceCollection.AddTransient<Pulsar.ViewModels.Dialogs.FirstLaunchSetupWizardViewModel>();

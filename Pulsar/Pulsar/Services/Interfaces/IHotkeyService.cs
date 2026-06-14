@@ -8,7 +8,7 @@ namespace Pulsar.Services.Interfaces
         Task InitializeAsync();
         void RegisterAction(string actionId, Action callback);
         void UnregisterAction(string actionId);
-        void UpdateHotkey(string actionId, HotkeyConfig newHotkey);
+        Task UpdateHotkey(string actionId, HotkeyConfig newHotkey);
         HotkeyConfig? GetHotkey(string actionId);
         
         /// <summary>

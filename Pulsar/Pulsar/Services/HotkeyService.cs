@@ -136,7 +136,7 @@ namespace Pulsar.Services
             }
         }
 
-        public async void UpdateHotkey(string actionId, HotkeyConfig newHotkey)
+        public async Task UpdateHotkey(string actionId, HotkeyConfig newHotkey)
         {
             if (_config == null) return;
             

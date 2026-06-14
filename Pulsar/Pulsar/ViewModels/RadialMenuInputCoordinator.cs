@@ -62,7 +62,7 @@ namespace Pulsar.ViewModels
             {
                 _logger?.LogDebug("[HandleKeyUp] Quick Switch triggered (duration: {DurationMs}ms)", duration);
                 markActionExecuted();
-                _windowService.SwitchToPreviousWindow();
+                _ = _windowService.SwitchToPreviousWindow();
                 hideMenu();
                 return true;
             }

@@ -243,13 +243,13 @@ namespace Pulsar.ViewModels
             ConfigureAnimationController();
 
             // [Refactor] Use HotkeyService
-            hotkeyService.RegisterAction("ShowGrid", () => Show(RadialMenuMode.Action));
-            hotkeyService.RegisterAction("ShowSwitcher", () => Show(RadialMenuMode.Task));
+            hotkeyService.RegisterAction("ShowGrid", () => _ = Show(RadialMenuMode.Action));
+            hotkeyService.RegisterAction("ShowSwitcher", () => _ = Show(RadialMenuMode.Task));
             hotkeyService.OnGlobalKeyUp += HandleKeyUp;
             _globalMouseService.OnMouseEvent += HandleGlobalMouseEvent;
 
             _configService.ConfigUpdated += OnConfigUpdated;
-            LoadConfigAsync();
+            _ = LoadConfigAsync();
 
             _mouseTrackingService.MousePositionChanged += OnMousePositionChanged;
             _pagingController.OnBoundaryReached += OnPagingBoundaryReached;
@@ -377,7 +377,7 @@ namespace Pulsar.ViewModels
             return (centerPos.X + (50 - slotSize) / 2, centerPos.Y + (50 - slotSize) / 2);
         }
 
-        private async void LoadConfigAsync()
+        private async Task LoadConfigAsync()
         {
             OnConfigUpdated();
         }
@@ -428,7 +428,7 @@ namespace Pulsar.ViewModels
 
         private int _isLoading; // 0 = idle, 1 = loading (atomic guard)
 
-        private async void Show(RadialMenuMode mode)
+        private async Task Show(RadialMenuMode mode)
         {
             Debug.Assert(Application.Current.Dispatcher.CheckAccess(), "Show() must run on UI thread");
             if (IsVisible || Interlocked.CompareExchange(ref _isLoading, 1, 0) != 0) return;
@@ -532,7 +532,7 @@ namespace Pulsar.ViewModels
                 {
                     _logger?.LogDebug("[Show] Pending Quick Switch detected, executing immediately.");
                     SetActionExecuted(true);
-                    _windowService.SwitchToPreviousWindow();
+                    await _windowService.SwitchToPreviousWindow();
                     IsVisible = false;
                 }
                 

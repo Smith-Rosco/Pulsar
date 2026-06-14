@@ -482,7 +482,7 @@ namespace Pulsar.Services
             _trackingService.SetPreviousWindow(PulsarNative.GetForegroundWindow());
         }
 
-        public async void SwitchToPreviousWindow()
+        public async Task SwitchToPreviousWindow()
         {
             IntPtr current = PulsarNative.GetForegroundWindow();
             PulsarNative.GetWindowThreadProcessId(current, out uint currentPid);

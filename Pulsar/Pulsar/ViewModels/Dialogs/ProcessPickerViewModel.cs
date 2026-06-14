@@ -34,10 +34,10 @@ namespace Pulsar.ViewModels.Dialogs
         public ProcessPickerViewModel(IWindowService windowService)
         {
             _windowService = windowService;
-            LoadProcessesAsync();
+            _ = LoadProcessesAsync();
         }
 
-        private async void LoadProcessesAsync()
+        private async Task LoadProcessesAsync()
         {
             IsLoading = true;
             try
