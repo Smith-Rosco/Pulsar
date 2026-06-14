@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Plugin.Metadata;
@@ -26,6 +27,7 @@ namespace Pulsar.ViewModels.Settings
         private readonly IConfigService _configService;
         private readonly IPluginUsageTracker? _usageTracker;
         private readonly IPluginHealthMonitor? _healthMonitor;
+        private readonly ILogger? _logger;
         private readonly IPluginLogService? _logService;
         private readonly IDialogService? _dialogService;
         private readonly IServiceProvider? _serviceProvider;
@@ -110,6 +112,7 @@ namespace Pulsar.ViewModels.Settings
             _dialogService = dialogService;
             _serviceProvider = serviceProvider;
             _loc = localizationService;
+            _logger = serviceProvider?.GetService<ILogger<PluginViewModel>>();
             _plugin = _registry.GetPlugin(descriptor.Id);
             _metadata = metadataRegistry?.GetMetadata(descriptor.Id) ?? descriptor.Metadata;
             _displayModel = BuiltInPluginDisplayModel.FromMetadata(_metadata);
@@ -311,7 +314,13 @@ namespace Pulsar.ViewModels.Settings
             var configurable = await EnsureConfigurablePluginAsync();
             configurable?.UpdateSettings(profile.Config);
 
-            _ = _configService.SaveAsync(config);
+            _ = _configService.SaveAsync(config).ContinueWith(t =>
+            {
+                if (t.IsFaulted && t.Exception != null)
+                {
+                    _logger?.LogError(t.Exception, "[PluginViewModel] Failed to save config for {PluginId}", Id);
+                }
+            }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
         [RelayCommand]
@@ -323,7 +332,13 @@ namespace Pulsar.ViewModels.Settings
 
         partial void OnIsEnabledChanged(bool value)
         {
-            _ = _registry.SetPluginStateAsync(Id, value);
+            _ = _registry.SetPluginStateAsync(Id, value).ContinueWith(t =>
+            {
+                if (t.IsFaulted && t.Exception != null)
+                {
+                    _logger?.LogError(t.Exception, "[PluginViewModel] Failed to set plugin state for {PluginId}", Id);
+                }
+            }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
         [RelayCommand]

@@ -145,13 +145,13 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
         {
             if (_windowService == null)
             {
-                return PluginResult.Error("Plugin not initialized");
+                return PluginResult.Error(_loc?["Plugin.Bookmarklet.NotInitialized"] ?? "Plugin not initialized");
             }
 
             return action.ToLowerInvariant() switch
             {
                 "run" => await RunBookmarkletAsync(args, context),
-                _ => PluginResult.Error($"Unknown action: {action}")
+                _ => PluginResult.Error(string.Format(_loc?["Plugin.VbaRunner.UnknownAction"] ?? "Unknown action: {0}", action))
             };
         }
 

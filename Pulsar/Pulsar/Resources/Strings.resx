@@ -2195,4 +2195,62 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
   <data name="Plugin.Command.UnknownAction" xml:space="preserve">
     <value>Unknown action: {0}</value>
   </data>
+  <!-- ==================== WinSwitcher Plugin ==================== -->
+  <data name="Plugin.WinSwitcher.WindowServiceNotInitialized" xml:space="preserve">
+    <value>WindowService not initialized</value>
+  </data>
+  <data name="Plugin.WinSwitcher.UnknownAction" xml:space="preserve">
+    <value>Unknown action: {0}. Supported: activate, launch, switch</value>
+  </data>
+  <data name="Plugin.WinSwitcher.MissingAppParam" xml:space="preserve">
+    <value>Missing required parameter: app</value>
+  </data>
+  <data name="Plugin.WinSwitcher.MissingPathParam" xml:space="preserve">
+    <value>Missing required parameter: path</value>
+  </data>
+  <data name="Plugin.WinSwitcher.ProcessNotRunning" xml:space="preserve">
+    <value>Process '{0}' is not running</value>
+  </data>
+  <data name="Plugin.WinSwitcher.SwitchedTo" xml:space="preserve">
+    <value>Switched to {0}</value>
+  </data>
+  <data name="Plugin.WinSwitcher.Launched" xml:space="preserve">
+    <value>Launched {0}</value>
+  </data>
+  <!-- ==================== SystemCommand Plugin ==================== -->
+  <data name="Plugin.SystemCommand.NotInitialized" xml:space="preserve">
+    <value>System plugin not initialized</value>
+  </data>
+  <data name="Plugin.SystemCommand.SettingsOpened" xml:space="preserve">
+    <value>Settings opened</value>
+  </data>
+  <data name="Plugin.SystemCommand.NoTargetProcess" xml:space="preserve">
+    <value>No target process found in context</value>
+  </data>
+  <data name="Plugin.SystemCommand.UnknownCommand" xml:space="preserve">
+    <value>Unknown system command: {0}</value>
+  </data>
+  <data name="Plugin.SystemCommand.ExecutionFailed" xml:space="preserve">
+    <value>Failed to execute system command: {0}</value>
+  </data>
+  <!-- ==================== VbaRunner Plugin ==================== -->
+  <data name="Plugin.VbaRunner.InitializationFailed" xml:space="preserve">
+    <value>Plugin initialization failed</value>
+  </data>
+  <data name="Plugin.VbaRunner.MissingAction" xml:space="preserve">
+    <value>Missing action parameter. Please configure the slot with an action (e.g., 'run').</value>
+  </data>
+  <data name="Plugin.VbaRunner.UnknownAction" xml:space="preserve">
+    <value>Unknown action: {0}</value>
+  </data>
+  <data name="Plugin.VbaRunner.MissingScriptPath" xml:space="preserve">
+    <value>Missing required parameter: scriptPath</value>
+  </data>
+  <data name="Plugin.VbaRunner.ScriptFileNotFound" xml:space="preserve">
+    <value>Script file not found: {0}</value>
+  </data>
+  <!-- ==================== Bookmarklet Plugin ==================== -->
+  <data name="Plugin.Bookmarklet.NotInitialized" xml:space="preserve">
+    <value>Plugin not initialized</value>
+  </data>
 </root>

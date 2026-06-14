@@ -215,7 +215,7 @@ namespace Pulsar.Services
         /// <summary>
         /// 等待窗口出现
         /// </summary>
-        private async Task<IntPtr?> WaitForWindowAsync(string processName, TimeSpan timeout)
+        private async Task<IntPtr?> WaitForWindowAsync(string processName, TimeSpan timeout, CancellationToken cancellationToken = default)
         {
             var stopwatch = Stopwatch.StartNew();
 
@@ -227,7 +227,7 @@ namespace Pulsar.Services
                     return hwnd;
                 }
 
-                await Task.Delay(200);
+                await Task.Delay(200, cancellationToken);
             }
 
             return null;

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Native;
@@ -21,6 +22,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
         private IFocusManager? _focusManager;
         private ScriptEngine? _scriptEngine;
         private ILogger<VbaRunnerPlugin>? _logger;
+        private ILocalizationService? _loc;
         private readonly VbaRunnerSettings _settings = new();
 
         public string Id => "com.pulsar.vbarunner";
@@ -42,6 +44,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
             _windowService = services.GetService(typeof(IWindowService)) as IWindowService;
             _focusManager = services.GetService(typeof(IFocusManager)) as IFocusManager;
             _logger = services.GetService(typeof(ILogger<VbaRunnerPlugin>)) as ILogger<VbaRunnerPlugin>;
+            _loc = services.GetService(typeof(ILocalizationService)) as ILocalizationService;
 
             if (_windowService == null)
             {
@@ -172,19 +175,19 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
         {
             if (_scriptEngine == null)
             {
-                return PluginResult.Error("Plugin initialization failed");
+                return PluginResult.Error(_loc?["Plugin.VbaRunner.InitializationFailed"] ?? "Plugin initialization failed");
             }
 
             if (string.IsNullOrEmpty(action))
             {
                 _logger?.LogWarning("[VbaRunnerPlugin] Action parameter is missing or null");
-                return PluginResult.Error("Missing action parameter. Please configure the slot with an action (e.g., 'run').");
+                return PluginResult.Error(_loc?["Plugin.VbaRunner.MissingAction"] ?? "Missing action parameter. Please configure the slot with an action (e.g., 'run').");
             }
 
             return action.ToLowerInvariant() switch
             {
                 "run" => await RunScriptAsync(args, context),
-                _ => PluginResult.Error($"Unknown action: {action}")
+                _ => PluginResult.Error(string.Format(_loc?["Plugin.VbaRunner.UnknownAction"] ?? "Unknown action: {0}", action))
             };
         }
 
@@ -202,7 +205,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
             if (!args.TryGetValue("scriptPath", out var scriptPath) || string.IsNullOrEmpty(scriptPath))
             {
                 _logger?.LogWarning("[VbaRunnerPlugin] Missing scriptPath parameter");
-                return PluginResult.Error("Missing required parameter: scriptPath");
+                return PluginResult.Error(_loc?["Plugin.VbaRunner.MissingScriptPath"] ?? "Missing required parameter: scriptPath");
             }
 
             // 支持环境变量展开 (如 %USERPROFILE%)
@@ -211,7 +214,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
             if (!File.Exists(scriptPath))
             {
                 _logger?.LogWarning("[VbaRunnerPlugin] Script file not found: {ScriptPath}", scriptPath);
-                return PluginResult.Error($"Script file not found: {scriptPath}");
+                return PluginResult.Error(string.Format(_loc?["Plugin.VbaRunner.ScriptFileNotFound"] ?? "Script file not found: {0}", scriptPath));
             }
 
             _logger?.LogDebug("[VbaRunnerPlugin] Script: {ScriptPath}", scriptPath);

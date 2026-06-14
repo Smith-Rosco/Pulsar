@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Models;
@@ -26,6 +27,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
         private IWindowService _windowService = null!;
         private ILogger<WinSwitcherPlugin>? _logger;
         private ITrayService? _trayService;
+        private ILocalizationService? _loc;
         private HashSet<string> _excludedProcesses = new();
 
         public string Id => "com.pulsar.winswitcher";
@@ -46,6 +48,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
             _windowService = (services.GetService(typeof(IWindowService)) as IWindowService)!;
             _logger = services.GetService(typeof(ILogger<WinSwitcherPlugin>)) as ILogger<WinSwitcherPlugin>;
             _trayService = services.GetService(typeof(ITrayService)) as ITrayService;
+            _loc = services.GetService(typeof(ILocalizationService)) as ILocalizationService;
 
             if (_windowService == null)
             {
@@ -164,7 +167,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
         {
             if (_windowService == null)
             {
-                return PluginResult.Error("WindowService not initialized", PluginErrorSeverity.Critical);
+                return PluginResult.Error(_loc?["Plugin.WinSwitcher.WindowServiceNotInitialized"] ?? "WindowService not initialized", PluginErrorSeverity.Critical);
             }
 
             return action.ToLowerInvariant() switch
@@ -172,7 +175,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                 "activate" => await ActivateWindowAsync(args, context),
                 "launch" => await LaunchApplicationAsync(args, context),
                 "switch" => await SmartSwitchAsync(args, context), // 智能切换或启动
-                _ => PluginResult.Error($"Unknown action: {action}. Supported: activate, launch, switch", 
+                _ => PluginResult.Error(string.Format(_loc?["Plugin.WinSwitcher.UnknownAction"] ?? "Unknown action: {0}. Supported: activate, launch, switch", action), 
                     PluginErrorSeverity.Recoverable)
             };
         }
@@ -186,7 +189,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
         {
             if (!args.TryGetValue("app", out var processName) || string.IsNullOrEmpty(processName))
             {
-                return PluginResult.Error("Missing required parameter: app", PluginErrorSeverity.Recoverable);
+                return PluginResult.Error(_loc?["Plugin.WinSwitcher.MissingAppParam"] ?? "Missing required parameter: app", PluginErrorSeverity.Recoverable);
             }
 
             _logger?.LogDebug($"{LogPrefix} Attempting to activate: {{ProcessName}}", processName);
@@ -196,12 +199,12 @@ namespace Pulsar.Plugins.Core.WinSwitcher
             if (switched)
             {
                 _logger?.LogInformation($"{LogPrefix} Successfully switched to: {{ProcessName}}", processName);
-                return PluginResult.Ok($"Switched to {processName}");
+                return PluginResult.Ok(string.Format(_loc?["Plugin.WinSwitcher.SwitchedTo"] ?? "Switched to {0}", processName));
             }
             else
             {
                 _logger?.LogInformation($"{LogPrefix} Process not running: {{ProcessName}}", processName);
-                return PluginResult.Error($"Process '{processName}' is not running", 
+                return PluginResult.Error(string.Format(_loc?["Plugin.WinSwitcher.ProcessNotRunning"] ?? "Process '{0}' is not running", processName), 
                     PluginErrorSeverity.Recoverable);
             }
         }
@@ -215,7 +218,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
         {
             if (!args.TryGetValue("path", out var exePath) || string.IsNullOrEmpty(exePath))
             {
-                return PluginResult.Error("Missing required parameter: path", PluginErrorSeverity.Recoverable);
+                return PluginResult.Error(_loc?["Plugin.WinSwitcher.MissingPathParam"] ?? "Missing required parameter: path", PluginErrorSeverity.Recoverable);
             }
             
             // 验证路径格式
@@ -255,7 +258,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
 
                 Process.Start(startInfo);
                 _logger?.LogInformation($"{LogPrefix} Successfully launched: {{ExePath}}", exePath);
-                return PluginResult.Ok($"Launched {Path.GetFileName(exePath)}");
+                return PluginResult.Ok(string.Format(_loc?["Plugin.WinSwitcher.Launched"] ?? "Launched {0}", Path.GetFileName(exePath)));
             }
             catch (System.IO.FileNotFoundException ex)
             {
@@ -298,7 +301,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
             if (switched)
             {
                 _logger?.LogInformation($"{LogPrefix} Switched to existing window: {{ProcessName}}", processName);
-                return PluginResult.Ok($"Switched to {processName}");
+                return PluginResult.Ok(string.Format(_loc?["Plugin.WinSwitcher.SwitchedTo"] ?? "Switched to {0}", processName));
             }
 
             // 2. 切换失败，尝试启动
@@ -312,7 +315,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
             else
             {
                 _logger?.LogWarning($"{LogPrefix} Cannot launch: No path specified for {{ProcessName}}", processName);
-                return PluginResult.Error($"Process '{processName}' is not running and no launch path specified", 
+                return PluginResult.Error(string.Format(_loc?["Plugin.WinSwitcher.ProcessNotRunning"] ?? "Process '{0}' is not running", processName) + " and no launch path specified", 
                     PluginErrorSeverity.Recoverable);
             }
         }

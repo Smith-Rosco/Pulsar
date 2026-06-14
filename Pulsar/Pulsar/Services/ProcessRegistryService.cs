@@ -512,7 +512,7 @@ namespace Pulsar.Services
             }
         }
 
-        private async Task SaveRegistryAsync()
+        private async Task SaveRegistryAsync(CancellationToken cancellationToken = default)
         {
             const int maxRetries = 3;
             const int baseDelayMs = 100; // 增加基础延迟
@@ -555,7 +555,7 @@ namespace Pulsar.Services
                     }
                     
                     // 指数退避
-                    await Task.Delay(baseDelayMs * (attempt + 1));
+                    await Task.Delay(baseDelayMs * (attempt + 1), cancellationToken);
                 }
                 catch (Exception ex)
                 {

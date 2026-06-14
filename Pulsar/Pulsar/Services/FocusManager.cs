@@ -459,13 +459,13 @@ namespace Pulsar.Services
             return result;
         }
 
-        private async Task<bool> VerifyActivationAsync(IntPtr hWnd, FocusActivationOptions options)
+        private async Task<bool> VerifyActivationAsync(IntPtr hWnd, FocusActivationOptions options, CancellationToken cancellationToken = default)
         {
             for (int i = 0; i <= options.MaxRetries; i++)
             {
                 if (i > 0)
                 {
-                    await Task.Delay(options.VerifyDelayMs);
+                    await Task.Delay(options.VerifyDelayMs, cancellationToken);
                 }
 
                 var fg = _native.GetForegroundWindow();

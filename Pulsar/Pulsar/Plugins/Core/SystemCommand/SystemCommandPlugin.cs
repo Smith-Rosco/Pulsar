@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows; // Explicitly use WPF namespace
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.DependencyInjection;
+using Pulsar.Core.Localization;
 using Pulsar.Core.Messages;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Plugin.Metadata;
@@ -35,10 +36,12 @@ namespace Pulsar.Plugins.Core.SystemCommand
         public string? DocumentationUrl => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Docs", "Plugins", "SystemCommand.md");
 
         private IServiceProvider? _services;
+        private ILocalizationService? _loc;
 
         public void Initialize(IServiceProvider services)
         {
             _services = services;
+            _loc = services.GetService(typeof(ILocalizationService)) as ILocalizationService;
         }
 
         public async Task<PluginResult> ExecuteAsync(
@@ -47,7 +50,7 @@ namespace Pulsar.Plugins.Core.SystemCommand
             PulsarContext context,
             CancellationToken cancellationToken = default)
         {
-            if (_services == null) return PluginResult.Error("System plugin not initialized");
+            if (_services == null) return PluginResult.Error(_loc?["Plugin.SystemCommand.NotInitialized"] ?? "System plugin not initialized");
 
             var command = ResolveCanonicalAction(action, args);
 
@@ -75,7 +78,7 @@ namespace Pulsar.Plugins.Core.SystemCommand
                     {
                         case OpenSettingsAction:
                             WeakReferenceMessenger.Default.Send(new OpenSettingsMessage("Global", "Settings"));
-                            return PluginResult.Ok("Settings opened");
+                            return PluginResult.Ok(_loc?["Plugin.SystemCommand.SettingsOpened"] ?? "Settings opened");
 
                         case QuickAddProfileAction:
                             if (!string.IsNullOrEmpty(context.TargetProcessName))
@@ -85,16 +88,16 @@ namespace Pulsar.Plugins.Core.SystemCommand
                             }
                             else
                             {
-                                return PluginResult.Error("No target process found in context");
+                                return PluginResult.Error(_loc?["Plugin.SystemCommand.NoTargetProcess"] ?? "No target process found in context");
                             }
 
                         default:
-                            return PluginResult.Error($"Unknown system command: {command}");
+                            return PluginResult.Error(string.Format(_loc?["Plugin.SystemCommand.UnknownCommand"] ?? "Unknown system command: {0}", command));
                     }
                 }
                 catch (Exception ex)
                 {
-                    return PluginResult.Error($"Failed to execute system command: {ex.Message}");
+                    return PluginResult.Error(string.Format(_loc?["Plugin.SystemCommand.ExecutionFailed"] ?? "Failed to execute system command: {0}", ex.Message));
                 }
             });
         }
