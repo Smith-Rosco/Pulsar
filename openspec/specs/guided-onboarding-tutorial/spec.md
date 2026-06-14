@@ -1,106 +1,61 @@
 ## MODIFIED Requirements
 
-### Requirement: Tutorial progress survives app restarts
-The system SHALL persist onboarding tutorial state so that incomplete progress, completed milestones, explicit skip decisions, and crash recovery state survive application restart.
+### Requirement: Tutorial demonstrates concrete app-switch-then-command workflow
+The tutorial SHALL walk the user through a concrete scenario: switch to the target app via Switch Mode, then run a command via Command Mode that demonstrates the chosen plugin.
 
-#### Scenario: Incomplete tutorial resumes after restart
-- **WHEN** the user exits the application after starting but not completing the tutorial
-- **THEN** the system resumes from the saved tutorial state instead of restarting from the first step
+#### Scenario: Welcome step explains the scenario-specific workflow
+- **WHEN** the tutorial starts
+- **THEN** the welcome copy SHALL name the target app (Notepad, Excel, or browser) and explain the two-step workflow
+- **AND** the target app name SHALL be determined by the active `TutorialScenario`
 
-#### Scenario: Crashed tutorial resumes after restart
-- **WHEN** the user restarts the application after a previous tutorial session terminated due to an error
-- **THEN** the system detects the crash marker and resumes the tutorial from the crashed step
+#### Scenario: Switch-to-app step
+- **WHEN** the user reaches the Switch Mode step
+- **THEN** the instruction SHALL reference the scenario's target app (e.g., "Press Ctrl+Q and click the Notepad icon")
+- **AND** the step SHALL auto-advance when Pulsar reports a successful Switch action
 
-#### Scenario: Tutorial recovery without crash marker
-- **WHEN** the application starts and the tutorial was previously terminated without a crash marker and without completion
-- **THEN** the system resumes from the last saved step as normal
+#### Scenario: Command step references scenario-specific slot
+- **WHEN** the user reaches the Command Mode step
+- **THEN** the instruction SHALL reference the scenario's primary command slot label (e.g., "'Insert Sample Text' or 'Run VBA Demo'")
+- **AND** the step SHALL auto-advance when Pulsar reports a successful Command action
+
+#### Scenario: App not available fallback
+- **WHEN** the scenario's target app is not detected on the current machine
+- **THEN** the tutorial SHALL fall back to the first generated app slot for that scenario
+- **AND** the step copy SHALL reference that app by name instead of the original target
 
 ## ADDED Requirements
 
-### Requirement: Tutorial crash state is distinct from completion state
-The system SHALL record tutorial crashes in a dedicated field separate from the completion flag, and SHALL NOT mark the tutorial as completed when an error terminates the session.
+### Requirement: Step 2→3 transition is optimized to reduce context switching
+When a WaitForAction step completes via ActionExecuted trigger, the system SHALL skip the subsequent Instruction-only confirmation step and show a brief toast notification instead.
 
-#### Scenario: Tutorial error terminates session
-- **WHEN** the tutorial orchestrator catches an unhandled exception during step display or transition
-- **THEN** the system records the current step identifier in a crash state field and does NOT set the tutorial completion flag
+#### Scenario: Switch mode success skips confirmation step
+- **WHEN** step 2 (ActionExecuted/Switch) trigger fires
+- **THEN** the system SHALL skip step 3 (the Instruction-only success confirmation)
+- **AND** SHALL show a toast notification: "Switched to [app name]!" with a green checkmark
+- **AND** SHALL advance directly to step 4 (Command Mode)
 
-#### Scenario: Tutorial gracefully shuts down after error
-- **WHEN** error handling completes after a tutorial crash
-- **THEN** the overlay window is closed and the tutorial is not marked as active, but the tutorial remains eligible for automatic resume on next launch
+#### Scenario: Manual Next click does not trigger skip
+- **WHEN** the user manually clicks "Next" on a WaitForAction step
+- **THEN** the system SHALL NOT skip the subsequent step
+- **AND** SHALL advance to the next step normally
 
-### Requirement: WaitForAction steps hide Next button until timeout
-When a step type is `WaitForAction`, the Next/Continue button SHALL be hidden for the first 30 seconds to force the user to perform the intended action. After the 30-second hint timeout fires, the Next button SHALL reappear alongside the manual Continue button.
+#### Scenario: Step 3 is reached when manually navigated
+- **WHEN** the user navigates to step 3 via tutorial restart or step selector
+- **THEN** step 3 SHALL display normally as an Instruction step
 
-#### Scenario: Next button is hidden on WaitForAction step load
-- **WHEN** a step with `type: "WaitForAction"` is displayed
-- **THEN** the Next button SHALL have `Visibility = Collapsed`
+### Requirement: Tutorial shows slot-missing fallback guidance
+When entering a WaitForAction step that requires a specific plugin slot, the system SHALL check whether the required slot exists in the current config. If missing, it SHALL display inline guidance instead of hanging indefinitely.
 
-#### Scenario: Next button appears after 30-second timeout
-- **WHEN** the 30-second wait hint timeout fires on a WaitForAction step
-- **THEN** the Next button SHALL become visible
+#### Scenario: Required slot missing shows guidance card
+- **WHEN** `TutorialOrchestrator` enters a step with `ActionExecuted` trigger
+- **AND** the target slot (matching `IsTutorialPrimary` criteria) is not found in the current config
+- **THEN** the tutorial SHALL display an inline guidance message: "Your Pulsar slots are not configured yet. Go to Settings → Slots to add one, or restore default slots."
+- **AND** the "Next" button SHALL remain visible to let the user advance past the step
 
-#### Scenario: Next button appears when trigger fires early
-- **WHEN** the completion trigger fires before the 30-second timeout
-- **THEN** the tutorial SHALL auto-advance immediately (no need to show Next)
+#### Scenario: Slot exists proceeds normally
+- **WHEN** the target slot is found in the current config
+- **THEN** the tutorial SHALL proceed with normal WaitForAction behavior (hidden Next button, wait for trigger)
 
-### Requirement: Tutorial demonstrates concrete app-switch-then-command workflow
-The tutorial SHALL walk the user through a concrete scenario: switch to Notepad via Switch Mode, then run a command via Command Mode that inserts text into Notepad.
-
-#### Scenario: Welcome step explains the workflow
-- **WHEN** the tutorial starts
-- **THEN** the welcome copy SHALL name Notepad as the target app and explain the two-step workflow
-
-#### Scenario: Switch-to-Notepad step
-- **WHEN** the user reaches the Switch Mode step
-- **THEN** the instruction SHALL say "Press Ctrl+Q and click the Notepad icon to switch to it"
-- **AND** the step SHALL auto-advance when Pulsar reports a successful Switch action
-
-#### Scenario: Insert-text command step
-- **WHEN** the user reaches the Command Mode step after successfully switching to Notepad
-- **THEN** the instruction SHALL say "Press Ctrl+Shift+Q and click 'Insert Sample Text' to type into Notepad"
-- **AND** the step SHALL auto-advance when Pulsar reports a successful Command action
-
-#### Scenario: Notepad not available fallback
-- **WHEN** the system does not detect Notepad on the current machine
-- **THEN** the tutorial SHALL fall back to the first generated app slot and use that app for the demonstration
-- **AND** the step copy SHALL reference that app by name instead of Notepad
-
-### Requirement: Step auto-advance shows visual success feedback
-When a trigger fires and the tutorial auto-advances to the next step, the card SHALL briefly flash green border to signal that the action was successful and the step transition is happening.
-
-#### Scenario: Green border flash on auto-advance
-- **WHEN** a WaitForAction step completion trigger fires
-- **THEN** the card border SHALL animate: color changes to green (`#27AE60`) immediately, holds for 150ms, then fades to transparent over 300ms
-
-#### Scenario: No flash on manual Next click
-- **WHEN** the user clicks Next/Continue manually
-- **THEN** no green border flash SHALL play
-
-### Requirement: Step transition uses smooth crossfade
-When transitioning between tutorial steps, the overlay window SHALL remain open and the card content SHALL crossfade (old content fades out while new content fades in) to eliminate visual flicker or blank-gap flash.
-
-#### Scenario: Crossfade executes on next step
-- **WHEN** `NextStepAsync()` is called
-- **THEN** the current card SHALL fade from opacity 1 to 0 over 200ms
-- **AND** the new card SHALL fade from opacity 0 to 1 over 200ms simultaneously
-- **AND** the overlay window SHALL NOT close or re-show during this process
-
-### Requirement: Tutorial can be restarted from Settings
-The system SHALL provide a "Reset Tutorial" button accessible from within the application after the tutorial has been completed or skipped.
-
-#### Scenario: Reset tutorial from Settings
-- **WHEN** the user clicks "Reset Tutorial" in Settings
-- **THEN** a confirmation dialog SHALL appear: "This will restart the tutorial. Continue?"
-- **AND** on confirm, `OnboardingState` SHALL be set to `"SetupWizardComplete"`, `HasCompletedTutorial` SHALL be cleared
-- **AND** the tutorial SHALL start from step 1 on the next trigger of the tutorial start sequence
-
-### Requirement: Tutorial copy uses warm, human tone
-All user-facing tutorial text SHALL be rewritten to use warm, encouraging language that speaks directly to the user (you/your), describes what the user will experience, and avoids corporate jargon ("minimum onboarding path", "accelerate workflow", "useful wins").
-
-#### Scenario: English copy is rewritten
-- **WHEN** a user views the tutorial in English
-- **THEN** all `Tutorial.*` string resources SHALL use conversational tone, first-name basis ("you"), and concrete action descriptions
-
-#### Scenario: Chinese copy is rewritten
-- **WHEN** a user views the tutorial in Chinese
-- **THEN** all translated strings SHALL be reviewed for machine-translation artifacts and rewritten as natural Chinese
+#### Scenario: Slot appears after guidance is shown
+- **WHEN** the guidance card is displayed and the user subsequently adds the required slot
+- **THEN** the SlotAdded trigger SHALL fire and the tutorial SHALL auto-advance
