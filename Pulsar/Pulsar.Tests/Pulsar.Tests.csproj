@@ -25,4 +25,13 @@
     <ProjectReference Include="..\Pulsar\Pulsar.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\Pulsar\Assets\TutorialSteps.excel.json" Link="Assets\TutorialSteps.excel.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\Pulsar\Assets\TutorialSteps.browser.json" Link="Assets\TutorialSteps.browser.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

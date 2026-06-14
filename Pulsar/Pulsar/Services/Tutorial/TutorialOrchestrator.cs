@@ -29,12 +29,14 @@ namespace Pulsar.Services.Tutorial
         private readonly ITutorialTriggerEngine _triggerEngine;
         private readonly ITutorialSpotlightController _spotlightController;
         private readonly IWaitStepHintTimeout _waitStepHintTimeout;
+        private readonly TutorialScenarioRegistry _scenarioRegistry;
 
         private string DefaultWaitHintText => _loc["Tutorial.NoActionDetectedHint"];
         
         private List<TutorialStep> _steps;
         private int _currentStepIndex = -1;
         private TutorialStepCard? _stepCard;
+        private string? _scenarioId;
         
         // [P0-3 Fix] 防止竞态条件的标志位
         private bool _isTransitioning = false;
@@ -55,18 +57,31 @@ namespace Pulsar.Services.Tutorial
             IOverlayManager overlayManager,
             ITutorialTriggerEngine triggerEngine,
             ITutorialSpotlightController spotlightController,
-            IWaitStepHintTimeout waitStepHintTimeout)
+            IWaitStepHintTimeout waitStepHintTimeout,
+            TutorialScenarioRegistry? scenarioRegistry = null)
         {
             _loc = loc;
             _configService = configService;
             _logger = logger;
             _stepLoader = stepLoader;
             _overlayManager = overlayManager;
-
             _triggerEngine = triggerEngine;
             _spotlightController = spotlightController;
             _waitStepHintTimeout = waitStepHintTimeout;
+            _scenarioRegistry = scenarioRegistry ?? new TutorialScenarioRegistry();
             
+            _steps = InitializeSteps();
+        }
+
+        /// <summary>
+        /// 设置场景 ID 并重新加载对应步骤
+        /// </summary>
+        public void SetScenario(string? scenarioId)
+        {
+            if (string.Equals(_scenarioId, scenarioId, StringComparison.OrdinalIgnoreCase))
+                return;
+
+            _scenarioId = scenarioId;
             _steps = InitializeSteps();
         }
 
@@ -75,10 +90,10 @@ namespace Pulsar.Services.Tutorial
         /// </summary>
         private List<TutorialStep> InitializeSteps()
         {
-            _logger.LogInformation("[TutorialOrchestrator] Initializing tutorial steps");
+            _logger.LogInformation("[TutorialOrchestrator] Initializing tutorial steps (scenario: {ScenarioId})", _scenarioId ?? "default");
             
-            // 使用配置加载器从 JSON 文件加载步骤
-            var steps = _stepLoader.LoadSteps();
+            // 使用配置加载器从 JSON 文件加载步骤（支持场景特定步骤）
+            var steps = _stepLoader.LoadStepsForScenario(_scenarioId);
             
             _logger.LogInformation("[TutorialOrchestrator] Loaded {Count} tutorial steps", steps.Count);
             
@@ -119,9 +134,9 @@ namespace Pulsar.Services.Tutorial
         }
 
         /// <summary>
-        /// 进入下一步
+        /// 进入下一步（支持触发器和手动两种模式）
         /// </summary>
-        public async Task NextStepAsync()
+        public async Task NextStepAsync(bool fromTrigger = false)
         {
             // [P0-3 Fix] 防止重入（快速双击 Next 按钮）
             if (_isTransitioning)
@@ -138,8 +153,30 @@ namespace Pulsar.Services.Tutorial
                 
                 if (_currentStepIndex < _steps.Count - 1)
                 {
-                    _currentStepIndex++;
-                    await ShowStepAsync(CurrentStep!);
+                    // Step 2→3 优化：当 ActionExecuted/Switch 触发时，跳过确认步骤（step3）
+                    // 直接进入 Command Mode 步骤（step4），用 toast 通知替代
+                    if (fromTrigger && ShouldSkipStep(_currentStepIndex + 1))
+                    {
+                        _logger.LogInformation("[TutorialOrchestrator] Skipping confirmation step (index {SkipIndex}), advancing from step {CurrentIndex} to step {TargetIndex}",
+                            _currentStepIndex + 1, _currentStepIndex, _currentStepIndex + 2);
+                        
+                        _currentStepIndex += 2;
+                        await ShowStepAsync(CurrentStep!);
+                        
+                        // 显示 toast 通知
+                        var currentStep = CurrentStep;
+                        if (currentStep != null)
+                        {
+                            var appName = GetScenarioAppName();
+                            var toastText = string.Format(_loc["Tutorial.SwitchedToApp"] ?? "Switched to {0}!", appName);
+                            _overlayManager.ShowToast(toastText);
+                        }
+                    }
+                    else
+                    {
+                        _currentStepIndex++;
+                        await ShowStepAsync(CurrentStep!);
+                    }
                 }
                 else
                 {
@@ -155,6 +192,19 @@ namespace Pulsar.Services.Tutorial
             {
                 _isTransitioning = false;
             }
+        }
+
+        /// <summary>
+        /// 判断步骤是否为可跳过的确认步骤（step3）
+        /// </summary>
+        private bool ShouldSkipStep(int stepIndex)
+        {
+            if (stepIndex < 0 || stepIndex >= _steps.Count)
+                return false;
+
+            var step = _steps[stepIndex];
+            // 跳过条件：步骤 ID 包含 "switch_mode_success" 且类型为 Instruction
+            return step.Id == "step3_switch_mode_success" && step.Type == TutorialStepType.Instruction;
         }
 
         /// <summary>
@@ -233,6 +283,11 @@ namespace Pulsar.Services.Tutorial
                 _triggerEngine.Cleanup();
                 _waitStepHintTimeout.Cancel();
 
+                // 检查 ActionExecuted 步骤的 slot 是否存在
+                // 如果 slot 不存在，显示引导卡片而不是卡住
+                var isSlotMissing = step.CompletionTrigger?.Type == TutorialTriggerType.ActionExecuted
+                    && !HasRequiredSlot();
+
                 // 播放渐出过渡动画（如果有旧卡片）
                 if (_stepCard != null)
                 {
@@ -294,23 +349,56 @@ namespace Pulsar.Services.Tutorial
                 // [Fix] 移除窗口布局调整，避免闪动
                 // 不再调用 _layoutManager.ApplyLayoutAsync，让用户自由调整窗口
 
-                // 设置触发器
-                _triggerEngine.Setup(step, OnTriggerFired);
-
-                // Non-blocking timeout for wait steps (UX-only).
-                _waitStepHintTimeout.Start(
-                    step,
-                    getCurrentStepId: () => CurrentStep?.Id,
-                    onTimeoutAsync: () => System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                // 如果 slot 缺失（ActionExecuted 步骤但无对应 slot），显示引导卡片
+                if (isSlotMissing)
+                {
+                    if (_stepCard != null)
                     {
-                        if (CurrentStep?.Id != step.Id)
+                        _stepCard.SetSlotMissingGuidance();
+                        _stepCard.ShowNextButton();
+                    }
+                    
+                    // 设置 SlotAdded 触发器：当用户添加 slot 后自动推进
+                    try
+                    {
+                        var slotAddedStep = new TutorialStep
                         {
-                            return;
-                        }
+                            Id = "slot_added_monitor",
+                            CompletionTrigger = new TutorialTrigger
+                            {
+                                Type = TutorialTriggerType.SlotAdded,
+                                TargetValue = "{\"Mode\":\"CommandMode\"}"
+                            }
+                        };
+                        _triggerEngine.Setup(slotAddedStep, OnTriggerFired);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "[TutorialOrchestrator] Error setting up SlotAdded trigger for guidance");
+                    }
+                    
+                    _logger.LogWarning("[TutorialOrchestrator] Required slot missing for step: {StepId}, showing guidance card", step.Id);
+                }
+                else
+                {
+                    // 设置触发器
+                    _triggerEngine.Setup(step, OnTriggerFired);
 
-                        _stepCard?.SetWaitHintText(DefaultWaitHintText);
-                        _stepCard?.ShowManualContinueButton();
-                    }).Task);
+                    // Non-blocking timeout for wait steps (UX-only).
+                    _waitStepHintTimeout.Start(
+                        step,
+                        getCurrentStepId: () => CurrentStep?.Id,
+                        onTimeoutAsync: () => System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            if (CurrentStep?.Id != step.Id)
+                            {
+                                return;
+                            }
+
+                            _stepCard?.SetWaitHintText(DefaultWaitHintText);
+                            _stepCard?.ShowManualContinueButton();
+                        }).Task);
+                }
 
                 // 启动庆祝动画（完成步骤）
                 if (step.PrimaryAction == Models.Tutorial.TutorialPrimaryAction.CompleteTutorial)
@@ -364,6 +452,50 @@ namespace Pulsar.Services.Tutorial
         }
 
         // Helper Methods
+
+        /// <summary>
+        /// 获取当前 scenario 的应用名称（用于 toast 通知）
+        /// </summary>
+        private string GetScenarioAppName()
+        {
+            if (!string.IsNullOrEmpty(_scenarioId))
+            {
+                var scenario = _scenarioRegistry.GetById(_scenarioId);
+                if (scenario != null)
+                {
+                    return _loc[scenario.TitleKey] ?? "target app";
+                }
+            }
+            return _loc["Scenario.Notepad.Title"] ?? "Notepad";
+        }
+
+        /// <summary>
+        /// 检查当前配置中是否存在必需的 slot（用于 ActionExecuted 步骤验证）
+        /// </summary>
+        private bool HasRequiredSlot()
+        {
+            try
+            {
+                var config = _configService.Current;
+                if (config.Profiles == null)
+                    return false;
+
+                foreach (var profile in config.Profiles.Values)
+                {
+                    if (profile.CommandMode != null && profile.CommandMode.Count > 0)
+                        return true;
+                    if (profile.SwitchMode != null && profile.SwitchMode.Count > 0)
+                        return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[TutorialOrchestrator] Error checking required slot");
+                return false;
+            }
+        }
 
         /// <summary>
         /// 确保遮罩窗口已创建
@@ -500,7 +632,8 @@ namespace Pulsar.Services.Tutorial
                 await System.Threading.Tasks.Task.Delay(200);
 
                 // [P0-2 Fix] 异步事件处理器的错误边界
-                await NextStepAsync();
+                // 从触发器推进，支持 step 2→3 自动跳过
+                await NextStepAsync(fromTrigger: true);
             }
             catch (Exception ex)
             {

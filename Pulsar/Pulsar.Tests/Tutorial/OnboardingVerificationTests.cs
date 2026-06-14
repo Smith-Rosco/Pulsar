@@ -180,7 +180,7 @@ namespace Pulsar.Tests.Tutorial
 
             var canClose = await vm.CanCloseAsync(DialogResult.Confirmed);
 
-            canClose.Should().BeFalse("Confirmed should validate - no profile selected and no apps checked");
+            canClose.Should().BeTrue("first scenario is selected by default, no app selection required");
         }
     }
 }

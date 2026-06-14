@@ -192,8 +192,6 @@ namespace Pulsar.Views.Tutorial
             {
                 _continueButton.Visibility = Visibility.Visible;
             }
-
-            NextButton.Visibility = Visibility.Visible;
         }
 
         /// <summary>
@@ -295,6 +293,28 @@ namespace Pulsar.Views.Tutorial
         /// 获取当前步骤
         /// </summary>
         public TutorialStep? GetCurrentStep() => _currentStep;
+
+        /// <summary>
+        /// 设置 slot 缺失引导文本
+        /// </summary>
+        public void SetSlotMissingGuidance()
+        {
+            if (_loc == null) return;
+
+            TitleText.Text = _loc["Tutorial.SlotMissingTitle"] ?? "Slots not configured";
+            DescriptionText.Text = _loc["Tutorial.SlotMissingDesc"] ?? "Your Pulsar slots are not configured yet. Go to Settings → Slots to add one, or restore default slots.";
+            WaitHintText.Visibility = Visibility.Collapsed;
+            NextButton.Visibility = Visibility.Visible;
+            NextButton.Content = _loc["Tutorial.Next"] ?? "Next";
+        }
+
+        /// <summary>
+        /// 显示 Next 按钮（供 Orchestrator 调用）
+        /// </summary>
+        public void ShowNextButton()
+        {
+            NextButton.Visibility = Visibility.Visible;
+        }
 
         /// <summary>
         /// 播放成功动画（绿色边框闪烁）

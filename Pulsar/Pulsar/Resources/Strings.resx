@@ -1606,58 +1606,22 @@
     <value>Focused on browsing, note-taking, and quick lookups.</value>
   </data>
   <data name="FirstLaunch.SetupTitle" xml:space="preserve">
-    <value>Setup Pulsar</value>
+    <value>Welcome to Pulsar</value>
   </data>
   <data name="FirstLaunch.SetupDescription" xml:space="preserve">
-    <value>Choose how you plan to use Pulsar, and we'll create the right starter configuration for you.</value>
-  </data>
-  <data name="FirstLaunch.SetupHint" xml:space="preserve">
-    <value>Select at least one app. Up to six apps will be used as Switch Mode starter slots.</value>
+    <value>Pick a scenario below to see Pulsar in action. You can customize everything later.</value>
   </data>
   <data name="FirstLaunch.UsageScenario" xml:space="preserve">
-    <value>Usage Scenario</value>
-  </data>
-  <data name="FirstLaunch.LaunchApps" xml:space="preserve">
-    <value>Launch Apps</value>
-  </data>
-  <data name="FirstLaunch.Selected" xml:space="preserve">
-    <value>Selected</value>
-  </data>
-  <data name="FirstLaunch.SelectedApps" xml:space="preserve">
-    <value>Selected Apps: </value>
+    <value>Pick a Scenario</value>
   </data>
   <data name="FirstLaunch.CreateConfig" xml:space="preserve">
-    <value>Create Initial Configuration</value>
+    <value>Get Started</value>
   </data>
   <data name="FirstLaunch.Skip" xml:space="preserve">
     <value>Skip for Now</value>
   </data>
-  <data name="FirstLaunch.Footer" xml:space="preserve">
-    <value>Generated defaults create standard editable slots in your global profile. You can change everything later.</value>
-  </data>
   <data name="FirstLaunch.SelectScenarioError" xml:space="preserve">
-    <value>Please select a usage scenario first.</value>
-  </data>
-  <data name="FirstLaunch.SelectAppError" xml:space="preserve">
-    <value>Please select at least one launch app to generate defaults.</value>
-  </data>
-  <data name="FirstLaunch.Preview" xml:space="preserve">
-    <value>Configuration Preview</value>
-  </data>
-  <data name="FirstLaunch.Preview.Format" xml:space="preserve">
-    <value>{0} Switch slots + {1} Command slot ({2})</value>
-  </data>
-  <data name="FirstLaunch.Preview.PowerShell" xml:space="preserve">
-    <value>PowerShell</value>
-  </data>
-  <data name="FirstLaunch.Preview.Documentation" xml:space="preserve">
-    <value>Documentation</value>
-  </data>
-  <data name="FirstLaunch.Preview.Notepad" xml:space="preserve">
-    <value>Notepad</value>
-  </data>
-  <data name="FirstLaunch.Preview.InsertSampleText" xml:space="preserve">
-    <value>Insert Sample Text</value>
+    <value>Please select a scenario first.</value>
   </data>
   <data name="FirstLaunch.GeneralProductivitySlotDesc" xml:space="preserve">
     <value>Generates a Notepad command slot for quick note-taking</value>
@@ -2046,6 +2010,171 @@
   </data>
   <data name="Dialog.AddSlot.BackToPicker" xml:space="preserve">
     <value>Back to picker</value>
+  </data>
+  <!-- ==================== Scenario ==================== -->
+  <data name="Scenario.Notepad.Title" xml:space="preserve">
+    <value>Notepad &amp; SendKeys</value>
+  </data>
+  <data name="Scenario.Notepad.Description" xml:space="preserve">
+    <value>Classic Pulsar tutorial with Notepad switching and text insertion</value>
+  </data>
+  <data name="Scenario.Notepad.SlotDescription" xml:space="preserve">
+    <value>Generates a Notepad switch slot + sendkeys command slot</value>
+  </data>
+  <data name="Scenario.Excel.Title" xml:space="preserve">
+    <value>Excel Automation</value>
+  </data>
+  <data name="Scenario.Excel.Description" xml:space="preserve">
+    <value>VBA script execution in Excel via VbaRunner plugin</value>
+  </data>
+  <data name="Scenario.Excel.SlotDescription" xml:space="preserve">
+    <value>Generates a VBA demo slot + sendkeys fallback for Excel</value>
+  </data>
+  <data name="Scenario.Browser.Title" xml:space="preserve">
+    <value>Browser &amp; Bookmarklet</value>
+  </data>
+  <data name="Scenario.Browser.Description" xml:space="preserve">
+    <value>Browser switching and bookmarklet runner demo</value>
+  </data>
+  <data name="Scenario.Browser.SlotDescription" xml:space="preserve">
+    <value>Generates a Browser switch slot + bookmarklet command slot</value>
+  </data>
+  <!-- ==================== CommandSlot ==================== -->
+  <data name="CommandSlot.RunVbaDemo" xml:space="preserve">
+    <value>Run VBA Demo</value>
+  </data>
+  <data name="CommandSlot.OpenBookmarklet" xml:space="preserve">
+    <value>Run Bookmarklet Script</value>
+  </data>
+  <!-- ==================== Prerequisite ==================== -->
+  <data name="Prerequisite.ExcelExists" xml:space="preserve">
+    <value>Microsoft Excel</value>
+  </data>
+  <data name="Prerequisite.VbaSupport" xml:space="preserve">
+    <value>VBA Support (VBE7.DLL)</value>
+  </data>
+  <data name="Prerequisite.BrowserExists" xml:space="preserve">
+    <value>Web Browser (Chrome/Edge)</value>
+  </data>
+  <!-- ==================== Tutorial: Excel Scenario ==================== -->
+  <data name="Tutorial.Excel.WelcomeDesc" xml:space="preserve">
+    <value>Welcome! This tutorial will show you Pulsar's two modes in action with Excel.
+
+You will:
+1. Press Ctrl+Q to open Switch Mode and switch to Excel
+2. Press Ctrl+Shift+Q to open Command Mode and run a VBA demo in Excel
+
+You'll see how to switch to an app, then do something inside it.</value>
+  </data>
+  <data name="Tutorial.Excel.SwitchModeDesc" xml:space="preserve">
+    <value>Press Ctrl+Q to open Switch Mode, hover over the Excel icon, then release the hotkey to switch to it.
+
+That's all it takes — Pulsar jumps straight to Excel. No alt-tabbing, no searching.</value>
+  </data>
+  <data name="Tutorial.Excel.SwitchModeHint" xml:space="preserve">
+    <value>Press Ctrl+Q, hover over the Excel icon, and release the hotkey.</value>
+  </data>
+  <data name="Tutorial.Excel.FirstSwitch" xml:space="preserve">
+    <value>Switched to Excel</value>
+  </data>
+  <data name="Tutorial.Excel.FirstSwitchDesc" xml:space="preserve">
+    <value>Great — you switched to Excel!
+
+In the next step you'll use Command Mode to run a VBA demo in Excel.
+
+Click "Next" to continue.</value>
+  </data>
+  <data name="Tutorial.Excel.CommandModeDesc" xml:space="preserve">
+    <value>Press Ctrl+Shift+Q to open Command Mode, hover over "Run VBA Demo", then release the hotkey.
+
+Pulsar will execute a VBA script in Excel for you — that's Command Mode in action: running a plugin on the app you switched to.</value>
+  </data>
+  <data name="Tutorial.Excel.CommandModeHint" xml:space="preserve">
+    <value>Press Ctrl+Shift+Q, hover over "Run VBA Demo", and release the hotkey.</value>
+  </data>
+  <data name="Tutorial.Excel.FirstCommandDesc" xml:space="preserve">
+    <value>Pulsar ran the VBA script in Excel! You just combined both modes:
+
+1. Switch Mode (Ctrl+Q) — got you to Excel
+2. Command Mode (Ctrl+Shift+Q) — ran a VBA demo inside it
+
+That's the core Pulsar workflow.</value>
+  </data>
+  <data name="Tutorial.Excel.OnboardingCompleteDesc" xml:space="preserve">
+    <value>You just combined both Pulsar modes:
+
+✔ Switched to Excel with Switch Mode (Ctrl+Q)
+✔ Ran a VBA demo with Command Mode (Ctrl+Shift+Q)
+
+That's the core workflow: switch to any app, then act inside it.
+
+Open Settings anytime to customize your slots, or keep using the defaults — Pulsar is ready whenever you are!</value>
+  </data>
+
+  <!-- ==================== Tutorial: Browser Scenario ==================== -->
+  <data name="Tutorial.Browser.WelcomeDesc" xml:space="preserve">
+    <value>Welcome! This tutorial will show you Pulsar's two modes in action with your browser.
+
+You will:
+1. Press Ctrl+Q to open Switch Mode and switch to your browser
+2. Press Ctrl+Shift+Q to open Command Mode and run a bookmarklet
+
+You'll see how to switch to an app, then do something inside it.</value>
+  </data>
+  <data name="Tutorial.Browser.SwitchModeDesc" xml:space="preserve">
+    <value>Press Ctrl+Q to open Switch Mode, hover over the browser icon (Chrome or Edge), then release the hotkey to switch to it.
+
+That's all it takes — Pulsar jumps straight to your browser. No alt-tabbing, no searching.</value>
+  </data>
+  <data name="Tutorial.Browser.SwitchModeHint" xml:space="preserve">
+    <value>Press Ctrl+Q, hover over your browser icon, and release the hotkey.</value>
+  </data>
+  <data name="Tutorial.Browser.FirstSwitch" xml:space="preserve">
+    <value>Switched to your browser</value>
+  </data>
+  <data name="Tutorial.Browser.FirstSwitchDesc" xml:space="preserve">
+    <value>Great — you switched to your browser!
+
+In the next step you'll use Command Mode to open a bookmarklet.
+
+Click "Next" to continue.</value>
+  </data>
+  <data name="Tutorial.Browser.CommandModeDesc" xml:space="preserve">
+    <value>Press Ctrl+Shift+Q to open Command Mode, hover over "Open Bookmarklet", then release the hotkey.
+
+Pulsar will open a webpage in your browser for you — that's Command Mode in action: running a plugin on the app you switched to.</value>
+  </data>
+  <data name="Tutorial.Browser.CommandModeHint" xml:space="preserve">
+    <value>Press Ctrl+Shift+Q, hover over "Open Bookmarklet", and release the hotkey.</value>
+  </data>
+  <data name="Tutorial.Browser.FirstCommandDesc" xml:space="preserve">
+    <value>Pulsar opened the bookmarklet in your browser! You just combined both modes:
+
+1. Switch Mode (Ctrl+Q) — got you to your browser
+2. Command Mode (Ctrl+Shift+Q) — opened a webpage inside it
+
+That's the core Pulsar workflow.</value>
+  </data>
+  <data name="Tutorial.Browser.OnboardingCompleteDesc" xml:space="preserve">
+    <value>You just combined both Pulsar modes:
+
+✔ Switched to your browser with Switch Mode (Ctrl+Q)
+✔ Opened a bookmarklet with Command Mode (Ctrl+Shift+Q)
+
+That's the core workflow: switch to any app, then act inside it.
+
+Open Settings anytime to customize your slots, or keep using the defaults — Pulsar is ready whenever you are!</value>
+  </data>
+
+  <!-- ==================== Tutorial ==================== -->
+  <data name="Tutorial.SwitchedToApp" xml:space="preserve">
+    <value>Switched to {0}!</value>
+  </data>
+  <data name="Tutorial.SlotMissingTitle" xml:space="preserve">
+    <value>Slots not configured</value>
+  </data>
+  <data name="Tutorial.SlotMissingDesc" xml:space="preserve">
+    <value>Your Pulsar slots are not configured yet. Go to Settings → Slots to add one, or restore default slots.</value>
   </data>
   <!-- ==================== Plugin.Command ==================== -->
   <data name="Plugin.Command.Success.Executed" xml:space="preserve">

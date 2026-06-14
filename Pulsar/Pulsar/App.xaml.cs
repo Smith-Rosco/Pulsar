@@ -129,6 +129,9 @@ namespace Pulsar
             serviceCollection.AddSingleton<IDialogService, DialogService>();
             serviceCollection.AddSingleton<Pulsar.Services.Tutorial.IOnboardingTemplateService, Pulsar.Services.Tutorial.OnboardingTemplateService>();
             serviceCollection.AddSingleton<Pulsar.Services.Tutorial.IOnboardingStateService, Pulsar.Services.Tutorial.OnboardingStateService>();
+            serviceCollection.AddSingleton<Pulsar.Services.Tutorial.TutorialScenarioRegistry>();
+            serviceCollection.AddSingleton<Pulsar.Services.Tutorial.Prerequisites.ExcelPrerequisiteProvider>();
+            serviceCollection.AddSingleton<Pulsar.Services.Tutorial.Prerequisites.BrowserPrerequisiteProvider>();
             serviceCollection.AddSingleton<Pulsar.Services.Tutorial.StartupCoordinator>();
             
             // Tutorial Service

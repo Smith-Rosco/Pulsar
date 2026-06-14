@@ -110,6 +110,11 @@ namespace Pulsar.Services
             }
         }
 
+        public void SetScenarioId(string? scenarioId)
+        {
+            _orchestrator.SetScenario(scenarioId);
+        }
+
         public async Task StartTutorialAsync()
         {
             if (_isTutorialActive)
@@ -121,6 +126,21 @@ namespace Pulsar.Services
             _logger.LogInformation("Starting tutorial");
             _isTutorialActive = true;
             _previousStep = null;
+
+            // 从配置中读取场景 ID 并设置到编排器
+            try
+            {
+                var config = _configService.Current;
+                if (!string.IsNullOrEmpty(config.Settings.SelectedTutorialScenarioId))
+                {
+                    _orchestrator.SetScenario(config.Settings.SelectedTutorialScenarioId);
+                    _logger.LogInformation("Using tutorial scenario: {ScenarioId}", config.Settings.SelectedTutorialScenarioId);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to read selected tutorial scenario from config, using default");
+            }
 
             // Start the orchestrator
             try
@@ -219,6 +239,14 @@ namespace Pulsar.Services
             if (config.Settings.HasCompletedTutorial)
             {
                 return;
+            }
+
+            // 恢复前先从配置读取场景 ID，确保加载正确的教程步骤
+            if (!string.IsNullOrEmpty(config.Settings.SelectedTutorialScenarioId))
+            {
+                _orchestrator.SetScenario(config.Settings.SelectedTutorialScenarioId);
+                _logger.LogInformation("Restored tutorial scenario: {ScenarioId}",
+                    config.Settings.SelectedTutorialScenarioId);
             }
 
             if (!string.IsNullOrEmpty(config.Settings.TutorialCrashedAt))

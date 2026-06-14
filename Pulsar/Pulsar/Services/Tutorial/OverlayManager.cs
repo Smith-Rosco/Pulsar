@@ -134,5 +134,13 @@ namespace Pulsar.Services.Tutorial
         {
             _overlayWindow?.StopConfetti();
         }
+
+        /// <summary>
+        /// 显示 toast 通知
+        /// </summary>
+        public void ShowToast(string message, string icon = "\u2714")
+        {
+            _overlayWindow?.ShowToast(message, icon);
+        }
     }
 }

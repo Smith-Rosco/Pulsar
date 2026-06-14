@@ -20,12 +20,17 @@ namespace Pulsar.Services.Tutorial
     {
         private readonly ILogger<TutorialStepLoader> _logger;
         private readonly ILocalizationService _loc;
+        private readonly TutorialScenarioRegistry _scenarioRegistry;
         private readonly string _defaultConfigPath;
 
-        public TutorialStepLoader(ILogger<TutorialStepLoader> logger, ILocalizationService localizationService)
+        public TutorialStepLoader(
+            ILogger<TutorialStepLoader> logger,
+            ILocalizationService localizationService,
+            TutorialScenarioRegistry? scenarioRegistry = null)
         {
             _logger = logger;
             _loc = localizationService;
+            _scenarioRegistry = scenarioRegistry ?? new TutorialScenarioRegistry();
             
             // 默认配置文件路径 - 优先使用 Assets 目录
             var appDirectory = AppDomain.CurrentDomain.BaseDirectory;
@@ -37,6 +42,27 @@ namespace Pulsar.Services.Tutorial
         /// </summary>
         public List<TutorialStep> LoadSteps()
         {
+            return LoadSteps(_defaultConfigPath);
+        }
+
+        /// <summary>
+        /// 根据 scenario ID 加载教程步骤
+        /// </summary>
+        public List<TutorialStep> LoadStepsForScenario(string? scenarioId)
+        {
+            if (!string.IsNullOrEmpty(scenarioId))
+            {
+                var scenario = _scenarioRegistry.GetById(scenarioId);
+                if (scenario != null && !string.IsNullOrEmpty(scenario.StepsJsonPath))
+                {
+                    var appDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                    var scenarioPath = Path.Combine(appDirectory, "Assets", scenario.StepsJsonPath);
+                    return LoadSteps(scenarioPath);
+                }
+
+                _logger.LogWarning("[TutorialStepLoader] Scenario '{ScenarioId}' not found or has no custom steps, falling back to default", scenarioId);
+            }
+
             return LoadSteps(_defaultConfigPath);
         }
 

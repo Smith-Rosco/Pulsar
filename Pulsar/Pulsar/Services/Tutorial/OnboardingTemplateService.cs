@@ -6,25 +6,12 @@ using System.IO;
 using System.Linq;
 using Pulsar.Core.Localization;
 using Pulsar.Models;
+using Pulsar.Models.Tutorial;
 
 namespace Pulsar.Services.Tutorial
 {
-    public sealed class ConfigPreviewSummary
-    {
-        public int SwitchSlotCount { get; init; }
-        public int CommandSlotCount { get; init; }
-        public required string CommandSlotLabel { get; init; }
-    }
-
     public static class OnboardingProfileExtensions
     {
-        public static string GetCommandSlotLabelKey(this OnboardingUsageProfile profile) => profile switch
-        {
-            OnboardingUsageProfile.DeveloperWorkflow => "FirstLaunch.Preview.PowerShell",
-            OnboardingUsageProfile.BrowserAndDocs => "FirstLaunch.Preview.Documentation",
-            _ => "FirstLaunch.Preview.InsertSampleText"
-        };
-
         public static string GetSlotDescriptionKey(this OnboardingUsageProfile profile) => profile switch
         {
             OnboardingUsageProfile.DeveloperWorkflow => "FirstLaunch.DeveloperWorkflowSlotDesc",
@@ -66,7 +53,7 @@ namespace Pulsar.Services.Tutorial
 
         ProfilesConfig BuildInitialConfig(OnboardingTemplateRequest request);
 
-        ConfigPreviewSummary BuildPreviewSummary(OnboardingTemplateRequest request);
+        ProfilesConfig BuildInitialConfig(TutorialScenario scenario, IReadOnlyList<OnboardingAppSelection> selectedApps);
     }
 
     public sealed class OnboardingTemplateService : IOnboardingTemplateService
@@ -82,6 +69,7 @@ namespace Pulsar.Services.Tutorial
         {
             new() { Id = "chrome", DisplayName = "Google Chrome", ProcessName = "chrome", LaunchPath = "chrome.exe", IconKey = "\uE774" },
             new() { Id = "edge", DisplayName = "Microsoft Edge", ProcessName = "msedge", LaunchPath = "msedge.exe", IconKey = "\uE774" },
+            new() { Id = "excel", DisplayName = "Microsoft Excel", ProcessName = "excel", LaunchPath = "EXCEL.EXE", IconKey = "\uE736" },
             new() { Id = "explorer", DisplayName = "File Explorer", ProcessName = "explorer", LaunchPath = "explorer.exe", IconKey = "\uE8B7" },
             new() { Id = "notepad", DisplayName = "Notepad", ProcessName = "notepad", LaunchPath = "notepad.exe", IconKey = "\uE70F" },
             new() { Id = "powershell", DisplayName = "PowerShell", ProcessName = "powershell", LaunchPath = "powershell.exe", IconKey = "\uE756" },
@@ -93,7 +81,7 @@ namespace Pulsar.Services.Tutorial
             return AvailableApps;
         }
 
-        private static string ResolveExePath(string processName, string launchPath)
+        internal static string ResolveExePath(string processName, string launchPath)
         {
             if (!string.IsNullOrWhiteSpace(launchPath))
             {
@@ -140,7 +128,7 @@ namespace Pulsar.Services.Tutorial
             return fallback;
         }
 
-        private static string ResolveIconKey(string processName, string launchPath, string fallbackIconKey)
+        internal static string ResolveIconKey(string processName, string launchPath, string fallbackIconKey)
         {
             try
             {
@@ -176,12 +164,42 @@ namespace Pulsar.Services.Tutorial
                 throw new InvalidOperationException("At least one app must be selected for onboarding.");
             }
 
-            var orderedApps = request.SelectedApps
+            var orderedApps = GetOrderedApps(request.SelectedApps);
+
+            var switchSlots = BuildSwitchSlots(orderedApps);
+            var commandSlots = new List<PluginSlot>
+            {
+                BuildCommandExample(request.Profile, orderedApps)
+            };
+
+            return CreateProfilesConfig(switchSlots, commandSlots);
+        }
+
+        public ProfilesConfig BuildInitialConfig(TutorialScenario scenario, IReadOnlyList<OnboardingAppSelection> selectedApps)
+        {
+            if (selectedApps == null || selectedApps.Count == 0)
+            {
+                throw new InvalidOperationException("At least one app must be selected for onboarding.");
+            }
+
+            var orderedApps = GetOrderedApps(selectedApps);
+            var switchSlots = BuildSwitchSlots(orderedApps);
+            var commandSlots = BuildCommandExamples(scenario.CommandSlotTemplates);
+
+            return CreateProfilesConfig(switchSlots, commandSlots);
+        }
+
+        private static List<OnboardingAppSelection> GetOrderedApps(IReadOnlyList<OnboardingAppSelection> apps)
+        {
+            return apps
                 .GroupBy(app => app.Id, StringComparer.OrdinalIgnoreCase)
                 .Select(group => group.First())
                 .Take(6)
                 .ToList();
+        }
 
+        private static List<PluginSlot> BuildSwitchSlots(IReadOnlyList<OnboardingAppSelection> orderedApps)
+        {
             var switchSlots = new List<PluginSlot>();
             int slotIndex = 1;
 
@@ -205,11 +223,11 @@ namespace Pulsar.Services.Tutorial
                 });
             }
 
-            var commandSlots = new List<PluginSlot>
-            {
-                BuildCommandExample(request.Profile, orderedApps)
-            };
+            return switchSlots;
+        }
 
+        private static ProfilesConfig CreateProfilesConfig(List<PluginSlot> switchSlots, List<PluginSlot> commandSlots)
+        {
             return new ProfilesConfig
             {
                 Settings = new ProfileSettings
@@ -237,21 +255,25 @@ namespace Pulsar.Services.Tutorial
             };
         }
 
-        public ConfigPreviewSummary BuildPreviewSummary(OnboardingTemplateRequest request)
+        private List<PluginSlot> BuildCommandExamples(IReadOnlyList<CommandSlotTemplate> templates)
         {
-            var appCount = request.SelectedApps?.Count ?? 0;
-            var orderedApps = (request.SelectedApps ?? new List<OnboardingAppSelection>())
-                .GroupBy(app => app.Id, StringComparer.OrdinalIgnoreCase)
-                .Select(group => group.First())
-                .Take(6)
-                .ToList();
+            var slots = new List<PluginSlot>();
+            int slotIndex = 1;
 
-            return new ConfigPreviewSummary
+            foreach (var template in templates)
             {
-                SwitchSlotCount = orderedApps.Count,
-                CommandSlotCount = 1,
-                CommandSlotLabel = request.Profile.GetCommandSlotLabelKey()
-            };
+                slots.Add(new PluginSlot
+                {
+                    Slot = slotIndex++,
+                    PluginId = template.PluginId,
+                    Action = template.Action,
+                    Args = new Dictionary<string, string>(template.Args),
+                    Label = _loc?[template.LabelKey] ?? template.LabelKey,
+                    IconKey = template.IconKey
+                });
+            }
+
+            return slots;
         }
 
         private PluginSlot BuildCommandExample(OnboardingUsageProfile profile, IReadOnlyList<OnboardingAppSelection> selectedApps)

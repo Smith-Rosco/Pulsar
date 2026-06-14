@@ -78,5 +78,10 @@ namespace Pulsar.Services.Interfaces
         /// 停止庆祝彩纸动画
         /// </summary>
         void StopConfetti();
+
+        /// <summary>
+        /// 显示 toast 通知
+        /// </summary>
+        void ShowToast(string message, string icon = "\u2714");
     }
 }

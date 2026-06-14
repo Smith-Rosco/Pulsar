@@ -31,5 +31,36 @@
         <Rectangle x:Name="ConfettiLayer"
                    IsHitTestVisible="False"
                    Visibility="Collapsed"/>
+
+        <!-- Toast notification overlay -->
+        <Border x:Name="ToastNotification"
+                Visibility="Collapsed"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Top"
+                Margin="0,40,0,0"
+                Background="#27AE60"
+                CornerRadius="20"
+                Padding="16,10,20,10"
+                BorderThickness="0"
+                Opacity="0">
+            <Border.Effect>
+                <DropShadowEffect Color="Black" Opacity="0.3" BlurRadius="16" ShadowDepth="4" Direction="270"/>
+            </Border.Effect>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock x:Name="ToastIcon"
+                           Text="✓"
+                           FontSize="16"
+                           FontWeight="Bold"
+                           Foreground="White"
+                           VerticalAlignment="Center"
+                           Margin="0,0,8,0"/>
+                <TextBlock x:Name="ToastMessage"
+                           Text=""
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           Foreground="White"
+                           VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
     </Grid>
 </Window>

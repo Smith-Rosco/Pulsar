@@ -192,9 +192,9 @@
                                Margin="0,0,12,0"/>
 
                      <ui:Button x:Name="NextButton"
-                                Content="{lex:Locale Tutorial.Next}"
-                                Style="{StaticResource PulsarPrimaryButtonStyle}"
-                                Click="OnNextButtonClick"/>
+                                 Content="{lex:Locale Tutorial.Next}"
+                                 Style="{StaticResource PulsarPrimaryButtonStyle}"
+                                 Click="OnNextButtonClick"/>
                      </StackPanel>
                 </Grid>
             </Grid>

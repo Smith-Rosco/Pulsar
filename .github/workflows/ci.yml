@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore Pulsar/Pulsar.sln
+
+      - name: Build
+        run: dotnet build Pulsar/Pulsar.sln -c Release --no-restore -warnaserror
+
+      - name: Run tests
+        run: dotnet test Pulsar/Pulsar.Tests --no-build -c Release --verbosity normal

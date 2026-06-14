@@ -106,6 +106,11 @@ namespace Pulsar.Models
     /// </summary>
     public string? TutorialCrashedAt { get; set; } = null;
 
+    /// <summary>
+    /// 用户在前导设置向导中选择的教程场景 ID
+    /// </summary>
+    public string? SelectedTutorialScenarioId { get; set; } = null;
+
     // [Onboarding] Onboarding System Configuration
     /// <summary>
     /// <para>Onboarding completion status.</para>

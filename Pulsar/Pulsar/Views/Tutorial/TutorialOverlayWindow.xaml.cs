@@ -43,6 +43,9 @@ namespace Pulsar.Views.Tutorial
         private readonly System.Windows.Shapes.Rectangle _overlayBackground;
         private readonly ContentPresenter _cardPresenter;
         private System.Windows.Shapes.Rectangle? _confettiLayer;
+        private Border? _toastNotification;
+        private TextBlock? _toastMessage;
+        private TextBlock? _toastIcon;
         private OverlayState _currentState = OverlayState.Focused;
 
         private HwndSource? _hwndSource;
@@ -92,6 +95,9 @@ namespace Pulsar.Views.Tutorial
             _overlayBackground = (System.Windows.Shapes.Rectangle)FindName("OverlayBackground");
             _cardPresenter = (ContentPresenter)FindName("CardPresenter");
             _confettiLayer = (System.Windows.Shapes.Rectangle)FindName("ConfettiLayer");
+            _toastNotification = (Border)FindName("ToastNotification");
+            _toastMessage = (TextBlock)FindName("ToastMessage");
+            _toastIcon = (TextBlock)FindName("ToastIcon");
             
             Loaded += OnLoaded;
         }
@@ -653,6 +659,48 @@ namespace Pulsar.Views.Tutorial
             return visualBrush;
         }
         
+        /// <summary>
+        /// 显示 toast 通知
+        /// </summary>
+        public async void ShowToast(string message, string icon = "\u2714")
+        {
+            if (_toastNotification == null || _toastMessage == null || _toastIcon == null)
+                return;
+
+            _toastMessage.Text = message;
+            _toastIcon.Text = icon;
+            _toastNotification.Visibility = Visibility.Visible;
+            _toastNotification.Opacity = 0;
+
+            // Fade in
+            var fadeIn = new System.Windows.Media.Animation.DoubleAnimation
+            {
+                From = 0,
+                To = 1,
+                Duration = TimeSpan.FromMilliseconds(300),
+                EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
+            };
+            _toastNotification.BeginAnimation(OpacityProperty, fadeIn);
+
+            // Wait 2.5 seconds
+            await System.Threading.Tasks.Task.Delay(2500);
+
+            // Fade out
+            var fadeOut = new System.Windows.Media.Animation.DoubleAnimation
+            {
+                From = 1,
+                To = 0,
+                Duration = TimeSpan.FromMilliseconds(300),
+                EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
+            };
+            fadeOut.Completed += (_, _) =>
+            {
+                if (_toastNotification != null)
+                    _toastNotification.Visibility = Visibility.Collapsed;
+            };
+            _toastNotification.BeginAnimation(OpacityProperty, fadeOut);
+        }
+
         /// <summary>
         /// [Performance] 记录性能日志
         /// </summary>

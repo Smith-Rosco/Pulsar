@@ -28,6 +28,11 @@ namespace Pulsar.Services.Interfaces
         TutorialStep? CurrentStep { get; }
 
         /// <summary>
+        /// 设置教程场景 ID
+        /// </summary>
+        void SetScenarioId(string? scenarioId);
+
+        /// <summary>
         /// 启动教程
         /// </summary>
         Task StartTutorialAsync();

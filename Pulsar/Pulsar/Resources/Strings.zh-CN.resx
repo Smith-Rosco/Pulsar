@@ -1573,55 +1573,22 @@
     <value>专注于浏览、笔记和快速查阅任务。</value>
   </data>
   <data name="FirstLaunch.SetupTitle" xml:space="preserve">
-    <value>设置Pulsar</value>
+    <value>欢迎使用Pulsar</value>
   </data>
   <data name="FirstLaunch.SetupDescription" xml:space="preserve">
-    <value>选择您计划如何使用Pulsar，我们将为您创建合适的入门配置。</value>
-  </data>
-  <data name="FirstLaunch.SetupHint" xml:space="preserve">
-    <value>至少选择一个应用。最多六个应用将作为切换模式的启动配置位。</value>
+    <value>选择一个场景，立即体验 Pulsar。所有设置都可以后续自由调整。</value>
   </data>
   <data name="FirstLaunch.UsageScenario" xml:space="preserve">
-    <value>使用场景</value>
-  </data>
-  <data name="FirstLaunch.LaunchApps" xml:space="preserve">
-    <value>启动应用</value>
-  </data>
-  <data name="FirstLaunch.Selected" xml:space="preserve">
-    <value>已选择</value>
-  </data>
-  <data name="FirstLaunch.SelectedApps" xml:space="preserve">
-    <value>已选择应用：</value>
+    <value>选择场景</value>
   </data>
   <data name="FirstLaunch.CreateConfig" xml:space="preserve">
-    <value>创建初始配置</value>
+    <value>开始使用</value>
   </data>
   <data name="FirstLaunch.Skip" xml:space="preserve">
     <value>暂时跳过</value>
   </data>
-  <data name="FirstLaunch.Footer" xml:space="preserve">
-    <value>生成的默认值将在全局配置文件中创建标准的可编辑配置位。您稍后可以更改所有内容。</value>
-  </data>
   <data name="FirstLaunch.SelectScenarioError" xml:space="preserve">
-    <value>请先选择一个使用场景。</value>
-  </data>
-  <data name="FirstLaunch.SelectAppError" xml:space="preserve">
-    <value>请至少选择一个启动应用以生成默认配置。</value>
-  </data>
-  <data name="FirstLaunch.Preview" xml:space="preserve">
-    <value>配置预览</value>
-  </data>
-  <data name="FirstLaunch.Preview.Format" xml:space="preserve">
-    <value>{0} 个切换槽 + {1} 个命令槽（{2}）</value>
-  </data>
-  <data name="FirstLaunch.Preview.PowerShell" xml:space="preserve">
-    <value>PowerShell</value>
-  </data>
-  <data name="FirstLaunch.Preview.Documentation" xml:space="preserve">
-    <value>文档</value>
-  </data>
-  <data name="FirstLaunch.Preview.Notepad" xml:space="preserve">
-    <value>记事本</value>
+    <value>请先选择一个场景</value>
   </data>
   <data name="FirstLaunch.GeneralProductivitySlotDesc" xml:space="preserve">
     <value>会生成一个记事本命令槽，适合快速记笔记</value>
@@ -2004,6 +1971,171 @@
   </data>
   <data name="Dialog.AddSlot.BackToPicker" xml:space="preserve">
     <value>返回选择器</value>
+  </data>
+  <!-- ==================== Scenario ==================== -->
+  <data name="Scenario.Notepad.Title" xml:space="preserve">
+    <value>记事本与文本插入</value>
+  </data>
+  <data name="Scenario.Notepad.Description" xml:space="preserve">
+    <value>经典 Pulsar 教程，演示记事本切换和文本插入</value>
+  </data>
+  <data name="Scenario.Notepad.SlotDescription" xml:space="preserve">
+    <value>会生成一个记事本切换槽位和文本插入命令槽位</value>
+  </data>
+  <data name="Scenario.Excel.Title" xml:space="preserve">
+    <value>Excel 自动化</value>
+  </data>
+  <data name="Scenario.Excel.Description" xml:space="preserve">
+    <value>通过 VbaRunner 插件在 Excel 中执行 VBA 脚本</value>
+  </data>
+  <data name="Scenario.Excel.SlotDescription" xml:space="preserve">
+    <value>会生成一个 VBA 演示槽位和 Excel 文本插入槽位</value>
+  </data>
+  <data name="Scenario.Browser.Title" xml:space="preserve">
+    <value>浏览器与书签</value>
+  </data>
+  <data name="Scenario.Browser.Description" xml:space="preserve">
+    <value>浏览器切换和书签运行器演示</value>
+  </data>
+  <data name="Scenario.Browser.SlotDescription" xml:space="preserve">
+    <value>会生成浏览器切换槽位和书签命令槽位</value>
+  </data>
+  <!-- ==================== CommandSlot ==================== -->
+  <data name="CommandSlot.RunVbaDemo" xml:space="preserve">
+    <value>运行 VBA 演示</value>
+  </data>
+  <data name="CommandSlot.OpenBookmarklet" xml:space="preserve">
+    <value>执行书签脚本</value>
+  </data>
+  <!-- ==================== Prerequisite ==================== -->
+  <data name="Prerequisite.ExcelExists" xml:space="preserve">
+    <value>Microsoft Excel</value>
+  </data>
+  <data name="Prerequisite.VbaSupport" xml:space="preserve">
+    <value>VBA 支持（VBE7.DLL）</value>
+  </data>
+  <data name="Prerequisite.BrowserExists" xml:space="preserve">
+    <value>网络浏览器（Chrome/Edge）</value>
+  </data>
+  <!-- ==================== Tutorial: Excel Scenario ==================== -->
+  <data name="Tutorial.Excel.WelcomeDesc" xml:space="preserve">
+    <value>欢迎！本教程将带你体验 Pulsar 的两种模式在 Excel 中的应用。
+
+你将：
+1. 按 Ctrl+Q 打开切换模式，切换到 Excel
+2. 按 Ctrl+Shift+Q 打开命令模式，在 Excel 中运行 VBA 演示
+
+你将学会如何切换到应用，然后在其中执行操作。</value>
+  </data>
+  <data name="Tutorial.Excel.SwitchModeDesc" xml:space="preserve">
+    <value>按 Ctrl+Q 打开切换模式，将鼠标悬停在 Excel 图标上，然后释放快捷键即可切换到它。
+
+Pulsar 会直接跳转到 Excel，无需反复切换窗口。</value>
+  </data>
+  <data name="Tutorial.Excel.SwitchModeHint" xml:space="preserve">
+    <value>按 Ctrl+Q，将鼠标悬停在 Excel 图标上，然后释放快捷键。</value>
+  </data>
+  <data name="Tutorial.Excel.FirstSwitch" xml:space="preserve">
+    <value>已切换到 Excel</value>
+  </data>
+  <data name="Tutorial.Excel.FirstSwitchDesc" xml:space="preserve">
+    <value>太好了——你已切换到 Excel！
+
+下一步将使用命令模式在 Excel 中运行 VBA 演示。
+
+点击"下一步"继续。</value>
+  </data>
+  <data name="Tutorial.Excel.CommandModeDesc" xml:space="preserve">
+    <value>按 Ctrl+Shift+Q 打开命令模式，将鼠标悬停在"运行 VBA 演示"上，然后释放快捷键。
+
+Pulsar 会在 Excel 中为你执行 VBA 脚本——这就是命令模式的魅力：在你切换到的应用上运行插件。</value>
+  </data>
+  <data name="Tutorial.Excel.CommandModeHint" xml:space="preserve">
+    <value>按 Ctrl+Shift+Q，将鼠标悬停在"运行 VBA 演示"上，然后释放快捷键。</value>
+  </data>
+  <data name="Tutorial.Excel.FirstCommandDesc" xml:space="preserve">
+    <value>Pulsar 已在 Excel 中运行了 VBA 脚本！你刚刚结合了两种模式：
+
+1. 切换模式（Ctrl+Q）——帮你到达 Excel
+2. 命令模式（Ctrl+Shift+Q）——在其内部运行了 VBA 演示
+
+这就是 Pulsar 的核心工作流。</value>
+  </data>
+  <data name="Tutorial.Excel.OnboardingCompleteDesc" xml:space="preserve">
+    <value>你已经结合了 Pulsar 的两种模式：
+
+✔ 用切换模式（Ctrl+Q）跳到 Excel
+✔ 用命令模式（Ctrl+Shift+Q）运行了 VBA 演示
+
+这就是核心工作流——切换到任意应用，然后在其中执行操作。
+
+随时打开设置自定义你的槽位，或继续使用默认配置——Pulsar 随时为你服务！</value>
+  </data>
+
+  <!-- ==================== Tutorial: Browser Scenario ==================== -->
+  <data name="Tutorial.Browser.WelcomeDesc" xml:space="preserve">
+    <value>欢迎！本教程将带你体验 Pulsar 的两种模式在浏览器中的使用。
+
+你将：
+1. 按 Ctrl+Q 打开切换模式，切换到你的浏览器
+2. 按 Ctrl+Shift+Q 打开命令模式，运行一个书签
+
+你将学会如何切换到应用，然后在其中执行操作。</value>
+  </data>
+  <data name="Tutorial.Browser.SwitchModeDesc" xml:space="preserve">
+    <value>按 Ctrl+Q 打开切换模式，将鼠标悬停在浏览器图标（Chrome 或 Edge）上，然后释放快捷键即可切换到它。
+
+Pulsar 会直接跳转到你的浏览器，无需反复切换窗口。</value>
+  </data>
+  <data name="Tutorial.Browser.SwitchModeHint" xml:space="preserve">
+    <value>按 Ctrl+Q，将鼠标悬停在浏览器图标上，然后释放快捷键。</value>
+  </data>
+  <data name="Tutorial.Browser.FirstSwitch" xml:space="preserve">
+    <value>已切换到浏览器</value>
+  </data>
+  <data name="Tutorial.Browser.FirstSwitchDesc" xml:space="preserve">
+    <value>太好了——你已切换到浏览器！
+
+下一步将使用命令模式打开一个书签。
+
+点击"下一步"继续。</value>
+  </data>
+  <data name="Tutorial.Browser.CommandModeDesc" xml:space="preserve">
+    <value>按 Ctrl+Shift+Q 打开命令模式，将鼠标悬停在"打开书签"上，然后释放快捷键。
+
+Pulsar 会在你的浏览器中打开一个网页——这就是命令模式：在你切换到的应用上运行插件。</value>
+  </data>
+  <data name="Tutorial.Browser.CommandModeHint" xml:space="preserve">
+    <value>按 Ctrl+Shift+Q，将鼠标悬停在"打开书签"上，然后释放快捷键。</value>
+  </data>
+  <data name="Tutorial.Browser.FirstCommandDesc" xml:space="preserve">
+    <value>Pulsar 已在你浏览器中打开了书签！你刚刚结合了两种模式：
+
+1. 切换模式（Ctrl+Q）——帮你到达浏览器
+2. 命令模式（Ctrl+Shift+Q）——在其内部打开了网页
+
+这就是 Pulsar 的核心工作流。</value>
+  </data>
+  <data name="Tutorial.Browser.OnboardingCompleteDesc" xml:space="preserve">
+    <value>你已经结合了 Pulsar 的两种模式：
+
+✔ 用切换模式（Ctrl+Q）跳到浏览器
+✔ 用命令模式（Ctrl+Shift+Q）打开了书签
+
+这就是核心工作流——切换到任意应用，然后在其中执行操作。
+
+随时打开设置自定义你的槽位，或继续使用默认配置——Pulsar 随时为你服务！</value>
+  </data>
+
+  <!-- ==================== Tutorial ==================== -->
+  <data name="Tutorial.SwitchedToApp" xml:space="preserve">
+    <value>已切换到 {0}！</value>
+  </data>
+  <data name="Tutorial.SlotMissingTitle" xml:space="preserve">
+    <value>槽位未配置</value>
+  </data>
+  <data name="Tutorial.SlotMissingDesc" xml:space="preserve">
+    <value>你的 Pulsar 槽位尚未配置。请前往设置 → 槽位管理器添加一个槽位，或恢复默认槽位。</value>
   </data>
   <!-- ==================== Plugin.Command ==================== -->
   <data name="Plugin.Command.Success.Executed" xml:space="preserve">
