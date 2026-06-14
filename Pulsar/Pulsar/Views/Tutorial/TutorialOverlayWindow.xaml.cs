@@ -8,6 +8,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Shapes;
+using Pulsar.Helpers.Tutorial;
 using Pulsar.Models.Tutorial;
 
 namespace Pulsar.Views.Tutorial
@@ -41,6 +42,7 @@ namespace Pulsar.Views.Tutorial
         private Rect _spotlightBounds = Rect.Empty;
         private readonly System.Windows.Shapes.Rectangle _overlayBackground;
         private readonly ContentPresenter _cardPresenter;
+        private System.Windows.Shapes.Rectangle? _confettiLayer;
         private OverlayState _currentState = OverlayState.Focused;
 
         private HwndSource? _hwndSource;
@@ -67,10 +69,14 @@ namespace Pulsar.Views.Tutorial
         // [Performance] 性能监控
         private System.Diagnostics.Stopwatch? _perfStopwatch;
 
-        // Win32 API for click-through
+        // Confetti celebration system
+        private ConfettiRenderer? _confettiRenderer;
+
+        // Win32 API for click-through and no-activate
         private const int GWL_EXSTYLE = -20;
         private const int WS_EX_TRANSPARENT = 0x00000020;
         private const int WS_EX_LAYERED = 0x00080000;
+        private const int WS_EX_NOACTIVATE = 0x08000000;
 
         [DllImport("user32.dll")]
         private static extern int GetWindowLong(IntPtr hwnd, int index);
@@ -85,6 +91,7 @@ namespace Pulsar.Views.Tutorial
             // Get references to XAML elements
             _overlayBackground = (System.Windows.Shapes.Rectangle)FindName("OverlayBackground");
             _cardPresenter = (ContentPresenter)FindName("CardPresenter");
+            _confettiLayer = (System.Windows.Shapes.Rectangle)FindName("ConfettiLayer");
             
             Loaded += OnLoaded;
         }
@@ -94,6 +101,68 @@ namespace Pulsar.Views.Tutorial
             // Enable click-through outside the card in Focused mode.
             _hwndSource = PresentationSource.FromVisual(this) as HwndSource;
             _hwndSource?.AddHook(WndProc);
+
+            // 鼠标悬停恢复透明度
+            if (_cardPresenter != null)
+            {
+                _cardPresenter.MouseEnter += (_, _) =>
+                {
+                    if (_currentState == OverlayState.Observing)
+                    {
+                        _cardPresenter.Opacity = 1.0;
+                    }
+                };
+                _cardPresenter.MouseLeave += (_, _) =>
+                {
+                    if (_currentState == OverlayState.Observing && !IsActive)
+                    {
+                        _cardPresenter.Opacity = 0.85;
+                    }
+                };
+            }
+        }
+
+        /// <summary>
+        /// 启动庆祝彩纸动画
+        /// </summary>
+        public void StartConfetti()
+        {
+            StopConfetti();
+
+            var screen = SystemParameters.WorkArea;
+            _confettiRenderer = new ConfettiRenderer(screen.Width, screen.Height);
+
+            if (_confettiLayer != null)
+            {
+                _confettiLayer.Visibility = Visibility.Visible;
+                var brush = new VisualBrush(_confettiRenderer.Visual)
+                {
+                    Stretch = Stretch.None,
+                    AlignmentX = AlignmentX.Left,
+                    AlignmentY = AlignmentY.Top
+                };
+                _confettiLayer.Fill = brush;
+            }
+
+            _confettiRenderer.Start();
+        }
+
+        /// <summary>
+        /// 停止庆祝彩纸动画
+        /// </summary>
+        public void StopConfetti()
+        {
+            if (_confettiRenderer != null)
+            {
+                _confettiRenderer.Dispose();
+                _confettiRenderer = null;
+            }
+
+            if (_confettiLayer != null)
+            {
+                _confettiLayer.Visibility = Visibility.Collapsed;
+                _confettiLayer.Fill = null;
+            }
         }
 
         protected override void OnClosed(EventArgs e)
@@ -166,6 +235,50 @@ namespace Pulsar.Views.Tutorial
         }
 
         /// <summary>
+        /// 启用 WS_EX_NOACTIVATE：点击窗口时不激活（不抢夺焦点）
+        /// </summary>
+        private void EnableNoActivate()
+        {
+            var hwnd = new WindowInteropHelper(this).Handle;
+            int extendedStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+            SetWindowLong(hwnd, GWL_EXSTYLE, extendedStyle | WS_EX_NOACTIVATE);
+        }
+
+        /// <summary>
+        /// 禁用 WS_EX_NOACTIVATE：恢复正常激活行为
+        /// </summary>
+        private void DisableNoActivate()
+        {
+            var hwnd = new WindowInteropHelper(this).Handle;
+            int extendedStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+            SetWindowLong(hwnd, GWL_EXSTYLE, extendedStyle & ~WS_EX_NOACTIVATE);
+        }
+
+        /// <summary>
+        /// 当窗口失去激活状态时降低卡片透明度，提示窗口非活跃
+        /// </summary>
+        protected override void OnDeactivated(EventArgs e)
+        {
+            base.OnDeactivated(e);
+            if (_currentState == OverlayState.Observing && _cardPresenter != null)
+            {
+                _cardPresenter.Opacity = 0.85;
+            }
+        }
+
+        /// <summary>
+        /// 当窗口重新激活时恢复卡片透明度
+        /// </summary>
+        protected override void OnActivated(EventArgs e)
+        {
+            base.OnActivated(e);
+            if (_cardPresenter != null)
+            {
+                _cardPresenter.Opacity = 1.0;
+            }
+        }
+
+        /// <summary>
         /// 切换到 Focused 状态（全屏遮罩 + 聚光灯）
         /// </summary>
         public void EnterFocusedState()
@@ -177,6 +290,9 @@ namespace Pulsar.Views.Tutorial
             
             // 禁用点击穿透，恢复正常交互
             DisableClickThrough();
+            
+            // 恢复正常激活行为（聚焦状态需要模态效果）
+            DisableNoActivate();
             
             // 重置窗口位置和尺寸（清除 Observing 模式的残留）
             Left = 0;
@@ -237,14 +353,16 @@ namespace Pulsar.Views.Tutorial
             
             _currentState = OverlayState.Observing;
             _pendingPosition = position;  // [Fix] 记录目标位置
-            
+
+            // 启用 WS_EX_NOACTIVATE：点击卡片时不抢夺其他窗口的焦点
+            EnableNoActivate();
+
             // [Fix] 取消之前的定位任务（防抖）
             _positionDebounceToken?.Cancel();
             _positionDebounceToken = new System.Threading.CancellationTokenSource();
             var token = _positionDebounceToken.Token;
             
-            // 关键修复：在 Observing 模式下，不使用 Topmost，让 SettingsWindow 可以正常接收事件
-            Topmost = false;
+            // Topmost 保持 true（默认值，已在 XAML 设置），配合 WS_EX_NOACTIVATE 防止焦点抢夺
             
             // 隐藏遮罩
             if (_overlayBackground != null)
@@ -273,12 +391,12 @@ namespace Pulsar.Views.Tutorial
             }
             else
             {
-                // 自动调整大小模式：根据内容自适应
+                // 自动调整大小模式：根据内容自适应，最大不超过屏幕工作区高度的一半
                 SizeToContent = SizeToContent.WidthAndHeight;
                 Width = double.NaN;
                 Height = double.NaN;
-                MaxWidth = 450;
-                MaxHeight = 350;
+                MaxWidth = 540;
+                MaxHeight = SystemParameters.WorkArea.Height / 2;
             }
             
             // [Performance] 优化阴影效果：降低模糊半径以提升性能

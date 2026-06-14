@@ -44,6 +44,12 @@
   <data name="Settings.General.RestartOnboardingConfirm" xml:space="preserve">
     <value>This will reset your onboarding state and restart Pulsar to show the setup wizard. Continue?</value>
   </data>
+  <data name="Settings.General.ResetTutorial" xml:space="preserve">
+    <value>Reset Tutorial</value>
+  </data>
+  <data name="Settings.General.ResetTutorialConfirm" xml:space="preserve">
+    <value>This will reset the tutorial so you can go through it again from the beginning. Your slots and settings will not be affected. Continue?</value>
+  </data>
   <data name="Notification.RestartOnboarding" xml:space="preserve">
     <value>Restart Onboarding</value>
   </data>
@@ -1301,46 +1307,57 @@
     <value>Open Settings</value>
   </data>
   <data name="Tutorial.WelcomeDesc" xml:space="preserve">
-    <value>Your setup wizard already created a starter configuration. Now let's learn the two modes that make Pulsar fast.</value>
+    <value>Welcome! This tutorial will show you Pulsar's two modes in action. You'll switch to Notepad using Switch Mode (Ctrl+Q), then insert text into it using Command Mode (Ctrl+Shift+Q). Let's get started!</value>
   </data>
   <data name="Tutorial.SwitchMode" xml:space="preserve">
     <value>Switch Mode: app switching and launching</value>
   </data>
   <data name="Tutorial.SwitchModeDesc" xml:space="preserve">
-    <value>Press Ctrl+Q to open Switch Mode. Pick any app tile to jump straight to it — no alt-tabbing, no typing.</value>
+    <value>Press Ctrl+Q to open Switch Mode, hover over the Notepad icon, then release the hotkey to switch to it. Pulsar jumps straight to the app — no alt-tabbing needed.</value>
   </data>
   <data name="Tutorial.SwitchModeHint" xml:space="preserve">
-    <value>Open Switch Mode with Ctrl+Q.</value>
+    <value>Press Ctrl+Q, hover over the Notepad icon, and release the hotkey.</value>
   </data>
   <data name="Tutorial.FirstSwitch" xml:space="preserve">
-    <value>First switch success</value>
+    <value>Switched to Notepad</value>
   </data>
   <data name="Tutorial.FirstSwitchDesc" xml:space="preserve">
-    <value>Choose any generated app slot from Switch Mode. Pulsar activates that app and tracks that you know how to navigate.</value>
+    <value>Great — you switched to Notepad! In the next step you'll use Command Mode to insert text into Notepad. Click "Next" to continue.</value>
+  </data>
+  <data name="Tutorial.FirstSwitchHint" xml:space="preserve">
+    <value>Pulsar switched you to Notepad! Click "Next" to continue.</value>
   </data>
   <data name="Tutorial.CommandMode" xml:space="preserve">
     <value>Command Mode: run an action</value>
   </data>
   <data name="Tutorial.CommandModeDesc" xml:space="preserve">
-    <value>Press Ctrl+Shift+Q to open Command Mode. Here you'll find quick actions like opening settings or running scripts.</value>
+    <value>Press Ctrl+Shift+Q to open Command Mode, hover over "Insert Sample Text", then release the hotkey. Pulsar will type "Hello from Pulsar!" into Notepad for you.</value>
   </data>
   <data name="Tutorial.CommandModeHint" xml:space="preserve">
-    <value>Open Command Mode with Ctrl+Shift+Q.</value>
+    <value>Press Ctrl+Shift+Q, hover over "Insert Sample Text", and release the hotkey.</value>
   </data>
   <data name="Tutorial.FirstCommand" xml:space="preserve">
-    <value>First command success</value>
+    <value>Command executed!</value>
   </data>
   <data name="Tutorial.FirstCommandDesc" xml:space="preserve">
-    <value>Choose any generated command slot from Command Mode. Pulsar executes the action and unlocks the next step.</value>
+    <value>Pulsar typed into Notepad! You just combined both modes: Switch Mode got you to Notepad, and Command Mode did something inside it. That's the core Pulsar workflow.</value>
+  </data>
+  <data name="Tutorial.FirstCommandHint" xml:space="preserve">
+    <value>Pulsar typed into Notepad! You've mastered the core workflow.</value>
   </data>
   <data name="Tutorial.OnboardingComplete" xml:space="preserve">
     <value>Onboarding complete</value>
   </data>
   <data name="Tutorial.OnboardingCompleteDesc" xml:space="preserve">
-    <value>You completed the minimum onboarding path. Pulsar is now set up and ready to accelerate your daily workflow.</value>
+    <value>You just combined both Pulsar modes: Switched to Notepad with Switch Mode, then inserted text with Command Mode. That's the core workflow — switch to any app, then act inside it. You're ready to use Pulsar like a pro!</value>
   </data>
   <data name="Tutorial.Finish" xml:space="preserve">
     <value>Finish</value>
+  </data>
+  <!-- ==================== Slot ==================== -->
+  <!-- ==================== Command Slot Labels ==================== -->
+  <data name="CommandSlot.InsertSampleText" xml:space="preserve">
+    <value>Insert Sample Text</value>
   </data>
   <!-- ==================== Slot ==================== -->
   <data name="Slot.Ready" xml:space="preserve">
@@ -1624,6 +1641,33 @@
   <data name="FirstLaunch.SelectAppError" xml:space="preserve">
     <value>Please select at least one launch app to generate defaults.</value>
   </data>
+  <data name="FirstLaunch.Preview" xml:space="preserve">
+    <value>Configuration Preview</value>
+  </data>
+  <data name="FirstLaunch.Preview.Format" xml:space="preserve">
+    <value>{0} Switch slots + {1} Command slot ({2})</value>
+  </data>
+  <data name="FirstLaunch.Preview.PowerShell" xml:space="preserve">
+    <value>PowerShell</value>
+  </data>
+  <data name="FirstLaunch.Preview.Documentation" xml:space="preserve">
+    <value>Documentation</value>
+  </data>
+  <data name="FirstLaunch.Preview.Notepad" xml:space="preserve">
+    <value>Notepad</value>
+  </data>
+  <data name="FirstLaunch.Preview.InsertSampleText" xml:space="preserve">
+    <value>Insert Sample Text</value>
+  </data>
+  <data name="FirstLaunch.GeneralProductivitySlotDesc" xml:space="preserve">
+    <value>Generates a Notepad command slot for quick note-taking</value>
+  </data>
+  <data name="FirstLaunch.DeveloperWorkflowSlotDesc" xml:space="preserve">
+    <value>Generates a PowerShell command slot for quick scripting access</value>
+  </data>
+  <data name="FirstLaunch.BrowserDocsSlotDesc" xml:space="preserve">
+    <value>Generates a documentation command slot for quick reference access</value>
+  </data>
   <!-- ==================== Dialog.Permission ==================== -->
   <data name="Dialog.Permission.LowRisk" xml:space="preserve">
     <value>Low Risk</value>
@@ -1652,7 +1696,7 @@
     <value>This is the tutorial description text</value>
   </data>
   <data name="Tutorial.AutoContinue" xml:space="preserve">
-    <value>It will continue automatically after completing the action. If it doesn't continue automatically, you can click "Continue".</value>
+    <value>This step will move forward automatically once you perform the action. If nothing happens, just click "Continue" to keep going.</value>
   </data>
   <data name="Tutorial.Previous" xml:space="preserve">
     <value>Previous</value>

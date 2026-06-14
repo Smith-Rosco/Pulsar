@@ -50,7 +50,11 @@
                                Icon="{ui:SymbolIcon Play24}"
                                Command="{Binding RestartOnboardingCommand}"
                                Style="{StaticResource PulsarSecondaryButtonStyle}"
-                               Margin="8,0,0,0"/>
+                               Margin="8,0,8,0"/>
+                    <ui:Button Content="{lex:Locale Settings.General.ResetTutorial}"
+                               Icon="{ui:SymbolIcon ArrowReset24}"
+                               Command="{Binding ResetTutorialCommand}"
+                               Style="{StaticResource PulsarSecondaryButtonStyle}"/>
                 </StackPanel>
             </controls:SettingsPageHeader.ActionsContent>
         </controls:SettingsPageHeader>

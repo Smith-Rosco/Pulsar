@@ -55,6 +55,11 @@ namespace Pulsar.Services.Interfaces
         void Show();
 
         /// <summary>
+        /// 遮罩窗口是否已显示
+        /// </summary>
+        bool IsOverlayVisible();
+
+        /// <summary>
         /// 关闭遮罩窗口
         /// </summary>
         void Close();
@@ -63,5 +68,15 @@ namespace Pulsar.Services.Interfaces
         /// 获取当前遮罩窗口实例
         /// </summary>
         TutorialOverlayWindow? GetOverlayWindow();
+
+        /// <summary>
+        /// 启动庆祝彩纸动画
+        /// </summary>
+        void StartConfetti();
+
+        /// <summary>
+        /// 停止庆祝彩纸动画
+        /// </summary>
+        void StopConfetti();
     }
 }

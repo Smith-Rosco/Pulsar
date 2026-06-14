@@ -4,7 +4,9 @@
     {
       "id": "step1_onboarding_welcome",
       "title": "Welcome to Pulsar",
-      "description": "Your setup wizard already created a starter configuration, so this tutorial only focuses on the first useful wins.\n\nYou will do three things:\n1. Open Switch Mode with `Ctrl+Q`\n2. Trigger one generated app slot successfully\n3. Open Command Mode with `Ctrl+Shift+Q` and run one command slot\n\nOnce you finish those two successful actions, the onboarding path is complete.",
+      "titleKey": "Tutorial.Welcome",
+      "description": "Welcome! This tutorial will show you Pulsar's two modes in action.\n\nYou will:\n1. Press `Ctrl+Q` to open Switch Mode and switch to Notepad\n2. Press `Ctrl+Shift+Q` to open Command Mode and insert text into Notepad\n\nYou'll see how to switch to an app, then do something inside it.",
+      "descriptionKey": "Tutorial.WelcomeDesc",
       "type": "Instruction",
       "target": null,
       "completionTrigger": {
@@ -13,7 +15,7 @@
       },
       "layout": {
         "cardPosition": "TopRight",
-        "cardSizeMode": "Fixed",
+        "cardSizeMode": "Auto",
         "fixedCardWidth": 450,
         "fixedCardHeight": 320
       },
@@ -22,28 +24,12 @@
     {
       "id": "step2_switch_mode_intro",
       "title": "Switch Mode: app switching and launching",
-      "description": "`Ctrl+Q` opens Switch Mode. The outer ring shows the starter app slots generated during setup.\n\nUse it when you want to jump to an app quickly:\n• If the app is already open, Pulsar switches to it\n• If it is not open yet, Pulsar launches it\n\nPress `Ctrl+Q` once now to see those generated slots.",
+      "titleKey": "Tutorial.SwitchMode",
+      "description": "Press `Ctrl+Q` to open Switch Mode, hover over the Notepad icon, then release the hotkey to switch to it.\n\nThat's all it takes — Pulsar jumps straight to Notepad. No alt-tabbing, no searching.",
+      "descriptionKey": "Tutorial.SwitchModeDesc",
       "type": "WaitForAction",
-      "waitHintText": "Open Switch Mode with Ctrl+Q. If the hotkey is busy or not responding yet, you can still continue manually.",
-      "target": null,
-      "completionTrigger": {
-        "type": "RadialMenuShown",
-        "targetValue": "Task"
-      },
-      "layout": {
-        "cardPosition": "TopRight",
-        "cardSizeMode": "Fixed",
-        "fixedCardWidth": 450,
-        "fixedCardHeight": 320
-      },
-      "focusMode": "AlwaysObserving"
-    },
-    {
-      "id": "step3_switch_mode_success",
-      "title": "Complete one successful Switch Mode action",
-      "description": "Now trigger one of the generated app slots from Switch Mode.\n\nSuccess means Pulsar either switches to the running app or launches it for you. As soon as one switch action succeeds, this step will advance automatically.",
-      "type": "WaitForAction",
-      "waitHintText": "Choose any generated app slot from Switch Mode. This step only completes after Pulsar reports a successful switch or launch action.",
+      "waitHintText": "Press Ctrl+Q, hover over the Notepad icon, and release the hotkey.",
+      "waitHintKey": "Tutorial.SwitchModeHint",
       "target": null,
       "completionTrigger": {
         "type": "ActionExecuted",
@@ -51,7 +37,27 @@
       },
       "layout": {
         "cardPosition": "TopRight",
-        "cardSizeMode": "Fixed",
+        "cardSizeMode": "Auto",
+        "fixedCardWidth": 450,
+        "fixedCardHeight": 320
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step3_switch_mode_success",
+      "title": "Switched to Notepad",
+      "titleKey": "Tutorial.FirstSwitch",
+      "description": "Great — you switched to Notepad!\n\nIn the next step you'll use Command Mode to insert text into Notepad.\n\nClick \"Next\" to continue.",
+      "descriptionKey": "Tutorial.FirstSwitchDesc",
+      "type": "Instruction",
+      "target": null,
+      "completionTrigger": {
+        "type": "ButtonClick",
+        "targetValue": "NextButton"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Auto",
         "fixedCardWidth": 450,
         "fixedCardHeight": 320
       },
@@ -60,28 +66,12 @@
     {
       "id": "step4_command_mode_intro",
       "title": "Command Mode: run an action",
-      "description": "`Ctrl+Shift+Q` opens Command Mode. This mode runs actions instead of switching apps.\n\nYour onboarding setup created at least one starter command slot already, so you do not need to configure anything else first. Open Command Mode once now to preview it.",
+      "titleKey": "Tutorial.CommandMode",
+      "description": "Press `Ctrl+Shift+Q` to open Command Mode, hover over \"Insert Sample Text\", then release the hotkey.\n\nPulsar will type \"Hello from Pulsar!\" into Notepad for you — that's Command Mode in action: running a command on the app you switched to.",
+      "descriptionKey": "Tutorial.CommandModeDesc",
       "type": "WaitForAction",
-      "waitHintText": "Open Command Mode with Ctrl+Shift+Q. If needed, you can continue manually and try the action on the next step.",
-      "target": null,
-      "completionTrigger": {
-        "type": "RadialMenuShown",
-        "targetValue": "Action"
-      },
-      "layout": {
-        "cardPosition": "TopRight",
-        "cardSizeMode": "Fixed",
-        "fixedCardWidth": 460,
-        "fixedCardHeight": 300
-      },
-      "focusMode": "AlwaysObserving"
-    },
-    {
-      "id": "step5_command_mode_success",
-      "title": "Complete one successful Command Mode action",
-      "description": "Now run one generated command slot from Command Mode.\n\nAs soon as Pulsar completes one command successfully, the tutorial records the milestone and finishes the guided onboarding path.",
-      "type": "WaitForAction",
-      "waitHintText": "Choose any generated command slot. This step advances only after Pulsar reports a successful command execution.",
+      "waitHintText": "Press Ctrl+Shift+Q, hover over \"Insert Sample Text\", and release the hotkey.",
+      "waitHintKey": "Tutorial.CommandModeHint",
       "target": null,
       "completionTrigger": {
         "type": "ActionExecuted",
@@ -89,7 +79,27 @@
       },
       "layout": {
         "cardPosition": "TopRight",
-        "cardSizeMode": "Fixed",
+        "cardSizeMode": "Auto",
+        "fixedCardWidth": 460,
+        "fixedCardHeight": 300
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step5_command_mode_success",
+      "title": "Command executed!",
+      "titleKey": "Tutorial.FirstCommand",
+      "description": "Pulsar typed into Notepad! You just combined both modes:\n\n1. Switch Mode (`Ctrl+Q`) — got you to Notepad\n2. Command Mode (`Ctrl+Shift+Q`) — did something inside it\n\nThat's the core Pulsar workflow.",
+      "descriptionKey": "Tutorial.FirstCommandDesc",
+      "type": "Instruction",
+      "target": null,
+      "completionTrigger": {
+        "type": "ButtonClick",
+        "targetValue": "NextButton"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Auto",
         "fixedCardWidth": 480,
         "fixedCardHeight": 320
       },
@@ -97,11 +107,14 @@
     },
     {
       "id": "step6_completion",
-      "title": "Onboarding complete",
-      "description": "You have completed Pulsar's minimum onboarding loop.\n\nDone:\n• You opened Switch Mode with `Ctrl+Q`\n• You completed one successful switch or launch action\n• You opened Command Mode with `Ctrl+Shift+Q`\n• You completed one successful command action\n\nFrom here, you can keep using the generated defaults as-is, or open Settings later to refine labels, icons, and arguments.",
+      "title": "You're all set!",
+      "titleKey": "Tutorial.OnboardingComplete",
+      "description": "You just combined both Pulsar modes:\n\n\u2714 Switched to Notepad with Switch Mode (`Ctrl+Q`)\n\u2714 Inserted text with Command Mode (`Ctrl+Shift+Q`)\n\nThat's the core workflow: switch to any app, then act inside it.\n\nOpen Settings anytime to customize your slots, or keep using the defaults — Pulsar is ready whenever you are!",
+      "descriptionKey": "Tutorial.OnboardingCompleteDesc",
       "type": "Instruction",
       "primaryAction": "CompleteTutorial",
       "primaryButtonText": "Finish",
+      "primaryButtonTextKey": "Tutorial.Finish",
       "target": null,
       "completionTrigger": {
         "type": "ButtonClick",
@@ -109,7 +122,7 @@
       },
       "layout": {
         "cardPosition": "TopRight",
-        "cardSizeMode": "Fixed",
+        "cardSizeMode": "Auto",
         "fixedCardWidth": 480,
         "fixedCardHeight": 360
       },

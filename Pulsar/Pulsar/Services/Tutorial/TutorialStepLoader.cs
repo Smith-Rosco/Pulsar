@@ -94,6 +94,9 @@ namespace Pulsar.Services.Tutorial
                 _logger.LogInformation("[TutorialStepLoader] Validating configuration...");
                 ValidateConfig(config);
 
+                // 对没有显式设置 *Key 的步骤应用约定映射
+                ApplyConventionKeys(config.Steps);
+
                 _logger.LogInformation("[TutorialStepLoader] ✅ Successfully loaded {Count} tutorial steps from {Path}", 
                     config.Steps.Count, filePath);
                 
@@ -129,12 +132,12 @@ namespace Pulsar.Services.Tutorial
 
             _logger.LogDebug("[TutorialStepLoader] Searching for tutorial steps file (lang: {Lang})...", lang);
 
-            // 优先加载语言特定文件 (e.g. Steps.en.json, Steps.zh-CN.json)
+            // 优先加载语言特定文件 (e.g. TutorialSteps.en.json, TutorialSteps.zh-CN.json)
             // 然后回退到通用文件名
             var fileNames = new[]
             {
-                $"Steps.{lang}.json",
-                "Steps.json"
+                $"TutorialSteps.{lang}.json",
+                "TutorialSteps.json"
             };
 
             var searchDirs = new[]
@@ -206,6 +209,56 @@ namespace Pulsar.Services.Tutorial
         }
 
         /// <summary>
+        /// 对没有显式设置 *Key 的步骤应用约定映射
+        /// 规则：从 step ID 提取最后一个有意义的片段，PascalCase 后拼接成 "Tutorial.{Suffix}"
+        /// 例如：step1_onboarding_welcome → Tutorial.Welcome
+        /// </summary>
+        private static void ApplyConventionKeys(List<TutorialStep> steps)
+        {
+            foreach (var step in steps)
+            {
+                if (string.IsNullOrEmpty(step.TitleKey))
+                {
+                    var titleSuffix = DeriveLocSuffix(step.Id);
+                    if (titleSuffix != null)
+                    {
+                        step.TitleKey = "Tutorial." + titleSuffix;
+                    }
+                }
+
+                if (string.IsNullOrEmpty(step.DescriptionKey))
+                {
+                    var descSuffix = DeriveLocSuffix(step.Id);
+                    if (descSuffix != null)
+                    {
+                        step.DescriptionKey = "Tutorial." + descSuffix + "Desc";
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 从步骤 ID 推导本地化键后缀
+        /// 格式：去掉 stepN_ 前缀后，取最后一段下划线分隔的单词
+        /// </summary>
+        private static string? DeriveLocSuffix(string stepId)
+        {
+            // 去掉 stepN_ 前缀
+            var match = System.Text.RegularExpressions.Regex.Match(stepId, @"^step\d+_(.+)$");
+            if (!match.Success) return null;
+
+            var remainder = match.Groups[1].Value;
+
+            // 按 _ 分割，取最后一段
+            var parts = remainder.Split('_');
+            var lastSegment = parts.Length > 0 ? parts[^1] : remainder;
+            if (string.IsNullOrEmpty(lastSegment)) return null;
+
+            // PascalCase: 首字母大写
+            return char.ToUpper(lastSegment[0]) + lastSegment[1..];
+        }
+
+        /// <summary>
         /// 获取降级步骤（硬编码）
         /// 当 JSON 配置加载失败时使用
         /// </summary>
@@ -225,9 +278,7 @@ namespace Pulsar.Services.Tutorial
                     Layout = new TutorialLayout
                     {
                         CardPosition = CardPosition.TopRight,
-                        CardSizeMode = CardSizeMode.Fixed,
-                        FixedCardWidth = 450,
-                        FixedCardHeight = 320
+                        CardSizeMode = CardSizeMode.Auto
                     },
                     CompletionTrigger = new TutorialTrigger
                     {
@@ -245,9 +296,7 @@ namespace Pulsar.Services.Tutorial
                     Layout = new TutorialLayout
                     {
                         CardPosition = CardPosition.TopRight,
-                        CardSizeMode = CardSizeMode.Fixed,
-                        FixedCardWidth = 450,
-                        FixedCardHeight = 320
+                        CardSizeMode = CardSizeMode.Auto
                     },
                     CompletionTrigger = new TutorialTrigger
                     {
@@ -265,9 +314,7 @@ namespace Pulsar.Services.Tutorial
                     Layout = new TutorialLayout
                     {
                         CardPosition = CardPosition.TopRight,
-                        CardSizeMode = CardSizeMode.Fixed,
-                        FixedCardWidth = 450,
-                        FixedCardHeight = 320
+                        CardSizeMode = CardSizeMode.Auto
                     },
                     CompletionTrigger = new TutorialTrigger
                     {
@@ -286,9 +333,7 @@ namespace Pulsar.Services.Tutorial
                     Layout = new TutorialLayout
                     {
                         CardPosition = CardPosition.TopRight,
-                        CardSizeMode = CardSizeMode.Fixed,
-                        FixedCardWidth = 460,
-                        FixedCardHeight = 300
+                        CardSizeMode = CardSizeMode.Auto
                     },
                     CompletionTrigger = new TutorialTrigger
                     {
@@ -306,9 +351,7 @@ namespace Pulsar.Services.Tutorial
                     Layout = new TutorialLayout
                     {
                         CardPosition = CardPosition.TopRight,
-                        CardSizeMode = CardSizeMode.Fixed,
-                        FixedCardWidth = 480,
-                        FixedCardHeight = 320
+                        CardSizeMode = CardSizeMode.Auto
                     },
                     CompletionTrigger = new TutorialTrigger
                     {
@@ -328,9 +371,7 @@ namespace Pulsar.Services.Tutorial
                     Layout = new TutorialLayout
                     {
                         CardPosition = CardPosition.TopRight,
-                        CardSizeMode = CardSizeMode.Fixed,
-                        FixedCardWidth = 480,
-                        FixedCardHeight = 300
+                        CardSizeMode = CardSizeMode.Auto
                     },
                     CompletionTrigger = new TutorialTrigger
                     {

@@ -24,7 +24,12 @@
         
         <!-- Content container for tutorial card (centered) -->
         <ContentPresenter x:Name="CardPresenter"
-                         HorizontalAlignment="Center"
-                         VerticalAlignment="Center"/>
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"/>
+
+        <!-- Confetti overlay layer -->
+        <Rectangle x:Name="ConfettiLayer"
+                   IsHitTestVisible="False"
+                   Visibility="Collapsed"/>
     </Grid>
 </Window>

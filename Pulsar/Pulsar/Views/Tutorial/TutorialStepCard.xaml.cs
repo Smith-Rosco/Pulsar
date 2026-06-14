@@ -1,6 +1,7 @@
 // [Path]: Pulsar/Pulsar/Views/Tutorial/TutorialStepCard.xaml.cs
 
 using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
@@ -17,6 +18,7 @@ namespace Pulsar.Views.Tutorial
         public event EventHandler? BackClicked;
         public event EventHandler? NextClicked;
         public event EventHandler? SkipClicked;
+        public event EventHandler? ManualContinueRequested;
         
         private TutorialStep? _currentStep;
         private int _currentIndex;
@@ -25,6 +27,8 @@ namespace Pulsar.Views.Tutorial
 
         private TextBlock? _waitHintText;
         private System.Windows.Controls.Button? _backButton;
+        private System.Windows.Controls.Button? _continueButton;
+        private System.Windows.Controls.ProgressBar? _stepProgressBar;
 
         public TutorialStepCard()
         {
@@ -33,6 +37,8 @@ namespace Pulsar.Views.Tutorial
             _loc = (System.Windows.Application.Current as App)?.Services.GetService(typeof(ILocalizationService)) as ILocalizationService;
             _waitHintText = FindName("WaitHintText") as TextBlock;
             _backButton = FindName("BackButton") as System.Windows.Controls.Button;
+            _continueButton = FindName("ContinueButton") as System.Windows.Controls.Button;
+            _stepProgressBar = FindName("StepProgressBar") as System.Windows.Controls.ProgressBar;
 
             if (_loc != null)
             {
@@ -44,11 +50,10 @@ namespace Pulsar.Views.Tutorial
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            var storyboard = (Storyboard)Resources["CardEntranceAnimation"];
-            storyboard?.Begin();
-
             _waitHintText ??= FindName("WaitHintText") as TextBlock;
             _backButton ??= FindName("BackButton") as System.Windows.Controls.Button;
+            _continueButton ??= FindName("ContinueButton") as System.Windows.Controls.Button;
+            _stepProgressBar ??= FindName("StepProgressBar") as System.Windows.Controls.ProgressBar;
         }
 
         private void OnLanguageChanged(object? sender, string e)
@@ -62,8 +67,12 @@ namespace Pulsar.Views.Tutorial
             if (_currentStep == null) return;
 
             StepCounter.Text = string.Format(_loc?["Tutorial.StepFormat"] ?? "Step {0}/{1}", _currentIndex + 1, _totalSteps);
-            TitleText.Text = _loc?[_currentStep.Title] ?? _currentStep.Title;
-            DescriptionText.Text = _loc?[_currentStep.Description] ?? _currentStep.Description;
+            TitleText.Text = !string.IsNullOrEmpty(_currentStep.TitleKey)
+                ? (_loc?[_currentStep.TitleKey] ?? _currentStep.Title)
+                : _currentStep.Title;
+            DescriptionText.Text = !string.IsNullOrEmpty(_currentStep.DescriptionKey)
+                ? (_loc?[_currentStep.DescriptionKey] ?? _currentStep.Description)
+                : _currentStep.Description;
             NextButton.Content = ResolvePrimaryButtonText(_currentStep);
 
             ApplyWaitHint(_currentStep);
@@ -87,18 +96,30 @@ namespace Pulsar.Views.Tutorial
             RefreshStepContent();
             ApplyBackButtonVisibility(currentIndex);
 
+            if (_stepProgressBar != null && totalSteps > 0)
+            {
+                _stepProgressBar.Value = (double)(currentIndex + 1) / totalSteps;
+            }
+
             if (step.Type == TutorialStepType.Instruction)
             {
                 NextButton.Visibility = Visibility.Visible;
             }
             else
             {
-                NextButton.Visibility = Visibility.Visible;
+                NextButton.Visibility = Visibility.Collapsed;
             }
         }
 
         private string ResolvePrimaryButtonText(TutorialStep step)
         {
+            if (!string.IsNullOrWhiteSpace(step.PrimaryButtonTextKey))
+            {
+                var resolved = _loc?[step.PrimaryButtonTextKey] ?? step.PrimaryButtonText;
+                if (!string.IsNullOrWhiteSpace(resolved))
+                    return resolved;
+            }
+
             if (!string.IsNullOrWhiteSpace(step.PrimaryButtonText))
             {
                 var resolved = _loc?[step.PrimaryButtonText] ?? step.PrimaryButtonText;
@@ -122,15 +143,31 @@ namespace Pulsar.Views.Tutorial
                 return;
             }
 
-            if (step.Type == TutorialStepType.Instruction && string.IsNullOrWhiteSpace(step.WaitHintText))
+            if (step.Type == TutorialStepType.Instruction && string.IsNullOrWhiteSpace(step.WaitHintText) && string.IsNullOrWhiteSpace(step.WaitHintKey))
             {
                 _waitHintText.Visibility = Visibility.Collapsed;
                 return;
             }
 
-            var hintText = string.IsNullOrWhiteSpace(step.WaitHintText)
-                ? (_loc?["Tutorial.WaitHintDefault"] ?? "It will continue automatically after completing the action.")
-                : (_loc?[step.WaitHintText] ?? step.WaitHintText);
+            string hintText;
+            if (!string.IsNullOrWhiteSpace(step.WaitHintKey))
+            {
+                hintText = _loc?[step.WaitHintKey] ?? step.WaitHintText ?? string.Empty;
+            }
+            else if (!string.IsNullOrWhiteSpace(step.WaitHintText))
+            {
+                hintText = _loc?[step.WaitHintText] ?? step.WaitHintText;
+            }
+            else
+            {
+                hintText = _loc?["Tutorial.WaitHintDefault"] ?? "It will continue automatically after completing the action.";
+            }
+
+            if (string.IsNullOrWhiteSpace(hintText))
+            {
+                _waitHintText.Visibility = Visibility.Collapsed;
+                return;
+            }
 
             _waitHintText.Text = hintText;
             _waitHintText.Visibility = Visibility.Visible;
@@ -144,6 +181,30 @@ namespace Pulsar.Views.Tutorial
             }
 
             _backButton.Visibility = currentIndex > 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        /// <summary>
+        /// 显示手动继续按钮（超时后调用）
+        /// </summary>
+        public void ShowManualContinueButton()
+        {
+            if (_continueButton != null)
+            {
+                _continueButton.Visibility = Visibility.Visible;
+            }
+
+            NextButton.Visibility = Visibility.Visible;
+        }
+
+        /// <summary>
+        /// 隐藏手动继续按钮（触发器提前触发时调用）
+        /// </summary>
+        public void HideManualContinueButton()
+        {
+            if (_continueButton != null)
+            {
+                _continueButton.Visibility = Visibility.Collapsed;
+            }
         }
 
         /// <summary>
@@ -210,6 +271,11 @@ namespace Pulsar.Views.Tutorial
             Canvas.SetTop(this, (screenHeight - ActualHeight) / 2);
         }
 
+        private void OnContinueButtonClick(object sender, RoutedEventArgs e)
+        {
+            ManualContinueRequested?.Invoke(this, EventArgs.Empty);
+        }
+
         private void OnNextButtonClick(object sender, RoutedEventArgs e)
         {
             NextClicked?.Invoke(this, EventArgs.Empty);
@@ -229,6 +295,44 @@ namespace Pulsar.Views.Tutorial
         /// 获取当前步骤
         /// </summary>
         public TutorialStep? GetCurrentStep() => _currentStep;
+
+        /// <summary>
+        /// 播放成功动画（绿色边框闪烁）
+        /// </summary>
+        public void PlaySuccessAnimation()
+        {
+            var storyboard = (Storyboard)Resources["SuccessBorderFlashAnimation"];
+            storyboard?.Begin();
+        }
+
+        /// <summary>
+        /// 播放渐出动画（用于跨步骤过渡）
+        /// </summary>
+        public async Task CrossfadeOutAsync()
+        {
+            var storyboard = (Storyboard)Resources["CardCrossfadeOutAnimation"];
+            if (storyboard == null) return;
+
+            var tcs = new TaskCompletionSource();
+            void handler(object? s, EventArgs e)
+            {
+                storyboard.Completed -= handler;
+                tcs.TrySetResult();
+            }
+            storyboard.Completed += handler;
+            storyboard.Begin();
+
+            await tcs.Task;
+        }
+
+        /// <summary>
+        /// 播放入场动画
+        /// </summary>
+        public void PlayEntranceAnimation()
+        {
+            var storyboard = (Storyboard)Resources["CardEntranceAnimation"];
+            storyboard?.Begin();
+        }
     }
 
     /// <summary>

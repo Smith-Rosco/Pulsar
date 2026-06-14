@@ -110,5 +110,29 @@ namespace Pulsar.Services.Tutorial
         {
             return _overlayWindow;
         }
+
+        /// <summary>
+        /// 遮罩窗口是否已显示
+        /// </summary>
+        public bool IsOverlayVisible()
+        {
+            return _overlayWindow != null && _overlayWindow.IsVisible;
+        }
+
+        /// <summary>
+        /// 启动庆祝彩纸动画
+        /// </summary>
+        public void StartConfetti()
+        {
+            _overlayWindow?.StartConfetti();
+        }
+
+        /// <summary>
+        /// 停止庆祝彩纸动画
+        /// </summary>
+        public void StopConfetti()
+        {
+            _overlayWindow?.StopConfetti();
+        }
     }
 }

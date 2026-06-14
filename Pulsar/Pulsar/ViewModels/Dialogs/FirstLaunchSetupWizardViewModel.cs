@@ -24,6 +24,8 @@ namespace Pulsar.ViewModels.Dialogs
 
             public required string Description { get; init; }
 
+            public required string SlotDescription { get; init; }
+
             [ObservableProperty]
             private bool _isSelected;
         }
@@ -57,6 +59,7 @@ namespace Pulsar.ViewModels.Dialogs
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(CanFinish))]
+        [NotifyPropertyChangedFor(nameof(ConfigPreviewSummary))]
         private UsageProfileOption? _selectedProfile;
 
         public FirstLaunchSetupWizardViewModel(
@@ -110,6 +113,7 @@ namespace Pulsar.ViewModels.Dialogs
                     {
                         OnPropertyChanged(nameof(SelectedAppCount));
                         OnPropertyChanged(nameof(CanFinish));
+                        OnPropertyChanged(nameof(ConfigPreviewSummary));
                         ClearError();
                     }
                 };
@@ -134,9 +138,27 @@ namespace Pulsar.ViewModels.Dialogs
         private void BuildUsageProfiles()
         {
             UsageProfiles.Clear();
-            UsageProfiles.Add(new() { Value = OnboardingUsageProfile.GeneralProductivity, Title = _loc["FirstLaunch.GeneralProductivity"], Description = _loc["FirstLaunch.GeneralProductivityDesc"] });
-            UsageProfiles.Add(new() { Value = OnboardingUsageProfile.DeveloperWorkflow, Title = _loc["FirstLaunch.DeveloperWorkflow"], Description = _loc["FirstLaunch.DeveloperWorkflowDesc"] });
-            UsageProfiles.Add(new() { Value = OnboardingUsageProfile.BrowserAndDocs, Title = _loc["FirstLaunch.BrowserDocs"], Description = _loc["FirstLaunch.BrowserDocsDesc"] });
+            UsageProfiles.Add(new()
+            {
+                Value = OnboardingUsageProfile.GeneralProductivity,
+                Title = _loc["FirstLaunch.GeneralProductivity"],
+                Description = _loc["FirstLaunch.GeneralProductivityDesc"],
+                SlotDescription = _loc[OnboardingUsageProfile.GeneralProductivity.GetSlotDescriptionKey()]
+            });
+            UsageProfiles.Add(new()
+            {
+                Value = OnboardingUsageProfile.DeveloperWorkflow,
+                Title = _loc["FirstLaunch.DeveloperWorkflow"],
+                Description = _loc["FirstLaunch.DeveloperWorkflowDesc"],
+                SlotDescription = _loc[OnboardingUsageProfile.DeveloperWorkflow.GetSlotDescriptionKey()]
+            });
+            UsageProfiles.Add(new()
+            {
+                Value = OnboardingUsageProfile.BrowserAndDocs,
+                Title = _loc["FirstLaunch.BrowserDocs"],
+                Description = _loc["FirstLaunch.BrowserDocsDesc"],
+                SlotDescription = _loc[OnboardingUsageProfile.BrowserAndDocs.GetSlotDescriptionKey()]
+            });
         }
 
         private void RefreshLocalizedProperties()
@@ -152,6 +174,8 @@ namespace Pulsar.ViewModels.Dialogs
             OnPropertyChanged(nameof(SecondaryButtonText));
             OnPropertyChanged(nameof(FooterDescription));
             OnPropertyChanged(nameof(LanguageLabel));
+            OnPropertyChanged(nameof(PreviewLabel));
+            OnPropertyChanged(nameof(ConfigPreviewSummary));
         }
 
         public ObservableCollection<UsageProfileOption> UsageProfiles { get; }
@@ -178,11 +202,32 @@ namespace Pulsar.ViewModels.Dialogs
 
         public bool CanFinish => SelectedProfile != null && SelectedAppCount > 0;
 
+        public string ConfigPreviewSummary
+        {
+            get
+            {
+                if (SelectedProfile == null || SelectedAppCount == 0)
+                    return string.Empty;
+
+                var summary = _templateService.BuildPreviewSummary(new OnboardingTemplateRequest
+                {
+                    Profile = SelectedProfile.Value,
+                    SelectedApps = CommonApps.Where(a => a.IsSelected).Select(a => a.App).ToList()
+                });
+
+                var commandLabel = _loc[summary.CommandSlotLabel];
+                return string.Format(_loc["FirstLaunch.Preview.Format"] ?? "{0} Switch slots + {1} Command slot ({2})",
+                    summary.SwitchSlotCount, summary.CommandSlotCount, commandLabel);
+            }
+        }
+
         public string PrimaryButtonText => _loc["FirstLaunch.CreateConfig"];
 
         public string SecondaryButtonText => _loc["FirstLaunch.Skip"];
 
         public string FooterDescription => _loc["FirstLaunch.Footer"];
+
+        public string PreviewLabel => _loc["FirstLaunch.Preview"];
 
         public string ErrorChooseProfile => _loc["FirstLaunch.SelectScenarioError"];
 

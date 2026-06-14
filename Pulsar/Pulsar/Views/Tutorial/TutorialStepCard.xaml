@@ -19,29 +19,54 @@
             <!-- Card entrance animation -->
             <Storyboard x:Key="CardEntranceAnimation">
                 <DoubleAnimation Storyboard.TargetName="CardBorder"
-                               Storyboard.TargetProperty="Opacity"
-                               From="0" To="1"
-                               Duration="0:0:0.3">
+                                Storyboard.TargetProperty="Opacity"
+                                From="0" To="1"
+                                Duration="0:0:0.3">
                     <DoubleAnimation.EasingFunction>
                         <CubicEase EasingMode="EaseOut"/>
                     </DoubleAnimation.EasingFunction>
                 </DoubleAnimation>
                 <DoubleAnimation Storyboard.TargetName="ScaleTransform"
-                               Storyboard.TargetProperty="ScaleX"
-                               From="0.9" To="1"
-                               Duration="0:0:0.3">
+                                Storyboard.TargetProperty="ScaleX"
+                                From="0.9" To="1"
+                                Duration="0:0:0.3">
                     <DoubleAnimation.EasingFunction>
                         <CubicEase EasingMode="EaseOut"/>
                     </DoubleAnimation.EasingFunction>
                 </DoubleAnimation>
                 <DoubleAnimation Storyboard.TargetName="ScaleTransform"
-                               Storyboard.TargetProperty="ScaleY"
-                               From="0.9" To="1"
-                               Duration="0:0:0.3">
+                                Storyboard.TargetProperty="ScaleY"
+                                From="0.9" To="1"
+                                Duration="0:0:0.3">
                     <DoubleAnimation.EasingFunction>
                         <CubicEase EasingMode="EaseOut"/>
                     </DoubleAnimation.EasingFunction>
                 </DoubleAnimation>
+            </Storyboard>
+
+            <!-- Card crossfade-out animation -->
+            <Storyboard x:Key="CardCrossfadeOutAnimation">
+                <DoubleAnimation Storyboard.TargetName="CardBorder"
+                                Storyboard.TargetProperty="Opacity"
+                                From="1" To="0"
+                                Duration="0:0:0.2">
+                    <DoubleAnimation.EasingFunction>
+                        <CubicEase EasingMode="EaseOut"/>
+                    </DoubleAnimation.EasingFunction>
+                </DoubleAnimation>
+            </Storyboard>
+
+            <!-- Success border flash animation -->
+            <Storyboard x:Key="SuccessBorderFlashAnimation">
+                <ColorAnimation Storyboard.TargetName="CardBorder"
+                               Storyboard.TargetProperty="BorderBrush.Color"
+                               To="#27AE60"
+                               Duration="0:0:0"/>
+                <ColorAnimation Storyboard.TargetName="CardBorder"
+                               Storyboard.TargetProperty="BorderBrush.Color"
+                               To="#E0E0E0"
+                               Duration="0:0:0.3"
+                               BeginTime="0:0:0.15"/>
             </Storyboard>
         </ResourceDictionary>
     </UserControl.Resources>
@@ -52,8 +77,8 @@
                 BorderBrush="#E0E0E0"
                 BorderThickness="1"
                 CornerRadius="12"
-                MaxWidth="420"
-                Padding="24"
+                MaxWidth="540"
+                Padding="20"
                 RenderTransformOrigin="0.5,0.5">
             
             <Border.Effect>
@@ -72,6 +97,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -84,11 +110,24 @@
                           FontSize="12"
                           FontWeight="Medium"
                           Foreground="#666666"
-                          Margin="0,0,0,8"/>
+                          Margin="0,0,0,4"/>
+                
+                <!-- Progress bar -->
+                <ProgressBar x:Name="StepProgressBar"
+                            Grid.Row="1"
+                            Minimum="0"
+                            Maximum="1"
+                            Value="0"
+                            Height="3"
+                            Margin="0,0,0,8"
+                            Foreground="{DynamicResource AccentFillColorDefaultBrush}"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            IsIndeterminate="False"/>
                 
                 <!-- Title -->
                 <TextBlock x:Name="TitleText"
-                          Grid.Row="1"
+                          Grid.Row="2"
                           Text="{lex:Locale Tutorial.Welcome}"
                           FontSize="18"
                           FontWeight="SemiBold"
@@ -97,7 +136,7 @@
                           Margin="0,0,0,12"/>
                 
                 <!-- Description with ScrollViewer -->
-                <ScrollViewer Grid.Row="2"
+                <ScrollViewer Grid.Row="3"
                               VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled"
                               Margin="0,0,0,20">
@@ -111,7 +150,7 @@
 
                 <!-- Wait-for-action helper text -->
                 <TextBlock x:Name="WaitHintText"
-                           Grid.Row="3"
+                           Grid.Row="4"
                            Text="{lex:Locale Tutorial.AutoContinue}"
                            FontSize="12"
                            Foreground="#6A6A6A"
@@ -120,7 +159,7 @@
                            Margin="0,0,0,16"/>
                  
                 <!-- Action buttons -->
-                <Grid Grid.Row="4">
+                <Grid Grid.Row="5">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
@@ -145,11 +184,18 @@
                               Click="OnSkipButtonClick"
                               Margin="0,0,12,0"/>
                     
-                     <ui:Button x:Name="NextButton"
-                               Content="{lex:Locale Tutorial.Next}"
+                     <ui:Button x:Name="ContinueButton"
+                               Content="{lex:Locale Tutorial.Continue}"
                                Style="{StaticResource PulsarPrimaryButtonStyle}"
-                               Click="OnNextButtonClick"/>
-                    </StackPanel>
+                               Click="OnContinueButtonClick"
+                               Visibility="Collapsed"
+                               Margin="0,0,12,0"/>
+
+                     <ui:Button x:Name="NextButton"
+                                Content="{lex:Locale Tutorial.Next}"
+                                Style="{StaticResource PulsarPrimaryButtonStyle}"
+                                Click="OnNextButtonClick"/>
+                     </StackPanel>
                 </Grid>
             </Grid>
         </Border>

@@ -24,7 +24,7 @@ namespace Pulsar.Tests.Tutorial
             config.Profiles["Global"].SwitchMode.Should().OnlyContain(slot => slot.PluginId == "com.pulsar.winswitcher" && slot.Action == "switch");
             config.Profiles["Global"].CommandMode.Should().ContainSingle();
             config.Profiles["Global"].CommandMode[0].PluginId.Should().Be("com.pulsar.command");
-            config.Profiles["Global"].CommandMode[0].Action.Should().Be("run");
+            config.Profiles["Global"].CommandMode[0].Action.Should().Be("sendkeys");
         }
 
         [Fact]
@@ -54,17 +54,17 @@ namespace Pulsar.Tests.Tutorial
 
             config.Profiles["Global"].CommandMode.Should().ContainSingle(slot =>
                 slot.PluginId == "com.pulsar.command"
-                && slot.Action == "run"
-                && slot.Args.ContainsKey("path")
-                && !string.IsNullOrWhiteSpace(slot.Args["path"]));
+                && slot.Action == "sendkeys"
+                && slot.Args.ContainsKey("keys")
+                && !string.IsNullOrWhiteSpace(slot.Args["keys"]));
 
             steps.Should().Contain(step =>
-                step.Id == "step3_switch_mode_success"
+                step.Id == "step2_switch_mode_intro"
                 && step.CompletionTrigger != null
                 && step.CompletionTrigger.TargetValue == "Switch");
 
             steps.Should().Contain(step =>
-                step.Id == "step5_command_mode_success"
+                step.Id == "step4_command_mode_intro"
                 && step.CompletionTrigger != null
                 && step.CompletionTrigger.TargetValue == "Command");
         }

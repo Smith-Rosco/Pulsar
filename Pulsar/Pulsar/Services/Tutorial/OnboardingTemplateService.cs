@@ -1,10 +1,38 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
+using System.IO;
 using System.Linq;
+using Pulsar.Core.Localization;
 using Pulsar.Models;
 
 namespace Pulsar.Services.Tutorial
 {
+    public sealed class ConfigPreviewSummary
+    {
+        public int SwitchSlotCount { get; init; }
+        public int CommandSlotCount { get; init; }
+        public required string CommandSlotLabel { get; init; }
+    }
+
+    public static class OnboardingProfileExtensions
+    {
+        public static string GetCommandSlotLabelKey(this OnboardingUsageProfile profile) => profile switch
+        {
+            OnboardingUsageProfile.DeveloperWorkflow => "FirstLaunch.Preview.PowerShell",
+            OnboardingUsageProfile.BrowserAndDocs => "FirstLaunch.Preview.Documentation",
+            _ => "FirstLaunch.Preview.InsertSampleText"
+        };
+
+        public static string GetSlotDescriptionKey(this OnboardingUsageProfile profile) => profile switch
+        {
+            OnboardingUsageProfile.DeveloperWorkflow => "FirstLaunch.DeveloperWorkflowSlotDesc",
+            OnboardingUsageProfile.BrowserAndDocs => "FirstLaunch.BrowserDocsSlotDesc",
+            _ => "FirstLaunch.GeneralProductivitySlotDesc"
+        };
+    }
+
     public enum OnboardingUsageProfile
     {
         GeneralProductivity,
@@ -37,10 +65,19 @@ namespace Pulsar.Services.Tutorial
         IReadOnlyList<OnboardingAppSelection> GetAvailableApps();
 
         ProfilesConfig BuildInitialConfig(OnboardingTemplateRequest request);
+
+        ConfigPreviewSummary BuildPreviewSummary(OnboardingTemplateRequest request);
     }
 
     public sealed class OnboardingTemplateService : IOnboardingTemplateService
     {
+        private readonly ILocalizationService? _loc;
+
+        public OnboardingTemplateService(ILocalizationService? localizationService = null)
+        {
+            _loc = localizationService;
+        }
+
         private static readonly IReadOnlyList<OnboardingAppSelection> AvailableApps = new List<OnboardingAppSelection>
         {
             new() { Id = "chrome", DisplayName = "Google Chrome", ProcessName = "chrome", LaunchPath = "chrome.exe", IconKey = "\uE774" },
@@ -54,6 +91,82 @@ namespace Pulsar.Services.Tutorial
         public IReadOnlyList<OnboardingAppSelection> GetAvailableApps()
         {
             return AvailableApps;
+        }
+
+        private static string ResolveExePath(string processName, string launchPath)
+        {
+            if (!string.IsNullOrWhiteSpace(launchPath))
+            {
+                string fullPath = launchPath;
+                if (!Path.IsPathRooted(fullPath))
+                {
+                    string systemDir = Environment.GetFolderPath(Environment.SpecialFolder.System);
+                    string sysPath = Path.Combine(systemDir, fullPath);
+                    if (File.Exists(sysPath)) return sysPath;
+
+                    var paths = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator) ?? [];
+                    foreach (var dir in paths)
+                    {
+                        string candidate = Path.Combine(dir, fullPath);
+                        if (File.Exists(candidate)) return candidate;
+                    }
+                }
+                else if (File.Exists(fullPath))
+                {
+                    return fullPath;
+                }
+            }
+
+            string systemDir2 = Environment.GetFolderPath(Environment.SpecialFolder.System);
+            string exePath2 = Path.Combine(systemDir2, $"{processName}.exe");
+            if (File.Exists(exePath2)) return exePath2;
+
+            return launchPath ?? $"{processName}.exe";
+        }
+
+        private static string ResolveSystemDisplayName(string processName, string launchPath, string fallback)
+        {
+            try
+            {
+                string exePath = ResolveExePath(processName, launchPath);
+                if (File.Exists(exePath))
+                {
+                    var info = FileVersionInfo.GetVersionInfo(exePath);
+                    if (!string.IsNullOrWhiteSpace(info.FileDescription))
+                        return info.FileDescription;
+                }
+            }
+            catch { }
+            return fallback;
+        }
+
+        private static string ResolveIconKey(string processName, string launchPath, string fallbackIconKey)
+        {
+            try
+            {
+                string exePath = ResolveExePath(processName, launchPath);
+                if (!File.Exists(exePath)) return fallbackIconKey;
+
+                using var icon = Icon.ExtractAssociatedIcon(exePath);
+                if (icon == null) return fallbackIconKey;
+
+                string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                string folder = Path.Combine(appData, "Pulsar", "Cache", "Icons");
+                Directory.CreateDirectory(folder);
+                string safeName = string.Join("_", processName.Split(Path.GetInvalidFileNameChars()));
+                string filePath = Path.Combine(folder, $"{safeName}.png");
+
+                if (!File.Exists(filePath))
+                {
+                    using var bitmap = icon.ToBitmap();
+                    bitmap.Save(filePath, System.Drawing.Imaging.ImageFormat.Png);
+                }
+                return filePath;
+            }
+            catch
+            {
+                return fallbackIconKey;
+            }
         }
 
         public ProfilesConfig BuildInitialConfig(OnboardingTemplateRequest request)
@@ -74,6 +187,9 @@ namespace Pulsar.Services.Tutorial
 
             foreach (var app in orderedApps)
             {
+                string displayName = ResolveSystemDisplayName(app.ProcessName, app.LaunchPath, app.DisplayName);
+                string iconKey = ResolveIconKey(app.ProcessName, app.LaunchPath, app.IconKey);
+
                 switchSlots.Add(new PluginSlot
                 {
                     Slot = slotIndex++,
@@ -84,8 +200,8 @@ namespace Pulsar.Services.Tutorial
                         ["app"] = app.ProcessName,
                         ["path"] = app.LaunchPath
                     },
-                    Label = app.DisplayName,
-                    IconKey = app.IconKey
+                    Label = displayName,
+                    IconKey = iconKey
                 });
             }
 
@@ -121,7 +237,24 @@ namespace Pulsar.Services.Tutorial
             };
         }
 
-        private static PluginSlot BuildCommandExample(OnboardingUsageProfile profile, IReadOnlyList<OnboardingAppSelection> selectedApps)
+        public ConfigPreviewSummary BuildPreviewSummary(OnboardingTemplateRequest request)
+        {
+            var appCount = request.SelectedApps?.Count ?? 0;
+            var orderedApps = (request.SelectedApps ?? new List<OnboardingAppSelection>())
+                .GroupBy(app => app.Id, StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.First())
+                .Take(6)
+                .ToList();
+
+            return new ConfigPreviewSummary
+            {
+                SwitchSlotCount = orderedApps.Count,
+                CommandSlotCount = 1,
+                CommandSlotLabel = request.Profile.GetCommandSlotLabelKey()
+            };
+        }
+
+        private PluginSlot BuildCommandExample(OnboardingUsageProfile profile, IReadOnlyList<OnboardingAppSelection> selectedApps)
         {
             var browser = selectedApps.FirstOrDefault(app =>
                 app.ProcessName.Equals("chrome", StringComparison.OrdinalIgnoreCase)
@@ -158,13 +291,13 @@ namespace Pulsar.Services.Tutorial
                 {
                     Slot = 1,
                     PluginId = "com.pulsar.command",
-                    Action = "run",
+                    Action = "sendkeys",
                     Args = new Dictionary<string, string>
                     {
-                        ["path"] = "notepad.exe"
+                        ["keys"] = "Hello from Pulsar!"
                     },
-                    Label = "Open Notepad",
-                    IconKey = "\uE70F"
+                    Label = _loc?["CommandSlot.InsertSampleText"] ?? "Insert Sample Text",
+                    IconKey = "\uE756"
                 }
             };
         }

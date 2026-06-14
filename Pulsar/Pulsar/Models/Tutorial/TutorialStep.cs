@@ -1,6 +1,7 @@
 // [Path]: Pulsar/Pulsar/Models/Tutorial/TutorialStep.cs
 
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace Pulsar.Models.Tutorial
 {
@@ -63,6 +64,30 @@ namespace Pulsar.Models.Tutorial
         /// 主按钮自定义文案（为空时按步骤类型使用默认值）
         /// </summary>
         public string? PrimaryButtonText { get; set; }
+
+        /// <summary>
+        /// 本地化标题键（通过 _loc[key] 解析，为空时使用 Title 原始值）
+        /// </summary>
+        [JsonPropertyName("titleKey")]
+        public string? TitleKey { get; set; }
+
+        /// <summary>
+        /// 本地化描述键
+        /// </summary>
+        [JsonPropertyName("descriptionKey")]
+        public string? DescriptionKey { get; set; }
+
+        /// <summary>
+        /// 本地化等待提示键
+        /// </summary>
+        [JsonPropertyName("waitHintKey")]
+        public string? WaitHintKey { get; set; }
+
+        /// <summary>
+        /// 本地化主按钮文本键
+        /// </summary>
+        [JsonPropertyName("primaryButtonTextKey")]
+        public string? PrimaryButtonTextKey { get; set; }
 
         /// <summary>
         /// 等待步骤的辅助提示文案

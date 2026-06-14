@@ -2005,5 +2005,43 @@ namespace Pulsar.ViewModels
 
             Application.Current.Shutdown();
         }
+
+        [RelayCommand]
+        private async Task ResetTutorialAsync()
+        {
+            var result = await _dialogService.ShowConfirmationAsync(
+                _loc["Settings.General.ResetTutorial"],
+                _loc["Settings.General.ResetTutorialConfirm"]);
+
+            if (result != DialogResult.Confirmed)
+            {
+                return;
+            }
+
+            var config = await _configService.LoadAsync();
+            config.Settings.OnboardingState = "SetupWizardComplete";
+            config.Settings.HasCompletedTutorial = false;
+            config.Settings.TutorialCrashedAt = null;
+            config.Settings.LastTutorialStep = null;
+
+            if (config.Profiles.TryGetValue("Global", out var globalProfile))
+            {
+                globalProfile.CommandMode.Clear();
+                globalProfile.CommandMode.Add(new PluginSlot
+                {
+                    Slot = 1,
+                    PluginId = "com.pulsar.command",
+                    Action = "sendkeys",
+                    Args = new Dictionary<string, string>
+                    {
+                        ["keys"] = "Hello from Pulsar!"
+                    },
+                    Label = _loc["CommandSlot.InsertSampleText"],
+                    IconKey = "\uE756"
+                });
+            }
+
+            await _configService.SaveAsync(config);
+        }
     }
 }

@@ -232,6 +232,12 @@ namespace Pulsar.Services.Tutorial
                 // 清理上一步的触发器
                 _triggerEngine.Cleanup();
                 _waitStepHintTimeout.Cancel();
+
+                // 播放渐出过渡动画（如果有旧卡片）
+                if (_stepCard != null)
+                {
+                    await _stepCard.CrossfadeOutAsync();
+                }
                    
                 // 清理上一步的卡片
                 CleanupStepCard();
@@ -253,8 +259,12 @@ namespace Pulsar.Services.Tutorial
                 _stepCard.BackClicked += OnStepCardBackClicked;
                 _stepCard.NextClicked += OnStepCardNextClicked;
                 _stepCard.SkipClicked += OnStepCardSkipClicked;
+                _stepCard.ManualContinueRequested += OnManualContinueRequested;
 
                 _overlayManager.SetCardContent(_stepCard);
+
+                // 播放入场动画
+                _stepCard.PlayEntranceAnimation();
 
                 // 配置卡片大小模式
                 var sizeMode = step.Layout?.CardSizeMode ?? Models.Tutorial.CardSizeMode.Auto;
@@ -275,8 +285,11 @@ namespace Pulsar.Services.Tutorial
                     _overlayManager.EnterObservingState(finalCardPosition);
                 }
 
-                // 先显示窗口
-                _overlayManager.Show();
+                // 窗口已存在时只更新内容，无需重复 Show()
+                if (!_overlayManager.IsOverlayVisible())
+                {
+                    _overlayManager.Show();
+                }
                 
                 // [Fix] 移除窗口布局调整，避免闪动
                 // 不再调用 _layoutManager.ApplyLayoutAsync，让用户自由调整窗口
@@ -296,7 +309,14 @@ namespace Pulsar.Services.Tutorial
                         }
 
                         _stepCard?.SetWaitHintText(DefaultWaitHintText);
+                        _stepCard?.ShowManualContinueButton();
                     }).Task);
+
+                // 启动庆祝动画（完成步骤）
+                if (step.PrimaryAction == Models.Tutorial.TutorialPrimaryAction.CompleteTutorial)
+                {
+                    _overlayManager.StartConfetti();
+                }
 
                 // 触发事件
                 StepChanged?.Invoke(this, step);
@@ -329,7 +349,8 @@ namespace Pulsar.Services.Tutorial
 
                 _triggerEngine.Cleanup();
                 CleanupStepCard();
-                
+
+                _overlayManager.StopConfetti();
                 _overlayManager.Close();
 
                 TutorialCompleted?.Invoke(this, EventArgs.Empty);
@@ -393,6 +414,7 @@ namespace Pulsar.Services.Tutorial
                 _triggerEngine.Cleanup();
                 CleanupStepCard();
 
+                _overlayManager.StopConfetti();
                 _overlayManager.Close();
 
                 TutorialSkipped?.Invoke(this, EventArgs.Empty);
@@ -422,6 +444,7 @@ namespace Pulsar.Services.Tutorial
                     _stepCard.BackClicked -= OnStepCardBackClicked;
                     _stepCard.NextClicked -= OnStepCardNextClicked;
                     _stepCard.SkipClicked -= OnStepCardSkipClicked;
+                    _stepCard.ManualContinueRequested -= OnManualContinueRequested;
                     _stepCard = null;
                     
                     _logger.LogDebug("[TutorialOrchestrator] Step card cleaned up");
@@ -469,7 +492,13 @@ namespace Pulsar.Services.Tutorial
                 _logger.LogInformation("[TutorialOrchestrator] Trigger fired for step: {StepId}", CurrentStep?.Id);
 
                 _waitStepHintTimeout.Cancel();
-                 
+
+                // 播放成功视觉反馈
+                _stepCard?.PlaySuccessAnimation();
+
+                // 短暂延迟让动画可见再进入下一步
+                await System.Threading.Tasks.Task.Delay(200);
+
                 // [P0-2 Fix] 异步事件处理器的错误边界
                 await NextStepAsync();
             }
@@ -547,6 +576,21 @@ namespace Pulsar.Services.Tutorial
                 _logger.LogError(ex, "[TutorialOrchestrator] Error in skip button handler");
                 // 跳过时出错,强制清理
                 await ForceCleanupAsync();
+            }
+        }
+
+        private async void OnManualContinueRequested(object? sender, EventArgs e)
+        {
+            try
+            {
+                _logger.LogInformation("[TutorialOrchestrator] Manual continue requested for step: {StepId}", CurrentStep?.Id);
+                _waitStepHintTimeout.Cancel();
+                await NextStepAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[TutorialOrchestrator] Error in manual continue handler");
+                await HandleErrorAsync(ex);
             }
         }
 

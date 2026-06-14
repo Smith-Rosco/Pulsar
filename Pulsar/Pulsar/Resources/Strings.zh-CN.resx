@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -41,6 +41,12 @@
   </data>
   <data name="Settings.General.RestartOnboardingConfirm" xml:space="preserve">
     <value>这将重置您的引导状态并重启 Pulsar 以显示设置向导。是否继续？</value>
+  </data>
+  <data name="Settings.General.ResetTutorial" xml:space="preserve">
+    <value>重置教程</value>
+  </data>
+  <data name="Settings.General.ResetTutorialConfirm" xml:space="preserve">
+    <value>这将重置教程，让你从头重新体验一次。你的槽位和设置不会受到影响。是否继续？</value>
   </data>
   <data name="Notification.RestartOnboarding" xml:space="preserve">
     <value>重新开始引导</value>
@@ -1276,46 +1282,55 @@
     <value>打开设置</value>
   </data>
   <data name="Tutorial.WelcomeDesc" xml:space="preserve">
-    <value>您的设置向导已创建了入门配置。现在让我们了解让Pulsar高效运行的两种模式。</value>
+    <value>欢迎！本教程将带你体验 Pulsar 的两种模式：先用切换模式（Ctrl+Q）切换到记事本，再用命令模式（Ctrl+Shift+Q）向记事本插入文本。我们开始吧！</value>
   </data>
   <data name="Tutorial.SwitchMode" xml:space="preserve">
     <value>切换模式：应用切换与启动</value>
   </data>
   <data name="Tutorial.SwitchModeDesc" xml:space="preserve">
-    <value>按Ctrl+Q打开切换模式。选择任意应用磁贴直接跳转——无需Alt+Tab，无需输入。</value>
+    <value>按 Ctrl+Q 打开切换模式，将鼠标悬停在记事本图标上，然后释放快捷键即可切换到它。Pulsar 会直接跳转到该应用，无需反复切换窗口。</value>
   </data>
   <data name="Tutorial.SwitchModeHint" xml:space="preserve">
-    <value>使用Ctrl+Q打开切换模式。</value>
+    <value>按 Ctrl+Q，将鼠标悬停在记事本图标上，然后释放快捷键。</value>
   </data>
   <data name="Tutorial.FirstSwitch" xml:space="preserve">
-    <value>首次切换成功</value>
+    <value>已切换到记事本</value>
   </data>
   <data name="Tutorial.FirstSwitchDesc" xml:space="preserve">
-    <value>从切换模式中选择任意生成的应用槽位。Pulsar将激活该应用并记录您已掌握导航方式。</value>
+    <value>太好了——你已切换到记事本！下一步将使用命令模式向记事本插入文本。点击"下一步"继续。</value>
+  </data>
+  <data name="Tutorial.FirstSwitchHint" xml:space="preserve">
+    <value>Pulsar 已切换到记事本！点击"下一步"继续。</value>
   </data>
   <data name="Tutorial.CommandMode" xml:space="preserve">
     <value>命令模式：运行动作</value>
   </data>
   <data name="Tutorial.CommandModeDesc" xml:space="preserve">
-    <value>按Ctrl+Shift+Q打开命令模式。在这里您可以找到快速操作，如打开设置或运行脚本。</value>
+    <value>按 Ctrl+Shift+Q 打开命令模式，将鼠标悬停在了"插入示例文本"上，然后释放快捷键。Pulsar 会自动向记事本中键入"Hello from Pulsar!"。</value>
   </data>
   <data name="Tutorial.CommandModeHint" xml:space="preserve">
-    <value>使用Ctrl+Shift+Q打开命令模式。</value>
+    <value>按 Ctrl+Shift+Q，将鼠标悬停在"插入示例文本"上，然后释放快捷键。</value>
   </data>
   <data name="Tutorial.FirstCommand" xml:space="preserve">
-    <value>首次命令成功</value>
+    <value>命令已执行</value>
   </data>
   <data name="Tutorial.FirstCommandDesc" xml:space="preserve">
-    <value>从命令模式中选择任意生成的命令槽位。Pulsar将执行该操作并解锁下一步。</value>
+    <value>Pulsar 已向记事本键入文本！你刚刚结合了两种模式：切换模式让你到达记事本，命令模式在记事本内执行了操作。这就是 Pulsar 的核心工作流。</value>
+  </data>
+  <data name="Tutorial.FirstCommandHint" xml:space="preserve">
+    <value>Pulsar 已向记事本键入文本！你已经掌握了核心工作流。</value>
   </data>
   <data name="Tutorial.OnboardingComplete" xml:space="preserve">
     <value>入门完成</value>
   </data>
   <data name="Tutorial.OnboardingCompleteDesc" xml:space="preserve">
-    <value>您已完成最小入门路径。Pulsar现已设置完毕，可加速您的日常工作流程。</value>
+    <value>你已经结合了 Pulsar 的两种模式：用切换模式跳到记事本，再用命令模式插入文本。这就是核心工作流——切换到任意应用，然后在其中执行操作。你已经准备好像专家一样使用 Pulsar 了！</value>
   </data>
   <data name="Tutorial.Finish" xml:space="preserve">
     <value>完成</value>
+  </data>
+  <data name="CommandSlot.InsertSampleText" xml:space="preserve">
+    <value>插入示例文本</value>
   </data>
   <data name="Slot.Ready" xml:space="preserve">
     <value>就绪</value>
@@ -1593,6 +1608,30 @@
   <data name="FirstLaunch.SelectAppError" xml:space="preserve">
     <value>请至少选择一个启动应用以生成默认配置。</value>
   </data>
+  <data name="FirstLaunch.Preview" xml:space="preserve">
+    <value>配置预览</value>
+  </data>
+  <data name="FirstLaunch.Preview.Format" xml:space="preserve">
+    <value>{0} 个切换槽 + {1} 个命令槽（{2}）</value>
+  </data>
+  <data name="FirstLaunch.Preview.PowerShell" xml:space="preserve">
+    <value>PowerShell</value>
+  </data>
+  <data name="FirstLaunch.Preview.Documentation" xml:space="preserve">
+    <value>文档</value>
+  </data>
+  <data name="FirstLaunch.Preview.Notepad" xml:space="preserve">
+    <value>记事本</value>
+  </data>
+  <data name="FirstLaunch.GeneralProductivitySlotDesc" xml:space="preserve">
+    <value>会生成一个记事本命令槽，适合快速记笔记</value>
+  </data>
+  <data name="FirstLaunch.DeveloperWorkflowSlotDesc" xml:space="preserve">
+    <value>会生成一个 PowerShell 命令槽，适合快速脚本访问</value>
+  </data>
+  <data name="FirstLaunch.BrowserDocsSlotDesc" xml:space="preserve">
+    <value>会生成一个文档命令槽，适合快速查阅参考</value>
+  </data>
   <data name="Tutorial.StepFormat" xml:space="preserve">
     <value>步骤 {0}/{1}</value>
   </data>
@@ -1600,7 +1639,7 @@
     <value>这是教程描述文本</value>
   </data>
   <data name="Tutorial.AutoContinue" xml:space="preserve">
-    <value>完成操作后会自动继续；如未自动继续，可点击"继续"。</value>
+    <value>执行操作后会自动进入下一步；如果没有反应，点击"继续"手动前进即可。</value>
   </data>
   <data name="Tutorial.Previous" xml:space="preserve">
     <value>上一步</value>
