@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using FluentAssertions;
 using Moq;
 using Pulsar.Models;
@@ -48,7 +49,7 @@ namespace Pulsar.Tests.ViewModels
 
         private static RadialMenuViewModel CreateContext()
         {
-            var context = (RadialMenuViewModel)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(RadialMenuViewModel));
+            var context = (RadialMenuViewModel)RuntimeHelpers.GetUninitializedObject(typeof(RadialMenuViewModel));
             var mouseTrackingService = new Mock<IMouseTrackingService>();
             var hotkeyService = new Mock<IHotkeyService>();
 

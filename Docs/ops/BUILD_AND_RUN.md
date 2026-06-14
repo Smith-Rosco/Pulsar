@@ -43,26 +43,13 @@ dotnet run --project Pulsar/Pulsar/Pulsar.csproj
 
 ## Test Commands
 
-**Current Status**: No test projects are currently configured.
+**Current Status**: xUnit test project at `Pulsar/Pulsar.Tests/` (331+ tests).
 
-### Future Test Setup
+### Run Tests
 
-If adding tests in the future:
-
-1. Create a new xUnit project:
-   ```bash
-   dotnet new xunit -o Pulsar/Pulsar.Tests
-   ```
-
-2. Add reference:
-   ```bash
-   dotnet add Pulsar/Pulsar.Tests reference Pulsar/Pulsar/Pulsar.csproj
-   ```
-
-3. Run tests:
-   ```bash
-   dotnet test Pulsar/Pulsar.Tests
-   ```
+```bash
+dotnet test Pulsar/Pulsar.Tests/Pulsar.Tests.csproj
+```
 
 ---
 

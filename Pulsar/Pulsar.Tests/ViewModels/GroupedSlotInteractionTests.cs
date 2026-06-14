@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
@@ -122,7 +123,7 @@ namespace Pulsar.Tests.ViewModels
 
         private static RadialMenuViewModel CreateContext(IWindowService windowService, IPreviewService previewService)
         {
-            var context = (RadialMenuViewModel)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(RadialMenuViewModel));
+            var context = (RadialMenuViewModel)RuntimeHelpers.GetUninitializedObject(typeof(RadialMenuViewModel));
             var mouseTrackingService = new Mock<IMouseTrackingService>();
             var pagingController = new Mock<IPagingController>();
             var animationController = new Mock<IAnimationController>();

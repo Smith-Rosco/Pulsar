@@ -198,7 +198,7 @@ namespace Pulsar.Logging
                 activity.SetTag("error.type", exception.GetType().Name);
                 activity.SetTag("error.message", exception.Message);
                 activity.SetStatus(ActivityStatusCode.Error, exception.Message);
-                activity.RecordException(exception);
+                activity.AddException(exception);
             }
         }
 
