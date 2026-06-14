@@ -236,6 +236,13 @@ namespace Pulsar.Tests.ViewModels
 
         private static async Task WaitForInitializationAsync(SettingsViewModel viewModel)
         {
+            // SettingsViewModel no longer auto-loads settings in constructor.
+            // Ensure LoadSettings is called to populate AvailableContexts.
+            if (viewModel.AvailableContexts.Count == 0)
+            {
+                await viewModel.LoadSettings();
+            }
+
             for (int attempt = 0; attempt < 50; attempt++)
             {
                 if (viewModel.AvailableContexts.Count > 0 && viewModel.CurrentContext != null)

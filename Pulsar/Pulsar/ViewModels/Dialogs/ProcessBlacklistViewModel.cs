@@ -125,23 +125,38 @@ namespace Pulsar.ViewModels.Dialogs
         {
             foreach (var item in items)
             {
-                var icon = await _processRegistryService.GetIconAsync(item.ProcessName);
-                if (icon == null && !string.IsNullOrWhiteSpace(item.ExecutablePath))
+                try
                 {
-                    icon = IconHelper.GetIconFromPath(item.ExecutablePath);
-                }
+                    var icon = await _processRegistryService.GetIconAsync(item.ProcessName);
+                    if (icon == null && !string.IsNullOrWhiteSpace(item.ExecutablePath))
+                    {
+                        icon = IconHelper.GetIconFromPath(item.ExecutablePath);
+                    }
 
-                if (icon == null)
+                    if (icon == null)
+                    {
+                        item.HasResolvedIcon = true;
+                        continue;
+                    }
+
+                    if (System.Windows.Application.Current is App app)
+                    {
+                        await app.Dispatcher.InvokeAsync(() =>
+                        {
+                            item.Icon = icon;
+                            item.HasResolvedIcon = true;
+                        });
+                    }
+                    else
+                    {
+                        item.Icon = icon;
+                        item.HasResolvedIcon = true;
+                    }
+                }
+                catch
                 {
                     item.HasResolvedIcon = true;
-                    continue;
                 }
-
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
-                {
-                    item.Icon = icon;
-                    item.HasResolvedIcon = true;
-                });
             }
         }
 

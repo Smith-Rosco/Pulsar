@@ -42,7 +42,7 @@ namespace Pulsar.Tests.Plugins.Extensions.BookmarkletRunner
 
             result.Success.Should().BeFalse();
             result.Severity.Should().Be(PluginErrorSeverity.Recoverable);
-            result.Message.Should().Contain("重试");
+            result.Message.Should().Contain("try again");
             ctrlLCount.Should().Be(1);
             enterCount.Should().Be(0);
         }
@@ -116,7 +116,7 @@ namespace Pulsar.Tests.Plugins.Extensions.BookmarkletRunner
 
             result.Success.Should().BeFalse();
             result.Severity.Should().Be(PluginErrorSeverity.Recoverable);
-            result.Message.Should().Contain("浏览器地址栏");
+            result.Message.Should().Contain("Browser address bar");
             enterCount.Should().Be(0);
             windowService.Verify(x => x.HideMainWindow(), Times.Once);
         }

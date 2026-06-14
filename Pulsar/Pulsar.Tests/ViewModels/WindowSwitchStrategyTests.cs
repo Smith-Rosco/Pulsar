@@ -8,6 +8,7 @@ using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels;
 using Pulsar.ViewModels.Strategies;
 using Pulsar.Services;
+using Pulsar.Native;
 
 namespace Pulsar.Tests.ViewModels
 {
@@ -49,8 +50,10 @@ namespace Pulsar.Tests.ViewModels
         {
             var context = (RadialMenuViewModel)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(RadialMenuViewModel));
             var mouseTrackingService = new Mock<IMouseTrackingService>();
+            var hotkeyService = new Mock<IHotkeyService>();
 
             SetField(context, "_mouseTrackingService", mouseTrackingService.Object);
+            SetField(context, "_hotkeyService", hotkeyService.Object);
             SetField(context, "<Slots>k__BackingField", new ObservableCollection<SlotViewModel>());
             SetField(context, "_isVisible", true);
 

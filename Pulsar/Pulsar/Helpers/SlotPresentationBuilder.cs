@@ -7,7 +7,7 @@ namespace Pulsar.Helpers
 {
     public static class SlotPresentationBuilder
     {
-        private static ILocalizationService? Loc => ((App)Application.Current).Services.GetService<ILocalizationService>();
+        private static ILocalizationService? Loc => Application.Current is App app ? app.Services.GetService<ILocalizationService>() : null;
 
         public static SlotPresentation Build(PluginSlot slot)
         {

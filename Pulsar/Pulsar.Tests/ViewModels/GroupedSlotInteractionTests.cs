@@ -136,6 +136,8 @@ namespace Pulsar.Tests.ViewModels
                 .Setup(controller => controller.AnimateLayoutAsync(It.IsAny<LayoutTarget>(), It.IsAny<AnimationOptions?>(), It.IsAny<System.Threading.CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
+            var hotkeyService = new Mock<IHotkeyService>();
+            SetField(context, "_hotkeyService", hotkeyService.Object);
             SetField(context, "_mouseTrackingService", mouseTrackingService.Object);
             SetField(context, "_pagingController", pagingController.Object);
             SetField(context, "_animationController", animationController.Object);
