@@ -99,15 +99,15 @@ namespace Pulsar.ViewModels
             pagingController.SetTotalPages(pageProvider.TotalPages);
             pageProvider.RefreshVisuals(slots, centerSlot);
 
-            _ = pageProvider.LoadAsync().ContinueWith(_ =>
+            _ = pageProvider.LoadAsync().ContinueWith(async _ =>
             {
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     pagingController.SetTotalPages(pageProvider.TotalPages);
-                    pagingController.GoToPageAsync(pageProvider.CurrentPage).GetAwaiter().GetResult();
                     pageProvider.RefreshVisuals(slots, centerSlot);
                 });
-            });
+                await pagingController.GoToPageAsync(pageProvider.CurrentPage);
+            }, TaskScheduler.Default);
         }
     }
 }

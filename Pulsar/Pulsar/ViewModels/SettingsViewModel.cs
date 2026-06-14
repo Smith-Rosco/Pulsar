@@ -1240,7 +1240,7 @@ namespace Pulsar.ViewModels
             }
             
             MarkDirty();
-            SendDebouncedNotification(_loc["Notification.Moved"], string.Format(_loc["Notification.MovedUpFormat"], item.Label), ControlAppearance.Info);
+            _ = SendDebouncedNotification(_loc["Notification.Moved"], string.Format(_loc["Notification.MovedUpFormat"], item.Label), ControlAppearance.Info);
             _logger.LogInformation("Slot '{Label}' moved up from position {OldPos} to {NewPos}", 
                 item.Label, index + 1, index);
         }
@@ -1272,7 +1272,7 @@ namespace Pulsar.ViewModels
             }
             
             MarkDirty();
-            SendDebouncedNotification(_loc["Notification.Moved"], string.Format(_loc["Notification.MovedDownFormat"], item.Label), ControlAppearance.Info);
+            _ = SendDebouncedNotification(_loc["Notification.Moved"], string.Format(_loc["Notification.MovedDownFormat"], item.Label), ControlAppearance.Info);
             _logger.LogInformation("Slot '{Label}' moved down from position {OldPos} to {NewPos}", 
                 item.Label, index + 1, index + 2);
         }
@@ -1837,7 +1837,7 @@ namespace Pulsar.ViewModels
         /// Send a debounced notification that will be delayed by 300ms.
         /// If another notification is triggered within this time, the previous one is cancelled.
         /// </summary>
-        private async void SendDebouncedNotification(string title, string message, ControlAppearance appearance = ControlAppearance.Secondary)
+        private async Task SendDebouncedNotification(string title, string message, ControlAppearance appearance = ControlAppearance.Secondary)
         {
             // Cancel previous notification if still pending
             _notificationDebounceToken?.Cancel();
@@ -1962,7 +1962,7 @@ namespace Pulsar.ViewModels
                 MarkDirty();
                 
                 // ✅ Use debounced notification to prevent spam during rapid dragging
-                SendDebouncedNotification("Reordered", 
+                _ = SendDebouncedNotification("Reordered", 
                     string.Format(_loc["Notification.ReorderedFormat"], sourceSlot.Label, insertIndex + 1), 
                     ControlAppearance.Info);
                     

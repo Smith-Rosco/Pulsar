@@ -278,14 +278,14 @@ namespace Pulsar
                 var processRegistry = Services.GetService<IProcessRegistryService>();
                 if (processRegistry != null)
                 {
-                    Task.Run(async () => await processRegistry.FlushAsync()).GetAwaiter().GetResult();
+                    processRegistry.FlushAsync().GetAwaiter().GetResult();
                 }
                 
                 // Unload all plugins
                 var pluginRegistry = Services.GetService<IPluginRegistry>();
                 if (pluginRegistry != null)
                 {
-                    Task.Run(async () => await pluginRegistry.UnloadAllAsync()).GetAwaiter().GetResult();
+                    pluginRegistry.UnloadAllAsync().GetAwaiter().GetResult();
                 }
 
                 var backgroundWorkScheduler = Services.GetService<IBackgroundWorkScheduler>();

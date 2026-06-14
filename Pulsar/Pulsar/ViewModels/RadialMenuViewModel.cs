@@ -248,7 +248,7 @@ namespace Pulsar.ViewModels
             hotkeyService.OnGlobalKeyUp += HandleKeyUp;
             _globalMouseService.OnMouseEvent += HandleGlobalMouseEvent;
 
-            _configService.ConfigUpdated += OnConfigUpdated;
+            _configService.ConfigUpdated += () => _ = OnConfigUpdated();
             _ = LoadConfigAsync();
 
             _mouseTrackingService.MousePositionChanged += OnMousePositionChanged;
@@ -379,10 +379,10 @@ namespace Pulsar.ViewModels
 
         private async Task LoadConfigAsync()
         {
-            OnConfigUpdated();
+            await OnConfigUpdated();
         }
 
-        private async void OnConfigUpdated()
+        private async Task OnConfigUpdated()
         {
             _config = await _configService.LoadAsync();
             
@@ -591,13 +591,23 @@ namespace Pulsar.ViewModels
                 return treatFeedbackAsHandled;
             }
 
-            _pagingController.GoToPageAsync(currentPage + direction).GetAwaiter().GetResult();
+            _ = _pagingController.GoToPageAsync(currentPage + direction).ContinueWith(t =>
+            {
+                if (t.IsFaulted)
+                {
+                    _logger?.LogError(t.Exception, "[HandleMouseWheel] Page navigation failed");
+                    return;
+                }
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    if (direction > 0) _pageProvider.NextPage();
+                    else _pageProvider.PrevPage();
 
-            if (direction > 0) _pageProvider.NextPage();
-            else _pageProvider.PrevPage();
+                    _hasShownSinglePageHint = false;
+                    _pageProvider.RefreshVisuals(Slots, CenterSlot);
+                });
+            }, TaskScheduler.Default);
 
-            _hasShownSinglePageHint = false;
-            _pageProvider.RefreshVisuals(Slots, CenterSlot);
             return true;
         }
 
@@ -970,9 +980,23 @@ namespace Pulsar.ViewModels
             if (_pageProvider != null)
             {
                 _pagingController.SetTotalPages(_pageProvider.TotalPages);
-                _pagingController.GoToPageAsync(_pageProvider.CurrentPage).GetAwaiter().GetResult();
+                _ = _pagingController.GoToPageAsync(_pageProvider.CurrentPage).ContinueWith(t =>
+                {
+                    if (t.IsFaulted)
+                    {
+                        _logger?.LogError(t.Exception, "[UpdateSlotsPerPage] Page navigation failed");
+                        return;
+                    }
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        _pageProvider?.RefreshVisuals(Slots, CenterSlot);
+                    });
+                }, TaskScheduler.Default);
             }
-            _pageProvider?.RefreshVisuals(Slots, CenterSlot);
+            else
+            {
+                _pageProvider?.RefreshVisuals(Slots, CenterSlot);
+            }
             
             // [Logging] Log layout metrics for debugging
             double anglePerSlot = 360.0 / _slotsPerPage;

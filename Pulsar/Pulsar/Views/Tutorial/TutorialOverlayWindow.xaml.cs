@@ -662,7 +662,7 @@ namespace Pulsar.Views.Tutorial
         /// <summary>
         /// 显示 toast 通知
         /// </summary>
-        public async void ShowToast(string message, string icon = "\u2714")
+        public async Task ShowToast(string message, string icon = "\u2714")
         {
             if (_toastNotification == null || _toastMessage == null || _toastIcon == null)
                 return;
