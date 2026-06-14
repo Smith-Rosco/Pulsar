@@ -6,9 +6,11 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Pulsar.Core.Focus;
 using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin;
 using Pulsar.Plugins.Extensions.Command;
+using Pulsar.Services.Interfaces;
 using Pulsar.Tests.TestHelpers;
 
 namespace Pulsar.Tests.Plugins.Command
@@ -18,11 +20,16 @@ namespace Pulsar.Tests.Plugins.Command
         private readonly Mock<IKeySender> _keySenderMock = new();
         private readonly Mock<IProcessLauncher> _processLauncherMock = new();
         private readonly Mock<ILocalizationService> _locMock = new();
+        private readonly Mock<IWindowService> _windowServiceMock = new();
+        private readonly Mock<IFocusManager> _focusManagerMock = new();
 
         public CommandPluginTests()
         {
             _locMock.Setup(l => l[It.IsAny<string>()]).Returns((string key) => key);
             _locMock.Setup(l => l.GetString(It.IsAny<string>())).Returns((string key) => key);
+            _focusManagerMock
+                .Setup(f => f.ActivateWindowAsync(It.IsAny<IntPtr>(), It.IsAny<FocusActivationOptions?>()))
+                .ReturnsAsync(new FocusActivationResult { Success = true, VerificationPassed = true });
         }
 
         private CommandPlugin CreatePlugin()
@@ -31,7 +38,9 @@ namespace Pulsar.Tests.Plugins.Command
                 NullLogger<CommandPlugin>.Instance,
                 _keySenderMock.Object,
                 _processLauncherMock.Object,
-                _locMock.Object);
+                _locMock.Object,
+                _windowServiceMock.Object,
+                _focusManagerMock.Object);
         }
 
         [Fact]
@@ -124,13 +133,18 @@ namespace Pulsar.Tests.Plugins.Command
         {
             var plugin = CreatePlugin();
             var args = new Dictionary<string, string> { ["keys"] = "hello" };
-            var context = PulsarContextFactory.CreateTestContext();
+            var handle = new IntPtr(0x12345);
+            var context = PulsarContextFactory.CreateTestContext(targetWindowHandle: handle);
 
             var result = await plugin.ExecuteAsync("sendkeys", args, context);
 
             result.Success.Should().BeTrue();
             _keySenderMock.Verify(
                 k => k.ExecuteAsync(It.IsAny<IReadOnlyList<KeyInstruction>>(), It.IsAny<CancellationToken>()),
+                Times.Once);
+            _windowServiceMock.Verify(w => w.HideMainWindow(), Times.Once);
+            _focusManagerMock.Verify(
+                f => f.ActivateWindowAsync(handle, It.IsAny<FocusActivationOptions?>()),
                 Times.Once);
         }
 

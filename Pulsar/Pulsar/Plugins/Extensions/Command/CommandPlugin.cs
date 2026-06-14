@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Plugin.Metadata;
+using Pulsar.Services.Interfaces;
 
 namespace Pulsar.Plugins.Extensions.Command
 {
@@ -17,13 +18,17 @@ namespace Pulsar.Plugins.Extensions.Command
         private readonly IKeySender _keySender;
         private readonly IProcessLauncher _processLauncher;
         private readonly ILocalizationService _loc;
+        private readonly IWindowService _windowService;
+        private readonly IFocusManager _focusManager;
 
-        public CommandPlugin(ILogger<CommandPlugin> logger, IKeySender keySender, IProcessLauncher processLauncher, ILocalizationService loc)
+        public CommandPlugin(ILogger<CommandPlugin> logger, IKeySender keySender, IProcessLauncher processLauncher, ILocalizationService loc, IWindowService windowService, IFocusManager focusManager)
             : base(logger)
         {
             _keySender = keySender;
             _processLauncher = processLauncher;
             _loc = loc;
+            _windowService = windowService;
+            _focusManager = focusManager;
         }
 
         #region Plugin Metadata
@@ -149,6 +154,18 @@ namespace Pulsar.Plugins.Extensions.Command
             try
             {
                 cancellationToken.ThrowIfCancellationRequested();
+
+                // Hide Pulsar launcher and restore focus to the target window
+                // so keystrokes go to the intended application, not Pulsar itself
+                _windowService.HideMainWindow();
+
+                if (context.TargetWindowHandle != IntPtr.Zero && _focusManager != null)
+                {
+                    await _focusManager.ActivateWindowAsync(context.TargetWindowHandle);
+                }
+
+                // Brief pause for the window to settle after focus switch
+                await Task.Delay(100, cancellationToken);
 
                 await Task.Delay(delay, cancellationToken);
 

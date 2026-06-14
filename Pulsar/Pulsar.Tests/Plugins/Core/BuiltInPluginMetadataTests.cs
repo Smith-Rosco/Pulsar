@@ -8,6 +8,7 @@ using Pulsar.Plugins.Core.Pki.Contracts;
 using Pulsar.Plugins.Core.SystemCommand;
 using Pulsar.Plugins.Core.WinSwitcher;
 using Pulsar.Plugins.Extensions.Command;
+using Pulsar.Services.Interfaces;
 
 namespace Pulsar.Tests.Plugins.Core
 {
@@ -19,12 +20,16 @@ namespace Pulsar.Tests.Plugins.Core
             var keySender = new Mock<IKeySender>();
             var processLauncher = new Mock<IProcessLauncher>();
             var loc = new Mock<ILocalizationService>();
+            var windowService = new Mock<IWindowService>();
+            var focusManager = new Mock<IFocusManager>();
             loc.Setup(l => l[It.IsAny<string>()]).Returns((string key) => key);
             var plugin = new CommandPlugin(
                 NullLogger<CommandPlugin>.Instance,
                 keySender.Object,
                 processLauncher.Object,
-                loc.Object);
+                loc.Object,
+                windowService.Object,
+                focusManager.Object);
 
             var metadata = plugin.GetMetadata();
 
