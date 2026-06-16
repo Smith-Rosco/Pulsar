@@ -21,7 +21,7 @@ jobs:
         run: dotnet restore Pulsar/Pulsar/Pulsar.csproj
 
       - name: Publish (Self-Contained Single File)
-        run: dotnet publish Pulsar/Pulsar/Pulsar.csproj -c Release -o publish
+        run: dotnet publish Pulsar/Pulsar/Pulsar.csproj -c Release -o publish -p:SelfContained=true -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:IncludeNativeLibrariesForSelfExtract=true
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

@@ -25,18 +25,6 @@
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    
-    <SelfContained>true</SelfContained>
-    
-    <PublishSingleFile>true</PublishSingleFile>
-    
-    <PublishReadyToRun>true</PublishReadyToRun>
-    
-    <!-- Trimming enabled after removing System.Windows.Forms dependencies -->
-    <PublishTrimmed>true</PublishTrimmed>
-    <TrimMode>partial</TrimMode>
-    
-    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
 
   <ItemGroup>
