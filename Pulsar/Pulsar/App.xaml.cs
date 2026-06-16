@@ -127,26 +127,26 @@ namespace Pulsar
             serviceCollection.AddSingleton<IHotkeyService, HotkeyService>();
             serviceCollection.AddSingleton<IGlobalMouseService, GlobalMouseService>();
             serviceCollection.AddSingleton<IDialogService, DialogService>();
-            serviceCollection.AddSingleton<Pulsar.Services.Tutorial.IOnboardingTemplateService, Pulsar.Services.Tutorial.OnboardingTemplateService>();
-            serviceCollection.AddSingleton<Pulsar.Services.Tutorial.IOnboardingStateService, Pulsar.Services.Tutorial.OnboardingStateService>();
-            serviceCollection.AddSingleton<Pulsar.Services.Tutorial.TutorialScenarioRegistry>();
-            serviceCollection.AddSingleton<Pulsar.Services.Tutorial.Prerequisites.ExcelPrerequisiteProvider>();
-            serviceCollection.AddSingleton<Pulsar.Services.Tutorial.Prerequisites.BrowserPrerequisiteProvider>();
-            serviceCollection.AddSingleton<Pulsar.Services.Tutorial.StartupCoordinator>();
+            serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.IOnboardingTemplateService, Pulsar.Features.Tutorial.Services.OnboardingTemplateService>();
+            serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.IOnboardingStateService, Pulsar.Features.Tutorial.Services.OnboardingStateService>();
+            serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.TutorialScenarioRegistry>();
+            serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.Prerequisites.ExcelPrerequisiteProvider>();
+            serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.Prerequisites.BrowserPrerequisiteProvider>();
+            serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.StartupCoordinator>();
             
             // Tutorial Service
-            serviceCollection.AddSingleton<Pulsar.Services.Tutorial.TutorialStepLoader>();
-            serviceCollection.AddSingleton<Pulsar.Services.Tutorial.TriggerHandlers.ITriggerHandlerFactory, Pulsar.Services.Tutorial.TriggerHandlers.TriggerHandlerFactory>();
-            serviceCollection.AddSingleton<ITargetLocator, Pulsar.Services.Tutorial.TargetLocator>();
-            serviceCollection.AddSingleton<IOverlayManager, Pulsar.Services.Tutorial.OverlayManager>();
+            serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.TutorialStepLoader>();
+            serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.TriggerHandlers.ITriggerHandlerFactory, Pulsar.Features.Tutorial.Services.TriggerHandlers.TriggerHandlerFactory>();
+            serviceCollection.AddSingleton<ITargetLocator, Pulsar.Features.Tutorial.Services.TargetLocator>();
+            serviceCollection.AddSingleton<IOverlayManager, Pulsar.Features.Tutorial.Services.OverlayManager>();
             serviceCollection.AddSingleton<IWindowLayoutManager, WindowLayoutManager>();
-            serviceCollection.AddSingleton<Pulsar.Services.Tutorial.ISettingsWindowAccessor, Pulsar.Services.Tutorial.SettingsWindowAccessor>();
-            serviceCollection.AddSingleton<Pulsar.Services.Tutorial.ITutorialTriggerEngine, Pulsar.Services.Tutorial.TutorialTriggerEngine>();
-            serviceCollection.AddSingleton<Pulsar.Services.Tutorial.ITutorialSpotlightController, Pulsar.Services.Tutorial.TutorialSpotlightController>();
-            serviceCollection.AddSingleton<Pulsar.Services.Tutorial.IWaitStepHintTimeout, Pulsar.Services.Tutorial.WaitStepHintTimeout>();
+            serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.ISettingsWindowAccessor, Pulsar.Features.Tutorial.Services.SettingsWindowAccessor>();
+            serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.ITutorialTriggerEngine, Pulsar.Features.Tutorial.Services.TutorialTriggerEngine>();
+            serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.ITutorialSpotlightController, Pulsar.Features.Tutorial.Services.TutorialSpotlightController>();
+            serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.IWaitStepHintTimeout, Pulsar.Features.Tutorial.Services.WaitStepHintTimeout>();
             serviceCollection.AddSingleton<ITutorialService, TutorialService>();
-            serviceCollection.AddSingleton<ILogger<Pulsar.Services.Tutorial.TutorialOrchestrator>>(sp =>
-                sp.GetRequiredService<ILoggerFactory>().CreateLogger<Pulsar.Services.Tutorial.TutorialOrchestrator>());
+            serviceCollection.AddSingleton<ILogger<Pulsar.Features.Tutorial.Services.TutorialOrchestrator>>(sp =>
+                sp.GetRequiredService<ILoggerFactory>().CreateLogger<Pulsar.Features.Tutorial.Services.TutorialOrchestrator>());
             
             // [New] Fuzzy Search Service (for IconPicker and future use)
             serviceCollection.AddSingleton(typeof(Pulsar.Services.Interfaces.IFuzzySearchService<>), typeof(Pulsar.Services.FuzzySearch.FuzzySearchService<>));
@@ -197,7 +197,7 @@ namespace Pulsar
             
             // [Fix] Register SettingsViewModel as Transient for fresh state on every open
             serviceCollection.AddTransient<AboutViewModel>();
-            serviceCollection.AddTransient<SettingsShellViewModel>();
+            serviceCollection.AddSingleton<SettingsShellViewModel>();
             serviceCollection.AddTransient<SettingsViewModel>();
             serviceCollection.AddTransient<SettingsPageFactory>();
             

@@ -160,9 +160,9 @@ namespace Pulsar.ViewModels
         /// </summary>
         private void MarkDirty()
         {
-            if (_suppressDirty)
+            if (_suppressDirtyCount > 0)
             {
-                _logger.LogWarning("[MarkDirty] Skipped — _suppressDirty flag is still true (possible stale/incomplete initialization state)");
+                _logger.LogWarning("[MarkDirty] Skipped — _suppressDirtyCount is {Count} (possible stale/incomplete initialization state)", _suppressDirtyCount);
                 return;
             }
 
@@ -425,12 +425,11 @@ namespace Pulsar.ViewModels
         public void ResumeHotkeys() => _hotkeyService.Resume();
 
         private bool _suppressSlotSync = false;
-        private bool _suppressDirty = false;
+        private int _suppressDirtyCount = 0;
 
         private void WithSuppressedDirty(Action action)
         {
-            bool wasSuppressed = _suppressDirty;
-            _suppressDirty = true;
+            _suppressDirtyCount++;
 
             try
             {
@@ -438,14 +437,13 @@ namespace Pulsar.ViewModels
             }
             finally
             {
-                _suppressDirty = wasSuppressed;
+                _suppressDirtyCount--;
             }
         }
 
         private async Task WithSuppressedDirtyAsync(Func<Task> action)
         {
-            bool wasSuppressed = _suppressDirty;
-            _suppressDirty = true;
+            _suppressDirtyCount++;
 
             try
             {
@@ -453,7 +451,7 @@ namespace Pulsar.ViewModels
             }
             finally
             {
-                _suppressDirty = wasSuppressed;
+                _suppressDirtyCount--;
             }
         }
 
