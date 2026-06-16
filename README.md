@@ -11,6 +11,10 @@
 
 ---
 
+<p align="center">
+  <img src="Pulsar/Pulsar/Assets/Brand/demo.gif" alt="Pulsar Demo" width="500">
+</p>
+
 ## Features
 
 - **Radial Menu** — Hotkey-invoked circular launcher with spatial positioning for blind operation
@@ -19,13 +23,18 @@
 - **Global Hotkeys** — System-wide hotkey bindings for instant access
 - **Plugin Simulator** — Headless testing without the WPF shell
 
+## Prerequisites
+
+- Windows 10 or later (x64)
+- [.NET 8.0 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) (or SDK for building)
+
 ## Quick Start
 
 ```bash
 # Build
 dotnet build Pulsar/Pulsar/Pulsar.csproj
 
-# Run
+# Run (default hotkey: Ctrl+Alt+P)
 dotnet run --project Pulsar/Pulsar/Pulsar.csproj
 
 # Run tests
