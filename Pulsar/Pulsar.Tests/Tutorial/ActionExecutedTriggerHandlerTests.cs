@@ -1,8 +1,8 @@
 using FluentAssertions;
 using CommunityToolkit.Mvvm.Messaging;
 using Pulsar.Core.Messages;
-using Pulsar.Models.Tutorial;
-using Pulsar.Services.Tutorial.TriggerHandlers;
+using Pulsar.Features.Tutorial.Models;
+using Pulsar.Features.Tutorial.Services.TriggerHandlers;
 
 namespace Pulsar.Tests.Tutorial
 {

@@ -4,7 +4,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-namespace Pulsar.Core.Plugin.Versioning
+namespace Pulsar.Core.Plugin.Metadata
 {
     /// <summary>
     /// 插件清单加载器 - 解析 plugin.manifest.json

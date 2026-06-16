@@ -1,7 +1,7 @@
 // [Path]: Pulsar/Pulsar/Services/Interfaces/ITargetLocator.cs
 
 using System.Windows;
-using Pulsar.Models.Tutorial;
+using Pulsar.Features.Tutorial.Models;
 
 namespace Pulsar.Services.Interfaces
 {

@@ -6,8 +6,9 @@
 # dotenv files
 .env
 
-# Local OpenCode tooling lockfile
-.opencode/package-lock.json
+# Local OpenCode tooling
+opencode.jsonc
+.opencode/
 
 # User-specific files
 *.rsuser

@@ -12,7 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin;
-using Pulsar.Core.Plugin.Versioning;
+using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Models;
 
 namespace Pulsar.Services

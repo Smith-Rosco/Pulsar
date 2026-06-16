@@ -2,7 +2,7 @@ using System;
 using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
-using Pulsar.Services.Tutorial.Prerequisites;
+using Pulsar.Features.Tutorial.Services.Prerequisites;
 
 namespace Pulsar.Views.Converters
 {

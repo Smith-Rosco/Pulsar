@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 using FluentAssertions;
-using Pulsar.Services.Tutorial.Prerequisites;
+using Pulsar.Features.Tutorial.Services.Prerequisites;
 using Xunit;
 
 namespace Pulsar.Tests.Tutorial

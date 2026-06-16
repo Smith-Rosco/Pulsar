@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
-using Pulsar.Models.Tutorial;
-using Pulsar.Services.Tutorial;
+using Pulsar.Features.Tutorial.Models;
+using Pulsar.Features.Tutorial.Services;
 using Xunit;
 
 namespace Pulsar.Tests.Tutorial

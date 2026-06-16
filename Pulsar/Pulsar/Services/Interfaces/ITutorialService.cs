@@ -2,7 +2,7 @@
 
 using System;
 using System.Threading.Tasks;
-using Pulsar.Models.Tutorial;
+using Pulsar.Features.Tutorial.Models;
 
 namespace Pulsar.Services.Interfaces
 {

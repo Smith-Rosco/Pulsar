@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Pulsar.Models;
-using Pulsar.Core.Plugin.Versioning;
+using Pulsar.Core.Plugin.Metadata;
 
 namespace Pulsar.Services
 {

@@ -78,8 +78,8 @@ Architecture Decision Records (ADRs):
 
 ### Archive (Docs/archive/)
 Historical documents (not current truth):
-- **[2026-03/](./archive/2026-03/)** - Phase 2 completion reports, handovers
-- **[2026-01/](./archive/2026-01/)** - PKI implementation details
+- All files are date-prefixed (e.g., `2026-03-02-HANDOVER_V4.1.0.md`) in a flat directory
+- Includes Phase 2 completion reports, handovers, PKI implementation details, TUTORIAL_SYSTEM design docs, and bug-triage reports
 
 ---
 
@@ -116,7 +116,7 @@ Documentation for built-in plugins:
 1. **Draft** (`.draft.md` suffix) - Work in progress
 2. **Review** ("Status: Under Review" header) - Awaiting approval
 3. **Published** (no suffix, version number) - Active documentation
-4. **Archived** (moved to `archive/YYYY-MM/`) - Historical reference
+4. **Archived** (moved to `archive/`) - Historical reference
 5. **Deprecated** ("⚠️ DEPRECATED" header) - Obsolete, to be removed after 6 months
 
 ### Naming Conventions

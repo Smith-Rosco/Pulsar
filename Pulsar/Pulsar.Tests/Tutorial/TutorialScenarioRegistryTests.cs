@@ -1,5 +1,5 @@
 using FluentAssertions;
-using Pulsar.Services.Tutorial;
+using Pulsar.Features.Tutorial.Services;
 using Xunit;
 
 namespace Pulsar.Tests.Tutorial
@@ -55,7 +55,7 @@ namespace Pulsar.Tests.Tutorial
             var excel = registry.GetById("excel");
             excel.Should().NotBeNull();
             excel!.PrerequisiteProvider.Should().NotBeNull();
-            excel.PrerequisiteProvider.Should().Be(typeof(Pulsar.Services.Tutorial.Prerequisites.ExcelPrerequisiteProvider));
+            excel.PrerequisiteProvider.Should().Be(typeof(Pulsar.Features.Tutorial.Services.Prerequisites.ExcelPrerequisiteProvider));
         }
 
         [Fact]

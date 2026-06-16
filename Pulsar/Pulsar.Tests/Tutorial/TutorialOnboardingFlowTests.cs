@@ -2,7 +2,8 @@ using System.Linq;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Pulsar.Services.Tutorial;
+using Pulsar.Features.Tutorial.Models;
+using Pulsar.Features.Tutorial.Services;
 
 namespace Pulsar.Tests.Tutorial
 {
@@ -28,12 +29,12 @@ namespace Pulsar.Tests.Tutorial
 
             steps.Should().ContainSingle(step => step.Id == "step2_switch_mode_intro"
                 && step.CompletionTrigger != null
-                && step.CompletionTrigger.Type == Models.Tutorial.TutorialTriggerType.ActionExecuted
+                && step.CompletionTrigger.Type == TutorialTriggerType.ActionExecuted
                 && step.CompletionTrigger.TargetValue == "Switch");
 
             steps.Should().ContainSingle(step => step.Id == "step4_command_mode_intro"
                 && step.CompletionTrigger != null
-                && step.CompletionTrigger.Type == Models.Tutorial.TutorialTriggerType.ActionExecuted
+                && step.CompletionTrigger.Type == TutorialTriggerType.ActionExecuted
                 && step.CompletionTrigger.TargetValue == "Command");
         }
     }

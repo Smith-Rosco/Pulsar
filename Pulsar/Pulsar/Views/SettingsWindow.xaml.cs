@@ -11,7 +11,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Localization;
 using Pulsar.Core.Messages;
-using Pulsar.Helpers.Tutorial;
+using Pulsar.Features.Tutorial.Helpers;
 using Pulsar.Models;
 using Pulsar.Models.Settings;
 using Pulsar.Native;

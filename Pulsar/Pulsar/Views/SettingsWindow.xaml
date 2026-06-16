@@ -6,7 +6,7 @@
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:converters="clr-namespace:Pulsar.Core.Converters"
         xmlns:lex="clr-namespace:Pulsar.Core.Localization"
-        xmlns:tutorial="clr-namespace:Pulsar.Helpers.Tutorial"
+        xmlns:tutorial="clr-namespace:Pulsar.Features.Tutorial.Helpers"
         mc:Ignorable="d"
         Title="{lex:Locale SettingsWindow.Title}" Height="700" Width="1000"
         WindowStartupLocation="CenterScreen"

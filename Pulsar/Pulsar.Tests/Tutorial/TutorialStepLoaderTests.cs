@@ -6,8 +6,8 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Pulsar.Core.Localization;
-using Pulsar.Models.Tutorial;
-using Pulsar.Services.Tutorial;
+using Pulsar.Features.Tutorial.Models;
+using Pulsar.Features.Tutorial.Services;
 using Xunit;
 
 namespace Pulsar.Tests.Tutorial

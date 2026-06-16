@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Pulsar.Core.Plugin.Versioning
+namespace Pulsar.Core.Plugin.Metadata
 {
     /// <summary>
     /// 插件清单 - 描述插件的元数据、依赖和权限

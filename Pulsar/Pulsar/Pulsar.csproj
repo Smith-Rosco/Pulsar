@@ -49,13 +49,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Assets\TutorialSteps.json">
+    <None Include="Resources\Tutorial\TutorialSteps.json">
+      <Link>Assets\TutorialSteps.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Assets\TutorialSteps.excel.json">
+    <None Include="Resources\Tutorial\TutorialSteps.excel.json">
+      <Link>Assets\TutorialSteps.excel.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Assets\TutorialSteps.browser.json">
+    <None Include="Resources\Tutorial\TutorialSteps.browser.json">
+      <Link>Assets\TutorialSteps.browser.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Resources\Tutorial\Steps.en.json">
@@ -64,7 +67,12 @@
     <None Update="Resources\Tutorial\Steps.zh-CN.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Assets\Scripts\Demo\**">
+    <None Include="Plugins\Extensions\VbaRunner\DemoScripts\excel_demo.txt">
+      <Link>Assets\Scripts\Demo\excel_demo.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Plugins\Extensions\BookmarkletRunner\DemoScripts\browser_demo.js">
+      <Link>Assets\Scripts\Demo\browser_demo.js</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

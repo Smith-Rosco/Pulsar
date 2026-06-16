@@ -8,7 +8,7 @@
       xmlns:models="clr-namespace:Pulsar.Models"
       xmlns:converters="clr-namespace:Pulsar.Core.Converters"
       xmlns:controls="clr-namespace:Pulsar.Views.Controls"
-      xmlns:tutorial="clr-namespace:Pulsar.Helpers.Tutorial"
+      xmlns:tutorial="clr-namespace:Pulsar.Features.Tutorial.Helpers"
       xmlns:sys="clr-namespace:System;assembly=mscorlib"
       xmlns:lex="clr-namespace:Pulsar.Core.Localization"
       mc:Ignorable="d" 

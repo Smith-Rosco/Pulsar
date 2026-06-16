@@ -4,7 +4,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using NuGet.Versioning;
 
-namespace Pulsar.Core.Plugin.Versioning
+namespace Pulsar.Core.Plugin.Metadata
 {
     /// <summary>
     /// 插件版本解析器 - 处理语义化版本和依赖解析

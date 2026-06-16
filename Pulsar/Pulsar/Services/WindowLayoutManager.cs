@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.Extensions.Logging;
-using Pulsar.Models.Tutorial;
+using Pulsar.Features.Tutorial.Models;
 using Pulsar.Services.Interfaces;
 
 namespace Pulsar.Services

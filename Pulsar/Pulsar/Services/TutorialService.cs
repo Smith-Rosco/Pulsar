@@ -4,9 +4,9 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Localization;
-using Pulsar.Models.Tutorial;
+using Pulsar.Features.Tutorial.Models;
 using Pulsar.Services.Interfaces;
-using Pulsar.Services.Tutorial;
+using Pulsar.Features.Tutorial.Services;
 using Pulsar.ViewModels;
 
 namespace Pulsar.Services

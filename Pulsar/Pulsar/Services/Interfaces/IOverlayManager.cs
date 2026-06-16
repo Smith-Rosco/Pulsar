@@ -1,8 +1,8 @@
 // [Path]: Pulsar/Pulsar/Services/Interfaces/IOverlayManager.cs
 
 using System.Windows;
-using Pulsar.Models.Tutorial;
-using Pulsar.Views.Tutorial;
+using Pulsar.Features.Tutorial.Models;
+using Pulsar.Features.Tutorial.Views;
 
 namespace Pulsar.Services.Interfaces
 {

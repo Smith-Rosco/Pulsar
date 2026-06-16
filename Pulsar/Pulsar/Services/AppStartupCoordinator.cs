@@ -11,7 +11,7 @@ using Pulsar.Native;
 using Pulsar.Models;
 using Pulsar.Models.Enums;
 using Pulsar.Services.Interfaces;
-using Pulsar.Services.Tutorial;
+using Pulsar.Features.Tutorial.Services;
 using Pulsar.ViewModels.Dialogs;
 using Pulsar.Views;
 using Pulsar.Core.Localization;
