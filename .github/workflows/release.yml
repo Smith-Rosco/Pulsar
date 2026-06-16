@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore Pulsar/Pulsar/Pulsar.csproj
+
+      - name: Publish (Self-Contained Single File)
+        run: dotnet publish Pulsar/Pulsar/Pulsar.csproj -c Release -o publish
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pulsar-${{ github.ref_name }}
+          path: publish/
+
+      - name: Create Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $name = "Pulsar $tag"
+          gh release create $tag --title "$name" --generate-notes
+
+      - name: Upload Release Asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          Compress-Archive -Path publish\* -DestinationPath Pulsar-${{ github.ref_name }}.zip
+          gh release upload ${{ github.ref_name }} Pulsar-${{ github.ref_name }}.zip
