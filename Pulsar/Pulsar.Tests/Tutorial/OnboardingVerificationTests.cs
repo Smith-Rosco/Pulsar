@@ -7,7 +7,7 @@ using Moq;
 using Pulsar.Core.Localization;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
-using Pulsar.Services.Tutorial;
+using Pulsar.Features.Tutorial.Services;
 using Pulsar.ViewModels.Dialogs;
 using Xunit;
 using DialogResult = Pulsar.Models.Enums.DialogResult;
@@ -144,7 +144,7 @@ namespace Pulsar.Tests.Tutorial
         }
 
         [Fact]
-        public async Task FirstLaunchWizardViewModel_CanCloseAsync_WithConfirmedResult_ShouldValidate()
+        public async Task FirstLaunchWizardViewModel_CanCloseAsync_WithConfirmedResult_ShouldAlwaysBeValid()
         {
             var mockTemplateService = new Mock<IOnboardingTemplateService>();
             var mockConfigService = new Mock<IConfigService>();
@@ -154,20 +154,9 @@ namespace Pulsar.Tests.Tutorial
             mockLoc.Setup(l => l.SupportedLanguages).Returns(new List<string> { "en" });
             mockLoc.Setup(l => l.CurrentLanguage).Returns("en");
             mockLoc.Setup(l => l.GetString(It.IsAny<string>())).Returns<string>(key => key);
-            mockLoc.Setup(l => l["FirstLaunch.GeneralProductivity"]).Returns("General");
-            mockLoc.Setup(l => l["FirstLaunch.GeneralProductivityDesc"]).Returns("Desc");
-            mockLoc.Setup(l => l["FirstLaunch.SetupTitle"]).Returns("Setup");
             mockLoc.Setup(l => l["FirstLaunch.SetupDescription"]).Returns("Desc");
-            mockLoc.Setup(l => l["FirstLaunch.SetupHint"]).Returns("Hint");
-            mockLoc.Setup(l => l["FirstLaunch.UsageScenario"]).Returns("Usage");
-            mockLoc.Setup(l => l["FirstLaunch.LaunchApps"]).Returns("Apps");
-            mockLoc.Setup(l => l["FirstLaunch.Selected"]).Returns("Sel");
-            mockLoc.Setup(l => l["FirstLaunch.SelectedApps"]).Returns("SelApps");
             mockLoc.Setup(l => l["FirstLaunch.CreateConfig"]).Returns("Create");
             mockLoc.Setup(l => l["FirstLaunch.Skip"]).Returns("Skip");
-            mockLoc.Setup(l => l["FirstLaunch.Footer"]).Returns("Footer");
-            mockLoc.Setup(l => l["FirstLaunch.SelectScenarioError"]).Returns("Err");
-            mockLoc.Setup(l => l["FirstLaunch.SelectAppError"]).Returns("ErrApp");
             mockLoc.Setup(l => l["Settings.General.Language"]).Returns("Lang");
 
             mockTemplateService.Setup(t => t.GetAvailableApps()).Returns(new List<OnboardingAppSelection>());
@@ -180,7 +169,7 @@ namespace Pulsar.Tests.Tutorial
 
             var canClose = await vm.CanCloseAsync(DialogResult.Confirmed);
 
-            canClose.Should().BeTrue("first scenario is selected by default, no app selection required");
+            canClose.Should().BeTrue("wizard no longer validates, confirmed is always allowed");
         }
     }
 }

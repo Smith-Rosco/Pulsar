@@ -2624,7 +2624,37 @@
   <data
     name="FirstLaunch.SetupDescription"
     xml:space="preserve">
-    <value>选择一个场景，立即体验 Pulsar。所有设置都可以后续自由调整。</value>
+    <value>我们将通过一个简短的记事本教程带你体验 Pulsar 的核心功能。</value>
+  </data>
+  <data
+    name="FirstLaunch.FeatureIntro"
+    xml:space="preserve">
+    <value>你将学到两大核心功能：</value>
+  </data>
+  <data
+    name="FirstLaunch.Feature.SwitchModeTitle"
+    xml:space="preserve">
+    <value>Switch Mode</value>
+  </data>
+  <data
+    name="FirstLaunch.Feature.SwitchModeDesc"
+    xml:space="preserve">
+    <value>快速切换至任意窗口</value>
+  </data>
+  <data
+    name="FirstLaunch.Feature.CommandModeTitle"
+    xml:space="preserve">
+    <value>Command Mode</value>
+  </data>
+  <data
+    name="FirstLaunch.Feature.CommandModeDesc"
+    xml:space="preserve">
+    <value>向应用发送命令，如自动输入文本</value>
+  </data>
+  <data
+    name="FirstLaunch.SetupFooter"
+    xml:space="preserve">
+    <value>一切都可以后续自由调整。准备好了吗？</value>
   </data>
   <data
     name="FirstLaunch.UsageScenario"

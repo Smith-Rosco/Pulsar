@@ -1,13 +1,13 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using Pulsar.Core.Localization;
 using Pulsar.Models;
-using Pulsar.Models.Tutorial;
 using Pulsar.Services.Interfaces;
-using Pulsar.Services.Tutorial;
-using Pulsar.Services.Tutorial.Prerequisites;
+using Pulsar.Features.Tutorial.Models;
+using Pulsar.Features.Tutorial.Services;
 using Pulsar.ViewModels.Dialogs;
 using Xunit;
 
@@ -15,78 +15,83 @@ namespace Pulsar.Tests.Tutorial
 {
     public class FirstLaunchSetupWizardViewModelTests
     {
-        [Fact]
-        public void CanFinish_WithRequiredPrerequisiteNotMet_ShouldReturnTrue()
+        private static Mock<ILocalizationService> CreateDefaultLoc()
         {
             var loc = new Mock<ILocalizationService>();
             loc.Setup(l => l.GetString(It.IsAny<string>())).Returns((string key) => key);
             loc.Setup(l => l.SupportedLanguages).Returns(new[] { "en" });
             loc.Setup(l => l.CurrentLanguage).Returns("en");
-            loc.Setup(l => l["FirstLaunch.GeneralProductivity"]).Returns("General");
-            loc.Setup(l => l["FirstLaunch.GeneralProductivityDesc"]).Returns("General Desc");
-            loc.Setup(l => l["FirstLaunch.GeneralProductivitySlotDesc"]).Returns("Slot Desc");
-
-            var templateService = new Mock<IOnboardingTemplateService>();
-            templateService.Setup(t => t.GetAvailableApps()).Returns(new List<OnboardingAppSelection>
-            {
-                new() { Id = "notepad", DisplayName = "Notepad", ProcessName = "notepad", LaunchPath = "notepad.exe", IconKey = "\uE70F" }
-            });
-
-            var configService = new Mock<IConfigService>();
-            configService.Setup(c => c.Current).Returns(new ProfilesConfig());
-
-            var onboardingStateService = new Mock<IOnboardingStateService>();
-
-            var registry = new TutorialScenarioRegistry();
-
-            var vm = new FirstLaunchSetupWizardViewModel(
-                templateService.Object,
-                configService.Object,
-                onboardingStateService.Object,
-                loc.Object,
-                registry);
-
-            // 前置检查仅作信息展示，不阻止完成
-            vm.CanFinish.Should().BeTrue();
+            loc.Setup(l => l["FirstLaunch.SetupDescription"]).Returns("Welcome description");
+            loc.Setup(l => l["FirstLaunch.CreateConfig"]).Returns("Get Started");
+            loc.Setup(l => l["FirstLaunch.Skip"]).Returns("Skip");
+            loc.Setup(l => l["Settings.General.Language"]).Returns("Language");
+            return loc;
         }
 
         [Fact]
-        public void PrerequisiteResults_ShouldBePopulatedForAllScenarios()
+        public void Constructor_ShouldSetDefaultLanguage()
         {
-            var loc = new Mock<ILocalizationService>();
-            loc.Setup(l => l.GetString(It.IsAny<string>())).Returns((string key) => key);
-            loc.Setup(l => l.SupportedLanguages).Returns(new[] { "en" });
-            loc.Setup(l => l.CurrentLanguage).Returns("en");
-            loc.Setup(l => l["FirstLaunch.GeneralProductivity"]).Returns("General");
-            loc.Setup(l => l["FirstLaunch.GeneralProductivityDesc"]).Returns("General Desc");
-            loc.Setup(l => l["FirstLaunch.GeneralProductivitySlotDesc"]).Returns("Slot Desc");
+            var loc = CreateDefaultLoc();
+            var templateService = new Mock<IOnboardingTemplateService>();
+            var configService = new Mock<IConfigService>();
+            var onboardingStateService = new Mock<IOnboardingStateService>();
+
+            var vm = new FirstLaunchSetupWizardViewModel(
+                templateService.Object,
+                configService.Object,
+                onboardingStateService.Object,
+                loc.Object);
+
+            vm.Should().NotBeNull();
+            vm.SupportedLanguages.Should().NotBeEmpty();
+        }
+
+        [Fact]
+        public void Description_ShouldReturnLocalizedText()
+        {
+            var loc = CreateDefaultLoc();
+            var templateService = new Mock<IOnboardingTemplateService>();
+            var configService = new Mock<IConfigService>();
+            var onboardingStateService = new Mock<IOnboardingStateService>();
+
+            var vm = new FirstLaunchSetupWizardViewModel(
+                templateService.Object,
+                configService.Object,
+                onboardingStateService.Object,
+                loc.Object);
+
+            vm.Description.Should().Be("Welcome description");
+        }
+
+        [Fact]
+        public void FinishCommand_ShouldBuildConfigAndClose()
+        {
+            var loc = CreateDefaultLoc();
+            var configService = new Mock<IConfigService>();
+            configService.Setup(c => c.Current).Returns(new ProfilesConfig());
+            configService.Setup(c => c.LoadAsync()).ReturnsAsync(new ProfilesConfig());
 
             var templateService = new Mock<IOnboardingTemplateService>();
             templateService.Setup(t => t.GetAvailableApps()).Returns(new List<OnboardingAppSelection>
             {
                 new() { Id = "notepad", DisplayName = "Notepad", ProcessName = "notepad", LaunchPath = "notepad.exe", IconKey = "\uE70F" }
             });
-
-            var configService = new Mock<IConfigService>();
-            configService.Setup(c => c.Current).Returns(new ProfilesConfig());
+            templateService.Setup(t => t.BuildInitialConfig(It.IsAny<TutorialScenario>(), It.IsAny<IReadOnlyList<OnboardingAppSelection>>()))
+                .Returns(new ProfilesConfig());
 
             var onboardingStateService = new Mock<IOnboardingStateService>();
-
-            var registry = new TutorialScenarioRegistry();
 
             var vm = new FirstLaunchSetupWizardViewModel(
                 templateService.Object,
                 configService.Object,
                 onboardingStateService.Object,
-                loc.Object,
-                registry);
+                loc.Object);
 
-            // Prerequisites should be populated asynchronously; wait briefly
-            System.Threading.Thread.Sleep(300);
+            vm.FinishCommand.Execute(null);
 
-            // notepad scenario has no PrerequisiteProvider, so it won't add a key
-            vm.PrerequisiteResults.Should().ContainKeys("excel", "browser");
-            vm.PrerequisiteResults.Should().NotContainKey("notepad", "notepad scenario has no prerequisite provider");
+            templateService.Verify(t => t.BuildInitialConfig(It.IsAny<TutorialScenario>(), It.IsAny<IReadOnlyList<OnboardingAppSelection>>()), Times.Once);
+            configService.Verify(c => c.SaveAsync(It.IsAny<ProfilesConfig>()), Times.Once);
+            onboardingStateService.Verify(s => s.MarkSetupCompletedAsync(), Times.Once);
         }
     }
 }

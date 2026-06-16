@@ -1609,7 +1609,25 @@
     <value>Welcome to Pulsar</value>
   </data>
   <data name="FirstLaunch.SetupDescription" xml:space="preserve">
-    <value>Pick a scenario below to see Pulsar in action. You can customize everything later.</value>
+    <value>We'll guide you through a quick tutorial using Notepad to show you how Pulsar works.</value>
+  </data>
+  <data name="FirstLaunch.FeatureIntro" xml:space="preserve">
+    <value>You'll learn two core features:</value>
+  </data>
+  <data name="FirstLaunch.Feature.SwitchModeTitle" xml:space="preserve">
+    <value>Switch Mode</value>
+  </data>
+  <data name="FirstLaunch.Feature.SwitchModeDesc" xml:space="preserve">
+    <value>Quickly switch to any open window</value>
+  </data>
+  <data name="FirstLaunch.Feature.CommandModeTitle" xml:space="preserve">
+    <value>Command Mode</value>
+  </data>
+  <data name="FirstLaunch.Feature.CommandModeDesc" xml:space="preserve">
+    <value>Send commands to apps, like typing text automatically</value>
+  </data>
+  <data name="FirstLaunch.SetupFooter" xml:space="preserve">
+    <value>Everything can be customized later. Ready to start?</value>
   </data>
   <data name="FirstLaunch.UsageScenario" xml:space="preserve">
     <value>Pick a Scenario</value>
