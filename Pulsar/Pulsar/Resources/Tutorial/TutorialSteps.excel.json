@@ -1,0 +1,132 @@
+{
+  "version": "1.0.0",
+  "steps": [
+    {
+      "id": "step1_onboarding_welcome",
+      "title": "Welcome to Pulsar",
+      "titleKey": "Tutorial.Welcome",
+      "description": "Welcome! This tutorial will show you Pulsar's two modes in action with Excel.\n\nYou will:\n1. Press `Ctrl+Q` to open Switch Mode and switch to Excel\n2. Press `Ctrl+Shift+Q` to open Command Mode and run a VBA demo in Excel\n\nYou'll see how to switch to an app, then do something inside it.",
+      "descriptionKey": "Tutorial.Excel.WelcomeDesc",
+      "type": "Instruction",
+      "target": null,
+      "completionTrigger": {
+        "type": "ButtonClick",
+        "targetValue": "NextButton"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Auto",
+        "fixedCardWidth": 450,
+        "fixedCardHeight": 320
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step2_switch_mode_intro",
+      "title": "Switch Mode: app switching and launching",
+      "titleKey": "Tutorial.SwitchMode",
+      "description": "Press `Ctrl+Q` to open Switch Mode, hover over the Excel icon, then release the hotkey to switch to it.\n\nThat's all it takes — Pulsar jumps straight to Excel. No alt-tabbing, no searching.",
+      "descriptionKey": "Tutorial.Excel.SwitchModeDesc",
+      "type": "WaitForAction",
+      "waitHintText": "Press Ctrl+Q, hover over the Excel icon, and release the hotkey.",
+      "waitHintKey": "Tutorial.Excel.SwitchModeHint",
+      "target": null,
+      "completionTrigger": {
+        "type": "ActionExecuted",
+        "targetValue": "Switch"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Auto",
+        "fixedCardWidth": 450,
+        "fixedCardHeight": 320
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step3_switch_mode_success",
+      "title": "Switched to Excel",
+      "titleKey": "Tutorial.Excel.FirstSwitch",
+      "description": "Great — you switched to Excel!\n\nIn the next step you'll use Command Mode to run a VBA demo in Excel.\n\nClick \"Next\" to continue.",
+      "descriptionKey": "Tutorial.Excel.FirstSwitchDesc",
+      "type": "Instruction",
+      "target": null,
+      "completionTrigger": {
+        "type": "ButtonClick",
+        "targetValue": "NextButton"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Auto",
+        "fixedCardWidth": 450,
+        "fixedCardHeight": 320
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step4_command_mode_intro",
+      "title": "Command Mode: run an action",
+      "titleKey": "Tutorial.CommandMode",
+      "description": "Press `Ctrl+Shift+Q` to open Command Mode, hover over \"Run VBA Demo\", then release the hotkey.\n\nPulsar will execute a VBA script in Excel for you — that's Command Mode in action: running a plugin on the app you switched to.",
+      "descriptionKey": "Tutorial.Excel.CommandModeDesc",
+      "type": "WaitForAction",
+      "waitHintText": "Press Ctrl+Shift+Q, hover over \"Run VBA Demo\", and release the hotkey.",
+      "waitHintKey": "Tutorial.Excel.CommandModeHint",
+      "target": null,
+      "completionTrigger": {
+        "type": "ActionExecuted",
+        "targetValue": "Command"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Auto",
+        "fixedCardWidth": 460,
+        "fixedCardHeight": 300
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step5_command_mode_success",
+      "title": "Command executed!",
+      "titleKey": "Tutorial.FirstCommand",
+      "description": "Pulsar ran the VBA script in Excel! You just combined both modes:\n\n1. Switch Mode (`Ctrl+Q`) — got you to Excel\n2. Command Mode (`Ctrl+Shift+Q`) — ran a VBA demo inside it\n\nThat's the core Pulsar workflow.",
+      "descriptionKey": "Tutorial.Excel.FirstCommandDesc",
+      "type": "Instruction",
+      "target": null,
+      "completionTrigger": {
+        "type": "ButtonClick",
+        "targetValue": "NextButton"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Auto",
+        "fixedCardWidth": 480,
+        "fixedCardHeight": 320
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step6_completion",
+      "title": "You're all set!",
+      "titleKey": "Tutorial.OnboardingComplete",
+      "description": "You just combined both Pulsar modes:\n\n\u2714 Switched to Excel with Switch Mode (`Ctrl+Q`)\n\u2714 Ran a VBA demo with Command Mode (`Ctrl+Shift+Q`)\n\nThat's the core workflow: switch to any app, then act inside it.\n\nOpen Settings anytime to customize your slots, or keep using the defaults — Pulsar is ready whenever you are!",
+      "descriptionKey": "Tutorial.Excel.OnboardingCompleteDesc",
+      "type": "Instruction",
+      "primaryAction": "CompleteTutorial",
+      "primaryButtonText": "Finish",
+      "primaryButtonTextKey": "Tutorial.Finish",
+      "target": null,
+      "completionTrigger": {
+        "type": "ButtonClick",
+        "targetValue": "CompleteButton"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Auto",
+        "fixedCardWidth": 480,
+        "fixedCardHeight": 360
+      },
+      "focusMode": "AlwaysObserving"
+    }
+  ]
+}

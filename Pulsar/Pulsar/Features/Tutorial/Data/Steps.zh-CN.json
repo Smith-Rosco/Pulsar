@@ -1,0 +1,214 @@
+{
+  "version": "1.0.0",
+  "steps": [
+    {
+      "id": "step1_welcome",
+      "title": "欢迎使用 Pulsar！",
+      "description": "Pulsar 是一个以肌肉记忆为核心的径向启动器。首次上手先掌握这三件事：\n\n1. 任务模式 `Ctrl+Q`：快速切换或启动常用应用\n2. 动作模式 `Ctrl+Shift+Q`：执行当前上下文里的命令槽位\n3. Settings > Slots：所有槽位都在这里配置\n\n这一轮教程会优先带你走完最短闭环：打开设置、添加一个切换槽位、再添加一个动作槽位。",
+      "type": "Instruction",
+      "target": null,
+      "completionTrigger": {
+        "type": "ButtonClick",
+        "targetValue": "StartButton"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Fixed",
+        "fixedCardWidth": 450,
+        "fixedCardHeight": 300
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step2_open_settings",
+      "title": "打开设置界面",
+      "description": "先进入设置界面。后续的教程都会围绕 Settings 中的 Slots 页面完成。\n\n你可以直接点击下方“打开设置”，也可以从系统托盘里的 Pulsar 图标进入设置。",
+      "type": "Instruction",
+      "primaryAction": "OpenSettingsWindow",
+      "primaryButtonText": "Tutorial.OpenSettings",
+      "waitHintText": "点击“打开设置”后会自动进入下一步；如果没有响应，也可以通过托盘图标打开设置。",
+      "target": null,
+      "completionTrigger": {
+        "type": "WindowOpened",
+        "targetValue": "SettingsWindow"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Fixed",
+        "fixedCardWidth": 450,
+        "fixedCardHeight": 300
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step3_settings_overview",
+      "title": "先认识设置结构",
+      "description": "Pulsar 的配置入口主要有三块：\n\n• General：热键、主题和启动行为\n• Slots：配置任务模式 / 动作模式的槽位\n• Plugins：查看和管理已安装插件\n\n本次教程只聚焦最关键的 Slots 页面，因为它决定径向菜单里真正会出现什么。",
+      "type": "Instruction",
+      "target": {
+        "type": "Window",
+        "elementName": "SettingsWindow"
+      },
+      "completionTrigger": {
+        "type": "ButtonClick",
+        "targetValue": "NextButton"
+      },
+      "layout": {
+        "targetWindow": {
+          "left": 0.25,
+          "top": 0.15,
+          "width": 0.5,
+          "height": 0.7,
+          "isRelative": true
+        },
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Fixed",
+        "fixedCardWidth": 450,
+        "fixedCardHeight": 300
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step4_navigate_slots",
+      "title": "进入槽位配置",
+      "description": "请点击左侧导航里的“槽位配置”。\n\n你会在这里看到顶部的 Context/Profile 切换器：\n\n• `Launcher`：任务模式使用的应用切换槽位\n• `Global`：所有应用里都可见的动作槽位\n• 其他 Profile：仅在对应应用激活时显示的动作槽位\n\n先从最稳定、最容易理解的 `Launcher` 和 `Global` 开始就够了。",
+      "type": "WaitForNavigation",
+      "waitHintText": "点击左侧“槽位配置”后会自动继续；如果没有检测到，也可以手动点“继续”。",
+      "target": {
+        "type": "UIElement",
+        "elementName": "SlotsNavigationItem"
+      },
+      "completionTrigger": {
+        "type": "NavigationItemClicked",
+        "targetValue": "Slots"
+      },
+      "layout": {
+        "targetWindow": {
+          "left": 0.25,
+          "top": 0.15,
+          "width": 0.5,
+          "height": 0.7,
+          "isRelative": true
+        },
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Fixed",
+        "fixedCardWidth": 480,
+        "fixedCardHeight": 360
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step5_add_winswitcher_slot",
+      "title": "先做一个任务模式槽位",
+      "description": "现在在 `Launcher` Context 下添加一个 `Window Switcher` 槽位。\n\n推荐填写：\n• app: `notepad`\n• path: `C:\\Windows\\System32\\notepad.exe`\n• Display Label: `记事本`\n\n为什么先配这个？\n• 它最容易验证：按 `Ctrl+Q` 就能看到\n• `Window Switcher` 同时支持切换已打开窗口和启动应用\n• 这是最符合 Pulsar 核心定位的一类槽位\n\n填完后收起编辑卡片或直接保存当前改动。",
+      "type": "WaitForAction",
+      "waitHintText": "添加完成后会自动继续；如果没有检测到，也可以直接点“继续”。",
+      "target": {
+        "type": "UIElement",
+        "elementName": "AddSlotButton"
+      },
+      "completionTrigger": {
+        "type": "SlotAdded",
+        "targetValue": "{\"PluginId\":\"com.pulsar.winswitcher\",\"Profile\":\"Global\"}"
+      },
+      "layout": {
+        "targetWindow": {
+          "left": 0.25,
+          "top": 0.15,
+          "width": 0.5,
+          "height": 0.7,
+          "isRelative": true
+        },
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Fixed",
+        "fixedCardWidth": 480,
+        "fixedCardHeight": 420
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step6_test_switch_mode",
+      "title": "测试任务模式",
+      "description": "现在验证刚才的配置是否真的进入了径向菜单。\n\n操作方式：\n1. 按住 `Ctrl+Q` 打开任务模式\n2. 看外圈是否出现你刚配置的“记事本”槽位\n3. 释放到该槽位，Pulsar 会尝试切换或启动记事本\n\n你需要记住的只有一点：`Launcher` Context 对应的就是这里的任务模式内容。",
+      "type": "WaitForAction",
+      "waitHintText": "触发一次任务模式后会自动继续；如果没有检测到，确认热键生效后再试，或直接继续。",
+      "target": null,
+      "completionTrigger": {
+        "type": "RadialMenuShown",
+        "targetValue": "Task"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Fixed",
+        "fixedCardWidth": 480,
+        "fixedCardHeight": 360
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step7_add_global_command_slot",
+      "title": "再做一个全局动作槽位",
+      "description": "回到 Slots 页面，把顶部 Context 切换到 `Global`，再添加一个 `Command` 槽位。\n\n推荐填写：\n• path: `notepad.exe`\n• arguments: `C:\\Windows\\System32\\drivers\\etc\\hosts`\n• Display Label: `打开 Hosts 文件`\n\n为什么这里选 `Global` 而不是某个应用 Profile？\n• 首次上手更稳定，不依赖当前激活窗口\n• 之后按 `Ctrl+Shift+Q` 时，在任何应用中都能验证这个动作槽位\n• 等你熟悉后，再为特定应用扩展专属 Profile 会更自然。",
+      "type": "WaitForAction",
+      "waitHintText": "切到 Global 后添加一个 Command 槽位即可继续；如果没有自动检测到，也可以手动继续。",
+      "target": null,
+      "completionTrigger": {
+        "type": "SlotAdded",
+        "targetValue": "{\"PluginId\":\"com.pulsar.command\",\"Profile\":\"Global\",\"Mode\":\"CommandMode\"}"
+      },
+      "layout": {
+        "targetWindow": {
+          "left": 0.25,
+          "top": 0.15,
+          "width": 0.5,
+          "height": 0.7,
+          "isRelative": true
+        },
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Fixed",
+        "fixedCardWidth": 480,
+        "fixedCardHeight": 400
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step8_test_command_mode",
+      "title": "测试动作模式",
+      "description": "最后验证动作模式。\n\n操作方式：\n1. 按住 `Ctrl+Shift+Q` 打开动作模式\n2. 查看是否出现刚才添加的 `Global` 命令槽位\n3. 释放到该槽位，执行对应命令\n\n这里的关键理解是：\n• `Global` 槽位在任意应用中都能显示\n• 以后如果你为某个应用建了专属 Profile，动作模式会在它的基础上叠加或切换内容",
+      "type": "WaitForAction",
+      "waitHintText": "触发一次动作模式后会自动继续；如果没有检测到，确认热键配置仍是 Ctrl+Shift+Q。",
+      "target": null,
+      "completionTrigger": {
+        "type": "RadialMenuShown",
+        "targetValue": "Action"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Fixed",
+        "fixedCardWidth": 480,
+        "fixedCardHeight": 380
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step9_completion",
+      "title": "🎉 恭喜！教程完成",
+      "description": "你已经完成了 Pulsar 的最小上手闭环：\n\n✅ 在 `Launcher` 中配置了任务模式槽位\n✅ 用 `Ctrl+Q` 验证了应用切换 / 启动\n✅ 在 `Global` 中配置了动作模式槽位\n✅ 用 `Ctrl+Shift+Q` 验证了命令执行\n\n接下来可以继续扩展：\n• 为常用应用建立专属 Profile\n• 给槽位补上更清晰的图标、名称和参数\n• 继续探索 PKI、VBA Runner、Bookmarklet 等插件\n• 按自己的习惯调整热键与主题\n\n如果你只记住一句话，那就是：先从 `Launcher` 和 `Global` 开始，Pulsar 就已经能真正投入使用。",
+      "type": "Instruction",
+      "primaryAction": "CompleteTutorial",
+      "primaryButtonText": "Tutorial.Finish",
+      "target": null,
+      "completionTrigger": {
+        "type": "ButtonClick",
+        "targetValue": "CompleteButton"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Fixed",
+        "fixedCardWidth": 480,
+        "fixedCardHeight": 420
+      },
+      "focusMode": "AlwaysObserving"
+    }
+  ]
+}

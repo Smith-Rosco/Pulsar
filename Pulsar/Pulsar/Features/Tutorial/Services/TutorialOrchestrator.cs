@@ -1,0 +1,906 @@
+// [Path]: Pulsar/Pulsar/Services/Tutorial/TutorialOrchestrator.cs
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Pulsar.Core.Localization;
+using Pulsar.Features.Tutorial.Helpers;
+using Pulsar.Features.Tutorial.Models;
+using Pulsar.Models;
+using Pulsar.Services.Interfaces;
+using Pulsar.Features.Tutorial.Views;
+using Pulsar.Views;
+
+namespace Pulsar.Features.Tutorial.Services
+{
+    /// <summary>
+    /// 教程编排器 - 管理教程流程的状态机
+    /// </summary>
+    public class TutorialOrchestrator
+    {
+        private readonly ILocalizationService _loc;
+
+        private readonly IConfigService _configService;
+        private readonly ILogger<TutorialOrchestrator> _logger;
+        private readonly TutorialStepLoader _stepLoader;
+        private readonly IOverlayManager _overlayManager;
+        private readonly ITutorialTriggerEngine _triggerEngine;
+        private readonly ITutorialSpotlightController _spotlightController;
+        private readonly IWaitStepHintTimeout _waitStepHintTimeout;
+        private readonly TutorialScenarioRegistry _scenarioRegistry;
+
+        private string DefaultWaitHintText => _loc["Tutorial.NoActionDetectedHint"];
+        
+        private List<TutorialStep> _steps;
+        private int _currentStepIndex = -1;
+        private TutorialStepCard? _stepCard;
+        private string? _scenarioId;
+        
+        // [P0-3 Fix] 防止竞态条件的标志位
+        private bool _isTransitioning = false;
+
+        public TutorialStep? CurrentStep => _currentStepIndex >= 0 && _currentStepIndex < _steps.Count 
+            ? _steps[_currentStepIndex] 
+            : null;
+
+        public event EventHandler<TutorialStep>? StepChanged;
+        public event EventHandler? TutorialCompleted;
+        public event EventHandler? TutorialSkipped;
+
+        public TutorialOrchestrator(
+            ILocalizationService loc,
+            IConfigService configService,
+            ILogger<TutorialOrchestrator> logger,
+            TutorialStepLoader stepLoader,
+            IOverlayManager overlayManager,
+            ITutorialTriggerEngine triggerEngine,
+            ITutorialSpotlightController spotlightController,
+            IWaitStepHintTimeout waitStepHintTimeout,
+            TutorialScenarioRegistry? scenarioRegistry = null)
+        {
+            _loc = loc;
+            _configService = configService;
+            _logger = logger;
+            _stepLoader = stepLoader;
+            _overlayManager = overlayManager;
+            _triggerEngine = triggerEngine;
+            _spotlightController = spotlightController;
+            _waitStepHintTimeout = waitStepHintTimeout;
+            _scenarioRegistry = scenarioRegistry ?? new TutorialScenarioRegistry();
+            
+            _steps = InitializeSteps();
+        }
+
+        /// <summary>
+        /// 设置场景 ID 并重新加载对应步骤
+        /// </summary>
+        public void SetScenario(string? scenarioId)
+        {
+            if (string.Equals(_scenarioId, scenarioId, StringComparison.OrdinalIgnoreCase))
+                return;
+
+            _scenarioId = scenarioId;
+            _steps = InitializeSteps();
+        }
+
+        /// <summary>
+        /// 初始化所有教程步骤
+        /// </summary>
+        private List<TutorialStep> InitializeSteps()
+        {
+            _logger.LogInformation("[TutorialOrchestrator] Initializing tutorial steps (scenario: {ScenarioId})", _scenarioId ?? "default");
+            
+            // 使用配置加载器从 JSON 文件加载步骤（支持场景特定步骤）
+            var steps = _stepLoader.LoadStepsForScenario(_scenarioId);
+            
+            _logger.LogInformation("[TutorialOrchestrator] Loaded {Count} tutorial steps", steps.Count);
+            
+            return steps;
+        }
+
+        /// <summary>
+        /// 启动教程
+        /// </summary>
+        public async Task StartAsync()
+        {
+            if (_isTransitioning)
+            {
+                _logger.LogWarning("[TutorialOrchestrator] StartAsync called while transitioning, ignoring");
+                return;
+            }
+            
+            try
+            {
+                _isTransitioning = true;
+                _logger.LogInformation("[TutorialOrchestrator] Starting tutorial");
+
+                _steps = InitializeSteps();
+                _currentStepIndex = 0;
+                await UpdateConfigAsync(s => s.LastTutorialStep = null);
+                
+                await ShowStepAsync(CurrentStep!);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[TutorialOrchestrator] Error starting tutorial");
+                await HandleErrorAsync(ex);
+            }
+            finally
+            {
+                _isTransitioning = false;
+            }
+        }
+
+        /// <summary>
+        /// 进入下一步（支持触发器和手动两种模式）
+        /// </summary>
+        public async Task NextStepAsync(bool fromTrigger = false)
+        {
+            // [P0-3 Fix] 防止重入（快速双击 Next 按钮）
+            if (_isTransitioning)
+            {
+                _logger.LogWarning("[TutorialOrchestrator] NextStepAsync called while transitioning, ignoring");
+                return;
+            }
+            
+            try
+            {
+                _isTransitioning = true;
+
+                _waitStepHintTimeout.Cancel();
+                
+                if (_currentStepIndex < _steps.Count - 1)
+                {
+                    // Step 2→3 优化：当 ActionExecuted/Switch 触发时，跳过确认步骤（step3）
+                    // 直接进入 Command Mode 步骤（step4），用 toast 通知替代
+                    if (fromTrigger && ShouldSkipStep(_currentStepIndex + 1))
+                    {
+                        _logger.LogInformation("[TutorialOrchestrator] Skipping confirmation step (index {SkipIndex}), advancing from step {CurrentIndex} to step {TargetIndex}",
+                            _currentStepIndex + 1, _currentStepIndex, _currentStepIndex + 2);
+                        
+                        _currentStepIndex += 2;
+                        await ShowStepAsync(CurrentStep!);
+                        
+                        // 显示 toast 通知
+                        var currentStep = CurrentStep;
+                        if (currentStep != null)
+                        {
+                            var appName = GetScenarioAppName();
+                            var toastText = string.Format(_loc["Tutorial.SwitchedToApp"] ?? "Switched to {0}!", appName);
+                            _overlayManager.ShowToast(toastText);
+                        }
+                    }
+                    else
+                    {
+                        _currentStepIndex++;
+                        await ShowStepAsync(CurrentStep!);
+                    }
+                }
+                else
+                {
+                    await CompleteAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[TutorialOrchestrator] Error advancing to next step");
+                await HandleErrorAsync(ex);
+            }
+            finally
+            {
+                _isTransitioning = false;
+            }
+        }
+
+        /// <summary>
+        /// 判断步骤是否为可跳过的确认步骤（step3）
+        /// </summary>
+        private bool ShouldSkipStep(int stepIndex)
+        {
+            if (stepIndex < 0 || stepIndex >= _steps.Count)
+                return false;
+
+            var step = _steps[stepIndex];
+            // 跳过条件：步骤 ID 包含 "switch_mode_success" 且类型为 Instruction
+            return step.Id == "step3_switch_mode_success" && step.Type == TutorialStepType.Instruction;
+        }
+
+        /// <summary>
+        /// 跳转到指定步骤
+        /// </summary>
+        public async Task GoToStepAsync(int stepIndex)
+        {
+            // [P0-3 Fix] 防止重入
+            if (_isTransitioning)
+            {
+                _logger.LogWarning("[TutorialOrchestrator] GoToStepAsync called while transitioning, ignoring");
+                return;
+            }
+            
+            if (stepIndex < 0 || stepIndex >= _steps.Count)
+            {
+                _logger.LogError("[TutorialOrchestrator] Invalid step index: {Index}", stepIndex);
+                throw new ArgumentOutOfRangeException(nameof(stepIndex), 
+                    $"Step index must be between 0 and {_steps.Count - 1}");
+            }
+            
+            try
+            {
+                _isTransitioning = true;
+                
+                _logger.LogInformation("[TutorialOrchestrator] Jumping to step {Index}: {StepId}", 
+                    stepIndex, _steps[stepIndex].Id);
+                
+                _currentStepIndex = stepIndex;
+                await ShowStepAsync(CurrentStep!);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[TutorialOrchestrator] Error jumping to step {Index}", stepIndex);
+                await HandleErrorAsync(ex);
+            }
+            finally
+            {
+                _isTransitioning = false;
+            }
+        }
+
+        /// <summary>
+        /// 根据步骤 ID 查找索引
+        /// </summary>
+        public int FindStepIndex(string stepId)
+        {
+            var index = _steps.FindIndex(s => s.Id == stepId);
+            
+            if (index == -1)
+            {
+                _logger.LogWarning("[TutorialOrchestrator] Step not found: {StepId}", stepId);
+            }
+            
+            return index;
+        }
+
+        /// <summary>
+        /// 获取所有步骤 ID
+        /// </summary>
+        public List<string> GetAllStepIds()
+        {
+            return _steps.Select(s => s.Id).ToList();
+        }
+
+        /// <summary>
+        /// 显示指定步骤
+        /// </summary>
+        private async Task ShowStepAsync(TutorialStep step)
+        {
+            try
+            {
+                _logger.LogInformation("[TutorialOrchestrator] Showing step: {StepId}", step.Id);
+
+                // 清理上一步的触发器
+                _triggerEngine.Cleanup();
+                _waitStepHintTimeout.Cancel();
+
+                // 检查 ActionExecuted 步骤的 slot 是否存在
+                // 如果 slot 不存在，显示引导卡片而不是卡住
+                var isSlotMissing = step.CompletionTrigger?.Type == TutorialTriggerType.ActionExecuted
+                    && !HasRequiredSlot();
+
+                // 播放渐出过渡动画（如果有旧卡片）
+                if (_stepCard != null)
+                {
+                    await _stepCard.CrossfadeOutAsync();
+                }
+                   
+                // 清理上一步的卡片
+                CleanupStepCard();
+
+                // 更新配置中的当前步骤
+                await UpdateConfigAsync(s => s.LastTutorialStep = step.Id);
+
+                // 创建或更新遮罩窗口
+                _overlayManager.EnsureOverlayWindow();
+
+                // 根据 FocusMode 确定初始状态
+                var initialState = DetermineFocusState(step);
+
+                _spotlightController.ApplyForStep(step);
+
+                // 创建并显示步骤卡片
+                _stepCard = new TutorialStepCard();
+                _stepCard.SetStep(step, _currentStepIndex, _steps.Count);
+                _stepCard.BackClicked += OnStepCardBackClicked;
+                _stepCard.NextClicked += OnStepCardNextClicked;
+                _stepCard.SkipClicked += OnStepCardSkipClicked;
+                _stepCard.ManualContinueRequested += OnManualContinueRequested;
+
+                _overlayManager.SetCardContent(_stepCard);
+
+                // 播放入场动画
+                _stepCard.PlayEntranceAnimation();
+
+                // 配置卡片大小模式
+                var sizeMode = step.Layout?.CardSizeMode ?? CardSizeMode.Auto;
+                var fixedWidth = step.Layout?.FixedCardWidth ?? 450;
+                var fixedHeight = step.Layout?.FixedCardHeight ?? 300;
+                _overlayManager.SetCardSizeMode(sizeMode, fixedWidth, fixedHeight);
+
+                // [Fix] 根据初始状态设置窗口（只调用一次，传入最终的 CardPosition）
+                var finalCardPosition = step.Layout?.CardPosition ?? CardPosition.TopRight;
+                
+                if (initialState == OverlayState.Focused)
+                {
+                    _overlayManager.EnterFocusedState();
+                }
+                else
+                {
+                    // [Fix] 只调用一次 EnterObservingState，传入最终位置
+                    _overlayManager.EnterObservingState(finalCardPosition);
+                }
+
+                // 窗口已存在时只更新内容，无需重复 Show()
+                if (!_overlayManager.IsOverlayVisible())
+                {
+                    _overlayManager.Show();
+                }
+                
+                // [Fix] 移除窗口布局调整，避免闪动
+                // 不再调用 _layoutManager.ApplyLayoutAsync，让用户自由调整窗口
+
+                // 如果 slot 缺失（ActionExecuted 步骤但无对应 slot），显示引导卡片
+                if (isSlotMissing)
+                {
+                    if (_stepCard != null)
+                    {
+                        _stepCard.SetSlotMissingGuidance();
+                        _stepCard.ShowNextButton();
+                    }
+                    
+                    // 设置 SlotAdded 触发器：当用户添加 slot 后自动推进
+                    try
+                    {
+                        var slotAddedStep = new TutorialStep
+                        {
+                            Id = "slot_added_monitor",
+                            CompletionTrigger = new TutorialTrigger
+                            {
+                                Type = TutorialTriggerType.SlotAdded,
+                                TargetValue = "{\"Mode\":\"CommandMode\"}"
+                            }
+                        };
+                        _triggerEngine.Setup(slotAddedStep, OnTriggerFired);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "[TutorialOrchestrator] Error setting up SlotAdded trigger for guidance");
+                    }
+                    
+                    _logger.LogWarning("[TutorialOrchestrator] Required slot missing for step: {StepId}, showing guidance card", step.Id);
+                }
+                else
+                {
+                    // 设置触发器
+                    _triggerEngine.Setup(step, OnTriggerFired);
+
+                    // Non-blocking timeout for wait steps (UX-only).
+                    _waitStepHintTimeout.Start(
+                        step,
+                        getCurrentStepId: () => CurrentStep?.Id,
+                        onTimeoutAsync: () => System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            if (CurrentStep?.Id != step.Id)
+                            {
+                                return;
+                            }
+
+                            _stepCard?.SetWaitHintText(DefaultWaitHintText);
+                            _stepCard?.ShowManualContinueButton();
+                        }).Task);
+                }
+
+                // 启动庆祝动画（完成步骤）
+                if (step.PrimaryAction == TutorialPrimaryAction.CompleteTutorial)
+                {
+                    _overlayManager.StartConfetti();
+                }
+
+                // 触发事件
+                StepChanged?.Invoke(this, step);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[TutorialOrchestrator] Error showing step: {StepId}", step.Id);
+                throw; // 重新抛出，让调用者的 try-catch 处理
+            }
+        }
+
+        /// <summary>
+        /// 完成教程
+        /// </summary>
+        private async Task CompleteAsync()
+        {
+            try
+            {
+                _logger.LogInformation("[TutorialOrchestrator] Tutorial completed");
+
+                _waitStepHintTimeout.Cancel();
+
+                await UpdateConfigAsync(s =>
+                {
+                    s.HasCompletedTutorial = true;
+                    s.OnboardingState = "Complete";
+                    s.LastTutorialStep = null;
+                    s.TutorialCrashedAt = null;
+                });
+
+                _triggerEngine.Cleanup();
+                CleanupStepCard();
+
+                _overlayManager.StopConfetti();
+                _overlayManager.Close();
+
+                TutorialCompleted?.Invoke(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[TutorialOrchestrator] Error completing tutorial");
+                // 即使出错也要强制清理
+                await ForceCleanupAsync();
+            }
+        }
+
+        // Helper Methods
+
+        /// <summary>
+        /// 获取当前 scenario 的应用名称（用于 toast 通知）
+        /// </summary>
+        private string GetScenarioAppName()
+        {
+            if (!string.IsNullOrEmpty(_scenarioId))
+            {
+                var scenario = _scenarioRegistry.GetById(_scenarioId);
+                if (scenario != null)
+                {
+                    return _loc[scenario.TitleKey] ?? "target app";
+                }
+            }
+            return _loc["Scenario.Notepad.Title"] ?? "Notepad";
+        }
+
+        /// <summary>
+        /// 检查当前配置中是否存在必需的 slot（用于 ActionExecuted 步骤验证）
+        /// </summary>
+        private bool HasRequiredSlot()
+        {
+            try
+            {
+                var config = _configService.Current;
+                if (config.Profiles == null)
+                    return false;
+
+                foreach (var profile in config.Profiles.Values)
+                {
+                    if (profile.CommandMode != null && profile.CommandMode.Count > 0)
+                        return true;
+                    if (profile.SwitchMode != null && profile.SwitchMode.Count > 0)
+                        return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[TutorialOrchestrator] Error checking required slot");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 确保遮罩窗口已创建
+        /// </summary>
+        private void EnsureOverlayWindow()
+        {
+            _overlayManager.EnsureOverlayWindow();
+        }
+
+        /// <summary>
+        /// 获取 SettingsWindow 实例（用于访问 NavigationView）
+        /// </summary>
+        private SettingsWindow? GetSettingsWindow()
+        {
+            try
+            {
+                foreach (Window window in System.Windows.Application.Current.Windows)
+                {
+                    if (window is SettingsWindow settingsWindow && window.IsVisible)
+                    {
+                        return settingsWindow;
+                    }
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "[TutorialOrchestrator] Failed to get SettingsWindow");
+                return null;
+            }
+        }
+
+        public async Task SkipAsync()
+        {
+            try
+            {
+                _logger.LogInformation("[TutorialOrchestrator] Skip requested");
+
+                _waitStepHintTimeout.Cancel();
+
+                await UpdateConfigAsync(s =>
+                {
+                    s.HasCompletedTutorial = false;
+                    s.LastTutorialStep = "Skipped";
+                });
+
+                _triggerEngine.Cleanup();
+                CleanupStepCard();
+
+                _overlayManager.StopConfetti();
+                _overlayManager.Close();
+
+                TutorialSkipped?.Invoke(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[TutorialOrchestrator] Error while skipping tutorial");
+                await ForceCleanupAsync();
+            }
+        }
+
+        public async Task CompleteFromServiceAsync()
+        {
+            await CompleteAsync();
+        }
+
+        /// <summary>
+        /// 清理步骤卡片资源
+        /// </summary>
+        private void CleanupStepCard()
+        {
+            try
+            {
+                if (_stepCard != null)
+                {
+                    // [P0-1 Fix] 取消订阅事件，防止内存泄漏
+                    _stepCard.BackClicked -= OnStepCardBackClicked;
+                    _stepCard.NextClicked -= OnStepCardNextClicked;
+                    _stepCard.SkipClicked -= OnStepCardSkipClicked;
+                    _stepCard.ManualContinueRequested -= OnManualContinueRequested;
+                    _stepCard = null;
+                    
+                    _logger.LogDebug("[TutorialOrchestrator] Step card cleaned up");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[TutorialOrchestrator] Error cleaning up step card");
+                // 确保引用被清除，即使取消订阅失败
+                _stepCard = null;
+            }
+        }
+
+        /// <summary>
+        /// 根据步骤配置确定初始焦点状态
+        /// </summary>
+        private OverlayState DetermineFocusState(TutorialStep step)
+        {
+            switch (step.FocusMode)
+            {
+                case TutorialFocusMode.AlwaysFocused:
+                    return OverlayState.Focused;
+
+                case TutorialFocusMode.AlwaysObserving:
+                    return OverlayState.Observing;
+
+                case TutorialFocusMode.Auto:
+                    // Instruction 步骤默认 Focused，WaitForAction 默认 Observing
+                    return step.Type == TutorialStepType.Instruction
+                        ? OverlayState.Focused
+                        : OverlayState.Observing;
+
+                default:
+                    return OverlayState.Focused;
+            }
+        }
+
+        /// <summary>
+        /// 触发器触发时的回调
+        /// </summary>
+        private async void OnTriggerFired()
+        {
+            try
+            {
+                _logger.LogInformation("[TutorialOrchestrator] Trigger fired for step: {StepId}", CurrentStep?.Id);
+
+                _waitStepHintTimeout.Cancel();
+
+                // 播放成功视觉反馈
+                _stepCard?.PlaySuccessAnimation();
+
+                // 短暂延迟让动画可见再进入下一步
+                await System.Threading.Tasks.Task.Delay(200);
+
+                // [P0-2 Fix] 异步事件处理器的错误边界
+                // 从触发器推进，支持 step 2→3 自动跳过
+                await NextStepAsync(fromTrigger: true);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[TutorialOrchestrator] Error advancing to next step after trigger");
+                await HandleErrorAsync(ex);
+            }
+        }
+
+        /// <summary>
+        /// 步骤卡片"下一步"按钮点击
+        /// </summary>
+        private async void OnStepCardNextClicked(object? sender, EventArgs e)
+        {
+            try
+            {
+                var step = CurrentStep;
+                if (step == null)
+                {
+                    return;
+                }
+
+                switch (step.PrimaryAction)
+                {
+                    case TutorialPrimaryAction.OpenSettingsWindow:
+                        await OpenSettingsWindowAsync();
+                        return;
+
+                    case TutorialPrimaryAction.CompleteTutorial:
+                        await CompleteAsync();
+                        return;
+
+                    default:
+                        _waitStepHintTimeout.Cancel();
+                        await NextStepAsync();
+                        return;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[TutorialOrchestrator] Error in next button handler");
+                await HandleErrorAsync(ex);
+            }
+        }
+
+        /// <summary>
+        /// 步骤卡片"跳过"按钮点击
+        /// </summary>
+        private async void OnStepCardSkipClicked(object? sender, EventArgs e)
+        {
+            try
+            {
+                // [P0-2 Fix] 异步事件处理器的错误边界
+                 
+                _logger.LogInformation("[TutorialOrchestrator] Tutorial skipped by user");
+
+                _waitStepHintTimeout.Cancel();
+
+                await UpdateConfigAsync(s =>
+                {
+                    s.HasCompletedTutorial = false;
+                    s.LastTutorialStep = "Skipped";
+                });
+
+                _triggerEngine.Cleanup();
+                CleanupStepCard();
+                 
+                _overlayManager.Close();
+
+                TutorialSkipped?.Invoke(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[TutorialOrchestrator] Error in skip button handler");
+                // 跳过时出错,强制清理
+                await ForceCleanupAsync();
+            }
+        }
+
+        private async void OnManualContinueRequested(object? sender, EventArgs e)
+        {
+            try
+            {
+                _logger.LogInformation("[TutorialOrchestrator] Manual continue requested for step: {StepId}", CurrentStep?.Id);
+                _waitStepHintTimeout.Cancel();
+                await NextStepAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[TutorialOrchestrator] Error in manual continue handler");
+                await HandleErrorAsync(ex);
+            }
+        }
+
+        private async void OnStepCardBackClicked(object? sender, EventArgs e)
+        {
+            try
+            {
+                if (_currentStepIndex <= 0)
+                {
+                    return;
+                }
+
+                _waitStepHintTimeout.Cancel();
+                await GoToStepAsync(_currentStepIndex - 1);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[TutorialOrchestrator] Error in back button handler");
+                await HandleErrorAsync(ex);
+            }
+        }
+
+        /// <summary>
+        /// 更新配置的辅助方法
+        /// </summary>
+        private async Task UpdateConfigAsync(Action<ProfileSettings> updateAction)
+        {
+            try
+            {
+                var config = _configService.Current;
+                updateAction(config.Settings);
+                await _configService.SaveAsync(config);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[TutorialOrchestrator] Error updating config");
+                // 配置保存失败不应该阻止教程继续
+            }
+        }
+
+        /// <summary>
+        /// 处理教程错误
+        /// </summary>
+        private async Task HandleErrorAsync(Exception ex)
+        {
+            try
+            {
+                _logger.LogError(ex, "[TutorialOrchestrator] Tutorial error occurred, attempting graceful shutdown");
+
+                _waitStepHintTimeout.Cancel();
+                
+                // 清理资源
+                _triggerEngine.Cleanup();
+                CleanupStepCard();
+                
+                // 标记崩溃步骤,不标记为已完成
+                await UpdateConfigAsync(s =>
+                {
+                    s.TutorialCrashedAt = CurrentStep?.Id;
+                    s.LastTutorialStep = null;
+                });
+                
+                // 关闭遮罩窗口
+                _overlayManager.Close();
+                
+                // 重置转换标志
+                _isTransitioning = false;
+            }
+            catch (Exception cleanupEx)
+            {
+                _logger.LogError(cleanupEx, "[TutorialOrchestrator] Error during error handling, forcing cleanup");
+                // 如果优雅关闭失败，强制清理
+                await ForceCleanupAsync();
+            }
+        }
+
+        /// <summary>
+        /// 强制清理所有资源
+        /// </summary>
+        private async Task ForceCleanupAsync()
+        {
+            _logger.LogWarning("[TutorialOrchestrator] Force cleanup initiated");
+
+            try
+            {
+                _waitStepHintTimeout.Cancel();
+            }
+            catch
+            {
+            }
+            
+            try
+            {
+                _triggerEngine.Cleanup();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[TutorialOrchestrator] Error cleaning up trigger during force cleanup");
+            }
+            
+            try
+            {
+                CleanupStepCard();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[TutorialOrchestrator] Error cleaning up step card during force cleanup");
+            }
+            
+            try
+            {
+                _overlayManager.Close();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[TutorialOrchestrator] Error closing overlay window during force cleanup");
+            }
+
+            try
+            {
+                await UpdateConfigAsync(s =>
+                {
+                    s.TutorialCrashedAt = CurrentStep?.Id;
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[TutorialOrchestrator] Error setting crash marker during force cleanup");
+            }
+            
+            _isTransitioning = false;
+            
+            _logger.LogInformation("[TutorialOrchestrator] Force cleanup completed");
+        }
+
+        private Task OpenSettingsWindowAsync()
+        {
+            _logger.LogInformation("[TutorialOrchestrator] Opening settings window from tutorial");
+
+            var settingsWindow = GetSettingsWindow();
+            if (settingsWindow != null)
+            {
+                _logger.LogInformation("[TutorialOrchestrator] Settings window already open, activating");
+                settingsWindow.Activate();
+                return Task.CompletedTask;
+            }
+
+            _logger.LogInformation("[TutorialOrchestrator] Creating new settings window");
+
+            var app = System.Windows.Application.Current as App;
+            if (app?.Services == null)
+            {
+                _logger.LogError("[TutorialOrchestrator] App services are unavailable while opening settings window");
+                return Task.CompletedTask;
+            }
+
+            try
+            {
+                var window = app.Services.GetService<SettingsWindow>();
+                if (window == null)
+                {
+                    _logger.LogError("[TutorialOrchestrator] Failed to resolve SettingsWindow from DI container");
+                    return Task.CompletedTask;
+                }
+
+                window.Show();
+                window.Activate();
+                _logger.LogInformation("[TutorialOrchestrator] Settings window opened successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[TutorialOrchestrator] Error opening settings window");
+            }
+
+            return Task.CompletedTask;
+        }
+    }
+}

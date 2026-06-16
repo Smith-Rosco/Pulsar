@@ -1,0 +1,779 @@
+' ==========================================
+' 项目: FlowSentinel v5.2 (UX Pro Max)
+' 核心: Needleman-Wunsch 算法 + 视觉合并引擎
+' 更新:
+'   1. Dashboard 重构: 删除 Row 3 Sheet Banner，布局压缩 4行→3行，数据从 Row 4 开始
+'   2. 统计区重构: D1:M1 数字 / D2:M2 标签，值标垂直分离，取代跳格反模式
+'   3. A2 显示双表名+产品名拼接: ws1[prod1] → ws2[prod2]
+'   4. Status 列仅保留图标，去掉文本，列宽压缩至 5
+'   5. Note 字体颜色跟随行底色语义，修复硬编码红色问题
+'   6. A1:C1 合并标题，时间戳右移至 N1
+' ==========================================
+
+Option Explicit
+
+' --- UX 配色方案 ---
+Private Const COLOR_BG_HEADER As Long = 14277081
+Private Const COLOR_BG_DASHBOARD As Long = 16316664
+Private Const COLOR_TEXT_WHITE As Long = 16777215
+Private Const FONT_NAME_MAIN As String = "Microsoft YaHei UI"
+
+' --- 列宽配置 (单位: 字符宽度) ---
+Private Const W_A_STATUS As Double = 5
+Private Const W_B_NOTE As Double = 16
+Private Const W_C_CALL As Double = 18
+Private Const W_D_STAGE As Double = 13
+Private Const W_E_RECIPE As Double = 16
+Private Const W_F_PPID As Double = 22
+Private Const W_G_MASK As Double = 12
+Private Const W_H_DCOP As Double = 16
+
+' 状态色 (莫兰迪色系)
+Private Const COLOR_STATUS_OK As Long = 14811105      ' 浅绿
+Private Const COLOR_STATUS_WARN As Long = 13431551    ' 浅黄
+Private Const COLOR_STATUS_INFO As Long = 16248036    ' 浅蓝
+Private Const COLOR_STATUS_ERR As Long = 14080255     ' 浅红
+
+' 算法权重
+Private Const SCORE_EXACT As Long = 10
+Private Const SCORE_LEVEL As Long = 4
+Private Const SCORE_MISMATCH As Long = -5
+Private Const SCORE_GAP As Long = -5
+
+' 统计变量
+Private Type AuditStats
+    TotalRows As Long
+    ExactMatch As Long
+    LevelMatch As Long
+    ParamDiff As Long
+    MissingT1 As Long
+    MissingT2 As Long
+End Type
+
+' @Runner: ShowSheetSelector
+Sub Main(Optional RefSheetName As Variant)
+    On Error GoTo ErrorHandler
+    
+    Dim ws1 As Worksheet, ws2 As Worksheet
+    Dim tStart As Double
+    tStart = Timer
+    
+    Set ws1 = ActiveSheet
+    
+    Dim refName As String
+    
+    ' --- 参数解析: 适配 VBA Runner ---
+    ' 优先使用传入的参数 (Runner 下拉框选择的参考表)
+    If Not IsMissing(RefSheetName) And CStr(RefSheetName) <> "" Then
+        refName = CStr(RefSheetName)
+    Else
+        ' 智能猜测参考表 (手动模式 Fallback)
+        Dim defaultName As String
+        If Worksheets.Count = 2 Then
+            If Worksheets(1).Name = ws1.Name Then defaultName = Worksheets(2).Name Else defaultName = Worksheets(1).Name
+        Else
+            defaultName = "Sheet2"
+        End If
+        
+        refName = InputBox("当前工作表: " & ws1.Name & vbCrLf & "请输入参考表名称:", "FlowSentinel v5.0", defaultName)
+        If refName = "" Then Exit Sub
+    End If
+    
+    On Error Resume Next
+    Set ws2 = Worksheets(refName)
+    On Error GoTo ErrorHandler
+    If ws2 Is Nothing Then MsgBox "❌ 未找到工作表: " & refName: Exit Sub
+
+    ' 环境优化
+    Application.ScreenUpdating = False
+    Application.Calculation = xlCalculationManual
+    Application.EnableEvents = False
+    Application.DisplayAlerts = False ' 这里的 Alert False 很重要，防止合并单元格时的提示
+    Application.StatusBar = "🚀 正在初始化..."
+
+    ' 1. 表头与映射
+    Dim head1 As Long, head2 As Long
+    Dim dict1 As Object, dict2 As Object
+    Dim prodName1 As String, prodName2 As String
+    
+    head1 = FindHeaderRow(ws1)
+    head2 = FindHeaderRow(ws2)
+    Set dict1 = GetColumnIndices(ws1, head1)
+    Set dict2 = GetColumnIndices(ws2, head2)
+    prodName1 = ExtractProductName(ws1)
+    prodName2 = ExtractProductName(ws2)
+    
+    ' 2. 加载指纹
+    Dim arr1() As String, arr2() As String
+    arr1 = LoadFingerprints(ws1, head1 + 1, dict1)
+    arr2 = LoadFingerprints(ws2, head2 + 1, dict2)
+
+    ' 3. 矩阵计算
+    Application.StatusBar = "🧠 正在进行全局逻辑对齐..."
+    Dim n As Long, m As Long
+    n = UBound(arr1): m = UBound(arr2)
+    
+    If CDbl(n) * CDbl(m) > 50000000 Then
+        Err.Raise vbObjectError + 1, "FlowSentinel", "数据量过大，已停止以保护内存。"
+    End If
+    
+    Dim scoreMatrix() As Long
+    ReDim scoreMatrix(0 To n, 0 To m)
+    
+    Dim i As Long, j As Long
+    Dim matchS As Long, delS As Long, insS As Long
+    
+    ' 初始化边界
+    For i = 0 To n: scoreMatrix(i, 0) = i * SCORE_GAP: Next i
+    For j = 0 To m: scoreMatrix(0, j) = j * SCORE_GAP: Next j
+    
+    ' 填充矩阵
+    For i = 1 To n
+        For j = 1 To m
+            matchS = scoreMatrix(i - 1, j - 1) + CalculateScore(arr1(i), arr2(j))
+            delS = scoreMatrix(i - 1, j) + SCORE_GAP
+            insS = scoreMatrix(i, j - 1) + SCORE_GAP
+            
+            If matchS >= delS And matchS >= insS Then
+                scoreMatrix(i, j) = matchS
+            ElseIf delS >= insS Then
+                scoreMatrix(i, j) = delS
+            Else
+                scoreMatrix(i, j) = insS
+            End If
+        Next j
+    Next i
+
+    ' 4. 回溯路径
+    Application.StatusBar = "🎨 正在绘制可视化报告..."
+    Dim stats As AuditStats
+    Dim wsRpt As Worksheet
+    Set wsRpt = CreateReportSheet(ws1.Name, ws2.Name)
+    
+    Dim currI As Long, currJ As Long
+    Dim path() As Long, pStep As Long
+    currI = n: currJ = m
+    ReDim path(1 To n + m, 1 To 2)
+    
+    Do While currI > 0 Or currJ > 0
+        pStep = pStep + 1
+        Dim diagScore As Long
+        diagScore = CalculateScore(arr1(currI), arr2(currJ))
+        
+        If currI > 0 And currJ > 0 And scoreMatrix(currI, currJ) = scoreMatrix(currI - 1, currJ - 1) + diagScore Then
+            path(pStep, 1) = currI: path(pStep, 2) = currJ
+            currI = currI - 1: currJ = currJ - 1
+        ElseIf currI > 0 And scoreMatrix(currI, currJ) = scoreMatrix(currI - 1, currJ) + SCORE_GAP Then
+            path(pStep, 1) = currI: path(pStep, 2) = 0
+            currI = currI - 1
+        Else
+            path(pStep, 1) = 0: path(pStep, 2) = currJ
+            currJ = currJ - 1
+        End If
+    Loop
+
+    ' 5. 渲染行数据
+    Dim rRpt As Long
+    rRpt = 4 ' Dashboard 2行 + Header 1行 = Row 3，数据从第4行开始
+    
+    Dim k As Long, idx1 As Long, idx2 As Long
+    Dim fp1 As String, fp2 As String
+    
+    For k = pStep To 1 Step -1
+        idx1 = path(k, 1): idx2 = path(k, 2)
+        Dim status As String, icon As String, note As String
+        Dim rowColor As Long
+        
+        If idx1 > 0 And idx2 > 0 Then
+            fp1 = arr1(idx1): fp2 = arr2(idx2)
+            Dim r1 As Long, r2 As Long
+            r1 = head1 + idx1: r2 = head2 + idx2
+            
+            If fp1 = fp2 Then
+                note = CheckParamDiff(ws1, r1, dict1, ws2, r2, dict2, prodName1, prodName2)
+                If note = "" Then
+                    ' Icon: Heavy Check Mark (U+2714)
+                    status = "完美一致": icon = ChrW(&H2714): rowColor = xlNone
+                    stats.ExactMatch = stats.ExactMatch + 1
+                Else
+                    ' Icon: Warning Sign (U+26A0)
+                    status = "参数差异": icon = ChrW(&H26A0): rowColor = ResolveDiffColor(note)
+                    stats.ParamDiff = stats.ParamDiff + 1
+                End If
+            Else
+                Dim c1 As String, c2 As String
+                c1 = Split(fp1, "|")(0): c2 = Split(fp2, "|")(0)
+                Dim pDiff As String
+                pDiff = CheckParamDiff(ws1, r1, dict1, ws2, r2, dict2, prodName1, prodName2)
+                
+                If pDiff <> "" Then
+                    status = "偏差+参数差异": icon = ChrW(&H26A0): rowColor = ResolveDiffColor(pDiff)
+                    note = pDiff
+                    stats.ParamDiff = stats.ParamDiff + 1
+                Else
+                    ' Icon: Refresh/Cycle (U+21BB)
+                    status = "版本偏差": icon = ChrW(&H21BB): rowColor = COLOR_STATUS_INFO
+                    note = "Call: " & GetSuffix(c1) & " -> " & GetSuffix(c2)
+                    stats.LevelMatch = stats.LevelMatch + 1
+                End If
+            End If
+            
+            Call RenderRow(wsRpt, rRpt, icon, status, ws1, r1, dict1, ws2, r2, dict2, note, rowColor)
+            
+        ElseIf idx1 > 0 Then
+            ' Icon: Cross Mark (U+274C)
+            status = "基准缺失": icon = ChrW(&H274C): rowColor = COLOR_STATUS_ERR
+            Call RenderRow(wsRpt, rRpt, icon, status, ws1, head1 + idx1, dict1, Nothing, 0, dict2, "新流程新增步骤", rowColor)
+            stats.MissingT2 = stats.MissingT2 + 1
+        Else
+            ' Icon: Wastebasket (U+1F5D1) or Minus
+            status = "新表缺失": icon = ChrW(&H2796): rowColor = COLOR_STATUS_ERR
+            Call RenderRow(wsRpt, rRpt, icon, status, Nothing, 0, dict1, ws2, head2 + idx2, dict2, "新流程已删除", rowColor)
+            stats.MissingT1 = stats.MissingT1 + 1
+        End If
+        rRpt = rRpt + 1
+    Next k
+    stats.TotalRows = pStep
+
+    ' 6. 视觉后处理 (绘制层级边框)
+    Application.StatusBar = "🧹 正在绘制层级边框..."
+    Call ApplyBlockBorders(wsRpt, 4, rRpt - 1)
+    
+    ' 7. 渲染 Dashboard
+    Call RenderDashboard(wsRpt, stats, Timer - tStart, ws1.Name, ws2.Name, prodName1, prodName2)
+
+    ' 8. 收尾 (UX: 紧凑视图 & 手动宽)
+    With wsRpt
+        ' 用户反馈: 不要自动换行，溢出没关系，手动调宽
+        .Rows.WrapText = False
+        .Rows.AutoFit ' 确保行高紧凑
+        
+        ' 使用常量配置列宽 (优雅且可维护)
+        .Columns("A").ColumnWidth = W_A_STATUS
+        .Columns("B").ColumnWidth = W_B_NOTE
+        .Columns("C").ColumnWidth = W_C_CALL
+        .Columns("D").ColumnWidth = W_D_STAGE
+        .Columns("E").ColumnWidth = W_E_RECIPE
+        .Columns("F").ColumnWidth = W_F_PPID
+        .Columns("G").ColumnWidth = W_G_MASK
+        .Columns("H").ColumnWidth = W_H_DCOP
+        ' I列: 原J列 [基准]Call，分隔符已删除，改用左边框
+        .Columns("I").ColumnWidth = W_C_CALL
+        .Columns("J").ColumnWidth = W_D_STAGE
+        .Columns("K").ColumnWidth = W_E_RECIPE
+        .Columns("L").ColumnWidth = W_F_PPID
+        .Columns("M").ColumnWidth = W_G_MASK
+        .Columns("N").ColumnWidth = W_H_DCOP
+        
+        ' 冻结窗格 (冻结前3行: Dashboard 2 + Header 1)
+        .Rows(3).AutoFilter
+        .Activate
+        ActiveWindow.DisplayGridlines = False
+        .Range("A4").Select
+        ActiveWindow.FreezePanes = True
+        
+        ' 全局字体设置
+        .Cells.Font.Name = FONT_NAME_MAIN
+        
+        .Range("A1").Select
+    End With
+
+    Application.StatusBar = False
+    Application.ScreenUpdating = True
+    Application.Calculation = xlCalculationAutomatic
+    Application.EnableEvents = True
+    Application.DisplayAlerts = True
+    
+    MsgBox "审计报告生成完毕！" & vbCrLf & "包含 DCOP 比对与层级视图合并。", vbInformation
+    Exit Sub
+    
+ErrorHandler:
+    MsgBox "Error: " & Err.Description
+    Application.ScreenUpdating = True
+    Application.DisplayAlerts = True
+End Sub
+
+' --- UX: 视觉边框引擎 (仅绘制分割线，不合并) ---
+Sub ApplyBlockBorders(ws As Worksheet, startRow As Long, endRow As Long)
+    If endRow <= startRow Then Exit Sub
+    
+    ' 策略: 不合并单元格，避免背景色断裂。
+    ' 仅在 Call Block (Col 3 & 9) 结束时绘制深色分割线，增强视觉分块。
+    
+    Dim colsToCheck As Variant
+    colsToCheck = Array(3, 9) ' T1-Call, T2-Call (原Col10→Col9，已删除分隔符列)
+    
+    Dim c As Variant, r As Long
+    
+    For Each c In colsToCheck
+        For r = startRow + 1 To endRow + 1
+            Dim valCurr As String, valPrev As String
+            
+            ' 获取当前行值 (处理边界)
+            If r > endRow Then
+                valCurr = "##END##"
+            Else
+                valCurr = CStr(ws.Cells(r, c).Value)
+            End If
+            
+            ' 获取上一行值
+            valPrev = CStr(ws.Cells(r - 1, c).Value)
+            
+            ' 检测变化 (Block End)
+            If valCurr <> valPrev Then
+                ' 仅当上一行不是分隔符/空值时，才画线 (避免在 --- 后面画重线)
+                If valPrev <> "---" And valPrev <> "" Then
+                    With ws.Range(ws.Cells(r - 1, 1), ws.Cells(r - 1, 14)).Borders(xlEdgeBottom)
+                        .LineStyle = xlContinuous
+                        .Weight = xlThin ' 细实线 (深色)
+                        .Color = RGB(100, 100, 100)
+                    End With
+                End If
+            End If
+        Next r
+    Next c
+End Sub
+
+' --- 渲染 Dashboard (压缩模式: 2行) ---
+Sub RenderDashboard(ws As Worksheet, s As AuditStats, duration As Double, sheetName1 As String, sheetName2 As String, prodName1 As String, prodName2 As String)
+    ' Row 1-2: Dashboard 区域
+    ws.Range("A1:N2").Interior.Color = COLOR_BG_DASHBOARD
+    
+    ' Row 1: A1:C1 合并标题
+    With ws.Range("A1:C1")
+        .Merge
+        .Value = "FlowSentinel 审计概览"
+        .Font.Name = "Segoe UI"
+        .Font.Size = 13
+        .Font.Bold = True
+        .Font.Color = RGB(50, 60, 80)
+        .HorizontalAlignment = xlLeft
+        .VerticalAlignment = xlCenter
+    End With
+    
+    ' Row 2: A2 双表名+产品名拼接
+    With ws.Range("A2:C2")
+        .Merge
+        .Value = sheetName1 & "[" & prodName1 & "]" & "  →  " & sheetName2 & "[" & prodName2 & "]"
+        .Font.Name = "Segoe UI"
+        .Font.Size = 9
+        .Font.Color = RGB(90, 100, 120)
+        .HorizontalAlignment = xlLeft
+        .VerticalAlignment = xlCenter
+    End With
+    
+    ' 时间戳: M1:N1 右对齐 (表格范围 A:N，N 为最后一列)
+    With ws.Range("M1:N1")
+        .Merge
+        .Value = Format(duration, "0.00") & "s  " & Format(Now, "hh:mm:ss")
+        .Font.Name = "Segoe UI"
+        .Font.Size = 9
+        .Font.Color = RGB(120, 120, 120)
+        .HorizontalAlignment = xlRight
+        .VerticalAlignment = xlCenter
+    End With
+    
+    ' Row 1 统计数字区: D1:I1 数字, D2:I2 标签 (N1 已被时间戳占用，统计区收窄至 D~I)
+    ' 布局: D=Total | E=Exact | F=Revise | G=Diff | H=Del | I=Add
+    DrawStatCell ws, "D1", s.TotalRows,  "D2", "Total",  RGB(80, 80, 80)
+    DrawStatCell ws, "E1", s.ExactMatch, "E2", "Exact",  RGB(46, 139, 87)
+    DrawStatCell ws, "F1", s.LevelMatch, "F2", "Revise", RGB(52, 132, 200)
+    DrawStatCell ws, "G1", s.ParamDiff,  "G2", "Diff",   RGB(200, 160, 15)
+    DrawStatCell ws, "H1", s.MissingT1,  "H2", "Del",    RGB(200, 60, 50)
+    DrawStatCell ws, "I1", s.MissingT2,  "I2", "Add",    RGB(210, 100, 30)
+End Sub
+
+Sub DrawStatCell(ws As Worksheet, numCell As String, numVal As Long, lblCell As String, lblText As String, color As Long)
+    ' Row 上方: 数字
+    With ws.Range(numCell)
+        .Value = numVal
+        .Font.Name = "Segoe UI"
+        .Font.Size = 14
+        .Font.Bold = True
+        .Font.Color = color
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlCenter
+    End With
+    ' Row 下方: 标签
+    With ws.Range(lblCell)
+        .Value = lblText
+        .Font.Name = "Segoe UI"
+        .Font.Size = 8
+        .Font.Bold = False
+        .Font.Color = RGB(100, 100, 100)
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlCenter
+    End With
+End Sub
+
+' --- 渲染行 (支持 DCOP) ---
+Sub RenderRow(ws As Worksheet, r As Long, icon As String, status As String, ws1 As Worksheet, r1 As Long, d1 As Object, ws2 As Worksheet, r2 As Long, d2 As Object, note As String, color As Long)
+    ' 1. Status (Col 1) - 仅图标，文本已移至 Note 列
+    ws.Cells(r, 1).Value = icon
+    ws.Cells(r, 1).HorizontalAlignment = xlCenter
+    
+    ' 2. Note (Col 2 - Moved from End)
+    ws.Cells(r, 2).Value = note
+    ' Note 字体颜色跟随行底色语义：仅在错误/警告色时加深，其余保持深灰
+    If note <> "" Then
+        If color = COLOR_STATUS_ERR Then
+            ws.Cells(r, 2).Font.Color = RGB(180, 40, 40)
+        ElseIf color = COLOR_STATUS_WARN Then
+            ws.Cells(r, 2).Font.Color = RGB(140, 90, 0)
+        Else
+            ws.Cells(r, 2).Font.Color = RGB(60, 60, 60)
+        End If
+    End If
+
+    ' 3. T1 Data (Call, Stage, Recp, PPID, Mask, DCOP) -> Col 3 to 8
+    If r1 > 0 Then
+        ' 安全获取 DCOP
+        Dim dcop1 As String
+        If d1.Exists("dcop") And d1("dcop") > 0 Then dcop1 = CStr(ws1.Cells(r1, d1("dcop"))) Else dcop1 = "-"
+        
+        ws.Cells(r, 3).Resize(1, 6).Value = Array(ws1.Cells(r1, d1("callname")), ws1.Cells(r1, d1("stage")), ws1.Cells(r1, d1("recpname")), ws1.Cells(r1, d1("ppid")), ws1.Cells(r1, d1("mask")), dcop1)
+        ws.Hyperlinks.Add Anchor:=ws.Cells(r, 3), Address:="", SubAddress:="'" & ws1.Name & "'!" & ws1.Cells(r1, d1("callname")).Address, TextToDisplay:=CStr(ws1.Cells(r1, d1("callname")).Value)
+        ws.Cells(r, 3).Font.Underline = False
+        ws.Cells(r, 3).Font.Color = RGB(0, 102, 204)
+    Else
+        ws.Cells(r, 3).Value = "---"
+        ws.Cells(r, 3).Resize(1, 6).Font.Color = RGB(200, 200, 200)
+    End If
+    
+    ' Separator 列已删除，T2 首列 (Col 9) 用左边框替代视觉分隔
+    
+    ' T2 Data (Col 9~14, 原 Col 10~15)
+    If r2 > 0 Then
+        Dim dcop2 As String
+        If d2.Exists("dcop") And d2("dcop") > 0 Then dcop2 = CStr(ws2.Cells(r2, d2("dcop"))) Else dcop2 = "-"
+        
+        ws.Cells(r, 9).Resize(1, 6).Value = Array(ws2.Cells(r2, d2("callname")), ws2.Cells(r2, d2("stage")), ws2.Cells(r2, d2("recpname")), ws2.Cells(r2, d2("ppid")), ws2.Cells(r2, d2("mask")), dcop2)
+        ws.Hyperlinks.Add Anchor:=ws.Cells(r, 9), Address:="", SubAddress:="'" & ws2.Name & "'!" & ws2.Cells(r2, d2("callname")).Address, TextToDisplay:=CStr(ws2.Cells(r2, d2("callname")).Value)
+        ws.Cells(r, 9).Font.Underline = False
+        ws.Cells(r, 9).Font.Color = RGB(0, 102, 204)
+    Else
+        ws.Cells(r, 9).Value = "---"
+        ws.Cells(r, 9).Resize(1, 6).Font.Color = RGB(200, 200, 200)
+    End If
+    
+    ' Background
+    If color <> xlNone Then
+        ws.Range(ws.Cells(r, 1), ws.Cells(r, 14)).Interior.Color = color
+    End If
+    
+    ' 4. 智能差异高亮 (仅当两边都有数据时)
+    If r1 > 0 And r2 > 0 Then
+        Dim iDiff As Long, valCur As String, valRef As String
+        
+        ' 遍历关键列: Call(0), Stage(1), Recipe(2), PPID(3), Mask(4), DCOP(5)
+        For iDiff = 0 To 5
+            ' 安全获取文本值
+            On Error Resume Next
+            valCur = CStr(ws.Cells(r, 3 + iDiff).Value)
+            valRef = CStr(ws.Cells(r, 9 + iDiff).Value)
+            On Error GoTo 0
+            
+            ' 比对差异 (忽略大小写和空格)
+            If StrComp(Trim(valCur), Trim(valRef), vbTextCompare) <> 0 Then
+                ' 发现差异 - 红色加粗
+                ws.Cells(r, 3 + iDiff).Font.Color = RGB(200, 50, 50)
+                ws.Cells(r, 3 + iDiff).Font.Bold = True
+                
+                ws.Cells(r, 9 + iDiff).Font.Color = RGB(200, 50, 50)
+                ws.Cells(r, 9 + iDiff).Font.Bold = True
+            Else
+                ' 相同内容 - 保持深灰色 (除了Call列，它是超链接蓝色)
+                If iDiff <> 0 Then
+                    ws.Cells(r, 3 + iDiff).Font.Color = RGB(60, 60, 60)
+                    ws.Cells(r, 9 + iDiff).Font.Color = RGB(60, 60, 60)
+                End If
+            End If
+        Next iDiff
+    End If
+    
+    ' UX: 全部边框 (Level 2 - 基础网格)
+    ' 给每个单元格都画上细淡的边框
+    With ws.Range(ws.Cells(r, 1), ws.Cells(r, 14)).Borders
+        .LineStyle = xlContinuous
+        .Weight = xlHairline ' 极细线
+        .Color = RGB(200, 200, 200)
+    End With
+    
+    ' T2 首列左边框 (视觉分隔) - 必须在全局边框之后设置，否则会被覆盖
+    With ws.Cells(r, 9).Borders(xlEdgeLeft)
+        .LineStyle = xlContinuous
+        .Weight = xlMedium
+        .Color = RGB(100, 100, 100)
+    End With
+End Sub
+
+' --- 初始化报表 ---
+Function CreateReportSheet(sheetName1 As String, sheetName2 As String) As Worksheet
+    On Error Resume Next
+    Application.DisplayAlerts = False
+    Worksheets("Audit_Dashboard").Delete
+    Application.DisplayAlerts = True
+    On Error GoTo 0
+    
+    Dim ws As Worksheet
+    Set ws = Worksheets.Add(Before:=Worksheets(1))
+    ws.Name = "Audit_Dashboard"
+    
+    ' Row 3: 列表头 (加入 DCOP，已删除分隔符列)
+    Dim headers As Variant
+    headers = Array("Status", "Note", "[当前] Call", "Stage", "Recipe", "PPID", "Mask", "DCOP", "[基准] Call", "Stage", "Recipe", "PPID", "Mask", "DCOP")
+    
+    With ws.Range("A3:N3")
+        .Value = headers
+        .Font.Bold = True
+        .Font.Color = RGB(255, 255, 255)
+        .RowHeight = 25
+        .VerticalAlignment = xlCenter
+        
+        ' 视觉分区: 公共区 (灰色)
+        .Resize(1, 2).Interior.Color = RGB(60, 70, 85)
+        ' [当前] 区 - 蓝色系
+        .Offset(0, 2).Resize(1, 6).Interior.Color = RGB(50, 90, 140)
+        ' [基准] 区 - 灰色系 (原 Col10 → Col9, Offset=8)
+        .Offset(0, 8).Resize(1, 6).Interior.Color = RGB(100, 100, 100)
+        
+        ' T2 首列左边框 (替代原分隔符列)
+        With .Cells(1, 9).Borders(xlEdgeLeft)
+            .LineStyle = xlContinuous
+            .Weight = xlMedium
+            .Color = RGB(60, 70, 85)
+        End With
+    End With
+    
+    Set CreateReportSheet = ws
+End Function
+
+' --- 核心算法 ---
+Function CalculateScore(fp1 As String, fp2 As String) As Long
+    If fp1 = fp2 Then CalculateScore = SCORE_EXACT: Exit Function
+    Dim p1() As String, p2() As String
+    p1 = Split(fp1, "|"): p2 = Split(fp2, "|")
+    If p1(1) <> p2(1) Or p1(2) <> p2(2) Then CalculateScore = SCORE_MISMATCH: Exit Function
+    If GetLevel(p1(0)) = GetLevel(p2(0)) Then CalculateScore = SCORE_LEVEL Else CalculateScore = SCORE_MISMATCH
+End Function
+
+Function GetLevel(s As String) As String
+    Dim p As Long: p = InStrRev(s, "-")
+    If p > 0 Then GetLevel = Left(s, p - 1) Else GetLevel = s
+End Function
+
+Function GetSuffix(s As String) As String
+    Dim p As Long: p = InStrRev(s, "-")
+    If p > 0 Then GetSuffix = Mid(s, p + 1) Else GetSuffix = s
+End Function
+
+' --- 数据比对 (新增 DCOP) ---
+Function CheckParamDiff(ws1 As Worksheet, r1 As Long, d1 As Object, ws2 As Worksheet, r2 As Long, d2 As Object, prodName1 As String, prodName2 As String) As String
+    Dim rVal As String: rVal = LCase(CStr(ws1.Cells(r1, d1("recpname"))))
+    If rVal Like "if*" Or rVal Like "else*" Or rVal Like "end if*" Then Exit Function
+    
+    Dim diff As String
+    Dim ppid1 As String, ppid2 As String
+    ppid1 = CStr(ws1.Cells(r1, d1("ppid")))
+    ppid2 = CStr(ws2.Cells(r2, d2("ppid")))
+    
+    If ppid1 <> ppid2 Then
+        If NormalizePpid(ppid1, prodName1) = NormalizePpid(ppid2, prodName2) Then
+            diff = "产品名差异"
+        Else
+            diff = "PPID差异"
+        End If
+    End If
+    
+    ' Mask 比对
+    If CStr(ws1.Cells(r1, d1("mask"))) <> CStr(ws2.Cells(r2, d2("mask"))) Then
+        If diff <> "" Then diff = diff & ", "
+        diff = diff & "Mask差异"
+    End If
+    
+    ' DCOP 比对 (安全检查列是否存在)
+    Dim val1 As String, val2 As String
+    If d1("dcop") > 0 Then val1 = CStr(ws1.Cells(r1, d1("dcop")))
+    If d2("dcop") > 0 Then val2 = CStr(ws2.Cells(r2, d2("dcop")))
+    
+    If val1 <> val2 Then
+        If diff <> "" Then diff = diff & ", "
+        diff = diff & "DCOP差异"
+    End If
+    
+    CheckParamDiff = diff
+End Function
+
+' --- 数据加载 (IO优化) ---
+Function LoadFingerprints(ws As Worksheet, startRow As Long, d As Object) As String()
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, d("callname")).End(xlUp).Row
+    If lastRow < startRow Then ReDim LoadFingerprints(0): Exit Function
+    
+    Dim arr As Variant, res() As String
+    ' 确定读取范围的最大列 (如果 dcop 在很后面，需要读到 dcop)
+    Dim maxC As Long
+    maxC = Application.Max(d("callname"), d("stage"), d("recpname"))
+    
+    arr = ws.Range(ws.Cells(startRow, 1), ws.Cells(lastRow, maxC)).Value
+    
+    Dim r As Long, cnt As Long
+    ReDim res(1 To UBound(arr, 1))
+    For r = 1 To UBound(arr, 1)
+        If Trim(CStr(arr(r, d("callname")))) <> "" Then
+            cnt = cnt + 1
+            res(cnt) = Trim(CStr(arr(r, d("callname")))) & "|" & Trim(CStr(arr(r, d("stage")))) & "|" & Trim(CStr(arr(r, d("recpname"))))
+        End If
+    Next r
+    If cnt > 0 Then ReDim Preserve res(1 To cnt): LoadFingerprints = res Else ReDim res(0)
+End Function
+
+' --- 探测器 ---
+Function FindHeaderRow(ws As Worksheet) As Long
+    Dim r As Long, c As Long, m As Long, maxM As Long, bR As Long
+    For r = 1 To 20
+        m = 0
+        For c = 1 To 25
+            Dim v As String: v = LCase(Trim(CStr(ws.Cells(r, c).Value)))
+            If InStr(v, "callname") > 0 Or InStr(v, "stage") > 0 Or InStr(v, "recp") > 0 Then m = m + 1
+        Next c
+        If m > maxM Then maxM = m: bR = r
+    Next r
+    FindHeaderRow = IIf(bR = 0, 1, bR)
+End Function
+
+Function GetColumnIndices(ws As Worksheet, hR As Long) As Object
+    Dim d As Object, c As Long, v As String: Set d = CreateObject("Scripting.Dictionary")
+    ' 初始化为 0
+    d("callname") = 0: d("stage") = 0: d("recpname") = 0: d("ppid") = 0: d("mask") = 0: d("dcop") = 0
+    
+    ' Pass 1: 精确优先 (High Priority) - 解决字段匹配错误问题
+    For c = 1 To 50
+        v = LCase(Trim(CStr(ws.Cells(hR, c).Value)))
+        
+        If v = "callname" Or v = "call" Then d("callname") = c
+        If v = "stage" Or v = "step" Then d("stage") = c
+        If v = "recpname" Or v = "recipe" Then d("recpname") = c
+        If v = "ppid" Then d("ppid") = c
+        If v = "mask" Then d("mask") = c
+        If v = "dcop" Then d("dcop") = c
+    Next c
+    
+    ' Pass 2: 模糊匹配 (Fuzzy Fallback) - 仅当未找到时执行
+    For c = 1 To 50
+        v = LCase(Trim(CStr(ws.Cells(hR, c).Value)))
+        
+        If d("callname") = 0 And InStr(v, "call") > 0 Then d("callname") = c
+        If d("stage") = 0 And InStr(v, "stage") > 0 Then d("stage") = c
+        ' 关键修复: 排除 Title，确保不会错误匹配到 RecpTitle
+        If d("recpname") = 0 And InStr(v, "recp") > 0 And InStr(v, "title") = 0 Then d("recpname") = c
+        If d("ppid") = 0 And InStr(v, "ppid") > 0 Then d("ppid") = c
+        If d("mask") = 0 And InStr(v, "mask") > 0 Then d("mask") = c
+        If d("dcop") = 0 And InStr(v, "dcop") > 0 Then d("dcop") = c
+    Next c
+    
+    Set GetColumnIndices = d
+End Function
+
+Function ResolveDiffColor(diff As String) As Long
+    If InStr(1, diff, "产品名差异", vbBinaryCompare) > 0 Then
+        If InStr(1, diff, "PPID差异", vbBinaryCompare) = 0 _
+            And InStr(1, diff, "Mask差异", vbBinaryCompare) = 0 _
+            And InStr(1, diff, "DCOP差异", vbBinaryCompare) = 0 Then
+            ResolveDiffColor = COLOR_STATUS_INFO
+            Exit Function
+        End If
+    End If
+    
+    ResolveDiffColor = COLOR_STATUS_WARN
+End Function
+
+Function ExtractProductName(ws As Worksheet) As String
+    On Error Resume Next
+    
+    Dim regex As Object
+    Set regex = CreateObject("VBScript.RegExp")
+    If regex Is Nothing Then Exit Function
+    
+    With regex
+        .Global = False
+        .IgnoreCase = False
+        .Pattern = "^[A-Z0-9]{2}\d{4}[A-Z]{2}(-[A-Z])?\.\d{2}$"
+    End With
+    
+    Dim lastCol As Long
+    lastCol = ws.Cells.Find(What:="*", After:=ws.Cells(1, 1), LookIn:=xlFormulas, LookAt:=xlPart, _
+        SearchOrder:=xlByColumns, SearchDirection:=xlPrevious, MatchCase:=False).Column
+    If Err.Number <> 0 Then
+        Err.Clear
+        Exit Function
+    End If
+    
+    Dim rowNum As Long, colNum As Long
+    Dim cellText As String
+    
+    For rowNum = 1 To 10
+        For colNum = 1 To lastCol
+            cellText = Trim(CStr(ws.Cells(rowNum, colNum).Value))
+            If cellText <> "" Then
+                If regex.Test(cellText) Then
+                    ExtractProductName = Left$(cellText, Len(cellText) - 3)
+                    Exit Function
+                End If
+            End If
+        Next colNum
+    Next rowNum
+End Function
+
+Function NormalizePpid(ppid As String, prodName As String) As String
+    If prodName = "" Then
+        NormalizePpid = ppid
+        Exit Function
+    End If
+    
+    Dim fullWithVariant As String
+    Dim fullWithoutVariant As String
+    Dim customerQuery As String
+    Dim queryName As String
+    
+    fullWithVariant = prodName
+    If InStr(1, prodName, "-", vbBinaryCompare) > 0 Then
+        fullWithoutVariant = Split(prodName, "-")(0)
+    Else
+        fullWithoutVariant = prodName
+    End If
+    
+    customerQuery = Left$(fullWithoutVariant, 6)
+    queryName = Mid$(fullWithoutVariant, 3, 4)
+    
+    If InStr(1, ppid, fullWithVariant, vbBinaryCompare) > 0 Then
+        NormalizePpid = Replace(ppid, fullWithVariant, "<PROD>", 1, 1, vbBinaryCompare)
+        Exit Function
+    End If
+    
+    If fullWithoutVariant <> fullWithVariant Then
+        If InStr(1, ppid, fullWithoutVariant, vbBinaryCompare) > 0 Then
+            NormalizePpid = Replace(ppid, fullWithoutVariant, "<PROD>", 1, 1, vbBinaryCompare)
+            Exit Function
+        End If
+    ElseIf InStr(1, ppid, fullWithoutVariant, vbBinaryCompare) > 0 Then
+        NormalizePpid = Replace(ppid, fullWithoutVariant, "<PROD>", 1, 1, vbBinaryCompare)
+        Exit Function
+    End If
+    
+    If Len(customerQuery) = 6 Then
+        If InStr(1, ppid, customerQuery, vbBinaryCompare) > 0 Then
+            NormalizePpid = Replace(ppid, customerQuery, "<PROD>", 1, 1, vbBinaryCompare)
+            Exit Function
+        End If
+    End If
+    
+    If Len(queryName) = 4 Then
+        If InStr(1, ppid, queryName, vbBinaryCompare) > 0 Then
+            NormalizePpid = Replace(ppid, queryName, "<PROD>", 1, 1, vbBinaryCompare)
+            Exit Function
+        End If
+    End If
+    
+    NormalizePpid = ppid
+End Function
