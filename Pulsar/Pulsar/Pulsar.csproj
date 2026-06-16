@@ -23,9 +23,6 @@
     <AssemblyVersion>2.4.0.0</AssemblyVersion>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-  </PropertyGroup>
 
   <ItemGroup>
     <None Remove="Pulsar.ico" />
