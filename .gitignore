@@ -6,6 +6,9 @@
 # dotenv files
 .env
 
+# Source video for demo GIF (converted file only)
+export-*.mp4
+
 # Local OpenCode tooling
 opencode.jsonc
 .opencode/
