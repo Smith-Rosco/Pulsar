@@ -25,14 +25,13 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Unified Page Header -->
         <controls:SettingsPageHeader Grid.Row="0"
                                      Title="{lex:Locale Settings.About.Title}"
                                      Description="{lex:Locale Settings.About.Description}"/>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="0,0,20,0" MaxWidth="700" HorizontalAlignment="Left">
-                
+
                 <!-- App Identity Card -->
                 <ui:CardControl Margin="0,0,0,16">
                     <Grid>
@@ -41,7 +40,6 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- App Icon (Brand Lettermark) -->
                         <Border Grid.Column="0" 
                                 Width="80" 
                                 Height="80" 
@@ -58,13 +56,16 @@
                                    Stretch="Uniform" />
                         </Border>
 
-                        <!-- App Info -->
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <Image Height="26"
-                                   Margin="0,0,0,6"
+                                   Margin="0,0,0,2"
                                    HorizontalAlignment="Left"
                                    Source="pack://application:,,,/Pulsar;component/Assets/Brand/wordmark.png"
                                    Stretch="Uniform" />
+                            <TextBlock Text="{Binding ProductName}" 
+                                       FontSize="12" 
+                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                       Margin="0,0,0,6"/>
                             <TextBlock Text="{Binding AppVersion}" 
                                        FontSize="14" 
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
@@ -79,7 +80,7 @@
                     </Grid>
                 </ui:CardControl>
 
-                <!-- Quick Actions -->
+                <!-- Links -->
                 <ui:CardExpander Icon="Link24" Header="{lex:Locale Settings.About.Links}" Margin="0,0,0,12" IsExpanded="True">
                     <StackPanel>
                         <Grid Margin="0,0,0,8">
@@ -145,7 +146,6 @@
                 <!-- System Information -->
                 <ui:CardExpander Icon="Info24" Header="{lex:Locale Settings.About.SystemInfo}" Margin="0,0,0,12" IsExpanded="False">
                     <StackPanel>
-                        <!-- Framework -->
                         <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="140"/>
@@ -160,7 +160,20 @@
                                        FontSize="12"/>
                         </Grid>
 
-                        <!-- Architecture -->
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="140"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{lex:Locale Settings.About.RuntimeVersion}" 
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
+                                       FontSize="12"/>
+                            <TextBlock Grid.Column="1" 
+                                       Text="{Binding RuntimeVersion}" 
+                                       FontWeight="Medium"
+                                       FontSize="12"/>
+                        </Grid>
+
                         <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="140"/>
@@ -175,7 +188,6 @@
                                        FontSize="12"/>
                         </Grid>
 
-                        <!-- Build Configuration -->
                         <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="140"/>
@@ -190,7 +202,6 @@
                                        FontSize="12"/>
                         </Grid>
 
-                        <!-- Copyright -->
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="140"/>
@@ -207,7 +218,6 @@
 
                         <Separator Margin="0,16"/>
 
-                        <!-- Copy System Info Button -->
                         <ui:Button Content="{lex:Locale Settings.About.CopySystemInfo}"
                                    Icon="{ui:SymbolIcon Copy24}"
                                    Command="{Binding CopySystemInfoCommand}"
@@ -222,38 +232,116 @@
                         <TextBlock Text="{lex:Locale Settings.About.BuiltWith}" 
                                    FontSize="12" 
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                   Margin="0,0,0,8"/>
-                        
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                            <TextBlock Text="•" Margin="0,0,8,0" FontSize="12"/>
-                            <TextBlock Text="{lex:Locale Settings.About.WpfUi}" FontWeight="Medium" FontSize="12" Margin="0,0,4,0"/>
-                            <TextBlock Text="{lex:Locale Settings.About.WpfUiDescription}" 
-                                       FontSize="12" 
-                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                   Margin="0,0,0,12"/>
+
+                        <!-- UI & Input -->
+                        <TextBlock Text="{lex:Locale Settings.About.CreditsGroupUi}" 
+                                   FontSize="11" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   Margin="0,0,0,4"/>
+                        <StackPanel Margin="16,0,0,8">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                                <TextBlock Text="•" Margin="0,0,8,0" FontSize="12"/>
+                                <TextBlock Text="{lex:Locale Settings.About.WpfUi}" FontWeight="Medium" FontSize="12" Margin="0,0,4,0"/>
+                                <TextBlock Text="{lex:Locale Settings.About.WpfUiDescription}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                                <TextBlock Text="•" Margin="0,0,8,0" FontSize="12"/>
+                                <TextBlock Text="{lex:Locale Settings.About.HardcodetNotifyIcon}" FontWeight="Medium" FontSize="12" Margin="0,0,4,0"/>
+                                <TextBlock Text="{lex:Locale Settings.About.HardcodetNotifyIconDescription}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="•" Margin="0,0,8,0" FontSize="12"/>
+                                <TextBlock Text="{lex:Locale Settings.About.GongDragDrop}" FontWeight="Medium" FontSize="12" Margin="0,0,4,0"/>
+                                <TextBlock Text="{lex:Locale Settings.About.GongDragDropDescription}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                            </StackPanel>
                         </StackPanel>
 
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                            <TextBlock Text="•" Margin="0,0,8,0" FontSize="12"/>
-                            <TextBlock Text="{lex:Locale Settings.About.CommunityToolkit}" FontWeight="Medium" FontSize="12" Margin="0,0,4,0"/>
-                            <TextBlock Text="{lex:Locale Settings.About.CommunityToolkitDescription}" 
-                                       FontSize="12" 
-                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                        <!-- MVVM & DI -->
+                        <TextBlock Text="{lex:Locale Settings.About.CreditsGroupMvvm}" 
+                                   FontSize="11" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   Margin="0,8,0,4"/>
+                        <StackPanel Margin="16,0,0,8">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                                <TextBlock Text="•" Margin="0,0,8,0" FontSize="12"/>
+                                <TextBlock Text="{lex:Locale Settings.About.CommunityToolkit}" FontWeight="Medium" FontSize="12" Margin="0,0,4,0"/>
+                                <TextBlock Text="{lex:Locale Settings.About.CommunityToolkitDescription}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="•" Margin="0,0,8,0" FontSize="12"/>
+                                <TextBlock Text="{lex:Locale Settings.About.MsDi}" FontWeight="Medium" FontSize="12" Margin="0,0,4,0"/>
+                                <TextBlock Text="{lex:Locale Settings.About.MsDiDescription}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                            </StackPanel>
                         </StackPanel>
 
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                            <TextBlock Text="•" Margin="0,0,8,0" FontSize="12"/>
-                            <TextBlock Text="{lex:Locale Settings.About.Serilog}" FontWeight="Medium" FontSize="12" Margin="0,0,4,0"/>
-                            <TextBlock Text="{lex:Locale Settings.About.SerilogDescription}" 
-                                       FontSize="12" 
-                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                        <!-- Logging & Telemetry -->
+                        <TextBlock Text="{lex:Locale Settings.About.CreditsGroupLogging}" 
+                                   FontSize="11" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   Margin="0,8,0,4"/>
+                        <StackPanel Margin="16,0,0,8">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                                <TextBlock Text="•" Margin="0,0,8,0" FontSize="12"/>
+                                <TextBlock Text="{lex:Locale Settings.About.Serilog}" FontWeight="Medium" FontSize="12" Margin="0,0,4,0"/>
+                                <TextBlock Text="{lex:Locale Settings.About.SerilogDescription}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="•" Margin="0,0,8,0" FontSize="12"/>
+                                <TextBlock Text="{lex:Locale Settings.About.OpenTelemetry}" FontWeight="Medium" FontSize="12" Margin="0,0,4,0"/>
+                                <TextBlock Text="{lex:Locale Settings.About.OpenTelemetryDescription}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                            </StackPanel>
                         </StackPanel>
 
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="•" Margin="0,0,8,0" FontSize="12"/>
-                            <TextBlock Text="{lex:Locale Settings.About.Tomlyn}" FontWeight="Medium" FontSize="12" Margin="0,0,4,0"/>
-                            <TextBlock Text="{lex:Locale Settings.About.TomlynDescription}" 
-                                       FontSize="12" 
-                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                        <!-- Data & Configuration -->
+                        <TextBlock Text="{lex:Locale Settings.About.CreditsGroupData}" 
+                                   FontSize="11" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   Margin="0,8,0,4"/>
+                        <StackPanel Margin="16,0,0,8">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                                <TextBlock Text="•" Margin="0,0,8,0" FontSize="12"/>
+                                <TextBlock Text="{lex:Locale Settings.About.DataSqlite}" FontWeight="Medium" FontSize="12" Margin="0,0,4,0"/>
+                                <TextBlock Text="{lex:Locale Settings.About.DataSqliteDescription}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                                <TextBlock Text="•" Margin="0,0,8,0" FontSize="12"/>
+                                <TextBlock Text="{lex:Locale Settings.About.Tomlyn}" FontWeight="Medium" FontSize="12" Margin="0,0,4,0"/>
+                                <TextBlock Text="{lex:Locale Settings.About.TomlynDescription}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                                <TextBlock Text="•" Margin="0,0,8,0" FontSize="12"/>
+                                <TextBlock Text="{lex:Locale Settings.About.NUglify}" FontWeight="Medium" FontSize="12" Margin="0,0,4,0"/>
+                                <TextBlock Text="{lex:Locale Settings.About.NUglifyDescription}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="•" Margin="0,0,8,0" FontSize="12"/>
+                                <TextBlock Text="{lex:Locale Settings.About.NuGetVersioning}" FontWeight="Medium" FontSize="12" Margin="0,0,4,0"/>
+                                <TextBlock Text="{lex:Locale Settings.About.NuGetVersioningDescription}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Native & Platform -->
+                        <TextBlock Text="{lex:Locale Settings.About.CreditsGroupInterop}" 
+                                   FontSize="11" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   Margin="0,8,0,4"/>
+                        <StackPanel Margin="16,0,0,0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                                <TextBlock Text="•" Margin="0,0,8,0" FontSize="12"/>
+                                <TextBlock Text="{lex:Locale Settings.About.CsWin32}" FontWeight="Medium" FontSize="12" Margin="0,0,4,0"/>
+                                <TextBlock Text="{lex:Locale Settings.About.CsWin32Description}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="•" Margin="0,0,8,0" FontSize="12"/>
+                                <TextBlock Text="{lex:Locale Settings.About.DrawingCommon}" FontWeight="Medium" FontSize="12" Margin="0,0,4,0"/>
+                                <TextBlock Text="{lex:Locale Settings.About.DrawingCommonDescription}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                            </StackPanel>
                         </StackPanel>
                     </StackPanel>
                 </ui:CardExpander>

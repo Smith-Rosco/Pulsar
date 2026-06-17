@@ -572,6 +572,126 @@
     <value>- TOML配置解析器</value>
   </data>
   <data
+    name="Settings.About.RuntimeVersion"
+    xml:space="preserve">
+    <value>运行时版本</value>
+  </data>
+  <data
+    name="Settings.About.CreditsGroupUi"
+    xml:space="preserve">
+    <value>UI 与输入</value>
+  </data>
+  <data
+    name="Settings.About.HardcodetNotifyIcon"
+    xml:space="preserve">
+    <value>Hardcodet.NotifyIcon.Wpf</value>
+  </data>
+  <data
+    name="Settings.About.HardcodetNotifyIconDescription"
+    xml:space="preserve">
+    <value>- 系统托盘通知</value>
+  </data>
+  <data
+    name="Settings.About.GongDragDrop"
+    xml:space="preserve">
+    <value>gong-wpf-dragdrop</value>
+  </data>
+  <data
+    name="Settings.About.GongDragDropDescription"
+    xml:space="preserve">
+    <value>- 拖放支持</value>
+  </data>
+  <data
+    name="Settings.About.CreditsGroupMvvm"
+    xml:space="preserve">
+    <value>MVVM 与依赖注入</value>
+  </data>
+  <data
+    name="Settings.About.MsDi"
+    xml:space="preserve">
+    <value>Microsoft.Extensions.DependencyInjection</value>
+  </data>
+  <data
+    name="Settings.About.MsDiDescription"
+    xml:space="preserve">
+    <value>- 依赖注入容器</value>
+  </data>
+  <data
+    name="Settings.About.CreditsGroupLogging"
+    xml:space="preserve">
+    <value>日志与遥测</value>
+  </data>
+  <data
+    name="Settings.About.OpenTelemetry"
+    xml:space="preserve">
+    <value>OpenTelemetry</value>
+  </data>
+  <data
+    name="Settings.About.OpenTelemetryDescription"
+    xml:space="preserve">
+    <value>- 分布式追踪与指标</value>
+  </data>
+  <data
+    name="Settings.About.CreditsGroupData"
+    xml:space="preserve">
+    <value>数据与配置</value>
+  </data>
+  <data
+    name="Settings.About.DataSqlite"
+    xml:space="preserve">
+    <value>Microsoft.Data.Sqlite</value>
+  </data>
+  <data
+    name="Settings.About.DataSqliteDescription"
+    xml:space="preserve">
+    <value>- 嵌入式数据库</value>
+  </data>
+  <data
+    name="Settings.About.NUglify"
+    xml:space="preserve">
+    <value>NUglify</value>
+  </data>
+  <data
+    name="Settings.About.NUglifyDescription"
+    xml:space="preserve">
+    <value>- JavaScript 压缩</value>
+  </data>
+  <data
+    name="Settings.About.NuGetVersioning"
+    xml:space="preserve">
+    <value>NuGet.Versioning</value>
+  </data>
+  <data
+    name="Settings.About.NuGetVersioningDescription"
+    xml:space="preserve">
+    <value>- 版本号解析</value>
+  </data>
+  <data
+    name="Settings.About.CreditsGroupInterop"
+    xml:space="preserve">
+    <value>原生与平台</value>
+  </data>
+  <data
+    name="Settings.About.CsWin32"
+    xml:space="preserve">
+    <value>Microsoft.Windows.CsWin32</value>
+  </data>
+  <data
+    name="Settings.About.CsWin32Description"
+    xml:space="preserve">
+    <value>- 原生 Win32 互操作</value>
+  </data>
+  <data
+    name="Settings.About.DrawingCommon"
+    xml:space="preserve">
+    <value>System.Drawing.Common</value>
+  </data>
+  <data
+    name="Settings.About.DrawingCommonDescription"
+    xml:space="preserve">
+    <value>- 图像处理</value>
+  </data>
+  <data
     name="Settings.Marketplace.Title"
     xml:space="preserve">
     <value>插件市场</value>

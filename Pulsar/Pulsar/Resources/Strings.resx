@@ -350,6 +350,78 @@
   <data name="Settings.About.TomlynDescription" xml:space="preserve">
     <value>- TOML configuration parser</value>
   </data>
+  <data name="Settings.About.RuntimeVersion" xml:space="preserve">
+    <value>Runtime Version</value>
+  </data>
+  <data name="Settings.About.CreditsGroupUi" xml:space="preserve">
+    <value>UI &amp; Input</value>
+  </data>
+  <data name="Settings.About.HardcodetNotifyIcon" xml:space="preserve">
+    <value>Hardcodet.NotifyIcon.Wpf</value>
+  </data>
+  <data name="Settings.About.HardcodetNotifyIconDescription" xml:space="preserve">
+    <value>- System tray notifications</value>
+  </data>
+  <data name="Settings.About.GongDragDrop" xml:space="preserve">
+    <value>gong-wpf-dragdrop</value>
+  </data>
+  <data name="Settings.About.GongDragDropDescription" xml:space="preserve">
+    <value>- Drag &amp; drop support</value>
+  </data>
+  <data name="Settings.About.CreditsGroupMvvm" xml:space="preserve">
+    <value>MVVM &amp; DI</value>
+  </data>
+  <data name="Settings.About.MsDi" xml:space="preserve">
+    <value>Microsoft.Extensions.DependencyInjection</value>
+  </data>
+  <data name="Settings.About.MsDiDescription" xml:space="preserve">
+    <value>- Dependency injection</value>
+  </data>
+  <data name="Settings.About.CreditsGroupLogging" xml:space="preserve">
+    <value>Logging &amp; Telemetry</value>
+  </data>
+  <data name="Settings.About.OpenTelemetry" xml:space="preserve">
+    <value>OpenTelemetry</value>
+  </data>
+  <data name="Settings.About.OpenTelemetryDescription" xml:space="preserve">
+    <value>- Tracing &amp; metrics</value>
+  </data>
+  <data name="Settings.About.CreditsGroupData" xml:space="preserve">
+    <value>Data &amp; Configuration</value>
+  </data>
+  <data name="Settings.About.DataSqlite" xml:space="preserve">
+    <value>Microsoft.Data.Sqlite</value>
+  </data>
+  <data name="Settings.About.DataSqliteDescription" xml:space="preserve">
+    <value>- Embedded database</value>
+  </data>
+  <data name="Settings.About.NUglify" xml:space="preserve">
+    <value>NUglify</value>
+  </data>
+  <data name="Settings.About.NUglifyDescription" xml:space="preserve">
+    <value>- JavaScript minification</value>
+  </data>
+  <data name="Settings.About.NuGetVersioning" xml:space="preserve">
+    <value>NuGet.Versioning</value>
+  </data>
+  <data name="Settings.About.NuGetVersioningDescription" xml:space="preserve">
+    <value>- Version parsing</value>
+  </data>
+  <data name="Settings.About.CreditsGroupInterop" xml:space="preserve">
+    <value>Native &amp; Platform</value>
+  </data>
+  <data name="Settings.About.CsWin32" xml:space="preserve">
+    <value>Microsoft.Windows.CsWin32</value>
+  </data>
+  <data name="Settings.About.CsWin32Description" xml:space="preserve">
+    <value>- Native Win32 interop</value>
+  </data>
+  <data name="Settings.About.DrawingCommon" xml:space="preserve">
+    <value>System.Drawing.Common</value>
+  </data>
+  <data name="Settings.About.DrawingCommonDescription" xml:space="preserve">
+    <value>- Image processing</value>
+  </data>
   <!-- ==================== Settings.Marketplace ==================== -->
   <data name="Settings.Marketplace.Title" xml:space="preserve">
     <value>Plugin Marketplace</value>
