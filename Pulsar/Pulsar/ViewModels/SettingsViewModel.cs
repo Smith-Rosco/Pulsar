@@ -856,11 +856,17 @@ namespace Pulsar.ViewModels
                 _pendingSecrets.Clear();
                 
                 await _configService.SaveAsync(_config);
-                
+
                 // [Architecture] Notify RadialMenuViewModel to reinitialize slots if count changed
                 // This ensures immediate visual feedback without requiring app restart
                 WeakReferenceMessenger.Default.Send(new SlotsPerPageChangedMessage(_config.Settings.SlotsPerPage));
-                
+
+                // Persist hotkey changes to live engine
+                if (_config.Settings.Hotkeys.TryGetValue(HotkeyActionIds.ShowGrid, out var showGridHotkey))
+                    await _hotkeyService.UpdateHotkey(HotkeyActionIds.ShowGrid, showGridHotkey);
+                if (_config.Settings.Hotkeys.TryGetValue(HotkeyActionIds.ShowSwitcher, out var showSwitcherHotkey))
+                    await _hotkeyService.UpdateHotkey(HotkeyActionIds.ShowSwitcher, showSwitcherHotkey);
+
                 // [Phase 2] Reset dirty flag after successful save
                 HasUnsavedChanges = false;
                 
@@ -1718,25 +1724,37 @@ namespace Pulsar.ViewModels
 
         public HotkeyConfig ShowGridHotkey
         {
-            get => _config.Settings.Hotkeys.TryGetValue("ShowGrid", out var h) ? h : new HotkeyConfig { Key = "Q", Modifiers = "Control" };
+            get => _config.Settings.Hotkeys.TryGetValue(HotkeyActionIds.ShowGrid, out var h) ? h : new HotkeyConfig();
             set
             {
-                _config.Settings.Hotkeys["ShowGrid"] = value;
+                _config.Settings.Hotkeys[HotkeyActionIds.ShowGrid] = value;
                 OnPropertyChanged();
+                _hotkeyService.ApplyHotkey(HotkeyActionIds.ShowGrid, value);
+                var validation = _hotkeyService.ValidateHotkey(HotkeyActionIds.ShowGrid, value);
+                ShowGridHotkeyValidation = validation;
                 MarkDirty(); // [Phase 2]
             }
         }
 
         public HotkeyConfig ShowSwitcherHotkey
         {
-            get => _config.Settings.Hotkeys.TryGetValue("ShowSwitcher", out var h) ? h : new HotkeyConfig { Key = "Q", Modifiers = "Control,Shift" };
+            get => _config.Settings.Hotkeys.TryGetValue(HotkeyActionIds.ShowSwitcher, out var h) ? h : new HotkeyConfig();
             set
             {
-                _config.Settings.Hotkeys["ShowSwitcher"] = value;
+                _config.Settings.Hotkeys[HotkeyActionIds.ShowSwitcher] = value;
                 OnPropertyChanged();
+                _hotkeyService.ApplyHotkey(HotkeyActionIds.ShowSwitcher, value);
+                var validation = _hotkeyService.ValidateHotkey(HotkeyActionIds.ShowSwitcher, value);
+                ShowSwitcherHotkeyValidation = validation;
                 MarkDirty(); // [Phase 2]
             }
         }
+
+        [ObservableProperty]
+        private HotkeyValidationResult? _showGridHotkeyValidation;
+
+        [ObservableProperty]
+        private HotkeyValidationResult? _showSwitcherHotkeyValidation;
         
         // [New] Radial Menu Layout Configuration - Preview Text
         public string SlotsPerPagePreview
@@ -1752,10 +1770,9 @@ namespace Pulsar.ViewModels
         [RelayCommand]
         public void UpdateHotkey(string actionId)
         {
-            // Triggered after hotkey capture to ensure persistence/refresh if needed
-            // Currently Save() handles persistence, this might just be for UI refresh
-            if (actionId == "ShowGrid") OnPropertyChanged(nameof(ShowGridHotkey));
-            if (actionId == "ShowSwitcher") OnPropertyChanged(nameof(ShowSwitcherHotkey));
+            // Triggered after hotkey capture to ensure UI refresh
+            if (actionId == HotkeyActionIds.ShowGrid) OnPropertyChanged(nameof(ShowGridHotkey));
+            if (actionId == HotkeyActionIds.ShowSwitcher) OnPropertyChanged(nameof(ShowSwitcherHotkey));
         }
 
         // ===== Cache Management =====

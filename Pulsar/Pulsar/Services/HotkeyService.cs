@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
+using Microsoft.Extensions.Logging;
+using Pulsar.Helpers;
 using Pulsar.Models;
 using Pulsar.Native;
 using Pulsar.Services.Interfaces;
@@ -13,14 +15,16 @@ namespace Pulsar.Services
     {
         private readonly GlobalKeyboardHook _hook;
         private readonly IConfigService _configService;
+        private readonly ILogger<HotkeyService> _logger;
         private readonly Dictionary<string, Action> _actions = new();
         private ProfilesConfig? _config;
         private bool _isPaused;
 
-        public HotkeyService(GlobalKeyboardHook hook, IConfigService configService)
+        public HotkeyService(GlobalKeyboardHook hook, IConfigService configService, ILogger<HotkeyService> logger)
         {
             _hook = hook;
             _configService = configService;
+            _logger = logger;
         }
 
         private readonly Dictionary<int, List<ActionWithConfig>> _hotkeysByMainKey = new();
@@ -28,7 +32,7 @@ namespace Pulsar.Services
         private readonly HashSet<int> _pressedKeys = new();
 
         public event EventHandler<GlobalKeyStruct>? OnGlobalKeyUp;
-        
+
         public void Pause()
         {
             _isPaused = true;
@@ -52,24 +56,87 @@ namespace Pulsar.Services
             _config = await _configService.LoadAsync();
             if (_config == null) return;
 
-            // Ensure default hotkeys exist if config is fresh
-            if (!_config.Settings.Hotkeys.ContainsKey("ShowGrid"))
-            {
-                // [Default Swap] Action Grid -> Ctrl + Shift + Q
-                _config.Settings.Hotkeys["ShowGrid"] = new HotkeyConfig { Key = "Q", Modifiers = "Control,Shift" };
-            }
-            if (!_config.Settings.Hotkeys.ContainsKey("ShowSwitcher"))
-            {
-                // [Default Swap] Window Switcher -> Ctrl + Q
-                _config.Settings.Hotkeys["ShowSwitcher"] = new HotkeyConfig { Key = "Q", Modifiers = "Control" };
-            }
-            
             // Build optimization cache
             RebuildHotkeyCache();
 
             _hook.OnKeyDown += OnKeyDown;
             // Handle KeyUp to maintain state
             _hook.OnKeyUp += OnKeyUp;
+        }
+
+        public HotkeyValidationResult ValidateHotkey(string actionId, HotkeyConfig config)
+        {
+            var result = new HotkeyValidationResult();
+
+            if (config.IsEmpty)
+            {
+                result.IsEmpty = true;
+                return result;
+            }
+
+            // Check system-reserved
+            foreach (var reserved in ReservedHotkeys.SystemReserved)
+            {
+                if (string.Equals(config.NormalizedSignature, reserved.NormalizedSignature, StringComparison.OrdinalIgnoreCase))
+                {
+                    result.IsSystemReserved = true;
+                    break;
+                }
+            }
+
+            // Check conflicts with other registered actions
+            foreach (var kvp in _actions)
+            {
+                if (string.Equals(kvp.Key, actionId, StringComparison.OrdinalIgnoreCase))
+                    continue; // Skip self
+
+                if (_config != null && _config.Settings.Hotkeys.TryGetValue(kvp.Key, out var otherConfig))
+                {
+                    if (otherConfig.IsEmpty)
+                        continue; // Skip empty hotkeys
+
+                    if (string.Equals(config.NormalizedSignature, otherConfig.NormalizedSignature, StringComparison.OrdinalIgnoreCase))
+                    {
+                        result.Conflicts.Add(new HotkeyConflictEntry { ConflictingActionId = kvp.Key });
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        public void ApplyHotkey(string actionId, HotkeyConfig config)
+        {
+            if (_config == null) return;
+
+            _config.Settings.Hotkeys[actionId] = config;
+            RebuildHotkeyCache();
+        }
+
+        public async Task UpdateHotkey(string actionId, HotkeyConfig newHotkey)
+        {
+            if (_config == null) return;
+
+            _config.Settings.Hotkeys[actionId] = newHotkey;
+            await _configService.SaveAsync(_config);
+            RebuildHotkeyCache();
+        }
+
+        public Dictionary<string, HotkeyConfig> GetAllHotkeys()
+        {
+            if (_config == null)
+                return new Dictionary<string, HotkeyConfig>();
+
+            return new Dictionary<string, HotkeyConfig>(_config.Settings.Hotkeys);
+        }
+
+        public HotkeyConfig? GetHotkey(string actionId)
+        {
+            if (_config != null && _config.Settings.Hotkeys.TryGetValue(actionId, out var hotkey))
+            {
+                return hotkey;
+            }
+            return null;
         }
 
         private void RebuildHotkeyCache()
@@ -84,7 +151,10 @@ namespace Pulsar.Services
 
                 if (_config.Settings.Hotkeys.TryGetValue(actionId, out var hotkeyConfig))
                 {
-                    try 
+                    if (hotkeyConfig.IsEmpty)
+                        continue; // Skip empty/unassigned hotkeys
+
+                    try
                     {
                         // 1. Parse Key to VkCode
                         if (!Enum.TryParse<Key>(hotkeyConfig.Key, true, out var wpfKey)) continue;
@@ -96,10 +166,10 @@ namespace Pulsar.Services
 
                         foreach (var m in mods)
                         {
-                            if (m.Equals("Control", StringComparison.OrdinalIgnoreCase)) reqCtrl = true;
-                            else if (m.Equals("Shift", StringComparison.OrdinalIgnoreCase)) reqShift = true;
-                            else if (m.Equals("Alt", StringComparison.OrdinalIgnoreCase)) reqAlt = true;
-                            else if (m.Equals("Windows", StringComparison.OrdinalIgnoreCase)) reqWin = true;
+                            if (m.Equals(HotkeyModifiers.Control, StringComparison.OrdinalIgnoreCase)) reqCtrl = true;
+                            else if (m.Equals(HotkeyModifiers.Shift, StringComparison.OrdinalIgnoreCase)) reqShift = true;
+                            else if (m.Equals(HotkeyModifiers.Alt, StringComparison.OrdinalIgnoreCase)) reqAlt = true;
+                            else if (m.Equals(HotkeyModifiers.Windows, StringComparison.OrdinalIgnoreCase)) reqWin = true;
                         }
 
                         if (!_hotkeysByMainKey.ContainsKey(vkCode))
@@ -107,16 +177,19 @@ namespace Pulsar.Services
                             _hotkeysByMainKey[vkCode] = new List<ActionWithConfig>();
                         }
 
-                        _hotkeysByMainKey[vkCode].Add(new ActionWithConfig 
-                        { 
-                            Action = callback, 
-                            ReqCtrl = reqCtrl, 
-                            ReqShift = reqShift, 
-                            ReqAlt = reqAlt, 
-                            ReqWin = reqWin 
+                        _hotkeysByMainKey[vkCode].Add(new ActionWithConfig
+                        {
+                            Action = callback,
+                            ReqCtrl = reqCtrl,
+                            ReqShift = reqShift,
+                            ReqAlt = reqAlt,
+                            ReqWin = reqWin
                         });
                     }
-                    catch (Exception) { /* Ignore invalid config */ }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to parse hotkey config for action '{ActionId}'", actionId);
+                    }
                 }
             }
         }
@@ -136,25 +209,6 @@ namespace Pulsar.Services
             }
         }
 
-        public async Task UpdateHotkey(string actionId, HotkeyConfig newHotkey)
-        {
-            if (_config == null) return;
-            
-            _config.Settings.Hotkeys[actionId] = newHotkey;
-            await _configService.SaveAsync(_config);
-            
-            RebuildHotkeyCache();
-        }
-
-        public HotkeyConfig? GetHotkey(string actionId)
-        {
-            if (_config != null && _config.Settings.Hotkeys.TryGetValue(actionId, out var hotkey))
-            {
-                return hotkey;
-            }
-            return null;
-        }
-
         private void OnKeyDown(ref GlobalKeyStruct e)
         {
             if (_config == null || _isPaused) return;
@@ -165,7 +219,7 @@ namespace Pulsar.Services
             // Check if any registered hotkey is satisfied by the CURRENT state
             // We check hotkeys associated with ANY currently held key, not just the one pressed.
             // This enables "Q then Ctrl" (triggering on Ctrl press) and "Ctrl then Q" (triggering on Q press).
-            
+
             // Optimization: Only check triggers related to the key just pressed 
             // OR if the key just pressed is a modifier, check all held keys.
             bool isModifier = IsModifierKey(e.VkCode);

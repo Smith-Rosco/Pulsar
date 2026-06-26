@@ -243,8 +243,8 @@ namespace Pulsar.ViewModels
             ConfigureAnimationController();
 
             // [Refactor] Use HotkeyService
-            hotkeyService.RegisterAction("ShowGrid", () => _ = Show(RadialMenuMode.Action));
-            hotkeyService.RegisterAction("ShowSwitcher", () => _ = Show(RadialMenuMode.Task));
+            hotkeyService.RegisterAction(HotkeyActionIds.ShowGrid, () => _ = Show(RadialMenuMode.Action));
+            hotkeyService.RegisterAction(HotkeyActionIds.ShowSwitcher, () => _ = Show(RadialMenuMode.Task));
             hotkeyService.OnGlobalKeyUp += HandleKeyUp;
             _globalMouseService.OnMouseEvent += HandleGlobalMouseEvent;
 

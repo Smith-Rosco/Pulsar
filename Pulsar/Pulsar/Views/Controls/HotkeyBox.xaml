@@ -1,0 +1,34 @@
+<UserControl x:Class="Pulsar.Views.Controls.HotkeyBox"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             mc:Ignorable="d" 
+             d:DesignHeight="32" d:DesignWidth="200">
+    <Grid>
+        <TextBox x:Name="HotkeyTextBox"
+                 IsReadOnly="True"
+                 Cursor="Hand"
+                 PreviewKeyDown="OnPreviewKeyDown"
+                 GotFocus="OnGotFocus"
+                 LostFocus="OnLostFocus"
+                 Text="{Binding HotkeyText, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"
+                 BorderBrush="{Binding BorderBrushColor, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"
+                 VerticalAlignment="Stretch"
+                 HorizontalAlignment="Stretch"
+                 Padding="8,4"/>
+        <Border x:Name="ConflictBadge"
+                Visibility="Collapsed"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Margin="0,0,4,0"
+                Background="Transparent"
+                ToolTip="{Binding ConflictTooltipText, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}">
+            <ui:SymbolIcon Symbol="Warning24"
+                           Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                           Width="18"
+                           Height="18"/>
+        </Border>
+    </Grid>
+</UserControl>

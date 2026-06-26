@@ -442,6 +442,96 @@
     <value>查看日志</value>
   </data>
   <data
+    name="Settings.Analytics.Title"
+    xml:space="preserve">
+    <value>使用分析</value>
+  </data>
+  <data
+    name="Settings.Analytics.Description"
+    xml:space="preserve">
+    <value>查看插件和插槽使用统计</value>
+  </data>
+  <data
+    name="Settings.Analytics.NoData"
+    xml:space="preserve">
+    <value>暂无使用数据。开始使用插件后即可查看统计信息。</value>
+  </data>
+  <data
+    name="Settings.Analytics.Executions"
+    xml:space="preserve">
+    <value>次执行</value>
+  </data>
+  <data
+    name="Settings.Analytics.AvgDuration"
+    xml:space="preserve">
+    <value>平均耗时</value>
+  </data>
+  <data
+    name="Settings.Analytics.Refresh"
+    xml:space="preserve">
+    <value>刷新</value>
+  </data>
+  <data
+    name="Settings.Analytics.Loading"
+    xml:space="preserve">
+    <value>加载使用数据中...</value>
+  </data>
+  <data
+    name="Settings.Analytics.SlotHeatmap"
+    xml:space="preserve">
+    <value>插槽位置使用</value>
+  </data>
+  <data
+    name="Settings.Analytics.SuccessRate"
+    xml:space="preserve">
+    <value>成功率</value>
+  </data>
+  <data
+    name="Settings.Analytics.LastUsed"
+    xml:space="preserve">
+    <value>最近</value>
+  </data>
+  <data
+    name="Settings.Analytics.Recommendations"
+    xml:space="preserve">
+    <value>推荐建议</value>
+  </data>
+  <data
+    name="Settings.Analytics.SummaryTotalExec"
+    xml:space="preserve">
+    <value>总执行次数</value>
+  </data>
+  <data
+    name="Settings.Analytics.SummaryActivePlugins"
+    xml:space="preserve">
+    <value>活跃插件</value>
+  </data>
+  <data
+    name="Settings.Analytics.SummaryToday"
+    xml:space="preserve">
+    <value>今日</value>
+  </data>
+  <data
+    name="Settings.Analytics.SummaryWeek"
+    xml:space="preserve">
+    <value>本周</value>
+  </data>
+  <data
+    name="Settings.Analytics.FavoriteSlot"
+    xml:space="preserve">
+    <value>常用插槽</value>
+  </data>
+  <data
+    name="Settings.Analytics.Ops"
+    xml:space="preserve">
+    <value>次</value>
+  </data>
+  <data
+    name="Settings.Analytics.Plugins"
+    xml:space="preserve">
+    <value>个插件</value>
+  </data>
+  <data
     name="Settings.About.Title"
     xml:space="preserve">
     <value>关于</value>
@@ -3792,5 +3882,25 @@ Pulsar 会在你的浏览器中打开一个网页——这就是命令模式：�
     name="Plugin.Bookmarklet.MissingScriptPath"
     xml:space="preserve">
     <value>缺少必需参数: scriptPath。请检查插件配置。</value>
+  </data>
+  <data
+    name="Settings.General.HotkeyNone"
+    xml:space="preserve">
+    <value>(无)</value>
+  </data>
+  <data
+    name="Settings.General.HotkeyConflict"
+    xml:space="preserve">
+    <value>冲突：已分配给"{0}"</value>
+  </data>
+  <data
+    name="Settings.General.HotkeyReserved"
+    xml:space="preserve">
+    <value>此组合键为 Windows 系统保留</value>
+  </data>
+  <data
+    name="Settings.General.HotkeyClearTooltip"
+    xml:space="preserve">
+    <value>按 Backspace/Delete 清除</value>
   </data>
 </root>

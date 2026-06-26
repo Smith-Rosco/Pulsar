@@ -71,8 +71,8 @@ namespace Pulsar.Models
         // [New] Global Hotkeys Configuration
         public Dictionary<string, HotkeyConfig> Hotkeys { get; set; } = new()
         {
-            ["ShowGrid"] = new HotkeyConfig { Key = "Q", Modifiers = "Control,Shift" },
-            ["ShowSwitcher"] = new HotkeyConfig { Key = "Q", Modifiers = "Control" }
+            [Helpers.HotkeyActionIds.ShowGrid] = new HotkeyConfig { Key = "Q", Modifiers = $"{Helpers.HotkeyModifiers.Control},{Helpers.HotkeyModifiers.Shift}" },
+            [Helpers.HotkeyActionIds.ShowSwitcher] = new HotkeyConfig { Key = "Q", Modifiers = Helpers.HotkeyModifiers.Control }
         };
 
         // [RDP Fix] Input System Configuration
@@ -217,11 +217,32 @@ namespace Pulsar.Models
         public string Key { get; set; } = string.Empty;       // e.g., "Q", "Space", "F1"
         public string Modifiers { get; set; } = string.Empty; // e.g., "Control", "Control,Shift", "Alt"
 
-        public override string ToString()
+        [JsonIgnore]
+        public bool IsEmpty => string.IsNullOrEmpty(Key);
+
+        [JsonIgnore]
+        public string DisplayText
         {
-            if (string.IsNullOrEmpty(Modifiers)) return Key;
-            return $"{Modifiers} + {Key}";
+            get
+            {
+                if (IsEmpty) return string.Empty;
+                if (string.IsNullOrEmpty(Modifiers)) return Key;
+                return $"{Modifiers} + {Key}";
+            }
         }
+
+        [JsonIgnore]
+        public string NormalizedSignature
+        {
+            get
+            {
+                if (IsEmpty) return string.Empty;
+                var mods = string.IsNullOrEmpty(Modifiers) ? "" : Modifiers.ToUpperInvariant();
+                return $"{mods}+{Key.ToUpperInvariant()}";
+            }
+        }
+
+        public override string ToString() => DisplayText;
     }
 
     /// <summary>

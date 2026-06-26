@@ -550,6 +550,21 @@ namespace Pulsar.Tests.ViewModels
             };
         }
 
+        [Fact]
+        public async Task HotkeyChange_ShouldMarkDirty()
+        {
+            EnsureApplication();
+            var harness = CreateHarness();
+            var viewModel = harness.ViewModel;
+            await WaitForInitializationAsync(viewModel);
+
+            viewModel.HasUnsavedChanges.Should().BeFalse();
+
+            viewModel.ShowGridHotkey = new HotkeyConfig { Key = "F1", Modifiers = "Control" };
+
+            viewModel.HasUnsavedChanges.Should().BeTrue();
+        }
+
         private sealed record SettingsViewModelHarness(
             SettingsViewModel ViewModel,
             Mock<IConfigService> ConfigService,

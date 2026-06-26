@@ -221,6 +221,55 @@ namespace Pulsar.Tests.Config
         }
 
         [Fact]
+        public void HotkeyConfig_IsEmpty_WhenKeyEmpty()
+        {
+            new HotkeyConfig { Key = "", Modifiers = "" }.IsEmpty.Should().BeTrue();
+            new HotkeyConfig { Key = string.Empty, Modifiers = "" }.IsEmpty.Should().BeTrue();
+        }
+
+        [Fact]
+        public void HotkeyConfig_IsEmpty_WhenKeySet()
+        {
+            new HotkeyConfig { Key = "Q", Modifiers = "Control" }.IsEmpty.Should().BeFalse();
+        }
+
+        [Fact]
+        public void HotkeyConfig_NormalizedSignature_Format()
+        {
+            new HotkeyConfig { Key = "Q", Modifiers = "Control,Shift" }
+                .NormalizedSignature.Should().Be("CONTROL,SHIFT+Q");
+
+            new HotkeyConfig { Key = "Q", Modifiers = "control,shift" }
+                .NormalizedSignature.Should().Be("CONTROL,SHIFT+Q");
+        }
+
+        [Fact]
+        public void HotkeyConfig_NormalizedSignature_EmptyWhenEmpty()
+        {
+            new HotkeyConfig().NormalizedSignature.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void HotkeyConfig_DisplayText_Format()
+        {
+            new HotkeyConfig { Key = "Q", Modifiers = "Control" }
+                .DisplayText.Should().Be("Control + Q");
+        }
+
+        [Fact]
+        public void HotkeyConfig_DisplayText_WithNoModifiers()
+        {
+            new HotkeyConfig { Key = "F1", Modifiers = "" }
+                .DisplayText.Should().Be("F1");
+        }
+
+        [Fact]
+        public void HotkeyConfig_DisplayText_EmptyWhenEmpty()
+        {
+            new HotkeyConfig().DisplayText.Should().BeEmpty();
+        }
+
+        [Fact]
         public void ProfilesConfig_Dictionaries_ShouldBeCaseInsensitive()
         {
             // Arrange

@@ -52,6 +52,9 @@ namespace Pulsar.Services.Validation
             // Stage 4: Dependency Check
             ValidateDependencies(config, result);
 
+            // Stage 5: Hotkey Validation
+            ValidateHotkeys(config, result);
+
             _logger.LogInformation(
                 "[ConfigValidationPipeline] Validation completed. Errors: {ErrorCount}, Warnings: {WarningCount}",
                 result.Errors.Count,
@@ -343,6 +346,32 @@ namespace Pulsar.Services.Validation
                             $"Plugin '{pluginId}' depends on '{depId}', but it is not enabled",
                             pluginId);
                     }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Stage 5: Validate hotkey configurations for duplicate combinations.
+        /// </summary>
+        private void ValidateHotkeys(ProfilesConfig config, ValidationResult result)
+        {
+            var signatures = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var (actionId, hotkeyConfig) in config.Settings.Hotkeys)
+            {
+                if (hotkeyConfig.IsEmpty)
+                    continue;
+
+                var sig = hotkeyConfig.NormalizedSignature;
+                if (signatures.TryGetValue(sig, out var existingActionId))
+                {
+                    result.AddWarning(
+                        $"Hotkey '{sig}' is assigned to both '{existingActionId}' and '{actionId}'",
+                        "Hotkeys");
+                }
+                else
+                {
+                    signatures[sig] = actionId;
                 }
             }
         }

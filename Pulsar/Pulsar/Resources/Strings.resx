@@ -271,15 +271,70 @@
   <data name="Settings.Plugins.ViewLogsTooltip" xml:space="preserve">
     <value>View Logs</value>
   </data>
-  <!-- ==================== Settings.About ==================== -->
-  <data name="Settings.About.Title" xml:space="preserve">
-    <value>About</value>
-  </data>
-  <data name="Settings.About.Description" xml:space="preserve">
-    <value>Application information and system details</value>
-  </data>
-  <data name="Settings.About.Links" xml:space="preserve">
-    <value>Links</value>
+   <!-- ==================== Settings.Analytics ==================== -->
+   <data name="Settings.Analytics.Title" xml:space="preserve">
+     <value>Analytics</value>
+   </data>
+   <data name="Settings.Analytics.Description" xml:space="preserve">
+     <value>View your plugin and slot usage statistics</value>
+   </data>
+   <data name="Settings.Analytics.NoData" xml:space="preserve">
+     <value>No usage data available yet. Start using your plugins to see statistics here.</value>
+   </data>
+   <data name="Settings.Analytics.Executions" xml:space="preserve">
+     <value>executions</value>
+   </data>
+   <data name="Settings.Analytics.AvgDuration" xml:space="preserve">
+     <value>avg duration</value>
+   </data>
+    <data name="Settings.Analytics.Refresh" xml:space="preserve">
+      <value>Refresh</value>
+    </data>
+    <data name="Settings.Analytics.Loading" xml:space="preserve">
+      <value>Loading usage data...</value>
+    </data>
+    <data name="Settings.Analytics.SlotHeatmap" xml:space="preserve">
+      <value>Slot Position Usage</value>
+    </data>
+    <data name="Settings.Analytics.SuccessRate" xml:space="preserve">
+      <value>success rate</value>
+    </data>
+    <data name="Settings.Analytics.LastUsed" xml:space="preserve">
+      <value>Last</value>
+    </data>
+    <data name="Settings.Analytics.Recommendations" xml:space="preserve">
+      <value>Recommendations</value>
+    </data>
+    <data name="Settings.Analytics.SummaryTotalExec" xml:space="preserve">
+      <value>Total Executions</value>
+    </data>
+    <data name="Settings.Analytics.SummaryActivePlugins" xml:space="preserve">
+      <value>Active Plugins</value>
+    </data>
+    <data name="Settings.Analytics.SummaryToday" xml:space="preserve">
+      <value>Today</value>
+    </data>
+    <data name="Settings.Analytics.SummaryWeek" xml:space="preserve">
+      <value>Week</value>
+    </data>
+    <data name="Settings.Analytics.FavoriteSlot" xml:space="preserve">
+      <value>Favorite Slot</value>
+    </data>
+    <data name="Settings.Analytics.Ops" xml:space="preserve">
+      <value>ops</value>
+    </data>
+    <data name="Settings.Analytics.Plugins" xml:space="preserve">
+      <value>plugins</value>
+    </data>
+    <!-- ==================== Settings.About ==================== -->
+   <data name="Settings.About.Title" xml:space="preserve">
+     <value>About</value>
+   </data>
+   <data name="Settings.About.Description" xml:space="preserve">
+     <value>Application information and system details</value>
+   </data>
+   <data name="Settings.About.Links" xml:space="preserve">
+     <value>Links</value>
   </data>
   <data name="Settings.About.GitHub" xml:space="preserve">
     <value>GitHub Repository</value>
@@ -2342,5 +2397,18 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
   <!-- ==================== Bookmarklet Plugin ==================== -->
   <data name="Plugin.Bookmarklet.NotInitialized" xml:space="preserve">
     <value>Plugin not initialized</value>
+  </data>
+  <!-- ==================== Hotkey Localization ==================== -->
+  <data name="Settings.General.HotkeyNone" xml:space="preserve">
+    <value>(None)</value>
+  </data>
+  <data name="Settings.General.HotkeyConflict" xml:space="preserve">
+    <value>Conflict: already assigned to "{0}"</value>
+  </data>
+  <data name="Settings.General.HotkeyReserved" xml:space="preserve">
+    <value>This combination is reserved by Windows</value>
+  </data>
+  <data name="Settings.General.HotkeyClearTooltip" xml:space="preserve">
+    <value>Press Backspace/Delete to clear</value>
   </data>
 </root>
