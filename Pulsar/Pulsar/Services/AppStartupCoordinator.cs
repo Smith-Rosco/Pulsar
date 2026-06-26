@@ -94,11 +94,6 @@ namespace Pulsar.Services
                     var configService = _services.GetRequiredService<IConfigService>();
                     ConfigureValidationPipeline(configService);
 
-                    if (configService.Current != null)
-                    {
-                        await configService.SaveAsync(configService.Current);
-                    }
-
                     await RunOnboardingStartupAsync(cancellationToken);
 
                     var config = await configService.LoadAsync();

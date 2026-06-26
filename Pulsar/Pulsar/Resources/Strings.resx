@@ -38,20 +38,14 @@
   <data name="Settings.General.ResetDefaults" xml:space="preserve">
     <value>Reset to Defaults</value>
   </data>
-  <data name="Settings.General.RestartOnboarding" xml:space="preserve">
-    <value>Restart Onboarding</value>
-  </data>
-  <data name="Settings.General.RestartOnboardingConfirm" xml:space="preserve">
-    <value>This will reset your onboarding state and restart Pulsar to show the setup wizard. Continue?</value>
-  </data>
   <data name="Settings.General.ResetTutorial" xml:space="preserve">
-    <value>Reset Tutorial</value>
+    <value>Restart Tutorial</value>
   </data>
   <data name="Settings.General.ResetTutorialConfirm" xml:space="preserve">
-    <value>This will reset the tutorial so you can go through it again from the beginning. Your slots and settings will not be affected. Continue?</value>
+    <value>This will let you go through the tutorial again from the beginning. Your slots and settings will not be affected. Continue?</value>
   </data>
-  <data name="Notification.RestartOnboarding" xml:space="preserve">
-    <value>Restart Onboarding</value>
+  <data name="Settings.General.ResetTutorialDone" xml:space="preserve">
+    <value>Tutorial has been reset — it will start on next launch.</value>
   </data>
   <data name="Settings.General.Appearance" xml:space="preserve">
     <value>Appearance</value>

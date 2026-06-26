@@ -94,6 +94,7 @@ namespace Pulsar.ViewModels
         private readonly SettingsShellViewModel _settingsShell;
         private readonly ILogger<SettingsViewModel> _logger;
         private readonly ILocalizationService _loc;
+        private readonly ITutorialService _tutorialService;
         private ProfilesConfig _config;
 
         // ===== Drag & Drop Debounce Fields =====
@@ -343,6 +344,7 @@ namespace Pulsar.ViewModels
             SettingsShellViewModel settingsShell,
             ILogger<SettingsViewModel> logger,
             ILocalizationService localizationService,
+            ITutorialService tutorialService,
             IProcessRegistryService? processRegistryService = null)
         {
             _configService = configService;
@@ -358,6 +360,7 @@ namespace Pulsar.ViewModels
             _settingsShell = settingsShell;
             _logger = logger;
             _loc = localizationService;
+            _tutorialService = tutorialService;
             _processRegistryService = processRegistryService;
             _config = new ProfilesConfig();
             _settingsShell.PropertyChanged += OnSettingsShellPropertyChanged;
@@ -1994,34 +1997,6 @@ namespace Pulsar.ViewModels
         }
 
         [RelayCommand]
-        private async Task RestartOnboardingAsync()
-        {
-            var result = await _dialogService.ShowConfirmationAsync(
-                _loc["Notification.RestartOnboarding"],
-                _loc["Settings.General.RestartOnboardingConfirm"]);
-
-            if (result != DialogResult.Confirmed)
-            {
-                return;
-            }
-
-            var config = await _configService.LoadAsync();
-            config.Settings.OnboardingState = "NotStarted";
-            config.Settings.HasCompletedTutorial = false;
-            config.Settings.TutorialCrashedAt = null;
-            config.Settings.LastTutorialStep = null;
-            await _configService.SaveAsync(config);
-
-            var exePath = Environment.ProcessPath;
-            if (!string.IsNullOrEmpty(exePath))
-            {
-                Process.Start(exePath);
-            }
-
-            Application.Current.Shutdown();
-        }
-
-        [RelayCommand]
         private async Task ResetTutorialAsync()
         {
             var result = await _dialogService.ShowConfirmationAsync(
@@ -2034,29 +2009,29 @@ namespace Pulsar.ViewModels
             }
 
             var config = await _configService.LoadAsync();
-            config.Settings.OnboardingState = "SetupWizardComplete";
             config.Settings.HasCompletedTutorial = false;
             config.Settings.TutorialCrashedAt = null;
             config.Settings.LastTutorialStep = null;
 
-            if (config.Profiles.TryGetValue("Global", out var globalProfile))
+            if (config.Profiles.TryGetValue("Global", out var globalProfile)
+                && (globalProfile.SwitchMode == null || globalProfile.SwitchMode.Count == 0)
+                && (globalProfile.CommandMode == null || globalProfile.CommandMode.Count == 0))
             {
-                globalProfile.CommandMode.Clear();
-                globalProfile.CommandMode.Add(new PluginSlot
-                {
-                    Slot = 1,
-                    PluginId = "com.pulsar.command",
-                    Action = "sendkeys",
-                    Args = new Dictionary<string, string>
-                    {
-                        ["keys"] = "Hello from Pulsar!"
-                    },
-                    Label = _loc["CommandSlot.InsertSampleText"],
-                    IconKey = "\uE756"
-                });
+                globalProfile.SwitchMode =
+                [
+                    new PluginSlot { Slot = 1, PluginId = "com.pulsar.winswitcher", Action = "switch", Args = new Dictionary<string, string> { ["app"] = "notepad", ["path"] = "notepad.exe" }, Label = "Notepad", IconKey = "\uE70F" },
+                    new PluginSlot { Slot = 2, PluginId = "com.pulsar.winswitcher", Action = "switch", Args = new Dictionary<string, string> { ["app"] = "explorer", ["path"] = "explorer.exe" }, Label = "File Explorer", IconKey = "\uE8B7" },
+                    new PluginSlot { Slot = 3, PluginId = "com.pulsar.winswitcher", Action = "switch", Args = new Dictionary<string, string> { ["app"] = "calc", ["path"] = "calc.exe" }, Label = "Calculator", IconKey = "\uE8EF" }
+                ];
+                globalProfile.CommandMode =
+                [
+                    new PluginSlot { Slot = 1, PluginId = "com.pulsar.command", Action = "run", Args = new Dictionary<string, string> { ["path"] = "cmd.exe" }, Label = "Command Prompt", IconKey = "\uE756" }
+                ];
             }
 
             await _configService.SaveAsync(config);
+
+            await _tutorialService.StartTutorialAsync();
         }
     }
 }

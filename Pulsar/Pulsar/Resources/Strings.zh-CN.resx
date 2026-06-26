@@ -57,29 +57,19 @@
     <value>恢复默认设置</value>
   </data>
   <data
-    name="Settings.General.RestartOnboarding"
-    xml:space="preserve">
-    <value>重新开始引导</value>
-  </data>
-  <data
-    name="Settings.General.RestartOnboardingConfirm"
-    xml:space="preserve">
-    <value>这将重置您的引导状态并重启 Pulsar 以显示设置向导。是否继续？</value>
-  </data>
-  <data
     name="Settings.General.ResetTutorial"
     xml:space="preserve">
-    <value>重置教程</value>
+    <value>重新开始教程</value>
   </data>
   <data
     name="Settings.General.ResetTutorialConfirm"
     xml:space="preserve">
-    <value>这将重置教程，让你从头重新体验一次。你的槽位和设置不会受到影响。是否继续？</value>
+    <value>这将让你从头重新体验教程。你的槽位和设置不会受到影响。是否继续？</value>
   </data>
   <data
-    name="Notification.RestartOnboarding"
+    name="Settings.General.ResetTutorialDone"
     xml:space="preserve">
-    <value>重新开始引导</value>
+    <value>教程已重置，下次启动时将重新开始。</value>
   </data>
   <data
     name="Settings.General.Appearance"

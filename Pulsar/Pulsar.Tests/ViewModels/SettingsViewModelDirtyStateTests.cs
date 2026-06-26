@@ -339,6 +339,7 @@ namespace Pulsar.Tests.ViewModels
                 settingsShell,
                 NullLogger<SettingsViewModel>.Instance,
                 CreateLoc(),
+                new Mock<ITutorialService>().Object,
                 processRegistryService.Object);
 
             return new SettingsViewModelHarness(viewModel, configService, dialogService);
