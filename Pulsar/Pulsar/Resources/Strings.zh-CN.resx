@@ -587,6 +587,71 @@
     <value>{0}%</value>
   </data>
   <data
+    name="Settings.Analytics.FilterAllTime"
+    xml:space="preserve">
+    <value>全部时间</value>
+  </data>
+  <data
+    name="Settings.Analytics.FilterToday"
+    xml:space="preserve">
+    <value>今天</value>
+  </data>
+  <data
+    name="Settings.Analytics.FilterThisWeek"
+    xml:space="preserve">
+    <value>本周</value>
+  </data>
+  <data
+    name="Settings.Analytics.FilterThisMonth"
+    xml:space="preserve">
+    <value>本月</value>
+  </data>
+  <data
+    name="Settings.Analytics.SortByExecutions"
+    xml:space="preserve">
+    <value>执行次数</value>
+  </data>
+  <data
+    name="Settings.Analytics.SortBySuccessRate"
+    xml:space="preserve">
+    <value>成功率</value>
+  </data>
+  <data
+    name="Settings.Analytics.SortByDuration"
+    xml:space="preserve">
+    <value>平均时长</value>
+  </data>
+  <data
+    name="Settings.Analytics.SortByLastUsed"
+    xml:space="preserve">
+    <value>最后使用</value>
+  </data>
+  <data
+    name="Settings.Analytics.DisablePlugin"
+    xml:space="preserve">
+    <value>禁用插件</value>
+  </data>
+  <data
+    name="Settings.Analytics.ViewLogs"
+    xml:space="preserve">
+    <value>查看日志</value>
+  </data>
+  <data
+    name="Settings.Analytics.ExportCsv"
+    xml:space="preserve">
+    <value>导出 CSV</value>
+  </data>
+  <data
+    name="Settings.Analytics.TrendNoData"
+    xml:space="preserve">
+    <value>暂无近期数据</value>
+  </data>
+  <data
+    name="Settings.Analytics.Recommendation.MoveSlot"
+    xml:space="preserve">
+    <value>建议移至优选插槽</value>
+  </data>
+  <data
     name="Settings.About.Title"
     xml:space="preserve">
     <value>关于</value>
@@ -2885,6 +2950,16 @@
     name="Plugin.Recommendation.ViewLogsAction"
     xml:space="preserve">
     <value>查看日志</value>
+  </data>
+  <data
+    name="Plugin.Recommendation.InactiveTitle"
+    xml:space="preserve">
+    <value>检测到不活跃插件</value>
+  </data>
+  <data
+    name="Plugin.Recommendation.InactiveFormat"
+    xml:space="preserve">
+    <value>{0} 已不活跃 {1} 天。请检查是否仍需使用。</value>
   </data>
   <data
     name="Profile.ConfigurationIssues"

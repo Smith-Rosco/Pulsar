@@ -9,14 +9,13 @@ namespace Pulsar.Services.Interfaces
     /// </summary>
     public enum RecommendationType
     {
-        DisableUnusedPlugin,      // 禁用未使用的插件
-        CheckPluginErrors,        // 检查插件错误
-        OptimizePerformance       // 性能优化建议
+        DisableUnusedPlugin,
+        CheckPluginErrors,
+        OptimizePerformance,
+        InactivePlugin,
+        OptimizeSlotPlacement
     }
 
-    /// <summary>
-    /// 插件推荐项
-    /// </summary>
     public class PluginRecommendation
     {
         public RecommendationType Type { get; set; }
@@ -26,7 +25,9 @@ namespace Pulsar.Services.Interfaces
         public string PluginName { get; set; } = string.Empty;
         public string ActionLabel { get; set; } = string.Empty;
         public string Icon { get; set; } = "💡";
-        public string Severity { get; set; } = "Info"; // Info, Warning, Error
+        public string Severity { get; set; } = "Info";
+        public string ActionCommand { get; set; } = string.Empty;
+        public string ActionParameter { get; set; } = string.Empty;
     }
 
     /// <summary>

@@ -288,6 +288,57 @@
                     </ItemsControl>
                 </ui:CardControl>
 
+                <!-- Filter Row -->
+                <Grid Margin="0,0,0,12"
+                      Visibility="{Binding HasData, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="{lex:Locale Settings.Analytics.FilterAllTime}"
+                               FontSize="12" VerticalAlignment="Center"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               Margin="0,0,8,0"/>
+                    <ComboBox Grid.Column="1" MinWidth="140"
+                              SelectedIndex="{Binding TimeRange}">
+                        <ComboBoxItem Content="{lex:Locale Settings.Analytics.FilterAllTime}"/>
+                        <ComboBoxItem Content="{lex:Locale Settings.Analytics.FilterToday}"/>
+                        <ComboBoxItem Content="{lex:Locale Settings.Analytics.FilterThisWeek}"/>
+                        <ComboBoxItem Content="{lex:Locale Settings.Analytics.FilterThisMonth}"/>
+                    </ComboBox>
+                </Grid>
+
+                <!-- Sort Column Headers -->
+                <Grid Margin="14,0,14,4"
+                      Visibility="{Binding HasData, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="#" FontSize="11" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}" Width="32"/>
+                    <ui:Button Grid.Column="1" Style="{StaticResource PulsarSecondaryButtonStyle}"
+                             Command="{Binding SetSortCommand}" CommandParameter="Executions"
+                             HorizontalAlignment="Left" FontSize="11" FontWeight="SemiBold"
+                             Content="{lex:Locale Settings.Analytics.SortByExecutions}"/>
+                    <ui:Button Grid.Column="2" Style="{StaticResource PulsarSecondaryButtonStyle}"
+                             Command="{Binding SetSortCommand}" CommandParameter="SuccessRate"
+                             HorizontalAlignment="Left" FontSize="11" FontWeight="SemiBold"
+                             Content="{lex:Locale Settings.Analytics.SortBySuccessRate}"/>
+                    <ui:Button Grid.Column="3" Style="{StaticResource PulsarSecondaryButtonStyle}"
+                             Command="{Binding SetSortCommand}" CommandParameter="Duration"
+                             HorizontalAlignment="Left" FontSize="11" FontWeight="SemiBold"
+                             Content="{lex:Locale Settings.Analytics.SortByDuration}"/>
+                    <ui:Button Grid.Column="4" Style="{StaticResource PulsarSecondaryButtonStyle}"
+                             Command="{Binding SetSortCommand}" CommandParameter="LastUsed"
+                             HorizontalAlignment="Left" FontSize="11" FontWeight="SemiBold"
+                             Content="{lex:Locale Settings.Analytics.SortByLastUsed}"/>
+                </Grid>
+
                 <!-- Usage Stats List -->
                 <ItemsControl ItemsSource="{Binding MostUsedPlugins}"
                               Visibility="{Binding HasData, Converter={StaticResource BooleanToVisibilityConverter}}">
@@ -400,7 +451,7 @@
                                         </StackPanel>
                                     </UniformGrid>
 
-                                    <!-- Bottom Row: Slot + Mode Summary -->
+                                    <!-- Bottom Row: Slot + Mode Summary + Sparkline -->
                                     <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,6,0,0">
                                         <TextBlock Text="{Binding SlotBreakdown}"
                                                    FontSize="11"
@@ -409,6 +460,37 @@
                                                    FontSize="11"
                                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                    Margin="12,0,0,0"/>
+                                        <ItemsControl ItemsSource="{Binding TrendData}" Margin="16,0,0,0">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <StackPanel Orientation="Horizontal"/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Width="4" Height="14" CornerRadius="1" Margin="1,0"
+                                                            Background="{DynamicResource ControlFillColorDisabledBrush}"
+                                                            VerticalAlignment="Bottom">
+                                                        <Border Width="4"
+                                                                HorizontalAlignment="Left"
+                                                                VerticalAlignment="Bottom"
+                                                                CornerRadius="1"
+                                                                Background="{DynamicResource SystemFillColorAccentBrush}"
+                                                                Height="{Binding BarHeight, FallbackValue=0}">
+                                                            <Border.Style>
+                                                                <Style TargetType="Border">
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding HasData}" Value="False">
+                                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Border.Style>
+                                                        </Border>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
                                     </StackPanel>
                                 </Grid>
                             </ui:CardControl>
@@ -436,6 +518,7 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
 
                                         <ui:SymbolIcon Grid.Column="0" Margin="0,0,10,0" VerticalAlignment="Center">
@@ -482,6 +565,49 @@
                                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                        TextWrapping="Wrap"/>
                                         </StackPanel>
+
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="10,0,0,0">
+                                            <ui:Button Content="{lex:Locale Settings.Analytics.DisablePlugin}"
+                                                       Command="{Binding DataContext.DisablePluginCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                       CommandParameter="{Binding PluginId}"
+                                                       FontSize="11" Margin="4,0">
+                                                <ui:Button.Style>
+                                                    <Style TargetType="ui:Button" BasedOn="{StaticResource PulsarDangerButtonStyle}">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding ActionCommand}" Value="">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding ActionCommand}" Value="{x:Null}">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding ActionCommand}" Value="ViewLogs">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </ui:Button.Style>
+                                            </ui:Button>
+                                            <ui:Button Content="{lex:Locale Settings.Analytics.ViewLogs}"
+                                                       Command="{Binding DataContext.ViewLogsCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                       CommandParameter="{Binding PluginId}"
+                                                       FontSize="11">
+                                                <ui:Button.Style>
+                                                    <Style TargetType="ui:Button" BasedOn="{StaticResource PulsarSecondaryButtonStyle}">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding ActionCommand}" Value="">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding ActionCommand}" Value="{x:Null}">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding ActionCommand}" Value="DisablePlugin">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </ui:Button.Style>
+                                            </ui:Button>
+                                        </StackPanel>
                                     </Grid>
                                 </Border>
                             </DataTemplate>
@@ -489,13 +615,21 @@
                     </ItemsControl>
                 </ui:CardControl>
 
-                <!-- Refresh Button -->
-                <ui:Button Content="{lex:Locale Settings.Analytics.Refresh}"
-                           Icon="{ui:SymbolIcon ArrowSync24}"
-                           Command="{Binding RefreshCommand}"
-                           Style="{StaticResource PulsarSecondaryButtonStyle}"
-                           HorizontalAlignment="Left"
-                           Margin="0,8,0,24"/>
+                <!-- Action Buttons Row -->
+                <StackPanel Orientation="Horizontal" Margin="0,8,0,24">
+                    <ui:Button Content="{lex:Locale Settings.Analytics.Refresh}"
+                               Icon="{ui:SymbolIcon ArrowSync24}"
+                               Command="{Binding RefreshCommand}"
+                               Style="{StaticResource PulsarSecondaryButtonStyle}"
+                               HorizontalAlignment="Left"/>
+                    <ui:Button Content="{lex:Locale Settings.Analytics.ExportCsv}"
+                               Icon="{ui:SymbolIcon Save24}"
+                               Command="{Binding ExportCsvCommand}"
+                               Style="{StaticResource PulsarSecondaryButtonStyle}"
+                               HorizontalAlignment="Left"
+                               Margin="10,0,0,0"
+                               IsEnabled="{Binding HasData}"/>
+                </StackPanel>
 
             </StackPanel>
         </ScrollViewer>

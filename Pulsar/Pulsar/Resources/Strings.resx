@@ -359,6 +359,45 @@
     <data name="Settings.Analytics.SlotPercentageFormat" xml:space="preserve">
       <value>{0}%</value>
     </data>
+    <data name="Settings.Analytics.FilterAllTime" xml:space="preserve">
+      <value>All Time</value>
+    </data>
+    <data name="Settings.Analytics.FilterToday" xml:space="preserve">
+      <value>Today</value>
+    </data>
+    <data name="Settings.Analytics.FilterThisWeek" xml:space="preserve">
+      <value>This Week</value>
+    </data>
+    <data name="Settings.Analytics.FilterThisMonth" xml:space="preserve">
+      <value>This Month</value>
+    </data>
+    <data name="Settings.Analytics.SortByExecutions" xml:space="preserve">
+      <value>Executions</value>
+    </data>
+    <data name="Settings.Analytics.SortBySuccessRate" xml:space="preserve">
+      <value>Success Rate</value>
+    </data>
+    <data name="Settings.Analytics.SortByDuration" xml:space="preserve">
+      <value>Avg Duration</value>
+    </data>
+    <data name="Settings.Analytics.SortByLastUsed" xml:space="preserve">
+      <value>Last Used</value>
+    </data>
+    <data name="Settings.Analytics.DisablePlugin" xml:space="preserve">
+      <value>Disable Plugin</value>
+    </data>
+    <data name="Settings.Analytics.ViewLogs" xml:space="preserve">
+      <value>View Logs</value>
+    </data>
+    <data name="Settings.Analytics.ExportCsv" xml:space="preserve">
+      <value>Export CSV</value>
+    </data>
+    <data name="Settings.Analytics.TrendNoData" xml:space="preserve">
+      <value>No recent data</value>
+    </data>
+    <data name="Settings.Analytics.Recommendation.MoveSlot" xml:space="preserve">
+      <value>Consider moving to a prime-access slot</value>
+    </data>
     <!-- ==================== Settings.About ==================== -->
    <data name="Settings.About.Title" xml:space="preserve">
      <value>About</value>
@@ -1773,6 +1812,12 @@
   </data>
   <data name="Plugin.Recommendation.ViewLogsAction" xml:space="preserve">
     <value>View Logs</value>
+  </data>
+  <data name="Plugin.Recommendation.InactiveTitle" xml:space="preserve">
+    <value>Inactive Plugin Detected</value>
+  </data>
+  <data name="Plugin.Recommendation.InactiveFormat" xml:space="preserve">
+    <value>{0} has been inactive for {1} days. Check if it's still needed.</value>
   </data>
   <!-- ==================== FirstLaunchSetupWizard ==================== -->
   <data name="FirstLaunch.GeneralProductivity" xml:space="preserve">

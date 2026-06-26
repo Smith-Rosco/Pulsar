@@ -19,6 +19,8 @@ namespace Pulsar.Services
         private const int UnusedDaysThreshold = 30;
         private const double HighErrorRateThreshold = 0.2;
         private const int MinExecutionsForRecommendation = 5;
+        private const int InactiveDaysThreshold = 7;
+        private const int MinExecsForInactivityAlert = 50;
 
         public PluginRecommendationEngine(
             IPluginRegistry registry,
@@ -53,11 +55,10 @@ namespace Pulsar.Services
                     var stats = allStats.GetValueOrDefault(plugin.Id) ?? new Models.PluginUsageStats { PluginId = plugin.Id };
                     var health = allHealthReports.GetValueOrDefault(plugin.Id) ?? new Models.PluginHealthReport { PluginId = plugin.Id };
 
-                    // 检查未使用的插件
                     CheckUnusedPlugin(plugin, stats, recommendations);
-
-                    // 检查高错误率插件
                     CheckHighErrorRate(plugin, stats, health, recommendations);
+                    CheckInactivePlugin(plugin, stats, recommendations);
+                    CheckSlotOptimization(plugin, stats, recommendations);
                 }
             }
             catch (Exception ex)
@@ -83,6 +84,8 @@ namespace Pulsar.Services
 
                 CheckUnusedPlugin(plugin, stats, recommendations);
                 CheckHighErrorRate(plugin, stats, health, recommendations);
+                CheckInactivePlugin(plugin, stats, recommendations);
+                CheckSlotOptimization(plugin, stats, recommendations);
             }
             catch (Exception ex)
             {
@@ -113,6 +116,8 @@ namespace Pulsar.Services
                     PluginId = plugin.Id,
                     PluginName = plugin.DisplayName,
                     ActionLabel = _loc["Plugin.Recommendation.DisableAction"],
+                    ActionCommand = "DisablePlugin",
+                    ActionParameter = plugin.Id,
                     Icon = "\U0001f4a4",
                     Severity = "Info"
                 });
@@ -135,6 +140,8 @@ namespace Pulsar.Services
                     PluginId = plugin.Id,
                     PluginName = plugin.DisplayName,
                     ActionLabel = _loc["Plugin.Recommendation.ViewLogsAction"],
+                    ActionCommand = "ViewLogs",
+                    ActionParameter = plugin.Id,
                     Icon = "\u26A0\uFE0F",
                     Severity = "Warning"
                 });
@@ -150,8 +157,58 @@ namespace Pulsar.Services
                     PluginId = plugin.Id,
                     PluginName = plugin.DisplayName,
                     ActionLabel = _loc["Plugin.Recommendation.ViewLogsAction"],
+                    ActionCommand = "ViewLogs",
+                    ActionParameter = plugin.Id,
                     Icon = "\U0001f534",
                     Severity = "Error"
+                });
+            }
+        }
+
+        private void CheckInactivePlugin(IPulsarPlugin plugin, Models.PluginUsageStats stats, List<PluginRecommendation> recommendations)
+        {
+            if (stats.TotalExecutions < MinExecsForInactivityAlert)
+                return;
+
+            if (!stats.LastUsed.HasValue)
+                return;
+
+            var daysSinceLastUse = (DateTime.UtcNow - stats.LastUsed.Value).TotalDays;
+            if (daysSinceLastUse > InactiveDaysThreshold)
+            {
+                recommendations.Add(new PluginRecommendation
+                {
+                    Type = RecommendationType.InactivePlugin,
+                    Title = _loc["Plugin.Recommendation.InactiveTitle"],
+                    Message = string.Format(_loc["Plugin.Recommendation.InactiveFormat"], plugin.DisplayName, (int)daysSinceLastUse),
+                    PluginId = plugin.Id,
+                    PluginName = plugin.DisplayName,
+                    ActionLabel = _loc["Plugin.Recommendation.DisableAction"],
+                    ActionCommand = "DisablePlugin",
+                    ActionParameter = plugin.Id,
+                    Icon = "\u23F3",
+                    Severity = "Warning"
+                });
+            }
+        }
+
+        private void CheckSlotOptimization(IPulsarPlugin plugin, Models.PluginUsageStats stats, List<PluginRecommendation> recommendations)
+        {
+            if (stats.TotalExecutions < 100)
+                return;
+
+            if (stats.FavoriteSlot >= 3)
+            {
+                recommendations.Add(new PluginRecommendation
+                {
+                    Type = RecommendationType.OptimizeSlotPlacement,
+                    Title = $"Slot Optimization: {plugin.DisplayName}",
+                    Message = _loc["Settings.Analytics.Recommendation.MoveSlot"],
+                    PluginId = plugin.Id,
+                    PluginName = plugin.DisplayName,
+                    ActionLabel = "",
+                    Icon = "\U0001f4c8",
+                    Severity = "Info"
                 });
             }
         }
