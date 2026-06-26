@@ -132,6 +132,18 @@ This file provides essential context, conventions, and routing for AI agents wor
 
 ---
 
+### Stale Config Reference (HotkeyService)
+
+**Symptom**: After deleting all slots/settings in the Settings page and saving, `Profiles.json` still contains the old slot data. Save succeeds but file content reverts.
+
+**Root Cause**: `HotkeyService` holds a stale `_config` reference from `InitializeAsync`. `SettingsViewModel.Save()` calls `_hotkeyService.UpdateHotkey()` after the primary save, which internally calls `SaveAsync` with the **stale** reference, overwriting the user's changes.
+
+**Fix**: Replace `UpdateHotkey` calls in `Save()` with `RebuildCache()` (no second save). `RebuildCache()` refreshes `_config` from `_configService.Current` before rebuilding the hotkey cache.
+
+**Deep Dive**: [Docs/lessons/HOTKEY_SERVICE_STALE_CONFIG_OVERWRITE.md](./Docs/lessons/HOTKEY_SERVICE_STALE_CONFIG_OVERWRITE.md)
+
+---
+
 ### Hidden Scrollbars
 
 **Symptom**: Scrollbars remain visible despite `ScrollViewer.VerticalScrollBarVisibility="Hidden"`.

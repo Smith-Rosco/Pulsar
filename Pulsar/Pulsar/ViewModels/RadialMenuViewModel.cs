@@ -405,6 +405,76 @@ namespace Pulsar.ViewModels
                 _currentCenterSize = layout.CenterSize;
                 _currentSlotSize = layout.SlotSize;
             }
+
+            // [Fix] Refresh page provider with updated config data (color, label, icon, etc.)
+            // _pageProvider._allSlots may hold stale PluginSlot references from a previous Show().
+            // We must rebuild it with fresh slots from the updated _config.
+            if (_pageProvider is CommandPageProvider && _lastContext != null)
+            {
+                await RebuildPageProviderAsync();
+            }
+        }
+
+        private async Task RebuildPageProviderAsync()
+        {
+            if (_lastContext == null) return;
+            var slots = LoadSlotsFromConfig(_lastContext.TargetProcessName);
+
+            // Preserve creator slot if the existing provider has one
+            if (_pageProvider is CommandPageProvider existingCp
+                && slots.Count > 0
+                && existingCp.HasCreatorSlot())
+            {
+                var creator = new PluginSlot
+                {
+                    Slot = 0,
+                    Label = string.Format(_loc?["RadialMenu.AddProfileFormat"] ?? "Add Profile ({0})", _lastContext.DisplayProcessName),
+                    IconKey = "\uE710",
+                    PluginId = "internal:create_profile"
+                };
+                slots.Insert(0, creator);
+            }
+
+            _pageProvider = new CommandPageProvider(slots, _pluginRegistry, _lastContext, _trayService, _serviceProvider);
+            await _pageProvider.LoadAsync();
+            _pagingController.SetTotalPages(_pageProvider.TotalPages);
+            await _pagingController.GoToPageAsync(_pageProvider.CurrentPage);
+
+            if (IsVisible)
+            {
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    _pageProvider.RefreshVisuals(Slots, CenterSlot);
+                });
+            }
+        }
+
+        private List<PluginSlot> LoadSlotsFromConfig(string activeProcess)
+        {
+            var slots = new List<PluginSlot>();
+            if (_config?.Profiles == null) return slots;
+
+            bool foundProfile = false;
+
+            if (!string.IsNullOrEmpty(activeProcess) && _config.Profiles.TryGetValue(activeProcess, out var profile))
+            {
+                var profileSlots = profile.GetSlots(true);
+                if (profileSlots.Count > 0)
+                {
+                    slots.AddRange(profileSlots);
+                    foundProfile = true;
+                }
+            }
+
+            if (!foundProfile)
+            {
+                if (_config.Profiles.TryGetValue("Global", out var globalProfile))
+                {
+                    slots.AddRange(globalProfile.GetSlots(true));
+                }
+            }
+
+            return slots;
         }
 
         public void ClearVisuals()
@@ -481,38 +551,22 @@ namespace Pulsar.ViewModels
                 }
                 else // Action Mode
                 {
-                    var slots = new List<PluginSlot>();
-                    bool foundProfile = false;
+                    var slots = LoadSlotsFromConfig(activeProcess);
 
-                    // Try specific profile
-                    if (!string.IsNullOrEmpty(activeProcess) && _config.Profiles.TryGetValue(activeProcess, out var profile))
-                    {
-                        var profileSlots = profile.GetSlots(true); // true = CommandMode
-                        if (profileSlots.Count > 0)
-                        {
-                            slots.AddRange(profileSlots);
-                            foundProfile = true;
-                        }
-                    }
+                    // [Smart Profile Creator] - Insert at start with Slot = 0 (highest priority)
+                    bool foundProfile = !string.IsNullOrEmpty(activeProcess)
+                        && _config.Profiles.TryGetValue(activeProcess, out var _)
+                        && _config.Profiles[activeProcess].GetSlots(true).Count > 0;
 
-                    // Fallback to Global
                     if (!foundProfile)
                     {
-                        if (_config.Profiles.TryGetValue("Global", out var globalProfile))
+                        var creator = new PluginSlot
                         {
-                            slots.AddRange(globalProfile.GetSlots(true));
-                        }
-
-                        // [Smart Profile Creator] - Insert at start with Slot = 0 (highest priority)
-                        var creator = new PluginSlot 
-                        { 
-                            Slot = 0, // Slot = 0 ensures it appears first
-                            Label = string.Format(_loc["RadialMenu.AddProfileFormat"], _lastContext.DisplayProcessName),  // ✅ 使用格式化的进程名
-                            IconKey = "\uE710", // Add Icon
-                            PluginId = "internal:create_profile" 
+                            Slot = 0,
+                            Label = string.Format(_loc?["RadialMenu.AddProfileFormat"] ?? "Add Profile ({0})", _lastContext.DisplayProcessName),
+                            IconKey = "\uE710",
+                            PluginId = "internal:create_profile"
                         };
-                        
-                        // Insert at start - will be sorted by Slot in CommandPageProvider
                         slots.Insert(0, creator);
                     }
 

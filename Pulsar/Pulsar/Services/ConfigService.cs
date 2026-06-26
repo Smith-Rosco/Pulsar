@@ -24,9 +24,10 @@ namespace Pulsar.Services
         private const int DEFAULT_SLOTS_PER_PAGE = 8;
         private const string ResetReloadReason = "reset";
         
-    private readonly string _configPath;
+        private readonly string _configPath;
     private ProfilesConfig? _cachedConfig;
     private readonly object _cacheLock = new();
+    private volatile bool _loadFailed;
     private readonly ILogger<ConfigService> _logger;
         private readonly IPluginMetadataRegistry? _metadataRegistry;
         private readonly IBackgroundWorkScheduler? _backgroundWorkScheduler;
@@ -210,16 +211,22 @@ namespace Pulsar.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[ConfigService] Failed to load config from {Path}", _configPath);
+                _loadFailed = true;
                 
-                // [Fix] 加载失败时不覆盖现有文件
-                // 创建默认配置但不保存，避免覆盖用户数据
-                // 直接使用 CreateFallbackConfig() 而不是 CreateDefaultConfig()，避免触发后台检测
+                // [Safety] 加载失败时保留上次成功加载的缓存，避免丢失用户数据。
+                // 仅当 _cachedConfig 也为空时才创建 fallback。
                 lock (_cacheLock)
                 {
-                    _cachedConfig = CreateFallbackConfig();
+                    if (_cachedConfig == null)
+                    {
+                        _cachedConfig = CreateFallbackConfig();
+                        _logger.LogWarning("[ConfigService] No previous cache available; using in-memory fallback (not saving to disk)");
+                    }
+                    else
+                    {
+                        _logger.LogWarning("[ConfigService] File parse failed but previous cache exists; preserving cached config");
+                    }
                 }
-                
-                _logger.LogWarning("[ConfigService] Using fallback configuration in memory only (not saving to disk to preserve existing file)");
             }
 
             return _cachedConfig ?? CreateDefaultConfig();
@@ -386,12 +393,29 @@ namespace Pulsar.Services
 
                 ApplyDetectionResults(latestConfig, installedApps);
 
+                // [Safety] If the config file previously failed to load (catch
+                // block in LoadInternalAsync), the loaded config is an in-memory
+                // fallback. Never overwrite the user's valid Profiles.json with
+                // an empty fallback. Just mark detection done in-memory.
+                if (_loadFailed)
+                {
+                    _logger.LogWarning(
+                        "[ConfigService] Smart detection save skipped: config was loaded from "
+                        + "fallback due to a previous file read error. Preserving Profiles.json.");
+                    latestConfig.Settings.HasCompletedInitialDetection = true;
+                    lock (_cacheLock) { _cachedConfig = latestConfig; }
+                    _loadFailed = false;
+                    return;
+                }
+
                 await SaveAsync(latestConfig);
 
+                var globalProfile = latestConfig.Profiles?.TryGetValue("Global", out var gp) == true ? gp : null;
+                var switchCount = globalProfile?.SwitchMode?.Count ?? 0;
+                var cmdCount = globalProfile?.CommandMode?.Count ?? 0;
                 _logger.LogInformation(
                     "[ConfigService] Smart configuration applied with {SwitchCount} Switch Mode apps and {CommandCount} Command Mode slots ({Source})",
-                    latestConfig.Profiles["Global"].SwitchMode.Count,
-                    latestConfig.Profiles["Global"].CommandMode.Count,
+                    switchCount, cmdCount,
                     isResetReload ? "reset" : "first-launch");
             },
             new BackgroundWorkOptions

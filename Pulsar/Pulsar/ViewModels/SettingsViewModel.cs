@@ -864,11 +864,11 @@ namespace Pulsar.ViewModels
                 // This ensures immediate visual feedback without requiring app restart
                 WeakReferenceMessenger.Default.Send(new SlotsPerPageChangedMessage(_config.Settings.SlotsPerPage));
 
-                // Persist hotkey changes to live engine
-                if (_config.Settings.Hotkeys.TryGetValue(HotkeyActionIds.ShowGrid, out var showGridHotkey))
-                    await _hotkeyService.UpdateHotkey(HotkeyActionIds.ShowGrid, showGridHotkey);
-                if (_config.Settings.Hotkeys.TryGetValue(HotkeyActionIds.ShowSwitcher, out var showSwitcherHotkey))
-                    await _hotkeyService.UpdateHotkey(HotkeyActionIds.ShowSwitcher, showSwitcherHotkey);
+                // [Fix] Refresh hotkey cache from current config instead of double-saving stale data
+                // HotkeyService._config was set during InitializeAsync and may reference an older
+                // config object. Calling UpdateHotkey here would SaveAsync with that stale reference,
+                // overwriting the user's changes that were just persisted by SaveAsync(_config) above.
+                _hotkeyService.RebuildCache();
 
                 // [Phase 2] Reset dirty flag after successful save
                 HasUnsavedChanges = false;
@@ -2009,6 +2009,7 @@ namespace Pulsar.ViewModels
             }
 
             var config = await _configService.LoadAsync();
+            config.Settings.OnboardingState = "SetupWizardComplete";
             config.Settings.HasCompletedTutorial = false;
             config.Settings.TutorialCrashedAt = null;
             config.Settings.LastTutorialStep = null;

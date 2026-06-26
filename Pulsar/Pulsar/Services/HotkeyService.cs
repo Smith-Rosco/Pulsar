@@ -194,6 +194,12 @@ namespace Pulsar.Services
             }
         }
 
+        public void RebuildCache()
+        {
+            _config = _configService.Current;
+            RebuildHotkeyCache();
+        }
+
         public void RegisterAction(string actionId, Action callback)
         {
             _actions[actionId] = callback;

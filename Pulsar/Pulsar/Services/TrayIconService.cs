@@ -40,7 +40,22 @@ namespace Pulsar.Services
             BuildContextMenu();
             _taskbarIcon.TrayMouseDoubleClick += OnTrayMouseDoubleClick;
 
+            _loc.LanguageChanged += OnLanguageChanged;
+
             _logger?.LogInformation("[TrayIconService] Initialize() - TaskbarIcon created, Visibility={Visibility}", _taskbarIcon.Visibility);
+        }
+
+        private void OnLanguageChanged(object? sender, string cultureName)
+        {
+            if (!System.Windows.Application.Current.Dispatcher.CheckAccess())
+            {
+                System.Windows.Application.Current.Dispatcher.Invoke(() => OnLanguageChanged(sender, cultureName));
+                return;
+            }
+
+            _logger?.LogInformation("[TrayIconService] Language changed to {Language}, rebuilding context menu", cultureName);
+            _taskbarIcon.ToolTipText = _loc["Tray.Tooltip"];
+            BuildContextMenu();
         }
 
         private void TryLoadCustomIcon()

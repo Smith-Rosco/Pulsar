@@ -25,6 +25,8 @@ namespace Pulsar.ViewModels.Strategies
 
         public override int TotalPages => (int)Math.Ceiling((double)_allSlots.Count / (double)ItemsPerPage);
 
+        public bool HasCreatorSlot() => _allSlots.Any(s => s.PluginId == "internal:create_profile");
+
         public CommandPageProvider(
             List<PluginSlot> slots, 
             IPluginRegistry pluginRegistry, 

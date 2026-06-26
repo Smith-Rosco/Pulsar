@@ -9,6 +9,7 @@ namespace Pulsar.Services.Interfaces
         void RegisterAction(string actionId, Action callback);
         void UnregisterAction(string actionId);
         Task UpdateHotkey(string actionId, HotkeyConfig newHotkey);
+        void RebuildCache();
         HotkeyConfig? GetHotkey(string actionId);
 
         /// <summary>
