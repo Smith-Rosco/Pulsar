@@ -97,13 +97,13 @@ namespace Pulsar.Plugins.Extensions.Command
             };
         }
 
-        private async Task<PluginResult> RunCommandAsync(
+        private Task<PluginResult> RunCommandAsync(
             IReadOnlyDictionary<string, string> args,
             PulsarContext context,
             CancellationToken cancellationToken)
         {
             if (!TryGetRequiredArg(args, "path", out var path))
-                return MissingParameterError("path");
+                return Task.FromResult(MissingParameterError("path"));
 
             args.TryGetValue("arguments", out var arguments);
             args.TryGetValue("workingDir", out var workingDir);
@@ -126,12 +126,12 @@ namespace Pulsar.Plugins.Extensions.Command
 
                 _processLauncher.Launch(startInfo);
                 Logger.LogInformation("Command executed successfully: {Path}", path);
-                return PluginResult.Ok(string.Format(_loc["Plugin.Command.Success.Executed"], path));
+                return Task.FromResult(PluginResult.Ok(string.Format(_loc["Plugin.Command.Success.Executed"], path)));
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Command execution failed: {Path}", path);
-                return PluginResult.Error(string.Format(_loc["Plugin.Command.Error.ExecutionFailed"], ex.Message));
+                return Task.FromResult(PluginResult.Error(string.Format(_loc["Plugin.Command.Error.ExecutionFailed"], ex.Message)));
             }
         }
 

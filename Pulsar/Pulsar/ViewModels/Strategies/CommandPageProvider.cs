@@ -91,7 +91,8 @@ namespace Pulsar.ViewModels.Strategies
                     
                     if (isEnabled)
                     {
-                        slot.ActionStrategy = new PluginActionStrategy(item, _pluginRegistry, _context, _trayService, _feedbackService);
+                        slot.ActionStrategy = new PluginActionStrategy(item, _pluginRegistry, _context, _trayService, _feedbackService,
+                            _serviceProvider.GetService(typeof(IPluginUsageTracker)) as IPluginUsageTracker);
                     }
                     else
                     {

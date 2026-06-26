@@ -409,7 +409,7 @@ namespace Pulsar.Services
             }
         }
 
-        public async Task<CacheStatistics> GetCacheStatisticsAsync()
+        public Task<CacheStatistics> GetCacheStatisticsAsync()
         {
             var stats = new CacheStatistics
             {
@@ -446,7 +446,7 @@ namespace Pulsar.Services
             
             stats.PendingChanges = _hasPendingChanges ? 1 : 0;
 
-            return stats;
+            return Task.FromResult(stats);
         }
 
         // ========== 私有方法 ==========

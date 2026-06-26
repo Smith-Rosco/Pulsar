@@ -305,7 +305,7 @@ namespace Pulsar.Services
         /// <summary>
         /// 清理未使用的包文件
         /// </summary>
-        public async Task CleanupUnusedPackagesAsync(CancellationToken cancellationToken = default)
+        public Task CleanupUnusedPackagesAsync(CancellationToken cancellationToken = default)
         {
             try
             {
@@ -342,6 +342,8 @@ namespace Pulsar.Services
             {
                 _logger?.LogError(ex, "[PluginRepository] Failed to cleanup unused packages");
             }
+
+            return Task.CompletedTask;
         }
     }
 

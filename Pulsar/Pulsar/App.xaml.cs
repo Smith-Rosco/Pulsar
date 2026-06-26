@@ -204,6 +204,10 @@ namespace Pulsar
             // [New] Plugin Management UI
             serviceCollection.AddTransient<PluginManagerViewModel>();
             serviceCollection.AddTransient<SettingsPluginsPage>();
+            
+            // [New] Usage Analytics UI
+            serviceCollection.AddTransient<SettingsAnalyticsPageViewModel>();
+            serviceCollection.AddTransient<SettingsAnalyticsPage>();
 
             // [External Plugins] External Plugin Management Services
             serviceCollection.AddSingleton<LocalPluginScanner>(sp =>

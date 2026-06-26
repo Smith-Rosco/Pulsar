@@ -66,7 +66,7 @@ namespace Pulsar.Core.Plugin
         /// <summary>
         /// 加载插件
         /// </summary>
-        public async Task LoadAsync()
+        public Task LoadAsync()
         {
             if (State != PluginState.Unloaded)
             {
@@ -120,6 +120,8 @@ namespace Pulsar.Core.Plugin
                 State = PluginState.Loaded;
                 _logger?.LogInformation("[PluginHost] ✓ Successfully loaded plugin: {PluginId} v{Version}", 
                     PluginId, Version);
+
+                return Task.CompletedTask;
             }
             catch (Exception ex)
             {

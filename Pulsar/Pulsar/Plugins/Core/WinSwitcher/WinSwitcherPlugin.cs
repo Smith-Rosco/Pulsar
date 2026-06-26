@@ -212,25 +212,25 @@ namespace Pulsar.Plugins.Core.WinSwitcher
         /// <summary>
         /// 启动应用程序
         /// </summary>
-        private async Task<PluginResult> LaunchApplicationAsync(
+        private Task<PluginResult> LaunchApplicationAsync(
             IReadOnlyDictionary<string, string> args,
             PulsarContext context)
         {
             if (!args.TryGetValue("path", out var exePath) || string.IsNullOrEmpty(exePath))
             {
-                return PluginResult.Error(_loc?["Plugin.WinSwitcher.MissingPathParam"] ?? "Missing required parameter: path", PluginErrorSeverity.Recoverable);
+                return Task.FromResult(PluginResult.Error(_loc?["Plugin.WinSwitcher.MissingPathParam"] ?? "Missing required parameter: path", PluginErrorSeverity.Recoverable));
             }
             
             // 验证路径格式
             if (!Path.IsPathRooted(exePath))
             {
-                return PluginResult.Error($"Path must be absolute: {exePath}", PluginErrorSeverity.Recoverable);
+                return Task.FromResult(PluginResult.Error($"Path must be absolute: {exePath}", PluginErrorSeverity.Recoverable));
             }
             
             // 验证文件存在性
             if (!File.Exists(exePath))
             {
-                return PluginResult.Error($"Application not found: {exePath}", PluginErrorSeverity.Recoverable);
+                return Task.FromResult(PluginResult.Error($"Application not found: {exePath}", PluginErrorSeverity.Recoverable));
             }
             
             // 验证文件扩展名白名单
@@ -238,8 +238,8 @@ namespace Pulsar.Plugins.Core.WinSwitcher
             var ext = Path.GetExtension(exePath).ToLowerInvariant();
             if (!allowedExtensions.Contains(ext))
             {
-                return PluginResult.Error($"Unsupported file type: {ext}. Allowed: {string.Join(", ", allowedExtensions)}", 
-                    PluginErrorSeverity.Recoverable);
+                return Task.FromResult(PluginResult.Error($"Unsupported file type: {ext}. Allowed: {string.Join(", ", allowedExtensions)}", 
+                    PluginErrorSeverity.Recoverable));
             }
 
             args.TryGetValue("arguments", out var arguments);
@@ -258,27 +258,27 @@ namespace Pulsar.Plugins.Core.WinSwitcher
 
                 Process.Start(startInfo);
                 _logger?.LogInformation($"{LogPrefix} Successfully launched: {{ExePath}}", exePath);
-                return PluginResult.Ok(string.Format(_loc?["Plugin.WinSwitcher.Launched"] ?? "Launched {0}", Path.GetFileName(exePath)));
+                return Task.FromResult(PluginResult.Ok(string.Format(_loc?["Plugin.WinSwitcher.Launched"] ?? "Launched {0}", Path.GetFileName(exePath))));
             }
             catch (System.IO.FileNotFoundException ex)
             {
                 _logger?.LogError(ex, $"{LogPrefix} File not found: {{ExePath}}", exePath);
-                return PluginResult.Error($"File not found: {ex.Message}", PluginErrorSeverity.Recoverable);
+                return Task.FromResult(PluginResult.Error($"File not found: {ex.Message}", PluginErrorSeverity.Recoverable));
             }
             catch (UnauthorizedAccessException ex)
             {
                 _logger?.LogError(ex, $"{LogPrefix} Access denied: {{ExePath}}", exePath);
-                return PluginResult.Error($"Access denied: {ex.Message}", PluginErrorSeverity.Critical);
+                return Task.FromResult(PluginResult.Error($"Access denied: {ex.Message}", PluginErrorSeverity.Critical));
             }
             catch (System.ComponentModel.Win32Exception ex)
             {
                 _logger?.LogError(ex, $"{LogPrefix} Win32 error launching: {{ExePath}}", exePath);
-                return PluginResult.Error($"Failed to launch: {ex.Message}", PluginErrorSeverity.Recoverable);
+                return Task.FromResult(PluginResult.Error($"Failed to launch: {ex.Message}", PluginErrorSeverity.Recoverable));
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, $"{LogPrefix} Unexpected error launching: {{ExePath}}", exePath);
-                return PluginResult.Error($"Launch failed: {ex.Message}", PluginErrorSeverity.Critical);
+                return Task.FromResult(PluginResult.Error($"Launch failed: {ex.Message}", PluginErrorSeverity.Critical));
             }
         }
 

@@ -173,7 +173,7 @@ namespace Pulsar.ViewModels.Dialogs
             return image;
         }
 
-        public async Task<bool> CanCloseAsync(DialogResult result)
+        public Task<bool> CanCloseAsync(DialogResult result)
         {
             if (result == DialogResult.Confirmed)
             {
@@ -184,7 +184,7 @@ namespace Pulsar.ViewModels.Dialogs
 
                 Result = string.Join(",", blacklisted);
             }
-            return true;
+            return Task.FromResult(true);
         }
     }
 

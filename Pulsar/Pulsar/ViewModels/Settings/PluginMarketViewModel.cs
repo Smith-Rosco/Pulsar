@@ -102,7 +102,7 @@ namespace Pulsar.ViewModels.Settings
         /// 刷新插件列表
         /// </summary>
         [RelayCommand]
-        private async Task RefreshPluginsAsync()
+        private Task RefreshPluginsAsync()
         {
             try
             {
@@ -115,6 +115,8 @@ namespace Pulsar.ViewModels.Settings
             {
                 _logger?.LogError(ex, "[PluginMarketViewModel] Failed to refresh plugins");
             }
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
