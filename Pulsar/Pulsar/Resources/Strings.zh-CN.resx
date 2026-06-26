@@ -532,6 +532,61 @@
     <value>个插件</value>
   </data>
   <data
+    name="Settings.Analytics.JustNow"
+    xml:space="preserve">
+    <value>刚刚</value>
+  </data>
+  <data
+    name="Settings.Analytics.MinutesAgoFormat"
+    xml:space="preserve">
+    <value>{0}分钟前</value>
+  </data>
+  <data
+    name="Settings.Analytics.HoursAgoFormat"
+    xml:space="preserve">
+    <value>{0}小时前</value>
+  </data>
+  <data
+    name="Settings.Analytics.DaysAgoFormat"
+    xml:space="preserve">
+    <value>{0}天前</value>
+  </data>
+  <data
+    name="Settings.Analytics.DurationMs"
+    xml:space="preserve">
+    <value>{0} 毫秒</value>
+  </data>
+  <data
+    name="Settings.Analytics.DurationS"
+    xml:space="preserve">
+    <value>{0} 秒</value>
+  </data>
+  <data
+    name="Settings.Analytics.FavoriteSlotFormat"
+    xml:space="preserve">
+    <value>常用: 插槽 #{0}</value>
+  </data>
+  <data
+    name="Settings.Analytics.ModeTask"
+    xml:space="preserve">
+    <value>任务</value>
+  </data>
+  <data
+    name="Settings.Analytics.ModeAction"
+    xml:space="preserve">
+    <value>动作</value>
+  </data>
+  <data
+    name="Settings.Analytics.ErrorLoading"
+    xml:space="preserve">
+    <value>加载分析数据失败，请重试。</value>
+  </data>
+  <data
+    name="Settings.Analytics.SlotPercentageFormat"
+    xml:space="preserve">
+    <value>{0}%</value>
+  </data>
+  <data
     name="Settings.About.Title"
     xml:space="preserve">
     <value>关于</value>
@@ -2785,6 +2840,51 @@
     name="Plugin.HealthIcons"
     xml:space="preserve">
     <value>⚡ ✓ ⚠ 💤 🚫 ✅ ⚠️ 🔴 💤 🚫</value>
+  </data>
+  <data
+    name="Plugin.Recommendation.UnusedNeverUsed"
+    xml:space="preserve">
+    <value>{0} 从未被使用。考虑禁用以提升性能。</value>
+  </data>
+  <data
+    name="Plugin.Recommendation.UnusedDaysFormat"
+    xml:space="preserve">
+    <value>{0} 已 {1} 天未使用。考虑禁用它。</value>
+  </data>
+  <data
+    name="Plugin.Recommendation.UnusedTitle"
+    xml:space="preserve">
+    <value>检测到未使用的插件</value>
+  </data>
+  <data
+    name="Plugin.Recommendation.HighErrorTitle"
+    xml:space="preserve">
+    <value>检测到高错误率</value>
+  </data>
+  <data
+    name="Plugin.Recommendation.HighErrorFormat"
+    xml:space="preserve">
+    <value>{0} 错误率为 {1}%。请查看日志了解详情。</value>
+  </data>
+  <data
+    name="Plugin.Recommendation.CircuitBreakerTitle"
+    xml:space="preserve">
+    <value>熔断器已触发</value>
+  </data>
+  <data
+    name="Plugin.Recommendation.CircuitBreakerFormat"
+    xml:space="preserve">
+    <value>{0} 因重复失败已被临时禁用 {1} 次。</value>
+  </data>
+  <data
+    name="Plugin.Recommendation.DisableAction"
+    xml:space="preserve">
+    <value>禁用插件</value>
+  </data>
+  <data
+    name="Plugin.Recommendation.ViewLogsAction"
+    xml:space="preserve">
+    <value>查看日志</value>
   </data>
   <data
     name="Profile.ConfigurationIssues"

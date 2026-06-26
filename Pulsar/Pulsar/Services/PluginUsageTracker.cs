@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Pulsar.Services
@@ -24,7 +25,7 @@ namespace Pulsar.Services
         private readonly string _statsFilePath;
         private readonly System.Threading.Timer _autoSaveTimer;
         private readonly SemaphoreSlim _saveLock = new(1, 1);
-        private bool _isDirty = false;
+        private bool _isDirty;
 
         public PluginUsageTracker(ILogger<PluginUsageTracker> logger)
         {
@@ -48,47 +49,72 @@ namespace Pulsar.Services
         /// </summary>
         public void RecordExecution(string pluginId, bool success, long executionTimeMs, string? profileName = null)
         {
+            RecordExecution(pluginId, success, executionTimeMs, profileName, 0, string.Empty);
+        }
+
+        /// <summary>
+        /// 记录插件执行（含插槽位置和模式信息）
+        /// </summary>
+        public void RecordExecution(string pluginId, bool success, long executionTimeMs, string? profileName, int slotIndex, string mode)
+        {
             try
             {
                 var stats = _stats.GetOrAdd(pluginId, _ => new PluginUsageStats { PluginId = pluginId });
 
                 lock (stats)
                 {
-                    // 更新基本统计
+                    var now = DateTime.UtcNow;
+
                     stats.TotalExecutions++;
                     if (success)
                         stats.SuccessCount++;
                     else
                         stats.FailureCount++;
 
-                    // 更新时间
-                    var now = DateTime.UtcNow;
                     stats.LastUsed = now;
                     if (stats.FirstUsed == null)
                         stats.FirstUsed = now;
 
-                    // 更新执行时长
                     stats.TotalExecutionTimeMs += executionTimeMs;
                     stats.AverageExecutionTimeMs = (double)stats.TotalExecutionTimeMs / stats.TotalExecutions;
 
-                    // 更新每日统计
                     var dateKey = now.ToString("yyyy-MM-dd");
                     if (stats.DailyStats.ContainsKey(dateKey))
                         stats.DailyStats[dateKey]++;
                     else
                         stats.DailyStats[dateKey] = 1;
 
-                    // 清理超过 30 天的数据
                     CleanupOldDailyStats(stats);
 
-                    // 记录使用的 Profile
                     if (!string.IsNullOrEmpty(profileName))
                     {
                         stats.UsedInProfiles.Add(profileName);
                     }
+
+                    if (slotIndex > 0)
+                    {
+                        if (stats.SlotUsage.ContainsKey(slotIndex))
+                            stats.SlotUsage[slotIndex]++;
+                        else
+                            stats.SlotUsage[slotIndex] = 1;
+                    }
+
+                    if (!string.IsNullOrEmpty(mode))
+                    {
+                        if (mode == "Task")
+                            stats.TaskModeExecutions++;
+                        else if (mode == "Action")
+                            stats.ActionModeExecutions++;
+                    }
+
+                    var hour = now.Hour;
+                    if (stats.HourlyUsage.ContainsKey(hour))
+                        stats.HourlyUsage[hour]++;
+                    else
+                        stats.HourlyUsage[hour] = 1;
                 }
 
-                _isDirty = true;
+                Volatile.Write(ref _isDirty, true);
             }
             catch (Exception ex)
             {
@@ -161,7 +187,7 @@ namespace Pulsar.Services
         /// </summary>
         public async Task SaveAsync()
         {
-            if (!_isDirty)
+            if (!Volatile.Read(ref _isDirty))
                 return;
 
             await _saveLock.WaitAsync();
@@ -176,7 +202,7 @@ namespace Pulsar.Services
                 var json = JsonSerializer.Serialize(_stats.Values.ToList(), options);
                 await File.WriteAllTextAsync(_statsFilePath, json);
 
-                _isDirty = false;
+                Volatile.Write(ref _isDirty, false);
                 _logger.LogDebug("[PluginUsageTracker] Saved stats to {Path}", _statsFilePath);
             }
             catch (Exception ex)
@@ -235,7 +261,7 @@ namespace Pulsar.Services
         /// </summary>
         private void AutoSaveCallback(object? state)
         {
-            if (_isDirty)
+            if (Volatile.Read(ref _isDirty))
             {
                 _ = SaveAsync();
             }
@@ -270,7 +296,11 @@ namespace Pulsar.Services
                 DailyStats = new Dictionary<string, int>(source.DailyStats),
                 AverageExecutionTimeMs = source.AverageExecutionTimeMs,
                 TotalExecutionTimeMs = source.TotalExecutionTimeMs,
-                UsedInProfiles = new HashSet<string>(source.UsedInProfiles)
+                UsedInProfiles = new HashSet<string>(source.UsedInProfiles),
+                SlotUsage = new Dictionary<int, int>(source.SlotUsage),
+                TaskModeExecutions = source.TaskModeExecutions,
+                ActionModeExecutions = source.ActionModeExecutions,
+                HourlyUsage = new Dictionary<int, int>(source.HourlyUsage)
             };
         }
 
@@ -280,7 +310,7 @@ namespace Pulsar.Services
             _saveLock?.Dispose();
 
             // 最后保存一次
-            if (_isDirty)
+            if (Volatile.Read(ref _isDirty))
             {
                 Task.Run(() => SaveAsync()).ContinueWith(t =>
                 {

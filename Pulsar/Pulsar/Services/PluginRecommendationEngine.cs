@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin;
 using Pulsar.Services.Interfaces;
 using System;
@@ -7,31 +8,30 @@ using System.Linq;
 
 namespace Pulsar.Services
 {
-    /// <summary>
-    /// 插件推荐引擎实现
-    /// </summary>
     public class PluginRecommendationEngine : IPluginRecommendationEngine
     {
         private readonly IPluginRegistry _registry;
         private readonly IPluginUsageTracker _usageTracker;
         private readonly IPluginHealthMonitor _healthMonitor;
         private readonly ILogger<PluginRecommendationEngine> _logger;
+        private readonly ILocalizationService _loc;
 
-        // 推荐阈值
         private const int UnusedDaysThreshold = 30;
-        private const double HighErrorRateThreshold = 0.2; // 20% 错误率
+        private const double HighErrorRateThreshold = 0.2;
         private const int MinExecutionsForRecommendation = 5;
 
         public PluginRecommendationEngine(
             IPluginRegistry registry,
             IPluginUsageTracker usageTracker,
             IPluginHealthMonitor healthMonitor,
-            ILogger<PluginRecommendationEngine> logger)
+            ILogger<PluginRecommendationEngine> logger,
+            ILocalizationService localizationService)
         {
             _registry = registry;
             _usageTracker = usageTracker;
             _healthMonitor = healthMonitor;
             _logger = logger;
+            _loc = localizationService;
         }
 
         public List<PluginRecommendation> GetRecommendations()
@@ -94,7 +94,6 @@ namespace Pulsar.Services
 
         private void CheckUnusedPlugin(IPulsarPlugin plugin, Models.PluginUsageStats stats, List<PluginRecommendation> recommendations)
         {
-            // 如果插件从未使用或超过 30 天未使用
             if (stats.TotalExecutions == 0 || 
                 (stats.LastUsed.HasValue && (DateTime.UtcNow - stats.LastUsed.Value).TotalDays > UnusedDaysThreshold))
             {
@@ -103,18 +102,18 @@ namespace Pulsar.Services
                     : -1;
 
                 var message = stats.TotalExecutions == 0
-                    ? $"{plugin.DisplayName} has never been used. Consider disabling it to improve performance."
-                    : $"{plugin.DisplayName} hasn't been used for {daysSinceLastUse} days. Consider disabling it.";
+                    ? string.Format(_loc["Plugin.Recommendation.UnusedNeverUsed"], plugin.DisplayName)
+                    : string.Format(_loc["Plugin.Recommendation.UnusedDaysFormat"], plugin.DisplayName, daysSinceLastUse);
 
                 recommendations.Add(new PluginRecommendation
                 {
                     Type = RecommendationType.DisableUnusedPlugin,
-                    Title = "Unused Plugin Detected",
+                    Title = _loc["Plugin.Recommendation.UnusedTitle"],
                     Message = message,
                     PluginId = plugin.Id,
                     PluginName = plugin.DisplayName,
-                    ActionLabel = "Disable Plugin",
-                    Icon = "💤",
+                    ActionLabel = _loc["Plugin.Recommendation.DisableAction"],
+                    Icon = "\U0001f4a4",
                     Severity = "Info"
                 });
             }
@@ -122,39 +121,36 @@ namespace Pulsar.Services
 
         private void CheckHighErrorRate(IPulsarPlugin plugin, Models.PluginUsageStats stats, Models.PluginHealthReport health, List<PluginRecommendation> recommendations)
         {
-            // 只对有足够执行次数的插件进行检查
             if (stats.TotalExecutions < MinExecutionsForRecommendation)
                 return;
 
-            // 检查错误率
             if (health.ErrorRate > HighErrorRateThreshold)
             {
                 var errorPercentage = (health.ErrorRate * 100).ToString("F1");
                 recommendations.Add(new PluginRecommendation
                 {
                     Type = RecommendationType.CheckPluginErrors,
-                    Title = "High Error Rate Detected",
-                    Message = $"{plugin.DisplayName} has a {errorPercentage}% error rate. Check logs for details.",
+                    Title = _loc["Plugin.Recommendation.HighErrorTitle"],
+                    Message = string.Format(_loc["Plugin.Recommendation.HighErrorFormat"], plugin.DisplayName, errorPercentage),
                     PluginId = plugin.Id,
                     PluginName = plugin.DisplayName,
-                    ActionLabel = "View Logs",
-                    Icon = "⚠️",
+                    ActionLabel = _loc["Plugin.Recommendation.ViewLogsAction"],
+                    Icon = "\u26A0\uFE0F",
                     Severity = "Warning"
                 });
             }
 
-            // 检查 Circuit Breaker 触发
             if (health.CircuitBreakerTrips > 0)
             {
                 recommendations.Add(new PluginRecommendation
                 {
                     Type = RecommendationType.CheckPluginErrors,
-                    Title = "Circuit Breaker Triggered",
-                    Message = $"{plugin.DisplayName} has been temporarily disabled {health.CircuitBreakerTrips} time(s) due to repeated failures.",
+                    Title = _loc["Plugin.Recommendation.CircuitBreakerTitle"],
+                    Message = string.Format(_loc["Plugin.Recommendation.CircuitBreakerFormat"], plugin.DisplayName, health.CircuitBreakerTrips),
                     PluginId = plugin.Id,
                     PluginName = plugin.DisplayName,
-                    ActionLabel = "View Logs",
-                    Icon = "🔴",
+                    ActionLabel = _loc["Plugin.Recommendation.ViewLogsAction"],
+                    Icon = "\U0001f534",
                     Severity = "Error"
                 });
             }

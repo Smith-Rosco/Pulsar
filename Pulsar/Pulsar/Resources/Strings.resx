@@ -326,6 +326,39 @@
     <data name="Settings.Analytics.Plugins" xml:space="preserve">
       <value>plugins</value>
     </data>
+    <data name="Settings.Analytics.JustNow" xml:space="preserve">
+      <value>Just now</value>
+    </data>
+    <data name="Settings.Analytics.MinutesAgoFormat" xml:space="preserve">
+      <value>{0}m ago</value>
+    </data>
+    <data name="Settings.Analytics.HoursAgoFormat" xml:space="preserve">
+      <value>{0}h ago</value>
+    </data>
+    <data name="Settings.Analytics.DaysAgoFormat" xml:space="preserve">
+      <value>{0}d ago</value>
+    </data>
+    <data name="Settings.Analytics.DurationMs" xml:space="preserve">
+      <value>{0} ms</value>
+    </data>
+    <data name="Settings.Analytics.DurationS" xml:space="preserve">
+      <value>{0} s</value>
+    </data>
+    <data name="Settings.Analytics.FavoriteSlotFormat" xml:space="preserve">
+      <value>Favorite: Slot #{0}</value>
+    </data>
+    <data name="Settings.Analytics.ModeTask" xml:space="preserve">
+      <value>Task</value>
+    </data>
+    <data name="Settings.Analytics.ModeAction" xml:space="preserve">
+      <value>Action</value>
+    </data>
+    <data name="Settings.Analytics.ErrorLoading" xml:space="preserve">
+      <value>Failed to load analytics data. Please try again.</value>
+    </data>
+    <data name="Settings.Analytics.SlotPercentageFormat" xml:space="preserve">
+      <value>{0}%</value>
+    </data>
     <!-- ==================== Settings.About ==================== -->
    <data name="Settings.About.Title" xml:space="preserve">
      <value>About</value>
@@ -1712,6 +1745,34 @@
   <!-- ==================== Plugin.HealthIcons ==================== -->
   <data name="Plugin.HealthIcons" xml:space="preserve">
     <value>⚡ ✓ ⚠ 💤 🚫 ✅ ⚠️ 🔴 💤 🚫</value>
+  </data>
+  <!-- ==================== Plugin.Recommendation ==================== -->
+  <data name="Plugin.Recommendation.UnusedNeverUsed" xml:space="preserve">
+    <value>{0} has never been used. Consider disabling it to improve performance.</value>
+  </data>
+  <data name="Plugin.Recommendation.UnusedDaysFormat" xml:space="preserve">
+    <value>{0} hasn't been used for {1} days. Consider disabling it.</value>
+  </data>
+  <data name="Plugin.Recommendation.UnusedTitle" xml:space="preserve">
+    <value>Unused Plugin Detected</value>
+  </data>
+  <data name="Plugin.Recommendation.HighErrorTitle" xml:space="preserve">
+    <value>High Error Rate Detected</value>
+  </data>
+  <data name="Plugin.Recommendation.HighErrorFormat" xml:space="preserve">
+    <value>{0} has a {1}% error rate. Check logs for details.</value>
+  </data>
+  <data name="Plugin.Recommendation.CircuitBreakerTitle" xml:space="preserve">
+    <value>Circuit Breaker Triggered</value>
+  </data>
+  <data name="Plugin.Recommendation.CircuitBreakerFormat" xml:space="preserve">
+    <value>{0} has been temporarily disabled {1} time(s) due to repeated failures.</value>
+  </data>
+  <data name="Plugin.Recommendation.DisableAction" xml:space="preserve">
+    <value>Disable Plugin</value>
+  </data>
+  <data name="Plugin.Recommendation.ViewLogsAction" xml:space="preserve">
+    <value>View Logs</value>
   </data>
   <!-- ==================== FirstLaunchSetupWizard ==================== -->
   <data name="FirstLaunch.GeneralProductivity" xml:space="preserve">

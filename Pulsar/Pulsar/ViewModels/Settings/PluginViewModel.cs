@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Plugin.Metadata;
+using Pulsar.Helpers;
 using Pulsar.Models;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
@@ -34,6 +35,7 @@ namespace Pulsar.ViewModels.Settings
         private readonly PluginMetadata? _metadata;
         private readonly BuiltInPluginDisplayModel _displayModel;
         private readonly ILocalizationService? _loc;
+        private readonly PluginAnalyticsFormatter? _formatter;
 
         [ObservableProperty]
         private bool _isEnabled;
@@ -62,32 +64,32 @@ namespace Pulsar.ViewModels.Settings
 
         public ObservableCollection<PluginSettingViewModel> Settings { get; } = new();
 
-        public string UsageSummary => $"{UsageStats.TotalExecutions} uses";
-        public string ProfilesSummary => $"{UsageStats.UsedInProfiles.Count} profiles";
-        public string LastUsedSummary => UsageStats.LastUsed.HasValue ? FormatTimeAgo(UsageStats.LastUsed.Value) : (_loc?["Plugin.NeverUsed"] ?? "Never used");
-        public string HealthBadge => HealthReport.Status switch
+        public string UsageSummary => _formatter?.FormatUsageSummary(UsageStats) ?? $"{UsageStats.TotalExecutions} uses";
+        public string ProfilesSummary => _formatter?.FormatProfilesSummary(UsageStats) ?? $"{UsageStats.UsedInProfiles.Count} profiles";
+        public string LastUsedSummary => _formatter?.FormatLastUsedSummary(UsageStats) ?? (UsageStats.LastUsed.HasValue ? FormatTimeAgo(UsageStats.LastUsed.Value) : (_loc?["Plugin.NeverUsed"] ?? "Never used"));
+        public string HealthBadge => _formatter?.FormatHealthBadge(HealthReport) ?? HealthReport.Status switch
         {
-            PluginHealthStatus.Healthy => "✅",
-            PluginHealthStatus.Warning => "⚠️",
-            PluginHealthStatus.Critical => "🔴",
-            PluginHealthStatus.Unused => "💤",
-            PluginHealthStatus.Disabled => "🚫",
+            PluginHealthStatus.Healthy => "\u2705",
+            PluginHealthStatus.Warning => "\u26A0\uFE0F",
+            PluginHealthStatus.Critical => "\U0001f534",
+            PluginHealthStatus.Unused => "\U0001f4a4",
+            PluginHealthStatus.Disabled => "\U0001f6ab",
             _ => ""
         };
 
-        public string HealthScoreText => $"{HealthReport.HealthScore}/100";
-        public string HealthScoreColor => HealthReport.HealthScore switch
+        public string HealthScoreText => _formatter?.FormatHealthScoreText(HealthReport) ?? $"{HealthReport.HealthScore}/100";
+        public string HealthScoreColor => _formatter?.FormatHealthScoreColor(HealthReport) ?? HealthReport.HealthScore switch
         {
             >= 90 => "#28a745",
             >= 70 => "#ffc107",
             _ => "#dc3545"
         };
 
-        public string SuccessRateText => UsageStats.TotalExecutions > 0
+        public string SuccessRateText => _formatter?.FormatSuccessRateText(UsageStats) ?? (UsageStats.TotalExecutions > 0
             ? $"{(double)UsageStats.SuccessCount / UsageStats.TotalExecutions * 100:F1}%"
-            : (_loc?["Plugin.NA"] ?? "N/A");
+            : (_loc?["Plugin.NA"] ?? "N/A"));
 
-        public string AvgExecutionTimeText => $"{UsageStats.AverageExecutionTimeMs:F0}ms";
+        public string AvgExecutionTimeText => _formatter?.FormatAvgExecutionTimeText(UsageStats) ?? $"{UsageStats.AverageExecutionTimeMs:F0}ms";
         public bool IsViewLogsVisible => RecentErrorCount > 0;
         public string ViewLogsLabel => RecentErrorCount > 0 ? string.Format(_loc?["Settings.Plugins.ViewLogsErrorsFormat"] ?? "View Logs ({0} errors)", RecentErrorCount) : (_loc?["Settings.Plugins.ViewLogsDefault"] ?? "View Logs");
 
@@ -112,6 +114,7 @@ namespace Pulsar.ViewModels.Settings
             _dialogService = dialogService;
             _serviceProvider = serviceProvider;
             _loc = localizationService;
+            _formatter = localizationService != null ? new PluginAnalyticsFormatter(localizationService) : null;
             _logger = serviceProvider?.GetService<ILogger<PluginViewModel>>();
             _plugin = _registry.GetPlugin(descriptor.Id);
             _metadata = metadataRegistry?.GetMetadata(descriptor.Id) ?? descriptor.Metadata;

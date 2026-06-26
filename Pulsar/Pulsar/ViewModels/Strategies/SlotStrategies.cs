@@ -42,19 +42,22 @@ namespace Pulsar.ViewModels.Strategies
         private readonly PulsarContext _pulsarContext;
         private readonly ITrayService _trayService; // [New]
         private readonly IActionFeedbackService _feedbackService;
+        private readonly IPluginUsageTracker? _usageTracker;
 
         public PluginActionStrategy(
             PluginSlot pluginSlot, 
             IPluginRegistry registry, 
             PulsarContext pulsarContext,
             ITrayService trayService,
-            IActionFeedbackService feedbackService)
+            IActionFeedbackService feedbackService,
+            IPluginUsageTracker? usageTracker = null)
         {
             _pluginSlot = pluginSlot;
             _registry = registry;
             _pulsarContext = pulsarContext;
             _trayService = trayService;
             _feedbackService = feedbackService;
+            _usageTracker = usageTracker;
         }
 
         public async Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context, CancellationToken cancellationToken = default)
@@ -180,7 +183,7 @@ namespace Pulsar.ViewModels.Strategies
                 stopwatch.Stop();
 
                 // Record statistics for WinSwitcher plugin
-                _usageTracker?.RecordExecution("com.pulsar.winswitcher", success, stopwatch.ElapsedMilliseconds, _window.ProcessName);
+                _usageTracker?.RecordExecution("com.pulsar.winswitcher", success, stopwatch.ElapsedMilliseconds, _window.ProcessName, slot.SlotIndex, "Task");
                 
                 if (success)
                 {

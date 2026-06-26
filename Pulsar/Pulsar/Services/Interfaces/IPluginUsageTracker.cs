@@ -7,15 +7,10 @@ using Pulsar.Models;
 
 namespace Pulsar.Services.Interfaces
 {
-    /// <summary>
-    /// 插件使用统计追踪服务接口
-    /// </summary>
     public interface IPluginUsageTracker
     {
-        /// <summary>
-        /// 记录插件执行
-        /// </summary>
         void RecordExecution(string pluginId, bool success, long executionTimeMs, string? profileName = null);
+        void RecordExecution(string pluginId, bool success, long executionTimeMs, string? profileName, int slotIndex, string mode);
 
         /// <summary>
         /// 获取插件统计数据
