@@ -37,7 +37,7 @@ jobs:
         run: |
           $tag = "${{ github.ref_name }}"
           $name = "Pulsar $tag"
-          gh release create $tag --title "$name" --generate-notes
+          gh release create $tag --title "$name" --notes-from-tag
 
       - name: Upload Release Asset
         env:
