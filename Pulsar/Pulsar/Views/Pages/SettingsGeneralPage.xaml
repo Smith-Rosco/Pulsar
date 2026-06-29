@@ -32,24 +32,15 @@
                                      Description="{lex:Locale Settings.General.Description}">
             <controls:SettingsPageHeader.ActionsContent>
                 <StackPanel Orientation="Horizontal">
-                    <ui:Button Content="{lex:Locale Settings.General.OpenAppLogs}"
-                               Icon="{ui:SymbolIcon DocumentText24}"
-                               Command="{Binding OpenLogsFolderCommand}"
-                               Style="{StaticResource PulsarSecondaryButtonStyle}"
-                               Margin="0,0,8,0"/>
-                    <ui:Button Content="{lex:Locale Settings.General.OpenPluginLogs}"
+                    <ui:Button Content="{lex:Locale Settings.General.OpenLogs}"
                                Icon="{ui:SymbolIcon FolderOpen24}"
-                               Command="{Binding OpenPluginLogsFolderCommand}"
+                               Command="{Binding OpenLogsFolderCommand}"
                                Style="{StaticResource PulsarSecondaryButtonStyle}"
                                Margin="0,0,8,0"/>
                     <ui:Button Content="{lex:Locale Settings.General.ResetDefaults}"
                                Icon="{ui:SymbolIcon ArrowReset24}"
                                Command="{Binding ResetConfigCommand}"
                                Style="{StaticResource PulsarDangerButtonStyle}"/>
-                    <ui:Button Content="{lex:Locale Settings.General.ResetTutorial}"
-                               Icon="{ui:SymbolIcon ArrowReset24}"
-                               Command="{Binding ResetTutorialCommand}"
-                               Style="{StaticResource PulsarSecondaryButtonStyle}"/>
                 </StackPanel>
             </controls:SettingsPageHeader.ActionsContent>
         </controls:SettingsPageHeader>
@@ -115,7 +106,7 @@
                 </ui:CardExpander>
 
                 <!-- Radial Menu Layout Section -->
-                <ui:CardExpander Icon="Apps24" Header="{lex:Locale Settings.General.RadialMenuLayout}" Margin="0,0,0,12" IsExpanded="True">
+                <ui:CardExpander Icon="Apps24" Header="{lex:Locale Settings.General.RadialMenuLayout}" Margin="0,0,0,12" IsExpanded="False">
                     <StackPanel>
                         <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
@@ -146,7 +137,7 @@
                 </ui:CardExpander>
 
                 <!-- Hotkeys Section -->
-                <ui:CardExpander Icon="Keyboard24" Header="{lex:Locale Settings.General.GlobalHotkeys}" Margin="0,0,0,12" IsExpanded="True">
+                <ui:CardExpander Icon="Keyboard24" Header="{lex:Locale Settings.General.GlobalHotkeys}" Margin="0,0,0,12" IsExpanded="False">
                     <StackPanel>
                         <!-- Grid Hotkey -->
                         <Grid Margin="0,0,0,12">
@@ -210,6 +201,26 @@
                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}" 
                                    FontSize="11"
                                    Margin="0,0,0,0"/>
+
+                        <Separator Margin="0,12"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="{lex:Locale Settings.General.ResetTutorial}" FontWeight="Medium"/>
+                                <TextBlock Text="{lex:Locale Settings.General.ResetTutorialDescription}" 
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
+                                           FontSize="12"/>
+                            </StackPanel>
+                            <ui:Button Grid.Column="1" 
+                                       Content="{lex:Locale Settings.General.ResetTutorial}"
+                                       Icon="{ui:SymbolIcon ArrowReset24}"
+                                       Command="{Binding DataContext.ResetTutorialCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                       Style="{StaticResource PulsarSecondaryButtonStyle}"/>
+                        </Grid>
                     </StackPanel>
                 </ui:CardExpander>
 

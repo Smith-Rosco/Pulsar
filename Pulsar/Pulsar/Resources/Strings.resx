@@ -35,6 +35,9 @@
   <data name="Settings.General.OpenPluginLogs" xml:space="preserve">
     <value>Open Plugin Logs</value>
   </data>
+  <data name="Settings.General.OpenLogs" xml:space="preserve">
+    <value>Open Logs</value>
+  </data>
   <data name="Settings.General.ResetDefaults" xml:space="preserve">
     <value>Reset to Defaults</value>
   </data>
@@ -46,6 +49,9 @@
   </data>
   <data name="Settings.General.ResetTutorialDone" xml:space="preserve">
     <value>Tutorial has been reset — it will start on next launch.</value>
+  </data>
+  <data name="Settings.General.ResetTutorialDescription" xml:space="preserve">
+    <value>Restart the onboarding tutorial from the beginning</value>
   </data>
   <data name="Settings.General.Appearance" xml:space="preserve">
     <value>Appearance</value>
