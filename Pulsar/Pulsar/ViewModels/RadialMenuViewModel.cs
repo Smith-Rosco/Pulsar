@@ -233,9 +233,7 @@ namespace Pulsar.ViewModels
 
             _visualStateCoordinator = new RadialMenuVisualStateCoordinator(previewService, logger, _loc);
             _inputCoordinator = new RadialMenuInputCoordinator(windowService, logger);
-            var thumbnailCache = (ISubMenuThumbnailCache?)_serviceProvider.GetService(typeof(ISubMenuThumbnailCache))
-                ?? new SubMenuThumbnailCache(windowService);
-            _subMenuCoordinator = new RadialMenuSubMenuCoordinator(windowService, thumbnailCache, _usageTracker, _healthMonitor, logger);
+            _subMenuCoordinator = new RadialMenuSubMenuCoordinator(windowService, _usageTracker, _healthMonitor, logger);
             _layoutCoordinator = new RadialMenuLayoutCoordinator(slotLayoutEngine, animationController, logger);
 
             // [New] Load slots per page from config
@@ -954,6 +952,8 @@ namespace Pulsar.ViewModels
                     UpdateActiveSlot(clickedSlotIndex);
                 }), System.Windows.Threading.DispatcherPriority.Input);
             }
+
+            _previewService.ClearCache();
 
             _visualStateCoordinator.PrimeSubMenuPreview(
                 mostRecentWin,

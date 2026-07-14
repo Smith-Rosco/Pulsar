@@ -117,7 +117,6 @@ namespace Pulsar
             serviceCollection.AddSingleton<ISlotLayoutEngine, SlotLayoutEngine>();
             serviceCollection.AddSingleton<IMouseTrackingService, MouseTrackingService>();
             serviceCollection.AddSingleton<IPagingController, PagingController>();
-            serviceCollection.AddSingleton<ISubMenuThumbnailCache, SubMenuThumbnailCache>();
             serviceCollection.AddSingleton<IPreviewService, PreviewService>();
             serviceCollection.AddSingleton<ILocalUiPreferencesService, LocalUiPreferencesService>();
             serviceCollection.AddSingleton<ISettingsNavigationGuard, SettingsNavigationGuard>();

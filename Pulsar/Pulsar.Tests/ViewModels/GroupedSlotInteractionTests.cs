@@ -145,8 +145,7 @@ namespace Pulsar.Tests.ViewModels
             SetField(context, "_slotLayoutEngine", slotLayoutEngine.Object);
             SetField(context, "_previewService", previewService);
             SetField(context, "_visualStateCoordinator", new RadialMenuVisualStateCoordinator(previewService, null));
-            var thumbnailCache = new Mock<ISubMenuThumbnailCache>();
-            SetField(context, "_subMenuCoordinator", new RadialMenuSubMenuCoordinator(windowService, thumbnailCache.Object, null, null, null));
+            SetField(context, "_subMenuCoordinator", new RadialMenuSubMenuCoordinator(windowService, null, null, null));
             SetField(context, "_layoutCoordinator", new RadialMenuLayoutCoordinator(slotLayoutEngine.Object, animationController.Object, null));
             SetField(context, "<Slots>k__BackingField", new ObservableCollection<SlotViewModel>());
             SetField(context, "<CenterSlot>k__BackingField", new SlotViewModel(0, 0, 0, 50));

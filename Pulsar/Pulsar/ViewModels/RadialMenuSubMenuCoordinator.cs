@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows.Media;
 using Microsoft.Extensions.Logging;
 using Pulsar.Helpers;
 using Pulsar.Models;
@@ -16,18 +17,15 @@ namespace Pulsar.ViewModels
         private readonly IPluginUsageTracker? _usageTracker;
         private readonly IPluginHealthMonitor? _healthMonitor;
         private readonly IWindowService _windowService;
-        private readonly ISubMenuThumbnailCache _thumbnailCache;
         private readonly ILogger<RadialMenuViewModel>? _logger;
 
         public RadialMenuSubMenuCoordinator(
             IWindowService windowService,
-            ISubMenuThumbnailCache thumbnailCache,
             IPluginUsageTracker? usageTracker,
             IPluginHealthMonitor? healthMonitor,
             ILogger<RadialMenuViewModel>? logger)
         {
             _windowService = windowService;
-            _thumbnailCache = thumbnailCache;
             _usageTracker = usageTracker;
             _healthMonitor = healthMonitor;
             _logger = logger;
@@ -61,19 +59,8 @@ namespace Pulsar.ViewModels
                     slot.BadgeCount = 0;
                     slot.ClearPresentation();
 
-                    // Thumbnail: cached → immediate, else app icon + async capture
-                    var thumb = _thumbnailCache.Get(win.Handle);
-                    if (thumb != null)
-                    {
-                        slot.IconImage = thumb;
-                    }
-                    else
-                    {
-                        slot.IconImage = win.AppIcon;
-                        var hWnd = win.Handle;
-                        var title = win.Title;
-                        _ = CaptureThumbnailAsync(slot, hWnd, title);
-                    }
+                    slot.IconImage = win.AppIcon;
+                    _ = CaptureThumbnailAsync(slot, win.Handle, win.Title);
 
                     SubMenuColorPalette.Apply(slot, sortedWindows.Count > 1 ? i : -1);
                     slot.ActionStrategy = new WindowSwitchStrategy(win, _windowService, _usageTracker, _healthMonitor);
@@ -134,16 +121,26 @@ namespace Pulsar.ViewModels
 
         private async Task CaptureThumbnailAsync(SlotViewModel slot, IntPtr hWnd, string title)
         {
-            var thumb = await _thumbnailCache.GetOrCaptureAsync(hWnd, title);
-            if (thumb == null) return;
-
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            try
             {
-                if (slot.DataContext is ProcessWindowInfo win && win.Handle == hWnd)
+                var thumb = await _windowService.CaptureWindowAsync(hWnd);
+                if (thumb == null)
                 {
-                    slot.IconImage = thumb;
+                    _logger?.LogDebug("[SubMenu] CaptureWindowAsync returned null for {Hwnd} '{Title}'", hWnd, title);
+                    return;
                 }
-            });
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    if (slot.DataContext is ProcessWindowInfo win && win.Handle == hWnd)
+                    {
+                        slot.IconImage = thumb;
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[SubMenu] CaptureThumbnailAsync failed for {Hwnd} '{Title}'", hWnd, title);
+            }
         }
     }
 }

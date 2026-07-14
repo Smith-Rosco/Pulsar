@@ -595,147 +595,97 @@ namespace Pulsar.Services
         {
             return await Task.Run(() =>
             {
-                if (hWnd == IntPtr.Zero || !PulsarNative.IsWindow(hWnd)) 
+                if (hWnd == IntPtr.Zero || !PulsarNative.IsWindow(hWnd))
                 {
-                    // [Logging] Sample capture failures (1 in 20) - happens frequently
-                    if (_captureLogSampler.ShouldLog())
-                    {
-                        _logger.LogDebug("[CaptureWindow] Invalid Handle: {Hwnd} (sampled 1/{Rate})", hWnd, _captureLogSampler.Rate);
-                    }
+                    _logger.LogWarning("[CaptureWindow] Invalid handle: {Hwnd}", hWnd);
                     return null;
                 }
 
                 try
                 {
-                    // 1. Get Dimensions
-                    if (!PulsarNative.GetWindowRect(hWnd, out var rect)) 
+                    if (!PulsarNative.GetWindowRect(hWnd, out var rect))
                     {
-                        // [Logging] Sample GetWindowRect failures (1 in 20)
-                        if (_captureLogSampler.ShouldLog())
-                        {
-                            _logger.LogDebug("[CaptureWindow] GetWindowRect failed for {Hwnd} (sampled 1/{Rate})", hWnd, _captureLogSampler.Rate);
-                        }
+                        _logger.LogWarning("[CaptureWindow] GetWindowRect failed for {Hwnd}", hWnd);
                         return null;
                     }
-                    int width = rect.Right - rect.Left;
-                    int height = rect.Bottom - rect.Top;
-
-                    if (width <= 0 || height <= 0) 
+                    int w = rect.Right - rect.Left, h = rect.Bottom - rect.Top;
+                    if (w <= 0 || h <= 0)
                     {
-                        // [Logging] Sample dimension failures (1 in 20)
-                        if (_captureLogSampler.ShouldLog())
-                        {
-                            _logger.LogDebug("[CaptureWindow] Invalid dimensions {Width}x{Height} for {Hwnd} (sampled 1/{Rate})", 
-                                width, height, hWnd, _captureLogSampler.Rate);
-                        }
+                        _logger.LogWarning("[CaptureWindow] Invalid dimensions {W}x{H} for {Hwnd}", w, h, hWnd);
                         return null;
                     }
 
-                    // 2. Create Bitmap
-                    using (var fullBitmap = new System.Drawing.Bitmap(width, height))
+                    var bmp = CaptureViaPrintWindow(hWnd, w, h);
+                    if (bmp == null)
                     {
-                        using (var g = System.Drawing.Graphics.FromImage(fullBitmap))
-                        {
-                            // 3. Print Window Content
-                            IntPtr hdc = g.GetHdc();
-                            bool success = false;
-                            try
-                            {
-                                // PW_CLIENTONLY = 1
-                                // PW_RENDERFULLCONTENT = 0x00000002 (Windows 8.1+) - Captures layered windows/Chrome/WPF
-                                // Try RenderFullContent first
-                                success = PulsarNative.PrintWindow(hWnd, hdc, 0x00000002);
-                                if (!success)
-                                {
-                                    // Fallback to default
-                                    // [Logging] Sample PrintWindow failures (1 in 20)
-                                    if (_captureLogSampler.ShouldLog())
-                                    {
-                                        _logger.LogDebug("[CaptureWindow] PrintWindow(Full) failed for {Hwnd}, retrying with default flags (sampled 1/{Rate})", 
-                                            hWnd, _captureLogSampler.Rate);
-                                    }
-                                    success = PulsarNative.PrintWindow(hWnd, hdc, 0);
-                                }
-                                
-                                if (!success)
-                                {
-                                    // [Logging] Sample complete failures (1 in 20)
-                                    if (_captureLogSampler.ShouldLog())
-                                    {
-                                        int error = Marshal.GetLastWin32Error();
-                                        _logger.LogDebug("[CaptureWindow] PrintWindow failed completely for {Hwnd}. Error: {Error} (sampled 1/{Rate})", 
-                                            hWnd, error, _captureLogSampler.Rate);
-                                    }
-                                    return null;
-                                }
-                            }
-                            finally
-                            {
-                                g.ReleaseHdc(hdc);
-                            }
-                        }
-
-                        // [Optimization] Downscale Bitmap
-                        // The UI only displays this in a ~110x110 circle (or slightly larger on hover).
-                        // Full HD/4K textures cause massive GPU upload lag on the UI thread.
-                        // We'll scale to max 400px dimension which is plenty for high DPI.
-                        int maxDim = 400;
-                        int newWidth = width;
-                        int newHeight = height;
-                        
-                        if (width > maxDim || height > maxDim)
-                        {
-                            double ratio = (double)width / height;
-                            if (width > height)
-                            {
-                                newWidth = maxDim;
-                                newHeight = (int)(maxDim / ratio);
-                            }
-                            else
-                            {
-                                newHeight = maxDim;
-                                newWidth = (int)(maxDim * ratio);
-                            }
-                        }
-
-                        using (var scaledBitmap = new System.Drawing.Bitmap(newWidth, newHeight))
-                        {
-                            using (var g = System.Drawing.Graphics.FromImage(scaledBitmap))
-                            {
-                                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                                g.DrawImage(fullBitmap, 0, 0, newWidth, newHeight);
-                            }
-                            
-                            // 4. Convert to WPF ImageSource (using scaled bitmap)
-                            IntPtr hBitmap = scaledBitmap.GetHbitmap();
-                            try
-                            {
-                                var wpfBitmap = Imaging.CreateBitmapSourceFromHBitmap(
-                                    hBitmap,
-                                    IntPtr.Zero,
-                                    Int32Rect.Empty,
-                                    BitmapSizeOptions.FromEmptyOptions());
-                                
-                                wpfBitmap.Freeze(); // Make cross-thread accessible
-                                return (ImageSource)wpfBitmap;
-                            }
-                            finally
-                            {
-                                PulsarNative.DeleteObject(hBitmap);
-                            }
-                        }
+                        _logger.LogWarning("[CaptureWindow] PrintWindow failed for {Hwnd}", hWnd);
+                        return null;
                     }
+
+                    return DownscaleAndFreeze(bmp);
                 }
                 catch (Exception ex)
                 {
-                    // [Logging] Sample exceptions (1 in 20) - can happen frequently
-                    if (_captureLogSampler.ShouldLog())
-                    {
-                        _logger.LogDebug(ex, "[CaptureWindow] Exception for {Hwnd} (sampled 1/{Rate})", hWnd, _captureLogSampler.Rate);
-                    }
+                    _logger.LogWarning(ex, "[CaptureWindow] Exception for {Hwnd}", hWnd);
                     return null;
                 }
             });
+        }
+
+        private static System.Drawing.Bitmap? CaptureViaPrintWindow(IntPtr hWnd, int w, int h)
+        {
+            var bmp = new System.Drawing.Bitmap(w, h);
+            using var g = System.Drawing.Graphics.FromImage(bmp);
+            IntPtr hdc = g.GetHdc();
+            bool ok = false;
+            try
+            {
+                ok = PulsarNative.PrintWindow(hWnd, hdc, 0x00000002)
+                    || PulsarNative.PrintWindow(hWnd, hdc, 0);
+            }
+            finally
+            {
+                g.ReleaseHdc(hdc);
+            }
+            if (!ok) { bmp.Dispose(); return null; }
+            return bmp;
+        }
+
+        private static ImageSource DownscaleAndFreeze(System.Drawing.Bitmap bmp)
+        {
+            int w = bmp.Width, h = bmp.Height, maxDim = 400;
+            if (w > maxDim || h > maxDim)
+            {
+                double ratio = (double)w / h;
+                if (w > h) { w = maxDim; h = (int)(maxDim / ratio); }
+                else { h = maxDim; w = (int)(maxDim * ratio); }
+                using var scaled = new System.Drawing.Bitmap(w, h);
+                using (var g = System.Drawing.Graphics.FromImage(scaled))
+                {
+                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                    g.DrawImage(bmp, 0, 0, w, h);
+                }
+                bmp.Dispose();
+                return BmpToSource(scaled);
+            }
+            return BmpToSource(bmp);
+        }
+
+        private static ImageSource BmpToSource(System.Drawing.Bitmap bmp)
+        {
+            IntPtr hBitmap = bmp.GetHbitmap();
+            bmp.Dispose();
+            try
+            {
+                var wpfBitmap = Imaging.CreateBitmapSourceFromHBitmap(
+                    hBitmap, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+                wpfBitmap.Freeze();
+                return wpfBitmap;
+            }
+            finally
+            {
+                PulsarNative.DeleteObject(hBitmap);
+            }
         }
         
         /// <summary>
