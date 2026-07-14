@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Pulsar.Helpers;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels.Strategies;
@@ -15,15 +16,18 @@ namespace Pulsar.ViewModels
         private readonly IPluginUsageTracker? _usageTracker;
         private readonly IPluginHealthMonitor? _healthMonitor;
         private readonly IWindowService _windowService;
+        private readonly ISubMenuThumbnailCache _thumbnailCache;
         private readonly ILogger<RadialMenuViewModel>? _logger;
 
         public RadialMenuSubMenuCoordinator(
             IWindowService windowService,
+            ISubMenuThumbnailCache thumbnailCache,
             IPluginUsageTracker? usageTracker,
             IPluginHealthMonitor? healthMonitor,
             ILogger<RadialMenuViewModel>? logger)
         {
             _windowService = windowService;
+            _thumbnailCache = thumbnailCache;
             _usageTracker = usageTracker;
             _healthMonitor = healthMonitor;
             _logger = logger;
@@ -45,21 +49,33 @@ namespace Pulsar.ViewModels
             for (int i = 0; i < slotsPerPage; i++)
             {
                 var slot = slots.FirstOrDefault(s => s.SlotIndex == i + 1);
-                if (slot == null)
-                {
-                    continue;
-                }
+                if (slot == null) continue;
 
                 if (i < sortedWindows.Count)
                 {
                     var win = sortedWindows[i];
                     var label = !string.IsNullOrWhiteSpace(win.Title) ? win.Title : win.ProcessName;
                     slot.Label = label.Length > 40 ? label.Substring(0, 37) + "..." : label;
-                    slot.IconImage = win.AppIcon;
                     slot.Type = SlotType.Window;
                     slot.DataContext = win;
                     slot.BadgeCount = 0;
                     slot.ClearPresentation();
+
+                    // Thumbnail: cached → immediate, else app icon + async capture
+                    var thumb = _thumbnailCache.Get(win.Handle);
+                    if (thumb != null)
+                    {
+                        slot.IconImage = thumb;
+                    }
+                    else
+                    {
+                        slot.IconImage = win.AppIcon;
+                        var hWnd = win.Handle;
+                        var title = win.Title;
+                        _ = CaptureThumbnailAsync(slot, hWnd, title);
+                    }
+
+                    SubMenuColorPalette.Apply(slot, sortedWindows.Count > 1 ? i : -1);
                     slot.ActionStrategy = new WindowSwitchStrategy(win, _windowService, _usageTracker, _healthMonitor);
                     slot.ResetAnimation();
                 }
@@ -71,6 +87,7 @@ namespace Pulsar.ViewModels
                     slot.ActionStrategy = new NoOpStrategy();
                     slot.BadgeCount = 0;
                     slot.ClearPresentation();
+                    SubMenuColorPalette.Clear(slot);
                     slot.ResetAnimation();
                 }
             }
@@ -94,10 +111,12 @@ namespace Pulsar.ViewModels
             ObservableCollection<SlotViewModel> slots,
             SlotViewModel centerSlot)
         {
-            if (pageProvider == null)
+            foreach (var slot in slots)
             {
-                return;
+                SubMenuColorPalette.Clear(slot);
             }
+
+            if (pageProvider == null) return;
 
             pagingController.SetTotalPages(pageProvider.TotalPages);
             pageProvider.RefreshVisuals(slots, centerSlot);
@@ -111,6 +130,20 @@ namespace Pulsar.ViewModels
                 });
                 await pagingController.GoToPageAsync(pageProvider.CurrentPage);
             }, TaskScheduler.Default);
+        }
+
+        private async Task CaptureThumbnailAsync(SlotViewModel slot, IntPtr hWnd, string title)
+        {
+            var thumb = await _thumbnailCache.GetOrCaptureAsync(hWnd, title);
+            if (thumb == null) return;
+
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                if (slot.DataContext is ProcessWindowInfo win && win.Handle == hWnd)
+                {
+                    slot.IconImage = thumb;
+                }
+            });
         }
     }
 }

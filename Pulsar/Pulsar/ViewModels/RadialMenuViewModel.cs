@@ -233,7 +233,9 @@ namespace Pulsar.ViewModels
 
             _visualStateCoordinator = new RadialMenuVisualStateCoordinator(previewService, logger, _loc);
             _inputCoordinator = new RadialMenuInputCoordinator(windowService, logger);
-            _subMenuCoordinator = new RadialMenuSubMenuCoordinator(windowService, _usageTracker, _healthMonitor, logger);
+            var thumbnailCache = (ISubMenuThumbnailCache?)_serviceProvider.GetService(typeof(ISubMenuThumbnailCache))
+                ?? new SubMenuThumbnailCache(windowService);
+            _subMenuCoordinator = new RadialMenuSubMenuCoordinator(windowService, thumbnailCache, _usageTracker, _healthMonitor, logger);
             _layoutCoordinator = new RadialMenuLayoutCoordinator(slotLayoutEngine, animationController, logger);
 
             // [New] Load slots per page from config
@@ -912,24 +914,34 @@ namespace Pulsar.ViewModels
         {
             _menuState = MenuState.SubMenu;
 
-            // 1. Hide child slots before swapping content (no flash)
+            // 1. Compute parent slot position for expansion origin
+            var parentSlot = clickedSlotIndex > 0 && clickedSlotIndex <= Slots.Count
+                ? Slots[clickedSlotIndex - 1] : null;
+            var parentCenterX = parentSlot != null ? parentSlot.X + parentSlot.Size / 2 : CenterX;
+            var parentCenterY = parentSlot != null ? parentSlot.Y + parentSlot.Size / 2 : CenterY;
+
+            // 2. Hide child slots and position them at the parent slot (expansion origin)
             var childSlots = Slots.Where(s => s.SlotIndex >= 1).ToList();
             foreach (var s in childSlots)
             {
                 s.CurrentScale = 0;
                 s.CurrentOpacity = 0;
+                s.AnimationOffsetX = parentCenterX - (s.X + s.Size / 2);
+                s.AnimationOffsetY = parentCenterY - (s.Y + s.Size / 2);
             }
 
-            // 2. Swap content while hidden
+            // 3. Swap content while hidden
             CenterText = _loc["RadialMenu.Back"];
             var mostRecentWin = _subMenuCoordinator.ConfigureSubMenu(
                 windows, processName, _slotsPerPage, CenterSlot, Slots);
             OnSubMenuRepositionRequested?.Invoke();
 
-            // 3. Stagger slot entrance (200ms total for 8 slots)
+            // 4. Stagger slot entrance: appear at parent → snap to ring position
             for (int i = 0; i < childSlots.Count; i++)
             {
                 await Task.Delay(25);
+                childSlots[i].AnimationOffsetX = 0;
+                childSlots[i].AnimationOffsetY = 0;
                 childSlots[i].CurrentScale = 1.0;
                 childSlots[i].CurrentOpacity = 1.0;
             }
@@ -954,6 +966,9 @@ namespace Pulsar.ViewModels
 
         public void RestoreRootMenu()
         {
+             // Reset animation offsets
+             foreach (var s in Slots) s.ResetAnimation();
+
              // Reposition window to cursor
              OnSubMenuRepositionRequested?.Invoke();
              _menuState = MenuState.Root;
