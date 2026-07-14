@@ -261,9 +261,9 @@ namespace Pulsar.ViewModels.Strategies
         }
         
         // Helper for the View Model to call explicitly for drill down
-        public async Task EnterSubMenuAsync(RadialMenuViewModel context, string processName)
+        public async Task EnterSubMenuAsync(RadialMenuViewModel context, string processName, int clickedSlotIndex)
         {
-             await context.EnterSubMenuAsync(_windows, processName);
+             await context.EnterSubMenuAsync(_windows, processName, clickedSlotIndex);
         }
 
         private static PulsarNative.RECT? GetCursorMonitorRect()

@@ -222,10 +222,23 @@ namespace Pulsar.ViewModels
 
         // [New] Combined Offset (Magnetic only) - Bound to XAML
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(RenderOffsetX))]
         private double _offsetX;
 
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(RenderOffsetY))]
         private double _offsetY;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(RenderOffsetX))]
+        private double _animationOffsetX;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(RenderOffsetY))]
+        private double _animationOffsetY;
+
+        public double RenderOffsetX => OffsetX + AnimationOffsetX;
+        public double RenderOffsetY => OffsetY + AnimationOffsetY;
 
         public void ResetAnimation()
         {
@@ -233,6 +246,8 @@ namespace Pulsar.ViewModels
             CurrentOpacity = 1.0; // [Fix] Start fully visible
             OffsetX = 0;
             OffsetY = 0;
+            AnimationOffsetX = 0;
+            AnimationOffsetY = 0;
         }
 
         public void UpdateMagneticOffset(double desiredOffsetX, double desiredOffsetY)

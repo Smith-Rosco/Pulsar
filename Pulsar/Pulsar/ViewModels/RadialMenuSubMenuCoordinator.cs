@@ -59,6 +59,7 @@ namespace Pulsar.ViewModels
                     slot.Type = SlotType.Window;
                     slot.DataContext = win;
                     slot.BadgeCount = 0;
+                    slot.ClearPresentation();
                     slot.ActionStrategy = new WindowSwitchStrategy(win, _windowService, _usageTracker, _healthMonitor);
                     slot.ResetAnimation();
                 }
@@ -68,6 +69,8 @@ namespace Pulsar.ViewModels
                     slot.LoadIconData(string.Empty);
                     slot.Type = SlotType.None;
                     slot.ActionStrategy = new NoOpStrategy();
+                    slot.BadgeCount = 0;
+                    slot.ClearPresentation();
                     slot.ResetAnimation();
                 }
             }

@@ -59,7 +59,7 @@ namespace Pulsar.ViewModels
 
         private ProfilesConfig? _config;
         private IPageProvider? _pageProvider; // [New] Strategy for paging
-        
+
         /// <summary>
         /// 当前轮盘菜单模式 (Task/Action)
         /// [Fix] 使用 ObservableProperty 确保 PropertyChanged 事件被触发，
@@ -683,6 +683,7 @@ namespace Pulsar.ViewModels
 
         public event Action? OnRootBounceRequested;
         public event Action<BoundaryDirection>? OnPagingBoundaryFeedbackRequested;
+        public event Action? OnSubMenuRepositionRequested;
 
         private void TriggerRootBounceAnimation()
         {
@@ -907,35 +908,41 @@ namespace Pulsar.ViewModels
 
 
 
-        public async Task EnterSubMenuAsync(List<ProcessWindowInfo> windows, string processName)
+        public async Task EnterSubMenuAsync(List<ProcessWindowInfo> windows, string processName, int clickedSlotIndex)
         {
             _menuState = MenuState.SubMenu;
-            
-            // Keep the same visual skeleton when entering submenu:
-            // center grows a bit, outer slots drift outward slightly.
-            var layout = _layoutCoordinator.GetLayoutMetrics(_slotsPerPage, _currentCenterSize, _currentSlotSize);
-            double expandedSlotSize = layout.SlotSize * 0.98;
-            double expandedCenterSize = layout.CenterSize * 1.16;
-            double expandedRadius = layout.Radius * 1.10;
-            
-            // Trigger smooth expansion animation
-            _ = AnimateToLayoutAsync(
-                expandedRadius,
-                expandedCenterSize,
-                expandedSlotSize,
-                AnimationOptionsDefaults.SubMenuEnter);
 
-            // Swap content after the expansion is visibly underway so the transition feels continuous.
-            await Task.Delay(120);
+            // 1. Hide child slots before swapping content (no flash)
+            var childSlots = Slots.Where(s => s.SlotIndex >= 1).ToList();
+            foreach (var s in childSlots)
+            {
+                s.CurrentScale = 0;
+                s.CurrentOpacity = 0;
+            }
 
-            ClearVisuals();
+            // 2. Swap content while hidden
             CenterText = _loc["RadialMenu.Back"];
             var mostRecentWin = _subMenuCoordinator.ConfigureSubMenu(
-                windows,
-                processName,
-                _slotsPerPage,
-                CenterSlot,
-                Slots);
+                windows, processName, _slotsPerPage, CenterSlot, Slots);
+            OnSubMenuRepositionRequested?.Invoke();
+
+            // 3. Stagger slot entrance (200ms total for 8 slots)
+            for (int i = 0; i < childSlots.Count; i++)
+            {
+                await Task.Delay(25);
+                childSlots[i].CurrentScale = 1.0;
+                childSlots[i].CurrentOpacity = 1.0;
+            }
+
+            // Pre-select the slot at the same ring position the user clicked
+            if (clickedSlotIndex > 0 && clickedSlotIndex <= _slotsPerPage)
+            {
+                _ = System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    UpdateActiveSlot(clickedSlotIndex);
+                }), System.Windows.Threading.DispatcherPriority.Input);
+            }
+
             _visualStateCoordinator.PrimeSubMenuPreview(
                 mostRecentWin,
                 () => _menuState == MenuState.SubMenu,
@@ -943,8 +950,12 @@ namespace Pulsar.ViewModels
                 ApplyCenterPreview);
         }
 
+
+
         public void RestoreRootMenu()
         {
+             // Reposition window to cursor
+             OnSubMenuRepositionRequested?.Invoke();
              _menuState = MenuState.Root;
              ResetCenterSlotForRootMenu();
 

@@ -173,7 +173,7 @@ namespace Pulsar.ViewModels
 
                 if (slot.ActionStrategy is ProcessGroupStrategy pgStrategy && slot.DataContext is List<ProcessWindowInfo> windows && windows.Count(w => !string.IsNullOrWhiteSpace(w.Title)) > 1)
                 {
-                    await pgStrategy.EnterSubMenuAsync(context, slot.Label);
+                    await pgStrategy.EnterSubMenuAsync(context, slot.Label, activeSlotIndex);
                 }
             }
             else if (button == GlobalMouseButton.Right)

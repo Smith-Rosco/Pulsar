@@ -60,7 +60,7 @@
                             <Grid.RenderTransform>
                                 <TransformGroup>
                                     <ScaleTransform ScaleX="{Binding CurrentScale, FallbackValue=1}" ScaleY="{Binding CurrentScale, FallbackValue=1}"/>
-                                    <TranslateTransform X="{Binding OffsetX, FallbackValue=0}" Y="{Binding OffsetY, FallbackValue=0}"/>
+                                    <TranslateTransform X="{Binding RenderOffsetX, FallbackValue=0}" Y="{Binding RenderOffsetY, FallbackValue=0}"/>
                                 </TransformGroup>
                             </Grid.RenderTransform>
 

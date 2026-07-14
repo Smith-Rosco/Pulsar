@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 
 namespace Pulsar.Services
 {
@@ -21,8 +22,15 @@ namespace Pulsar.Services
         private Action<double>? _onBounceUpdate;
         private Action<Vector, IList<SlotAnimationTarget>>? _onMagnetismUpdate;
         private IList<SlotAnimationTarget>? _slotTargets;
+        private LayoutTarget _currentLayout;
+        private readonly LayoutAnimator _animator = new();
 
         public bool IsPaused => _isPaused;
+
+        public AnimationController()
+        {
+            _animator.Changed += OnAnimatorChanged;
+        }
 
         public void SetLayoutUpdateCallback(Action<LayoutTarget> callback) => _onLayoutUpdate = callback;
         public void SetBounceUpdateCallback(Action<double> callback) => _onBounceUpdate = callback;
@@ -36,99 +44,62 @@ namespace Pulsar.Services
         public async Task AnimateLayoutAsync(LayoutTarget target, AnimationOptions? options = null, CancellationToken ct = default)
         {
             var opts = options ?? AnimationOptionsDefaults.Smooth;
-            var startTime = DateTime.Now;
             var duration = opts.Duration;
-            var easing = opts.EasingFunction ?? EasingFunctions.EaseOutCubic;
 
-            LayoutTarget current = default;
-            bool firstFrame = true;
+            StopAnimations();
 
-            void AnimationLoop(object? sender, EventArgs e)
-            {
-                if (_isPaused) return;
-                if (ct.IsCancellationRequested) return;
+            _animator.Radius = _currentLayout.Radius;
+            _animator.CenterSize = _currentLayout.CenterSize;
+            _animator.SlotSize = _currentLayout.SlotSize;
 
-                var elapsed = DateTime.Now - startTime - _pausedDuration;
-                var t = Math.Min(elapsed.TotalMilliseconds / duration.TotalMilliseconds, 1.0);
-                var easedT = easing(t);
+            var easing = ToWpfEasing(opts.EasingFunction);
 
-                if (firstFrame)
-                {
-                    firstFrame = false;
-                    return;
-                }
-
-                current = new LayoutTarget(
-                    Lerp(current.Radius, target.Radius, easedT),
-                    Lerp(current.CenterSize, target.CenterSize, easedT),
-                    Lerp(current.SlotSize, target.SlotSize, easedT));
-
-                _onLayoutUpdate?.Invoke(current);
-
-                if (t >= 1.0)
-                {
-                    _onLayoutUpdate?.Invoke(target);
-                    CompositionTarget.Rendering -= AnimationLoop;
-                }
-            }
-
-            CompositionTarget.Rendering += AnimationLoop;
+            _animator.BeginAnimation(LayoutAnimator.RadiusProperty, new DoubleAnimation(target.Radius, duration) { EasingFunction = easing });
+            _animator.BeginAnimation(LayoutAnimator.CenterSizeProperty, new DoubleAnimation(target.CenterSize, duration) { EasingFunction = easing });
+            _animator.BeginAnimation(LayoutAnimator.SlotSizeProperty, new DoubleAnimation(target.SlotSize, duration) { EasingFunction = easing });
 
             try
             {
-                await Task.Delay(duration + TimeSpan.FromMilliseconds(100), ct);
+                await Task.Delay(duration + TimeSpan.FromMilliseconds(50), ct);
             }
             catch (TaskCanceledException)
             {
-                CompositionTarget.Rendering -= AnimationLoop;
+                SnapToCurrent();
+                return;
             }
+
+            _currentLayout = target;
+            _onLayoutUpdate?.Invoke(target);
         }
 
         public async Task BounceAsync(BounceDirection direction, CancellationToken ct = default)
         {
-            const int BounceDuration = 120;
-            const double BounceScale = 0.92;
-            var halfDuration = BounceDuration / 2;
-            var startTime = DateTime.Now;
+            var bounce = new BounceAnimator();
+            bounce.Bounced += s => _onBounceUpdate?.Invoke(s);
+            bounce.Scale = 1.0;
 
-            void AnimationLoop(object? sender, EventArgs e)
+            var anim = new DoubleAnimationUsingKeyFrames();
+            anim.KeyFrames.Add(new EasingDoubleKeyFrame(0.92, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(60))));
+            anim.KeyFrames.Add(new EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(120)))
             {
-                if (_isPaused) return;
-                if (ct.IsCancellationRequested) return;
+                EasingFunction = new ElasticEase { EasingMode = EasingMode.EaseOut, Oscillations = 2, Springiness = 0 }
+            });
 
-                var elapsed = (DateTime.Now - startTime - _pausedDuration).TotalMilliseconds;
-
-                if (elapsed < halfDuration)
-                {
-                    var progress = elapsed / halfDuration;
-                    var scale = 1.0 + (BounceScale - 1.0) * progress;
-                    _onBounceUpdate?.Invoke(scale);
-                }
-                else if (elapsed < BounceDuration)
-                {
-                    var progress = (elapsed - halfDuration) / halfDuration;
-                    var c4 = (2 * Math.PI) / 3;
-                    var easedProgress = Math.Pow(2, -10 * progress) * Math.Sin((progress * 10 - 0.75) * c4) + 1;
-                    var scale = BounceScale + (1.0 - BounceScale) * easedProgress;
-                    _onBounceUpdate?.Invoke(scale);
-                }
-                else
-                {
-                    _onBounceUpdate?.Invoke(1.0);
-                    CompositionTarget.Rendering -= AnimationLoop;
-                }
-            }
-
-            CompositionTarget.Rendering += AnimationLoop;
+            bounce.BeginAnimation(BounceAnimator.ScaleProperty, anim);
 
             try
             {
-                await Task.Delay(BounceDuration + 100, ct);
+                await Task.Delay(TimeSpan.FromMilliseconds(170), ct);
             }
             catch (TaskCanceledException)
             {
-                CompositionTarget.Rendering -= AnimationLoop;
+                bounce.BeginAnimation(BounceAnimator.ScaleProperty, null);
+                _onBounceUpdate?.Invoke(1.0);
+                return;
             }
+
+            bounce.BeginAnimation(BounceAnimator.ScaleProperty, null);
+            _onBounceUpdate?.Invoke(1.0);
         }
 
         public void UpdateMagnetism(Vector cursorPosition)
@@ -220,7 +191,66 @@ namespace Pulsar.Services
             }
         }
 
-        private static double Lerp(double start, double end, double t) => start + (end - start) * t;
+        private void SnapToCurrent()
+        {
+            var r = _animator.Radius;
+            var c = _animator.CenterSize;
+            var s = _animator.SlotSize;
+            StopAnimations();
+            _currentLayout = new LayoutTarget(r, c, s);
+            _animator.Radius = r;
+            _animator.CenterSize = c;
+            _animator.SlotSize = s;
+        }
+
+        private void OnAnimatorChanged()
+        {
+            var layout = new LayoutTarget(_animator.Radius, _animator.CenterSize, _animator.SlotSize);
+            _currentLayout = layout;
+            _onLayoutUpdate?.Invoke(layout);
+        }
+
+        private void StopAnimations()
+        {
+            _animator.BeginAnimation(LayoutAnimator.RadiusProperty, null);
+            _animator.BeginAnimation(LayoutAnimator.CenterSizeProperty, null);
+            _animator.BeginAnimation(LayoutAnimator.SlotSizeProperty, null);
+        }
+
+        private static IEasingFunction? ToWpfEasing(Func<double, double>? easing)
+        {
+            if (easing == EasingFunctions.EaseOutCubic) return new CubicEase { EasingMode = EasingMode.EaseOut };
+            if (easing == EasingFunctions.EaseInOutCubic) return new CubicEase { EasingMode = EasingMode.EaseInOut };
+            return null;
+        }
+
+        private sealed class BounceAnimator : UIElement
+        {
+            internal static readonly DependencyProperty ScaleProperty =
+                DependencyProperty.Register(nameof(Scale), typeof(double), typeof(BounceAnimator),
+                    new PropertyMetadata(1.0, (d, _) => ((BounceAnimator)d).Bounced?.Invoke((double)d.GetValue(ScaleProperty))));
+
+            internal double Scale { get => (double)GetValue(ScaleProperty); set => SetValue(ScaleProperty, value); }
+
+            internal event Action<double>? Bounced;
+        }
+
+        private sealed class LayoutAnimator : UIElement
+        {
+            internal static readonly DependencyProperty RadiusProperty = Register(nameof(Radius));
+            internal static readonly DependencyProperty CenterSizeProperty = Register(nameof(CenterSize));
+            internal static readonly DependencyProperty SlotSizeProperty = Register(nameof(SlotSize));
+
+            internal double Radius { get => (double)GetValue(RadiusProperty); set => SetValue(RadiusProperty, value); }
+            internal double CenterSize { get => (double)GetValue(CenterSizeProperty); set => SetValue(CenterSizeProperty, value); }
+            internal double SlotSize { get => (double)GetValue(SlotSizeProperty); set => SetValue(SlotSizeProperty, value); }
+
+            internal event Action? Changed;
+
+            private static DependencyProperty Register(string name) =>
+                DependencyProperty.Register(name, typeof(double), typeof(LayoutAnimator),
+                    new PropertyMetadata(0.0, (d, _) => ((LayoutAnimator)d).Changed?.Invoke()));
+        }
     }
 
 }

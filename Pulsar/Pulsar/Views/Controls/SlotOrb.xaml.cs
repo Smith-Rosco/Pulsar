@@ -65,7 +65,19 @@ namespace Pulsar.Views.Controls
         public static readonly DependencyProperty SizeProperty =
             DependencyProperty.Register(nameof(Size), typeof(double), typeof(SlotOrb), new PropertyMetadata(50.0));
         public static readonly DependencyProperty IsActiveProperty =
-            DependencyProperty.Register(nameof(IsActive), typeof(bool), typeof(SlotOrb), new PropertyMetadata(false));
+            DependencyProperty.Register(nameof(IsActive), typeof(bool), typeof(SlotOrb), new PropertyMetadata(false, OnIsActiveChanged));
+
+        private static void OnIsActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var orb = (SlotOrb)d;
+            if ((bool)e.NewValue) return;
+            orb._currentOffset = new Vector(0, 0);
+            if (orb.OrbTranslate != null)
+            {
+                orb.OrbTranslate.X = 0;
+                orb.OrbTranslate.Y = 0;
+            }
+        }
         public static readonly DependencyProperty IsRecommendedProperty =
             DependencyProperty.Register(nameof(IsRecommended), typeof(bool), typeof(SlotOrb), new PropertyMetadata(false));
         public static readonly DependencyProperty IsTransparentProperty =
@@ -118,6 +130,7 @@ namespace Pulsar.Views.Controls
         private void OnRenderFrame(object? sender, EventArgs e)
         {
             if (OrbTranslate == null || this.Visibility != Visibility.Visible) return;
+            if (!IsActive) return;
 
             Vector targetOffset = new Vector(0, 0);
 

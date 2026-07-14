@@ -79,6 +79,7 @@ namespace Pulsar.Views
             // [New] Subscribe to bounce animation event from ViewModel
             _viewModel.OnRootBounceRequested += HandleRootBounceRequested;
             _viewModel.OnPagingBoundaryFeedbackRequested += HandlePagingBoundaryFeedbackRequested;
+            _viewModel.OnSubMenuRepositionRequested += HandleSubMenuRepositionRequested;
             
             // ====================================================
             // 👻 [驻留模式初始化] (Resident Mode Init)
@@ -237,6 +238,21 @@ namespace Pulsar.Views
             MenuCanvas.Margin = new Thickness(0);
         }
 
+        private void HandleSubMenuRepositionRequested()
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.Invoke(HandleSubMenuRepositionRequested);
+                return;
+            }
+
+            PulsarNative.GetCursorPos(out var pt);
+            double wpfMouseX = pt.X / _dpiScaleX;
+            double wpfMouseY = pt.Y / _dpiScaleY;
+            this.Left = wpfMouseX - 250;
+            this.Top = wpfMouseY - 250;
+        }
+
         protected override void OnClosed(EventArgs e)
         {
             if (_viewModel != null)
@@ -244,6 +260,7 @@ namespace Pulsar.Views
                 _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
                 _viewModel.OnRootBounceRequested -= HandleRootBounceRequested;
                 _viewModel.OnPagingBoundaryFeedbackRequested -= HandlePagingBoundaryFeedbackRequested;
+                _viewModel.OnSubMenuRepositionRequested -= HandleSubMenuRepositionRequested;
             }
             base.OnClosed(e);
         }
