@@ -158,7 +158,7 @@ dotnet build Pulsar/Pulsar/Pulsar.csproj
 ✅ Scripts/test_error.js
    - 语法错误测试
 
-✅ Docs/decisions/ADR-002-Bookmarklet-NUglify-Refactor.md
+✅ Docs/decisions/003-bookmarklet-nuglify-refactor.md
    - 完整的架构决策记录
 
 ✅ Docs/Plugins/test_error_explanation.md
@@ -228,7 +228,7 @@ notepad %AppData%\Pulsar\Logs\pulsar-20260304.log
 | 文档 | 用途 |
 |------|------|
 | `Docs/Plugins/BookmarkletRunner.md` | 用户手册 |
-| `Docs/decisions/ADR-002-Bookmarklet-NUglify-Refactor.md` | 技术方案 |
+| `Docs/decisions/003-bookmarklet-nuglify-refactor.md` | 技术方案 |
 | `Docs/Plugins/test_error_explanation.md` | 错误测试说明 |
 | `TESTING_GUIDE.md` | 测试指南 |
 

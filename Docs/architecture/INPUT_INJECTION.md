@@ -142,7 +142,7 @@ This preserves the plugin-system invariant that runtime plugins use `PulsarConte
 ## Related Documents
 
 - `Docs/Plugins/PkiPlugin.md`
-- `Docs/archive/PKI_REFACTORING_AND_BUGS.md`
+- `Docs/archive/2026-03-26-PKI_REFACTORING_AND_BUGS.md`
 - `Docs/architecture/PLUGIN_SYSTEM.md`
 - `Docs/lessons/RDP_MODIFIER_KEY_STUCK.md`
 

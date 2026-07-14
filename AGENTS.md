@@ -401,5 +401,17 @@ dotnet restore Pulsar/Pulsar/Pulsar.csproj
 
 ---
 
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs for this repo live as GitHub issues. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context — `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
+---
+
 *Last Updated: 2026-06-07*  
 *Version: 2.2.0 (Updated with CommandPlugin refactoring)*

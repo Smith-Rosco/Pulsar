@@ -98,7 +98,7 @@ javascript:(function(){alert("text")})();
 | `IMPLEMENTATION_SUMMARY.md` | 完整总结（本文档） |
 | `Docs/Plugins/BookmarkletRunner.md` | 用户手册 |
 | `Docs/Plugins/test_error_explanation.md` | 错误测试说明 |
-| `Docs/decisions/ADR-002-Bookmarklet-NUglify-Refactor.md` | 技术方案 |
+| `Docs/decisions/003-bookmarklet-nuglify-refactor.md` | 技术方案 |
 | `TESTING_GUIDE.md` | 测试指南 |
 
 ---

@@ -78,7 +78,7 @@ Architecture Decision Records (ADRs):
 
 ### Archive (Docs/archive/)
 Historical documents (not current truth):
-- All files are date-prefixed (e.g., `2026-03-02-HANDOVER_V4.1.0.md`) in a flat directory
+- All files are date-prefixed (`YYYY-MM-DD-DESCRIPTIVE_NAME.md`) in a flat directory
 - Includes Phase 2 completion reports, handovers, PKI implementation details, TUTORIAL_SYSTEM design docs, and bug-triage reports
 
 ---

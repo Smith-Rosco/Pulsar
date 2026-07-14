@@ -58,7 +58,7 @@
 
 ### 文档 (6 个文件)
 ```
-✅ ADR-002-Bookmarklet-NUglify-Refactor.md (530 行)
+✅ 003-bookmarklet-nuglify-refactor.md (530 行)
    - 完整的架构决策记录
 
 ✅ IMPLEMENTATION_SUMMARY.md (285 行)
@@ -163,7 +163,7 @@ Pulsar_Project/
 │   │   ├── BookmarkletRunner.md (用户手册 v2.0.0)
 │   │   └── test_error_explanation.md (错误测试说明)
 │   └── decisions/
-│       └── ADR-002-Bookmarklet-NUglify-Refactor.md (架构决策)
+│       └── 003-bookmarklet-nuglify-refactor.md (架构决策)
 │
 ├── IMPLEMENTATION_SUMMARY.md (完整总结)
 ├── QUICK_REFERENCE.md (快速参考)

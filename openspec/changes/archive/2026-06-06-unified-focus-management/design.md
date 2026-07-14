@@ -80,7 +80,7 @@ The radial menu window (`RadialMenuWindow`) calls `RestoreFocus()` immediately w
 
 **Choice**: After `IFocusManager.ActivateWindowAsync()` completes for PKI focus restore, the `SendKeysInjectionExecutor` checks that `GetForegroundWindow()` matches the expected target handle. If mismatch, retry once with 50ms delay. If still mismatched, fail the injection with `FocusRestore` stage failure.
 
-**Rationale**: Pulsar currently has a documented bug (PKI_REFACTORING_AND_BUGS.md) where UIA `SetValue` was abandoned because of focus timing issues. The same principle applies: if focus didn't land on the target window, injecting credentials into whichever window currently has focus is a security risk. Verification makes this a hard failure.
+**Rationale**: Pulsar currently has a documented bug (2026-03-26-PKI_REFACTORING_AND_BUGS.md) where UIA `SetValue` was abandoned because of focus timing issues. The same principle applies: if focus didn't land on the target window, injecting credentials into whichever window currently has focus is a security risk. Verification makes this a hard failure.
 
 **Alternatives considered**:
 - **No verification, rely on SetForegroundWindow return value**: The return value is unreliable — it returns true even when focus fails to transfer due to UIPI, hung threads, or virtual desktop mismatch

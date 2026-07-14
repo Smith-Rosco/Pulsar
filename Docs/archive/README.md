@@ -21,9 +21,9 @@ This directory contains archived documentation from March 2026, covering:
 | Document | Date | Description |
 |----------|------|-------------|
 | [2026-03-02-HANDOVER_V4.1.0.md](./2026-03-02-HANDOVER_V4.1.0.md) | 2026-03-02 | Final handover document (v4.1.0) - Superseded by [AGENTS.md](../../../AGENTS.md) |
-| [HANDOVER.md](./HANDOVER.md) | 2026-03-02 | Intermediate handover (Phase 2 Task 2) |
-| [HANDOVER_PHASE1.md](./HANDOVER_PHASE1.md) | 2026-03-02 | Phase 1 completion handover |
-| [HANDOVER_PHASE2.md](./HANDOVER_PHASE2.md) | 2026-03-02 | Phase 2 planning handover |
+| [2026-03-02-HANDOVER.md](./2026-03-02-HANDOVER.md) | 2026-03-02 | Intermediate handover (Phase 2 Task 2) |
+| [2026-03-02-HANDOVER_PHASE1.md](./2026-03-02-HANDOVER_PHASE1.md) | 2026-03-02 | Phase 1 completion handover |
+| [2026-03-02-HANDOVER_PHASE2.md](./2026-03-02-HANDOVER_PHASE2.md) | 2026-03-02 | Phase 2 planning handover |
 
 ### 2. Bookmarklet Runner v2.0.0 (2026-03-04)
 
@@ -42,21 +42,22 @@ This directory contains archived documentation from March 2026, covering:
 
 | Document | Date | Description |
 |----------|------|-------------|
-| [PLUGIN_SYSTEM_MODERNIZATION_PHASE1.md](./PLUGIN_SYSTEM_MODERNIZATION_PHASE1.md) | 2026-03-02 | Phase 1 completion report |
-| [PLUGIN_SETTINGS_MIGRATION.md](./PLUGIN_SETTINGS_MIGRATION.md) | 2026-03-02 | Settings migration guide |
-| [REFACTORING_REPORT.md](./REFACTORING_REPORT.md) | 2026-03-02 | Refactoring summary |
+| [2026-03-02-PLUGIN_SYSTEM_MODERNIZATION_PHASE1.md](./2026-03-02-PLUGIN_SYSTEM_MODERNIZATION_PHASE1.md) | 2026-03-02 | Phase 1 completion report |
+| [2026-03-01-PLUGIN_SETTINGS_MIGRATION.md](./2026-03-01-PLUGIN_SETTINGS_MIGRATION.md) | 2026-03-01 | Settings migration guide |
+| [2026-03-01-REFACTORING_REPORT.md](./2026-03-01-REFACTORING_REPORT.md) | 2026-03-01 | Refactoring summary |
 
 ### 4. Phase 2 Task Reports
 
 | Document | Task | Description |
 |----------|------|-------------|
-| [PHASE2_TASKS.md](./PHASE2_TASKS.md) | Overview | Phase 2 task planning |
-| [phase2-task1/](./phase2-task1/) | Task 1 | Task 1 artifacts |
-| [PHASE2_TASK2_COMPLETION_REPORT.md](./PHASE2_TASK2_COMPLETION_REPORT.md) | Task 2 | Permission system completion |
-| [PHASE2_TASK3_SUMMARY.md](./PHASE2_TASK3_SUMMARY.md) | Task 3 | Task 3 summary |
-| [PHASE2_TASK4_COMPLETION_REPORT.md](./PHASE2_TASK4_COMPLETION_REPORT.md) | Task 4 | Task 4 completion |
-| [PHASE2_TASK5_COMPLETION_SUMMARY.md](./PHASE2_TASK5_COMPLETION_SUMMARY.md) | Task 5 | Task 5 summary |
-| [PHASE2_TASK5_TEST_REPORT.md](./PHASE2_TASK5_TEST_REPORT.md) | Task 5 | Task 5 test report |
+| [2026-03-02-PHASE2_TASKS.md](./2026-03-02-PHASE2_TASKS.md) | Overview | Phase 2 task planning |
+| [2026-03-02-HANDOVER_PHASE2_TASK1.md](./2026-03-02-HANDOVER_PHASE2_TASK1.md) | Task 1 | Task 1 handover |
+| [2026-03-02-PHASE2_TASK1_COMPLETION_REPORT.md](./2026-03-02-PHASE2_TASK1_COMPLETION_REPORT.md) | Task 1 | Task 1 completion |
+| [2026-03-02-PHASE2_TASK2_COMPLETION_REPORT.md](./2026-03-02-PHASE2_TASK2_COMPLETION_REPORT.md) | Task 2 | Permission system completion |
+| [2026-03-02-PHASE2_TASK3_SUMMARY.md](./2026-03-02-PHASE2_TASK3_SUMMARY.md) | Task 3 | Task 3 summary |
+| [2026-03-02-PHASE2_TASK4_COMPLETION_REPORT.md](./2026-03-02-PHASE2_TASK4_COMPLETION_REPORT.md) | Task 4 | Task 4 completion |
+| [2026-03-02-PHASE2_TASK5_COMPLETION_SUMMARY.md](./2026-03-02-PHASE2_TASK5_COMPLETION_SUMMARY.md) | Task 5 | Task 5 summary |
+| [2026-03-02-PHASE2_TASK5_TEST_REPORT.md](./2026-03-02-PHASE2_TASK5_TEST_REPORT.md) | Task 5 | Task 5 test report |
 
 ---
 

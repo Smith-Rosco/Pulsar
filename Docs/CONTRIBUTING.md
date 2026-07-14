@@ -29,7 +29,7 @@ This guide defines standards and best practices for creating and maintaining Pul
 - **Purpose**: Active, maintained documentation
 
 ### 4. Archived Phase
-- **Location**: Move to `docs/archive/YYYY-MM/`
+- **Location**: Move to `Docs/archive/`
 - **Header**: Add "⚠️ ARCHIVED DOCUMENT" warning at top
 - **Purpose**: Historical reference, no longer updated
 
@@ -52,10 +52,10 @@ This guide defines standards and best practices for creating and maintaining Pul
 - **Examples**: `COMPONENT_LIBRARY.md`, `UI_BEST_PRACTICES.md`
 - **Location**: `docs/guides/`
 
-### Archive Documents (docs/archive/)
-- **Format**: `YYYY-MM-DESCRIPTIVE_NAME.md` or `DESCRIPTIVE_NAME.md`
-- **Examples**: `2026-03-REFACTORING_REPORT.md`, `PKI_IMPLEMENTATION.md`
-- **Location**: `docs/archive/YYYY-MM/`
+### Archive Documents (Docs/archive/)
+- **Format**: `YYYY-MM-DD-DESCRIPTIVE_NAME.md`
+- **Examples**: `2026-03-02-HANDOVER_V4.1.0.md`, `2026-03-09-ARCHITECTURE_FIX_SUMMARY.md`
+- **Location**: `Docs/archive/`
 
 ### Architecture Decision Records (docs/decisions/)
 - **Format**: `NNN-descriptive-title.md` (NNN = zero-padded number)
