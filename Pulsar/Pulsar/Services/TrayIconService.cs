@@ -208,20 +208,12 @@ namespace Pulsar.Services
             try
             {
                 var newTheme = _themeService.CurrentTheme == AppTheme.Dark ? AppTheme.Light : AppTheme.Dark;
-                var windows = Application.Current.Windows.OfType<Window>().ToList();
+                var window = Application.Current.Windows.OfType<Window>().FirstOrDefault();
 
-                if (windows.Count > 0)
+                if (window != null)
                 {
-                    // Step 1: Update all windows' resources (no ThemeChanged yet)
-                    for (int i = 0; i < windows.Count; i++)
-                    {
-                        var backdrop = windows[i] is FluentWindow fw ? fw.WindowBackdropType : WindowBackdropType.None;
-                        _themeService.ApplyTheme(windows[i], newTheme, backdrop, updateGlobal: false);
-                    }
-
-                    // Step 2: Fire ThemeChanged once (all windows already updated)
-                    var firstBackdrop = windows[0] is FluentWindow fw0 ? fw0.WindowBackdropType : WindowBackdropType.None;
-                    _themeService.ApplyTheme(windows[0], newTheme, firstBackdrop, updateGlobal: true);
+                    var backdrop = window is FluentWindow fw ? fw.WindowBackdropType : WindowBackdropType.None;
+                    _themeService.ApplyTheme(window, newTheme, backdrop, updateGlobal: true);
                 }
                 else
                 {
