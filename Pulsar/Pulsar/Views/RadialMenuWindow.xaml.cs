@@ -48,9 +48,6 @@ namespace Pulsar.Views
             _logger = logger;
             _focusManager = focusManager;
 
-            // [Theme Isolation] Apply Default Theme immediately before InitializeComponent
-            _themeService.ApplyTheme(this, AppTheme.Dark, WindowBackdropType.None, updateGlobal: false);
-
             InitializeComponent();
             DataContext = vm;
 
