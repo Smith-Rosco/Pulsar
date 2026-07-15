@@ -98,12 +98,23 @@ namespace Pulsar.Services
             }
         }
 
+        private void ApplyThemeToContextMenu(ContextMenu menu)
+        {
+            var themeTarget = _themeService.CurrentTheme == AppTheme.Dark ? ApplicationTheme.Dark : ApplicationTheme.Light;
+            var existingTheme = menu.Resources.MergedDictionaries.OfType<ThemesDictionary>().FirstOrDefault();
+            if (existingTheme != null)
+                existingTheme.Theme = themeTarget;
+            else
+                menu.Resources.MergedDictionaries.Add(new ThemesDictionary { Theme = themeTarget });
+
+            if (!menu.Resources.MergedDictionaries.OfType<ControlsDictionary>().Any())
+                menu.Resources.MergedDictionaries.Add(new ControlsDictionary());
+        }
+
         private void BuildContextMenu()
         {
             var contextMenu = new ContextMenu();
-            var themeTarget = _themeService.CurrentTheme == AppTheme.Dark ? ApplicationTheme.Dark : ApplicationTheme.Light;
-            contextMenu.Resources.MergedDictionaries.Add(new ThemesDictionary { Theme = themeTarget });
-            contextMenu.Resources.MergedDictionaries.Add(new ControlsDictionary());
+            ApplyThemeToContextMenu(contextMenu);
 
             var settingsItem = new System.Windows.Controls.MenuItem
             {
@@ -200,7 +211,10 @@ namespace Pulsar.Services
                 System.Windows.Application.Current.Dispatcher.Invoke(() => OnThemeChanged(sender, theme));
                 return;
             }
-            BuildContextMenu();
+
+            // Update existing context menu in-place so the currently displayed popup reflects the new theme
+            if (_taskbarIcon?.ContextMenu is ContextMenu menu)
+                ApplyThemeToContextMenu(menu);
 
             // Sync SettingsViewModel config + ComboBox binding
             var settingsWin = Application.Current.Windows.OfType<Views.SettingsWindow>().FirstOrDefault();
