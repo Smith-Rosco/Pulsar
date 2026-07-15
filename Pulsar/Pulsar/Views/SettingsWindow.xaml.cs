@@ -408,23 +408,6 @@ namespace Pulsar.Views
                 _themeService.ApplyTheme(page, theme, updateGlobal: false);
             }
             RefreshNavigationTheme(theme);
-            InvalidateThemeBindings(this);
-        }
-
-        private static void InvalidateThemeBindings(DependencyObject element)
-        {
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
-            {
-                var child = VisualTreeHelper.GetChild(element, i);
-                if (child is FrameworkElement fe)
-                {
-                    fe.InvalidateProperty(FrameworkElement.StyleProperty);
-                    fe.InvalidateProperty(Control.BackgroundProperty);
-                    fe.InvalidateProperty(Control.ForegroundProperty);
-                    fe.InvalidateProperty(Control.BorderBrushProperty);
-                }
-                InvalidateThemeBindings(child);
-            }
         }
 
         private void RefreshNavigationTheme(AppTheme theme)
