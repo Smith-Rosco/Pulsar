@@ -403,6 +403,8 @@ namespace Pulsar.Views
 
         private void OnThemeChanged(object? sender, AppTheme theme)
         {
+            var backdrop = this is FluentWindow fw ? fw.WindowBackdropType : WindowBackdropType.None;
+            _themeService.ApplyTheme(this, theme, backdrop, updateGlobal: false);
             foreach (var page in _pages.Values)
             {
                 _themeService.ApplyTheme(page, theme, updateGlobal: false);

@@ -1694,6 +1694,15 @@ namespace Pulsar.ViewModels
             }
         }
 
+        public void SyncThemeFromService()
+        {
+            var serviceTheme = _themeService.CurrentTheme;
+            if (_config.Settings.ThemeEnum == serviceTheme) return;
+            _config.Settings.Theme = serviceTheme.ToString();
+            OnPropertyChanged(nameof(CurrentTheme));
+            MarkDirty();
+        }
+
         public HotkeyConfig ShowGridHotkey
         {
             get => _config.Settings.Hotkeys.TryGetValue(HotkeyActionIds.ShowGrid, out var h) ? h : new HotkeyConfig();

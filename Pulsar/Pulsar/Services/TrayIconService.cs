@@ -201,6 +201,11 @@ namespace Pulsar.Services
                 return;
             }
             BuildContextMenu();
+
+            // Sync SettingsViewModel config + ComboBox binding
+            var settingsWin = Application.Current.Windows.OfType<Views.SettingsWindow>().FirstOrDefault();
+            if (settingsWin?.DataContext is ViewModels.SettingsViewModel vm)
+                vm.SyncThemeFromService();
         }
 
         private void OnToggleThemeClicked(object? sender, EventArgs e)
@@ -208,16 +213,24 @@ namespace Pulsar.Services
             try
             {
                 var newTheme = _themeService.CurrentTheme == AppTheme.Dark ? AppTheme.Light : AppTheme.Dark;
-                var window = Application.Current.Windows.OfType<Window>().FirstOrDefault();
-
-                if (window != null)
+                // 使用 SettingsWindow 触发切换（与设置页面一致），通过 ThemeChanged 事件级联更新所有窗口
+                var settingsWindow = Application.Current.Windows.OfType<Views.SettingsWindow>().FirstOrDefault();
+                if (settingsWindow != null)
                 {
-                    var backdrop = window is FluentWindow fw ? fw.WindowBackdropType : WindowBackdropType.None;
-                    _themeService.ApplyTheme(window, newTheme, backdrop, updateGlobal: true);
+                    _themeService.ApplyTheme(settingsWindow, newTheme, WindowBackdropType.Mica, updateGlobal: true);
                 }
                 else
                 {
-                    _themeService.ApplyTheme(new System.Windows.Controls.ContentControl(), newTheme, updateGlobal: true);
+                    // fallback: 任意窗口
+                    var window = Application.Current.Windows.OfType<Window>().FirstOrDefault();
+                    if (window != null)
+                    {
+                        _themeService.ApplyTheme(window, newTheme, WindowBackdropType.Mica, updateGlobal: true);
+                    }
+                    else
+                    {
+                        _themeService.ApplyTheme(new System.Windows.Controls.ContentControl(), newTheme, updateGlobal: true);
+                    }
                 }
             }
             catch (Exception ex)
