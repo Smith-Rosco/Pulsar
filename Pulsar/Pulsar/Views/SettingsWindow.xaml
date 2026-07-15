@@ -41,7 +41,7 @@
                                    OpenPaneLength="250"
                                    IsBackButtonVisible="Collapsed">
                     <ui:NavigationView.Resources>
-                        <SolidColorBrush x:Key="NavigationViewIndicatorForeground" Color="Transparent"/>
+                        <SolidColorBrush x:Key="NavigationViewSelectionIndicatorForeground" Color="Transparent"/>
                     </ui:NavigationView.Resources>
 
                     <ui:NavigationView.FooterMenuItems>

@@ -130,8 +130,6 @@ namespace Pulsar.Views
             DisableScrollViewers(RootNavigation);
             DisableScrollViewers(NavPaneGrid);
             await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
-            await Task.Delay(50);
-            HideRemainingIndicators();
             InitializeNavIndicator();
         }
 
@@ -287,28 +285,6 @@ namespace Pulsar.Views
             }
         }
 
-        private void HideRemainingIndicators()
-        {
-            foreach (var item in _navItemMap.Values)
-            {
-                SetIndicatorTransparent(item);
-            }
-        }
-
-        private static void SetIndicatorTransparent(DependencyObject element)
-        {
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
-            {
-                var child = VisualTreeHelper.GetChild(element, i);
-                if (child is Border b && b.Name.IndexOf("Indicator", StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    b.Background = System.Windows.Media.Brushes.Transparent;
-                    b.BorderBrush = System.Windows.Media.Brushes.Transparent;
-                }
-                SetIndicatorTransparent(child);
-            }
-        }
-
         private Rect GetItemRelativeBounds(NavigationViewItem item)
         {
             try
@@ -396,8 +372,6 @@ namespace Pulsar.Views
                 ApplySelectedNavigationItem(activePageId);
             });
             await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
-            await Task.Delay(50);
-            HideRemainingIndicators();
             InitializeNavIndicator();
         }
 
