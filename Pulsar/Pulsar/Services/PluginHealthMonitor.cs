@@ -20,7 +20,7 @@ namespace Pulsar.Services
         private readonly IPluginUsageTracker _usageTracker;
 
         // 错误记录（最近 100 次执行）
-        private readonly ConcurrentDictionary<string, CircularBuffer<bool>> _recentExecutions = new();
+        private readonly ConcurrentDictionary<string, ConcurrentQueue<bool>> _recentExecutions = new();
 
         // Circuit Breaker 触发记录（最近 24 小时）
         private readonly ConcurrentDictionary<string, List<DateTime>> _circuitBreakerTrips = new();
@@ -48,8 +48,9 @@ namespace Pulsar.Services
             try
             {
                 // 记录到最近执行缓冲区
-                var buffer = _recentExecutions.GetOrAdd(pluginId, _ => new CircularBuffer<bool>(RecentExecutionBufferSize));
-                buffer.Add(false); // false = 失败
+                var buffer = _recentExecutions.GetOrAdd(pluginId, _ => new ConcurrentQueue<bool>());
+                buffer.Enqueue(false);
+                while (buffer.Count > RecentExecutionBufferSize && buffer.TryDequeue(out _)) { }
 
                 // 记录最后错误
                 var errorMessage = action != null
@@ -72,8 +73,9 @@ namespace Pulsar.Services
         {
             try
             {
-                var buffer = _recentExecutions.GetOrAdd(pluginId, _ => new CircularBuffer<bool>(RecentExecutionBufferSize));
-                buffer.Add(true); // true = 成功
+                var buffer = _recentExecutions.GetOrAdd(pluginId, _ => new ConcurrentQueue<bool>());
+                buffer.Enqueue(true);
+                while (buffer.Count > RecentExecutionBufferSize && buffer.TryDequeue(out _)) { }
             }
             catch (Exception ex)
             {
@@ -137,7 +139,7 @@ namespace Pulsar.Services
             // 计算错误率
             if (_recentExecutions.TryGetValue(pluginId, out var buffer))
             {
-                var executions = buffer.GetAll();
+                var executions = buffer.ToList();
                 report.RecentExecutionCount = executions.Count;
                 report.RecentErrorCount = executions.Count(e => !e);
                 report.ErrorRate = report.RecentExecutionCount > 0
@@ -211,7 +213,7 @@ namespace Pulsar.Services
             // 错误率惩罚（最多 -50 分）
             if (_recentExecutions.TryGetValue(pluginId, out var buffer))
             {
-                var executions = buffer.GetAll();
+                var executions = buffer.ToList();
                 if (executions.Count > 0)
                 {
                     var errorRate = (double)executions.Count(e => !e) / executions.Count;
@@ -292,55 +294,5 @@ namespace Pulsar.Services
         }
     }
 
-    /// <summary>
-    /// 循环缓冲区（固定大小，FIFO）
-    /// </summary>
-    internal class CircularBuffer<T>
-    {
-        private readonly T[] _buffer;
-        private int _head = 0;
-        private int _count = 0;
-        private readonly object _lock = new();
 
-        public CircularBuffer(int capacity)
-        {
-            _buffer = new T[capacity];
-        }
-
-        public void Add(T item)
-        {
-            lock (_lock)
-            {
-                _buffer[_head] = item;
-                _head = (_head + 1) % _buffer.Length;
-                if (_count < _buffer.Length)
-                    _count++;
-            }
-        }
-
-        public List<T> GetAll()
-        {
-            lock (_lock)
-            {
-                var result = new List<T>(_count);
-                if (_count == _buffer.Length)
-                {
-                    // 缓冲区已满，按顺序读取
-                    for (int i = 0; i < _buffer.Length; i++)
-                    {
-                        result.Add(_buffer[(_head + i) % _buffer.Length]);
-                    }
-                }
-                else
-                {
-                    // 缓冲区未满，直接读取
-                    for (int i = 0; i < _count; i++)
-                    {
-                        result.Add(_buffer[i]);
-                    }
-                }
-                return result;
-            }
-        }
-    }
 }

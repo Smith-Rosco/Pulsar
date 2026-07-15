@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
-using Pulsar.Core.Plugin.Dependencies;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Services.Interfaces;
 
@@ -19,10 +18,8 @@ namespace Pulsar.Core.Plugin
         private readonly IServiceProvider _services;
         private readonly ILogger<PluginLoader>? _logger;
         private readonly IPluginMetadataRegistry? _metadataRegistry;
-        private readonly DependencyIsolationManager? _dependencyManager;
         private readonly PluginFactory _pluginFactory;
         private readonly object _discoveryLock = new();
-        private DependencyIsolationResult? _dependencyAnalysisResult;
         private DiscoveryCache? _fullDiscoveryCache;
         private DiscoveryCache? _coreDiscoveryCache;
 
@@ -33,11 +30,6 @@ namespace Pulsar.Core.Plugin
             _logger = services.GetService(typeof(ILogger<PluginLoader>)) as ILogger<PluginLoader>;
             _metadataRegistry = services.GetService(typeof(IPluginMetadataRegistry)) as IPluginMetadataRegistry;
             _pluginFactory = new PluginFactory(services);
-
-            if (Directory.Exists(pluginDir))
-            {
-                _dependencyManager = new DependencyIsolationManager(pluginDir, null);
-            }
         }
 
         public virtual List<PluginDescriptor> DiscoverDescriptors(bool includeCore, bool includeExtensions, bool analyzeDependencies)
@@ -49,37 +41,6 @@ namespace Pulsar.Core.Plugin
             }
 
             var descriptors = new List<PluginDescriptor>();
-
-            if (includeExtensions && analyzeDependencies && _dependencyManager != null)
-            {
-                try
-                {
-                    _logger?.LogInformation("[PluginLoader] Analyzing plugin dependencies...");
-                    _dependencyAnalysisResult = _dependencyManager.AnalyzeAndResolveAsync().GetAwaiter().GetResult();
-
-                    if (_dependencyAnalysisResult.Success)
-                    {
-                        _logger?.LogInformation(
-                            "[PluginLoader] Dependency analysis completed: {Conflicts} conflicts, {Shims} shims generated",
-                            _dependencyAnalysisResult.Conflicts.Count,
-                            _dependencyAnalysisResult.GeneratedShims.Count);
-
-                        if (_dependencyAnalysisResult.HasCriticalConflicts)
-                        {
-                            _logger?.LogWarning("[PluginLoader] Critical dependency conflicts detected. Some plugins may fail to load.");
-                            _logger?.LogWarning("[PluginLoader] Conflict report:\n{Report}", _dependencyManager.GenerateConflictReport());
-                        }
-                    }
-                    else
-                    {
-                        _logger?.LogError("[PluginLoader] Dependency analysis failed: {Error}", _dependencyAnalysisResult.ErrorMessage);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogError(ex, "[PluginLoader] Failed to analyze plugin dependencies");
-                }
-            }
 
             DiscoverBuiltinDescriptors(descriptors, includeCore, includeExtensions);
 
@@ -180,24 +141,7 @@ namespace Pulsar.Core.Plugin
                         var anchorDll = dllFiles.FirstOrDefault(f => Path.GetFileNameWithoutExtension(f).Equals(pluginName, StringComparison.OrdinalIgnoreCase))
                             ?? dllFiles.First();
 
-                        Dictionary<string, string>? shimMap = null;
-                        if (_dependencyAnalysisResult != null && _dependencyAnalysisResult.GeneratedShims.Any())
-                        {
-                            shimMap = new Dictionary<string, string>();
-                            foreach (var shimPath in _dependencyAnalysisResult.GeneratedShims)
-                            {
-                                try
-                                {
-                                    var shimName = Path.GetFileNameWithoutExtension(shimPath);
-                                    shimMap[shimName] = shimPath;
-                                }
-                                catch
-                                {
-                                }
-                            }
-                        }
-
-                        var context = new PluginLoadContext(anchorDll, shimMap);
+                        var context = new PluginLoadContext(anchorDll, shimMap: null);
 
                         foreach (var dllPath in dllFiles)
                         {
@@ -388,21 +332,6 @@ namespace Pulsar.Core.Plugin
                 },
                 Actions = new Dictionary<string, SlotActionMetadata>(StringComparer.OrdinalIgnoreCase)
             };
-        }
-
-        public DependencyIsolationResult? GetDependencyAnalysisResult()
-        {
-            return _dependencyAnalysisResult;
-        }
-
-        public string GetDependencyConflictReport()
-        {
-            return _dependencyManager?.GenerateConflictReport() ?? "Dependency analysis not available.";
-        }
-
-        public bool HasCriticalDependencyConflicts()
-        {
-            return _dependencyManager?.HasCriticalConflicts() ?? false;
         }
 
         private List<PluginDescriptor>? TryGetCachedDescriptors(bool includeCore, bool includeExtensions, bool analyzeDependencies)

@@ -234,8 +234,6 @@ namespace Pulsar
             serviceCollection.AddTransient<ExternalPluginManagerViewModel>();
             serviceCollection.AddTransient<SettingsExternalPluginsPage>();
             
-            serviceCollection.AddTransient<PluginMarketViewModel>();
-            serviceCollection.AddTransient<SettingsMarketplacePage>();
             serviceCollection.AddTransient<Pulsar.ViewModels.Dialogs.FirstLaunchSetupWizardViewModel>();
 
             serviceCollection.AddTransient<SettingsWindow>();

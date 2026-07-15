@@ -78,7 +78,6 @@ namespace Pulsar.Simulator
             mockWindow.Setup(w => w.GetPreviousWindow()).Returns(IntPtr.Zero);
             mockWindow.Setup(w => w.GetProcessWindowsAsync(It.IsAny<int>())).ReturnsAsync(new List<ProcessWindowInfo>());
             mockWindow.Setup(w => w.HideMainWindow());
-            
             services.AddSingleton(mockWindow.Object);
 
             var mockFocusManager = new Mock<IFocusManager>();
