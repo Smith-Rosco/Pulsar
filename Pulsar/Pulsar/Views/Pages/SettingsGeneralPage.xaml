@@ -51,36 +51,17 @@
                 <!-- Appearance Section -->
                 <ui:CardExpander Icon="Color24" Header="{lex:Locale Settings.General.Appearance}" Margin="0,0,0,12" IsExpanded="False">
                     <StackPanel>
-                        <Grid Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="{lex:Locale Settings.General.LauncherTheme}" FontWeight="Medium"/>
-                                <TextBlock Text="{lex:Locale Settings.General.LauncherThemeDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"/>
-                            </StackPanel>
-                            <ComboBox Grid.Column="1" Width="140"
-                                      SelectedValue="{Binding DataContext.LauncherTheme, RelativeSource={RelativeSource AncestorType=Page}}" 
-                                      SelectedValuePath="Content">
-                                <ComboBoxItem Content="Dark"/>
-                                <ComboBoxItem Content="Light"/>
-                            </ComboBox>
-                        </Grid>
-
-                        <Separator Margin="0,12"/>
-
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock Text="{lex:Locale Settings.General.SettingsTheme}" FontWeight="Medium"/>
-                                <TextBlock Text="{lex:Locale Settings.General.SettingsThemeDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                                <TextBlock Text="{lex:Locale Settings.General.Theme}" FontWeight="Medium"/>
+                                <TextBlock Text="{lex:Locale Settings.General.ThemeDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"/>
                             </StackPanel>
                             <ComboBox Grid.Column="1" Width="140"
-                                      SelectedValue="{Binding DataContext.SettingsThemeString, RelativeSource={RelativeSource AncestorType=Page}}" 
+                                      SelectedValue="{Binding DataContext.CurrentTheme, RelativeSource={RelativeSource AncestorType=Page}}"
                                       SelectedValuePath="Content">
                                 <ComboBoxItem Content="Dark"/>
                                 <ComboBoxItem Content="Light"/>

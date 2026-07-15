@@ -35,8 +35,7 @@ namespace Pulsar.Tests.Config
             // Assert
             settings.CenterSlotBehavior.Should().Be("MRU_Window");
             settings.TriggerDistance.Should().Be(100.0);
-            settings.LauncherTheme.Should().Be("Light");
-            settings.SettingsTheme.Should().Be("Light");
+            settings.Theme.Should().Be("Light");
             settings.HoverScale.Should().Be(1.2);
             settings.Springiness.Should().Be(6.0);
             settings.MaxDisplacement.Should().Be(20.0);
@@ -198,13 +197,11 @@ namespace Pulsar.Tests.Config
             // Arrange
             var settings = new ProfileSettings
             {
-                LauncherTheme = "Dark",
-                SettingsTheme = "Light"
+                Theme = "Dark"
             };
 
             // Act & Assert
-            settings.LauncherThemeEnum.Should().Be(AppTheme.Dark);
-            settings.SettingsThemeEnum.Should().Be(AppTheme.Light);
+            settings.ThemeEnum.Should().Be(AppTheme.Dark);
         }
 
         [Fact]
@@ -213,11 +210,11 @@ namespace Pulsar.Tests.Config
             // Arrange
             var settings = new ProfileSettings
             {
-                LauncherTheme = "InvalidTheme"
+                Theme = "InvalidTheme"
             };
 
             // Act & Assert
-            settings.LauncherThemeEnum.Should().Be(AppTheme.Dark, "should fallback to Dark for invalid values");
+            settings.ThemeEnum.Should().Be(AppTheme.Dark, "should fallback to Dark for invalid values");
         }
 
         [Fact]

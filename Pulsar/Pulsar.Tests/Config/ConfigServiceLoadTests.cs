@@ -59,7 +59,7 @@ namespace Pulsar.Tests.Config
             {
                 Settings = new ProfileSettings
                 {
-                    LauncherTheme = "Dark",
+                    Theme = "Dark",
                     TriggerDistance = 150.0
                 }
             };
@@ -72,7 +72,7 @@ namespace Pulsar.Tests.Config
             var config = await service.LoadAsync();
 
             // Assert
-            config.Settings.LauncherTheme.Should().Be("Dark");
+            config.Settings.Theme.Should().Be("Dark");
             config.Settings.TriggerDistance.Should().Be(150.0);
         }
 
@@ -82,7 +82,7 @@ namespace Pulsar.Tests.Config
             // Arrange
             var partialJson = @"{
                 ""settings"": {
-                    ""launcherTheme"": ""Dark""
+                    ""theme"": ""Dark""
                 }
             }";
             
@@ -94,7 +94,7 @@ namespace Pulsar.Tests.Config
             var config = await service.LoadAsync();
 
             // Assert
-            config.Settings.LauncherTheme.Should().Be("Dark", "specified field should be loaded");
+            config.Settings.Theme.Should().Be("Dark", "specified field should be loaded");
             config.Settings.TriggerDistance.Should().Be(100.0, "missing field should use default value");
             config.Settings.HoverScale.Should().Be(1.2, "missing field should use default value");
         }
@@ -193,7 +193,7 @@ namespace Pulsar.Tests.Config
                     HasCompletedTutorial = true,
                     LastTutorialStep = "step3_settings_overview",
                     HasCompletedInitialDetection = true,
-                    LauncherTheme = "Dark"
+                    Theme = "Dark"
                 },
                 Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
                 {

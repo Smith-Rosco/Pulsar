@@ -202,7 +202,7 @@ namespace Pulsar.Services
 
             if (settingsWindow?.DataContext is SettingsViewModel settingsVm)
             {
-                return settingsVm.SettingsTheme;
+                return settingsVm.CurrentTheme;
             }
 
             // Fallback to global theme

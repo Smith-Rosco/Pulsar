@@ -56,17 +56,11 @@
   <data name="Settings.General.Appearance" xml:space="preserve">
     <value>Appearance</value>
   </data>
-  <data name="Settings.General.LauncherTheme" xml:space="preserve">
-    <value>Launcher Theme</value>
+  <data name="Settings.General.Theme" xml:space="preserve">
+    <value>Theme</value>
   </data>
-  <data name="Settings.General.LauncherThemeDescription" xml:space="preserve">
-    <value>Visual style of the radial menu</value>
-  </data>
-  <data name="Settings.General.SettingsTheme" xml:space="preserve">
-    <value>Settings Theme</value>
-  </data>
-  <data name="Settings.General.SettingsThemeDescription" xml:space="preserve">
-    <value>Visual style of this configuration window</value>
+  <data name="Settings.General.ThemeDescription" xml:space="preserve">
+    <value>Dark or Light visual style for all windows</value>
   </data>
   <data name="Settings.General.Dark" xml:space="preserve">
     <value>Dark</value>

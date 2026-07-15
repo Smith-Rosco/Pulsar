@@ -106,7 +106,7 @@ namespace Pulsar.Tests.Config
                     TutorialCrashedAt = null,
                     ConfigCreatedAt = DateTime.UtcNow,
                     Language = "zh-CN",
-                    LauncherTheme = "Dark"
+                    Theme = "Dark"
                 },
                 Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
                 {
@@ -133,7 +133,7 @@ namespace Pulsar.Tests.Config
             reloaded.Settings.LastTutorialStep.Should().BeNull();
             reloaded.Settings.TutorialCrashedAt.Should().BeNull();
             reloaded.Settings.Language.Should().Be("zh-CN");
-            reloaded.Settings.LauncherTheme.Should().Be("Dark");
+            reloaded.Settings.Theme.Should().Be("Dark");
             reloaded.Settings.ConfigCreatedAt.Should().NotBeNull();
         }
 

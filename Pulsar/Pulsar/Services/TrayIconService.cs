@@ -201,11 +201,6 @@ namespace Pulsar.Services
                 return;
             }
             BuildContextMenu();
-
-            // Sync SettingsViewModel so its combo box shows correct value
-            var settingsWin = Application.Current.Windows.OfType<Views.SettingsWindow>().FirstOrDefault();
-            if (settingsWin?.DataContext is ViewModels.SettingsViewModel vm)
-                vm.SyncExternalTheme(theme);
         }
 
         private void OnToggleThemeClicked(object? sender, EventArgs e)

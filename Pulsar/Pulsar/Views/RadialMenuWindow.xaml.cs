@@ -111,7 +111,7 @@ namespace Pulsar.Views
             try
             {
                 var config = await _configService.LoadAsync();
-                _themeService.ApplyTheme(this, config.Settings.LauncherThemeEnum, WindowBackdropType.None, updateGlobal: false);
+                _themeService.ApplyTheme(this, config.Settings.ThemeEnum, WindowBackdropType.None, updateGlobal: false);
             }
             catch (Exception ex)
             {
@@ -210,7 +210,7 @@ namespace Pulsar.Views
         private async void RefreshThemeOnShow()
         {
             var config = await _configService.LoadAsync();
-            _themeService.ApplyTheme(this, config.Settings.LauncherThemeEnum, WindowBackdropType.None, updateGlobal: false);
+            _themeService.ApplyTheme(this, config.Settings.ThemeEnum, WindowBackdropType.None, updateGlobal: false);
             _themeService.EnforceTransparency(this);
         }
 

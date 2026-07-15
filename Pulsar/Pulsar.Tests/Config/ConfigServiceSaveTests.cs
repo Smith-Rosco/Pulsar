@@ -42,7 +42,7 @@ namespace Pulsar.Tests.Config
             {
                 Settings = new ProfileSettings
                 {
-                    LauncherTheme = "Dark",
+                    Theme = "Dark",
                     TriggerDistance = 200.0
                 }
             };
@@ -57,7 +57,7 @@ namespace Pulsar.Tests.Config
             var savedConfig = JsonSerializer.Deserialize<ProfilesConfig>(savedJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             
             savedConfig.Should().NotBeNull();
-            savedConfig!.Settings.LauncherTheme.Should().Be("Dark");
+            savedConfig!.Settings.Theme.Should().Be("Dark");
             savedConfig.Settings.TriggerDistance.Should().Be(200.0);
         }
 
@@ -97,14 +97,14 @@ namespace Pulsar.Tests.Config
             var service = CreateConfigService();
             var config = new ProfilesConfig
             {
-                Settings = new ProfileSettings { LauncherTheme = "Dark" }
+                Settings = new ProfileSettings { Theme = "Dark" }
             };
 
             // Act
             await service.SaveAsync(config);
 
             // Assert
-            service.Current.Settings.LauncherTheme.Should().Be("Dark", "cached config should be updated");
+            service.Current.Settings.Theme.Should().Be("Dark", "cached config should be updated");
         }
 
         [Fact]
@@ -146,7 +146,7 @@ namespace Pulsar.Tests.Config
             var service = CreateConfigService();
             var config = new ProfilesConfig
             {
-                Settings = new ProfileSettings { LauncherTheme = "Dark" }
+                Settings = new ProfileSettings { Theme = "Dark" }
             };
 
             // Act
@@ -154,8 +154,8 @@ namespace Pulsar.Tests.Config
 
             // Assert
             var savedJson = await File.ReadAllTextAsync(_configPath);
-            savedJson.Should().Contain("\"launcherTheme\"", "property names should be camelCase");
-            savedJson.Should().NotContain("\"LauncherTheme\"");
+            savedJson.Should().Contain("\"theme\"", "property names should be camelCase");
+            savedJson.Should().NotContain("\"Theme\"");
         }
 
         [Fact]
@@ -167,7 +167,7 @@ namespace Pulsar.Tests.Config
             {
                 Settings = new ProfileSettings
                 {
-                    LauncherTheme = "Dark",
+                    Theme = "Dark",
                     TriggerDistance = 150.0,
                     HoverScale = 1.5
                 }
@@ -186,7 +186,7 @@ namespace Pulsar.Tests.Config
             var loadedConfig = await service2.LoadAsync();
 
             // Assert
-            loadedConfig.Settings.LauncherTheme.Should().Be("Dark");
+            loadedConfig.Settings.Theme.Should().Be("Dark");
             loadedConfig.Settings.TriggerDistance.Should().Be(150.0);
             loadedConfig.Settings.HoverScale.Should().Be(1.5);
             loadedConfig.Profiles.Should().ContainKey("TestProcess");

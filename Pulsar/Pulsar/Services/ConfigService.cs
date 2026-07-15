@@ -648,7 +648,7 @@ namespace Pulsar.Services
                 {
                     CenterSlotBehavior = "MRU_Window",
                     TriggerDistance = 100.0,
-                    LauncherTheme = "Light",
+                    Theme = "Light",
                     HoverScale = 1.2,
                     Springiness = 6.0,
                     MaxDisplacement = 20.0,

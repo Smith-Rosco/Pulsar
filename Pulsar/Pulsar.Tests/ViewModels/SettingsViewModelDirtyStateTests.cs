@@ -359,8 +359,7 @@ namespace Pulsar.Tests.ViewModels
                 Settings = new ProfileSettings
                 {
                     SlotsPerPage = 8,
-                    LauncherTheme = "Light",
-                    SettingsTheme = "Light"
+                    Theme = "Light"
                 },
                 Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
                 {
@@ -426,8 +425,7 @@ namespace Pulsar.Tests.ViewModels
                     LastTutorialStep = null,
                     OnboardingState = "NotStarted",
                     HasCompletedInitialDetection = false,
-                    LauncherTheme = "Light",
-                    SettingsTheme = "Light",
+                    Theme = "Light",
                     SlotsPerPage = 8
                 },
                 Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)

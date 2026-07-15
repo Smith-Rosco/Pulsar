@@ -34,14 +34,14 @@ namespace Pulsar.Tests.Config
             {
                 Settings = new ProfileSettings
                 {
-                    LauncherTheme = "Dark",
+                    Theme = "Dark",
                     TriggerDistance = 200.0
                 }
             };
 
             await service.SaveAsync(config);
 
-            service.Current.Settings.LauncherTheme.Should().Be("Dark",
+            service.Current.Settings.Theme.Should().Be("Dark",
                 "cache should be updated after successful save");
             service.Current.Settings.TriggerDistance.Should().Be(200.0,
                 "all values should be updated in cache after successful save");
@@ -60,7 +60,7 @@ namespace Pulsar.Tests.Config
             {
                 Settings = new ProfileSettings
                 {
-                    LauncherTheme = "Blue",
+                    Theme = "Blue",
                     TriggerDistance = 150.0
                 }
             };
@@ -68,7 +68,7 @@ namespace Pulsar.Tests.Config
             await service.SaveAsync(config);
 
             var loaded1 = await service.LoadAsync();
-            loaded1.Settings.LauncherTheme.Should().Be("Blue");
+            loaded1.Settings.Theme.Should().Be("Blue");
 
             var appDataPath = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -79,7 +79,7 @@ namespace Pulsar.Tests.Config
                 File.WriteAllText(appDataPath, "{}");
 
                 var loaded2 = await service.LoadAsync();
-                loaded2.Settings.LauncherTheme.Should().Be("Blue",
+                loaded2.Settings.Theme.Should().Be("Blue",
                     "LoadAsync should return cached config without re-reading disk");
             }
         }
@@ -97,13 +97,13 @@ namespace Pulsar.Tests.Config
             {
                 Settings = new ProfileSettings
                 {
-                    LauncherTheme = "Custom",
+                    Theme = "Custom",
                     TriggerDistance = 300.0
                 }
             };
 
             await service.SaveAsync(config);
-            service.Current.Settings.LauncherTheme.Should().Be("Custom");
+            service.Current.Settings.Theme.Should().Be("Custom");
 
             var resetConfig = await service.ResetToFirstLaunchAsync();
             resetConfig.Should().NotBeNull("reset should return a valid config");

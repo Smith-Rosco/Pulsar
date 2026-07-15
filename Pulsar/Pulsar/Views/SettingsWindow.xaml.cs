@@ -90,7 +90,7 @@ namespace Pulsar.Views
                 });
             });
 
-            _themeService.ApplyTheme(this, _viewModel.SettingsTheme, WindowBackdropType.Mica, updateGlobal: true);
+            _themeService.ApplyTheme(this, _viewModel.CurrentTheme, WindowBackdropType.Mica, updateGlobal: true);
 
             Loaded += OnLoaded;
             PreviewKeyDown += OnPreviewKeyDown;
@@ -161,7 +161,7 @@ namespace Pulsar.Views
             {
                 page = _pageFactory.CreatePage(registration.Id, _viewModel);
                 _pages[registration.Id] = page;
-                _themeService.ApplyTheme(page, _viewModel.SettingsTheme, updateGlobal: false);
+                _themeService.ApplyTheme(page, _viewModel.CurrentTheme, updateGlobal: false);
             }
 
             NavigateWithAnimation(page);

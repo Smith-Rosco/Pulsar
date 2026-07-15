@@ -488,13 +488,10 @@ namespace Pulsar.ViewModels
                     RefreshContexts();
 
                     // Notify properties to trigger bindings/theme updates
-                    OnPropertyChanged(nameof(LauncherTheme));
-                    OnPropertyChanged(nameof(SettingsTheme));
-                    OnPropertyChanged(nameof(SettingsThemeString));
+                    OnPropertyChanged(nameof(CurrentTheme));
 
-                    // Apply loaded theme visually (constructor may have used stale default)
-                    if (_config.Settings.SettingsThemeEnum != _themeService.CurrentTheme)
-                        ApplySettingsTheme(_config.Settings.SettingsThemeEnum);
+                    if (_config.Settings.ThemeEnum != _themeService.CurrentTheme)
+                        ApplySettingsTheme(_config.Settings.ThemeEnum);
                     
                     // [New] Notify Hotkeys
                     OnPropertyChanged(nameof(ShowGridHotkey));
@@ -1682,62 +1679,19 @@ namespace Pulsar.ViewModels
             RefreshSlotPresentationModel(slot);
         }
 
-        public AppTheme LauncherTheme
+        public AppTheme CurrentTheme
         {
-            get => _config.Settings.LauncherThemeEnum;
+            get => _config.Settings.ThemeEnum;
             set
             {
-                _config.Settings.LauncherTheme = value.ToString();
-                OnPropertyChanged();
-                MarkDirty(); // [Phase 2]
-            }
-        }
-
-        public AppTheme SettingsTheme
-        {
-            get => _config.Settings.SettingsThemeEnum;
-            set
-            {
-                if (_config.Settings.SettingsThemeEnum != value)
+                if (_config.Settings.ThemeEnum != value)
                 {
-                    _config.Settings.SettingsTheme = value.ToString();
+                    _config.Settings.Theme = value.ToString();
                     OnPropertyChanged();
-                    OnPropertyChanged(nameof(SettingsThemeString));
                     ApplySettingsTheme(value);
-                    MarkDirty(); // [Phase 2]
+                    MarkDirty();
                 }
             }
-        }
-
-        public string SettingsThemeString
-        {
-            get => _config.Settings.SettingsTheme;
-            set
-            {
-                if (_config.Settings.SettingsTheme != value)
-                {
-                    _config.Settings.SettingsTheme = value;
-                    OnPropertyChanged();
-                    OnPropertyChanged(nameof(SettingsTheme));
-                    
-                    if (Enum.TryParse<AppTheme>(value, true, out var themeEnum))
-                    {
-                        ApplySettingsTheme(themeEnum);
-                    }
-                    MarkDirty(); // [Phase 2]
-                }
-            }
-        }
-
-        public void SyncExternalTheme(AppTheme theme)
-        {
-            if (_config.Settings.SettingsThemeEnum == theme) return;
-            _config.Settings.SettingsTheme = theme.ToString();
-            _config.Settings.LauncherTheme = theme.ToString();
-            OnPropertyChanged(nameof(SettingsTheme));
-            OnPropertyChanged(nameof(SettingsThemeString));
-            OnPropertyChanged(nameof(LauncherTheme));
-            MarkDirty();
         }
 
         public HotkeyConfig ShowGridHotkey
