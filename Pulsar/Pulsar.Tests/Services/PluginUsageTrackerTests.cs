@@ -53,7 +53,7 @@ namespace Pulsar.Tests.Services
             stats.LastUsed.Should().NotBeNull();
             stats.FirstUsed.Should().NotBeNull();
 
-            var todayKey = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            var todayKey = DateTime.Now.ToString("yyyy-MM-dd");
             stats.DailyStats.Should().ContainKey(todayKey);
             stats.DailyStats[todayKey].Should().Be(1);
 
@@ -62,7 +62,7 @@ namespace Pulsar.Tests.Services
             stats.TaskModeExecutions.Should().Be(1);
             stats.ActionModeExecutions.Should().Be(0);
 
-            var currentHour = DateTime.UtcNow.Hour;
+            var currentHour = DateTime.Now.Hour;
             stats.HourlyUsage.Should().ContainKey(currentHour);
             stats.HourlyUsage[currentHour].Should().Be(1);
         }
@@ -233,9 +233,9 @@ namespace Pulsar.Tests.Services
         [Fact]
         public async Task CleanupDailyStats_RemovesEntriesOlderThan30Days()
         {
-            var oldDate = DateTime.UtcNow.AddDays(-35).ToString("yyyy-MM-dd");
-            var recentDate = DateTime.UtcNow.AddDays(-5).ToString("yyyy-MM-dd");
-            var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            var oldDate = DateTime.Now.AddDays(-35).ToString("yyyy-MM-dd");
+            var recentDate = DateTime.Now.AddDays(-5).ToString("yyyy-MM-dd");
+            var today = DateTime.Now.ToString("yyyy-MM-dd");
 
             var preloadedStats = new PluginUsageStats
             {

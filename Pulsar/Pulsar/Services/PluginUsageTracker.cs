@@ -63,7 +63,7 @@ namespace Pulsar.Services
 
                 lock (stats)
                 {
-                    var now = DateTime.UtcNow;
+                    var now = DateTime.Now;
 
                     stats.TotalExecutions++;
                     if (success)
@@ -71,9 +71,9 @@ namespace Pulsar.Services
                     else
                         stats.FailureCount++;
 
-                    stats.LastUsed = now;
+                    stats.LastUsed = now.ToUniversalTime();
                     if (stats.FirstUsed == null)
-                        stats.FirstUsed = now;
+                        stats.FirstUsed = now.ToUniversalTime();
 
                     stats.TotalExecutionTimeMs += executionTimeMs;
                     stats.AverageExecutionTimeMs = (double)stats.TotalExecutionTimeMs / stats.TotalExecutions;
@@ -272,7 +272,7 @@ namespace Pulsar.Services
         /// </summary>
         private void CleanupOldDailyStats(PluginUsageStats stats)
         {
-            var cutoffDate = DateTime.UtcNow.AddDays(-30).ToString("yyyy-MM-dd");
+            var cutoffDate = DateTime.Now.AddDays(-30).ToString("yyyy-MM-dd");
             var keysToRemove = stats.DailyStats.Keys.Where(k => string.Compare(k, cutoffDate) < 0).ToList();
             foreach (var key in keysToRemove)
             {

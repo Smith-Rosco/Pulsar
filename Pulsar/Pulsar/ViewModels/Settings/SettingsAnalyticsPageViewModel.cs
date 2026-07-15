@@ -330,9 +330,9 @@ namespace Pulsar.ViewModels.Settings
         {
             var cutoff = TimeRange switch
             {
-                AnalyticsTimeRange.Today => DateTime.UtcNow.Date,
-                AnalyticsTimeRange.ThisWeek => DateTime.UtcNow.AddDays(-7),
-                AnalyticsTimeRange.ThisMonth => DateTime.UtcNow.AddDays(-30),
+                AnalyticsTimeRange.Today => DateTime.Now.Date,
+                AnalyticsTimeRange.ThisWeek => DateTime.Now.AddDays(-6).Date,
+                AnalyticsTimeRange.ThisMonth => DateTime.Now.AddDays(-29).Date,
                 _ => DateTime.MinValue
             };
 

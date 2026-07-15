@@ -40,7 +40,7 @@ namespace Pulsar.Tests.ViewModels
             string primaryMode = "Task", int taskMode = 10,
             int actionMode = 5, DateTime? lastUsed = null)
         {
-            var todayKey = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            var todayKey = DateTime.Now.ToString("yyyy-MM-dd");
             var dailyStats = new Dictionary<string, int>();
             if (today > 0) dailyStats[todayKey] = today;
             if (recent > 0 && !dailyStats.ContainsKey(todayKey)) dailyStats[todayKey] = recent;
@@ -56,7 +56,7 @@ namespace Pulsar.Tests.ViewModels
                 ActionModeExecutions = actionMode,
                 LastUsed = lastUsed ?? DateTime.UtcNow,
                 SlotUsage = new Dictionary<int, int> { { favoriteSlot, totalExecs } },
-                HourlyUsage = new Dictionary<int, int> { { DateTime.UtcNow.Hour, totalExecs } },
+                HourlyUsage = new Dictionary<int, int> { { DateTime.Now.Hour, totalExecs } },
                 DailyStats = dailyStats
             };
         }
@@ -144,9 +144,9 @@ namespace Pulsar.Tests.ViewModels
                 CreatePlugin("plugin.b", "Plugin B")
             };
 
-            var todayKey = DateTime.UtcNow.ToString("yyyy-MM-dd");
-            var day2Key = DateTime.UtcNow.AddDays(-1).ToString("yyyy-MM-dd");
-            var day3Key = DateTime.UtcNow.AddDays(-2).ToString("yyyy-MM-dd");
+            var todayKey = DateTime.Now.ToString("yyyy-MM-dd");
+            var day2Key = DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd");
+            var day3Key = DateTime.Now.AddDays(-2).ToString("yyyy-MM-dd");
 
             var statA = new PluginUsageStats
             {
@@ -162,7 +162,7 @@ namespace Pulsar.Tests.ViewModels
                     { day3Key, 10 }
                 },
                 SlotUsage = new Dictionary<int, int> { { 1, 100 } },
-                HourlyUsage = new Dictionary<int, int> { { DateTime.UtcNow.Hour, 100 } }
+                HourlyUsage = new Dictionary<int, int> { { DateTime.Now.Hour, 100 } }
             };
 
             var statB = new PluginUsageStats
@@ -179,7 +179,7 @@ namespace Pulsar.Tests.ViewModels
                     { day3Key, 5 }
                 },
                 SlotUsage = new Dictionary<int, int> { { 2, 50 } },
-                HourlyUsage = new Dictionary<int, int> { { DateTime.UtcNow.Hour, 50 } }
+                HourlyUsage = new Dictionary<int, int> { { DateTime.Now.Hour, 50 } }
             };
 
             var stats = new List<PluginUsageStats> { statA, statB };

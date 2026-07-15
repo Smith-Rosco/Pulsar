@@ -102,28 +102,22 @@ namespace Pulsar.Models
         [JsonIgnore]
         public string PrimaryMode => TaskModeExecutions >= ActionModeExecutions ? "Task" : "Action";
 
-        /// <summary>
-        /// Last 7 days execution count
-        /// </summary>
         [JsonIgnore]
         public int RecentExecutions
         {
             get
             {
-                var cutoff = DateTime.UtcNow.AddDays(-7).ToString("yyyy-MM-dd");
+                var cutoff = DateTime.Now.AddDays(-6).ToString("yyyy-MM-dd");
                 return DailyStats.Where(kvp => string.Compare(kvp.Key, cutoff) >= 0).Sum(kvp => kvp.Value);
             }
         }
 
-        /// <summary>
-        /// Today's execution count
-        /// </summary>
         [JsonIgnore]
         public int TodayExecutions
         {
             get
             {
-                var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+                var today = DateTime.Now.ToString("yyyy-MM-dd");
                 return DailyStats.TryGetValue(today, out var count) ? count : 0;
             }
         }
