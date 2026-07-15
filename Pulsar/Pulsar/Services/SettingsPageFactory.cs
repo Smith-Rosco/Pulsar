@@ -30,11 +30,11 @@ namespace Pulsar.Services
         {
             return pageId switch
             {
-                SettingsPageIds.General => new SettingsGeneralPage(settingsViewModel),
-                SettingsPageIds.Slots => new SettingsSlotsPage(settingsViewModel),
+                SettingsPageIds.General => new SettingsGeneralPage(settingsViewModel, _themeService),
+                SettingsPageIds.Slots => new SettingsSlotsPage(settingsViewModel, _themeService),
                 SettingsPageIds.Plugins => new SettingsPluginsPage(_pluginManagerViewModel, _themeService, _externalPluginManagerViewModel),
-                SettingsPageIds.Analytics => new SettingsAnalyticsPage(_analyticsViewModel),
-                SettingsPageIds.About => new SettingsAboutPage(new AboutViewModel()),
+                SettingsPageIds.Analytics => new SettingsAnalyticsPage(_analyticsViewModel, _themeService),
+                SettingsPageIds.About => new SettingsAboutPage(new AboutViewModel(), _themeService),
                 _ => throw new InvalidOperationException($"Unknown settings page id '{pageId}'.")
             };
         }

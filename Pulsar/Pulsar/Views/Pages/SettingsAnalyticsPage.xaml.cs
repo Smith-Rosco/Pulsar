@@ -10,14 +10,15 @@ namespace Pulsar.Views.Pages
         private readonly SettingsAnalyticsPageViewModel _viewModel;
 
         public SettingsAnalyticsPage()
-            : this(App.Current.Services.GetRequiredService<SettingsAnalyticsPageViewModel>())
+            : this(
+                App.Current.Services.GetRequiredService<SettingsAnalyticsPageViewModel>(),
+                App.Current.Services.GetRequiredService<IThemeService>())
         {
         }
 
-        public SettingsAnalyticsPage(SettingsAnalyticsPageViewModel viewModel)
+        public SettingsAnalyticsPage(SettingsAnalyticsPageViewModel viewModel, IThemeService themeService)
         {
             InitializeComponent();
-            var themeService = App.Current.Services.GetRequiredService<IThemeService>();
             themeService.ApplyTheme(this, themeService.CurrentTheme, updateGlobal: false);
             DataContext = viewModel;
             _viewModel = viewModel;
