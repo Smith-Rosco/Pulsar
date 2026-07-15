@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.Threading;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
-using Pulsar.Core.Plugin.Security;
 using Pulsar.Native;
 
 namespace Pulsar.Core.Plugin
@@ -21,10 +20,6 @@ namespace Pulsar.Core.Plugin
         public string TargetProcessName { get; }  // 大写，如 "EXCEL"
         public int TargetProcessId { get; }
         public string TargetExePath => _resolvedExePath ?? string.Empty;
-        
-        // === 权限管理 ===
-        // CurrentPluginId and PermissionInterceptor moved to PluginExecutionContext
-        // for true immutability. See PluginExecutionContext.BeginScope().
         
         /// <summary>
         /// 显示用进程名 - 首字母大写格式 (如 "Excel")
@@ -75,7 +70,6 @@ namespace Pulsar.Core.Plugin
         /// </summary>
         public Task<IReadOnlyList<ProcessWindowInfo>> GetTargetProcessWindowsAsync()
         {
-            CheckPermission(PluginPermission.ReadProcessWindows, nameof(GetTargetProcessWindowsAsync));
             return _windowsLazy.Value;
         }
 
@@ -85,7 +79,6 @@ namespace Pulsar.Core.Plugin
         /// </summary>
         public Task<string?> GetClipboardTextAsync()
         {
-            CheckPermission(PluginPermission.ReadClipboard, nameof(GetClipboardTextAsync));
             return _clipboardLazy.Value;
         }
 
@@ -95,7 +88,6 @@ namespace Pulsar.Core.Plugin
         /// </summary>
         public Task<string?> GetSelectedTextAsync()
         {
-            CheckPermission(PluginPermission.ReadSelectedText, nameof(GetSelectedTextAsync));
             return _selectedTextLazy.Value;
         }
 
@@ -105,30 +97,10 @@ namespace Pulsar.Core.Plugin
         }
 
         /// <summary>
-        /// 检查权限
-        /// </summary>
-        private void CheckPermission(PluginPermission permission, string operation)
-        {
-            var executionCtx = PluginExecutionContext.Current;
-            if (executionCtx == null || string.IsNullOrEmpty(executionCtx.CurrentPluginId) || executionCtx.PermissionInterceptor == null)
-            {
-                return;
-            }
-
-            if (executionCtx.PermissionInterceptor.HasPermission(executionCtx.CurrentPluginId, PluginPermission.BypassPermissionCheck))
-            {
-                return;
-            }
-
-            executionCtx.PermissionInterceptor.CheckPermission(executionCtx.CurrentPluginId, permission, operation);
-        }
-
-        /// <summary>
         /// 捕获当前上下文 (轻量级，非阻塞)
         /// </summary>
         /// <param name="windowService">窗口服务</param>
         /// <param name="logger">日志记录器</param>
-        /// <param name="permissionInterceptor">权限拦截器（可选）</param>
         /// <returns>上下文实例</returns>
         public static PulsarContext Capture(IWindowService windowService, ILogger? logger = null)
         {

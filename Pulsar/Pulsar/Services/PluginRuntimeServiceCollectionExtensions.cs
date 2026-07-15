@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Plugin.Runtime;
-using Pulsar.Core.Plugin.Security;
+
 
 namespace Pulsar.Services
 {
@@ -20,9 +20,6 @@ namespace Pulsar.Services
             // Circuit Breaker Policy
             services.AddSingleton<IPluginBreakerPolicy, PluginCircuitBreakerPolicy>();
 
-            // Permission Interceptor (if not already registered)
-            services.AddSingleton<PermissionInterceptor>();
-
             // Plugin Execution Pipeline
             services.AddSingleton<IPluginExecutionPipeline>(sp =>
             {
@@ -31,8 +28,7 @@ namespace Pulsar.Services
                 var logger = sp.GetService<ILogger<PluginExecutionPipeline>>();
                 var usageTracker = sp.GetService<Services.Interfaces.IPluginUsageTracker>();
                 var healthMonitor = sp.GetService<Services.Interfaces.IPluginHealthMonitor>();
-                var permissionInterceptor = sp.GetService<PermissionInterceptor>();
-                return new PluginExecutionPipeline(runtimeStateStore, breakerPolicy, logger, usageTracker, healthMonitor, permissionInterceptor);
+                return new PluginExecutionPipeline(runtimeStateStore, breakerPolicy, logger, usageTracker, healthMonitor);
             });
 
             // Plugin Loader (needs plugin directory path from config)

@@ -61,9 +61,6 @@
                 <contents:EditProfileContent/>
             </DataTemplate>
             
-            <DataTemplate DataType="{x:Type dialogs:PermissionRequestViewModel}">
-                <contents:PermissionRequestContent/>
-            </DataTemplate>
             
             <DataTemplate DataType="{x:Type dialogs:PluginLogViewerViewModel}">
                 <contents:PluginLogViewerContentHost/>

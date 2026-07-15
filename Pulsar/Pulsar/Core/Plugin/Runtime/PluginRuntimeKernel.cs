@@ -338,22 +338,19 @@ namespace Pulsar.Core.Plugin.Runtime
         private readonly IPluginUsageTracker? _usageTracker;
         private readonly IPluginHealthMonitor? _healthMonitor;
         private readonly ILogger<PluginExecutionPipeline> _logger;
-        private readonly Security.PermissionInterceptor? _permissionInterceptor;
 
         public PluginExecutionPipeline(
             IPluginRuntimeStateStore runtimeStateStore,
             IPluginBreakerPolicy breakerPolicy,
             ILogger<PluginExecutionPipeline>? logger = null,
             IPluginUsageTracker? usageTracker = null,
-            IPluginHealthMonitor? healthMonitor = null,
-            Security.PermissionInterceptor? permissionInterceptor = null)
+            IPluginHealthMonitor? healthMonitor = null)
         {
             _runtimeStateStore = runtimeStateStore;
             _breakerPolicy = breakerPolicy;
             _usageTracker = usageTracker;
             _healthMonitor = healthMonitor;
             _logger = logger ?? NullLogger<PluginExecutionPipeline>.Instance;
-            _permissionInterceptor = permissionInterceptor;
         }
 
         public async Task<PluginExecutionOutcome> ExecuteAsync(PluginExecutionRequest request, CancellationToken cancellationToken = default)
@@ -387,8 +384,7 @@ namespace Pulsar.Core.Plugin.Runtime
             using var executionScope = PluginExecutionContext.BeginScope(
                 pluginId,
                 request.Action,
-                targetProcessName: request.Context.TargetProcessName,
-                permissionInterceptor: _permissionInterceptor);
+                targetProcessName: request.Context.TargetProcessName);
 
             var stopwatch = Stopwatch.StartNew();
             var readyState = PluginLifecycleState.Enabled;

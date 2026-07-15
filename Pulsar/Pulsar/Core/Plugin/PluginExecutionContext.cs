@@ -2,7 +2,6 @@
 
 using System;
 using System.Threading;
-using Pulsar.Core.Plugin.Security;
 
 namespace Pulsar.Core.Plugin
 {
@@ -44,56 +43,33 @@ namespace Pulsar.Core.Plugin
         /// </summary>
         public string? TargetProcessName { get; }
 
-        /// <summary>
-        /// 当前执行的插件 ID (用于权限检查)
-        /// </summary>
-        public string? CurrentPluginId { get; }
-
-        /// <summary>
-        /// 权限拦截器 (用于运行时权限检查)
-        /// </summary>
-        public PermissionInterceptor? PermissionInterceptor { get; }
-
         private PluginExecutionContext(
             string pluginId,
             string action,
             Guid executionId,
-            string? targetProcessName,
-            string? currentPluginId = null,
-            PermissionInterceptor? permissionInterceptor = null)
+            string? targetProcessName)
         {
             PluginId = pluginId;
             Action = action;
             ExecutionId = executionId;
             StartTimeUtc = DateTime.UtcNow;
             TargetProcessName = targetProcessName;
-            CurrentPluginId = currentPluginId;
-            PermissionInterceptor = permissionInterceptor;
         }
 
         /// <summary>
         /// 开始一个新的插件执行上下文作用域
         /// </summary>
-        /// <param name="pluginId">插件 ID</param>
-        /// <param name="action">动作名称</param>
-        /// <param name="executionId">执行 ID（可选，默认生成新 GUID）</param>
-        /// <param name="targetProcessName">目标进程名称（可选）</param>
-        /// <param name="permissionInterceptor">权限拦截器（可选）</param>
-        /// <returns>上下文作用域（需要 using 语句确保释放）</returns>
         public static PluginExecutionContext BeginScope(
             string pluginId,
             string action,
             Guid? executionId = null,
-            string? targetProcessName = null,
-            PermissionInterceptor? permissionInterceptor = null)
+            string? targetProcessName = null)
         {
             var context = new PluginExecutionContext(
                 pluginId,
                 action,
                 executionId ?? Guid.NewGuid(),
-                targetProcessName,
-                currentPluginId: pluginId,
-                permissionInterceptor: permissionInterceptor
+                targetProcessName
             );
 
             _current.Value = context;
