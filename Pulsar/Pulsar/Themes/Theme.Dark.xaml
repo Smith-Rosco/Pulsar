@@ -24,6 +24,9 @@
     <SolidColorBrush x:Key="Theme.Destructive" Color="#E81123"/>
     <SolidColorBrush x:Key="Theme.Destructive.Hover" Color="#FF5C2B"/>
 
+    <SolidColorBrush x:Key="Theme.ScrollBar.Thumb" Color="#888888"/>
+    <SolidColorBrush x:Key="Theme.ScrollBar.Thumb.Hover" Color="#AAAAAA"/>
+
     <SolidColorBrush x:Key="SlotTypeBrushDefault" Color="#FF9CA3AF"/>
     <SolidColorBrush x:Key="SlotTypeBrushSecret" Color="#FFF2C14E"/>
     <SolidColorBrush x:Key="SlotTypeBrushApp" Color="#FF4FB3FF"/>

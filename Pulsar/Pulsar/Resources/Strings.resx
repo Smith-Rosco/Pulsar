@@ -1498,6 +1498,15 @@
   <data name="Tray.Exit" xml:space="preserve">
     <value>Exit Pulsar</value>
   </data>
+  <data name="Tray.ToggleTheme" xml:space="preserve">
+    <value>Toggle Theme</value>
+  </data>
+  <data name="Tray.Restart" xml:space="preserve">
+    <value>Restart Pulsar</value>
+  </data>
+  <data name="Tray.AutoStart" xml:space="preserve">
+    <value>Run at Startup</value>
+  </data>
   <!-- ==================== Tutorial ==================== -->
   <data name="Tutorial.Welcome" xml:space="preserve">
     <value>Welcome to Pulsar</value>

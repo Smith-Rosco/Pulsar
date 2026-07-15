@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -10,7 +11,9 @@ using Pulsar.Core.Localization;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 using Pulsar.Views;
-using Serilog;
+using Wpf.Ui.Appearance;
+using Wpf.Ui.Controls;
+using Wpf.Ui.Markup;
 
 namespace Pulsar.Services
 {
@@ -19,12 +22,16 @@ namespace Pulsar.Services
         private TaskbarIcon? _taskbarIcon;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILocalizationService _loc;
+        private readonly IThemeService _themeService;
+
+        // ponytail: IThemeService from Pulsar.Services.Interfaces (not Wpf.Ui.IThemeService)
         private readonly ILogger<TrayIconService>? _logger;
 
-        public TrayIconService(IServiceProvider serviceProvider, ILocalizationService loc, ILogger<TrayIconService>? logger = null)
+        public TrayIconService(IServiceProvider serviceProvider, ILocalizationService loc, Pulsar.Services.Interfaces.IThemeService themeService, ILogger<TrayIconService>? logger = null)
         {
             _serviceProvider = serviceProvider;
             _loc = loc;
+            _themeService = themeService;
             _logger = logger;
         }
 
@@ -41,6 +48,7 @@ namespace Pulsar.Services
             _taskbarIcon.TrayMouseDoubleClick += OnTrayMouseDoubleClick;
 
             _loc.LanguageChanged += OnLanguageChanged;
+            _themeService.ThemeChanged += OnThemeChanged;
 
             _logger?.LogInformation("[TrayIconService] Initialize() - TaskbarIcon created, Visibility={Visibility}", _taskbarIcon.Visibility);
         }
@@ -93,14 +101,55 @@ namespace Pulsar.Services
         private void BuildContextMenu()
         {
             var contextMenu = new ContextMenu();
+            var themeTarget = _themeService.CurrentTheme == AppTheme.Dark ? ApplicationTheme.Dark : ApplicationTheme.Light;
+            contextMenu.Resources.MergedDictionaries.Add(new ThemesDictionary { Theme = themeTarget });
+            contextMenu.Resources.MergedDictionaries.Add(new ControlsDictionary());
 
-            var settingsItem = new MenuItem { Header = _loc["Tray.Settings"] };
+            var settingsItem = new System.Windows.Controls.MenuItem
+            {
+                Header = _loc["Tray.Settings"],
+                Icon = new SymbolIcon(SymbolRegular.Settings24)
+            };
             settingsItem.Click += OnSettingsClicked;
             contextMenu.Items.Add(settingsItem);
 
             contextMenu.Items.Add(new Separator());
 
-            var exitItem = new MenuItem { Header = _loc["Tray.Exit"] };
+            var toggleThemeItem = new System.Windows.Controls.MenuItem
+            {
+                Header = _loc["Tray.ToggleTheme"],
+                Icon = new SymbolIcon(SymbolRegular.DarkTheme24),
+                IsCheckable = true,
+                IsChecked = _themeService.CurrentTheme == AppTheme.Light
+            };
+            toggleThemeItem.Click += OnToggleThemeClicked;
+            contextMenu.Items.Add(toggleThemeItem);
+
+            var autoStartItem = new System.Windows.Controls.MenuItem
+            {
+                Header = _loc["Tray.AutoStart"],
+                Icon = new SymbolIcon(SymbolRegular.Power24),
+                IsCheckable = true,
+                IsChecked = IsAutoStartEnabled()
+            };
+            autoStartItem.Click += OnAutoStartClicked;
+            contextMenu.Items.Add(autoStartItem);
+
+            var restartItem = new System.Windows.Controls.MenuItem
+            {
+                Header = _loc["Tray.Restart"],
+                Icon = new SymbolIcon(SymbolRegular.ArrowRepeatAll24)
+            };
+            restartItem.Click += OnRestartClicked;
+            contextMenu.Items.Add(restartItem);
+
+            contextMenu.Items.Add(new Separator());
+
+            var exitItem = new System.Windows.Controls.MenuItem
+            {
+                Header = _loc["Tray.Exit"],
+                Icon = new SymbolIcon(SymbolRegular.DoorArrowLeft24)
+            };
             exitItem.Click += (s, e) =>
             {
                 Dispose();
@@ -142,6 +191,99 @@ namespace Pulsar.Services
                     window.Focus();
                 }
             });
+        }
+
+        private void OnThemeChanged(object? sender, AppTheme theme)
+        {
+            if (!System.Windows.Application.Current.Dispatcher.CheckAccess())
+            {
+                System.Windows.Application.Current.Dispatcher.Invoke(() => OnThemeChanged(sender, theme));
+                return;
+            }
+            BuildContextMenu();
+
+            // Sync SettingsViewModel so its combo box shows correct value
+            var settingsWin = Application.Current.Windows.OfType<Views.SettingsWindow>().FirstOrDefault();
+            if (settingsWin?.DataContext is ViewModels.SettingsViewModel vm)
+                vm.SyncExternalTheme(theme);
+        }
+
+        private void OnToggleThemeClicked(object? sender, EventArgs e)
+        {
+            try
+            {
+                var newTheme = _themeService.CurrentTheme == AppTheme.Dark ? AppTheme.Light : AppTheme.Dark;
+                var windows = Application.Current.Windows.OfType<Window>().ToList();
+
+                if (windows.Count > 0)
+                {
+                    // Step 1: Update all windows' resources (no ThemeChanged yet)
+                    for (int i = 0; i < windows.Count; i++)
+                    {
+                        var backdrop = windows[i] is FluentWindow fw ? fw.WindowBackdropType : WindowBackdropType.None;
+                        _themeService.ApplyTheme(windows[i], newTheme, backdrop, updateGlobal: false);
+                    }
+
+                    // Step 2: Fire ThemeChanged once (all windows already updated)
+                    var firstBackdrop = windows[0] is FluentWindow fw0 ? fw0.WindowBackdropType : WindowBackdropType.None;
+                    _themeService.ApplyTheme(windows[0], newTheme, firstBackdrop, updateGlobal: true);
+                }
+                else
+                {
+                    _themeService.ApplyTheme(new System.Windows.Controls.ContentControl(), newTheme, updateGlobal: true);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[TrayIconService] Failed to toggle theme");
+            }
+        }
+
+        private void OnRestartClicked(object? sender, EventArgs e)
+        {
+            var processPath = Environment.ProcessPath;
+            if (string.IsNullOrEmpty(processPath)) return;
+
+            Dispose();
+            Process.Start(processPath);
+            Application.Current.Shutdown();
+        }
+
+        private static bool IsAutoStartEnabled()
+        {
+            try
+            {
+                using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run");
+                return key?.GetValue("Pulsar") != null;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static void OnAutoStartClicked(object? sender, EventArgs e)
+        {
+            try
+            {
+                using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
+                if (key == null) return;
+
+                var existing = key.GetValue("Pulsar");
+                if (existing != null)
+                {
+                    key.DeleteValue("Pulsar");
+                }
+                else
+                {
+                    var path = Environment.ProcessPath;
+                    if (!string.IsNullOrEmpty(path))
+                        key.SetValue("Pulsar", $"\"{path}\"");
+                }
+            }
+            catch (Exception)
+            {
+            }
         }
 
         public void ShowNotification(string title, string message, PulsarNotificationIcon icon)
@@ -186,6 +328,8 @@ namespace Pulsar.Services
 
         public void Dispose()
         {
+            _themeService.ThemeChanged -= OnThemeChanged;
+            _loc.LanguageChanged -= OnLanguageChanged;
             if (_taskbarIcon != null)
             {
                 _taskbarIcon.Dispose();

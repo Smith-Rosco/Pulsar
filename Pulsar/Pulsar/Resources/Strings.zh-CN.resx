@@ -2452,6 +2452,21 @@
     <value>退出Pulsar</value>
   </data>
   <data
+    name="Tray.ToggleTheme"
+    xml:space="preserve">
+    <value>切换主题</value>
+  </data>
+  <data
+    name="Tray.Restart"
+    xml:space="preserve">
+    <value>重启Pulsar</value>
+  </data>
+  <data
+    name="Tray.AutoStart"
+    xml:space="preserve">
+    <value>开机自启</value>
+  </data>
+  <data
     name="Tutorial.Welcome"
     xml:space="preserve">
     <value>欢迎使用Pulsar</value>

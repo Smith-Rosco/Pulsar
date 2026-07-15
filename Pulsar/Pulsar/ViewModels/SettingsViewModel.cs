@@ -491,6 +491,10 @@ namespace Pulsar.ViewModels
                     OnPropertyChanged(nameof(LauncherTheme));
                     OnPropertyChanged(nameof(SettingsTheme));
                     OnPropertyChanged(nameof(SettingsThemeString));
+
+                    // Apply loaded theme visually (constructor may have used stale default)
+                    if (_config.Settings.SettingsThemeEnum != _themeService.CurrentTheme)
+                        ApplySettingsTheme(_config.Settings.SettingsThemeEnum);
                     
                     // [New] Notify Hotkeys
                     OnPropertyChanged(nameof(ShowGridHotkey));
@@ -1723,6 +1727,17 @@ namespace Pulsar.ViewModels
                     MarkDirty(); // [Phase 2]
                 }
             }
+        }
+
+        public void SyncExternalTheme(AppTheme theme)
+        {
+            if (_config.Settings.SettingsThemeEnum == theme) return;
+            _config.Settings.SettingsTheme = theme.ToString();
+            _config.Settings.LauncherTheme = theme.ToString();
+            OnPropertyChanged(nameof(SettingsTheme));
+            OnPropertyChanged(nameof(SettingsThemeString));
+            OnPropertyChanged(nameof(LauncherTheme));
+            MarkDirty();
         }
 
         public HotkeyConfig ShowGridHotkey

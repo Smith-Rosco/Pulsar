@@ -19,7 +19,9 @@ using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels;
 using Pulsar.ViewModels.Settings;
+using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
+using Wpf.Ui.Markup;
 
 namespace Pulsar.Views
 {
@@ -33,8 +35,11 @@ namespace Pulsar.Views
         private readonly ILogger<SettingsWindow> _logger;
         private readonly ILocalizationService _localizationService;
         private readonly Dictionary<string, Page> _pages = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, NavigationViewItem> _navItemMap = new(StringComparer.OrdinalIgnoreCase);
+        private NavigationViewItem? _previousActiveItem;
         private bool _isClosingProgrammatically;
         private bool _isApplyingSelection;
+        private bool _isNavAnimating;
 
         public NavigationView GetNavigationView() => RootNavigation;
 
@@ -94,6 +99,7 @@ namespace Pulsar.Views
         private void BuildNavigationItems()
         {
             RootNavigation.MenuItems.Clear();
+            _navItemMap.Clear();
 
             foreach (var registration in _pageCatalog.Pages)
             {
@@ -113,6 +119,7 @@ namespace Pulsar.Views
                 }
 
                 RootNavigation.MenuItems.Add(item);
+                _navItemMap[registration.Id] = item;
             }
         }
 
@@ -121,13 +128,23 @@ namespace Pulsar.Views
             await _viewModel.LoadSettings();
             NavigateToCurrentShellPage();
             DisableScrollViewers(RootNavigation);
+            DisableScrollViewers(NavPaneGrid);
+            await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+            await Task.Delay(50);
+            HideRemainingIndicators();
+            InitializeNavIndicator();
         }
 
-        private void ShellViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        private async void ShellViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(SettingsShellViewModel.CurrentPageId))
             {
+                var oldPageId = _previousActiveItem?.Tag?.ToString();
+                var newPageId = _shellViewModel.CurrentPageId;
+                // Run indicator animation and page navigation concurrently
+                var indicatorTask = AnimateNavIndicatorAsync(oldPageId, newPageId);
                 NavigateToCurrentShellPage();
+                await indicatorTask;
             }
         }
 
@@ -161,6 +178,7 @@ namespace Pulsar.Views
                     item.IsActive = string.Equals(item.Tag?.ToString(), pageId, StringComparison.OrdinalIgnoreCase);
                     if (item.IsActive)
                     {
+                        _previousActiveItem = item;
                     }
                 }
             }
@@ -186,6 +204,125 @@ namespace Pulsar.Views
 
             page.BeginAnimation(UIElement.OpacityProperty, fadeIn);
             ((TranslateTransform)page.RenderTransform).BeginAnimation(TranslateTransform.YProperty, slideUp);
+        }
+
+        private const double IndicatorWidth = 3;
+        private const double IndicatorHeight = 22;
+
+        private void InitializeNavIndicator()
+        {
+            var activeItem = _navItemMap.Values.FirstOrDefault(i => i.IsActive);
+            if (activeItem == null) return;
+
+            var bounds = GetItemRelativeBounds(activeItem);
+            if (bounds.Height <= 0) return;
+
+            var centerY = bounds.Top + (bounds.Height - IndicatorHeight) / 2;
+            Canvas.SetLeft(NavIndicator, bounds.Left);
+            Canvas.SetTop(NavIndicator, centerY);
+            NavIndicator.Height = IndicatorHeight;
+            NavIndicator.Width = IndicatorWidth;
+            NavIndicator.Visibility = Visibility.Visible;
+        }
+
+        private async Task AnimateNavIndicatorAsync(string? oldPageId, string? newPageId)
+        {
+            if (_isNavAnimating || string.IsNullOrEmpty(newPageId)) return;
+            if (!_navItemMap.TryGetValue(newPageId, out var newItem)) return;
+
+            _isNavAnimating = true;
+
+            try
+            {
+                if (!_navItemMap.TryGetValue(oldPageId ?? string.Empty, out var oldItem))
+                    oldItem = _previousActiveItem;
+                oldItem ??= newItem;
+
+                NavIndicator.Visibility = Visibility.Visible;
+
+                await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+                await Task.Delay(16);
+
+                var oldBounds = GetItemRelativeBounds(oldItem);
+                var newBounds = GetItemRelativeBounds(newItem);
+
+                if (oldBounds.Height <= 0 || newBounds.Height <= 0) return;
+
+                var oldCenterY = oldBounds.Top + (oldBounds.Height - IndicatorHeight) / 2;
+                var newCenterY = newBounds.Top + (newBounds.Height - IndicatorHeight) / 2;
+                var oldBottomCenter = oldCenterY + IndicatorHeight;
+                var newBottomCenter = newCenterY + IndicatorHeight;
+
+                var stretchTop = Math.Min(oldCenterY, newCenterY);
+                var stretchBottom = Math.Max(oldBottomCenter, newBottomCenter);
+                var stretchHeight = stretchBottom - stretchTop;
+
+                var stretchDuration = TimeSpan.FromMilliseconds(120);
+                var snapDuration = TimeSpan.FromMilliseconds(130);
+                var easing = new CubicEase { EasingMode = EasingMode.EaseInOut };
+
+                // Phase 1: Stretch
+                var stretchTopAnim = new DoubleAnimation(stretchTop, stretchDuration) { EasingFunction = easing };
+                var stretchHeightAnim = new DoubleAnimation(stretchHeight, stretchDuration) { EasingFunction = easing };
+
+                stretchTopAnim.FillBehavior = FillBehavior.HoldEnd;
+                stretchHeightAnim.FillBehavior = FillBehavior.HoldEnd;
+
+                NavIndicator.BeginAnimation(Canvas.TopProperty, stretchTopAnim);
+                NavIndicator.BeginAnimation(FrameworkElement.HeightProperty, stretchHeightAnim);
+
+                await Task.Delay(stretchDuration);
+
+                // Phase 2: Snap to new position
+                var snapTopAnim = new DoubleAnimation(newCenterY, snapDuration) { EasingFunction = easing };
+                var snapHeightAnim = new DoubleAnimation(IndicatorHeight, snapDuration) { EasingFunction = easing };
+                NavIndicator.BeginAnimation(Canvas.TopProperty, snapTopAnim);
+                NavIndicator.BeginAnimation(FrameworkElement.HeightProperty, snapHeightAnim);
+
+                await Task.Delay(snapDuration);
+            }
+            finally
+            {
+                _isNavAnimating = false;
+            }
+        }
+
+        private void HideRemainingIndicators()
+        {
+            foreach (var item in _navItemMap.Values)
+            {
+                SetIndicatorTransparent(item);
+            }
+        }
+
+        private static void SetIndicatorTransparent(DependencyObject element)
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
+            {
+                var child = VisualTreeHelper.GetChild(element, i);
+                if (child is Border b && b.Name.IndexOf("Indicator", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    b.Background = System.Windows.Media.Brushes.Transparent;
+                    b.BorderBrush = System.Windows.Media.Brushes.Transparent;
+                }
+                SetIndicatorTransparent(child);
+            }
+        }
+
+        private Rect GetItemRelativeBounds(NavigationViewItem item)
+        {
+            try
+            {
+                var transform = item.TransformToAncestor(NavPaneGrid);
+                var topLeft = transform.Transform(new Point(0, 0));
+                if (double.IsNaN(topLeft.X) || double.IsNaN(topLeft.Y)) return Rect.Empty;
+                return new Rect(topLeft.X, topLeft.Y,
+                    Math.Max(0, item.ActualWidth), Math.Max(0, item.ActualHeight));
+            }
+            catch
+            {
+                return Rect.Empty;
+            }
         }
 
         private void DisableScrollViewers(DependencyObject depObj)
@@ -249,14 +386,19 @@ namespace Pulsar.Views
             }
         }
 
-        private void OnLanguageChanged(object? sender, string e)
+        private async void OnLanguageChanged(object? sender, string e)
         {
-            Dispatcher.Invoke(() =>
+            await Dispatcher.InvokeAsync(() =>
             {
                 var activePageId = _shellViewModel.CurrentPageId;
+                _previousActiveItem = null;
                 BuildNavigationItems();
                 ApplySelectedNavigationItem(activePageId);
             });
+            await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+            await Task.Delay(50);
+            HideRemainingIndicators();
+            InitializeNavIndicator();
         }
 
         private void OnThemeChanged(object? sender, AppTheme theme)
@@ -264,6 +406,42 @@ namespace Pulsar.Views
             foreach (var page in _pages.Values)
             {
                 _themeService.ApplyTheme(page, theme, updateGlobal: false);
+            }
+            RefreshNavigationTheme(theme);
+            InvalidateThemeBindings(this);
+        }
+
+        private static void InvalidateThemeBindings(DependencyObject element)
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
+            {
+                var child = VisualTreeHelper.GetChild(element, i);
+                if (child is FrameworkElement fe)
+                {
+                    fe.InvalidateProperty(FrameworkElement.StyleProperty);
+                    fe.InvalidateProperty(Control.BackgroundProperty);
+                    fe.InvalidateProperty(Control.ForegroundProperty);
+                    fe.InvalidateProperty(Control.BorderBrushProperty);
+                }
+                InvalidateThemeBindings(child);
+            }
+        }
+
+        private void RefreshNavigationTheme(AppTheme theme)
+        {
+            if (!RootNavigation.IsLoaded) return;
+            // ponytail: avoid ApplyTheme (triggers resource remove/re-add that causes NaN animations)
+            var targetTheme = theme == AppTheme.Dark ? ApplicationTheme.Dark : ApplicationTheme.Light;
+            var existing = RootNavigation.Resources.MergedDictionaries.OfType<ThemesDictionary>().FirstOrDefault();
+            if (existing != null)
+                existing.Theme = targetTheme;
+            else
+                RootNavigation.Resources.MergedDictionaries.Add(new ThemesDictionary { Theme = targetTheme });
+            foreach (var item in _navItemMap.Values)
+            {
+                item.InvalidateProperty(Control.BackgroundProperty);
+                item.InvalidateProperty(Control.ForegroundProperty);
+                item.InvalidateProperty(FrameworkElement.StyleProperty);
             }
         }
 

@@ -34,33 +34,46 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <ui:NavigationView x:Name="RootNavigation"
-                               Grid.Column="0"
-                               PaneDisplayMode="Left"
-                               IsPaneOpen="True"
-                               OpenPaneLength="250"
-                               IsBackButtonVisible="Collapsed">
+            <Grid x:Name="NavPaneGrid" Grid.Column="0">
+                <ui:NavigationView x:Name="RootNavigation"
+                                   PaneDisplayMode="Left"
+                                   IsPaneOpen="True"
+                                   OpenPaneLength="250"
+                                   IsBackButtonVisible="Collapsed">
+                    <ui:NavigationView.Resources>
+                        <SolidColorBrush x:Key="NavigationViewIndicatorForeground" Color="Transparent"/>
+                    </ui:NavigationView.Resources>
 
-                <ui:NavigationView.FooterMenuItems>
-                    <ui:NavigationViewItem
-                        Content="{lex:Locale SettingsWindow.SaveChanges}"
-                        Icon="{ui:SymbolIcon Save24}"
-                        Command="{Binding DataContext.SaveCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                        ToolTip="{lex:Locale SettingsWindow.SaveChangesTooltip}">
-                        <ui:NavigationViewItem.InfoBadge>
-                            <ui:InfoBadge>
-                                <ui:InfoBadge.Template>
-                                    <ControlTemplate TargetType="ui:InfoBadge">
-                                        <Ellipse Width="8" Height="8"
-                                                 Fill="#E74856"
-                                                 Visibility="{Binding DataContext.HasUnsavedChanges, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}"/>
-                                    </ControlTemplate>
-                                </ui:InfoBadge.Template>
-                            </ui:InfoBadge>
-                        </ui:NavigationViewItem.InfoBadge>
-                    </ui:NavigationViewItem>
-                </ui:NavigationView.FooterMenuItems>
-            </ui:NavigationView>
+                    <ui:NavigationView.FooterMenuItems>
+                        <ui:NavigationViewItem
+                            Content="{lex:Locale SettingsWindow.SaveChanges}"
+                            Icon="{ui:SymbolIcon Save24}"
+                            Command="{Binding DataContext.SaveCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            ToolTip="{lex:Locale SettingsWindow.SaveChangesTooltip}">
+                            <ui:NavigationViewItem.InfoBadge>
+                                <ui:InfoBadge>
+                                    <ui:InfoBadge.Template>
+                                        <ControlTemplate TargetType="ui:InfoBadge">
+                                            <Ellipse Width="8" Height="8"
+                                                     Fill="#E74856"
+                                                     Visibility="{Binding DataContext.HasUnsavedChanges, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}"/>
+                                        </ControlTemplate>
+                                    </ui:InfoBadge.Template>
+                                </ui:InfoBadge>
+                            </ui:NavigationViewItem.InfoBadge>
+                        </ui:NavigationViewItem>
+                    </ui:NavigationView.FooterMenuItems>
+                </ui:NavigationView>
+
+                <Canvas IsHitTestVisible="False">
+                    <Rectangle x:Name="NavIndicator"
+                               Width="3"
+                               Fill="{DynamicResource Theme.Accent}"
+                               RadiusX="1.5" RadiusY="1.5"
+                               IsHitTestVisible="False"
+                               Visibility="Collapsed"/>
+                </Canvas>
+            </Grid>
 
             <Frame x:Name="RootFrame"
                    Grid.Column="1"
