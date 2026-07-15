@@ -21,3 +21,4 @@ namespace Pulsar.Services.Interfaces
         Task UnloadAllAsync();
     }
 }
+

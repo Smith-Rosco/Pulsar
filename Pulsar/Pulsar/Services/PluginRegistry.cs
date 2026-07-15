@@ -17,14 +17,14 @@ namespace Pulsar.Services
     /// </summary>
     public class PluginRegistry : IPluginRegistry
     {
-        private readonly IPluginRuntimeKernel _runtimeKernel;
-        private readonly IPluginCatalog _catalog;
-        private readonly IPluginRuntimeStateStore _runtimeStateStore;
+        private readonly PluginRuntimeKernel _runtimeKernel;
+        private readonly PluginCatalog _catalog;
+        private readonly PluginRuntimeStateStore _runtimeStateStore;
 
         public PluginRegistry(
-            IPluginRuntimeKernel runtimeKernel,
-            IPluginCatalog catalog,
-            IPluginRuntimeStateStore runtimeStateStore)
+            PluginRuntimeKernel runtimeKernel,
+            PluginCatalog catalog,
+            PluginRuntimeStateStore runtimeStateStore)
         {
             _runtimeKernel = runtimeKernel;
             _catalog = catalog;
@@ -99,3 +99,4 @@ namespace Pulsar.Services
         }
     }
 }
+

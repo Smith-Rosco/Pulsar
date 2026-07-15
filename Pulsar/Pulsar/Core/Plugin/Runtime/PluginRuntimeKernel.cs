@@ -60,74 +60,7 @@ namespace Pulsar.Core.Plugin.Runtime
         public bool IsTelemetrySuccess => Kind == PluginExecutionOutcomeKind.Success;
     }
 
-    public interface IPluginCatalog
-    {
-        IReadOnlyDictionary<string, PluginDescriptor> Descriptors { get; }
-
-        void RegisterDescriptors(IEnumerable<PluginDescriptor> descriptors);
-
-        bool TryGetDescriptor(string pluginId, out PluginDescriptor? descriptor);
-
-        IEnumerable<PluginDescriptor> GetAll();
-    }
-
-    public interface IPluginRuntimeStateStore
-    {
-        IReadOnlyDictionary<string, IPulsarPlugin> Plugins { get; }
-
-        PluginLifecycleState GetState(string pluginId);
-
-        PluginRuntimeSnapshot GetSnapshot(string pluginId);
-
-        void SetPlugin(IPulsarPlugin plugin, PluginLifecycleState state);
-
-        void Transition(string pluginId, PluginLifecycleState state, Exception? error = null);
-
-        bool TryGetPlugin(string pluginId, out IPulsarPlugin? plugin);
-
-        void RemovePlugin(string pluginId);
-    }
-
-    public interface IPluginBreakerPolicy
-    {
-        PluginBreakerAvailability CheckAvailability(PluginDescriptor descriptor, string pluginId);
-
-        void RecordSuccess(PluginDescriptor descriptor, string pluginId);
-
-        void RecordFailure(PluginDescriptor descriptor, string pluginId, Exception ex);
-    }
-
-    public interface IPluginExecutionPipeline
-    {
-        Task<PluginExecutionOutcome> ExecuteAsync(PluginExecutionRequest request, CancellationToken cancellationToken = default);
-    }
-
-    public interface IPluginRuntimeKernel
-    {
-        Task LoadCoreAsync();
-
-        Task DiscoverDeferredAsync();
-
-        PluginDescriptor? GetDescriptor(string pluginId);
-
-        IEnumerable<PluginDescriptor> GetAllPluginDescriptors();
-
-        IPulsarPlugin? GetPlugin(string pluginId);
-
-        IEnumerable<IPulsarPlugin> GetAllPlugins();
-
-        Task<IPulsarPlugin?> GetOrActivatePluginAsync(string pluginId);
-
-        Task<PluginResult> ExecuteAsync(string pluginId, string action, IReadOnlyDictionary<string, string> args, PulsarContext context, CancellationToken cancellationToken = default);
-
-        Task SetPluginStateAsync(string pluginId, bool enabled);
-
-        bool IsPluginEnabled(string pluginId);
-
-        Task UnloadAllAsync();
-    }
-
-    public sealed class PluginCatalog : IPluginCatalog
+    public class PluginCatalog
     {
         private readonly Dictionary<string, PluginDescriptor> _descriptors = new(StringComparer.OrdinalIgnoreCase);
 
@@ -152,7 +85,7 @@ namespace Pulsar.Core.Plugin.Runtime
         }
     }
 
-    public sealed class PluginRuntimeStateStore : IPluginRuntimeStateStore
+    public class PluginRuntimeStateStore
     {
         private readonly ConcurrentDictionary<string, IPulsarPlugin> _plugins = new(StringComparer.OrdinalIgnoreCase);
         private readonly ConcurrentDictionary<string, PluginRuntimeSnapshot> _snapshots = new(StringComparer.OrdinalIgnoreCase);
@@ -228,7 +161,7 @@ namespace Pulsar.Core.Plugin.Runtime
         public bool Recovered { get; }
     }
 
-    public sealed class PluginCircuitBreakerPolicy : IPluginBreakerPolicy
+    public class PluginCircuitBreakerPolicy
     {
         private const int MaxFailures = 3;
         private static readonly TimeSpan ResetTimeout = TimeSpan.FromMinutes(1);
@@ -331,17 +264,17 @@ namespace Pulsar.Core.Plugin.Runtime
         public CancellationToken CancellationToken { get; init; }
     }
 
-    public sealed class PluginExecutionPipeline : IPluginExecutionPipeline
+    public class PluginExecutionPipeline
     {
-        private readonly IPluginRuntimeStateStore _runtimeStateStore;
-        private readonly IPluginBreakerPolicy _breakerPolicy;
+        private readonly PluginRuntimeStateStore _runtimeStateStore;
+        private readonly PluginCircuitBreakerPolicy _breakerPolicy;
         private readonly IPluginUsageTracker? _usageTracker;
         private readonly IPluginHealthMonitor? _healthMonitor;
         private readonly ILogger<PluginExecutionPipeline> _logger;
 
         public PluginExecutionPipeline(
-            IPluginRuntimeStateStore runtimeStateStore,
-            IPluginBreakerPolicy breakerPolicy,
+            PluginRuntimeStateStore runtimeStateStore,
+            PluginCircuitBreakerPolicy breakerPolicy,
             ILogger<PluginExecutionPipeline>? logger = null,
             IPluginUsageTracker? usageTracker = null,
             IPluginHealthMonitor? healthMonitor = null)
@@ -464,22 +397,22 @@ namespace Pulsar.Core.Plugin.Runtime
         }
     }
 
-    public sealed class PluginRuntimeKernel : IPluginRuntimeKernel
+    public class PluginRuntimeKernel
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly PluginLoader _loader;
-        private readonly IPluginCatalog _catalog;
-        private readonly IPluginRuntimeStateStore _runtimeStateStore;
-        private readonly IPluginExecutionPipeline _executionPipeline;
+        private readonly PluginCatalog _catalog;
+        private readonly PluginRuntimeStateStore _runtimeStateStore;
+        private readonly PluginExecutionPipeline _executionPipeline;
         private readonly ILogger<PluginRuntimeKernel> _logger;
         private readonly IConfigService? _configService;
 
         public PluginRuntimeKernel(
             IServiceProvider serviceProvider,
             PluginLoader loader,
-            IPluginCatalog catalog,
-            IPluginRuntimeStateStore runtimeStateStore,
-            IPluginExecutionPipeline executionPipeline,
+            PluginCatalog catalog,
+            PluginRuntimeStateStore runtimeStateStore,
+            PluginExecutionPipeline executionPipeline,
             ILogger<PluginRuntimeKernel>? logger = null,
             IConfigService? configService = null)
         {
@@ -749,3 +682,5 @@ namespace Pulsar.Core.Plugin.Runtime
         }
     }
 }
+
+

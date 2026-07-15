@@ -21,13 +21,8 @@ namespace Pulsar.Tests.Config
             var registry = new PluginMetadataRegistry(Mock.Of<ILogger<PluginMetadataRegistry>>());
             registry.Register(CreateCommandMetadata());
 
-            var pluginRegistry = new PluginRegistry(
-                Mock.Of<IPluginRuntimeKernel>(),
-                Mock.Of<IPluginCatalog>(),
-                Mock.Of<IPluginRuntimeStateStore>());
-
             var pipeline = new ConfigValidationPipeline(
-                pluginRegistry,
+                Mock.Of<IPluginRegistry>(),
                 registry,
                 Mock.Of<ILogger<ConfigValidationPipeline>>());
 
@@ -59,13 +54,8 @@ namespace Pulsar.Tests.Config
             var registry = new PluginMetadataRegistry(Mock.Of<ILogger<PluginMetadataRegistry>>());
             registry.Register(CreatePkiMetadata());
 
-            var pluginRegistry = new PluginRegistry(
-                Mock.Of<IPluginRuntimeKernel>(),
-                Mock.Of<IPluginCatalog>(),
-                Mock.Of<IPluginRuntimeStateStore>());
-
             var pipeline = new ConfigValidationPipeline(
-                pluginRegistry,
+                Mock.Of<IPluginRegistry>(),
                 registry,
                 Mock.Of<ILogger<ConfigValidationPipeline>>());
 
@@ -208,3 +198,4 @@ namespace Pulsar.Tests.Config
         }
     }
 }
+
