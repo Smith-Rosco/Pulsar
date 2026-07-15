@@ -189,23 +189,8 @@ namespace Pulsar.Services
                 w.WindowState != WindowState.Minimized);
         }
 
-        /// <summary>
-        /// Infers the appropriate theme from the calling context.
-        /// Priority: Active SettingsWindow theme > Global theme
-        /// </summary>
         private AppTheme InferThemeFromContext()
         {
-            // Check if SettingsWindow is active and use its theme
-            var settingsWindow = System.Windows.Application.Current.Windows
-                .OfType<SettingsWindow>()
-                .FirstOrDefault(w => w.IsActive || w.IsVisible);
-
-            if (settingsWindow?.DataContext is SettingsViewModel settingsVm)
-            {
-                return settingsVm.CurrentTheme;
-            }
-
-            // Fallback to global theme
             return _themeService.CurrentTheme;
         }
 
