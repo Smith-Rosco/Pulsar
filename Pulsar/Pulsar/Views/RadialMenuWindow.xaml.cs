@@ -103,17 +103,9 @@ namespace Pulsar.Views
             _themeService.EnforceTransparency(this);
         }
 
-        private async void InitializeTheme()
+        private void InitializeTheme()
         {
-            try
-            {
-                var config = await _configService.LoadAsync();
-                _themeService.ApplyTheme(this, config.Settings.ThemeEnum, WindowBackdropType.None, updateGlobal: false);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Theme init failed");
-            }
+            _themeService.ApplyTheme(this, _configService.Current.Settings.ThemeEnum, WindowBackdropType.None, updateGlobal: false);
         }
 
 
@@ -202,13 +194,6 @@ namespace Pulsar.Views
             };
             
             this.BeginAnimation(UIElement.OpacityProperty, fadeOut);
-        }
-
-        private async void RefreshThemeOnShow()
-        {
-            var config = await _configService.LoadAsync();
-            _themeService.ApplyTheme(this, config.Settings.ThemeEnum, WindowBackdropType.None, updateGlobal: false);
-            _themeService.EnforceTransparency(this);
         }
 
         private void UpdateWindowPosition()
