@@ -38,16 +38,6 @@ namespace Pulsar.Services.Interfaces
         Task StartTutorialAsync();
 
         /// <summary>
-        /// 暂停教程
-        /// </summary>
-        void PauseTutorial();
-
-        /// <summary>
-        /// 恢复教程
-        /// </summary>
-        void ResumeTutorial();
-
-        /// <summary>
         /// 跳过教程
         /// </summary>
         Task SkipTutorialAsync();

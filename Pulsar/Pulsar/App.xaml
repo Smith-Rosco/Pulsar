@@ -2,7 +2,6 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-             xmlns:converters="clr-namespace:Pulsar.Core.Converters"
              xmlns:dialogs="clr-namespace:Pulsar.ViewModels.Dialogs"
              xmlns:views="clr-namespace:Pulsar.Views.Dialogs.Contents"
              ShutdownMode="OnExplicitShutdown">
@@ -38,7 +37,6 @@
                 <views:PluginLogViewerContentHost/>
             </DataTemplate>
 
-            <converters:ScaleConverter x:Key="ScaleConverter"/>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             
             <!-- Universal Icon Font Stack - Resolves "Squares" Issue -->

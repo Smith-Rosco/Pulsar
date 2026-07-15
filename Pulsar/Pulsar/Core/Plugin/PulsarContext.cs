@@ -34,7 +34,6 @@ namespace Pulsar.Core.Plugin
         // === 延迟加载任务 ===
         private readonly Lazy<Task<IReadOnlyList<ProcessWindowInfo>>> _windowsLazy;
         private readonly Lazy<Task<string?>> _clipboardLazy;
-        private readonly Lazy<Task<string?>> _selectedTextLazy;
         private readonly Lazy<Task<string>> _targetExePathLazy;
         private string? _resolvedExePath;
 
@@ -45,8 +44,7 @@ namespace Pulsar.Core.Plugin
             int pid,
             Func<Task<string>> exePathFactory,
             Func<Task<IReadOnlyList<ProcessWindowInfo>>> windowsFactory,
-            Func<Task<string?>> clipboardFactory,
-            Func<Task<string?>> selectionFactory)
+            Func<Task<string?>> clipboardFactory)
         {
             TargetWindowHandle = hwnd;
             TargetProcessName = processName;
@@ -59,7 +57,6 @@ namespace Pulsar.Core.Plugin
             }, LazyThreadSafetyMode.ExecutionAndPublication);
             _windowsLazy = new Lazy<Task<IReadOnlyList<ProcessWindowInfo>>>(windowsFactory);
             _clipboardLazy = new Lazy<Task<string?>>(clipboardFactory);
-            _selectedTextLazy = new Lazy<Task<string?>>(selectionFactory);
         }
 
         // === 异步访问接口 ===
@@ -80,15 +77,6 @@ namespace Pulsar.Core.Plugin
         public Task<string?> GetClipboardTextAsync()
         {
             return _clipboardLazy.Value;
-        }
-
-        /// <summary>
-        /// 获取选中的文本（延迟加载，暂未实现）
-        /// 需要权限: ReadSelectedText
-        /// </summary>
-        public Task<string?> GetSelectedTextAsync()
-        {
-            return _selectedTextLazy.Value;
         }
 
         public Task<string> GetTargetExePathAsync()
@@ -180,10 +168,7 @@ namespace Pulsar.Core.Plugin
                 }
             });
             
-            // 3. 选中文本工厂 (占位)
-            var selectionFactory = new Func<Task<string?>>(() => Task.FromResult<string?>(null));
-
-            var context = new PulsarContext(hwnd, processName, pid, exePathFactory, windowsFactory, clipboardFactory, selectionFactory);
+            var context = new PulsarContext(hwnd, processName, pid, exePathFactory, windowsFactory, clipboardFactory);
             return context;
         }
     }

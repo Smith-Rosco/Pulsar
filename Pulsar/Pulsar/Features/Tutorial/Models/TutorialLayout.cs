@@ -101,10 +101,6 @@ namespace Pulsar.Features.Tutorial.Models
         /// </summary>
         Center,
 
-        /// <summary>
-        /// 智能定位：自动避开目标窗口
-        /// </summary>
-        Smart
     }
 
     /// <summary>

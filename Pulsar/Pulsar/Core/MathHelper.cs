@@ -34,10 +34,5 @@ namespace Pulsar.Core
             int slot = (sectorIdx % 8) + 1;
             return slot;
         }
-
-        public static double RadiansToDegrees(double radians)
-        {
-            return radians * (180.0 / Math.PI);
-        }
     }
 }

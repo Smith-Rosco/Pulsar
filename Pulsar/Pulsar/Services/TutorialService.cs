@@ -155,30 +155,6 @@ namespace Pulsar.Services
             }
         }
 
-        public void PauseTutorial()
-        {
-            if (!_isTutorialActive)
-            {
-                _logger.LogWarning("Cannot pause tutorial - not active");
-                return;
-            }
-
-            _logger.LogInformation("Pausing tutorial");
-            // TODO: Implement pause logic
-        }
-
-        public void ResumeTutorial()
-        {
-            if (!_isTutorialActive)
-            {
-                _logger.LogWarning("Cannot resume tutorial - not active");
-                return;
-            }
-
-            _logger.LogInformation("Resuming tutorial");
-            // TODO: Implement resume logic
-        }
-
         public async Task SkipTutorialAsync()
         {
             if (!_isTutorialActive)

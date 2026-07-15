@@ -508,13 +508,6 @@ namespace Pulsar.Features.Tutorial.Views
                     Left = (screen.Width - cardWidth) / 2 + screen.Left;
                     Top = (screen.Height - cardHeight) / 2 + screen.Top;
                     break;
-                    
-                case CardPosition.Smart:
-                    // TODO: 实现智能定位算法（避开目标窗口）
-                    // 暂时使用右上角
-                    Left = screen.Right - cardWidth - margin;
-                    Top = screen.Top + margin;
-                    break;
             }
             
             LogPerformance($"PositionCard ({position})");

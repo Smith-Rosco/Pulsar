@@ -9,8 +9,7 @@ namespace Pulsar.Features.Tutorial.Services
     public enum StartupAction
     {
         NormalStartup,
-        ShowWizard,
-        ResumeTutorial
+        ShowWizard
     }
 
     public class StartupCoordinator
@@ -62,12 +61,6 @@ namespace Pulsar.Features.Tutorial.Services
                 // They didn't finish the setup wizard
                  _logger.LogInformation("Incomplete setup detected. Showing onboarding wizard.");
                 return StartupAction.ShowWizard;
-            }
-
-            if (!state.HasCompletedTutorial && !state.HasSkippedTutorial)
-            {
-                _logger.LogInformation("Incomplete tutorial detected. Resuming tutorial.");
-                return StartupAction.ResumeTutorial;
             }
 
             return StartupAction.NormalStartup;

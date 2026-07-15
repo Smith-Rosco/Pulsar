@@ -41,11 +41,6 @@ namespace Pulsar.Features.Tutorial.Models
         public TutorialTrigger? CompletionTrigger { get; set; }
 
         /// <summary>
-        /// 步骤关联的操作列表（预留用于未来扩展）
-        /// </summary>
-        public List<TutorialAction> Actions { get; set; } = new();
-
-        /// <summary>
         /// 窗口布局配置（可选）
         /// </summary>
         public TutorialLayout? Layout { get; set; }
@@ -138,12 +133,4 @@ namespace Pulsar.Features.Tutorial.Models
         WaitForNavigation
     }
 
-    /// <summary>
-    /// 教程操作（预留用于未来扩展）
-    /// </summary>
-    public class TutorialAction
-    {
-        public string Type { get; set; } = string.Empty;
-        public Dictionary<string, string> Parameters { get; set; } = new();
-    }
 }
