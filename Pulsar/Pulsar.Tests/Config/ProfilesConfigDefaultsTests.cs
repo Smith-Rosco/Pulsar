@@ -35,7 +35,7 @@ namespace Pulsar.Tests.Config
             // Assert
             settings.CenterSlotBehavior.Should().Be("MRU_Window");
             settings.TriggerDistance.Should().Be(100.0);
-            settings.Theme.Should().Be("Light");
+            settings.Theme.Should().Be("Dark");
             settings.HoverScale.Should().Be(1.2);
             settings.Springiness.Should().Be(6.0);
             settings.MaxDisplacement.Should().Be(20.0);

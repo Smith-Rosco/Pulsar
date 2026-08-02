@@ -86,7 +86,7 @@ namespace Pulsar.Tests.Config
 
             service.ScheduleSmartDetection();
 
-            await Task.Delay(5000);
+            await WaitForDetectionCompletionAsync(service);
 
             var reloaded = await service.LoadAsync(forceReload: true);
             reloaded.Settings.HasCompletedInitialDetection.Should().BeTrue();
@@ -125,7 +125,7 @@ namespace Pulsar.Tests.Config
 
             service.ScheduleSmartDetection();
 
-            await Task.Delay(5000);
+            await WaitForDetectionCompletionAsync(service);
 
             var reloaded = await service.LoadAsync(forceReload: true);
             reloaded.Settings.OnboardingState.Should().Be("Skipped", "OnboardingState must be preserved after smart detection");
@@ -162,7 +162,7 @@ namespace Pulsar.Tests.Config
 
             service.ScheduleSmartDetection();
 
-            await Task.Delay(5000);
+            await WaitForDetectionCompletionAsync(service);
 
             var reloaded = await service.LoadAsync(forceReload: true);
             reloaded.Settings.TutorialCrashedAt.Should().Be("step_3_navigate_to_command_mode", "TutorialCrashedAt must be preserved");
@@ -199,7 +199,7 @@ namespace Pulsar.Tests.Config
 
             service.ScheduleSmartDetection();
 
-            await Task.Delay(5000);
+            await WaitForDetectionCompletionAsync(service);
 
             var reloaded = await service.LoadAsync(forceReload: true);
             reloaded.Profiles.Should().ContainKey("CustomApp", "User-created profiles must be preserved");
@@ -240,7 +240,7 @@ namespace Pulsar.Tests.Config
 
             service.ScheduleSmartDetection();
 
-            await Task.Delay(5000);
+            await WaitForDetectionCompletionAsync(service);
 
             var reloaded = await service.LoadAsync(forceReload: true);
             reloaded.Plugins.Should().ContainKey("com.pulsar.winswitcher");
@@ -278,7 +278,7 @@ namespace Pulsar.Tests.Config
 
             service.ScheduleSmartDetection();
 
-            await Task.Delay(5000);
+            await WaitForDetectionCompletionAsync(service);
 
             var reloaded = await service.LoadAsync(forceReload: true);
             reloaded.Profiles["Global"].SwitchMode.Should().NotBeEmpty();
@@ -352,7 +352,7 @@ namespace Pulsar.Tests.Config
 
             service.ScheduleSmartDetection();
 
-            await Task.Delay(5000);
+            await WaitForDetectionCompletionAsync(service);
 
             var reloaded = await service.LoadAsync(forceReload: true);
             reloaded.Settings.OnboardingState.Should().Be("Skipped", "Skip state must survive smart detection");
@@ -369,6 +369,23 @@ namespace Pulsar.Tests.Config
             configPathField?.SetValue(service, _configPath);
 
             return service;
+        }
+
+        private static async Task WaitForDetectionCompletionAsync(ConfigService service)
+        {
+            var deadline = DateTime.UtcNow.AddSeconds(60);
+            while (DateTime.UtcNow < deadline)
+            {
+                var reloaded = await service.LoadAsync(forceReload: true);
+                if (reloaded.Settings.HasCompletedInitialDetection)
+                {
+                    return;
+                }
+
+                await Task.Delay(100);
+            }
+
+            throw new TimeoutException("Smart detection did not complete in time.");
         }
 
         public void Dispose()

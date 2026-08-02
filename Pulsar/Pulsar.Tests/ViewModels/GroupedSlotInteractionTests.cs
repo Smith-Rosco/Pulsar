@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using System.Windows;
 using FluentAssertions;
 using Moq;
 using Pulsar.Models;
@@ -56,6 +57,7 @@ namespace Pulsar.Tests.ViewModels
         [Fact]
         public async Task HandleGlobalMouseClickAsync_ShouldEnterSubMenu_ForGroupedSlotLeftClick()
         {
+            EnsureApplication();
             var windowService = new Mock<IWindowService>();
             var previewService = new Mock<IPreviewService>();
             var coordinator = new RadialMenuInputCoordinator(windowService.Object, logger: null);
@@ -157,6 +159,14 @@ namespace Pulsar.Tests.ViewModels
             SetField(context, "_loc", new Pulsar.Core.Localization.LocalizationService(new Mock<Microsoft.Extensions.Logging.ILogger<Pulsar.Core.Localization.LocalizationService>>().Object));
 
             return context;
+        }
+
+        private static void EnsureApplication()
+        {
+            if (Application.Current == null)
+            {
+                _ = new Application();
+            }
         }
 
         private static void SetField(object target, string fieldName, object? value)

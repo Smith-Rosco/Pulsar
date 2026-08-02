@@ -54,7 +54,7 @@ namespace Pulsar.Models
         public string CenterSlotBehavior { get; set; } = "MRU_Window";
         public double TriggerDistance { get; set; } = 100.0;
         
-        public string Theme { get; set; } = "Light";
+        public string Theme { get; set; } = "Dark";
         public double HoverScale { get; set; } = 1.2;
         public double Springiness { get; set; } = 6.0;
         public double MaxDisplacement { get; set; } = 20.0;
