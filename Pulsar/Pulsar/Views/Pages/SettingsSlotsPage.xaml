@@ -6,6 +6,7 @@
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:dd="urn:gong-wpf-dragdrop"
       xmlns:models="clr-namespace:Pulsar.Models"
+      xmlns:dragDrop="clr-namespace:Pulsar.Views.DragDrop"
       xmlns:converters="clr-namespace:Pulsar.Core.Converters"
       xmlns:controls="clr-namespace:Pulsar.Views.Controls"
       xmlns:tutorial="clr-namespace:Pulsar.Features.Tutorial.Helpers"
@@ -29,6 +30,9 @@
             <converters:StringPathToImageSourceConverter x:Key="PathToImage"/>
             <converters:HexToBrushConverter x:Key="HexToBrush"/>
             <converters:SlotBrushConverter x:Key="SlotBrushConverter"/>
+
+            <!-- Drag & Drop -->
+            <dragDrop:SlotDragHandler x:Key="SlotDragHandler"/>
 
             <!-- SlotParameterFieldTemplate and SystemCommandFieldsTemplate removed: Quick Edit layer eliminated -->
 
@@ -217,7 +221,11 @@
                               Padding="0,0,0,60"
                               dd:DragDrop.IsDragSource="True"
                               dd:DragDrop.IsDropTarget="True"
+                              dd:DragDrop.DragHandler="{StaticResource SlotDragHandler}"
                               dd:DragDrop.DropHandler="{Binding}"
+                              dd:DragDrop.DropTargetScrollViewer="{Binding ElementName=SlotsScrollViewer}"
+                              dd:DragDrop.DropScrollingMode="VerticalOnly"
+                              dd:DragDrop.DropTargetAdornerBrush="{DynamicResource AccentFillColorDefaultBrush}"
                               dd:DragDrop.UseDefaultDragAdorner="False"
                               dd:DragDrop.DragAdornerTemplate="{StaticResource SlotCardDragAdornerTemplate}">
                     <ItemsControl.ItemTemplate>
@@ -228,18 +236,35 @@
                                     Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                                     BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="8"
-                                    Cursor="SizeAll">
+                                    CornerRadius="8">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
 
+                                    <!-- Drag Handle -->
+                                    <Border x:Name="SlotDragHandle"
+                                            Grid.Column="0"
+                                            Width="24"
+                                            Margin="0,0,6,0"
+                                            Background="Transparent"
+                                            Cursor="SizeAll"
+                                            ToolTip="{lex:Locale Settings.Slots.DragToReorder}"
+                                            VerticalAlignment="Stretch">
+                                        <ui:SymbolIcon x:Name="SlotDragHandleIcon"
+                                                       Symbol="ReOrderDotsVertical24"
+                                                       FontSize="14"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
+                                    </Border>
+
                                     <!-- Slot Orb -->
-                                    <Border Grid.Column="0"
+                                    <Border Grid.Column="1"
                                             Style="{StaticResource SlotOrbContainerStyle}"
                                             Margin="0,0,10,0"
                                             Background="{Binding Color, Converter={StaticResource HexToBrush}}">
@@ -251,7 +276,7 @@
                                     </Border>
 
                                     <!-- Title + Subtitle + Position Badge -->
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="{Binding Label}"
                                                        FontSize="14"
@@ -273,7 +298,7 @@
                                     </StackPanel>
 
                                     <!-- Edit Button -->
-                                    <ui:Button Grid.Column="2"
+                                    <ui:Button Grid.Column="3"
                                                x:Name="EditButton"
                                                Icon="{ui:SymbolIcon Edit24}"
                                                Style="{StaticResource PulsarIconButtonStyle}"
@@ -285,7 +310,7 @@
                                                Visibility="Collapsed"/>
 
                                     <!-- Delete Button -->
-                                    <ui:Button Grid.Column="3"
+                                    <ui:Button Grid.Column="4"
                                                x:Name="DeleteButton"
                                                Icon="{ui:SymbolIcon Delete24}"
                                                Style="{StaticResource PulsarIconButtonStyle}"
@@ -299,6 +324,9 @@
                             </Border>
 
                             <DataTemplate.Triggers>
+                                <Trigger SourceName="SlotDragHandle" Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="SlotDragHandleIcon" Property="Foreground" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+                                </Trigger>
                                 <Trigger SourceName="SlotCard" Property="IsMouseOver" Value="True">
                                     <Setter TargetName="EditButton" Property="Visibility" Value="Visible"/>
                                     <Setter TargetName="DeleteButton" Property="Visibility" Value="Visible"/>

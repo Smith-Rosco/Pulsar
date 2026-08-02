@@ -153,6 +153,9 @@
   <data name="Settings.Slots.RemoveSlot" xml:space="preserve">
     <value>Remove Slot</value>
   </data>
+  <data name="Settings.Slots.DragToReorder" xml:space="preserve">
+    <value>Drag to reorder</value>
+  </data>
   <data name="Settings.Slots.PluginType" xml:space="preserve">
     <value>Plugin type</value>
   </data>

@@ -247,6 +247,11 @@
     <value>移除槽位</value>
   </data>
   <data
+    name="Settings.Slots.DragToReorder"
+    xml:space="preserve">
+    <value>拖拽以排序</value>
+  </data>
+  <data
     name="Settings.Slots.PluginType"
     xml:space="preserve">
     <value>插件类型</value>
