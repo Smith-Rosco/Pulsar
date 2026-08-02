@@ -22,16 +22,6 @@ namespace Pulsar.Services.FuzzySearch
         public bool EnableIndexing { get; set; } = true;
 
         /// <summary>
-        /// 启用缓存系统（缓存最近查询结果）
-        /// </summary>
-        public bool EnableCaching { get; set; } = true;
-
-        /// <summary>
-        /// 缓存大小（LRU 缓存容量）
-        /// </summary>
-        public int CacheSize { get; set; } = 100;
-
-        /// <summary>
         /// 渐进式搜索配置
         /// </summary>
         public ProgressiveSearchConfig Progressive { get; set; } = new();

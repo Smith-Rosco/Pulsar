@@ -106,28 +106,13 @@ namespace Pulsar.Services
 
         private Rect GetWindowRect(IntPtr hwnd)
         {
-            NativeMethods.GetWindowRect(hwnd, out var rect);
+            Pulsar.Native.PulsarNative.GetWindowRect(hwnd, out var rect);
             return new Rect(rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top);
         }
 
         public void Dispose()
         {
             StopTracking();
-        }
-    }
-
-    internal static class NativeMethods
-    {
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
-
-        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-        public struct RECT
-        {
-            public int Left;
-            public int Top;
-            public int Right;
-            public int Bottom;
         }
     }
 }

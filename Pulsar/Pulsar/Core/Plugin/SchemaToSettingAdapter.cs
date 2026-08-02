@@ -101,21 +101,6 @@ namespace Pulsar.Core.Plugin
                         definition.IsRequired = true;
                         break;
 
-                    case MinLengthValidator minLengthValidator:
-                        definition.MinLength = minLengthValidator.MinLength;
-                        break;
-
-                    case MaxLengthValidator maxLengthValidator:
-                        definition.MaxLength = maxLengthValidator.MaxLength;
-                        break;
-
-                    case MaxItemsValidator maxItemsValidator:
-                        definition.MaxValue = maxItemsValidator.MaxItems;
-                        break;
-
-                    case AllowedValuesValidator allowedValuesValidator:
-                        definition.Options = allowedValuesValidator.AllowedValues.ToList();
-                        break;
                 }
             }
         }
@@ -138,109 +123,6 @@ namespace Pulsar.Core.Plugin
             }
 
             return char.ToUpper(result[0]) + result.Substring(1);
-        }
-    }
-
-    public class MinLengthValidator : ValidationRule
-    {
-        public int MinLength { get; }
-
-        public MinLengthValidator(int minLength)
-        {
-            MinLength = minLength;
-        }
-
-        public override bool Validate(object? value, out string errorMessage)
-        {
-            if (value is string strValue)
-            {
-                if (strValue.Length < MinLength)
-                {
-                    errorMessage = $"Minimum length is {MinLength} characters.";
-                    return false;
-                }
-            }
-            errorMessage = string.Empty;
-            return true;
-        }
-    }
-
-    public class MaxLengthValidator : ValidationRule
-    {
-        public int MaxLength { get; }
-
-        public MaxLengthValidator(int maxLength)
-        {
-            MaxLength = maxLength;
-        }
-
-        public override bool Validate(object? value, out string errorMessage)
-        {
-            if (value is string strValue)
-            {
-                if (strValue.Length > MaxLength)
-                {
-                    errorMessage = $"Maximum length is {MaxLength} characters.";
-                    return false;
-                }
-            }
-            errorMessage = string.Empty;
-            return true;
-        }
-    }
-
-    public class MaxItemsValidator : ValidationRule
-    {
-        public int MaxItems { get; }
-
-        public MaxItemsValidator(int maxItems)
-        {
-            MaxItems = maxItems;
-        }
-
-        public override bool Validate(object? value, out string errorMessage)
-        {
-            if (value is System.Collections.IList list)
-            {
-                if (list.Count > MaxItems)
-                {
-                    errorMessage = $"Maximum {MaxItems} items allowed.";
-                    return false;
-                }
-            }
-            else if (value is string strValue)
-            {
-                var items = strValue.Split(',', StringSplitOptions.RemoveEmptyEntries);
-                if (items.Length > MaxItems)
-                {
-                    errorMessage = $"Maximum {MaxItems} items allowed.";
-                    return false;
-                }
-            }
-            errorMessage = string.Empty;
-            return true;
-        }
-    }
-
-    public class AllowedValuesValidator : ValidationRule
-    {
-        public List<string> AllowedValues { get; }
-
-        public AllowedValuesValidator(params string[] allowedValues)
-        {
-            AllowedValues = allowedValues.ToList();
-        }
-
-        public override bool Validate(object? value, out string errorMessage)
-        {
-            var strValue = value?.ToString() ?? string.Empty;
-            if (!AllowedValues.Contains(strValue, StringComparer.OrdinalIgnoreCase))
-            {
-                errorMessage = $"Value must be one of: {string.Join(", ", AllowedValues)}";
-                return false;
-            }
-            errorMessage = string.Empty;
-            return true;
         }
     }
 }
