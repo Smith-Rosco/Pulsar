@@ -14,6 +14,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/SlotStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
             <converters:DoubleMultiplyConverter x:Key="Multiply"/>
@@ -41,20 +42,35 @@
                      Height="{Binding Radius, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=2}"
                      HorizontalAlignment="Center"
                      VerticalAlignment="Center"
-                     Stroke="{DynamicResource SurfaceStrokeColorDefaultBrush}"
-                     StrokeThickness="1"
-                     StrokeDashArray="4 4"
-                     IsHitTestVisible="False"
-                     Opacity="0.45"/>
+                     Style="{StaticResource SlotGuideRingStyle}"/>
 
-            <!-- Center Hint (MRU placeholder is not editable in settings) -->
-            <TextBlock Text="{lex:Locale Settings.Slots.Wheel.CenterHint}"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center"
-                       FontSize="11"
-                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                       Opacity="0.6"
-                       IsHitTestVisible="False"/>
+            <!-- Center State (non-interactive: MRU/back area is not editable in settings) -->
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        IsHitTestVisible="False">
+                <StackPanel.Style>
+                    <Style TargetType="StackPanel">
+                        <Setter Property="Opacity" Value="0.75"/>
+                    </Style>
+                </StackPanel.Style>
+                <Border Width="44" Height="44"
+                        CornerRadius="22"
+                        Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                        BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        HorizontalAlignment="Center">
+                    <ui:SymbolIcon Symbol="DialPad24"
+                                   FontSize="20"
+                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Text="{lex:Locale Settings.Slots.Wheel.CenterHint}"
+                           HorizontalAlignment="Center"
+                           Margin="0,6,0,0"
+                           FontSize="11"
+                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
+            </StackPanel>
 
             <!-- Slots -->
             <ItemsControl x:Name="WheelItems"
@@ -69,56 +85,172 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemContainerStyle>
                     <Style TargetType="ContentPresenter">
-                        <Setter Property="Canvas.Left" Value="{Binding X}"/>
-                        <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                        <Setter Property="Canvas.Left" Value="{Binding ContainerX}"/>
+                        <Setter Property="Canvas.Top" Value="{Binding ContainerY}"/>
                     </Style>
                 </ItemsControl.ItemContainerStyle>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Grid x:Name="ItemRoot"
                               Tag="{Binding}"
-                              Width="{Binding Size, Mode=OneWay}"
-                              Height="{Binding Size, Mode=OneWay}"
-                              MouseLeftButtonDown="Item_MouseLeftButtonDown">
+                              Width="{Binding ContainerSize, Mode=OneWay}"
+                              Height="{Binding ContainerSize, Mode=OneWay}"
+                              RenderTransformOrigin="0.5,0.5"
+                              MouseLeftButtonDown="Item_MouseLeftButtonDown"
+                              ToolTip="{Binding Tooltip}">
+                            <Grid.RenderTransform>
+                                <ScaleTransform x:Name="ItemScale" ScaleX="1" ScaleY="1"/>
+                            </Grid.RenderTransform>
                             <Grid.Style>
                                 <Style TargetType="Grid">
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsDragging}" Value="True">
                                             <Setter Property="Opacity" Value="0.35"/>
                                         </DataTrigger>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Trigger.EnterActions>
+                                                <BeginStoryboard>
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                                         To="1.08" Duration="0:0:0.18">
+                                                            <DoubleAnimation.EasingFunction>
+                                                                <CubicEase EasingMode="EaseOut"/>
+                                                            </DoubleAnimation.EasingFunction>
+                                                        </DoubleAnimation>
+                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                                         To="1.08" Duration="0:0:0.18">
+                                                            <DoubleAnimation.EasingFunction>
+                                                                <CubicEase EasingMode="EaseOut"/>
+                                                            </DoubleAnimation.EasingFunction>
+                                                        </DoubleAnimation>
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </Trigger.EnterActions>
+                                            <Trigger.ExitActions>
+                                                <BeginStoryboard>
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                                         To="1" Duration="0:0:0.2">
+                                                            <DoubleAnimation.EasingFunction>
+                                                                <CubicEase EasingMode="EaseOut"/>
+                                                            </DoubleAnimation.EasingFunction>
+                                                        </DoubleAnimation>
+                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                                         To="1" Duration="0:0:0.2">
+                                                            <DoubleAnimation.EasingFunction>
+                                                                <CubicEase EasingMode="EaseOut"/>
+                                                            </DoubleAnimation.EasingFunction>
+                                                        </DoubleAnimation>
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </Trigger.ExitActions>
+                                        </Trigger>
                                     </Style.Triggers>
                                 </Style>
                             </Grid.Style>
 
-                            <!-- Empty Placeholder Outline -->
+                            <!-- Position Badge + Orb + Actions (centered inner Size grid) -->
+                            <Grid Width="{Binding Size, Mode=OneWay}"
+                                  Height="{Binding Size, Mode=OneWay}"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center">
+
+                                <!-- Position Badge (always visible, top-left) -->
+                                <Border Style="{StaticResource SlotPositionBadgeStyle}">
+                                    <TextBlock Text="{Binding Position}"
+                                               Style="{StaticResource SlotPositionBadgeTextStyle}"/>
+                                </Border>
+
+                                <!-- Slot Orb -->
+                                <controls:SlotOrb x:Name="Orb"
+                                                  IconKey="{Binding IconKey}"
+                                                  Label="{Binding Label}"
+                                                  Size="{Binding Size, Mode=OneWay}"
+                                                  Width="{Binding Size, Mode=OneWay}"
+                                                  Height="{Binding Size, Mode=OneWay}"
+                                                  IsTransparent="{Binding IsEmpty}"
+                                                  CustomFill="{Binding ColorHex, Converter={StaticResource HexToBrush}}"
+                                                  CustomStroke="{Binding ColorHex, Converter={StaticResource HexToBrush}}"
+                                                  ShowActiveGlow="False"
+                                                  ToolTip="{Binding Tooltip}"/>
+
+                                <!-- Hover Edit/Delete Buttons (overlaid, do not affect slot layout) -->
+                                <StackPanel Orientation="Horizontal"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Bottom"
+                                            Margin="0,0,0,-26">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Grid}}" Value="True"/>
+                                                        <Condition Binding="{Binding IsEmpty}" Value="False"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+                                    <ui:Button Style="{StaticResource PulsarIconButtonStyle}"
+                                               Icon="{ui:SymbolIcon Edit24}"
+                                               Tag="{Binding}"
+                                               Click="HoverEdit_Click"
+                                               Margin="0,0,4,0"
+                                               ToolTip="{lex:Locale Settings.Slots.EditSlot}"/>
+                                    <ui:Button Style="{StaticResource PulsarIconButtonStyle}"
+                                               Icon="{ui:SymbolIcon Delete24}"
+                                               Tag="{Binding}"
+                                               Click="HoverDelete_Click"
+                                               Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                                               ToolTip="{lex:Locale Settings.Slots.RemoveSlot}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Empty Placeholder: dashed ring, accent on hover -->
                             <Ellipse Width="{Binding Size, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=1.3}"
                                      Height="{Binding Size, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=1.3}"
-                                     Stroke="{DynamicResource SurfaceStrokeColorDefaultBrush}"
-                                     StrokeThickness="1"
-                                     StrokeDashArray="3 3"
-                                     IsHitTestVisible="False">
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center">
                                 <Ellipse.Style>
-                                    <Style TargetType="Ellipse">
+                                    <Style TargetType="Ellipse" BasedOn="{StaticResource SlotEmptyRingStyle}">
                                         <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsEmpty}" Value="True">
                                                 <Setter Property="Visibility" Value="Visible"/>
                                             </DataTrigger>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsEmpty}" Value="True"/>
+                                                    <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Grid}}" Value="True"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <MultiDataTrigger.EnterActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.15"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </MultiDataTrigger.EnterActions>
+                                                <MultiDataTrigger.ExitActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0.55" Duration="0:0:0.2"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </MultiDataTrigger.ExitActions>
+                                            </MultiDataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Ellipse.Style>
                             </Ellipse>
 
-                            <!-- Empty Placeholder Add Hint -->
-                            <TextBlock Text="+"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       FontSize="{Binding Size, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=0.5}"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                       IsHitTestVisible="False">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
+                            <!-- Empty Placeholder Add Hint (plus glyph) -->
+                            <StackPanel HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        IsHitTestVisible="False">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
                                         <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsEmpty}" Value="True">
@@ -126,12 +258,32 @@
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
+                                </StackPanel.Style>
+                                <ui:SymbolIcon Symbol="Add24"
+                                               FontSize="{Binding Size, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=0.5}"
+                                               Foreground="{DynamicResource TextFillColorTertiaryBrush}">
+                                    <ui:SymbolIcon.Style>
+                                        <Style TargetType="ui:SymbolIcon">
+                                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}"/>
+                                            <Style.Triggers>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding IsEmpty}" Value="True"/>
+                                                        <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Grid}}" Value="True"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Foreground" Value="{DynamicResource Theme.Accent}"/>
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ui:SymbolIcon.Style>
+                                </ui:SymbolIcon>
+                            </StackPanel>
 
                             <!-- Drop Target Ring -->
                             <Ellipse Width="{Binding Size, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=1.3}"
                                      Height="{Binding Size, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=1.3}"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center"
                                      Stroke="{DynamicResource Theme.Accent}"
                                      StrokeThickness="2"
                                      StrokeDashArray="4 3"
@@ -148,9 +300,48 @@
                                 </Ellipse.Style>
                             </Ellipse>
 
+                            <!-- Hover Ring (occupied slots, accent on mouse-over) -->
+                            <Ellipse Width="{Binding Size, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=1.3}"
+                                     Height="{Binding Size, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=1.3}"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center"
+                                     Stroke="{DynamicResource Theme.Accent}"
+                                     StrokeThickness="2"
+                                     IsHitTestVisible="False">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Opacity" Value="0"/>
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsEmpty}" Value="False"/>
+                                                    <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Grid}}" Value="True"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <MultiDataTrigger.EnterActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0.75" Duration="0:0:0.15"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </MultiDataTrigger.EnterActions>
+                                                <MultiDataTrigger.ExitActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </MultiDataTrigger.ExitActions>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+
                             <!-- Highlight Ring (transient, pulse on/off) -->
                             <Ellipse Width="{Binding Size, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=1.35}"
                                      Height="{Binding Size, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=1.35}"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center"
                                      Stroke="{DynamicResource Theme.Accent}"
                                      StrokeThickness="2.5"
                                      IsHitTestVisible="False">
@@ -178,52 +369,6 @@
                                     </Style>
                                 </Ellipse.Style>
                             </Ellipse>
-
-                            <!-- Slot Orb -->
-                            <controls:SlotOrb x:Name="Orb"
-                                              IconKey="{Binding IconKey}"
-                                              Label="{Binding Label}"
-                                              Size="{Binding Size, Mode=OneWay}"
-                                              Width="{Binding Size, Mode=OneWay}"
-                                              Height="{Binding Size, Mode=OneWay}"
-                                              IsTransparent="{Binding IsEmpty}"
-                                              CustomFill="{Binding ColorHex, Converter={StaticResource HexToBrush}}"
-                                              CustomStroke="{Binding ColorHex, Converter={StaticResource HexToBrush}}"
-                                              ShowActiveGlow="False"
-                                              ToolTip="{Binding Tooltip}"/>
-
-                            <!-- Hover Edit/Delete Buttons (overlaid, do not affect slot layout) -->
-                            <StackPanel Orientation="Horizontal"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Bottom"
-                                        Margin="0,0,0,-26">
-                                <StackPanel.Style>
-                                    <Style TargetType="StackPanel">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                        <Style.Triggers>
-                                            <MultiDataTrigger>
-                                                <MultiDataTrigger.Conditions>
-                                                    <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Grid}}" Value="True"/>
-                                                    <Condition Binding="{Binding IsEmpty}" Value="False"/>
-                                                </MultiDataTrigger.Conditions>
-                                                <Setter Property="Visibility" Value="Visible"/>
-                                            </MultiDataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </StackPanel.Style>
-                                <ui:Button Style="{StaticResource PulsarIconButtonStyle}"
-                                           Icon="{ui:SymbolIcon Edit24}"
-                                           Tag="{Binding}"
-                                           Click="HoverEdit_Click"
-                                           Margin="0,0,4,0"
-                                           ToolTip="{lex:Locale Settings.Slots.EditSlot}"/>
-                                <ui:Button Style="{StaticResource PulsarIconButtonStyle}"
-                                           Icon="{ui:SymbolIcon Delete24}"
-                                           Tag="{Binding}"
-                                           Click="HoverDelete_Click"
-                                           Foreground="{DynamicResource SystemFillColorCriticalBrush}"
-                                           ToolTip="{lex:Locale Settings.Slots.RemoveSlot}"/>
-                            </StackPanel>
                         </Grid>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
@@ -257,8 +402,15 @@
                            IsEnabled="{Binding HasPreviousPage}"
                            ToolTip="{lex:Locale Settings.Slots.Wheel.PreviousPage}"/>
                 <TextBlock VerticalAlignment="Center"
-                           Margin="10,0"
+                           Margin="10,0,6,0"
+                           FontSize="12"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                    <Run Text="{lex:Locale Settings.Slots.Wheel.PageLabel}"/>
+                </TextBlock>
+                <TextBlock VerticalAlignment="Center"
+                           Margin="0,0,10,0"
                            FontWeight="SemiBold"
+                           FontSize="14"
                            Foreground="{DynamicResource TextFillColorPrimaryBrush}">
                     <Run Text="{Binding PageDisplayText, Mode=OneWay}"/>
                 </TextBlock>

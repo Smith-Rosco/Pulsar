@@ -282,6 +282,11 @@
     <value>每页</value>
   </data>
   <data
+    name="Settings.Slots.Wheel.PageLabel"
+    xml:space="preserve">
+    <value>第</value>
+  </data>
+  <data
     name="Settings.Slots.Wheel.MoveTo"
     xml:space="preserve">
     <value>移动到</value>
@@ -295,6 +300,11 @@
     name="Settings.Slots.Wheel.SlotFormat"
     xml:space="preserve">
     <value>第 {0} 位</value>
+  </data>
+  <data
+    name="Settings.Slots.Wheel.EmptySlotTooltipFormat"
+    xml:space="preserve">
+    <value>点击在第 {0} 位添加一个槽位</value>
   </data>
   <data
     name="Settings.Slots.Wheel.Edit"

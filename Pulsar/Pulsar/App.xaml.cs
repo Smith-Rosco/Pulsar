@@ -192,6 +192,7 @@ namespace Pulsar
             serviceCollection.AddSingleton<SettingsShellViewModel>();
             serviceCollection.AddTransient<SettingsViewModel>();
             serviceCollection.AddTransient<SettingsPageFactory>();
+            serviceCollection.AddTransient<SlotWheelEditorViewModel>();
             
             // [New] Plugin Management UI
             serviceCollection.AddTransient<PluginManagerViewModel>();

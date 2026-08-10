@@ -36,6 +36,7 @@ namespace Pulsar.Views.Controls
         private bool _isDragging;
         private Border? _dragGhost;
         private WheelSlotItem? _emptySlotCandidate;
+        private SlotContextMenuBuilder? _contextMenuBuilder;
 
         public event EventHandler<SlotWheelActionEventArgs>? EditRequested;
         public event EventHandler<SlotWheelActionEventArgs>? DeleteRequested;
@@ -255,7 +256,7 @@ namespace Pulsar.Views.Controls
         private void WheelItems_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
             var item = FindItem(e.OriginalSource as DependencyObject);
-            if (item == null || item.IsEmpty || item.Slot == null)
+            if (item == null || item.IsEmpty || item.Slot == null || Vm == null)
             {
                 e.Handled = true;
                 return;
@@ -282,37 +283,14 @@ namespace Pulsar.Views.Controls
 
         private ContextMenu BuildContextMenu(PluginSlot slot)
         {
-            var menu = new ContextMenu();
+            var loc = _services.GetRequiredService<ILocalizationService>();
+            _contextMenuBuilder ??= new SlotContextMenuBuilder(loc);
+
+            var menu = _contextMenuBuilder.Build(slot, Vm!);
             ApplyThemeToContextMenu(menu);
 
-            var loc = _services.GetRequiredService<ILocalizationService>();
-
-            var moveTo = new MenuItem { Header = loc["Settings.Slots.Wheel.MoveTo"] };
-            for (int page = 1; page <= Vm!.TotalPages; page++)
-            {
-                var pageItem = new MenuItem { Header = string.Format(loc["Settings.Slots.Wheel.PageFormat"], page) };
-                for (int slotNum = 1; slotNum <= Vm.SlotsPerPage; slotNum++)
-                {
-                    int targetPage = page;
-                    int targetSlot = slotNum;
-                    var slotItem = new MenuItem { Header = string.Format(loc["Settings.Slots.Wheel.SlotFormat"], slotNum) };
-                    slotItem.Click += (_, _) => Vm.MoveToPageAndSlot(slot, targetPage, targetSlot);
-                    pageItem.Items.Add(slotItem);
-                }
-
-                moveTo.Items.Add(pageItem);
-            }
-
-            menu.Items.Add(moveTo);
-            menu.Items.Add(new Separator());
-
-            var edit = new MenuItem { Header = loc["Settings.Slots.Wheel.Edit"] };
-            edit.Click += (_, _) => EditRequested?.Invoke(this, new SlotWheelActionEventArgs(slot));
-            menu.Items.Add(edit);
-
-            var delete = new MenuItem { Header = loc["Settings.Slots.Wheel.Delete"] };
-            delete.Click += (_, _) => DeleteRequested?.Invoke(this, new SlotWheelActionEventArgs(slot));
-            menu.Items.Add(delete);
+            _contextMenuBuilder.OnEdit = s => EditRequested?.Invoke(this, new SlotWheelActionEventArgs(s));
+            _contextMenuBuilder.OnDelete = s => DeleteRequested?.Invoke(this, new SlotWheelActionEventArgs(s));
 
             return menu;
         }

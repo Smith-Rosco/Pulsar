@@ -8,6 +8,7 @@ using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
+using Pulsar.Core.Localization;
 using Pulsar.Core.Messages;
 using Pulsar.Models;
 using Pulsar.Services;
@@ -24,18 +25,24 @@ namespace Pulsar.ViewModels.Settings
 
         private readonly ISlotLayoutEngine _layoutEngine;
         private readonly IMessenger _messenger;
+        private readonly ILocalizationService _loc;
         private IList<PluginSlot>? _slots;
         private int _slotsPerPage = 8;
         private LayoutParameters _layoutParams;
         private double _scale = 1.0;
         private CancellationTokenSource? _highlightCts;
 
-        public SlotWheelEditorViewModel(ISlotLayoutEngine layoutEngine, IMessenger? messenger = null)
+        public SlotWheelEditorViewModel(
+            ISlotLayoutEngine layoutEngine,
+            ILocalizationService localizationService,
+            IMessenger? messenger = null,
+            double canvasSize = 520)
         {
             _layoutEngine = layoutEngine;
+            _loc = localizationService;
             _messenger = messenger ?? WeakReferenceMessenger.Default;
             _messenger.Register<SlotAddedMessage>(this, (_, message) => HandleSlotAdded(message.Slot));
-            CanvasSize = 460;
+            CanvasSize = canvasSize;
         }
 
         public ObservableCollection<WheelSlotItem> Items { get; } = new();
@@ -239,9 +246,7 @@ namespace Pulsar.ViewModels.Settings
 
         private double CalculateScaledSlotSize(int count)
         {
-            double size = _layoutEngine is SlotLayoutEngine engine
-                ? engine.CalculateOptimalSlotSize(count)
-                : SourceDefaultSlotSize;
+            double size = _layoutEngine.CalculateOptimalSlotSize(count);
 
             return size * _scale;
         }
@@ -310,7 +315,8 @@ namespace Pulsar.ViewModels.Settings
                     position,
                     enginePos.X * _scale,
                     enginePos.Y * _scale,
-                    SlotSize)
+                    SlotSize,
+                    _loc)
                 {
                     IsHighlighted = slot != null && ReferenceEquals(slot, HighlightedSlot)
                 });

@@ -69,4 +69,46 @@
         <Setter Property="Margin" Value="0,10,0,0"/>
     </Style>
 
+    <!-- ==================== Slot Wheel Editor ==================== -->
+
+    <Style x:Key="SlotPositionBadgeStyle" TargetType="Border">
+        <Setter Property="MinWidth" Value="16"/>
+        <Setter Property="Height" Value="16"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="4,0"/>
+        <Setter Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorSecondaryBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="VerticalAlignment" Value="Top"/>
+        <Setter Property="Margin" Value="-2,-2,0,0"/>
+        <Setter Property="Panel.ZIndex" Value="120"/>
+        <Setter Property="IsHitTestVisible" Value="False"/>
+    </Style>
+
+    <Style x:Key="SlotPositionBadgeTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="9"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <Style x:Key="SlotEmptyRingStyle" TargetType="Ellipse">
+        <Setter Property="Stroke" Value="{DynamicResource TextFillColorTertiaryBrush}"/>
+        <Setter Property="StrokeThickness" Value="1.5"/>
+        <Setter Property="StrokeDashArray" Value="3 3"/>
+        <Setter Property="Opacity" Value="0.55"/>
+        <Setter Property="IsHitTestVisible" Value="False"/>
+    </Style>
+
+    <Style x:Key="SlotGuideRingStyle" TargetType="Ellipse">
+        <Setter Property="Stroke" Value="{DynamicResource SurfaceStrokeColorDefaultBrush}"/>
+        <Setter Property="StrokeThickness" Value="1.5"/>
+        <Setter Property="StrokeDashArray" Value="4 4"/>
+        <Setter Property="IsHitTestVisible" Value="False"/>
+        <Setter Property="Opacity" Value="0.5"/>
+    </Style>
+
+
 </ResourceDictionary>

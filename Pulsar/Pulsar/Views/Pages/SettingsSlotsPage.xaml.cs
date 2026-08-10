@@ -33,8 +33,7 @@ namespace Pulsar.Views.Pages
             _themeService = themeService;
 
             DataContext = viewModel;
-            _wheelViewModel = new SlotWheelEditorViewModel(
-                App.Current.Services.GetRequiredService<ISlotLayoutEngine>());
+            _wheelViewModel = App.Current.Services.GetRequiredService<SlotWheelEditorViewModel>();
             WheelEditor.DataContext = _wheelViewModel;
 
             themeService.ApplyTheme(this, themeService.CurrentTheme, updateGlobal: false);

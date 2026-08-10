@@ -3,6 +3,9 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using CommunityToolkit.Mvvm.Messaging;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Pulsar.Core.Localization;
 using Pulsar.Core.Messages;
 using Pulsar.Models;
 using Pulsar.Services;
@@ -16,7 +19,10 @@ namespace Pulsar.Tests.ViewModels
 
         private static SlotWheelEditorViewModel CreateVm()
         {
-            return new SlotWheelEditorViewModel(new SlotLayoutEngine(), new WeakReferenceMessenger());
+            return new SlotWheelEditorViewModel(
+                new SlotLayoutEngine(),
+                new LocalizationService(new Mock<ILogger<LocalizationService>>().Object),
+                new WeakReferenceMessenger());
         }
 
         private static ObservableCollection<PluginSlot> CreateSlots(int count)
@@ -192,7 +198,10 @@ namespace Pulsar.Tests.ViewModels
         public void AddingSlot_NavigatesToItsPage_AndHighlights()
         {
             var messenger = new WeakReferenceMessenger();
-            var vm = new SlotWheelEditorViewModel(new SlotLayoutEngine(), messenger);
+            var vm = new SlotWheelEditorViewModel(
+                new SlotLayoutEngine(),
+                new LocalizationService(new Mock<ILogger<LocalizationService>>().Object),
+                messenger);
             var slots = CreateSlots(13);
             vm.SetSlots(slots, SlotsPerPage);
             var added = new PluginSlot { Label = "S14", Slot = 14, PluginId = "com.pulsar.command", IconKey = "E756" };
@@ -208,9 +217,11 @@ namespace Pulsar.Tests.ViewModels
         public void BulkReload_DoesNotAutoNavigateOrFlash()
         {
             var messenger = new WeakReferenceMessenger();
-            var vm = new SlotWheelEditorViewModel(new SlotLayoutEngine(), messenger);
+            var vm = new SlotWheelEditorViewModel(
+                new SlotLayoutEngine(),
+                new LocalizationService(new Mock<ILogger<LocalizationService>>().Object),
+                messenger);
             var slots = CreateSlots(13);
-            vm.SetSlots(slots, SlotsPerPage);
 
             // Simulate SettingsViewModel context switch: Clear + repopulate the same collection.
             slots.Clear();
@@ -291,6 +302,46 @@ namespace Pulsar.Tests.ViewModels
             moved.Should().BeTrue();
             slots[15].Should().BeSameAs(source);
             slots.Select(s => s.Slot).Should().Equal(Enumerable.Range(1, 16));
+        }
+
+        [Fact]
+        public void WheelItem_ExposesPositionBadgeNumber()
+        {
+            var vm = CreateVm();
+            vm.SetSlots(CreateSlots(8), SlotsPerPage);
+
+            var item = vm.Items.Single(i => i.Position == 3);
+
+            item.Position.Should().Be(3);
+            item.PositionLabel.Should().Contain("3");
+        }
+
+        [Fact]
+        public void FilledSlotTooltip_IsLocalizedAndIncludesLabel()
+        {
+            var slots = CreateSlots(1);
+            var vm = CreateVm();
+            vm.SetSlots(slots, SlotsPerPage);
+
+            var item = vm.Items.Single(i => !i.IsEmpty);
+
+            item.Tooltip.Should().NotBeNull();
+            item.Tooltip.Should().Contain("1");
+            item.Tooltip.Should().Contain("S1");
+            item.Tooltip.Should().NotBe("#1 S1");
+        }
+
+        [Fact]
+        public void EmptySlotTooltip_IsLocalizedAddHint()
+        {
+            var vm = CreateVm();
+            vm.SetSlots(CreateSlots(1), SlotsPerPage);
+            vm.GoToPage(2);
+
+            var empty = vm.Items.Single(i => i.IsEmpty && i.Position == 2);
+
+            empty.Tooltip.Should().NotBeNull();
+            empty.Tooltip.Should().Contain("2");
         }
     }
 }

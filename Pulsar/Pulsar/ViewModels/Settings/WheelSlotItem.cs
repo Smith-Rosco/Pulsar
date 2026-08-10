@@ -1,17 +1,22 @@
+using System;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Pulsar.Core.Localization;
 using Pulsar.Models;
 
 namespace Pulsar.ViewModels.Settings
 {
     public sealed partial class WheelSlotItem : ObservableObject
     {
-        public WheelSlotItem(PluginSlot? slot, int position, double x, double y, double size)
+        private readonly ILocalizationService _loc;
+
+        public WheelSlotItem(PluginSlot? slot, int position, double x, double y, double size, ILocalizationService loc)
         {
             Slot = slot;
             Position = position;
             X = x;
             Y = y;
             Size = size;
+            _loc = loc;
         }
 
         public PluginSlot? Slot { get; }
@@ -24,7 +29,20 @@ namespace Pulsar.ViewModels.Settings
 
         public double Size { get; }
 
+        /// <summary>
+        /// Bounding size that fully contains the orb and its largest ring (Size*1.35 + stroke).
+        /// WPF Grids clip children to the cell bounds, so the slot container must be large
+        /// enough for the rings instead of letting them overflow a Size×Size box.
+        /// </summary>
+        public double ContainerSize => Size * 1.5;
+
+        public double ContainerX => X - (ContainerSize - Size) / 2;
+
+        public double ContainerY => Y - (ContainerSize - Size) / 2;
+
         public bool IsEmpty => Slot == null;
+
+        public string PositionLabel => string.Format(_loc["Settings.Slots.PositionFormat"], Position);
 
         [ObservableProperty]
         private bool _isHighlighted;
@@ -41,6 +59,8 @@ namespace Pulsar.ViewModels.Settings
 
         public string? ColorHex => Slot?.Color;
 
-        public string? Tooltip => IsEmpty ? null : $"#{Slot?.Slot} {Label}";
+        public string? Tooltip => IsEmpty
+            ? string.Format(_loc["Settings.Slots.Wheel.EmptySlotTooltipFormat"], Position)
+            : string.Format(_loc["Settings.Slots.PositionFormat"], Position) + " — " + Label;
     }
 }

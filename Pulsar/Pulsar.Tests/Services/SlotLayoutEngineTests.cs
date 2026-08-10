@@ -57,6 +57,16 @@ namespace Pulsar.Tests.Services
             layout.TotalSlots.Should().Be(8);
         }
 
+        [Fact]
+        public void InterfaceExposes_OptimalSlotAndCenterSizes()
+        {
+            ISlotLayoutEngine iface = _engine;
+
+            iface.CalculateOptimalSlotSize(8).Should().Be(_engine.CalculateOptimalSlotSize(8));
+            iface.CalculateOptimalCenterSize(8).Should().Be(_engine.CalculateOptimalCenterSize(8));
+            iface.CalculateOptimalSlotSize(12).Should().Be(_engine.CalculateOptimalSlotSize(12));
+        }
+
         private static Vector CreatePointFromTopAngle(double angleFromTopDegrees, double radius)
         {
             double angleRad = (angleFromTopDegrees - 90) * Math.PI / 180.0;
