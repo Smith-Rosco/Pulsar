@@ -991,6 +991,7 @@ namespace Pulsar.ViewModels
 
             CurrentSlots.Add(slot);
             MarkDirty();
+            WeakReferenceMessenger.Default.Send(new SlotAddedMessage(slot));
             SendNotification(_loc["Notification.Success"], string.Format(_loc["Notification.SlotAddedFormat"], slot.Label), ControlAppearance.Success);
         }
 

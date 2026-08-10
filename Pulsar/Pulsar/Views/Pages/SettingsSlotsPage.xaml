@@ -4,13 +4,9 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-      xmlns:dd="urn:gong-wpf-dragdrop"
-      xmlns:models="clr-namespace:Pulsar.Models"
-      xmlns:dragDrop="clr-namespace:Pulsar.Views.DragDrop"
       xmlns:converters="clr-namespace:Pulsar.Core.Converters"
       xmlns:controls="clr-namespace:Pulsar.Views.Controls"
       xmlns:tutorial="clr-namespace:Pulsar.Features.Tutorial.Helpers"
-      xmlns:sys="clr-namespace:System;assembly=mscorlib"
       xmlns:lex="clr-namespace:Pulsar.Core.Localization"
       mc:Ignorable="d" 
       d:DesignHeight="800" d:DesignWidth="800"
@@ -30,55 +26,6 @@
             <converters:StringPathToImageSourceConverter x:Key="PathToImage"/>
             <converters:HexToBrushConverter x:Key="HexToBrush"/>
             <converters:SlotBrushConverter x:Key="SlotBrushConverter"/>
-
-            <!-- Drag & Drop -->
-            <dragDrop:SlotDragHandler x:Key="SlotDragHandler"/>
-
-            <!-- SlotParameterFieldTemplate and SystemCommandFieldsTemplate removed: Quick Edit layer eliminated -->
-
-            <!-- Custom Drag Adorner Template for Slot Cards -->
-            <DataTemplate x:Key="SlotCardDragAdornerTemplate">
-                <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                        BorderBrush="{DynamicResource AccentFillColorDefaultBrush}"
-                        BorderThickness="2"
-                        CornerRadius="8"
-                        Padding="12"
-                        Opacity="0.9"
-                        MinWidth="300">
-                    <Border.Effect>
-                        <DropShadowEffect Color="Black" 
-                                          Opacity="0.3" 
-                                          BlurRadius="20" 
-                                          ShadowDepth="4"/>
-                    </Border.Effect>
-                    <Border.RenderTransform>
-                        <ScaleTransform ScaleX="1.05" ScaleY="1.05"/>
-                    </Border.RenderTransform>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <controls:SlotOrb Grid.Column="0"
-                                           IconKey="{Binding IconKey}"
-                                           Size="32"
-                                           Width="32" Height="32"
-                                           IsTransparent="True"
-                                           ShowActiveGlow="False"
-                                           Margin="0,0,12,0"/>
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding Label}" 
-                                       FontSize="14" 
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                            <TextBlock Text="{Binding Slot, StringFormat={lex:Locale Settings.Slots.PositionFormat}}" 
-                                       FontSize="12"
-                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                        </StackPanel>
-                    </Grid>
-                </Border>
-            </DataTemplate>
-
         </ResourceDictionary>
     </Page.Resources>
 
@@ -172,7 +119,7 @@
             </controls:SettingsPageHeader.ActionsContent>
         </controls:SettingsPageHeader>
 
-        <!-- Slots Area: ScrollViewer + FAB overlay -->
+        <!-- Slots Area: Wheel editor + FAB overlay -->
         <Grid Grid.Row="1">
 
             <!-- Empty State -->
@@ -200,142 +147,23 @@
                            HorizontalAlignment="Center"/>
             </StackPanel>
 
-            <!-- Slot List -->
-            <ScrollViewer x:Name="SlotsScrollViewer"
-                          VerticalScrollBarVisibility="Auto"
-                          Padding="0,0,16,0">
-                <ScrollViewer.Style>
-                    <Style TargetType="ScrollViewer" BasedOn="{StaticResource OverlayScrollViewerStyle}">
+            <!-- Slot Wheel Editor (replaces the legacy card list) -->
+            <controls:SlotWheelEditor x:Name="WheelEditor"
+                                      Margin="0,8,0,0"
+                                      VerticalAlignment="Center"
+                                      EditRequested="WheelEditor_EditRequested"
+                                      DeleteRequested="WheelEditor_DeleteRequested"
+                                      AddSlotRequested="WheelEditor_AddSlotRequested">
+                <controls:SlotWheelEditor.Style>
+                    <Style TargetType="controls:SlotWheelEditor">
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding CurrentSlots.Count}" Value="0">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding CurrentSlots}" Value="{x:Null}">
+                            <DataTrigger Binding="{Binding TotalSlots}" Value="0">
                                 <Setter Property="Visibility" Value="Collapsed"/>
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
-                </ScrollViewer.Style>
-                <ItemsControl ItemsSource="{Binding CurrentSlots}" 
-                              AlternationCount="2"
-                              Padding="0,0,0,60"
-                              dd:DragDrop.IsDragSource="True"
-                              dd:DragDrop.IsDropTarget="True"
-                              dd:DragDrop.DragHandler="{StaticResource SlotDragHandler}"
-                              dd:DragDrop.DropHandler="{Binding}"
-                              dd:DragDrop.DropTargetScrollViewer="{Binding ElementName=SlotsScrollViewer}"
-                              dd:DragDrop.DropScrollingMode="VerticalOnly"
-                              dd:DragDrop.DropTargetAdornerBrush="{DynamicResource AccentFillColorDefaultBrush}"
-                              dd:DragDrop.UseDefaultDragAdorner="False"
-                              dd:DragDrop.DragAdornerTemplate="{StaticResource SlotCardDragAdornerTemplate}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type models:PluginSlot}">
-                            <Border x:Name="SlotCard"
-                                    Margin="0,0,0,8"
-                                    Padding="12,10"
-                                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="8">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <!-- Drag Handle -->
-                                    <Border x:Name="SlotDragHandle"
-                                            Grid.Column="0"
-                                            Width="24"
-                                            Margin="0,0,6,0"
-                                            Background="Transparent"
-                                            Cursor="SizeAll"
-                                            ToolTip="{lex:Locale Settings.Slots.DragToReorder}"
-                                            VerticalAlignment="Stretch">
-                                        <ui:SymbolIcon x:Name="SlotDragHandleIcon"
-                                                       Symbol="ReOrderDotsVertical24"
-                                                       FontSize="14"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center"
-                                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
-                                    </Border>
-
-                                    <!-- Slot Orb -->
-                                    <Border Grid.Column="1"
-                                            Style="{StaticResource SlotOrbContainerStyle}"
-                                            Margin="0,0,10,0"
-                                            Background="{Binding Color, Converter={StaticResource HexToBrush}}">
-                                        <controls:SlotOrb IconKey="{Binding IconKey}"
-                                                           Size="28" Width="28" Height="28"
-                                                           Margin="5"
-                                                           IsTransparent="True"
-                                                           ShowActiveGlow="False"/>
-                                    </Border>
-
-                                    <!-- Title + Subtitle + Position Badge -->
-                                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{Binding Label}"
-                                                       FontSize="14"
-                                                       FontWeight="SemiBold"
-                                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                                            <Border Style="{StaticResource SlotChipBorderStyle}"
-                                                    Padding="5,1"
-                                                    Margin="6,0,0,0"
-                                                    VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding Slot, StringFormat='#{0}'}"
-                                                           Style="{StaticResource SlotCaptionChipTextStyle}"
-                                                           FontSize="10"/>
-                                            </Border>
-                                        </StackPanel>
-                                        <TextBlock Text="{Binding ActionLabel}"
-                                                   FontSize="12"
-                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                                   Visibility="{Binding ActionLabel, Converter={StaticResource StringEmptyToVis}}"/>
-                                    </StackPanel>
-
-                                    <!-- Edit Button -->
-                                    <ui:Button Grid.Column="3"
-                                               x:Name="EditButton"
-                                               Icon="{ui:SymbolIcon Edit24}"
-                                               Style="{StaticResource PulsarIconButtonStyle}"
-                                               ToolTip="{lex:Locale Settings.Slots.EditSlot}"
-                                               Click="SlotEdit_Click"
-                                               Tag="{Binding}"
-                                               VerticalAlignment="Center"
-                                               Margin="0,0,4,0"
-                                               Visibility="Collapsed"/>
-
-                                    <!-- Delete Button -->
-                                    <ui:Button Grid.Column="4"
-                                               x:Name="DeleteButton"
-                                               Icon="{ui:SymbolIcon Delete24}"
-                                               Style="{StaticResource PulsarIconButtonStyle}"
-                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                               ToolTip="{lex:Locale Settings.Slots.RemoveSlot}"
-                                               Click="SlotRemove_Click"
-                                               Tag="{Binding}"
-                                               VerticalAlignment="Center"
-                                               Visibility="Collapsed"/>
-                                </Grid>
-                            </Border>
-
-                            <DataTemplate.Triggers>
-                                <Trigger SourceName="SlotDragHandle" Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="SlotDragHandleIcon" Property="Foreground" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
-                                </Trigger>
-                                <Trigger SourceName="SlotCard" Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="EditButton" Property="Visibility" Value="Visible"/>
-                                    <Setter TargetName="DeleteButton" Property="Visibility" Value="Visible"/>
-                                </Trigger>
-                            </DataTemplate.Triggers>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
+                </controls:SlotWheelEditor.Style>
+            </controls:SlotWheelEditor>
 
             <!-- FAB: Add Slot (floating, bottom-right) -->
             <ui:Button x:Name="AddSlotFab"

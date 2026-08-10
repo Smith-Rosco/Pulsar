@@ -252,6 +252,61 @@
     <value>拖拽以排序</value>
   </data>
   <data
+    name="Settings.Slots.Wheel.CenterHint"
+    xml:space="preserve">
+    <value>中心</value>
+  </data>
+  <data
+    name="Settings.Slots.Wheel.DragDropHint"
+    xml:space="preserve">
+    <value>拖拽调整顺序 · 右键移动</value>
+  </data>
+  <data
+    name="Settings.Slots.Wheel.PreviousPage"
+    xml:space="preserve">
+    <value>上一页</value>
+  </data>
+  <data
+    name="Settings.Slots.Wheel.NextPage"
+    xml:space="preserve">
+    <value>下一页</value>
+  </data>
+  <data
+    name="Settings.Slots.Wheel.SlotsUnit"
+    xml:space="preserve">
+    <value> 个插槽</value>
+  </data>
+  <data
+    name="Settings.Slots.Wheel.PerPage"
+    xml:space="preserve">
+    <value>每页</value>
+  </data>
+  <data
+    name="Settings.Slots.Wheel.MoveTo"
+    xml:space="preserve">
+    <value>移动到</value>
+  </data>
+  <data
+    name="Settings.Slots.Wheel.PageFormat"
+    xml:space="preserve">
+    <value>第 {0} 页</value>
+  </data>
+  <data
+    name="Settings.Slots.Wheel.SlotFormat"
+    xml:space="preserve">
+    <value>第 {0} 位</value>
+  </data>
+  <data
+    name="Settings.Slots.Wheel.Edit"
+    xml:space="preserve">
+    <value>编辑</value>
+  </data>
+  <data
+    name="Settings.Slots.Wheel.Delete"
+    xml:space="preserve">
+    <value>删除</value>
+  </data>
+  <data
     name="Settings.Slots.PluginType"
     xml:space="preserve">
     <value>插件类型</value>

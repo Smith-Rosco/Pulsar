@@ -1,0 +1,288 @@
+<UserControl x:Class="Pulsar.Views.Controls.SlotWheelEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:controls="clr-namespace:Pulsar.Views.Controls"
+             xmlns:converters="clr-namespace:Pulsar.Core.Converters"
+             xmlns:lex="clr-namespace:Pulsar.Core.Localization"
+             mc:Ignorable="d"
+             d:DesignHeight="460" d:DesignWidth="360">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <converters:DoubleMultiplyConverter x:Key="Multiply"/>
+            <converters:NullableHexToBrushConverter x:Key="HexToBrush"/>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Wheel Host -->
+        <Grid x:Name="WheelHost"
+              Grid.Row="0"
+              Width="{Binding CanvasSize, Mode=OneWay}"
+              Height="{Binding CanvasSize, Mode=OneWay}"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center">
+
+            <!-- Guide Ring -->
+            <Ellipse Width="{Binding Radius, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=2}"
+                     Height="{Binding Radius, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=2}"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Center"
+                     Stroke="{DynamicResource SurfaceStrokeColorDefaultBrush}"
+                     StrokeThickness="1"
+                     StrokeDashArray="4 4"
+                     IsHitTestVisible="False"
+                     Opacity="0.45"/>
+
+            <!-- Center Hint (MRU placeholder is not editable in settings) -->
+            <TextBlock Text="{lex:Locale Settings.Slots.Wheel.CenterHint}"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       FontSize="11"
+                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                       Opacity="0.6"
+                       IsHitTestVisible="False"/>
+
+            <!-- Slots -->
+            <ItemsControl x:Name="WheelItems"
+                          ItemsSource="{Binding Items}"
+                          MouseMove="WheelItems_MouseMove"
+                          MouseUp="WheelItems_MouseUp"
+                          ContextMenuOpening="WheelItems_ContextMenuOpening">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <Canvas/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemContainerStyle>
+                    <Style TargetType="ContentPresenter">
+                        <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                        <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                    </Style>
+                </ItemsControl.ItemContainerStyle>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid x:Name="ItemRoot"
+                              Tag="{Binding}"
+                              Width="{Binding Size, Mode=OneWay}"
+                              Height="{Binding Size, Mode=OneWay}"
+                              MouseLeftButtonDown="Item_MouseLeftButtonDown">
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDragging}" Value="True">
+                                            <Setter Property="Opacity" Value="0.35"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Grid.Style>
+
+                            <!-- Empty Placeholder Outline -->
+                            <Ellipse Width="{Binding Size, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=1.3}"
+                                     Height="{Binding Size, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=1.3}"
+                                     Stroke="{DynamicResource SurfaceStrokeColorDefaultBrush}"
+                                     StrokeThickness="1"
+                                     StrokeDashArray="3 3"
+                                     IsHitTestVisible="False">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsEmpty}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+
+                            <!-- Empty Placeholder Add Hint -->
+                            <TextBlock Text="+"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       FontSize="{Binding Size, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=0.5}"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                       IsHitTestVisible="False">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsEmpty}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+
+                            <!-- Drop Target Ring -->
+                            <Ellipse Width="{Binding Size, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=1.3}"
+                                     Height="{Binding Size, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=1.3}"
+                                     Stroke="{DynamicResource Theme.Accent}"
+                                     StrokeThickness="2"
+                                     StrokeDashArray="4 3"
+                                     IsHitTestVisible="False">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Opacity" Value="0"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsDropTarget}" Value="True">
+                                                <Setter Property="Opacity" Value="0.85"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+
+                            <!-- Highlight Ring (transient, pulse on/off) -->
+                            <Ellipse Width="{Binding Size, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=1.35}"
+                                     Height="{Binding Size, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=1.35}"
+                                     Stroke="{DynamicResource Theme.Accent}"
+                                     StrokeThickness="2.5"
+                                     IsHitTestVisible="False">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Opacity" Value="0"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsHighlighted}" Value="True">
+                                                <DataTrigger.EnterActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.18"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </DataTrigger.EnterActions>
+                                                <DataTrigger.ExitActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.4"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </DataTrigger.ExitActions>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+
+                            <!-- Slot Orb -->
+                            <controls:SlotOrb x:Name="Orb"
+                                              IconKey="{Binding IconKey}"
+                                              Label="{Binding Label}"
+                                              Size="{Binding Size, Mode=OneWay}"
+                                              Width="{Binding Size, Mode=OneWay}"
+                                              Height="{Binding Size, Mode=OneWay}"
+                                              IsTransparent="{Binding IsEmpty}"
+                                              CustomFill="{Binding ColorHex, Converter={StaticResource HexToBrush}}"
+                                              CustomStroke="{Binding ColorHex, Converter={StaticResource HexToBrush}}"
+                                              ShowActiveGlow="False"
+                                              ToolTip="{Binding Tooltip}"/>
+
+                            <!-- Hover Edit/Delete Buttons (overlaid, do not affect slot layout) -->
+                            <StackPanel Orientation="Horizontal"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Bottom"
+                                        Margin="0,0,0,-26">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Grid}}" Value="True"/>
+                                                    <Condition Binding="{Binding IsEmpty}" Value="False"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                                <ui:Button Style="{StaticResource PulsarIconButtonStyle}"
+                                           Icon="{ui:SymbolIcon Edit24}"
+                                           Tag="{Binding}"
+                                           Click="HoverEdit_Click"
+                                           Margin="0,0,4,0"
+                                           ToolTip="{lex:Locale Settings.Slots.EditSlot}"/>
+                                <ui:Button Style="{StaticResource PulsarIconButtonStyle}"
+                                           Icon="{ui:SymbolIcon Delete24}"
+                                           Tag="{Binding}"
+                                           Click="HoverDelete_Click"
+                                           Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                                           ToolTip="{lex:Locale Settings.Slots.RemoveSlot}"/>
+                            </StackPanel>
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Drag Ghost Layer -->
+            <Canvas x:Name="DragLayer" IsHitTestVisible="False"/>
+        </Grid>
+
+        <!-- Drag / Reorder Hint -->
+        <TextBlock Grid.Row="1"
+                   Text="{lex:Locale Settings.Slots.Wheel.DragDropHint}"
+                   HorizontalAlignment="Center"
+                   Margin="0,6,0,0"
+                   FontSize="11"
+                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
+
+        <!-- Pager -->
+        <Border Grid.Row="2"
+                Margin="0,10,0,0"
+                Padding="12,6"
+                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                HorizontalAlignment="Center">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <ui:Button Style="{StaticResource PulsarIconButtonStyle}"
+                           Icon="{ui:SymbolIcon ArrowLeft24}"
+                           Command="{Binding GoPreviousPageCommand}"
+                           IsEnabled="{Binding HasPreviousPage}"
+                           ToolTip="{lex:Locale Settings.Slots.Wheel.PreviousPage}"/>
+                <TextBlock VerticalAlignment="Center"
+                           Margin="10,0"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+                    <Run Text="{Binding PageDisplayText, Mode=OneWay}"/>
+                </TextBlock>
+                <ui:Button Style="{StaticResource PulsarIconButtonStyle}"
+                           Icon="{ui:SymbolIcon ArrowRight24}"
+                           Command="{Binding GoNextPageCommand}"
+                           IsEnabled="{Binding HasNextPage}"
+                           ToolTip="{lex:Locale Settings.Slots.Wheel.NextPage}"/>
+                <Rectangle Width="1" Height="16"
+                           Fill="{DynamicResource SurfaceStrokeColorDefaultBrush}"
+                           Margin="12,0"
+                           VerticalAlignment="Center"/>
+                <TextBlock VerticalAlignment="Center"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                    <Run Text="{Binding TotalSlots, Mode=OneWay}"/>
+                    <Run Text="{lex:Locale Settings.Slots.Wheel.SlotsUnit}"/>
+                </TextBlock>
+                <TextBlock VerticalAlignment="Center"
+                           Margin="10,0,0,0"
+                           Foreground="{DynamicResource TextFillColorTertiaryBrush}">
+                    <Run Text="{Binding SlotsPerPage, Mode=OneWay}"/>
+                    <Run Text="{lex:Locale Settings.Slots.Wheel.PerPage}"/>
+                </TextBlock>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

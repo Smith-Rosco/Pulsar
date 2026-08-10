@@ -156,6 +156,39 @@
   <data name="Settings.Slots.DragToReorder" xml:space="preserve">
     <value>Drag to reorder</value>
   </data>
+  <data name="Settings.Slots.Wheel.CenterHint" xml:space="preserve">
+    <value>Center</value>
+  </data>
+  <data name="Settings.Slots.Wheel.DragDropHint" xml:space="preserve">
+    <value>Drag to reorder · Right-click to move</value>
+  </data>
+  <data name="Settings.Slots.Wheel.PreviousPage" xml:space="preserve">
+    <value>Previous page</value>
+  </data>
+  <data name="Settings.Slots.Wheel.NextPage" xml:space="preserve">
+    <value>Next page</value>
+  </data>
+  <data name="Settings.Slots.Wheel.SlotsUnit" xml:space="preserve">
+    <value> slots</value>
+  </data>
+  <data name="Settings.Slots.Wheel.PerPage" xml:space="preserve">
+    <value>per page</value>
+  </data>
+  <data name="Settings.Slots.Wheel.MoveTo" xml:space="preserve">
+    <value>Move to</value>
+  </data>
+  <data name="Settings.Slots.Wheel.PageFormat" xml:space="preserve">
+    <value>Page {0}</value>
+  </data>
+  <data name="Settings.Slots.Wheel.SlotFormat" xml:space="preserve">
+    <value>Slot {0}</value>
+  </data>
+  <data name="Settings.Slots.Wheel.Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="Settings.Slots.Wheel.Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
   <data name="Settings.Slots.PluginType" xml:space="preserve">
     <value>Plugin type</value>
   </data>
