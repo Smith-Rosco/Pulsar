@@ -25,72 +25,24 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Themes/DialogTemplates.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-            
-            <!-- Type Converter for checking if Content is string -->
-            <local:TypeToBooleanConverter x:Key="TypeConverter"/>
-            
-            <!-- Default String Template -->
-            <DataTemplate DataType="{x:Type sys:String}">
-                <TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="14" Foreground="{DynamicResource Theme.Text.Primary}"/>
-            </DataTemplate>
-            
-            <!-- Dialog ViewModel Templates -->
-            <DataTemplate DataType="{x:Type dialogs:ProcessBlacklistViewModel}">
-                <contents:ProcessBlacklistContent/>
-            </DataTemplate>
-            
-            <DataTemplate DataType="{x:Type dialogs:ColorPickerViewModel}">
-                <contents:ColorPickerContent/>
-            </DataTemplate>
-            
-            <DataTemplate DataType="{x:Type dialogs:IconPickerViewModel}">
-                <contents:IconPickerContent/>
-            </DataTemplate>
-            
-            <DataTemplate DataType="{x:Type dialogs:InputDialogViewModel}">
-                <contents:InputDialogContent/>
-            </DataTemplate>
-            
-            <DataTemplate DataType="{x:Type dialogs:InputProfileViewModel}">
-                <contents:InputProfileContent/>
-            </DataTemplate>
-            
-            <DataTemplate DataType="{x:Type dialogs:EditProfileViewModel}">
-                <contents:EditProfileContent/>
-            </DataTemplate>
-            
-            
-            <DataTemplate DataType="{x:Type dialogs:PluginLogViewerViewModel}">
-                <contents:PluginLogViewerContentHost/>
-            </DataTemplate>
-            
-            <DataTemplate DataType="{x:Type dialogs:ProcessPickerViewModel}">
-                <contents:ProcessPickerContent/>
-            </DataTemplate>
-            
-            <DataTemplate DataType="{x:Type dialogs:QuickSecretsViewModel}">
-                <contents:QuickSecretsContent/>
-            </DataTemplate>
 
-            <DataTemplate DataType="{x:Type dialogs:SlotEditorViewModel}">
-                <contents:AddSlotContent/>
-            </DataTemplate>
-
-            <DataTemplate DataType="{x:Type dialogs:SecretPickerViewModel}">
-                <contents:SecretPickerContent/>
-            </DataTemplate>
-            
-            <DataTemplate DataType="{x:Type dialogs:PluginSettingsDialogViewModel}">
-                <contents:PluginSettingsDialogContent/>
-            </DataTemplate>
-
-            <DataTemplate DataType="{x:Type dialogs:FirstLaunchSetupWizardViewModel}">
-                <contents:FirstLaunchSetupWizardContent/>
-            </DataTemplate>
+            <Style x:Key="PulsarTertiaryDialogButtonStyle"
+                   TargetType="ui:Button"
+                   BasedOn="{StaticResource PulsarSecondaryButtonStyle}">
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding UseDangerStyleForTertiary}" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource Theme.Destructive}"/>
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource Theme.Destructive}"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
         </ResourceDictionary>
     </Window.Resources>
+
 
     <Border Background="{DynamicResource Theme.Window.Background}"
             BorderBrush="{DynamicResource Theme.Border.Brush}"
@@ -125,28 +77,8 @@
                     <ui:Button Content="{Binding TertiaryButtonText}"
                                Visibility="{Binding IsTertiaryButtonVisible, Converter={StaticResource BoolToVis}}"
                                Command="{Binding CloseCommand}"
+                               Style="{StaticResource PulsarTertiaryDialogButtonStyle}"
                                Margin="0,0,10,0">
-                        <ui:Button.Style>
-                            <Style TargetType="ui:Button">
-                                <Setter Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
-                                <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}"/>
-                                <Setter Property="Padding" Value="12,6"/>
-                                <Setter Property="MinWidth" Value="80"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding UseDangerStyleForTertiary}" Value="True">
-                                        <Setter Property="Background" Value="#D13438"/>
-                                        <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="BorderBrush" Value="#D13438"/>
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding UseDangerStyleForTertiary}" Value="False">
-                                        <Setter Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}"/>
-                                        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
-                                        <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ui:Button.Style>
                         <ui:Button.CommandParameter>
                             <enums:DialogResult>No</enums:DialogResult>
                         </ui:Button.CommandParameter>

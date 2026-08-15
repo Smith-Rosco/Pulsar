@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Messages;
+using Pulsar.Core.Localization;
 using Pulsar.Models;
 using Pulsar.Native;
 using Pulsar.Services;
@@ -42,6 +43,7 @@ namespace Pulsar.ViewModels.Strategies
         private readonly PulsarContext _pulsarContext;
         private readonly ITrayService _trayService; // [New]
         private readonly IActionFeedbackService _feedbackService;
+        private readonly IActionFeedbackPresenter _feedbackPresenter;
         private readonly IPluginUsageTracker? _usageTracker;
 
         public PluginActionStrategy(
@@ -50,7 +52,8 @@ namespace Pulsar.ViewModels.Strategies
             PulsarContext pulsarContext,
             ITrayService trayService,
             IActionFeedbackService feedbackService,
-            IPluginUsageTracker? usageTracker = null)
+            IPluginUsageTracker? usageTracker = null,
+            IActionFeedbackPresenter? feedbackPresenter = null)
         {
             _pluginSlot = pluginSlot;
             _registry = registry;
@@ -58,6 +61,7 @@ namespace Pulsar.ViewModels.Strategies
             _trayService = trayService;
             _feedbackService = feedbackService;
             _usageTracker = usageTracker;
+            _feedbackPresenter = feedbackPresenter ?? new ActionFeedbackPresenter(trayService);
         }
 
         public async Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context, CancellationToken cancellationToken = default)
@@ -85,20 +89,7 @@ namespace Pulsar.ViewModels.Strategies
             if (!result.Success)
             {
                 var feedback = _feedbackService.Create(_pluginSlot.PluginId, _pluginSlot.Action, result);
-
-                // Audio Feedback
-                if (feedback.Kind == ActionFeedbackKind.ConfigurationError
-                    || feedback.Kind == ActionFeedbackKind.TemporaryUnavailable)
-                {
-                    System.Media.SystemSounds.Exclamation.Play();
-                }
-                else
-                {
-                    System.Media.SystemSounds.Hand.Play();
-                }
-
-                // Visual Feedback (Notification)
-                _trayService.ShowNotification(feedback.Title, feedback.ToNotificationMessage(), feedback.Icon);
+                _feedbackPresenter.Present(result, feedback);
             }
         }
     }
@@ -319,11 +310,13 @@ namespace Pulsar.ViewModels.Strategies
     {
         private readonly PluginSlot _config;
         private readonly ITrayService? _trayService;
+        private readonly ILocalizationService? _loc;
 
-        public LaunchApplicationStrategy(PluginSlot config, ITrayService? trayService = null)
+        public LaunchApplicationStrategy(PluginSlot config, ITrayService? trayService = null, ILocalizationService? localizationService = null)
         {
             _config = config;
             _trayService = trayService;
+            _loc = localizationService;
         }
 
         public Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context, CancellationToken cancellationToken = default)
@@ -356,7 +349,10 @@ namespace Pulsar.ViewModels.Strategies
                 // Show launch toast before Process.Start
                 if (_trayService != null && _config.Args.TryGetValue("app", out var processName) && !string.IsNullOrEmpty(processName))
                 {
-                    _trayService.ShowNotification("Launching", $"Starting {processName}...", Models.PulsarNotificationIcon.Info);
+                    _trayService.ShowNotification(
+                        _loc?["Feedback.Launching"] ?? "Launching",
+                        string.Format(_loc?["Feedback.StartingFormat"] ?? "Starting {0}...", processName),
+                        Models.PulsarNotificationIcon.Info);
                 }
 
                 // Launch the application

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Pulsar.Models;
 using Pulsar.Native;
+using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels.Strategies;
 
@@ -35,6 +36,7 @@ namespace Pulsar.ViewModels
             double lastMouseY,
             double centerX,
             double centerY,
+            QuickSwitchPolicy quickSwitchPolicy,
             Action markPendingQuickSwitch,
             Action markActionExecuted,
             Action hideMenu,
@@ -58,7 +60,9 @@ namespace Pulsar.ViewModels
                 _logger?.LogDebug("[HandleKeyUp] Modifier Release. Duration: {DurationMs}ms, ActiveSlot: {ActiveSlot}", duration, activeSlotIndex);
             }
 
-            if (duration < 250 && IsWithinQuickSwitchZone(lastMouseX, lastMouseY, centerX, centerY) && menuState == MenuState.Root)
+            if (duration < quickSwitchPolicy.MaxDuration.TotalMilliseconds
+                && IsWithinQuickSwitchZone(lastMouseX, lastMouseY, centerX, centerY, quickSwitchPolicy.CenterZoneRadius)
+                && menuState == MenuState.Root)
             {
                 _logger?.LogDebug("[HandleKeyUp] Quick Switch triggered (duration: {DurationMs}ms)", duration);
                 markActionExecuted();
@@ -189,12 +193,17 @@ namespace Pulsar.ViewModels
             }
         }
 
-        private static bool IsWithinQuickSwitchZone(double lastMouseX, double lastMouseY, double centerX, double centerY)
+        private static bool IsWithinQuickSwitchZone(
+            double lastMouseX,
+            double lastMouseY,
+            double centerX,
+            double centerY,
+            double centerZoneRadius)
         {
             double dx = lastMouseX - centerX;
             double dy = lastMouseY - centerY;
             double distFromCenter = Math.Sqrt(dx * dx + dy * dy);
-            return distFromCenter < 30.0;
+            return distFromCenter < centerZoneRadius;
         }
     }
 }

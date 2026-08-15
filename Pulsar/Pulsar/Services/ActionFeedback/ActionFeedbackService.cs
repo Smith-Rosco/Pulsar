@@ -21,6 +21,15 @@ namespace Pulsar.Services.ActionFeedback
                 return CreateSuccessFeedback(pluginId, action);
             }
 
+            if (result.ErrorCode != PluginErrorCode.None)
+            {
+                var coded = CreateFromErrorCode(pluginId, result.ErrorCode);
+                if (coded != null)
+                {
+                    return coded;
+                }
+            }
+
             if (IsTemporaryUnavailable(result.Message))
             {
                 return new ActionFeedback(
@@ -103,6 +112,54 @@ namespace Pulsar.Services.ActionFeedback
                 _loc["Feedback.ActionCompleteBody"],
                 null,
                 PulsarNotificationIcon.Info);
+        }
+
+        private ActionFeedback? CreateFromErrorCode(string pluginId, PluginErrorCode errorCode)
+        {
+            switch (errorCode)
+            {
+                case PluginErrorCode.TemporaryUnavailable:
+                    return new ActionFeedback(
+                        ActionFeedbackKind.TemporaryUnavailable,
+                        _loc["Feedback.ActionUnavailable"],
+                        _loc["Feedback.ActionUnavailableBody"],
+                        _loc["Feedback.ActionUnavailableHelp"],
+                        PulsarNotificationIcon.Warning);
+
+                case PluginErrorCode.MissingRequiredParameter:
+                case PluginErrorCode.InvalidConfiguration:
+                case PluginErrorCode.UnknownAction:
+                case PluginErrorCode.UnsafePath:
+                    return new ActionFeedback(
+                        ActionFeedbackKind.ConfigurationError,
+                        _loc["Feedback.FixSlotSetup"],
+                        _loc["Feedback.FixSlotSetupBody"],
+                        _loc["Feedback.FixSlotSetupHelp"],
+                        PulsarNotificationIcon.Warning);
+
+                case PluginErrorCode.NoRunningBrowser:
+                case PluginErrorCode.NoTargetWindow:
+                case PluginErrorCode.NotFound:
+                    return new ActionFeedback(
+                        ActionFeedbackKind.RecoverableFailure,
+                        _loc["Feedback.AppNotAvailable"],
+                        _loc["Feedback.AppNotAvailableBody"],
+                        _loc["Feedback.AppNotAvailableHelp"],
+                        PulsarNotificationIcon.Warning);
+
+                case PluginErrorCode.AccessDenied:
+                case PluginErrorCode.DependencyMissing:
+                case PluginErrorCode.ExecutionFailed:
+                    return new ActionFeedback(
+                        ActionFeedbackKind.RecoverableFailure,
+                        _loc["Feedback.ActionFailed"],
+                        _loc["Feedback.ActionFailedBody"],
+                        _loc["Feedback.ActionFailedHelp"],
+                        PulsarNotificationIcon.Error);
+
+                default:
+                    return null;
+            }
         }
 
         private ActionFeedback CreateWinSwitcherFailure(string? message)

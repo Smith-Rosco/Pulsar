@@ -3,6 +3,32 @@ using Pulsar.Native;
 
 namespace Pulsar.Services.Interfaces
 {
+    public sealed class HotkeyInvocationEventArgs : EventArgs
+    {
+        public HotkeyInvocationEventArgs(
+            string actionId,
+            int mainVkCode,
+            bool requiresCtrl,
+            bool requiresShift,
+            bool requiresAlt,
+            bool requiresWin)
+        {
+            ActionId = actionId;
+            MainVkCode = mainVkCode;
+            RequiresCtrl = requiresCtrl;
+            RequiresShift = requiresShift;
+            RequiresAlt = requiresAlt;
+            RequiresWin = requiresWin;
+        }
+
+        public string ActionId { get; }
+        public int MainVkCode { get; }
+        public bool RequiresCtrl { get; }
+        public bool RequiresShift { get; }
+        public bool RequiresAlt { get; }
+        public bool RequiresWin { get; }
+    }
+
     public interface IHotkeyService
     {
         Task InitializeAsync();
@@ -45,5 +71,11 @@ namespace Pulsar.Services.Interfaces
         void ResetModifierState();
 
         event EventHandler<GlobalKeyStruct>? OnGlobalKeyUp;
+
+        /// <summary>
+        /// Raised synchronously from the keyboard hook when a configured hotkey fires,
+        /// before the registered action is dispatched to the UI thread.
+        /// </summary>
+        event EventHandler<HotkeyInvocationEventArgs>? HotkeyInvoked;
     }
 }

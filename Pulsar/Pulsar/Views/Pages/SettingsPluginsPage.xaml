@@ -241,7 +241,7 @@
                     <ui:Button Grid.Column="1"
                                Icon="{ui:SymbolIcon FolderOpen24}"
                                ToolTip="{lex:Locale Settings.Plugins.Browse}"
-                               Appearance="Secondary"
+                               Style="{StaticResource PulsarSecondaryButtonStyle}"
                                Margin="4,0,0,0"
                                Click="BrowsePathButton_Click"
                                Tag="{Binding}"/>
@@ -323,8 +323,17 @@
                                      Description="{lex:Locale Settings.Plugins.Description}">
             <controls:SettingsPageHeader.ActionsContent>
                 <StackPanel Orientation="Horizontal">
+                    <!-- Quick status filter -->
+                    <ComboBox ItemsSource="{Binding BuiltIn.FilterOptions}"
+                              SelectedValuePath="Mode"
+                              SelectedValue="{Binding BuiltIn.SelectedFilterMode, Mode=TwoWay}"
+                              DisplayMemberPath="Label"
+                              MinWidth="110"
+                              Margin="0,0,8,0"/>
+
                     <!-- Search Box (only visible on Built-in tab) -->
-                    <ui:TextBox PlaceholderText="{lex:Locale Settings.Plugins.SearchPlugins}"
+                    <ui:TextBox Tag="PluginSearchBox"
+                                PlaceholderText="{lex:Locale Settings.Plugins.SearchPlugins}"
                                 Icon="{ui:SymbolIcon Search24}"
                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                 ClearButtonEnabled="True"
@@ -373,7 +382,7 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <!-- Group Container -->
-                         <Expander IsExpanded="True" Margin="0,0,0,16" Style="{StaticResource PluginsGroupExpanderStyle}" Tag="{Binding GroupName}">
+                         <Expander IsExpanded="True" Margin="0,0,0,16" Style="{StaticResource PluginsGroupExpanderStyle}" Tag="{Binding GroupId}">
                             <Expander.Header>
                                 <TextBlock Text="{Binding GroupName}" Style="{StaticResource GroupHeaderStyle}"/>
                             </Expander.Header>

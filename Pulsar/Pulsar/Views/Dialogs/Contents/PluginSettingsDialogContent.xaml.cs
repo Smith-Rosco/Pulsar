@@ -1,5 +1,7 @@
 using System.Windows;
+using Microsoft.Extensions.DependencyInjection;
 using System.Windows.Controls;
+using Pulsar.Core.Localization;
 using Pulsar.ViewModels.Settings;
 
 namespace Pulsar.Views.Dialogs.Contents
@@ -15,10 +17,11 @@ namespace Pulsar.Views.Dialogs.Contents
         {
             if (sender is System.Windows.Controls.Button button && button.Tag is PathSettingViewModel vm)
             {
+                var loc = App.Current.Services.GetRequiredService<ILocalizationService>();
                 var dialog = new Microsoft.Win32.OpenFileDialog
                 {
-                    Title = "Select File",
-                    Filter = "All files (*.*)|*.*"
+                    Title = loc["Dialog.FileDialog.SelectFile"],
+                    Filter = loc["Dialog.FileDialog.AllFilesFilter"]
                 };
 
                 if (dialog.ShowDialog() == true)

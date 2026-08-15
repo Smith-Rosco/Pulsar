@@ -6,6 +6,8 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows.Data;
 using System.ComponentModel;
+using Pulsar.Core.Localization;
+using Pulsar.Models;
 using System;
 using System.Collections.Generic;
 
@@ -16,8 +18,29 @@ namespace Pulsar.ViewModels.Settings
     /// </summary>
     public class PluginGroup
     {
+        public string GroupId { get; set; } = string.Empty;
         public string GroupName { get; set; } = string.Empty;
         public ObservableCollection<PluginViewModel> Plugins { get; set; } = new();
+    }
+
+    public enum PluginFilterMode
+    {
+        All,
+        Enabled,
+        Disabled,
+        Errors
+    }
+
+    public sealed class PluginFilterOption
+    {
+        public PluginFilterOption(PluginFilterMode mode, string label)
+        {
+            Mode = mode;
+            Label = label;
+        }
+
+        public PluginFilterMode Mode { get; }
+        public string Label { get; }
     }
 
     public partial class PluginManagerViewModel : ObservableObject
@@ -30,6 +53,7 @@ namespace Pulsar.ViewModels.Settings
         private readonly IDialogService? _dialogService;
         private readonly IServiceProvider? _serviceProvider;
         private readonly IPluginMetadataRegistry? _metadataRegistry;
+        private readonly ILocalizationService? _loc;
 
         public ObservableCollection<PluginViewModel> Plugins { get; } = new();
         public ObservableCollection<PluginGroup> GroupedPlugins { get; } = new();
@@ -42,10 +66,15 @@ namespace Pulsar.ViewModels.Settings
         [ObservableProperty]
         private string _searchText = "";
 
+        [ObservableProperty]
+        private PluginFilterMode _selectedFilterMode = PluginFilterMode.All;
+
+        public IReadOnlyList<PluginFilterOption> FilterOptions { get; }
+
         public PluginManagerViewModel(IPluginRegistry registry, IConfigService configService,
             IPluginUsageTracker? usageTracker = null, IPluginHealthMonitor? healthMonitor = null,
             IPluginLogService? logService = null, IDialogService? dialogService = null, IServiceProvider? serviceProvider = null,
-            IPluginMetadataRegistry? metadataRegistry = null)
+            IPluginMetadataRegistry? metadataRegistry = null, ILocalizationService? localizationService = null)
         {
             _registry = registry;
             _configService = configService;
@@ -55,7 +84,16 @@ namespace Pulsar.ViewModels.Settings
             _dialogService = dialogService;
             _serviceProvider = serviceProvider;
             _metadataRegistry = metadataRegistry;
-            
+            _loc = localizationService;
+
+            FilterOptions =
+            [
+                new PluginFilterOption(PluginFilterMode.All, _loc?["Settings.Plugins.FilterAll"] ?? "All"),
+                new PluginFilterOption(PluginFilterMode.Enabled, _loc?["Settings.Plugins.FilterEnabled"] ?? "Enabled"),
+                new PluginFilterOption(PluginFilterMode.Disabled, _loc?["Settings.Plugins.FilterDisabled"] ?? "Disabled"),
+                new PluginFilterOption(PluginFilterMode.Errors, _loc?["Settings.Plugins.FilterErrors"] ?? "Errors")
+            ];
+
             // Initialize CollectionView for filtering
             FilteredPlugins = CollectionViewSource.GetDefaultView(Plugins);
             FilteredPlugins.Filter = FilterPlugins;
@@ -70,14 +108,32 @@ namespace Pulsar.ViewModels.Settings
             UpdateGroupedPlugins();
         }
 
+        partial void OnSelectedFilterModeChanged(PluginFilterMode value)
+        {
+            FilteredPlugins.Refresh();
+            UpdateGroupedPlugins();
+        }
+
         private bool FilterPlugins(object item)
         {
             if (item is not PluginViewModel plugin) return false;
+
+            bool matchesFilter = SelectedFilterMode switch
+            {
+                PluginFilterMode.Enabled => plugin.IsEnabled,
+                PluginFilterMode.Disabled => !plugin.IsEnabled,
+                PluginFilterMode.Errors => plugin.RecentErrorCount > 0 || plugin.HealthReport.Status == PluginHealthStatus.Critical,
+                _ => true
+            };
+
+            if (!matchesFilter) return false;
+
             if (string.IsNullOrWhiteSpace(SearchText)) return true;
 
             return plugin.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
                    plugin.Description.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
-                   plugin.Author.Contains(SearchText, StringComparison.OrdinalIgnoreCase);
+                   plugin.Author.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
+                   plugin.Category.Contains(SearchText, StringComparison.OrdinalIgnoreCase);
         }
 
         private void LoadPlugins()
@@ -115,7 +171,8 @@ namespace Pulsar.ViewModels.Settings
             {
                 GroupedPlugins.Add(new PluginGroup
                 {
-                    GroupName = $"Core Plugins ({core.Count})",
+                    GroupId = "Core",
+                    GroupName = string.Format(_loc?["Settings.Plugins.GroupCoreFormat"] ?? "Core Plugins ({0})", core.Count),
                     Plugins = new ObservableCollection<PluginViewModel>(core)
                 });
             }
@@ -126,7 +183,8 @@ namespace Pulsar.ViewModels.Settings
             {
                 GroupedPlugins.Add(new PluginGroup
                 {
-                    GroupName = $"Extension Plugins ({extensions.Count})",
+                    GroupId = "Extensions",
+                    GroupName = string.Format(_loc?["Settings.Plugins.GroupExtensionFormat"] ?? "Extension Plugins ({0})", extensions.Count),
                     Plugins = new ObservableCollection<PluginViewModel>(extensions)
                 });
             }

@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using Microsoft.Extensions.DependencyInjection;
+using Pulsar.Core.Localization;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 
@@ -91,13 +92,25 @@ namespace Pulsar.Views.Controls
                 new PropertyMetadata(string.Empty));
 
         private IHotkeyService? _hotkeyService;
+        private ILocalizationService? _loc;
 
         public HotkeyBox()
         {
             InitializeComponent();
             HotkeyText = string.Empty;
             BorderBrushColor = Brushes.Transparent;
+
+            try
+            {
+                _loc = App.Current?.Services.GetService<ILocalizationService>();
+            }
+            catch
+            {
+                _loc = null;
+            }
         }
+
+        private string Loc(string key, string fallback) => _loc?[key] ?? fallback;
 
         private static void OnHotkeyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
@@ -115,7 +128,9 @@ namespace Pulsar.Views.Controls
         {
             if (Hotkey == null || Hotkey.IsEmpty)
             {
-                HotkeyText = PlaceholderText;
+                HotkeyText = string.IsNullOrEmpty(PlaceholderText)
+                    ? Loc("HotkeyBox.None", "(None)")
+                    : PlaceholderText;
             }
             else
             {
@@ -146,13 +161,13 @@ namespace Pulsar.Views.Controls
             {
                 ConflictBadge.Visibility = Visibility.Visible;
                 BorderBrushColor = new SolidColorBrush(Color.FromRgb(255, 191, 0));
-                ConflictTooltipText = "This combination is reserved by Windows";
+                ConflictTooltipText = Loc("HotkeyBox.SystemReserved", "This combination is reserved by Windows");
             }
             else if (vr.Conflicts.Count > 0)
             {
                 ConflictBadge.Visibility = Visibility.Visible;
                 BorderBrushColor = new SolidColorBrush(Color.FromRgb(255, 0, 0));
-                ConflictTooltipText = $"Conflict: already assigned to \"{vr.Conflicts[0].ConflictingActionId}\"";
+                ConflictTooltipText = string.Format(Loc("HotkeyBox.ConflictFormat", "Conflict: already assigned to \"{0}\""), vr.Conflicts[0].ConflictingActionId);
             }
             else
             {

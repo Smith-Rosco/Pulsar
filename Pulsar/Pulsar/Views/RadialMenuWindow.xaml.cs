@@ -27,6 +27,7 @@ namespace Pulsar.Views
         // [Fix] 添加 WindowService 字段以解决报错
         private readonly IWindowService _windowService;
         private readonly IFocusManager _focusManager;
+        private readonly IWindowPlacementService _windowPlacementService;
 
         // DPI 缩放比例缓存
         private double _dpiScaleX = 1.0;
@@ -38,7 +39,8 @@ namespace Pulsar.Views
             IWindowService windowService,
             IThemeService themeService,
             ILogger<RadialMenuWindow> logger,
-            IFocusManager focusManager)
+            IFocusManager focusManager,
+            IWindowPlacementService windowPlacementService)
         {
             // Initialize Fields First
             _viewModel = vm;
@@ -47,6 +49,7 @@ namespace Pulsar.Views
             _themeService = themeService;
             _logger = logger;
             _focusManager = focusManager;
+            _windowPlacementService = windowPlacementService;
 
             InitializeComponent();
             DataContext = vm;
@@ -198,26 +201,24 @@ namespace Pulsar.Views
 
         private void UpdateWindowPosition()
         {
-            // Update DPI Scale
+            RepositionToCursor();
+
+            // Reset Canvas Margin (it's now 0,0 relative to window)
+            MenuCanvas.Margin = new Thickness(0);
+        }
+
+        private void RepositionToCursor()
+        {
+            // Update DPI Scale from the current window visual.
             var dpi = VisualTreeHelper.GetDpi(this);
             _dpiScaleX = dpi.DpiScaleX;
             _dpiScaleY = dpi.DpiScaleY;
 
-            // Get Global Cursor Position (Physical Pixels)
-            PulsarNative.GetCursorPos(out var pt);
-            double wpfMouseX = pt.X / _dpiScaleX;
-            double wpfMouseY = pt.Y / _dpiScaleY;
+            var placement = _windowPlacementService.CalculateCursorCenteredPlacement(
+                new WindowPlacementRequest(Width, Height, _dpiScaleX, _dpiScaleY));
 
-            // Center window on cursor
-            // Window Width/Height is fixed at 500 in XAML
-            double halfWidth = 250; 
-            double halfHeight = 250;
-
-            this.Left = wpfMouseX - halfWidth;
-            this.Top = wpfMouseY - halfHeight;
-
-            // Reset Canvas Margin (it's now 0,0 relative to window)
-            MenuCanvas.Margin = new Thickness(0);
+            this.Left = placement.LeftDip;
+            this.Top = placement.TopDip;
         }
 
         private void HandleSubMenuRepositionRequested()
@@ -228,11 +229,7 @@ namespace Pulsar.Views
                 return;
             }
 
-            PulsarNative.GetCursorPos(out var pt);
-            double wpfMouseX = pt.X / _dpiScaleX;
-            double wpfMouseY = pt.Y / _dpiScaleY;
-            this.Left = wpfMouseX - 250;
-            this.Top = wpfMouseY - 250;
+            RepositionToCursor();
         }
 
         protected override void OnClosed(EventArgs e)

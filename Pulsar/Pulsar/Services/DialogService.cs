@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
+using Pulsar.Core.Localization;
 using Pulsar.Models;
 using Pulsar.Models.Enums;
 using Pulsar.Native;
@@ -20,11 +21,19 @@ namespace Pulsar.Services
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IThemeService _themeService;
+        private readonly IWindowPlacementService _windowPlacementService;
+        private readonly ILocalizationService _loc;
 
-        public DialogService(IServiceProvider serviceProvider, IThemeService themeService)
+        public DialogService(
+            IServiceProvider serviceProvider,
+            IThemeService themeService,
+            IWindowPlacementService windowPlacementService,
+            ILocalizationService localizationService)
         {
             _serviceProvider = serviceProvider;
             _themeService = themeService;
+            _windowPlacementService = windowPlacementService;
+            _loc = localizationService;
         }
 
         public async Task<Pulsar.Models.Enums.DialogResult> ShowMessageAsync(
@@ -35,7 +44,7 @@ namespace Pulsar.Services
         {
             return await RunOnUi(() =>
             {
-                var vm = new DialogHostViewModel
+                var vm = new DialogHostViewModel(_loc)
                 {
                     Title = title,
                     Content = message, // Simple string content
@@ -78,7 +87,7 @@ namespace Pulsar.Services
         {
             return await RunOnUi(() =>
             {
-                var vm = new DialogHostViewModel
+                var vm = new DialogHostViewModel(_loc)
                 {
                     Title = title
                 };
@@ -101,14 +110,14 @@ namespace Pulsar.Services
             {
                 var inputVm = new ViewModels.Dialogs.InputDialogViewModel(message, defaultValue);
                 
-                var vm = new DialogHostViewModel
+                var vm = new DialogHostViewModel(_loc)
                 {
                     Title = title,
                     Content = inputVm,
                     IsPrimaryButtonVisible = true,
-                    PrimaryButtonText = "OK",
+                    PrimaryButtonText = _loc["Dialog.Button.Ok"],
                     IsSecondaryButtonVisible = true,
-                    SecondaryButtonText = "Cancel"
+                    SecondaryButtonText = _loc["Dialog.Button.Cancel"]
                 };
 
                 inputVm.RequestClose = (result) => vm.CloseCommand.Execute(result);
@@ -126,19 +135,19 @@ namespace Pulsar.Services
         public async Task<Pulsar.Models.Enums.DialogResult> ShowConfirmationAsync(
             string title, 
             string message, 
-            string confirmText = "Confirm", 
-            string cancelText = "Cancel")
+            string? confirmText = null, 
+            string? cancelText = null)
         {
             return await RunOnUi(() =>
             {
-                var vm = new DialogHostViewModel
+                var vm = new DialogHostViewModel(_loc)
                 {
                     Title = title,
                     Content = message,
                     IsPrimaryButtonVisible = true,
-                    PrimaryButtonText = confirmText,
+                    PrimaryButtonText = confirmText ?? _loc["Dialog.Button.Confirm"],
                     IsSecondaryButtonVisible = true,
-                    SecondaryButtonText = cancelText
+                    SecondaryButtonText = cancelText ?? _loc["Dialog.Button.Cancel"]
                 };
 
                 return ShowDialogInternal(vm, DialogPlacement.CenterOwner, DialogSizeConstraints.XSmall);
@@ -229,31 +238,45 @@ namespace Pulsar.Services
         /// </summary>
         private void PositionNearMouse(Window window)
         {
+            var dpi = System.Windows.Media.VisualTreeHelper.GetDpi(window);
+            var cursor = _windowPlacementService.ToDip(
+                0, 0, dpi.DpiScaleX, dpi.DpiScaleY);
+
             PulsarNative.GetCursorPos(out var pt);
+            cursor = _windowPlacementService.ToDip(pt.X, pt.Y, dpi.DpiScaleX, dpi.DpiScaleY);
+
+            // Offset from cursor (avoid covering cursor), converted to DIP.
+            const double offsetDip = 20;
+            double left = cursor.X + offsetDip;
+            double top = cursor.Y + offsetDip;
+
             var monitor = PulsarNative.MonitorFromPoint(pt, PulsarNative.MONITOR_DEFAULTTONEAREST);
-            var monitorInfo = new PulsarNative.MONITORINFO();
-            monitorInfo.cbSize = Marshal.SizeOf(monitorInfo);
-            PulsarNative.GetMonitorInfo(monitor, ref monitorInfo);
+            var monitorInfo = new PulsarNative.MONITORINFO
+            {
+                cbSize = Marshal.SizeOf<PulsarNative.MONITORINFO>()
+            };
 
-            // Offset from cursor (avoid covering cursor)
-            const int offsetX = 20;
-            const int offsetY = 20;
+            if (monitor == IntPtr.Zero || !PulsarNative.GetMonitorInfo(monitor, ref monitorInfo))
+            {
+                window.Left = left;
+                window.Top = top;
+                return;
+            }
 
-            double left = pt.X + offsetX;
-            double top = pt.Y + offsetY;
+            double workLeft = monitorInfo.rcWork.Left / dpi.DpiScaleX;
+            double workTop = monitorInfo.rcWork.Top / dpi.DpiScaleY;
+            double workRight = monitorInfo.rcWork.Right / dpi.DpiScaleX;
+            double workBottom = monitorInfo.rcWork.Bottom / dpi.DpiScaleY;
+            double workWidth = workRight - workLeft;
+            double workHeight = workBottom - workTop;
 
-            // Ensure window stays within monitor working area (excludes taskbar)
-            if (left + window.Width > monitorInfo.rcWork.Right)
-                left = monitorInfo.rcWork.Right - window.Width;
-
-            if (top + window.Height > monitorInfo.rcWork.Bottom)
-                top = monitorInfo.rcWork.Bottom - window.Height;
-
-            if (left < monitorInfo.rcWork.Left)
-                left = monitorInfo.rcWork.Left;
-
-            if (top < monitorInfo.rcWork.Top)
-                top = monitorInfo.rcWork.Top;
+            // Ensure window stays within monitor working area (excludes taskbar).
+            left = window.Width >= workWidth
+                ? workLeft
+                : Math.Clamp(left, workLeft, workRight - window.Width);
+            top = window.Height >= workHeight
+                ? workTop
+                : Math.Clamp(top, workTop, workBottom - window.Height);
 
             window.Left = left;
             window.Top = top;
@@ -355,14 +378,14 @@ namespace Pulsar.Services
             {
                 var colorPickerVm = new ViewModels.Dialogs.ColorPickerViewModel(initialColor);
                 
-                var vm = new DialogHostViewModel
+                var vm = new DialogHostViewModel(_loc)
                 {
                     Title = title,
                     Content = colorPickerVm,
                     IsPrimaryButtonVisible = true,
-                    PrimaryButtonText = "Select",
+                    PrimaryButtonText = _loc["Dialog.Button.Select"],
                     IsSecondaryButtonVisible = true,
-                    SecondaryButtonText = "Cancel"
+                    SecondaryButtonText = _loc["Dialog.Button.Cancel"]
                 };
 
                 colorPickerVm.RequestClose = (result) => vm.CloseCommand.Execute(result);

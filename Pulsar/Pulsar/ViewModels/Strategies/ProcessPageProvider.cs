@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Pulsar.Core.Localization;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 using Pulsar.Core.Plugin;
@@ -14,6 +15,7 @@ namespace Pulsar.ViewModels.Strategies
     public class ProcessPageProvider : BasePageProvider
     {
         private readonly IWindowService _windowService;
+        private readonly ILocalizationService? _loc;
         private readonly ProfilesConfig _config;
         private readonly System.IServiceProvider _serviceProvider;
         private readonly IPluginUsageTracker? _usageTracker;
@@ -32,6 +34,7 @@ namespace Pulsar.ViewModels.Strategies
             _windowService = windowService;
             _config = config;
             _serviceProvider = serviceProvider;
+            _loc = serviceProvider.GetService(typeof(ILocalizationService)) as ILocalizationService;
             _matcher = new ProcessWindowMatcher(config);
             
             // Resolve analytics services
@@ -52,7 +55,9 @@ namespace Pulsar.ViewModels.Strategies
         {
             ClearSlots(slots);
 
-            string centerText = _currentPage == 0 ? "Switch" : $"Page {_currentPage + 1}";
+            string centerText = _currentPage == 0
+                ? (_loc?["RadialMenu.Switch"] ?? "Switch")
+                : string.Format(_loc?["RadialMenu.PageFormat"] ?? "Page {0}", _currentPage + 1);
             centerSlot.Label = centerText;
             centerSlot.LoadIconData(string.Empty);
             centerSlot.ActionStrategy = NoOpStrategy.Instance;
@@ -129,12 +134,12 @@ namespace Pulsar.ViewModels.Strategies
 
                     string baseLabel = !string.IsNullOrEmpty(slotItem.Config.Label) 
                         ? slotItem.Config.Label 
-                        : "App";
-                    slotViewModel.Label = $"{baseLabel} (Not Running)";
+                        : (_loc?["RadialMenu.App"] ?? "App");
+                    slotViewModel.Label = string.Format(_loc?["RadialMenu.NotRunningFormat"] ?? "{0} (Not Running)", baseLabel);
 
                     slotViewModel.Type = SlotType.Process;
                     slotViewModel.DataContext = slotItem.Config;
-                    slotViewModel.ActionStrategy = new LaunchApplicationStrategy(slotItem.Config, _trayService);
+                    slotViewModel.ActionStrategy = new LaunchApplicationStrategy(slotItem.Config, _trayService, _loc);
                     slotViewModel.CurrentOpacity = 0.5;
                 }
             }

@@ -33,11 +33,24 @@ namespace Pulsar.Views.Controls
         public SlotOrb()
         {
             InitializeComponent();
-            this.Loaded += (s, e) => CompositionTarget.Rendering += OnRenderFrame;
-            this.Unloaded += (s, e) => CompositionTarget.Rendering -= OnRenderFrame;
+            this.Loaded += OnLoaded;
+            this.Unloaded += OnUnloaded;
 
             // [Fix 3.1] �����ɼ��Ա仯��������ʱ��������λ��
             this.IsVisibleChanged += OnIsVisibleChanged;
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            if (IsActive)
+            {
+                CompositionTarget.Rendering += OnRenderFrame;
+            }
+        }
+
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            CompositionTarget.Rendering -= OnRenderFrame;
         }
 
         private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -70,12 +83,25 @@ namespace Pulsar.Views.Controls
         private static void OnIsActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var orb = (SlotOrb)d;
-            if ((bool)e.NewValue) return;
-            orb._currentOffset = new Vector(0, 0);
-            if (orb.OrbTranslate != null)
+            bool isActive = (bool)e.NewValue;
+
+            if (isActive)
             {
-                orb.OrbTranslate.X = 0;
-                orb.OrbTranslate.Y = 0;
+                if (orb.IsLoaded && orb.Visibility == Visibility.Visible)
+                {
+                    CompositionTarget.Rendering -= orb.OnRenderFrame;
+                    CompositionTarget.Rendering += orb.OnRenderFrame;
+                }
+            }
+            else
+            {
+                CompositionTarget.Rendering -= orb.OnRenderFrame;
+                orb._currentOffset = new Vector(0, 0);
+                if (orb.OrbTranslate != null)
+                {
+                    orb.OrbTranslate.X = 0;
+                    orb.OrbTranslate.Y = 0;
+                }
             }
         }
         public static readonly DependencyProperty IsRecommendedProperty =

@@ -35,6 +35,7 @@ namespace Pulsar.ViewModels
             List<ProcessWindowInfo> windows,
             string processName,
             int slotsPerPage,
+            int pageIndex,
             SlotViewModel centerSlot,
             ObservableCollection<SlotViewModel> slots)
         {
@@ -43,15 +44,17 @@ namespace Pulsar.ViewModels
             centerSlot.ActionStrategy = new BackActionStrategy();
 
             var sortedWindows = windows.OrderBy(w => w.FirstSeenTime).ToList();
+            int startIndex = Math.Max(0, pageIndex * Math.Max(1, slotsPerPage));
+            var pageWindows = sortedWindows.Skip(startIndex).Take(Math.Max(1, slotsPerPage)).ToList();
 
             for (int i = 0; i < slotsPerPage; i++)
             {
                 var slot = slots.FirstOrDefault(s => s.SlotIndex == i + 1);
                 if (slot == null) continue;
 
-                if (i < sortedWindows.Count)
+                if (i < pageWindows.Count)
                 {
-                    var win = sortedWindows[i];
+                    var win = pageWindows[i];
                     var label = !string.IsNullOrWhiteSpace(win.Title) ? win.Title : win.ProcessName;
                     slot.Label = label.Length > 40 ? label.Substring(0, 37) + "..." : label;
                     slot.Type = SlotType.Window;
@@ -79,8 +82,9 @@ namespace Pulsar.ViewModels
                 }
             }
 
-            int maxWindowsToShow = Math.Min(slotsPerPage, sortedWindows.Count);
-            _logger?.LogDebug("[EnterSubMenuAsync] Displaying {WindowCount} windows across {SlotCount} slots", maxWindowsToShow, slotsPerPage);
+            int maxWindowsToShow = Math.Min(slotsPerPage, pageWindows.Count);
+            _logger?.LogDebug("[ConfigureSubMenu] Page {Page} displaying {WindowCount} of {TotalCount} windows across {SlotCount} slots",
+                pageIndex + 1, maxWindowsToShow, sortedWindows.Count, slotsPerPage);
 
             return _windowService.SelectTargetWindow(
                 windows,

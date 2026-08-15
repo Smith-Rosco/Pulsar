@@ -62,7 +62,10 @@ namespace Pulsar.Services
             }
 
             _logger?.LogInformation("[TrayIconService] Language changed to {Language}, rebuilding context menu", cultureName);
-            _taskbarIcon.ToolTipText = _loc["Tray.Tooltip"];
+            if (_taskbarIcon != null)
+            {
+                _taskbarIcon.ToolTipText = _loc["Tray.Tooltip"];
+            }
             BuildContextMenu();
         }
 

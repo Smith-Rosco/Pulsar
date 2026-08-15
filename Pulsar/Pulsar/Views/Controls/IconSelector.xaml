@@ -4,12 +4,13 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:controls="clr-namespace:Pulsar.Views.Controls"
+             xmlns:lex="clr-namespace:Pulsar.Core.Localization"
              mc:Ignorable="d"
              x:Name="Root"
              Focusable="True"
              Cursor="Hand"
              MouseLeftButtonDown="Root_MouseLeftButtonDown"
-             ToolTip="Click to change icon"
+             ToolTip="{lex:Locale Dialog.IconPicker.ChangeIcon}"
              d:DesignHeight="42" d:DesignWidth="280">
 
     <Grid>

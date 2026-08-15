@@ -32,6 +32,7 @@ namespace Pulsar.Services
         private readonly HashSet<int> _pressedKeys = new();
 
         public event EventHandler<GlobalKeyStruct>? OnGlobalKeyUp;
+        public event EventHandler<HotkeyInvocationEventArgs>? HotkeyInvoked;
 
         public void Pause()
         {
@@ -179,6 +180,8 @@ namespace Pulsar.Services
 
                         _hotkeysByMainKey[vkCode].Add(new ActionWithConfig
                         {
+                            ActionId = actionId,
+                            MainVkCode = vkCode,
                             Action = callback,
                             ReqCtrl = reqCtrl,
                             ReqShift = reqShift,
@@ -266,6 +269,14 @@ namespace Pulsar.Services
                         item.ReqAlt == e.IsAlt &&
                         item.ReqWin == e.IsWin)
                     {
+                        HotkeyInvoked?.Invoke(this, new HotkeyInvocationEventArgs(
+                            item.ActionId,
+                            item.MainVkCode,
+                            item.ReqCtrl,
+                            item.ReqShift,
+                            item.ReqAlt,
+                            item.ReqWin));
+
                         Application.Current.Dispatcher.InvokeAsync(() => item.Action.Invoke());
                         e.Handled = true;
                         return true;
@@ -284,6 +295,8 @@ namespace Pulsar.Services
 
         private class ActionWithConfig
         {
+            public string ActionId { get; set; } = string.Empty;
+            public int MainVkCode { get; set; }
             public Action Action { get; set; } = delegate { };
             public bool ReqCtrl { get; set; }
             public bool ReqShift { get; set; }

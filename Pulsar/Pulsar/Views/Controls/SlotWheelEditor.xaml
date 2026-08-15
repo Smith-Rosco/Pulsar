@@ -75,8 +75,10 @@
             <!-- Slots -->
             <ItemsControl x:Name="WheelItems"
                           ItemsSource="{Binding Items}"
+                          Focusable="True"
                           MouseMove="WheelItems_MouseMove"
                           MouseUp="WheelItems_MouseUp"
+                          PreviewKeyDown="WheelItems_PreviewKeyDown"
                           ContextMenuOpening="WheelItems_ContextMenuOpening">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -93,6 +95,7 @@
                     <DataTemplate>
                         <Grid x:Name="ItemRoot"
                               Tag="{Binding}"
+                              Focusable="True"
                               Width="{Binding ContainerSize, Mode=OneWay}"
                               Height="{Binding ContainerSize, Mode=OneWay}"
                               RenderTransformOrigin="0.5,0.5"

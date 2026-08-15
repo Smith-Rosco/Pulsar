@@ -41,6 +41,13 @@
                 Width="500" Height="500"
                 HorizontalAlignment="Left" VerticalAlignment="Top">
 
+            <!-- Subtle ground scrim keeps the translucent menu readable over any background.
+                 Radial gradient: darkens the ring area but fades before a hard visible edge. -->
+            <Ellipse Width="440" Height="440"
+                     Canvas.Left="30" Canvas.Top="30"
+                     Fill="{DynamicResource Theme.Radial.ScrimBrush}"
+                     IsHitTestVisible="False"/>
+
             <ItemsControl ItemsSource="{Binding Slots}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -81,7 +88,7 @@
                                      VerticalAlignment="Top"
                                      Margin="0,-6,-6,0"
                                      Style="{StaticResource SlotChipBorderStyle}"
-                                     Background="#B20B1220"
+                                     Background="{DynamicResource Theme.Orb.Chip.Background}"
                                      Padding="6,2"
                                      Visibility="{Binding ShowTypeBadge, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
                                 <TextBlock Text="{Binding TypeBadge}"
@@ -189,7 +196,8 @@
                                 </Style>
                             </Grid.Style>
 
-                            <Ellipse Width="{Binding Size}" Height="{Binding Size}">
+                            <Ellipse Width="{Binding CenterSlot.Size, RelativeSource={RelativeSource AncestorType=Window}}"
+                                     Height="{Binding CenterSlot.Size, RelativeSource={RelativeSource AncestorType=Window}}">
                                 <Ellipse.Fill>
                                     <ImageBrush ImageSource="{Binding CenterPreviewImage}" Stretch="UniformToFill"/>
                                 </Ellipse.Fill>
@@ -223,7 +231,7 @@
                 <!-- Shadow Layer (Offset 1px) -->
                 <TextBlock Text="{Binding DynamicTitle, NotifyOnTargetUpdated=True}"
                            TextAlignment="Center"
-                           Foreground="Black"
+                           Foreground="{DynamicResource Theme.Radial.Title.Shadow}"
                            FontSize="16" FontWeight="SemiBold"
                            Opacity="0.5"
                            Margin="1,1,0,0">
@@ -241,7 +249,7 @@
                 <!-- Foreground Layer -->
                 <TextBlock Text="{Binding DynamicTitle, NotifyOnTargetUpdated=True}"
                            TextAlignment="Center"
-                           Foreground="#DDFFFFFF"
+                           Foreground="{DynamicResource Theme.Radial.Title.Foreground}"
                            FontSize="16" FontWeight="SemiBold">
                     <TextBlock.Triggers>
                         <EventTrigger RoutedEvent="Binding.TargetUpdated">

@@ -74,7 +74,7 @@ namespace Pulsar.ViewModels.Settings
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "[ExternalPluginManagerViewModel] Failed to initialize");
-                StatusMessage = $"Failed to load plugins: {ex.Message}";
+                StatusMessage = string.Format(_loc["Settings.ExternalPlugins.StatusLoadFailedFormat"], ex.Message);
             }
             finally
             {
@@ -101,7 +101,7 @@ namespace Pulsar.ViewModels.Settings
                 if (openFileDialog.ShowDialog() == true)
                 {
                     var filePath = openFileDialog.FileName;
-                    StatusMessage = $"Installing plugin from {Path.GetFileName(filePath)}...";
+                    StatusMessage = string.Format(_loc["Settings.ExternalPlugins.StatusInstallingFormat"], Path.GetFileName(filePath));
 
                     var result = await _packageManager.InstallFromFileAsync(filePath);
 
@@ -135,7 +135,7 @@ namespace Pulsar.ViewModels.Settings
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "[ExternalPluginManagerViewModel] Failed to install plugin from file");
-                StatusMessage = $"Error installing plugin from file: {ex.Message}";
+                StatusMessage = string.Format(_loc["Settings.ExternalPlugins.StatusErrorInstallingFormat"], ex.Message);
 
                 if (_dialogService != null)
                 {
@@ -169,7 +169,7 @@ namespace Pulsar.ViewModels.Settings
                     }
                 }
 
-                StatusMessage = $"Uninstalling {plugin.Name}...";
+                StatusMessage = string.Format(_loc["Settings.ExternalPlugins.StatusUninstallingFormat"], plugin.Name);
 
                 var result = await _packageManager.UninstallAsync(plugin.Id, keepData: false);
 
@@ -202,7 +202,7 @@ namespace Pulsar.ViewModels.Settings
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "[ExternalPluginManagerViewModel] Failed to uninstall plugin {PluginId}", plugin.Id);
-                StatusMessage = $"Error uninstalling {plugin.Name}: {ex.Message}";
+                StatusMessage = string.Format(_loc["Settings.ExternalPlugins.StatusErrorUninstallingFormat"], plugin.Name, ex.Message);
             }
         }
 
@@ -211,7 +211,7 @@ namespace Pulsar.ViewModels.Settings
         /// </summary>
         private void OnOperationProgress(object? sender, PluginOperationProgressEventArgs e)
         {
-            StatusMessage = $"{e.PluginId}: {e.Message} ({e.Progress}%)";
+            StatusMessage = string.Format(_loc["Settings.ExternalPlugins.StatusProgressFormat"], e.PluginId, e.Message, e.Progress);
         }
     }
 }

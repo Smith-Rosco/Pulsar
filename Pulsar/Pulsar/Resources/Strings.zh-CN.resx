@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader
     name="resmimetype">
@@ -259,7 +259,7 @@
   <data
     name="Settings.Slots.Wheel.DragDropHint"
     xml:space="preserve">
-    <value>拖拽调整顺序 · 右键移动</value>
+    <value>拖拽调整顺序 · 右键移动 · Ctrl+←/→ 移动焦点槽位 · Enter 编辑 · Delete 删除</value>
   </data>
   <data
     name="Settings.Slots.Wheel.PreviousPage"
@@ -4152,5 +4152,158 @@ Pulsar 会在你的浏览器中打开一个网页——这就是命令模式：�
     name="Settings.General.HotkeyClearTooltip"
     xml:space="preserve">
     <value>按 Backspace/Delete 清除</value>
+  </data>
+  <data name="Dialog.Button.Ok" xml:space="preserve">
+    <value>确定</value>
+  </data>
+  <data name="Dialog.Button.Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="Dialog.Button.Yes" xml:space="preserve">
+    <value>是</value>
+  </data>
+  <data name="Dialog.Button.No" xml:space="preserve">
+    <value>否</value>
+  </data>
+  <data name="Dialog.Button.Save" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="Dialog.Button.DontSave" xml:space="preserve">
+    <value>不保存</value>
+  </data>
+  <data name="Dialog.Button.Select" xml:space="preserve">
+    <value>选择</value>
+  </data>
+  <data name="Dialog.Button.Confirm" xml:space="preserve">
+    <value>确认</value>
+  </data>
+  <data name="Dialog.FileDialog.SelectFile" xml:space="preserve">
+    <value>选择文件</value>
+  </data>
+  <data name="Dialog.FileDialog.AllFilesFilter" xml:space="preserve">
+    <value>所有文件 (*.*)|*.*</value>
+  </data>
+  <data name="Dialog.IconPicker.ChangeIcon" xml:space="preserve">
+    <value>点击更换图标</value>
+  </data>
+  <data name="HotkeyBox.None" xml:space="preserve">
+    <value>(无)</value>
+  </data>
+  <data name="HotkeyBox.SystemReserved" xml:space="preserve">
+    <value>该组合键已被 Windows 保留</value>
+  </data>
+  <data name="HotkeyBox.ConflictFormat" xml:space="preserve">
+    <value>冲突：已分配给“{0}”</value>
+  </data>
+  <data name="RadialMenu.PageFormat" xml:space="preserve">
+    <value>第 {0} 页</value>
+  </data>
+  <data name="RadialMenu.PageOfFormat" xml:space="preserve">
+    <value>第 {0}/{1} 页</value>
+  </data>
+  <data name="RadialMenu.Switch" xml:space="preserve">
+    <value>切换</value>
+  </data>
+  <data name="RadialMenu.Global" xml:space="preserve">
+    <value>全局</value>
+  </data>
+  <data name="RadialMenu.App" xml:space="preserve">
+    <value>应用</value>
+  </data>
+  <data name="RadialMenu.NotRunningFormat" xml:space="preserve">
+    <value>{0}（未运行）</value>
+  </data>
+  <data name="Feedback.Launching" xml:space="preserve">
+    <value>正在启动</value>
+  </data>
+  <data name="Feedback.StartingFormat" xml:space="preserve">
+    <value>正在启动 {0}...</value>
+  </data>
+  <data name="Settings.Plugins.GroupCoreFormat" xml:space="preserve">
+    <value>核心插件（{0}）</value>
+  </data>
+  <data name="Settings.Plugins.GroupExtensionFormat" xml:space="preserve">
+    <value>扩展插件（{0}）</value>
+  </data>
+  <data name="Settings.ExternalPlugins.InstalledHeaderFormat" xml:space="preserve">
+    <value>已安装的外部插件（{0}）</value>
+  </data>
+  <data name="Settings.ExternalPlugins.ByAuthorFormat" xml:space="preserve">
+    <value>作者：{0}</value>
+  </data>
+  <data name="Settings.ExternalPlugins.StatusCountFormat" xml:space="preserve">
+    <value>已安装 {0} 个外部插件</value>
+  </data>
+  <data name="Settings.ExternalPlugins.StatusLoadFailedFormat" xml:space="preserve">
+    <value>加载插件失败：{0}</value>
+  </data>
+  <data name="Settings.ExternalPlugins.StatusInstallingFormat" xml:space="preserve">
+    <value>正在从 {0} 安装插件...</value>
+  </data>
+  <data name="Settings.ExternalPlugins.StatusErrorInstallingFormat" xml:space="preserve">
+    <value>从文件安装插件出错：{0}</value>
+  </data>
+  <data name="Settings.ExternalPlugins.StatusUninstallingFormat" xml:space="preserve">
+    <value>正在卸载 {0}...</value>
+  </data>
+  <data name="Settings.ExternalPlugins.StatusErrorUninstallingFormat" xml:space="preserve">
+    <value>卸载 {0} 出错：{1}</value>
+  </data>
+  <data name="Settings.ExternalPlugins.StatusProgressFormat" xml:space="preserve">
+    <value>{0}：{1}（{2}%）</value>
+  </data>
+  <data name="Settings.General.SlotsPerPagePreviewFormat" xml:space="preserve">
+    <value>{0} 个槽位（{1:F0}° 扇区）</value>
+  </data>
+  <data name="Settings.General.CacheLoading" xml:space="preserve">
+    <value>正在加载...</value>
+  </data>
+  <data name="PluginLogViewer.Total" xml:space="preserve">
+    <value>总计</value>
+  </data>
+  <data name="PluginLogViewer.Debug" xml:space="preserve">
+    <value>调试</value>
+  </data>
+  <data name="PluginLogViewer.Info" xml:space="preserve">
+    <value>信息</value>
+  </data>
+  <data name="PluginLogViewer.Warning" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="PluginLogViewer.Error" xml:space="preserve">
+    <value>错误</value>
+  </data>
+  <data name="PluginLogViewer.Critical" xml:space="preserve">
+    <value>严重</value>
+  </data>
+  <data name="Settings.ExternalPlugins.InstalledPluginsHeader" xml:space="preserve">
+    <value>已安装的外部插件</value>
+  </data>
+  <data name="Settings.ExternalPlugins.ByAuthor" xml:space="preserve">
+    <value>作者：</value>
+  </data>
+  <data name="Settings.ExternalPlugins.StatusCount" xml:space="preserve">
+    <value> 个外部插件已安装</value>
+  </data>
+  <data name="Settings.General.QuickSwitchTimeout" xml:space="preserve">
+    <value>快速切换窗口（毫秒）</value>
+  </data>
+  <data name="Settings.General.QuickSwitchTimeoutDescription" xml:space="preserve">
+    <value>在该时间内于中心区域松开热键即可切回上一个窗口。</value>
+  </data>
+  <data name="RadialMenu.SubMenuPageFormat" xml:space="preserve">
+    <value>{0}（{1}/{2}）</value>
+  </data>
+  <data name="Settings.Plugins.FilterAll" xml:space="preserve">
+    <value>全部</value>
+  </data>
+  <data name="Settings.Plugins.FilterEnabled" xml:space="preserve">
+    <value>已启用</value>
+  </data>
+  <data name="Settings.Plugins.FilterDisabled" xml:space="preserve">
+    <value>已禁用</value>
+  </data>
+  <data name="Settings.Plugins.FilterErrors" xml:space="preserve">
+    <value>有错误</value>
   </data>
 </root>

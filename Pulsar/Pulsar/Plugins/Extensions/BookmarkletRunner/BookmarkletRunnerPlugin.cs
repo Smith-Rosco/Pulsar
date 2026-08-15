@@ -165,7 +165,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
             // 1. 验证并获取脚本路径
             if (!args.TryGetValue("scriptPath", out var scriptPath) || string.IsNullOrEmpty(scriptPath))
             {
-                return PluginResult.Error(_loc?["Bookmarklet.Error.MissingScriptPath"] ?? "Missing required parameter: scriptPath. Please check plugin configuration.");
+                return PluginResult.Error(_loc?["Bookmarklet.Error.MissingScriptPath"] ?? "Missing required parameter: scriptPath. Please check plugin configuration.", PluginErrorSeverity.Recoverable, PluginErrorCode.MissingRequiredParameter);
             }
 
             _logger?.LogDebug("[BookmarkletRunner] Script path: {ScriptPath}", scriptPath);
@@ -174,7 +174,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
             if (!ScriptPreprocessor.IsPathSafe(scriptPath))
             {
                 _logger?.LogWarning("[BookmarkletRunner] Unsafe script path detected");
-                return PluginResult.Error(_loc?["Bookmarklet.Error.UnsafePath"] ?? "Script path contains unsafe characters or attempts to access restricted directories.");
+                return PluginResult.Error(_loc?["Bookmarklet.Error.UnsafePath"] ?? "Script path contains unsafe characters or attempts to access restricted directories.", PluginErrorSeverity.Recoverable, PluginErrorCode.UnsafePath);
             }
 
             // 3. 读取并预处理脚本（使用新的验证系统）
@@ -208,7 +208,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
                 if (string.IsNullOrEmpty(validationResult.ProcessedScript))
                 {
                     _logger?.LogWarning("[BookmarkletRunner] Script is empty after preprocessing");
-                    return PluginResult.Error(_loc?["Bookmarklet.Error.EmptyScript"] ?? "Script content is empty. Please check if the file is correct.");
+                    return PluginResult.Error(_loc?["Bookmarklet.Error.EmptyScript"] ?? "Script content is empty. Please check if the file is correct.", PluginErrorSeverity.Recoverable, PluginErrorCode.InvalidConfiguration);
                 }
 
                 _logger?.LogDebug("[BookmarkletRunner] Script validated successfully ({Length} chars)", 
@@ -217,7 +217,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
             catch (FileNotFoundException ex)
             {
                 _logger?.LogWarning(ex, "[BookmarkletRunner] File not found");
-                return PluginResult.Error(string.Format(_loc?["Bookmarklet.Error.FileNotFound"] ?? "Script file not found: {0}. Please confirm the file exists.", scriptPath));
+                return PluginResult.Error(string.Format(_loc?["Bookmarklet.Error.FileNotFound"] ?? "Script file not found: {0}. Please confirm the file exists.", scriptPath), PluginErrorSeverity.Recoverable, PluginErrorCode.NotFound);
             }
             catch (Exception ex)
             {
@@ -236,7 +236,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
             if (browserHandle == IntPtr.Zero)
             {
                 _logger?.LogWarning("[BookmarkletRunner] No browser window found");
-                return PluginResult.Error(_loc?["Bookmarklet.Error.NoBrowser"] ?? "No running browser detected. Please open a browser window first.");
+                return PluginResult.Error(_loc?["Bookmarklet.Error.NoBrowser"] ?? "No running browser detected. Please open a browser window first.", PluginErrorSeverity.Recoverable, PluginErrorCode.NoRunningBrowser);
             }
 
             // 5. 隐藏 Pulsar 主窗口

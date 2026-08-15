@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Pulsar.Core.Localization;
 using Pulsar.Models;
 using Pulsar.Helpers;
 using Pulsar.Core.Plugin;
@@ -22,6 +23,7 @@ namespace Pulsar.ViewModels.Strategies
         private readonly IActionFeedbackService _feedbackService;
 
         private readonly IServiceProvider _serviceProvider;
+        private readonly ILocalizationService? _loc;
 
         public override int TotalPages => (int)Math.Ceiling((double)_allSlots.Count / (double)ItemsPerPage);
 
@@ -42,6 +44,7 @@ namespace Pulsar.ViewModels.Strategies
             _trayService = trayService;
             _feedbackService = (IActionFeedbackService)serviceProvider.GetService(typeof(IActionFeedbackService))!;
             _serviceProvider = serviceProvider;
+            _loc = serviceProvider.GetService(typeof(ILocalizationService)) as ILocalizationService;
         }
 
         public override Task LoadAsync()
@@ -94,7 +97,8 @@ namespace Pulsar.ViewModels.Strategies
                     if (isEnabled)
                     {
                         slot.ActionStrategy = new PluginActionStrategy(item, _pluginRegistry, _context, _trayService, _feedbackService,
-                            _serviceProvider.GetService(typeof(IPluginUsageTracker)) as IPluginUsageTracker);
+                            _serviceProvider.GetService(typeof(IPluginUsageTracker)) as IPluginUsageTracker,
+                            _serviceProvider.GetService(typeof(IActionFeedbackPresenter)) as IActionFeedbackPresenter);
                     }
                     else
                     {
@@ -108,9 +112,9 @@ namespace Pulsar.ViewModels.Strategies
             }
 
             // Update Center Text
-            string centerText = TotalPages > 1 
-                ? $"Page {_currentPage + 1}/{TotalPages}" 
-                : (string.IsNullOrEmpty(_context.TargetProcessName) ? "Global" : _context.DisplayProcessName);
+            string centerText = TotalPages > 1
+                ? string.Format(_loc?["RadialMenu.PageOfFormat"] ?? "Page {0}/{1}", _currentPage + 1, TotalPages)
+                : (string.IsNullOrEmpty(_context.TargetProcessName) ? (_loc?["RadialMenu.Global"] ?? "Global") : _context.DisplayProcessName);
             centerSlot.Label = centerText;
             centerSlot.ActionStrategy = NoOpStrategy.Instance;
             centerSlot.Type = SlotType.Action;

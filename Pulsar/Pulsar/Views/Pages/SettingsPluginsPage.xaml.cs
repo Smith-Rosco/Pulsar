@@ -51,8 +51,36 @@ namespace Pulsar.Views.Pages
 
             DataContext = new PluginsPageViewModel(viewModel, externalPluginManager);
 
+            PreviewKeyDown += OnPagePreviewKeyDown;
+
             // Apply theme AFTER InitializeComponent().
             themeService.ApplyTheme(this, themeService.CurrentTheme, updateGlobal: false);
+        }
+
+        private void OnPagePreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            bool isCtrl = (System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Control) != 0;
+
+            if (isCtrl && e.Key == System.Windows.Input.Key.F)
+            {
+                var searchBox = FindVisualChild<System.Windows.Controls.TextBox>(this, tb => Equals(tb.Tag, "PluginSearchBox"));
+                if (searchBox != null && searchBox.Focus())
+                {
+                    searchBox.SelectAll();
+                    e.Handled = true;
+                }
+
+                return;
+            }
+
+            if (isCtrl && e.Key == System.Windows.Input.Key.R && DataContext is PluginsPageViewModel pageVm)
+            {
+                if (pageVm.RefreshAllCommand.CanExecute(null))
+                {
+                    pageVm.RefreshAllCommand.Execute(null);
+                    e.Handled = true;
+                }
+            }
         }
 
         private void OnPluginTabChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -68,7 +96,7 @@ namespace Pulsar.Views.Pages
         /// </summary>
         private void JumpToCoreButton_Click(object sender, RoutedEventArgs e)
         {
-            ScrollToGroup("Core Plugins");
+            ScrollToGroup("Core");
         }
 
         /// <summary>
@@ -76,7 +104,7 @@ namespace Pulsar.Views.Pages
         /// </summary>
         private void JumpToExtensionButton_Click(object sender, RoutedEventArgs e)
         {
-            ScrollToGroup("Extension Plugins");
+            ScrollToGroup("Extensions");
         }
 
         /// <summary>
@@ -86,10 +114,11 @@ namespace Pulsar.Views.Pages
         {
             if (sender is System.Windows.Controls.Button button && button.Tag is PathSettingViewModel vm)
             {
+                var loc = App.Current.Services.GetRequiredService<Pulsar.Core.Localization.ILocalizationService>();
                 var dialog = new Microsoft.Win32.OpenFileDialog
                 {
-                    Title = "Select File",
-                    Filter = "All files (*.*)|*.*"
+                    Title = loc["Dialog.FileDialog.SelectFile"],
+                    Filter = loc["Dialog.FileDialog.AllFilesFilter"]
                 };
 
                 if (dialog.ShowDialog() == true)
@@ -183,13 +212,18 @@ namespace Pulsar.Views.Pages
         /// </summary>
         private T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
         {
+            return FindVisualChild<T>(parent, _ => true);
+        }
+
+        private T? FindVisualChild<T>(DependencyObject parent, Func<T, bool> predicate) where T : DependencyObject
+        {
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
             {
                 var child = VisualTreeHelper.GetChild(parent, i);
-                if (child is T typedChild)
+                if (child is T typedChild && predicate(typedChild))
                     return typedChild;
 
-                var result = FindVisualChild<T>(child);
+                var result = FindVisualChild<T>(child, predicate);
                 if (result != null)
                     return result;
             }

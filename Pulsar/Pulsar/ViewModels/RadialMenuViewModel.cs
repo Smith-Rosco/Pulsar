@@ -36,6 +36,7 @@ namespace Pulsar.ViewModels
         private readonly IPluginRegistry _pluginRegistry;
         private readonly IHotkeyService _hotkeyService; // [Clean] Make explicit
         private readonly IGlobalMouseService _globalMouseService;
+        private readonly IWindowPlacementService _windowPlacementService;
         private readonly ITrayService _trayService; // [New]
         private readonly IAnimationController _animationController;
         private readonly IMouseTrackingService _mouseTrackingService;
@@ -91,6 +92,7 @@ namespace Pulsar.ViewModels
                 {
                     if (!_isVisible)
                     {
+                        _activeHotkeyInvocation = null;
                         _hotkeyService.ResetModifierState();
                         _mouseTrackingService.StopTracking();
                         // Reset physics just in case
@@ -181,18 +183,34 @@ namespace Pulsar.ViewModels
         private DateTime _showStartTime;
         private bool _pendingQuickSwitch; // [Fix] Track premature release during loading
 
+        // [UX] Sub-menu paging state. Window groups can exceed slots-per-page.
+        private List<ProcessWindowInfo> _subMenuWindows = new();
+        private string _subMenuProcessName = string.Empty;
+        private int _subMenuPage;
+        private int _subMenuTotalPages = 1;
+
         private bool _hasShownSinglePageHint = false;
+        private CancellationTokenSource? _centerHintCts;
 
         // [UX Improvement] Quick Switch Position Tolerance
         private const double QuickSwitchPositionTolerance = 30.0; // 30px tolerance from center
         private CancellationTokenSource? _layoutAnimationCts;
+
+        // [UX] Tracks the exact hotkey combo that invoked the current menu session.
+        private HotkeyInvocationSnapshot? _activeHotkeyInvocation;
 
         // 按键常量
         private const int VK_LCONTROL = 0xA2;
         private const int VK_RCONTROL = 0xA3;
         private const int VK_LSHIFT = 0xA0;
         private const int VK_RSHIFT = 0xA1;
+        private const int VK_LMENU = 0xA4;
+        private const int VK_RMENU = 0xA5;
         private const int VK_CONTROL = 0x11;
+        private const int VK_SHIFT = 0x10;
+        private const int VK_MENU = 0x12;
+        private const int VK_LWIN = 0x5B;
+        private const int VK_RWIN = 0x5C;
 
         public RadialMenuViewModel(
             IConfigService configService,
@@ -200,6 +218,7 @@ namespace Pulsar.ViewModels
             IPluginRegistry pluginRegistry,
             IHotkeyService hotkeyService,
             IGlobalMouseService globalMouseService,
+            IWindowPlacementService windowPlacementService,
             ITrayService trayService, // [New]
             IAnimationController animationController,
             IMouseTrackingService mouseTrackingService,
@@ -215,6 +234,7 @@ namespace Pulsar.ViewModels
             _pluginRegistry = pluginRegistry;
             _hotkeyService = hotkeyService;
             _globalMouseService = globalMouseService;
+            _windowPlacementService = windowPlacementService;
             _trayService = trayService;
             _animationController = animationController;
             _mouseTrackingService = mouseTrackingService;
@@ -245,6 +265,7 @@ namespace Pulsar.ViewModels
             // [Refactor] Use HotkeyService
             hotkeyService.RegisterAction(HotkeyActionIds.ShowGrid, () => _ = Show(RadialMenuMode.Action));
             hotkeyService.RegisterAction(HotkeyActionIds.ShowSwitcher, () => _ = Show(RadialMenuMode.Task));
+            hotkeyService.HotkeyInvoked += OnHotkeyInvoked;
             hotkeyService.OnGlobalKeyUp += HandleKeyUp;
             _globalMouseService.OnMouseEvent += HandleGlobalMouseEvent;
 
@@ -276,6 +297,8 @@ namespace Pulsar.ViewModels
                 CenterX - _currentCenterSize / 2, 
                 CenterY - _currentCenterSize / 2, 
                 _currentCenterSize);
+
+            _animationController.SyncCurrentLayout(new LayoutTarget(_currentRadius, _currentCenterSize, _currentSlotSize));
             
             // [New] Use dynamic slot count and size
             for (int i = 1; i <= _slotsPerPage; i++)
@@ -404,6 +427,7 @@ namespace Pulsar.ViewModels
                 _currentRadius = layout.Radius;
                 _currentCenterSize = layout.CenterSize;
                 _currentSlotSize = layout.SlotSize;
+                _animationController.SyncCurrentLayout(new LayoutTarget(layout.Radius, layout.CenterSize, layout.SlotSize));
             }
 
             // [Fix] Refresh page provider with updated config data (color, label, icon, etc.)
@@ -534,8 +558,10 @@ namespace Pulsar.ViewModels
                 CenterSlot.Size = _currentCenterSize;
                 CenterSlot.X = CenterX - _currentCenterSize / 2;
                 CenterSlot.Y = CenterY - _currentCenterSize / 2;
-                
-                ApplyLayoutTarget(new LayoutTarget(_currentRadius, _currentCenterSize, _currentSlotSize));
+
+                var showLayout = new LayoutTarget(_currentRadius, _currentCenterSize, _currentSlotSize);
+                _animationController.SyncCurrentLayout(showLayout);
+                ApplyLayoutTarget(showLayout);
                 
                 string activeProcess = _lastContext.TargetProcessName; // e.g., "EXCEL"
 
@@ -607,7 +633,7 @@ namespace Pulsar.ViewModels
         public bool HandleMouseWheel(int delta, bool treatFeedbackAsHandled)
         {
             if (!IsVisible) return false;
-            if (_menuState != MenuState.Root) return false;
+            if (_menuState == MenuState.SubMenu) return HandleSubMenuMouseWheel(delta, treatFeedbackAsHandled);
             if (_pageProvider == null) return false;
 
             int direction = delta < 0 ? 1 : -1;
@@ -619,15 +645,7 @@ namespace Pulsar.ViewModels
                 if (!_hasShownSinglePageHint)
                 {
                     _hasShownSinglePageHint = true;
-                    var originalText = CenterText;
-                    CenterText = _loc["RadialMenu.SinglePage"];
-                    Task.Delay(800).ContinueWith(_ =>
-                    {
-                        System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                        {
-                            CenterText = originalText;
-                        });
-                    });
+                    _ = ShowTransientCenterTextAsync(_loc["RadialMenu.SinglePage"], 800);
                 }
 
                 return treatFeedbackAsHandled;
@@ -669,16 +687,31 @@ namespace Pulsar.ViewModels
         {
             OnPagingBoundaryFeedbackRequested?.Invoke(e.Direction);
 
-            var originalText = CenterText;
-            CenterText = e.Direction == BoundaryDirection.FirstPage ? _loc["RadialMenu.FirstPage"] : _loc["RadialMenu.LastPage"];
+            var hint = e.Direction == BoundaryDirection.FirstPage ? _loc["RadialMenu.FirstPage"] : _loc["RadialMenu.LastPage"];
+            _ = ShowTransientCenterTextAsync(hint, 500);
+        }
 
-            Task.Delay(500).ContinueWith(_ =>
+        private async Task ShowTransientCenterTextAsync(string hint, int durationMs)
+        {
+            _centerHintCts?.Cancel();
+            var cts = new CancellationTokenSource();
+            _centerHintCts = cts;
+
+            var originalText = CenterText;
+            CenterText = hint;
+
+            try
             {
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                await Task.Delay(durationMs, cts.Token);
+                if (!cts.IsCancellationRequested)
                 {
                     CenterText = originalText;
-                });
-            });
+                }
+            }
+            catch (TaskCanceledException)
+            {
+                // A newer hint superseded this one; leave CenterText untouched.
+            }
         }
 
         public event Action? OnRootBounceRequested;
@@ -694,9 +727,15 @@ namespace Pulsar.ViewModels
         {
             if (!IsVisible) return;
 
+            bool isInsideMenu = _windowPlacementService.IsPointInsideWindow(_windowHandle, e.X, e.Y);
+
             // Handle Wheel
             if (e.Action == GlobalMouseAction.Wheel)
             {
+                // Wheel paging only applies while the cursor is over the menu. Wheels over
+                // other applications pass through untouched.
+                if (!isInsideMenu) return;
+
                 bool handled = false;
                 if (System.Windows.Application.Current.Dispatcher.CheckAccess())
                 {
@@ -710,6 +749,21 @@ namespace Pulsar.ViewModels
                     });
                 }
                 e.Handled = handled;
+                return;
+            }
+
+            // Clicks outside the menu: dismiss and let the click pass through to the
+            // underlying window instead of swallowing every global mouse event.
+            if (!isInsideMenu)
+            {
+                if (e.Action == GlobalMouseAction.Up)
+                {
+                    _ = System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        if (IsVisible) IsVisible = false;
+                    });
+                }
+
                 return;
             }
 
@@ -752,7 +806,7 @@ namespace Pulsar.ViewModels
             }
             else if (e.Action == GlobalMouseAction.Down)
             {
-                // Swallow mousedown so it doesn't fall through
+                // Swallow mousedown inside the menu so it doesn't fall through.
                 e.Handled = true;
             }
         }
@@ -847,6 +901,24 @@ namespace Pulsar.ViewModels
                 ApplyCenterPreview);
         }
 
+        private void OnHotkeyInvoked(object? sender, HotkeyInvocationEventArgs e)
+        {
+            _activeHotkeyInvocation = new HotkeyInvocationSnapshot(e);
+        }
+
+        private bool IsReleaseTriggerForActiveInvocation(int vkCode)
+        {
+            return _activeHotkeyInvocation?.MatchesRelease(vkCode) == true;
+        }
+
+        private bool IsMajorModifierRelease(int vkCode)
+        {
+            return vkCode == VK_LCONTROL || vkCode == VK_RCONTROL || vkCode == VK_CONTROL
+                || vkCode == VK_LSHIFT || vkCode == VK_RSHIFT || vkCode == VK_SHIFT
+                || vkCode == VK_LMENU || vkCode == VK_RMENU || vkCode == VK_MENU
+                || vkCode == VK_LWIN || vkCode == VK_RWIN;
+        }
+
         private void HandleKeyUp(object? sender, GlobalKeyStruct e)
         {
             // [Logging] Sample debug logs (1/10 rate)
@@ -855,32 +927,26 @@ namespace Pulsar.ViewModels
                 _logger?.LogDebug("[HandleKeyUp] Key: {Key}, IsVisible: {IsVisible}", e.VkCode, IsVisible);
             }
 
-            // [Refactor] Move modifier check up to handle "release during load" race condition
-            bool isModifierRelease = e.VkCode == VK_LCONTROL || e.VkCode == VK_RCONTROL || 
-                                     e.VkCode == VK_LSHIFT || e.VkCode == VK_RSHIFT ||
-                                     e.VkCode == 0xA4 || e.VkCode == 0xA5; // Alt
+            // Prefer the exact invocation combo; fall back to the legacy broad modifier
+            // heuristic for sessions where the invocation event was unavailable.
+            bool releaseTriggersExecution =
+                IsReleaseTriggerForActiveInvocation(e.VkCode)
+                || (_activeHotkeyInvocation == null && IsMajorModifierRelease(e.VkCode));
 
             if (!IsVisible)
             {
-                // [Fix] If loading and modifier released, mark for immediate execution upon show
-                if (_isLoading != 0 && isModifierRelease)
+                // [Fix] If loading and the invocation key released, mark for immediate execution upon show
+                if (_isLoading != 0 && releaseTriggersExecution)
                 {
                       _pendingQuickSwitch = true;
                       _logger?.LogDebug("[HandleKeyUp] Key released during loading. Pending Quick Switch set.");
                 }
                 return;
             }
-            
-            // [Refactor] Check for Control key release (standard behavior)
-            // or if the user customized modifiers, we should probably check if *those* modifiers were released.
-            // For now, keeping the "Ctrl Release" logic as the "Execute" trigger is specific to the current design paradigm
-            // (Hold Ctrl -> Select -> Release Ctrl -> Execute).
-            // If we allow changing the trigger key to "Alt+Space", does "Release Alt" trigger it?
-            // Yes, usually the modifier release triggers execution in radial menus.
 
-            // Simple heuristic: If any major modifier is released while visible, try execute.
-            if (isModifierRelease)
+            if (releaseTriggersExecution)
             {
+                _activeHotkeyInvocation = null;
                 _inputCoordinator.HandleModifierRelease(
                     IsVisible,
                     _isLoading != 0,
@@ -892,6 +958,7 @@ namespace Pulsar.ViewModels
                     _lastMouseY,
                     CenterX,
                     CenterY,
+                    QuickSwitchPolicy.FromSettings(_config?.Settings),
                     () => _pendingQuickSwitch = true,
                     () => SetActionExecuted(true),
                     () => IsVisible = false,
@@ -906,11 +973,44 @@ namespace Pulsar.ViewModels
             }
         }
 
+        private sealed class HotkeyInvocationSnapshot
+        {
+            private readonly int _mainVkCode;
+            private readonly bool _requiresCtrl;
+            private readonly bool _requiresShift;
+            private readonly bool _requiresAlt;
+            private readonly bool _requiresWin;
 
+            public HotkeyInvocationSnapshot(HotkeyInvocationEventArgs e)
+            {
+                _mainVkCode = e.MainVkCode;
+                _requiresCtrl = e.RequiresCtrl;
+                _requiresShift = e.RequiresShift;
+                _requiresAlt = e.RequiresAlt;
+                _requiresWin = e.RequiresWin;
+            }
+
+            public bool MatchesRelease(int vkCode)
+            {
+                if (vkCode == _mainVkCode)
+                {
+                    return true;
+                }
+
+                return (_requiresCtrl && (vkCode == VK_LCONTROL || vkCode == VK_RCONTROL || vkCode == VK_CONTROL))
+                    || (_requiresShift && (vkCode == VK_LSHIFT || vkCode == VK_RSHIFT || vkCode == VK_SHIFT))
+                    || (_requiresAlt && (vkCode == VK_LMENU || vkCode == VK_RMENU || vkCode == VK_MENU))
+                    || (_requiresWin && (vkCode == VK_LWIN || vkCode == VK_RWIN));
+            }
+        }
 
         public async Task EnterSubMenuAsync(List<ProcessWindowInfo> windows, string processName, int clickedSlotIndex)
         {
             _menuState = MenuState.SubMenu;
+            _subMenuWindows = windows ?? new List<ProcessWindowInfo>();
+            _subMenuProcessName = processName;
+            _subMenuPage = 0;
+            _subMenuTotalPages = Math.Max(1, (int)Math.Ceiling(_subMenuWindows.Count / (double)_slotsPerPage));
 
             // 1. Compute parent slot position for expansion origin
             var parentSlot = clickedSlotIndex > 0 && clickedSlotIndex <= Slots.Count
@@ -931,7 +1031,8 @@ namespace Pulsar.ViewModels
             // 3. Swap content while hidden
             CenterText = _loc["RadialMenu.Back"];
             var mostRecentWin = _subMenuCoordinator.ConfigureSubMenu(
-                windows, processName, _slotsPerPage, CenterSlot, Slots);
+                _subMenuWindows, processName, _slotsPerPage, _subMenuPage, CenterSlot, Slots);
+            UpdateSubMenuCenterLabel();
             OnSubMenuRepositionRequested?.Invoke();
 
             // 4. Stagger slot entrance: appear at parent → snap to ring position
@@ -944,12 +1045,16 @@ namespace Pulsar.ViewModels
                 childSlots[i].CurrentOpacity = 1.0;
             }
 
-            // Pre-select the slot at the same ring position the user clicked
+            // Pre-select the slot at the same ring position the user clicked, if populated.
             if (clickedSlotIndex > 0 && clickedSlotIndex <= _slotsPerPage)
             {
+                var preSelected = Slots.FirstOrDefault(s => s.SlotIndex == clickedSlotIndex);
+                bool shouldPreSelect = preSelected != null
+                    && preSelected.Type != SlotType.None
+                    && preSelected.IsEnabled;
                 _ = System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    UpdateActiveSlot(clickedSlotIndex);
+                    UpdateActiveSlot(shouldPreSelect ? clickedSlotIndex : -1);
                 }), System.Windows.Threading.DispatcherPriority.Input);
             }
 
@@ -962,10 +1067,51 @@ namespace Pulsar.ViewModels
                 ApplyCenterPreview);
         }
 
+        private void UpdateSubMenuCenterLabel()
+        {
+            var processName = CenterSlot.Label;
+            CenterSlot.Label = _subMenuTotalPages > 1
+                ? string.Format(_loc["RadialMenu.SubMenuPageFormat"], processName, _subMenuPage + 1, _subMenuTotalPages)
+                : processName;
+        }
 
+        public bool HandleSubMenuMouseWheel(int delta, bool treatFeedbackAsHandled)
+        {
+            if (_subMenuTotalPages <= 1)
+            {
+                return treatFeedbackAsHandled;
+            }
+
+            int direction = delta < 0 ? 1 : -1;
+
+            if (direction > 0 && _subMenuPage >= _subMenuTotalPages - 1)
+            {
+                OnPagingBoundaryFeedbackRequested?.Invoke(BoundaryDirection.LastPage);
+                return treatFeedbackAsHandled;
+            }
+
+            if (direction < 0 && _subMenuPage <= 0)
+            {
+                OnPagingBoundaryFeedbackRequested?.Invoke(BoundaryDirection.FirstPage);
+                return treatFeedbackAsHandled;
+            }
+
+            _subMenuPage += direction;
+            _subMenuCoordinator.ConfigureSubMenu(
+                _subMenuWindows, _subMenuProcessName, _slotsPerPage, _subMenuPage, CenterSlot, Slots);
+            UpdateSubMenuCenterLabel();
+            _previewService.ClearCache();
+            ApplyCenterPreview(ResolvedWindowPreview.Icon(null));
+            return true;
+        }
 
         public void RestoreRootMenu()
         {
+             _subMenuWindows = new List<ProcessWindowInfo>();
+             _subMenuProcessName = string.Empty;
+             _subMenuPage = 0;
+             _subMenuTotalPages = 1;
+
              // Reset animation offsets
              foreach (var s in Slots) s.ResetAnimation();
 

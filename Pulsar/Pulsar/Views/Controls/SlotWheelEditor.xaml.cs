@@ -253,6 +253,38 @@ namespace Pulsar.Views.Controls
             }
         }
 
+        private void WheelItems_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            var item = FindItem(e.OriginalSource as DependencyObject);
+            if (item?.Slot == null || Vm == null)
+            {
+                return;
+            }
+
+            bool isCtrl = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
+
+            if (isCtrl && (e.Key == Key.Left || e.Key == Key.Right))
+            {
+                int delta = e.Key == Key.Left ? -1 : 1;
+                int targetPosition = item.Position + delta;
+                if (targetPosition >= 1 && targetPosition <= Vm.Items.Count)
+                {
+                    Vm.Reorder(item.Slot, targetPosition);
+                    e.Handled = true;
+                }
+            }
+            else if (e.Key == Key.Enter)
+            {
+                EditRequested?.Invoke(this, new SlotWheelActionEventArgs(item.Slot));
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Delete)
+            {
+                DeleteRequested?.Invoke(this, new SlotWheelActionEventArgs(item.Slot));
+                e.Handled = true;
+            }
+        }
+
         private void WheelItems_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
             var item = FindItem(e.OriginalSource as DependencyObject);

@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Pulsar.Core.Localization;
 using Pulsar.Models.Enums;
 using Pulsar.ViewModels.Base;
 using System;
@@ -12,6 +13,13 @@ namespace Pulsar.ViewModels
 {
     public partial class DialogHostViewModel : ObservableObject
     {
+        private readonly ILocalizationService? _loc;
+
+        public DialogHostViewModel(ILocalizationService? localizationService = null)
+        {
+            _loc = localizationService;
+        }
+
         [ObservableProperty]
         private string _title = string.Empty;
 
@@ -127,44 +135,46 @@ namespace Pulsar.ViewModels
 
         public void ConfigureButtons(DialogButtons buttons)
         {
+            string Loc(string key, string fallback) => _loc?[key] ?? fallback;
+
             switch (buttons)
             {
                 case DialogButtons.Ok:
                     IsPrimaryButtonVisible = true;
-                    PrimaryButtonText = "OK";
+                    PrimaryButtonText = Loc("Dialog.Button.Ok", "OK");
                     IsSecondaryButtonVisible = false;
                     IsTertiaryButtonVisible = false;
                     break;
                 case DialogButtons.OkCancel:
                     IsPrimaryButtonVisible = true;
-                    PrimaryButtonText = "OK";
+                    PrimaryButtonText = Loc("Dialog.Button.Ok", "OK");
                     IsSecondaryButtonVisible = true;
-                    SecondaryButtonText = "Cancel";
+                    SecondaryButtonText = Loc("Dialog.Button.Cancel", "Cancel");
                     IsTertiaryButtonVisible = false;
                     break;
                 case DialogButtons.YesNo:
                     IsPrimaryButtonVisible = true;
-                    PrimaryButtonText = "Yes";
+                    PrimaryButtonText = Loc("Dialog.Button.Yes", "Yes");
                     IsSecondaryButtonVisible = true;
-                    SecondaryButtonText = "No";
+                    SecondaryButtonText = Loc("Dialog.Button.No", "No");
                     IsTertiaryButtonVisible = false;
                     break;
                 case DialogButtons.YesNoCancel:
                     IsPrimaryButtonVisible = true;
-                    PrimaryButtonText = "Yes";
+                    PrimaryButtonText = Loc("Dialog.Button.Yes", "Yes");
                     IsTertiaryButtonVisible = true;
-                    TertiaryButtonText = "No";
+                    TertiaryButtonText = Loc("Dialog.Button.No", "No");
                     IsSecondaryButtonVisible = true;
-                    SecondaryButtonText = "Cancel";
+                    SecondaryButtonText = Loc("Dialog.Button.Cancel", "Cancel");
                     break;
                 case DialogButtons.SaveDontSaveCancel:
                     IsPrimaryButtonVisible = true;
-                    PrimaryButtonText = "Save";
+                    PrimaryButtonText = Loc("Dialog.Button.Save", "Save");
                     IsTertiaryButtonVisible = true;
-                    TertiaryButtonText = "Don't Save";
+                    TertiaryButtonText = Loc("Dialog.Button.DontSave", "Don't Save");
                     UseDangerStyleForTertiary = true;
                     IsSecondaryButtonVisible = true;
-                    SecondaryButtonText = "Cancel";
+                    SecondaryButtonText = Loc("Dialog.Button.Cancel", "Cancel");
                     break;
                 case DialogButtons.None:
                     IsPrimaryButtonVisible = false;
@@ -173,5 +183,7 @@ namespace Pulsar.ViewModels
                     break;
             }
         }
+
+        public string GetLocalizedButtonText(string key, string fallback) => _loc?[key] ?? fallback;
     }
 }

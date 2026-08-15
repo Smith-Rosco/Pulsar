@@ -1,0 +1,63 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+                    xmlns:dialogs="clr-namespace:Pulsar.ViewModels.Dialogs"
+                    xmlns:contents="clr-namespace:Pulsar.Views.Dialogs.Contents">
+
+    <!-- Default String Template -->
+    <DataTemplate DataType="{x:Type sys:String}">
+        <TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="14" Foreground="{DynamicResource Theme.Text.Primary}"/>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type dialogs:ProcessBlacklistViewModel}">
+        <contents:ProcessBlacklistContent/>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type dialogs:ColorPickerViewModel}">
+        <contents:ColorPickerContent/>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type dialogs:IconPickerViewModel}">
+        <contents:IconPickerContent/>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type dialogs:InputDialogViewModel}">
+        <contents:InputDialogContent/>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type dialogs:InputProfileViewModel}">
+        <contents:InputProfileContent/>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type dialogs:EditProfileViewModel}">
+        <contents:EditProfileContent/>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type dialogs:PluginLogViewerViewModel}">
+        <contents:PluginLogViewerContentHost/>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type dialogs:ProcessPickerViewModel}">
+        <contents:ProcessPickerContent/>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type dialogs:QuickSecretsViewModel}">
+        <contents:QuickSecretsContent/>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type dialogs:SlotEditorViewModel}">
+        <contents:AddSlotContent/>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type dialogs:SecretPickerViewModel}">
+        <contents:SecretPickerContent/>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type dialogs:PluginSettingsDialogViewModel}">
+        <contents:PluginSettingsDialogContent/>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type dialogs:FirstLaunchSetupWizardViewModel}">
+        <contents:FirstLaunchSetupWizardContent/>
+    </DataTemplate>
+</ResourceDictionary>

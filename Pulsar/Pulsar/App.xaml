@@ -16,29 +16,9 @@
                 -->
                 <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ScrollViewerStyles.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/TooltipStyles.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Themes/DialogTemplates.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
-            <DataTemplate DataType="{x:Type dialogs:ProcessPickerViewModel}">
-                <views:ProcessPickerContent/>
-            </DataTemplate>
-            <DataTemplate DataType="{x:Type dialogs:IconPickerViewModel}">
-                <views:IconPickerContent/>
-            </DataTemplate>
-            <DataTemplate DataType="{x:Type dialogs:InputProfileViewModel}">
-                <views:InputProfileContent/>
-            </DataTemplate>
-            <DataTemplate DataType="{x:Type dialogs:QuickSecretsViewModel}">
-                <views:QuickSecretsContent/>
-            </DataTemplate>
-             <DataTemplate DataType="{x:Type dialogs:EditProfileViewModel}">
-                 <views:EditProfileContent/>
-             </DataTemplate>
-            <DataTemplate DataType="{x:Type dialogs:PluginLogViewerViewModel}">
-                <views:PluginLogViewerContentHost/>
-            </DataTemplate>
-
-            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-            
             <!-- Universal Icon Font Stack - Resolves "Squares" Issue -->
             <!-- Priority: Pulsar Icons > Emoji > Symbols > Text Fallback (CJK/Latin) -->
             <FontFamily x:Key="PulsarIconFontFamily">

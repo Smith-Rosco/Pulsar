@@ -160,7 +160,7 @@
     <value>Center</value>
   </data>
   <data name="Settings.Slots.Wheel.DragDropHint" xml:space="preserve">
-    <value>Drag to reorder · Right-click to move</value>
+    <value>Drag to reorder · Right-click to move · Ctrl+←/→ moves focused slot · Enter edits · Delete removes</value>
   </data>
   <data name="Settings.Slots.Wheel.PreviousPage" xml:space="preserve">
     <value>Previous page</value>
@@ -2561,5 +2561,158 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
   </data>
   <data name="Settings.General.HotkeyClearTooltip" xml:space="preserve">
     <value>Press Backspace/Delete to clear</value>
+  </data>
+  <data name="Dialog.Button.Ok" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Dialog.Button.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Dialog.Button.Yes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="Dialog.Button.No" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="Dialog.Button.Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Dialog.Button.DontSave" xml:space="preserve">
+    <value>Don't Save</value>
+  </data>
+  <data name="Dialog.Button.Select" xml:space="preserve">
+    <value>Select</value>
+  </data>
+  <data name="Dialog.Button.Confirm" xml:space="preserve">
+    <value>Confirm</value>
+  </data>
+  <data name="Dialog.FileDialog.SelectFile" xml:space="preserve">
+    <value>Select File</value>
+  </data>
+  <data name="Dialog.FileDialog.AllFilesFilter" xml:space="preserve">
+    <value>All files (*.*)|*.*</value>
+  </data>
+  <data name="Dialog.IconPicker.ChangeIcon" xml:space="preserve">
+    <value>Click to change icon</value>
+  </data>
+  <data name="HotkeyBox.None" xml:space="preserve">
+    <value>(None)</value>
+  </data>
+  <data name="HotkeyBox.SystemReserved" xml:space="preserve">
+    <value>This combination is reserved by Windows</value>
+  </data>
+  <data name="HotkeyBox.ConflictFormat" xml:space="preserve">
+    <value>Conflict: already assigned to "{0}"</value>
+  </data>
+  <data name="RadialMenu.PageFormat" xml:space="preserve">
+    <value>Page {0}</value>
+  </data>
+  <data name="RadialMenu.PageOfFormat" xml:space="preserve">
+    <value>Page {0}/{1}</value>
+  </data>
+  <data name="RadialMenu.Switch" xml:space="preserve">
+    <value>Switch</value>
+  </data>
+  <data name="RadialMenu.Global" xml:space="preserve">
+    <value>Global</value>
+  </data>
+  <data name="RadialMenu.App" xml:space="preserve">
+    <value>App</value>
+  </data>
+  <data name="RadialMenu.NotRunningFormat" xml:space="preserve">
+    <value>{0} (Not Running)</value>
+  </data>
+  <data name="Feedback.Launching" xml:space="preserve">
+    <value>Launching</value>
+  </data>
+  <data name="Feedback.StartingFormat" xml:space="preserve">
+    <value>Starting {0}...</value>
+  </data>
+  <data name="Settings.Plugins.GroupCoreFormat" xml:space="preserve">
+    <value>Core Plugins ({0})</value>
+  </data>
+  <data name="Settings.Plugins.GroupExtensionFormat" xml:space="preserve">
+    <value>Extension Plugins ({0})</value>
+  </data>
+  <data name="Settings.ExternalPlugins.InstalledHeaderFormat" xml:space="preserve">
+    <value>Installed External Plugins ({0})</value>
+  </data>
+  <data name="Settings.ExternalPlugins.ByAuthorFormat" xml:space="preserve">
+    <value>by {0}</value>
+  </data>
+  <data name="Settings.ExternalPlugins.StatusCountFormat" xml:space="preserve">
+    <value>{0} external plugins installed</value>
+  </data>
+  <data name="Settings.ExternalPlugins.StatusLoadFailedFormat" xml:space="preserve">
+    <value>Failed to load plugins: {0}</value>
+  </data>
+  <data name="Settings.ExternalPlugins.StatusInstallingFormat" xml:space="preserve">
+    <value>Installing plugin from {0}...</value>
+  </data>
+  <data name="Settings.ExternalPlugins.StatusErrorInstallingFormat" xml:space="preserve">
+    <value>Error installing plugin from file: {0}</value>
+  </data>
+  <data name="Settings.ExternalPlugins.StatusUninstallingFormat" xml:space="preserve">
+    <value>Uninstalling {0}...</value>
+  </data>
+  <data name="Settings.ExternalPlugins.StatusErrorUninstallingFormat" xml:space="preserve">
+    <value>Error uninstalling {0}: {1}</value>
+  </data>
+  <data name="Settings.ExternalPlugins.StatusProgressFormat" xml:space="preserve">
+    <value>{0}: {1} ({2}%)</value>
+  </data>
+  <data name="Settings.General.SlotsPerPagePreviewFormat" xml:space="preserve">
+    <value>{0} slots ({1:F0}° sectors)</value>
+  </data>
+  <data name="Settings.General.CacheLoading" xml:space="preserve">
+    <value>Loading...</value>
+  </data>
+  <data name="PluginLogViewer.Total" xml:space="preserve">
+    <value>Total</value>
+  </data>
+  <data name="PluginLogViewer.Debug" xml:space="preserve">
+    <value>Debug</value>
+  </data>
+  <data name="PluginLogViewer.Info" xml:space="preserve">
+    <value>Info</value>
+  </data>
+  <data name="PluginLogViewer.Warning" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="PluginLogViewer.Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="PluginLogViewer.Critical" xml:space="preserve">
+    <value>Critical</value>
+  </data>
+  <data name="Settings.ExternalPlugins.InstalledPluginsHeader" xml:space="preserve">
+    <value>Installed External Plugins</value>
+  </data>
+  <data name="Settings.ExternalPlugins.ByAuthor" xml:space="preserve">
+    <value>by </value>
+  </data>
+  <data name="Settings.ExternalPlugins.StatusCount" xml:space="preserve">
+    <value> external plugins installed</value>
+  </data>
+  <data name="Settings.General.QuickSwitchTimeout" xml:space="preserve">
+    <value>Quick-switch window (ms)</value>
+  </data>
+  <data name="Settings.General.QuickSwitchTimeoutDescription" xml:space="preserve">
+    <value>Releasing the hotkey near the center within this time switches back to the previous window.</value>
+  </data>
+  <data name="RadialMenu.SubMenuPageFormat" xml:space="preserve">
+    <value>{0} ({1}/{2})</value>
+  </data>
+  <data name="Settings.Plugins.FilterAll" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="Settings.Plugins.FilterEnabled" xml:space="preserve">
+    <value>Enabled</value>
+  </data>
+  <data name="Settings.Plugins.FilterDisabled" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
+  <data name="Settings.Plugins.FilterErrors" xml:space="preserve">
+    <value>Errors</value>
   </data>
 </root>

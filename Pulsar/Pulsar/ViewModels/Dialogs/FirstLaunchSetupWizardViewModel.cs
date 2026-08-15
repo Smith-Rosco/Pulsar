@@ -62,9 +62,38 @@ namespace Pulsar.ViewModels.Dialogs
                 });
             }
 
-            _selectedLanguage = SupportedLanguages.FirstOrDefault(l => l.Code == "zh-CN") ?? SupportedLanguages.FirstOrDefault();
-            if (_selectedLanguage != null)
-                _loc.SetLanguage("zh-CN");
+            var defaultLanguage = ResolveDefaultLanguage();
+            _selectedLanguage = SupportedLanguages.FirstOrDefault(l => string.Equals(l.Code, defaultLanguage, StringComparison.OrdinalIgnoreCase))
+                ?? SupportedLanguages.FirstOrDefault();
+        }
+
+        private string ResolveDefaultLanguage()
+        {
+            // Prefer the language already configured for Pulsar (first launch may reuse an
+            // existing default config), then the app-localization service state, then the OS
+            // UI culture. Never mutate the global language from the wizard constructor.
+            try
+            {
+                var configured = _configService.Current?.Settings?.Language;
+                if (!string.IsNullOrWhiteSpace(configured))
+                {
+                    return configured;
+                }
+            }
+            catch
+            {
+                // Config access is best-effort; fall through to UI culture.
+            }
+
+            if (!string.IsNullOrWhiteSpace(_loc.CurrentLanguage))
+            {
+                return _loc.CurrentLanguage;
+            }
+
+            var osCulture = System.Globalization.CultureInfo.CurrentUICulture.Name;
+            return SupportedLanguages.Any(l => string.Equals(l.Code, osCulture, StringComparison.OrdinalIgnoreCase))
+                ? osCulture
+                : "en";
         }
 
         public ObservableCollection<LanguageDisplayModel> SupportedLanguages { get; }

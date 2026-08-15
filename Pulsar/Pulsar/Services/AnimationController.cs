@@ -41,6 +41,15 @@ namespace Pulsar.Services
 
         public void SetSlotTargets(IList<SlotAnimationTarget> targets) => _slotTargets = targets;
 
+        public void SyncCurrentLayout(LayoutTarget target)
+        {
+            StopAnimations();
+            _currentLayout = target;
+            _animator.Radius = target.Radius;
+            _animator.CenterSize = target.CenterSize;
+            _animator.SlotSize = target.SlotSize;
+        }
+
         public async Task AnimateLayoutAsync(LayoutTarget target, AnimationOptions? options = null, CancellationToken ct = default)
         {
             var opts = options ?? AnimationOptionsDefaults.Smooth;

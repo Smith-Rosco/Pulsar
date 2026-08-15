@@ -21,6 +21,13 @@ namespace Pulsar.Services.Interfaces
         void SetBounceUpdateCallback(Action<double> callback);
         void SetMagnetismUpdateCallback(Action<Vector, IList<SlotAnimationTarget>> callback);
         void SetSlotTargets(IList<SlotAnimationTarget> targets);
+
+        /// <summary>
+        /// Synchronizes the controller's internal layout state with an externally applied layout.
+        /// Must be called when the caller updates the layout without running AnimateLayoutAsync,
+        /// otherwise the next animation starts from the default (0,0,0) state.
+        /// </summary>
+        void SyncCurrentLayout(LayoutTarget target);
         void Pause();
         void Resume();
         Task QueueAsync(Func<CancellationToken, Task> animation, CancellationToken ct = default);

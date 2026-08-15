@@ -76,6 +76,18 @@ namespace Pulsar.Models
         // [RDP Fix] Input System Configuration
         public InputSettings Input { get; set; } = new();
 
+        /// <summary>
+        /// Quick-switch window duration in milliseconds. Releasing the invocation key
+        /// inside the center zone within this window switches back to the previous window.
+        /// </summary>
+        [ObservableProperty]
+        private int _quickSwitchTimeoutMs = 250;
+
+        /// <summary>
+        /// Center-zone radius for quick switch, in WPF DIPs.
+        /// </summary>
+        public double QuickSwitchCenterZoneRadius { get; set; } = 30.0;
+
     // [Tutorial] Tutorial System Configuration
     /// <summary>
     /// <para>是否已完成教程。</para>

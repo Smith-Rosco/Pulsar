@@ -17,7 +17,7 @@ namespace Pulsar.Services.Interfaces
         
         Task<string?> ShowInputAsync(string title, string message, string defaultValue = "");
 
-        Task<Pulsar.Models.Enums.DialogResult> ShowConfirmationAsync(string title, string message, string confirmText = "Confirm", string cancelText = "Cancel");
+        Task<Pulsar.Models.Enums.DialogResult> ShowConfirmationAsync(string title, string message, string? confirmText = null, string? cancelText = null);
 
         Task<string?> ShowColorPickerAsync(string title, string initialColor = "#FF0000");
     }

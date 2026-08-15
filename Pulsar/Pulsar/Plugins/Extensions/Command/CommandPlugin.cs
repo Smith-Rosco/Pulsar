@@ -131,7 +131,7 @@ namespace Pulsar.Plugins.Extensions.Command
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Command execution failed: {Path}", path);
-                return Task.FromResult(PluginResult.Error(string.Format(_loc["Plugin.Command.Error.ExecutionFailed"], ex.Message)));
+                return Task.FromResult(PluginResult.Error(string.Format(_loc["Plugin.Command.Error.ExecutionFailed"], ex.Message), PluginErrorSeverity.Recoverable, PluginErrorCode.ExecutionFailed));
             }
         }
 
@@ -178,7 +178,7 @@ namespace Pulsar.Plugins.Extensions.Command
             catch (OperationCanceledException)
             {
                 Logger.LogInformation("SendKeys cancelled");
-                return PluginResult.Error(_loc["Plugin.Command.Error.Cancelled"]);
+                return PluginResult.Error(_loc["Plugin.Command.Error.Cancelled"], PluginErrorSeverity.Recoverable, PluginErrorCode.UserCancelled);
             }
             catch (Exception ex)
             {

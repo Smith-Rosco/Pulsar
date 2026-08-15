@@ -83,10 +83,15 @@
                 <!-- Installed External Plugins List -->
                 <StackPanel Visibility="{Binding IsLoading, Converter={StaticResource InverseBoolToVisConverter}}">
                     <!-- Section Header -->
-                    <TextBlock Text="{Binding InstalledPlugins.Count, StringFormat='Installed External Plugins ({0})'}"
-                               FontSize="16"
-                               FontWeight="SemiBold"
-                               Margin="0,0,0,16"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                        <TextBlock Text="{lex:Locale Settings.ExternalPlugins.InstalledPluginsHeader}"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding InstalledPlugins.Count}"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Margin="8,0,0,0"/>
+                    </StackPanel>
 
                     <!-- Plugin Cards -->
                     <ItemsControl ItemsSource="{Binding InstalledPlugins}">
@@ -137,10 +142,12 @@
                                             </StackPanel>
 
                                             <!-- Author -->
-                                            <TextBlock Text="{Binding Author, StringFormat='by {0}'}"
-                                                       FontSize="12"
+                                            <TextBlock FontSize="12"
                                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                                       Margin="0,0,0,8"/>
+                                                       Margin="0,0,0,8">
+                                                <Run Text="{lex:Locale Settings.ExternalPlugins.ByAuthor}"/>
+                                                <Run Text="{Binding Author, Mode=OneWay}"/>
+                                            </TextBlock>
 
                                             <!-- Description -->
                                             <TextBlock Text="{Binding Description}"
@@ -267,10 +274,12 @@
 
                 <!-- Plugin Count -->
                 <TextBlock Grid.Column="1"
-                           Text="{Binding InstalledPlugins.Count, StringFormat='{}{0} external plugins installed'}"
                            FontSize="12"
                            Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                           VerticalAlignment="Center"/>
+                           VerticalAlignment="Center">
+                    <Run Text="{Binding InstalledPlugins.Count, Mode=OneWay}"/>
+                    <Run Text="{lex:Locale Settings.ExternalPlugins.StatusCount}"/>
+                </TextBlock>
             </Grid>
         </Border>
     </Grid>
