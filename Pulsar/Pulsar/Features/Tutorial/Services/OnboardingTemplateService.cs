@@ -234,7 +234,7 @@ namespace Pulsar.Features.Tutorial.Services
                 {
                     CenterSlotBehavior = "MRU_Window",
                     TriggerDistance = 100.0,
-                    Theme = "Light",
+                    Theme = ProfileSettings.DefaultTheme,
                     HoverScale = 1.2,
                     Springiness = 6.0,
                     MaxDisplacement = 20.0,

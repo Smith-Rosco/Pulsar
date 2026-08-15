@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -10,8 +9,6 @@ using Pulsar.Core.Localization;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels.Settings;
-using Wpf.Ui.Appearance;
-using Wpf.Ui.Markup;
 
 namespace Pulsar.Views.Controls
 {
@@ -330,22 +327,7 @@ namespace Pulsar.Views.Controls
         private void ApplyThemeToContextMenu(ContextMenu menu)
         {
             var themeService = _services.GetRequiredService<IThemeService>();
-            var themeTarget = themeService.CurrentTheme == AppTheme.Dark ? ApplicationTheme.Dark : ApplicationTheme.Light;
-
-            var existingTheme = menu.Resources.MergedDictionaries.OfType<ThemesDictionary>().FirstOrDefault();
-            if (existingTheme != null)
-            {
-                existingTheme.Theme = themeTarget;
-            }
-            else
-            {
-                menu.Resources.MergedDictionaries.Add(new ThemesDictionary { Theme = themeTarget });
-            }
-
-            if (!menu.Resources.MergedDictionaries.OfType<ControlsDictionary>().Any())
-            {
-                menu.Resources.MergedDictionaries.Add(new ControlsDictionary());
-            }
+            themeService.ApplyContextMenuTheme(menu, themeService.CurrentTheme);
         }
     }
 }

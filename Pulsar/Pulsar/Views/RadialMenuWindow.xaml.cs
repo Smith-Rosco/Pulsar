@@ -3,7 +3,6 @@
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels;
 using Pulsar.Native;
-using Pulsar.Models;        // AppTheme
 using Microsoft.Extensions.Logging;
 using System;
 using System.ComponentModel;
@@ -20,7 +19,6 @@ namespace Pulsar.Views
     public partial class RadialMenuWindow : Window
     {
         private readonly RadialMenuViewModel _viewModel;
-        private readonly IConfigService _configService;
         private readonly IThemeService _themeService;
         private readonly ILogger<RadialMenuWindow> _logger;
 
@@ -35,7 +33,6 @@ namespace Pulsar.Views
 
         public RadialMenuWindow(
             RadialMenuViewModel vm,
-            IConfigService configService,
             IWindowService windowService,
             IThemeService themeService,
             ILogger<RadialMenuWindow> logger,
@@ -44,7 +41,6 @@ namespace Pulsar.Views
         {
             // Initialize Fields First
             _viewModel = vm;
-            _configService = configService;
             _windowService = windowService;
             _themeService = themeService;
             _logger = logger;
@@ -108,7 +104,8 @@ namespace Pulsar.Views
 
         private void InitializeTheme()
         {
-            _themeService.ApplyTheme(this, _configService.Current.Settings.ThemeEnum, WindowBackdropType.None, updateGlobal: false);
+            // ThemeService is bootstrapped from Profiles.json before this window is created.
+            _themeService.ApplyTheme(this, _themeService.CurrentTheme, WindowBackdropType.None, updateGlobal: false);
         }
 
 

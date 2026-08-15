@@ -48,6 +48,11 @@ namespace Pulsar.Services
 
             await ConfigureLocalizationAsync(configService);
 
+            // Theme must be established before the tray icon builds its ContextMenu.
+            // Otherwise ThemeService falls back to its in-memory default and the first
+            // tray menu is rendered with the wrong theme until Settings opens.
+            await ConfigureThemeAsync(configService);
+
             var processRegistryService = _services.GetRequiredService<IProcessRegistryService>();
             await processRegistryService.InitializeAsync();
             _logger.LogInformation("[Startup] ProcessRegistryService initialized");
@@ -166,6 +171,22 @@ namespace Pulsar.Services
             catch (Exception ex)
             {
                 Log.Warning(ex, "Failed to apply logging configuration from Profiles.json, using defaults");
+            }
+        }
+
+        private async Task ConfigureThemeAsync(IConfigService configService)
+        {
+            try
+            {
+                var config = await configService.LoadAsync();
+                var theme = config?.Settings?.ThemeEnum ?? AppTheme.Light;
+                var themeService = _services.GetRequiredService<IThemeService>();
+                themeService.Initialize(theme);
+                _logger.LogInformation("[Startup] Theme initialized to {Theme} from configuration", theme);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "[Startup] Failed to initialize theme from config; using ThemeService default");
             }
         }
 

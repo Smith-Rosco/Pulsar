@@ -1,6 +1,6 @@
 using System;
-using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Linq;
 using Microsoft.Extensions.Logging;
@@ -17,13 +17,34 @@ namespace Pulsar.Services
     {
         private readonly ILogger<ThemeService> _logger;
 
-        public AppTheme CurrentTheme { get; private set; } = AppTheme.Dark;
+        /// <summary>
+        /// Runtime theme. Defaults to Light because first-launch Profiles.json uses Light;
+        /// startup must call <see cref="Initialize"/> before creating themed UI so persisted
+        /// Dark configurations override this value immediately.
+        /// </summary>
+        public AppTheme CurrentTheme { get; private set; } = AppTheme.Light;
 
         public event EventHandler<AppTheme>? ThemeChanged;
 
         public ThemeService(ILogger<ThemeService> logger)
         {
             _logger = logger;
+        }
+
+        public void Initialize(AppTheme theme)
+        {
+            if (CurrentTheme == theme)
+            {
+                _logger.LogDebug("[ThemeService] Theme already initialized to {Theme}", theme);
+                return;
+            }
+
+            CurrentTheme = theme;
+            _logger.LogInformation("[ThemeService] Runtime theme initialized from configuration: {Theme}", theme);
+
+            // Normal startup calls this before any subscribers exist. Raising here also keeps
+            // the method safe if it is ever used later in the app lifecycle.
+            ThemeChanged?.Invoke(this, theme);
         }
 
         public void ApplyTheme(FrameworkElement element, AppTheme theme, WindowBackdropType backdrop = WindowBackdropType.None, bool updateGlobal = true)
@@ -77,9 +98,36 @@ namespace Pulsar.Services
              }
         }
 
+        public void ApplyContextMenuTheme(ContextMenu menu, AppTheme theme)
+        {
+            if (menu == null)
+            {
+                return;
+            }
+
+            var targetTheme = ToApplicationTheme(theme);
+
+            // Update in place when possible. ContextMenus are popup visual trees that do not
+            // inherit window resources, so both WPF-UI dictionaries must be present locally.
+            var existingThemeDict = menu.Resources.MergedDictionaries.OfType<ThemesDictionary>().FirstOrDefault();
+            if (existingThemeDict != null)
+            {
+                existingThemeDict.Theme = targetTheme;
+            }
+            else
+            {
+                menu.Resources.MergedDictionaries.Add(new ThemesDictionary { Theme = targetTheme });
+            }
+
+            if (!menu.Resources.MergedDictionaries.OfType<ControlsDictionary>().Any())
+            {
+                menu.Resources.MergedDictionaries.Add(new ControlsDictionary());
+            }
+        }
+
         private void ApplyStandardTheme(FrameworkElement element, AppTheme theme, WindowBackdropType backdrop)
         {
-            var targetTheme = theme == AppTheme.Light ? ApplicationTheme.Light : ApplicationTheme.Dark;
+            var targetTheme = ToApplicationTheme(theme);
 
             // 1. Try to update existing ThemesDictionary to avoid "NaN" animation crashes
             var existingThemeDict = element.Resources.MergedDictionaries.OfType<ThemesDictionary>().FirstOrDefault();
@@ -120,6 +168,11 @@ namespace Pulsar.Services
             {
                 fw.WindowBackdropType = backdrop;
             }
+        }
+
+        private static ApplicationTheme ToApplicationTheme(AppTheme theme)
+        {
+            return theme == AppTheme.Light ? ApplicationTheme.Light : ApplicationTheme.Dark;
         }
 
         private void ClearThemeResources(FrameworkElement element)

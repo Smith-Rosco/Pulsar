@@ -90,7 +90,11 @@ namespace Pulsar.Views
                 });
             });
 
-            _themeService.ApplyTheme(this, _viewModel.CurrentTheme, WindowBackdropType.Mica, updateGlobal: true);
+            // The ViewModel has not loaded Profiles.json yet at this point, so its
+            // CurrentTheme is only an in-memory default and must not become the global
+            // theme. Use the already-bootstrapped ThemeService value for the first paint;
+            // LoadSettings() will reconcile and publish any real difference later.
+            _themeService.ApplyTheme(this, _themeService.CurrentTheme, WindowBackdropType.Mica, updateGlobal: false);
 
             Loaded += OnLoaded;
             PreviewKeyDown += OnPreviewKeyDown;
@@ -159,7 +163,7 @@ namespace Pulsar.Views
             {
                 page = _pageFactory.CreatePage(registration.Id, _viewModel);
                 _pages[registration.Id] = page;
-                _themeService.ApplyTheme(page, _viewModel.CurrentTheme, updateGlobal: false);
+                _themeService.ApplyTheme(page, _themeService.CurrentTheme, updateGlobal: false);
             }
 
             NavigateWithAnimation(page);

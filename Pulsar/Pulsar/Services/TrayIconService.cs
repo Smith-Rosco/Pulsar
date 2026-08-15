@@ -11,15 +11,14 @@ using Pulsar.Core.Localization;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 using Pulsar.Views;
-using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
-using Wpf.Ui.Markup;
 
 namespace Pulsar.Services
 {
     public class TrayIconService : ITrayService
     {
         private TaskbarIcon? _taskbarIcon;
+        private System.Windows.Controls.MenuItem? _toggleThemeItem;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILocalizationService _loc;
         private readonly IThemeService _themeService;
@@ -44,11 +43,14 @@ namespace Pulsar.Services
             };
 
             TryLoadCustomIcon();
-            BuildContextMenu();
-            _taskbarIcon.TrayMouseDoubleClick += OnTrayMouseDoubleClick;
 
+            // Subscribe before building so a theme change can never slip between
+            // menu construction and event subscription.
             _loc.LanguageChanged += OnLanguageChanged;
             _themeService.ThemeChanged += OnThemeChanged;
+
+            BuildContextMenu();
+            _taskbarIcon.TrayMouseDoubleClick += OnTrayMouseDoubleClick;
 
             _logger?.LogInformation("[TrayIconService] Initialize() - TaskbarIcon created, Visibility={Visibility}", _taskbarIcon.Visibility);
         }
@@ -101,23 +103,10 @@ namespace Pulsar.Services
             }
         }
 
-        private void ApplyThemeToContextMenu(ContextMenu menu)
-        {
-            var themeTarget = _themeService.CurrentTheme == AppTheme.Dark ? ApplicationTheme.Dark : ApplicationTheme.Light;
-            var existingTheme = menu.Resources.MergedDictionaries.OfType<ThemesDictionary>().FirstOrDefault();
-            if (existingTheme != null)
-                existingTheme.Theme = themeTarget;
-            else
-                menu.Resources.MergedDictionaries.Add(new ThemesDictionary { Theme = themeTarget });
-
-            if (!menu.Resources.MergedDictionaries.OfType<ControlsDictionary>().Any())
-                menu.Resources.MergedDictionaries.Add(new ControlsDictionary());
-        }
-
         private void BuildContextMenu()
         {
             var contextMenu = new ContextMenu();
-            ApplyThemeToContextMenu(contextMenu);
+            _themeService.ApplyContextMenuTheme(contextMenu, _themeService.CurrentTheme);
 
             var settingsItem = new System.Windows.Controls.MenuItem
             {
@@ -138,6 +127,7 @@ namespace Pulsar.Services
             };
             toggleThemeItem.Click += OnToggleThemeClicked;
             contextMenu.Items.Add(toggleThemeItem);
+            _toggleThemeItem = toggleThemeItem;
 
             var autoStartItem = new System.Windows.Controls.MenuItem
             {
@@ -217,7 +207,13 @@ namespace Pulsar.Services
 
             // Update existing context menu in-place so the currently displayed popup reflects the new theme
             if (_taskbarIcon?.ContextMenu is ContextMenu menu)
-                ApplyThemeToContextMenu(menu);
+                _themeService.ApplyContextMenuTheme(menu, theme);
+
+            // The checkable "light theme" item must stay in sync with the dictionaries above.
+            if (_toggleThemeItem != null)
+            {
+                _toggleThemeItem.IsChecked = theme == AppTheme.Light;
+            }
 
             // Sync SettingsViewModel config + ComboBox binding
             var settingsWin = Application.Current.Windows.OfType<Views.SettingsWindow>().FirstOrDefault();

@@ -46,6 +46,7 @@ namespace Pulsar.Tests.Config
             // Assert
             config.Should().NotBeNull();
             config.Settings.Should().NotBeNull();
+            config.Settings.Theme.Should().Be(ProfileSettings.DefaultTheme, "first launch must default to light theme");
             config.Profiles.Should().NotBeNull();
             config.Plugins.Should().NotBeNull();
             File.Exists(_configPath).Should().BeTrue("default config should be saved");

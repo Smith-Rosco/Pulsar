@@ -96,6 +96,18 @@ This file provides essential context, conventions, and routing for AI agents wor
 
 ---
 
+### Theme Bootstrap Ordering (Tray ContextMenu)
+
+**Symptom**: First tray right-click menu renders in the wrong theme (e.g. Dark) while the rest of the app uses the persisted theme (e.g. Light). Opening Settings "fixes" it later.
+
+**Root Cause**: `ThemeService.CurrentTheme` is an in-memory default and was not initialized from `Profiles.json` before `TrayIconService.BuildContextMenu()` ran.
+
+**Fix**: Bootstrap `IThemeService.Initialize(config.Settings.ThemeEnum)` in `AppStartupCoordinator` before `ITrayService.Initialize()`. Windows/pages must paint from `IThemeService.CurrentTheme`, not from an unloaded ViewModel default.
+
+**Deep Dive**: [Docs/lessons/WPF_THEME_INJECTION_PITFALLS.md](./Docs/lessons/WPF_THEME_INJECTION_PITFALLS.md)
+
+---
+
 ### Resources Hygiene (XAMLParseException)
 
 **Symptom**: `XAMLParseException` - "Resources property can only be set once".

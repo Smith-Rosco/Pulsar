@@ -2,8 +2,8 @@
 
 **Status**: Published  
 **Scope**: Lesson  
-**Applies To**: WPF Page, Window, UserControl  
-**Last Updated**: 2026-03-03
+**Applies To**: WPF Page, Window, UserControl, ContextMenu, Startup
+**Last Updated**: 2026-08-15
 
 ---
 
@@ -70,11 +70,36 @@ public MyPage(IThemeService themeService)
 
 ---
 
+## Theme Bootstrap Ordering
+
+### Symptom
+
+On first launch (or any launch), the Settings page uses the persisted Light theme but the first tray right-click menu is Dark. Opening Settings later "fixes" the menu because `SettingsViewModel.LoadSettings()` finally publishes the config theme globally.
+
+### Root Cause
+
+`ThemeService.CurrentTheme` starts as an in-memory default and was never initialized from `Profiles.json` before `TrayIconService.BuildContextMenu()` ran. The tray menu therefore captured the service default. The Settings window later called `ApplyTheme(..., updateGlobal: true)` from the loaded config, firing `ThemeChanged` and repainting the already-built menu.
+
+### Correct Pattern
+
+Initialize the runtime theme before creating any UI:
+
+```csharp
+// AppStartupCoordinator.RunBlockingInitializationAsync()
+var config = await configService.LoadAsync();
+themeService.Initialize(config.Settings.ThemeEnum);
+
+// Only then create the tray icon, windows, and pages.
+trayService.Initialize();
+```
+
+Windows should paint from `IThemeService.CurrentTheme`, never from a ViewModel property that has not loaded configuration yet.
+
 ## Context Menus
 
 ### Rule
 
-Context menus do not inherit Window resources. Manually inject `ui:ControlsDictionary` into `ContextMenu.Resources`.
+Context menus do not inherit Window resources. Manually inject `ui:ControlsDictionary` into `ContextMenu.Resources`, preferably through `IThemeService.ApplyContextMenuTheme()`.
 
 ### Correct Pattern
 
@@ -133,3 +158,4 @@ window.Resources.MergedDictionaries.Add(new ThemesDictionary { Theme = newTheme 
 
 **Change History**:
 - v1.0.0 (2026-03-03): Initial extraction from AGENTS.md
+- v1.1.0 (2026-08-15): Add theme bootstrap ordering fix for first tray ContextMenu paint

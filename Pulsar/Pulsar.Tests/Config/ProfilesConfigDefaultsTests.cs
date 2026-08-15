@@ -35,7 +35,7 @@ namespace Pulsar.Tests.Config
             // Assert
             settings.CenterSlotBehavior.Should().Be("MRU_Window");
             settings.TriggerDistance.Should().Be(100.0);
-            settings.Theme.Should().Be("Dark");
+            settings.Theme.Should().Be(ProfileSettings.DefaultTheme);
             settings.HoverScale.Should().Be(1.2);
             settings.Springiness.Should().Be(6.0);
             settings.MaxDisplacement.Should().Be(20.0);
@@ -189,6 +189,14 @@ namespace Pulsar.Tests.Config
             
             new HotkeyConfig { Key = "F1", Modifiers = "" }
                 .ToString().Should().Be("F1");
+        }
+
+        [Fact]
+        public void ProfileSettings_ThemeEnum_ShouldDefaultToLight()
+        {
+            var settings = new ProfileSettings();
+
+            settings.ThemeEnum.Should().Be(AppTheme.Light);
         }
 
         [Fact]
