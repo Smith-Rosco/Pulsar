@@ -43,17 +43,21 @@ namespace Pulsar.Core.Plugin
         /// </summary>
         public string? TargetProcessName { get; }
 
+        private readonly PluginExecutionContext? _previous;
+
         private PluginExecutionContext(
             string pluginId,
             string action,
             Guid executionId,
-            string? targetProcessName)
+            string? targetProcessName,
+            PluginExecutionContext? previous)
         {
             PluginId = pluginId;
             Action = action;
             ExecutionId = executionId;
             StartTimeUtc = DateTime.UtcNow;
             TargetProcessName = targetProcessName;
+            _previous = previous;
         }
 
         /// <summary>
@@ -65,11 +69,13 @@ namespace Pulsar.Core.Plugin
             Guid? executionId = null,
             string? targetProcessName = null)
         {
+            var previous = _current.Value;
             var context = new PluginExecutionContext(
                 pluginId,
                 action,
                 executionId ?? Guid.NewGuid(),
-                targetProcessName
+                targetProcessName,
+                previous
             );
 
             _current.Value = context;
@@ -77,11 +83,12 @@ namespace Pulsar.Core.Plugin
         }
 
         /// <summary>
-        /// 释放上下文作用域
+        /// 释放上下文作用域。AsyncLocal 作用域是栈式的：释放当前作用域会恢复
+        /// 进入该作用域之前的值，因此嵌套插件执行不会丢失外层关联信息。
         /// </summary>
         public void Dispose()
         {
-            _current.Value = null;
+            _current.Value = _previous;
         }
     }
 }

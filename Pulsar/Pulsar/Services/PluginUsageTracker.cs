@@ -27,15 +27,29 @@ namespace Pulsar.Services
         private readonly SemaphoreSlim _saveLock = new(1, 1);
         private bool _isDirty;
 
-        public PluginUsageTracker(ILogger<PluginUsageTracker> logger)
+        public PluginUsageTracker(
+            ILogger<PluginUsageTracker> logger,
+            string? statsFilePath = null)
         {
             _logger = logger;
 
-            // 确定存储路径
-            var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            var pulsarDir = Path.Combine(appDataPath, "Pulsar");
-            Directory.CreateDirectory(pulsarDir);
-            _statsFilePath = Path.Combine(pulsarDir, "PluginUsageStats.json");
+            if (!string.IsNullOrWhiteSpace(statsFilePath))
+            {
+                _statsFilePath = Path.GetFullPath(statsFilePath);
+            }
+            else
+            {
+                // 确定存储路径
+                var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                var pulsarDir = Path.Combine(appDataPath, "Pulsar");
+                _statsFilePath = Path.Combine(pulsarDir, "PluginUsageStats.json");
+            }
+
+            var statsDirectory = Path.GetDirectoryName(_statsFilePath);
+            if (!string.IsNullOrEmpty(statsDirectory))
+            {
+                Directory.CreateDirectory(statsDirectory);
+            }
 
             // 启动自动保存定时器（每 5 分钟）
             _autoSaveTimer = new System.Threading.Timer(AutoSaveCallback, null, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
@@ -190,17 +204,63 @@ namespace Pulsar.Services
             if (!Volatile.Read(ref _isDirty))
                 return;
 
-            await _saveLock.WaitAsync();
+            await FlushCoreAsync();
+        }
+
+        /// <inheritdoc />
+        public Task FlushAsync()
+        {
+            return FlushCoreAsync();
+        }
+
+        private async Task FlushCoreAsync()
+        {
+            await _saveLock.WaitAsync().ConfigureAwait(false);
             try
             {
+                if (!Volatile.Read(ref _isDirty))
+                {
+                    return;
+                }
+
                 var options = new JsonSerializerOptions
                 {
                     WriteIndented = true,
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                 };
 
-                var json = JsonSerializer.Serialize(_stats.Values.ToList(), options);
-                await File.WriteAllTextAsync(_statsFilePath, json);
+                // Snapshot each stats object under its own lock. RecordExecution
+                // may be mutating it concurrently from the plugin pipeline.
+                var snapshots = new List<PluginUsageStats>(_stats.Count);
+                foreach (var stats in _stats.Values)
+                {
+                    lock (stats)
+                    {
+                        snapshots.Add(CloneStats(stats));
+                    }
+                }
+
+                var tempPath = _statsFilePath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+                try
+                {
+                    var json = JsonSerializer.Serialize(snapshots, options);
+                    await File.WriteAllTextAsync(tempPath, json).ConfigureAwait(false);
+                    File.Move(tempPath, _statsFilePath, overwrite: true);
+                }
+                finally
+                {
+                    try
+                    {
+                        if (File.Exists(tempPath))
+                        {
+                            File.Delete(tempPath);
+                        }
+                    }
+                    catch
+                    {
+                        // Best-effort cleanup. The unique temp name makes leftovers harmless.
+                    }
+                }
 
                 Volatile.Write(ref _isDirty, false);
                 _logger.LogDebug("[PluginUsageTracker] Saved stats to {Path}", _statsFilePath);
@@ -220,7 +280,7 @@ namespace Pulsar.Services
         /// </summary>
         public async Task LoadAsync()
         {
-            await _saveLock.WaitAsync();
+            await _saveLock.WaitAsync().ConfigureAwait(false);
             try
             {
                 if (!File.Exists(_statsFilePath))
@@ -229,7 +289,7 @@ namespace Pulsar.Services
                     return;
                 }
 
-                var json = await File.ReadAllTextAsync(_statsFilePath);
+                var json = await File.ReadAllTextAsync(_statsFilePath).ConfigureAwait(false);
                 var options = new JsonSerializerOptions
                 {
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase

@@ -43,7 +43,7 @@ dotnet run --project Pulsar/Pulsar/Pulsar.csproj
 
 ## Test Commands
 
-**Current Status**: xUnit test project at `Pulsar/Pulsar.Tests/` (331+ tests).
+**Current Status**: xUnit test project at `Pulsar/Pulsar.Tests/` (410+ tests).
 
 ### Run Tests
 

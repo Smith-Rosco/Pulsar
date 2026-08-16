@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -90,6 +91,72 @@ namespace Pulsar.Tests.Plugin
             first.Should().HaveCount(1);
             second.Should().HaveCount(1);
             loader.DiscoverCount.Should().Be(1);
+        }
+
+        [Fact]
+        public void ManifestVersionCompatibility_ShouldRejectTooNewMinimumVersion()
+        {
+            var manifest = new PluginManifest
+            {
+                Id = "test.version",
+                MinPulsarVersion = "999.0.0"
+            };
+
+            var compatible = PluginLoader.IsManifestVersionCompatible(manifest, out var reason);
+
+            compatible.Should().BeFalse();
+            reason.Should().Contain("requires Pulsar");
+        }
+
+        [Fact]
+        public void ManifestVersionCompatibility_ShouldAcceptCurrentHostVersion()
+        {
+            var manifest = new PluginManifest
+            {
+                Id = "test.version",
+                MinPulsarVersion = "1.0.0",
+                MaxPulsarVersion = "2.0.0"
+            };
+
+            var compatible = PluginLoader.IsManifestVersionCompatible(manifest, out var reason);
+
+            compatible.Should().BeTrue(reason);
+        }
+
+        [Fact]
+        public void ManifestVersionCompatibility_ShouldAcceptSemanticVersionSuffix()
+        {
+            var manifest = new PluginManifest
+            {
+                Id = "test.version",
+                MinPulsarVersion = "1.0.0-beta.1",
+                MaxPulsarVersion = "2.0.0+build.7"
+            };
+
+            var compatible = PluginLoader.IsManifestVersionCompatible(manifest, out var reason);
+
+            compatible.Should().BeTrue(reason);
+        }
+
+        [Fact]
+        public void TryReadExternalManifest_ShouldPreferPluginManifestFile()
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), "PulsarTests", Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            try
+            {
+                File.WriteAllText(Path.Combine(tempDir, "manifest.json"), "{\"id\":\"test.legacy\"}");
+                File.WriteAllText(Path.Combine(tempDir, "plugin.manifest.json"), "{\"id\":\"test.preferred\"}");
+
+                var manifest = PluginLoader.TryReadExternalManifest(tempDir);
+
+                manifest.Should().NotBeNull();
+                manifest!.Id.Should().Be("test.preferred");
+            }
+            finally
+            {
+                try { Directory.Delete(tempDir, recursive: true); } catch { /* ignore */ }
+            }
         }
 
         private static List<PluginDescriptor> BuildDescriptors()

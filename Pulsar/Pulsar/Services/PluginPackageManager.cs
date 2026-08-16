@@ -68,7 +68,11 @@ namespace Pulsar.Services
                 ReportProgress(pluginId, PluginInstallStatus.Uninstalling, 20, "Removing plugin files...");
 
                 // 2. 删除插件目录
-                var pluginPath = Path.Combine(_pluginInstallDirectory, pluginId);
+                if (!TryGetSafeInstallPath(pluginId, out var pluginPath, out var pathError))
+                {
+                    return PluginOperationResult.Failed(pluginId, PluginOperationType.Uninstall, pathError);
+                }
+
                 if (Directory.Exists(pluginPath))
                 {
                     // 如果保留数据，备份配置文件
@@ -204,8 +208,41 @@ namespace Pulsar.Services
         /// </summary>
         private bool IsPluginInstalled(string pluginId)
         {
-            var pluginPath = Path.Combine(_pluginInstallDirectory, pluginId);
-            return Directory.Exists(pluginPath);
+            return TryGetSafeInstallPath(pluginId, out var pluginPath, out _)
+                && Directory.Exists(pluginPath);
+        }
+
+        /// <summary>
+        /// Resolves a plugin install path while ensuring the manifest-controlled
+        /// plugin ID cannot escape the plugin store via "..", rooted paths, or
+        /// alternate directory separators.
+        /// </summary>
+        private bool TryGetSafeInstallPath(string pluginId, out string installPath, out string error)
+        {
+            installPath = string.Empty;
+            error = string.Empty;
+
+            if (string.IsNullOrWhiteSpace(pluginId))
+            {
+                error = "Invalid plugin package: plugin Id is empty.";
+                return false;
+            }
+
+            var root = Path.GetFullPath(_pluginInstallDirectory)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+            var candidate = Path.GetFullPath(Path.Combine(root, pluginId));
+            var requiredPrefix = root + Path.DirectorySeparatorChar;
+
+            if (!candidate.Equals(root, StringComparison.OrdinalIgnoreCase)
+                && candidate.StartsWith(requiredPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                installPath = candidate;
+                return true;
+            }
+
+            error = $"Invalid plugin package: plugin Id '{pluginId}' is not a safe relative path.";
+            return false;
         }
 
         /// <summary>
@@ -284,7 +321,11 @@ namespace Pulsar.Services
                     }
 
                     // 7. 移动到插件目录
-                    var installPath = Path.Combine(_pluginInstallDirectory, pluginId);
+                    if (!TryGetSafeInstallPath(pluginId, out var installPath, out var pathError))
+                    {
+                        return PluginOperationResult.Failed(pluginId, PluginOperationType.Install, pathError);
+                    }
+
                     Directory.CreateDirectory(installPath);
 
                     ReportProgress(pluginId, PluginInstallStatus.Installing, 60, "Copying files...");

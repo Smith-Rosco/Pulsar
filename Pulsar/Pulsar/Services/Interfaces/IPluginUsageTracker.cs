@@ -41,5 +41,11 @@ namespace Pulsar.Services.Interfaces
         /// 从磁盘加载统计数据
         /// </summary>
         Task LoadAsync();
+
+        /// <summary>
+        /// Flushes pending statistics to disk. Called during application shutdown
+        /// so data recorded after the last periodic auto-save is not lost.
+        /// </summary>
+        Task FlushAsync();
     }
 }

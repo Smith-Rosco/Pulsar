@@ -232,15 +232,7 @@ namespace Pulsar.Tests.Config
         /// </summary>
         private ConfigService CreateConfigService()
         {
-            var service = new ConfigService(_mockLogger.Object);
-            
-            // Use reflection to override config path
-            var configPathField = typeof(ConfigService)
-                .GetField("_configPath", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            
-            configPathField?.SetValue(service, _configPath);
-            
-            return service;
+            return new ConfigService(_mockLogger.Object, configPath: _configPath);
         }
 
         public void Dispose()

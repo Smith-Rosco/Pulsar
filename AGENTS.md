@@ -27,7 +27,7 @@ This file provides essential context, conventions, and routing for AI agents wor
 
 **Rule**: Never query live window state inside plugins; always use `PulsarContext`.
 
-**Rule**: PulsarContext is fully immutable after construction. Per-execution mutable data (CurrentPluginId, PermissionInterceptor) lives in `PluginExecutionContext` (AsyncLocal scope), not on `PulsarContext`.
+**Rule**: PulsarContext is fully immutable after construction. Per-execution correlation data (PluginId, Action, ExecutionId) lives in `PluginExecutionContext` (stack-scoped AsyncLocal), not on `PulsarContext`. (Permission interception is a planned trust-boundary extension; until shipped, external plugins are treated as untrusted only at package install/discovery boundaries.)
 
 **Rule**: Respect plugin tier semantics:
 - **Core plugins** (`Plugins/Core/`): Essential, cannot be disabled, crashes are fatal
@@ -217,7 +217,7 @@ This file provides essential context, conventions, and routing for AI agents wor
 - **Dependency Injection**: Constructor injection, register in `App.xaml.cs`
 - **Plugin Runtime DI**: Use `serviceCollection.AddPluginRuntime(pluginDir)` extension in `App.xaml.cs` instead of manual `new`
 - **Plugin Registry Access**: Inject `IPluginRegistry` interface, not concrete `PluginRegistry` class
-- **Plugin Execution Context**: Use `PluginExecutionContext.Current` to access per-execution data (plugin ID, permission interceptor)
+- **Plugin Execution Context**: Use `PluginExecutionContext.Current` to access per-execution correlation data (plugin ID, action, execution ID). Scopes are stack-based and restore the previous scope on Dispose.
 - **Thread Safety**: Plugin runtime dictionaries use `ConcurrentDictionary`; hotkey actions dispatch via `Dispatcher.InvokeAsync()`
 - **MVVM**: Use `[ObservableProperty]` and `[RelayCommand]` from CommunityToolkit
 - **Async/Await**: Use `async Task` for I/O operations. Avoid `async void` except event handlers.
@@ -393,6 +393,7 @@ dotnet restore Pulsar/Pulsar/Pulsar.csproj
   - [WPF_USERCONTROL_BINDING_BREAKS.md](./Docs/lessons/WPF_USERCONTROL_BINDING_BREAKS.md)
   - [CONTEXTMENU_RESOURCE_INHERITANCE.md](./Docs/lessons/CONTEXTMENU_RESOURCE_INHERITANCE.md)
   - [WPF_SCROLLVIEWER_VISIBILITY.md](./Docs/lessons/WPF_SCROLLVIEWER_VISIBILITY.md)
+  - [ASYNC_SHUTDOWN_DEADLOCK.md](./Docs/lessons/ASYNC_SHUTDOWN_DEADLOCK.md)
   - [WPF_RESOURCES_HYGIENE.md](./Docs/lessons/WPF_RESOURCES_HYGIENE.md)
   - [FOREGROUND_WINDOW_ACTIVATION_RELIABILITY.md](./Docs/lessons/FOREGROUND_WINDOW_ACTIVATION_RELIABILITY.md)
   - [SENDINPUT_FOREGROUND_ACTIVATION.md](./Docs/lessons/SENDINPUT_FOREGROUND_ACTIVATION.md)

@@ -345,7 +345,7 @@ namespace Pulsar.ViewModels
             hotkeyService.OnGlobalKeyUp += HandleKeyUp;
             _globalMouseService.OnMouseEvent += HandleGlobalMouseEvent;
 
-            _configService.ConfigUpdated += () => _ = OnConfigUpdated();
+            _configService.ConfigUpdated += OnConfigUpdatedRequested;
             _ = LoadConfigAsync();
 
             _mouseTrackingService.MousePositionChanged += OnMousePositionChanged;
@@ -484,6 +484,21 @@ namespace Pulsar.ViewModels
         private async Task LoadConfigAsync()
         {
             await OnConfigUpdated();
+        }
+
+        private void OnConfigUpdatedRequested()
+        {
+            // ConfigService.SaveAsync may complete on a background thread (smart
+            // detection, tutorial work). This ViewModel owns ObservableCollection
+            // instances, so every config refresh must land on the Dispatcher.
+            var dispatcher = System.Windows.Application.Current?.Dispatcher;
+            if (dispatcher == null || dispatcher.CheckAccess())
+            {
+                _ = OnConfigUpdated();
+                return;
+            }
+
+            _ = dispatcher.InvokeAsync(() => _ = OnConfigUpdated());
         }
 
         private async Task OnConfigUpdated()

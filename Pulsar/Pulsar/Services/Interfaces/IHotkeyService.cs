@@ -34,7 +34,11 @@ namespace Pulsar.Services.Interfaces
         Task InitializeAsync();
         void RegisterAction(string actionId, Action callback);
         void UnregisterAction(string actionId);
-        Task UpdateHotkey(string actionId, HotkeyConfig newHotkey);
+
+        /// <summary>
+        /// Refreshes the effective hotkey cache from <see cref="IConfigService.Current"/>.
+        /// This is a cache-only operation and never writes to disk.
+        /// </summary>
         void RebuildCache();
         HotkeyConfig? GetHotkey(string actionId);
 

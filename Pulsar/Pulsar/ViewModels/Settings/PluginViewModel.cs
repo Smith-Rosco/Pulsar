@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Pulsar.ViewModels.Settings
@@ -36,6 +37,7 @@ namespace Pulsar.ViewModels.Settings
         private readonly BuiltInPluginDisplayModel _displayModel;
         private readonly ILocalizationService? _loc;
         private readonly PluginAnalyticsFormatter? _formatter;
+        private readonly SemaphoreSlim _settingsSaveLock = new(1, 1);
 
         [ObservableProperty]
         private bool _isEnabled;
@@ -298,50 +300,65 @@ namespace Pulsar.ViewModels.Settings
                 }
             }
 
-            var config = _configService.Current;
-            if (!config.Plugins.TryGetValue(Id, out var profile))
+            try
             {
-                profile = new PluginProfile();
-                config.Plugins[Id] = profile;
-            }
-
-            if (newValue != null)
-            {
-                profile.Config[key] = newValue;
-            }
-            else
-            {
-                profile.Config.Remove(key);
-            }
-
-            var configurable = await EnsureConfigurablePluginAsync();
-            configurable?.UpdateSettings(profile.Config);
-
-            _ = _configService.SaveAsync(config).ContinueWith(t =>
-            {
-                if (t.IsFaulted && t.Exception != null)
+                // Serialize settings writes for this plugin. Rapid toggles in the
+                // settings dialog otherwise produce overlapping SaveAsync calls that
+                // fight over the same in-memory config object.
+                await _settingsSaveLock.WaitAsync();
+                try
                 {
-                    _logger?.LogError(t.Exception, "[PluginViewModel] Failed to save config for {PluginId}", Id);
+                    var config = _configService.Current;
+                    if (!config.Plugins.TryGetValue(Id, out var profile))
+                    {
+                        profile = new PluginProfile();
+                        config.Plugins[Id] = profile;
+                    }
+
+                    if (newValue != null)
+                    {
+                        profile.Config[key] = newValue;
+                    }
+                    else
+                    {
+                        profile.Config.Remove(key);
+                    }
+
+                    var configurable = await EnsureConfigurablePluginAsync();
+                    configurable?.UpdateSettings(profile.Config);
+
+                    await _configService.SaveAsync(config);
                 }
-            }, TaskContinuationOptions.OnlyOnFaulted);
+                finally
+                {
+                    _settingsSaveLock.Release();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[PluginViewModel] Failed to save config for {PluginId}", Id);
+            }
         }
 
         [RelayCommand]
         private async Task ToggleStateAsync()
         {
-            IsEnabled = !IsEnabled;
-            await _registry.SetPluginStateAsync(Id, IsEnabled);
-        }
-
-        partial void OnIsEnabledChanged(bool value)
-        {
-            _ = _registry.SetPluginStateAsync(Id, value).ContinueWith(t =>
+            if (!CanDisable)
             {
-                if (t.IsFaulted && t.Exception != null)
-                {
-                    _logger?.LogError(t.Exception, "[PluginViewModel] Failed to set plugin state for {PluginId}", Id);
-                }
-            }, TaskContinuationOptions.OnlyOnFaulted);
+                return;
+            }
+
+            var targetState = !IsEnabled;
+            try
+            {
+                await _registry.SetPluginStateAsync(Id, targetState);
+                IsEnabled = targetState;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[PluginViewModel] Failed to set plugin state for {PluginId}", Id);
+                IsEnabled = !targetState;
+            }
         }
 
         [RelayCommand]

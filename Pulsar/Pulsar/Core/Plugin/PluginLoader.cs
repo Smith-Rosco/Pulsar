@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Services.Interfaces;
@@ -131,6 +132,19 @@ namespace Pulsar.Core.Plugin
                 {
                     try
                     {
+                        var manifest = TryReadExternalManifest(folder);
+                        if (manifest == null)
+                        {
+                            _logger?.LogWarning("[PluginLoader] External plugin folder has no valid manifest and was skipped: {Folder}", folder);
+                            continue;
+                        }
+
+                        if (!IsManifestVersionCompatible(manifest, out var versionReason))
+                        {
+                            _logger?.LogWarning("[PluginLoader] Skipped external plugin {PluginId} from {Folder}: {Reason}", manifest.Id, folder, versionReason);
+                            continue;
+                        }
+
                         var dllFiles = Directory.GetFiles(folder, "*.dll");
                         if (dllFiles.Length == 0)
                         {
@@ -157,9 +171,24 @@ namespace Pulsar.Core.Plugin
                                 {
                                     try
                                     {
+                                        if (!IsManifestEntryPointMatch(manifest, pluginType))
+                                        {
+                                            continue;
+                                        }
+
                                         var descriptor = CreateDescriptor(pluginType);
                                         if (!ShouldInclude(descriptor, includeCore, includeExtensions))
                                         {
+                                            continue;
+                                        }
+
+                                        if (!string.Equals(descriptor.Id, manifest.Id, StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            _logger?.LogWarning(
+                                                "[PluginLoader] External plugin type {PluginType} declares Id '{ActualId}' but manifest declares '{ManifestId}'. Skipping.",
+                                                pluginType.FullName,
+                                                descriptor.Id,
+                                                manifest.Id);
                                             continue;
                                         }
 
@@ -199,6 +228,87 @@ namespace Pulsar.Core.Plugin
             {
                 _logger?.LogError(ex, "[PluginLoader] Error scanning plugin directory");
             }
+        }
+
+        internal static PluginManifest? TryReadExternalManifest(string folder)
+        {
+            var manifestPath = Path.Combine(folder, "plugin.manifest.json");
+            if (!File.Exists(manifestPath))
+            {
+                manifestPath = Path.Combine(folder, "manifest.json");
+            }
+
+            if (!File.Exists(manifestPath))
+            {
+                return null;
+            }
+
+            try
+            {
+                var json = File.ReadAllText(manifestPath);
+                var manifest = JsonSerializer.Deserialize<PluginManifest>(
+                    json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                return string.IsNullOrWhiteSpace(manifest?.Id) ? null : manifest;
+            }
+            catch (Exception ex) when (ex is IOException or JsonException or NotSupportedException)
+            {
+                return null;
+            }
+        }
+
+        internal static bool IsManifestVersionCompatible(PluginManifest manifest, out string reason)
+        {
+            reason = string.Empty;
+
+            var hostVersion = Assembly.GetExecutingAssembly().GetName().Version ?? new Version(1, 0, 0);
+            if (!TryParseManifestVersion(manifest.MinPulsarVersion, out var minVersion))
+            {
+                reason = $"unsupported minPulsarVersion '{manifest.MinPulsarVersion}'.";
+                return false;
+            }
+
+            if (hostVersion < minVersion)
+            {
+                reason = $"requires Pulsar >= {manifest.MinPulsarVersion}, host is {hostVersion}.";
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(manifest.MaxPulsarVersion)
+                && TryParseManifestVersion(manifest.MaxPulsarVersion, out var maxVersion)
+                && hostVersion > maxVersion)
+            {
+                reason = $"requires Pulsar <= {manifest.MaxPulsarVersion}, host is {hostVersion}.";
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryParseManifestVersion(
+            string value,
+            [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out Version? version)
+        {
+            if (Version.TryParse(value, out version))
+            {
+                return true;
+            }
+
+            // Semantic-version prerelease/build suffixes ("1.0.0-beta", "1.0.0+build")
+            // are accepted by stripping the suffix for the compatibility check.
+            var core = value.Split('+', 2)[0].Split('-', 2)[0];
+            return Version.TryParse(core, out version);
+        }
+
+        private static bool IsManifestEntryPointMatch(PluginManifest manifest, Type pluginType)
+        {
+            if (string.IsNullOrWhiteSpace(manifest.EntryPoint))
+            {
+                return true;
+            }
+
+            return string.Equals(pluginType.FullName, manifest.EntryPoint, StringComparison.Ordinal);
         }
 
         private PluginDescriptor CreateDescriptor(Type pluginType)

@@ -155,7 +155,16 @@ namespace Pulsar
             serviceCollection.AddSingleton(typeof(Pulsar.Services.Interfaces.IFuzzySearchService<>), typeof(Pulsar.Services.FuzzySearch.FuzzySearchService<>));
             
             // 2. Plugin System (New Architecture)
-            serviceCollection.AddPluginRuntime(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Plugins"));
+            // External plugin packages are installed under %AppData% by
+            // PluginPackageManager. The runtime loader MUST scan the same store,
+            // otherwise "installed" plugins are visible in Settings but never loaded.
+            var externalPluginDirectory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "Pulsar",
+                "Plugins");
+
+            serviceCollection.AddSingleton<Core.Plugin.Runtime.ICorePluginFailureHandler, AppShutdownCorePluginFailureHandler>();
+            serviceCollection.AddPluginRuntime(externalPluginDirectory);
             
             // [New] Plugin Monitoring & Analytics Services
             serviceCollection.AddSingleton<IPluginUsageTracker, PluginUsageTracker>();
@@ -208,23 +217,15 @@ namespace Pulsar
             // [External Plugins] External Plugin Management Services
             serviceCollection.AddSingleton<LocalPluginScanner>(sp =>
             {
-                var pluginDirectory = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "Pulsar",
-                    "Plugins");
                 var logger = sp.GetService<ILogger<LocalPluginScanner>>();
-                return new LocalPluginScanner(pluginDirectory, logger);
+                return new LocalPluginScanner(externalPluginDirectory, logger);
             });
-            
+
             serviceCollection.AddSingleton<PluginPackageManager>(sp =>
             {
-                var pluginInstallDirectory = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "Pulsar",
-                    "Plugins");
                 var logger = sp.GetService<ILogger<PluginPackageManager>>();
-                
-                return new PluginPackageManager(pluginInstallDirectory, logger);
+
+                return new PluginPackageManager(externalPluginDirectory, logger);
             });
             
             serviceCollection.AddTransient<ExternalPluginManagerViewModel>();
@@ -266,38 +267,65 @@ namespace Pulsar
 
         }
 
+        private void RunShutdownTask(string phase, Func<Task> taskFactory)
+        {
+            Log.Information("[Shutdown] Starting {Phase}", phase);
+
+            try
+            {
+                Task.Run(taskFactory).GetAwaiter().GetResult();
+                Log.Information("[Shutdown] Completed {Phase}", phase);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "[Shutdown] {Phase} failed", phase);
+            }
+        }
+
         protected override void OnExit(ExitEventArgs e)
         {
             Log.Information("=== Pulsar Application Exiting ===");
             
             if (Services != null)
             {
-                // Flush pending ProcessRegistry changes
-                var processRegistry = Services.GetService<IProcessRegistryService>();
-                if (processRegistry != null)
-                {
-                    processRegistry.FlushAsync().GetAwaiter().GetResult();
-                }
-                
-                // Unload all plugins
-                var pluginRegistry = Services.GetService<IPluginRegistry>();
-                if (pluginRegistry != null)
-                {
-                    pluginRegistry.UnloadAllAsync().GetAwaiter().GetResult();
-                }
+                // IMPORTANT: OnExit runs on the WPF Dispatcher thread. Persistence
+                // methods below await file I/O; if invoked inline, their
+                // continuations are posted back to the Dispatcher while this
+                // thread is blocked on GetAwaiter().GetResult() — a guaranteed
+                // async deadlock. Run each shutdown phase on the thread pool and
+                // block only for completion.
+                RunShutdownTask(
+                    "ProcessRegistry flush",
+                    () =>
+                    {
+                        var processRegistry = Services.GetService<IProcessRegistryService>();
+                        return processRegistry?.FlushAsync() ?? Task.CompletedTask;
+                    });
+
+                RunShutdownTask(
+                    "PluginUsageTracker flush",
+                    () =>
+                    {
+                        var usageTracker = Services.GetService<IPluginUsageTracker>();
+                        return usageTracker?.FlushAsync() ?? Task.CompletedTask;
+                    });
+
+                RunShutdownTask(
+                    "Plugin unload",
+                    () =>
+                    {
+                        var pluginRegistry = Services.GetService<IPluginRegistry>();
+                        return pluginRegistry?.UnloadAllAsync() ?? Task.CompletedTask;
+                    });
 
                 var backgroundWorkScheduler = Services.GetService<IBackgroundWorkScheduler>();
                 backgroundWorkScheduler?.CancelAll();
-                
-                var trayService = Services.GetService<ITrayService>();
-                trayService?.Dispose();
 
-                var mouseWheelHook = Services.GetService<GlobalMouseHook>();
-                mouseWheelHook?.Dispose();
-
-                var keyboardHook = Services.GetService<GlobalKeyboardHook>();
-                keyboardHook?.Dispose();
-
+                // All singletons that need deterministic cleanup implement IDisposable.
+                // Let the container dispose them once after plugin unload and
+                // persistence flush; avoid manual disposal followed by a second
+                // container disposal of the same instance.
+                (Services as IDisposable)?.Dispose();
             }
 
             Log.CloseAndFlush();

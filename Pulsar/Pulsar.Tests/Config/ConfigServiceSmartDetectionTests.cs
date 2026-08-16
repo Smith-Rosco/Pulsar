@@ -361,14 +361,7 @@ namespace Pulsar.Tests.Config
 
         private ConfigService CreateConfigService()
         {
-            var service = new ConfigService(_mockLogger.Object);
-
-            var configPathField = typeof(ConfigService)
-                .GetField("_configPath", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-
-            configPathField?.SetValue(service, _configPath);
-
-            return service;
+            return new ConfigService(_mockLogger.Object, configPath: _configPath);
         }
 
         private static async Task WaitForDetectionCompletionAsync(ConfigService service)

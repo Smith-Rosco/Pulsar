@@ -502,7 +502,7 @@ namespace Pulsar.Services
 
             try
             {
-                var json = await File.ReadAllTextAsync(_registryPath);
+                var json = await File.ReadAllTextAsync(_registryPath).ConfigureAwait(false);
                 _registry = JsonSerializer.Deserialize<ProcessRegistry>(json) ?? new ProcessRegistry();
             }
             catch (Exception ex)
@@ -531,7 +531,7 @@ namespace Pulsar.Services
                     
                     // 原子写入：先写临时文件，再替换（避免损坏）
                     var tempPath = _registryPath + ".tmp";
-                    await File.WriteAllTextAsync(tempPath, json);
+                    await File.WriteAllTextAsync(tempPath, json).ConfigureAwait(false);
                     File.Move(tempPath, _registryPath, overwrite: true);
                     
                     // 记录成功指标
@@ -555,7 +555,7 @@ namespace Pulsar.Services
                     }
                     
                     // 指数退避
-                    await Task.Delay(baseDelayMs * (attempt + 1), cancellationToken);
+                    await Task.Delay(baseDelayMs * (attempt + 1), cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
