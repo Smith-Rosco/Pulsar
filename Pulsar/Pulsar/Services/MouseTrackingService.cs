@@ -30,6 +30,12 @@ namespace Pulsar.Services
 
         public int HoveredSlotIndex { get; private set; }
 
+        public int HitTest(int screenX, int screenY)
+        {
+            var relative = ScreenToRelative(new System.Windows.Point(screenX, screenY));
+            return HitTestRelative(relative);
+        }
+
         public void SetWindowHandle(IntPtr handle)
         {
             _windowHandle = handle;
@@ -66,12 +72,16 @@ namespace Pulsar.Services
             var relativePos = ScreenToRelative(screenPos);
             RelativePosition = relativePos;
 
+            HoveredSlotIndex = HitTestRelative(relativePos);
+            MousePositionChanged?.Invoke(this, relativePos);
+        }
+
+        private int HitTestRelative(Vector relativePos)
+        {
             var dx = relativePos.X - _layoutParameters.CenterX;
             var dy = relativePos.Y - _layoutParameters.CenterY;
             IsInDeadZone = Math.Sqrt(dx * dx + dy * dy) < _layoutParameters.DeadZoneRadius;
-            HoveredSlotIndex = IsInDeadZone ? 0 : _layoutEngine.HitTest(relativePos, _layoutParameters);
-
-            MousePositionChanged?.Invoke(this, relativePos);
+            return IsInDeadZone ? 0 : _layoutEngine.HitTest(relativePos, _layoutParameters);
         }
 
         private System.Windows.Point GetGlobalCursorPosition()

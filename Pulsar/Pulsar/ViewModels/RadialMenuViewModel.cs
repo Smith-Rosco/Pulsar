@@ -930,10 +930,16 @@ namespace Pulsar.ViewModels
 
                 if (System.Windows.Application.Current.Dispatcher.CheckAccess())
                 {
+                    int clickSlotIndex = _mouseTrackingService.HitTest(e.X, e.Y);
+                    if (clickSlotIndex != _activeSlotIndex)
+                    {
+                        UpdateActiveSlot(clickSlotIndex);
+                    }
+
                     await _inputCoordinator.HandleGlobalMouseClickAsync(
                         e.Button,
                         IsVisible,
-                        _activeSlotIndex,
+                        clickSlotIndex,
                         _menuState,
                         CenterSlot,
                         Slots,
@@ -945,10 +951,16 @@ namespace Pulsar.ViewModels
                 {
                     _ = System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
                     {
+                        int clickSlotIndex = _mouseTrackingService.HitTest(e.X, e.Y);
+                        if (clickSlotIndex != _activeSlotIndex)
+                        {
+                            UpdateActiveSlot(clickSlotIndex);
+                        }
+
                         await _inputCoordinator.HandleGlobalMouseClickAsync(
                             e.Button,
                             IsVisible,
-                            _activeSlotIndex,
+                            clickSlotIndex,
                             _menuState,
                             CenterSlot,
                             Slots,
