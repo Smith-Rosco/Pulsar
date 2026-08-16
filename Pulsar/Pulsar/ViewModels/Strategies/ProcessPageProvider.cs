@@ -72,6 +72,7 @@ namespace Pulsar.ViewModels.Strategies
             {
                 var slotItem = _matchedSlots[i];
                 var slotViewModel = slots[i - startIndex]; // Map to visual slot position (0-N)
+                slotViewModel.ResetAnimation();
 
                 // Skip completely empty slots
                 if (!slotItem.IsConfigured && !slotItem.IsRunning)

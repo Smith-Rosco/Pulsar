@@ -79,7 +79,20 @@ namespace Pulsar.Services.Interfaces
     public static class EasingFunctions
     {
         public static double EaseOutCubic(double t) => 1 - Math.Pow(1 - t, 3);
+        public static double EaseInCubic(double t) => t * t * t;
         public static double EaseInOutCubic(double t) => t < 0.5 ? 4 * t * t * t : 1 - Math.Pow(-2 * t + 2, 3) / 2;
+
+        /// <summary>
+        /// Slightly overshooting ease-out. Visually close to Kando's
+        /// cubic-bezier(0.775, 1.325, 0.535, 1) submenu transition.
+        /// </summary>
+        public static double EaseOutBack(double t)
+        {
+            const double c1 = 0.9;
+            const double c3 = c1 + 1;
+            return 1 + (c3 * Math.Pow(t - 1, 3)) + (c1 * Math.Pow(t - 1, 2));
+        }
+
         public static double EaseOutElastic(double t)
         {
             var c4 = (2 * Math.PI) / 3;

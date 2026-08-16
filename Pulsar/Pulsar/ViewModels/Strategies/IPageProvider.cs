@@ -75,6 +75,10 @@ namespace Pulsar.ViewModels.Strategies
                 slot.ClearPresentation();
                 slot.ActionStrategy = new NoOpStrategy();
                 slot.IsEnabled = true;
+                slot.AnimationOffsetX = 0;
+                slot.AnimationOffsetY = 0;
+                slot.CurrentScale = 0;
+                slot.CurrentOpacity = 0;
             }
         }
     }

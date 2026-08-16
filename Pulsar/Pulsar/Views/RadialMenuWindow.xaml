@@ -107,10 +107,19 @@
                 <!-- Shared Background Container -->
                 <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
                     
-                    <!-- 1. Center Orb Wrapper (Normal State) -->
-                    <Grid HorizontalAlignment="Center" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                    <!-- 1. Center Orb Wrapper (Normal State).
+                         Scale/opacity/offset are VM-driven so submenu transitions can
+                         morph the center node continuously instead of swapping content. -->
+                    <Grid HorizontalAlignment="Center" VerticalAlignment="Center"
+                          RenderTransformOrigin="0.5,0.5"
+                          Opacity="{Binding CenterSlot.CurrentOpacity}">
                         <Grid.RenderTransform>
-                            <ScaleTransform ScaleX="1" ScaleY="1"/>
+                            <TransformGroup>
+                                <ScaleTransform ScaleX="{Binding CenterSlot.CurrentScale}"
+                                                ScaleY="{Binding CenterSlot.CurrentScale}"/>
+                                <TranslateTransform X="{Binding CenterSlot.AnimationOffsetX}"
+                                                    Y="{Binding CenterSlot.AnimationOffsetY}"/>
+                            </TransformGroup>
                         </Grid.RenderTransform>
                         
                         <!-- Normal slot orb (overlay/fallback) -->

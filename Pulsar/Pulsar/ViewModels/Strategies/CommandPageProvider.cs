@@ -64,7 +64,8 @@ namespace Pulsar.ViewModels.Strategies
             {
                 var item = pageItems[i];
                 var slot = slots[i]; // Slot 1 is index 0
-                
+                slot.ResetAnimation();
+
                 // [Refactor] Slot 值已经在配置中持久化，无需运行时分配
                 
                 slot.Label = item.Label;

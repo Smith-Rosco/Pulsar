@@ -7,6 +7,8 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Interop;
@@ -30,6 +32,9 @@ namespace Pulsar.Views
         // DPI 缩放比例缓存
         private double _dpiScaleX = 1.0;
         private double _dpiScaleY = 1.0;
+
+        // Cancels an in-flight submenu window translation when a newer request wins.
+        private CancellationTokenSource? _windowRepositionCts;
 
         public RadialMenuWindow(
             RadialMenuViewModel vm,
@@ -199,6 +204,11 @@ namespace Pulsar.Views
 
         private void UpdateWindowPosition()
         {
+            // A direct summon always wins over an in-flight submenu translation.
+            _windowRepositionCts?.Cancel();
+            _windowRepositionCts = null;
+            StopWindowPositionAnimation();
+
             RepositionToCursor();
 
             // Reset Canvas Margin (it's now 0,0 relative to window)
@@ -207,16 +217,67 @@ namespace Pulsar.Views
 
         private void RepositionToCursor()
         {
+            var placement = GetCursorCenteredPlacement();
+            this.Left = placement.LeftDip;
+            this.Top = placement.TopDip;
+        }
+
+        private WindowPlacement GetCursorCenteredPlacement()
+        {
             // Update DPI Scale from the current window visual.
             var dpi = VisualTreeHelper.GetDpi(this);
             _dpiScaleX = dpi.DpiScaleX;
             _dpiScaleY = dpi.DpiScaleY;
 
-            var placement = _windowPlacementService.CalculateCursorCenteredPlacement(
+            return _windowPlacementService.CalculateCursorCenteredPlacement(
                 new WindowPlacementRequest(Width, Height, _dpiScaleX, _dpiScaleY));
+        }
 
+        /// <summary>
+        /// Kando-style root translation: instead of teleporting the window when a
+        /// submenu opens, glide the window to the cursor-centered position while the
+        /// selected slot simultaneously moves to the center of the canvas. The
+        /// selected item therefore stays under the pointer for the whole transition.
+        /// </summary>
+        private async Task RepositionToCursorAnimatedAsync()
+        {
+            _windowRepositionCts?.Cancel();
+            var cts = new CancellationTokenSource();
+            _windowRepositionCts = cts;
+
+            var placement = GetCursorCenteredPlacement();
+            var duration = TimeSpan.FromMilliseconds(220);
+            var easing = new CubicEase { EasingMode = EasingMode.EaseInOut };
+
+            var leftAnimation = new DoubleAnimation(placement.LeftDip, duration) { EasingFunction = easing };
+            var topAnimation = new DoubleAnimation(placement.TopDip, duration) { EasingFunction = easing };
+
+            this.BeginAnimation(Window.LeftProperty, leftAnimation);
+            this.BeginAnimation(Window.TopProperty, topAnimation);
+
+            try
+            {
+                await Task.Delay(duration + TimeSpan.FromMilliseconds(50), cts.Token);
+            }
+            catch (TaskCanceledException)
+            {
+                return;
+            }
+
+            if (cts.IsCancellationRequested)
+            {
+                return;
+            }
+
+            StopWindowPositionAnimation();
             this.Left = placement.LeftDip;
             this.Top = placement.TopDip;
+        }
+
+        private void StopWindowPositionAnimation()
+        {
+            this.BeginAnimation(Window.LeftProperty, null);
+            this.BeginAnimation(Window.TopProperty, null);
         }
 
         private void HandleSubMenuRepositionRequested()
@@ -227,11 +288,14 @@ namespace Pulsar.Views
                 return;
             }
 
-            RepositionToCursor();
+            _ = RepositionToCursorAnimatedAsync();
         }
 
         protected override void OnClosed(EventArgs e)
         {
+            _windowRepositionCts?.Cancel();
+            _windowRepositionCts = null;
+
             if (_viewModel != null)
             {
                 _viewModel.PropertyChanged -= OnViewModelPropertyChanged;

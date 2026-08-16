@@ -109,18 +109,11 @@ namespace Pulsar.ViewModels
 
             if (pageProvider == null) return;
 
+            // Synchronous refresh only. The page provider was loaded when the menu
+            // opened; firing an async reload here would make root slots "pop" back
+            // halfway through the submenu exit morph.
             pagingController.SetTotalPages(pageProvider.TotalPages);
             pageProvider.RefreshVisuals(slots, centerSlot);
-
-            _ = pageProvider.LoadAsync().ContinueWith(async _ =>
-            {
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
-                {
-                    pagingController.SetTotalPages(pageProvider.TotalPages);
-                    pageProvider.RefreshVisuals(slots, centerSlot);
-                });
-                await pagingController.GoToPageAsync(pageProvider.CurrentPage);
-            }, TaskScheduler.Default);
         }
 
         private async Task CaptureThumbnailAsync(SlotViewModel slot, IntPtr hWnd, string title)

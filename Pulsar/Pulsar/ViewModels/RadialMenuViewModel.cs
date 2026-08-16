@@ -95,8 +95,15 @@ namespace Pulsar.ViewModels
                         _activeHotkeyInvocation = null;
                         _hotkeyService.ResetModifierState();
                         _mouseTrackingService.StopTracking();
+
+                        // Stop any in-flight submenu morph and unlock input state.
+                        _subMenuTransitionCts?.Cancel();
+                        _subMenuTransitionCts = null;
+                        _isTransitioning = false;
+
                         // Reset physics just in case
                         foreach(var slot in Slots) slot.ResetAnimation();
+                        CenterSlot?.ResetAnimation();
                     }
                     else
                     {
@@ -191,6 +198,22 @@ namespace Pulsar.ViewModels
 
         private bool _hasShownSinglePageHint = false;
         private CancellationTokenSource? _centerHintCts;
+
+        // [UX] Submenu transition state. During a transition all pointer/keyboard
+        // input is ignored so a partially-morphed menu can never be acted upon.
+        private bool _isTransitioning;
+        private CancellationTokenSource? _subMenuTransitionCts;
+        private int _subMenuOriginSlotIndex = -1;
+        private double _subMenuOriginX;
+        private double _subMenuOriginY;
+
+        // Kando-inspired timing: a short anticipation collapse, a root-translation
+        // glide, and a slightly overshooting bloom for the new ring.
+        private static readonly TimeSpan SubMenuGlideDuration = TimeSpan.FromMilliseconds(220);
+        private static readonly TimeSpan SubMenuCollapseDuration = TimeSpan.FromMilliseconds(160);
+        private static readonly TimeSpan SubMenuBloomDuration = TimeSpan.FromMilliseconds(260);
+        private const double SubMenuCollapsedScale = 0.45;
+        private const double SubMenuCollapsedOpacity = 0.0;
 
         // [UX Improvement] Quick Switch Position Tolerance
         private const double QuickSwitchPositionTolerance = 30.0; // 30px tolerance from center
@@ -298,6 +321,7 @@ namespace Pulsar.ViewModels
                 CenterX - _currentCenterSize / 2, 
                 CenterY - _currentCenterSize / 2, 
                 _currentCenterSize);
+            CenterSlot.ResetAnimation();
 
             _animationController.SyncCurrentLayout(new LayoutTarget(_currentRadius, _currentCenterSize, _currentSlotSize));
             
@@ -366,6 +390,10 @@ namespace Pulsar.ViewModels
             CenterSlot.ActionStrategy = NoOpStrategy.Instance;
             CenterSlot.Type = SlotType.Action;
             CenterSlot.BadgeCount = 0;
+            CenterSlot.IconImage = null;
+            CenterSlot.LoadIconData(string.Empty);
+            CenterSlot.ClearPresentation();
+            CenterSlot.ResetAnimation();
         }
 
         private void ApplyLayoutTarget(LayoutTarget target)
@@ -509,6 +537,7 @@ namespace Pulsar.ViewModels
             CenterSlot.LoadIconData(string.Empty);
             CenterSlot.IsActive = false;
             CenterSlot.ClearPresentation(); // [Fix] Clear center slot presentation
+            CenterSlot.ResetAnimation();
 
             foreach (var slot in Slots)
             {
@@ -637,6 +666,13 @@ namespace Pulsar.ViewModels
                 return;
             }
 
+            // A morph is already in progress; ignore this request rather than
+            // tearing the menu between two visual states.
+            if (_isTransitioning)
+            {
+                return;
+            }
+
             _activeHotkeyInvocation = null;
             _pendingQuickSwitch = false;
 
@@ -673,7 +709,7 @@ namespace Pulsar.ViewModels
 
         public bool HandleMouseWheel(int delta, bool treatFeedbackAsHandled)
         {
-            if (!IsVisible) return false;
+            if (!IsVisible || _isTransitioning) return false;
             if (_menuState == MenuState.SubMenu) return HandleSubMenuMouseWheel(delta, treatFeedbackAsHandled);
             if (_pageProvider == null) return false;
 
@@ -755,12 +791,97 @@ namespace Pulsar.ViewModels
             }
         }
 
+        private readonly record struct SlotPose(
+            double Scale,
+            double Opacity,
+            double OffsetX,
+            double OffsetY);
+
+        private static SlotPose GetPose(SlotViewModel slot) => new(
+            slot.CurrentScale,
+            slot.CurrentOpacity,
+            slot.AnimationOffsetX,
+            slot.AnimationOffsetY);
+
+        private static void ApplyPose(SlotViewModel slot, SlotPose pose)
+        {
+            slot.CurrentScale = pose.Scale;
+            slot.CurrentOpacity = pose.Opacity;
+            slot.AnimationOffsetX = pose.OffsetX;
+            slot.AnimationOffsetY = pose.OffsetY;
+        }
+
+        /// <summary>
+        /// Runs a short VM-side animation on the UI thread. Unlike the layout animator
+        /// this is deliberately lightweight: it interpolates slot poses so several
+        /// groups can run concurrently with different easings.
+        /// </summary>
+        private static async Task AnimateAsync(
+            TimeSpan duration,
+            Func<double, double>? easing,
+            Action<double> update,
+            CancellationToken cancellationToken)
+        {
+            easing ??= EasingFunctions.EaseOutCubic;
+
+            if (duration <= TimeSpan.Zero)
+            {
+                update(1);
+                return;
+            }
+
+            var stopwatch = Stopwatch.StartNew();
+            while (stopwatch.Elapsed < duration)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                double progress = Math.Clamp(stopwatch.Elapsed.TotalMilliseconds / duration.TotalMilliseconds, 0, 1);
+                update(easing(progress));
+                await Task.Delay(16, cancellationToken);
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            update(1);
+        }
+
+        private static async Task AnimateSlotsAsync(
+            IReadOnlyCollection<SlotViewModel> slots,
+            Func<SlotViewModel, SlotPose> getTarget,
+            TimeSpan duration,
+            Func<double, double>? easing,
+            CancellationToken cancellationToken)
+        {
+            if (slots.Count == 0)
+            {
+                return;
+            }
+
+            var startPoses = slots.Select(GetPose).ToArray();
+            var targetPoses = slots.Select(getTarget).ToArray();
+            var slotList = slots.ToArray();
+
+            await AnimateAsync(duration, easing, progress =>
+            {
+                for (int i = 0; i < slotList.Length; i++)
+                {
+                    ApplyPose(slotList[i], new SlotPose(
+                        Lerp(startPoses[i].Scale, targetPoses[i].Scale, progress),
+                        Lerp(startPoses[i].Opacity, targetPoses[i].Opacity, progress),
+                        Lerp(startPoses[i].OffsetX, targetPoses[i].OffsetX, progress),
+                        Lerp(startPoses[i].OffsetY, targetPoses[i].OffsetY, progress)));
+                }
+            }, cancellationToken);
+        }
+
+        private static double Lerp(double from, double to, double progress) =>
+            from + ((to - from) * progress);
+
         public event Action<BoundaryDirection>? OnPagingBoundaryFeedbackRequested;
         public event Action? OnSubMenuRepositionRequested;
 
         private async void HandleGlobalMouseEvent(object? sender, GlobalMouseEventArgs e)
         {
-            if (!IsVisible) return;
+            if (!IsVisible || _isTransitioning) return;
 
             bool isInsideMenu = _windowPlacementService.IsPointInsideWindow(_windowHandle, e.X, e.Y);
 
@@ -902,7 +1023,7 @@ namespace Pulsar.ViewModels
 
         private void OnMousePositionChanged(object? sender, Vector relativePosition)
         {
-            if (!IsVisible) return;
+            if (!IsVisible || _isTransitioning) return;
 
             _lastMouseX = relativePosition.X;
             _lastMouseY = relativePosition.Y;
@@ -958,6 +1079,13 @@ namespace Pulsar.ViewModels
             if (++_logSampleCounter % LOG_SAMPLE_RATE == 0)
             {
                 _logger?.LogDebug("[HandleKeyUp] Key: {Key}, IsVisible: {IsVisible}", e.VkCode, IsVisible);
+            }
+
+            // Ignore hotkey releases while a submenu morph is running. The menu is
+            // intentionally inert until the transition settles.
+            if (_isTransitioning)
+            {
+                return;
             }
 
             // Escape is the global fallback for cancellation. The radial window also
@@ -1049,67 +1177,160 @@ namespace Pulsar.ViewModels
 
         public async Task EnterSubMenuAsync(List<ProcessWindowInfo> windows, string processName, int clickedSlotIndex)
         {
-            _menuState = MenuState.SubMenu;
-            _subMenuWindows = windows ?? new List<ProcessWindowInfo>();
-            _subMenuProcessName = processName;
-            _subMenuPage = 0;
-            _subMenuTotalPages = Math.Max(1, (int)Math.Ceiling(_subMenuWindows.Count / (double)_slotsPerPage));
-
-            // 1. Compute parent slot position for expansion origin
-            var parentSlot = clickedSlotIndex > 0 && clickedSlotIndex <= Slots.Count
-                ? Slots[clickedSlotIndex - 1] : null;
-            var parentCenterX = parentSlot != null ? parentSlot.X + parentSlot.Size / 2 : CenterX;
-            var parentCenterY = parentSlot != null ? parentSlot.Y + parentSlot.Size / 2 : CenterY;
-
-            // 2. Hide child slots and position them at the parent slot (expansion origin)
-            var childSlots = Slots.Where(s => s.SlotIndex >= 1).ToList();
-            foreach (var s in childSlots)
+            if (_isTransitioning)
             {
-                s.CurrentScale = 0;
-                s.CurrentOpacity = 0;
-                s.AnimationOffsetX = parentCenterX - (s.X + s.Size / 2);
-                s.AnimationOffsetY = parentCenterY - (s.Y + s.Size / 2);
+                return;
             }
 
-            // 3. Swap content while hidden
-            CenterText = _loc["RadialMenu.Back"];
-            var mostRecentWin = _subMenuCoordinator.ConfigureSubMenu(
-                _subMenuWindows, processName, _slotsPerPage, _subMenuPage, CenterSlot, Slots);
-            UpdateSubMenuCenterLabel();
-            OnSubMenuRepositionRequested?.Invoke();
+            _isTransitioning = true;
+            _subMenuTransitionCts?.Cancel();
+            var transitionCts = new CancellationTokenSource();
+            _subMenuTransitionCts = transitionCts;
+            var cancellationToken = transitionCts.Token;
 
-            // 4. Stagger slot entrance: appear at parent → snap to ring position
-            for (int i = 0; i < childSlots.Count; i++)
+            try
             {
-                await Task.Delay(25);
-                childSlots[i].AnimationOffsetX = 0;
-                childSlots[i].AnimationOffsetY = 0;
-                childSlots[i].CurrentScale = 1.0;
-                childSlots[i].CurrentOpacity = 1.0;
-            }
+                _menuState = MenuState.SubMenu;
+                _subMenuWindows = windows ?? new List<ProcessWindowInfo>();
+                _subMenuProcessName = processName;
+                _subMenuPage = 0;
+                _subMenuTotalPages = Math.Max(1, (int)Math.Ceiling(_subMenuWindows.Count / (double)_slotsPerPage));
 
-            // Pre-select the slot at the same ring position the user clicked, if populated.
-            if (clickedSlotIndex > 0 && clickedSlotIndex <= _slotsPerPage)
-            {
-                var preSelected = Slots.FirstOrDefault(s => s.SlotIndex == clickedSlotIndex);
-                bool shouldPreSelect = preSelected != null
-                    && preSelected.Type != SlotType.None
-                    && preSelected.IsEnabled;
-                _ = System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                var parentSlot = clickedSlotIndex > 0 && clickedSlotIndex <= Slots.Count
+                    ? Slots[clickedSlotIndex - 1]
+                    : null;
+                var parentCenterX = parentSlot != null ? parentSlot.X + parentSlot.Size / 2 : CenterX;
+                var parentCenterY = parentSlot != null ? parentSlot.Y + parentSlot.Size / 2 : CenterY;
+
+                _subMenuOriginSlotIndex = clickedSlotIndex;
+                _subMenuOriginX = parentCenterX;
+                _subMenuOriginY = parentCenterY;
+
+                // Kando-style root translation: glide the window so the clicked item
+                // will end up under the pointer. The clicked slot simultaneously glides
+                // to the canvas center, so the two motions cancel out on screen.
+                OnSubMenuRepositionRequested?.Invoke();
+
+                var childSlots = Slots.Where(s => s.SlotIndex >= 1).ToList();
+                var otherSlots = childSlots.Where(s => s != parentSlot).ToList();
+
+                // Release hover state before morphing so SlotOrb's inner active-scale
+                // animation cannot fight the outer glide/bloom transforms.
+                _activeSlotIndex = -1;
+                CenterSlot.IsActive = false;
+                foreach (var slot in childSlots)
                 {
-                    UpdateActiveSlot(shouldPreSelect ? clickedSlotIndex : -1);
-                }), System.Windows.Threading.DispatcherPriority.Input);
+                    slot.IsActive = false;
+                }
+
+                // The selected slot grows from ring size to center size by scaling
+                // around its own center while moving to the middle of the canvas.
+                double clickedScaleTarget = parentSlot != null
+                    ? Math.Clamp(_currentCenterSize / Math.Max(1, parentSlot.Size), 1.0, 1.45)
+                    : 1.0;
+
+                var glideClicked = parentSlot == null
+                    ? Task.CompletedTask
+                    : AnimateSlotsAsync(
+                        new[] { parentSlot },
+                        _ => new SlotPose(
+                            clickedScaleTarget,
+                            1.0,
+                            CenterX - parentCenterX,
+                            CenterY - parentCenterY),
+                        SubMenuGlideDuration,
+                        EasingFunctions.EaseInOutCubic,
+                        cancellationToken);
+
+                var collapseOthers = AnimateSlotsAsync(
+                    otherSlots,
+                    _ => new SlotPose(SubMenuCollapsedScale, SubMenuCollapsedOpacity, 0, 0),
+                    SubMenuCollapseDuration,
+                    EasingFunctions.EaseInCubic,
+                    cancellationToken);
+
+                var collapseCenter = AnimateSlotsAsync(
+                    new[] { CenterSlot },
+                    _ => new SlotPose(SubMenuCollapsedScale, SubMenuCollapsedOpacity, 0, 0),
+                    SubMenuCollapseDuration,
+                    EasingFunctions.EaseInCubic,
+                    cancellationToken);
+
+                await Task.WhenAll(glideClicked, collapseOthers, collapseCenter);
+                cancellationToken.ThrowIfCancellationRequested();
+
+                // Swap content at the invisible/collapsed point. The clicked process
+                // icon is copied to the center before the old center disappears, which
+                // keeps the morph continuous.
+                if (parentSlot != null)
+                {
+                    if (parentSlot.IconImage != null)
+                    {
+                        CenterSlot.IconImage = parentSlot.IconImage;
+                    }
+                    else
+                    {
+                        CenterSlot.LoadIconData(parentSlot.IconKey);
+                    }
+                }
+
+                CenterText = _loc["RadialMenu.Back"];
+                var mostRecentWin = _subMenuCoordinator.ConfigureSubMenu(
+                    _subMenuWindows, processName, _slotsPerPage, _subMenuPage, CenterSlot, Slots);
+                UpdateSubMenuCenterLabel();
+
+                // The center node is already at the middle and full-size. The new
+                // window slots start collapsed at the middle, then bloom to the ring.
+                CenterSlot.ResetAnimation();
+                foreach (var slot in childSlots)
+                {
+                    slot.AnimationOffsetX = CenterX - (slot.X + slot.Size / 2);
+                    slot.AnimationOffsetY = CenterY - (slot.Y + slot.Size / 2);
+                    slot.CurrentScale = SubMenuCollapsedScale;
+                    slot.CurrentOpacity = SubMenuCollapsedOpacity;
+                }
+
+                await AnimateSlotsAsync(
+                    childSlots,
+                    _ => new SlotPose(1.0, 1.0, 0, 0),
+                    SubMenuBloomDuration,
+                    EasingFunctions.EaseOutBack,
+                    cancellationToken);
+
+                // Pre-select the slot at the same ring position the user clicked, if populated.
+                if (clickedSlotIndex > 0 && clickedSlotIndex <= _slotsPerPage)
+                {
+                    var preSelected = Slots.FirstOrDefault(s => s.SlotIndex == clickedSlotIndex);
+                    bool shouldPreSelect = preSelected != null
+                        && preSelected.Type != SlotType.None
+                        && preSelected.IsEnabled;
+                    _ = System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        UpdateActiveSlot(shouldPreSelect ? clickedSlotIndex : -1);
+                    }), System.Windows.Threading.DispatcherPriority.Input);
+                }
+
+                _previewService.ClearCache();
+
+                _visualStateCoordinator.PrimeSubMenuPreview(
+                    mostRecentWin,
+                    () => _menuState == MenuState.SubMenu,
+                    GetPreviewHostContext,
+                    ApplyCenterPreview);
             }
-
-            _previewService.ClearCache();
-
-            _visualStateCoordinator.PrimeSubMenuPreview(
-                mostRecentWin,
-                () => _menuState == MenuState.SubMenu,
-                GetPreviewHostContext,
-                ApplyCenterPreview);
+            catch (OperationCanceledException)
+            {
+                // The menu was dismissed while the morph was running.
+            }
+            finally
+            {
+                _isTransitioning = false;
+                if (ReferenceEquals(_subMenuTransitionCts, transitionCts))
+                {
+                    _subMenuTransitionCts = null;
+                }
+            }
         }
-
         private void UpdateSubMenuCenterLabel()
         {
             var processName = CenterSlot.Label;
@@ -1150,37 +1371,133 @@ namespace Pulsar.ViewModels
 
         public void RestoreRootMenu()
         {
-             _subMenuWindows = new List<ProcessWindowInfo>();
-             _subMenuProcessName = string.Empty;
-             _subMenuPage = 0;
-             _subMenuTotalPages = 1;
+            if (_isTransitioning)
+            {
+                return;
+            }
 
-             // Reset animation offsets
-             foreach (var s in Slots) s.ResetAnimation();
+            _ = RestoreRootMenuAsync();
+        }
 
-             // Reposition window to cursor
-             OnSubMenuRepositionRequested?.Invoke();
-             _menuState = MenuState.Root;
-             ResetCenterSlotForRootMenu();
+        private async Task RestoreRootMenuAsync()
+        {
+            _isTransitioning = true;
+            _subMenuTransitionCts?.Cancel();
+            var transitionCts = new CancellationTokenSource();
+            _subMenuTransitionCts = transitionCts;
+            var cancellationToken = transitionCts.Token;
 
-             // [UX Enhancement] Trigger smooth contraction animation back to dynamic normal sizes
-             var layout = _layoutCoordinator.GetLayoutMetrics(_slotsPerPage, _currentCenterSize, _currentSlotSize);
-             double normalSlotSize = layout.SlotSize;
-             double normalCenterSize = layout.CenterSize;
-             double normalRadius = layout.Radius;
-               
-             _ = AnimateToLayoutAsync(
-                 normalRadius,
-                 normalCenterSize,
-                 normalSlotSize,
-                 AnimationOptionsDefaults.SubMenuExit);
-               
-              // Clear Preview
-              ApplyCenterPreview(ResolvedWindowPreview.Icon(CenterSlot.IconImage));
+            try
+            {
+                double originX = _subMenuOriginX;
+                double originY = _subMenuOriginY;
 
-              _subMenuCoordinator.RestoreRootMenu(_pageProvider, _pagingController, Slots, CenterSlot);
-         }
+                // Release hover state before reversing the morph.
+                _activeSlotIndex = -1;
+                CenterSlot.IsActive = false;
+                foreach (var slot in Slots)
+                {
+                    slot.IsActive = false;
+                }
 
+                // Glide the window back to the cursor while the submenu collapses.
+                OnSubMenuRepositionRequested?.Invoke();
+
+                // Phase 1: window slots and the old center contract together. The
+                // center "Back" node moves towards the slot that originally opened
+                // this submenu, so the gesture reads as a reverse of the enter morph.
+                await AnimateSlotsAsync(
+                    Slots,
+                    slot => new SlotPose(
+                        SubMenuCollapsedScale,
+                        SubMenuCollapsedOpacity,
+                        CenterX - (slot.X + slot.Size / 2),
+                        CenterY - (slot.Y + slot.Size / 2)),
+                    SubMenuCollapseDuration,
+                    EasingFunctions.EaseInCubic,
+                    cancellationToken);
+
+                await AnimateSlotsAsync(
+                    new[] { CenterSlot },
+                    _ => new SlotPose(
+                        SubMenuCollapsedScale,
+                        SubMenuCollapsedOpacity,
+                        originX - CenterX,
+                        originY - CenterY),
+                    SubMenuCollapseDuration,
+                    EasingFunctions.EaseInCubic,
+                    cancellationToken);
+
+                cancellationToken.ThrowIfCancellationRequested();
+
+                // Swap back to root content at the fully-collapsed point.
+                _subMenuWindows = new List<ProcessWindowInfo>();
+                _subMenuProcessName = string.Empty;
+                _subMenuPage = 0;
+                _subMenuTotalPages = 1;
+                _subMenuOriginSlotIndex = -1;
+                _subMenuOriginX = 0;
+                _subMenuOriginY = 0;
+
+                _menuState = MenuState.Root;
+                ResetCenterSlotForRootMenu();
+                _subMenuCoordinator.RestoreRootMenu(_pageProvider, _pagingController, Slots, CenterSlot);
+
+                var desiredOpacityByIndex = Slots.ToDictionary(slot => slot.SlotIndex, slot => slot.CurrentOpacity);
+
+                foreach (var slot in Slots)
+                {
+                    slot.AnimationOffsetX = CenterX - (slot.X + slot.Size / 2);
+                    slot.AnimationOffsetY = CenterY - (slot.Y + slot.Size / 2);
+                    slot.CurrentScale = SubMenuCollapsedScale;
+                    slot.CurrentOpacity = SubMenuCollapsedOpacity;
+                }
+
+                CenterSlot.AnimationOffsetX = 0;
+                CenterSlot.AnimationOffsetY = 0;
+                CenterSlot.CurrentScale = SubMenuCollapsedScale;
+                CenterSlot.CurrentOpacity = SubMenuCollapsedOpacity;
+
+                // Phase 2: bloom the root ring back out. Slots that are intentionally
+                // dimmed by their page provider keep their desired opacity.
+                await Task.WhenAll(
+                    AnimateSlotsAsync(
+                        Slots,
+                        slot => new SlotPose(
+                            1.0,
+                            desiredOpacityByIndex.TryGetValue(slot.SlotIndex, out var opacity) ? opacity : 0,
+                            0,
+                            0),
+                        SubMenuBloomDuration,
+                        EasingFunctions.EaseOutBack,
+                        cancellationToken),
+                    AnimateSlotsAsync(
+                        new[] { CenterSlot },
+                        _ => new SlotPose(1.0, 1.0, 0, 0),
+                        SubMenuBloomDuration,
+                        EasingFunctions.EaseOutBack,
+                        cancellationToken));
+
+                ApplyCenterPreview(ResolvedWindowPreview.Icon(CenterSlot.IconImage));
+
+                // The root page provider has already written the context label into the
+                // center. Keep that label visible; the next real mouse move will resume
+                // hover/title updates.
+                DynamicTitle = string.Empty;
+            }
+            catch (OperationCanceledException)
+            {
+                // The menu was dismissed while the morph was running.
+            }
+            finally
+            {
+                _isTransitioning = false;
+                if (ReferenceEquals(_subMenuTransitionCts, transitionCts))
+                {
+                    _subMenuTransitionCts = null;
+                }
+            }
+        }
         private void ApplyCenterPreview(ResolvedWindowPreview preview)
         {
             CenterPreviewKind = preview.Kind;
