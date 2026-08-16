@@ -43,6 +43,10 @@
     <SolidColorBrush x:Key="Theme.Orb.Active.Glow" Color="#CC00BFFF"/>
     <SolidColorBrush x:Key="Theme.Orb.Text" Color="#FFFFFF"/>
 
+    <!-- Slot title (text-only orb) readability tokens: local semi-opaque backplate -->
+    <SolidColorBrush x:Key="Theme.Orb.Label.Background" Color="#CC1F1F1F"/>
+    <SolidColorBrush x:Key="Theme.Orb.Label.Foreground" Color="#FFFFFFFF"/>
+
     <SolidColorBrush x:Key="Theme.Radial.Scrim" Color="#26000000"/>
     <RadialGradientBrush x:Key="Theme.Radial.ScrimBrush" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
         <GradientStop Color="#40000000" Offset="0.0"/>
@@ -52,6 +56,7 @@
     </RadialGradientBrush>
     <SolidColorBrush x:Key="Theme.Radial.Title.Foreground" Color="#FFFFFFFF"/>
     <SolidColorBrush x:Key="Theme.Radial.Title.Shadow" Color="#FF000000"/>
+    <SolidColorBrush x:Key="Theme.Radial.Title.Scrim" Color="#B2000000"/>
     <SolidColorBrush x:Key="Theme.Orb.Chip.Background" Color="#B20B1220"/>
 
     <sys:Double x:Key="Theme.Orb.BlurOpacity">1.0</sys:Double>

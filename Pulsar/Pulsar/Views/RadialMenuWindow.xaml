@@ -29,6 +29,7 @@
                 <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/SlotStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVisibilityConverter"/>
             <converters:SlotBrushConverter x:Key="SlotBrushConverter"/>
             <sys:Boolean x:Key="FalseValue">False</sys:Boolean>
         </ResourceDictionary>
@@ -40,13 +41,6 @@
                 Background="Transparent"
                 Width="500" Height="500"
                 HorizontalAlignment="Left" VerticalAlignment="Top">
-
-            <!-- Subtle ground scrim keeps the translucent menu readable over any background.
-                 Radial gradient: darkens the ring area but fades before a hard visible edge. -->
-            <Ellipse Width="440" Height="440"
-                     Canvas.Left="30" Canvas.Top="30"
-                     Fill="{DynamicResource Theme.Radial.ScrimBrush}"
-                     IsHitTestVisible="False"/>
 
             <ItemsControl ItemsSource="{Binding Slots}">
                 <ItemsControl.ItemsPanel>
@@ -222,45 +216,55 @@
                  Yes.
                  To put this BEHIND everything, we should put it as the FIRST child of Canvas. -->
 
-            <!-- [Optimized] Dynamic Title with Hard Shadow (No DropShadowEffect for Performance) -->
+            <!-- [Optimized] Dynamic Title with Hard Shadow (No DropShadowEffect for Performance).
+                 A local translucent scrim keeps the white title readable on both light and
+                 dark desktop backgrounds after the wheel-level gradient scrim was removed. -->
             <Grid Canvas.Left="0" 
                   Canvas.Top="{Binding TitleTopOffset}" 
                   Width="500"
                   IsHitTestVisible="False">
-                
-                <!-- Shadow Layer (Offset 1px) -->
-                <TextBlock Text="{Binding DynamicTitle, NotifyOnTargetUpdated=True}"
-                           TextAlignment="Center"
-                           Foreground="{DynamicResource Theme.Radial.Title.Shadow}"
-                           FontSize="16" FontWeight="SemiBold"
-                           Opacity="0.5"
-                           Margin="1,1,0,0">
-                    <TextBlock.Triggers>
-                        <EventTrigger RoutedEvent="Binding.TargetUpdated">
-                            <BeginStoryboard>
-                                <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="0.5" Duration="0:0:0.15" />
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </EventTrigger>
-                    </TextBlock.Triggers>
-                </TextBlock>
+                <Border HorizontalAlignment="Center"
+                        VerticalAlignment="Top"
+                        Padding="10,3"
+                        CornerRadius="6"
+                        Background="{DynamicResource Theme.Radial.Title.Scrim}"
+                        Visibility="{Binding DynamicTitle, Converter={StaticResource StringEmptyToVisibilityConverter}}">
+                    <Grid>
+                        <!-- Shadow Layer (Offset 1px) -->
+                        <TextBlock Text="{Binding DynamicTitle, NotifyOnTargetUpdated=True}"
+                                   TextAlignment="Center"
+                                   Foreground="{DynamicResource Theme.Radial.Title.Shadow}"
+                                   FontSize="16" FontWeight="SemiBold"
+                                   Opacity="0.5"
+                                   Margin="1,1,0,0">
+                            <TextBlock.Triggers>
+                                <EventTrigger RoutedEvent="Binding.TargetUpdated">
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="0.5" Duration="0:0:0.15" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                            </TextBlock.Triggers>
+                        </TextBlock>
 
-                <!-- Foreground Layer -->
-                <TextBlock Text="{Binding DynamicTitle, NotifyOnTargetUpdated=True}"
-                           TextAlignment="Center"
-                           Foreground="{DynamicResource Theme.Radial.Title.Foreground}"
-                           FontSize="16" FontWeight="SemiBold">
-                    <TextBlock.Triggers>
-                        <EventTrigger RoutedEvent="Binding.TargetUpdated">
-                            <BeginStoryboard>
-                                <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.4" To="1" Duration="0:0:0.15" />
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </EventTrigger>
-                    </TextBlock.Triggers>
-                </TextBlock>
+                        <!-- Foreground Layer -->
+                        <TextBlock Text="{Binding DynamicTitle, NotifyOnTargetUpdated=True}"
+                                   TextAlignment="Center"
+                                   Foreground="{DynamicResource Theme.Radial.Title.Foreground}"
+                                   FontSize="16" FontWeight="SemiBold">
+                            <TextBlock.Triggers>
+                                <EventTrigger RoutedEvent="Binding.TargetUpdated">
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.4" To="1" Duration="0:0:0.15" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                            </TextBlock.Triggers>
+                        </TextBlock>
+                    </Grid>
+                </Border>
             </Grid>
         </Canvas>
     </Grid>

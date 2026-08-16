@@ -51,6 +51,37 @@ namespace Pulsar.Tests.Config
         }
 
         [Fact]
+        public void ThemeDictionaries_ShouldExposeRadialReadabilityTokens_ForBothSupportedThemes()
+        {
+            RunInSta(() =>
+            {
+                string[] themeSources =
+                {
+                    "/Pulsar;component/Themes/Theme.Light.xaml",
+                    "/Pulsar;component/Themes/Theme.Dark.xaml"
+                };
+
+                string[] expectedKeys =
+                {
+                    "Theme.Orb.Label.Background",
+                    "Theme.Orb.Label.Foreground",
+                    "Theme.Radial.Title.Scrim"
+                };
+
+                foreach (string themeSource in themeSources)
+                {
+                    var dictionary = (ResourceDictionary)Application.LoadComponent(new Uri(themeSource, UriKind.Relative));
+
+                    foreach (string expectedKey in expectedKeys)
+                    {
+                        dictionary.Contains(expectedKey).Should().BeTrue($"{themeSource} should define {expectedKey}");
+                        dictionary[expectedKey].Should().BeAssignableTo<SolidColorBrush>();
+                    }
+                }
+            });
+        }
+
+        [Fact]
         public void SlotBrushConverter_ShouldResolveBrushFromHostResourceScope()
         {
             RunInSta(() =>

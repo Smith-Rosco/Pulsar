@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Pulsar.Core.Localization;
+using Pulsar.Helpers;
 using Pulsar.Models;
 using Pulsar.ViewModels.Strategies;
 using System;
@@ -161,14 +162,9 @@ namespace Pulsar.ViewModels
                 CustomStrokeBrush = strokeBrush;
 
                 // 3. Foreground: Adaptive Contrast
-                // Luminance formula: 0.299R + 0.587G + 0.114B
-                double luminance = (0.299 * color.R + 0.587 * color.G + 0.114 * color.B) / 255.0;
-                
-                // If background is bright (lum > 0.5), use Black text. Otherwise White.
-                // Note: Since our fill is only 25% opacity, the background color matters too.
-                // Assuming dark theme background, we mainly care if the stroke/fill makes it too bright.
-                // A simple heuristic: if the custom color is very bright, use black to stand out against the glow/stroke.
-                var foreColor = luminance > 0.7 ? System.Windows.Media.Colors.Black : System.Windows.Media.Colors.White;
+                // The fill is translucent, so pick white or near-black by evaluating
+                // WCAG contrast against both black and white worst-case backdrops.
+                var foreColor = ColorContrastHelper.PickForegroundColor(color, fillBrush.Opacity);
                 var foreBrush = new System.Windows.Media.SolidColorBrush(foreColor);
                 foreBrush.Freeze();
                 CustomForegroundBrush = foreBrush;
