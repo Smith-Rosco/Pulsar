@@ -1,8 +1,10 @@
+using System.Windows.Input;
 using FluentAssertions;
 using Moq;
 using Pulsar.Core.Localization;
 using Pulsar.Models.Enums;
 using Pulsar.ViewModels;
+using Pulsar.ViewModels.Base;
 using Xunit;
 
 namespace Pulsar.Tests.ViewModels
@@ -34,6 +36,42 @@ namespace Pulsar.Tests.ViewModels
 
             vm.PrimaryButtonText.Should().Be("OK");
             vm.SecondaryButtonText.Should().Be("Cancel");
+        }
+
+        [Fact]
+        public void CancelFromKeyboard_ClosesNormalDialogAsCancelled()
+        {
+            var vm = new DialogHostViewModel();
+            DialogResult? requestedResult = null;
+            vm.RequestClose = result => requestedResult = result;
+
+            vm.CancelFromKeyboard();
+
+            requestedResult.Should().Be(DialogResult.Cancelled);
+        }
+
+        [Fact]
+        public void CancelFromKeyboard_DelegatesToWizardSecondaryCommand()
+        {
+            var secondaryCommand = new Mock<ICommand>();
+            secondaryCommand
+                .Setup(command => command.CanExecute(It.IsAny<object?>()))
+                .Returns(true);
+
+            var wizard = new Mock<IWizardDialogViewModel>();
+            wizard.SetupGet(w => w.PrimaryButtonText).Returns("Next");
+            wizard.SetupGet(w => w.SecondaryButtonText).Returns("Cancel");
+            wizard.SetupGet(w => w.IsPrimaryButtonVisible).Returns(true);
+            wizard.SetupGet(w => w.IsSecondaryButtonVisible).Returns(true);
+            wizard.SetupGet(w => w.PrimaryCommand).Returns(new Mock<ICommand>().Object);
+            wizard.SetupGet(w => w.SecondaryCommand).Returns(secondaryCommand.Object);
+
+            var vm = new DialogHostViewModel();
+            vm.Content = wizard.Object;
+
+            vm.CancelFromKeyboard();
+
+            secondaryCommand.Verify(command => command.Execute(null), Times.Once);
         }
     }
 }

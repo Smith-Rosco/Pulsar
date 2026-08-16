@@ -211,6 +211,7 @@ namespace Pulsar.ViewModels
         private const int VK_MENU = 0x12;
         private const int VK_LWIN = 0x5B;
         private const int VK_RWIN = 0x5C;
+        private const int VK_ESCAPE = 0x1B;
 
         public RadialMenuViewModel(
             IConfigService configService,
@@ -624,7 +625,47 @@ namespace Pulsar.ViewModels
                 Interlocked.Exchange(ref _isLoading, 0);
             }
         }
-        
+        /// <summary>
+        /// Cancels the active menu session using the same contract for Escape,
+        /// center click, and right-click. In a submenu this navigates back to the
+        /// root menu instead of dismissing the whole session.
+        /// </summary>
+        public void CancelActiveMenu()
+        {
+            if (!IsVisible && _isLoading == 0)
+            {
+                return;
+            }
+
+            _activeHotkeyInvocation = null;
+            _pendingQuickSwitch = false;
+
+            if (IsInSubMenu)
+            {
+                RestoreRootMenu();
+                return;
+            }
+
+            SetActionExecuted(false);
+            IsVisible = false;
+        }
+
+        /// <summary>
+        /// Maps directional keyboard input to the existing wheel-paging pipeline:
+        /// <c>1</c> = next page (Right arrow), <c>-1</c> = previous page (Left arrow).
+        /// </summary>
+        public bool HandlePagingKey(int direction)
+        {
+            if (!IsVisible || direction == 0)
+            {
+                return false;
+            }
+
+            // Wheel-down (negative delta) currently means "next page".
+            int delta = direction > 0 ? -120 : 120;
+            return HandleMouseWheel(delta, treatFeedbackAsHandled: true);
+        }
+
         public void HandleMouseWheel(int delta)
         {
             HandleMouseWheel(delta, treatFeedbackAsHandled: false);
@@ -714,14 +755,8 @@ namespace Pulsar.ViewModels
             }
         }
 
-        public event Action? OnRootBounceRequested;
         public event Action<BoundaryDirection>? OnPagingBoundaryFeedbackRequested;
         public event Action? OnSubMenuRepositionRequested;
-
-        private void TriggerRootBounceAnimation()
-        {
-            OnRootBounceRequested?.Invoke();
-        }
 
         private async void HandleGlobalMouseEvent(object? sender, GlobalMouseEventArgs e)
         {
@@ -783,7 +818,6 @@ namespace Pulsar.ViewModels
                         Slots,
                         this,
                         RestoreRootMenu,
-                        TriggerRootBounceAnimation,
                         () => IsVisible = false);
                 }
                 else
@@ -799,7 +833,6 @@ namespace Pulsar.ViewModels
                             Slots,
                             this,
                             RestoreRootMenu,
-                            TriggerRootBounceAnimation,
                             () => IsVisible = false);
                     });
                 }
@@ -925,6 +958,16 @@ namespace Pulsar.ViewModels
             if (++_logSampleCounter % LOG_SAMPLE_RATE == 0)
             {
                 _logger?.LogDebug("[HandleKeyUp] Key: {Key}, IsVisible: {IsVisible}", e.VkCode, IsVisible);
+            }
+
+            // Escape is the global fallback for cancellation. The radial window also
+            // handles Escape on key-down when it owns keyboard focus; this key-up path
+            // guarantees the same behavior even if focus briefly returned elsewhere.
+            if (IsVisible && e.VkCode == VK_ESCAPE)
+            {
+                _logger?.LogDebug("[HandleKeyUp] Escape pressed, cancelling active menu");
+                CancelActiveMenu();
+                return;
             }
 
             // Prefer the exact invocation combo; fall back to the legacy broad modifier

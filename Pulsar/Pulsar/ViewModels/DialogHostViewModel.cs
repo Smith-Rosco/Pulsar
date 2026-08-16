@@ -133,6 +133,30 @@ namespace Pulsar.ViewModels
                 CloseCommand.Execute(DialogResult.Cancelled);
         });
 
+        /// <summary>
+        /// Keyboard cancellation contract. Esc closes a normal dialog with
+        /// <see cref="DialogResult.Cancelled"/> and delegates to the wizard's
+        /// secondary command in wizard mode (which is always Cancel/Back for
+        /// current wizard implementations).
+        /// </summary>
+        public void CancelFromKeyboard()
+        {
+            if (_activeWizard != null)
+            {
+                if (_activeWizard.SecondaryCommand.CanExecute(null))
+                {
+                    _activeWizard.SecondaryCommand.Execute(null);
+                }
+
+                return;
+            }
+
+            if (CloseCommand.CanExecute(DialogResult.Cancelled))
+            {
+                CloseCommand.Execute(DialogResult.Cancelled);
+            }
+        }
+
         public void ConfigureButtons(DialogButtons buttons)
         {
             string Loc(string key, string fallback) => _loc?[key] ?? fallback;

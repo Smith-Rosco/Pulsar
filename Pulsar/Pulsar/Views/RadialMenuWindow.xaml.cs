@@ -72,8 +72,9 @@ namespace Pulsar.Views
                 });
             });
 
-            // [New] Subscribe to bounce animation event from ViewModel
-            _viewModel.OnRootBounceRequested += HandleRootBounceRequested;
+            // Keyboard affordances: Escape cancels, Left/Right page through slots.
+            PreviewKeyDown += OnPreviewKeyDown;
+
             _viewModel.OnPagingBoundaryFeedbackRequested += HandlePagingBoundaryFeedbackRequested;
             _viewModel.OnSubMenuRepositionRequested += HandleSubMenuRepositionRequested;
             
@@ -234,39 +235,40 @@ namespace Pulsar.Views
             if (_viewModel != null)
             {
                 _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
-                _viewModel.OnRootBounceRequested -= HandleRootBounceRequested;
                 _viewModel.OnPagingBoundaryFeedbackRequested -= HandlePagingBoundaryFeedbackRequested;
                 _viewModel.OnSubMenuRepositionRequested -= HandleSubMenuRepositionRequested;
             }
             base.OnClosed(e);
         }
 
-        private void HandleRootBounceRequested()
+        private void OnPreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (!this.Dispatcher.CheckAccess())
+            if (!_viewModel.IsVisible)
             {
-                this.Dispatcher.Invoke(HandleRootBounceRequested);
                 return;
             }
 
-            // Implement a "shake" or "bounce" animation on the center slot.
-            // Wait, we need a reference to the center slot visual.
-            // If we don't have direct access, we can animate the MenuCanvas, or trigger the physics engine.
-            // Let's animate the whole MenuCanvas with a quick shake.
-            var shakeAnim = new DoubleAnimation(0.9, 1.0, TimeSpan.FromMilliseconds(200));
-            shakeAnim.EasingFunction = new ElasticEase { EasingMode = EasingMode.EaseOut, Oscillations = 2, Springiness = 5 };
-
-            var trans = MenuCanvas.RenderTransform as ScaleTransform;
-            if (trans == null)
+            switch (e.Key)
             {
-                trans = new ScaleTransform(1, 1);
-                MenuCanvas.RenderTransform = trans;
-                MenuCanvas.RenderTransformOrigin = new System.Windows.Point(0.5, 0.5);
-            }
+                case Key.Escape:
+                    _viewModel.CancelActiveMenu();
+                    e.Handled = true;
+                    break;
 
-            trans.BeginAnimation(ScaleTransform.ScaleXProperty, shakeAnim);
-            trans.BeginAnimation(ScaleTransform.ScaleYProperty, shakeAnim);
-            System.Media.SystemSounds.Hand.Play();
+                case Key.Left:
+                    if (_viewModel.HandlePagingKey(-1))
+                    {
+                        e.Handled = true;
+                    }
+                    break;
+
+                case Key.Right:
+                    if (_viewModel.HandlePagingKey(1))
+                    {
+                        e.Handled = true;
+                    }
+                    break;
+            }
         }
 
         private void HandlePagingBoundaryFeedbackRequested(BoundaryDirection direction)

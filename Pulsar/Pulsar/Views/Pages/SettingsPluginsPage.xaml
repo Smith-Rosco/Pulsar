@@ -11,7 +11,7 @@
       xmlns:lex="clr-namespace:Pulsar.Core.Localization"
       mc:Ignorable="d" 
       d:DesignHeight="600" d:DesignWidth="900"
-      Title="SettingsPluginsPage">
+      Title="{lex:Locale Settings.Plugins.Title}">
 
     <Page.Resources>
         <ResourceDictionary>

@@ -105,6 +105,24 @@ This guide documents UI/UX best practices and design patterns used in the Pulsar
 
 ---
 
+## Keyboard Interaction Contract
+
+### Radial Menu
+- `Esc`: cancel the active session (root menu) or return from a submenu.
+- `←` / `→`: previous / next page. Paging reuses the mouse-wheel pipeline so
+  boundary feedback, single-page hints, and animations stay identical.
+- Center click: executes what the center label promises — **Cancel** in the root
+  menu and **Back** in a submenu.
+- Right click: same cancellation/back contract as `Esc`.
+
+### Dialogs
+- `Esc` cancels a normal dialog and delegates to the wizard secondary command
+  in wizard mode.
+- Dialog hosts use bubbling `KeyDown` rather than `PreviewKeyDown`, allowing
+  focused controls such as `HotkeyBox` to retain their own Esc semantics.
+
+---
+
 ## 🎯 Next Steps (Medium Priority)
 
 ### Recommended for Next Iteration:

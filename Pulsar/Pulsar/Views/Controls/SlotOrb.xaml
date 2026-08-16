@@ -13,6 +13,7 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVisibilityConverter"/>
+        <converters:DoubleMultiplyConverter x:Key="SizeFactor"/>
     </UserControl.Resources>
 
     <UserControl.RenderTransform>
@@ -288,8 +289,18 @@
             </Border>
     
             <!-- [UX] Text-only slot title: keep a local semi-opaque backplate behind the
-                 text so it stays readable over any orb color or desktop background. -->
-            <Viewbox StretchDirection="DownOnly" MaxWidth="22" HorizontalAlignment="Center" VerticalAlignment="Center">
+                 text so it stays readable over any orb color or desktop background.
+                 The Viewbox is sized proportionally to the orb itself (0.64x), so the
+                 larger center slot gets a larger label while small ring slots stay
+                 compact. MaxWidth=40 in design units keeps "取消" (22 units at FontSize
+                 11) and short labels such as "Cancel"/"Back"/"Pulsar" fully visible; only very
+                 long window/process titles are ellipsized before scaling. -->
+            <Viewbox Stretch="Uniform"
+                     StretchDirection="Both"
+                     MaxWidth="{Binding Size, ElementName=OrbRoot, Converter={StaticResource SizeFactor}, ConverterParameter=0.64}"
+                     MaxHeight="{Binding Size, ElementName=OrbRoot, Converter={StaticResource SizeFactor}, ConverterParameter=0.64}"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Center">
                 <Border CornerRadius="5"
                         Padding="2,1"
                         HorizontalAlignment="Center"
@@ -316,7 +327,7 @@
                                FontSize="11"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource Theme.Orb.Label.Foreground}"
-                               MaxWidth="18"
+                               MaxWidth="40"
                                TextTrimming="CharacterEllipsis"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"/>

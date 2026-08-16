@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
+using System.Windows.Input;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels;
 using Pulsar.Models.Enums;
@@ -28,9 +29,28 @@ namespace Pulsar.Views.Dialogs
         public DialogHostWindow()
         {
             InitializeComponent();
-            
+
+            // Esc cancels the dialog. KeyDown is intentionally used (not
+            // PreviewKeyDown) so controls such as HotkeyBox can keep their own
+            // Escape behavior (clear hotkey) by marking the event handled first.
+            KeyDown += OnKeyDown;
+
             // Prevent accidental maximization
             StateChanged += OnStateChanged;
+        }
+
+        private void OnKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Escape)
+            {
+                return;
+            }
+
+            if (DataContext is DialogHostViewModel viewModel)
+            {
+                viewModel.CancelFromKeyboard();
+                e.Handled = true;
+            }
         }
 
         /// <summary>

@@ -135,7 +135,6 @@ namespace Pulsar.ViewModels
             IReadOnlyCollection<SlotViewModel> slots,
             RadialMenuViewModel context,
             Action restoreRootMenu,
-            Action triggerRootBounceAnimation,
             Action hideMenu,
             CancellationToken cancellationToken = default)
         {
@@ -153,9 +152,12 @@ namespace Pulsar.ViewModels
 
                 if (activeSlotIndex == 0)
                 {
+                    // The center slot is explicitly labeled "Cancel" in the root menu
+                    // and "Back" in a submenu. Its click behavior must match that
+                    // contract instead of playing a non-actionable bounce animation.
                     if (menuState == MenuState.Root)
                     {
-                        triggerRootBounceAnimation();
+                        hideMenu();
                         return;
                     }
 
@@ -182,13 +184,16 @@ namespace Pulsar.ViewModels
             }
             else if (button == GlobalMouseButton.Right)
             {
+                // Right-click is the universal "cancel/go back" gesture in the radial
+                // menu. It intentionally mirrors Escape so both keyboard and mouse
+                // users share one predictable cancellation contract.
                 if (menuState == MenuState.SubMenu)
                 {
                     restoreRootMenu();
                 }
-                else if (menuState == MenuState.Root)
+                else
                 {
-                    triggerRootBounceAnimation();
+                    hideMenu();
                 }
             }
         }

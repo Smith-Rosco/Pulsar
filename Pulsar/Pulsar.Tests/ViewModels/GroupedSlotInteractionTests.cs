@@ -92,12 +92,65 @@ namespace Pulsar.Tests.ViewModels
                 slots: context.Slots,
                 context: context,
                 restoreRootMenu: context.RestoreRootMenu,
-                triggerRootBounceAnimation: () => { },
                 hideMenu: () => context.IsVisible = false);
 
             context.IsInSubMenu.Should().BeTrue();
             windowService.Verify(service => service.SelectTargetWindow(It.IsAny<List<ProcessWindowInfo>>(), It.IsAny<WindowSelectionRequest?>()), Times.Once);
             windowService.Verify(service => service.ActivateWindow(It.IsAny<ProcessWindowInfo>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task HandleGlobalMouseClickAsync_ShouldHideMenu_ForRootCenterLeftClick()
+        {
+            var windowService = new Mock<IWindowService>();
+            var coordinator = new RadialMenuInputCoordinator(windowService.Object, logger: null);
+            var context = CreateContext(windowService.Object, Mock.Of<IPreviewService>());
+            var wasHidden = false;
+
+            await coordinator.HandleGlobalMouseClickAsync(
+                GlobalMouseButton.Left,
+                isVisible: true,
+                activeSlotIndex: 0,
+                menuState: MenuState.Root,
+                centerSlot: context.CenterSlot,
+                slots: context.Slots,
+                context: context,
+                restoreRootMenu: context.RestoreRootMenu,
+                hideMenu: () =>
+                {
+                    context.IsVisible = false;
+                    wasHidden = true;
+                });
+
+            wasHidden.Should().BeTrue();
+            context.IsVisible.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task HandleGlobalMouseClickAsync_ShouldHideMenu_ForRootRightClick()
+        {
+            var windowService = new Mock<IWindowService>();
+            var coordinator = new RadialMenuInputCoordinator(windowService.Object, logger: null);
+            var context = CreateContext(windowService.Object, Mock.Of<IPreviewService>());
+            var wasHidden = false;
+
+            await coordinator.HandleGlobalMouseClickAsync(
+                GlobalMouseButton.Right,
+                isVisible: true,
+                activeSlotIndex: -1,
+                menuState: MenuState.Root,
+                centerSlot: context.CenterSlot,
+                slots: context.Slots,
+                context: context,
+                restoreRootMenu: context.RestoreRootMenu,
+                hideMenu: () =>
+                {
+                    context.IsVisible = false;
+                    wasHidden = true;
+                });
+
+            wasHidden.Should().BeTrue();
+            context.IsVisible.Should().BeFalse();
         }
 
         private static List<ProcessWindowInfo> CreateWindows()
