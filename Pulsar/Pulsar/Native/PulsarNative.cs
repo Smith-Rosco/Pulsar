@@ -58,6 +58,9 @@ namespace Pulsar.Native
         public static extern bool GetCursorPos(out POINT lpPoint);
 
         [DllImport("user32.dll")]
+        public static extern bool SetCursorPos(int x, int y);
+
+        [DllImport("user32.dll")]
         public static extern IntPtr MonitorFromPoint(POINT pt, uint dwFlags);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto)]

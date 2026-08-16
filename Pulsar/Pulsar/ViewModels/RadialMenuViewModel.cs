@@ -36,7 +36,7 @@ namespace Pulsar.ViewModels
         private readonly IPluginRegistry _pluginRegistry;
         private readonly IHotkeyService _hotkeyService; // [Clean] Make explicit
         private readonly IGlobalMouseService _globalMouseService;
-        private readonly IWindowPlacementService _windowPlacementService;
+        private readonly IMenuViewportService _menuViewportService;
         private readonly ITrayService _trayService; // [New]
         private readonly IAnimationController _animationController;
         private readonly IMouseTrackingService _mouseTrackingService;
@@ -93,6 +93,8 @@ namespace Pulsar.ViewModels
                     if (!_isVisible)
                     {
                         _activeHotkeyInvocation = null;
+                        _menuWatchdogCts?.Cancel();
+                        _menuWatchdogCts = null;
                         _hotkeyService.ResetModifierState();
                         _mouseTrackingService.StopTracking();
 
@@ -110,6 +112,8 @@ namespace Pulsar.ViewModels
                         _hotkeyService.ResetModifierState();
                         UpdateMouseTrackingLayout();
                         _mouseTrackingService.StartTracking();
+                        _lastMenuInteractionUtc = DateTime.UtcNow;
+                        StartMenuWatchdog();
                     }
                 }
             }
@@ -124,10 +128,18 @@ namespace Pulsar.ViewModels
 
         private int _activeSlotIndex = -1;
 
-        // 布局常量
+        // 布局常量：槽位视觉布局仍使用 500x500 画布坐标系。
         private const double CanvasSize = 500;
         private const double CenterX = CanvasSize / 2;
         private const double CenterY = CanvasSize / 2;
+
+        // 运行时视口中心：由 IMenuViewportService 在窗口铺满当前工作区后写入。
+        // 命中测试、快速切换死区、预览宿主均使用该中心，而不是固定 250,250。
+        private double _menuCenterX = CenterX;
+        private double _menuCenterY = CenterY;
+
+        public double MenuCanvasLeft => _menuCenterX - (CanvasSize / 2);
+        public double MenuCanvasTop => _menuCenterY - (CanvasSize / 2);
 
         private double _currentRadius;
         private double _currentCenterSize;
@@ -207,6 +219,13 @@ namespace Pulsar.ViewModels
         private double _subMenuOriginX;
         private double _subMenuOriginY;
 
+        // Viewport center bookkeeping. The root center is restored after leaving a
+        // submenu; the last click point is where a submenu should expand.
+        private double _rootMenuCenterX = CenterX;
+        private double _rootMenuCenterY = CenterY;
+        private double _lastClickRelativeX = -1;
+        private double _lastClickRelativeY = -1;
+
         // Kando-inspired timing: a short anticipation collapse, a root-translation
         // glide, and a slightly overshooting bloom for the new ring.
         private static readonly TimeSpan SubMenuGlideDuration = TimeSpan.FromMilliseconds(220);
@@ -218,6 +237,12 @@ namespace Pulsar.ViewModels
         // [UX Improvement] Quick Switch Position Tolerance
         private const double QuickSwitchPositionTolerance = 30.0; // 30px tolerance from center
         private CancellationTokenSource? _layoutAnimationCts;
+
+        // Full-screen safety net: never leave the transparent input surface covering
+        // a monitor indefinitely, even if a plugin or transition hangs.
+        private static readonly TimeSpan MenuWatchdogTimeout = TimeSpan.FromSeconds(60);
+        private CancellationTokenSource? _menuWatchdogCts;
+        private DateTime _lastMenuInteractionUtc = DateTime.UtcNow;
 
         // [UX] Tracks the exact hotkey combo that invoked the current menu session.
         private HotkeyInvocationSnapshot? _activeHotkeyInvocation;
@@ -242,7 +267,7 @@ namespace Pulsar.ViewModels
             IPluginRegistry pluginRegistry,
             IHotkeyService hotkeyService,
             IGlobalMouseService globalMouseService,
-            IWindowPlacementService windowPlacementService,
+            IMenuViewportService menuViewportService,
             ITrayService trayService, // [New]
             IAnimationController animationController,
             IMouseTrackingService mouseTrackingService,
@@ -258,7 +283,7 @@ namespace Pulsar.ViewModels
             _pluginRegistry = pluginRegistry;
             _hotkeyService = hotkeyService;
             _globalMouseService = globalMouseService;
-            _windowPlacementService = windowPlacementService;
+            _menuViewportService = menuViewportService;
             _trayService = trayService;
             _animationController = animationController;
             _mouseTrackingService = mouseTrackingService;
@@ -382,7 +407,7 @@ namespace Pulsar.ViewModels
                     slotTarget.ApplyOffset?.Invoke(slotTarget.DesiredOffsetX, slotTarget.DesiredOffsetY);
                 }
             });
-            _layoutCoordinator.RefreshAnimationTargets(Slots);
+            _layoutCoordinator.RefreshAnimationTargets(Slots, _menuCenterX, _menuCenterY);
         }
 
         private void ResetCenterSlotForRootMenu()
@@ -419,7 +444,7 @@ namespace Pulsar.ViewModels
             }
 
             UpdateMouseTrackingLayout();
-            _layoutCoordinator.RefreshAnimationTargets(Slots);
+            _layoutCoordinator.RefreshAnimationTargets(Slots, _menuCenterX, _menuCenterY);
         }
 
         private (double X, double Y) GetSlotPosition(int index, int totalSlots, double radius, double slotSize)
@@ -791,6 +816,57 @@ namespace Pulsar.ViewModels
             }
         }
 
+        private void StartMenuWatchdog()
+        {
+            _menuWatchdogCts?.Cancel();
+            var cts = new CancellationTokenSource();
+            _menuWatchdogCts = cts;
+            _ = WatchdogLoopAsync(cts);
+        }
+
+        private async Task WatchdogLoopAsync(CancellationTokenSource cts)
+        {
+            while (!cts.IsCancellationRequested)
+            {
+                var idleDuration = DateTime.UtcNow - _lastMenuInteractionUtc;
+                var remaining = MenuWatchdogTimeout - idleDuration;
+                if (remaining <= TimeSpan.Zero)
+                {
+                    var app = System.Windows.Application.Current;
+                    if (app != null)
+                    {
+                        await app.Dispatcher.InvokeAsync(() =>
+                        {
+                            if (!IsVisible)
+                            {
+                                return;
+                            }
+
+                            _logger?.LogWarning(
+                                "[RadialMenu] Watchdog dismissed the menu after {TimeoutMs}ms of inactivity",
+                                MenuWatchdogTimeout.TotalMilliseconds);
+                            IsVisible = false;
+                        });
+                    }
+
+                    return;
+                }
+
+                var wait = remaining < TimeSpan.FromSeconds(1)
+                    ? remaining
+                    : TimeSpan.FromSeconds(1);
+
+                try
+                {
+                    await Task.Delay(wait, cts.Token);
+                }
+                catch (TaskCanceledException)
+                {
+                    return;
+                }
+            }
+        }
+
         private readonly record struct SlotPose(
             double Scale,
             double Opacity,
@@ -873,45 +949,93 @@ namespace Pulsar.ViewModels
             }, cancellationToken);
         }
 
+        private async Task AnimateMenuCenterAsync(
+            Point target,
+            TimeSpan duration,
+            Func<double, double>? easing,
+            CancellationToken cancellationToken)
+        {
+            double startX = _menuCenterX;
+            double startY = _menuCenterY;
+
+            await AnimateAsync(duration, easing, progress =>
+            {
+                _menuCenterX = Lerp(startX, target.X, progress);
+                _menuCenterY = Lerp(startY, target.Y, progress);
+                OnPropertyChanged(nameof(MenuCanvasLeft));
+                OnPropertyChanged(nameof(MenuCanvasTop));
+                UpdateMouseTrackingLayout();
+            }, cancellationToken);
+
+            _layoutCoordinator.RefreshAnimationTargets(Slots, _menuCenterX, _menuCenterY);
+        }
+
         private static double Lerp(double from, double to, double progress) =>
             from + ((to - from) * progress);
 
         public event Action<BoundaryDirection>? OnPagingBoundaryFeedbackRequested;
-        public event Action? OnSubMenuRepositionRequested;
 
         private async void HandleGlobalMouseEvent(object? sender, GlobalMouseEventArgs e)
         {
-            if (!IsVisible || _isTransitioning) return;
+            if (!IsVisible) return;
 
-            bool isInsideMenu = _windowPlacementService.IsPointInsideWindow(_windowHandle, e.X, e.Y);
+            // During a submenu morph the menu is still the owner of all pointer
+            // input, but actions are ignored until the transition settles.
+            if (_isTransitioning)
+            {
+                e.Handled = true;
+                return;
+            }
+
+            _lastMenuInteractionUtc = DateTime.UtcNow;
+
+            // The full-screen viewport owns all pointer input while the menu is open.
+            // No mouse event is passed through to applications underneath.
+            bool isInViewport = _menuViewportService.IsPointInActiveViewport(e.X, e.Y);
 
             // Handle Wheel
             if (e.Action == GlobalMouseAction.Wheel)
             {
-                // Wheel paging only applies while the cursor is over the menu. Wheels over
-                // other applications pass through untouched.
-                if (!isInsideMenu) return;
-
-                bool handled = false;
-                if (System.Windows.Application.Current.Dispatcher.CheckAccess())
+                if (isInViewport)
                 {
-                    handled = HandleMouseWheel(e.Delta, treatFeedbackAsHandled: true);
+                    // Wheel paging only applies near the radial menu. The rest of the
+                    // full-screen viewport swallows the wheel but does not page, so
+                    // scrolling over an empty corner never flips slots unexpectedly.
+                    var relative = _mouseTrackingService.ToRelative(e.X, e.Y);
+                    double dx = relative.X - _menuCenterX;
+                    double dy = relative.Y - _menuCenterY;
+                    double distance = Math.Sqrt(dx * dx + dy * dy);
+                    bool nearMenu = distance <= _currentRadius + _currentSlotSize + 40;
+
+                    bool handled = false;
+                    if (nearMenu && System.Windows.Application.Current.Dispatcher.CheckAccess())
+                    {
+                        handled = HandleMouseWheel(e.Delta, treatFeedbackAsHandled: true);
+                    }
+                    else if (nearMenu)
+                    {
+                        System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            handled = HandleMouseWheel(e.Delta, treatFeedbackAsHandled: true);
+                        });
+                    }
+
+                    e.Handled = true;
                 }
                 else
                 {
-                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        handled = HandleMouseWheel(e.Delta, treatFeedbackAsHandled: true);
-                    });
+                    // Outside the current monitor viewport: swallow rather than pass through.
+                    e.Handled = true;
                 }
-                e.Handled = handled;
+
                 return;
             }
 
-            // Clicks outside the menu: dismiss and let the click pass through to the
-            // underlying window instead of swallowing every global mouse event.
-            if (!isInsideMenu)
+            if (!isInViewport)
             {
+                // Another monitor was clicked while the menu covered the original one.
+                // Dismiss, but still do not pass the click through.
+                e.Handled = true;
                 if (e.Action == GlobalMouseAction.Up)
                 {
                     _ = System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
@@ -930,6 +1054,10 @@ namespace Pulsar.ViewModels
 
                 if (System.Windows.Application.Current.Dispatcher.CheckAccess())
                 {
+                    var clickPoint = _mouseTrackingService.ToRelative(e.X, e.Y);
+                    _lastClickRelativeX = clickPoint.X;
+                    _lastClickRelativeY = clickPoint.Y;
+
                     int clickSlotIndex = _mouseTrackingService.HitTest(e.X, e.Y);
                     if (clickSlotIndex != _activeSlotIndex)
                     {
@@ -951,6 +1079,10 @@ namespace Pulsar.ViewModels
                 {
                     _ = System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
                     {
+                        var clickPoint = _mouseTrackingService.ToRelative(e.X, e.Y);
+                        _lastClickRelativeX = clickPoint.X;
+                        _lastClickRelativeY = clickPoint.Y;
+
                         int clickSlotIndex = _mouseTrackingService.HitTest(e.X, e.Y);
                         if (clickSlotIndex != _activeSlotIndex)
                         {
@@ -972,7 +1104,7 @@ namespace Pulsar.ViewModels
             }
             else if (e.Action == GlobalMouseAction.Down)
             {
-                // Swallow mousedown inside the menu so it doesn't fall through.
+                // Swallow mousedown inside the viewport so it doesn't fall through.
                 e.Handled = true;
             }
         }
@@ -1006,11 +1138,30 @@ namespace Pulsar.ViewModels
             UpdateMouseTrackingLayout();
         }
 
+        /// <summary>
+        /// Moves the hit-test/preview center to a window-local DIP point. Slot visuals
+        /// remain anchored to the 500x500 canvas; only the viewport center moves.
+        /// </summary>
+        public void SetMenuCenter(Point center)
+        {
+            _menuCenterX = center.X;
+            _menuCenterY = center.Y;
+            _rootMenuCenterX = center.X;
+            _rootMenuCenterY = center.Y;
+            OnPropertyChanged(nameof(MenuCanvasLeft));
+            OnPropertyChanged(nameof(MenuCanvasTop));
+            UpdateMouseTrackingLayout();
+        }
+
         public PreviewHostContext GetPreviewHostContext()
         {
             return new PreviewHostContext(
                 _windowHandle,
-                new Rect(CenterSlot.X, CenterSlot.Y, CenterSlot.Size, CenterSlot.Size));
+                new Rect(
+                    _menuCenterX - (CenterSlot.Size / 2),
+                    _menuCenterY - (CenterSlot.Size / 2),
+                    CenterSlot.Size,
+                    CenterSlot.Size));
         }
 
         private void UpdateActiveSlot(int index)
@@ -1037,6 +1188,7 @@ namespace Pulsar.ViewModels
         {
             if (!IsVisible || _isTransitioning) return;
 
+            _lastMenuInteractionUtc = DateTime.UtcNow;
             _lastMouseX = relativePosition.X;
             _lastMouseY = relativePosition.Y;
 
@@ -1052,7 +1204,12 @@ namespace Pulsar.ViewModels
         private void UpdateMouseTrackingLayout()
         {
             var deadZone = _slotLayoutEngine.CalculateOptimalLayout(_slotsPerPage).DeadZoneRadius;
-            _mouseTrackingService.SetLayoutParameters(new LayoutParameters(CenterX, CenterY, _currentRadius, deadZone, _slotsPerPage));
+            _mouseTrackingService.SetLayoutParameters(new LayoutParameters(
+                _menuCenterX,
+                _menuCenterY,
+                _currentRadius,
+                deadZone,
+                _slotsPerPage));
         }
         private void UpdateDynamicVisuals()
         {
@@ -1087,6 +1244,11 @@ namespace Pulsar.ViewModels
 
         private void HandleKeyUp(object? sender, GlobalKeyStruct e)
         {
+            if (IsVisible)
+            {
+                _lastMenuInteractionUtc = DateTime.UtcNow;
+            }
+
             // [Logging] Sample debug logs (1/10 rate)
             if (++_logSampleCounter % LOG_SAMPLE_RATE == 0)
             {
@@ -1139,8 +1301,8 @@ namespace Pulsar.ViewModels
                     _showStartTime,
                     _lastMouseX,
                     _lastMouseY,
-                    CenterX,
-                    CenterY,
+                    _menuCenterX,
+                    _menuCenterY,
                     QuickSwitchPolicy.FromSettings(_config?.Settings),
                     () => _pendingQuickSwitch = true,
                     () => SetActionExecuted(true),
@@ -1218,10 +1380,22 @@ namespace Pulsar.ViewModels
                 _subMenuOriginX = parentCenterX;
                 _subMenuOriginY = parentCenterY;
 
-                // Kando-style root translation: glide the window so the clicked item
-                // will end up under the pointer. The clicked slot simultaneously glides
-                // to the canvas center, so the two motions cancel out on screen.
-                OnSubMenuRepositionRequested?.Invoke();
+                // Save the root viewport center so the reverse morph can restore it.
+                _rootMenuCenterX = _menuCenterX;
+                _rootMenuCenterY = _menuCenterY;
+
+                // Kando-style root translation, viewport edition: move the canvas
+                // center to the click point while the clicked slot glides to the
+                // canvas center. The selected item therefore stays under the pointer.
+                var submenuCenter = _lastClickRelativeX >= 0 && _lastClickRelativeY >= 0
+                    ? new Point(_lastClickRelativeX, _lastClickRelativeY)
+                    : new Point(_menuCenterX, _menuCenterY);
+
+                var glideViewportCenter = AnimateMenuCenterAsync(
+                    submenuCenter,
+                    SubMenuGlideDuration,
+                    EasingFunctions.EaseInOutCubic,
+                    cancellationToken);
 
                 var childSlots = Slots.Where(s => s.SlotIndex >= 1).ToList();
                 var otherSlots = childSlots.Where(s => s != parentSlot).ToList();
@@ -1268,7 +1442,7 @@ namespace Pulsar.ViewModels
                     EasingFunctions.EaseInCubic,
                     cancellationToken);
 
-                await Task.WhenAll(glideClicked, collapseOthers, collapseCenter);
+                await Task.WhenAll(glideClicked, collapseOthers, collapseCenter, glideViewportCenter);
                 cancellationToken.ThrowIfCancellationRequested();
 
                 // Swap content at the invisible/collapsed point. The clicked process
@@ -1412,13 +1586,17 @@ namespace Pulsar.ViewModels
                     slot.IsActive = false;
                 }
 
-                // Glide the window back to the cursor while the submenu collapses.
-                OnSubMenuRepositionRequested?.Invoke();
+                // Glide the viewport center back to where the root menu opened.
+                var restoreCenterTask = AnimateMenuCenterAsync(
+                    new Point(_rootMenuCenterX, _rootMenuCenterY),
+                    SubMenuCollapseDuration,
+                    EasingFunctions.EaseInOutCubic,
+                    cancellationToken);
 
                 // Phase 1: window slots and the old center contract together. The
                 // center "Back" node moves towards the slot that originally opened
                 // this submenu, so the gesture reads as a reverse of the enter morph.
-                await AnimateSlotsAsync(
+                var collapseSlotsTask = AnimateSlotsAsync(
                     Slots,
                     slot => new SlotPose(
                         SubMenuCollapsedScale,
@@ -1429,7 +1607,7 @@ namespace Pulsar.ViewModels
                     EasingFunctions.EaseInCubic,
                     cancellationToken);
 
-                await AnimateSlotsAsync(
+                var collapseCenterTask = AnimateSlotsAsync(
                     new[] { CenterSlot },
                     _ => new SlotPose(
                         SubMenuCollapsedScale,
@@ -1440,6 +1618,7 @@ namespace Pulsar.ViewModels
                     EasingFunctions.EaseInCubic,
                     cancellationToken);
 
+                await Task.WhenAll(restoreCenterTask, collapseSlotsTask, collapseCenterTask);
                 cancellationToken.ThrowIfCancellationRequested();
 
                 // Swap back to root content at the fully-collapsed point.

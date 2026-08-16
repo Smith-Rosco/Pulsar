@@ -35,12 +35,15 @@
         </ResourceDictionary>
     </Window.Resources>
 
-    <Grid Background="Transparent">
-        <!-- [Refactor] Compact Mode: Window is now exact size of menu. Canvas handles interaction. -->
+    <Canvas x:Name="ViewportRoot" Background="Transparent">
+        <!-- [Refactor] Full-screen viewport. The 500x500 MenuCanvas is positioned at
+             the clamped cursor point; hit-testing extends to the whole viewport. -->
         <Canvas x:Name="MenuCanvas"
                 Background="Transparent"
                 Width="500" Height="500"
-                HorizontalAlignment="Left" VerticalAlignment="Top">
+                HorizontalAlignment="Left" VerticalAlignment="Top"
+                Canvas.Left="{Binding MenuCanvasLeft}"
+                Canvas.Top="{Binding MenuCanvasTop}">
 
             <ItemsControl ItemsSource="{Binding Slots}">
                 <ItemsControl.ItemsPanel>
@@ -276,5 +279,5 @@
                 </Border>
             </Grid>
         </Canvas>
-    </Grid>
+    </Canvas>
 </Window>

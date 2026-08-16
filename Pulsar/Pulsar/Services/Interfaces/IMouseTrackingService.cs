@@ -11,6 +11,12 @@ namespace Pulsar.Services.Interfaces
         int HoveredSlotIndex { get; }
 
         /// <summary>
+        /// Converts a physical screen point to window-local DIP coordinates using the
+        /// active radial window bounds and DPI transform.
+        /// </summary>
+        Vector ToRelative(int screenX, int screenY);
+
+        /// <summary>
         /// Synchronously hit-tests a physical screen point against the current menu
         /// layout. Click handling must use this value instead of the last sampled
         /// <see cref="HoveredSlotIndex"/> so fast pointer movements cannot act on a

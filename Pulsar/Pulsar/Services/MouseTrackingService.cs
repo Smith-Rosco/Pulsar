@@ -30,10 +30,14 @@ namespace Pulsar.Services
 
         public int HoveredSlotIndex { get; private set; }
 
+        public Vector ToRelative(int screenX, int screenY)
+        {
+            return ScreenToRelative(new System.Windows.Point(screenX, screenY));
+        }
+
         public int HitTest(int screenX, int screenY)
         {
-            var relative = ScreenToRelative(new System.Windows.Point(screenX, screenY));
-            return HitTestRelative(relative);
+            return HitTestRelative(ToRelative(screenX, screenY));
         }
 
         public void SetWindowHandle(IntPtr handle)

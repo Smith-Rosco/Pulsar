@@ -27,14 +27,11 @@ namespace Pulsar.Views
         // [Fix] 添加 WindowService 字段以解决报错
         private readonly IWindowService _windowService;
         private readonly IFocusManager _focusManager;
-        private readonly IWindowPlacementService _windowPlacementService;
+        private readonly IMenuViewportService _menuViewportService;
 
-        // DPI 缩放比例缓存
-        private double _dpiScaleX = 1.0;
-        private double _dpiScaleY = 1.0;
-
-        // Cancels an in-flight submenu window translation when a newer request wins.
-        private CancellationTokenSource? _windowRepositionCts;
+        // Full visual extent of the 500x500 menu canvas, including title and slot
+        // overshoot. The viewport service keeps this extent inside the work area.
+        private const double MenuVisualExtentDip = 260;
 
         public RadialMenuWindow(
             RadialMenuViewModel vm,
@@ -42,7 +39,7 @@ namespace Pulsar.Views
             IThemeService themeService,
             ILogger<RadialMenuWindow> logger,
             IFocusManager focusManager,
-            IWindowPlacementService windowPlacementService)
+            IMenuViewportService menuViewportService)
         {
             // Initialize Fields First
             _viewModel = vm;
@@ -50,7 +47,7 @@ namespace Pulsar.Views
             _themeService = themeService;
             _logger = logger;
             _focusManager = focusManager;
-            _windowPlacementService = windowPlacementService;
+            _menuViewportService = menuViewportService;
 
             InitializeComponent();
             DataContext = vm;
@@ -81,11 +78,14 @@ namespace Pulsar.Views
             PreviewKeyDown += OnPreviewKeyDown;
 
             _viewModel.OnPagingBoundaryFeedbackRequested += HandlePagingBoundaryFeedbackRequested;
-            _viewModel.OnSubMenuRepositionRequested += HandleSubMenuRepositionRequested;
-            
+
             // ====================================================
             // 👻 [驻留模式初始化] (Resident Mode Init)
             // ====================================================
+            // Idle surface is 1x1. PrepareViewport expands it to the current monitor
+            // work area only while the radial menu is visible.
+            this.Width = 1;
+            this.Height = 1;
             this.Opacity = 0;
             this.Visibility = Visibility.Visible;
             this.IsHitTestVisible = false;
@@ -138,11 +138,24 @@ namespace Pulsar.Views
 
         private void Summon()
         {
-            // [Fix] Removed redundant SetPreviousWindow call. 
-            // The ViewModel now handles this via PulsarContext.Capture() BEFORE the window is shown.
+            // [Fix] Removed redundant SetPreviousWindow call.
+            // The ViewModel captures PulsarContext BEFORE this window becomes visible.
 
-            // 1. [定位] 瞬间移动位置 (紧凑模式) - 此时 Opacity 为 0，移动无痕
-            UpdateWindowPosition();
+            // 1. Expand the resident 1x1 window to the work area of the monitor under
+            //    the cursor, then place the 500x500 menu canvas around the clamped
+            //    pointer position.
+            var viewport = _menuViewportService.PrepareViewport(this, MenuVisualExtentDip);
+            _viewModel.SetMenuCenter(viewport.MenuCenterDip);
+
+            // Kando-style pointer correction: when the menu center had to move away
+            // from the cursor near a screen edge, warp the pointer onto the center so
+            // the "menu follows pointer" invariant is restored.
+            if (viewport.PointerWarpRequired)
+            {
+                int physicalX = (int)Math.Round(viewport.MenuCenterDip.X * viewport.DpiScaleX);
+                int physicalY = (int)Math.Round(viewport.MenuCenterDip.Y * viewport.DpiScaleY);
+                PulsarNative.SetCursorPos(physicalX, physicalY);
+            }
             
             // [Refactor] Resident Mode: Window is always Visible.
             // Ensure Visibility is Visible (just in case)
@@ -195,6 +208,7 @@ namespace Pulsar.Views
                 _logger?.LogInformation("[RadialMenu] Dismiss: fade complete, calling ReleaseAsync (mode={RestoreMode})",
                     _focusManager.RestoreMode);
                 _viewModel.ClearVisuals();
+                _menuViewportService.CollapseViewport(this);
                 await _focusManager.ReleaseAsync();
                 _logger?.LogInformation("[RadialMenu] Dismiss: ReleaseAsync complete");
             };
@@ -202,105 +216,12 @@ namespace Pulsar.Views
             this.BeginAnimation(UIElement.OpacityProperty, fadeOut);
         }
 
-        private void UpdateWindowPosition()
-        {
-            // A direct summon always wins over an in-flight submenu translation.
-            _windowRepositionCts?.Cancel();
-            _windowRepositionCts = null;
-            StopWindowPositionAnimation();
-
-            RepositionToCursor();
-
-            // Reset Canvas Margin (it's now 0,0 relative to window)
-            MenuCanvas.Margin = new Thickness(0);
-        }
-
-        private void RepositionToCursor()
-        {
-            var placement = GetCursorCenteredPlacement();
-            this.Left = placement.LeftDip;
-            this.Top = placement.TopDip;
-        }
-
-        private WindowPlacement GetCursorCenteredPlacement()
-        {
-            // Update DPI Scale from the current window visual.
-            var dpi = VisualTreeHelper.GetDpi(this);
-            _dpiScaleX = dpi.DpiScaleX;
-            _dpiScaleY = dpi.DpiScaleY;
-
-            return _windowPlacementService.CalculateCursorCenteredPlacement(
-                new WindowPlacementRequest(Width, Height, _dpiScaleX, _dpiScaleY));
-        }
-
-        /// <summary>
-        /// Kando-style root translation: instead of teleporting the window when a
-        /// submenu opens, glide the window to the cursor-centered position while the
-        /// selected slot simultaneously moves to the center of the canvas. The
-        /// selected item therefore stays under the pointer for the whole transition.
-        /// </summary>
-        private async Task RepositionToCursorAnimatedAsync()
-        {
-            _windowRepositionCts?.Cancel();
-            var cts = new CancellationTokenSource();
-            _windowRepositionCts = cts;
-
-            var placement = GetCursorCenteredPlacement();
-            var duration = TimeSpan.FromMilliseconds(220);
-            var easing = new CubicEase { EasingMode = EasingMode.EaseInOut };
-
-            var leftAnimation = new DoubleAnimation(placement.LeftDip, duration) { EasingFunction = easing };
-            var topAnimation = new DoubleAnimation(placement.TopDip, duration) { EasingFunction = easing };
-
-            this.BeginAnimation(Window.LeftProperty, leftAnimation);
-            this.BeginAnimation(Window.TopProperty, topAnimation);
-
-            try
-            {
-                await Task.Delay(duration + TimeSpan.FromMilliseconds(50), cts.Token);
-            }
-            catch (TaskCanceledException)
-            {
-                return;
-            }
-
-            if (cts.IsCancellationRequested)
-            {
-                return;
-            }
-
-            StopWindowPositionAnimation();
-            this.Left = placement.LeftDip;
-            this.Top = placement.TopDip;
-        }
-
-        private void StopWindowPositionAnimation()
-        {
-            this.BeginAnimation(Window.LeftProperty, null);
-            this.BeginAnimation(Window.TopProperty, null);
-        }
-
-        private void HandleSubMenuRepositionRequested()
-        {
-            if (!Dispatcher.CheckAccess())
-            {
-                Dispatcher.Invoke(HandleSubMenuRepositionRequested);
-                return;
-            }
-
-            _ = RepositionToCursorAnimatedAsync();
-        }
-
         protected override void OnClosed(EventArgs e)
         {
-            _windowRepositionCts?.Cancel();
-            _windowRepositionCts = null;
-
             if (_viewModel != null)
             {
                 _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
                 _viewModel.OnPagingBoundaryFeedbackRequested -= HandlePagingBoundaryFeedbackRequested;
-                _viewModel.OnSubMenuRepositionRequested -= HandleSubMenuRepositionRequested;
             }
             base.OnClosed(e);
         }

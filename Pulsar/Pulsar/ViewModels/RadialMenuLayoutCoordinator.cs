@@ -55,13 +55,19 @@ namespace Pulsar.ViewModels
             RefreshAnimationTargets(slots);
         }
 
-        public void RefreshAnimationTargets(ObservableCollection<SlotViewModel> slots)
+        public void RefreshAnimationTargets(
+            ObservableCollection<SlotViewModel> slots,
+            double viewportCenterX = 250,
+            double viewportCenterY = 250)
         {
+            double offsetX = viewportCenterX - 250;
+            double offsetY = viewportCenterY - 250;
+
             _animationController.SetSlotTargets(slots
                 .Select(slot => new SlotAnimationTarget
                 {
-                    CenterX = slot.X + slot.Size / 2,
-                    CenterY = slot.Y + slot.Size / 2,
+                    CenterX = slot.X + (slot.Size / 2) + offsetX,
+                    CenterY = slot.Y + (slot.Size / 2) + offsetY,
                     ApplyOffset = slot.UpdateMagneticOffset
                 })
                 .ToList());

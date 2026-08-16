@@ -115,6 +115,7 @@ namespace Pulsar
             serviceCollection.AddSingleton<IActionFeedbackPresenter, ActionFeedbackPresenter>();
             serviceCollection.AddSingleton<IThemeService, ThemeService>();
             serviceCollection.AddSingleton<IWindowPlacementService, WindowPlacementService>();
+            serviceCollection.AddSingleton<IMenuViewportService, MenuViewportService>();
             serviceCollection.AddSingleton<IAnimationController, AnimationController>();
             serviceCollection.AddSingleton<ISlotLayoutEngine, SlotLayoutEngine>();
             serviceCollection.AddSingleton<IMouseTrackingService, MouseTrackingService>();
