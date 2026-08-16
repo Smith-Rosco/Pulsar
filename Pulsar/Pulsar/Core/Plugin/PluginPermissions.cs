@@ -1,0 +1,127 @@
+using System;
+using System.Collections.Generic;
+
+namespace Pulsar.Core.Plugin
+{
+    /// <summary>
+    /// Well-known external-plugin permission tokens. Unknown tokens are treated
+    /// as denied so a typo or a future permission can never silently grant
+    /// capabilities the host does not understand.
+    /// </summary>
+    public static class PluginPermissions
+    {
+        public const string ClipboardRead = "clipboard.read";
+        public const string ClipboardWrite = "clipboard.write";
+        public const string InputInject = "input.inject";
+        public const string WindowFocus = "window.focus";
+        public const string ProcessLaunch = "process.launch";
+        public const string FileSystemRead = "filesystem.read";
+        public const string FileSystemWrite = "filesystem.write";
+        public const string NetworkClient = "network.client";
+
+        public static IReadOnlyList<string> All { get; } = new[]
+        {
+            ClipboardRead,
+            ClipboardWrite,
+            InputInject,
+            WindowFocus,
+            ProcessLaunch,
+            FileSystemRead,
+            FileSystemWrite,
+            NetworkClient
+        };
+
+        public static bool IsKnown(string permission)
+        {
+            foreach (var known in All)
+            {
+                if (string.Equals(known, permission, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+
+    public interface IPluginPermissionService
+    {
+        PluginPermissionEvaluation Evaluate(
+            PluginDescriptor descriptor,
+            IEnumerable<string>? grantedPermissions);
+    }
+
+    public sealed class PluginPermissionEvaluation
+    {
+        public PluginPermissionEvaluation(
+            bool granted,
+            IReadOnlyList<string> missingPermissions,
+            IReadOnlyList<string> unknownPermissions)
+        {
+            Granted = granted;
+            MissingPermissions = missingPermissions;
+            UnknownPermissions = unknownPermissions;
+        }
+
+        public bool Granted { get; }
+
+        public IReadOnlyList<string> MissingPermissions { get; }
+
+        public IReadOnlyList<string> UnknownPermissions { get; }
+    }
+
+    public sealed class PluginPermissionService : IPluginPermissionService
+    {
+        public PluginPermissionEvaluation Evaluate(
+            PluginDescriptor descriptor,
+            IEnumerable<string>? grantedPermissions)
+        {
+            ArgumentNullException.ThrowIfNull(descriptor);
+
+            // Built-in plugins run inside the trusted host assembly and are not
+            // governed by the external manifest permission model.
+            if (!descriptor.IsExternal || descriptor.Permissions.Count == 0)
+            {
+                return new PluginPermissionEvaluation(
+                    true,
+                    Array.Empty<string>(),
+                    Array.Empty<string>());
+            }
+
+            var granted = new HashSet<string>(StringComparer.Ordinal);
+            if (grantedPermissions != null)
+            {
+                foreach (var permission in grantedPermissions)
+                {
+                    if (!string.IsNullOrWhiteSpace(permission))
+                    {
+                        granted.Add(permission);
+                    }
+                }
+            }
+
+            var missing = new List<string>();
+            var unknown = new List<string>();
+
+            foreach (var permission in descriptor.Permissions)
+            {
+                if (!PluginPermissions.IsKnown(permission))
+                {
+                    unknown.Add(permission);
+                    continue;
+                }
+
+                if (!granted.Contains(permission))
+                {
+                    missing.Add(permission);
+                }
+            }
+
+            return new PluginPermissionEvaluation(
+                missing.Count == 0 && unknown.Count == 0,
+                missing,
+                unknown);
+        }
+    }
+}

@@ -2715,4 +2715,52 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
   <data name="Settings.Plugins.FilterErrors" xml:space="preserve">
     <value>Errors</value>
   </data>
+  <data name="Plugin.Permissions.ConfirmTitle" xml:space="preserve">
+    <value>External Plugin Permissions</value>
+  </data>
+  <data name="Plugin.Permissions.ConfirmBodyFormat" xml:space="preserve">
+    <value>{0} v{1} by {2} requests the following permissions:{3}</value>
+  </data>
+  <data name="Plugin.Permissions.Approve" xml:space="preserve">
+    <value>Approve &amp; Install</value>
+  </data>
+  <data name="Plugin.Permissions.ApprovalRequired" xml:space="preserve">
+    <value>Permission approval required</value>
+  </data>
+  <data name="Plugin.Permissions.InstallCancelled" xml:space="preserve">
+    <value>Install cancelled</value>
+  </data>
+  <data name="Plugin.Permissions.GrantFailedFormat" xml:space="preserve">
+    <value>Plugin installed, but granting permissions failed for {0}: {1}</value>
+  </data>
+  <data name="Plugin.Permission.clipboardread" xml:space="preserve">
+    <value>Read the clipboard</value>
+  </data>
+  <data name="Plugin.Permission.clipboardwrite" xml:space="preserve">
+    <value>Write to the clipboard</value>
+  </data>
+  <data name="Plugin.Permission.inputinject" xml:space="preserve">
+    <value>Inject keyboard/mouse input</value>
+  </data>
+  <data name="Plugin.Permission.windowfocus" xml:space="preserve">
+    <value>Activate and focus application windows</value>
+  </data>
+  <data name="Plugin.Permission.processlaunch" xml:space="preserve">
+    <value>Launch applications or processes</value>
+  </data>
+  <data name="Plugin.Permission.filesystemread" xml:space="preserve">
+    <value>Read files from disk</value>
+  </data>
+  <data name="Plugin.Permission.filesystemwrite" xml:space="preserve">
+    <value>Write files to disk</value>
+  </data>
+  <data name="Plugin.Permission.networkclient" xml:space="preserve">
+    <value>Make network requests</value>
+  </data>
+  <data name="Settings.ExternalPlugins.GrantPermissions" xml:space="preserve">
+    <value>Grant Permissions</value>
+  </data>
+  <data name="Plugin.Permissions.GrantSuccess" xml:space="preserve">
+    <value>Permissions granted.</value>
+  </data>
 </root>

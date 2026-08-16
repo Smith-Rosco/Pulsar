@@ -260,10 +260,106 @@ namespace Pulsar.Services
         }
 
         /// <summary>
+        /// Reads and validates a plugin ZIP manifest without installing it. Used by
+        /// the settings UI to display the permission consent prompt.
+        /// </summary>
+        public async Task<PluginPackageInspectionResult> InspectPackageAsync(
+            string zipFilePath,
+            CancellationToken cancellationToken = default)
+        {
+            if (!File.Exists(zipFilePath))
+            {
+                return PluginPackageInspectionResult.Failed($"File not found: {zipFilePath}");
+            }
+
+            if (!Path.GetExtension(zipFilePath).Equals(".zip", StringComparison.OrdinalIgnoreCase))
+            {
+                return PluginPackageInspectionResult.Failed("File must be a .zip archive");
+            }
+
+            var tempExtractPath = Path.Combine(Path.GetTempPath(), $"Pulsar_Inspect_{Guid.NewGuid():N}");
+            Directory.CreateDirectory(tempExtractPath);
+
+            try
+            {
+                await Task.Run(() => ZipFile.ExtractToDirectory(zipFilePath, tempExtractPath), cancellationToken);
+                return ReadAndValidateManifest(tempExtractPath);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[PluginPackageManager] Failed to inspect plugin package {Path}", zipFilePath);
+                return PluginPackageInspectionResult.Failed(ex.Message);
+            }
+            finally
+            {
+                try
+                {
+                    if (Directory.Exists(tempExtractPath))
+                    {
+                        Directory.Delete(tempExtractPath, recursive: true);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogWarning(ex, "[PluginPackageManager] Failed to delete inspect temp directory: {Path}", tempExtractPath);
+                }
+            }
+        }
+
+        private PluginPackageInspectionResult ReadAndValidateManifest(string extractPath)
+        {
+            var manifestPath = Path.Combine(extractPath, "plugin.manifest.json");
+            if (!File.Exists(manifestPath))
+            {
+                manifestPath = Path.Combine(extractPath, "manifest.json");
+            }
+
+            if (!File.Exists(manifestPath))
+            {
+                return PluginPackageInspectionResult.Failed("Invalid plugin package: manifest.json not found");
+            }
+
+            try
+            {
+                var manifestJson = File.ReadAllText(manifestPath);
+                var manifest = JsonSerializer.Deserialize<PluginManifest>(
+                    manifestJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                if (manifest == null || string.IsNullOrWhiteSpace(manifest.Id))
+                {
+                    return PluginPackageInspectionResult.Failed("Invalid manifest.json: missing Id field");
+                }
+
+                var unknownPermissions = manifest.Permissions
+                    .Where(permission => !PluginPermissions.IsKnown(permission))
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray();
+
+                if (unknownPermissions.Length > 0)
+                {
+                    return PluginPackageInspectionResult.Failed(
+                        $"Invalid manifest.json: unknown permission(s) {string.Join(", ", unknownPermissions)}");
+                }
+
+                return PluginPackageInspectionResult.Succeeded(manifest);
+            }
+            catch (JsonException ex)
+            {
+                return PluginPackageInspectionResult.Failed($"Invalid manifest.json: {ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// 从本地 ZIP 文件安装插件
         /// </summary>
         public async Task<PluginOperationResult> InstallFromFileAsync(
             string zipFilePath,
+            IReadOnlyCollection<string>? approvedPermissions = null,
             CancellationToken cancellationToken = default)
         {
             var stopwatch = Stopwatch.StartNew();
@@ -309,6 +405,33 @@ namespace Pulsar.Services
                     if (manifest == null || string.IsNullOrEmpty(manifest.Id))
                     {
                         return PluginOperationResult.Failed("unknown", PluginOperationType.Install, "Invalid manifest.json: missing Id field");
+                    }
+
+                    var unknownPermissions = manifest.Permissions
+                        .Where(permission => !PluginPermissions.IsKnown(permission))
+                        .Distinct(StringComparer.Ordinal)
+                        .ToArray();
+
+                    if (unknownPermissions.Length > 0)
+                    {
+                        return PluginOperationResult.Failed(
+                            manifest.Id,
+                            PluginOperationType.Install,
+                            $"Invalid manifest.json: unknown permission(s) {string.Join(", ", unknownPermissions)}");
+                    }
+
+                    var approved = approvedPermissions?.ToHashSet(StringComparer.Ordinal) ?? new HashSet<string>(StringComparer.Ordinal);
+                    var missingPermissions = manifest.Permissions
+                        .Where(permission => !approved.Contains(permission))
+                        .Distinct(StringComparer.Ordinal)
+                        .ToArray();
+
+                    if (missingPermissions.Length > 0)
+                    {
+                        return PluginOperationResult.Failed(
+                            manifest.Id,
+                            PluginOperationType.Install,
+                            $"Permission approval required: {string.Join(", ", missingPermissions)}");
                     }
 
                     var pluginId = manifest.Id;

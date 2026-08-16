@@ -25,6 +25,17 @@ namespace Pulsar.Core.Plugin
 
         public required PluginTier Tier { get; init; }
 
+        /// <summary>
+        /// True when the descriptor was discovered from an external package under
+        /// the plugin store. External plugins are governed by manifest permissions.
+        /// </summary>
+        public bool IsExternal { get; init; }
+
+        /// <summary>
+        /// Manifest-declared permission tokens. Empty for built-in plugins.
+        /// </summary>
+        public IReadOnlyList<string> Permissions { get; init; } = Array.Empty<string>();
+
         public required Type ImplementationType { get; init; }
 
         public required IReadOnlyList<string> Dependencies { get; init; }

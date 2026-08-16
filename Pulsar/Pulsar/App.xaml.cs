@@ -164,6 +164,7 @@ namespace Pulsar
                 "Plugins");
 
             serviceCollection.AddSingleton<Core.Plugin.Runtime.ICorePluginFailureHandler, AppShutdownCorePluginFailureHandler>();
+            serviceCollection.AddSingleton<Core.Plugin.IPluginPermissionService, Core.Plugin.PluginPermissionService>();
             serviceCollection.AddPluginRuntime(externalPluginDirectory);
             
             // [New] Plugin Monitoring & Analytics Services

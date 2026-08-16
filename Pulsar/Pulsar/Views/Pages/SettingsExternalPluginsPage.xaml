@@ -167,13 +167,22 @@
 
                                         <!-- Action Buttons -->
                                         <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                            <!-- Grant Permissions (idempotent for installed plugins) -->
+                                            <ui:Button Content="{lex:Locale Settings.ExternalPlugins.GrantPermissions}"
+                                                       Command="{Binding DataContext.ApprovePluginPermissionsCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                       CommandParameter="{Binding}"
+                                                       Icon="{ui:SymbolIcon Key24}"
+                                                       Style="{StaticResource PulsarSecondaryButtonStyle}"
+                                                       MinWidth="140"
+                                                       Visibility="{Binding HasPermissions, Converter={StaticResource BoolToVis}}"/>
                                             <!-- Uninstall Button -->
                                             <ui:Button Content="{lex:Locale Settings.ExternalPlugins.Uninstall}"
                                                        Command="{Binding DataContext.UninstallPluginCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                        CommandParameter="{Binding}"
                                                        Icon="{ui:SymbolIcon Delete24}"
                                                        Style="{StaticResource PulsarDangerButtonStyle}"
-                                                       MinWidth="100"/>
+                                                       MinWidth="140"
+                                                       Margin="0,8,0,0"/>
                                         </StackPanel>
                                     </Grid>
                                 </Border>

@@ -300,6 +300,12 @@ namespace Pulsar.Core.Plugin.Runtime
 
         public required PulsarContext Context { get; init; }
 
+        /// <summary>
+        /// Permissions granted to the plugin in Profiles.json. The pipeline passes
+        /// this to <see cref="IPluginPermissionService"/> before execution.
+        /// </summary>
+        public IReadOnlyCollection<string> GrantedPermissions { get; init; } = Array.Empty<string>();
+
         public required Func<bool> IsEnabled { get; init; }
 
         public required Func<Task<IPulsarPlugin?>> ActivateAsync { get; init; }
@@ -337,6 +343,7 @@ namespace Pulsar.Core.Plugin.Runtime
         private readonly IPluginHealthMonitor? _healthMonitor;
         private readonly ILogger<PluginExecutionPipeline> _logger;
         private readonly ICorePluginFailureHandler _coreFailureHandler;
+        private readonly IPluginPermissionService _permissionService;
         private readonly ConcurrentDictionary<string, SemaphoreSlim> _executionLocks = new(StringComparer.OrdinalIgnoreCase);
 
         public PluginExecutionPipeline(
@@ -346,7 +353,8 @@ namespace Pulsar.Core.Plugin.Runtime
             IPluginUsageTracker? usageTracker = null,
             IPluginHealthMonitor? healthMonitor = null,
             ICorePluginFailureHandler? coreFailureHandler = null,
-            TimeSpan? executionTimeout = null)
+            TimeSpan? executionTimeout = null,
+            IPluginPermissionService? permissionService = null)
         {
             _runtimeStateStore = runtimeStateStore;
             _breakerPolicy = breakerPolicy;
@@ -355,6 +363,7 @@ namespace Pulsar.Core.Plugin.Runtime
             _logger = logger ?? NullLogger<PluginExecutionPipeline>.Instance;
             _coreFailureHandler = coreFailureHandler ?? RethrowCorePluginFailureHandler.Instance;
             ExecutionTimeout = executionTimeout ?? TimeSpan.FromSeconds(30);
+            _permissionService = permissionService ?? new PluginPermissionService();
         }
 
         /// <summary>
@@ -398,6 +407,29 @@ namespace Pulsar.Core.Plugin.Runtime
             {
                 _logger.LogWarning("Plugin is disabled by user: {PluginId}", pluginId);
                 return new PluginExecutionOutcome(PluginResult.Error("Plugin is disabled."), PluginExecutionOutcomeKind.Blocked);
+            }
+
+            var permissionEvaluation = _permissionService.Evaluate(
+                request.Descriptor,
+                request.GrantedPermissions);
+            if (!permissionEvaluation.Granted)
+            {
+                var details = permissionEvaluation.MissingPermissions.Count > 0
+                    ? string.Join(", ", permissionEvaluation.MissingPermissions)
+                    : string.Join(", ", permissionEvaluation.UnknownPermissions);
+
+                _logger.LogWarning(
+                    "Plugin execution blocked by permissions: {PluginId}. Missing=[{Missing}] Unknown=[{Unknown}]",
+                    pluginId,
+                    string.Join(", ", permissionEvaluation.MissingPermissions),
+                    string.Join(", ", permissionEvaluation.UnknownPermissions));
+
+                return new PluginExecutionOutcome(
+                    PluginResult.Error(
+                        $"Plugin execution blocked by permissions: {details}",
+                        PluginErrorSeverity.Recoverable,
+                        PluginErrorCode.AccessDenied),
+                    PluginExecutionOutcomeKind.Blocked);
             }
 
             var availability = _breakerPolicy.CheckAvailability(request.Descriptor, pluginId);
@@ -654,12 +686,69 @@ namespace Pulsar.Core.Plugin.Runtime
                 Action = action,
                 Args = args,
                 Context = context,
+                GrantedPermissions = GetGrantedPermissions(pluginId),
                 IsEnabled = () => IsPluginEnabled(pluginId),
                 ActivateAsync = () => GetOrActivatePluginAsync(pluginId),
                 CancellationToken = cancellationToken
             });
 
             return outcome.Result;
+        }
+
+        /// <summary>
+        /// Persists user-approved permissions for an external plugin. Unknown
+        /// permission tokens are rejected before touching Profiles.json.
+        /// </summary>
+        public async Task GrantPermissionsAsync(string pluginId, IEnumerable<string> permissions)
+        {
+            if (_configService == null)
+            {
+                return;
+            }
+
+            var descriptor = GetDescriptor(pluginId);
+            if (descriptor == null)
+            {
+                _logger.LogWarning("[PluginRuntimeKernel] Cannot grant permissions for unknown plugin: {PluginId}", pluginId);
+                return;
+            }
+
+            var normalized = permissions
+                .Where(permission => !string.IsNullOrWhiteSpace(permission))
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+
+            foreach (var permission in normalized)
+            {
+                if (!PluginPermissions.IsKnown(permission))
+                {
+                    throw new ArgumentException($"Unknown plugin permission: {permission}", nameof(permissions));
+                }
+            }
+
+            var config = _configService.Current;
+            if (!config.Plugins.TryGetValue(pluginId, out var profile))
+            {
+                profile = new PluginProfile();
+                config.Plugins[pluginId] = profile;
+            }
+
+            profile.GrantedPermissions = normalized.ToList();
+            await _configService.SaveAsync(config);
+            _logger.LogInformation(
+                "[PluginRuntimeKernel] Granted {Count} permissions for {PluginId}",
+                normalized.Length,
+                pluginId);
+        }
+
+        private IReadOnlyCollection<string> GetGrantedPermissions(string pluginId)
+        {
+            if (_configService?.Current.Plugins.TryGetValue(pluginId, out var profile) == true)
+            {
+                return profile.GrantedPermissions;
+            }
+
+            return Array.Empty<string>();
         }
 
         public async Task SetPluginStateAsync(string pluginId, bool enabled)

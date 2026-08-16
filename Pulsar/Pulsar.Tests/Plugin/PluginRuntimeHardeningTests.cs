@@ -2,6 +2,11 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
+using Pulsar.Tests.TestHelpers;
 using FluentAssertions;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Plugin.Metadata;
@@ -65,6 +70,107 @@ namespace Pulsar.Tests.Plugin
         }
 
         [Fact]
+        public void PermissionEvaluator_ExternalPlugin_RequiresExplicitGrants()
+        {
+            var descriptor = CreateExtensionDescriptor(
+                "test.permissions.plugin",
+                isExternal: true,
+                permissions: new[] { PluginPermissions.ClipboardRead, PluginPermissions.InputInject });
+            var service = new PluginPermissionService();
+
+            var denied = service.Evaluate(descriptor, Array.Empty<string>());
+            denied.Granted.Should().BeFalse();
+            denied.MissingPermissions.Should().BeEquivalentTo(
+                PluginPermissions.ClipboardRead,
+                PluginPermissions.InputInject);
+
+            var granted = service.Evaluate(
+                descriptor,
+                new[] { PluginPermissions.ClipboardRead, PluginPermissions.InputInject });
+            granted.Granted.Should().BeTrue();
+            granted.MissingPermissions.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void PermissionEvaluator_UnknownPermission_IsDenied()
+        {
+            var descriptor = CreateExtensionDescriptor(
+                "test.permissions.unknown",
+                isExternal: true,
+                permissions: new[] { "filesystem.exec" });
+            var service = new PluginPermissionService();
+
+            var evaluation = service.Evaluate(descriptor, new[] { "filesystem.exec" });
+
+            evaluation.Granted.Should().BeFalse();
+            evaluation.UnknownPermissions.Should().Contain("filesystem.exec");
+        }
+
+        [Fact]
+        public async Task Pipeline_BlocksExternalPlugin_WhenPermissionsAreNotGranted()
+        {
+            var descriptor = CreateExtensionDescriptor(
+                "test.permissions.pipeline",
+                isExternal: true,
+                permissions: new[] { PluginPermissions.WindowFocus });
+            var plugin = new PermissionTestPlugin(descriptor.Id);
+            var state = new PluginRuntimeStateStore();
+            state.SetPlugin(plugin, PluginLifecycleState.Enabled);
+            var pipeline = new PluginExecutionPipeline(state, new PluginCircuitBreakerPolicy());
+
+            var outcome = await pipeline.ExecuteAsync(new PluginExecutionRequest
+            {
+                Descriptor = descriptor,
+                Action = "test",
+                Args = new Dictionary<string, string>(),
+                Context = PulsarContextFactory.CreateTestContext(),
+                GrantedPermissions = Array.Empty<string>(),
+                IsEnabled = () => true,
+                ActivateAsync = () => Task.FromResult<IPulsarPlugin?>(plugin),
+                CancellationToken = CancellationToken.None
+            });
+
+            outcome.Kind.Should().Be(PluginExecutionOutcomeKind.Blocked);
+            outcome.Result.ErrorCode.Should().Be(PluginErrorCode.AccessDenied);
+            plugin.ExecutionCount.Should().Be(0);
+        }
+
+        [Fact]
+        public async Task Kernel_GrantPermissionsAsync_PersistsApprovedPermissions()
+        {
+            var descriptor = CreateExtensionDescriptor(
+                "test.permissions.grant",
+                isExternal: true,
+                permissions: new[] { PluginPermissions.ClipboardRead });
+            var catalog = new PluginCatalog();
+            catalog.RegisterDescriptors(new[] { descriptor });
+
+            var state = new PluginRuntimeStateStore();
+            var pipeline = new PluginExecutionPipeline(state, new PluginCircuitBreakerPolicy());
+            var loader = new PluginLoader(Mock.Of<IServiceProvider>(), "unused");
+
+            var config = new Pulsar.Models.ProfilesConfig();
+            var configService = new Mock<Pulsar.Services.Interfaces.IConfigService>();
+            configService.Setup(x => x.Current).Returns(config);
+            configService.Setup(x => x.SaveAsync(It.IsAny<Pulsar.Models.ProfilesConfig>()))
+                .Returns(Task.CompletedTask);
+
+            var kernel = new PluginRuntimeKernel(
+                Mock.Of<IServiceProvider>(),
+                loader,
+                catalog,
+                state,
+                pipeline,
+                NullLogger<PluginRuntimeKernel>.Instance,
+                configService.Object);
+
+            await kernel.GrantPermissionsAsync(descriptor.Id, new[] { PluginPermissions.ClipboardRead });
+
+            config.Plugins[descriptor.Id].GrantedPermissions.Should().Contain(PluginPermissions.ClipboardRead);
+            configService.Verify(x => x.SaveAsync(config), Times.Once);
+        }
+
+        [Fact]
         public void PluginRuntimeStateStore_ShouldRejectInvalidTransitions()
         {
             var store = new PluginRuntimeStateStore();
@@ -98,7 +204,10 @@ namespace Pulsar.Tests.Plugin
             }
         }
 
-        private static PluginDescriptor CreateExtensionDescriptor(string pluginId)
+        private static PluginDescriptor CreateExtensionDescriptor(
+            string pluginId,
+            bool isExternal = false,
+            IReadOnlyList<string>? permissions = null)
         {
             return new PluginDescriptor
             {
@@ -110,6 +219,8 @@ namespace Pulsar.Tests.Plugin
                 Icon = "T",
                 CanDisable = true,
                 Tier = PluginTier.Extension,
+                IsExternal = isExternal,
+                Permissions = permissions ?? Array.Empty<string>(),
                 ImplementationType = typeof(PluginRuntimeHardeningTests),
                 Dependencies = new List<string>(),
                 Metadata = new PluginMetadata
@@ -145,5 +256,35 @@ namespace Pulsar.Tests.Plugin
                 IsConfigurable = false
             };
         }
+
+        private sealed class PermissionTestPlugin : IPulsarPlugin
+        {
+            private readonly string _id;
+            private int _executionCount;
+
+            public PermissionTestPlugin(string id)
+            {
+                _id = id;
+            }
+
+            public int ExecutionCount => _executionCount;
+
+            public string Id => _id;
+            public string DisplayName => "Permission Test Plugin";
+            public string Version => "1.0.0";
+            public string Author => "Test";
+            public string Description => "Permission test plugin";
+            public string Icon => "T";
+            public bool CanDisable => true;
+
+            public void Initialize(IServiceProvider services) { }
+
+            public Task<PluginResult> ExecuteAsync(string action, IReadOnlyDictionary<string, string> args, PulsarContext context, CancellationToken cancellationToken = default)
+            {
+                Interlocked.Increment(ref _executionCount);
+                return Task.FromResult(PluginResult.Ok());
+            }
+        }
+
     }
 }

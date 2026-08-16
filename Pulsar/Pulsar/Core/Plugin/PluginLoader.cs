@@ -68,6 +68,14 @@ namespace Pulsar.Core.Plugin
         {
             var plugin = _pluginFactory.CreatePlugin(descriptor.ImplementationType);
             plugin.Initialize(_services);
+
+            // External descriptors intentionally defer metadata discovery until
+            // activation (constructors must not run before permission consent).
+            if (descriptor.IsExternal && plugin is IPluginMetadataProvider metadataProvider)
+            {
+                _metadataRegistry?.Register(metadataProvider.GetMetadata());
+            }
+
             _logger?.LogInformation("[PluginLoader] Activated plugin: {PluginId} ({DisplayName})", plugin.Id, plugin.DisplayName);
             return plugin;
         }
@@ -176,19 +184,9 @@ namespace Pulsar.Core.Plugin
                                             continue;
                                         }
 
-                                        var descriptor = CreateDescriptor(pluginType);
+                                        var descriptor = CreateExternalDescriptor(pluginType, manifest);
                                         if (!ShouldInclude(descriptor, includeCore, includeExtensions))
                                         {
-                                            continue;
-                                        }
-
-                                        if (!string.Equals(descriptor.Id, manifest.Id, StringComparison.OrdinalIgnoreCase))
-                                        {
-                                            _logger?.LogWarning(
-                                                "[PluginLoader] External plugin type {PluginType} declares Id '{ActualId}' but manifest declares '{ManifestId}'. Skipping.",
-                                                pluginType.FullName,
-                                                descriptor.Id,
-                                                manifest.Id);
                                             continue;
                                         }
 
@@ -311,7 +309,78 @@ namespace Pulsar.Core.Plugin
             return string.Equals(pluginType.FullName, manifest.EntryPoint, StringComparison.Ordinal);
         }
 
-        private PluginDescriptor CreateDescriptor(Type pluginType)
+        /// <summary>
+        /// Builds an external descriptor without instantiating the plugin type.
+        /// Discovery-time instantiation would execute untrusted constructors
+        /// before the user approves the package permissions; manifest data is
+        /// authoritative until first activation.
+        /// </summary>
+        internal static PluginDescriptor CreateExternalDescriptor(Type pluginType, PluginManifest manifest)
+        {
+            if (manifest.IsCore || manifest.Tier == PluginTier.Core)
+            {
+                throw new PluginInstantiationException(
+                    "External plugin packages cannot declare the Core tier.",
+                    pluginType);
+            }
+
+            var metadata = new PluginMetadata
+            {
+                Id = manifest.Id,
+                Display = new DisplayInfo
+                {
+                    Name = string.IsNullOrWhiteSpace(manifest.DisplayName) ? pluginType.Name : manifest.DisplayName,
+                    Description = manifest.Description,
+                    IconKey = string.IsNullOrWhiteSpace(manifest.Icon) ? "📦" : manifest.Icon,
+                    Category = manifest.Tags.FirstOrDefault() ?? "External",
+                    Version = manifest.Version,
+                    Author = string.IsNullOrWhiteSpace(manifest.Author) ? "Unknown" : manifest.Author,
+                    License = manifest.License,
+                    DocumentationUrl = manifest.DocumentationUrl
+                },
+                Schema = null,
+                UI = new UIHints
+                {
+                    Badge = "External",
+                    AccentColor = "#7C5CFF",
+                    ShowInQuickAccess = true,
+                    SortOrder = 200
+                },
+                Capabilities = new PluginCapabilities
+                {
+                    SupportedActions = new List<string>(),
+                    RequiresForegroundWindow = false,
+                    Dependencies = manifest.Dependencies.Keys.ToList(),
+                    CanDisable = true,
+                    Tier = PluginTier.Extension,
+                    MinPulsarVersion = manifest.MinPulsarVersion
+                },
+                Actions = new Dictionary<string, SlotActionMetadata>(StringComparer.OrdinalIgnoreCase)
+            };
+
+            return new PluginDescriptor
+            {
+                Id = manifest.Id,
+                DisplayName = string.IsNullOrWhiteSpace(manifest.DisplayName) ? pluginType.Name : manifest.DisplayName,
+                Version = manifest.Version,
+                Author = string.IsNullOrWhiteSpace(manifest.Author) ? "Unknown" : manifest.Author,
+                Description = manifest.Description,
+                Icon = string.IsNullOrWhiteSpace(manifest.Icon) ? "📦" : manifest.Icon,
+                CanDisable = true,
+                Tier = PluginTier.Extension,
+                IsExternal = true,
+                Permissions = manifest.Permissions,
+                ImplementationType = pluginType,
+                Dependencies = manifest.Dependencies.Keys.ToList(),
+                Metadata = metadata,
+                IsConfigurable = typeof(IPluginConfigurable).IsAssignableFrom(pluginType)
+            };
+        }
+
+        private PluginDescriptor CreateDescriptor(
+            Type pluginType,
+            bool isExternal = false,
+            IReadOnlyList<string>? permissions = null)
         {
             var plugin = _pluginFactory.CreatePlugin(pluginType);
             var tier = plugin is IPluginTiered tiered ? tiered.Tier : (plugin.CanDisable ? PluginTier.Extension : PluginTier.Core);
@@ -330,6 +399,8 @@ namespace Pulsar.Core.Plugin
                 Icon = plugin.Icon,
                 CanDisable = plugin.CanDisable,
                 Tier = tier,
+                IsExternal = isExternal,
+                Permissions = permissions ?? Array.Empty<string>(),
                 ImplementationType = pluginType,
                 Dependencies = plugin.Dependencies.ToList(),
                 Metadata = metadata,

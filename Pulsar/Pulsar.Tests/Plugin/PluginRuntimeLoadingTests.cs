@@ -159,6 +159,39 @@ namespace Pulsar.Tests.Plugin
             }
         }
 
+        [Fact]
+        public void CreateExternalDescriptor_ShouldNotInstantiatePluginType()
+        {
+            var manifest = new PluginManifest
+            {
+                Id = "test.external.descriptor",
+                DisplayName = "External Descriptor",
+                Version = "1.0.0",
+                EntryPoint = typeof(ThrowingConstructorPlugin).FullName!
+            };
+
+            var descriptor = PluginLoader.CreateExternalDescriptor(typeof(ThrowingConstructorPlugin), manifest);
+
+            descriptor.Should().NotBeNull();
+            descriptor.IsExternal.Should().BeTrue();
+            descriptor.Id.Should().Be(manifest.Id);
+            descriptor.Permissions.Should().BeSameAs(manifest.Permissions);
+        }
+
+        [Fact]
+        public void CreateExternalDescriptor_CoreTier_ShouldBeRejected()
+        {
+            var manifest = new PluginManifest
+            {
+                Id = "test.external.core",
+                Tier = PluginTier.Core
+            };
+
+            var action = () => PluginLoader.CreateExternalDescriptor(typeof(ThrowingConstructorPlugin), manifest);
+
+            action.Should().Throw<PluginInstantiationException>();
+        }
+
         private static List<PluginDescriptor> BuildDescriptors()
         {
             var metadata = new Core.Plugin.Metadata.PluginMetadata
@@ -267,6 +300,29 @@ namespace Pulsar.Tests.Plugin
             }
 
             public int DiscoverCount { get; private set; }
+        }
+
+        private sealed class ThrowingConstructorPlugin : IPulsarPlugin
+        {
+            public ThrowingConstructorPlugin()
+            {
+                throw new InvalidOperationException("External plugin constructors must not run during discovery.");
+            }
+
+            public string Id => "test.external.descriptor";
+            public string DisplayName => "External Descriptor";
+            public string Version => "1.0.0";
+            public string Author => "Tests";
+            public string Description => "Throwing constructor test plugin";
+            public string Icon => "T";
+            public bool CanDisable => true;
+
+            public void Initialize(IServiceProvider services) { }
+
+            public Task<PluginResult> ExecuteAsync(string action, IReadOnlyDictionary<string, string> args, PulsarContext context, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(PluginResult.Ok());
+            }
         }
 
         private sealed class DeferredActivationPlugin : IPulsarPlugin

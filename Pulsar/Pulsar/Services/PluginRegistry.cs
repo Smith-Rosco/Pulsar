@@ -81,6 +81,11 @@ namespace Pulsar.Services
             await _runtimeKernel.SetPluginStateAsync(pluginId, enabled);
         }
 
+        public async Task GrantPermissionsAsync(string pluginId, IEnumerable<string> permissions)
+        {
+            await _runtimeKernel.GrantPermissionsAsync(pluginId, permissions);
+        }
+
         public bool IsPluginEnabled(string pluginId)
         {
             return _runtimeKernel.IsPluginEnabled(pluginId);

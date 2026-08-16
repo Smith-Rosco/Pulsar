@@ -4306,4 +4306,52 @@ Pulsar 会在你的浏览器中打开一个网页——这就是命令模式：�
   <data name="Settings.Plugins.FilterErrors" xml:space="preserve">
     <value>有错误</value>
   </data>
+  <data name="Plugin.Permissions.ConfirmTitle" xml:space="preserve">
+    <value>外部插件权限</value>
+  </data>
+  <data name="Plugin.Permissions.ConfirmBodyFormat" xml:space="preserve">
+    <value>{0} v{1}（作者：{2}）请求以下权限：{3}</value>
+  </data>
+  <data name="Plugin.Permissions.Approve" xml:space="preserve">
+    <value>批准并安装</value>
+  </data>
+  <data name="Plugin.Permissions.ApprovalRequired" xml:space="preserve">
+    <value>需要权限批准</value>
+  </data>
+  <data name="Plugin.Permissions.InstallCancelled" xml:space="preserve">
+    <value>已取消安装</value>
+  </data>
+  <data name="Plugin.Permissions.GrantFailedFormat" xml:space="preserve">
+    <value>插件已安装，但为 {0} 授予权限失败：{1}</value>
+  </data>
+  <data name="Plugin.Permission.clipboardread" xml:space="preserve">
+    <value>读取剪贴板</value>
+  </data>
+  <data name="Plugin.Permission.clipboardwrite" xml:space="preserve">
+    <value>写入剪贴板</value>
+  </data>
+  <data name="Plugin.Permission.inputinject" xml:space="preserve">
+    <value>注入键盘/鼠标输入</value>
+  </data>
+  <data name="Plugin.Permission.windowfocus" xml:space="preserve">
+    <value>激活并聚焦应用程序窗口</value>
+  </data>
+  <data name="Plugin.Permission.processlaunch" xml:space="preserve">
+    <value>启动应用程序或进程</value>
+  </data>
+  <data name="Plugin.Permission.filesystemread" xml:space="preserve">
+    <value>从磁盘读取文件</value>
+  </data>
+  <data name="Plugin.Permission.filesystemwrite" xml:space="preserve">
+    <value>向磁盘写入文件</value>
+  </data>
+  <data name="Plugin.Permission.networkclient" xml:space="preserve">
+    <value>发起网络请求</value>
+  </data>
+  <data name="Settings.ExternalPlugins.GrantPermissions" xml:space="preserve">
+    <value>授予权限</value>
+  </data>
+  <data name="Plugin.Permissions.GrantSuccess" xml:space="preserve">
+    <value>权限已授予。</value>
+  </data>
 </root>

@@ -20,6 +20,7 @@ namespace Pulsar.ViewModels.Settings
     {
         private readonly LocalPluginScanner _scanner;
         private readonly PluginPackageManager _packageManager;
+        private readonly IPluginRegistry _pluginRegistry;
         private readonly ILogger<ExternalPluginManagerViewModel>? _logger;
         private readonly IDialogService? _dialogService;
         private readonly ILocalizationService _loc;
@@ -36,12 +37,14 @@ namespace Pulsar.ViewModels.Settings
         public ExternalPluginManagerViewModel(
             LocalPluginScanner scanner,
             PluginPackageManager packageManager,
+            IPluginRegistry pluginRegistry,
             ILocalizationService localizationService,
             ILogger<ExternalPluginManagerViewModel>? logger = null,
             IDialogService? dialogService = null)
         {
             _scanner = scanner;
             _packageManager = packageManager;
+            _pluginRegistry = pluginRegistry;
             _loc = localizationService;
             _logger = logger;
             _dialogService = dialogService;
@@ -103,11 +106,65 @@ namespace Pulsar.ViewModels.Settings
                     var filePath = openFileDialog.FileName;
                     StatusMessage = string.Format(_loc["Settings.ExternalPlugins.StatusInstallingFormat"], Path.GetFileName(filePath));
 
-                    var result = await _packageManager.InstallFromFileAsync(filePath);
+                    var inspection = await _packageManager.InspectPackageAsync(filePath);
+                    if (!inspection.Success || inspection.Manifest == null)
+                    {
+                        StatusMessage = string.Format(_loc["Notification.InstallFailedFormat"], inspection.ErrorMessage);
+                        if (_dialogService != null)
+                        {
+                            await _dialogService.ShowMessageAsync(
+                                _loc["Notification.InstallFailed"],
+                                inspection.ErrorMessage ?? _loc["Notification.InstallFailed"]);
+                        }
+                        return;
+                    }
+
+                    var manifest = inspection.Manifest;
+                    if (manifest.Permissions.Count > 0)
+                    {
+                        if (_dialogService == null)
+                        {
+                            StatusMessage = _loc["Plugin.Permissions.ApprovalRequired"];
+                            return;
+                        }
+
+                        var approval = await _dialogService.ShowConfirmationAsync(
+                            _loc["Plugin.Permissions.ConfirmTitle"],
+                            BuildPermissionPrompt(manifest),
+                            _loc["Plugin.Permissions.Approve"],
+                            _loc["Dialog.Button.Cancel"]);
+
+                        if (approval != Models.Enums.DialogResult.Confirmed)
+                        {
+                            StatusMessage = _loc["Plugin.Permissions.InstallCancelled"];
+                            return;
+                        }
+                    }
+
+                    var result = await _packageManager.InstallFromFileAsync(filePath, manifest.Permissions);
 
                     if (result.Success)
                     {
-                        StatusMessage = _loc["Notification.SuccessfullyInstalled"];
+                        var permissionsGranted = true;
+
+                        if (manifest.Permissions.Count > 0)
+                        {
+                            try
+                            {
+                                await _pluginRegistry.GrantPermissionsAsync(manifest.Id, manifest.Permissions);
+                            }
+                            catch (Exception ex)
+                            {
+                                permissionsGranted = false;
+                                _logger?.LogError(ex, "[ExternalPluginManagerViewModel] Plugin installed but permission grant failed for {PluginId}", manifest.Id);
+                                StatusMessage = string.Format(_loc["Plugin.Permissions.GrantFailedFormat"], manifest.Id, ex.Message);
+                            }
+                        }
+
+                        if (permissionsGranted)
+                        {
+                            StatusMessage = _loc["Notification.SuccessfullyInstalled"];
+                        }
 
                         if (_dialogService != null)
                         {
@@ -175,6 +232,20 @@ namespace Pulsar.ViewModels.Settings
 
                 if (result.Success)
                 {
+                    // Uninstall revokes prior permission grants so a future
+                    // reinstall has to go through the consent prompt again.
+                    if (plugin.Permissions.Count > 0)
+                    {
+                        try
+                        {
+                            await _pluginRegistry.GrantPermissionsAsync(plugin.Id, Array.Empty<string>());
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger?.LogError(ex, "[ExternalPluginManagerViewModel] Failed to revoke permissions for uninstalled plugin {PluginId}", plugin.Id);
+                        }
+                    }
+
                     StatusMessage = string.Format(_loc["Notification.SuccessfullyUninstalledFormat"], plugin.Name);
 
                     if (_dialogService != null)
@@ -204,6 +275,76 @@ namespace Pulsar.ViewModels.Settings
                 _logger?.LogError(ex, "[ExternalPluginManagerViewModel] Failed to uninstall plugin {PluginId}", plugin.Id);
                 StatusMessage = string.Format(_loc["Settings.ExternalPlugins.StatusErrorUninstallingFormat"], plugin.Name, ex.Message);
             }
+        }
+
+        [RelayCommand]
+        private async Task ApprovePluginPermissionsAsync(PluginPackageInfo plugin)
+        {
+            if (plugin == null || plugin.Permissions.Count == 0)
+            {
+                return;
+            }
+
+            try
+            {
+                if (_dialogService != null)
+                {
+                    var approval = await _dialogService.ShowConfirmationAsync(
+                        _loc["Plugin.Permissions.ConfirmTitle"],
+                        BuildPermissionPrompt(plugin),
+                        _loc["Plugin.Permissions.Approve"],
+                        _loc["Dialog.Button.Cancel"]);
+
+                    if (approval != Models.Enums.DialogResult.Confirmed)
+                    {
+                        return;
+                    }
+                }
+
+                await _pluginRegistry.GrantPermissionsAsync(plugin.Id, plugin.Permissions);
+                StatusMessage = _loc["Plugin.Permissions.GrantSuccess"];
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[ExternalPluginManagerViewModel] Failed to grant permissions for {PluginId}", plugin.Id);
+                StatusMessage = string.Format(_loc["Plugin.Permissions.GrantFailedFormat"], plugin.Id, ex.Message);
+            }
+        }
+
+        private string BuildPermissionPrompt(Pulsar.Core.Plugin.Metadata.PluginManifest manifest)
+        {
+            return BuildPermissionPrompt(
+                manifest.DisplayName,
+                manifest.Version,
+                manifest.Author,
+                manifest.Permissions);
+        }
+
+        private string BuildPermissionPrompt(PluginPackageInfo plugin)
+        {
+            return BuildPermissionPrompt(plugin.Name, plugin.Version, plugin.Author, plugin.Permissions);
+        }
+
+        private string BuildPermissionPrompt(
+            string displayName,
+            string version,
+            string author,
+            IEnumerable<string> permissions)
+        {
+            var permissionLines = permissions.Select(permission =>
+                "• " + _loc[$"Plugin.Permission.{PermissionKey(permission)}"]);
+
+            return string.Format(
+                _loc["Plugin.Permissions.ConfirmBodyFormat"],
+                displayName,
+                version,
+                author,
+                Environment.NewLine + string.Join(Environment.NewLine, permissionLines));
+        }
+
+        private static string PermissionKey(string permission)
+        {
+            return permission.Replace(".", string.Empty);
         }
 
         /// <summary>

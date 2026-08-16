@@ -43,6 +43,12 @@ namespace Pulsar.Models
         /// 注意：System.Text.Json 反序列化时 value 可能是 JsonElement
         /// </summary>
         public Dictionary<string, object> Config { get; set; } = new();
+
+        /// <summary>
+        /// Permissions explicitly approved by the user for an external plugin.
+        /// The runtime blocks execution when a manifest permission is missing here.
+        /// </summary>
+        public List<string> GrantedPermissions { get; set; } = new();
     }
 
     /// <summary>

@@ -27,7 +27,9 @@ This file provides essential context, conventions, and routing for AI agents wor
 
 **Rule**: Never query live window state inside plugins; always use `PulsarContext`.
 
-**Rule**: PulsarContext is fully immutable after construction. Per-execution correlation data (PluginId, Action, ExecutionId) lives in `PluginExecutionContext` (stack-scoped AsyncLocal), not on `PulsarContext`. (Permission interception is a planned trust-boundary extension; until shipped, external plugins are treated as untrusted only at package install/discovery boundaries.)
+**Rule**: PulsarContext is fully immutable after construction. Per-execution correlation data (PluginId, Action, ExecutionId) lives in `PluginExecutionContext` (stack-scoped AsyncLocal), not on `PulsarContext`.
+
+**Rule**: External plugins are permission-gated. `PluginPermissionService` blocks execution until every manifest permission is present in `PluginProfile.GrantedPermissions`. External descriptors are built from `plugin.manifest.json` without instantiating plugin types; constructors run only after consent.
 
 **Rule**: Respect plugin tier semantics:
 - **Core plugins** (`Plugins/Core/`): Essential, cannot be disabled, crashes are fatal
