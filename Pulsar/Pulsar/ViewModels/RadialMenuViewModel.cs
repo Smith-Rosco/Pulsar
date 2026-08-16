@@ -226,13 +226,40 @@ namespace Pulsar.ViewModels
         private double _lastClickRelativeX = -1;
         private double _lastClickRelativeY = -1;
 
-        // Kando-inspired timing: a short anticipation collapse, a root-translation
-        // glide, and a slightly overshooting bloom for the new ring.
-        private static readonly TimeSpan SubMenuGlideDuration = TimeSpan.FromMilliseconds(220);
-        private static readonly TimeSpan SubMenuCollapseDuration = TimeSpan.FromMilliseconds(160);
-        private static readonly TimeSpan SubMenuBloomDuration = TimeSpan.FromMilliseconds(260);
+        // Kando-inspired timing: a short anticipation collapse, a distance-adaptive
+        // root-translation glide, and a slightly overshooting bloom for the new ring.
+        private static readonly TimeSpan SubMenuCollapseDuration = TimeSpan.FromMilliseconds(110);
+        private static readonly TimeSpan SubMenuRestoreBloomDuration = TimeSpan.FromMilliseconds(160);
+        private const double SubMenuEnterMinDurationMs = 110;
+        private const double SubMenuEnterMaxDurationMs = 240;
+        private const double SubMenuBloomMinDurationMs = 150;
+        private const double SubMenuBloomMaxDurationMs = 230;
         private const double SubMenuCollapsedScale = 0.45;
         private const double SubMenuCollapsedOpacity = 0.0;
+
+        /// <summary>
+        /// Submenu travel speed grows with the distance between the current menu
+        /// center and the click point. Near clicks get the minimum duration; far
+        /// clicks move at a higher DIP/ms velocity while still being capped so a
+        /// full-screen-edge click never feels sluggish.
+        /// </summary>
+        internal static TimeSpan GetSubMenuEnterDuration(double distanceDip)
+        {
+            double velocityDipPerMs = 1.8 + (distanceDip * 0.002);
+            double durationMs = distanceDip / velocityDipPerMs;
+            return TimeSpan.FromMilliseconds(Math.Clamp(
+                durationMs,
+                SubMenuEnterMinDurationMs,
+                SubMenuEnterMaxDurationMs));
+        }
+
+        private static TimeSpan GetSubMenuBloomDuration(TimeSpan enterDuration)
+        {
+            return TimeSpan.FromMilliseconds(Math.Clamp(
+                enterDuration.TotalMilliseconds + 30,
+                SubMenuBloomMinDurationMs,
+                SubMenuBloomMaxDurationMs));
+        }
 
         // [UX Improvement] Quick Switch Position Tolerance
         private const double QuickSwitchPositionTolerance = 30.0; // 30px tolerance from center
@@ -1391,9 +1418,15 @@ namespace Pulsar.ViewModels
                     ? new Point(_lastClickRelativeX, _lastClickRelativeY)
                     : new Point(_menuCenterX, _menuCenterY);
 
+                double submenuDistance = Math.Sqrt(
+                    Math.Pow(submenuCenter.X - _menuCenterX, 2)
+                    + Math.Pow(submenuCenter.Y - _menuCenterY, 2));
+                var enterDuration = GetSubMenuEnterDuration(submenuDistance);
+                var bloomDuration = GetSubMenuBloomDuration(enterDuration);
+
                 var glideViewportCenter = AnimateMenuCenterAsync(
                     submenuCenter,
-                    SubMenuGlideDuration,
+                    enterDuration,
                     EasingFunctions.EaseInOutCubic,
                     cancellationToken);
 
@@ -1424,7 +1457,7 @@ namespace Pulsar.ViewModels
                             1.0,
                             CenterX - parentCenterX,
                             CenterY - parentCenterY),
-                        SubMenuGlideDuration,
+                        enterDuration,
                         EasingFunctions.EaseInOutCubic,
                         cancellationToken);
 
@@ -1479,7 +1512,7 @@ namespace Pulsar.ViewModels
                 await AnimateSlotsAsync(
                     childSlots,
                     _ => new SlotPose(1.0, 1.0, 0, 0),
-                    SubMenuBloomDuration,
+                    bloomDuration,
                     EasingFunctions.EaseOutBack,
                     cancellationToken);
 
@@ -1659,13 +1692,13 @@ namespace Pulsar.ViewModels
                             desiredOpacityByIndex.TryGetValue(slot.SlotIndex, out var opacity) ? opacity : 0,
                             0,
                             0),
-                        SubMenuBloomDuration,
+                        SubMenuRestoreBloomDuration,
                         EasingFunctions.EaseOutBack,
                         cancellationToken),
                     AnimateSlotsAsync(
                         new[] { CenterSlot },
                         _ => new SlotPose(1.0, 1.0, 0, 0),
-                        SubMenuBloomDuration,
+                        SubMenuRestoreBloomDuration,
                         EasingFunctions.EaseOutBack,
                         cancellationToken));
 

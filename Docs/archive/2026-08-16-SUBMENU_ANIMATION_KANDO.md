@@ -37,6 +37,15 @@ Pulsar 是 WPF 架构，中心与圆环槽不是同一棵视觉树，因此采�
 - `IPageProvider.ClearSlots` 清空时显式隐藏空槽，避免旧动画状态泄漏到下一页。
 - `RadialMenuSubMenuCoordinator.RestoreRootMenu` 改为同步刷新，避免退出动画中途内容“跳回”。
 
+## 速度调优（2026-08-16 追加）
+
+- 全局提速：压缩阶段 160ms → 110ms；返回绽放 260ms → 160ms。
+- 进入子菜单采用距离自适应时长：
+  - `velocity = 1.8 + distance * 0.002` DIP/ms；
+  - 时长范围 110–240ms；
+  - 点击点越远，DIP/ms 速度越高，同时用上限防止跨屏长距离拖沓。
+- 新窗口槽绽放时长 = 进入时长 + 30ms，范围 150–230ms。
+
 ## 验证
 
 - `dotnet build`：0 warning / 0 error（产物输出到临时目录，因为运行中的 Pulsar 占用 bin）
