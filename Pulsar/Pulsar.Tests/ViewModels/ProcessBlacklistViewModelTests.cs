@@ -16,7 +16,7 @@ namespace Pulsar.Tests.ViewModels
         [Fact]
         public async Task Constructor_ShouldBuildListFromRegistryAndLightweightRunningState()
         {
-            var windowService = new Mock<IWindowService>(MockBehavior.Strict);
+            var windowService = new Mock<IWindowDiscoveryService>(MockBehavior.Strict);
             var processRegistryService = new Mock<IProcessRegistryService>(MockBehavior.Strict);
 
             processRegistryService
@@ -59,7 +59,7 @@ namespace Pulsar.Tests.ViewModels
         [Fact]
         public async Task Constructor_ShouldExposeRowsBeforeDeferredIconsComplete()
         {
-            var windowService = new Mock<IWindowService>(MockBehavior.Strict);
+            var windowService = new Mock<IWindowDiscoveryService>(MockBehavior.Strict);
             var processRegistryService = new Mock<IProcessRegistryService>(MockBehavior.Strict);
             var iconGate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -99,7 +99,7 @@ namespace Pulsar.Tests.ViewModels
         [Fact]
         public async Task Constructor_ShouldShowRunningProcesses_WhenRegistryIsEmpty()
         {
-            var windowService = new Mock<IWindowService>(MockBehavior.Strict);
+            var windowService = new Mock<IWindowDiscoveryService>(MockBehavior.Strict);
             var processRegistryService = new Mock<IProcessRegistryService>(MockBehavior.Strict);
 
             processRegistryService
@@ -130,7 +130,7 @@ namespace Pulsar.Tests.ViewModels
         [Fact]
         public async Task Constructor_ShouldUseRunningExecutablePathForDeferredIcons_WhenRegistryIsEmpty()
         {
-            var windowService = new Mock<IWindowService>(MockBehavior.Strict);
+            var windowService = new Mock<IWindowDiscoveryService>(MockBehavior.Strict);
             var processRegistryService = new Mock<IProcessRegistryService>(MockBehavior.Strict);
 
             processRegistryService

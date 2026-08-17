@@ -10,20 +10,20 @@ namespace Pulsar.Services
 {
     public class PreviewService : IPreviewService
     {
-        private readonly IWindowService _windowService;
+        private readonly IWindowDiscoveryService _windowService;
         private readonly ILiveWindowPreviewHost _liveWindowPreviewHost;
         private readonly Func<IntPtr, bool> _isWindow;
         private readonly Func<IntPtr, bool> _isIconic;
         private readonly Func<IntPtr, bool> _isCloaked;
         private readonly Dictionary<IntPtr, BitmapSource> _cache = new();
 
-        public PreviewService(IWindowService windowService)
+        public PreviewService(IWindowDiscoveryService windowService)
             : this(windowService, new LiveWindowPreviewHost(), PulsarNative.IsWindow, PulsarNative.IsIconic, IsCloaked)
         {
         }
 
         internal PreviewService(
-            IWindowService windowService,
+            IWindowDiscoveryService windowService,
             ILiveWindowPreviewHost liveWindowPreviewHost,
             Func<IntPtr, bool> isWindow,
             Func<IntPtr, bool> isIconic,

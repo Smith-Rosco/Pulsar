@@ -14,11 +14,11 @@ namespace Pulsar.ViewModels
 {
     internal sealed class RadialMenuInputCoordinator
     {
-        private readonly IWindowService _windowService;
+        private readonly IWindowFocusContextService _windowService;
         private readonly ILogger<RadialMenuViewModel>? _logger;
 
         public RadialMenuInputCoordinator(
-            IWindowService windowService,
+            IWindowFocusContextService windowService,
             ILogger<RadialMenuViewModel>? logger)
         {
             _windowService = windowService;

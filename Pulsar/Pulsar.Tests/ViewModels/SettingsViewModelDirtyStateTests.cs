@@ -153,6 +153,9 @@ namespace Pulsar.Tests.ViewModels
             harness.ConfigService
                 .Setup(service => service.LoadAsync())
                 .ReturnsAsync(() => CloneConfig(fallbackConfig));
+            harness.ConfigService
+                .Setup(service => service.LoadSnapshotAsync(It.IsAny<bool>()))
+                .ReturnsAsync(() => CloneConfig(fallbackConfig));
 
             harness.DialogService
                 .Setup(service => service.ShowConfirmationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
@@ -189,6 +192,9 @@ namespace Pulsar.Tests.ViewModels
                 .ReturnsAsync(CloneConfig(fallbackConfig));
             harness.ConfigService
                 .Setup(service => service.LoadAsync())
+                .ReturnsAsync(() => CloneConfig(fallbackConfig));
+            harness.ConfigService
+                .Setup(service => service.LoadSnapshotAsync(It.IsAny<bool>()))
                 .ReturnsAsync(() => CloneConfig(fallbackConfig));
 
             harness.DialogService
@@ -276,9 +282,10 @@ namespace Pulsar.Tests.ViewModels
             var config = CreateConfig();
 
             var configService = new Mock<IConfigService>();
-            configService.SetupGet(service => service.Current).Returns(config);
+            configService.Setup(service => service.GetSnapshot()).Returns(config);
             configService.SetupGet(service => service.LastValidationResult).Returns((ValidationResult?)null);
             configService.Setup(service => service.LoadAsync()).ReturnsAsync(CloneConfig(config));
+            configService.Setup(service => service.LoadSnapshotAsync(It.IsAny<bool>())).ReturnsAsync(CloneConfig(config));
             configService.Setup(service => service.SaveAsync(It.IsAny<ProfilesConfig>())).Returns(Task.CompletedTask);
             configService.Setup(service => service.GetValidatedSlotsPerPage()).Returns(() => config.Settings.SlotsPerPage);
 
@@ -327,7 +334,7 @@ namespace Pulsar.Tests.ViewModels
 
             var viewModel = new SettingsViewModel(
                 configService.Object,
-                new Mock<IWindowService>().Object,
+                new Mock<IWindowDiscoveryService>().Object,
                 CreateThemeServiceMock().Object,
                 new Mock<IHotkeyService>().Object,
                 dialogService.Object,

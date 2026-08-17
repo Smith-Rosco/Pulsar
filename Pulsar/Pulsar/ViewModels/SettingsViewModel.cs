@@ -80,7 +80,7 @@ namespace Pulsar.ViewModels
     public partial class SettingsViewModel : ObservableObject, GongSolutions.Wpf.DragDrop.IDropTarget
     {
         private readonly IConfigService _configService;
-        private readonly IWindowService _windowService;
+        private readonly IWindowDiscoveryService _windowService;
         private readonly IThemeService _themeService;
         private readonly IHotkeyService _hotkeyService;
         private readonly IDialogService _dialogService;
@@ -95,6 +95,7 @@ namespace Pulsar.ViewModels
         private readonly ILocalizationService _loc;
         private readonly ITutorialService _tutorialService;
         private ProfilesConfig _config;
+        private ConfigEditSession? _editSession;
 
         // ===== Drag & Drop =====
         private CancellationTokenSource? _notificationDebounceToken;
@@ -329,7 +330,7 @@ namespace Pulsar.ViewModels
 
         public SettingsViewModel(
             IConfigService configService,
-            IWindowService windowService,
+            IWindowDiscoveryService windowService,
             IThemeService themeService,
             IHotkeyService hotkeyService,
             IDialogService dialogService,
@@ -458,8 +459,13 @@ namespace Pulsar.ViewModels
 
         public async Task<ProfilesConfig> GetConfigAsync()
         {
-             if (_config == null) _config = await _configService.LoadAsync();
-             return _config;
+            if (_config == null)
+            {
+                _editSession = await ConfigEditSession.BeginAsync(_configService);
+                _config = _editSession.Draft;
+            }
+
+            return _config;
         }
 
         public async Task LoadSettings()
@@ -470,15 +476,8 @@ namespace Pulsar.ViewModels
 
                 try
                 {
-                    var sharedConfig = await _configService.LoadAsync();
-                    // [Transactional] Deep Clone to work on a draft
-                    var options = new System.Text.Json.JsonSerializerOptions 
-                    { 
-                        PropertyNameCaseInsensitive = true,
-                        WriteIndented = true 
-                    };
-                    var json = System.Text.Json.JsonSerializer.Serialize(sharedConfig, options);
-                    _config = System.Text.Json.JsonSerializer.Deserialize<ProfilesConfig>(json, options) ?? new ProfilesConfig();
+                    _editSession = await ConfigEditSession.BeginAsync(_configService);
+                    _config = _editSession.Draft;
                     _persistedSecrets = await _secretStore.LoadAsync();
 
                     GeneralSettings = _config.Settings;
@@ -856,8 +855,14 @@ namespace Pulsar.ViewModels
                 await _secretStore.SaveAsync(allSecrets);
                 _persistedSecrets = new Dictionary<Guid, Plugins.Core.Pki.Models.SecretPayload>(allSecrets);
                 _pendingSecrets.Clear();
-                
-                await _configService.SaveAsync(_config);
+
+                if (_editSession == null)
+                {
+                    _editSession = await ConfigEditSession.BeginAsync(_configService);
+                    _config = _editSession.Draft;
+                }
+
+                await _editSession.CommitAsync();
 
                 // [Architecture] Notify RadialMenuViewModel to reinitialize slots if count changed
                 // This ensures immediate visual feedback without requiring app restart
@@ -1353,8 +1358,14 @@ namespace Pulsar.ViewModels
             {
                 if (_config.Profiles.Remove(profileName))
                 {
-                    // [Fix] Save changes to disk
-                    await _configService.SaveAsync(_config);
+                    // [Fix] Save changes to disk through the active edit session
+                    if (_editSession == null)
+                    {
+                        _editSession = await ConfigEditSession.BeginAsync(_configService);
+                        _config = _editSession.Draft;
+                    }
+
+                    await _editSession.CommitAsync();
                     
                     SendNotification(_loc["Notification.Deleted"], string.Format(_loc["Notification.ProfileDeletedFormat"], profileName), ControlAppearance.Info);
                     
@@ -1782,7 +1793,8 @@ namespace Pulsar.ViewModels
                 return;
             }
 
-            var config = await _configService.LoadAsync();
+            var session = await ConfigEditSession.BeginAsync(_configService);
+            var config = session.Draft;
             config.Settings.OnboardingState = "SetupWizardComplete";
             config.Settings.HasCompletedTutorial = false;
             config.Settings.TutorialCrashedAt = null;
@@ -1804,7 +1816,7 @@ namespace Pulsar.ViewModels
                 ];
             }
 
-            await _configService.SaveAsync(config);
+            await session.CommitAsync();
 
             await _tutorialService.StartTutorialAsync();
         }

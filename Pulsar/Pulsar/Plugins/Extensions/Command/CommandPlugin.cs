@@ -18,10 +18,10 @@ namespace Pulsar.Plugins.Extensions.Command
         private readonly IKeySender _keySender;
         private readonly IProcessLauncher _processLauncher;
         private readonly ILocalizationService _loc;
-        private readonly IWindowService _windowService;
+        private readonly IWindowShellService _windowService;
         private readonly IFocusManager _focusManager;
 
-        public CommandPlugin(ILogger<CommandPlugin> logger, IKeySender keySender, IProcessLauncher processLauncher, ILocalizationService loc, IWindowService windowService, IFocusManager focusManager)
+        public CommandPlugin(ILogger<CommandPlugin> logger, IKeySender keySender, IProcessLauncher processLauncher, ILocalizationService loc, IWindowShellService windowService, IFocusManager focusManager)
             : base(logger)
         {
             _keySender = keySender;

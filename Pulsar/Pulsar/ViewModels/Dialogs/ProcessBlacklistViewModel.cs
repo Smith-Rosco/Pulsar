@@ -16,7 +16,7 @@ namespace Pulsar.ViewModels.Dialogs
 {
     public partial class ProcessBlacklistViewModel : ObservableObject, IDialogViewModel
     {
-        private readonly IWindowService _windowService;
+        private readonly IWindowDiscoveryService _windowService;
         private readonly IProcessRegistryService _processRegistryService;
         private readonly HashSet<string> _currentBlacklist;
 
@@ -32,7 +32,7 @@ namespace Pulsar.ViewModels.Dialogs
 
         public string Result { get; private set; } = string.Empty;
 
-        public ProcessBlacklistViewModel(IWindowService windowService, IProcessRegistryService processRegistryService, string currentBlacklist)
+        public ProcessBlacklistViewModel(IWindowDiscoveryService windowService, IProcessRegistryService processRegistryService, string currentBlacklist)
         {
             _windowService = windowService;
             _processRegistryService = processRegistryService;

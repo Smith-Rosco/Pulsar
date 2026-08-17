@@ -14,7 +14,7 @@ namespace Pulsar.ViewModels.Dialogs
 {
     public partial class ProcessPickerViewModel : ObservableObject, IDialogViewModel
     {
-        private readonly IWindowService _windowService;
+        private readonly IWindowDiscoveryService _windowService;
         private List<ProcessWindowInfo> _allProcesses = new();
 
         [ObservableProperty]
@@ -31,7 +31,7 @@ namespace Pulsar.ViewModels.Dialogs
 
         public Action<DialogResult>? RequestClose { get; set; }
 
-        public ProcessPickerViewModel(IWindowService windowService)
+        public ProcessPickerViewModel(IWindowDiscoveryService windowService)
         {
             _windowService = windowService;
             _ = LoadProcessesAsync();
