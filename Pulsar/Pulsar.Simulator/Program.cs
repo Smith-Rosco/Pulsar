@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Pulsar.Core;
 using Pulsar.Core.Focus;
+using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin;
 using Pulsar.Models;
 using Pulsar.Plugins.Core.Pki.Contracts;
@@ -71,7 +72,7 @@ namespace Pulsar.Simulator
 
             // Mock core dependencies
             var mockConfig = new Mock<IConfigService>();
-            mockConfig.Setup(c => c.Current).Returns(new ProfilesConfig());
+            mockConfig.Setup(c => c.GetSnapshot()).Returns(new ProfilesConfig());
             services.AddSingleton(mockConfig.Object);
 
             var mockWindow = new Mock<IWindowService>();
@@ -79,11 +80,19 @@ namespace Pulsar.Simulator
             mockWindow.Setup(w => w.GetProcessWindowsAsync(It.IsAny<int>())).ReturnsAsync(new List<ProcessWindowInfo>());
             mockWindow.Setup(w => w.HideMainWindow());
             services.AddSingleton(mockWindow.Object);
+            services.AddSingleton<IWindowDiscoveryService>(sp => sp.GetRequiredService<IWindowService>());
+            services.AddSingleton<IWindowActivationService>(sp => sp.GetRequiredService<IWindowService>());
+            services.AddSingleton<IWindowFocusContextService>(sp => sp.GetRequiredService<IWindowService>());
+            services.AddSingleton<IWindowShellService>(sp => sp.GetRequiredService<IWindowService>());
 
             var mockFocusManager = new Mock<IFocusManager>();
             mockFocusManager.Setup(f => f.ActivateWindowAsync(It.IsAny<IntPtr>(), It.IsAny<FocusActivationOptions>()))
                 .ReturnsAsync(new FocusActivationResult { Success = true, VerificationPassed = true });
             services.AddSingleton(mockFocusManager.Object);
+
+            services.AddSingleton<ILocalizationService, LocalizationService>();
+            services.AddTransient<IKeySender, Pulsar.Plugins.Extensions.Command.KeySender>();
+            services.AddTransient<IProcessLauncher, Pulsar.Plugins.Extensions.Command.ProcessLauncher>();
 
             services.AddSingleton<ISecretProtector, CredentialsManager>();
             services.AddSingleton<IPkiSecretStore, SecretRepository>();
@@ -101,6 +110,7 @@ namespace Pulsar.Simulator
             // Initialize PluginRegistry
             var registry = serviceProvider.GetRequiredService<IPluginRegistry>();
             await registry.LoadCoreAsync();
+            await registry.DiscoverDeferredAsync();
 
             // Prepare Parameters
             var pluginArgs = new Dictionary<string, string>();

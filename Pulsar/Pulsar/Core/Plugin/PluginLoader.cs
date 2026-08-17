@@ -476,8 +476,7 @@ namespace Pulsar.Core.Plugin
                     }
                     else
                     {
-                        _logger?.LogWarning("[PluginLoader] Missing dependency '{DependencyId}' for plugin '{PluginId}'", depId, plugin.Id);
-                        throw new InvalidOperationException($"Missing dependency '{depId}' for plugin '{plugin.Id}'");
+                        _logger?.LogDebug("[PluginLoader] Dependency '{DependencyId}' for plugin '{PluginId}' resolved outside this discovery set", depId, plugin.Id);
                     }
                 }
 

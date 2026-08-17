@@ -110,6 +110,10 @@ namespace Pulsar
             serviceCollection.AddSingleton<IConfigService, ConfigService>();
             serviceCollection.AddSingleton<IProcessRegistryService, ProcessRegistryService>();
             serviceCollection.AddSingleton<IWindowService, WindowService>();
+            serviceCollection.AddSingleton<IWindowDiscoveryService>(sp => sp.GetRequiredService<IWindowService>());
+            serviceCollection.AddSingleton<IWindowActivationService>(sp => sp.GetRequiredService<IWindowService>());
+            serviceCollection.AddSingleton<IWindowFocusContextService>(sp => sp.GetRequiredService<IWindowService>());
+            serviceCollection.AddSingleton<IWindowShellService>(sp => sp.GetRequiredService<IWindowService>());
             serviceCollection.AddSingleton<ITrayService, TrayIconService>();
             serviceCollection.AddSingleton<IActionFeedbackService, ActionFeedbackService>();
             serviceCollection.AddSingleton<IActionFeedbackPresenter, ActionFeedbackPresenter>();
