@@ -156,10 +156,8 @@
                             <MultiDataTrigger.ExitActions>
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" 
-                                                         To="0.0" Duration="0:0:0.3"/>
-                                        <DoubleAnimation Storyboard.TargetProperty="Effect.Radius" 
-                                                         To="10" Duration="0:0:0.3"/>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.8" To="0.0" Duration="0:0:0.3"/>
+                                        <DoubleAnimation Storyboard.TargetProperty="Effect.Radius" From="25" To="10" Duration="0:0:0.3"/>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </MultiDataTrigger.ExitActions>
@@ -360,16 +358,16 @@
                         <BeginStoryboard>
                             <Storyboard>
                                 <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)"
-                                                 To="1.15" Duration="0:0:0.4">
+                                                 To="1.15" Duration="0:0:0.22">
                                     <DoubleAnimation.EasingFunction>
-                                        <ElasticEase EasingMode="EaseOut" Springiness="4" Oscillations="1"/>
+                                        <CubicEase EasingMode="EaseOut"/>
                                     </DoubleAnimation.EasingFunction>
                                 </DoubleAnimation>
 
                                 <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)"
-                                                 To="1.15" Duration="0:0:0.4">
+                                                 To="1.15" Duration="0:0:0.22">
                                     <DoubleAnimation.EasingFunction>
-                                        <ElasticEase EasingMode="EaseOut" Springiness="4" Oscillations="1"/>
+                                        <CubicEase EasingMode="EaseOut"/>
                                     </DoubleAnimation.EasingFunction>
                                 </DoubleAnimation>
                             </Storyboard>
@@ -380,17 +378,19 @@
                         <BeginStoryboard>
                             <Storyboard>
                                 <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)"
-                                                 To="1.0" Duration="0:0:0.25">
+                                                 From="1.15" To="1.0" Duration="0:0:0.22">
                                     <DoubleAnimation.EasingFunction>
                                         <BackEase EasingMode="EaseOut" Amplitude="0.3"/>
                                     </DoubleAnimation.EasingFunction>
                                 </DoubleAnimation>
                                 <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)"
-                                                 To="1.0" Duration="0:0:0.25">
+                                                 From="1.15" To="1.0" Duration="0:0:0.22">
                                     <DoubleAnimation.EasingFunction>
                                         <BackEase EasingMode="EaseOut" Amplitude="0.3"/>
                                     </DoubleAnimation.EasingFunction>
                                 </DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                 From="1.0" To="0.8" Duration="0:0:0.22"/>
                             </Storyboard>
                         </BeginStoryboard>
                     </DataTrigger.ExitActions>

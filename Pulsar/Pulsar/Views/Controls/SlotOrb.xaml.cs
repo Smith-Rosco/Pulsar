@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media; // VisualTreeHelper, CompositionTarget
+using System.Windows.Media.Animation;
 
 // [����] ǿ��ָ�� Point Ϊ WPF ����
 using Point = System.Windows.Point;
@@ -87,6 +88,18 @@ namespace Pulsar.Views.Controls
 
             if (isActive)
             {
+                // A re-activation supersedes any in-flight release animation; resume
+                // the parallax lerp from the translated position it left off at.
+                if (orb.OrbTranslate != null)
+                {
+                    orb.OrbTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+                    orb.OrbTranslate.BeginAnimation(TranslateTransform.YProperty, null);
+                    var dpi = VisualTreeHelper.GetDpi(orb);
+                    orb._currentOffset = new Vector(
+                        orb.OrbTranslate.X * dpi.DpiScaleX,
+                        orb.OrbTranslate.Y * dpi.DpiScaleY);
+                }
+
                 if (orb.IsLoaded && orb.Visibility == Visibility.Visible)
                 {
                     CompositionTarget.Rendering -= orb.OnRenderFrame;
@@ -99,8 +112,18 @@ namespace Pulsar.Views.Controls
                 orb._currentOffset = new Vector(0, 0);
                 if (orb.OrbTranslate != null)
                 {
-                    orb.OrbTranslate.X = 0;
-                    orb.OrbTranslate.Y = 0;
+                    // Ease the parallax drift back to rest instead of snapping it.
+                    var release = TimeSpan.FromMilliseconds(180);
+                    orb.OrbTranslate.BeginAnimation(TranslateTransform.XProperty,
+                        new DoubleAnimation(orb.OrbTranslate.X, 0.0, release)
+                        {
+                            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+                        });
+                    orb.OrbTranslate.BeginAnimation(TranslateTransform.YProperty,
+                        new DoubleAnimation(orb.OrbTranslate.Y, 0.0, release)
+                        {
+                            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+                        });
                 }
             }
         }
