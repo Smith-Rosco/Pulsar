@@ -20,16 +20,21 @@ namespace Pulsar.Views.Controls
         // ��ǰ��λ���� (X, Y)
         private Vector _currentOffset = new Vector(0, 0);
 
-        // [�ؼ�����] ƽ������ (0.05 - 0.2)
-        // ֵԽС������Խ����Խճ����ֵԽ����ӦԽ�졣
-        // 0.1 ��һ���ǳ����ŵ���ֵ�������ڷ������ƶ���
-        private const double SmoothFactor = 0.1;
+        // [Time-based damping] The parallax converges exponentially with a fixed
+        // time constant (frame-rate independent) and a hard velocity ceiling, so a
+        // fast sweep across a large circle eases toward the far offset instead of
+        // snapping to it. Speed adapts to remaining distance up to the ceiling.
+        private const double ParallaxTimeConstant = 1.0 / 12.0; // ~83ms to close 63% of the gap
+        private const double MaxParallaxSpeed = 90.0;           // px/s, velocity ceiling
 
         // �Ӳ�ǿ��: ����ƶ� 100px��Orb �ƶ� 12px
         private const double ParallaxIntensity = 0.12;
 
         // ���λ������ (����): �������Χ
         private const double MaxOffsetLimit = 12.0;
+
+        private DateTime _lastFrameTimeUtc = DateTime.MinValue;
+        private bool _renderLoopSubscribed;
 
         public SlotOrb()
         {
@@ -45,19 +50,25 @@ namespace Pulsar.Views.Controls
         {
             if (IsActive)
             {
-                CompositionTarget.Rendering += OnRenderFrame;
+                EnsureRenderLoop();
             }
         }
 
         private void OnUnloaded(object sender, RoutedEventArgs e)
         {
-            CompositionTarget.Rendering -= OnRenderFrame;
+            StopRenderLoop();
         }
 
         private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
+            // Reset the frame clock so a resumed render loop never computes a
+            // giant delta (which would otherwise snap the offset to its target).
+            _lastFrameTimeUtc = DateTime.MinValue;
+
             if (!(bool)e.NewValue)
             {
+                StopRenderLoop();
+
                 // [Fix 3.2] ���ؼ����ɼ�ʱ����������ƫ����
                 // ��ֹ�´���ʾʱ���ִӾ�λ��"��"���������
                 _currentOffset = new Vector(0, 0);
@@ -67,6 +78,29 @@ namespace Pulsar.Views.Controls
                     OrbTranslate.Y = 0;
                 }
             }
+            else if (IsActive)
+            {
+                // Re-shown while still active: resume the drift loop.
+                EnsureRenderLoop();
+            }
+        }
+
+        // The render loop drives ALL parallax motion (drift while active, eased
+        // release back to rest while inactive). It never animates OrbTranslate via
+        // a WPF Timeline, so OrbTranslate's base value stays clean and re-activation
+        // can never snap to a stale "far" position.
+        private void EnsureRenderLoop()
+        {
+            if (_renderLoopSubscribed) return;
+            CompositionTarget.Rendering += OnRenderFrame;
+            _renderLoopSubscribed = true;
+        }
+
+        private void StopRenderLoop()
+        {
+            if (!_renderLoopSubscribed) return;
+            CompositionTarget.Rendering -= OnRenderFrame;
+            _renderLoopSubscribed = false;
         }
 
         // ============================
@@ -86,44 +120,44 @@ namespace Pulsar.Views.Controls
             var orb = (SlotOrb)d;
             bool isActive = (bool)e.NewValue;
 
+            // Fluid motion language: a single QuadraticEase family and matched
+            // durations so activation and release feel like one breathing gesture
+            // rather than a sequence of disconnected jerks.
+            var enter = TimeSpan.FromMilliseconds(300);
+            var release = TimeSpan.FromMilliseconds(320);
+            var easeOut = new QuadraticEase { EasingMode = EasingMode.EaseOut };
+
             if (isActive)
             {
-                // A re-activation supersedes any in-flight release animation; resume
-                // the parallax lerp from the translated position it left off at.
-                if (orb.OrbTranslate != null)
+                // Re-activation must not snap: _currentOffset already tracks where
+                // the drift actually is (the render loop keeps it in sync during
+                // release), so just reset the frame clock and resume the loop.
+                orb._lastFrameTimeUtc = DateTime.MinValue;
+
+                // No hard-coded From values: animate from wherever the value
+                // currently is, so rapid hover flips glide instead of snapping.
+                orb.BeginAnimation(OpacityProperty, new DoubleAnimation(1.0, enter) { EasingFunction = easeOut });
+                if (orb.OrbScale != null)
                 {
-                    orb.OrbTranslate.BeginAnimation(TranslateTransform.XProperty, null);
-                    orb.OrbTranslate.BeginAnimation(TranslateTransform.YProperty, null);
-                    var dpi = VisualTreeHelper.GetDpi(orb);
-                    orb._currentOffset = new Vector(
-                        orb.OrbTranslate.X * dpi.DpiScaleX,
-                        orb.OrbTranslate.Y * dpi.DpiScaleY);
+                    orb.OrbScale.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(1.15, enter) { EasingFunction = easeOut });
+                    orb.OrbScale.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(1.15, enter) { EasingFunction = easeOut });
                 }
 
-                if (orb.IsLoaded && orb.Visibility == Visibility.Visible)
-                {
-                    CompositionTarget.Rendering -= orb.OnRenderFrame;
-                    CompositionTarget.Rendering += orb.OnRenderFrame;
-                }
+                orb.EnsureRenderLoop();
             }
             else
             {
-                CompositionTarget.Rendering -= orb.OnRenderFrame;
-                orb._currentOffset = new Vector(0, 0);
-                if (orb.OrbTranslate != null)
+                // Graceful release: ease scale and opacity back to rest. The
+                // parallax drift is NOT animated with a WPF Timeline here — the
+                // render loop stays subscribed and eases _currentOffset back to 0
+                // itself, then unsubscribes once settled. This keeps OrbTranslate's
+                // base value clean so a later re-activation never snaps to a stale
+                // "far" position.
+                orb.BeginAnimation(OpacityProperty, new DoubleAnimation(0.8, release) { EasingFunction = easeOut });
+                if (orb.OrbScale != null)
                 {
-                    // Ease the parallax drift back to rest instead of snapping it.
-                    var release = TimeSpan.FromMilliseconds(180);
-                    orb.OrbTranslate.BeginAnimation(TranslateTransform.XProperty,
-                        new DoubleAnimation(orb.OrbTranslate.X, 0.0, release)
-                        {
-                            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
-                        });
-                    orb.OrbTranslate.BeginAnimation(TranslateTransform.YProperty,
-                        new DoubleAnimation(orb.OrbTranslate.Y, 0.0, release)
-                        {
-                            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
-                        });
+                    orb.OrbScale.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(1.0, release) { EasingFunction = easeOut });
+                    orb.OrbScale.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(1.0, release) { EasingFunction = easeOut });
                 }
             }
         }
@@ -178,12 +212,14 @@ namespace Pulsar.Views.Controls
         // ============================
         private void OnRenderFrame(object? sender, EventArgs e)
         {
-            if (OrbTranslate == null || this.Visibility != Visibility.Visible) return;
-            if (!IsActive) return;
+            if (OrbTranslate == null || this.Visibility != Visibility.Visible)
+            {
+                StopRenderLoop();
+                return;
+            }
 
-            Vector targetOffset = new Vector(0, 0);
-
-            // 1. ����Ŀ��λ�� (Target)
+            // Active: drift toward the cursor. Inactive (releasing): ease back to rest.
+            Vector targetOffset;
             if (IsActive)
             {
                 try
@@ -203,25 +239,52 @@ namespace Pulsar.Views.Controls
                 }
                 catch
                 {
-                    // Ignore
+                    targetOffset = new Vector(0, 0);
                 }
             }
+            else
+            {
+                targetOffset = new Vector(0, 0);
+            }
 
-            // 2. ���Բ�ֵ (Lerp) - ȡ����������
-            // ��ʽ����ǰֵ = ��ǰֵ + (Ŀ��ֵ - ��ǰֵ) * ϵ��
-            // ����һ�����������㷨����Զ������壬Ҳ����Զ����"����"
+            // 2. Time-based lerp: the step depends only on elapsed time (so the
+            //    speed is consistent across refresh rates) and is capped by a
+            //    velocity ceiling. Close to the target it settles gently; far
+            //    from it (large circle sweeps) it approaches faster, but never
+            //    more than MaxParallaxSpeed per second.
+            var now = DateTime.UtcNow;
+            double dt = _lastFrameTimeUtc == DateTime.MinValue ? 0.0 : (now - _lastFrameTimeUtc).TotalSeconds;
+            _lastFrameTimeUtc = now;
 
-            _currentOffset.X += (targetOffset.X - _currentOffset.X) * SmoothFactor;
-            _currentOffset.Y += (targetOffset.Y - _currentOffset.Y) * SmoothFactor;
+            if (dt > 0)
+            {
+                double alpha = 1.0 - Math.Exp(-dt / ParallaxTimeConstant);
+                double maxStep = MaxParallaxSpeed * dt;
 
-            // 3. ��Сֵ���� (ֹͣ�����ʡ����)
-            if (Math.Abs(targetOffset.X - _currentOffset.X) < 0.05) _currentOffset.X = targetOffset.X;
-            if (Math.Abs(targetOffset.Y - _currentOffset.Y) < 0.05) _currentOffset.Y = targetOffset.Y;
+                double stepX = Math.Clamp((targetOffset.X - _currentOffset.X) * alpha, -maxStep, maxStep);
+                double stepY = Math.Clamp((targetOffset.Y - _currentOffset.Y) * alpha, -maxStep, maxStep);
 
-            // 4. Ӧ�ñ任
+                _currentOffset.X += stepX;
+                _currentOffset.Y += stepY;
+
+                // 3. Settle when close enough (stop sub-pixel jitter).
+                if (Math.Abs(targetOffset.X - _currentOffset.X) < 0.05) _currentOffset.X = targetOffset.X;
+                if (Math.Abs(targetOffset.Y - _currentOffset.Y) < 0.05) _currentOffset.Y = targetOffset.Y;
+            }
+
+            // 4. Apply transform
             var dpi = VisualTreeHelper.GetDpi(this);
             OrbTranslate.X = _currentOffset.X / dpi.DpiScaleX;
             OrbTranslate.Y = _currentOffset.Y / dpi.DpiScaleY;
+
+            // 5. Once a release has fully settled, stop the loop to save cycles.
+            if (!IsActive && Math.Abs(_currentOffset.X) < 0.05 && Math.Abs(_currentOffset.Y) < 0.05)
+            {
+                _currentOffset = new Vector(0, 0);
+                OrbTranslate.X = 0;
+                OrbTranslate.Y = 0;
+                StopRenderLoop();
+            }
         }
 
 

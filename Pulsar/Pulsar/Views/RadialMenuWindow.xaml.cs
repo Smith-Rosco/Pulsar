@@ -200,8 +200,14 @@ namespace Pulsar.Views
 
             _viewModel.ClearPreviewPresentation();
 
-            var fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(100));
-            fadeOut.FillBehavior = FillBehavior.HoldEnd;
+            // Fade is eased and slightly slower than the slot release (320ms) so the
+            // window and the active slot's exit animation close out in one rhythm
+            // instead of the fade racing ahead and cutting the animation mid-flight.
+            var fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(160))
+            {
+                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
+                FillBehavior = FillBehavior.HoldEnd
+            };
             
             fadeOut.Completed += async (s, e) =>
             {

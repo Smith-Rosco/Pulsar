@@ -147,17 +147,33 @@
                                 <BeginStoryboard>
                                     <Storyboard>
                                         <DoubleAnimation Storyboard.TargetProperty="Opacity" 
-                                                         To="0.8" Duration="0:0:0.15"/>
+                                                         To="0.8" Duration="0:0:0.3">
+                                            <DoubleAnimation.EasingFunction>
+                                                <QuadraticEase EasingMode="EaseOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
                                         <DoubleAnimation Storyboard.TargetProperty="Effect.Radius" 
-                                                         To="25" Duration="0:0:0.15"/>
+                                                         To="25" Duration="0:0:0.3">
+                                            <DoubleAnimation.EasingFunction>
+                                                <QuadraticEase EasingMode="EaseOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </MultiDataTrigger.EnterActions>
                             <MultiDataTrigger.ExitActions>
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.8" To="0.0" Duration="0:0:0.3"/>
-                                        <DoubleAnimation Storyboard.TargetProperty="Effect.Radius" From="25" To="10" Duration="0:0:0.3"/>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.8" To="0.0" Duration="0:0:0.32">
+                                            <DoubleAnimation.EasingFunction>
+                                                <QuadraticEase EasingMode="EaseOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetProperty="Effect.Radius" From="25" To="10" Duration="0:0:0.32">
+                                            <DoubleAnimation.EasingFunction>
+                                                <QuadraticEase EasingMode="EaseOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </MultiDataTrigger.ExitActions>
@@ -352,48 +368,10 @@
 
                 <DataTrigger Binding="{Binding IsActive, RelativeSource={RelativeSource Self}}" Value="True">
                     <Setter Property="Panel.ZIndex" Value="99"/>
-                    <Setter Property="Opacity" Value="1.0"/>
-
-                    <DataTrigger.EnterActions>
-                        <BeginStoryboard>
-                            <Storyboard>
-                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)"
-                                                 To="1.15" Duration="0:0:0.22">
-                                    <DoubleAnimation.EasingFunction>
-                                        <CubicEase EasingMode="EaseOut"/>
-                                    </DoubleAnimation.EasingFunction>
-                                </DoubleAnimation>
-
-                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)"
-                                                 To="1.15" Duration="0:0:0.22">
-                                    <DoubleAnimation.EasingFunction>
-                                        <CubicEase EasingMode="EaseOut"/>
-                                    </DoubleAnimation.EasingFunction>
-                                </DoubleAnimation>
-                            </Storyboard>
-                        </BeginStoryboard>
-                    </DataTrigger.EnterActions>
-
-                    <DataTrigger.ExitActions>
-                        <BeginStoryboard>
-                            <Storyboard>
-                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)"
-                                                 From="1.15" To="1.0" Duration="0:0:0.22">
-                                    <DoubleAnimation.EasingFunction>
-                                        <BackEase EasingMode="EaseOut" Amplitude="0.3"/>
-                                    </DoubleAnimation.EasingFunction>
-                                </DoubleAnimation>
-                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)"
-                                                 From="1.15" To="1.0" Duration="0:0:0.22">
-                                    <DoubleAnimation.EasingFunction>
-                                        <BackEase EasingMode="EaseOut" Amplitude="0.3"/>
-                                    </DoubleAnimation.EasingFunction>
-                                </DoubleAnimation>
-                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                 From="1.0" To="0.8" Duration="0:0:0.22"/>
-                            </Storyboard>
-                        </BeginStoryboard>
-                    </DataTrigger.ExitActions>
+                    <!-- Scale/opacity enter & exit are driven in code-behind
+                         (OnIsActiveChanged) so rapid hover flips can glide from
+                         the current value instead of snapping to hard-coded
+                         From values. -->
                 </DataTrigger>
             </Style.Triggers>
         </Style>
