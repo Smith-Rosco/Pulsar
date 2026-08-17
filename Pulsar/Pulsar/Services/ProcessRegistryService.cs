@@ -637,19 +637,19 @@ namespace Pulsar.Services
         {
             try
             {
-                var config = await _configService.LoadAsync();
+                var session = await ConfigEditSession.BeginAsync(_configService);
 
                 // 确保插件配置存在
-                if (!config.Plugins.ContainsKey("com.pulsar.winswitcher"))
+                if (!session.Draft.Plugins.ContainsKey("com.pulsar.winswitcher"))
                 {
-                    config.Plugins["com.pulsar.winswitcher"] = new PluginProfile();
+                    session.Draft.Plugins["com.pulsar.winswitcher"] = new PluginProfile();
                 }
 
                 // 更新黑名单配置
                 var excludeProcesses = string.Join(",", blacklistedProcesses);
-                config.Plugins["com.pulsar.winswitcher"].Config["ExcludeProcesses"] = excludeProcesses;
+                session.Draft.Plugins["com.pulsar.winswitcher"].Config["ExcludeProcesses"] = excludeProcesses;
 
-                await _configService.SaveAsync(config);
+                await session.CommitAsync();
                 
                 // [Logging] Downgraded to Debug - happens frequently, not critical
                 _logger.LogDebug("[ProcessRegistry] Synced blacklist to Profiles.json");

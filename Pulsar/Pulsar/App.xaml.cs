@@ -165,6 +165,7 @@ namespace Pulsar
 
             serviceCollection.AddSingleton<Core.Plugin.Runtime.ICorePluginFailureHandler, AppShutdownCorePluginFailureHandler>();
             serviceCollection.AddSingleton<Core.Plugin.IPluginPermissionService, Core.Plugin.PluginPermissionService>();
+            serviceCollection.AddSingleton<Core.Plugin.IPluginPackageIntegrityVerifier, PluginPackageIntegrityService>();
             serviceCollection.AddPluginRuntime(externalPluginDirectory);
             
             // [New] Plugin Monitoring & Analytics Services
@@ -225,8 +226,9 @@ namespace Pulsar
             serviceCollection.AddSingleton<PluginPackageManager>(sp =>
             {
                 var logger = sp.GetService<ILogger<PluginPackageManager>>();
+                var integrityVerifier = sp.GetRequiredService<Core.Plugin.IPluginPackageIntegrityVerifier>();
 
-                return new PluginPackageManager(externalPluginDirectory, logger);
+                return new PluginPackageManager(externalPluginDirectory, logger, integrityVerifier);
             });
             
             serviceCollection.AddTransient<ExternalPluginManagerViewModel>();

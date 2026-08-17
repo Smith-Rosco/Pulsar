@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Pulsar.Core.Plugin;
 using Pulsar.Models;
+using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels.Base;
 using Pulsar.ViewModels.Settings;
@@ -112,7 +113,8 @@ namespace Pulsar.ViewModels.Dialogs
                     }
                 }
 
-                await _configService.SaveAsync(_configService.Current);
+                var session = await ConfigEditSession.BeginAsync(_configService);
+                await session.CommitAsync();
             }
 
             return true;

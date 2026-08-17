@@ -124,4 +124,81 @@ namespace Pulsar.Core.Plugin
                 unknown);
         }
     }
+
+    /// <summary>
+    /// Per-execution permission gate exposed through <see cref="PluginExecutionContext"/>.
+    /// Plugin-level checks happen before activation; this interceptor is the
+    /// in-execution defense-in-depth hook for future per-action permission calls.
+    /// </summary>
+    public interface IPluginPermissionInterceptor
+    {
+        bool IsGranted(string permission);
+
+        void Demand(string permission);
+    }
+
+    public sealed class PluginPermissionDeniedException : Exception
+    {
+        public PluginPermissionDeniedException(string permission)
+            : base($"Plugin permission is not granted: {permission}")
+        {
+            Permission = permission;
+        }
+
+        public string Permission { get; }
+    }
+
+    public sealed class GrantedPluginPermissionInterceptor : IPluginPermissionInterceptor
+    {
+        private readonly HashSet<string> _granted;
+
+        public GrantedPluginPermissionInterceptor(IEnumerable<string>? grantedPermissions)
+        {
+            _granted = new HashSet<string>(StringComparer.Ordinal);
+
+            if (grantedPermissions == null)
+            {
+                return;
+            }
+
+            foreach (var permission in grantedPermissions)
+            {
+                if (PluginPermissions.IsKnown(permission))
+                {
+                    _granted.Add(permission);
+                }
+            }
+        }
+
+        public bool IsGranted(string permission)
+        {
+            return PluginPermissions.IsKnown(permission) && _granted.Contains(permission);
+        }
+
+        public void Demand(string permission)
+        {
+            if (!IsGranted(permission))
+            {
+                throw new PluginPermissionDeniedException(permission);
+            }
+        }
+    }
+
+    public sealed class AllowAllPluginPermissionInterceptor : IPluginPermissionInterceptor
+    {
+        public static readonly AllowAllPluginPermissionInterceptor Instance = new();
+
+        public bool IsGranted(string permission)
+        {
+            return PluginPermissions.IsKnown(permission);
+        }
+
+        public void Demand(string permission)
+        {
+            if (!IsGranted(permission))
+            {
+                throw new PluginPermissionDeniedException(permission);
+            }
+        }
+    }
 }

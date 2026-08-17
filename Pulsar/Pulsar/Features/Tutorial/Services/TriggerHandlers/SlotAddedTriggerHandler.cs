@@ -38,7 +38,7 @@ namespace Pulsar.Features.Tutorial.Services.TriggerHandlers
 
             _configUpdatedHandler = () =>
             {
-                var config = _configService.Current;
+                var config = _configService.GetSnapshot();
 
                 _logger?.LogDebug(
                     "[SlotAddedTriggerHandler] ConfigUpdated event fired, checking criteria: {Criteria}",
@@ -61,7 +61,7 @@ namespace Pulsar.Features.Tutorial.Services.TriggerHandlers
             _configService.ConfigUpdated += _configUpdatedHandler;
             
             // [Fix] 立即检查一次，以防 Slot 在触发器设置之前就已经存在
-            var currentConfig = _configService.Current;
+            var currentConfig = _configService.GetSnapshot();
             if (SlotMatchesCriteria(currentConfig, _criteriaJson))
             {
                 _logger?.LogInformation(

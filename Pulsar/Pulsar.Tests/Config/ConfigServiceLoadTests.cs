@@ -254,7 +254,7 @@ namespace Pulsar.Tests.Config
             var service = CreateConfigService();
 
             // Act
-            var config = service.Current;
+            var config = service.GetSnapshot();
 
             // Assert
             config.Should().NotBeNull();

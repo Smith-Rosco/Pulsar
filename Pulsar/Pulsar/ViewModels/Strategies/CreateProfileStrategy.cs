@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Pulsar.Core.Messages; // [New]
 using CommunityToolkit.Mvvm.Messaging; // [New]
 using Pulsar.Models;
+using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.Views;
 using Pulsar.Helpers; // [New] For IconHelper
@@ -35,8 +36,8 @@ namespace Pulsar.ViewModels.Strategies
             context.IsVisible = false;
 
             // 2. Add Profile if missing
-            var config = await _configService.LoadAsync();
-            if (!config.Profiles.ContainsKey(_processName))
+            var session = await ConfigEditSession.BeginAsync(_configService);
+            if (!session.Draft.Profiles.ContainsKey(_processName))
             {
                 // [New] Try Extract Icon
                 string iconKey = "\uE71D"; // Default AppGeneric
@@ -59,12 +60,12 @@ namespace Pulsar.ViewModels.Strategies
                 }
 
                 // Default Profile Template
-                config.Profiles[_processName] = new ProcessProfile
+                session.Draft.Profiles[_processName] = new ProcessProfile
                 {
                     Icon = iconKey, // Use extracted icon
                     CommandMode = new List<PluginSlot>()
                 };
-                await _configService.SaveAsync(config);
+                await session.CommitAsync();
             }
 
             // 3. Open Settings Window via Message (Decoupled & Robust)

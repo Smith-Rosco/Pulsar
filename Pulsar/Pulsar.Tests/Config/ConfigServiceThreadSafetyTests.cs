@@ -43,9 +43,9 @@ namespace Pulsar.Tests.Config
 
             await service.SaveAsync(config);
 
-            service.Current.Settings.Theme.Should().Be("Dark",
+            service.GetSnapshot().Settings.Theme.Should().Be("Dark",
                 "cache should be updated after successful save");
-            service.Current.Settings.TriggerDistance.Should().Be(200.0,
+            service.GetSnapshot().Settings.TriggerDistance.Should().Be(200.0,
                 "all values should be updated in cache after successful save");
         }
 
@@ -92,7 +92,7 @@ namespace Pulsar.Tests.Config
             };
 
             await service.SaveAsync(config);
-            service.Current.Settings.Theme.Should().Be("Custom");
+            service.GetSnapshot().Settings.Theme.Should().Be("Custom");
 
             var resetConfig = await service.ResetToFirstLaunchAsync();
             resetConfig.Should().NotBeNull("reset should return a valid config");

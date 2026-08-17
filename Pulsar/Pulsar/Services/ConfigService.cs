@@ -41,15 +41,19 @@ namespace Pulsar.Services
         /// 当前配置快照。调用方不得直接修改返回对象后再依赖隐式持久化；
         /// 任何修改都必须通过 <see cref="SaveAsync"/> 提交。
         /// </summary>
-        public ProfilesConfig Current
+        /// <inheritdoc />
+        public ProfilesConfig GetSnapshot()
         {
-            get
+            lock (_cacheLock)
             {
-                lock (_cacheLock)
-                {
-                    return _cachedConfig ??= CreateDefaultConfig();
-                }
+                return _cachedConfig ??= CreateDefaultConfig();
             }
+        }
+
+        /// <inheritdoc />
+        public Task<ProfilesConfig> LoadSnapshotAsync(bool forceReload = false)
+        {
+            return LoadInternalAsync(forceReload: forceReload);
         }
         
         /// <summary>
@@ -914,7 +918,7 @@ namespace Pulsar.Services
         /// </summary>
         public int GetValidatedSlotsPerPage()
         {
-            int slots = Current.Settings.SlotsPerPage;
+            int slots = GetSnapshot().Settings.SlotsPerPage;
             
             // 验证并约束到合理范围
             if (slots < MIN_SLOTS_PER_PAGE || slots > MAX_SLOTS_PER_PAGE)
@@ -943,14 +947,14 @@ namespace Pulsar.Services
                     value, clampedValue);
             }
             
-            Current.Settings.SlotsPerPage = clampedValue;
+            GetSnapshot().Settings.SlotsPerPage = clampedValue;
             
             // 异步保存，但不等待（避免阻塞 UI）
             ScheduleBackgroundWork(
                 workId: "config.save.slots-per-page",
                 work: async _ =>
                 {
-                    await SaveAsync(Current);
+                    await SaveAsync(GetSnapshot());
                     _logger.LogInformation(
                         "[ConfigService] SlotsPerPage updated to {Value}",
                         clampedValue);

@@ -54,7 +54,7 @@ namespace Pulsar.Tests.Plugin
             config.Plugins["test.deferred"] = new PluginProfile { Enabled = true };
 
             var configService = new Mock<IConfigService>();
-            configService.Setup(x => x.Current).Returns(config);
+            configService.Setup(x => x.GetSnapshot()).Returns(config);
             services.AddSingleton(configService.Object);
 
             var provider = services.BuildServiceProvider();

@@ -11,6 +11,7 @@ using Pulsar.Core.Localization;
 using Pulsar.Features.Tutorial.Helpers;
 using Pulsar.Features.Tutorial.Models;
 using Pulsar.Models;
+using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.Features.Tutorial.Views;
 using Pulsar.Views;
@@ -478,7 +479,7 @@ namespace Pulsar.Features.Tutorial.Services
         {
             try
             {
-                var config = _configService.Current;
+                var config = _configService.GetSnapshot();
                 if (config.Profiles == null)
                     return false;
 
@@ -755,9 +756,9 @@ namespace Pulsar.Features.Tutorial.Services
         {
             try
             {
-                var config = _configService.Current;
-                updateAction(config.Settings);
-                await _configService.SaveAsync(config);
+                var session = await ConfigEditSession.BeginAsync(_configService);
+                updateAction(session.Draft.Settings);
+                await session.CommitAsync();
             }
             catch (Exception ex)
             {

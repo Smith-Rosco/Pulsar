@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Pulsar.Models;
+using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 
 namespace Pulsar.Features.Tutorial.Services
@@ -49,33 +50,33 @@ namespace Pulsar.Features.Tutorial.Services
 
         public async Task MarkOnboardingSkippedAsync()
         {
-            ProfilesConfig config = await _configService.LoadAsync();
-            config.Settings.OnboardingState = "Skipped";
-            await _configService.SaveAsync(config);
+            var session = await ConfigEditSession.BeginAsync(_configService);
+            session.Draft.Settings.OnboardingState = "Skipped";
+            await session.CommitAsync();
         }
 
         public async Task MarkSetupCompletedAsync()
         {
-            ProfilesConfig config = await _configService.LoadAsync();
-            config.Settings.OnboardingState = "SetupWizardComplete";
-            await _configService.SaveAsync(config);
+            var session = await ConfigEditSession.BeginAsync(_configService);
+            session.Draft.Settings.OnboardingState = "SetupWizardComplete";
+            await session.CommitAsync();
         }
 
         public async Task MarkTutorialCompletedAsync()
         {
-            ProfilesConfig config = await _configService.LoadAsync();
-            config.Settings.HasCompletedTutorial = true;
-            config.Settings.OnboardingState = "Complete";
-            config.Settings.LastTutorialStep = null;
-            config.Settings.TutorialCrashedAt = null;
-            await _configService.SaveAsync(config);
+            var session = await ConfigEditSession.BeginAsync(_configService);
+            session.Draft.Settings.HasCompletedTutorial = true;
+            session.Draft.Settings.OnboardingState = "Complete";
+            session.Draft.Settings.LastTutorialStep = null;
+            session.Draft.Settings.TutorialCrashedAt = null;
+            await session.CommitAsync();
         }
 
         public async Task MarkTutorialSkippedAsync()
         {
-            ProfilesConfig config = await _configService.LoadAsync();
-            config.Settings.LastTutorialStep = "Skipped";
-            await _configService.SaveAsync(config);
+            var session = await ConfigEditSession.BeginAsync(_configService);
+            session.Draft.Settings.LastTutorialStep = "Skipped";
+            await session.CommitAsync();
         }
     }
 }

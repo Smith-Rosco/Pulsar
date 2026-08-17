@@ -49,7 +49,7 @@ namespace Pulsar.Tests.Tutorial
                 mockLoc.Setup(l => l["Tutorial.NoActionDetectedHint"]).Returns("Continue...");
 
                 var mockConfig = new Mock<IConfigService>();
-                mockConfig.Setup(c => c.Current).Returns(new ProfilesConfig
+                mockConfig.Setup(c => c.GetSnapshot()).Returns(new ProfilesConfig
                 {
                     Settings = new ProfileSettings(),
                     Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)

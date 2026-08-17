@@ -74,7 +74,7 @@ namespace Pulsar.ViewModels.Dialogs
             // UI culture. Never mutate the global language from the wizard constructor.
             try
             {
-                var configured = _configService.Current?.Settings?.Language;
+                var configured = _configService.GetSnapshot()?.Settings?.Language;
                 if (!string.IsNullOrWhiteSpace(configured))
                 {
                     return configured;

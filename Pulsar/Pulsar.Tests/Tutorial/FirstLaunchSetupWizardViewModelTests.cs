@@ -68,7 +68,7 @@ namespace Pulsar.Tests.Tutorial
         {
             var loc = CreateDefaultLoc();
             var configService = new Mock<IConfigService>();
-            configService.Setup(c => c.Current).Returns(new ProfilesConfig());
+            configService.Setup(c => c.GetSnapshot()).Returns(new ProfilesConfig());
             configService.Setup(c => c.LoadAsync()).ReturnsAsync(new ProfilesConfig());
 
             var templateService = new Mock<IOnboardingTemplateService>();

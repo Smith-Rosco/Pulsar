@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Pulsar.Core.Localization;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
+using Pulsar.Services;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -450,10 +451,15 @@ namespace Pulsar.Core.Plugin.Runtime
                 return new PluginExecutionOutcome(PluginResult.Error($"Plugin unavailable: {pluginId}"), PluginExecutionOutcomeKind.Blocked);
             }
 
+            IPluginPermissionInterceptor permissionInterceptor = request.Descriptor.IsExternal
+                ? new GrantedPluginPermissionInterceptor(request.GrantedPermissions)
+                : AllowAllPluginPermissionInterceptor.Instance;
+
             using var executionScope = PluginExecutionContext.BeginScope(
                 pluginId,
                 request.Action,
-                targetProcessName: request.Context.TargetProcessName);
+                targetProcessName: request.Context.TargetProcessName,
+                permissionInterceptor: permissionInterceptor);
 
             var stopwatch = Stopwatch.StartNew();
             var readyState = PluginLifecycleState.Enabled;
@@ -726,15 +732,15 @@ namespace Pulsar.Core.Plugin.Runtime
                 }
             }
 
-            var config = _configService.Current;
-            if (!config.Plugins.TryGetValue(pluginId, out var profile))
+            var session = await ConfigEditSession.BeginAsync(_configService);
+            if (!session.Draft.Plugins.TryGetValue(pluginId, out var profile))
             {
                 profile = new PluginProfile();
-                config.Plugins[pluginId] = profile;
+                session.Draft.Plugins[pluginId] = profile;
             }
 
             profile.GrantedPermissions = normalized.ToList();
-            await _configService.SaveAsync(config);
+            await session.CommitAsync();
             _logger.LogInformation(
                 "[PluginRuntimeKernel] Granted {Count} permissions for {PluginId}",
                 normalized.Length,
@@ -743,7 +749,7 @@ namespace Pulsar.Core.Plugin.Runtime
 
         private IReadOnlyCollection<string> GetGrantedPermissions(string pluginId)
         {
-            if (_configService?.Current.Plugins.TryGetValue(pluginId, out var profile) == true)
+            if (_configService?.GetSnapshot().Plugins.TryGetValue(pluginId, out var profile) == true)
             {
                 return profile.GrantedPermissions;
             }
@@ -770,11 +776,11 @@ namespace Pulsar.Core.Plugin.Runtime
                 return;
             }
 
-            var config = _configService.Current;
-            if (!config.Plugins.TryGetValue(pluginId, out var profile))
+            var session = await ConfigEditSession.BeginAsync(_configService);
+            if (!session.Draft.Plugins.TryGetValue(pluginId, out var profile))
             {
                 profile = new PluginProfile();
-                config.Plugins[pluginId] = profile;
+                session.Draft.Plugins[pluginId] = profile;
             }
 
             if (profile.Enabled == enabled)
@@ -801,7 +807,7 @@ namespace Pulsar.Core.Plugin.Runtime
                 _runtimeStateStore.Transition(pluginId, enabled ? PluginLifecycleState.Enabled : PluginLifecycleState.Disabled);
             }
 
-            await _configService.SaveAsync(config);
+            await session.CommitAsync();
         }
 
         public bool IsPluginEnabled(string pluginId)
@@ -812,7 +818,7 @@ namespace Pulsar.Core.Plugin.Runtime
                 return true;
             }
 
-            if (_configService?.Current?.Plugins.TryGetValue(pluginId, out var profile) == true)
+            if (_configService?.GetSnapshot()?.Plugins.TryGetValue(pluginId, out var profile) == true)
             {
                 return profile.Enabled;
             }
@@ -848,7 +854,7 @@ namespace Pulsar.Core.Plugin.Runtime
                 return;
             }
 
-            var config = _configService.Current;
+            var config = _configService.GetSnapshot();
             if (!config.Plugins.TryGetValue(plugin.Id, out var profile))
             {
                 profile = new PluginProfile { Enabled = true };

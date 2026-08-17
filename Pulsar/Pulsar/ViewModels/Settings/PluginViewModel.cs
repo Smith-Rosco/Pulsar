@@ -269,7 +269,7 @@ namespace Pulsar.ViewModels.Settings
 
         private Dictionary<string, object> GetCurrentConfig()
         {
-            if (_configService.Current.Plugins.TryGetValue(Id, out var profile))
+            if (_configService.GetSnapshot().Plugins.TryGetValue(Id, out var profile))
             {
                 return profile.Config;
             }
@@ -308,11 +308,11 @@ namespace Pulsar.ViewModels.Settings
                 await _settingsSaveLock.WaitAsync();
                 try
                 {
-                    var config = _configService.Current;
-                    if (!config.Plugins.TryGetValue(Id, out var profile))
+                    var session = await ConfigEditSession.BeginAsync(_configService);
+                    if (!session.Draft.Plugins.TryGetValue(Id, out var profile))
                     {
                         profile = new PluginProfile();
-                        config.Plugins[Id] = profile;
+                        session.Draft.Plugins[Id] = profile;
                     }
 
                     if (newValue != null)
@@ -327,7 +327,7 @@ namespace Pulsar.ViewModels.Settings
                     var configurable = await EnsureConfigurablePluginAsync();
                     configurable?.UpdateSettings(profile.Config);
 
-                    await _configService.SaveAsync(config);
+                    await session.CommitAsync();
                 }
                 finally
                 {

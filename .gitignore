@@ -12,6 +12,7 @@ export-*.mp4
 # Local OpenCode tooling
 opencode.jsonc
 .opencode/
+session.jsonl
 
 # User-specific files
 *.rsuser

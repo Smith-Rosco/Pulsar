@@ -19,6 +19,7 @@ namespace Pulsar.Core.Plugin
         private readonly IServiceProvider _services;
         private readonly ILogger<PluginLoader>? _logger;
         private readonly IPluginMetadataRegistry? _metadataRegistry;
+        private readonly IPluginPackageIntegrityVerifier? _packageIntegrityVerifier;
         private readonly PluginFactory _pluginFactory;
         private readonly object _discoveryLock = new();
         private DiscoveryCache? _fullDiscoveryCache;
@@ -30,6 +31,7 @@ namespace Pulsar.Core.Plugin
             _pluginDirectory = pluginDir;
             _logger = services.GetService(typeof(ILogger<PluginLoader>)) as ILogger<PluginLoader>;
             _metadataRegistry = services.GetService(typeof(IPluginMetadataRegistry)) as IPluginMetadataRegistry;
+            _packageIntegrityVerifier = services.GetService(typeof(IPluginPackageIntegrityVerifier)) as IPluginPackageIntegrityVerifier;
             _pluginFactory = new PluginFactory(services);
         }
 
@@ -151,6 +153,20 @@ namespace Pulsar.Core.Plugin
                         {
                             _logger?.LogWarning("[PluginLoader] Skipped external plugin {PluginId} from {Folder}: {Reason}", manifest.Id, folder, versionReason);
                             continue;
+                        }
+
+                        if (_packageIntegrityVerifier != null)
+                        {
+                            var integrity = _packageIntegrityVerifier.VerifyInstalledAsync(folder).GetAwaiter().GetResult();
+                            if (!integrity.IsValid)
+                            {
+                                _logger?.LogWarning(
+                                    "[PluginLoader] Skipped external plugin {PluginId} from {Folder}: {IntegrityError}",
+                                    manifest.Id,
+                                    folder,
+                                    integrity.Error ?? "integrity verification failed");
+                                continue;
+                            }
                         }
 
                         var dllFiles = Directory.GetFiles(folder, "*.dll");

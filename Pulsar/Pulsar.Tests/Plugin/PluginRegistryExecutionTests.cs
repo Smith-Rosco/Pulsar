@@ -111,7 +111,7 @@ namespace Pulsar.Tests.Plugin
             // Mock config service to return disabled state
             var config = new ProfilesConfig();
             config.Plugins[plugin.Id] = new PluginProfile { Enabled = false };
-            _mockConfigService.Setup(x => x.Current).Returns(config);
+            _mockConfigService.Setup(x => x.GetSnapshot()).Returns(config);
             
             var registry = CreateRegistry(plugin, _mockConfigService.Object);
             
@@ -135,7 +135,7 @@ namespace Pulsar.Tests.Plugin
             // Mock config service to return disabled state (should be ignored for core plugins)
             var config = new ProfilesConfig();
             config.Plugins[plugin.Id] = new PluginProfile { Enabled = false };
-            _mockConfigService.Setup(x => x.Current).Returns(config);
+            _mockConfigService.Setup(x => x.GetSnapshot()).Returns(config);
             
             var registry = CreateRegistry(plugin, _mockConfigService.Object);
             

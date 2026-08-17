@@ -104,7 +104,7 @@ namespace Pulsar.Tests.Config
             await service.SaveAsync(config);
 
             // Assert
-            service.Current.Settings.Theme.Should().Be("Dark", "cached config should be updated");
+            service.GetSnapshot().Settings.Theme.Should().Be("Dark", "cached config should be updated");
         }
 
         [Fact]

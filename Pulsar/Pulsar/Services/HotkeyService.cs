@@ -128,7 +128,7 @@ namespace Pulsar.Services
 
         /// <summary>
         /// Applies a hotkey to the in-memory cache only. It intentionally does NOT
-        /// mutate the shared <see cref="IConfigService.Current"/> object; persistence
+        /// mutate the shared <see cref="IConfigStore.GetSnapshot"/> object; persistence
         /// remains the exclusive job of the settings editor commit path.
         /// </summary>
         public void ApplyHotkey(string actionId, HotkeyConfig config)
@@ -227,7 +227,7 @@ namespace Pulsar.Services
 
         public void RebuildCache()
         {
-            _config = _configService.Current;
+            _config = _configService.GetSnapshot();
 
             lock (_syncLock)
             {

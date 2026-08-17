@@ -5,21 +5,10 @@ using System.Threading.Tasks;
 
 namespace Pulsar.Services.Interfaces
 {
-    public interface IConfigService
+    public interface IConfigService : IConfigStore
     {
-        ProfilesConfig Current { get; }
-        
-        /// <summary>
-        /// 最近一次验证结果
-        /// </summary>
-        ValidationResult? LastValidationResult { get; }
-        
-        event Action? ConfigUpdated;
-        
         Task<ProfilesConfig> LoadAsync();
         Task<ProfilesConfig> LoadAsync(bool forceReload);
-        Task<ProfilesConfig> ResetToFirstLaunchAsync();
-        Task SaveAsync(ProfilesConfig config);
         
         /// <summary>
         /// 调度后台智能应用检测（向导完成/跳过 或 正常启动路径触发）

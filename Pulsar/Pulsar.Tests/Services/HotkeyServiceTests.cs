@@ -18,7 +18,7 @@ namespace Pulsar.Tests.Services
             config ??= new ProfilesConfig();
             configServiceMock = new Mock<IConfigService>();
             configServiceMock.Setup(x => x.LoadAsync()).ReturnsAsync(config);
-            configServiceMock.Setup(x => x.Current).Returns(config);
+            configServiceMock.Setup(x => x.GetSnapshot()).Returns(config);
 
             var hook = new Native.GlobalKeyboardHook();
             var logger = NullLogger<HotkeyService>.Instance;
@@ -119,7 +119,7 @@ namespace Pulsar.Tests.Services
             var service = CreateService(out var configServiceMock);
             service.RegisterAction("ShowGrid", () => { });
 
-            var persistedHotkey = configServiceMock.Object.Current.Settings.Hotkeys["ShowGrid"];
+            var persistedHotkey = configServiceMock.Object.GetSnapshot().Settings.Hotkeys["ShowGrid"];
 
             var newHotkey = new HotkeyConfig { Key = "F5", Modifiers = "Shift" };
             service.ApplyHotkey("ShowGrid", newHotkey);
