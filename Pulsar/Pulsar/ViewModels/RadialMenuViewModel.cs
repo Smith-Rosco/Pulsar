@@ -1040,26 +1040,16 @@ namespace Pulsar.ViewModels
             {
                 if (isInViewport)
                 {
-                    // Wheel paging only applies near the radial menu. The rest of the
-                    // full-screen viewport swallows the wheel but does not page, so
-                    // scrolling over an empty corner never flips slots unexpectedly.
-                    var relative = _mouseTrackingService.ToRelative(e.X, e.Y);
-                    double dx = relative.X - _menuCenterX;
-                    double dy = relative.Y - _menuCenterY;
-                    double distance = Math.Sqrt(dx * dx + dy * dy);
-                    bool nearMenu = distance <= _currentRadius + _currentSlotSize + 40;
-
-                    bool handled = false;
-                    if (nearMenu && System.Windows.Application.Current.Dispatcher.CheckAccess())
+                    // The full-screen viewport owns wheel input while the menu is
+                    // open: scrolling anywhere on it pages the radial menu.
+                    if (System.Windows.Application.Current.Dispatcher.CheckAccess())
                     {
-                        handled = HandleMouseWheel(e.Delta, treatFeedbackAsHandled: true);
+                        HandleMouseWheel(e.Delta, treatFeedbackAsHandled: true);
                     }
-                    else if (nearMenu)
+                    else
                     {
                         System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                        {
-                            handled = HandleMouseWheel(e.Delta, treatFeedbackAsHandled: true);
-                        });
+                            HandleMouseWheel(e.Delta, treatFeedbackAsHandled: true));
                     }
 
                     e.Handled = true;
