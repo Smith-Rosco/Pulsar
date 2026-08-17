@@ -51,8 +51,8 @@ dotnet test Pulsar/Pulsar.Tests/Pulsar.Tests.csproj
 # 无头插件模拟
 dotnet run --project Pulsar/Pulsar.Simulator -- --plugin "com.pulsar.winswitcher" --action "activate" --args "{\"app\":\"chrome\"}"
 
-# 发布自包含版本
-dotnet publish Pulsar/Pulsar/Pulsar.csproj -c Release -o publish -p:RuntimeIdentifier=win-x64 -p:SelfContained=true -p:PublishSingleFile=true -p:PublishReadyToRun=true
+# 发布自包含版本（完整流程见 Docs/ops/BUILD_AND_RUN.md）
+dotnet publish Pulsar/Pulsar/Pulsar.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:PublishDir="Artifacts\publish\v<Version>"
 ```
 
 ## 内置插件
