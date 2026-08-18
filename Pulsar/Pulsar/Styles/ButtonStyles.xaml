@@ -58,12 +58,10 @@
                                     </Style>
                                 </ContentPresenter.Style>
                             </ContentPresenter>
-                            <ContentPresenter x:Name="TextPresenter"
-                                              Content="{TemplateBinding Content}"
-                                              ContentTemplate="{TemplateBinding ContentTemplate}"
-                                              VerticalAlignment="Center"
-                                              RecognizesAccessKey="True"
-                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                            <TextBlock x:Name="TextPresenter"
+                                       Text="{TemplateBinding Content}"
+                                       VerticalAlignment="Center"
+                                       SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
                         </StackPanel>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -144,12 +142,10 @@
                                     </Style>
                                 </ContentPresenter.Style>
                             </ContentPresenter>
-                            <ContentPresenter x:Name="TextPresenter"
-                                              Content="{TemplateBinding Content}"
-                                              ContentTemplate="{TemplateBinding ContentTemplate}"
-                                              VerticalAlignment="Center"
-                                              RecognizesAccessKey="True"
-                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                            <TextBlock x:Name="TextPresenter"
+                                       Text="{TemplateBinding Content}"
+                                       VerticalAlignment="Center"
+                                       SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
                         </StackPanel>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -213,14 +209,12 @@
                                     </Style>
                                 </ContentPresenter.Style>
                             </ContentPresenter>
-                            <ContentPresenter x:Name="TextPresenter"
-                                              Content="{TemplateBinding Content}"
-                                              ContentTemplate="{TemplateBinding ContentTemplate}"
-                                              VerticalAlignment="Center"
-                                              RecognizesAccessKey="True"
-                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
-                                <ContentPresenter.Style>
-                                    <Style TargetType="ContentPresenter">
+                            <TextBlock x:Name="TextPresenter"
+                                       Text="{TemplateBinding Content}"
+                                       VerticalAlignment="Center"
+                                       SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
                                         <Setter Property="Visibility" Value="Visible"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}" Value="{x:Null}">
@@ -228,8 +222,8 @@
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
-                                </ContentPresenter.Style>
-                            </ContentPresenter>
+                                </TextBlock.Style>
+                            </TextBlock>
                         </StackPanel>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -286,12 +280,10 @@
                                     </Style>
                                 </ContentPresenter.Style>
                             </ContentPresenter>
-                            <ContentPresenter x:Name="TextPresenter"
-                                              Content="{TemplateBinding Content}"
-                                              ContentTemplate="{TemplateBinding ContentTemplate}"
-                                              VerticalAlignment="Center"
-                                              RecognizesAccessKey="True"
-                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                            <TextBlock x:Name="TextPresenter"
+                                       Text="{TemplateBinding Content}"
+                                       VerticalAlignment="Center"
+                                       SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
                         </StackPanel>
                     </Border>
                     <ControlTemplate.Triggers>

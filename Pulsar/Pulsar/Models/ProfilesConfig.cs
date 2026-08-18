@@ -395,7 +395,13 @@ namespace Pulsar.Models
         public string Action
         {
             get => _action ?? string.Empty;
-            set => SetProperty(ref _action, value);
+            set
+            {
+                if (SetProperty(ref _action, value))
+                {
+                    SyncActionOptionSelection();
+                }
+            }
         }
 
         // Dictionary itself is not observable. Two-way binding might be tricky.
@@ -602,7 +608,17 @@ namespace Pulsar.Models
             DisposeFields(AdvancedParameters);
             DisposeFields(QuickEditParameters);
 
+            foreach (var option in AvailableActions)
+            {
+                option.PropertyChanged -= OnActionOptionPropertyChanged;
+            }
+
             AvailableActions = new ObservableCollection<SlotActionOption>(availableActions);
+
+            foreach (var option in AvailableActions)
+            {
+                option.PropertyChanged += OnActionOptionPropertyChanged;
+            }
             RequiredParameters = new ObservableCollection<SlotParameterEditorField>(required);
             OptionalParameters = new ObservableCollection<SlotParameterEditorField>(optional);
             AdvancedParameters = new ObservableCollection<SlotParameterEditorField>(advanced);
@@ -641,6 +657,34 @@ namespace Pulsar.Models
             foreach (var field in fields)
             {
                 field.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Action selector options bind IsSelected two-way from the UI (segmented
+        /// buttons / combo). Selecting an option must apply the action to the slot;
+        /// without this the visual selection never reaches <see cref="Action"/>.
+        /// </summary>
+        private void OnActionOptionPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (sender is SlotActionOption option
+                && e.PropertyName == nameof(SlotActionOption.IsSelected)
+                && option.IsSelected
+                && !string.Equals(Action, option.Value, StringComparison.OrdinalIgnoreCase))
+            {
+                Action = option.Value;
+            }
+        }
+
+        private void SyncActionOptionSelection()
+        {
+            foreach (var option in AvailableActions)
+            {
+                bool shouldBeSelected = string.Equals(option.Value, Action, StringComparison.OrdinalIgnoreCase);
+                if (option.IsSelected != shouldBeSelected)
+                {
+                    option.IsSelected = shouldBeSelected;
+                }
             }
         }
 

@@ -348,19 +348,22 @@ namespace Pulsar.Services
         {
             ArgumentNullException.ThrowIfNull(config);
 
-            if (expectedRevision.HasValue
-                && Interlocked.Read(ref _configRevision) != expectedRevision.Value)
-            {
-                throw new ConfigConcurrencyException(
-                    $"Config revision {Interlocked.Read(ref _configRevision)} does not match expected {expectedRevision.Value}; " +
-                    "a concurrent editor has already committed changes.");
-            }
-
             bool updated = false;
 
             await _saveLock.WaitAsync();
             try
             {
+                // Optimistic-concurrency guard. Checked inside the write lock so the
+                // check and the revision bump are atomic: two sessions started against
+                // the same revision can never both commit.
+                if (expectedRevision.HasValue
+                    && Interlocked.Read(ref _configRevision) != expectedRevision.Value)
+                {
+                    throw new ConfigConcurrencyException(
+                        $"Config revision {Interlocked.Read(ref _configRevision)} does not match expected {expectedRevision.Value}; " +
+                        "a concurrent editor has already committed changes.");
+                }
+
                 // [Architectural Fix] Normalize all plugin configs before validation and saving
                 // This ensures any JsonElement values that might have been introduced during
                 // runtime modifications are converted to concrete types.

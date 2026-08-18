@@ -299,9 +299,17 @@ namespace Pulsar.ViewModels
         private void OnSlotPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (sender is PluginSlot slot
-                && (e.PropertyName == "Item[]" || e.PropertyName == nameof(PluginSlot.Action)))
+                && e.PropertyName == nameof(PluginSlot.Action))
             {
+                // Action changed (e.g. via the action selector): rebuild the
+                // parameter editor fields for the new action, then refresh visuals.
+                InitializeSlotMetadata(slot);
                 UpdateSlotPresentation(slot);
+            }
+            else if (sender is PluginSlot argsSlot
+                && e.PropertyName == "Item[]")
+            {
+                UpdateSlotPresentation(argsSlot);
             }
 
             if (sender is PluginSlot presentationSlot
@@ -862,7 +870,8 @@ namespace Pulsar.ViewModels
                     _config = _editSession.Draft;
                 }
 
-                await _editSession.CommitAsync();
+                await CommitWithRecoveryAsync(_editSession);
+                ResyncSettingsReferences();
 
                 // [Architecture] Notify RadialMenuViewModel to reinitialize slots if count changed
                 // This ensures immediate visual feedback without requiring app restart
@@ -893,6 +902,42 @@ namespace Pulsar.ViewModels
                 {
                     SendNotification(_loc["Notification.Error"], _loc["Notification.SaveError"], ControlAppearance.Danger);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Commits the session; when a concurrent writer (plugin settings dialog,
+        /// blacklist sync, tutorial state...) won since the session began, rebase the
+        /// draft over the writer's changes and retry instead of surfacing a save error.
+        /// </summary>
+        private static async Task CommitWithRecoveryAsync(ConfigEditSession session)
+        {
+            const int maxAttempts = 3;
+
+            for (int attempt = 1; ; attempt++)
+            {
+                try
+                {
+                    await session.CommitAsync();
+                    return;
+                }
+                catch (ConfigConcurrencyException) when (attempt < maxAttempts)
+                {
+                    await session.RebaseAsync();
+                }
+            }
+        }
+
+        /// <summary>
+        /// A rebase may replace draft regions (e.g. Settings) with newer objects from
+        /// the store. Re-point bound references at the committed draft so the UI and
+        /// the persisted graph stay the same objects.
+        /// </summary>
+        private void ResyncSettingsReferences()
+        {
+            if (!ReferenceEquals(GeneralSettings, _config.Settings))
+            {
+                WithSuppressedDirty(() => GeneralSettings = _config.Settings);
             }
         }
 
@@ -1365,7 +1410,8 @@ namespace Pulsar.ViewModels
                         _config = _editSession.Draft;
                     }
 
-                    await _editSession.CommitAsync();
+                    await CommitWithRecoveryAsync(_editSession);
+                    ResyncSettingsReferences();
                     
                     SendNotification(_loc["Notification.Deleted"], string.Format(_loc["Notification.ProfileDeletedFormat"], profileName), ControlAppearance.Info);
                     

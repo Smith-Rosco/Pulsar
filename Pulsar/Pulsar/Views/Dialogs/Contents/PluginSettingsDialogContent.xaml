@@ -11,8 +11,13 @@
               mc:Ignorable="d" 
              d:DesignHeight="500" d:DesignWidth="550">
     <UserControl.Resources>
-        <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVisibilityConverter"/>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVisibilityConverter"/>
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
 
         <DataTemplate x:Key="BooleanSettingTemplate" DataType="{x:Type vm:BooleanSettingViewModel}">
             <ui:CardControl Margin="0,4">
@@ -115,7 +120,7 @@
                     <ui:Button Grid.Column="1"
                                Icon="{ui:SymbolIcon FolderOpen24}"
                                 ToolTip="{lex:Locale Dialog.PluginSettings.Browse}"
-                               Appearance="Secondary"
+                               Style="{StaticResource PulsarIconButtonStyle}"
                                Margin="4,0,0,0"
                                Tag="{Binding}"
                                Click="BrowsePathButton_Click"/>
@@ -246,6 +251,7 @@
                                           IntegerTemplate="{StaticResource IntegerSettingTemplate}"
                                           SecretTemplate="{StaticResource SecretSettingTemplate}"
                                           MultiSelectTemplate="{StaticResource MultiSelectSettingTemplate}"/>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid>
@@ -270,15 +276,15 @@
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
             <ui:Button Content="{lex:Locale Dialog.PluginSettings.ResetDefaults}"
-                       Appearance="Secondary"
+                       Style="{StaticResource PulsarSecondaryButtonStyle}"
                        Command="{Binding ResetToDefaultsCommand}"
                        Margin="0,0,8,0"/>
             <ui:Button Content="{lex:Locale Dialog.PluginSettings.Cancel}"
-                       Appearance="Secondary"
+                       Style="{StaticResource PulsarSecondaryButtonStyle}"
                        Command="{Binding CancelCommand}"
                        Margin="0,0,8,0"/>
             <ui:Button Content="{lex:Locale Dialog.PluginSettings.Save}"
-                       Appearance="Primary"
+                       Style="{StaticResource PulsarPrimaryButtonStyle}"
                        Command="{Binding SaveCommand}"
                        IsEnabled="{Binding CanSave}"/>
         </StackPanel>

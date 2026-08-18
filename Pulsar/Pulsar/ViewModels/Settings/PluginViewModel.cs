@@ -437,7 +437,7 @@ namespace Pulsar.ViewModels.Settings
                 HasSettings = Settings.Count > 0;
             }
 
-            var dialogVm = new Pulsar.ViewModels.Dialogs.PluginSettingsDialogViewModel(this, _configService);
+            var dialogVm = new Pulsar.ViewModels.Dialogs.PluginSettingsDialogViewModel(this);
             var dialogResult = await _dialogService.ShowCustomAsync(
                 string.Format(_loc?["Notification.ConfigureTitleFormat"] ?? "Configure {0}", Name),
                 dialogVm,

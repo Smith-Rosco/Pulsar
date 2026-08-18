@@ -398,9 +398,8 @@ namespace Pulsar.ViewModels.Dialogs
             if (_isApplyingSuggestions)
                 return;
 
-            if (string.Equals(e.PropertyName, nameof(PluginSlot.Action), StringComparison.Ordinal))
-                return;
-
+            // Action changes arrive here too (applied via the action selector options);
+            // suggestions (label/icon) and the visible fields depend on the action.
             ApplySuggestions();
             NotifyAll();
         }

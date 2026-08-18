@@ -1,4 +1,3 @@
-using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -6,8 +5,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Pulsar.Core.Plugin;
 using Pulsar.Models;
-using Pulsar.Services;
-using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels.Base;
 using Pulsar.ViewModels.Settings;
 using DialogResult = Pulsar.Models.Enums.DialogResult;
@@ -17,7 +14,6 @@ namespace Pulsar.ViewModels.Dialogs
     public partial class PluginSettingsDialogViewModel : ObservableObject, IDialogViewModel
     {
         private readonly PluginViewModel _pluginViewModel;
-        private readonly IConfigService _configService;
 
         [ObservableProperty]
         private string _title;
@@ -39,10 +35,9 @@ namespace Pulsar.ViewModels.Dialogs
 
         public Action<DialogResult>? RequestClose { get; set; }
 
-        public PluginSettingsDialogViewModel(PluginViewModel pluginViewModel, IConfigService configService)
+        public PluginSettingsDialogViewModel(PluginViewModel pluginViewModel)
         {
             _pluginViewModel = pluginViewModel;
-            _configService = configService;
             
             _title = $"Configure {pluginViewModel.Name}";
             _pluginName = pluginViewModel.Name;
@@ -90,7 +85,7 @@ namespace Pulsar.ViewModels.Dialogs
             }
         }
 
-        public async Task<bool> CanCloseAsync(DialogResult result)
+        public Task<bool> CanCloseAsync(DialogResult result)
         {
             if (result == DialogResult.Confirmed)
             {
@@ -101,9 +96,13 @@ namespace Pulsar.ViewModels.Dialogs
 
                 if (!Settings.All(s => s.IsValid))
                 {
-                    return false;
+                    return Task.FromResult(false);
                 }
 
+                // Copying the value back raises PluginSettingViewModel.ValueChanged,
+                // which PluginViewModel persists through its own config edit session.
+                // No extra commit here: an unchanged-draft commit would only bump the
+                // store revision and break a concurrent settings-editor save.
                 foreach (var dialogSetting in Settings)
                 {
                     var originalSetting = _pluginViewModel.Settings.FirstOrDefault(s => s.Key == dialogSetting.Key);
@@ -112,12 +111,9 @@ namespace Pulsar.ViewModels.Dialogs
                         originalSetting.Value = dialogSetting.Value;
                     }
                 }
-
-                var session = await ConfigEditSession.BeginAsync(_configService);
-                await session.CommitAsync();
             }
 
-            return true;
+            return Task.FromResult(true);
         }
     }
 }
