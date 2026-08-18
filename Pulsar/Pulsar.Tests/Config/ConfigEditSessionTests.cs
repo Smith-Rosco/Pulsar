@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Pulsar.Models;
 using Pulsar.Services;
+using Pulsar.Services.Interfaces;
 using Xunit;
 
 namespace Pulsar.Tests.Config
@@ -76,31 +77,6 @@ namespace Pulsar.Tests.Config
         }
 
         [Fact]
-        public async Task CommitAsync_WithStaleRevision_ThrowsConcurrencyException()
-        {
-            var service = CreateConfigService();
-            var seed = new ProfilesConfig();
-            seed.Settings.Language = "en-US";
-            await service.SaveAsync(seed);
-
-            var staleSession = await ConfigEditSession.BeginAsync(service);
-            staleSession.Draft.Settings.Language = "zh-CN";
-
-            // A concurrent writer commits first, bumping the revision.
-            var otherSession = await ConfigEditSession.BeginAsync(service);
-            otherSession.Draft.Settings.Language = "fr-FR";
-            await otherSession.CommitAsync();
-
-            // The stale session must not silently overwrite the newer write.
-            var act = async () => await staleSession.CommitAsync();
-            await act.Should().ThrowAsync<ConfigConcurrencyException>();
-            staleSession.HasCommitted.Should().BeFalse();
-
-            service.GetSnapshot().Settings.Language.Should().Be("fr-FR",
-                "the newer writer's change must survive the stale commit attempt");
-        }
-
-        [Fact]
         public async Task CommitAsync_WithCurrentRevision_ShouldSucceed()
         {
             var service = CreateConfigService();
@@ -115,6 +91,29 @@ namespace Pulsar.Tests.Config
 
             session.HasCommitted.Should().BeTrue();
             service.GetSnapshot().Settings.Language.Should().Be("zh-CN");
+        }
+
+        [Fact]
+        public async Task CommitAsync_ThroughInterface_ShouldRebaseAndRetryOnce_WhenRevisionIsStale()
+        {
+            var service = CreateConfigService();
+            var seed = new ProfilesConfig();
+            seed.Profiles["Global"] = new ProcessProfile { Alias = "Original" };
+            await service.SaveAsync(seed);
+
+            IConfigEditSession session = await ConfigEditSession.BeginAsync(service);
+            session.Draft.Settings.Language = "zh-CN";
+
+            var otherSession = await ConfigEditSession.BeginAsync(service);
+            otherSession.Draft.Profiles["Global"].Alias = "Concurrent";
+            await otherSession.CommitAsync();
+
+            await session.CommitAsync();
+
+            var saved = service.GetSnapshot();
+            saved.Settings.Language.Should().Be("zh-CN");
+            saved.Profiles["Global"].Alias.Should().Be("Concurrent");
+            session.HasCommitted.Should().BeTrue();
         }
 
         private ConfigService CreateConfigService()

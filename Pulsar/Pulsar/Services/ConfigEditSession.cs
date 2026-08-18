@@ -12,14 +12,14 @@ namespace Pulsar.Services
     /// <summary>
     /// Transactional editing session over an <see cref="IConfigService"/> snapshot.
     /// The draft is isolated from the store until <see cref="CommitAsync"/>.
-    /// Committing against a stale revision throws <see cref="ConfigConcurrencyException"/>
+    /// Committing against a stale revision rebases untouched regions and retries once,
     /// so a concurrent editor's changes are never silently overwritten.
     /// After a successful commit the session re-arms to the store's new revision, so a
     /// long-lived editor session (e.g. the Settings window) can save repeatedly.
     /// When a concurrent writer wins between edits, <see cref="RebaseAsync"/> folds the
     /// writer's changes into untouched regions of the draft and re-arms the revision.
     /// </summary>
-    public sealed class ConfigEditSession
+    public sealed class ConfigEditSession : IConfigEditSession
     {
         private static readonly JsonSerializerOptions CloneOptions = new()
         {
@@ -65,7 +65,16 @@ namespace Pulsar.Services
 
         public async Task CommitAsync()
         {
-            await _store.SaveAsync(Draft, _revisionAtBegin);
+            try
+            {
+                await _store.SaveAsync(Draft, _revisionAtBegin);
+            }
+            catch (ConfigConcurrencyException)
+            {
+                await RebaseAsync();
+                await _store.SaveAsync(Draft, _revisionAtBegin);
+            }
+
             _committed = true;
 
             // Re-arm: our own commit bumped the store revision. Without this a
@@ -81,7 +90,7 @@ namespace Pulsar.Services
         /// changes; regions the user edited keep the user's version. The revision is then
         /// re-armed so the next <see cref="CommitAsync"/> can proceed.
         /// </summary>
-        public async Task RebaseAsync()
+        private async Task RebaseAsync()
         {
             var current = await _store.LoadSnapshotAsync();
 

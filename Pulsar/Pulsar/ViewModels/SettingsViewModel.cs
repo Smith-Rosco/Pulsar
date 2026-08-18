@@ -95,7 +95,7 @@ namespace Pulsar.ViewModels
         private readonly ILocalizationService _loc;
         private readonly ITutorialService _tutorialService;
         private ProfilesConfig _config;
-        private ConfigEditSession? _editSession;
+        private IConfigEditSession? _editSession;
 
         // ===== Drag & Drop =====
         private CancellationTokenSource? _notificationDebounceToken;
@@ -870,7 +870,7 @@ namespace Pulsar.ViewModels
                     _config = _editSession.Draft;
                 }
 
-                await CommitWithRecoveryAsync(_editSession);
+                await _editSession.CommitAsync();
                 ResyncSettingsReferences();
 
                 // [Architecture] Notify RadialMenuViewModel to reinitialize slots if count changed
@@ -901,29 +901,6 @@ namespace Pulsar.ViewModels
                 else
                 {
                     SendNotification(_loc["Notification.Error"], _loc["Notification.SaveError"], ControlAppearance.Danger);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Commits the session; when a concurrent writer (plugin settings dialog,
-        /// blacklist sync, tutorial state...) won since the session began, rebase the
-        /// draft over the writer's changes and retry instead of surfacing a save error.
-        /// </summary>
-        private static async Task CommitWithRecoveryAsync(ConfigEditSession session)
-        {
-            const int maxAttempts = 3;
-
-            for (int attempt = 1; ; attempt++)
-            {
-                try
-                {
-                    await session.CommitAsync();
-                    return;
-                }
-                catch (ConfigConcurrencyException) when (attempt < maxAttempts)
-                {
-                    await session.RebaseAsync();
                 }
             }
         }
@@ -1410,7 +1387,7 @@ namespace Pulsar.ViewModels
                         _config = _editSession.Draft;
                     }
 
-                    await CommitWithRecoveryAsync(_editSession);
+                    await _editSession.CommitAsync();
                     ResyncSettingsReferences();
                     
                     SendNotification(_loc["Notification.Deleted"], string.Format(_loc["Notification.ProfileDeletedFormat"], profileName), ControlAppearance.Info);
