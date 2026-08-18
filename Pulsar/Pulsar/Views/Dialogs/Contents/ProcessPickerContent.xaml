@@ -8,6 +8,10 @@
              xmlns:lex="clr-namespace:Pulsar.Core.Localization"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="400">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </UserControl.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>

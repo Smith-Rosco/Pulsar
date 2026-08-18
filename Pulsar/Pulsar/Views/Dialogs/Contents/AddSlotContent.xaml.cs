@@ -81,22 +81,27 @@ namespace Pulsar.Views.Dialogs.Contents
             }
         }
 
-        private void SlotParameterPicker_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is FrameworkElement element && element.Tag is Models.SlotParameterEditorField field)
-            {
-                _ = _boundViewModel?.PickParameterValueAsync(field);
-            }
-        }
-
         private void ColorSwatch_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            _ = _boundViewModel?.PickColorAsync();
+            _ = GetViewModel()?.PickColorAsync();
         }
 
         private void PickIcon_Click(object sender, System.EventArgs e)
         {
-            _ = _boundViewModel?.PickIconAsync();
+            _ = GetViewModel()?.PickIconAsync();
+        }
+
+        private SlotEditorViewModel? GetViewModel()
+        {
+            return DataContext as SlotEditorViewModel;
+        }
+
+        private void ParameterItemsControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is ItemsControl itemsControl)
+            {
+                itemsControl.Tag = GetViewModel();
+            }
         }
 
         private static T? FindChildByName<T>(DependencyObject parent, string name) where T : DependencyObject

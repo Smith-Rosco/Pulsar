@@ -346,6 +346,7 @@ namespace Pulsar.ViewModels.Dialogs
             NotifyAll();
         }
 
+        [RelayCommand]
         public async Task PickParameterValueAsync(SlotParameterEditorField field)
         {
             await _pickParameterValueAsync(field);

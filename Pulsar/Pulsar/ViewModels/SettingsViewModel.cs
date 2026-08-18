@@ -1416,12 +1416,17 @@ namespace Pulsar.ViewModels
         public async Task PickIcon(PluginSlot item)
         {
             if (item == null) return;
-            var vm = new IconPickerViewModel(_searchService, item.IconKey);
+            var originalIconKey = item.IconKey;
+            var vm = new IconPickerViewModel(_searchService, originalIconKey, key => item.IconKey = key);
             var result = await _dialogService.ShowCustomAsync(_loc["Notification.SelectIcon"], vm, DialogButtons.OkCancel, DialogSizeConstraints.LargeResizable);
 
             if (result == DialogResult.Confirmed)
             {
                 item.IconKey = vm.SelectedKey;
+            }
+            else
+            {
+                item.IconKey = originalIconKey;
             }
         }
 

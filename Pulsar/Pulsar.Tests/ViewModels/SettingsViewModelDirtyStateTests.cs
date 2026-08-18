@@ -21,6 +21,7 @@ using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.Services.Validation;
 using Pulsar.ViewModels;
+using Pulsar.ViewModels.Dialogs;
 using Pulsar.ViewModels.Settings;
 
 namespace Pulsar.Tests.ViewModels
@@ -103,6 +104,29 @@ namespace Pulsar.Tests.ViewModels
             slot.Label = "Renamed Slot";
 
             viewModel.HasUnsavedChanges.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task PickIcon_WhenCancelled_ShouldRestoreOriginalIconAfterPreview()
+        {
+            EnsureApplication();
+            var harness = CreateHarness();
+            var viewModel = harness.ViewModel;
+            await WaitForInitializationAsync(viewModel);
+            var slot = viewModel.CurrentSlots.Single();
+            var originalIcon = slot.IconKey;
+            harness.DialogService
+                .Setup(service => service.ShowCustomAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<IconPickerViewModel>(),
+                    It.IsAny<DialogButtons>(),
+                    It.IsAny<DialogSizeConstraints>()))
+                .Callback<string, IconPickerViewModel, DialogButtons, DialogSizeConstraints>((_, picker, _, _) => picker.SelectedKey = "E8A7")
+                .ReturnsAsync(DialogResult.Cancelled);
+
+            await viewModel.PickIcon(slot);
+
+            slot.IconKey.Should().Be(originalIcon);
         }
 
         [Fact]
