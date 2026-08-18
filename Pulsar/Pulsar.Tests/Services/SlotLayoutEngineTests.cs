@@ -67,6 +67,26 @@ namespace Pulsar.Tests.Services
             iface.CalculateOptimalSlotSize(12).Should().Be(_engine.CalculateOptimalSlotSize(12));
         }
 
+        [Theory]
+        [InlineData(4)]
+        [InlineData(6)]
+        [InlineData(8)]
+        [InlineData(12)]
+        public void Interface_DefaultBaseRadius_ShouldMatchImplementation(int slotCount)
+        {
+            // Regression: the interface's baseRadius default was 0 while the
+            // implementation's is 90. C# resolves defaults at the caller's static
+            // type, so calling through the interface silently shrank the ring
+            // (e.g. 90 -> 78.4 for 8 slots).
+            ISlotLayoutEngine iface = _engine;
+
+            var viaInterface = iface.CalculateOptimalRadius(slotCount, 50);
+            var viaImplementation = _engine.CalculateOptimalRadius(slotCount, 50);
+
+            viaInterface.Should().Be(viaImplementation);
+            viaInterface.Should().BeGreaterThan(0);
+        }
+
         private static Vector CreatePointFromTopAngle(double angleFromTopDegrees, double radius)
         {
             double angleRad = (angleFromTopDegrees - 90) * Math.PI / 180.0;
