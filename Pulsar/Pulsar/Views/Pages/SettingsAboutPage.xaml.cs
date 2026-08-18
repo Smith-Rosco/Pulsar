@@ -18,7 +18,7 @@ namespace Pulsar.Views.Pages
         {
             InitializeComponent();
             DataContext = viewModel;
-            themeService.ApplyTheme(this, themeService.CurrentTheme, updateGlobal: false);
+            themeService.ApplyTheme(this, themeService.CurrentTheme);
         }
     }
 }

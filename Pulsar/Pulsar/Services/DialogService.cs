@@ -331,7 +331,7 @@ namespace Pulsar.Services
 
             // 1. Apply theme (use override if provided, otherwise infer from context)
             var theme = themeOverride ?? InferThemeFromContext();
-            _themeService.ApplyTheme(window, theme, backdrop, updateGlobal: false);
+            _themeService.ApplyTheme(window, theme, backdrop);
 
             // 2. Apply size constraints
             ApplySizeConstraints(window, constraints);

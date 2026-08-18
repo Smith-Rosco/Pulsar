@@ -20,12 +20,18 @@ namespace Pulsar.Services.Interfaces
         void Initialize(AppTheme theme);
 
         /// <summary>
+        /// Changes the runtime theme and notifies subscribers. Painting individual
+        /// elements remains the responsibility of <see cref="ApplyTheme"/>.
+        /// </summary>
+        void SetGlobalTheme(AppTheme theme);
+
+        /// <summary>
         /// Applies WPF-UI theme dictionaries to a ContextMenu. ContextMenus render in a
         /// separate visual tree and do not inherit window/page resources.
         /// </summary>
         void ApplyContextMenuTheme(ContextMenu menu, AppTheme theme);
 
-        void ApplyTheme(FrameworkElement element, AppTheme theme, WindowBackdropType backdrop = WindowBackdropType.None, bool updateGlobal = true);
+        void ApplyTheme(FrameworkElement element, AppTheme theme, WindowBackdropType backdrop = WindowBackdropType.None);
         void EnforceTransparency(Window window);
     }
 }

@@ -226,25 +226,7 @@ namespace Pulsar.Services
             try
             {
                 var newTheme = _themeService.CurrentTheme == AppTheme.Dark ? AppTheme.Light : AppTheme.Dark;
-                // 使用 SettingsWindow 触发切换（与设置页面一致），通过 ThemeChanged 事件级联更新所有窗口
-                var settingsWindow = Application.Current.Windows.OfType<Views.SettingsWindow>().FirstOrDefault();
-                if (settingsWindow != null)
-                {
-                    _themeService.ApplyTheme(settingsWindow, newTheme, WindowBackdropType.Mica, updateGlobal: true);
-                }
-                else
-                {
-                    // fallback: 任意窗口
-                    var window = Application.Current.Windows.OfType<Window>().FirstOrDefault();
-                    if (window != null)
-                    {
-                        _themeService.ApplyTheme(window, newTheme, WindowBackdropType.Mica, updateGlobal: true);
-                    }
-                    else
-                    {
-                        _themeService.ApplyTheme(new System.Windows.Controls.ContentControl(), newTheme, updateGlobal: true);
-                    }
-                }
+                _themeService.SetGlobalTheme(newTheme);
             }
             catch (Exception ex)
             {

@@ -36,7 +36,7 @@ namespace Pulsar.Views.Pages
             _wheelViewModel = App.Current.Services.GetRequiredService<SlotWheelEditorViewModel>();
             WheelEditor.DataContext = _wheelViewModel;
 
-            themeService.ApplyTheme(this, themeService.CurrentTheme, updateGlobal: false);
+            themeService.ApplyTheme(this, themeService.CurrentTheme);
         }
 
         protected override void OnInitialized(EventArgs e)

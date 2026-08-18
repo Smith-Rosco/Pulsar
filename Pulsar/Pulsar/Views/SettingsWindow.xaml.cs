@@ -94,7 +94,7 @@ namespace Pulsar.Views
             // CurrentTheme is only an in-memory default and must not become the global
             // theme. Use the already-bootstrapped ThemeService value for the first paint;
             // LoadSettings() will reconcile and publish any real difference later.
-            _themeService.ApplyTheme(this, _themeService.CurrentTheme, WindowBackdropType.Mica, updateGlobal: false);
+            _themeService.ApplyTheme(this, _themeService.CurrentTheme, WindowBackdropType.Mica);
 
             Loaded += OnLoaded;
             PreviewKeyDown += OnPreviewKeyDown;
@@ -163,7 +163,7 @@ namespace Pulsar.Views
             {
                 page = _pageFactory.CreatePage(registration.Id, _viewModel);
                 _pages[registration.Id] = page;
-                _themeService.ApplyTheme(page, _themeService.CurrentTheme, updateGlobal: false);
+                _themeService.ApplyTheme(page, _themeService.CurrentTheme);
             }
 
             NavigateWithAnimation(page);
@@ -382,10 +382,10 @@ namespace Pulsar.Views
         private void OnThemeChanged(object? sender, AppTheme theme)
         {
             var backdrop = this is FluentWindow fw ? fw.WindowBackdropType : WindowBackdropType.None;
-            _themeService.ApplyTheme(this, theme, backdrop, updateGlobal: false);
+            _themeService.ApplyTheme(this, theme, backdrop);
             foreach (var page in _pages.Values)
             {
-                _themeService.ApplyTheme(page, theme, updateGlobal: false);
+                _themeService.ApplyTheme(page, theme);
             }
             RefreshNavigationTheme(theme);
         }

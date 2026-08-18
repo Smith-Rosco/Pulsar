@@ -61,7 +61,7 @@ namespace Pulsar.Views
             // Listen for theme changes from other windows
             _themeService.ThemeChanged += (s, theme) =>
             {
-                _themeService.ApplyTheme(this, theme, WindowBackdropType.None, updateGlobal: false);
+                _themeService.ApplyTheme(this, theme, WindowBackdropType.None);
                 _themeService.EnforceTransparency(this);
             };
 
@@ -111,7 +111,7 @@ namespace Pulsar.Views
         private void InitializeTheme()
         {
             // ThemeService is bootstrapped from Profiles.json before this window is created.
-            _themeService.ApplyTheme(this, _themeService.CurrentTheme, WindowBackdropType.None, updateGlobal: false);
+            _themeService.ApplyTheme(this, _themeService.CurrentTheme, WindowBackdropType.None);
         }
 
 
