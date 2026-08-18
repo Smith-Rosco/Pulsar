@@ -63,9 +63,11 @@ Pain archive - known pitfalls and correct patterns:
 - **[WPF_THEME_INJECTION_PITFALLS.md](./lessons/WPF_THEME_INJECTION_PITFALLS.md)** - Theme injection timing issues
 - **[WPF_RESOURCES_HYGIENE.md](./lessons/WPF_RESOURCES_HYGIENE.md)** - XAMLParseException prevention
 - **[WPFUI_BUTTON_PRIMARY_BUG.md](./lessons/WPFUI_BUTTON_PRIMARY_BUG.md)** - Button Appearance="Primary" bug
+- **[WPF_BUTTON_TEMPLATE_FROZEN_FOREGROUND.md](./lessons/WPF_BUTTON_TEMPLATE_FROZEN_FOREGROUND.md)** - Button text frozen as black on accent backgrounds
 - **[WPF_USERCONTROL_BINDING_BREAKS.md](./lessons/WPF_USERCONTROL_BINDING_BREAKS.md)** - UserControl DataContext binding
 - **[CONTEXTMENU_RESOURCE_INHERITANCE.md](./lessons/CONTEXTMENU_RESOURCE_INHERITANCE.md)** - ContextMenu styling
 - **[WPF_SCROLLVIEWER_VISIBILITY.md](./lessons/WPF_SCROLLVIEWER_VISIBILITY.md)** - Hidden scrollbars workaround
+- **[CONFIG_EDIT_SESSION_STALE_REVISION.md](./lessons/CONFIG_EDIT_SESSION_STALE_REVISION.md)** - Settings save fails until tab switch
 
 ### Operations (Docs/ops/)
 Commands and operational procedures:
