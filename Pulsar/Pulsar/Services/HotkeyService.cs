@@ -27,6 +27,23 @@ namespace Pulsar.Services
             _hook = hook;
             _configService = configService;
             _logger = logger;
+
+            // Stay in sync with any commit path (Settings save, ConfigEditSession,
+            // tutorial, future plugins). Without this, a hotkey change made outside
+            // the Settings save path would leave the effective cache stale.
+            _configService.ConfigUpdated += OnConfigUpdated;
+        }
+
+        private void OnConfigUpdated()
+        {
+            try
+            {
+                RebuildCache();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[HotkeyService] Failed to rebuild hotkey cache after config update");
+            }
         }
 
         private readonly Dictionary<int, List<ActionWithConfig>> _hotkeysByMainKey = new();
@@ -128,7 +145,7 @@ namespace Pulsar.Services
 
         /// <summary>
         /// Applies a hotkey to the in-memory cache only. It intentionally does NOT
-        /// mutate the shared <see cref="IConfigStore.GetSnapshot"/> object; persistence
+        /// mutate the shared <see cref="IConfigService.GetSnapshot"/> object; persistence
         /// remains the exclusive job of the settings editor commit path.
         /// </summary>
         public void ApplyHotkey(string actionId, HotkeyConfig config)

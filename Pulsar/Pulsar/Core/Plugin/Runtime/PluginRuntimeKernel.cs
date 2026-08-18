@@ -854,12 +854,13 @@ namespace Pulsar.Core.Plugin.Runtime
                 return;
             }
 
+            // Read-only apply: the runtime applies the user's persisted profile (or
+            // defaults when absent) but never writes back to Profiles.json. Activating
+            // a plugin is not a user configuration change.
             var config = _configService.GetSnapshot();
-            if (!config.Plugins.TryGetValue(plugin.Id, out var profile))
-            {
-                profile = new PluginProfile { Enabled = true };
-                config.Plugins[plugin.Id] = profile;
-            }
+            PluginProfile? profile = null;
+            config.Plugins.TryGetValue(plugin.Id, out profile);
+            profile ??= new PluginProfile { Enabled = true };
 
             if (plugin is IPluginConfigurable configurable)
             {
@@ -869,7 +870,7 @@ namespace Pulsar.Core.Plugin.Runtime
                     if (!validationResult.IsValid)
                     {
                         _logger.LogError("[PluginRuntimeKernel] Invalid settings for {PluginId}: {Errors}", plugin.Id, string.Join(", ", validationResult.Errors));
-                        profile.Config = GetDefaultSettings(configurable);
+                        profile = new PluginProfile { Enabled = profile.Enabled, Config = GetDefaultSettings(configurable) };
                     }
 
                     configurable.UpdateSettings(profile.Config);

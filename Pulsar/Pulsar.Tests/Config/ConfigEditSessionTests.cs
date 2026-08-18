@@ -75,6 +75,48 @@ namespace Pulsar.Tests.Config
             session.Draft.Profiles.Should().NotBeNull();
         }
 
+        [Fact]
+        public async Task CommitAsync_WithStaleRevision_ThrowsConcurrencyException()
+        {
+            var service = CreateConfigService();
+            var seed = new ProfilesConfig();
+            seed.Settings.Language = "en-US";
+            await service.SaveAsync(seed);
+
+            var staleSession = await ConfigEditSession.BeginAsync(service);
+            staleSession.Draft.Settings.Language = "zh-CN";
+
+            // A concurrent writer commits first, bumping the revision.
+            var otherSession = await ConfigEditSession.BeginAsync(service);
+            otherSession.Draft.Settings.Language = "fr-FR";
+            await otherSession.CommitAsync();
+
+            // The stale session must not silently overwrite the newer write.
+            var act = async () => await staleSession.CommitAsync();
+            await act.Should().ThrowAsync<ConfigConcurrencyException>();
+            staleSession.HasCommitted.Should().BeFalse();
+
+            service.GetSnapshot().Settings.Language.Should().Be("fr-FR",
+                "the newer writer's change must survive the stale commit attempt");
+        }
+
+        [Fact]
+        public async Task CommitAsync_WithCurrentRevision_ShouldSucceed()
+        {
+            var service = CreateConfigService();
+            var seed = new ProfilesConfig();
+            seed.Settings.Language = "en-US";
+            await service.SaveAsync(seed);
+
+            var session = await ConfigEditSession.BeginAsync(service);
+            session.Draft.Settings.Language = "zh-CN";
+
+            await session.CommitAsync();
+
+            session.HasCommitted.Should().BeTrue();
+            service.GetSnapshot().Settings.Language.Should().Be("zh-CN");
+        }
+
         private ConfigService CreateConfigService()
         {
             return new ConfigService(_mockLogger.Object, configPath: _configPath);

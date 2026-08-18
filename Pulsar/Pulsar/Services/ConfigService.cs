@@ -38,16 +38,47 @@ namespace Pulsar.Services
         public event Action? ConfigUpdated;
 
         /// <summary>
-        /// 当前配置快照。调用方不得直接修改返回对象后再依赖隐式持久化；
-        /// 任何修改都必须通过 <see cref="SaveAsync"/> 提交。
+        /// Monotonically increasing write revision. Bumped on every successful save;
+        /// consumed by <see cref="ConfigEditSession"/> to detect optimistic-concurrency
+        /// conflicts (lost updates from concurrent editors).
+        /// </summary>
+        public long CurrentRevision => Interlocked.Read(ref _configRevision);
+
+        /// <summary>
+        /// 当前配置快照（深拷贝）。调用方修改返回值只会修改副本，永远不会污染
+        /// 共享缓存——"只读"由类型行为强制，而非调用方自觉。任何持久化修改
+        /// 必须通过 <see cref="ConfigEditSession"/> 提交。
         /// </summary>
         /// <inheritdoc />
         public ProfilesConfig GetSnapshot()
         {
             lock (_cacheLock)
             {
-                return _cachedConfig ??= CreateDefaultConfig();
+                return CloneConfig(_cachedConfig ??= CreateDefaultConfig());
             }
+        }
+
+        /// <summary>
+        /// JSON round-trip deep copy. Rebuilds the case-insensitive Profiles dictionary
+        /// so snapshot readers see the same lookup semantics as the live cache.
+        /// </summary>
+        private static ProfilesConfig CloneConfig(ProfilesConfig source)
+        {
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                WriteIndented = true
+            };
+
+            var json = JsonSerializer.Serialize(source, options);
+            var clone = JsonSerializer.Deserialize<ProfilesConfig>(json, options) ?? new ProfilesConfig();
+
+            if (clone.Profiles != null)
+            {
+                clone.Profiles = new Dictionary<string, ProcessProfile>(clone.Profiles, StringComparer.OrdinalIgnoreCase);
+            }
+
+            return clone;
         }
 
         /// <inheritdoc />
@@ -118,6 +149,9 @@ namespace Pulsar.Services
                 lock (_cacheLock)
                 {
                     _cachedConfig = null;
+                    // Invalidate any in-flight ConfigEditSession: its revision no
+                    // longer corresponds to a config that survived the reset.
+                    Interlocked.Increment(ref _configRevision);
                 }
 
                 if (File.Exists(_configPath))
@@ -298,9 +332,29 @@ namespace Pulsar.Services
             }
         }
 
-        public async Task SaveAsync(ProfilesConfig config)
+        public Task SaveAsync(ProfilesConfig config)
+        {
+            return SaveAsync(config, expectedRevision: null);
+        }
+
+        /// <summary>
+        /// Saves a config, optionally guarded by an optimistic-concurrency revision.
+        /// When <paramref name="expectedRevision"/> is provided and no longer matches
+        /// the current revision, the save is rejected with
+        /// <see cref="ConfigConcurrencyException"/> instead of overwriting a newer
+        /// writer's changes.
+        /// </summary>
+        public async Task SaveAsync(ProfilesConfig config, long? expectedRevision)
         {
             ArgumentNullException.ThrowIfNull(config);
+
+            if (expectedRevision.HasValue
+                && Interlocked.Read(ref _configRevision) != expectedRevision.Value)
+            {
+                throw new ConfigConcurrencyException(
+                    $"Config revision {Interlocked.Read(ref _configRevision)} does not match expected {expectedRevision.Value}; " +
+                    "a concurrent editor has already committed changes.");
+            }
 
             bool updated = false;
 
@@ -946,15 +1000,24 @@ namespace Pulsar.Services
                     "[ConfigService] SlotsPerPage value {Value} out of range. Clamped to {ClampedValue}",
                     value, clampedValue);
             }
-            
-            GetSnapshot().Settings.SlotsPerPage = clampedValue;
-            
+
+            // Mutate the internal cache directly (ConfigService owns it), then save.
+            // GetSnapshot() returns a deep copy, so it cannot be used for writes.
+            ProfilesConfig? configToSave = null;
+            lock (_cacheLock)
+            {
+                var cached = _cachedConfig ??= CreateDefaultConfig();
+                cached.Settings.SlotsPerPage = clampedValue;
+                configToSave = cached;
+            }
+
+            var saved = configToSave;
             // 异步保存，但不等待（避免阻塞 UI）
             ScheduleBackgroundWork(
                 workId: "config.save.slots-per-page",
                 work: async _ =>
                 {
-                    await SaveAsync(GetSnapshot());
+                    await SaveAsync(saved);
                     _logger.LogInformation(
                         "[ConfigService] SlotsPerPage updated to {Value}",
                         clampedValue);

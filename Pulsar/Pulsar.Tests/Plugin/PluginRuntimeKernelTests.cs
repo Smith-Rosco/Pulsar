@@ -193,6 +193,9 @@ namespace Pulsar.Tests.Plugin
             configService.Setup(x => x.SaveAsync(It.IsAny<ProfilesConfig>()))
                 .Callback<ProfilesConfig>(saved => persistedConfig = saved)
                 .Returns(Task.CompletedTask);
+            configService.Setup(x => x.SaveAsync(It.IsAny<ProfilesConfig>(), It.IsAny<long?>()))
+                .Callback<ProfilesConfig, long?>((saved, _) => persistedConfig = saved)
+                .Returns(Task.CompletedTask);
 
             var catalog = new PluginCatalog();
             var runtimeState = new PluginRuntimeStateStore();
@@ -217,7 +220,7 @@ namespace Pulsar.Tests.Plugin
             plugin.DisableCount.Should().Be(1);
             plugin.EnableCount.Should().Be(1);
             runtimeState.GetState(plugin.Id).Should().Be(PluginLifecycleState.Enabled);
-            configService.Verify(x => x.SaveAsync(It.IsAny<ProfilesConfig>()), Times.Exactly(2));
+            configService.Verify(x => x.SaveAsync(It.IsAny<ProfilesConfig>(), It.IsAny<long?>()), Times.Exactly(2));
         }
 
         private static PluginDescriptor CreateDescriptor(string id, PluginTier tier, bool canDisable, Type implementationType)

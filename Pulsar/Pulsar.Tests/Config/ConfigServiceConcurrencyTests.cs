@@ -34,7 +34,7 @@ namespace Pulsar.Tests.Config
             await service.SaveAsync(config);
 
             File.Exists(_configPath).Should().BeTrue("the service should use the injected path");
-            service.GetSnapshot().Should().BeSameAs(config, "SaveAsync should update the cached snapshot");
+            service.GetSnapshot().Settings.Theme.Should().Be("Dark", "SaveAsync should update the cached snapshot");
         }
 
         [Fact]

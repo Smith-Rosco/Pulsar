@@ -153,7 +153,7 @@ namespace Pulsar.Tests.Plugin
             var configService = new Mock<Pulsar.Services.Interfaces.IConfigService>();
             configService.Setup(x => x.GetSnapshot()).Returns(config);
             configService.Setup(x => x.LoadSnapshotAsync(It.IsAny<bool>())).ReturnsAsync(config);
-            configService.Setup(x => x.SaveAsync(It.IsAny<Pulsar.Models.ProfilesConfig>()))
+            configService.Setup(x => x.SaveAsync(It.IsAny<Pulsar.Models.ProfilesConfig>(), It.IsAny<long?>()))
                 .Returns(Task.CompletedTask);
 
             var kernel = new PluginRuntimeKernel(
@@ -167,7 +167,7 @@ namespace Pulsar.Tests.Plugin
 
             await kernel.GrantPermissionsAsync(descriptor.Id, new[] { PluginPermissions.ClipboardRead });
 
-            configService.Verify(x => x.SaveAsync(It.IsAny<Pulsar.Models.ProfilesConfig>()), Times.Once);
+            configService.Verify(x => x.SaveAsync(It.IsAny<Pulsar.Models.ProfilesConfig>(), It.IsAny<long?>()), Times.Once);
         }
 
         [Fact]

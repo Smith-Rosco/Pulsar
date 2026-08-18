@@ -8,25 +8,29 @@ using Pulsar.Services.Validation;
 namespace Pulsar.Services
 {
     /// <summary>
-    /// Transactional editing session over an <see cref="IConfigStore"/> snapshot.
+    /// Transactional editing session over an <see cref="IConfigService"/> snapshot.
     /// The draft is isolated from the store until <see cref="CommitAsync"/>.
+    /// Committing against a stale revision throws <see cref="ConfigConcurrencyException"/>
+    /// so a concurrent editor's changes are never silently overwritten.
     /// </summary>
     public sealed class ConfigEditSession
     {
-        private readonly IConfigStore _store;
+        private readonly IConfigService _store;
+        private readonly long _revisionAtBegin;
         private bool _committed;
 
-        private ConfigEditSession(IConfigStore store, ProfilesConfig draft)
+        private ConfigEditSession(IConfigService store, ProfilesConfig draft, long revisionAtBegin)
         {
             _store = store;
             Draft = draft;
+            _revisionAtBegin = revisionAtBegin;
         }
 
         public ProfilesConfig Draft { get; }
 
         public bool HasCommitted => _committed;
 
-        public static async Task<ConfigEditSession> BeginAsync(IConfigStore store)
+        public static async Task<ConfigEditSession> BeginAsync(IConfigService store)
         {
             ArgumentNullException.ThrowIfNull(store);
 
@@ -41,7 +45,7 @@ namespace Pulsar.Services
             var draft = JsonSerializer.Deserialize<ProfilesConfig>(json, options)
                 ?? new ProfilesConfig();
 
-            return new ConfigEditSession(store, draft);
+            return new ConfigEditSession(store, draft, store.CurrentRevision);
         }
 
         public async Task<ValidationResult?> ValidateAsync()
@@ -54,7 +58,7 @@ namespace Pulsar.Services
 
         public async Task CommitAsync()
         {
-            await _store.SaveAsync(Draft);
+            await _store.SaveAsync(Draft, _revisionAtBegin);
             _committed = true;
         }
     }

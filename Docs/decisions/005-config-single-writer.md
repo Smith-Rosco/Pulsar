@@ -1,6 +1,6 @@
 # ADR-005: Config Persistence Uses a Single Writer and Injectable Paths
 
-**Status**: Accepted
+**Status**: Accepted (superseded in part by ADR-009 — deep-copy snapshots + optimistic concurrency)
 **Date**: 2026-08-16
 **Deciders**: Pulsar Development Team
 
@@ -29,3 +29,4 @@
 
 **Change History**:
 - v1.0.0 (2026-08-16): Initial version
+- v2.0.0 (2026-08-18): `GetSnapshot()` now returns a deep copy; `ConfigEditSession` commits against a captured revision (see ADR-009).
