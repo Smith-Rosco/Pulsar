@@ -266,7 +266,14 @@ namespace Pulsar.ViewModels
 
         // ============ View-facing commands ============
 
-        public void SetWindowHandle(IntPtr handle) => _session.SetWindowHandle(handle);
+        public void SetWindowHandle(IntPtr handle)
+        {
+            // The mouse tracking sampler needs the window handle to convert physical
+            // screen points into window-relative DIP coordinates. Without it every
+            // position resolves to (0,0) and the hit-test collapses onto one slot.
+            _mouseTrackingService.SetWindowHandle(handle);
+            _session.SetWindowHandle(handle);
+        }
 
         public void SetMenuCenter(Point center) => _session.SetMenuCenter(center);
 
