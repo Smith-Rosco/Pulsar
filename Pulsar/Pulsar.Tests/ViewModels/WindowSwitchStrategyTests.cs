@@ -1,15 +1,12 @@
 using System;
-using System.Collections.ObjectModel;
-using System.Reflection;
-using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels;
 using Pulsar.ViewModels.Strategies;
-using Pulsar.Services;
-using Pulsar.Native;
+using Xunit;
 
 namespace Pulsar.Tests.ViewModels
 {
@@ -19,7 +16,7 @@ namespace Pulsar.Tests.ViewModels
         public async Task ExecuteAsync_ShouldHideMenuBeforeAttemptingActivation()
         {
             var windowService = new Mock<IWindowService>();
-            RadialMenuViewModel? observedContext = null;
+            IMenuSession? observedContext = null;
 
             windowService
                 .Setup(service => service.ActivateWindow(It.IsAny<ProcessWindowInfo>()))
@@ -27,13 +24,13 @@ namespace Pulsar.Tests.ViewModels
                 .Returns(true);
 
             var strategy = new WindowSwitchStrategy(CreateWindow(), windowService.Object);
-            var context = CreateContext();
-            context.IsVisible = true;
-            observedContext = context;
+            var context = new Mock<IMenuSession>();
+            context.SetupProperty(c => c.IsVisible, true);
+            observedContext = context.Object;
 
-            await strategy.ExecuteAsync(new SlotViewModel(1, 0, 0, 40), context);
+            await strategy.ExecuteAsync(new SlotViewModel(1, 0, 0, 40), context.Object);
 
-            context.IsVisible.Should().BeFalse();
+            context.Object.IsVisible.Should().BeFalse();
             windowService.Verify(service => service.ActivateWindow(It.IsAny<ProcessWindowInfo>()), Times.Once);
         }
 
@@ -45,27 +42,6 @@ namespace Pulsar.Tests.ViewModels
                 ProcessName = "testapp",
                 Title = "Test Window"
             };
-        }
-
-        private static RadialMenuViewModel CreateContext()
-        {
-            var context = (RadialMenuViewModel)RuntimeHelpers.GetUninitializedObject(typeof(RadialMenuViewModel));
-            var mouseTrackingService = new Mock<IMouseTrackingService>();
-            var hotkeyService = new Mock<IHotkeyService>();
-
-            SetField(context, "_mouseTrackingService", mouseTrackingService.Object);
-            SetField(context, "_hotkeyService", hotkeyService.Object);
-            SetField(context, "<Slots>k__BackingField", new ObservableCollection<SlotViewModel>());
-            SetField(context, "_isVisible", true);
-
-            return context;
-        }
-
-        private static void SetField(object target, string fieldName, object? value)
-        {
-            var field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
-            field.Should().NotBeNull($"field {fieldName} must exist for test setup");
-            field!.SetValue(target, value);
         }
     }
 }

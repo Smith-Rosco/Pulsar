@@ -179,6 +179,7 @@ This file provides essential context, conventions, and routing for AI agents wor
 | **Add dialog** | [Docs/architecture/DIALOG_SYSTEM.md](./Docs/architecture/DIALOG_SYSTEM.md) - **Always specify DialogSizeConstraints AND register DataTemplate!** |
 | **Modify UI (XAML)** | [Docs/guides/UI_BEST_PRACTICES.md](./Docs/guides/UI_BEST_PRACTICES.md) |
 | **Use reusable components** | [Docs/guides/COMPONENT_LIBRARY.md](./Docs/guides/COMPONENT_LIBRARY.md) |
+| **Radial Menu interaction/state** | `ViewModels/MenuSession.cs` (session state machine), `ViewModels/RadialMenuViewModel.cs` (thin binding projection + event adapter). See [Docs/decisions/008-menu-session-refactor.md](./Docs/decisions/008-menu-session-refactor.md). Strategies depend on `IMenuSession`, never the VM. |
 | **Understand architecture** | [ARCHITECTURE.md](./ARCHITECTURE.md), [Docs/architecture/](./Docs/architecture/) |
 | **Input injection (PKI)** | [Docs/architecture/INPUT_INJECTION.md](./Docs/architecture/INPUT_INJECTION.md) |
 | **WPF UI issues** | [Docs/lessons/](./Docs/lessons/) |

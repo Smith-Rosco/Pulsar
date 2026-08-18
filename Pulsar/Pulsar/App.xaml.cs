@@ -202,6 +202,8 @@ namespace Pulsar
             serviceCollection.AddTransient<Core.Plugin.IProcessLauncher, Plugins.Extensions.Command.ProcessLauncher>();
 
             // 4. UI Services
+            serviceCollection.AddSingleton<IUiDispatcher, WpfUiDispatcher>();
+            serviceCollection.AddSingleton<MenuSession>();
             serviceCollection.AddSingleton<RadialMenuViewModel>();
             serviceCollection.AddSingleton<RadialMenuWindow>();
             

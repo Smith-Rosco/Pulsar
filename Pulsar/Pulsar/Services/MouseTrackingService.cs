@@ -6,48 +6,28 @@ using System.Windows.Media;
 
 namespace Pulsar.Services
 {
+    /// <summary>
+    /// Pure cursor sampler: captures the global cursor position on the WPF rendering
+    /// loop and raises <see cref="MousePositionChanged"/> with the window-relative DIP
+    /// point. Hit-testing and hover decisions belong to the Menu Session.
+    /// </summary>
     public class MouseTrackingService : IMouseTrackingService, IDisposable
     {
-        private readonly IWindowService _windowService;
-        private readonly ISlotLayoutEngine _layoutEngine;
-        private bool _isTracking;
         private IntPtr _windowHandle;
-        private LayoutParameters _layoutParameters;
+        private bool _isTracking;
         private DateTime _lastUpdate = DateTime.MinValue;
         private const int MinUpdateIntervalMs = 16;
 
         public event EventHandler<Vector>? MousePositionChanged;
-
-        public MouseTrackingService(IWindowService windowService, ISlotLayoutEngine layoutEngine)
-        {
-            _windowService = windowService;
-            _layoutEngine = layoutEngine;
-        }
-
-        public Vector RelativePosition { get; private set; }
-
-        public bool IsInDeadZone { get; private set; }
-
-        public int HoveredSlotIndex { get; private set; }
 
         public Vector ToRelative(int screenX, int screenY)
         {
             return ScreenToRelative(new System.Windows.Point(screenX, screenY));
         }
 
-        public int HitTest(int screenX, int screenY)
-        {
-            return HitTestRelative(ToRelative(screenX, screenY));
-        }
-
         public void SetWindowHandle(IntPtr handle)
         {
             _windowHandle = handle;
-        }
-
-        public void SetLayoutParameters(LayoutParameters parameters)
-        {
-            _layoutParameters = parameters;
         }
 
         public void StartTracking()
@@ -74,18 +54,7 @@ namespace Pulsar.Services
 
             var screenPos = GetGlobalCursorPosition();
             var relativePos = ScreenToRelative(screenPos);
-            RelativePosition = relativePos;
-
-            HoveredSlotIndex = HitTestRelative(relativePos);
             MousePositionChanged?.Invoke(this, relativePos);
-        }
-
-        private int HitTestRelative(Vector relativePos)
-        {
-            var dx = relativePos.X - _layoutParameters.CenterX;
-            var dy = relativePos.Y - _layoutParameters.CenterY;
-            IsInDeadZone = Math.Sqrt(dx * dx + dy * dy) < _layoutParameters.DeadZoneRadius;
-            return IsInDeadZone ? 0 : _layoutEngine.HitTest(relativePos, _layoutParameters);
         }
 
         private System.Windows.Point GetGlobalCursorPosition()

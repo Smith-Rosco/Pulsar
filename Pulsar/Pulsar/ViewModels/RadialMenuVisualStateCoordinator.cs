@@ -15,13 +15,13 @@ namespace Pulsar.ViewModels
     internal sealed class RadialMenuVisualStateCoordinator
     {
         private readonly IPreviewService _previewService;
-        private readonly ILogger<RadialMenuViewModel>? _logger;
+        private readonly ILogger? _logger;
         private readonly ILocalizationService? _loc;
         private CancellationTokenSource? _previewCts;
 
         public RadialMenuVisualStateCoordinator(
             IPreviewService previewService,
-            ILogger<RadialMenuViewModel>? logger,
+            ILogger? logger,
             ILocalizationService? localizationService = null)
         {
             _previewService = previewService;

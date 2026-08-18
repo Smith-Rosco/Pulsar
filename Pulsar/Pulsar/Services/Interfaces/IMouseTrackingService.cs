@@ -3,12 +3,14 @@ using System.Windows;
 
 namespace Pulsar.Services.Interfaces
 {
+    /// <summary>
+    /// Pure cursor sampler. Raises <see cref="MousePositionChanged"/> on the rendering
+    /// loop with the window-relative DIP position. Hit-testing, dead-zone and hover
+    /// decisions live in the Menu Session, not here.
+    /// </summary>
     public interface IMouseTrackingService
     {
         event EventHandler<Vector>? MousePositionChanged;
-        Vector RelativePosition { get; }
-        bool IsInDeadZone { get; }
-        int HoveredSlotIndex { get; }
 
         /// <summary>
         /// Converts a physical screen point to window-local DIP coordinates using the
@@ -16,16 +18,8 @@ namespace Pulsar.Services.Interfaces
         /// </summary>
         Vector ToRelative(int screenX, int screenY);
 
-        /// <summary>
-        /// Synchronously hit-tests a physical screen point against the current menu
-        /// layout. Click handling must use this value instead of the last sampled
-        /// <see cref="HoveredSlotIndex"/> so fast pointer movements cannot act on a
-        /// stale slot.
-        /// </summary>
-        int HitTest(int screenX, int screenY);
         void StartTracking();
         void StopTracking();
-        void SetLayoutParameters(LayoutParameters parameters);
         void SetWindowHandle(IntPtr handle);
     }
 

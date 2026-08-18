@@ -30,7 +30,7 @@ namespace Pulsar.ViewModels.Strategies
             _serviceProvider = serviceProvider;
         }
 
-        public async Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context, CancellationToken cancellationToken = default)
+        public async Task ExecuteAsync(SlotViewModel slot, IMenuSession context, CancellationToken cancellationToken = default)
         {
             // 1. Close Menu
             context.IsVisible = false;

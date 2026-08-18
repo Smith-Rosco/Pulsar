@@ -23,7 +23,7 @@ namespace Pulsar.ViewModels
         // [New] Strategy Pattern
         public IActionStrategy ActionStrategy { get; set; } = new NoOpStrategy();
         
-        public async Task ExecuteAsync(RadialMenuViewModel context, CancellationToken cancellationToken = default)
+        public async Task ExecuteAsync(IMenuSession context, CancellationToken cancellationToken = default)
         {
             if (ActionStrategy != null)
             {
