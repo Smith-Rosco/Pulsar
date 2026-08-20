@@ -103,18 +103,15 @@
                             <ui:Button Command="{Binding DataContext.SelectIconCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
                                        CommandParameter="{Binding Code}"
                                        Style="{StaticResource PulsarIconButtonStyle}" 
+                                       Content="{Binding Character}"
+                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                       FontSize="24"
                                        Padding="4" Margin="2"
                                        ToolTip="{Binding Name}"
                                        Height="56" Width="56"
-                                       CornerRadius="4">
-                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                                    <TextBlock Text="{Binding Character}" 
-                                               FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" 
-                                               FontSize="24" 
-                                               HorizontalAlignment="Center"
-                                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                                </StackPanel>
-                            </ui:Button>
+                                       CornerRadius="4"
+                                       HorizontalContentAlignment="Center"
+                                       VerticalContentAlignment="Center"/>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>

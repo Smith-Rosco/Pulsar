@@ -333,6 +333,24 @@ namespace Pulsar.Tests.ViewModels
         }
 
         [Fact]
+        public void IconPickerGridItem_ShouldBindGlyphAsButtonContent_NotWrappedInStackPanel()
+        {
+            var projectRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../Pulsar/Pulsar"));
+            var xaml = File.ReadAllText(Path.Combine(
+                projectRoot,
+                "Views",
+                "Dialogs",
+                "Contents",
+                "IconPickerContent.xaml"));
+
+            // PulsarIconButtonStyle renders Content through its own TextBlock (Content coerced to
+            // string), so a StackPanel child renders as "System.Windows.Controls.StackPanel". The
+            // glyph must be bound directly as Content and pick up the icon font via inheritance.
+            xaml.Should().Contain("Content=\"{Binding Character}\"");
+            xaml.Should().Contain("CommandParameter=\"{Binding Code}\"");
+        }
+
+        [Fact]
         public void SlotTypeCard_BuildPrimaryCards_ShouldReturn6Cards()
         {
             var loc = CreateLoc();
