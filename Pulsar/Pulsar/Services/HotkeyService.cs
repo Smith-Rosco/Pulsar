@@ -81,6 +81,17 @@ namespace Pulsar.Services
             }
         }
 
+        public bool IsModifierHeld(GestureModifier modifier)
+        {
+            return modifier switch
+            {
+                GestureModifier.Control => _hook.IsCtrlDown,
+                GestureModifier.Shift => _hook.IsShiftDown,
+                GestureModifier.Win => _hook.IsWinDown,
+                _ => _hook.IsAltDown
+            };
+        }
+
         public async Task InitializeAsync()
         {
             _config = await _configService.LoadAsync();

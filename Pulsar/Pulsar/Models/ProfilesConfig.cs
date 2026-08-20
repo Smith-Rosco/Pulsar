@@ -81,6 +81,58 @@ namespace Pulsar.Models
             [Helpers.HotkeyActionIds.ShowSwitcher] = new HotkeyConfig { Key = "Q", Modifiers = Helpers.HotkeyModifiers.Control }
         };
 
+        // [New] Right-Drag Summon Configuration
+        /// <summary>
+        /// Enables summoning the radial menu with a right-click gesture. Each menu
+        /// requires its own modifier held at the right-button down, which lets the
+        /// whole gesture be swallowed before the source application sees any input —
+        /// plain right-click stays completely untouched. Disabled by default.
+        /// </summary>
+        [ObservableProperty]
+        private bool _enableRightDragSummon;
+
+        /// <summary>
+        /// Modifier key that summons the task-switcher menu when held with a
+        /// right-click. Values: "Alt", "Control", "Shift", "Win". Must differ from
+        /// <see cref="RightDragActionModifier"/>.
+        /// </summary>
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(RightDragModifiersConflict))]
+        private string _rightDragSwitcherModifier = "Control";
+
+        /// <summary>
+        /// Modifier key that summons the action menu when held with a right-click.
+        /// Values: "Alt", "Control", "Shift", "Win". Must differ from
+        /// <see cref="RightDragSwitcherModifier"/>.
+        /// </summary>
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(RightDragModifiersConflict))]
+        private string _rightDragActionModifier = "Shift";
+
+        /// <summary>
+        /// Parsed form of <see cref="RightDragSwitcherModifier"/> with a safe fallback.
+        /// </summary>
+        public GestureModifier RightDragSwitcherModifierKey =>
+            Enum.TryParse<GestureModifier>(RightDragSwitcherModifier, ignoreCase: true, out var value)
+                ? value
+                : GestureModifier.Control;
+
+        /// <summary>
+        /// Parsed form of <see cref="RightDragActionModifier"/> with a safe fallback.
+        /// </summary>
+        public GestureModifier RightDragActionModifierKey =>
+            Enum.TryParse<GestureModifier>(RightDragActionModifier, ignoreCase: true, out var value)
+                ? value
+                : GestureModifier.Shift;
+
+        /// <summary>
+        /// True when both modifiers resolve to the same key. Such a configuration
+        /// disables the gesture (a single modifier cannot disambiguate two menus).
+        /// </summary>
+        public bool RightDragModifiersConflict =>
+            !string.IsNullOrWhiteSpace(RightDragSwitcherModifier)
+            && string.Equals(RightDragSwitcherModifier, RightDragActionModifier, StringComparison.OrdinalIgnoreCase);
+
         // [RDP Fix] Input System Configuration
         public InputSettings Input { get; set; } = new();
 

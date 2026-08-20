@@ -2700,6 +2700,42 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
   <data name="Settings.General.QuickSwitchTimeoutDescription" xml:space="preserve">
     <value>Releasing the hotkey near the center within this time switches back to the previous window.</value>
   </data>
+  <data name="Settings.General.RightDragSummon" xml:space="preserve">
+    <value>Right-Drag Gesture</value>
+  </data>
+  <data name="Settings.General.RightDragSummonToggle" xml:space="preserve">
+    <value>Enable right-click gesture</value>
+  </data>
+  <data name="Settings.General.RightDragSummonDescription" xml:space="preserve">
+    <value>Hold the switcher modifier with a right-click to open the task switcher, or the action modifier to open the action menu. The gesture is swallowed before reaching the source app, so plain right-click stays completely normal. The menu stays visible while the right button is held and executes on release.</value>
+  </data>
+  <data name="Settings.General.RightDragSwitcherModifier" xml:space="preserve">
+    <value>Task switcher modifier</value>
+  </data>
+  <data name="Settings.General.RightDragSwitcherModifierDescription" xml:space="preserve">
+    <value>Hold this key with a right-click to open the task-switcher menu.</value>
+  </data>
+  <data name="Settings.General.RightDragActionModifier" xml:space="preserve">
+    <value>Action menu modifier</value>
+  </data>
+  <data name="Settings.General.RightDragActionModifierDescription" xml:space="preserve">
+    <value>Hold this key with a right-click to open the action menu.</value>
+  </data>
+  <data name="Settings.General.RightDragModifiersConflict" xml:space="preserve">
+    <value>The two modifiers must be different. The gesture stays disabled while they match.</value>
+  </data>
+  <data name="Settings.General.ModifierAlt" xml:space="preserve">
+    <value>Alt</value>
+  </data>
+  <data name="Settings.General.ModifierCtrl" xml:space="preserve">
+    <value>Ctrl</value>
+  </data>
+  <data name="Settings.General.ModifierShift" xml:space="preserve">
+    <value>Shift</value>
+  </data>
+  <data name="Settings.General.ModifierWin" xml:space="preserve">
+    <value>Win</value>
+  </data>
   <data name="RadialMenu.SubMenuPageFormat" xml:space="preserve">
     <value>{0} ({1}/{2})</value>
   </data>

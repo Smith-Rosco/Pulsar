@@ -40,6 +40,13 @@ namespace Pulsar.ViewModels
         private readonly IConfigService _configService;
         private readonly ILogger<RadialMenuViewModel>? _logger;
 
+        // Right-drag summon gesture state. The detector is a pure state machine; the
+        // ViewModel owns the modifier discrimination and the event swallowing.
+        private readonly RightDragGestureDetector _gestureDetector = new();
+        private bool _gestureEnabled;
+        private GestureModifier _gestureSwitcherModifier = GestureModifier.Control;
+        private GestureModifier _gestureActionModifier = GestureModifier.Shift;
+
         public RadialMenuViewModel(
             MenuSession session,
             IHotkeyService hotkeyService,
@@ -82,6 +89,7 @@ namespace Pulsar.ViewModels
             });
 
             _session.Initialize();
+            RefreshGestureConfig();
         }
 
         private void OnSessionPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -101,9 +109,9 @@ namespace Pulsar.ViewModels
             OnPropertyChanged(e.PropertyName);
         }
 
-        private async Task ShowAsync(RadialMenuMode mode)
+        private async Task ShowAsync(RadialMenuMode mode, MenuInvocationSource invocationSource = MenuInvocationSource.Hotkey)
         {
-            await _session.BeginSessionAsync(mode);
+            await _session.BeginSessionAsync(mode, invocationSource);
         }
 
         private void OnHotkeyInvoked(object? sender, HotkeyInvocationEventArgs e)
@@ -122,14 +130,24 @@ namespace Pulsar.ViewModels
             if (dispatcher == null || dispatcher.CheckAccess())
             {
                 _session.RefreshConfig(_configService.GetSnapshot());
+                RefreshGestureConfig();
                 return;
             }
 
-            _ = dispatcher.InvokeAsync(() => _session.RefreshConfig(_configService.GetSnapshot()));
+            _ = dispatcher.InvokeAsync(() =>
+            {
+                _session.RefreshConfig(_configService.GetSnapshot());
+                RefreshGestureConfig();
+            });
         }
 
         private void OnGlobalMouseEvent(object? sender, GlobalMouseEventArgs e)
         {
+            if (FeedRightDragGesture(e))
+            {
+                return;
+            }
+
             if (!_session.IsVisible) return;
 
             _session.Touch();
@@ -202,6 +220,107 @@ namespace Pulsar.ViewModels
             }
 
             dispatcher.Invoke(action);
+        }
+
+        // ============ Right-drag summon gesture ============
+
+        private void RefreshGestureConfig()
+        {
+            var settings = _configService.GetSnapshot().Settings;
+            _gestureEnabled = settings.EnableRightDragSummon && !settings.RightDragModifiersConflict;
+            _gestureSwitcherModifier = settings.RightDragSwitcherModifierKey;
+            _gestureActionModifier = settings.RightDragActionModifierKey;
+
+            if (!_gestureEnabled)
+            {
+                _gestureDetector.Reset();
+            }
+        }
+
+        /// <summary>
+        /// Feeds the right-click gesture detector. Returns true when the event was
+        /// consumed by the gesture (swallowed and/or routed to a summon or release).
+        /// Only active while the menu is closed, or while a gesture press is in
+        /// progress so its own right-button release can be claimed — even if the
+        /// feature is toggled off mid-gesture, an in-flight press must not leak its
+        /// button-up to the source application.
+        /// </summary>
+        private bool FeedRightDragGesture(GlobalMouseEventArgs e)
+        {
+            if (!_gestureEnabled && !_gestureDetector.IsPressed)
+            {
+                return false;
+            }
+
+            bool gestureInProgress = _gestureDetector.IsPressed || _gestureDetector.IsSummoned;
+            if (_session.IsVisible && !gestureInProgress)
+            {
+                return false;
+            }
+
+            if (e.Action == GlobalMouseAction.Down && e.Button == GlobalMouseButton.Right)
+            {
+                var downDecision = _gestureDetector.OnRightDown(
+                    IsModifierHeld(_gestureSwitcherModifier),
+                    IsModifierHeld(_gestureActionModifier));
+
+                if (downDecision == RightDragGestureDecision.ActionSummon)
+                {
+                    e.Handled = true;
+                    _logger?.LogDebug("[RightDragGesture] Action summon: swallowed right-down at ({X},{Y})", e.X, e.Y);
+                    InvokeOnUi(() => _ = ShowAsync(RadialMenuMode.Action, MenuInvocationSource.RightDragGesture));
+                    return true;
+                }
+
+                if (downDecision == RightDragGestureDecision.SwitcherSummon)
+                {
+                    e.Handled = true;
+                    _logger?.LogDebug("[RightDragGesture] Switcher summon: swallowed right-down at ({X},{Y})", e.X, e.Y);
+                    InvokeOnUi(() => _ = ShowAsync(RadialMenuMode.Task, MenuInvocationSource.RightDragGesture));
+                    return true;
+                }
+
+                _logger?.LogDebug("[RightDragGesture] Right-down passed through (no configured modifier) at ({X},{Y})", e.X, e.Y);
+                return false;
+            }
+
+            if (e.Action == GlobalMouseAction.Up && e.Button == GlobalMouseButton.Right)
+            {
+                var upDecision = _gestureDetector.OnRightUp();
+                if (upDecision == RightDragGestureDecision.GestureRelease)
+                {
+                    e.Handled = true;
+                    _logger?.LogDebug("[RightDragGesture] Gesture release: swallowed right-up, executing selection");
+                    InvokeOnUi(() => _ = _session.HandleGestureRightReleaseAsync());
+                    return true;
+                }
+
+                _logger?.LogDebug("[RightDragGesture] Right-up passed through (no gesture press)");
+                return false;
+            }
+
+            return false;
+        }
+
+        private bool IsModifierHeld(GestureModifier modifier)
+        {
+            // The keyboard hook's tracked state is the reliable, RDP-safe ground
+            // truth and has no race when the modifier and the right button are
+            // pressed nearly simultaneously. GetKeyState is kept as a fallback for
+            // the rare case where ResetModifierState (called when a menu shows)
+            // cleared the tracked state while the key is still physically held.
+            if (_hotkeyService.IsModifierHeld(modifier))
+            {
+                return true;
+            }
+
+            return modifier switch
+            {
+                GestureModifier.Control => PulsarNative.IsCtrlHeld(),
+                GestureModifier.Shift => PulsarNative.IsShiftHeld(),
+                GestureModifier.Win => PulsarNative.IsWinHeld(),
+                _ => PulsarNative.IsAltHeld()
+            };
         }
 
         // ============ IMenuSession (forward to MenuSession) ============

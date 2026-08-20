@@ -4291,6 +4291,42 @@ Pulsar 会在你的浏览器中打开一个网页——这就是命令模式：�
   <data name="Settings.General.QuickSwitchTimeoutDescription" xml:space="preserve">
     <value>在该时间内于中心区域松开热键即可切回上一个窗口。</value>
   </data>
+  <data name="Settings.General.RightDragSummon" xml:space="preserve">
+    <value>右键手势</value>
+  </data>
+  <data name="Settings.General.RightDragSummonToggle" xml:space="preserve">
+    <value>启用右键手势唤起</value>
+  </data>
+  <data name="Settings.General.RightDragSummonDescription" xml:space="preserve">
+    <value>按住"任务切换修饰键"并右键可打开任务切换菜单，按住"动作菜单修饰键"并右键可打开动作菜单。手势会在到达源程序前被吞掉，因此纯右键完全不受影响。面板在按住右键期间保持显示，松开时执行。</value>
+  </data>
+  <data name="Settings.General.RightDragSwitcherModifier" xml:space="preserve">
+    <value>任务切换菜单修饰键</value>
+  </data>
+  <data name="Settings.General.RightDragSwitcherModifierDescription" xml:space="preserve">
+    <value>按住此键并右键时打开任务切换菜单。</value>
+  </data>
+  <data name="Settings.General.RightDragActionModifier" xml:space="preserve">
+    <value>动作菜单修饰键</value>
+  </data>
+  <data name="Settings.General.RightDragActionModifierDescription" xml:space="preserve">
+    <value>按住此键并右键时打开动作菜单。</value>
+  </data>
+  <data name="Settings.General.RightDragModifiersConflict" xml:space="preserve">
+    <value>两个修饰键不能相同。相同期间手势保持关闭。</value>
+  </data>
+  <data name="Settings.General.ModifierAlt" xml:space="preserve">
+    <value>Alt</value>
+  </data>
+  <data name="Settings.General.ModifierCtrl" xml:space="preserve">
+    <value>Ctrl</value>
+  </data>
+  <data name="Settings.General.ModifierShift" xml:space="preserve">
+    <value>Shift</value>
+  </data>
+  <data name="Settings.General.ModifierWin" xml:space="preserve">
+    <value>Win</value>
+  </data>
   <data name="RadialMenu.SubMenuPageFormat" xml:space="preserve">
     <value>{0}（{1}/{2}）</value>
   </data>

@@ -74,6 +74,13 @@ namespace Pulsar.Services.Interfaces
         /// </summary>
         void ResetModifierState();
 
+        /// <summary>
+        /// Reports whether the given modifier key is currently held, based on the
+        /// keyboard hook's RDP-safe tracked state (immune to the GetKeyState race when
+        /// the modifier and the mouse button are pressed almost simultaneously).
+        /// </summary>
+        bool IsModifierHeld(GestureModifier modifier);
+
         event EventHandler<GlobalKeyStruct>? OnGlobalKeyUp;
 
         /// <summary>

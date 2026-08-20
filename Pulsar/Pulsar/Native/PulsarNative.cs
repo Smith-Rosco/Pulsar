@@ -67,12 +67,30 @@ namespace Pulsar.Native
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         public static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
 
+        [DllImport("user32.dll")]
+        private static extern short GetKeyState(int nVirtKey);
+
         [StructLayout(LayoutKind.Sequential)]
         public struct POINT
         {
             public int X;
             public int Y;
         }
+
+        // --- Modifier helpers for the right-drag summon gesture ---
+
+        /// <summary>
+        /// True when the given virtual-key code is currently held (high-order bit of GetKeyState).
+        /// </summary>
+        public static bool IsKeyHeld(int vkCode) => (GetKeyState(vkCode) & 0x8000) != 0;
+
+        public static bool IsAltHeld() => IsKeyHeld(0x12) || IsKeyHeld(0xA4) || IsKeyHeld(0xA5);
+
+        public static bool IsCtrlHeld() => IsKeyHeld(0x11) || IsKeyHeld(0xA2) || IsKeyHeld(0xA3);
+
+        public static bool IsShiftHeld() => IsKeyHeld(0x10) || IsKeyHeld(0xA0) || IsKeyHeld(0xA1);
+
+        public static bool IsWinHeld() => IsKeyHeld(0x5B) || IsKeyHeld(0x5C);
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
         public struct MONITORINFO

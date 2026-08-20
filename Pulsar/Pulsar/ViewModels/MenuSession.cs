@@ -20,6 +20,17 @@ using Pulsar.ViewModels.Strategies;
 namespace Pulsar.ViewModels
 {
     /// <summary>
+    /// How the current menu session was summoned. Gesture-summoned sessions are
+    /// held open by the right mouse button and executed by its release; hotkey
+    /// sessions keep the existing keyboard-release semantics.
+    /// </summary>
+    public enum MenuInvocationSource
+    {
+        Hotkey,
+        RightDragGesture
+    }
+
+    /// <summary>
     /// The Menu Session is the pure-logic state machine of one Radial Menu
     /// invocation: visibility, hovered Slot, paging, submenu morph, and input
     /// decisions. The ViewModel projects its state for binding; the view renders it.
@@ -140,6 +151,15 @@ namespace Pulsar.ViewModels
         private DateTime _lastMenuInteractionUtc = DateTime.UtcNow;
         private HotkeyInvocationSnapshot? _activeHotkeyInvocation;
 
+        /// <summary>
+        /// How this session was summoned. Drives the input policy: gesture sessions
+        /// execute on the right-button release, hotkey sessions keep keyboard-release
+        /// semantics. Internal setter allows tests to exercise the gesture paths.
+        /// </summary>
+        internal MenuInvocationSource InvocationSource { get; set; } = MenuInvocationSource.Hotkey;
+
+        public bool IsGestureSummoned => InvocationSource == MenuInvocationSource.RightDragGesture;
+
         public ObservableCollection<SlotViewModel> Slots { get; } = new();
         public SlotViewModel CenterSlot { get; private set; } = null!;
 
@@ -193,6 +213,7 @@ namespace Pulsar.ViewModels
                 {
                     if (!_isVisible)
                     {
+                        InvocationSource = MenuInvocationSource.Hotkey;
                         _activeHotkeyInvocation = null;
                         _menuWatchdogCts?.Cancel();
                         _menuWatchdogCts = null;
@@ -346,13 +367,15 @@ namespace Pulsar.ViewModels
             _pagingController.OnBoundaryReached += OnPagingBoundaryReached;
         }
 
-        public async Task BeginSessionAsync(RadialMenuMode mode)
+        public async Task BeginSessionAsync(RadialMenuMode mode, MenuInvocationSource invocationSource = MenuInvocationSource.Hotkey)
         {
             Debug.Assert(_ui.CheckAccess(), "BeginSessionAsync must run on UI thread");
             if (IsVisible || Interlocked.CompareExchange(ref _isLoading, 1, 0) != 0) return;
 
             try
             {
+                InvocationSource = invocationSource;
+
                 IntPtr foregroundHandle = PulsarNative.GetForegroundWindow();
                 _logger?.LogDebug("[Show] Foreground Handle: {Hwnd}", foregroundHandle);
 
@@ -653,6 +676,18 @@ namespace Pulsar.ViewModels
             IsVisible = false;
         }
 
+        /// <summary>
+        /// Executes the selection when the right button that summoned a
+        /// gesture-opened menu is released. Mirrors the hotkey release-to-execute
+        /// semantics: a quick release near the center quick-switches, otherwise the
+        /// hovered slot is executed (or the menu dismissed over empty space).
+        /// </summary>
+        public async Task HandleGestureRightReleaseAsync()
+        {
+            InvocationSource = MenuInvocationSource.Hotkey;
+            await HandleModifierRelease(QuickSwitchPolicy.FromSettings(_config?.Settings), _isLoading != 0);
+        }
+
         public async Task ExecuteSelectionAsync()
         {
             if (_activeSlotIndex < 0)
@@ -710,6 +745,13 @@ namespace Pulsar.ViewModels
             {
                 _logger?.LogDebug("[HandleKeyUp] Escape pressed, cancelling active menu");
                 CancelActiveMenu();
+                return;
+            }
+
+            // A menu summoned by a right-click gesture is executed by the right-button
+            // release only; a keyboard modifier/hotkey release must never trigger it.
+            if (InvocationSource == MenuInvocationSource.RightDragGesture)
+            {
                 return;
             }
 
