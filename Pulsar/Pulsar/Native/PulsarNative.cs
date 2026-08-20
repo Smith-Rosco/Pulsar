@@ -68,7 +68,7 @@ namespace Pulsar.Native
         public static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
 
         [DllImport("user32.dll")]
-        private static extern short GetKeyState(int nVirtKey);
+        private static extern short GetAsyncKeyState(int nVirtKey);
 
         [StructLayout(LayoutKind.Sequential)]
         public struct POINT
@@ -80,9 +80,15 @@ namespace Pulsar.Native
         // --- Modifier helpers for the right-drag summon gesture ---
 
         /// <summary>
-        /// True when the given virtual-key code is currently held (high-order bit of GetKeyState).
+        /// True when the given virtual-key code is currently held (high-order bit).
+        /// Uses GetAsyncKeyState: this is queried from the low-level mouse hook thread,
+        /// where GetKeyState returns the calling thread's last-processed input-queue
+        /// state (usually stale — the modifier appears up) rather than the physical
+        /// keyboard state. GetAsyncKeyState reads the physical state, so the modifier
+        /// is still detected when it was pressed nearly simultaneously with the right
+        /// button, or after a menu show cleared the keyboard hook's tracked state.
         /// </summary>
-        public static bool IsKeyHeld(int vkCode) => (GetKeyState(vkCode) & 0x8000) != 0;
+        public static bool IsKeyHeld(int vkCode) => (GetAsyncKeyState(vkCode) & 0x8000) != 0;
 
         public static bool IsAltHeld() => IsKeyHeld(0x12) || IsKeyHeld(0xA4) || IsKeyHeld(0xA5);
 

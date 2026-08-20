@@ -122,6 +122,14 @@ namespace Pulsar.ViewModels
 
         private DateTime _showStartTime;
         private bool _pendingQuickSwitch;
+
+        /// <summary>
+        /// Set when a right-drag release resolved the session while the menu was still
+        /// loading: the switch already ran immediately on release, so the in-flight
+        /// show must abort instead of surfacing a menu with no button held.
+        /// </summary>
+        private bool _gestureReleaseHandledDuringLoad;
+
         private double _lastMouseX;
         private double _lastMouseY;
 
@@ -385,6 +393,7 @@ namespace Pulsar.ViewModels
 
                 _showStartTime = DateTime.Now;
                 _pendingQuickSwitch = false;
+                _gestureReleaseHandledDuringLoad = false;
 
                 ActionExecuted = false;
                 ResetSelection();
@@ -445,6 +454,16 @@ namespace Pulsar.ViewModels
                 await _pagingController.GoToPageAsync(_pageProvider.CurrentPage);
                 ResetCenterSlotForRootMenu();
                 _pageProvider.RefreshVisuals(Slots, CenterSlot);
+
+                if (_gestureReleaseHandledDuringLoad)
+                {
+                    // A right-drag release already resolved this session while the menu
+                    // was loading (the switch ran immediately on release). Never surface
+                    // the menu: doing so would steal focus from the just-activated
+                    // window and then flash it back out.
+                    _logger?.LogDebug("[Show] Gesture release handled during load, aborting surface.");
+                    return;
+                }
 
                 IsVisible = true;
 
@@ -678,14 +697,48 @@ namespace Pulsar.ViewModels
 
         /// <summary>
         /// Executes the selection when the right button that summoned a
-        /// gesture-opened menu is released. Mirrors the hotkey release-to-execute
-        /// semantics: a quick release near the center quick-switches, otherwise the
-        /// hovered slot is executed (or the menu dismissed over empty space).
+        /// gesture-opened menu is released.
+        ///
+        /// A gesture release is a deliberate spatial action, so it resolves by cursor
+        /// position rather than the hotkey's "quick release" duration window (which the
+        /// switcher page load would consume): releasing in the center quick-switches,
+        /// releasing over a slot selects it, releasing over empty space dismisses.
         /// </summary>
         public async Task HandleGestureRightReleaseAsync()
         {
             InvocationSource = MenuInvocationSource.Hotkey;
-            await HandleModifierRelease(QuickSwitchPolicy.FromSettings(_config?.Settings), _isLoading != 0);
+
+            if (!IsVisible)
+            {
+                // Released while the menu was still loading. The user has not aimed at
+                // any slot, so the gesture resolves to a quick switch back to the
+                // previously-active window. The switch needs only the foreground window
+                // captured at session start — not the (still loading) switcher page —
+                // so run it now instead of waiting for the load to finish.
+                if (_isLoading != 0)
+                {
+                    _logger?.LogDebug("[RightDragGesture] Released during load; quick-switching immediately.");
+                    _pendingQuickSwitch = true;
+                    _gestureReleaseHandledDuringLoad = true;
+                    SetActionExecuted(true);
+                    await _windowService.SwitchToPreviousWindow();
+                }
+
+                return;
+            }
+
+            if (_menuState == MenuState.Root
+                && IsWithinQuickSwitchZone(QuickSwitchPolicy.FromSettings(_config?.Settings).CenterZoneRadius))
+            {
+                _logger?.LogDebug("[RightDragGesture] Spatial quick switch on right release.");
+                SetActionExecuted(true);
+                await _windowService.SwitchToPreviousWindow();
+                IsVisible = false;
+                return;
+            }
+
+            await ExecuteSelectionAsync();
+            IsVisible = false;
         }
 
         public async Task ExecuteSelectionAsync()

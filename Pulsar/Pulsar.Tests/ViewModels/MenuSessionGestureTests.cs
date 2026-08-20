@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 using FluentAssertions;
@@ -101,6 +102,66 @@ namespace Pulsar.Tests.ViewModels
 
             session.IsVisible.Should().BeFalse();
             session.InvocationSource.Should().Be(MenuInvocationSource.Hotkey);
+        }
+
+        [Fact]
+        public async Task HandleGestureRightReleaseAsync_WhileLoading_ShouldQuickSwitchImmediately()
+        {
+            var windowService = new Mock<IWindowService>();
+            var session = CreateSession(windowService);
+            session.InvocationSource = MenuInvocationSource.RightDragGesture;
+            SetLoading(session, loading: true);
+
+            await session.HandleGestureRightReleaseAsync();
+
+            // Releasing the right button before the switcher page has finished loading
+            // must resolve immediately (quick switch back to the previous window) and
+            // must NOT wait for the slow page load to complete.
+            windowService.Verify(service => service.SwitchToPreviousWindow(), Times.Once);
+            session.IsVisible.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task HandleGestureRightReleaseAsync_InCenterZone_ShouldQuickSwitch_RegardlessOfHeldDuration()
+        {
+            var windowService = new Mock<IWindowService>();
+            var session = CreateSession(windowService);
+            session.IsVisible = true;
+            session.InvocationSource = MenuInvocationSource.RightDragGesture;
+            session.SetMenuCenter(new Point(250, 250));
+            session.HandlePointerMoved(new Vector(250, 250));
+
+            // The switcher page load consumes the hotkey quick-switch window
+            // (_showStartTime is never set here, so the held duration is huge). A
+            // gesture release must resolve spatially — cursor in the center zone —
+            // not be dropped because the duration threshold already passed.
+            await session.HandleGestureRightReleaseAsync();
+
+            windowService.Verify(service => service.SwitchToPreviousWindow(), Times.Once);
+            session.IsVisible.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task HandleGestureRightReleaseAsync_OutsideCenterZone_ShouldNotQuickSwitch()
+        {
+            var windowService = new Mock<IWindowService>();
+            var session = CreateSession(windowService);
+            session.IsVisible = true;
+            session.InvocationSource = MenuInvocationSource.RightDragGesture;
+            session.SetMenuCenter(new Point(250, 250));
+            session.HandlePointerMoved(new Vector(0, 0));
+
+            await session.HandleGestureRightReleaseAsync();
+
+            windowService.Verify(service => service.SwitchToPreviousWindow(), Times.Never);
+            session.IsVisible.Should().BeFalse();
+        }
+
+        private static void SetLoading(MenuSession session, bool loading)
+        {
+            typeof(MenuSession)
+                .GetField("_isLoading", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .SetValue(session, loading ? 1 : 0);
         }
 
         private static MenuSession CreateSession(Mock<IWindowService>? windowService = null)
