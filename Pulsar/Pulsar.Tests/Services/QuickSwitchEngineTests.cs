@@ -52,5 +52,39 @@ namespace Pulsar.Tests.Services
 
             result.TargetWindow.Should().Be(fallback);
         }
+
+        [Fact]
+        public void FindValidHistoryWindow_ShouldSkipOwnedWindow_WhenNotExplicitlyRecorded()
+        {
+            var engine = new QuickSwitchEngine();
+            IntPtr ownerWindow = new(11);
+            IntPtr ownedWindow = new(22);
+            IntPtr currentApp = new(33);
+
+            engine.RecordWindowActivation(ownerWindow, 10);
+            engine.RecordWindowActivation(currentApp, 10);
+
+            var result = engine.ResolveTarget(currentApp, ownerWindow, 5000, _ => true, _ => true);
+
+            result.TargetWindow.Should().Be(ownerWindow);
+            result.UsedFallbackPreviousWindow.Should().BeFalse();
+        }
+
+        [Fact]
+        public void FindValidHistoryWindow_ShouldFindOwnedWindow_WhenExplicitlyRecorded()
+        {
+            var engine = new QuickSwitchEngine();
+            IntPtr ownerWindow = new(11);
+            IntPtr ownedWindow = new(22);
+            IntPtr currentApp = new(33);
+
+            engine.RecordWindowActivation(ownerWindow, 10);
+            engine.RecordWindowActivation(currentApp, 10);
+            engine.RecordWindowActivation(ownedWindow, 10);
+
+            var result = engine.ResolveTarget(currentApp, ownerWindow, 5000, _ => true, _ => true);
+
+            result.TargetWindow.Should().Be(ownedWindow);
+        }
     }
 }

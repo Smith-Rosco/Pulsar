@@ -7,13 +7,15 @@ using Pulsar.Native;
 namespace Pulsar.Services
 {
     /// <summary>
-    /// 全局窗口激活监听器 - 使用 Windows Hook 实时追踪窗口焦点变化
-    /// 用于解决手动切换窗口后 Quick Switch 失效的问题
+    /// 全局窗口激活监听器 - 使用 Windows Hook 实时追踪窗口焦点变化和窗口显示事件
+    /// 用于解决手动切换窗口后 Quick Switch 失效的问题，
+    /// 以及附属窗口（如 360 PDF Viewer）首次显示时无法进入历史记录的问题
     /// </summary>
     public class WindowActivationMonitor : IDisposable
     {
         private readonly ILogger<WindowActivationMonitor>? _logger;
-        private IntPtr _hookHandle;
+        private IntPtr _foregroundHookHandle;
+        private IntPtr _objectShowHookHandle;
         private PulsarNative.WinEventDelegate? _hookDelegate;
         private bool _isRunning;
         private readonly object _lock = new object();
@@ -23,13 +25,19 @@ namespace Pulsar.Services
         /// </summary>
         public event Action<IntPtr>? WindowActivated;
 
+        /// <summary>
+        /// 窗口显示事件 - 当任何顶层窗口变为可见时触发
+        /// 用于捕获附属窗口（owned windows）首次显示的场景
+        /// </summary>
+        public event Action<IntPtr>? WindowShown;
+
         public WindowActivationMonitor(ILogger<WindowActivationMonitor>? logger = null)
         {
             _logger = logger;
         }
 
         /// <summary>
-        /// 启动全局窗口激活监听
+        /// 启动全局窗口事件监听（前台切换 + 窗口显示）
         /// </summary>
         public void Start()
         {
@@ -43,12 +51,9 @@ namespace Pulsar.Services
 
                 try
                 {
-                    // 保持委托引用，防止被 GC 回收
                     _hookDelegate = WinEventProc;
-                    
-                    _logger?.LogInformation("[WindowActivationMonitor] Attempting to register WinEvent hook...");
-                    
-                    _hookHandle = PulsarNative.SetWinEventHook(
+
+                    _foregroundHookHandle = PulsarNative.SetWinEventHook(
                         PulsarNative.EVENT_SYSTEM_FOREGROUND,
                         PulsarNative.EVENT_SYSTEM_FOREGROUND,
                         IntPtr.Zero,
@@ -57,15 +62,36 @@ namespace Pulsar.Services
                         0,
                         PulsarNative.WINEVENT_OUTOFCONTEXT);
 
-                    if (_hookHandle == IntPtr.Zero)
+                    if (_foregroundHookHandle == IntPtr.Zero)
                     {
                         int error = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
-                        _logger?.LogError("[WindowActivationMonitor] Failed to set WinEvent hook. Win32 Error: {Error}", error);
-                        return;
+                        _logger?.LogError("[WindowActivationMonitor] Failed to set foreground hook. Win32 Error: {Error}", error);
+                    }
+                    else
+                    {
+                        _logger?.LogInformation("[WindowActivationMonitor] ✅ Foreground hook registered. Handle: {Handle}", _foregroundHookHandle);
+                    }
+
+                    _objectShowHookHandle = PulsarNative.SetWinEventHook(
+                        PulsarNative.EVENT_OBJECT_SHOW,
+                        PulsarNative.EVENT_OBJECT_SHOW,
+                        IntPtr.Zero,
+                        _hookDelegate,
+                        0,
+                        0,
+                        PulsarNative.WINEVENT_OUTOFCONTEXT);
+
+                    if (_objectShowHookHandle == IntPtr.Zero)
+                    {
+                        int error = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+                        _logger?.LogError("[WindowActivationMonitor] Failed to set object show hook. Win32 Error: {Error}", error);
+                    }
+                    else
+                    {
+                        _logger?.LogInformation("[WindowActivationMonitor] ✅ Object show hook registered. Handle: {Handle}", _objectShowHookHandle);
                     }
 
                     _isRunning = true;
-                    _logger?.LogInformation("[WindowActivationMonitor] ✅ Hook registered successfully. Handle: {Handle}", _hookHandle);
                 }
                 catch (Exception ex)
                 {
@@ -75,7 +101,7 @@ namespace Pulsar.Services
         }
 
         /// <summary>
-        /// 停止全局窗口激活监听
+        /// 停止全局窗口事件监听
         /// </summary>
         public void Stop()
         {
@@ -88,10 +114,16 @@ namespace Pulsar.Services
 
                 try
                 {
-                    if (_hookHandle != IntPtr.Zero)
+                    if (_foregroundHookHandle != IntPtr.Zero)
                     {
-                        PulsarNative.UnhookWinEvent(_hookHandle);
-                        _hookHandle = IntPtr.Zero;
+                        PulsarNative.UnhookWinEvent(_foregroundHookHandle);
+                        _foregroundHookHandle = IntPtr.Zero;
+                    }
+
+                    if (_objectShowHookHandle != IntPtr.Zero)
+                    {
+                        PulsarNative.UnhookWinEvent(_objectShowHookHandle);
+                        _objectShowHookHandle = IntPtr.Zero;
                     }
 
                     _isRunning = false;
@@ -106,29 +138,40 @@ namespace Pulsar.Services
         }
 
         /// <summary>
-        /// Windows Hook 回调函数
+        /// Windows Hook 回调函数 - 处理前台切换和窗口显示事件
         /// </summary>
         private void WinEventProc(IntPtr hWinEventHook, uint eventType,
             IntPtr hwnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime)
         {
-            // 只处理窗口对象（排除菜单、滚动条等子对象）
             if (idObject != 0 || idChild != 0)
             {
                 return;
             }
 
-            if (eventType == PulsarNative.EVENT_SYSTEM_FOREGROUND && hwnd != IntPtr.Zero)
+            if (hwnd == IntPtr.Zero)
             {
-                try
+                return;
+            }
+
+            try
+            {
+                if (eventType == PulsarNative.EVENT_SYSTEM_FOREGROUND)
                 {
-                    _logger?.LogDebug("[WindowActivationMonitor] 🔔 EVENT_SYSTEM_FOREGROUND received. HWND: {Hwnd}, Thread: {Thread}", 
+                    _logger?.LogDebug("[WindowActivationMonitor] 🔔 EVENT_SYSTEM_FOREGROUND received. HWND: {Hwnd}, Thread: {Thread}",
                         hwnd, dwEventThread);
                     WindowActivated?.Invoke(hwnd);
                 }
-                catch (Exception ex)
+                else if (eventType == PulsarNative.EVENT_OBJECT_SHOW)
                 {
-                    _logger?.LogError(ex, "[WindowActivationMonitor] Error in WindowActivated event handler for HWND: {Hwnd}", hwnd);
+                    _logger?.LogDebug("[WindowActivationMonitor] 👁 EVENT_OBJECT_SHOW received. HWND: {Hwnd}, Thread: {Thread}",
+                        hwnd, dwEventThread);
+                    WindowShown?.Invoke(hwnd);
                 }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[WindowActivationMonitor] Error in event handler. EventType: {EventType}, HWND: {Hwnd}",
+                    eventType, hwnd);
             }
         }
 

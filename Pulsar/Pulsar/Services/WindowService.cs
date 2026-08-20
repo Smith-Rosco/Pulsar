@@ -108,6 +108,7 @@ namespace Pulsar.Services
             
             _activationMonitor = new WindowActivationMonitor(monitorLogger);
             _activationMonitor.WindowActivated += OnGlobalWindowActivated;
+            _activationMonitor.WindowShown += OnWindowShown;
             _activationMonitor.Start();
             
             _logger.LogInformation("[WindowService] Initialized with registry cleanup timer and global window tracking");
@@ -122,6 +123,25 @@ namespace Pulsar.Services
                 hwnd, GetWindowTitle(hwnd));
             
             // 实时记录窗口激活到历史栈
+            RecordWindowActivation(hwnd);
+        }
+
+        /// <summary>
+        /// 窗口显示事件处理器 - 捕获附属窗口首次显示
+        /// 如 360 PDF Viewer 等 owned window 不会触发前台切换事件，
+        /// 但会触发 EVENT_OBJECT_SHOW，通过此处理器将其记录到历史栈
+        /// </summary>
+        private void OnWindowShown(IntPtr hwnd)
+        {
+            if (!IsAltTabWindow(hwnd))
+            {
+                _logger.LogDebug("[WindowService] 📥 OnWindowShown filtered out. HWND: {Hwnd}, Title: '{Title}'",
+                    hwnd, GetWindowTitle(hwnd));
+                return;
+            }
+
+            _logger.LogDebug("[WindowService] 📥 OnWindowShown recording. HWND: {Hwnd}, Title: '{Title}'",
+                hwnd, GetWindowTitle(hwnd));
             RecordWindowActivation(hwnd);
         }
         
@@ -790,6 +810,9 @@ namespace Pulsar.Services
             _logger.LogInformation("[ActivateWindow] SUCCESS: '{Title}' (Process: {ProcessName})",
                 window.Title,
                 window.ProcessName);
+
+            RecordWindowActivation(window.Handle);
+
             return result;
         }
 

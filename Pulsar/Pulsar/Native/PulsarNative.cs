@@ -27,6 +27,7 @@ namespace Pulsar.Native
         public const byte VK_MENU = 0x12;
         public const uint KEYEVENTF_KEYUP = 0x0002;
         public const uint EVENT_SYSTEM_FOREGROUND = 0x0003;
+        public const uint EVENT_OBJECT_SHOW = 0x8002;
         public const uint WINEVENT_OUTOFCONTEXT = 0x0000;
         public const uint SHGFI_ICON = 0x100;
         public const uint SHGFI_LARGEICON = 0x0;
