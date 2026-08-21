@@ -121,6 +121,7 @@ namespace Pulsar.ViewModels
         private string _pulsarText = "Pulsar";
 
         private DateTime _showStartTime;
+        private DateTime _showVisibleTime;
         private bool _pendingQuickSwitch;
 
         /// <summary>
@@ -466,12 +467,25 @@ namespace Pulsar.ViewModels
                 }
 
                 IsVisible = true;
+                _showVisibleTime = DateTime.Now;
+
+                // Seed cursor coordinates so IsWithinQuickSwitchZone works
+                // even when the first render frame hasn't fired yet (mouse stationary).
+                _lastMouseX = _menuCenterX;
+                _lastMouseY = _menuCenterY;
 
                 if (_pendingQuickSwitch)
                 {
                     _logger?.LogDebug("[Show] Pending Quick Switch detected, executing immediately.");
                     SetActionExecuted(true);
-                    await _windowService.SwitchToPreviousWindow();
+                    bool switched = await _windowService.SwitchToPreviousWindow();
+                    if (!switched)
+                    {
+                        _trayService.ShowNotification(
+                            _loc?["QuickSwitch.FailedTitle"] ?? "Quick Switch",
+                            _loc?["QuickSwitch.FailedBody"] ?? "No previous window to switch to.",
+                            PulsarNotificationIcon.Warning);
+                    }
                     IsVisible = false;
                 }
             }
@@ -678,15 +692,22 @@ namespace Pulsar.ViewModels
                 return;
             }
 
-            var duration = (DateTime.Now - _showStartTime).TotalMilliseconds;
+            var visibleDuration = (DateTime.Now - _showVisibleTime).TotalMilliseconds;
 
-            if (duration < quickSwitchPolicy.MaxDuration.TotalMilliseconds
+            if (visibleDuration < quickSwitchPolicy.MaxDuration.TotalMilliseconds
                 && IsWithinQuickSwitchZone(quickSwitchPolicy.CenterZoneRadius)
                 && _menuState == MenuState.Root)
             {
-                _logger?.LogDebug("[HandleKeyUp] Quick Switch triggered (duration: {DurationMs}ms)", duration);
+                _logger?.LogDebug("[HandleKeyUp] Quick Switch triggered (visibleDuration: {DurationMs}ms)", visibleDuration);
                 SetActionExecuted(true);
-                await _windowService.SwitchToPreviousWindow();
+                bool switched = await _windowService.SwitchToPreviousWindow();
+                if (!switched)
+                {
+                    _trayService.ShowNotification(
+                        _loc["QuickSwitch.FailedTitle"],
+                        _loc["QuickSwitch.FailedBody"],
+                        PulsarNotificationIcon.Warning);
+                }
                 IsVisible = false;
                 return;
             }
@@ -721,7 +742,14 @@ namespace Pulsar.ViewModels
                     _pendingQuickSwitch = true;
                     _gestureReleaseHandledDuringLoad = true;
                     SetActionExecuted(true);
-                    await _windowService.SwitchToPreviousWindow();
+                    bool switched = await _windowService.SwitchToPreviousWindow();
+                    if (!switched)
+                    {
+                        _trayService.ShowNotification(
+                            _loc["QuickSwitch.FailedTitle"],
+                            _loc["QuickSwitch.FailedBody"],
+                            PulsarNotificationIcon.Warning);
+                    }
                 }
 
                 return;
@@ -732,7 +760,14 @@ namespace Pulsar.ViewModels
             {
                 _logger?.LogDebug("[RightDragGesture] Spatial quick switch on right release.");
                 SetActionExecuted(true);
-                await _windowService.SwitchToPreviousWindow();
+                bool switched = await _windowService.SwitchToPreviousWindow();
+                if (!switched)
+                {
+                    _trayService.ShowNotification(
+                        _loc["QuickSwitch.FailedTitle"],
+                        _loc["QuickSwitch.FailedBody"],
+                        PulsarNotificationIcon.Warning);
+                }
                 IsVisible = false;
                 return;
             }
@@ -825,7 +860,14 @@ namespace Pulsar.ViewModels
             if (releaseTriggersExecution)
             {
                 _activeHotkeyInvocation = null;
-                _ = HandleModifierRelease(QuickSwitchPolicy.FromSettings(_config?.Settings), _isLoading != 0);
+                var quickSwitchTask = HandleModifierRelease(QuickSwitchPolicy.FromSettings(_config?.Settings), _isLoading != 0);
+                quickSwitchTask.ContinueWith(t =>
+                {
+                    if (t.IsFaulted)
+                    {
+                        _logger?.LogError(t.Exception, "[HandleKeyUp] Quick switch failed with unhandled exception");
+                    }
+                }, TaskScheduler.Default);
             }
         }
 

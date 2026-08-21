@@ -2799,4 +2799,10 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
   <data name="Plugin.Permissions.GrantSuccess" xml:space="preserve">
     <value>Permissions granted.</value>
   </data>
+  <data name="QuickSwitch.FailedTitle" xml:space="preserve">
+    <value>Quick Switch</value>
+  </data>
+  <data name="QuickSwitch.FailedBody" xml:space="preserve">
+    <value>No previous window to switch to.</value>
+  </data>
 </root>

@@ -4390,4 +4390,10 @@ Pulsar 会在你的浏览器中打开一个网页——这就是命令模式：�
   <data name="Plugin.Permissions.GrantSuccess" xml:space="preserve">
     <value>权限已授予。</value>
   </data>
+  <data name="QuickSwitch.FailedTitle" xml:space="preserve">
+    <value>快速切换</value>
+  </data>
+  <data name="QuickSwitch.FailedBody" xml:space="preserve">
+    <value>没有可切换的上一个窗口。</value>
+  </data>
 </root>
