@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Pulsar.Core.Localization;
 using Pulsar.Plugins.Core.Pki;
 using Pulsar.Plugins.Core.Pki.Contracts;
 using Pulsar.Plugins.Core.Pki.Models.Execution;
@@ -12,6 +13,21 @@ namespace Pulsar.Tests.Plugins.Core.Pki
 {
     public class PkiPluginTests
     {
+        private static ILocalizationService CreateLoc()
+        {
+            var mock = new Mock<ILocalizationService>();
+            mock.Setup(l => l[It.IsAny<string>()]).Returns((string key) => key);
+            mock.Setup(l => l.GetString(It.IsAny<string>())).Returns((string key) => key);
+            mock.Setup(l => l["Plugin.Common.UnknownAction"]).Returns("Unknown action: {0}");
+            mock.Setup(l => l["Plugin.Common.UnknownActionSupported"]).Returns("Unknown action: {0}. Supported actions: {1}");
+            return mock.Object;
+        }
+
+        private static PkiPlugin CreatePlugin(Mock<IPkiExecutionService> executionService)
+        {
+            return new PkiPlugin(NullLogger<PkiPlugin>.Instance, CreateLoc(), executionService.Object);
+        }
+
         [Fact]
         public async Task ExecuteAsync_ShouldDelegateFillActionToExecutionService()
         {
@@ -22,7 +38,7 @@ namespace Pulsar.Tests.Plugins.Core.Pki
                     "Credentials injected successfully",
                     new InjectionPlan(System.Guid.NewGuid(), new List<InjectionStep>())));
 
-            var plugin = new PkiPlugin(NullLogger<PkiPlugin>.Instance, executionService.Object);
+            var plugin = CreatePlugin(executionService);
             var args = new Dictionary<string, string> { ["secretId"] = System.Guid.NewGuid().ToString() };
 
             var result = await plugin.ExecuteAsync("fill", args, PulsarContextFactory.CreateTestContext());
@@ -44,7 +60,7 @@ namespace Pulsar.Tests.Plugins.Core.Pki
                 .Setup(x => x.ExecuteAsync(It.IsAny<IReadOnlyDictionary<string, string>>(), It.IsAny<Pulsar.Core.Plugin.PulsarContext>()))
                 .ReturnsAsync(PkiExecutionResult.Fail(PkiExecutionStage.Validation, "Missing required parameter: secretId"));
 
-            var plugin = new PkiPlugin(NullLogger<PkiPlugin>.Instance, executionService.Object);
+            var plugin = CreatePlugin(executionService);
 
             var result = await plugin.ExecuteAsync(
                 "inject",
@@ -60,7 +76,7 @@ namespace Pulsar.Tests.Plugins.Core.Pki
         public void GetMetadata_ShouldExposeCanonicalActionOnlyAndKeepInjectAsAlias()
         {
             var executionService = new Mock<IPkiExecutionService>();
-            var plugin = new PkiPlugin(NullLogger<PkiPlugin>.Instance, executionService.Object);
+            var plugin = CreatePlugin(executionService);
 
             var metadata = plugin.GetMetadata();
 
@@ -74,7 +90,7 @@ namespace Pulsar.Tests.Plugins.Core.Pki
         public async Task ExecuteAsync_ShouldReturnUnknownActionError_WhenActionIsUnsupported()
         {
             var executionService = new Mock<IPkiExecutionService>();
-            var plugin = new PkiPlugin(NullLogger<PkiPlugin>.Instance, executionService.Object);
+            var plugin = CreatePlugin(executionService);
 
             var result = await plugin.ExecuteAsync(
                 "unknown",
@@ -82,6 +98,7 @@ namespace Pulsar.Tests.Plugins.Core.Pki
                 PulsarContextFactory.CreateTestContext());
 
             result.Success.Should().BeFalse();
+            result.ErrorCode.Should().Be(Pulsar.Core.Plugin.PluginErrorCode.UnknownAction);
             result.Message.Should().Contain("Unknown action: unknown");
             executionService.Verify(x => x.ExecuteAsync(It.IsAny<IReadOnlyDictionary<string, string>>(), It.IsAny<Pulsar.Core.Plugin.PulsarContext>()), Times.Never);
         }

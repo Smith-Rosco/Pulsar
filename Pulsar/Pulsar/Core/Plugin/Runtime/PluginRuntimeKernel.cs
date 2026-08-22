@@ -764,7 +764,7 @@ namespace Pulsar.Core.Plugin.Runtime
                 return;
             }
 
-            if (!descriptor.CanDisable)
+            if (descriptor.Tier == PluginTier.Core)
             {
                 _logger.LogWarning("[PluginRuntimeKernel] Cannot disable core plugin: {PluginId}", pluginId);
                 return;
@@ -803,7 +803,7 @@ namespace Pulsar.Core.Plugin.Runtime
         public bool IsPluginEnabled(string pluginId)
         {
             var descriptor = GetDescriptor(pluginId);
-            if (descriptor != null && !descriptor.CanDisable)
+            if (descriptor != null && descriptor.Tier == PluginTier.Core)
             {
                 return true;
             }
@@ -871,7 +871,7 @@ namespace Pulsar.Core.Plugin.Runtime
                 }
             }
 
-            if (!descriptor.CanDisable)
+            if (descriptor.Tier == PluginTier.Core)
             {
                 if (plugin is IPluginLifecycle coreLifecycle)
                 {

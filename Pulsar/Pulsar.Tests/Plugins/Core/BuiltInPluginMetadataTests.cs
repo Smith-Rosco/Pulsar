@@ -57,7 +57,8 @@ namespace Pulsar.Tests.Plugins.Core
         public void SecretFillMetadata_ShouldExposeCanonicalActionAndLegacyAlias()
         {
             var executionService = new Mock<IPkiExecutionService>();
-            var plugin = new PkiPlugin(NullLogger<PkiPlugin>.Instance, executionService.Object);
+            var loc = new Mock<ILocalizationService>();
+            var plugin = new PkiPlugin(NullLogger<PkiPlugin>.Instance, loc.Object, executionService.Object);
 
             var metadata = plugin.GetMetadata();
 

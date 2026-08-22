@@ -182,6 +182,8 @@ namespace Pulsar.Tests.Plugins.Command
         [Fact]
         public async Task ExecuteAsync_UnknownAction_ReturnsError()
         {
+            _locMock.Setup(l => l["Plugin.Common.UnknownActionSupported"]).Returns("Unknown action: {0}. Supported actions: {1}");
+
             var plugin = CreatePlugin();
             var args = new Dictionary<string, string>();
             var context = PulsarContextFactory.CreateTestContext();
@@ -189,6 +191,12 @@ namespace Pulsar.Tests.Plugins.Command
             var result = await plugin.ExecuteAsync("unknown", args, context);
 
             result.Success.Should().BeFalse();
+            result.ErrorCode.Should().Be(PluginErrorCode.UnknownAction);
+            result.Message.Should().Contain("Unknown action: unknown");
+            _processLauncherMock.Verify(l => l.Launch(It.IsAny<System.Diagnostics.ProcessStartInfo>()), Times.Never);
+            _keySenderMock.Verify(
+                k => k.ExecuteAsync(It.IsAny<IReadOnlyList<KeyInstruction>>(), It.IsAny<CancellationToken>()),
+                Times.Never);
         }
     }
 }

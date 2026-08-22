@@ -2491,6 +2491,16 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
   <data name="Plugin.Command.UnknownAction" xml:space="preserve">
     <value>Unknown action: {0}</value>
   </data>
+  <!-- ==================== Common Plugin Errors ==================== -->
+  <data name="Plugin.Common.MissingRequiredParameter" xml:space="preserve">
+    <value>Missing required parameter: {0}</value>
+  </data>
+  <data name="Plugin.Common.UnknownAction" xml:space="preserve">
+    <value>Unknown action: {0}</value>
+  </data>
+  <data name="Plugin.Common.UnknownActionSupported" xml:space="preserve">
+    <value>Unknown action: {0}. Supported actions: {1}</value>
+  </data>
   <!-- ==================== WinSwitcher Plugin ==================== -->
   <data name="Plugin.WinSwitcher.WindowServiceNotInitialized" xml:space="preserve">
     <value>WindowService not initialized</value>

@@ -2,6 +2,8 @@ namespace Pulsar.Plugins.Extensions.Command
 {
     public class CommandPluginSettings
     {
-        public int DefaultDelay { get; set; } = 50;
+        public const int DefaultDelayMs = 50;
+
+        public int DefaultDelay { get; set; } = DefaultDelayMs;
     }
 }

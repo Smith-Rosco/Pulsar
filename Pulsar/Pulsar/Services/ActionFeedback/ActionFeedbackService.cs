@@ -50,11 +50,6 @@ namespace Pulsar.Services.ActionFeedback
                 return CreateCommandFailure(action, result.Message);
             }
 
-            if (string.Equals(pluginId, "com.pulsar.pki", StringComparison.OrdinalIgnoreCase))
-            {
-                return CreatePkiFailure(result.Message);
-            }
-
             if (string.Equals(pluginId, "com.pulsar.bookmarklet", StringComparison.OrdinalIgnoreCase))
             {
                 return CreateBookmarkletFailure(result.Message);
@@ -116,6 +111,41 @@ namespace Pulsar.Services.ActionFeedback
 
         private ActionFeedback? CreateFromErrorCode(string pluginId, PluginErrorCode errorCode)
         {
+            // Pki keeps its credential-specific feedback kinds, now keyed off the
+            // stable ErrorCode produced by PkiPlugin's stage mapping instead of
+            // matching on (bilingual) message needles.
+            if (string.Equals(pluginId, "com.pulsar.pki", StringComparison.OrdinalIgnoreCase))
+            {
+                switch (errorCode)
+                {
+                    case PluginErrorCode.MissingRequiredParameter:
+                    case PluginErrorCode.NotFound:
+                    case PluginErrorCode.InvalidConfiguration:
+                        return new ActionFeedback(
+                            ActionFeedbackKind.ConfigurationError,
+                            _loc["Feedback.FixCredentialSlot"],
+                            _loc["Feedback.FixCredentialSlotBody"],
+                            _loc["Feedback.FixCredentialSlotHelp"],
+                            PulsarNotificationIcon.Warning);
+
+                    case PluginErrorCode.ExecutionFailed:
+                        return new ActionFeedback(
+                            ActionFeedbackKind.RecoverableFailure,
+                            _loc["Feedback.CredentialFillFailed"],
+                            _loc["Feedback.CredentialFillFailedBody"],
+                            _loc["Feedback.CredentialFillFailedHelp"],
+                            PulsarNotificationIcon.Error);
+
+                    default:
+                        return new ActionFeedback(
+                            ActionFeedbackKind.RecoverableFailure,
+                            _loc["Feedback.CredentialFillFailed2"],
+                            _loc["Feedback.CredentialFillFailed2Body"],
+                            _loc["Feedback.CredentialFillFailed2Help"],
+                            PulsarNotificationIcon.Error);
+                }
+            }
+
             switch (errorCode)
             {
                 case PluginErrorCode.TemporaryUnavailable:
@@ -219,36 +249,6 @@ namespace Pulsar.Services.ActionFeedback
                 _loc["Feedback.OpenFailed"],
                 _loc["Feedback.OpenFailedBody"],
                 _loc["Feedback.OpenFailedHelp"],
-                PulsarNotificationIcon.Error);
-        }
-
-        private ActionFeedback CreatePkiFailure(string? message)
-        {
-            if (ContainsAny(message, "Missing required parameter: secretId", "Secret not found", "Secret data is empty", "Decryption failed"))
-            {
-                return new ActionFeedback(
-                    ActionFeedbackKind.ConfigurationError,
-                    _loc["Feedback.FixCredentialSlot"],
-                    _loc["Feedback.FixCredentialSlotBody"],
-                    _loc["Feedback.FixCredentialSlotHelp"],
-                    PulsarNotificationIcon.Warning);
-            }
-
-            if (ContainsAny(message, "restore focus", "text entry", "key entry", "injection failed", "hide launcher"))
-            {
-                return new ActionFeedback(
-                    ActionFeedbackKind.RecoverableFailure,
-                    _loc["Feedback.CredentialFillFailed"],
-                    _loc["Feedback.CredentialFillFailedBody"],
-                    _loc["Feedback.CredentialFillFailedHelp"],
-                    PulsarNotificationIcon.Error);
-            }
-
-            return new ActionFeedback(
-                ActionFeedbackKind.RecoverableFailure,
-                _loc["Feedback.CredentialFillFailed2"],
-                _loc["Feedback.CredentialFillFailed2Body"],
-                _loc["Feedback.CredentialFillFailed2Help"],
                 PulsarNotificationIcon.Error);
         }
 

@@ -17,18 +17,24 @@ namespace Pulsar.Plugins.Extensions.Command
         private readonly CommandPluginSettings _settings = new();
         private readonly IKeySender _keySender;
         private readonly IProcessLauncher _processLauncher;
-        private readonly ILocalizationService _loc;
         private readonly IWindowShellService _windowService;
         private readonly IFocusManager _focusManager;
 
+        private readonly IReadOnlyDictionary<string, PluginActionHandler> _actionHandlers;
+
         public CommandPlugin(ILogger<CommandPlugin> logger, IKeySender keySender, IProcessLauncher processLauncher, ILocalizationService loc, IWindowShellService windowService, IFocusManager focusManager)
-            : base(logger)
+            : base(logger, loc)
         {
             _keySender = keySender;
             _processLauncher = processLauncher;
-            _loc = loc;
             _windowService = windowService;
             _focusManager = focusManager;
+
+            _actionHandlers = new Dictionary<string, PluginActionHandler>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["run"] = RunCommandAsync,
+                ["sendkeys"] = SendKeysAsync
+            };
         }
 
         #region Plugin Metadata
@@ -65,7 +71,7 @@ namespace Pulsar.Plugins.Extensions.Command
                     Key = "defaultDelay",
                     Label = "Default Delay",
                     Type = PluginSettingType.Integer,
-                    DefaultValue = 50,
+                    DefaultValue = CommandPluginSettings.DefaultDelayMs,
                     Description = "Default delay in milliseconds before sending keys (0-10000)",
                     MinValue = 0,
                     MaxValue = 10000
@@ -83,18 +89,13 @@ namespace Pulsar.Plugins.Extensions.Command
 
         #region Plugin Execution Logic
 
-        public override async Task<PluginResult> ExecuteAsync(
+        public override Task<PluginResult> ExecuteAsync(
             string action,
             IReadOnlyDictionary<string, string> args,
             PulsarContext context,
             CancellationToken cancellationToken = default)
         {
-            return action.ToLowerInvariant() switch
-            {
-                "run" => await RunCommandAsync(args, context, cancellationToken),
-                "sendkeys" => await SendKeysAsync(args, context, cancellationToken),
-                _ => UnknownActionError(action, "run", "sendkeys")
-            };
+            return DispatchAsync(action, args, context, cancellationToken, _actionHandlers);
         }
 
         private Task<PluginResult> RunCommandAsync(
@@ -126,12 +127,12 @@ namespace Pulsar.Plugins.Extensions.Command
 
                 _processLauncher.Launch(startInfo);
                 Logger.LogInformation("Command executed successfully: {Path}", path);
-                return Task.FromResult(PluginResult.Ok(string.Format(_loc["Plugin.Command.Success.Executed"], path)));
+                return Task.FromResult(PluginResult.Ok(string.Format(Loc["Plugin.Command.Success.Executed"], path)));
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Command execution failed: {Path}", path);
-                return Task.FromResult(PluginResult.Error(string.Format(_loc["Plugin.Command.Error.ExecutionFailed"], ex.Message), PluginErrorSeverity.Recoverable, PluginErrorCode.ExecutionFailed));
+                return Task.FromResult(PluginResult.Error(string.Format(Loc["Plugin.Command.Error.ExecutionFailed"], ex.Message), PluginErrorSeverity.Recoverable, PluginErrorCode.ExecutionFailed));
             }
         }
 
@@ -173,17 +174,17 @@ namespace Pulsar.Plugins.Extensions.Command
                 await _keySender.ExecuteAsync(instructions, cancellationToken);
 
                 Logger.LogInformation("Keys sent successfully");
-                return PluginResult.Ok(_loc["Plugin.Command.Success.KeysSent"]);
+                return PluginResult.Ok(Loc["Plugin.Command.Success.KeysSent"]);
             }
             catch (OperationCanceledException)
             {
                 Logger.LogInformation("SendKeys cancelled");
-                return PluginResult.Error(_loc["Plugin.Command.Error.Cancelled"], PluginErrorSeverity.Recoverable, PluginErrorCode.UserCancelled);
+                return PluginResult.Error(Loc["Plugin.Command.Error.Cancelled"], PluginErrorSeverity.Recoverable, PluginErrorCode.UserCancelled);
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "SendKeys failed");
-                return PluginResult.Error(string.Format(_loc["Plugin.Command.Error.SendKeysFailed"], ex.Message));
+                return PluginResult.Error(string.Format(Loc["Plugin.Command.Error.SendKeysFailed"], ex.Message), PluginErrorSeverity.Recoverable, PluginErrorCode.ExecutionFailed);
             }
         }
 

@@ -9,12 +9,8 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Pulsar.Core;
 using Pulsar.Core.Focus;
-using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin;
 using Pulsar.Models;
-using Pulsar.Plugins.Core.Pki.Contracts;
-using Pulsar.Plugins.Core.Pki.Services;
-using Pulsar.Plugins.Core.Pki.Services.Input;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Serilog;
@@ -37,6 +33,9 @@ namespace Pulsar.Simulator
 
             [Option('c', "context", Required = false, HelpText = "Path to a JSON file containing mock process info")]
             public string ContextFile { get; set; } = string.Empty;
+
+            [Option('l', "live", Required = false, HelpText = "Execute with real side effects (key injection, process launch). Off by default: dry-run logs the intended action instead.")]
+            public bool Live { get; set; }
         }
 
         static async Task<int> Main(string[] args)
@@ -90,20 +89,11 @@ namespace Pulsar.Simulator
                 .ReturnsAsync(new FocusActivationResult { Success = true, VerificationPassed = true });
             services.AddSingleton(mockFocusManager.Object);
 
-            services.AddSingleton<ILocalizationService, LocalizationService>();
-            services.AddTransient<IKeySender, Pulsar.Plugins.Extensions.Command.KeySender>();
-            services.AddTransient<IProcessLauncher, Pulsar.Plugins.Extensions.Command.ProcessLauncher>();
-
-            services.AddSingleton<ISecretProtector, CredentialsManager>();
-            services.AddSingleton<IPkiSecretStore, SecretRepository>();
-            services.AddSingleton<IPkiSecretMetadataResolver, PkiSecretMetadataResolver>();
-            services.AddSingleton<IInjectionExecutor, SendKeysInjectionExecutor>();
-            services.AddSingleton<IPkiExecutionService, PkiExecutionService>();
-            services.AddSingleton<ISendKeysWriter, WindowsSendKeysWriter>();
-
-            // Plugin runtime
+            // Plugin foundation: localization, PKI stack, side-effect adapters, runtime.
+            // Single composition root shared with the WPF app; dry-run swaps every
+            // side-effecting adapter for a logging no-op.
             var pluginDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Plugins");
-            services.AddPluginRuntime(pluginDir);
+            services.AddPluginFoundation(pluginDir, dryRun: !opts.Live);
 
             var serviceProvider = services.BuildServiceProvider();
 
@@ -140,7 +130,8 @@ namespace Pulsar.Simulator
                 Success = result.Success,
                 Message = result.Message,
                 Cue = result.Cue.ToString(),
-                Severity = result.Severity.ToString()
+                Severity = result.Severity.ToString(),
+                ErrorCode = result.ErrorCode.ToString()
             }, new JsonSerializerOptions { WriteIndented = true });
 
             Console.WriteLine("\n--- SIMULATION RESULT ---");

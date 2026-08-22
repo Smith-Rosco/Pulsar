@@ -167,7 +167,7 @@ namespace Pulsar.Plugins.Extensions.Command
                                 Example = "100",
                                 InputHint = "Milliseconds.",
                                 ValidationHint = "Leave empty to use the default 50 ms delay.",
-                                DefaultValue = 50,
+                                DefaultValue = CommandPluginSettings.DefaultDelayMs,
                                 Validators = new List<ValidationRule> { new RangeValidator(0, 10000) }
                             }
                         }

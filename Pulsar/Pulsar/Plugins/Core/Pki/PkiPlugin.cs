@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Plugins.Core.Pki.Contracts;
@@ -22,13 +23,26 @@ namespace Pulsar.Plugins.Core.Pki
     {
         private readonly IPkiExecutionService _executionService;
         private readonly PkiPluginSettings _settings = new();
+        private readonly IReadOnlyDictionary<string, PluginActionHandler> _actionHandlers;
+
+        private static readonly IReadOnlyDictionary<string, string> ActionAliases =
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["inject"] = "fill"
+            };
 
         public PkiPlugin(
             ILogger<PkiPlugin> logger,
+            ILocalizationService loc,
             IPkiExecutionService executionService)
-            : base(logger)
+            : base(logger, loc)
         {
             _executionService = executionService;
+
+            _actionHandlers = new Dictionary<string, PluginActionHandler>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["fill"] = FillCredentialsAsync
+            };
         }
 
         public override string Id => "com.pulsar.pki";
@@ -48,7 +62,7 @@ namespace Pulsar.Plugins.Core.Pki
             "Plugins",
             "PkiPlugin.md");
 
-        public override async Task<PluginResult> ExecuteAsync(
+        public override Task<PluginResult> ExecuteAsync(
             string action,
             IReadOnlyDictionary<string, string> args,
             PulsarContext context,
@@ -66,17 +80,13 @@ namespace Pulsar.Plugins.Core.Pki
                 enrichedArgs["injectionDelay"] = _settings.InjectionDelay.ToString();
             }
 
-            return action.ToLowerInvariant() switch
-            {
-                "fill" => await FillCredentialsAsync(enrichedArgs, context),
-                "inject" => await FillCredentialsAsync(enrichedArgs, context),
-                _ => UnknownActionError(action, "fill", "inject")
-            };
+            return DispatchAsync(action, enrichedArgs, context, cancellationToken, _actionHandlers, ActionAliases);
         }
 
         private async Task<PluginResult> FillCredentialsAsync(
             IReadOnlyDictionary<string, string> args,
-            PulsarContext context)
+            PulsarContext context,
+            CancellationToken cancellationToken)
         {
             PkiExecutionResult result = await _executionService.ExecuteAsync(args, context);
 
@@ -90,7 +100,18 @@ namespace Pulsar.Plugins.Core.Pki
                 result.Stage,
                 result.Message);
 
-            return PluginResult.Error(result.Message);
+            return PluginResult.Error(result.Message, PluginErrorSeverity.Recoverable, MapStageToErrorCode(result.Stage));
+        }
+
+        private static PluginErrorCode MapStageToErrorCode(PkiExecutionStage stage)
+        {
+            return stage switch
+            {
+                PkiExecutionStage.Validation => PluginErrorCode.MissingRequiredParameter,
+                PkiExecutionStage.SecretLookup => PluginErrorCode.NotFound,
+                PkiExecutionStage.Decryption => PluginErrorCode.InvalidConfiguration,
+                _ => PluginErrorCode.ExecutionFailed
+            };
         }
 
         public PluginMetadata GetMetadata()

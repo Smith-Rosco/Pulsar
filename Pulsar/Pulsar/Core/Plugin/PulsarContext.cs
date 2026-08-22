@@ -32,8 +32,6 @@ namespace Pulsar.Core.Plugin
         public IReadOnlyDictionary<string, object>? SessionData { get; init; }
 
         // === 延迟加载任务 ===
-        private readonly Lazy<Task<IReadOnlyList<ProcessWindowInfo>>> _windowsLazy;
-        private readonly Lazy<Task<string?>> _clipboardLazy;
         private readonly Lazy<Task<string>> _targetExePathLazy;
         private string? _resolvedExePath;
 
@@ -42,9 +40,7 @@ namespace Pulsar.Core.Plugin
             IntPtr hwnd, 
             string processName,
             int pid,
-            Func<Task<string>> exePathFactory,
-            Func<Task<IReadOnlyList<ProcessWindowInfo>>> windowsFactory,
-            Func<Task<string?>> clipboardFactory)
+            Func<Task<string>> exePathFactory)
         {
             TargetWindowHandle = hwnd;
             TargetProcessName = processName;
@@ -55,30 +51,10 @@ namespace Pulsar.Core.Plugin
                 _resolvedExePath = await exePathFactory();
                 return _resolvedExePath;
             }, LazyThreadSafetyMode.ExecutionAndPublication);
-            _windowsLazy = new Lazy<Task<IReadOnlyList<ProcessWindowInfo>>>(windowsFactory);
-            _clipboardLazy = new Lazy<Task<string?>>(clipboardFactory);
         }
 
         // === 异步访问接口 ===
         
-        /// <summary>
-        /// 获取目标进程的所有窗口（延迟加载）
-        /// 需要权限: ReadProcessWindows
-        /// </summary>
-        public Task<IReadOnlyList<ProcessWindowInfo>> GetTargetProcessWindowsAsync()
-        {
-            return _windowsLazy.Value;
-        }
-
-        /// <summary>
-        /// 获取剪贴板文本（延迟加载）
-        /// 需要权限: ReadClipboard
-        /// </summary>
-        public Task<string?> GetClipboardTextAsync()
-        {
-            return _clipboardLazy.Value;
-        }
-
         public Task<string> GetTargetExePathAsync()
         {
             return _targetExePathLazy.Value;
@@ -140,35 +116,7 @@ namespace Pulsar.Core.Plugin
                 }
             });
             
-            // 1. 窗口列表工厂
-            var windowsFactory = new Func<Task<IReadOnlyList<ProcessWindowInfo>>>(async () => 
-            {
-                if (pid <= 0) return new List<ProcessWindowInfo>();
-                return await windowService.GetProcessWindowsAsync(pid);
-            });
-
-            // 2. 剪贴板工厂 (需调度到 UI 线程)
-            var clipboardFactory = new Func<Task<string?>>(async () =>
-            {
-                try 
-                {
-                    // 使用 Application.Current.Dispatcher 确保在 UI 线程访问剪贴板
-                    if (System.Windows.Application.Current == null) return null;
-                    
-                    return await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => 
-                    {
-                        try { return System.Windows.Clipboard.GetText(); }
-                        catch { return null; }
-                    });
-                }
-                catch (Exception ex)
-                {
-                    logger?.LogWarning(ex, "[PulsarContext] Failed to get clipboard");
-                    return null;
-                }
-            });
-            
-            var context = new PulsarContext(hwnd, processName, pid, exePathFactory, windowsFactory, clipboardFactory);
+            var context = new PulsarContext(hwnd, processName, pid, exePathFactory);
             return context;
         }
     }

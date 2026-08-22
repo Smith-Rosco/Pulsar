@@ -4034,6 +4034,22 @@ Pulsar 会在你的浏览器中打开一个网页——这就是命令模式：�
     xml:space="preserve">
     <value>δ֪������{0}</value>
   </data>
+  <!-- ==================== Common Plugin Errors ==================== -->
+  <data
+    name="Plugin.Common.MissingRequiredParameter"
+    xml:space="preserve">
+    <value>缺少必要参数: {0}</value>
+  </data>
+  <data
+    name="Plugin.Common.UnknownAction"
+    xml:space="preserve">
+    <value>未知操作: {0}</value>
+  </data>
+  <data
+    name="Plugin.Common.UnknownActionSupported"
+    xml:space="preserve">
+    <value>未知操作: {0}。支持的操作: {1}</value>
+  </data>
   <!-- ==================== WinSwitcher Plugin ==================== -->
   <!-- ==================== SystemCommand Plugin ==================== -->
   <!-- ==================== VbaRunner Plugin ==================== -->

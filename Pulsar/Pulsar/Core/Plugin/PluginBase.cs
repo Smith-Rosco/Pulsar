@@ -2,12 +2,22 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Pulsar.Core.Localization;
 
 namespace Pulsar.Core.Plugin
 {
+    /// <summary>
+    /// 一个插件 Action 的处理函数。签名与 <see cref="PluginBase{T}.ExecuteAsync"/> 对齐，
+    /// 只是省去了 action 名——action 名由 handler map 的键承担。
+    /// </summary>
+    public delegate Task<PluginResult> PluginActionHandler(
+        IReadOnlyDictionary<string, string> args,
+        PulsarContext context,
+        CancellationToken cancellationToken);
     /// <summary>
     /// 插件抽象基类 - 提供通用功能和模板方法
     /// 
@@ -45,12 +55,19 @@ namespace Pulsar.Core.Plugin
         protected ILogger<T> Logger { get; }
 
         /// <summary>
-        /// 构造函数 - 自动注入日志记录器
+        /// 本地化服务。所有用户可见文本（包括错误消息）必须经它解析。
+        /// </summary>
+        protected ILocalizationService Loc { get; }
+
+        /// <summary>
+        /// 构造函数 - 自动注入日志记录器与本地化服务
         /// </summary>
         /// <param name="logger">日志记录器 (由 DI 容器注入)</param>
-        protected PluginBase(ILogger<T> logger)
+        /// <param name="localizationService">本地化服务 (由 DI 容器注入)</param>
+        protected PluginBase(ILogger<T> logger, ILocalizationService localizationService)
         {
             Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            Loc = localizationService ?? throw new ArgumentNullException(nameof(localizationService));
         }
 
         #region IPulsarPlugin 必需属性
@@ -191,6 +208,40 @@ namespace Pulsar.Core.Plugin
         #region 辅助方法
 
         /// <summary>
+        /// 按 action 名分发到 handler map。action 名统一小写后查找，可携带别名映射
+        /// （例如 PKI 的 "inject" → "fill"）。未命中时返回本地化的 UnknownAction 错误。
+        /// handler map 是运行期"存在哪些 Action"的唯一事实源——插件不再手写 switch。
+        /// </summary>
+        /// <param name="action">动作名（不区分大小写）</param>
+        /// <param name="args">静态参数</param>
+        /// <param name="context">运行时上下文</param>
+        /// <param name="cancellationToken">取消令牌</param>
+        /// <param name="handlers">action 名 → 处理函数的映射</param>
+        /// <param name="aliases">别名 → 规范名映射</param>
+        protected Task<PluginResult> DispatchAsync(
+            string action,
+            IReadOnlyDictionary<string, string> args,
+            PulsarContext context,
+            CancellationToken cancellationToken,
+            IReadOnlyDictionary<string, PluginActionHandler> handlers,
+            IReadOnlyDictionary<string, string>? aliases = null)
+        {
+            var normalized = action.ToLowerInvariant();
+
+            if (aliases != null && aliases.TryGetValue(normalized, out var target))
+            {
+                normalized = target;
+            }
+
+            if (handlers.TryGetValue(normalized, out var handler))
+            {
+                return handler(args, context, cancellationToken);
+            }
+
+            return Task.FromResult(UnknownActionError(normalized, handlers.Keys.ToArray()));
+        }
+
+        /// <summary>
         /// 验证必需参数是否存在
         /// </summary>
         /// <param name="args">参数字典</param>
@@ -214,34 +265,34 @@ namespace Pulsar.Core.Plugin
         }
 
         /// <summary>
-        /// 创建参数缺失错误结果
+        /// 创建参数缺失错误结果（本地化，携带 ErrorCode）
         /// </summary>
         /// <param name="paramName">参数名</param>
         /// <returns>错误结果</returns>
         protected PluginResult MissingParameterError(string paramName)
         {
             return PluginResult.Error(
-                $"Missing required parameter: {paramName}",
-                PluginErrorSeverity.Recoverable
-            );
+                string.Format(Loc["Plugin.Common.MissingRequiredParameter"], paramName),
+                PluginErrorSeverity.Recoverable,
+                PluginErrorCode.MissingRequiredParameter);
         }
 
         /// <summary>
-        /// 创建未知动作错误结果
+        /// 创建未知动作错误结果（本地化，携带 ErrorCode）
         /// </summary>
         /// <param name="action">动作名</param>
         /// <param name="supportedActions">支持的动作列表</param>
         /// <returns>错误结果</returns>
         protected PluginResult UnknownActionError(string action, params string[] supportedActions)
         {
-            var supported = supportedActions.Length > 0
-                ? $" Supported actions: {string.Join(", ", supportedActions)}"
-                : string.Empty;
+            var message = supportedActions.Length > 0
+                ? string.Format(Loc["Plugin.Common.UnknownActionSupported"], action, string.Join(", ", supportedActions))
+                : string.Format(Loc["Plugin.Common.UnknownAction"], action);
 
             return PluginResult.Error(
-                $"Unknown action: {action}.{supported}",
-                PluginErrorSeverity.Recoverable
-            );
+                message,
+                PluginErrorSeverity.Recoverable,
+                PluginErrorCode.UnknownAction);
         }
 
         #endregion

@@ -47,7 +47,7 @@ namespace Pulsar.Tests.Services
             var pkiFeedback = _service.Create(
                 "com.pulsar.pki",
                 "fill",
-                PluginResult.Error("Missing required parameter: secretId"));
+                PluginResult.Error("Missing required parameter: secretId", PluginErrorSeverity.Recoverable, PluginErrorCode.MissingRequiredParameter));
 
             commandFeedback.Kind.Should().Be(ActionFeedbackKind.ConfigurationError);
             pkiFeedback.Kind.Should().Be(ActionFeedbackKind.ConfigurationError);
@@ -73,7 +73,10 @@ namespace Pulsar.Tests.Services
         {
             var rawMessage = "Secret not found: 01234567-89ab-cdef-0123-456789abcdef";
 
-            var feedback = _service.Create("com.pulsar.pki", "fill", PluginResult.Error(rawMessage));
+            var feedback = _service.Create(
+                "com.pulsar.pki",
+                "fill",
+                PluginResult.Error(rawMessage, PluginErrorSeverity.Recoverable, PluginErrorCode.NotFound));
 
             feedback.Kind.Should().Be(ActionFeedbackKind.ConfigurationError);
             feedback.Message.Should().NotContain("01234567-89ab-cdef-0123-456789abcdef");

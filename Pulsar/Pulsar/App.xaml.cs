@@ -101,7 +101,6 @@ namespace Pulsar
             // 0. Logging Services
             serviceCollection.AddLogging(loggingBuilder => loggingBuilder.AddSerilog(dispose: true));
             serviceCollection.AddSingleton(levelSwitch);
-            serviceCollection.AddSingleton<ILocalizationService, LocalizationService>();
             serviceCollection.AddSingleton<ILoggingConfigService, LoggingConfigService>();
             serviceCollection.AddSingleton<IBackgroundWorkScheduler, BackgroundWorkScheduler>();
 
@@ -170,7 +169,7 @@ namespace Pulsar
             serviceCollection.AddSingleton<Core.Plugin.Runtime.ICorePluginFailureHandler, AppShutdownCorePluginFailureHandler>();
             serviceCollection.AddSingleton<Core.Plugin.IPluginPermissionService, Core.Plugin.PluginPermissionService>();
             serviceCollection.AddSingleton<Core.Plugin.IPluginPackageIntegrityVerifier, PluginPackageIntegrityService>();
-            serviceCollection.AddPluginRuntime(externalPluginDirectory);
+            serviceCollection.AddPluginFoundation(externalPluginDirectory);
             
             // [New] Plugin Monitoring & Analytics Services
             serviceCollection.AddSingleton<IPluginUsageTracker, PluginUsageTracker>();
@@ -186,20 +185,6 @@ namespace Pulsar
             serviceCollection.AddSingleton<IModifierStateTracker>(sp => sp.GetRequiredService<GlobalKeyboardHook>());
             serviceCollection.AddSingleton<IFocusManager, Services.FocusManager>();
             serviceCollection.AddSingleton<IFocusHistory>(sp => (IFocusHistory)sp.GetRequiredService<IFocusManager>());
-
-            // 4. PKI Service
-            serviceCollection.AddSingleton<ISecretProtector, CredentialsManager>();
-            serviceCollection.AddSingleton<IPkiSecretStore, SecretRepository>();
-            serviceCollection.AddSingleton<IPkiSecretMetadataResolver, PkiSecretMetadataResolver>();
-            serviceCollection.AddSingleton<IInjectionExecutor, SendKeysInjectionExecutor>();
-            serviceCollection.AddSingleton<IPkiExecutionService, PkiExecutionService>();
-
-            // PKI Input Simulators
-            serviceCollection.AddSingleton<Pulsar.Plugins.Core.Pki.Services.Input.ISendKeysWriter, Pulsar.Plugins.Core.Pki.Services.Input.WindowsSendKeysWriter>();
-
-            // Command Plugin Abstractions
-            serviceCollection.AddTransient<Core.Plugin.IKeySender, Plugins.Extensions.Command.KeySender>();
-            serviceCollection.AddTransient<Core.Plugin.IProcessLauncher, Plugins.Extensions.Command.ProcessLauncher>();
 
             // 4. UI Services
             serviceCollection.AddSingleton<IUiDispatcher, WpfUiDispatcher>();
