@@ -53,11 +53,13 @@ jobs:
           # （如本地上传中断留下的草稿），清理后由 CI 接管，避免 CI 被空 draft 阻塞。
           $exists = $false
           try {
-            $info = gh release view "${{ github.ref_name }}" --json isDraft,assets 2>$null | ConvertFrom-Json
+            # 注意：runner 的 pwsh 设 ErrorActionPreference=Stop，原生命令写 stderr 会抛错，
+            # 必须用 2>&1 合并重定向（2>$null 仍可能触发 NativeCommandError）。
+            $info = gh release view "${{ github.ref_name }}" --json isDraft,assets 2>&1 | ConvertFrom-Json
             if ($info -and -not $info.isDraft -and $info.assets.Count -gt 0) {
               $exists = $true
             } elseif ($info) {
-              gh release delete "${{ github.ref_name }}" --yes 2>$null | Out-Null
+              gh release delete "${{ github.ref_name }}" --yes 2>&1 | Out-Null
               Write-Host "已清理半成品 release（draft 或无资产），由 CI 接管"
             }
           } catch { }
