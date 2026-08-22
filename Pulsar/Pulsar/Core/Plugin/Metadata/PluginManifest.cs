@@ -100,6 +100,21 @@ namespace Pulsar.Core.Plugin.Metadata
         public List<string> Files { get; set; } = new();
 
         /// <summary>
+        /// Optional publisher-controlled SHA-256 hashes for package files.
+        /// Keys are relative paths using '/' separators. When present, every
+        /// listed file is verified before installation.
+        /// </summary>
+        [JsonPropertyName("fileHashes")]
+        public Dictionary<string, string> FileHashes { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Optional publisher identifier. Informational unless a trusted public
+        /// key with the same publisher ID is installed in the host trust store.
+        /// </summary>
+        [JsonPropertyName("publisher")]
+        public string? Publisher { get; set; }
+
+        /// <summary>
         /// 插件分类标签
         /// </summary>
         [JsonPropertyName("tags")]

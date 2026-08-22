@@ -52,8 +52,8 @@ dotnet test Pulsar/Pulsar.Tests/Pulsar.Tests.csproj
 # Headless plugin simulation
 dotnet run --project Pulsar/Pulsar.Simulator -- --plugin "com.pulsar.winswitcher" --action "activate" --args "{\"app\":\"chrome\"}"
 
-# Publish self-contained release
-dotnet publish Pulsar/Pulsar/Pulsar.csproj -c Release -o publish -p:RuntimeIdentifier=win-x64 -p:SelfContained=true -p:PublishSingleFile=true -p:PublishReadyToRun=true
+# Publish self-contained release (see Docs/ops/BUILD_AND_RUN.md for the full Artifacts workflow)
+dotnet publish Pulsar/Pulsar/Pulsar.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:PublishDir="Artifacts\publish\v<Version>"
 ```
 
 ## Built-in Plugins

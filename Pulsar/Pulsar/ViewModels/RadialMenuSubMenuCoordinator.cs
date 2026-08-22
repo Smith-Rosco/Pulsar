@@ -17,13 +17,13 @@ namespace Pulsar.ViewModels
         private readonly IPluginUsageTracker? _usageTracker;
         private readonly IPluginHealthMonitor? _healthMonitor;
         private readonly IWindowService _windowService;
-        private readonly ILogger<RadialMenuViewModel>? _logger;
+        private readonly ILogger? _logger;
 
         public RadialMenuSubMenuCoordinator(
             IWindowService windowService,
             IPluginUsageTracker? usageTracker,
             IPluginHealthMonitor? healthMonitor,
-            ILogger<RadialMenuViewModel>? logger)
+            ILogger? logger)
         {
             _windowService = windowService;
             _usageTracker = usageTracker;

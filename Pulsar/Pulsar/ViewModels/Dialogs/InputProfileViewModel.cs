@@ -16,7 +16,7 @@ namespace Pulsar.ViewModels.Dialogs
 {
     public partial class InputProfileViewModel : ObservableObject, IDialogViewModel
     {
-        private readonly IWindowService _windowService;
+        private readonly IWindowDiscoveryService _windowService;
         private readonly IDialogService _dialogService;
         private readonly IFuzzySearchService<IconItem> _searchService;
         private readonly HashSet<string> _existingProfiles;
@@ -47,7 +47,7 @@ namespace Pulsar.ViewModels.Dialogs
 
         public Action<DialogResult>? RequestClose { get; set; }
 
-        public InputProfileViewModel(IWindowService windowService, IDialogService dialogService, IFuzzySearchService<IconItem> searchService, ILocalizationService localizationService, IEnumerable<string> existingProfiles)
+        public InputProfileViewModel(IWindowDiscoveryService windowService, IDialogService dialogService, IFuzzySearchService<IconItem> searchService, ILocalizationService localizationService, IEnumerable<string> existingProfiles)
         {
             _windowService = windowService;
             _dialogService = dialogService;

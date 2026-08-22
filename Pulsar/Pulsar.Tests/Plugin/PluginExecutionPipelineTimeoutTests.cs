@@ -26,13 +26,14 @@ namespace Pulsar.Tests.Plugin
                 Mock.Of<ITrayService>());
 
             var runtimeState = new PluginRuntimeStateStore();
-            var pipeline = new PluginExecutionPipeline(runtimeState, breakerPolicy);
+            var pipeline = new PluginExecutionPipeline(
+                runtimeState,
+                breakerPolicy,
+                executionTimeout: TimeSpan.FromMilliseconds(200));
 
             var plugin = new HungTestPlugin();
             var descriptor = CreateDescriptor(plugin, canDisable: true, tier: PluginTier.Extension);
             runtimeState.SetPlugin(plugin, PluginLifecycleState.Enabled);
-
-            using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
 
             var request = new PluginExecutionRequest
             {
@@ -45,7 +46,7 @@ namespace Pulsar.Tests.Plugin
                 CancellationToken = CancellationToken.None
             };
 
-            var outcome = await pipeline.ExecuteAsync(request, cts.Token);
+            var outcome = await pipeline.ExecuteAsync(request);
 
             outcome.Kind.Should().Be(PluginExecutionOutcomeKind.Blocked, "timeout should produce a Blocked outcome");
             outcome.Result.Severity.Should().Be(PluginErrorSeverity.Critical, "timeout severity should be Critical");
@@ -65,14 +66,17 @@ namespace Pulsar.Tests.Plugin
                 Mock.Of<IPluginHealthMonitor>(),
                 Mock.Of<ITrayService>());
 
+            var coreFailureHandler = new RecordingCoreFailureHandler();
             var runtimeState = new PluginRuntimeStateStore();
-            var pipeline = new PluginExecutionPipeline(runtimeState, breakerPolicy);
+            var pipeline = new PluginExecutionPipeline(
+                runtimeState,
+                breakerPolicy,
+                coreFailureHandler: coreFailureHandler,
+                executionTimeout: TimeSpan.FromMilliseconds(200));
 
             var plugin = new HungTestPlugin();
             var descriptor = CreateDescriptor(plugin, canDisable: false, tier: PluginTier.Core);
             runtimeState.SetPlugin(plugin, PluginLifecycleState.Enabled);
-
-            using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
 
             var request = new PluginExecutionRequest
             {
@@ -85,11 +89,13 @@ namespace Pulsar.Tests.Plugin
                 CancellationToken = CancellationToken.None
             };
 
-            var outcome = await pipeline.ExecuteAsync(request, cts.Token);
+            var outcome = await pipeline.ExecuteAsync(request);
 
-            outcome.Kind.Should().Be(PluginExecutionOutcomeKind.Blocked);
+            outcome.Kind.Should().Be(PluginExecutionOutcomeKind.Exception);
+            coreFailureHandler.HandledException.Should().BeOfType<TimeoutException>("core timeout must flow through the fatal-failure policy");
+
             var snapshot = runtimeState.GetSnapshot(plugin.Id);
-            snapshot.State.Should().Be(PluginLifecycleState.Faulted, "core plugin should still transition to Faulted on timeout");
+            snapshot.State.Should().Be(PluginLifecycleState.Faulted, "core plugin should transition to Faulted on timeout");
 
             var availability = breakerPolicy.CheckAvailability(descriptor, plugin.Id);
             availability.Allowed.Should().BeTrue("breaker should NOT open for core plugins");
@@ -127,6 +133,19 @@ namespace Pulsar.Tests.Plugin
             outcome.Result.Success.Should().BeTrue();
             var snapshot = runtimeState.GetSnapshot(plugin.Id);
             snapshot.State.Should().Be(PluginLifecycleState.Enabled, "successful plugins should return to ready state");
+        }
+
+        private sealed class RecordingCoreFailureHandler : ICorePluginFailureHandler
+        {
+            public Exception? HandledException { get; private set; }
+
+            public PluginExecutionOutcome Handle(PluginDescriptor descriptor, Exception exception)
+            {
+                HandledException = exception;
+                return new PluginExecutionOutcome(
+                    PluginResult.Error($"Core plugin failed: {descriptor.Id}", PluginErrorSeverity.Critical, PluginErrorCode.ExecutionFailed),
+                    PluginExecutionOutcomeKind.Exception);
+            }
         }
 
         private sealed class HungTestPlugin : IPulsarPlugin

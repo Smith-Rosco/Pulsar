@@ -27,7 +27,9 @@ This file provides essential context, conventions, and routing for AI agents wor
 
 **Rule**: Never query live window state inside plugins; always use `PulsarContext`.
 
-**Rule**: PulsarContext is fully immutable after construction. Per-execution mutable data (CurrentPluginId, PermissionInterceptor) lives in `PluginExecutionContext` (AsyncLocal scope), not on `PulsarContext`.
+**Rule**: PulsarContext is fully immutable after construction. Per-execution correlation data (PluginId, Action, ExecutionId) lives in `PluginExecutionContext` (stack-scoped AsyncLocal), not on `PulsarContext`.
+
+**Rule**: External plugins are permission-gated. `PluginPermissionService` blocks execution until every manifest permission is present in `PluginProfile.GrantedPermissions`. External descriptors are built from `plugin.manifest.json` without instantiating plugin types; constructors run only after consent.
 
 **Rule**: Respect plugin tier semantics:
 - **Core plugins** (`Plugins/Core/`): Essential, cannot be disabled, crashes are fatal
@@ -156,6 +158,30 @@ This file provides essential context, conventions, and routing for AI agents wor
 
 ---
 
+### Stale Edit-Session Revision (Settings Save Fails)
+
+**Symptom**: Saving settings reports "保存更改失败，请重试". The second consecutive save always fails; background writers (plugin settings, blacklist sync, tutorial) make even the first save fail randomly. Switching tabs "fixes" it (the navigation guard reloads settings into a fresh session).
+
+**Root Cause**: A long-lived `ConfigEditSession` commits against the revision captured at `BeginAsync`. Every successful save (its own or a background writer's) bumps `ConfigService.CurrentRevision`, so the held session's next commit throws `ConfigConcurrencyException`.
+
+**Fix**: `ConfigEditSession.CommitAsync` re-arms its revision after success; on conflict `RebaseAsync` merges untouched regions from the store and `SettingsViewModel` retries. Never commit an unchanged draft (see `PluginSettingsDialogViewModel`).
+
+**Deep Dive**: [Docs/lessons/CONFIG_EDIT_SESSION_STALE_REVISION.md](./Docs/lessons/CONFIG_EDIT_SESSION_STALE_REVISION.md)
+
+---
+
+### Button Text Frozen Black (Pulsar Button Templates)
+
+**Symptom**: Pulsar-styled buttons (Add Slot / Save Slot / dialog footers) show the dark-navy accent background with **black** text, and hover/checked states do not change the text color.
+
+**Root Cause**: The template's text presenter was a `ContentPresenter`; WPF's string→`TextBlock` conversion freezes the foreground as a `ParentTemplate` local value at first layout, so template triggers setting `TextElement.Foreground` on the presenter never reach the rendered text.
+
+**Fix**: Use an explicit `<TextBlock Text="{TemplateBinding Content}"/>` for the text presenter (triggers then set its `Foreground` directly), or set `Foreground` on the control itself for inherited state colors.
+
+**Deep Dive**: [Docs/lessons/WPF_BUTTON_TEMPLATE_FROZEN_FOREGROUND.md](./Docs/lessons/WPF_BUTTON_TEMPLATE_FROZEN_FOREGROUND.md)
+
+---
+
 ### Hidden Scrollbars
 
 **Symptom**: Scrollbars remain visible despite `ScrollViewer.VerticalScrollBarVisibility="Hidden"`.
@@ -177,6 +203,8 @@ This file provides essential context, conventions, and routing for AI agents wor
 | **Add dialog** | [Docs/architecture/DIALOG_SYSTEM.md](./Docs/architecture/DIALOG_SYSTEM.md) - **Always specify DialogSizeConstraints AND register DataTemplate!** |
 | **Modify UI (XAML)** | [Docs/guides/UI_BEST_PRACTICES.md](./Docs/guides/UI_BEST_PRACTICES.md) |
 | **Use reusable components** | [Docs/guides/COMPONENT_LIBRARY.md](./Docs/guides/COMPONENT_LIBRARY.md) |
+| **Radial Menu interaction/state** | `ViewModels/MenuSession.cs` (session state machine), `ViewModels/RadialMenuViewModel.cs` (thin binding projection + event adapter). See [Docs/decisions/008-menu-session-refactor.md](./Docs/decisions/008-menu-session-refactor.md). Strategies depend on `IMenuSession`, never the VM. |
+| **Config persistence/writes** | `Services/ConfigService.cs`, `Services/ConfigEditSession.cs`. `GetSnapshot()` returns a **deep copy** — never mutate it. All writes go through `ConfigEditSession` (revision-guarded). See [Docs/decisions/009-config-snapshot-seam.md](./Docs/decisions/009-config-snapshot-seam.md) and [005-config-single-writer.md](./Docs/decisions/005-config-single-writer.md). |
 | **Understand architecture** | [ARCHITECTURE.md](./ARCHITECTURE.md), [Docs/architecture/](./Docs/architecture/) |
 | **Input injection (PKI)** | [Docs/architecture/INPUT_INJECTION.md](./Docs/architecture/INPUT_INJECTION.md) |
 | **WPF UI issues** | [Docs/lessons/](./Docs/lessons/) |
@@ -217,7 +245,7 @@ This file provides essential context, conventions, and routing for AI agents wor
 - **Dependency Injection**: Constructor injection, register in `App.xaml.cs`
 - **Plugin Runtime DI**: Use `serviceCollection.AddPluginRuntime(pluginDir)` extension in `App.xaml.cs` instead of manual `new`
 - **Plugin Registry Access**: Inject `IPluginRegistry` interface, not concrete `PluginRegistry` class
-- **Plugin Execution Context**: Use `PluginExecutionContext.Current` to access per-execution data (plugin ID, permission interceptor)
+- **Plugin Execution Context**: Use `PluginExecutionContext.Current` to access per-execution correlation data (plugin ID, action, execution ID). Scopes are stack-based and restore the previous scope on Dispose.
 - **Thread Safety**: Plugin runtime dictionaries use `ConcurrentDictionary`; hotkey actions dispatch via `Dispatcher.InvokeAsync()`
 - **MVVM**: Use `[ObservableProperty]` and `[RelayCommand]` from CommunityToolkit
 - **Async/Await**: Use `async Task` for I/O operations. Avoid `async void` except event handlers.
@@ -389,13 +417,18 @@ dotnet restore Pulsar/Pulsar/Pulsar.csproj
 ### Troubleshooting
 - **[Docs/lessons/](./Docs/lessons/)** - Pain archive (WPF pitfalls, known issues)
   - [WPFUI_BUTTON_PRIMARY_BUG.md](./Docs/lessons/WPFUI_BUTTON_PRIMARY_BUG.md)
+  - [WPF_BUTTON_TEMPLATE_FROZEN_FOREGROUND.md](./Docs/lessons/WPF_BUTTON_TEMPLATE_FROZEN_FOREGROUND.md)
+  - [CONFIG_EDIT_SESSION_STALE_REVISION.md](./Docs/lessons/CONFIG_EDIT_SESSION_STALE_REVISION.md)
   - [WPF_THEME_INJECTION_PITFALLS.md](./Docs/lessons/WPF_THEME_INJECTION_PITFALLS.md)
   - [WPF_USERCONTROL_BINDING_BREAKS.md](./Docs/lessons/WPF_USERCONTROL_BINDING_BREAKS.md)
   - [CONTEXTMENU_RESOURCE_INHERITANCE.md](./Docs/lessons/CONTEXTMENU_RESOURCE_INHERITANCE.md)
   - [WPF_SCROLLVIEWER_VISIBILITY.md](./Docs/lessons/WPF_SCROLLVIEWER_VISIBILITY.md)
+  - [ASYNC_SHUTDOWN_DEADLOCK.md](./Docs/lessons/ASYNC_SHUTDOWN_DEADLOCK.md)
   - [WPF_RESOURCES_HYGIENE.md](./Docs/lessons/WPF_RESOURCES_HYGIENE.md)
   - [FOREGROUND_WINDOW_ACTIVATION_RELIABILITY.md](./Docs/lessons/FOREGROUND_WINDOW_ACTIVATION_RELIABILITY.md)
   - [SENDINPUT_FOREGROUND_ACTIVATION.md](./Docs/lessons/SENDINPUT_FOREGROUND_ACTIVATION.md)
+  - [POWERSHELL_5_1_COMPRESS_ARCHIVE_BROKEN.md](./Docs/lessons/POWERSHELL_5_1_COMPRESS_ARCHIVE_BROKEN.md) — Compress-Archive in 5.1 breaks when PS7 pollutes PSModulePath; use pwsh/bsdtar, never PATH GNU tar
+  - [GH_CLI_HASH_PATH_BUG.md](./Docs/lessons/GH_CLI_HASH_PATH_BUG.md) — gh CLI truncates local paths at `#` (URL fragment); upload from a `#`-free temp dir
 
 ### Operations & Decisions
 - **[Docs/decisions/](./Docs/decisions/)** - Architecture Decision Records (ADRs)
@@ -425,5 +458,5 @@ Single-context — `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents
 
 ---
 
-*Last Updated: 2026-06-07*  
-*Version: 2.2.0 (Updated with CommandPlugin refactoring)*
+*Last Updated: 2026-08-18*  
+*Version: 2.3.0 (Added ConfigEditSession stale-revision and button template frozen-foreground lessons)*

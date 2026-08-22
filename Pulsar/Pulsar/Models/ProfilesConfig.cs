@@ -43,6 +43,12 @@ namespace Pulsar.Models
         /// 注意：System.Text.Json 反序列化时 value 可能是 JsonElement
         /// </summary>
         public Dictionary<string, object> Config { get; set; } = new();
+
+        /// <summary>
+        /// Permissions explicitly approved by the user for an external plugin.
+        /// The runtime blocks execution when a manifest permission is missing here.
+        /// </summary>
+        public List<string> GrantedPermissions { get; set; } = new();
     }
 
     /// <summary>
@@ -74,6 +80,58 @@ namespace Pulsar.Models
             [Helpers.HotkeyActionIds.ShowGrid] = new HotkeyConfig { Key = "Q", Modifiers = $"{Helpers.HotkeyModifiers.Control},{Helpers.HotkeyModifiers.Shift}" },
             [Helpers.HotkeyActionIds.ShowSwitcher] = new HotkeyConfig { Key = "Q", Modifiers = Helpers.HotkeyModifiers.Control }
         };
+
+        // [New] Right-Drag Summon Configuration
+        /// <summary>
+        /// Enables summoning the radial menu with a right-click gesture. Each menu
+        /// requires its own modifier held at the right-button down, which lets the
+        /// whole gesture be swallowed before the source application sees any input —
+        /// plain right-click stays completely untouched. Disabled by default.
+        /// </summary>
+        [ObservableProperty]
+        private bool _enableRightDragSummon;
+
+        /// <summary>
+        /// Modifier key that summons the task-switcher menu when held with a
+        /// right-click. Values: "Alt", "Control", "Shift", "Win". Must differ from
+        /// <see cref="RightDragActionModifier"/>.
+        /// </summary>
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(RightDragModifiersConflict))]
+        private string _rightDragSwitcherModifier = "Control";
+
+        /// <summary>
+        /// Modifier key that summons the action menu when held with a right-click.
+        /// Values: "Alt", "Control", "Shift", "Win". Must differ from
+        /// <see cref="RightDragSwitcherModifier"/>.
+        /// </summary>
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(RightDragModifiersConflict))]
+        private string _rightDragActionModifier = "Shift";
+
+        /// <summary>
+        /// Parsed form of <see cref="RightDragSwitcherModifier"/> with a safe fallback.
+        /// </summary>
+        public GestureModifier RightDragSwitcherModifierKey =>
+            Enum.TryParse<GestureModifier>(RightDragSwitcherModifier, ignoreCase: true, out var value)
+                ? value
+                : GestureModifier.Control;
+
+        /// <summary>
+        /// Parsed form of <see cref="RightDragActionModifier"/> with a safe fallback.
+        /// </summary>
+        public GestureModifier RightDragActionModifierKey =>
+            Enum.TryParse<GestureModifier>(RightDragActionModifier, ignoreCase: true, out var value)
+                ? value
+                : GestureModifier.Shift;
+
+        /// <summary>
+        /// True when both modifiers resolve to the same key. Such a configuration
+        /// disables the gesture (a single modifier cannot disambiguate two menus).
+        /// </summary>
+        public bool RightDragModifiersConflict =>
+            !string.IsNullOrWhiteSpace(RightDragSwitcherModifier)
+            && string.Equals(RightDragSwitcherModifier, RightDragActionModifier, StringComparison.OrdinalIgnoreCase);
 
         // [RDP Fix] Input System Configuration
         public InputSettings Input { get; set; } = new();
@@ -389,7 +447,13 @@ namespace Pulsar.Models
         public string Action
         {
             get => _action ?? string.Empty;
-            set => SetProperty(ref _action, value);
+            set
+            {
+                if (SetProperty(ref _action, value))
+                {
+                    SyncActionOptionSelection();
+                }
+            }
         }
 
         // Dictionary itself is not observable. Two-way binding might be tricky.
@@ -596,7 +660,17 @@ namespace Pulsar.Models
             DisposeFields(AdvancedParameters);
             DisposeFields(QuickEditParameters);
 
+            foreach (var option in AvailableActions)
+            {
+                option.PropertyChanged -= OnActionOptionPropertyChanged;
+            }
+
             AvailableActions = new ObservableCollection<SlotActionOption>(availableActions);
+
+            foreach (var option in AvailableActions)
+            {
+                option.PropertyChanged += OnActionOptionPropertyChanged;
+            }
             RequiredParameters = new ObservableCollection<SlotParameterEditorField>(required);
             OptionalParameters = new ObservableCollection<SlotParameterEditorField>(optional);
             AdvancedParameters = new ObservableCollection<SlotParameterEditorField>(advanced);
@@ -635,6 +709,34 @@ namespace Pulsar.Models
             foreach (var field in fields)
             {
                 field.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Action selector options bind IsSelected two-way from the UI (segmented
+        /// buttons / combo). Selecting an option must apply the action to the slot;
+        /// without this the visual selection never reaches <see cref="Action"/>.
+        /// </summary>
+        private void OnActionOptionPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (sender is SlotActionOption option
+                && e.PropertyName == nameof(SlotActionOption.IsSelected)
+                && option.IsSelected
+                && !string.Equals(Action, option.Value, StringComparison.OrdinalIgnoreCase))
+            {
+                Action = option.Value;
+            }
+        }
+
+        private void SyncActionOptionSelection()
+        {
+            foreach (var option in AvailableActions)
+            {
+                bool shouldBeSelected = string.Equals(option.Value, Action, StringComparison.OrdinalIgnoreCase);
+                if (option.IsSelected != shouldBeSelected)
+                {
+                    option.IsSelected = shouldBeSelected;
+                }
             }
         }
 

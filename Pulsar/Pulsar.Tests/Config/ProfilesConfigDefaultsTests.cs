@@ -72,6 +72,50 @@ namespace Pulsar.Tests.Config
         }
 
         [Fact]
+        public void ProfileSettings_RightDragSummon_ShouldBeDisabledByDefault()
+        {
+            // Act
+            var settings = new ProfileSettings();
+
+            // Assert
+            settings.EnableRightDragSummon.Should().BeFalse();
+            settings.RightDragSwitcherModifier.Should().Be("Control");
+            settings.RightDragActionModifier.Should().Be("Shift");
+            settings.RightDragSwitcherModifierKey.Should().Be(GestureModifier.Control);
+            settings.RightDragActionModifierKey.Should().Be(GestureModifier.Shift);
+            settings.RightDragModifiersConflict.Should().BeFalse();
+        }
+
+        [Fact]
+        public void ProfileSettings_RightDragModifiersConflict_ShouldDetectDuplicateModifier()
+        {
+            // Arrange
+            var settings = new ProfileSettings
+            {
+                RightDragSwitcherModifier = "Control",
+                RightDragActionModifier = "control"
+            };
+
+            // Act & Assert
+            settings.RightDragModifiersConflict.Should().BeTrue("comparison must be case-insensitive");
+        }
+
+        [Fact]
+        public void ProfileSettings_RightDragModifierKey_ShouldFallbackOnInvalidValue()
+        {
+            // Arrange
+            var settings = new ProfileSettings
+            {
+                RightDragSwitcherModifier = "NotAKey",
+                RightDragActionModifier = ""
+            };
+
+            // Act & Assert
+            settings.RightDragSwitcherModifierKey.Should().Be(GestureModifier.Control);
+            settings.RightDragActionModifierKey.Should().Be(GestureModifier.Shift);
+        }
+
+        [Fact]
         public void PluginProfile_ShouldBeEnabledByDefault()
         {
             // Act

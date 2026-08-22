@@ -22,7 +22,7 @@ namespace Pulsar.Tests.Tutorial
             loc.Setup(l => l.GetString(It.IsAny<string>())).Returns((string key) => key);
 
             configService ??= Mock.Of<IConfigService>(c =>
-                c.Current == new ProfilesConfig());
+                c.GetSnapshot() == new ProfilesConfig());
 
             var logger = Mock.Of<ILogger<TutorialOrchestrator>>();
             var stepLoaderLogger = Mock.Of<ILogger<TutorialStepLoader>>();
@@ -114,7 +114,7 @@ namespace Pulsar.Tests.Tutorial
                     ["Global"] = new ProcessProfile()
                 }
             };
-            var configService = Mock.Of<IConfigService>(c => c.Current == config);
+            var configService = Mock.Of<IConfigService>(c => c.GetSnapshot() == config);
 
             var orchestrator = CreateOrchestrator(configService);
 
@@ -140,7 +140,7 @@ namespace Pulsar.Tests.Tutorial
                     }
                 }
             };
-            var configService = Mock.Of<IConfigService>(c => c.Current == config);
+            var configService = Mock.Of<IConfigService>(c => c.GetSnapshot() == config);
 
             var orchestrator = CreateOrchestrator(configService);
 

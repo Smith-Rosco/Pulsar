@@ -44,6 +44,17 @@ namespace Pulsar.Models
         public List<string> Tags { get; set; } = new();
 
         /// <summary>
+        /// Permissions requested by the external plugin manifest.
+        /// </summary>
+        public List<string> Permissions { get; set; } = new();
+
+        /// <summary>
+        /// UI convenience flag for external plugins that request permissions.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonIgnore]
+        public bool HasPermissions => Permissions.Count > 0;
+
+        /// <summary>
         /// 依赖项
         /// </summary>
         public List<PluginDependency> Dependencies { get; set; } = new();
@@ -142,6 +153,36 @@ namespace Pulsar.Models
         public override string ToString()
         {
             return $"{PluginId} {VersionConstraint}";
+        }
+    }
+
+    /// <summary>
+    /// Result of inspecting a plugin ZIP before installation.
+    /// </summary>
+    public class PluginPackageInspectionResult
+    {
+        public bool Success { get; set; }
+
+        public Pulsar.Core.Plugin.Metadata.PluginManifest? Manifest { get; set; }
+
+        public string? ErrorMessage { get; set; }
+
+        public static PluginPackageInspectionResult Succeeded(Pulsar.Core.Plugin.Metadata.PluginManifest manifest)
+        {
+            return new PluginPackageInspectionResult
+            {
+                Success = true,
+                Manifest = manifest
+            };
+        }
+
+        public static PluginPackageInspectionResult Failed(string errorMessage)
+        {
+            return new PluginPackageInspectionResult
+            {
+                Success = false,
+                ErrorMessage = errorMessage
+            };
         }
     }
 

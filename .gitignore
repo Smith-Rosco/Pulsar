@@ -12,6 +12,7 @@ export-*.mp4
 # Local OpenCode tooling
 opencode.jsonc
 .opencode/
+session.jsonl
 
 # User-specific files
 *.rsuser
@@ -190,7 +191,7 @@ DocProject/Help/Html2
 DocProject/Help/html
 
 # Click-Once directory
-publish/
+/Artifacts/publish/
 
 # Publish Web Output
 *.[Pp]ublish.xml

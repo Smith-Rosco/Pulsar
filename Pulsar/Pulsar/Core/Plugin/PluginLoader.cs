@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Services.Interfaces;
@@ -18,6 +19,7 @@ namespace Pulsar.Core.Plugin
         private readonly IServiceProvider _services;
         private readonly ILogger<PluginLoader>? _logger;
         private readonly IPluginMetadataRegistry? _metadataRegistry;
+        private readonly IPluginPackageIntegrityVerifier? _packageIntegrityVerifier;
         private readonly PluginFactory _pluginFactory;
         private readonly object _discoveryLock = new();
         private DiscoveryCache? _fullDiscoveryCache;
@@ -29,6 +31,7 @@ namespace Pulsar.Core.Plugin
             _pluginDirectory = pluginDir;
             _logger = services.GetService(typeof(ILogger<PluginLoader>)) as ILogger<PluginLoader>;
             _metadataRegistry = services.GetService(typeof(IPluginMetadataRegistry)) as IPluginMetadataRegistry;
+            _packageIntegrityVerifier = services.GetService(typeof(IPluginPackageIntegrityVerifier)) as IPluginPackageIntegrityVerifier;
             _pluginFactory = new PluginFactory(services);
         }
 
@@ -67,6 +70,14 @@ namespace Pulsar.Core.Plugin
         {
             var plugin = _pluginFactory.CreatePlugin(descriptor.ImplementationType);
             plugin.Initialize(_services);
+
+            // External descriptors intentionally defer metadata discovery until
+            // activation (constructors must not run before permission consent).
+            if (descriptor.IsExternal && plugin is IPluginMetadataProvider metadataProvider)
+            {
+                _metadataRegistry?.Register(metadataProvider.GetMetadata());
+            }
+
             _logger?.LogInformation("[PluginLoader] Activated plugin: {PluginId} ({DisplayName})", plugin.Id, plugin.DisplayName);
             return plugin;
         }
@@ -131,6 +142,33 @@ namespace Pulsar.Core.Plugin
                 {
                     try
                     {
+                        var manifest = TryReadExternalManifest(folder);
+                        if (manifest == null)
+                        {
+                            _logger?.LogWarning("[PluginLoader] External plugin folder has no valid manifest and was skipped: {Folder}", folder);
+                            continue;
+                        }
+
+                        if (!IsManifestVersionCompatible(manifest, out var versionReason))
+                        {
+                            _logger?.LogWarning("[PluginLoader] Skipped external plugin {PluginId} from {Folder}: {Reason}", manifest.Id, folder, versionReason);
+                            continue;
+                        }
+
+                        if (_packageIntegrityVerifier != null)
+                        {
+                            var integrity = _packageIntegrityVerifier.VerifyInstalledAsync(folder).GetAwaiter().GetResult();
+                            if (!integrity.IsValid)
+                            {
+                                _logger?.LogWarning(
+                                    "[PluginLoader] Skipped external plugin {PluginId} from {Folder}: {IntegrityError}",
+                                    manifest.Id,
+                                    folder,
+                                    integrity.Error ?? "integrity verification failed");
+                                continue;
+                            }
+                        }
+
                         var dllFiles = Directory.GetFiles(folder, "*.dll");
                         if (dllFiles.Length == 0)
                         {
@@ -157,7 +195,12 @@ namespace Pulsar.Core.Plugin
                                 {
                                     try
                                     {
-                                        var descriptor = CreateDescriptor(pluginType);
+                                        if (!IsManifestEntryPointMatch(manifest, pluginType))
+                                        {
+                                            continue;
+                                        }
+
+                                        var descriptor = CreateExternalDescriptor(pluginType, manifest);
                                         if (!ShouldInclude(descriptor, includeCore, includeExtensions))
                                         {
                                             continue;
@@ -201,7 +244,159 @@ namespace Pulsar.Core.Plugin
             }
         }
 
-        private PluginDescriptor CreateDescriptor(Type pluginType)
+        internal static PluginManifest? TryReadExternalManifest(string folder)
+        {
+            var manifestPath = Path.Combine(folder, "plugin.manifest.json");
+            if (!File.Exists(manifestPath))
+            {
+                manifestPath = Path.Combine(folder, "manifest.json");
+            }
+
+            if (!File.Exists(manifestPath))
+            {
+                return null;
+            }
+
+            try
+            {
+                var json = File.ReadAllText(manifestPath);
+                var manifest = JsonSerializer.Deserialize<PluginManifest>(
+                    json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                return string.IsNullOrWhiteSpace(manifest?.Id) ? null : manifest;
+            }
+            catch (Exception ex) when (ex is IOException or JsonException or NotSupportedException)
+            {
+                return null;
+            }
+        }
+
+        internal static bool IsManifestVersionCompatible(PluginManifest manifest, out string reason)
+        {
+            reason = string.Empty;
+
+            var hostVersion = Assembly.GetExecutingAssembly().GetName().Version ?? new Version(1, 0, 0);
+            if (!TryParseManifestVersion(manifest.MinPulsarVersion, out var minVersion))
+            {
+                reason = $"unsupported minPulsarVersion '{manifest.MinPulsarVersion}'.";
+                return false;
+            }
+
+            if (hostVersion < minVersion)
+            {
+                reason = $"requires Pulsar >= {manifest.MinPulsarVersion}, host is {hostVersion}.";
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(manifest.MaxPulsarVersion)
+                && TryParseManifestVersion(manifest.MaxPulsarVersion, out var maxVersion)
+                && hostVersion > maxVersion)
+            {
+                reason = $"requires Pulsar <= {manifest.MaxPulsarVersion}, host is {hostVersion}.";
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryParseManifestVersion(
+            string value,
+            [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out Version? version)
+        {
+            if (Version.TryParse(value, out version))
+            {
+                return true;
+            }
+
+            // Semantic-version prerelease/build suffixes ("1.0.0-beta", "1.0.0+build")
+            // are accepted by stripping the suffix for the compatibility check.
+            var core = value.Split('+', 2)[0].Split('-', 2)[0];
+            return Version.TryParse(core, out version);
+        }
+
+        private static bool IsManifestEntryPointMatch(PluginManifest manifest, Type pluginType)
+        {
+            if (string.IsNullOrWhiteSpace(manifest.EntryPoint))
+            {
+                return true;
+            }
+
+            return string.Equals(pluginType.FullName, manifest.EntryPoint, StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// Builds an external descriptor without instantiating the plugin type.
+        /// Discovery-time instantiation would execute untrusted constructors
+        /// before the user approves the package permissions; manifest data is
+        /// authoritative until first activation.
+        /// </summary>
+        internal static PluginDescriptor CreateExternalDescriptor(Type pluginType, PluginManifest manifest)
+        {
+            if (manifest.IsCore || manifest.Tier == PluginTier.Core)
+            {
+                throw new PluginInstantiationException(
+                    "External plugin packages cannot declare the Core tier.",
+                    pluginType);
+            }
+
+            var metadata = new PluginMetadata
+            {
+                Id = manifest.Id,
+                Display = new DisplayInfo
+                {
+                    Name = string.IsNullOrWhiteSpace(manifest.DisplayName) ? pluginType.Name : manifest.DisplayName,
+                    Description = manifest.Description,
+                    IconKey = string.IsNullOrWhiteSpace(manifest.Icon) ? "📦" : manifest.Icon,
+                    Category = manifest.Tags.FirstOrDefault() ?? "External",
+                    Version = manifest.Version,
+                    Author = string.IsNullOrWhiteSpace(manifest.Author) ? "Unknown" : manifest.Author,
+                    License = manifest.License,
+                    DocumentationUrl = manifest.DocumentationUrl
+                },
+                Schema = null,
+                UI = new UIHints
+                {
+                    Badge = "External",
+                    AccentColor = "#7C5CFF",
+                    ShowInQuickAccess = true,
+                    SortOrder = 200
+                },
+                Capabilities = new PluginCapabilities
+                {
+                    SupportedActions = new List<string>(),
+                    RequiresForegroundWindow = false,
+                    Dependencies = manifest.Dependencies.Keys.ToList(),
+                    CanDisable = true,
+                    Tier = PluginTier.Extension,
+                    MinPulsarVersion = manifest.MinPulsarVersion
+                },
+                Actions = new Dictionary<string, SlotActionMetadata>(StringComparer.OrdinalIgnoreCase)
+            };
+
+            return new PluginDescriptor
+            {
+                Id = manifest.Id,
+                DisplayName = string.IsNullOrWhiteSpace(manifest.DisplayName) ? pluginType.Name : manifest.DisplayName,
+                Version = manifest.Version,
+                Author = string.IsNullOrWhiteSpace(manifest.Author) ? "Unknown" : manifest.Author,
+                Description = manifest.Description,
+                Icon = string.IsNullOrWhiteSpace(manifest.Icon) ? "📦" : manifest.Icon,
+                CanDisable = true,
+                Tier = PluginTier.Extension,
+                IsExternal = true,
+                Permissions = manifest.Permissions,
+                ImplementationType = pluginType,
+                Dependencies = manifest.Dependencies.Keys.ToList(),
+                Metadata = metadata,
+                IsConfigurable = typeof(IPluginConfigurable).IsAssignableFrom(pluginType)
+            };
+        }
+
+        private PluginDescriptor CreateDescriptor(
+            Type pluginType,
+            bool isExternal = false,
+            IReadOnlyList<string>? permissions = null)
         {
             var plugin = _pluginFactory.CreatePlugin(pluginType);
             var tier = plugin is IPluginTiered tiered ? tiered.Tier : (plugin.CanDisable ? PluginTier.Extension : PluginTier.Core);
@@ -220,6 +415,8 @@ namespace Pulsar.Core.Plugin
                 Icon = plugin.Icon,
                 CanDisable = plugin.CanDisable,
                 Tier = tier,
+                IsExternal = isExternal,
+                Permissions = permissions ?? Array.Empty<string>(),
                 ImplementationType = pluginType,
                 Dependencies = plugin.Dependencies.ToList(),
                 Metadata = metadata,
@@ -279,8 +476,7 @@ namespace Pulsar.Core.Plugin
                     }
                     else
                     {
-                        _logger?.LogWarning("[PluginLoader] Missing dependency '{DependencyId}' for plugin '{PluginId}'", depId, plugin.Id);
-                        throw new InvalidOperationException($"Missing dependency '{depId}' for plugin '{plugin.Id}'");
+                        _logger?.LogDebug("[PluginLoader] Dependency '{DependencyId}' for plugin '{PluginId}' resolved outside this discovery set", depId, plugin.Id);
                     }
                 }
 

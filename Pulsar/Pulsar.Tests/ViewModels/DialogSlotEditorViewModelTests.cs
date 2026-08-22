@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -228,6 +229,125 @@ namespace Pulsar.Tests.ViewModels
 
             await vm.PickParameterValueAsync(vm.RequiredParameters.Single());
             vm.HeaderStatusText.Should().NotBeNullOrEmpty();
+        }
+
+        [Fact]
+        public async Task PickParameterValueCommand_ShouldInvokePickerForAppLauncherField()
+        {
+            var loc = CreateLoc();
+            SlotParameterEditorField? pickedField = null;
+            var slot = CreateDraftSlot("com.pulsar.winswitcher");
+            var field = slot.RequiredParameters.Single();
+            var vm = new SlotEditorViewModel(
+                SlotEditorMode.Edit,
+                BuildTestCards(loc),
+                CreateDraftSlot,
+                (s, action) => { s.Action = action ?? string.Empty; RefreshSlot(s); },
+                picked => { pickedField = picked; return Task.CompletedTask; },
+                _ => Task.CompletedTask,
+                _ => Task.CompletedTask,
+                loc,
+                existingSlot: slot,
+                metadataRegistry: CreateMetadataRegistry());
+
+            await vm.PickParameterValueCommand.ExecuteAsync(field);
+
+            pickedField.Should().BeSameAs(field);
+        }
+
+        [Fact]
+        public async Task PickIconAsync_ShouldUpdateCurrentSlotAndRaiseIconNotification()
+        {
+            var loc = CreateLoc();
+            var slot = CreateConfiguredSlot();
+            var iconNotifications = 0;
+            slot.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName == nameof(PluginSlot.IconKey))
+                {
+                    iconNotifications++;
+                }
+            };
+            var vm = new SlotEditorViewModel(
+                SlotEditorMode.Edit,
+                BuildTestCards(loc),
+                CreateDraftSlot,
+                (s, action) => { s.Action = action ?? string.Empty; RefreshSlot(s); },
+                _ => Task.CompletedTask,
+                pickedSlot => { pickedSlot.IconKey = "E8A7"; return Task.CompletedTask; },
+                _ => Task.CompletedTask,
+                loc,
+                existingSlot: slot,
+                metadataRegistry: CreateMetadataRegistry());
+
+            await vm.PickIconAsync();
+
+            vm.Slot.Should().BeSameAs(slot);
+            vm.Slot!.IconKey.Should().Be("E8A7");
+            iconNotifications.Should().Be(1);
+        }
+
+        [Fact]
+        public void IconPickerViewModel_SelectedKeyChange_ShouldPublishPreviewImmediately()
+        {
+            var search = new Mock<IFuzzySearchService<IconItem>>();
+            string? previewKey = null;
+            using var vm = new IconPickerViewModel(search.Object, "E72E", key => previewKey = key);
+
+            vm.SelectedKey = "E8A7";
+
+            previewKey.Should().Be("E8A7");
+        }
+
+        [Theory]
+        [InlineData("AddSlotContent.xaml")]
+        [InlineData("SlotConfigurationDialogContent.xaml")]
+        public void SlotParameterPickerTemplate_ShouldBindThroughItemsControlTagBridge(string fileName)
+        {
+            var projectRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../Pulsar/Pulsar"));
+            var xaml = File.ReadAllText(Path.Combine(
+                projectRoot,
+                "Views",
+                "Dialogs",
+                "Contents",
+                fileName));
+
+            xaml.Should().Contain("Command=\"{Binding Tag.PickParameterValueCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}\"");
+            xaml.Should().Contain("CommandParameter=\"{Binding}\"");
+            xaml.Should().Contain("Loaded=\"ParameterItemsControl_Loaded\"");
+        }
+
+        [Fact]
+        public void ProcessPickerContent_ShouldDeclareItsVisibilityConverterLocally()
+        {
+            var projectRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../Pulsar/Pulsar"));
+            var xaml = File.ReadAllText(Path.Combine(
+                projectRoot,
+                "Views",
+                "Dialogs",
+                "Contents",
+                "ProcessPickerContent.xaml"));
+
+            xaml.Should().Contain("<BooleanToVisibilityConverter x:Key=\"BooleanToVisibilityConverter\"/>");
+            xaml.Should().Contain("Converter={StaticResource BooleanToVisibilityConverter}");
+        }
+
+        [Fact]
+        public void IconPickerGridItem_ShouldBindGlyphAsButtonContent_NotWrappedInStackPanel()
+        {
+            var projectRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../Pulsar/Pulsar"));
+            var xaml = File.ReadAllText(Path.Combine(
+                projectRoot,
+                "Views",
+                "Dialogs",
+                "Contents",
+                "IconPickerContent.xaml"));
+
+            // PulsarIconButtonStyle renders Content through its own TextBlock (Content coerced to
+            // string), so a StackPanel child renders as "System.Windows.Controls.StackPanel". The
+            // glyph must be bound directly as Content and pick up the icon font via inheritance.
+            xaml.Should().Contain("Content=\"{Binding Character}\"");
+            xaml.Should().Contain("CommandParameter=\"{Binding Code}\"");
         }
 
         [Fact]

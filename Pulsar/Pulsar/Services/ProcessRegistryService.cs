@@ -502,7 +502,7 @@ namespace Pulsar.Services
 
             try
             {
-                var json = await File.ReadAllTextAsync(_registryPath);
+                var json = await File.ReadAllTextAsync(_registryPath).ConfigureAwait(false);
                 _registry = JsonSerializer.Deserialize<ProcessRegistry>(json) ?? new ProcessRegistry();
             }
             catch (Exception ex)
@@ -531,7 +531,7 @@ namespace Pulsar.Services
                     
                     // 原子写入：先写临时文件，再替换（避免损坏）
                     var tempPath = _registryPath + ".tmp";
-                    await File.WriteAllTextAsync(tempPath, json);
+                    await File.WriteAllTextAsync(tempPath, json).ConfigureAwait(false);
                     File.Move(tempPath, _registryPath, overwrite: true);
                     
                     // 记录成功指标
@@ -555,7 +555,7 @@ namespace Pulsar.Services
                     }
                     
                     // 指数退避
-                    await Task.Delay(baseDelayMs * (attempt + 1), cancellationToken);
+                    await Task.Delay(baseDelayMs * (attempt + 1), cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -585,7 +585,7 @@ namespace Pulsar.Services
             try
             {
                 // 从 Profiles.json 读取现有黑名单
-                var config = await _configService.LoadAsync();
+                var config = await _configService.LoadSnapshotAsync();
                 var winSwitcherConfig = config.Plugins.GetValueOrDefault("com.pulsar.winswitcher");
                 var excludeProcesses = winSwitcherConfig?.Config.GetValueOrDefault("ExcludeProcesses")?.ToString() ?? "";
 
@@ -637,20 +637,10 @@ namespace Pulsar.Services
         {
             try
             {
-                var config = await _configService.LoadAsync();
+                await ConfigEditSession.RunAsync(_configService, session =>
+                    session.UpdatePluginProfile("com.pulsar.winswitcher", profile =>
+                        profile.Config["ExcludeProcesses"] = string.Join(",", blacklistedProcesses)));
 
-                // 确保插件配置存在
-                if (!config.Plugins.ContainsKey("com.pulsar.winswitcher"))
-                {
-                    config.Plugins["com.pulsar.winswitcher"] = new PluginProfile();
-                }
-
-                // 更新黑名单配置
-                var excludeProcesses = string.Join(",", blacklistedProcesses);
-                config.Plugins["com.pulsar.winswitcher"].Config["ExcludeProcesses"] = excludeProcesses;
-
-                await _configService.SaveAsync(config);
-                
                 // [Logging] Downgraded to Debug - happens frequently, not critical
                 _logger.LogDebug("[ProcessRegistry] Synced blacklist to Profiles.json");
             }

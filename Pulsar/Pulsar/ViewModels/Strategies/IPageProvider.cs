@@ -77,8 +77,8 @@ namespace Pulsar.ViewModels.Strategies
                 slot.IsEnabled = true;
                 slot.AnimationOffsetX = 0;
                 slot.AnimationOffsetY = 0;
-                slot.CurrentScale = 0;
-                slot.CurrentOpacity = 0;
+                slot.CurrentScale = 1.0;
+                slot.CurrentOpacity = 1.0;
             }
         }
     }

@@ -17,6 +17,7 @@ namespace Pulsar.ViewModels.Dialogs
     {
         private readonly List<IconItem> _allItems;
         private readonly IFuzzySearchService<IconItem> _searchService;
+        private readonly Action<string>? _previewChanged;
         private CancellationTokenSource? _searchCts;
         private const int DebounceMs = 150;
         private bool _isIndexBuilt = false;
@@ -35,9 +36,13 @@ namespace Pulsar.ViewModels.Dialogs
 
         public Action<DialogResult>? RequestClose { get; set; }
 
-        public IconPickerViewModel(IFuzzySearchService<IconItem> searchService, string initialKey = "")
+        public IconPickerViewModel(
+            IFuzzySearchService<IconItem> searchService,
+            string initialKey = "",
+            Action<string>? previewChanged = null)
         {
             _searchService = searchService;
+            _previewChanged = previewChanged;
             _allItems = GlyphData.CommonIcons;
             
             // 延迟初始化：先显示空列表，快速打开对话框
@@ -46,6 +51,11 @@ namespace Pulsar.ViewModels.Dialogs
 
             // 异步构建索引和加载图标
             _ = InitializeAsync();
+        }
+
+        partial void OnSelectedKeyChanged(string value)
+        {
+            _previewChanged?.Invoke(value);
         }
 
         private async Task InitializeAsync()

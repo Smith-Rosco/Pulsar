@@ -31,7 +31,42 @@ jobs:
           name: Pulsar-${{ github.ref_name }}
           path: publish/
 
+      - name: Verify publish output
+        shell: pwsh
+        run: |
+          # 与本地发布一致的产物校验（cor3 缺失会导致应用无法启动）
+          foreach ($f in @('Pulsar.exe', 'Pulsar.pdb')) {
+            if (-not (Test-Path "publish/$f")) { throw "缺少 $f" }
+          }
+          if (-not (Get-ChildItem publish -Filter '*_cor3.dll' -ErrorAction SilentlyContinue)) {
+            throw "缺少 *_cor3.dll"
+          }
+          if (-not (Test-Path 'publish/Assets')) { throw "缺少 Assets/" }
+
+      - name: Check release exists
+        id: release_check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          # 有效 release = 非 draft 且至少 1 个资产。draft / 空资产视为半成品
+          # （如本地上传中断留下的草稿），清理后由 CI 接管，避免 CI 被空 draft 阻塞。
+          $exists = $false
+          try {
+            # 注意：runner 的 pwsh 设 ErrorActionPreference=Stop，原生命令写 stderr 会抛错，
+            # 必须用 2>&1 合并重定向（2>$null 仍可能触发 NativeCommandError）。
+            $info = gh release view "${{ github.ref_name }}" --json isDraft,assets 2>&1 | ConvertFrom-Json
+            if ($info -and -not $info.isDraft -and $info.assets.Count -gt 0) {
+              $exists = $true
+            } elseif ($info) {
+              gh release delete "${{ github.ref_name }}" --yes 2>&1 | Out-Null
+              Write-Host "已清理半成品 release（draft 或无资产），由 CI 接管"
+            }
+          } catch { }
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "exists=$exists"
+
       - name: Create Release
+        if: steps.release_check.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -40,6 +75,7 @@ jobs:
           gh release create $tag --title "$name" --notes-from-tag
 
       - name: Upload Release Asset
+        if: steps.release_check.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh

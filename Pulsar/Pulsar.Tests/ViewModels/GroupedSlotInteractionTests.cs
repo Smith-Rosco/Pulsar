@@ -1,20 +1,24 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using FluentAssertions;
 using Moq;
+using Pulsar.Core.Localization;
 using Pulsar.Models;
 using Pulsar.Native;
+using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels;
 using Pulsar.ViewModels.Strategies;
+using Xunit;
 
 namespace Pulsar.Tests.ViewModels
 {
+    /// <summary>
+    /// Interaction-policy tests for the grouped (process) slot. These now construct
+    /// <see cref="MenuSession"/> directly with mocks — no WPF shell, no reflection.
+    /// </summary>
     public class GroupedSlotInteractionTests
     {
         [Fact]
@@ -43,10 +47,10 @@ namespace Pulsar.Tests.ViewModels
                 .Returns(true);
 
             var strategy = new ProcessGroupStrategy(windows, windowService.Object);
-            var context = CreateContext(windowService.Object, Mock.Of<IPreviewService>());
-            context.IsVisible = true;
+            var context = new Mock<IMenuSession>();
+            context.SetupProperty(c => c.IsVisible, true);
 
-            await strategy.ExecuteAsync(new SlotViewModel(1, 0, 0, 40), context);
+            await strategy.ExecuteAsync(new SlotViewModel(1, 0, 0, 40), context.Object);
 
             capturedRequest.Should().NotBeNull();
             capturedRequest!.Intent.Should().Be(WindowSelectionIntent.GroupedRootDirectTrigger);
@@ -57,11 +61,9 @@ namespace Pulsar.Tests.ViewModels
         [Fact]
         public async Task HandleGlobalMouseClickAsync_ShouldEnterSubMenu_ForGroupedSlotLeftClick()
         {
-            EnsureApplication();
             var windowService = new Mock<IWindowService>();
             var previewService = new Mock<IPreviewService>();
-            var coordinator = new RadialMenuInputCoordinator(windowService.Object, logger: null);
-            var context = CreateContext(windowService.Object, previewService.Object);
+            var session = CreateSession(windowService, previewService);
             var windows = CreateWindows();
 
             windowService
@@ -73,28 +75,17 @@ namespace Pulsar.Tests.ViewModels
                     DecisionReason = "test"
                 });
 
-            var slot = new SlotViewModel(1, 0, 0, 40)
-            {
-                Label = "testapp",
-                Type = SlotType.Process,
-                DataContext = windows,
-                ActionStrategy = new ProcessGroupStrategy(windows, windowService.Object)
-            };
+            var slot = session.Slots.First(s => s.SlotIndex == 1);
+            slot.Label = "testapp";
+            slot.Type = SlotType.Process;
+            slot.DataContext = windows;
+            slot.ActionStrategy = new ProcessGroupStrategy(windows, windowService.Object);
 
-            context.Slots.Add(slot);
+            session.IsVisible = true;
 
-            await coordinator.HandleGlobalMouseClickAsync(
-                GlobalMouseButton.Left,
-                isVisible: true,
-                activeSlotIndex: 1,
-                menuState: MenuState.Root,
-                centerSlot: context.CenterSlot,
-                slots: context.Slots,
-                context: context,
-                restoreRootMenu: context.RestoreRootMenu,
-                hideMenu: () => context.IsVisible = false);
+            await session.HandleGlobalMouseClickAsync(GlobalMouseButton.Left, clickSlotIndex: 1, new Vector(150, 150));
 
-            context.IsInSubMenu.Should().BeTrue();
+            session.IsInSubMenu.Should().BeTrue();
             windowService.Verify(service => service.SelectTargetWindow(It.IsAny<List<ProcessWindowInfo>>(), It.IsAny<WindowSelectionRequest?>()), Times.Once);
             windowService.Verify(service => service.ActivateWindow(It.IsAny<ProcessWindowInfo>()), Times.Never);
         }
@@ -103,54 +94,78 @@ namespace Pulsar.Tests.ViewModels
         public async Task HandleGlobalMouseClickAsync_ShouldHideMenu_ForRootCenterLeftClick()
         {
             var windowService = new Mock<IWindowService>();
-            var coordinator = new RadialMenuInputCoordinator(windowService.Object, logger: null);
-            var context = CreateContext(windowService.Object, Mock.Of<IPreviewService>());
-            var wasHidden = false;
+            var session = CreateSession(windowService, new Mock<IPreviewService>());
 
-            await coordinator.HandleGlobalMouseClickAsync(
-                GlobalMouseButton.Left,
-                isVisible: true,
-                activeSlotIndex: 0,
-                menuState: MenuState.Root,
-                centerSlot: context.CenterSlot,
-                slots: context.Slots,
-                context: context,
-                restoreRootMenu: context.RestoreRootMenu,
-                hideMenu: () =>
-                {
-                    context.IsVisible = false;
-                    wasHidden = true;
-                });
+            session.IsVisible = true;
+            await session.HandleGlobalMouseClickAsync(GlobalMouseButton.Left, clickSlotIndex: 0, new Vector(150, 150));
 
-            wasHidden.Should().BeTrue();
-            context.IsVisible.Should().BeFalse();
+            session.IsVisible.Should().BeFalse();
         }
 
         [Fact]
         public async Task HandleGlobalMouseClickAsync_ShouldHideMenu_ForRootRightClick()
         {
             var windowService = new Mock<IWindowService>();
-            var coordinator = new RadialMenuInputCoordinator(windowService.Object, logger: null);
-            var context = CreateContext(windowService.Object, Mock.Of<IPreviewService>());
-            var wasHidden = false;
+            var session = CreateSession(windowService, new Mock<IPreviewService>());
 
-            await coordinator.HandleGlobalMouseClickAsync(
-                GlobalMouseButton.Right,
-                isVisible: true,
-                activeSlotIndex: -1,
-                menuState: MenuState.Root,
-                centerSlot: context.CenterSlot,
-                slots: context.Slots,
-                context: context,
-                restoreRootMenu: context.RestoreRootMenu,
-                hideMenu: () =>
-                {
-                    context.IsVisible = false;
-                    wasHidden = true;
-                });
+            session.IsVisible = true;
+            await session.HandleGlobalMouseClickAsync(GlobalMouseButton.Right, clickSlotIndex: -1, new Vector(150, 150));
 
-            wasHidden.Should().BeTrue();
-            context.IsVisible.Should().BeFalse();
+            session.IsVisible.Should().BeFalse();
+        }
+
+        private static MenuSession CreateSession(Mock<IWindowService> windowService, Mock<IPreviewService> previewService)
+        {
+            var slotLayoutEngine = new Mock<ISlotLayoutEngine>();
+            slotLayoutEngine
+                .Setup(engine => engine.CalculateOptimalLayout(It.IsAny<int>()))
+                .Returns(new LayoutParameters(250, 250, 120, 0, 8));
+            slotLayoutEngine
+                .Setup(engine => engine.GetSlotPosition(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<LayoutParameters>()))
+                .Returns((0d, 0d));
+            slotLayoutEngine
+                .Setup(engine => engine.HitTest(It.IsAny<Vector>(), It.IsAny<LayoutParameters>()))
+                .Returns(-1);
+
+            var animationController = new Mock<IAnimationController>();
+            animationController
+                .Setup(controller => controller.AnimateLayoutAsync(It.IsAny<LayoutTarget>(), It.IsAny<AnimationOptions?>(), It.IsAny<System.Threading.CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var configService = new Mock<IConfigService>();
+            configService
+                .Setup(service => service.GetValidatedSlotsPerPage())
+                .Returns(8);
+            configService
+                .Setup(service => service.GetSnapshot())
+                .Returns(new ProfilesConfig());
+
+            var hotkeyService = new Mock<IHotkeyService>();
+            var trayService = new Mock<ITrayService>();
+            var pagingController = new Mock<IPagingController>();
+            var serviceProvider = new Mock<System.IServiceProvider>();
+
+            var loc = new Mock<ILocalizationService>();
+            loc.Setup(l => l["RadialMenu.Pulsar"]).Returns("Pulsar");
+            loc.Setup(l => l["RadialMenu.Back"]).Returns("Back");
+            loc.Setup(l => l["Notification.Cancel"]).Returns("Cancel");
+
+            var session = new MenuSession(
+                configService.Object,
+                windowService.Object,
+                Mock.Of<IPluginRegistry>(),
+                hotkeyService.Object,
+                trayService.Object,
+                animationController.Object,
+                slotLayoutEngine.Object,
+                pagingController.Object,
+                previewService.Object,
+                serviceProvider.Object,
+                loc.Object,
+                new DirectUiDispatcher());
+
+            session.Initialize();
+            return session;
         }
 
         private static List<ProcessWindowInfo> CreateWindows()
@@ -176,57 +191,22 @@ namespace Pulsar.Tests.ViewModels
             ];
         }
 
-        private static RadialMenuViewModel CreateContext(IWindowService windowService, IPreviewService previewService)
+        /// <summary>Direct-call fake so MenuSession tests need no WPF Application.</summary>
+        private sealed class DirectUiDispatcher : IUiDispatcher
         {
-            var context = (RadialMenuViewModel)RuntimeHelpers.GetUninitializedObject(typeof(RadialMenuViewModel));
-            var mouseTrackingService = new Mock<IMouseTrackingService>();
-            var pagingController = new Mock<IPagingController>();
-            var animationController = new Mock<IAnimationController>();
-            var slotLayoutEngine = new Mock<ISlotLayoutEngine>();
-
-            slotLayoutEngine
-                .Setup(engine => engine.CalculateOptimalLayout(It.IsAny<int>()))
-                .Returns(new LayoutParameters(250, 250, 120, 0, 8));
-
-            animationController
-                .Setup(controller => controller.AnimateLayoutAsync(It.IsAny<LayoutTarget>(), It.IsAny<AnimationOptions?>(), It.IsAny<System.Threading.CancellationToken>()))
-                .Returns(Task.CompletedTask);
-
-            var hotkeyService = new Mock<IHotkeyService>();
-            SetField(context, "_hotkeyService", hotkeyService.Object);
-            SetField(context, "_mouseTrackingService", mouseTrackingService.Object);
-            SetField(context, "_pagingController", pagingController.Object);
-            SetField(context, "_animationController", animationController.Object);
-            SetField(context, "_slotLayoutEngine", slotLayoutEngine.Object);
-            SetField(context, "_previewService", previewService);
-            SetField(context, "_visualStateCoordinator", new RadialMenuVisualStateCoordinator(previewService, null));
-            SetField(context, "_subMenuCoordinator", new RadialMenuSubMenuCoordinator(windowService, null, null, null));
-            SetField(context, "_layoutCoordinator", new RadialMenuLayoutCoordinator(slotLayoutEngine.Object, animationController.Object, null));
-            SetField(context, "<Slots>k__BackingField", new ObservableCollection<SlotViewModel>());
-            SetField(context, "<CenterSlot>k__BackingField", new SlotViewModel(0, 0, 0, 50));
-            SetField(context, "_slotsPerPage", 8);
-            SetField(context, "_currentCenterSize", 50d);
-            SetField(context, "_currentSlotSize", 50d);
-            SetField(context, "_currentRadius", 120d);
-            SetField(context, "_isVisible", true);
-            SetField(context, "_loc", new Pulsar.Core.Localization.LocalizationService(new Mock<Microsoft.Extensions.Logging.ILogger<Pulsar.Core.Localization.LocalizationService>>().Object));
-
-            return context;
-        }
-
-        private static void EnsureApplication()
-        {
-            if (Application.Current == null)
+            public bool CheckAccess() => true;
+            public void Invoke(Action action) => action();
+            public Task InvokeAsync(Action action)
             {
-                _ = new Application();
+                action();
+                return Task.CompletedTask;
             }
-        }
 
-        private static void SetField(object target, string fieldName, object? value)
-        {
-            var field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
-            field.Should().NotBeNull($"field {fieldName} must exist for test setup");
-            field!.SetValue(target, value);
+            public Task BeginInvoke(Action action)
+            {
+                action();
+                return Task.CompletedTask;
+            }
         }
     }
 }

@@ -49,13 +49,13 @@ namespace Pulsar.Tests.Tutorial
                 mockLoc.Setup(l => l["Tutorial.NoActionDetectedHint"]).Returns("Continue...");
 
                 var mockConfig = new Mock<IConfigService>();
-                mockConfig.Setup(c => c.Current).Returns(new ProfilesConfig
+                mockConfig.Setup(c => c.GetSnapshot()).Returns(new ProfilesConfig
                 {
                     Settings = new ProfileSettings(),
                     Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
                 });
-                mockConfig.Setup(c => c.SaveAsync(It.IsAny<ProfilesConfig>()))
-                    .Callback<ProfilesConfig>(config => savedConfig = config)
+                mockConfig.Setup(c => c.SaveAsync(It.IsAny<ProfilesConfig>(), It.IsAny<long?>()))
+                    .Callback<ProfilesConfig, long?>((config, _) => savedConfig = config)
                     .Returns(Task.CompletedTask);
 
                 var mockLogger = new Mock<ILogger<TutorialOrchestrator>>();
@@ -93,7 +93,7 @@ namespace Pulsar.Tests.Tutorial
                 await orchestrator.StartAsync();
 
                 // Verify: HandleErrorAsync should have saved TutorialCrashedAt
-                mockConfig.Verify(c => c.SaveAsync(It.IsAny<ProfilesConfig>()), Times.AtLeastOnce,
+                mockConfig.Verify(c => c.SaveAsync(It.IsAny<ProfilesConfig>(), It.IsAny<long?>()), Times.AtLeastOnce,
                     "SaveAsync should be called at least once during error handling");
                 
                 savedConfig.Should().NotBeNull("SaveAsync callback should have captured the config");

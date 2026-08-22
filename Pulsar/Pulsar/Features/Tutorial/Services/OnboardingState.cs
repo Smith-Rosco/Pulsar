@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Pulsar.Models;
+using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 
 namespace Pulsar.Features.Tutorial.Services
@@ -33,7 +34,7 @@ namespace Pulsar.Features.Tutorial.Services
 
         public async Task<OnboardingState> GetStateAsync()
         {
-            ProfilesConfig config = await _configService.LoadAsync(forceReload: true);
+            ProfilesConfig config = await _configService.LoadSnapshotAsync(forceReload: true);
             string onboardingState = config.Settings.OnboardingState ?? "NotStarted";
 
             return new OnboardingState
@@ -49,33 +50,32 @@ namespace Pulsar.Features.Tutorial.Services
 
         public async Task MarkOnboardingSkippedAsync()
         {
-            ProfilesConfig config = await _configService.LoadAsync();
-            config.Settings.OnboardingState = "Skipped";
-            await _configService.SaveAsync(config);
+            await ConfigEditSession.RunAsync(_configService, session =>
+                session.UpdateSettings(settings => settings.OnboardingState = "Skipped"));
         }
 
         public async Task MarkSetupCompletedAsync()
         {
-            ProfilesConfig config = await _configService.LoadAsync();
-            config.Settings.OnboardingState = "SetupWizardComplete";
-            await _configService.SaveAsync(config);
+            await ConfigEditSession.RunAsync(_configService, session =>
+                session.UpdateSettings(settings => settings.OnboardingState = "SetupWizardComplete"));
         }
 
         public async Task MarkTutorialCompletedAsync()
         {
-            ProfilesConfig config = await _configService.LoadAsync();
-            config.Settings.HasCompletedTutorial = true;
-            config.Settings.OnboardingState = "Complete";
-            config.Settings.LastTutorialStep = null;
-            config.Settings.TutorialCrashedAt = null;
-            await _configService.SaveAsync(config);
+            await ConfigEditSession.RunAsync(_configService, session =>
+                session.UpdateSettings(settings =>
+                {
+                    settings.HasCompletedTutorial = true;
+                    settings.OnboardingState = "Complete";
+                    settings.LastTutorialStep = null;
+                    settings.TutorialCrashedAt = null;
+                }));
         }
 
         public async Task MarkTutorialSkippedAsync()
         {
-            ProfilesConfig config = await _configService.LoadAsync();
-            config.Settings.LastTutorialStep = "Skipped";
-            await _configService.SaveAsync(config);
+            await ConfigEditSession.RunAsync(_configService, session =>
+                session.UpdateSettings(settings => settings.LastTutorialStep = "Skipped"));
         }
     }
 }

@@ -12,7 +12,7 @@ namespace Pulsar.Views.Pages
             DataContext = viewModel;
 
             // Apply theme AFTER InitializeComponent()
-            themeService.ApplyTheme(this, themeService.CurrentTheme, updateGlobal: false);
+            themeService.ApplyTheme(this, themeService.CurrentTheme);
         }
     }
 }

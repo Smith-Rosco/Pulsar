@@ -294,6 +294,11 @@ namespace Pulsar.ViewModels.Settings
 
         private void RebuildItems()
         {
+            foreach (var item in Items)
+            {
+                item.Dispose();
+            }
+
             Items.Clear();
 
             if (_slots == null)

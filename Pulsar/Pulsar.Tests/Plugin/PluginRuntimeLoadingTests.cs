@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -53,7 +54,7 @@ namespace Pulsar.Tests.Plugin
             config.Plugins["test.deferred"] = new PluginProfile { Enabled = true };
 
             var configService = new Mock<IConfigService>();
-            configService.Setup(x => x.Current).Returns(config);
+            configService.Setup(x => x.GetSnapshot()).Returns(config);
             services.AddSingleton(configService.Object);
 
             var provider = services.BuildServiceProvider();
@@ -90,6 +91,105 @@ namespace Pulsar.Tests.Plugin
             first.Should().HaveCount(1);
             second.Should().HaveCount(1);
             loader.DiscoverCount.Should().Be(1);
+        }
+
+        [Fact]
+        public void ManifestVersionCompatibility_ShouldRejectTooNewMinimumVersion()
+        {
+            var manifest = new PluginManifest
+            {
+                Id = "test.version",
+                MinPulsarVersion = "999.0.0"
+            };
+
+            var compatible = PluginLoader.IsManifestVersionCompatible(manifest, out var reason);
+
+            compatible.Should().BeFalse();
+            reason.Should().Contain("requires Pulsar");
+        }
+
+        [Fact]
+        public void ManifestVersionCompatibility_ShouldAcceptCurrentHostVersion()
+        {
+            var manifest = new PluginManifest
+            {
+                Id = "test.version",
+                MinPulsarVersion = "1.0.0",
+                MaxPulsarVersion = "2.0.0"
+            };
+
+            var compatible = PluginLoader.IsManifestVersionCompatible(manifest, out var reason);
+
+            compatible.Should().BeTrue(reason);
+        }
+
+        [Fact]
+        public void ManifestVersionCompatibility_ShouldAcceptSemanticVersionSuffix()
+        {
+            var manifest = new PluginManifest
+            {
+                Id = "test.version",
+                MinPulsarVersion = "1.0.0-beta.1",
+                MaxPulsarVersion = "2.0.0+build.7"
+            };
+
+            var compatible = PluginLoader.IsManifestVersionCompatible(manifest, out var reason);
+
+            compatible.Should().BeTrue(reason);
+        }
+
+        [Fact]
+        public void TryReadExternalManifest_ShouldPreferPluginManifestFile()
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), "PulsarTests", Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            try
+            {
+                File.WriteAllText(Path.Combine(tempDir, "manifest.json"), "{\"id\":\"test.legacy\"}");
+                File.WriteAllText(Path.Combine(tempDir, "plugin.manifest.json"), "{\"id\":\"test.preferred\"}");
+
+                var manifest = PluginLoader.TryReadExternalManifest(tempDir);
+
+                manifest.Should().NotBeNull();
+                manifest!.Id.Should().Be("test.preferred");
+            }
+            finally
+            {
+                try { Directory.Delete(tempDir, recursive: true); } catch { /* ignore */ }
+            }
+        }
+
+        [Fact]
+        public void CreateExternalDescriptor_ShouldNotInstantiatePluginType()
+        {
+            var manifest = new PluginManifest
+            {
+                Id = "test.external.descriptor",
+                DisplayName = "External Descriptor",
+                Version = "1.0.0",
+                EntryPoint = typeof(ThrowingConstructorPlugin).FullName!
+            };
+
+            var descriptor = PluginLoader.CreateExternalDescriptor(typeof(ThrowingConstructorPlugin), manifest);
+
+            descriptor.Should().NotBeNull();
+            descriptor.IsExternal.Should().BeTrue();
+            descriptor.Id.Should().Be(manifest.Id);
+            descriptor.Permissions.Should().BeSameAs(manifest.Permissions);
+        }
+
+        [Fact]
+        public void CreateExternalDescriptor_CoreTier_ShouldBeRejected()
+        {
+            var manifest = new PluginManifest
+            {
+                Id = "test.external.core",
+                Tier = PluginTier.Core
+            };
+
+            var action = () => PluginLoader.CreateExternalDescriptor(typeof(ThrowingConstructorPlugin), manifest);
+
+            action.Should().Throw<PluginInstantiationException>();
         }
 
         private static List<PluginDescriptor> BuildDescriptors()
@@ -200,6 +300,29 @@ namespace Pulsar.Tests.Plugin
             }
 
             public int DiscoverCount { get; private set; }
+        }
+
+        private sealed class ThrowingConstructorPlugin : IPulsarPlugin
+        {
+            public ThrowingConstructorPlugin()
+            {
+                throw new InvalidOperationException("External plugin constructors must not run during discovery.");
+            }
+
+            public string Id => "test.external.descriptor";
+            public string DisplayName => "External Descriptor";
+            public string Version => "1.0.0";
+            public string Author => "Tests";
+            public string Description => "Throwing constructor test plugin";
+            public string Icon => "T";
+            public bool CanDisable => true;
+
+            public void Initialize(IServiceProvider services) { }
+
+            public Task<PluginResult> ExecuteAsync(string action, IReadOnlyDictionary<string, string> args, PulsarContext context, CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(PluginResult.Ok());
+            }
         }
 
         private sealed class DeferredActivationPlugin : IPulsarPlugin

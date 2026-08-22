@@ -148,8 +148,8 @@
                                    Icon="{ui:SymbolIcon FolderOpen16}"
                                    Style="{StaticResource PulsarIconButtonStyle}"
                                    ToolTip="{lex:Locale Dialog.PluginSettings.Browse}"
-                                   Click="SlotParameterPicker_Click"
-                                   Tag="{Binding}"
+                                   Command="{Binding Tag.PickParameterValueCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                   CommandParameter="{Binding}"
                                    Visibility="{Binding HasPicker, Converter={StaticResource BoolToVis}}"/>
 
                         <ui:ToggleSwitch Grid.Column="1"
@@ -310,6 +310,7 @@
 
                 <!-- Required parameters -->
                 <ItemsControl ItemsSource="{Binding RequiredParameters}"
+                              Loaded="ParameterItemsControl_Loaded"
                               ItemTemplate="{StaticResource SlotParameterFieldTemplate}"
                               Visibility="{Binding HasRequiredParameters, Converter={StaticResource BoolToVis}}"/>
 
@@ -400,6 +401,7 @@
                                  Visibility="{Binding HasOptionalSettings, Converter={StaticResource BoolToVis}}">
                     <StackPanel Margin="0,4,0,0">
                         <ItemsControl ItemsSource="{Binding OptionalParameters}"
+                                      Loaded="ParameterItemsControl_Loaded"
                                       ItemTemplate="{StaticResource SlotParameterFieldTemplate}"
                                       Visibility="{Binding HasOptionalParameters, Converter={StaticResource BoolToVis}}"/>
 
@@ -407,6 +409,7 @@
                                 Visibility="{Binding HasAdvancedParameters, Converter={StaticResource BoolToVis}}">
                             <StackPanel>
                                 <ItemsControl ItemsSource="{Binding AdvancedParameters}"
+                                              Loaded="ParameterItemsControl_Loaded"
                                               ItemTemplate="{StaticResource SlotParameterFieldTemplate}"/>
                             </StackPanel>
                         </Border>

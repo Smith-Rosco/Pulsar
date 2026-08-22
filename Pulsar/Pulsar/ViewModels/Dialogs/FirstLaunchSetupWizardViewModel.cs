@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.Input;
 using Pulsar.Core.Localization;
 using Pulsar.Models;
 using Pulsar.Features.Tutorial.Models;
+using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.Features.Tutorial.Services;
 using Pulsar.ViewModels.Base;
@@ -74,7 +75,7 @@ namespace Pulsar.ViewModels.Dialogs
             // UI culture. Never mutate the global language from the wizard constructor.
             try
             {
-                var configured = _configService.Current?.Settings?.Language;
+                var configured = _configService.GetSnapshot()?.Settings?.Language;
                 if (!string.IsNullOrWhiteSpace(configured))
                 {
                     return configured;
@@ -163,16 +164,20 @@ namespace Pulsar.ViewModels.Dialogs
         {
             var scenario = _scenarioRegistry.Default;
             var apps = BuildScenarioApps(scenario);
-            var config = _templateService.BuildInitialConfig(scenario, apps);
-            config.Settings.SelectedTutorialScenarioId = scenario.Id;
+            var template = _templateService.BuildInitialConfig(scenario, apps);
+            template.Settings.SelectedTutorialScenarioId = scenario.Id;
 
             if (SelectedLanguage != null)
-                config.Settings.Language = SelectedLanguage.Code;
+                template.Settings.Language = SelectedLanguage.Code;
 
-            config.Settings.HasCompletedInitialDetection = true;
+            template.Settings.HasCompletedInitialDetection = true;
 
-            await _configService.SaveAsync(config);
-            await _onboardingStateService.MarkSetupCompletedAsync();
+            await ConfigEditSession.RunAsync(_configService, session =>
+            {
+                session.ReplaceAll(template);
+                session.UpdateSettings(settings => settings.OnboardingState = "SetupWizardComplete");
+            });
+
             RequestClose?.Invoke(DialogResult.Confirmed);
         }
 

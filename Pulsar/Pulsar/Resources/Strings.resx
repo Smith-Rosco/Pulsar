@@ -2700,6 +2700,42 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
   <data name="Settings.General.QuickSwitchTimeoutDescription" xml:space="preserve">
     <value>Releasing the hotkey near the center within this time switches back to the previous window.</value>
   </data>
+  <data name="Settings.General.RightDragSummon" xml:space="preserve">
+    <value>Right-Drag Gesture</value>
+  </data>
+  <data name="Settings.General.RightDragSummonToggle" xml:space="preserve">
+    <value>Enable right-click gesture</value>
+  </data>
+  <data name="Settings.General.RightDragSummonDescription" xml:space="preserve">
+    <value>Hold the switcher modifier with a right-click to open the task switcher, or the action modifier to open the action menu. The gesture is swallowed before reaching the source app, so plain right-click stays completely normal. The menu stays visible while the right button is held and executes on release.</value>
+  </data>
+  <data name="Settings.General.RightDragSwitcherModifier" xml:space="preserve">
+    <value>Task switcher modifier</value>
+  </data>
+  <data name="Settings.General.RightDragSwitcherModifierDescription" xml:space="preserve">
+    <value>Hold this key with a right-click to open the task-switcher menu.</value>
+  </data>
+  <data name="Settings.General.RightDragActionModifier" xml:space="preserve">
+    <value>Action menu modifier</value>
+  </data>
+  <data name="Settings.General.RightDragActionModifierDescription" xml:space="preserve">
+    <value>Hold this key with a right-click to open the action menu.</value>
+  </data>
+  <data name="Settings.General.RightDragModifiersConflict" xml:space="preserve">
+    <value>The two modifiers must be different. The gesture stays disabled while they match.</value>
+  </data>
+  <data name="Settings.General.ModifierAlt" xml:space="preserve">
+    <value>Alt</value>
+  </data>
+  <data name="Settings.General.ModifierCtrl" xml:space="preserve">
+    <value>Ctrl</value>
+  </data>
+  <data name="Settings.General.ModifierShift" xml:space="preserve">
+    <value>Shift</value>
+  </data>
+  <data name="Settings.General.ModifierWin" xml:space="preserve">
+    <value>Win</value>
+  </data>
   <data name="RadialMenu.SubMenuPageFormat" xml:space="preserve">
     <value>{0} ({1}/{2})</value>
   </data>
@@ -2714,5 +2750,59 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
   </data>
   <data name="Settings.Plugins.FilterErrors" xml:space="preserve">
     <value>Errors</value>
+  </data>
+  <data name="Plugin.Permissions.ConfirmTitle" xml:space="preserve">
+    <value>External Plugin Permissions</value>
+  </data>
+  <data name="Plugin.Permissions.ConfirmBodyFormat" xml:space="preserve">
+    <value>{0} v{1} by {2} requests the following permissions:{3}</value>
+  </data>
+  <data name="Plugin.Permissions.Approve" xml:space="preserve">
+    <value>Approve &amp; Install</value>
+  </data>
+  <data name="Plugin.Permissions.ApprovalRequired" xml:space="preserve">
+    <value>Permission approval required</value>
+  </data>
+  <data name="Plugin.Permissions.InstallCancelled" xml:space="preserve">
+    <value>Install cancelled</value>
+  </data>
+  <data name="Plugin.Permissions.GrantFailedFormat" xml:space="preserve">
+    <value>Plugin installed, but granting permissions failed for {0}: {1}</value>
+  </data>
+  <data name="Plugin.Permission.clipboardread" xml:space="preserve">
+    <value>Read the clipboard</value>
+  </data>
+  <data name="Plugin.Permission.clipboardwrite" xml:space="preserve">
+    <value>Write to the clipboard</value>
+  </data>
+  <data name="Plugin.Permission.inputinject" xml:space="preserve">
+    <value>Inject keyboard/mouse input</value>
+  </data>
+  <data name="Plugin.Permission.windowfocus" xml:space="preserve">
+    <value>Activate and focus application windows</value>
+  </data>
+  <data name="Plugin.Permission.processlaunch" xml:space="preserve">
+    <value>Launch applications or processes</value>
+  </data>
+  <data name="Plugin.Permission.filesystemread" xml:space="preserve">
+    <value>Read files from disk</value>
+  </data>
+  <data name="Plugin.Permission.filesystemwrite" xml:space="preserve">
+    <value>Write files to disk</value>
+  </data>
+  <data name="Plugin.Permission.networkclient" xml:space="preserve">
+    <value>Make network requests</value>
+  </data>
+  <data name="Settings.ExternalPlugins.GrantPermissions" xml:space="preserve">
+    <value>Grant Permissions</value>
+  </data>
+  <data name="Plugin.Permissions.GrantSuccess" xml:space="preserve">
+    <value>Permissions granted.</value>
+  </data>
+  <data name="QuickSwitch.FailedTitle" xml:space="preserve">
+    <value>Quick Switch</value>
+  </data>
+  <data name="QuickSwitch.FailedBody" xml:space="preserve">
+    <value>No previous window to switch to.</value>
   </data>
 </root>

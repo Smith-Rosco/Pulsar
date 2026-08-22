@@ -191,6 +191,105 @@
                     </StackPanel>
                 </ui:CardExpander>
 
+                <!-- Right-Drag Gesture Section -->
+                <ui:CardExpander Icon="DialPad24" Header="{lex:Locale Settings.General.RightDragSummon}" Margin="0,0,0,12" IsExpanded="False">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="{lex:Locale Settings.General.RightDragSummonToggle}" FontWeight="Medium"/>
+                                <TextBlock Text="{lex:Locale Settings.General.RightDragSummonDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" TextWrapping="Wrap" MaxWidth="420"/>
+                            </StackPanel>
+                            <ui:ToggleSwitch Grid.Column="1" IsChecked="{Binding EnableRightDragSummon, Mode=TwoWay}"/>
+                        </Grid>
+
+                        <TextBlock Text="{lex:Locale Settings.General.RightDragModifiersConflict}"
+                                   Foreground="{DynamicResource DangerForegroundBrush}"
+                                   FontSize="12"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="420"
+                                   Margin="0,0,0,12">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding RightDragModifiersConflict}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <Separator Margin="0,12"/>
+
+                        <!-- Switcher modifier -->
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="{lex:Locale Settings.General.RightDragSwitcherModifier}" FontWeight="Medium"/>
+                                <TextBlock Text="{lex:Locale Settings.General.RightDragSwitcherModifierDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" TextWrapping="Wrap" MaxWidth="420"/>
+                            </StackPanel>
+                            <ComboBox Grid.Column="1" Width="140"
+                                      IsEnabled="{Binding EnableRightDragSummon}"
+                                      SelectedValue="{Binding RightDragSwitcherModifier, Mode=TwoWay}"
+                                      SelectedValuePath="Tag"
+                                      AutomationProperties.Name="{lex:Locale Settings.General.RightDragSwitcherModifier}">
+                                <ComboBoxItem Tag="Alt">
+                                    <TextBlock Text="{lex:Locale Settings.General.ModifierAlt}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="Control">
+                                    <TextBlock Text="{lex:Locale Settings.General.ModifierCtrl}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="Shift">
+                                    <TextBlock Text="{lex:Locale Settings.General.ModifierShift}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="Win">
+                                    <TextBlock Text="{lex:Locale Settings.General.ModifierWin}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                            </ComboBox>
+                        </Grid>
+
+                        <Separator Margin="0,12"/>
+
+                        <!-- Action modifier -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="{lex:Locale Settings.General.RightDragActionModifier}" FontWeight="Medium"/>
+                                <TextBlock Text="{lex:Locale Settings.General.RightDragActionModifierDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" TextWrapping="Wrap" MaxWidth="420"/>
+                            </StackPanel>
+                            <ComboBox Grid.Column="1" Width="140"
+                                      IsEnabled="{Binding EnableRightDragSummon}"
+                                      SelectedValue="{Binding RightDragActionModifier, Mode=TwoWay}"
+                                      SelectedValuePath="Tag"
+                                      AutomationProperties.Name="{lex:Locale Settings.General.RightDragActionModifier}">
+                                <ComboBoxItem Tag="Alt">
+                                    <TextBlock Text="{lex:Locale Settings.General.ModifierAlt}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="Control">
+                                    <TextBlock Text="{lex:Locale Settings.General.ModifierCtrl}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="Shift">
+                                    <TextBlock Text="{lex:Locale Settings.General.ModifierShift}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="Win">
+                                    <TextBlock Text="{lex:Locale Settings.General.ModifierWin}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                            </ComboBox>
+                        </Grid>
+                    </StackPanel>
+                </ui:CardExpander>
+
                 <!-- Cache Management Section -->
                 <ui:CardExpander Icon="Database24" Header="{lex:Locale Settings.General.CacheManagement}" Margin="0,0,0,12" IsExpanded="False">
                     <StackPanel>

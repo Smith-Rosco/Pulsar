@@ -16,7 +16,9 @@ namespace Pulsar.Services
         private readonly GlobalKeyboardHook _hook;
         private readonly IConfigService _configService;
         private readonly ILogger<HotkeyService> _logger;
+        private readonly object _syncLock = new();
         private readonly Dictionary<string, Action> _actions = new();
+        private readonly Dictionary<string, HotkeyConfig> _effectiveHotkeys = new(StringComparer.OrdinalIgnoreCase);
         private ProfilesConfig? _config;
         private bool _isPaused;
 
@@ -25,6 +27,23 @@ namespace Pulsar.Services
             _hook = hook;
             _configService = configService;
             _logger = logger;
+
+            // Stay in sync with any commit path (Settings save, ConfigEditSession,
+            // tutorial, future plugins). Without this, a hotkey change made outside
+            // the Settings save path would leave the effective cache stale.
+            _configService.ConfigUpdated += OnConfigUpdated;
+        }
+
+        private void OnConfigUpdated()
+        {
+            try
+            {
+                RebuildCache();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[HotkeyService] Failed to rebuild hotkey cache after config update");
+            }
         }
 
         private readonly Dictionary<int, List<ActionWithConfig>> _hotkeysByMainKey = new();
@@ -36,29 +55,50 @@ namespace Pulsar.Services
 
         public void Pause()
         {
-            _isPaused = true;
-            _pressedKeys.Clear();
+            lock (_syncLock)
+            {
+                _isPaused = true;
+                _pressedKeys.Clear();
+            }
         }
 
         public void Resume()
         {
-            _isPaused = false;
-            _pressedKeys.Clear();
+            lock (_syncLock)
+            {
+                _isPaused = false;
+                _pressedKeys.Clear();
+            }
         }
 
         public void ResetModifierState()
         {
             _hook.ResetModifierState();
-            _pressedKeys.Clear();
+
+            lock (_syncLock)
+            {
+                _pressedKeys.Clear();
+            }
+        }
+
+        public bool IsModifierHeld(GestureModifier modifier)
+        {
+            return modifier switch
+            {
+                GestureModifier.Control => _hook.IsCtrlDown,
+                GestureModifier.Shift => _hook.IsShiftDown,
+                GestureModifier.Win => _hook.IsWinDown,
+                _ => _hook.IsAltDown
+            };
         }
 
         public async Task InitializeAsync()
         {
-            _config = await _configService.LoadAsync();
+            _config = await _configService.LoadSnapshotAsync();
             if (_config == null) return;
 
             // Build optimization cache
-            RebuildHotkeyCache();
+            RebuildCacheCore(_config.Settings.Hotkeys);
 
             _hook.OnKeyDown += OnKeyDown;
             // Handle KeyUp to maintain state
@@ -85,13 +125,21 @@ namespace Pulsar.Services
                 }
             }
 
-            // Check conflicts with other registered actions
-            foreach (var kvp in _actions)
+            // Check conflicts with other registered actions against the
+            // effective in-memory hotkeys. These may differ from the persisted
+            // config while the Settings editor has an unsaved draft.
+            KeyValuePair<string, Action>[] actionsSnapshot;
+            lock (_syncLock)
+            {
+                actionsSnapshot = _actions.ToArray();
+            }
+
+            foreach (var kvp in actionsSnapshot)
             {
                 if (string.Equals(kvp.Key, actionId, StringComparison.OrdinalIgnoreCase))
                     continue; // Skip self
 
-                if (_config != null && _config.Settings.Hotkeys.TryGetValue(kvp.Key, out var otherConfig))
+                if (_effectiveHotkeys.TryGetValue(kvp.Key, out var otherConfig))
                 {
                     if (otherConfig.IsEmpty)
                         continue; // Skip empty hotkeys
@@ -106,51 +154,48 @@ namespace Pulsar.Services
             return result;
         }
 
+        /// <summary>
+        /// Applies a hotkey to the in-memory cache only. It intentionally does NOT
+        /// mutate the shared <see cref="IConfigService.GetSnapshot"/> object; persistence
+        /// remains the exclusive job of the settings editor commit path.
+        /// </summary>
         public void ApplyHotkey(string actionId, HotkeyConfig config)
         {
-            if (_config == null) return;
-
-            _config.Settings.Hotkeys[actionId] = config;
-            RebuildHotkeyCache();
-        }
-
-        public async Task UpdateHotkey(string actionId, HotkeyConfig newHotkey)
-        {
-            if (_config == null) return;
-
-            _config.Settings.Hotkeys[actionId] = newHotkey;
-            await _configService.SaveAsync(_config);
-            RebuildHotkeyCache();
+            lock (_syncLock)
+            {
+                _effectiveHotkeys[actionId] = config;
+                RebuildHotkeyCacheCore();
+            }
         }
 
         public Dictionary<string, HotkeyConfig> GetAllHotkeys()
         {
-            if (_config == null)
-                return new Dictionary<string, HotkeyConfig>();
-
-            return new Dictionary<string, HotkeyConfig>(_config.Settings.Hotkeys);
+            lock (_syncLock)
+            {
+                return new Dictionary<string, HotkeyConfig>(_effectiveHotkeys);
+            }
         }
 
         public HotkeyConfig? GetHotkey(string actionId)
         {
-            if (_config != null && _config.Settings.Hotkeys.TryGetValue(actionId, out var hotkey))
+            lock (_syncLock)
             {
-                return hotkey;
+                return _effectiveHotkeys.TryGetValue(actionId, out var hotkey)
+                    ? hotkey
+                    : null;
             }
-            return null;
         }
 
-        private void RebuildHotkeyCache()
+        private void RebuildHotkeyCacheCore()
         {
             _hotkeysByMainKey.Clear();
-            if (_config == null) return;
 
             foreach (var kvp in _actions)
             {
                 string actionId = kvp.Key;
                 Action callback = kvp.Value;
 
-                if (_config.Settings.Hotkeys.TryGetValue(actionId, out var hotkeyConfig))
+                if (_effectiveHotkeys.TryGetValue(actionId, out var hotkeyConfig))
                 {
                     if (hotkeyConfig.IsEmpty)
                         continue; // Skip empty/unassigned hotkeys
@@ -197,47 +242,72 @@ namespace Pulsar.Services
             }
         }
 
+        private void RebuildCacheCore(Dictionary<string, HotkeyConfig> hotkeys)
+        {
+            _effectiveHotkeys.Clear();
+            foreach (var kvp in hotkeys)
+            {
+                _effectiveHotkeys[kvp.Key] = kvp.Value;
+            }
+
+            RebuildHotkeyCacheCore();
+        }
+
         public void RebuildCache()
         {
-            _config = _configService.Current;
-            RebuildHotkeyCache();
+            _config = _configService.GetSnapshot();
+
+            lock (_syncLock)
+            {
+                RebuildCacheCore(_config.Settings.Hotkeys);
+            }
         }
 
         public void RegisterAction(string actionId, Action callback)
         {
-            _actions[actionId] = callback;
-            RebuildHotkeyCache();
+            lock (_syncLock)
+            {
+                _actions[actionId] = callback;
+                RebuildHotkeyCacheCore();
+            }
         }
 
         public void UnregisterAction(string actionId)
         {
-            if (_actions.ContainsKey(actionId))
+            lock (_syncLock)
             {
-                _actions.Remove(actionId);
-                RebuildHotkeyCache();
+                if (_actions.ContainsKey(actionId))
+                {
+                    _actions.Remove(actionId);
+                    RebuildHotkeyCacheCore();
+                }
             }
         }
 
         private void OnKeyDown(ref GlobalKeyStruct e)
         {
-            if (_config == null || _isPaused) return;
+            int[] heldKeys;
+            bool isModifier;
 
-            // Update State
-            _pressedKeys.Add(e.VkCode);
+            lock (_syncLock)
+            {
+                if (_config == null || _isPaused) return;
 
-            // Check if any registered hotkey is satisfied by the CURRENT state
-            // We check hotkeys associated with ANY currently held key, not just the one pressed.
-            // This enables "Q then Ctrl" (triggering on Ctrl press) and "Ctrl then Q" (triggering on Q press).
+                // Update State
+                _pressedKeys.Add(e.VkCode);
 
-            // Optimization: Only check triggers related to the key just pressed 
-            // OR if the key just pressed is a modifier, check all held keys.
-            bool isModifier = IsModifierKey(e.VkCode);
+                // Snapshot all currently held keys before releasing the lock so
+                // cache rebuilds can never observe a half-updated enumeration.
+                heldKeys = _pressedKeys.ToArray();
+                isModifier = IsModifierKey(e.VkCode);
+            }
 
+            // Check if any registered hotkey is satisfied by the CURRENT state.
+            // We check hotkeys associated with ANY currently held key, not just the
+            // one pressed. This enables "Q then Ctrl" and "Ctrl then Q".
             if (isModifier)
             {
-                // If a modifier was pressed, check ALL currently held main keys
-                // copy to list to avoid modification during enumeration (though HashSet shouldn't change here)
-                foreach (var heldKey in _pressedKeys)
+                foreach (var heldKey in heldKeys)
                 {
                     if (CheckAndExecute(heldKey, ref e)) return;
                 }
@@ -251,38 +321,55 @@ namespace Pulsar.Services
 
         private void OnKeyUp(ref GlobalKeyStruct e)
         {
-            _pressedKeys.Remove(e.VkCode);
+            lock (_syncLock)
+            {
+                _pressedKeys.Remove(e.VkCode);
+            }
+
             OnGlobalKeyUp?.Invoke(this, e);
         }
 
         private bool CheckAndExecute(int vkCode, ref GlobalKeyStruct e)
         {
-            if (_hotkeysByMainKey.TryGetValue(vkCode, out var actions))
-            {
-                foreach (var item in actions)
-                {
-                    // Verify Modifiers strictly
-                    // Note: GlobalKeyStruct.IsCtrl/Shift etc. are populated by GetKeyState() 
-                    // which reflects the state *including* the key event currently being processed.
-                    if (item.ReqCtrl == e.IsCtrl &&
-                        item.ReqShift == e.IsShift &&
-                        item.ReqAlt == e.IsAlt &&
-                        item.ReqWin == e.IsWin)
-                    {
-                        HotkeyInvoked?.Invoke(this, new HotkeyInvocationEventArgs(
-                            item.ActionId,
-                            item.MainVkCode,
-                            item.ReqCtrl,
-                            item.ReqShift,
-                            item.ReqAlt,
-                            item.ReqWin));
+            List<ActionWithConfig>? candidates = null;
 
-                        Application.Current.Dispatcher.InvokeAsync(() => item.Action.Invoke());
-                        e.Handled = true;
-                        return true;
-                    }
+            lock (_syncLock)
+            {
+                if (_hotkeysByMainKey.TryGetValue(vkCode, out var actions))
+                {
+                    candidates = new List<ActionWithConfig>(actions);
                 }
             }
+
+            if (candidates == null)
+            {
+                return false;
+            }
+
+            foreach (var item in candidates)
+            {
+                // Verify Modifiers strictly
+                // Note: GlobalKeyStruct.IsCtrl/Shift etc. are populated by GetKeyState()
+                // which reflects the state *including* the key event currently being processed.
+                if (item.ReqCtrl == e.IsCtrl &&
+                    item.ReqShift == e.IsShift &&
+                    item.ReqAlt == e.IsAlt &&
+                    item.ReqWin == e.IsWin)
+                {
+                    HotkeyInvoked?.Invoke(this, new HotkeyInvocationEventArgs(
+                        item.ActionId,
+                        item.MainVkCode,
+                        item.ReqCtrl,
+                        item.ReqShift,
+                        item.ReqAlt,
+                        item.ReqWin));
+
+                    Application.Current.Dispatcher.InvokeAsync(() => item.Action.Invoke());
+                    e.Handled = true;
+                    return true;
+                }
+            }
+
             return false;
         }
 

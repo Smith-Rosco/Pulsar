@@ -154,12 +154,7 @@ namespace Pulsar.ViewModels
             // Apply theme immediately to the active window (SettingsWindow)
             System.Windows.Application.Current.Dispatcher.Invoke(() => 
             {
-                var win = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.DataContext == this);
-                if (win != null)
-                {
-                    // [Fix] Settings window triggers global update
-                    _themeService.ApplyTheme(win, theme, WindowBackdropType.Mica, updateGlobal: true);
-                }
+                _themeService.SetGlobalTheme(theme);
             });
         }
 

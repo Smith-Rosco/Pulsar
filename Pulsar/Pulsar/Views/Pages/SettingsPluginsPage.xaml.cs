@@ -54,7 +54,7 @@ namespace Pulsar.Views.Pages
             PreviewKeyDown += OnPagePreviewKeyDown;
 
             // Apply theme AFTER InitializeComponent().
-            themeService.ApplyTheme(this, themeService.CurrentTheme, updateGlobal: false);
+            themeService.ApplyTheme(this, themeService.CurrentTheme);
         }
 
         private void OnPagePreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)

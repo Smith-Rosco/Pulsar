@@ -37,6 +37,7 @@ namespace Pulsar.Services
         
         private const int MaxHistorySize = 10;
         private const int QuickSwitchTimeoutMs = 5000; // 5秒内的连续切换视为同一对
+        private const int MaxQuickSwitchAttempts = 5;  // 最多尝试 5 个历史窗口
         
         // [New] Dynamic blacklist - can be updated by plugins
         private HashSet<string> _dynamicBlacklist = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -108,6 +109,7 @@ namespace Pulsar.Services
             
             _activationMonitor = new WindowActivationMonitor(monitorLogger);
             _activationMonitor.WindowActivated += OnGlobalWindowActivated;
+            _activationMonitor.WindowShown += OnWindowShown;
             _activationMonitor.Start();
             
             _logger.LogInformation("[WindowService] Initialized with registry cleanup timer and global window tracking");
@@ -122,6 +124,25 @@ namespace Pulsar.Services
                 hwnd, GetWindowTitle(hwnd));
             
             // 实时记录窗口激活到历史栈
+            RecordWindowActivation(hwnd);
+        }
+
+        /// <summary>
+        /// 窗口显示事件处理器 - 捕获附属窗口首次显示
+        /// 如 360 PDF Viewer 等 owned window 不会触发前台切换事件，
+        /// 但会触发 EVENT_OBJECT_SHOW，通过此处理器将其记录到历史栈
+        /// </summary>
+        private void OnWindowShown(IntPtr hwnd)
+        {
+            if (!IsAltTabWindow(hwnd))
+            {
+                _logger.LogDebug("[WindowService] 📥 OnWindowShown filtered out. HWND: {Hwnd}, Title: '{Title}'",
+                    hwnd, GetWindowTitle(hwnd));
+                return;
+            }
+
+            _logger.LogDebug("[WindowService] 📥 OnWindowShown recording. HWND: {Hwnd}, Title: '{Title}'",
+                hwnd, GetWindowTitle(hwnd));
             RecordWindowActivation(hwnd);
         }
         
@@ -482,36 +503,59 @@ namespace Pulsar.Services
             _trackingService.SetPreviousWindow(PulsarNative.GetForegroundWindow());
         }
 
-        public async Task SwitchToPreviousWindow()
+        public async Task<bool> SwitchToPreviousWindow()
         {
             IntPtr current = PulsarNative.GetForegroundWindow();
             PulsarNative.GetWindowThreadProcessId(current, out uint currentPid);
             bool currentIsPulsar = (currentPid == _currentProcessId);
             IntPtr realCurrentWindow = currentIsPulsar ? _trackingService.PreviousWindowHandle : current;
-            var resolution = _quickSwitchEngine.ResolveTarget(
-                realCurrentWindow,
-                _trackingService.PreviousWindowHandle,
-                QuickSwitchTimeoutMs,
-                IsAltTabWindow,
-                PulsarNative.IsWindow);
 
-            if (resolution.TargetWindow == IntPtr.Zero)
+            // Always suppress focus restore when a quick switch is requested —
+            // the user explicitly asked to leave the current app. Even if activation
+            // fails, bouncing back to the original window is worse than staying put.
+            SetFocusRestoreMode(FocusRestoreMode.NoRestore);
+
+            IntPtr excludeTarget = IntPtr.Zero;
+            for (int attempt = 0; attempt < MaxQuickSwitchAttempts; attempt++)
             {
-                _logger.LogWarning("[QuickSwitch] ❌ No valid previous window found");
-                return;
+                var resolution = _quickSwitchEngine.ResolveTarget(
+                    realCurrentWindow,
+                    _trackingService.PreviousWindowHandle,
+                    QuickSwitchTimeoutMs,
+                    IsAltTabWindow,
+                    PulsarNative.IsWindow,
+                    excludeTarget);
+
+                if (resolution.TargetWindow == IntPtr.Zero)
+                {
+                    _logger.LogWarning("[QuickSwitch] ❌ No valid previous window found");
+                    return false;
+                }
+
+                var activation = await ActivateWindowDetailedAsync(new ProcessWindowInfo
+                {
+                    Handle = resolution.TargetWindow,
+                    Title = GetWindowTitle(resolution.TargetWindow),
+                    ProcessName = string.Empty
+                });
+
+                if (activation.Success)
+                {
+                    _logger.LogInformation("[QuickSwitch] ✅ Switched to '{Title}'",
+                        GetWindowTitle(resolution.TargetWindow));
+                    return true;
+                }
+
+                // The previous window may have just been closed or become unresponsive.
+                // Fall through to the next window in activation order instead of giving up.
+                _logger.LogWarning(
+                    "[QuickSwitch] ⚠️ Activation failed for '{Title}' (Handle: 0x{Hwnd:X}), trying next candidate...",
+                    GetWindowTitle(resolution.TargetWindow), resolution.TargetWindow.ToInt64());
+                excludeTarget = resolution.TargetWindow;
             }
 
-            var activation = await ActivateWindowDetailedAsync(new ProcessWindowInfo
-            {
-                Handle = resolution.TargetWindow,
-                Title = GetWindowTitle(resolution.TargetWindow),
-                ProcessName = string.Empty
-            });
-
-            if (activation.Success)
-            {
-                SetFocusRestoreMode(FocusRestoreMode.NoRestore);
-            }
+            _logger.LogWarning("[QuickSwitch] ❌ All {Count} quick-switch candidates failed", MaxQuickSwitchAttempts);
+            return false;
         }
         
         // ==========================================
@@ -790,6 +834,9 @@ namespace Pulsar.Services
             _logger.LogInformation("[ActivateWindow] SUCCESS: '{Title}' (Process: {ProcessName})",
                 window.Title,
                 window.ProcessName);
+
+            RecordWindowActivation(window.Handle);
+
             return result;
         }
 

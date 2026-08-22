@@ -101,7 +101,7 @@ namespace Pulsar.Services
 
                     await RunOnboardingStartupAsync(cancellationToken);
 
-                    var config = await configService.LoadAsync();
+                    var config = await configService.LoadSnapshotAsync();
                     if (config.Settings.HasCompletedTutorial
                         || string.Equals(config.Settings.LastTutorialStep, "Skipped", StringComparison.OrdinalIgnoreCase)
                         || !string.Equals(config.Settings.OnboardingState, "SetupWizardComplete", StringComparison.OrdinalIgnoreCase))
@@ -156,7 +156,7 @@ namespace Pulsar.Services
         {
             try
             {
-                var config = await configService.LoadAsync();
+                var config = await configService.LoadSnapshotAsync();
                 if (config?.Settings?.Logging == null)
                 {
                     return;
@@ -178,7 +178,7 @@ namespace Pulsar.Services
         {
             try
             {
-                var config = await configService.LoadAsync();
+                var config = await configService.LoadSnapshotAsync();
                 var theme = config?.Settings?.ThemeEnum ?? AppTheme.Light;
                 var themeService = _services.GetRequiredService<IThemeService>();
                 themeService.Initialize(theme);
@@ -195,7 +195,7 @@ namespace Pulsar.Services
             try
             {
                 var localizationService = _services.GetRequiredService<ILocalizationService>();
-                var config = await configService.LoadAsync();
+                var config = await configService.LoadSnapshotAsync();
                 var language = config?.Settings?.Language;
                 if (!string.IsNullOrEmpty(language))
                 {
@@ -212,7 +212,7 @@ namespace Pulsar.Services
         private async Task ConfigureKeyboardHookAsync(IConfigService configService)
         {
             var keyboardHook = _services.GetRequiredService<GlobalKeyboardHook>();
-            var config = await configService.LoadAsync();
+            var config = await configService.LoadSnapshotAsync();
             if (config?.Settings?.Input != null)
             {
                 keyboardHook.UseHybridMode = config.Settings.Input.IsHybridMode;

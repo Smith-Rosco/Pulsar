@@ -27,6 +27,7 @@ namespace Pulsar.Native
         public const byte VK_MENU = 0x12;
         public const uint KEYEVENTF_KEYUP = 0x0002;
         public const uint EVENT_SYSTEM_FOREGROUND = 0x0003;
+        public const uint EVENT_OBJECT_SHOW = 0x8002;
         public const uint WINEVENT_OUTOFCONTEXT = 0x0000;
         public const uint SHGFI_ICON = 0x100;
         public const uint SHGFI_LARGEICON = 0x0;
@@ -66,12 +67,36 @@ namespace Pulsar.Native
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         public static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
 
+        [DllImport("user32.dll")]
+        private static extern short GetAsyncKeyState(int nVirtKey);
+
         [StructLayout(LayoutKind.Sequential)]
         public struct POINT
         {
             public int X;
             public int Y;
         }
+
+        // --- Modifier helpers for the right-drag summon gesture ---
+
+        /// <summary>
+        /// True when the given virtual-key code is currently held (high-order bit).
+        /// Uses GetAsyncKeyState: this is queried from the low-level mouse hook thread,
+        /// where GetKeyState returns the calling thread's last-processed input-queue
+        /// state (usually stale — the modifier appears up) rather than the physical
+        /// keyboard state. GetAsyncKeyState reads the physical state, so the modifier
+        /// is still detected when it was pressed nearly simultaneously with the right
+        /// button, or after a menu show cleared the keyboard hook's tracked state.
+        /// </summary>
+        public static bool IsKeyHeld(int vkCode) => (GetAsyncKeyState(vkCode) & 0x8000) != 0;
+
+        public static bool IsAltHeld() => IsKeyHeld(0x12) || IsKeyHeld(0xA4) || IsKeyHeld(0xA5);
+
+        public static bool IsCtrlHeld() => IsKeyHeld(0x11) || IsKeyHeld(0xA2) || IsKeyHeld(0xA3);
+
+        public static bool IsShiftHeld() => IsKeyHeld(0x10) || IsKeyHeld(0xA0) || IsKeyHeld(0xA1);
+
+        public static bool IsWinHeld() => IsKeyHeld(0x5B) || IsKeyHeld(0x5C);
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
         public struct MONITORINFO

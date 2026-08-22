@@ -48,23 +48,28 @@ namespace Pulsar.Tests.Plugin
         }
 
         [Fact]
-        public async Task CircuitBreaker_ShouldNotTrip_ForCorePlugins()
+        public async Task CircuitBreaker_ShouldFailFast_ForCorePlugins()
         {
             // Arrange
             var plugin = new FaultyTestPlugin(shouldThrow: true, canDisable: false); // Core plugin
             var registry = CreateRegistry(plugin);
-            
+
             var context = PulsarContextFactory.CreateTestContext();
             var args = new Dictionary<string, string>().AsReadOnly();
 
-            // Act - Execute 4 times (should not trigger circuit breaker for core plugins)
-            var result1 = await registry.ExecuteAsync(plugin.Id, "test", args, context);
-            var result2 = await registry.ExecuteAsync(plugin.Id, "test", args, context);
-            var result3 = await registry.ExecuteAsync(plugin.Id, "test", args, context);
-            var result4 = await registry.ExecuteAsync(plugin.Id, "test", args, context);
+            // Act - Core plugin failures are fatal by architecture and must propagate.
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+                async () => await registry.ExecuteAsync(plugin.Id, "test", args, context));
 
             // Assert
-            result4.Message.Should().NotContain("disabled for safety", "core plugins should not be protected by circuit breaker");
+            exception.Message.Should().Contain("Simulated plugin crash",
+                "the original core plugin exception should propagate");
+
+            var breakerPolicy = new PluginCircuitBreakerPolicy();
+            var descriptor = registry.GetDescriptor(plugin.Id);
+            descriptor.Should().NotBeNull();
+            var availability = breakerPolicy.CheckAvailability(descriptor!, plugin.Id);
+            availability.Allowed.Should().BeTrue("core plugins are not protected by the circuit breaker");
         }
 
         [Fact]

@@ -4291,6 +4291,42 @@ Pulsar 会在你的浏览器中打开一个网页——这就是命令模式：�
   <data name="Settings.General.QuickSwitchTimeoutDescription" xml:space="preserve">
     <value>在该时间内于中心区域松开热键即可切回上一个窗口。</value>
   </data>
+  <data name="Settings.General.RightDragSummon" xml:space="preserve">
+    <value>右键手势</value>
+  </data>
+  <data name="Settings.General.RightDragSummonToggle" xml:space="preserve">
+    <value>启用右键手势唤起</value>
+  </data>
+  <data name="Settings.General.RightDragSummonDescription" xml:space="preserve">
+    <value>按住"任务切换修饰键"并右键可打开任务切换菜单，按住"动作菜单修饰键"并右键可打开动作菜单。手势会在到达源程序前被吞掉，因此纯右键完全不受影响。面板在按住右键期间保持显示，松开时执行。</value>
+  </data>
+  <data name="Settings.General.RightDragSwitcherModifier" xml:space="preserve">
+    <value>任务切换菜单修饰键</value>
+  </data>
+  <data name="Settings.General.RightDragSwitcherModifierDescription" xml:space="preserve">
+    <value>按住此键并右键时打开任务切换菜单。</value>
+  </data>
+  <data name="Settings.General.RightDragActionModifier" xml:space="preserve">
+    <value>动作菜单修饰键</value>
+  </data>
+  <data name="Settings.General.RightDragActionModifierDescription" xml:space="preserve">
+    <value>按住此键并右键时打开动作菜单。</value>
+  </data>
+  <data name="Settings.General.RightDragModifiersConflict" xml:space="preserve">
+    <value>两个修饰键不能相同。相同期间手势保持关闭。</value>
+  </data>
+  <data name="Settings.General.ModifierAlt" xml:space="preserve">
+    <value>Alt</value>
+  </data>
+  <data name="Settings.General.ModifierCtrl" xml:space="preserve">
+    <value>Ctrl</value>
+  </data>
+  <data name="Settings.General.ModifierShift" xml:space="preserve">
+    <value>Shift</value>
+  </data>
+  <data name="Settings.General.ModifierWin" xml:space="preserve">
+    <value>Win</value>
+  </data>
   <data name="RadialMenu.SubMenuPageFormat" xml:space="preserve">
     <value>{0}（{1}/{2}）</value>
   </data>
@@ -4305,5 +4341,59 @@ Pulsar 会在你的浏览器中打开一个网页——这就是命令模式：�
   </data>
   <data name="Settings.Plugins.FilterErrors" xml:space="preserve">
     <value>有错误</value>
+  </data>
+  <data name="Plugin.Permissions.ConfirmTitle" xml:space="preserve">
+    <value>外部插件权限</value>
+  </data>
+  <data name="Plugin.Permissions.ConfirmBodyFormat" xml:space="preserve">
+    <value>{0} v{1}（作者：{2}）请求以下权限：{3}</value>
+  </data>
+  <data name="Plugin.Permissions.Approve" xml:space="preserve">
+    <value>批准并安装</value>
+  </data>
+  <data name="Plugin.Permissions.ApprovalRequired" xml:space="preserve">
+    <value>需要权限批准</value>
+  </data>
+  <data name="Plugin.Permissions.InstallCancelled" xml:space="preserve">
+    <value>已取消安装</value>
+  </data>
+  <data name="Plugin.Permissions.GrantFailedFormat" xml:space="preserve">
+    <value>插件已安装，但为 {0} 授予权限失败：{1}</value>
+  </data>
+  <data name="Plugin.Permission.clipboardread" xml:space="preserve">
+    <value>读取剪贴板</value>
+  </data>
+  <data name="Plugin.Permission.clipboardwrite" xml:space="preserve">
+    <value>写入剪贴板</value>
+  </data>
+  <data name="Plugin.Permission.inputinject" xml:space="preserve">
+    <value>注入键盘/鼠标输入</value>
+  </data>
+  <data name="Plugin.Permission.windowfocus" xml:space="preserve">
+    <value>激活并聚焦应用程序窗口</value>
+  </data>
+  <data name="Plugin.Permission.processlaunch" xml:space="preserve">
+    <value>启动应用程序或进程</value>
+  </data>
+  <data name="Plugin.Permission.filesystemread" xml:space="preserve">
+    <value>从磁盘读取文件</value>
+  </data>
+  <data name="Plugin.Permission.filesystemwrite" xml:space="preserve">
+    <value>向磁盘写入文件</value>
+  </data>
+  <data name="Plugin.Permission.networkclient" xml:space="preserve">
+    <value>发起网络请求</value>
+  </data>
+  <data name="Settings.ExternalPlugins.GrantPermissions" xml:space="preserve">
+    <value>授予权限</value>
+  </data>
+  <data name="Plugin.Permissions.GrantSuccess" xml:space="preserve">
+    <value>权限已授予。</value>
+  </data>
+  <data name="QuickSwitch.FailedTitle" xml:space="preserve">
+    <value>快速切换</value>
+  </data>
+  <data name="QuickSwitch.FailedBody" xml:space="preserve">
+    <value>没有可切换的上一个窗口。</value>
   </data>
 </root>

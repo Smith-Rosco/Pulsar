@@ -43,17 +43,30 @@ namespace Pulsar.Core.Plugin
         /// </summary>
         public string? TargetProcessName { get; }
 
+        /// <summary>
+        /// Per-execution permission gate, populated by the runtime pipeline.
+        /// External plugins may call <see cref="DemandPermission"/> before touching
+        /// a sensitive capability instead of relying only on the plugin-level check.
+        /// </summary>
+        public IPluginPermissionInterceptor? PermissionInterceptor { get; }
+
+        private readonly PluginExecutionContext? _previous;
+
         private PluginExecutionContext(
             string pluginId,
             string action,
             Guid executionId,
-            string? targetProcessName)
+            string? targetProcessName,
+            IPluginPermissionInterceptor? permissionInterceptor,
+            PluginExecutionContext? previous)
         {
             PluginId = pluginId;
             Action = action;
             ExecutionId = executionId;
             StartTimeUtc = DateTime.UtcNow;
             TargetProcessName = targetProcessName;
+            PermissionInterceptor = permissionInterceptor;
+            _previous = previous;
         }
 
         /// <summary>
@@ -63,13 +76,17 @@ namespace Pulsar.Core.Plugin
             string pluginId,
             string action,
             Guid? executionId = null,
-            string? targetProcessName = null)
+            string? targetProcessName = null,
+            IPluginPermissionInterceptor? permissionInterceptor = null)
         {
+            var previous = _current.Value;
             var context = new PluginExecutionContext(
                 pluginId,
                 action,
                 executionId ?? Guid.NewGuid(),
-                targetProcessName
+                targetProcessName,
+                permissionInterceptor,
+                previous
             );
 
             _current.Value = context;
@@ -77,11 +94,26 @@ namespace Pulsar.Core.Plugin
         }
 
         /// <summary>
-        /// 释放上下文作用域
+        /// Demands a manifest permission inside the current execution scope.
+        /// Unknown permissions always fail closed.
+        /// </summary>
+        public void DemandPermission(string permission)
+        {
+            if (PermissionInterceptor == null)
+            {
+                throw new PluginPermissionDeniedException(permission);
+            }
+
+            PermissionInterceptor.Demand(permission);
+        }
+
+        /// <summary>
+        /// 释放上下文作用域。AsyncLocal 作用域是栈式的：释放当前作用域会恢复
+        /// 进入该作用域之前的值，因此嵌套插件执行不会丢失外层关联信息。
         /// </summary>
         public void Dispose()
         {
-            _current.Value = null;
+            _current.Value = _previous;
         }
     }
 }

@@ -220,8 +220,8 @@
                                    Icon="{ui:SymbolIcon FolderOpen16}"
                                    Style="{StaticResource PulsarIconButtonStyle}"
                                    ToolTip="{lex:Locale Dialog.AddSlot.BrowseIcon}"
-                                   Click="SlotParameterPicker_Click"
-                                   Tag="{Binding}"
+                                   Command="{Binding Tag.PickParameterValueCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                   CommandParameter="{Binding}"
                                    Visibility="{Binding HasPicker, Converter={StaticResource BoolToVis}}"/>
 
                         <ui:ToggleSwitch Grid.Column="1"
@@ -535,6 +535,7 @@
 
                 <!-- Required parameters -->
                 <ItemsControl ItemsSource="{Binding RequiredParameters}"
+                              Loaded="ParameterItemsControl_Loaded"
                               ItemTemplate="{StaticResource SlotParameterFieldTemplate}"
                               Visibility="{Binding HasRequiredParameters, Converter={StaticResource BoolToVis}}"/>
 

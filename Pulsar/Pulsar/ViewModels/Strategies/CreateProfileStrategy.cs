@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Pulsar.Core.Messages; // [New]
 using CommunityToolkit.Mvvm.Messaging; // [New]
 using Pulsar.Models;
+using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.Views;
 using Pulsar.Helpers; // [New] For IconHelper
@@ -29,43 +30,39 @@ namespace Pulsar.ViewModels.Strategies
             _serviceProvider = serviceProvider;
         }
 
-        public async Task ExecuteAsync(SlotViewModel slot, RadialMenuViewModel context, CancellationToken cancellationToken = default)
+        public async Task ExecuteAsync(SlotViewModel slot, IMenuSession context, CancellationToken cancellationToken = default)
         {
             // 1. Close Menu
             context.IsVisible = false;
 
             // 2. Add Profile if missing
-            var config = await _configService.LoadAsync();
-            if (!config.Profiles.ContainsKey(_processName))
-            {
-                // [New] Try Extract Icon
-                string iconKey = "\uE71D"; // Default AppGeneric
-                string exePath = await _exePathFactory();
-                if (!string.IsNullOrEmpty(exePath))
+            await ConfigEditSession.RunAsync(_configService, session =>
+                session.EnsureProcessProfileAsync(_processName, async profile =>
                 {
-                    try
+                    // [New] Try Extract Icon
+                    string iconKey = "\uE71D"; // Default AppGeneric
+                    string exePath = await _exePathFactory();
+                    if (!string.IsNullOrEmpty(exePath))
                     {
-                        var iconSource = IconHelper.GetIconFromPath(exePath);
-                        if (iconSource != null)
+                        try
                         {
-                            var cachePath = IconHelper.SaveIconToCache(iconSource, _processName);
-                            if (!string.IsNullOrEmpty(cachePath))
+                            var iconSource = IconHelper.GetIconFromPath(exePath);
+                            if (iconSource != null)
                             {
-                                iconKey = cachePath;
+                                var cachePath = IconHelper.SaveIconToCache(iconSource, _processName);
+                                if (!string.IsNullOrEmpty(cachePath))
+                                {
+                                    iconKey = cachePath;
+                                }
                             }
                         }
+                        catch { /* Icon extraction failed, use default */ }
                     }
-                    catch { /* Icon extraction failed, use default */ }
-                }
 
-                // Default Profile Template
-                config.Profiles[_processName] = new ProcessProfile
-                {
-                    Icon = iconKey, // Use extracted icon
-                    CommandMode = new List<PluginSlot>()
-                };
-                await _configService.SaveAsync(config);
-            }
+                    // Default Profile Template
+                    profile.Icon = iconKey;
+                    profile.CommandMode = new List<PluginSlot>();
+                }));
 
             // 3. Open Settings Window via Message (Decoupled & Robust)
             

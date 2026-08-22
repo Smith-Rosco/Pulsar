@@ -34,7 +34,11 @@ namespace Pulsar.Services.Interfaces
         Task InitializeAsync();
         void RegisterAction(string actionId, Action callback);
         void UnregisterAction(string actionId);
-        Task UpdateHotkey(string actionId, HotkeyConfig newHotkey);
+
+        /// <summary>
+        /// Refreshes the effective hotkey cache from the current config snapshot.
+        /// This is a cache-only operation and never writes to disk.
+        /// </summary>
         void RebuildCache();
         HotkeyConfig? GetHotkey(string actionId);
 
@@ -69,6 +73,13 @@ namespace Pulsar.Services.Interfaces
         /// Call this when the radial menu is shown or hidden to clear any stale state.
         /// </summary>
         void ResetModifierState();
+
+        /// <summary>
+        /// Reports whether the given modifier key is currently held, based on the
+        /// keyboard hook's RDP-safe tracked state (immune to the GetKeyState race when
+        /// the modifier and the mouse button are pressed almost simultaneously).
+        /// </summary>
+        bool IsModifierHeld(GestureModifier modifier);
 
         event EventHandler<GlobalKeyStruct>? OnGlobalKeyUp;
 

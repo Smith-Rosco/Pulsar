@@ -23,7 +23,7 @@ namespace Pulsar.ViewModels
         // [New] Strategy Pattern
         public IActionStrategy ActionStrategy { get; set; } = new NoOpStrategy();
         
-        public async Task ExecuteAsync(RadialMenuViewModel context, CancellationToken cancellationToken = default)
+        public async Task ExecuteAsync(IMenuSession context, CancellationToken cancellationToken = default)
         {
             if (ActionStrategy != null)
             {
@@ -214,7 +214,13 @@ namespace Pulsar.ViewModels
         [ObservableProperty]
         private bool _isEnabled = true;
 
-        private const double MagneticSmoothFactor = 0.22;
+        // [Time-based damping] Frame-rate-independent exponential convergence with a
+        // velocity ceiling: the magnetic pull adapts to how far the target is but
+        // never snaps to it during fast sweeps across the wheel.
+        private const double MagneticTimeConstant = 0.10; // ~100ms to close 63% of the gap
+        private const double MaxMagneticSpeed = 120.0;    // px/s, velocity ceiling
+
+        private DateTime _lastMagneticUpdateUtc = DateTime.MinValue;
 
         // [New] Combined Offset (Magnetic only) - Bound to XAML
         [ObservableProperty]
@@ -244,12 +250,25 @@ namespace Pulsar.ViewModels
             OffsetY = 0;
             AnimationOffsetX = 0;
             AnimationOffsetY = 0;
+            _lastMagneticUpdateUtc = DateTime.MinValue;
         }
 
         public void UpdateMagneticOffset(double desiredOffsetX, double desiredOffsetY)
         {
-            var nextOffsetX = OffsetX + (desiredOffsetX - OffsetX) * MagneticSmoothFactor;
-            var nextOffsetY = OffsetY + (desiredOffsetY - OffsetY) * MagneticSmoothFactor;
+            var now = DateTime.UtcNow;
+            double dt = _lastMagneticUpdateUtc == DateTime.MinValue ? 0.0 : (now - _lastMagneticUpdateUtc).TotalSeconds;
+            _lastMagneticUpdateUtc = now;
+
+            if (dt <= 0)
+            {
+                return;
+            }
+
+            double alpha = 1.0 - Math.Exp(-dt / MagneticTimeConstant);
+            double maxStep = MaxMagneticSpeed * dt;
+
+            var nextOffsetX = OffsetX + Math.Clamp((desiredOffsetX - OffsetX) * alpha, -maxStep, maxStep);
+            var nextOffsetY = OffsetY + Math.Clamp((desiredOffsetY - OffsetY) * alpha, -maxStep, maxStep);
 
             if (Math.Abs(desiredOffsetX - nextOffsetX) < 0.05)
             {

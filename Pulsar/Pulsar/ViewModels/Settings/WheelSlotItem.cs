@@ -1,11 +1,12 @@
 using System;
+using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Pulsar.Core.Localization;
 using Pulsar.Models;
 
 namespace Pulsar.ViewModels.Settings
 {
-    public sealed partial class WheelSlotItem : ObservableObject
+    public sealed partial class WheelSlotItem : ObservableObject, IDisposable
     {
         private readonly ILocalizationService _loc;
 
@@ -17,6 +18,31 @@ namespace Pulsar.ViewModels.Settings
             Y = y;
             Size = size;
             _loc = loc;
+
+            // The wheel preview binds to WheelSlotItem's computed properties, which are
+            // snapshots of the underlying slot. Without forwarding slot property changes,
+            // live edits (e.g. picking a new icon) never reach the orb.
+            if (slot != null)
+            {
+                slot.PropertyChanged += OnSlotPropertyChanged;
+            }
+        }
+
+        private void OnSlotPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            switch (e.PropertyName)
+            {
+                case nameof(PluginSlot.Label):
+                    OnPropertyChanged(nameof(Label));
+                    OnPropertyChanged(nameof(Tooltip));
+                    break;
+                case nameof(PluginSlot.IconKey):
+                    OnPropertyChanged(nameof(IconKey));
+                    break;
+                case nameof(PluginSlot.Color):
+                    OnPropertyChanged(nameof(ColorHex));
+                    break;
+            }
         }
 
         public PluginSlot? Slot { get; }
@@ -62,5 +88,13 @@ namespace Pulsar.ViewModels.Settings
         public string? Tooltip => IsEmpty
             ? string.Format(_loc["Settings.Slots.Wheel.EmptySlotTooltipFormat"], Position)
             : string.Format(_loc["Settings.Slots.PositionFormat"], Position) + " — " + Label;
+
+        public void Dispose()
+        {
+            if (Slot != null)
+            {
+                Slot.PropertyChanged -= OnSlotPropertyChanged;
+            }
+        }
     }
 }

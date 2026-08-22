@@ -17,8 +17,8 @@ namespace Pulsar.Tests.Services
         {
             config ??= new ProfilesConfig();
             configServiceMock = new Mock<IConfigService>();
-            configServiceMock.Setup(x => x.LoadAsync()).ReturnsAsync(config);
-            configServiceMock.Setup(x => x.Current).Returns(config);
+            configServiceMock.Setup(x => x.LoadSnapshotAsync(It.IsAny<bool>())).ReturnsAsync(config);
+            configServiceMock.Setup(x => x.GetSnapshot()).Returns(config);
 
             var hook = new Native.GlobalKeyboardHook();
             var logger = NullLogger<HotkeyService>.Instance;
@@ -114,10 +114,12 @@ namespace Pulsar.Tests.Services
         }
 
         [Fact]
-        public void ApplyHotkey_UpdatesInMemoryConfig_WithoutPersistence()
+        public void ApplyHotkey_UpdatesEffectiveCache_WithoutPersistenceOrSharedConfigMutation()
         {
             var service = CreateService(out var configServiceMock);
             service.RegisterAction("ShowGrid", () => { });
+
+            var persistedHotkey = configServiceMock.Object.GetSnapshot().Settings.Hotkeys["ShowGrid"];
 
             var newHotkey = new HotkeyConfig { Key = "F5", Modifiers = "Shift" };
             service.ApplyHotkey("ShowGrid", newHotkey);
@@ -127,7 +129,26 @@ namespace Pulsar.Tests.Services
             retrieved!.Key.Should().Be("F5");
             retrieved.Modifiers.Should().Be("Shift");
 
-            configServiceMock.Verify(x => x.SaveAsync(It.IsAny<ProfilesConfig>()), Times.Never);
+            persistedHotkey.Key.Should().Be("Q",
+                "ApplyHotkey must not mutate the shared persisted config object before the settings editor commits");
+            configServiceMock.Verify(x => x.SaveAsync(It.IsAny<ProfilesConfig>(), It.IsAny<long?>()), Times.Never);
+        }
+
+        [Fact]
+        public void RebuildCache_DiscardsUncommittedEffectiveHotkeys()
+        {
+            var config = new ProfilesConfig();
+            config.Settings.Hotkeys["ShowGrid"] = new HotkeyConfig { Key = "Q", Modifiers = "Control" };
+            var service = CreateService(out _, config);
+            service.RegisterAction("ShowGrid", () => { });
+
+            service.ApplyHotkey("ShowGrid", new HotkeyConfig { Key = "F5", Modifiers = "Shift" });
+            service.GetHotkey("ShowGrid")!.Key.Should().Be("F5");
+
+            service.RebuildCache();
+
+            service.GetHotkey("ShowGrid")!.Key.Should().Be("Q",
+                "RebuildCache should reload the persisted configuration and discard unsaved drafts");
         }
 
         [Fact]

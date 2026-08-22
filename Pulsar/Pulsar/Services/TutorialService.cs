@@ -96,7 +96,7 @@ namespace Pulsar.Services
         {
             try
             {
-                var config = _configService.Current;
+                var config = _configService.GetSnapshot();
                 HasCompletedTutorial = config.Settings.HasCompletedTutorial;
                 if (!string.IsNullOrEmpty(config.Settings.TutorialCrashedAt))
                 {
@@ -130,7 +130,7 @@ namespace Pulsar.Services
             // 从配置中读取场景 ID 并设置到编排器
             try
             {
-                var config = _configService.Current;
+                var config = _configService.GetSnapshot();
                 if (!string.IsNullOrEmpty(config.Settings.SelectedTutorialScenarioId))
                 {
                     _orchestrator.SetScenario(config.Settings.SelectedTutorialScenarioId);
@@ -210,7 +210,7 @@ namespace Pulsar.Services
         /// </summary>
         public async Task CheckResumeAsync()
         {
-            var config = _configService.Current;
+            var config = _configService.GetSnapshot();
 
             if (config.Settings.HasCompletedTutorial)
             {
@@ -231,8 +231,8 @@ namespace Pulsar.Services
                     config.Settings.TutorialCrashedAt);
 
                 var crashedStepId = config.Settings.TutorialCrashedAt;
-                config.Settings.TutorialCrashedAt = null;
-                await _configService.SaveAsync(config);
+                await ConfigEditSession.RunAsync(_configService, session =>
+                    session.UpdateSettings(settings => settings.TutorialCrashedAt = null));
 
                 await GoToStepAsync(crashedStepId);
                 return;

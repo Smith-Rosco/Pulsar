@@ -74,11 +74,13 @@ namespace Pulsar.Services.WindowSwitching
             IntPtr previousWindow,
             int timeoutMs,
             Func<IntPtr, bool> isValidQuickSwitchWindow,
-            Func<IntPtr, bool> isWindow)
+            Func<IntPtr, bool> isWindow,
+            IntPtr excludeTarget = default)
         {
             lock (_switchPairLock)
             {
-                if (_activeSwitchPair != null &&
+                if (excludeTarget == IntPtr.Zero &&
+                    _activeSwitchPair != null &&
                     !_activeSwitchPair.IsExpired(timeoutMs) &&
                     isWindow(_activeSwitchPair.SourceWindow) &&
                     isWindow(_activeSwitchPair.TargetWindow) &&
@@ -98,10 +100,10 @@ namespace Pulsar.Services.WindowSwitching
                     _activeSwitchPair = null;
                 }
 
-                IntPtr historyTarget = FindValidHistoryWindow(currentWindow, isValidQuickSwitchWindow, isWindow);
+                IntPtr historyTarget = FindValidHistoryWindow(currentWindow, excludeTarget, isValidQuickSwitchWindow, isWindow);
                 if (historyTarget != IntPtr.Zero)
                 {
-                    if (currentWindow != IntPtr.Zero && currentWindow != historyTarget)
+                    if (excludeTarget == IntPtr.Zero && currentWindow != IntPtr.Zero && currentWindow != historyTarget)
                     {
                         _activeSwitchPair = new SwitchPairSnapshot(currentWindow, historyTarget);
                     }
@@ -109,9 +111,13 @@ namespace Pulsar.Services.WindowSwitching
                     return new QuickSwitchResolution { TargetWindow = historyTarget };
                 }
 
-                if (previousWindow != IntPtr.Zero && isWindow(previousWindow) && isValidQuickSwitchWindow(previousWindow))
+                if (previousWindow != IntPtr.Zero &&
+                    previousWindow != currentWindow &&
+                    previousWindow != excludeTarget &&
+                    isWindow(previousWindow) &&
+                    isValidQuickSwitchWindow(previousWindow))
                 {
-                    if (currentWindow != IntPtr.Zero && currentWindow != previousWindow)
+                    if (excludeTarget == IntPtr.Zero && currentWindow != IntPtr.Zero && currentWindow != previousWindow)
                     {
                         _activeSwitchPair = new SwitchPairSnapshot(currentWindow, previousWindow);
                     }
@@ -129,6 +135,7 @@ namespace Pulsar.Services.WindowSwitching
 
         private IntPtr FindValidHistoryWindow(
             IntPtr excludeWindow,
+            IntPtr excludeTarget,
             Func<IntPtr, bool> isValidQuickSwitchWindow,
             Func<IntPtr, bool> isWindow)
         {
@@ -138,7 +145,10 @@ namespace Pulsar.Services.WindowSwitching
 
                 foreach (IntPtr candidate in historyArray)
                 {
-                    if (candidate != excludeWindow && isWindow(candidate) && isValidQuickSwitchWindow(candidate))
+                    if (candidate != excludeWindow &&
+                        candidate != excludeTarget &&
+                        isWindow(candidate) &&
+                        isValidQuickSwitchWindow(candidate))
                     {
                         return candidate;
                     }

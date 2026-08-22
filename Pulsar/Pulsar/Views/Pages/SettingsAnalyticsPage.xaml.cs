@@ -19,7 +19,7 @@ namespace Pulsar.Views.Pages
         public SettingsAnalyticsPage(SettingsAnalyticsPageViewModel viewModel, IThemeService themeService)
         {
             InitializeComponent();
-            themeService.ApplyTheme(this, themeService.CurrentTheme, updateGlobal: false);
+            themeService.ApplyTheme(this, themeService.CurrentTheme);
             DataContext = viewModel;
             _viewModel = viewModel;
             Loaded += OnLoaded;

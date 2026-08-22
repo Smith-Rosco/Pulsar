@@ -21,6 +21,7 @@ using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.Services.Validation;
 using Pulsar.ViewModels;
+using Pulsar.ViewModels.Dialogs;
 using Pulsar.ViewModels.Settings;
 
 namespace Pulsar.Tests.ViewModels
@@ -82,7 +83,7 @@ namespace Pulsar.Tests.ViewModels
                 Args = new Dictionary<string, string>()
             };
 
-            InvokePrivate(viewModel, "CommitCreatedSlot", slot);
+            viewModel.SlotEditor.CommitCreatedSlot(slot);
 
             viewModel.HasUnsavedChanges.Should().BeTrue();
             viewModel.CurrentSlots.Should().Contain(slot);
@@ -106,6 +107,29 @@ namespace Pulsar.Tests.ViewModels
         }
 
         [Fact]
+        public async Task PickIcon_WhenCancelled_ShouldRestoreOriginalIconAfterPreview()
+        {
+            EnsureApplication();
+            var harness = CreateHarness();
+            var viewModel = harness.ViewModel;
+            await WaitForInitializationAsync(viewModel);
+            var slot = viewModel.CurrentSlots.Single();
+            var originalIcon = slot.IconKey;
+            harness.DialogService
+                .Setup(service => service.ShowCustomAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<IconPickerViewModel>(),
+                    It.IsAny<DialogButtons>(),
+                    It.IsAny<DialogSizeConstraints>()))
+                .Callback<string, IconPickerViewModel, DialogButtons, DialogSizeConstraints>((_, picker, _, _) => picker.SelectedKey = "E8A7")
+                .ReturnsAsync(DialogResult.Cancelled);
+
+            await viewModel.PickIcon(slot);
+
+            slot.IconKey.Should().Be(originalIcon);
+        }
+
+        [Fact]
         public async Task CreateSlotDraft_DoesNotSetDirty()
         {
             EnsureApplication();
@@ -114,11 +138,9 @@ namespace Pulsar.Tests.ViewModels
             var viewModel = harness.ViewModel;
             await WaitForInitializationAsync(viewModel);
 
-            var draftResult = InvokePrivate(viewModel, "CreateSlotDraft", "com.pulsar.command");
-            draftResult.Should().BeOfType<PluginSlot>();
-            var draft = (PluginSlot)draftResult!;
+            var draft = viewModel.SlotEditor.CreateSlotDraft("com.pulsar.command");
 
-            InvokePrivate(viewModel, "SetSlotDraftAction", draft, "run");
+            viewModel.SlotEditor.SetSlotDraftAction(draft, "run");
 
             draft.IconKey.Should().Be("E756");
             draft.Color.Should().BeEmpty();
@@ -151,7 +173,7 @@ namespace Pulsar.Tests.ViewModels
                 .Setup(service => service.ResetToFirstLaunchAsync())
                 .ReturnsAsync(CloneConfig(fallbackConfig));
             harness.ConfigService
-                .Setup(service => service.LoadAsync())
+                .Setup(service => service.LoadSnapshotAsync(It.IsAny<bool>()))
                 .ReturnsAsync(() => CloneConfig(fallbackConfig));
 
             harness.DialogService
@@ -166,7 +188,7 @@ namespace Pulsar.Tests.ViewModels
 
             // Assert
             harness.ConfigService.Verify(service => service.ResetToFirstLaunchAsync(), Times.Once);
-            harness.ConfigService.Verify(service => service.SaveAsync(It.IsAny<ProfilesConfig>()), Times.Never);
+            harness.ConfigService.Verify(service => service.SaveAsync(It.IsAny<ProfilesConfig>(), It.IsAny<long?>()), Times.Never);
 
             var reloadedConfig = await viewModel.GetConfigAsync();
             reloadedConfig.Profiles.Should().ContainKey("Global");
@@ -188,7 +210,7 @@ namespace Pulsar.Tests.ViewModels
                 .Setup(service => service.ResetToFirstLaunchAsync())
                 .ReturnsAsync(CloneConfig(fallbackConfig));
             harness.ConfigService
-                .Setup(service => service.LoadAsync())
+                .Setup(service => service.LoadSnapshotAsync(It.IsAny<bool>()))
                 .ReturnsAsync(() => CloneConfig(fallbackConfig));
 
             harness.DialogService
@@ -256,13 +278,6 @@ namespace Pulsar.Tests.ViewModels
             throw new TimeoutException("SettingsViewModel did not finish initialization in time.");
         }
 
-        private static object? InvokePrivate(object instance, string methodName, params object[] arguments)
-        {
-            var method = instance.GetType().GetMethod(methodName, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-            method.Should().NotBeNull($"{methodName} should exist on {instance.GetType().Name}");
-            return method!.Invoke(instance, arguments);
-        }
-
         private static void EnsureApplication()
         {
             if (Application.Current == null)
@@ -276,10 +291,10 @@ namespace Pulsar.Tests.ViewModels
             var config = CreateConfig();
 
             var configService = new Mock<IConfigService>();
-            configService.SetupGet(service => service.Current).Returns(config);
+            configService.Setup(service => service.GetSnapshot()).Returns(config);
             configService.SetupGet(service => service.LastValidationResult).Returns((ValidationResult?)null);
-            configService.Setup(service => service.LoadAsync()).ReturnsAsync(CloneConfig(config));
-            configService.Setup(service => service.SaveAsync(It.IsAny<ProfilesConfig>())).Returns(Task.CompletedTask);
+            configService.Setup(service => service.LoadSnapshotAsync(It.IsAny<bool>())).ReturnsAsync(CloneConfig(config));
+            configService.Setup(service => service.SaveAsync(It.IsAny<ProfilesConfig>(), It.IsAny<long?>())).Returns(Task.CompletedTask);
             configService.Setup(service => service.GetValidatedSlotsPerPage()).Returns(() => config.Settings.SlotsPerPage);
 
             var dialogService = new Mock<IDialogService>();
@@ -327,7 +342,7 @@ namespace Pulsar.Tests.ViewModels
 
             var viewModel = new SettingsViewModel(
                 configService.Object,
-                new Mock<IWindowService>().Object,
+                new Mock<IWindowDiscoveryService>().Object,
                 CreateThemeServiceMock().Object,
                 new Mock<IHotkeyService>().Object,
                 dialogService.Object,

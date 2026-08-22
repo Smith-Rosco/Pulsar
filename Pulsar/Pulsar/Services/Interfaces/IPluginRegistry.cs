@@ -16,6 +16,7 @@ namespace Pulsar.Services.Interfaces
         Task<IPulsarPlugin?> GetOrActivatePluginAsync(string pluginId);
         Task<PluginResult> ExecuteAsync(string pluginId, string action, IReadOnlyDictionary<string, string> args, PulsarContext context, CancellationToken cancellationToken = default);
         Task SetPluginStateAsync(string pluginId, bool enabled);
+        Task GrantPermissionsAsync(string pluginId, IEnumerable<string> permissions);
         bool IsPluginEnabled(string pluginId);
         IEnumerable<IPulsarPlugin> GetAllPlugins();
         Task UnloadAllAsync();

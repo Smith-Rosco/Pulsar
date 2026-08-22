@@ -274,10 +274,19 @@ namespace Pulsar.Native
                    _trackedWinDown == getKeyStateWin;
         }
 
-        public void OnSyntheticEventBegin()
+                public void OnSyntheticEventBegin()
         {
             _syntheticEventSuppression = true;
         }
+        // --- Tracked modifier state (RDP-safe ground truth) ---
+
+        public bool IsCtrlDown => _trackedCtrlDown;
+
+        public bool IsShiftDown => _trackedShiftDown;
+
+        public bool IsAltDown => _trackedAltDown;
+
+        public bool IsWinDown => _trackedWinDown;
 
         public void OnSyntheticEventEnd()
         {

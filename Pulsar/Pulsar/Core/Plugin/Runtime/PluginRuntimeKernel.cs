@@ -3,11 +3,13 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Pulsar.Core.Localization;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
+using Pulsar.Services;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -123,6 +125,13 @@ namespace Pulsar.Core.Plugin.Runtime
         public void Transition(string pluginId, PluginLifecycleState state, Exception? error = null)
         {
             var snapshot = GetSnapshot(pluginId);
+
+            if (!IsValidTransition(snapshot.State, state))
+            {
+                throw new InvalidOperationException(
+                    $"Invalid plugin lifecycle transition for '{pluginId}': {snapshot.State} -> {state}.");
+            }
+
             _snapshots[pluginId] = new PluginRuntimeSnapshot
             {
                 PluginId = pluginId,
@@ -130,6 +139,28 @@ namespace Pulsar.Core.Plugin.Runtime
                 LastError = error,
                 LoadedAtUtc = snapshot.LoadedAtUtc ?? (state is PluginLifecycleState.Loaded or PluginLifecycleState.Enabled or PluginLifecycleState.Disabled or PluginLifecycleState.Running or PluginLifecycleState.Recovering or PluginLifecycleState.Faulted ? DateTime.UtcNow : null),
                 UnloadedAtUtc = state == PluginLifecycleState.Unloaded ? DateTime.UtcNow : snapshot.UnloadedAtUtc
+            };
+        }
+
+        private static bool IsValidTransition(PluginLifecycleState current, PluginLifecycleState next)
+        {
+            // Idempotent re-entry into the same state is always allowed.
+            if (current == next)
+            {
+                return true;
+            }
+
+            return next switch
+            {
+                // Terminal / recovery states can be reached from any prior state.
+                PluginLifecycleState.Faulted or PluginLifecycleState.Unloaded => true,
+
+                PluginLifecycleState.Loaded => current is PluginLifecycleState.Unloaded or PluginLifecycleState.Faulted,
+                PluginLifecycleState.Enabled => current is PluginLifecycleState.Unloaded or PluginLifecycleState.Loaded or PluginLifecycleState.Disabled or PluginLifecycleState.Running or PluginLifecycleState.Faulted or PluginLifecycleState.Recovering,
+                PluginLifecycleState.Disabled => current is PluginLifecycleState.Loaded or PluginLifecycleState.Enabled or PluginLifecycleState.Running,
+                PluginLifecycleState.Running => current is PluginLifecycleState.Enabled or PluginLifecycleState.Faulted or PluginLifecycleState.Recovering,
+                PluginLifecycleState.Recovering => current is PluginLifecycleState.Faulted,
+                _ => false
             };
         }
 
@@ -166,7 +197,10 @@ namespace Pulsar.Core.Plugin.Runtime
         private const int MaxFailures = 3;
         private static readonly TimeSpan ResetTimeout = TimeSpan.FromMinutes(1);
 
-        private readonly ConcurrentDictionary<string, int> _failureCounts = new(StringComparer.OrdinalIgnoreCase);
+        // Sliding-window failure timestamps. ADR-002 defines the breaker as
+        // "3 crashes within 1 minute"; storing timestamps makes that window real
+        // instead of counting failures indefinitely.
+        private readonly ConcurrentDictionary<string, List<DateTime>> _recentFailures = new(StringComparer.OrdinalIgnoreCase);
         private readonly ConcurrentDictionary<string, DateTime> _brokenCircuits = new(StringComparer.OrdinalIgnoreCase);
         private readonly ILogger<PluginCircuitBreakerPolicy> _logger;
         private readonly IPluginHealthMonitor? _healthMonitor;
@@ -218,7 +252,7 @@ namespace Pulsar.Core.Plugin.Runtime
                 return;
             }
 
-            _failureCounts.TryRemove(pluginId, out _);
+            _recentFailures.TryRemove(pluginId, out _);
         }
 
         public void RecordFailure(PluginDescriptor descriptor, string pluginId, Exception ex)
@@ -228,7 +262,17 @@ namespace Pulsar.Core.Plugin.Runtime
                 return;
             }
 
-            var count = _failureCounts.AddOrUpdate(pluginId, 1, (_, existing) => existing + 1);
+            var failures = _recentFailures.GetOrAdd(pluginId, _ => new List<DateTime>());
+            int count;
+
+            lock (failures)
+            {
+                var cutoff = DateTime.UtcNow - ResetTimeout;
+                failures.RemoveAll(timestamp => timestamp < cutoff);
+                failures.Add(DateTime.UtcNow);
+                count = failures.Count;
+            }
+
             _logger.LogWarning(ex, "Plugin crashed ({Count}/{MaxFailures})", count, MaxFailures);
 
             if (count < MaxFailures)
@@ -237,7 +281,7 @@ namespace Pulsar.Core.Plugin.Runtime
             }
 
             _brokenCircuits[pluginId] = DateTime.UtcNow;
-            _failureCounts.TryRemove(pluginId, out _);
+            _recentFailures.TryRemove(pluginId, out _);
             _logger.LogCritical("Circuit Breaker Tripped! Plugin temporarily disabled for {Timeout}s", ResetTimeout.TotalSeconds);
             _healthMonitor?.RecordCircuitBreakerTrip(pluginId);
             _trayService?.ShowNotification(
@@ -257,11 +301,39 @@ namespace Pulsar.Core.Plugin.Runtime
 
         public required PulsarContext Context { get; init; }
 
+        /// <summary>
+        /// Permissions granted to the plugin in Profiles.json. The pipeline passes
+        /// this to <see cref="IPluginPermissionService"/> before execution.
+        /// </summary>
+        public IReadOnlyCollection<string> GrantedPermissions { get; init; } = Array.Empty<string>();
+
         public required Func<bool> IsEnabled { get; init; }
 
         public required Func<Task<IPulsarPlugin?>> ActivateAsync { get; init; }
 
         public CancellationToken CancellationToken { get; init; }
+    }
+
+    /// <summary>
+    /// Decides what happens when a Core plugin (tier = Core) fails. Core plugin
+    /// failures are fatal by architecture: the default policy rethrows the
+    /// original exception. The application shell may register an alternative
+    /// policy that shuts the process down after emergency cleanup.
+    /// </summary>
+    public interface ICorePluginFailureHandler
+    {
+        PluginExecutionOutcome Handle(PluginDescriptor descriptor, Exception exception);
+    }
+
+    public sealed class RethrowCorePluginFailureHandler : ICorePluginFailureHandler
+    {
+        public static readonly RethrowCorePluginFailureHandler Instance = new();
+
+        public PluginExecutionOutcome Handle(PluginDescriptor descriptor, Exception exception)
+        {
+            ExceptionDispatchInfo.Capture(exception).Throw();
+            throw new InvalidOperationException("Unreachable.", exception);
+        }
     }
 
     public class PluginExecutionPipeline
@@ -271,22 +343,64 @@ namespace Pulsar.Core.Plugin.Runtime
         private readonly IPluginUsageTracker? _usageTracker;
         private readonly IPluginHealthMonitor? _healthMonitor;
         private readonly ILogger<PluginExecutionPipeline> _logger;
+        private readonly ICorePluginFailureHandler _coreFailureHandler;
+        private readonly IPluginPermissionService _permissionService;
+        private readonly ConcurrentDictionary<string, SemaphoreSlim> _executionLocks = new(StringComparer.OrdinalIgnoreCase);
 
         public PluginExecutionPipeline(
             PluginRuntimeStateStore runtimeStateStore,
             PluginCircuitBreakerPolicy breakerPolicy,
             ILogger<PluginExecutionPipeline>? logger = null,
             IPluginUsageTracker? usageTracker = null,
-            IPluginHealthMonitor? healthMonitor = null)
+            IPluginHealthMonitor? healthMonitor = null,
+            ICorePluginFailureHandler? coreFailureHandler = null,
+            TimeSpan? executionTimeout = null,
+            IPluginPermissionService? permissionService = null)
         {
             _runtimeStateStore = runtimeStateStore;
             _breakerPolicy = breakerPolicy;
             _usageTracker = usageTracker;
             _healthMonitor = healthMonitor;
             _logger = logger ?? NullLogger<PluginExecutionPipeline>.Instance;
+            _coreFailureHandler = coreFailureHandler ?? RethrowCorePluginFailureHandler.Instance;
+            ExecutionTimeout = executionTimeout ?? TimeSpan.FromSeconds(30);
+            _permissionService = permissionService ?? new PluginPermissionService();
         }
 
+        /// <summary>
+        /// Maximum wall-clock duration of a single plugin action. The value is
+        /// exposed as init-only so timeout policy tests can run without waiting
+        /// 30 seconds while production keeps the original budget.
+        /// </summary>
+        public TimeSpan ExecutionTimeout { get; init; }
+
         public async Task<PluginExecutionOutcome> ExecuteAsync(PluginExecutionRequest request, CancellationToken cancellationToken = default)
+        {
+            var pluginId = request.Descriptor.Id;
+
+            // Default execution policy: one action per plugin at a time. A plugin
+            // that needs reentrancy must be refactored to use a background queue,
+            // not concurrent mutation of its internal state.
+            var executionLock = _executionLocks.GetOrAdd(pluginId, static _ => new SemaphoreSlim(1, 1));
+            if (!await executionLock.WaitAsync(TimeSpan.Zero, cancellationToken).ConfigureAwait(false))
+            {
+                _logger.LogWarning("Plugin is already executing: {PluginId}", pluginId);
+                return new PluginExecutionOutcome(
+                    PluginResult.Error($"Plugin is already executing: {pluginId}", PluginErrorSeverity.Recoverable, PluginErrorCode.TemporaryUnavailable),
+                    PluginExecutionOutcomeKind.Blocked);
+            }
+
+            try
+            {
+                return await ExecuteCoreAsync(request, cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                executionLock.Release();
+            }
+        }
+
+        private async Task<PluginExecutionOutcome> ExecuteCoreAsync(PluginExecutionRequest request, CancellationToken cancellationToken = default)
         {
             var pluginId = request.Descriptor.Id;
 
@@ -294,6 +408,29 @@ namespace Pulsar.Core.Plugin.Runtime
             {
                 _logger.LogWarning("Plugin is disabled by user: {PluginId}", pluginId);
                 return new PluginExecutionOutcome(PluginResult.Error("Plugin is disabled."), PluginExecutionOutcomeKind.Blocked);
+            }
+
+            var permissionEvaluation = _permissionService.Evaluate(
+                request.Descriptor,
+                request.GrantedPermissions);
+            if (!permissionEvaluation.Granted)
+            {
+                var details = permissionEvaluation.MissingPermissions.Count > 0
+                    ? string.Join(", ", permissionEvaluation.MissingPermissions)
+                    : string.Join(", ", permissionEvaluation.UnknownPermissions);
+
+                _logger.LogWarning(
+                    "Plugin execution blocked by permissions: {PluginId}. Missing=[{Missing}] Unknown=[{Unknown}]",
+                    pluginId,
+                    string.Join(", ", permissionEvaluation.MissingPermissions),
+                    string.Join(", ", permissionEvaluation.UnknownPermissions));
+
+                return new PluginExecutionOutcome(
+                    PluginResult.Error(
+                        $"Plugin execution blocked by permissions: {details}",
+                        PluginErrorSeverity.Recoverable,
+                        PluginErrorCode.AccessDenied),
+                    PluginExecutionOutcomeKind.Blocked);
             }
 
             var availability = _breakerPolicy.CheckAvailability(request.Descriptor, pluginId);
@@ -314,17 +451,22 @@ namespace Pulsar.Core.Plugin.Runtime
                 return new PluginExecutionOutcome(PluginResult.Error($"Plugin unavailable: {pluginId}"), PluginExecutionOutcomeKind.Blocked);
             }
 
+            IPluginPermissionInterceptor permissionInterceptor = request.Descriptor.IsExternal
+                ? new GrantedPluginPermissionInterceptor(request.GrantedPermissions)
+                : AllowAllPluginPermissionInterceptor.Instance;
+
             using var executionScope = PluginExecutionContext.BeginScope(
                 pluginId,
                 request.Action,
-                targetProcessName: request.Context.TargetProcessName);
+                targetProcessName: request.Context.TargetProcessName,
+                permissionInterceptor: permissionInterceptor);
 
             var stopwatch = Stopwatch.StartNew();
             var readyState = PluginLifecycleState.Enabled;
             _runtimeStateStore.Transition(pluginId, PluginLifecycleState.Running);
 
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, request.CancellationToken);
-            linkedCts.CancelAfter(TimeSpan.FromSeconds(30));
+            linkedCts.CancelAfter(ExecutionTimeout);
 
             try
             {
@@ -340,6 +482,8 @@ namespace Pulsar.Core.Plugin.Runtime
                 _runtimeStateStore.Transition(pluginId, readyState);
                 if (request.Descriptor.Tier == PluginTier.Extension && result.Severity == PluginErrorSeverity.Critical)
                 {
+                    // A returned Critical result is a handled failure signal for the
+                    // breaker. Only unhandled exceptions/timeouts are fatal for Core.
                     var criticalException = new InvalidOperationException(result.Message ?? "Critical plugin error");
                     _runtimeStateStore.Transition(pluginId, PluginLifecycleState.Faulted, criticalException);
                     _breakerPolicy.RecordFailure(request.Descriptor, pluginId, criticalException);
@@ -348,20 +492,40 @@ namespace Pulsar.Core.Plugin.Runtime
                 _logger.LogWarning("Plugin execution failed (logic error): {Message}", result.Message ?? "Unknown error");
                 return Complete(pluginId, stopwatch, request.Context, request.Action, result, PluginExecutionOutcomeKind.HandledFailure);
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested && !request.CancellationToken.IsCancellationRequested)
             {
-                var timeoutException = new TimeoutException($"Plugin execution timed out after 30 seconds: {pluginId}");
+                var timeoutException = new TimeoutException($"Plugin execution timed out after {ExecutionTimeout.TotalSeconds:0.#} seconds: {pluginId}");
                 _runtimeStateStore.Transition(pluginId, PluginLifecycleState.Faulted, timeoutException);
-                _breakerPolicy.RecordFailure(request.Descriptor, pluginId, timeoutException);
                 _logger.LogError(timeoutException, "Plugin execution timed out");
+
+                if (request.Descriptor.Tier == PluginTier.Core)
+                {
+                    return _coreFailureHandler.Handle(request.Descriptor, timeoutException);
+                }
+
+                _breakerPolicy.RecordFailure(request.Descriptor, pluginId, timeoutException);
                 var timeoutResult = PluginResult.Error($"Plugin execution timed out: {pluginId}", PluginErrorSeverity.Critical);
                 return Complete(pluginId, stopwatch, request.Context, request.Action, timeoutResult, PluginExecutionOutcomeKind.Blocked, timeoutException);
+            }
+            catch (OperationCanceledException)
+            {
+                // Caller cancellation is not a plugin fault and must not trip the breaker.
+                _runtimeStateStore.Transition(pluginId, readyState);
+                _logger.LogInformation("Plugin execution cancelled by caller: {PluginId}", pluginId);
+                var cancelledResult = PluginResult.Error("Plugin execution was cancelled.", PluginErrorSeverity.Recoverable, PluginErrorCode.UserCancelled);
+                return Complete(pluginId, stopwatch, request.Context, request.Action, cancelledResult, PluginExecutionOutcomeKind.Blocked);
             }
             catch (Exception ex)
             {
                 _runtimeStateStore.Transition(pluginId, PluginLifecycleState.Faulted, ex);
-                _breakerPolicy.RecordFailure(request.Descriptor, pluginId, ex);
                 _logger.LogError(ex, "Plugin execution threw exception");
+
+                if (request.Descriptor.Tier == PluginTier.Core)
+                {
+                    return _coreFailureHandler.Handle(request.Descriptor, ex);
+                }
+
+                _breakerPolicy.RecordFailure(request.Descriptor, pluginId, ex);
                 var result = PluginResult.Error($"Plugin execution failed: {ex.Message}");
                 return Complete(pluginId, stopwatch, request.Context, request.Action, result, PluginExecutionOutcomeKind.Exception, ex);
             }
@@ -406,6 +570,7 @@ namespace Pulsar.Core.Plugin.Runtime
         private readonly PluginExecutionPipeline _executionPipeline;
         private readonly ILogger<PluginRuntimeKernel> _logger;
         private readonly IConfigService? _configService;
+        private readonly ConcurrentDictionary<string, SemaphoreSlim> _activationLocks = new(StringComparer.OrdinalIgnoreCase);
 
         public PluginRuntimeKernel(
             IServiceProvider serviceProvider,
@@ -476,22 +641,39 @@ namespace Pulsar.Core.Plugin.Runtime
                 return null;
             }
 
-            var stopwatch = Stopwatch.StartNew();
+            // Per-plugin activation gate. Two slots may request the same plugin at
+            // the same time; without this gate each request creates its own instance
+            // and the second one overwrites runtime state, losing lifecycle hooks.
+            var activationLock = _activationLocks.GetOrAdd(pluginId, static _ => new SemaphoreSlim(1, 1));
+            await activationLock.WaitAsync();
             try
             {
-                var plugin = _loader.ActivatePlugin(descriptor);
-                _runtimeStateStore.SetPlugin(plugin, PluginLifecycleState.Loaded);
-                await ApplyProfileAsync(descriptor, plugin);
-                stopwatch.Stop();
-                _logger.LogInformation("[PluginRuntimeKernel] Activated plugin {PluginId} in {ElapsedMs}ms", plugin.Id, stopwatch.ElapsedMilliseconds);
-                return plugin;
+                if (_runtimeStateStore.TryGetPlugin(pluginId, out existingPlugin))
+                {
+                    return existingPlugin;
+                }
+
+                var stopwatch = Stopwatch.StartNew();
+                try
+                {
+                    var plugin = _loader.ActivatePlugin(descriptor);
+                    _runtimeStateStore.SetPlugin(plugin, PluginLifecycleState.Loaded);
+                    await ApplyProfileAsync(descriptor, plugin);
+                    stopwatch.Stop();
+                    _logger.LogInformation("[PluginRuntimeKernel] Activated plugin {PluginId} in {ElapsedMs}ms", plugin.Id, stopwatch.ElapsedMilliseconds);
+                    return plugin;
+                }
+                catch (Exception ex)
+                {
+                    stopwatch.Stop();
+                    _runtimeStateStore.Transition(pluginId, PluginLifecycleState.Faulted, ex);
+                    _logger.LogError(ex, "[PluginRuntimeKernel] Failed to activate plugin {PluginId} after {ElapsedMs}ms", pluginId, stopwatch.ElapsedMilliseconds);
+                    return null;
+                }
             }
-            catch (Exception ex)
+            finally
             {
-                stopwatch.Stop();
-                _runtimeStateStore.Transition(pluginId, PluginLifecycleState.Faulted, ex);
-                _logger.LogError(ex, "[PluginRuntimeKernel] Failed to activate plugin {PluginId} after {ElapsedMs}ms", pluginId, stopwatch.ElapsedMilliseconds);
-                return null;
+                activationLock.Release();
             }
         }
 
@@ -510,12 +692,63 @@ namespace Pulsar.Core.Plugin.Runtime
                 Action = action,
                 Args = args,
                 Context = context,
+                GrantedPermissions = GetGrantedPermissions(pluginId),
                 IsEnabled = () => IsPluginEnabled(pluginId),
                 ActivateAsync = () => GetOrActivatePluginAsync(pluginId),
                 CancellationToken = cancellationToken
             });
 
             return outcome.Result;
+        }
+
+        /// <summary>
+        /// Persists user-approved permissions for an external plugin. Unknown
+        /// permission tokens are rejected before touching Profiles.json.
+        /// </summary>
+        public async Task GrantPermissionsAsync(string pluginId, IEnumerable<string> permissions)
+        {
+            if (_configService == null)
+            {
+                return;
+            }
+
+            var descriptor = GetDescriptor(pluginId);
+            if (descriptor == null)
+            {
+                _logger.LogWarning("[PluginRuntimeKernel] Cannot grant permissions for unknown plugin: {PluginId}", pluginId);
+                return;
+            }
+
+            var normalized = permissions
+                .Where(permission => !string.IsNullOrWhiteSpace(permission))
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+
+            foreach (var permission in normalized)
+            {
+                if (!PluginPermissions.IsKnown(permission))
+                {
+                    throw new ArgumentException($"Unknown plugin permission: {permission}", nameof(permissions));
+                }
+            }
+
+            await ConfigEditSession.RunAsync(_configService, session =>
+                session.UpdatePluginProfile(pluginId, profile =>
+                    profile.GrantedPermissions = normalized.ToList()));
+            _logger.LogInformation(
+                "[PluginRuntimeKernel] Granted {Count} permissions for {PluginId}",
+                normalized.Length,
+                pluginId);
+        }
+
+        private IReadOnlyCollection<string> GetGrantedPermissions(string pluginId)
+        {
+            if (_configService?.GetSnapshot().Plugins.TryGetValue(pluginId, out var profile) == true)
+            {
+                return profile.GrantedPermissions;
+            }
+
+            return Array.Empty<string>();
         }
 
         public async Task SetPluginStateAsync(string pluginId, bool enabled)
@@ -537,19 +770,17 @@ namespace Pulsar.Core.Plugin.Runtime
                 return;
             }
 
-            var config = _configService.Current;
-            if (!config.Plugins.TryGetValue(pluginId, out var profile))
-            {
-                profile = new PluginProfile();
-                config.Plugins[pluginId] = profile;
-            }
-
-            if (profile.Enabled == enabled)
+            var currentProfile = _configService.GetSnapshot().Plugins.TryGetValue(pluginId, out var current)
+                ? current
+                : new PluginProfile();
+            if (currentProfile.Enabled == enabled)
             {
                 return;
             }
 
-            profile.Enabled = enabled;
+            await ConfigEditSession.RunAsync(_configService, session =>
+                session.UpdatePluginProfile(pluginId, profile => profile.Enabled = enabled));
+
             if (_runtimeStateStore.TryGetPlugin(pluginId, out var plugin) && plugin is IPluginLifecycle lifecycle)
             {
                 if (enabled)
@@ -567,8 +798,6 @@ namespace Pulsar.Core.Plugin.Runtime
             {
                 _runtimeStateStore.Transition(pluginId, enabled ? PluginLifecycleState.Enabled : PluginLifecycleState.Disabled);
             }
-
-            await _configService.SaveAsync(config);
         }
 
         public bool IsPluginEnabled(string pluginId)
@@ -579,7 +808,7 @@ namespace Pulsar.Core.Plugin.Runtime
                 return true;
             }
 
-            if (_configService?.Current?.Plugins.TryGetValue(pluginId, out var profile) == true)
+            if (_configService?.GetSnapshot()?.Plugins.TryGetValue(pluginId, out var profile) == true)
             {
                 return profile.Enabled;
             }
@@ -615,12 +844,13 @@ namespace Pulsar.Core.Plugin.Runtime
                 return;
             }
 
-            var config = _configService.Current;
-            if (!config.Plugins.TryGetValue(plugin.Id, out var profile))
-            {
-                profile = new PluginProfile { Enabled = true };
-                config.Plugins[plugin.Id] = profile;
-            }
+            // Read-only apply: the runtime applies the user's persisted profile (or
+            // defaults when absent) but never writes back to Profiles.json. Activating
+            // a plugin is not a user configuration change.
+            var config = _configService.GetSnapshot();
+            PluginProfile? profile = null;
+            config.Plugins.TryGetValue(plugin.Id, out profile);
+            profile ??= new PluginProfile { Enabled = true };
 
             if (plugin is IPluginConfigurable configurable)
             {
@@ -630,7 +860,7 @@ namespace Pulsar.Core.Plugin.Runtime
                     if (!validationResult.IsValid)
                     {
                         _logger.LogError("[PluginRuntimeKernel] Invalid settings for {PluginId}: {Errors}", plugin.Id, string.Join(", ", validationResult.Errors));
-                        profile.Config = GetDefaultSettings(configurable);
+                        profile = new PluginProfile { Enabled = profile.Enabled, Config = GetDefaultSettings(configurable) };
                     }
 
                     configurable.UpdateSettings(profile.Config);

@@ -16,7 +16,6 @@ using Pulsar.Core.Messages;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Plugins.Core.Pki.Contracts;
 using Pulsar.Plugins.Core.Pki.Models;
-using Pulsar.Plugins.Core.Pki.Services;
 using Pulsar.Helpers;
 using Pulsar.Models;
 using Pulsar.Services;
@@ -34,53 +33,10 @@ using DragDropEffects = System.Windows.DragDropEffects;
 
 namespace Pulsar.ViewModels
 {
-    /// <summary>
-    /// Enhanced ContextInfo with slot count display
-    /// </summary>
-    public partial class ContextInfo : ObservableObject
-    {
-        public string Key { get; }
-        public string DisplayName { get; }
-        public string Icon { get; }
-        public bool IsProfile { get; }
-        public string? Alias { get; } // [New]
-
-        [ObservableProperty]
-        private int _slotCount;
-
-        public ContextInfo(string key, string displayName, string icon, bool isProfile, string? alias = null)
-        {
-            Key = key;
-            
-            // 🎯 核心逻辑：自动格式化显示名称
-            // 优先级：Alias > 格式化的 Key > 原始 displayName
-            if (!string.IsNullOrWhiteSpace(alias))
-            {
-                // 用户自定义别名优先
-                DisplayName = alias;
-            }
-            else if (isProfile)
-            {
-                // Profile 类型：格式化进程名（EXCEL → Excel）
-                DisplayName = ProcessNameFormatter.ToDisplayName(key);
-            }
-            else
-            {
-                // 系统上下文（Launcher/Global）：使用原始名称
-                DisplayName = displayName;
-            }
-            
-            Icon = icon;
-            IsProfile = isProfile;
-            Alias = alias;
-            SlotCount = 0;
-        }
-    }
-
     public partial class SettingsViewModel : ObservableObject, GongSolutions.Wpf.DragDrop.IDropTarget
     {
         private readonly IConfigService _configService;
-        private readonly IWindowService _windowService;
+        private readonly IWindowDiscoveryService _windowService;
         private readonly IThemeService _themeService;
         private readonly IHotkeyService _hotkeyService;
         private readonly IDialogService _dialogService;
@@ -94,7 +50,9 @@ namespace Pulsar.ViewModels
         private readonly ILogger<SettingsViewModel> _logger;
         private readonly ILocalizationService _loc;
         private readonly ITutorialService _tutorialService;
+        private readonly SlotEditorWorkspace _slotEditor;
         private ProfilesConfig _config;
+        private ConfigEditSession? _editSession;
 
         // ===== Drag & Drop =====
         private CancellationTokenSource? _notificationDebounceToken;
@@ -113,22 +71,25 @@ namespace Pulsar.ViewModels
             }
         }
 
-        public ObservableCollection<ContextInfo> AvailableContexts { get; } = new();
+        // ===== Slot editing (delegated to the Slot Editor Workspace) =====
 
-        [ObservableProperty]
-        [NotifyPropertyChangedFor(nameof(CanDeleteProfile))]
-        [NotifyPropertyChangedFor(nameof(CanAddSecrets))]
-        [NotifyPropertyChangedFor(nameof(CanEditProfile))] // [New]
-        private ContextInfo? _currentContext;
+        public SlotEditorWorkspace SlotEditor => _slotEditor;
 
-        public bool CanDeleteProfile => CurrentContext?.IsProfile == true;
-        public bool CanEditProfile => CurrentContext?.IsProfile == true; // [New]
-        public bool CanAddSecrets => CurrentContext?.Key != "Launcher";
+        public ObservableCollection<ContextInfo> AvailableContexts => _slotEditor.AvailableContexts;
 
-        // [Phase 2] Unsaved Changes Tracking
-        [ObservableProperty]
-        [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
-        private bool _hasUnsavedChanges;
+        public ContextInfo? CurrentContext
+        {
+            get => _slotEditor.CurrentContext;
+            set => _slotEditor.CurrentContext = value;
+        }
+
+        public bool CanDeleteProfile => _slotEditor.CanDeleteProfile;
+        public bool CanEditProfile => _slotEditor.CanEditProfile;
+        public bool CanAddSecrets => _slotEditor.CanAddSecrets;
+
+        public ObservableCollection<PluginSlot> CurrentSlots => _slotEditor.CurrentSlots;
+
+        public bool HasUnsavedChanges => _slotEditor.HasUnsavedChanges;
 
         public ObservableCollection<LanguageDisplayModel> SupportedLanguages { get; } = new();
 
@@ -158,26 +119,7 @@ namespace Pulsar.ViewModels
         /// </summary>
         private void MarkDirty()
         {
-            if (_suppressDirtyCount > 0)
-            {
-                _logger.LogWarning("[MarkDirty] Skipped — _suppressDirtyCount is {Count} (possible stale/incomplete initialization state)", _suppressDirtyCount);
-                return;
-            }
-
-            _logger.LogDebug("MarkDirty called, HasUnsavedChanges: {Current} -> true", HasUnsavedChanges);
-            HasUnsavedChanges = true;
-            
-            // [Fix] Manually notify command to refresh CanExecute
-            // This is needed because ui:NavigationViewItem may not automatically respond to property changes
-            try
-            {
-                SaveCommand.NotifyCanExecuteChanged();
-                _logger.LogDebug("SaveCommand.NotifyCanExecuteChanged() called successfully");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to notify SaveCommand");
-            }
+            _slotEditor.MarkDirty();
         }
 
         /// <summary>
@@ -235,101 +177,9 @@ namespace Pulsar.ViewModels
             }
         }
 
-        private ObservableCollection<PluginSlot> _currentSlots = new ObservableCollection<PluginSlot>();
-        public ObservableCollection<PluginSlot> CurrentSlots
-        {
-            get => _currentSlots;
-            set
-            {
-                if (_currentSlots != null)
-                {
-                    _currentSlots.CollectionChanged -= OnCurrentSlotsCollectionChanged;
-                    // 取消订阅旧集合中所有对象的属性变更事件
-                    foreach (var slot in _currentSlots)
-                    {
-                        slot.PropertyChanged -= OnSlotPropertyChanged;
-                    }
-                }
-
-                if (SetProperty(ref _currentSlots, value))
-                {
-                    if (_currentSlots != null)
-                    {
-                        _currentSlots.CollectionChanged += OnCurrentSlotsCollectionChanged;
-                        // 订阅新集合中所有对象的属性变更事件
-                        foreach (var slot in _currentSlots)
-                        {
-                            slot.PropertyChanged -= OnSlotPropertyChanged; // 防止重复订阅
-                            slot.PropertyChanged += OnSlotPropertyChanged;
-                        }
-                        UpdateCurrentContextVisuals();
-                    }
-                }
-            }
-        }
-
-        private void OnCurrentSlotsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-        {
-            // 处理集合变更（添加/删除）
-            if (e.OldItems != null)
-            {
-                foreach (PluginSlot slot in e.OldItems)
-                {
-                    slot.PropertyChanged -= OnSlotPropertyChanged;
-                }
-            }
-
-            if (e.NewItems != null)
-            {
-                foreach (PluginSlot slot in e.NewItems)
-                {
-                    slot.PropertyChanged -= OnSlotPropertyChanged; // 防止重复订阅
-                    slot.PropertyChanged += OnSlotPropertyChanged;
-                }
-            }
-
-            UpdateCurrentContextVisuals();
-            MarkDirty(); // 集合变更（添加/删除）也需要标记为脏
-        }
-
-        /// <summary>
-        /// 监听 PluginSlot 内部属性变更（Label, IconKey, Color, Args 等）
-        /// </summary>
-        private void OnSlotPropertyChanged(object? sender, PropertyChangedEventArgs e)
-        {
-            if (sender is PluginSlot slot
-                && (e.PropertyName == "Item[]" || e.PropertyName == nameof(PluginSlot.Action)))
-            {
-                UpdateSlotPresentation(slot);
-            }
-
-            if (sender is PluginSlot presentationSlot
-                && (e.PropertyName == nameof(PluginSlot.Label)
-                    || e.PropertyName == nameof(PluginSlot.Color)
-                    || e.PropertyName == nameof(PluginSlot.PluginId)
-                    || e.PropertyName == nameof(PluginSlot.Slot)))
-            {
-                RefreshSlotPresentationModel(presentationSlot);
-            }
-
-            MarkDirty();
-        }
-
-        private static void RefreshSlotPresentationModel(PluginSlot slot)
-        {
-            slot.SetPresentation(SlotPresentationBuilder.Build(slot));
-        }
-
-        private void UpdateCurrentContextVisuals()
-        {
-            if (CurrentContext == null || CurrentSlots == null) return;
-            
-            CurrentContext.SlotCount = CurrentSlots.Count;
-        }
-
         public SettingsViewModel(
             IConfigService configService,
-            IWindowService windowService,
+            IWindowDiscoveryService windowService,
             IThemeService themeService,
             IHotkeyService hotkeyService,
             IDialogService dialogService,
@@ -360,6 +210,13 @@ namespace Pulsar.ViewModels
             _tutorialService = tutorialService;
             _processRegistryService = processRegistryService;
             _config = new ProfilesConfig();
+
+            _slotEditor = new SlotEditorWorkspace(
+                pluginMetadataRegistry,
+                secretMetadataResolver,
+                () => _configService.LastValidationResult);
+            _slotEditor.PropertyChanged += OnSlotEditorPropertyChanged;
+
             _cacheStatistics = _loc["Settings.General.CacheLoading"];
             _settingsShell.PropertyChanged += OnSettingsShellPropertyChanged;
 
@@ -411,6 +268,32 @@ namespace Pulsar.ViewModels
             });
         }
 
+        private void OnSlotEditorPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            switch (e.PropertyName)
+            {
+                case nameof(SlotEditorWorkspace.CurrentContext):
+                case nameof(SlotEditorWorkspace.CurrentSlots):
+                case nameof(SlotEditorWorkspace.AvailableContexts):
+                case nameof(SlotEditorWorkspace.CanDeleteProfile):
+                case nameof(SlotEditorWorkspace.CanEditProfile):
+                case nameof(SlotEditorWorkspace.CanAddSecrets):
+                case nameof(SlotEditorWorkspace.HasUnsavedChanges):
+                    OnPropertyChanged(e.PropertyName);
+                    break;
+            }
+
+            if (e.PropertyName == nameof(SlotEditorWorkspace.HasUnsavedChanges))
+            {
+                SaveCommand.NotifyCanExecuteChanged();
+            }
+
+            if (e.PropertyName == nameof(SlotEditorWorkspace.CanAddSecrets))
+            {
+                AddSecretCommand.NotifyCanExecuteChanged();
+            }
+        }
+
         private void OnSettingsShellPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(SettingsShellViewModel.CurrentPageId))
@@ -425,175 +308,46 @@ namespace Pulsar.ViewModels
         public void PauseHotkeys() => _hotkeyService.Pause();
         public void ResumeHotkeys() => _hotkeyService.Resume();
 
-        private bool _suppressSlotSync = false;
-        private int _suppressDirtyCount = 0;
-
-        private void WithSuppressedDirty(Action action)
-        {
-            _suppressDirtyCount++;
-
-            try
-            {
-                action();
-            }
-            finally
-            {
-                _suppressDirtyCount--;
-            }
-        }
-
-        private async Task WithSuppressedDirtyAsync(Func<Task> action)
-        {
-            _suppressDirtyCount++;
-
-            try
-            {
-                await action();
-            }
-            finally
-            {
-                _suppressDirtyCount--;
-            }
-        }
-
         public async Task<ProfilesConfig> GetConfigAsync()
         {
-             if (_config == null) _config = await _configService.LoadAsync();
-             return _config;
+            if (_config == null)
+            {
+                _editSession = await ConfigEditSession.BeginAsync(_configService);
+                _config = _editSession.Draft;
+                _slotEditor.AttachConfig(_config);
+            }
+
+            return _config;
         }
 
         public async Task LoadSettings()
         {
-            await WithSuppressedDirtyAsync(async () =>
+            await _slotEditor.WithSuppressedDirtyAsync(async () =>
             {
-                _suppressSlotSync = true;
+                _editSession = await ConfigEditSession.BeginAsync(_configService);
+                _config = _editSession.Draft;
 
-                try
-                {
-                    var sharedConfig = await _configService.LoadAsync();
-                    // [Transactional] Deep Clone to work on a draft
-                    var options = new System.Text.Json.JsonSerializerOptions 
-                    { 
-                        PropertyNameCaseInsensitive = true,
-                        WriteIndented = true 
-                    };
-                    var json = System.Text.Json.JsonSerializer.Serialize(sharedConfig, options);
-                    _config = System.Text.Json.JsonSerializer.Deserialize<ProfilesConfig>(json, options) ?? new ProfilesConfig();
-                    _persistedSecrets = await _secretStore.LoadAsync();
+                _slotEditor.Load(_config, await _secretStore.LoadAsync());
 
-                    GeneralSettings = _config.Settings;
-                    SelectedLanguage = SupportedLanguages.FirstOrDefault(l => l.Code == _config.Settings.Language) ?? SupportedLanguages.FirstOrDefault();
-                    RefreshContexts();
+                GeneralSettings = _config.Settings;
+                SelectedLanguage = SupportedLanguages.FirstOrDefault(l => l.Code == _config.Settings.Language) ?? SupportedLanguages.FirstOrDefault();
 
-                    // Notify properties to trigger bindings/theme updates
-                    OnPropertyChanged(nameof(CurrentTheme));
+                // Notify properties to trigger bindings/theme updates
+                OnPropertyChanged(nameof(CurrentTheme));
 
-                    if (_config.Settings.ThemeEnum != _themeService.CurrentTheme)
-                        ApplySettingsTheme(_config.Settings.ThemeEnum);
-                    
-                    // [New] Notify Hotkeys
-                    OnPropertyChanged(nameof(ShowGridHotkey));
-                    OnPropertyChanged(nameof(ShowSwitcherHotkey));
-                    
-                    // [New] Notify Radial Menu Layout
-                    OnPropertyChanged(nameof(SlotsPerPagePreview));
-                    
-                    // [Phase 2] Reset dirty flag after loading
-                    HasUnsavedChanges = false;
-                }
-                finally
-                {
-                    _suppressSlotSync = false;
-                }
+                if (_config.Settings.ThemeEnum != _themeService.CurrentTheme)
+                    ApplySettingsTheme(_config.Settings.ThemeEnum);
+                
+                // [New] Notify Hotkeys
+                OnPropertyChanged(nameof(ShowGridHotkey));
+                OnPropertyChanged(nameof(ShowSwitcherHotkey));
+                
+                // [New] Notify Radial Menu Layout
+                OnPropertyChanged(nameof(SlotsPerPagePreview));
             });
         }
 
-        private void UpdateContextStats(ContextInfo ctx)
-        {
-            if (_config?.Profiles == null) return;
-            
-            List<PluginSlot>? slots = null;
-
-            if (ctx.Key == "Launcher")
-            {
-                if (_config.Profiles.TryGetValue("Global", out var p)) slots = p.SwitchMode;
-            }
-            else if (ctx.Key == "Global")
-            {
-                if (_config.Profiles.TryGetValue("Global", out var p)) slots = p.CommandMode;
-            }
-            else
-            {
-                if (_config.Profiles.TryGetValue(ctx.Key, out var p)) slots = p.CommandMode;
-            }
-
-            if (slots != null)
-            {
-                ctx.SlotCount = slots.Count;
-            }
-            else
-            {
-                ctx.SlotCount = 0;
-            }
-        }
-
-        partial void OnCurrentContextChanged(ContextInfo? value)
-        {
-            if (value == null || _config == null) return;
-            AddSecretCommand.NotifyCanExecuteChanged();
-
-            WithSuppressedDirty(() =>
-            {
-                List<PluginSlot> sourceList = new List<PluginSlot>();
-
-                if (value.Key == "Launcher")
-                {
-                    if (_config.Profiles.TryGetValue("Global", out var globalProfile) && globalProfile.SwitchMode != null)
-                    {
-                        sourceList = globalProfile.SwitchMode;
-                    }
-                }
-                else if (value.Key == "Global")
-                {
-                     if (_config.Profiles.TryGetValue("Global", out var globalProfile) && globalProfile.CommandMode != null)
-                    {
-                        sourceList = globalProfile.CommandMode;
-                    }
-                }
-                else
-                {
-                    if (_config.Profiles.TryGetValue(value.Key, out var profile) && profile.CommandMode != null)
-                    {
-                        sourceList = profile.CommandMode;
-                    }
-                }
-
-                CurrentSlots.CollectionChanged -= OnCurrentSlotsCollectionChanged;
-
-                foreach (var slot in CurrentSlots)
-                {
-                    slot.PropertyChanged -= OnSlotPropertyChanged;
-                }
-
-                CurrentSlots.Clear();
-
-                foreach (var slot in sourceList.OrderBy(s => s.Slot))
-                {
-                    CurrentSlots.Add(slot);
-                }
-
-                CurrentSlots.CollectionChanged += OnCurrentSlotsCollectionChanged;
-
-                foreach (var slot in CurrentSlots)
-                {
-                    slot.PropertyChanged -= OnSlotPropertyChanged;
-                    slot.PropertyChanged += OnSlotPropertyChanged;
-                }
-
-                UpdateCurrentContextVisuals();
-                RefreshSlotParameterMetadata();
-            });
-        }
+        public void RefreshContexts() => _slotEditor.RefreshContexts();
 
         [RelayCommand]
         public async Task AddSlotDialog()
@@ -602,8 +356,8 @@ namespace Pulsar.ViewModels
             var vm = new SlotEditorViewModel(
                 SlotEditorMode.Create,
                 cards,
-                CreateSlotDraft,
-                SetSlotDraftAction,
+                _slotEditor.CreateSlotDraft,
+                _slotEditor.SetSlotDraftAction,
                 PickSlotParameterValue,
                 PickIcon,
                 PickColor,
@@ -628,7 +382,8 @@ namespace Pulsar.ViewModels
 
             if (result == DialogResult.Confirmed && vm.CreatedSlot != null)
             {
-                CommitCreatedSlot(vm.CreatedSlot);
+                _slotEditor.CommitCreatedSlot(vm.CreatedSlot);
+                SendNotification(_loc["Notification.Success"], string.Format(_loc["Notification.SlotAddedFormat"], vm.CreatedSlot.Label), ControlAppearance.Success);
 
                 // P2 Fix: If the newly created slot is a PKI slot and secretId is still empty,
                 // immediately open the secret picker so the user can link a secret.
@@ -643,8 +398,9 @@ namespace Pulsar.ViewModels
         [RelayCommand]
         public void AddSlotOfType(string pluginId)
         {
-            var draft = CreateSlotDraft(pluginId);
-            CommitCreatedSlot(draft);
+            var draft = _slotEditor.CreateSlotDraft(pluginId);
+            _slotEditor.CommitCreatedSlot(draft);
+            SendNotification(_loc["Notification.Success"], string.Format(_loc["Notification.SlotAddedFormat"], draft.Label), ControlAppearance.Success);
         }
 
         [RelayCommand(CanExecute = nameof(CanAddSecrets))]
@@ -668,7 +424,7 @@ namespace Pulsar.ViewModels
                     Account = vm.Account,
                     EncryptedData = vm.ResultEncryptedData
                 };
-                _pendingSecrets[secretId] = payload;
+                _slotEditor.PendingSecrets[secretId] = payload;
 
                 var newItem = new PluginSlot
                 {
@@ -685,7 +441,7 @@ namespace Pulsar.ViewModels
                 };
 
                 CurrentSlots.Add(newItem);
-                InitializeSlotMetadata(newItem);
+                _slotEditor.InitializeSlotMetadata(newItem);
                 MarkDirty(); // [Phase 2]
                 SendNotification(_loc["Notification.Success"], _loc["Notification.SecretAdded"], ControlAppearance.Success);
             }
@@ -707,11 +463,6 @@ namespace Pulsar.ViewModels
 
                 if (string.IsNullOrWhiteSpace(processName)) return;
 
-                // [Smart Icon Discovery] logic is inside InputProfileViewModel if user picked process.
-                // But if user typed manually, we might still want to discover?
-                // InputProfileViewModel.PickProcess handles it.
-                // If manual typing, we trust InputProfileViewModel's IconKey (default or picked).
-                
                 if (_config.Profiles.ContainsKey(processName))
                 {
                     SendNotification(_loc["Notification.Error"], string.Format(_loc["Notification.ProfileAlreadyExistsFormat"], processName), ControlAppearance.Danger);
@@ -754,9 +505,6 @@ namespace Pulsar.ViewModels
                     }
                     catch { /* Ignore access denied for specific process instance */ }
                 }
-
-                // 2. Try common paths (optional, but good for common apps like chrome/notepad if not running?)
-                // For now, stick to running processes to be safe and accurate.
             }
             catch (Exception ex)
             {
@@ -790,44 +538,6 @@ namespace Pulsar.ViewModels
             }
         }
 
-        partial void OnCurrentContextChanging(ContextInfo? value)
-        {
-            if (!_suppressSlotSync)
-            {
-                SyncSlotsToConfig();
-            }
-        }
-
-        private void SyncSlotsToConfig()
-        {
-            if (_config == null || CurrentContext == null || CurrentSlots == null) return;
-
-            // Clone list to ensure config has its own copy
-            var listToSave = CurrentSlots.ToList();
-
-            if (CurrentContext.Key == "Launcher")
-            {
-                if (!_config.Profiles.ContainsKey("Global")) _config.Profiles["Global"] = new ProcessProfile();
-                _config.Profiles["Global"].SwitchMode = listToSave;
-            }
-            else if (CurrentContext.Key == "Global")
-            {
-                if (!_config.Profiles.ContainsKey("Global")) _config.Profiles["Global"] = new ProcessProfile();
-                _config.Profiles["Global"].CommandMode = listToSave;
-            }
-            else
-            {
-                // For regular profiles
-                if (!_config.Profiles.TryGetValue(CurrentContext.Key, out var profile))
-                {
-                    // Should exist if context exists, but create if missing to be safe
-                    profile = new ProcessProfile();
-                    _config.Profiles[CurrentContext.Key] = profile;
-                }
-                profile.CommandMode = listToSave;
-            }
-        }
-
         [RelayCommand(CanExecute = nameof(CanSave))]
         public async Task Save()
         {
@@ -842,22 +552,29 @@ namespace Pulsar.ViewModels
             try
             {
                 // [Fix] Ensure current modifications are committed before saving
-                SyncSlotsToConfig();
+                _slotEditor.SyncSlotsToConfig();
                 
                 // [Fix] Refresh slot metadata BEFORE saving to ensure valid actions are persisted
-                RefreshSlotParameterMetadata();
+                _slotEditor.RefreshSlotParameterMetadata();
 
                 var allSecrets = await _secretStore.LoadAsync();
-                foreach (var kvp in _pendingSecrets)
+                foreach (var kvp in _slotEditor.PendingSecrets)
                 {
                     allSecrets[kvp.Key] = kvp.Value;
                 }
                 
                 await _secretStore.SaveAsync(allSecrets);
-                _persistedSecrets = new Dictionary<Guid, Plugins.Core.Pki.Models.SecretPayload>(allSecrets);
-                _pendingSecrets.Clear();
-                
-                await _configService.SaveAsync(_config);
+                _slotEditor.ReplacePersistedSecrets(allSecrets);
+
+                if (_editSession == null)
+                {
+                    _editSession = await ConfigEditSession.BeginAsync(_configService);
+                    _config = _editSession.Draft;
+                    _slotEditor.AttachConfig(_config);
+                }
+
+                await _editSession.CommitAsync();
+                ResyncSettingsReferences();
 
                 // [Architecture] Notify RadialMenuViewModel to reinitialize slots if count changed
                 // This ensures immediate visual feedback without requiring app restart
@@ -870,7 +587,7 @@ namespace Pulsar.ViewModels
                 _hotkeyService.RebuildCache();
 
                 // [Phase 2] Reset dirty flag after successful save
-                HasUnsavedChanges = false;
+                _slotEditor.ResetDirty();
                 
                 SendNotification(_loc["Notification.Saved"], _loc["Notification.ConfigSaved"], ControlAppearance.Success);
             }
@@ -880,7 +597,7 @@ namespace Pulsar.ViewModels
 
                 if (_configService.LastValidationResult is { IsValid: false } validationResult)
                 {
-                    RefreshSlotValidationSummaries(validationResult);
+                    _slotEditor.RefreshSlotValidationSummaries(validationResult);
                     var firstError = validationResult.Errors.FirstOrDefault()?.Message ?? _loc["Notification.FailedToSave"];
                     SendNotification(_loc["Notification.ValidationError"], firstError, ControlAppearance.Danger);
                 }
@@ -888,6 +605,19 @@ namespace Pulsar.ViewModels
                 {
                     SendNotification(_loc["Notification.Error"], _loc["Notification.SaveError"], ControlAppearance.Danger);
                 }
+            }
+        }
+
+        /// <summary>
+        /// A rebase may replace draft regions (e.g. Settings) with newer objects from
+        /// the store. Re-point bound references at the committed draft so the UI and
+        /// the persisted graph stay the same objects.
+        /// </summary>
+        private void ResyncSettingsReferences()
+        {
+            if (!ReferenceEquals(GeneralSettings, _config.Settings))
+            {
+                _slotEditor.WithSuppressedDirty(() => GeneralSettings = _config.Settings);
             }
         }
 
@@ -945,105 +675,6 @@ namespace Pulsar.ViewModels
             return SlotTypeCard.BuildAllCards(_loc, pluginDisplayModels);
         }
 
-        private PluginSlot CreateSlotDraft(string pluginId)
-        {
-            var slot = new PluginSlot
-            {
-                Slot = GetNextSlotNumber(),
-                PluginId = pluginId
-            };
-
-            string? iconKey = _pluginMetadataRegistry.GetMetadata(pluginId)?.Display.IconKey;
-            if (!string.IsNullOrWhiteSpace(iconKey))
-            {
-                slot.IconKey = iconKey;
-            }
-
-            InitializeSlotMetadata(slot);
-            RefreshSlotValidationSummary(slot);
-            UpdateSlotPresentation(slot);
-            return slot;
-        }
-
-        private void SetSlotDraftAction(PluginSlot slot, string? action)
-        {
-            if (slot == null || string.IsNullOrWhiteSpace(action))
-            {
-                return;
-            }
-
-            slot.Action = action;
-            InitializeSlotMetadata(slot);
-            RefreshSlotValidationSummary(slot);
-            UpdateSlotPresentation(slot);
-        }
-
-        private void CommitCreatedSlot(PluginSlot slot)
-        {
-            if (CurrentSlots == null || slot == null)
-            {
-                return;
-            }
-
-            slot.Slot = GetNextSlotNumber();
-            InitializeSlotMetadata(slot);
-            RefreshSlotValidationSummary(slot);
-            UpdateSlotPresentation(slot);
-
-            CurrentSlots.Add(slot);
-            MarkDirty();
-            WeakReferenceMessenger.Default.Send(new SlotAddedMessage(slot));
-            SendNotification(_loc["Notification.Success"], string.Format(_loc["Notification.SlotAddedFormat"], slot.Label), ControlAppearance.Success);
-        }
-
-        private int GetNextSlotNumber()
-        {
-            if (CurrentSlots == null || CurrentSlots.Count == 0)
-            {
-                return 1;
-            }
-
-            return CurrentSlots.Max(slot => slot.Slot) + 1;
-        }
-
-        public void RefreshContexts()
-        {
-            var previousKey = CurrentContext?.Key;
-
-            AvailableContexts.Clear();
-            
-            var launcherCtx = new ContextInfo("Launcher", "Launcher", "\uE768", false, null);
-            UpdateContextStats(launcherCtx);
-            AvailableContexts.Add(launcherCtx);
-            
-            var globalCtx = new ContextInfo("Global", "Global", "\uE774", false, null);
-            UpdateContextStats(globalCtx);
-            AvailableContexts.Add(globalCtx);
-
-            if (_config.Profiles != null)
-            {
-                foreach (var profileKey in _config.Profiles.Keys.Where(k => k != "Global").OrderBy(k => k))
-                {
-                    _config.Profiles.TryGetValue(profileKey, out var profileData);
-                    string iconKey = !string.IsNullOrEmpty(profileData?.Icon) ? profileData.Icon : "\uE945";
-                    
-                    // ✅ 简化逻辑：直接传递 profileKey，让 ContextInfo 构造函数自动处理格式化
-                    // 优先级：Alias > 格式化的 profileKey (EXCEL → Excel) > 原始 profileKey
-                    var profileCtx = new ContextInfo(profileKey, profileKey, iconKey, true, profileData?.Alias);
-                    UpdateContextStats(profileCtx);
-                    AvailableContexts.Add(profileCtx);
-                }
-            }
-
-            var target = AvailableContexts.FirstOrDefault(c => c.Key == previousKey)
-                         ?? AvailableContexts.FirstOrDefault();
-            CurrentContext = target;
-        }
-
-
-
-
-
         [RelayCommand]
         public void AddSlot()
         {
@@ -1059,11 +690,6 @@ namespace Pulsar.ViewModels
             }
         }
 
-
-
-        private Dictionary<Guid, Plugins.Core.Pki.Models.SecretPayload> _pendingSecrets = new();
-        private Dictionary<Guid, Plugins.Core.Pki.Models.SecretPayload> _persistedSecrets = new();
-
         [RelayCommand]
         public async Task EditSecret(PluginSlot slot)
         {
@@ -1075,9 +701,9 @@ namespace Pulsar.ViewModels
                 return;
             }
 
-            if (!_pendingSecrets.TryGetValue(secretId, out var payload))
+            if (!_slotEditor.PendingSecrets.TryGetValue(secretId, out var payload))
             {
-                _persistedSecrets.TryGetValue(secretId, out payload);
+                _slotEditor.PersistedSecrets.TryGetValue(secretId, out payload);
             }
 
             if (payload == null) 
@@ -1088,7 +714,7 @@ namespace Pulsar.ViewModels
 
             var vm = new QuickSecretsViewModel(_secretProtector);
             bool autoEnter = slot.Args.TryGetValue("autoEnter", out var ae) && bool.Parse(ae);
-            var secretDisplay = ResolveSecretDisplay(secretId.ToString(), BuildLegacySecretLabelMap());
+            var secretDisplay = _slotEditor.ResolveSecretDisplay(secretId.ToString(), _slotEditor.BuildLegacySecretLabelMap());
             vm.LoadForEdit(secretDisplay?.Label ?? slot.Label, payload.Account, payload.EncryptedData, autoEnter);
 
             var result = await _dialogService.ShowCustomAsync(_loc["Notification.EditSecret"], vm, DialogButtons.OkCancel);
@@ -1100,9 +726,9 @@ namespace Pulsar.ViewModels
                 
                 payload.Account = vm.Account;
                 payload.EncryptedData = vm.ResultEncryptedData;
-                _pendingSecrets[secretId] = payload;
+                _slotEditor.PendingSecrets[secretId] = payload;
 
-                RefreshSlotParameterMetadata();
+                _slotEditor.RefreshSlotParameterMetadata();
                 MarkDirty(); // [Phase 2]
                 SendNotification(_loc["Notification.Success"], _loc["Notification.SecretUpdated"], ControlAppearance.Success);
             }
@@ -1116,9 +742,9 @@ namespace Pulsar.ViewModels
         {
             if (slot == null || slot.PluginId != "com.pulsar.pki") return;
 
-            var labelMap = BuildLegacySecretLabelMap();
+            var labelMap = _slotEditor.BuildLegacySecretLabelMap();
 
-            var pickerVm = new SecretPickerViewModel(_secretStore, _secretProtector, _secretMetadataResolver, _loc, _pendingSecrets, labelMap, _dialogService);
+            var pickerVm = new SecretPickerViewModel(_secretStore, _secretProtector, _secretMetadataResolver, _loc, _slotEditor.PendingSecrets, labelMap, _dialogService);
             await pickerVm.LoadAsync();
 
             await _dialogService.ShowCustomAsync(_loc["Notification.SelectSecret"], pickerVm, Models.Enums.DialogButtons.None, DialogSizeConstraints.Medium);
@@ -1127,9 +753,9 @@ namespace Pulsar.ViewModels
             {
                 slot.SetArgument("secretId", pickerVm.SelectedSecretId.Value.ToString());
 
-                InitializeSlotMetadata(slot);
-                RefreshSlotValidationSummary(slot);
-                UpdateSlotPresentation(slot);
+                _slotEditor.InitializeSlotMetadata(slot);
+                _slotEditor.RefreshSlotValidationSummary(slot);
+                _slotEditor.UpdateSlotPresentation(slot);
                 MarkDirty();
             }
         }
@@ -1195,8 +821,8 @@ namespace Pulsar.ViewModels
             var vm = new SlotEditorViewModel(
                 SlotEditorMode.Edit,
                 cards,
-                CreateSlotDraft,
-                SetSlotAction,
+                _slotEditor.CreateSlotDraft,
+                _slotEditor.SetSlotAction,
                 PickSlotParameterValue,
                 PickIcon,
                 PickColor,
@@ -1222,8 +848,7 @@ namespace Pulsar.ViewModels
             
             if (result == Pulsar.Models.Enums.DialogResult.Confirmed)
             {
-                CurrentSlots.Remove(item);
-                MarkDirty(); // [Phase 2]
+                _slotEditor.RemoveSlot(item);
                 
                 SendNotification(_loc["Notification.Deleted"], _loc["Notification.SlotRemoved"], ControlAppearance.Info);
             }
@@ -1232,67 +857,33 @@ namespace Pulsar.ViewModels
         [RelayCommand(CanExecute = nameof(CanMoveSlotUp))]
         public void MoveSlotUp(PluginSlot item)
         {
-            if (CurrentSlots == null || !CurrentSlots.Contains(item)) return;
+            if (item == null) return;
             
-            var index = CurrentSlots.IndexOf(item);
-            if (index <= 0) return; // Already at top
+            var index = CurrentSlots?.IndexOf(item) ?? -1;
+            _slotEditor.MoveSlotUp(item);
             
-            // ✅ Efficient: Use ObservableCollection.Move() instead of Clear + Add loop
-            CurrentSlots.Move(index, index - 1);
-            
-            // Reassign Slot values to maintain consistency (1, 2, 3...)
-            for (int i = 0; i < CurrentSlots.Count; i++)
-            {
-                CurrentSlots[i].Slot = i + 1;
-            }
-            
-            MarkDirty();
             _ = SendDebouncedNotification(_loc["Notification.Moved"], string.Format(_loc["Notification.MovedUpFormat"], item.Label), ControlAppearance.Info);
             _logger.LogInformation("Slot '{Label}' moved up from position {OldPos} to {NewPos}", 
                 item.Label, index + 1, index);
         }
 
-        private bool CanMoveSlotUp(PluginSlot? item)
-        {
-            if (item == null || CurrentSlots == null || !CurrentSlots.Contains(item)) 
-                return false;
-            
-            var index = CurrentSlots.IndexOf(item);
-            return index > 0; // Can move up if not at top
-        }
+        private bool CanMoveSlotUp(PluginSlot? item) => _slotEditor.CanMoveSlotUp(item);
 
         [RelayCommand(CanExecute = nameof(CanMoveSlotDown))]
         public void MoveSlotDown(PluginSlot item)
         {
-            if (CurrentSlots == null || !CurrentSlots.Contains(item)) return;
+            if (item == null) return;
             
-            var index = CurrentSlots.IndexOf(item);
-            if (index < 0 || index >= CurrentSlots.Count - 1) return; // Already at bottom
+            var index = CurrentSlots?.IndexOf(item) ?? -1;
+            _slotEditor.MoveSlotDown(item);
             
-            // ✅ Efficient: Use ObservableCollection.Move() instead of Clear + Add loop
-            CurrentSlots.Move(index, index + 1);
-            
-            // Reassign Slot values to maintain consistency (1, 2, 3...)
-            for (int i = 0; i < CurrentSlots.Count; i++)
-            {
-                CurrentSlots[i].Slot = i + 1;
-            }
-            
-            MarkDirty();
             _ = SendDebouncedNotification(_loc["Notification.Moved"], string.Format(_loc["Notification.MovedDownFormat"], item.Label), ControlAppearance.Info);
             _logger.LogInformation("Slot '{Label}' moved down from position {OldPos} to {NewPos}", 
                 item.Label, index + 1, index + 2);
         }
 
-        private bool CanMoveSlotDown(PluginSlot? item)
-        {
-            if (item == null || CurrentSlots == null || !CurrentSlots.Contains(item)) 
-                return false;
-            
-            var index = CurrentSlots.IndexOf(item);
-            return index >= 0 && index < CurrentSlots.Count - 1; // Can move down if not at bottom
-        }
-        
+        private bool CanMoveSlotDown(PluginSlot? item) => _slotEditor.CanMoveSlotDown(item);
+
         [RelayCommand]
         public async Task PickProcess(object parameter)
         {
@@ -1326,14 +917,12 @@ namespace Pulsar.ViewModels
                           slot.Label = selected.Title;
                       }
 
-                      RefreshSlotValidationSummary(slot);
+                      _slotEditor.RefreshSlotValidationSummary(slot);
                       
                       if (!string.IsNullOrEmpty(cachedIconPath)) slot.IconKey = cachedIconPath;
                   }
-               }
-          }
-        
-
+             }
+        }
 
         [RelayCommand]
         public async Task DeleteProfile()
@@ -1348,13 +937,20 @@ namespace Pulsar.ViewModels
             if (confirm != DialogResult.Confirmed) return;
 
             // [Fix] Suppress sync to prevent zombie resurrection of the deleted profile
-            _suppressSlotSync = true;
-            try
+            await _slotEditor.WithSuppressedSlotSyncAsync(async () =>
             {
                 if (_config.Profiles.Remove(profileName))
                 {
-                    // [Fix] Save changes to disk
-                    await _configService.SaveAsync(_config);
+                    // [Fix] Save changes to disk through the active edit session
+                    if (_editSession == null)
+                    {
+                        _editSession = await ConfigEditSession.BeginAsync(_configService);
+                        _config = _editSession.Draft;
+                        _slotEditor.AttachConfig(_config);
+                    }
+
+                    await _editSession.CommitAsync();
+                    ResyncSettingsReferences();
                     
                     SendNotification(_loc["Notification.Deleted"], string.Format(_loc["Notification.ProfileDeletedFormat"], profileName), ControlAppearance.Info);
                     
@@ -1368,26 +964,24 @@ namespace Pulsar.ViewModels
                                    
                     CurrentContext = fallback;
                 }
-            }
-            finally
-            {
-                // [Important] Re-enable sync only after context switch is complete
-                _suppressSlotSync = false;
-            }
+            });
         }
-        
 
-        
         [RelayCommand]
         public async Task PickIcon(PluginSlot item)
         {
             if (item == null) return;
-            var vm = new IconPickerViewModel(_searchService, item.IconKey);
+            var originalIconKey = item.IconKey;
+            var vm = new IconPickerViewModel(_searchService, originalIconKey, key => item.IconKey = key);
             var result = await _dialogService.ShowCustomAsync(_loc["Notification.SelectIcon"], vm, DialogButtons.OkCancel, DialogSizeConstraints.LargeResizable);
 
             if (result == DialogResult.Confirmed)
             {
                 item.IconKey = vm.SelectedKey;
+            }
+            else
+            {
+                item.IconKey = originalIconKey;
             }
         }
 
@@ -1403,15 +997,6 @@ namespace Pulsar.ViewModels
                 item.Color = string.Equals(selectedColor, "#FFFFFF", StringComparison.OrdinalIgnoreCase)
                     ? string.Empty
                     : selectedColor;
-                // [Fix] Ensure the Brush converter updates by notifying property changed on item if needed, 
-                // but PluginSlot implements INPC so setting property is enough.
-                // However, the SlotViewModel using this item needs to update its CustomColor.
-                // In SettingsView, we bind directly to PluginSlot.Color, so it updates the UI here.
-                // But the RadialMenu needs a reload or live update?
-                // RadialMenuViewModel -> BindSlots -> SetColor.
-                // If we want live update in RadialMenu without reload, SlotViewModel needs to listen to PluginSlot changes?
-                // No, RadialMenu reloads on Save/ConfigUpdate. So user must Save.
-                // This is fine for Settings Page preview.
             }
         }
 
@@ -1440,7 +1025,7 @@ namespace Pulsar.ViewModels
             {
                 // [Fix] Use indexer to ensure PropertyChanged notification
                 item["scriptPath"] = dialog.FileName; 
-                RefreshSlotValidationSummary(item);
+                _slotEditor.RefreshSlotValidationSummary(item);
             }
         }
 
@@ -1471,21 +1056,13 @@ namespace Pulsar.ViewModels
             {
                 // [Fix] Use indexer to ensure PropertyChanged notification
                 item["scriptPath"] = dialog.FileName; 
-                RefreshSlotValidationSummary(item);
+                _slotEditor.RefreshSlotValidationSummary(item);
             }
         }
 
         public void SetSlotAction(PluginSlot slot, string? action)
         {
-            if (slot == null || string.IsNullOrWhiteSpace(action) || string.Equals(slot.Action, action, StringComparison.OrdinalIgnoreCase))
-            {
-                return;
-            }
-
-            slot.Action = action;
-            InitializeSlotMetadata(slot);
-            RefreshSlotValidationSummary(slot);
-            MarkDirty();
+            _slotEditor.SetSlotAction(slot, action);
         }
 
         public async Task PickSlotParameterValue(SlotParameterEditorField field)
@@ -1516,166 +1093,6 @@ namespace Pulsar.ViewModels
                     await PickSecret(field.Slot);
                     break;
             }
-        }
-
-        private void RefreshSlotParameterMetadata()
-        {
-            if (CurrentSlots == null)
-            {
-                return;
-            }
-
-            foreach (var slot in CurrentSlots)
-            {
-                InitializeSlotMetadata(slot);
-            }
-
-            RefreshSlotValidationSummaries(_configService.LastValidationResult);
-        }
-
-        private void InitializeSlotMetadata(PluginSlot slot)
-        {
-            if (string.Equals(slot.PluginId, "com.pulsar.system", StringComparison.OrdinalIgnoreCase))
-            {
-                slot.Action = Plugins.Core.SystemCommand.SystemCommandPlugin.ResolveCanonicalAction(slot.Action, slot.Args);
-            }
-
-            var metadata = _pluginMetadataRegistry.GetMetadata(slot.PluginId);
-            var originalAction = slot.Action;
-
-            // 先确定有效的 actionMetadata（回退到第一个可用 action）
-            var actionMetadata = _pluginMetadataRegistry.GetActionMetadata(slot.PluginId, slot.Action)
-                ?? metadata?.Actions.Values.FirstOrDefault();
-
-            // 如果 slot.Action 为空或在注册表中找不到对应的 action，回退到第一个可用 action
-            if (actionMetadata != null && (string.IsNullOrWhiteSpace(slot.Action)
-                || _pluginMetadataRegistry.GetActionMetadata(slot.PluginId, slot.Action) == null
-                || !string.Equals(slot.Action, actionMetadata.Name, StringComparison.OrdinalIgnoreCase)))
-            {
-                System.Diagnostics.Debug.WriteLine($"[InitializeSlotMetadata] Slot {slot.Slot}: action '{originalAction}' is empty/invalid, setting to '{actionMetadata.Name}'");
-                slot.Action = actionMetadata.Name;
-            }
-
-            // 在 slot.Action 确定后再构建 IsSelected 状态
-            var actionOptions = metadata?.Actions
-                .Select(action => new SlotActionOption
-                {
-                    Value = action.Key,
-                    Label = action.Value.Label ?? action.Key,
-                    Description = action.Value.Description,
-                    IsSelected = string.Equals(action.Key, slot.Action, StringComparison.OrdinalIgnoreCase)
-                })
-                .OrderBy(action => action.Label)
-                .ToList() ?? new List<SlotActionOption>();
-
-            var parameters = actionMetadata?.Parameters
-                .Select(parameter => new SlotParameterEditorField(slot, parameter, rawSecretId => ResolveSecretDisplay(rawSecretId, BuildLegacySecretLabelMap())))
-                .ToList() ?? new List<SlotParameterEditorField>();
-
-            var quickEditParameters = SlotParameterPresentationHelper.BuildQuickEditParameters(parameters);
-            var summaryTokens = SlotParameterPresentationHelper.BuildSummaryTokens(parameters, slot.ValidationSummary);
-
-            slot.SetParameterMetadata(
-                actionOptions,
-                actionMetadata,
-                parameters.Where(parameter => parameter.Metadata.Group == Pulsar.Core.Plugin.Metadata.SlotParameterGroup.Required),
-                parameters.Where(parameter => parameter.Metadata.Group == Pulsar.Core.Plugin.Metadata.SlotParameterGroup.Optional),
-                parameters.Where(parameter => parameter.Metadata.Group == Pulsar.Core.Plugin.Metadata.SlotParameterGroup.Advanced),
-                quickEditParameters,
-                summaryTokens);
-        }
-
-        private void RefreshSlotValidationSummaries(ValidationResult? validationResult)
-        {
-            if (CurrentSlots == null)
-            {
-                return;
-            }
-
-            foreach (var slot in CurrentSlots)
-            {
-                var summary = validationResult?.Errors
-                    .Where(error => error.PluginId == slot.PluginId && error.PropertyName != null && error.PropertyName.Contains($":{slot.Slot}]"))
-                    .Select(error => error.Message)
-                    .FirstOrDefault() ?? string.Empty;
-
-                slot.SetValidationSummary(summary);
-                UpdateSlotPresentation(slot);
-            }
-        }
-
-        private void RefreshSlotValidationSummary(PluginSlot slot)
-        {
-            var validationResult = _configService.LastValidationResult;
-            if (validationResult == null)
-            {
-                slot.SetValidationSummary(string.Empty);
-                return;
-            }
-
-            var summary = validationResult.Errors
-                .Where(error => error.PluginId == slot.PluginId && error.PropertyName != null && error.PropertyName.Contains($":{slot.Slot}]"))
-                .Select(error => error.Message)
-                .FirstOrDefault() ?? string.Empty;
-
-                slot.SetValidationSummary(summary);
-                UpdateSlotPresentation(slot);
-        }
-
-        private Dictionary<Guid, string> BuildLegacySecretLabelMap()
-        {
-            var labelMap = new Dictionary<Guid, string>();
-
-            if (CurrentSlots == null)
-            {
-                return labelMap;
-            }
-
-            foreach (var slot in CurrentSlots)
-            {
-                if (slot.Args.TryGetValue("secretId", out var idStr)
-                    && Guid.TryParse(idStr, out var secretId)
-                    && !string.IsNullOrWhiteSpace(slot.Label))
-                {
-                    labelMap[secretId] = slot.Label;
-                }
-            }
-
-            return labelMap;
-        }
-
-        private SecretDisplayMetadata? ResolveSecretDisplay(string rawSecretId, IReadOnlyDictionary<Guid, string>? legacyLabels = null)
-        {
-            return _secretMetadataResolver.Resolve(rawSecretId, _persistedSecrets, _pendingSecrets, legacyLabels);
-        }
-
-        private void UpdateSlotPresentation(PluginSlot slot)
-        {
-            if (slot == null)
-            {
-                return;
-            }
-
-            var parameters = slot.RequiredParameters
-                .Concat(slot.OptionalParameters)
-                .Concat(slot.AdvancedParameters)
-                .ToList();
-
-            slot.SetParameterMetadata(
-                slot.AvailableActions,
-                new SlotActionMetadata
-                {
-                    Name = slot.Action,
-                    Label = slot.ActionLabel,
-                    Description = slot.ActionDescription
-                },
-                slot.RequiredParameters,
-                slot.OptionalParameters,
-                slot.AdvancedParameters,
-                SlotParameterPresentationHelper.BuildQuickEditParameters(parameters),
-                SlotParameterPresentationHelper.BuildSummaryTokens(parameters, slot.ValidationSummary));
-
-            RefreshSlotPresentationModel(slot);
         }
 
         private void SendNotification(string title, string message, ControlAppearance appearance = ControlAppearance.Secondary)
@@ -1724,38 +1141,24 @@ namespace Pulsar.ViewModels
                 var sourceIndex = CurrentSlots.IndexOf(sourceSlot);
                 if (sourceIndex < 0) return;
 
-                // Use InsertIndex from dropInfo - this matches the visual indicator exactly
                 var insertIndex = dropInfo.InsertIndex;
                 
-                // Clamp to valid range
                 if (insertIndex < 0) insertIndex = 0;
                 if (insertIndex > CurrentSlots.Count) insertIndex = CurrentSlots.Count;
 
-                // Adjust insert index if we removed an item before the target position
                 if (sourceIndex < insertIndex)
                 {
                     insertIndex--;
                 }
 
-                // ✅ Debounce: Only proceed if position actually changed
                 if (sourceIndex == insertIndex)
                 {
                     _logger.LogDebug("Slot dropped at same position (index {Index}), ignoring", sourceIndex);
-                    return; // No actual movement, skip operation
+                    return;
                 }
 
-                // ✅ Efficient: Use ObservableCollection.Move() instead of Remove + Insert
-                CurrentSlots.Move(sourceIndex, insertIndex);
+                _slotEditor.Reorder(sourceIndex, insertIndex);
 
-                // Reassign Slot values based on new positions (1, 2, 3...)
-                for (int i = 0; i < CurrentSlots.Count; i++)
-                {
-                    CurrentSlots[i].Slot = i + 1;
-                }
-
-                MarkDirty();
-                
-                // ✅ Use debounced notification to prevent spam during rapid dragging
                 _ = SendDebouncedNotification("Reordered", 
                     string.Format(_loc["Notification.ReorderedFormat"], sourceSlot.Label, insertIndex + 1), 
                     ControlAppearance.Info);
@@ -1782,7 +1185,8 @@ namespace Pulsar.ViewModels
                 return;
             }
 
-            var config = await _configService.LoadAsync();
+            var session = await ConfigEditSession.BeginAsync(_configService);
+            var config = session.Draft;
             config.Settings.OnboardingState = "SetupWizardComplete";
             config.Settings.HasCompletedTutorial = false;
             config.Settings.TutorialCrashedAt = null;
@@ -1804,7 +1208,7 @@ namespace Pulsar.ViewModels
                 ];
             }
 
-            await _configService.SaveAsync(config);
+            await session.CommitAsync();
 
             await _tutorialService.StartTutorialAsync();
         }

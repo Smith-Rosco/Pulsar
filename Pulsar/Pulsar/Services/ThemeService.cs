@@ -47,13 +47,20 @@ namespace Pulsar.Services
             ThemeChanged?.Invoke(this, theme);
         }
 
-        public void ApplyTheme(FrameworkElement element, AppTheme theme, WindowBackdropType backdrop = WindowBackdropType.None, bool updateGlobal = true)
+        public void SetGlobalTheme(AppTheme theme)
         {
-            if (updateGlobal)
+            if (CurrentTheme == theme)
             {
-                CurrentTheme = theme;
+                return;
             }
 
+            CurrentTheme = theme;
+            _logger.LogInformation("[ThemeService] Runtime theme changed to {Theme}", theme);
+            ThemeChanged?.Invoke(this, theme);
+        }
+
+        public void ApplyTheme(FrameworkElement element, AppTheme theme, WindowBackdropType backdrop = WindowBackdropType.None)
+        {
             if (element == null) return;
             _logger.LogDebug("[ThemeService] ApplyTheme: Element={Element}, Theme={Theme}", element.GetType().Name, theme);
 
@@ -74,11 +81,6 @@ namespace Pulsar.Services
                  ApplyStandardTheme(element, theme, backdrop);
             }
 
-            // 3. Notify subscribers
-            if (updateGlobal)
-            {
-                ThemeChanged?.Invoke(this, theme);
-            }
         }
 
         private void ApplyRadialTheme(Window window, AppTheme theme)

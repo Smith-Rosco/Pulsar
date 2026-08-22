@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -204,6 +205,32 @@ namespace Pulsar.Tests.Services
         }
 
         [Fact]
+        public async Task FlushAsync_PersistsDirtyStats_ToInjectedPath()
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), "PulsarTests", Guid.NewGuid().ToString("N"));
+            var tempFile = Path.Combine(tempDir, "PluginUsageStats.json");
+            Directory.CreateDirectory(tempDir);
+
+            try
+            {
+                using (var tracker = new PluginUsageTracker(_loggerMock.Object, statsFilePath: tempFile))
+                {
+                    tracker.RecordExecution("flush.test", true, 42, "profile", 1, "Task");
+                    await tracker.FlushAsync();
+                }
+
+                File.Exists(tempFile).Should().BeTrue("FlushAsync should persist pending stats before shutdown");
+                var json = await File.ReadAllTextAsync(tempFile);
+                json.Should().Contain("flush.test");
+            }
+            finally
+            {
+                try { if (Directory.Exists(tempDir)) Directory.Delete(tempDir, recursive: true); }
+                catch { /* ignore */ }
+            }
+        }
+
+        [Fact]
         public async Task SaveAsync_LoadAsync_Roundtrip_PreservesAllData()
         {
             CleanupTestFile();
@@ -229,6 +256,37 @@ namespace Pulsar.Tests.Services
                 stats.SlotUsage.Should().ContainKey(1);
             }
         }
+
+#pragma warning disable xUnit1031 // This test intentionally blocks to prove a non-pumping context cannot deadlock shutdown flush.
+        [Fact]
+        public void FlushAsync_DoesNotCaptureSynchronizationContext()
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), "PulsarTests", Guid.NewGuid().ToString("N"));
+            var tempFile = Path.Combine(tempDir, "PluginUsageStats.json");
+            Directory.CreateDirectory(tempDir);
+
+            var originalContext = SynchronizationContext.Current;
+            SynchronizationContext.SetSynchronizationContext(new NonPumpingSynchronizationContext());
+
+            try
+            {
+                using var tracker = new PluginUsageTracker(_loggerMock.Object, statsFilePath: tempFile);
+                tracker.RecordExecution("flush.nocontext", true, 5);
+
+                var flushTask = tracker.FlushAsync();
+                var completed = flushTask.Wait(TimeSpan.FromSeconds(2));
+
+                completed.Should().BeTrue(
+                    "flush must not require a pumping UI SynchronizationContext; App.OnExit blocks the UI thread while waiting for this task");
+            }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(originalContext);
+                try { if (Directory.Exists(tempDir)) Directory.Delete(tempDir, recursive: true); }
+                catch { /* ignore */ }
+            }
+        }
+#pragma warning restore xUnit1031
 
         [Fact]
         public async Task CleanupDailyStats_RemovesEntriesOlderThan30Days()
@@ -290,6 +348,21 @@ namespace Pulsar.Tests.Services
                 await tracker2.LoadAsync();
                 var stats = tracker2.GetStats("persist.test");
                 stats.TotalExecutions.Should().Be(1);
+            }
+        }
+
+        private sealed class NonPumpingSynchronizationContext : SynchronizationContext
+        {
+            private readonly System.Collections.Concurrent.ConcurrentQueue<(SendOrPostCallback Callback, object? State)> _queued = new();
+
+            public override void Post(SendOrPostCallback d, object? state)
+            {
+                _queued.Enqueue((d, state));
+            }
+
+            public override void Send(SendOrPostCallback d, object? state)
+            {
+                d(state);
             }
         }
     }

@@ -16,12 +16,12 @@ namespace Pulsar.ViewModels
 
         private readonly ISlotLayoutEngine _slotLayoutEngine;
         private readonly IAnimationController _animationController;
-        private readonly ILogger<RadialMenuViewModel>? _logger;
+        private readonly ILogger? _logger;
 
         public RadialMenuLayoutCoordinator(
             ISlotLayoutEngine slotLayoutEngine,
             IAnimationController animationController,
-            ILogger<RadialMenuViewModel>? logger)
+            ILogger? logger)
         {
             _slotLayoutEngine = slotLayoutEngine;
             _animationController = animationController;
@@ -31,10 +31,9 @@ namespace Pulsar.ViewModels
         public (double Radius, double CenterSize, double SlotSize) GetLayoutMetrics(int slotCount, double currentCenterSize, double currentSlotSize)
         {
             var parameters = _slotLayoutEngine.CalculateOptimalLayout(slotCount);
-            var slotLayoutEngine = _slotLayoutEngine as SlotLayoutEngine;
-            var slotSize = slotLayoutEngine?.CalculateOptimalSlotSize(slotCount) ?? currentSlotSize;
-            var centerSize = slotLayoutEngine?.CalculateOptimalCenterSize(slotCount) ?? currentCenterSize;
-            var radius = slotLayoutEngine?.CalculateOptimalRadius(slotCount, slotSize) ?? parameters.Radius;
+            var slotSize = _slotLayoutEngine.CalculateOptimalSlotSize(slotCount);
+            var centerSize = _slotLayoutEngine.CalculateOptimalCenterSize(slotCount);
+            var radius = _slotLayoutEngine.CalculateOptimalRadius(slotCount, slotSize);
             return (radius, centerSize, slotSize);
         }
 
@@ -75,12 +74,7 @@ namespace Pulsar.ViewModels
 
         public double CalculateVisualDensity(int slotCount, double slotSize, double radius)
         {
-            if (_slotLayoutEngine is SlotLayoutEngine slotLayoutEngine)
-            {
-                return slotLayoutEngine.CalculateVisualDensity(slotCount, slotSize, radius);
-            }
-
-            return 0;
+            return _slotLayoutEngine.CalculateVisualDensity(slotCount, slotSize, radius);
         }
 
         public bool ApplyConfigSlotCountChange(

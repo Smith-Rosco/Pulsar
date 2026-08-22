@@ -16,11 +16,11 @@ namespace Pulsar.Views.Dialogs.Contents
             return DataContext as SlotEditorViewModel;
         }
 
-        private void SlotParameterPicker_Click(object sender, RoutedEventArgs e)
+        private void ParameterItemsControl_Loaded(object sender, RoutedEventArgs e)
         {
-            if (sender is FrameworkElement element && element.Tag is Models.SlotParameterEditorField field)
+            if (sender is ItemsControl itemsControl)
             {
-                _ = GetViewModel()?.PickParameterValueAsync(field);
+                itemsControl.Tag = GetViewModel();
             }
         }
 

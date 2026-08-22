@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading;
+using System.Windows;
 using System.Windows.Controls;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -45,6 +46,36 @@ namespace Pulsar.Tests.Services
             service.Initialize(AppTheme.Dark);
 
             received.Should().Be(AppTheme.Dark);
+        }
+
+        [Fact]
+        public void SetGlobalTheme_ShouldUpdateRuntimeTheme_AndRaiseOnce()
+        {
+            var service = new ThemeService(NullLogger<ThemeService>.Instance);
+            var raisedCount = 0;
+            service.ThemeChanged += (_, _) => raisedCount++;
+
+            service.SetGlobalTheme(AppTheme.Dark);
+            service.SetGlobalTheme(AppTheme.Dark);
+
+            service.CurrentTheme.Should().Be(AppTheme.Dark);
+            raisedCount.Should().Be(1);
+        }
+
+        [Fact]
+        public void ApplyTheme_ShouldNotChangeRuntimeTheme_OrRaiseThemeChanged()
+        {
+            RunInSta(() =>
+            {
+                var service = new ThemeService(NullLogger<ThemeService>.Instance);
+                var raisedCount = 0;
+                service.ThemeChanged += (_, _) => raisedCount++;
+
+                service.ApplyTheme(new FrameworkElement(), AppTheme.Dark);
+
+                service.CurrentTheme.Should().Be(AppTheme.Light);
+                raisedCount.Should().Be(0);
+            });
         }
 
         [Fact]

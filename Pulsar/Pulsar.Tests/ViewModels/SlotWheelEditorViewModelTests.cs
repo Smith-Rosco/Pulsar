@@ -343,5 +343,65 @@ namespace Pulsar.Tests.ViewModels
             empty.Tooltip.Should().NotBeNull();
             empty.Tooltip.Should().Contain("2");
         }
+
+        [Fact]
+        public void SlotIconChange_ShouldPropagateToWheelItem_AndRaisePropertyChanged()
+        {
+            var slots = CreateSlots(1);
+            var vm = CreateVm();
+            vm.SetSlots(slots, SlotsPerPage);
+            var item = vm.Items.Single(i => !i.IsEmpty);
+            var raised = 0;
+            item.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName == nameof(WheelSlotItem.IconKey)) raised++;
+            };
+
+            slots[0].IconKey = "E8A7";
+
+            raised.Should().Be(1);
+            item.IconKey.Should().Be("E8A7");
+        }
+
+        [Fact]
+        public void SlotLabelChange_ShouldPropagateToWheelItemTooltip_AndRaisePropertyChanged()
+        {
+            var slots = CreateSlots(1);
+            var vm = CreateVm();
+            vm.SetSlots(slots, SlotsPerPage);
+            var item = vm.Items.Single(i => !i.IsEmpty);
+            var labelRaised = 0;
+            var tooltipRaised = 0;
+            item.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName == nameof(WheelSlotItem.Label)) labelRaised++;
+                if (args.PropertyName == nameof(WheelSlotItem.Tooltip)) tooltipRaised++;
+            };
+
+            slots[0].Label = "Renamed";
+
+            labelRaised.Should().Be(1);
+            tooltipRaised.Should().Be(1);
+            item.Tooltip.Should().Contain("Renamed");
+        }
+
+        [Fact]
+        public void SlotColorChange_ShouldPropagateToWheelItemColorHex_AndRaisePropertyChanged()
+        {
+            var slots = CreateSlots(1);
+            var vm = CreateVm();
+            vm.SetSlots(slots, SlotsPerPage);
+            var item = vm.Items.Single(i => !i.IsEmpty);
+            var raised = 0;
+            item.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName == nameof(WheelSlotItem.ColorHex)) raised++;
+            };
+
+            slots[0].Color = "#FF0000";
+
+            raised.Should().Be(1);
+            item.ColorHex.Should().Be("#FF0000");
+        }
     }
 }

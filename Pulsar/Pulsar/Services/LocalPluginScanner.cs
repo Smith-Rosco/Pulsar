@@ -81,7 +81,8 @@ namespace Pulsar.Services
                             IsInstalled = true,
                             InstalledVersion = manifest.Version,
                             LocalPath = folder,
-                            Tags = manifest.Tags ?? new List<string>()
+                            Tags = manifest.Tags ?? new List<string>(),
+                            Permissions = manifest.Permissions ?? new List<string>()
                         };
 
                         installedPlugins.Add(pluginInfo);

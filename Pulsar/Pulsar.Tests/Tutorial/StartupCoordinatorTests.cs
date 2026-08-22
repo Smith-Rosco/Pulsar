@@ -83,7 +83,7 @@ namespace Pulsar.Tests.Tutorial
         public async Task HandleStartupAsync_CleanProfile_ShouldShowOnboarding()
         {
             _mockOnboardingState.Setup(s => s.GetStateAsync()).ReturnsAsync(new OnboardingState { IsFirstRun = true });
-            _mockConfigService.Setup(s => s.LoadAsync()).ReturnsAsync(CreateCleanFirstRunConfig());
+            _mockConfigService.Setup(s => s.LoadSnapshotAsync(It.IsAny<bool>())).ReturnsAsync(CreateCleanFirstRunConfig());
 
             var coordinator = CreateCoordinator();
 
@@ -100,7 +100,7 @@ namespace Pulsar.Tests.Tutorial
                 IsFirstRun = false,
                 HasSkippedOnboarding = true
             });
-            _mockConfigService.Setup(s => s.LoadAsync()).ReturnsAsync(CreateCleanFirstRunConfig());
+            _mockConfigService.Setup(s => s.LoadSnapshotAsync(It.IsAny<bool>())).ReturnsAsync(CreateCleanFirstRunConfig());
 
             var coordinator = CreateCoordinator();
 
@@ -113,7 +113,7 @@ namespace Pulsar.Tests.Tutorial
         public async Task HandleStartupAsync_ExistingConfiguredUser_ShouldBypassAutomaticOnboarding()
         {
             _mockOnboardingState.Setup(s => s.GetStateAsync()).ReturnsAsync(new OnboardingState { IsFirstRun = true });
-            _mockConfigService.Setup(s => s.LoadAsync()).ReturnsAsync(CreateLegacyConfiguredUserConfig());
+            _mockConfigService.Setup(s => s.LoadSnapshotAsync(It.IsAny<bool>())).ReturnsAsync(CreateLegacyConfiguredUserConfig());
 
             var coordinator = CreateCoordinator();
 
@@ -133,7 +133,7 @@ namespace Pulsar.Tests.Tutorial
                 HasCompletedTutorial = false,
                 HasSkippedTutorial = false
             });
-            _mockConfigService.Setup(s => s.LoadAsync()).ReturnsAsync(CreateCleanFirstRunConfig());
+            _mockConfigService.Setup(s => s.LoadSnapshotAsync(It.IsAny<bool>())).ReturnsAsync(CreateCleanFirstRunConfig());
 
             var coordinator = CreateCoordinator();
 
@@ -152,7 +152,7 @@ namespace Pulsar.Tests.Tutorial
             HasCompletedTutorial = false,
             HasSkippedTutorial = true
         });
-        _mockConfigService.Setup(s => s.LoadAsync()).ReturnsAsync(CreateCleanFirstRunConfig());
+        _mockConfigService.Setup(s => s.LoadSnapshotAsync(It.IsAny<bool>())).ReturnsAsync(CreateCleanFirstRunConfig());
 
         var coordinator = CreateCoordinator();
 
@@ -169,7 +169,7 @@ namespace Pulsar.Tests.Tutorial
             IsFirstRun = false,
             HasSkippedOnboarding = true
         });
-        _mockConfigService.Setup(s => s.LoadAsync()).ReturnsAsync(new ProfilesConfig
+        _mockConfigService.Setup(s => s.LoadSnapshotAsync(It.IsAny<bool>())).ReturnsAsync(new ProfilesConfig
         {
             Settings = new ProfileSettings { HasCompletedInitialDetection = false },
             Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
@@ -192,7 +192,7 @@ namespace Pulsar.Tests.Tutorial
             IsFirstRun = false,
             HasSkippedOnboarding = true
         });
-        _mockConfigService.Setup(s => s.LoadAsync()).ReturnsAsync(new ProfilesConfig
+        _mockConfigService.Setup(s => s.LoadSnapshotAsync(It.IsAny<bool>())).ReturnsAsync(new ProfilesConfig
         {
             Settings = new ProfileSettings { HasCompletedInitialDetection = true },
             Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)

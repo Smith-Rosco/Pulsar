@@ -11,6 +11,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Models;
@@ -24,16 +25,20 @@ namespace Pulsar.Services
     {
         private readonly string _pluginInstallDirectory;
         private readonly ILogger<PluginPackageManager>? _logger;
+        private readonly IPluginPackageIntegrityVerifier _integrityVerifier;
         private readonly SemaphoreSlim _operationLock = new(1, 1);
 
         public event EventHandler<PluginOperationProgressEventArgs>? OperationProgress;
 
         public PluginPackageManager(
             string pluginInstallDirectory,
-            ILogger<PluginPackageManager>? logger = null)
+            ILogger<PluginPackageManager>? logger = null,
+            IPluginPackageIntegrityVerifier? integrityVerifier = null)
         {
             _pluginInstallDirectory = pluginInstallDirectory;
             _logger = logger;
+            _integrityVerifier = integrityVerifier
+                ?? new PluginPackageIntegrityService(NullLogger<PluginPackageIntegrityService>.Instance);
 
             // 确保安装目录存在
             if (!Directory.Exists(_pluginInstallDirectory))
@@ -68,7 +73,11 @@ namespace Pulsar.Services
                 ReportProgress(pluginId, PluginInstallStatus.Uninstalling, 20, "Removing plugin files...");
 
                 // 2. 删除插件目录
-                var pluginPath = Path.Combine(_pluginInstallDirectory, pluginId);
+                if (!TryGetSafeInstallPath(pluginId, out var pluginPath, out var pathError))
+                {
+                    return PluginOperationResult.Failed(pluginId, PluginOperationType.Uninstall, pathError);
+                }
+
                 if (Directory.Exists(pluginPath))
                 {
                     // 如果保留数据，备份配置文件
@@ -204,8 +213,41 @@ namespace Pulsar.Services
         /// </summary>
         private bool IsPluginInstalled(string pluginId)
         {
-            var pluginPath = Path.Combine(_pluginInstallDirectory, pluginId);
-            return Directory.Exists(pluginPath);
+            return TryGetSafeInstallPath(pluginId, out var pluginPath, out _)
+                && Directory.Exists(pluginPath);
+        }
+
+        /// <summary>
+        /// Resolves a plugin install path while ensuring the manifest-controlled
+        /// plugin ID cannot escape the plugin store via "..", rooted paths, or
+        /// alternate directory separators.
+        /// </summary>
+        private bool TryGetSafeInstallPath(string pluginId, out string installPath, out string error)
+        {
+            installPath = string.Empty;
+            error = string.Empty;
+
+            if (string.IsNullOrWhiteSpace(pluginId))
+            {
+                error = "Invalid plugin package: plugin Id is empty.";
+                return false;
+            }
+
+            var root = Path.GetFullPath(_pluginInstallDirectory)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+            var candidate = Path.GetFullPath(Path.Combine(root, pluginId));
+            var requiredPrefix = root + Path.DirectorySeparatorChar;
+
+            if (!candidate.Equals(root, StringComparison.OrdinalIgnoreCase)
+                && candidate.StartsWith(requiredPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                installPath = candidate;
+                return true;
+            }
+
+            error = $"Invalid plugin package: plugin Id '{pluginId}' is not a safe relative path.";
+            return false;
         }
 
         /// <summary>
@@ -223,13 +265,110 @@ namespace Pulsar.Services
         }
 
         /// <summary>
+        /// Reads and validates a plugin ZIP manifest without installing it. Used by
+        /// the settings UI to display the permission consent prompt.
+        /// </summary>
+        public async Task<PluginPackageInspectionResult> InspectPackageAsync(
+            string zipFilePath,
+            CancellationToken cancellationToken = default)
+        {
+            if (!File.Exists(zipFilePath))
+            {
+                return PluginPackageInspectionResult.Failed($"File not found: {zipFilePath}");
+            }
+
+            if (!Path.GetExtension(zipFilePath).Equals(".zip", StringComparison.OrdinalIgnoreCase))
+            {
+                return PluginPackageInspectionResult.Failed("File must be a .zip archive");
+            }
+
+            var tempExtractPath = Path.Combine(Path.GetTempPath(), $"Pulsar_Inspect_{Guid.NewGuid():N}");
+            Directory.CreateDirectory(tempExtractPath);
+
+            try
+            {
+                await Task.Run(() => ZipFile.ExtractToDirectory(zipFilePath, tempExtractPath), cancellationToken);
+                return ReadAndValidateManifest(tempExtractPath);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[PluginPackageManager] Failed to inspect plugin package {Path}", zipFilePath);
+                return PluginPackageInspectionResult.Failed(ex.Message);
+            }
+            finally
+            {
+                try
+                {
+                    if (Directory.Exists(tempExtractPath))
+                    {
+                        Directory.Delete(tempExtractPath, recursive: true);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogWarning(ex, "[PluginPackageManager] Failed to delete inspect temp directory: {Path}", tempExtractPath);
+                }
+            }
+        }
+
+        private PluginPackageInspectionResult ReadAndValidateManifest(string extractPath)
+        {
+            var manifestPath = Path.Combine(extractPath, "plugin.manifest.json");
+            if (!File.Exists(manifestPath))
+            {
+                manifestPath = Path.Combine(extractPath, "manifest.json");
+            }
+
+            if (!File.Exists(manifestPath))
+            {
+                return PluginPackageInspectionResult.Failed("Invalid plugin package: manifest.json not found");
+            }
+
+            try
+            {
+                var manifestJson = File.ReadAllText(manifestPath);
+                var manifest = JsonSerializer.Deserialize<PluginManifest>(
+                    manifestJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                if (manifest == null || string.IsNullOrWhiteSpace(manifest.Id))
+                {
+                    return PluginPackageInspectionResult.Failed("Invalid manifest.json: missing Id field");
+                }
+
+                var unknownPermissions = manifest.Permissions
+                    .Where(permission => !PluginPermissions.IsKnown(permission))
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray();
+
+                if (unknownPermissions.Length > 0)
+                {
+                    return PluginPackageInspectionResult.Failed(
+                        $"Invalid manifest.json: unknown permission(s) {string.Join(", ", unknownPermissions)}");
+                }
+
+                return PluginPackageInspectionResult.Succeeded(manifest);
+            }
+            catch (JsonException ex)
+            {
+                return PluginPackageInspectionResult.Failed($"Invalid manifest.json: {ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// 从本地 ZIP 文件安装插件
         /// </summary>
         public async Task<PluginOperationResult> InstallFromFileAsync(
             string zipFilePath,
+            IReadOnlyCollection<string>? approvedPermissions = null,
             CancellationToken cancellationToken = default)
         {
             var stopwatch = Stopwatch.StartNew();
+            string? createdInstallPath = null;
 
             await _operationLock.WaitAsync(cancellationToken);
             try
@@ -256,22 +395,54 @@ namespace Pulsar.Services
 
                 try
                 {
-                    await Task.Run(() => ZipFile.ExtractToDirectory(zipFilePath, tempExtractPath), cancellationToken);
-
-                    // 4. 查找 manifest.json
-                    var manifestPath = Path.Combine(tempExtractPath, "manifest.json");
-                    if (!File.Exists(manifestPath))
+                    var archiveIntegrity = await _integrityVerifier.VerifyArchiveAsync(zipFilePath, cancellationToken);
+                    if (!archiveIntegrity.IsValid)
                     {
-                        return PluginOperationResult.Failed("unknown", PluginOperationType.Install, "Invalid plugin package: manifest.json not found");
+                        return PluginOperationResult.Failed(
+                            "unknown",
+                            PluginOperationType.Verify,
+                            archiveIntegrity.Error ?? "Package integrity verification failed.");
                     }
 
-                    // 5. 读取 manifest.json
-                    var manifestJson = await File.ReadAllTextAsync(manifestPath, cancellationToken);
-                    var manifest = JsonSerializer.Deserialize<PluginManifest>(manifestJson);
+                    await Task.Run(() => ZipFile.ExtractToDirectory(zipFilePath, tempExtractPath), cancellationToken);
 
-                    if (manifest == null || string.IsNullOrEmpty(manifest.Id))
+                    // 4. Validate manifest.json / plugin.manifest.json. This helper
+                    // also rejects unknown permission tokens before any file copy.
+                    var inspection = ReadAndValidateManifest(tempExtractPath);
+                    if (!inspection.Success || inspection.Manifest == null)
                     {
-                        return PluginOperationResult.Failed("unknown", PluginOperationType.Install, "Invalid manifest.json: missing Id field");
+                        return PluginOperationResult.Failed(
+                            "unknown",
+                            PluginOperationType.Install,
+                            inspection.ErrorMessage ?? "Invalid plugin package manifest");
+                    }
+
+                    var manifest = inspection.Manifest;
+
+                    var extractedIntegrity = await _integrityVerifier.VerifyExtractedAsync(
+                        tempExtractPath,
+                        manifest.FileHashes,
+                        cancellationToken);
+                    if (!extractedIntegrity.IsValid)
+                    {
+                        return PluginOperationResult.Failed(
+                            manifest.Id,
+                            PluginOperationType.Verify,
+                            extractedIntegrity.Error ?? "Extracted package hash verification failed.");
+                    }
+
+                    var approved = approvedPermissions?.ToHashSet(StringComparer.Ordinal) ?? new HashSet<string>(StringComparer.Ordinal);
+                    var missingPermissions = manifest.Permissions
+                        .Where(permission => !approved.Contains(permission))
+                        .Distinct(StringComparer.Ordinal)
+                        .ToArray();
+
+                    if (missingPermissions.Length > 0)
+                    {
+                        return PluginOperationResult.Failed(
+                            manifest.Id,
+                            PluginOperationType.Install,
+                            $"Permission approval required: {string.Join(", ", missingPermissions)}");
                     }
 
                     var pluginId = manifest.Id;
@@ -284,8 +455,13 @@ namespace Pulsar.Services
                     }
 
                     // 7. 移动到插件目录
-                    var installPath = Path.Combine(_pluginInstallDirectory, pluginId);
+                    if (!TryGetSafeInstallPath(pluginId, out var installPath, out var pathError))
+                    {
+                        return PluginOperationResult.Failed(pluginId, PluginOperationType.Install, pathError);
+                    }
+
                     Directory.CreateDirectory(installPath);
+                    createdInstallPath = installPath;
 
                     ReportProgress(pluginId, PluginInstallStatus.Installing, 60, "Copying files...");
 
@@ -305,6 +481,15 @@ namespace Pulsar.Services
                             File.Copy(file, targetPath, overwrite: true);
                         }
                     }, cancellationToken);
+
+                    var installRecord = await _integrityVerifier.WriteInstallRecordAsync(
+                        installPath,
+                        archiveIntegrity.PackageSha256,
+                        cancellationToken);
+                    if (!installRecord.IsValid)
+                    {
+                        throw new InvalidOperationException(installRecord.Error ?? "Failed to write plugin integrity record.");
+                    }
 
                     ReportProgress(pluginId, PluginInstallStatus.Installed, 100, "Installation completed");
 
@@ -333,6 +518,25 @@ namespace Pulsar.Services
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "[PluginPackageManager] Failed to install plugin from file");
+
+                // Roll back any partial install directory so a failed package copy
+                // never leaves a half-installed plugin that is visible to the loader.
+                if (!string.IsNullOrEmpty(createdInstallPath))
+                {
+                    try
+                    {
+                        if (Directory.Exists(createdInstallPath))
+                        {
+                            Directory.Delete(createdInstallPath, recursive: true);
+                            _logger?.LogInformation("[PluginPackageManager] Removed partial install directory: {Path}", createdInstallPath);
+                        }
+                    }
+                    catch (Exception cleanupEx)
+                    {
+                        _logger?.LogWarning(cleanupEx, "[PluginPackageManager] Failed to remove partial install directory: {Path}", createdInstallPath);
+                    }
+                }
+
                 ReportProgress("unknown", PluginInstallStatus.Failed, 0, $"Installation failed: {ex.Message}");
                 return PluginOperationResult.Failed("unknown", PluginOperationType.Install, ex.Message);
             }

@@ -3,7 +3,7 @@
 **Status**: Published  
 **Scope**: Operations  
 **Applies To**: All developers and AI agents  
-**Last Updated**: 2026-03-03
+**Last Updated**: 2026-08-17
 
 ---
 
@@ -41,9 +41,81 @@ dotnet run --project Pulsar/Pulsar/Pulsar.csproj
 
 ---
 
+## Publish a Release (Artifact Convention)
+
+Release artifacts are published into `Artifacts/` and packaged as a zip. The version
+is taken from `<Version>` in `Pulsar/Pulsar/Pulsar.csproj` (e.g. `1.4.1`). Bump the
+version there before publishing a new release.
+
+Publish parameters are captured in
+`Pulsar/Pulsar/Properties/PublishProfiles/FolderProfile.pubxml`
+(**Release / win-x64 / SelfContained / PublishSingleFile / PublishReadyToRun**).
+
+### 1. Publish
+
+```powershell
+$v = "<Version>"  # e.g. 1.4.1 (matches <Version> in Pulsar.csproj)
+$root = "E:\8_Project\10_C#\Pulsar_Project"  # repo root
+Remove-Item "$root\Artifacts\publish\v$v\*" -Recurse -Force -ErrorAction SilentlyContinue
+dotnet publish Pulsar/Pulsar/Pulsar.csproj -c Release -r win-x64 --self-contained true `
+  -p:PublishSingleFile=true -p:PublishReadyToRun=true `
+  -p:PublishDir="$root\Artifacts\publish\v$v\"
+```
+
+**Output structure** — `Artifacts\publish\v{Version}\`:
+
+| Entry | Purpose |
+|-------|---------|
+| `Pulsar.exe` | Self-contained single-file app (ReadyToRun) |
+| `Pulsar.pdb` | Debug symbols |
+| `*_cor3.dll` | Native WPF runtime libs (**required** — do NOT strip; without them the self-contained app won't launch) |
+| `Assets/` | Tutorial steps + demo scripts (copied from project resources) |
+
+### 2. Package
+
+Zip the **folder contents** (not the folder itself), matching existing artifacts:
+
+```powershell
+Compress-Archive -Path "Artifacts\publish\v$v\*" `
+  -DestinationPath "Artifacts\Pulsar-v$v.zip" -CompressionLevel Optimal -Force
+```
+
+**Result** — `Artifacts\Pulsar-v{Version}.zip` (e.g. `Artifacts\Pulsar-v1.4.1.zip`),
+flat structure with `Pulsar.exe`, `Pulsar.pdb`, the `*_cor3.dll` runtime libs and
+`Assets/`.
+
+> ⚠️ The `*_cor3.dll` native libs are part of the self-contained WPF single-file
+> output and must ship alongside `Pulsar.exe`. Earlier artifacts omitted them and
+> the published build could not start.
+
+---
+
+## Publish Automation (pi Extension)
+
+The release ritual is automated by a pi coding-agent extension (`.pi/extensions/publish-local/`):
+
+| Command | Behavior |
+|---------|----------|
+| `/publish` | Local release: version bump → `dotnet publish` → verify → zip into `Artifacts/` |
+| `/publish gh` | Local release **plus** GitHub Release (needs `gh` CLI) |
+| `/publish gh-only` | Skip build; publish the existing `Artifacts/Pulsar-v{ver}.zip` to GitHub |
+| `/publish minor` / `/publish 1.6.0` | Explicit bump type or full version |
+
+- Every destructive step (clearing `Artifacts/publish/`, overwriting an existing zip, pushing to origin) asks for confirmation.
+- **GitHub publishing is opt-in per invocation and defaults to off.**
+- Release notes are generated from `git log` (conventional commits) and can be edited before publishing.
+- Tags are created as **annotated tags** so the CI workflow's `--notes-from-tag` carries notes.
+- The csproj version bump is rolled back automatically if publish/verify/zip fails before the commit step.
+- GitHub publishing requires `gh` (`winget install GitHub.cli` + `gh auth login`).
+- CI note: `.github/workflows/release.yml` skips release creation when the release already exists, so the extension-created release (from the locally verified artifact) is never overwritten.
+
+Usage from inside pi: `/reload` (first install), then `/publish` or ask the agent "发布本地版本".
+
+---
+
 ## Test Commands
 
-**Current Status**: xUnit test project at `Pulsar/Pulsar.Tests/` (331+ tests).
+**Current Status**: xUnit test project at `Pulsar/Pulsar.Tests/` (410+ tests).
 
 ### Run Tests
 

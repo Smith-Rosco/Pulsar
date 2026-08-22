@@ -25,17 +25,67 @@ namespace Pulsar.Services
         private const string ResetReloadReason = "reset";
         
         private readonly string _configPath;
-    private ProfilesConfig? _cachedConfig;
-    private readonly object _cacheLock = new();
-    private volatile bool _loadFailed;
-    private readonly ILogger<ConfigService> _logger;
+        private ProfilesConfig? _cachedConfig;
+        private readonly object _cacheLock = new();
+        private readonly SemaphoreSlim _saveLock = new(1, 1);
+        private long _configRevision;
+        private volatile bool _loadFailed;
+        private readonly ILogger<ConfigService> _logger;
         private readonly IPluginMetadataRegistry? _metadataRegistry;
         private readonly IBackgroundWorkScheduler? _backgroundWorkScheduler;
         private ConfigValidationPipeline? _validationPipeline;
 
         public event Action? ConfigUpdated;
 
-        public ProfilesConfig Current => _cachedConfig ?? CreateDefaultConfig();
+        /// <summary>
+        /// Monotonically increasing write revision. Bumped on every successful save;
+        /// consumed by <see cref="ConfigEditSession"/> to detect optimistic-concurrency
+        /// conflicts (lost updates from concurrent editors).
+        /// </summary>
+        public long CurrentRevision => Interlocked.Read(ref _configRevision);
+
+        /// <summary>
+        /// 当前配置快照（深拷贝）。调用方修改返回值只会修改副本，永远不会污染
+        /// 共享缓存——"只读"由类型行为强制，而非调用方自觉。任何持久化修改
+        /// 必须通过 <see cref="ConfigEditSession"/> 提交。
+        /// </summary>
+        /// <inheritdoc />
+        public ProfilesConfig GetSnapshot()
+        {
+            lock (_cacheLock)
+            {
+                return CloneConfig(_cachedConfig ??= CreateDefaultConfig());
+            }
+        }
+
+        /// <summary>
+        /// JSON round-trip deep copy. Rebuilds the case-insensitive Profiles dictionary
+        /// so snapshot readers see the same lookup semantics as the live cache.
+        /// </summary>
+        private static ProfilesConfig CloneConfig(ProfilesConfig source)
+        {
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                WriteIndented = true
+            };
+
+            var json = JsonSerializer.Serialize(source, options);
+            var clone = JsonSerializer.Deserialize<ProfilesConfig>(json, options) ?? new ProfilesConfig();
+
+            if (clone.Profiles != null)
+            {
+                clone.Profiles = new Dictionary<string, ProcessProfile>(clone.Profiles, StringComparer.OrdinalIgnoreCase);
+            }
+
+            return clone;
+        }
+
+        /// <inheritdoc />
+        public Task<ProfilesConfig> LoadSnapshotAsync(bool forceReload = false)
+        {
+            return LoadInternalAsync(forceReload: forceReload);
+        }
         
         /// <summary>
         /// 最近一次验证结果
@@ -45,14 +95,28 @@ namespace Pulsar.Services
         public ConfigService(
             ILogger<ConfigService> logger,
             IPluginMetadataRegistry? metadataRegistry = null,
-            IBackgroundWorkScheduler? backgroundWorkScheduler = null)
+            IBackgroundWorkScheduler? backgroundWorkScheduler = null,
+            string? configPath = null)
         {
             _logger = logger;
             _metadataRegistry = metadataRegistry;
             _backgroundWorkScheduler = backgroundWorkScheduler;
-            string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Pulsar");
-            Directory.CreateDirectory(folder);
-            _configPath = Path.Combine(folder, ConfigFileName);
+
+            if (!string.IsNullOrWhiteSpace(configPath))
+            {
+                _configPath = Path.GetFullPath(configPath);
+            }
+            else
+            {
+                string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Pulsar");
+                _configPath = Path.Combine(folder, ConfigFileName);
+            }
+
+            var configDirectory = Path.GetDirectoryName(_configPath);
+            if (!string.IsNullOrEmpty(configDirectory))
+            {
+                Directory.CreateDirectory(configDirectory);
+            }
         }
         
         /// <summary>
@@ -63,30 +127,36 @@ namespace Pulsar.Services
             _validationPipeline = pipeline;
         }
 
-        public async Task<ProfilesConfig> LoadAsync()
-        {
-            return await LoadInternalAsync();
-        }
-
-        public async Task<ProfilesConfig> LoadAsync(bool forceReload)
-        {
-            return await LoadInternalAsync(forceReload: forceReload);
-        }
-
         public async Task<ProfilesConfig> ResetToFirstLaunchAsync()
         {
             _logger.LogInformation("[ConfigService] Reset requested; clearing cached configuration and re-entering first-launch flow");
 
-            _cachedConfig = null;
+            // Serialize with writers so a concurrent SaveAsync cannot resurrect the
+            // file between cache invalidation and deletion.
+            await _saveLock.WaitAsync();
+            try
+            {
+                lock (_cacheLock)
+                {
+                    _cachedConfig = null;
+                    // Invalidate any in-flight ConfigEditSession: its revision no
+                    // longer corresponds to a config that survived the reset.
+                    Interlocked.Increment(ref _configRevision);
+                }
 
-            if (File.Exists(_configPath))
-            {
-                File.Delete(_configPath);
-                _logger.LogInformation("[ConfigService] Deleted active configuration file at {Path} before reset reload", _configPath);
+                if (File.Exists(_configPath))
+                {
+                    File.Delete(_configPath);
+                    _logger.LogInformation("[ConfigService] Deleted active configuration file at {Path} before reset reload", _configPath);
+                }
+                else
+                {
+                    _logger.LogInformation("[ConfigService] No persisted configuration file found; reset will regenerate defaults in-memory and on disk");
+                }
             }
-            else
+            finally
             {
-                _logger.LogInformation("[ConfigService] No persisted configuration file found; reset will regenerate defaults in-memory and on disk");
+                _saveLock.Release();
             }
 
             return await LoadInternalAsync(ResetReloadReason);
@@ -115,10 +185,22 @@ namespace Pulsar.Services
                     _logger.LogInformation("[ConfigService] No persisted configuration found; entering first-launch path");
                 }
 
-                _cachedConfig = CreateDefaultConfig(isResetReload);
-                await SaveAsync(_cachedConfig);
-                return _cachedConfig;
+                ProfilesConfig defaultConfig;
+                lock (_cacheLock)
+                {
+                    defaultConfig = _cachedConfig ?? CreateDefaultConfig(isResetReload);
+                    _cachedConfig = defaultConfig;
+                }
+
+                await SaveAsync(defaultConfig, expectedRevision: null);
+                return defaultConfig;
             }
+
+            // Capture the revision before reading so a concurrent successful save
+            // can invalidate this read instead of letting stale disk data overwrite
+            // the in-memory cache.
+            var revisionBeforeRead = Interlocked.Read(ref _configRevision);
+            ProfilesConfig? loaded;
 
             try
             {
@@ -128,7 +210,7 @@ namespace Pulsar.Services
                     WriteIndented = true,
                     PropertyNameCaseInsensitive = true
                 };
-                var loaded = await JsonSerializer.DeserializeAsync<ProfilesConfig>(stream, options);
+                loaded = await JsonSerializer.DeserializeAsync<ProfilesConfig>(stream, options);
                 
                 // [Architectural Fix] Ensure Profiles dictionary is case-insensitive
                 // System.Text.Json always creates case-sensitive dictionaries by default.
@@ -160,22 +242,17 @@ namespace Pulsar.Services
                     }
                 }
 
-                lock (_cacheLock)
-                {
-                    _cachedConfig = loaded;
-                }
-
-                if (_cachedConfig?.Settings is { } settings)
+                if (loaded?.Settings is { } settings)
                 {
                     ProfileSettings.ValidateOnboardingInvariants(settings, _logger);
                 }
                 
                 // [New] Validate configuration after loading
-                if (_validationPipeline != null && _cachedConfig != null)
+                if (_validationPipeline != null && loaded != null)
                 {
                     try
                     {
-                        LastValidationResult = await _validationPipeline.ValidateAsync(_cachedConfig);
+                        LastValidationResult = await _validationPipeline.ValidateAsync(loaded);
                         
                         if (!LastValidationResult.IsValid)
                         {
@@ -226,120 +303,193 @@ namespace Pulsar.Services
                     {
                         _logger.LogWarning("[ConfigService] File parse failed but previous cache exists; preserving cached config");
                     }
-                }
-            }
 
-            return _cachedConfig ?? CreateDefaultConfig();
-        }
-
-        public async Task SaveAsync(ProfilesConfig config)
-        {
-            // [Architectural Fix] Normalize all plugin configs before validation and saving
-            // This ensures any JsonElement values that might have been introduced during
-            // runtime modifications are converted to concrete types.
-            if (config?.Plugins != null)
-            {
-                foreach (var pluginProfile in config.Plugins.Values)
-                {
-                    if (pluginProfile.Config != null)
-                    {
-                        pluginProfile.Config = NormalizeConfigDictionary(pluginProfile.Config);
-                    }
-                }
-            }
-
-            // [New] Validate before saving
-            if (_validationPipeline != null && config != null)
-            {
-                try
-                {
-                    LastValidationResult = await _validationPipeline.ValidateAsync(config);
-                    
-                    if (!LastValidationResult.IsValid)
-                    {
-                        var errorMessages = string.Join("; ", LastValidationResult.Errors.Select(e => e.Message));
-                        _logger.LogError(
-                            "[ConfigService] Cannot save invalid configuration. Errors: {Errors}",
-                            errorMessages);
-                        
-                        throw new InvalidOperationException(
-                            $"Configuration validation failed: {errorMessages}");
-                    }
-                    
-                    if (LastValidationResult.Warnings.Any())
-                    {
-                        _logger.LogWarning(
-                            "[ConfigService] Saving configuration with {WarningCount} warnings",
-                            LastValidationResult.Warnings.Count);
-                    }
-                }
-                catch (InvalidOperationException)
-                {
-                    throw; // Re-throw validation errors
-                }
-                catch (Exception validationEx)
-                {
-                    _logger.LogError(validationEx, "[ConfigService] Validation pipeline threw exception during save");
-                    // Continue with save despite validation error
-                }
-            }
-            
-            var options = CreatePersistenceJsonOptions();
-
-            // [Fix] 使用重试逻辑处理文件访问冲突
-            // 教程系统可能会快速连续保存配置，需要重试机制
-            const int maxRetries = 3;
-            const int delayMs = 100;
-            
-            for (int attempt = 0; attempt < maxRetries; attempt++)
-            {
-                try
-                {
-                    // 先写入临时文件，然后原子性替换
-                    var tempPath = _configPath + ".tmp";
-                    
-                    using (var stream = new FileStream(
-                        tempPath, 
-                        FileMode.Create, 
-                        FileAccess.Write, 
-                        FileShare.None,
-                        bufferSize: 4096,
-                        useAsync: true))
-                    {
-                        await JsonSerializer.SerializeAsync(stream, config, options);
-                        await stream.FlushAsync();
-                    }
-                    
-                    // 原子性替换文件
-                    File.Move(tempPath, _configPath, overwrite: true);
-                    
-                    _logger.LogDebug("[ConfigService] Configuration saved successfully");
-                    break; // 成功，退出重试循环
-                }
-                catch (IOException ex) when (attempt < maxRetries - 1)
-                {
-                    _logger.LogWarning(
-                        "[ConfigService] File access conflict on attempt {Attempt}/{MaxRetries}, retrying in {Delay}ms. Error: {Error}",
-                        attempt + 1,
-                        maxRetries,
-                        delayMs,
-                        ex.Message);
-                    
-                    await Task.Delay(delayMs);
-                }
-                catch (IOException ex) when (attempt == maxRetries - 1)
-                {
-                    _logger.LogError(ex, "[ConfigService] Failed to save configuration after {MaxRetries} attempts", maxRetries);
-                    throw;
+                    return _cachedConfig;
                 }
             }
 
             lock (_cacheLock)
             {
-                _cachedConfig = config;
+                var effectiveConfig = _cachedConfig ?? loaded ?? CreateDefaultConfig();
+
+                if (revisionBeforeRead == Interlocked.Read(ref _configRevision))
+                {
+                    _cachedConfig = effectiveConfig;
+                    _loadFailed = false;
+                }
+
+                return effectiveConfig;
+            }
+        }
+
+        /// <summary>
+        /// Saves a config, optionally guarded by an optimistic-concurrency revision.
+        /// When <paramref name="expectedRevision"/> is provided and no longer matches
+        /// the current revision, the save is rejected with
+        /// <see cref="ConfigConcurrencyException"/> instead of overwriting a newer
+        /// writer's changes.
+        /// </summary>
+        public async Task SaveAsync(ProfilesConfig config, long? expectedRevision)
+        {
+            ArgumentNullException.ThrowIfNull(config);
+
+            bool updated = false;
+
+            await _saveLock.WaitAsync();
+            try
+            {
+                // Optimistic-concurrency guard. Checked inside the write lock so the
+                // check and the revision bump are atomic: two sessions started against
+                // the same revision can never both commit.
+                if (expectedRevision.HasValue
+                    && Interlocked.Read(ref _configRevision) != expectedRevision.Value)
+                {
+                    throw new ConfigConcurrencyException(
+                        $"Config revision {Interlocked.Read(ref _configRevision)} does not match expected {expectedRevision.Value}; " +
+                        "a concurrent editor has already committed changes.");
+                }
+
+                // [Architectural Fix] Normalize all plugin configs before validation and saving
+                // This ensures any JsonElement values that might have been introduced during
+                // runtime modifications are converted to concrete types.
+                if (config.Plugins != null)
+                {
+                    foreach (var pluginProfile in config.Plugins.Values)
+                    {
+                        if (pluginProfile.Config != null)
+                        {
+                            pluginProfile.Config = NormalizeConfigDictionary(pluginProfile.Config);
+                        }
+                    }
+                }
+
+                // [New] Validate before saving
+                if (_validationPipeline != null)
+                {
+                    try
+                    {
+                        LastValidationResult = await _validationPipeline.ValidateAsync(config);
+
+                        if (!LastValidationResult.IsValid)
+                        {
+                            var errorMessages = string.Join("; ", LastValidationResult.Errors.Select(e => e.Message));
+                            _logger.LogError(
+                                "[ConfigService] Cannot save invalid configuration. Errors: {Errors}",
+                                errorMessages);
+
+                            throw new InvalidOperationException(
+                                $"Configuration validation failed: {errorMessages}");
+                        }
+
+                        if (LastValidationResult.Warnings.Any())
+                        {
+                            _logger.LogWarning(
+                                "[ConfigService] Saving configuration with {WarningCount} warnings",
+                                LastValidationResult.Warnings.Count);
+                        }
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        throw; // Re-throw validation errors
+                    }
+                    catch (Exception validationEx)
+                    {
+                        _logger.LogError(validationEx, "[ConfigService] Validation pipeline threw exception during save");
+                        // Continue with save despite validation error
+                    }
+                }
+
+                var options = CreatePersistenceJsonOptions();
+
+                // [Fix] 使用重试逻辑处理文件访问冲突
+                // 教程系统可能会快速连续保存配置，需要重试机制
+                const int maxRetries = 3;
+                const int delayMs = 100;
+
+                // 每次保存使用唯一临时文件；并发保存现在由 _saveLock 串行化，
+                // 唯一文件名仍可避免历史 .tmp 残留与后续保存互相干扰。
+                var tempPath = _configPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+
+                try
+                {
+                    for (int attempt = 0; attempt < maxRetries; attempt++)
+                    {
+                        try
+                        {
+                            // 先写入临时文件，然后原子性替换
+                            using (var stream = new FileStream(
+                                tempPath,
+                                FileMode.Create,
+                                FileAccess.Write,
+                                FileShare.None,
+                                bufferSize: 4096,
+                                useAsync: true))
+                            {
+                                await JsonSerializer.SerializeAsync(stream, config, options);
+                                await stream.FlushAsync();
+                            }
+
+                            // 原子性替换文件
+                            File.Move(tempPath, _configPath, overwrite: true);
+                            tempPath = string.Empty;
+
+                            _logger.LogDebug("[ConfigService] Configuration saved successfully");
+                            break; // 成功，退出重试循环
+                        }
+                        catch (IOException ex) when (attempt < maxRetries - 1)
+                        {
+                            _logger.LogWarning(
+                                "[ConfigService] File access conflict on attempt {Attempt}/{MaxRetries}, retrying in {Delay}ms. Error: {Error}",
+                                attempt + 1,
+                                maxRetries,
+                                delayMs,
+                                ex.Message);
+
+                            await Task.Delay(delayMs);
+                        }
+                        catch (IOException ex) when (attempt == maxRetries - 1)
+                        {
+                            _logger.LogError(ex, "[ConfigService] Failed to save configuration after {MaxRetries} attempts", maxRetries);
+                            throw;
+                        }
+                    }
+                }
+                finally
+                {
+                    if (!string.IsNullOrEmpty(tempPath))
+                    {
+                        try
+                        {
+                            File.Delete(tempPath);
+                        }
+                        catch
+                        {
+                            // Best-effort cleanup of a temporary file. A later save
+                            // never reuses this name, so a leftover is harmless.
+                        }
+                    }
+                }
+
+                lock (_cacheLock)
+                {
+                    _cachedConfig = config;
+                    Interlocked.Increment(ref _configRevision);
+                }
+
+                _loadFailed = false;
+                updated = true;
+            }
+            finally
+            {
+                _saveLock.Release();
             }
 
-            ConfigUpdated?.Invoke();
+            // Raise outside the write lock. Subscribers may synchronously trigger
+            // another SaveAsync; this keeps the write lock strictly non-reentrant.
+            if (updated)
+            {
+                ConfigUpdated?.Invoke();
+            }
         }
 
         /// <summary>
@@ -378,7 +528,7 @@ namespace Pulsar.Services
             {
                 await Task.Delay(1000, cancellationToken);
 
-                var latestConfig = await LoadAsync(forceReload: true);
+                var latestConfig = await LoadSnapshotAsync(forceReload: true);
                 if (!IsSmartDetectionEligible(latestConfig))
                 {
                     return;
@@ -408,7 +558,7 @@ namespace Pulsar.Services
                     return;
                 }
 
-                await SaveAsync(latestConfig);
+                await SaveAsync(latestConfig, expectedRevision: null);
 
                 var globalProfile = latestConfig.Profiles?.TryGetValue("Global", out var gp) == true ? gp : null;
                 var switchCount = globalProfile?.SwitchMode?.Count ?? 0;
@@ -810,7 +960,7 @@ namespace Pulsar.Services
         /// </summary>
         public int GetValidatedSlotsPerPage()
         {
-            int slots = Current.Settings.SlotsPerPage;
+            int slots = GetSnapshot().Settings.SlotsPerPage;
             
             // 验证并约束到合理范围
             if (slots < MIN_SLOTS_PER_PAGE || slots > MAX_SLOTS_PER_PAGE)
@@ -823,39 +973,6 @@ namespace Pulsar.Services
             }
             
             return slots;
-        }
-        
-        /// <summary>
-        /// 设置每页 slot 数量并保存配置
-        /// </summary>
-        public void SetSlotsPerPage(int value)
-        {
-            int clampedValue = Math.Clamp(value, MIN_SLOTS_PER_PAGE, MAX_SLOTS_PER_PAGE);
-            
-            if (clampedValue != value)
-            {
-                _logger.LogWarning(
-                    "[ConfigService] SlotsPerPage value {Value} out of range. Clamped to {ClampedValue}",
-                    value, clampedValue);
-            }
-            
-            Current.Settings.SlotsPerPage = clampedValue;
-            
-            // 异步保存，但不等待（避免阻塞 UI）
-            ScheduleBackgroundWork(
-                workId: "config.save.slots-per-page",
-                work: async _ =>
-                {
-                    await SaveAsync(Current);
-                    _logger.LogInformation(
-                        "[ConfigService] SlotsPerPage updated to {Value}",
-                        clampedValue);
-                },
-                new BackgroundWorkOptions
-                {
-                    Priority = BackgroundWorkPriority.Low,
-                    DuplicateBehavior = BackgroundWorkDuplicateBehavior.SkipIfRunning
-                });
         }
 
         private void ScheduleBackgroundWork(string workId, Func<CancellationToken, Task> work, BackgroundWorkOptions options)
