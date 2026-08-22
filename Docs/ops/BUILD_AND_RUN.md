@@ -90,6 +90,29 @@ flat structure with `Pulsar.exe`, `Pulsar.pdb`, the `*_cor3.dll` runtime libs an
 
 ---
 
+## Publish Automation (pi Extension)
+
+The release ritual is automated by a pi coding-agent extension (`.pi/extensions/publish-local/`):
+
+| Command | Behavior |
+|---------|----------|
+| `/publish` | Local release: version bump → `dotnet publish` → verify → zip into `Artifacts/` |
+| `/publish gh` | Local release **plus** GitHub Release (needs `gh` CLI) |
+| `/publish gh-only` | Skip build; publish the existing `Artifacts/Pulsar-v{ver}.zip` to GitHub |
+| `/publish minor` / `/publish 1.6.0` | Explicit bump type or full version |
+
+- Every destructive step (clearing `Artifacts/publish/`, overwriting an existing zip, pushing to origin) asks for confirmation.
+- **GitHub publishing is opt-in per invocation and defaults to off.**
+- Release notes are generated from `git log` (conventional commits) and can be edited before publishing.
+- Tags are created as **annotated tags** so the CI workflow's `--notes-from-tag` carries notes.
+- The csproj version bump is rolled back automatically if publish/verify/zip fails before the commit step.
+- GitHub publishing requires `gh` (`winget install GitHub.cli` + `gh auth login`).
+- CI note: `.github/workflows/release.yml` skips release creation when the release already exists, so the extension-created release (from the locally verified artifact) is never overwritten.
+
+Usage from inside pi: `/reload` (first install), then `/publish` or ask the agent "发布本地版本".
+
+---
+
 ## Test Commands
 
 **Current Status**: xUnit test project at `Pulsar/Pulsar.Tests/` (410+ tests).
