@@ -37,8 +37,15 @@ Private Const COLOR_STATUS_ERR As Long = 14080255     ' 浅红
 ' 算法权重
 Private Const SCORE_EXACT As Long = 10
 Private Const SCORE_LEVEL As Long = 4
+Private Const SCORE_RECIPE_DEVICE As Long = 2   ' 机台类型(Recipe前3位)一致，弱于版本匹配但优于 Gap
 Private Const SCORE_MISMATCH As Long = -5
 Private Const SCORE_GAP As Long = -5
+
+' 产品名正则模式 (Part ID 命名规则: AABBBBCD(-X)，第7位 C=版本A-Z，第8位 D=CE自定义 A-Z/0-9)
+Private Const REGEX_FULL_NAME As String = "[A-Z0-9]{2}[A-Z0-9]{4}[A-Z][A-Z0-9](-[A-Z][A-Z0-9]*)?"
+Private Const REGEX_4CHAR_SUFFIX As String = "[A-Z0-9]{4}(-[A-Z][A-Z0-9]+)"
+Private Const REGEX_6CHAR_PREFIX As String = "[A-Z0-9]{2}[A-Z0-9]{4}(-[A-Z][A-Z0-9]*)?"
+
 
 ' 统计变量
 Private Type AuditStats
@@ -158,7 +165,12 @@ Sub Main(Optional RefSheetName As Variant)
     Do While currI > 0 Or currJ > 0
         pStep = pStep + 1
         Dim diagScore As Long
-        diagScore = CalculateScore(arr1(currI), arr2(currJ))
+        ' 防御: 某一侧已回溯完时 arr(0) 会越界 (数组是1基)，此时对角分无意义，直接给 MISMATCH
+        If currI > 0 And currJ > 0 Then
+            diagScore = CalculateScore(arr1(currI), arr2(currJ))
+        Else
+            diagScore = SCORE_MISMATCH
+        End If
         
         If currI > 0 And currJ > 0 And scoreMatrix(currI, currJ) = scoreMatrix(currI - 1, currJ - 1) + diagScore Then
             path(pStep, 1) = currI: path(pStep, 2) = currJ
@@ -172,6 +184,44 @@ Sub Main(Optional RefSheetName As Variant)
         End If
     Loop
 
+    ' 4.5 顺序保持后处理 (同 Stage 内已有步骤按顺序优先匹配，插入/删除落在块尾)
+    ' 场景: 一步刻蚀 vs 两步刻蚀(同机台)时，NW 全局最优可能把旧步骤配到第二步、把第一步当新增。
+    ' 语义: 旧步骤应对齐新流程中第一个兼容步骤。相邻 [gap, match] 且 gap 元素与 match 对侧元素同Stage+Recipe兼容 → 交换重配。
+    Dim repath() As Long, pNew As Long, ri As Long, didSwap As Boolean
+    ReDim repath(1 To n + m, 1 To 2)
+    pNew = 0
+    ri = pStep
+    Do While ri >= 1
+        didSwap = False
+        If ri > 1 Then
+            ' 情形1: 插入后跟匹配 (0,b) -> (a,c): a 与 b 兼容 → (a,b) 匹配 + (0,c) 插入
+            ' 注意: VBA 的 And 不短路，必须先用纯比较守卫、确认索引 > 0 后再调用 IsCompatPair
+            If path(ri, 1) = 0 And path(ri, 2) > 0 And path(ri - 1, 1) > 0 And path(ri - 1, 2) > 0 Then
+                If IsCompatPair(arr1(path(ri - 1, 1)), arr2(path(ri, 2))) Then
+                    pNew = pNew + 1: repath(pNew, 1) = path(ri - 1, 1): repath(pNew, 2) = path(ri, 2)
+                    pNew = pNew + 1: repath(pNew, 1) = 0: repath(pNew, 2) = path(ri - 1, 2)
+                    ri = ri - 2
+                    didSwap = True
+                End If
+            End If
+            ' 情形2: 删除后跟匹配 (a,0) -> (b,c): a 与 c 兼容 → (a,c) 匹配 + (b,0) 删除
+            If Not didSwap Then
+                If path(ri, 1) > 0 And path(ri, 2) = 0 And path(ri - 1, 1) > 0 And path(ri - 1, 2) > 0 Then
+                    If IsCompatPair(arr1(path(ri, 1)), arr2(path(ri - 1, 2))) Then
+                        pNew = pNew + 1: repath(pNew, 1) = path(ri, 1): repath(pNew, 2) = path(ri - 1, 2)
+                        pNew = pNew + 1: repath(pNew, 1) = path(ri - 1, 1): repath(pNew, 2) = 0
+                        ri = ri - 2
+                        didSwap = True
+                    End If
+                End If
+            End If
+        End If
+        If Not didSwap Then
+            pNew = pNew + 1: repath(pNew, 1) = path(ri, 1): repath(pNew, 2) = path(ri, 2)
+            ri = ri - 1
+        End If
+    Loop
+
     ' 5. 渲染行数据
     Dim rRpt As Long
     rRpt = 4 ' Dashboard 2行 + Header 1行 = Row 3，数据从第4行开始
@@ -179,8 +229,8 @@ Sub Main(Optional RefSheetName As Variant)
     Dim k As Long, idx1 As Long, idx2 As Long
     Dim fp1 As String, fp2 As String
     
-    For k = pStep To 1 Step -1
-        idx1 = path(k, 1): idx2 = path(k, 2)
+    For k = 1 To pNew
+        idx1 = repath(k, 1): idx2 = repath(k, 2)
         Dim status As String, icon As String, note As String
         Dim rowColor As Long
         
@@ -211,29 +261,28 @@ Sub Main(Optional RefSheetName As Variant)
                     note = pDiff
                     stats.ParamDiff = stats.ParamDiff + 1
                 Else
-                    ' Icon: Refresh/Cycle (U+21BB)
-                    status = "版本偏差": icon = ChrW(&H21BB): rowColor = COLOR_STATUS_INFO
-                    note = "Call: " & GetSuffix(c1) & " -> " & GetSuffix(c2)
-                    stats.LevelMatch = stats.LevelMatch + 1
+                    ' Call 版本差异已被忽略，视作完美一致
+                    status = "完美一致": icon = ChrW(&H2714): rowColor = xlNone: note = ""
+                    stats.ExactMatch = stats.ExactMatch + 1
                 End If
             End If
             
-            Call RenderRow(wsRpt, rRpt, icon, status, ws1, r1, dict1, ws2, r2, dict2, note, rowColor)
+            Call RenderRow(wsRpt, rRpt, icon, status, ws1, r1, dict1, ws2, r2, dict2, note, rowColor, prodName1, prodName2)
             
         ElseIf idx1 > 0 Then
             ' Icon: Cross Mark (U+274C)
             status = "基准缺失": icon = ChrW(&H274C): rowColor = COLOR_STATUS_ERR
-            Call RenderRow(wsRpt, rRpt, icon, status, ws1, head1 + idx1, dict1, Nothing, 0, dict2, "新流程新增步骤", rowColor)
+            Call RenderRow(wsRpt, rRpt, icon, status, ws1, head1 + idx1, dict1, Nothing, 0, dict2, "新流程新增步骤", rowColor, prodName1, prodName2)
             stats.MissingT2 = stats.MissingT2 + 1
         Else
             ' Icon: Wastebasket (U+1F5D1) or Minus
             status = "新表缺失": icon = ChrW(&H2796): rowColor = COLOR_STATUS_ERR
-            Call RenderRow(wsRpt, rRpt, icon, status, Nothing, 0, dict1, ws2, head2 + idx2, dict2, "新流程已删除", rowColor)
+            Call RenderRow(wsRpt, rRpt, icon, status, Nothing, 0, dict1, ws2, head2 + idx2, dict2, "新流程已删除", rowColor, prodName1, prodName2)
             stats.MissingT1 = stats.MissingT1 + 1
         End If
         rRpt = rRpt + 1
     Next k
-    stats.TotalRows = pStep
+    stats.TotalRows = pNew
 
     ' 6. 视觉后处理 (绘制层级边框)
     Application.StatusBar = "🧹 正在绘制层级边框..."
@@ -407,7 +456,7 @@ Sub DrawStatCell(ws As Worksheet, numCell As String, numVal As Long, lblCell As 
 End Sub
 
 ' --- 渲染行 (支持 DCOP) ---
-Sub RenderRow(ws As Worksheet, r As Long, icon As String, status As String, ws1 As Worksheet, r1 As Long, d1 As Object, ws2 As Worksheet, r2 As Long, d2 As Object, note As String, color As Long)
+Sub RenderRow(ws As Worksheet, r As Long, icon As String, status As String, ws1 As Worksheet, r1 As Long, d1 As Object, ws2 As Worksheet, r2 As Long, d2 As Object, note As String, color As Long, prodName1 As String, prodName2 As String)
     ' 1. Status (Col 1) - 仅图标，文本已移至 Note 列
     ws.Cells(r, 1).Value = icon
     ws.Cells(r, 1).HorizontalAlignment = xlCenter
@@ -473,14 +522,46 @@ Sub RenderRow(ws As Worksheet, r As Long, icon As String, status As String, ws1 
             valRef = CStr(ws.Cells(r, 9 + iDiff).Value)
             On Error GoTo 0
             
-            ' 比对差异 (忽略大小写和空格)
-            If StrComp(Trim(valCur), Trim(valRef), vbTextCompare) <> 0 Then
+            Dim isDiff As Boolean
+            Dim isProductNameOnly As Boolean
+            isDiff = False
+            isProductNameOnly = False
+            
+            ' Call: 忽略版本后缀差异
+            If iDiff = 0 Then
+                isDiff = (GetLevel(Trim(valCur)) <> GetLevel(Trim(valRef)))
+            ' Mask: 忽略差异
+            ElseIf iDiff = 4 Then
+                isDiff = False
+            ' PPID: 三段判定 —— 原始相等 / 仅产品名差异(弱标红) / 真差异(强标红)
+            ElseIf iDiff = 3 Then
+                If StrComp(Trim(valCur), Trim(valRef), vbBinaryCompare) = 0 Then
+                    isDiff = False
+                ElseIf NormalizePpid(Trim(valCur), prodName1) = NormalizePpid(Trim(valRef), prodName2) Then
+                    ' 仅产品名不同: 单元格弱标红，不改变 note/状态/行底色
+                    isDiff = False
+                    isProductNameOnly = True
+                Else
+                    isDiff = True
+                End If
+            Else
+                isDiff = (StrComp(Trim(valCur), Trim(valRef), vbTextCompare) <> 0)
+            End If
+            
+            If isDiff Then
                 ' 发现差异 - 红色加粗
                 ws.Cells(r, 3 + iDiff).Font.Color = RGB(200, 50, 50)
                 ws.Cells(r, 3 + iDiff).Font.Bold = True
                 
                 ws.Cells(r, 9 + iDiff).Font.Color = RGB(200, 50, 50)
                 ws.Cells(r, 9 + iDiff).Font.Bold = True
+            ElseIf isProductNameOnly Then
+                ' 仅产品名差异 - 弱标红 (红字不加粗，弱于真差异)
+                ws.Cells(r, 3 + iDiff).Font.Color = RGB(200, 120, 120)
+                ws.Cells(r, 3 + iDiff).Font.Bold = False
+                
+                ws.Cells(r, 9 + iDiff).Font.Color = RGB(200, 120, 120)
+                ws.Cells(r, 9 + iDiff).Font.Bold = False
             Else
                 ' 相同内容 - 保持深灰色 (除了Call列，它是超链接蓝色)
                 If iDiff <> 0 Then
@@ -549,12 +630,64 @@ Function CreateReportSheet(sheetName1 As String, sheetName2 As String) As Worksh
 End Function
 
 ' --- 核心算法 ---
+' 层级: 同Stage硬门槛 -> 同Recipe -> 同Recipe基础(去.CC版本) -> 同机台类型(Recipe前3位) -> 否则不匹配
 Function CalculateScore(fp1 As String, fp2 As String) As Long
     If fp1 = fp2 Then CalculateScore = SCORE_EXACT: Exit Function
+    
     Dim p1() As String, p2() As String
     p1 = Split(fp1, "|"): p2 = Split(fp2, "|")
-    If p1(1) <> p2(1) Or p1(2) <> p2(2) Then CalculateScore = SCORE_MISMATCH: Exit Function
-    If GetLevel(p1(0)) = GetLevel(p2(0)) Then CalculateScore = SCORE_LEVEL Else CalculateScore = SCORE_MISMATCH
+    
+    ' 防御: 指纹为空或缺字段 (如某一侧工作表无数据行) 时直接判不匹配，避免下标越界
+    If UBound(p1) < 2 Or UBound(p2) < 2 Then CalculateScore = SCORE_MISMATCH: Exit Function
+    
+    ' 硬门槛: 不同 Stage 不参与匹配 (防止 Recipe 名跨 Stage 复用导致误配)
+    If p1(1) <> p2(1) Then CalculateScore = SCORE_MISMATCH: Exit Function
+    
+    ' 特殊流程控制 Recipe (IF/Else/END IF/OUT BANK/ASHIP): 仅允许完全相等，不参与模糊档
+    If IsSpecialRecipe(p1(2)) Or IsSpecialRecipe(p2(2)) Then CalculateScore = SCORE_MISMATCH: Exit Function
+    
+    If p1(2) = p2(2) Then
+        ' Recipe 完全一致: Call 层级一致 -> EXACT，否则 LEVEL
+        If GetLevel(p1(0)) = GetLevel(p2(0)) Then CalculateScore = SCORE_EXACT Else CalculateScore = SCORE_LEVEL
+    ElseIf RecipeBase(p1(2)) = RecipeBase(p2(2)) Then
+        ' Recipe 去 .CC 版本后一致 -> 版本差异留在同一行
+        CalculateScore = SCORE_LEVEL
+    ElseIf RecipeDevice(p1(2)) <> "" And RecipeDevice(p1(2)) = RecipeDevice(p2(2)) Then
+        ' Recipe 前3位 (机台类型) 一致 -> 弱对齐 (优于 Gap，避免整行错位)
+        CalculateScore = SCORE_RECIPE_DEVICE
+    Else
+        CalculateScore = SCORE_MISMATCH
+    End If
+End Function
+
+' Recipe 去版本 (去 ".CC" 后缀)，"EOFW101.01" -> "EOFW101"
+Function RecipeBase(s As String) As String
+    Dim p As Long: p = InStr(1, s, ".")
+    If p > 0 Then RecipeBase = Left(s, p - 1) Else RecipeBase = s
+End Function
+
+' 机台类型 = Recipe 前3位，仅对10位标准 Recipe (AAABBBB.CC) 生效，其余返回空串
+Function RecipeDevice(s As String) As String
+    If Len(s) = 10 Then RecipeDevice = Left(s, 3) Else RecipeDevice = ""
+End Function
+
+' 特殊流程控制 Recipe: 不参与模糊对齐
+Function IsSpecialRecipe(s As String) As Boolean
+    Dim v As String: v = LCase(Trim(s))
+    IsSpecialRecipe = (v Like "if*") Or (v Like "else*") Or (v Like "end if*") Or (v Like "out bank*") Or (v Like "aship*")
+End Function
+
+' 顺序重配用的兼容判定: 同 Stage 且 Recipe 完全一致 / 同基础(去版本) / 同机台类型(前3位)
+Function IsCompatPair(fp1 As String, fp2 As String) As Boolean
+    Dim p1() As String, p2() As String
+    p1 = Split(fp1, "|"): p2 = Split(fp2, "|")
+    If UBound(p1) < 2 Or UBound(p2) < 2 Then IsCompatPair = False: Exit Function
+    If p1(1) <> p2(1) Then IsCompatPair = False: Exit Function
+    If IsSpecialRecipe(p1(2)) Or IsSpecialRecipe(p2(2)) Then IsCompatPair = (p1(2) = p2(2)): Exit Function
+    If p1(2) = p2(2) Then IsCompatPair = True: Exit Function
+    If RecipeBase(p1(2)) = RecipeBase(p2(2)) Then IsCompatPair = True: Exit Function
+    If RecipeDevice(p1(2)) <> "" And RecipeDevice(p1(2)) = RecipeDevice(p2(2)) Then IsCompatPair = True: Exit Function
+    IsCompatPair = False
 End Function
 
 Function GetLevel(s As String) As String
@@ -578,17 +711,9 @@ Function CheckParamDiff(ws1 As Worksheet, r1 As Long, d1 As Object, ws2 As Works
     ppid2 = CStr(ws2.Cells(r2, d2("ppid")))
     
     If ppid1 <> ppid2 Then
-        If NormalizePpid(ppid1, prodName1) = NormalizePpid(ppid2, prodName2) Then
-            diff = "产品名差异"
-        Else
+        If NormalizePpid(ppid1, prodName1) <> NormalizePpid(ppid2, prodName2) Then
             diff = "PPID差异"
         End If
-    End If
-    
-    ' Mask 比对
-    If CStr(ws1.Cells(r1, d1("mask"))) <> CStr(ws2.Cells(r2, d2("mask"))) Then
-        If diff <> "" Then diff = diff & ", "
-        diff = diff & "Mask差异"
     End If
     
     ' DCOP 比对 (安全检查列是否存在)
@@ -676,21 +801,10 @@ Function GetColumnIndices(ws As Worksheet, hR As Long) As Object
 End Function
 
 Function ResolveDiffColor(diff As String) As Long
-    If InStr(1, diff, "产品名差异", vbBinaryCompare) > 0 Then
-        If InStr(1, diff, "PPID差异", vbBinaryCompare) = 0 _
-            And InStr(1, diff, "Mask差异", vbBinaryCompare) = 0 _
-            And InStr(1, diff, "DCOP差异", vbBinaryCompare) = 0 Then
-            ResolveDiffColor = COLOR_STATUS_INFO
-            Exit Function
-        End If
-    End If
-    
     ResolveDiffColor = COLOR_STATUS_WARN
 End Function
 
 Function ExtractProductName(ws As Worksheet) As String
-    On Error Resume Next
-    
     Dim regex As Object
     Set regex = CreateObject("VBScript.RegExp")
     If regex Is Nothing Then Exit Function
@@ -698,26 +812,30 @@ Function ExtractProductName(ws As Worksheet) As String
     With regex
         .Global = False
         .IgnoreCase = False
-        .Pattern = "^[A-Z0-9]{2}\d{4}[A-Z]{2}(-[A-Z])?\.\d{2}$"
+        .Pattern = REGEX_FULL_NAME
     End With
     
     Dim lastCol As Long
+    On Error Resume Next
     lastCol = ws.Cells.Find(What:="*", After:=ws.Cells(1, 1), LookIn:=xlFormulas, LookAt:=xlPart, _
         SearchOrder:=xlByColumns, SearchDirection:=xlPrevious, MatchCase:=False).Column
     If Err.Number <> 0 Then
         Err.Clear
         Exit Function
     End If
+    On Error GoTo 0
     
     Dim rowNum As Long, colNum As Long
     Dim cellText As String
+    Dim matches As Object
     
     For rowNum = 1 To 10
         For colNum = 1 To lastCol
             cellText = Trim(CStr(ws.Cells(rowNum, colNum).Value))
             If cellText <> "" Then
-                If regex.Test(cellText) Then
-                    ExtractProductName = Left$(cellText, Len(cellText) - 3)
+                Set matches = regex.Execute(cellText)
+                If matches.Count > 0 Then
+                    ExtractProductName = matches(0).Value
                     Exit Function
                 End If
             End If
@@ -726,54 +844,71 @@ Function ExtractProductName(ws As Worksheet) As String
 End Function
 
 Function NormalizePpid(ppid As String, prodName As String) As String
-    If prodName = "" Then
-        NormalizePpid = ppid
-        Exit Function
-    End If
+    Dim result As String: result = ppid
+    Dim re As Object, mm As Object, cl As Object
     
-    Dim fullWithVariant As String
-    Dim fullWithoutVariant As String
-    Dim customerQuery As String
-    Dim queryName As String
+    ' === 锚点归一化 (首选: 已知产品名) ===
+    ' 序号(BBBB) 是产品名的稳定指纹。PPID 中出现该序号 ⇒ 产品名嵌入其中 ⇒ 按 完整名→不带版本→纯序号 顺序替换，首次成功即完成。
+    Dim core As String, serial As String, dash As Long, base6 As String
+    Dim anchored As Boolean
+    anchored = False
     
-    fullWithVariant = prodName
-    If InStr(1, prodName, "-", vbBinaryCompare) > 0 Then
-        fullWithoutVariant = Split(prodName, "-")(0)
-    Else
-        fullWithoutVariant = prodName
-    End If
-    
-    customerQuery = Left$(fullWithoutVariant, 6)
-    queryName = Mid$(fullWithoutVariant, 3, 4)
-    
-    If InStr(1, ppid, fullWithVariant, vbBinaryCompare) > 0 Then
-        NormalizePpid = Replace(ppid, fullWithVariant, "<PROD>", 1, 1, vbBinaryCompare)
-        Exit Function
-    End If
-    
-    If fullWithoutVariant <> fullWithVariant Then
-        If InStr(1, ppid, fullWithoutVariant, vbBinaryCompare) > 0 Then
-            NormalizePpid = Replace(ppid, fullWithoutVariant, "<PROD>", 1, 1, vbBinaryCompare)
-            Exit Function
-        End If
-    ElseIf InStr(1, ppid, fullWithoutVariant, vbBinaryCompare) > 0 Then
-        NormalizePpid = Replace(ppid, fullWithoutVariant, "<PROD>", 1, 1, vbBinaryCompare)
-        Exit Function
-    End If
-    
-    If Len(customerQuery) = 6 Then
-        If InStr(1, ppid, customerQuery, vbBinaryCompare) > 0 Then
-            NormalizePpid = Replace(ppid, customerQuery, "<PROD>", 1, 1, vbBinaryCompare)
-            Exit Function
+    If prodName <> "" Then
+        core = prodName
+        dash = InStrRev(core, "-")
+        If dash > 4 Then core = Left(core, dash - 1)   ' 去 -X 后缀取 8 位核心
+        serial = ""
+        If Len(core) >= 6 Then serial = Mid(core, 3, 4) ' BBBB 序号
+        base6 = Left(core, 6)
+        
+        If serial <> "" And InStr(1, result, serial, vbBinaryCompare) > 0 Then
+            ' 1) 完整产品名 (含 -X)
+            If InStr(1, result, prodName, vbBinaryCompare) > 0 Then
+                result = Replace(result, prodName, "<PRD>", 1, 1, vbBinaryCompare)
+            ' 2) 8 位核心 (去 -X)
+            ElseIf core <> prodName And InStr(1, result, core, vbBinaryCompare) > 0 Then
+                result = Replace(result, core, "<PRD>", 1, 1, vbBinaryCompare)
+            ' 3) 不带版本 (6 位 AA+BBBB)
+            ElseIf Len(base6) >= 6 And InStr(1, result, base6, vbBinaryCompare) > 0 Then
+                result = Replace(result, base6, "<PRD>", 1, 1, vbBinaryCompare)
+            ' 4) 纯序号 (4 位 BBBB)
+            Else
+                result = Replace(result, serial, "<PRD>", 1, 1, vbBinaryCompare)
+            End If
+            anchored = True
         End If
     End If
     
-    If Len(queryName) = 4 Then
-        If InStr(1, ppid, queryName, vbBinaryCompare) > 0 Then
-            NormalizePpid = Replace(ppid, queryName, "<PROD>", 1, 1, vbBinaryCompare)
-            Exit Function
+    If Not anchored Then
+        ' === 保底: 无已知产品名或序号未命中 → 正则三级回退 ===
+        Set re = CreateObject("VBScript.RegExp")
+        re.Global = False: re.IgnoreCase = False
+        
+        ' 2a: 8-char full product name pattern (most specific, 第7位C=版本A-Z，第8位D=CE自定义)
+        re.Pattern = REGEX_FULL_NAME
+        Set mm = re.Execute(result)
+        If mm.Count = 0 Then
+            ' 2b: 4-char query name with mandatory suffix (more specific than 6-char prefix)
+            re.Pattern = REGEX_4CHAR_SUFFIX
+            Set mm = re.Execute(result)
+        End If
+        If mm.Count = 0 Then
+            ' 2c: 6-char prefix with optional suffix (least specific)
+            re.Pattern = REGEX_6CHAR_PREFIX
+            Set mm = re.Execute(result)
+        End If
+        If mm.Count > 0 Then
+            result = Replace(result, mm(0).Value, "<PRD>", 1, 1, vbBinaryCompare)
         End If
     End If
     
-    NormalizePpid = ppid
+    ' Phase 3: strip leftover -X / -A11 suffix stuck after <PRD>
+    If InStr(1, result, "<PRD>-", vbBinaryCompare) > 0 Then
+        Set cl = CreateObject("VBScript.RegExp")
+        cl.Global = True: cl.IgnoreCase = False
+        cl.Pattern = "<PRD>(-[A-Z][A-Z0-9]*)+"
+        result = cl.Replace(result, "<PRD>")
+    End If
+    
+    NormalizePpid = result
 End Function
