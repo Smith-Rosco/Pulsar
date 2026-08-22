@@ -36,37 +36,33 @@ namespace Pulsar.ViewModels.Strategies
             context.IsVisible = false;
 
             // 2. Add Profile if missing
-            var session = await ConfigEditSession.BeginAsync(_configService);
-            if (!session.Draft.Profiles.ContainsKey(_processName))
-            {
-                // [New] Try Extract Icon
-                string iconKey = "\uE71D"; // Default AppGeneric
-                string exePath = await _exePathFactory();
-                if (!string.IsNullOrEmpty(exePath))
+            await ConfigEditSession.RunAsync(_configService, session =>
+                session.EnsureProcessProfileAsync(_processName, async profile =>
                 {
-                    try
+                    // [New] Try Extract Icon
+                    string iconKey = "\uE71D"; // Default AppGeneric
+                    string exePath = await _exePathFactory();
+                    if (!string.IsNullOrEmpty(exePath))
                     {
-                        var iconSource = IconHelper.GetIconFromPath(exePath);
-                        if (iconSource != null)
+                        try
                         {
-                            var cachePath = IconHelper.SaveIconToCache(iconSource, _processName);
-                            if (!string.IsNullOrEmpty(cachePath))
+                            var iconSource = IconHelper.GetIconFromPath(exePath);
+                            if (iconSource != null)
                             {
-                                iconKey = cachePath;
+                                var cachePath = IconHelper.SaveIconToCache(iconSource, _processName);
+                                if (!string.IsNullOrEmpty(cachePath))
+                                {
+                                    iconKey = cachePath;
+                                }
                             }
                         }
+                        catch { /* Icon extraction failed, use default */ }
                     }
-                    catch { /* Icon extraction failed, use default */ }
-                }
 
-                // Default Profile Template
-                session.Draft.Profiles[_processName] = new ProcessProfile
-                {
-                    Icon = iconKey, // Use extracted icon
-                    CommandMode = new List<PluginSlot>()
-                };
-                await session.CommitAsync();
-            }
+                    // Default Profile Template
+                    profile.Icon = iconKey;
+                    profile.CommandMode = new List<PluginSlot>();
+                }));
 
             // 3. Open Settings Window via Message (Decoupled & Robust)
             

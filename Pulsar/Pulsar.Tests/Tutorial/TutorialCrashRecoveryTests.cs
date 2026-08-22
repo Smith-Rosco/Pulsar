@@ -54,9 +54,6 @@ namespace Pulsar.Tests.Tutorial
                     Settings = new ProfileSettings(),
                     Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
                 });
-                mockConfig.Setup(c => c.SaveAsync(It.IsAny<ProfilesConfig>()))
-                    .Callback<ProfilesConfig>(config => savedConfig = config)
-                    .Returns(Task.CompletedTask);
                 mockConfig.Setup(c => c.SaveAsync(It.IsAny<ProfilesConfig>(), It.IsAny<long?>()))
                     .Callback<ProfilesConfig, long?>((config, _) => savedConfig = config)
                     .Returns(Task.CompletedTask);

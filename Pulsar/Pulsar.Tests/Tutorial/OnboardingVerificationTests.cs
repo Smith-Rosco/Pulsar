@@ -21,7 +21,7 @@ namespace Pulsar.Tests.Tutorial
         {
             var mockConfigService = new Mock<IConfigService>();
 
-            mockConfigService.Setup(s => s.LoadAsync(It.IsAny<bool>()))
+            mockConfigService.Setup(s => s.LoadSnapshotAsync(It.IsAny<bool>()))
                 .ReturnsAsync(new ProfilesConfig
                 {
                     Settings = new ProfileSettings
@@ -37,8 +37,8 @@ namespace Pulsar.Tests.Tutorial
 
             state.IsFirstRun.Should().BeTrue();
             state.HasSkippedOnboarding.Should().BeFalse();
-            mockConfigService.Verify(s => s.LoadAsync(true), Times.Once,
-                "GetStateAsync MUST call LoadAsync with forceReload=true to bypass cached config");
+            mockConfigService.Verify(s => s.LoadSnapshotAsync(true), Times.Once,
+                "GetStateAsync MUST call LoadSnapshotAsync with forceReload=true to bypass cached config");
         }
 
         [Fact]
@@ -46,7 +46,7 @@ namespace Pulsar.Tests.Tutorial
         {
             var mockConfigService = new Mock<IConfigService>();
 
-            mockConfigService.Setup(s => s.LoadAsync(It.IsAny<bool>()))
+            mockConfigService.Setup(s => s.LoadSnapshotAsync(It.IsAny<bool>()))
                 .ReturnsAsync(new ProfilesConfig
                 {
                     Settings = new ProfileSettings
@@ -71,7 +71,7 @@ namespace Pulsar.Tests.Tutorial
 
             var mockConfigService = new Mock<IConfigService>();
 
-            mockConfigService.Setup(s => s.LoadAsync(It.IsAny<bool>()))
+            mockConfigService.Setup(s => s.LoadSnapshotAsync(It.IsAny<bool>()))
                 .ReturnsAsync(() =>
                 {
                     callCount++;
@@ -95,7 +95,7 @@ namespace Pulsar.Tests.Tutorial
             state2.IsFirstRun.Should().BeFalse("second call should reflect edited OnboardingState");
             state2.HasSkippedOnboarding.Should().BeTrue("second call should read updated Skipped state");
 
-            mockConfigService.Verify(s => s.LoadAsync(true), Times.AtLeast(2),
+            mockConfigService.Verify(s => s.LoadSnapshotAsync(true), Times.AtLeast(2),
                 "Every call to GetStateAsync must force-reload to reflect external edits");
         }
 

@@ -190,9 +190,6 @@ namespace Pulsar.Tests.Plugin
             var configService = new Mock<IConfigService>();
             configService.Setup(x => x.GetSnapshot()).Returns(() => persistedConfig);
             configService.Setup(x => x.LoadSnapshotAsync(It.IsAny<bool>())).ReturnsAsync(() => persistedConfig);
-            configService.Setup(x => x.SaveAsync(It.IsAny<ProfilesConfig>()))
-                .Callback<ProfilesConfig>(saved => persistedConfig = saved)
-                .Returns(Task.CompletedTask);
             configService.Setup(x => x.SaveAsync(It.IsAny<ProfilesConfig>(), It.IsAny<long?>()))
                 .Callback<ProfilesConfig, long?>((saved, _) => persistedConfig = saved)
                 .Returns(Task.CompletedTask);

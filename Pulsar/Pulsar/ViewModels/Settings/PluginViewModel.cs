@@ -308,26 +308,24 @@ namespace Pulsar.ViewModels.Settings
                 await _settingsSaveLock.WaitAsync();
                 try
                 {
-                    var session = await ConfigEditSession.BeginAsync(_configService);
-                    if (!session.Draft.Plugins.TryGetValue(Id, out var profile))
-                    {
-                        profile = new PluginProfile();
-                        session.Draft.Plugins[Id] = profile;
-                    }
+                    Dictionary<string, object>? savedConfig = null;
+                    await ConfigEditSession.RunAsync(_configService, session =>
+                        session.UpdatePluginProfile(Id, profile =>
+                        {
+                            if (newValue != null)
+                            {
+                                profile.Config[key] = newValue;
+                            }
+                            else
+                            {
+                                profile.Config.Remove(key);
+                            }
 
-                    if (newValue != null)
-                    {
-                        profile.Config[key] = newValue;
-                    }
-                    else
-                    {
-                        profile.Config.Remove(key);
-                    }
+                            savedConfig = profile.Config;
+                        }));
 
                     var configurable = await EnsureConfigurablePluginAsync();
-                    configurable?.UpdateSettings(profile.Config);
-
-                    await session.CommitAsync();
+                    configurable?.UpdateSettings(savedConfig ?? new Dictionary<string, object>());
                 }
                 finally
                 {

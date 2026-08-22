@@ -17,7 +17,7 @@ namespace Pulsar.Tests.Services
         {
             config ??= new ProfilesConfig();
             configServiceMock = new Mock<IConfigService>();
-            configServiceMock.Setup(x => x.LoadAsync()).ReturnsAsync(config);
+            configServiceMock.Setup(x => x.LoadSnapshotAsync(It.IsAny<bool>())).ReturnsAsync(config);
             configServiceMock.Setup(x => x.GetSnapshot()).Returns(config);
 
             var hook = new Native.GlobalKeyboardHook();
@@ -131,7 +131,7 @@ namespace Pulsar.Tests.Services
 
             persistedHotkey.Key.Should().Be("Q",
                 "ApplyHotkey must not mutate the shared persisted config object before the settings editor commits");
-            configServiceMock.Verify(x => x.SaveAsync(It.IsAny<ProfilesConfig>()), Times.Never);
+            configServiceMock.Verify(x => x.SaveAsync(It.IsAny<ProfilesConfig>(), It.IsAny<long?>()), Times.Never);
         }
 
         [Fact]

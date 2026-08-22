@@ -36,7 +36,7 @@ namespace Pulsar.Services.Interfaces
         void UnregisterAction(string actionId);
 
         /// <summary>
-        /// Refreshes the effective hotkey cache from <see cref="IConfigStore.GetSnapshot"/>.
+        /// Refreshes the effective hotkey cache from the current config snapshot.
         /// This is a cache-only operation and never writes to disk.
         /// </summary>
         void RebuildCache();

@@ -27,8 +27,6 @@ namespace Pulsar.Services.Interfaces
 
         Task<ProfilesConfig> LoadSnapshotAsync(bool forceReload = false);
 
-        Task SaveAsync(ProfilesConfig config);
-
         /// <summary>
         /// Saves with an optimistic-concurrency guard: throws
         /// <see cref="ConfigConcurrencyException"/> if <paramref name="expectedRevision"/>
@@ -42,9 +40,6 @@ namespace Pulsar.Services.Interfaces
 
         event Action? ConfigUpdated;
 
-        Task<ProfilesConfig> LoadAsync();
-        Task<ProfilesConfig> LoadAsync(bool forceReload);
-        
         /// <summary>
         /// 调度后台智能应用检测（向导完成/跳过 或 正常启动路径触发）
         /// </summary>
@@ -54,10 +49,5 @@ namespace Pulsar.Services.Interfaces
         /// 获取经过验证的每页 slot 数量 (4-12)
         /// </summary>
         int GetValidatedSlotsPerPage();
-        
-        /// <summary>
-        /// 设置每页 slot 数量并保存配置
-        /// </summary>
-        void SetSlotsPerPage(int value);
     }
 }

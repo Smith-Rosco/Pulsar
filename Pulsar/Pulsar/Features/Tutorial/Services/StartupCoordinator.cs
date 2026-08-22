@@ -31,7 +31,7 @@ namespace Pulsar.Features.Tutorial.Services
         public async Task<StartupAction> HandleStartupAsync()
         {
             var state = await _onboardingState.GetStateAsync();
-            var config = await _configService.LoadAsync();
+            var config = await _configService.LoadSnapshotAsync();
 
             if (state.HasSkippedOnboarding)
             {

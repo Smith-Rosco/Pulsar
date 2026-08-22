@@ -127,16 +127,6 @@ namespace Pulsar.Services
             _validationPipeline = pipeline;
         }
 
-        public async Task<ProfilesConfig> LoadAsync()
-        {
-            return await LoadInternalAsync();
-        }
-
-        public async Task<ProfilesConfig> LoadAsync(bool forceReload)
-        {
-            return await LoadInternalAsync(forceReload: forceReload);
-        }
-
         public async Task<ProfilesConfig> ResetToFirstLaunchAsync()
         {
             _logger.LogInformation("[ConfigService] Reset requested; clearing cached configuration and re-entering first-launch flow");
@@ -202,7 +192,7 @@ namespace Pulsar.Services
                     _cachedConfig = defaultConfig;
                 }
 
-                await SaveAsync(defaultConfig);
+                await SaveAsync(defaultConfig, expectedRevision: null);
                 return defaultConfig;
             }
 
@@ -330,11 +320,6 @@ namespace Pulsar.Services
 
                 return effectiveConfig;
             }
-        }
-
-        public Task SaveAsync(ProfilesConfig config)
-        {
-            return SaveAsync(config, expectedRevision: null);
         }
 
         /// <summary>
@@ -543,7 +528,7 @@ namespace Pulsar.Services
             {
                 await Task.Delay(1000, cancellationToken);
 
-                var latestConfig = await LoadAsync(forceReload: true);
+                var latestConfig = await LoadSnapshotAsync(forceReload: true);
                 if (!IsSmartDetectionEligible(latestConfig))
                 {
                     return;
@@ -573,7 +558,7 @@ namespace Pulsar.Services
                     return;
                 }
 
-                await SaveAsync(latestConfig);
+                await SaveAsync(latestConfig, expectedRevision: null);
 
                 var globalProfile = latestConfig.Profiles?.TryGetValue("Global", out var gp) == true ? gp : null;
                 var switchCount = globalProfile?.SwitchMode?.Count ?? 0;
@@ -988,48 +973,6 @@ namespace Pulsar.Services
             }
             
             return slots;
-        }
-        
-        /// <summary>
-        /// 设置每页 slot 数量并保存配置
-        /// </summary>
-        public void SetSlotsPerPage(int value)
-        {
-            int clampedValue = Math.Clamp(value, MIN_SLOTS_PER_PAGE, MAX_SLOTS_PER_PAGE);
-            
-            if (clampedValue != value)
-            {
-                _logger.LogWarning(
-                    "[ConfigService] SlotsPerPage value {Value} out of range. Clamped to {ClampedValue}",
-                    value, clampedValue);
-            }
-
-            // Mutate the internal cache directly (ConfigService owns it), then save.
-            // GetSnapshot() returns a deep copy, so it cannot be used for writes.
-            ProfilesConfig? configToSave = null;
-            lock (_cacheLock)
-            {
-                var cached = _cachedConfig ??= CreateDefaultConfig();
-                cached.Settings.SlotsPerPage = clampedValue;
-                configToSave = cached;
-            }
-
-            var saved = configToSave;
-            // 异步保存，但不等待（避免阻塞 UI）
-            ScheduleBackgroundWork(
-                workId: "config.save.slots-per-page",
-                work: async _ =>
-                {
-                    await SaveAsync(saved);
-                    _logger.LogInformation(
-                        "[ConfigService] SlotsPerPage updated to {Value}",
-                        clampedValue);
-                },
-                new BackgroundWorkOptions
-                {
-                    Priority = BackgroundWorkPriority.Low,
-                    DuplicateBehavior = BackgroundWorkDuplicateBehavior.SkipIfRunning
-                });
         }
 
         private void ScheduleBackgroundWork(string workId, Func<CancellationToken, Task> work, BackgroundWorkOptions options)

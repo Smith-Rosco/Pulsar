@@ -64,12 +64,13 @@ namespace Pulsar.Tests.Tutorial
         }
 
         [Fact]
-        public void FinishCommand_ShouldBuildConfigAndClose()
+        public async Task FinishCommand_ShouldBuildConfigAndClose_ThroughSingleSession()
         {
             var loc = CreateDefaultLoc();
             var configService = new Mock<IConfigService>();
             configService.Setup(c => c.GetSnapshot()).Returns(new ProfilesConfig());
-            configService.Setup(c => c.LoadAsync()).ReturnsAsync(new ProfilesConfig());
+            configService.Setup(c => c.LoadSnapshotAsync(It.IsAny<bool>())).ReturnsAsync(new ProfilesConfig());
+            configService.Setup(c => c.SaveAsync(It.IsAny<ProfilesConfig>(), It.IsAny<long?>())).Returns(Task.CompletedTask);
 
             var templateService = new Mock<IOnboardingTemplateService>();
             templateService.Setup(t => t.GetAvailableApps()).Returns(new List<OnboardingAppSelection>
@@ -87,11 +88,11 @@ namespace Pulsar.Tests.Tutorial
                 onboardingStateService.Object,
                 loc.Object);
 
-            vm.FinishCommand.Execute(null);
+            await vm.FinishCommand.ExecuteAsync(null);
 
             templateService.Verify(t => t.BuildInitialConfig(It.IsAny<TutorialScenario>(), It.IsAny<IReadOnlyList<OnboardingAppSelection>>()), Times.Once);
-            configService.Verify(c => c.SaveAsync(It.IsAny<ProfilesConfig>()), Times.Once);
-            onboardingStateService.Verify(s => s.MarkSetupCompletedAsync(), Times.Once);
+            configService.Verify(c => c.SaveAsync(It.IsAny<ProfilesConfig>(), It.IsAny<long?>()), Times.Once);
+            onboardingStateService.Verify(s => s.MarkSetupCompletedAsync(), Times.Never);
         }
     }
 }

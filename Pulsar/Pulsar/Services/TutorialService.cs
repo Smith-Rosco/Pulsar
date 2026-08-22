@@ -231,9 +231,8 @@ namespace Pulsar.Services
                     config.Settings.TutorialCrashedAt);
 
                 var crashedStepId = config.Settings.TutorialCrashedAt;
-                var session = await ConfigEditSession.BeginAsync(_configService);
-                session.Draft.Settings.TutorialCrashedAt = null;
-                await session.CommitAsync();
+                await ConfigEditSession.RunAsync(_configService, session =>
+                    session.UpdateSettings(settings => settings.TutorialCrashedAt = null));
 
                 await GoToStepAsync(crashedStepId);
                 return;

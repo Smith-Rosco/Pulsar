@@ -101,7 +101,7 @@ namespace Pulsar.Tests.Config
             seed.Profiles["Global"] = new ProcessProfile { Alias = "Original" };
             await service.SaveAsync(seed);
 
-            IConfigEditSession session = await ConfigEditSession.BeginAsync(service);
+            ConfigEditSession session = await ConfigEditSession.BeginAsync(service);
             session.Draft.Settings.Language = "zh-CN";
 
             var otherSession = await ConfigEditSession.BeginAsync(service);
@@ -114,6 +114,138 @@ namespace Pulsar.Tests.Config
             saved.Settings.Language.Should().Be("zh-CN");
             saved.Profiles["Global"].Alias.Should().Be("Concurrent");
             session.HasCommitted.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task UpdateSettings_AppliesMutation_AndPersists()
+        {
+            var service = CreateConfigService();
+            var seed = new ProfilesConfig();
+            seed.Settings.Language = "en-US";
+            await service.SaveAsync(seed);
+
+            await ConfigEditSession.RunAsync(service, session =>
+                session.UpdateSettings(settings => settings.Language = "de-DE"));
+
+            service.GetSnapshot().Settings.Language.Should().Be("de-DE");
+        }
+
+        [Fact]
+        public async Task UpdatePluginProfile_EnsuresMissingProfile_BeforeMutating()
+        {
+            var service = CreateConfigService();
+            var seed = new ProfilesConfig();
+            await service.SaveAsync(seed);
+
+            await ConfigEditSession.RunAsync(service, session =>
+                session.UpdatePluginProfile("com.example", profile => profile.Enabled = false));
+
+            var saved = service.GetSnapshot();
+            saved.Plugins.Should().ContainKey("com.example");
+            saved.Plugins["com.example"].Enabled.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task UpdatePluginProfile_PreservesExistingProfileValues()
+        {
+            var service = CreateConfigService();
+            var seed = new ProfilesConfig();
+            seed.Plugins["com.example"] = new PluginProfile
+            {
+                Enabled = false,
+                Config = { ["keep"] = "value" }
+            };
+            await service.SaveAsync(seed);
+
+            await ConfigEditSession.RunAsync(service, session =>
+                session.UpdatePluginProfile("com.example", profile => profile.Enabled = true));
+
+            var saved = service.GetSnapshot();
+            saved.Plugins["com.example"].Enabled.Should().BeTrue();
+            ((System.Text.Json.JsonElement)saved.Plugins["com.example"].Config["keep"]).GetString().Should().Be("value");
+        }
+
+        [Fact]
+        public async Task EnsureProcessProfileAsync_CreatesMissingProfile_WithInitializedValues()
+        {
+            var service = CreateConfigService();
+            var seed = new ProfilesConfig();
+            await service.SaveAsync(seed);
+
+            await ConfigEditSession.RunAsync(service, session =>
+                session.EnsureProcessProfileAsync("notepad", profile =>
+                {
+                    profile.Alias = "Notepad";
+                    profile.CommandMode = new System.Collections.Generic.List<PluginSlot>();
+                }));
+
+            var saved = service.GetSnapshot();
+            saved.Profiles.Should().ContainKey("notepad");
+            saved.Profiles["notepad"].Alias.Should().Be("Notepad");
+        }
+
+        [Fact]
+        public async Task EnsureProcessProfileAsync_LeavesExistingProfileUntouched()
+        {
+            var service = CreateConfigService();
+            var seed = new ProfilesConfig();
+            seed.Profiles["notepad"] = new ProcessProfile { Alias = "Original" };
+            await service.SaveAsync(seed);
+            var revisionBefore = service.CurrentRevision;
+
+            await ConfigEditSession.RunAsync(service, session =>
+                session.EnsureProcessProfileAsync("notepad", profile =>
+                {
+                    profile.Alias = "Clobbered";
+                    profile.SwitchMode = new System.Collections.Generic.List<PluginSlot>();
+                }));
+
+            var saved = service.GetSnapshot();
+            saved.Profiles["notepad"].Alias.Should().Be("Original");
+            service.CurrentRevision.Should().Be(revisionBefore);
+        }
+
+        [Fact]
+        public async Task RunAsync_UnchangedDraft_SkipsCommit()
+        {
+            var service = CreateConfigService();
+            var seed = new ProfilesConfig();
+            seed.Settings.Language = "en-US";
+            await service.SaveAsync(seed);
+            var revisionBefore = service.CurrentRevision;
+
+            await ConfigEditSession.RunAsync(service, session =>
+                session.UpdateSettings(settings => settings.Language = "en-US"));
+
+            service.CurrentRevision.Should().Be(revisionBefore);
+            service.GetSnapshot().Settings.Language.Should().Be("en-US");
+        }
+
+        [Fact]
+        public async Task ReplaceAll_ReplacesWholeDraft_FromTemplate()
+        {
+            var service = CreateConfigService();
+            var seed = new ProfilesConfig();
+            seed.Settings.Language = "en-US";
+            await service.SaveAsync(seed);
+
+            var template = new ProfilesConfig
+            {
+                Settings = new ProfileSettings { Language = "zh-CN", OnboardingState = "SetupWizardComplete" },
+                Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["Global"] = new ProcessProfile { Alias = "Global" }
+                }
+            };
+
+            await ConfigEditSession.RunAsync(service, session =>
+                session.ReplaceAll(template));
+
+            var saved = service.GetSnapshot();
+            saved.Settings.Language.Should().Be("zh-CN");
+            saved.Settings.OnboardingState.Should().Be("SetupWizardComplete");
+            saved.Profiles["Global"].Alias.Should().Be("Global");
+            saved.Profiles["global"].Alias.Should().Be("Global");
         }
 
         private ConfigService CreateConfigService()

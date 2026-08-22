@@ -585,7 +585,7 @@ namespace Pulsar.Services
             try
             {
                 // 从 Profiles.json 读取现有黑名单
-                var config = await _configService.LoadAsync();
+                var config = await _configService.LoadSnapshotAsync();
                 var winSwitcherConfig = config.Plugins.GetValueOrDefault("com.pulsar.winswitcher");
                 var excludeProcesses = winSwitcherConfig?.Config.GetValueOrDefault("ExcludeProcesses")?.ToString() ?? "";
 
@@ -637,20 +637,10 @@ namespace Pulsar.Services
         {
             try
             {
-                var session = await ConfigEditSession.BeginAsync(_configService);
+                await ConfigEditSession.RunAsync(_configService, session =>
+                    session.UpdatePluginProfile("com.pulsar.winswitcher", profile =>
+                        profile.Config["ExcludeProcesses"] = string.Join(",", blacklistedProcesses)));
 
-                // 确保插件配置存在
-                if (!session.Draft.Plugins.ContainsKey("com.pulsar.winswitcher"))
-                {
-                    session.Draft.Plugins["com.pulsar.winswitcher"] = new PluginProfile();
-                }
-
-                // 更新黑名单配置
-                var excludeProcesses = string.Join(",", blacklistedProcesses);
-                session.Draft.Plugins["com.pulsar.winswitcher"].Config["ExcludeProcesses"] = excludeProcesses;
-
-                await session.CommitAsync();
-                
                 // [Logging] Downgraded to Debug - happens frequently, not critical
                 _logger.LogDebug("[ProcessRegistry] Synced blacklist to Profiles.json");
             }

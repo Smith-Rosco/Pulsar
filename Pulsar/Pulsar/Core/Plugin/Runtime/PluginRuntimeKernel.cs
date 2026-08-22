@@ -732,15 +732,9 @@ namespace Pulsar.Core.Plugin.Runtime
                 }
             }
 
-            var session = await ConfigEditSession.BeginAsync(_configService);
-            if (!session.Draft.Plugins.TryGetValue(pluginId, out var profile))
-            {
-                profile = new PluginProfile();
-                session.Draft.Plugins[pluginId] = profile;
-            }
-
-            profile.GrantedPermissions = normalized.ToList();
-            await session.CommitAsync();
+            await ConfigEditSession.RunAsync(_configService, session =>
+                session.UpdatePluginProfile(pluginId, profile =>
+                    profile.GrantedPermissions = normalized.ToList()));
             _logger.LogInformation(
                 "[PluginRuntimeKernel] Granted {Count} permissions for {PluginId}",
                 normalized.Length,
@@ -776,19 +770,17 @@ namespace Pulsar.Core.Plugin.Runtime
                 return;
             }
 
-            var session = await ConfigEditSession.BeginAsync(_configService);
-            if (!session.Draft.Plugins.TryGetValue(pluginId, out var profile))
-            {
-                profile = new PluginProfile();
-                session.Draft.Plugins[pluginId] = profile;
-            }
-
-            if (profile.Enabled == enabled)
+            var currentProfile = _configService.GetSnapshot().Plugins.TryGetValue(pluginId, out var current)
+                ? current
+                : new PluginProfile();
+            if (currentProfile.Enabled == enabled)
             {
                 return;
             }
 
-            profile.Enabled = enabled;
+            await ConfigEditSession.RunAsync(_configService, session =>
+                session.UpdatePluginProfile(pluginId, profile => profile.Enabled = enabled));
+
             if (_runtimeStateStore.TryGetPlugin(pluginId, out var plugin) && plugin is IPluginLifecycle lifecycle)
             {
                 if (enabled)
@@ -806,8 +798,6 @@ namespace Pulsar.Core.Plugin.Runtime
             {
                 _runtimeStateStore.Transition(pluginId, enabled ? PluginLifecycleState.Enabled : PluginLifecycleState.Disabled);
             }
-
-            await session.CommitAsync();
         }
 
         public bool IsPluginEnabled(string pluginId)

@@ -94,7 +94,7 @@ namespace Pulsar.Services
 
         public async Task InitializeAsync()
         {
-            _config = await _configService.LoadAsync();
+            _config = await _configService.LoadSnapshotAsync();
             if (_config == null) return;
 
             // Build optimization cache

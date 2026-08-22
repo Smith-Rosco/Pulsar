@@ -5,7 +5,6 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
-using Pulsar.Services.Validation;
 
 namespace Pulsar.Services
 {
@@ -19,7 +18,7 @@ namespace Pulsar.Services
     /// When a concurrent writer wins between edits, <see cref="RebaseAsync"/> folds the
     /// writer's changes into untouched regions of the draft and re-arms the revision.
     /// </summary>
-    public sealed class ConfigEditSession : IConfigEditSession
+    public sealed class ConfigEditSession
     {
         private static readonly JsonSerializerOptions CloneOptions = new()
         {
@@ -40,7 +39,7 @@ namespace Pulsar.Services
             _revisionAtBegin = revisionAtBegin;
         }
 
-        public ProfilesConfig Draft { get; }
+        public ProfilesConfig Draft { get; private set; }
 
         public bool HasCommitted => _committed;
 
@@ -55,12 +54,118 @@ namespace Pulsar.Services
             return new ConfigEditSession(store, draft, baseSnapshot, store.CurrentRevision);
         }
 
-        public async Task<ValidationResult?> ValidateAsync()
+        /// <summary>
+        /// Begins a session, applies <paramref name="mutate"/> to the draft, then commits.
+        /// The commit is skipped when the draft is unchanged, so "ensure" operations never
+        /// produce redundant writes. Exceptions from <paramref name="mutate"/> or the commit
+        /// propagate to the caller.
+        /// </summary>
+        public static Task RunAsync(IConfigService store, Action<ConfigEditSession> mutate)
         {
-            // Validation is performed by the store during commit. Returning its
-            // last result keeps callers informed without duplicating the pipeline.
-            await Task.CompletedTask;
-            return _store.LastValidationResult;
+            ArgumentNullException.ThrowIfNull(mutate);
+            return RunAsync(store, session =>
+            {
+                mutate(session);
+                return Task.CompletedTask;
+            });
+        }
+
+        /// <summary>
+        /// Async variant of <see cref="RunAsync(IConfigService, Action{ConfigEditSession})"/>
+        /// for mutations that need to await inside the session.
+        /// </summary>
+        public static async Task RunAsync(IConfigService store, Func<ConfigEditSession, Task> mutate)
+        {
+            ArgumentNullException.ThrowIfNull(store);
+            ArgumentNullException.ThrowIfNull(mutate);
+
+            var session = await BeginAsync(store);
+            await mutate(session);
+
+            if (session.DraftUnchanged())
+            {
+                return;
+            }
+
+            await session.CommitAsync();
+        }
+
+        /// <summary>
+        /// Applies a mutation to <see cref="Draft"/>'s top-level Settings.
+        /// </summary>
+        public void UpdateSettings(Action<ProfileSettings> mutate)
+        {
+            ArgumentNullException.ThrowIfNull(mutate);
+            mutate(Draft.Settings);
+        }
+
+        /// <summary>
+        /// Ensures a plugin profile exists for <paramref name="pluginId"/>, then applies
+        /// <paramref name="mutate"/> to it. Existing profiles keep their current values
+        /// except for what the mutation changes.
+        /// </summary>
+        public void UpdatePluginProfile(string pluginId, Action<PluginProfile> mutate)
+        {
+            ArgumentNullException.ThrowIfNull(pluginId);
+            ArgumentNullException.ThrowIfNull(mutate);
+
+            if (!Draft.Plugins.TryGetValue(pluginId, out var profile))
+            {
+                profile = new PluginProfile();
+                Draft.Plugins[pluginId] = profile;
+            }
+
+            mutate(profile);
+        }
+
+        /// <summary>
+        /// Creates a process profile for <paramref name="processName"/> if missing and runs
+        /// <paramref name="initializer"/> on the new profile. An existing profile is left
+        /// untouched, so seeding a fresh profile never overwrites configured slots.
+        /// </summary>
+        public Task EnsureProcessProfileAsync(string processName, Action<ProcessProfile> initializer)
+        {
+            ArgumentNullException.ThrowIfNull(initializer);
+            return EnsureProcessProfileAsync(processName, profile =>
+            {
+                initializer(profile);
+                return Task.CompletedTask;
+            });
+        }
+
+        /// <summary>
+        /// Async variant of <see cref="EnsureProcessProfileAsync(string, Action{ProcessProfile})"/>
+        /// for seed values that require awaiting (e.g. icon extraction from an executable path).
+        /// </summary>
+        public async Task EnsureProcessProfileAsync(string processName, Func<ProcessProfile, Task> initializer)
+        {
+            ArgumentNullException.ThrowIfNull(processName);
+            ArgumentNullException.ThrowIfNull(initializer);
+
+            if (Draft.Profiles.ContainsKey(processName))
+            {
+                return;
+            }
+
+            var profile = new ProcessProfile();
+            Draft.Profiles[processName] = profile;
+            await initializer(profile);
+        }
+
+        /// <summary>
+        /// Replaces the entire draft with a deep copy of <paramref name="config"/>. Used by
+        /// whole-config bootstrap flows (e.g. the first-launch wizard) that start from a
+        /// freshly built template rather than editing the current state.
+        /// </summary>
+        public void ReplaceAll(ProfilesConfig config)
+        {
+            ArgumentNullException.ThrowIfNull(config);
+            Draft = DeepClone(config);
+        }
+
+        private bool DraftUnchanged()
+        {
+            return JsonEquals(Draft, _base);
         }
 
         public async Task CommitAsync()

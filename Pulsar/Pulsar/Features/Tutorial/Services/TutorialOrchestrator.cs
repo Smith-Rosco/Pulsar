@@ -756,9 +756,7 @@ namespace Pulsar.Features.Tutorial.Services
         {
             try
             {
-                var session = await ConfigEditSession.BeginAsync(_configService);
-                updateAction(session.Draft.Settings);
-                await session.CommitAsync();
+                await ConfigEditSession.RunAsync(_configService, session => session.UpdateSettings(updateAction));
             }
             catch (Exception ex)
             {
