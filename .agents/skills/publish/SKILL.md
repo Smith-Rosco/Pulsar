@@ -18,9 +18,9 @@ description: Pulsar 发布/打包流程（版本决策→构建→校验→打�
 | 5 | 校验 zip | PK 魔数 + 条目 |
 | 6 | Release notes | AI 撰写中文 notes，**展示给用户确认** |
 | 7 | commit + tag | `chore: bump version to X.Y.Z`（本地发布可选） |
-| 8 | GitHub Release | **先 push tag**（见坑 2、3） |
+| 8 | GitHub Release | **优先 push tag → CI 云端构建发布**（坑 2、3）；备选本地分步上传 |
 
-**gh-only 模式**：跳过 2-7，只执行第 8 步（用现有 zip 补发远端）。先确认 `Artifacts/Pulsar-v{ver}.zip` 与 csproj 版本一致、本地 tag 存在。
+**gh-only 模式**：跳过 2-7，只执行第 8 步（用现有 zip 补发远端）。先确认 `Artifacts/Pulsar-v{ver}.zip` 与 csproj 版本一致、本地 tag 存在。**tag 已推送但 CI 未触发/失败时，删远端 tag 重推触发**（`git push origin :v{ver} && git push origin v{ver}`）。
 
 ## 1. 版本决策
 
@@ -79,23 +79,31 @@ git tag -a v{ver} -m "{notes}"                                                # 
 
 ## 8. GitHub Release — 坑 2（顺序）与坑 3（# 路径）
 
-**顺序**：`gh release create` 要求 tag 已推送到远端，否则报
-`tag v{ver} exists locally but has not been pushed...`。**必须先生成并推送 tag**（第 7 步完成或 tag 已存在时直接推）：
+**推荐方式：push tag 后由 GitHub Actions 云端构建发布，本地不上传 zip**（80MB 上传慢且易超时；runner 到 GitHub 内网秒传）：
 
 ```bash
-# gh 不在 PATH 时用完整路径："/c/Program Files/GitHub CLI/gh.exe"（或 C:\Program Files\GitHub CLI\gh.exe）
-git push origin v{ver}   # ← 先推 tag！
+# 1. 第 7 步完成（或 tag 已存在）后推送 tag → 触发 .github/workflows/release.yml（匹配 v*）
+git push origin v{ver}
+# 2. 等待 CI：gh run list 查 run id，gh run watch <id>；失败则 gh run view --log-failed 排障
+# 3. 验证：gh release view v{ver} --json isDraft,assets （须非 draft 且含 Pulsar-v{ver}.zip）
 ```
 
-**# 路径坑**：仓库路径含 `#`（如 `E:\8_Project\10_C#\Pulsar_Project`）时，gh CLI 把路径在 `#` 处截断（URL fragment 解析）→ `GetFileAttributesEx E:\8_Project\10_C: ...`。**zip 和 notes 必须复制到无 # 的临时目录再上传**：
+CI 用 `--notes-from-tag` 读 notes，所以本地 tag 必须是 **annotated 且带 notes**（第 7 步已满足）。CI 对 draft/空资产半成品会自动清理接管；CI 产物校验（exe/pdb/cor3/Assets）与本地一致。
+
+**备选（CI 不可用或要立即发本地产物）**：分步执行避免单次超时：
 
 ```bash
-mkdir -p "$TMP/pulsar-upload"
-cp "Artifacts/Pulsar-v{ver}.zip" "$TMP/pulsar-upload/"
-# notes 写入 $TMP/pulsar-upload/notes.md（第 6 步确认后的内容）
-gh release create "v{ver}" "$TMP/pulsar-upload/Pulsar-v{ver}.zip" \
-  --title "Pulsar v{ver}" --notes-file "$TMP/pulsar-upload/notes.md"
-git push origin HEAD   # 最后推分支
+gh release create v{ver} --draft --title "Pulsar v{ver}" --notes-file <notes>  # 秒级
+gh release upload v{ver} <临时目录>/Pulsar-v{ver}.zip                          # 慢，耐心等
+gh release edit v{ver} --draft=false
+```
+
+**坑 2（顺序）**：`gh release create` 要求 tag 已推送，否则报 `tag exists locally but has not been pushed...`。**先 `git push origin v{ver}`**。
+
+**坑 3（# 路径）**：仓库路径含 `#`（如 `E:\8_Project\10_C#\Pulsar_Project`）时，gh CLI 把路径在 `#` 处截断（URL fragment）→ `GetFileAttributesEx E:\8_Project\10_C: ...`。**zip 和 notes 必须复制到无 # 的临时目录再传**：
+
+```bash
+mkdir -p "$TMP/pulsar-upload" && cp "Artifacts/Pulsar-v{ver}.zip" "$TMP/pulsar-upload/"
 ```
 
 详见 `Docs/lessons/GH_CLI_HASH_PATH_BUG.md`。
