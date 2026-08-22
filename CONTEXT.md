@@ -88,3 +88,11 @@ The encrypted sensitive half of a Secret (account + data), stored separately fro
 **PKI**:
 The Core module that stores Secrets and injects credentials into target windows.
 _Avoid_: Password manager
+
+**Config Edit Session**:
+A transactional workspace over a snapshot of Profiles.json; mutations target its draft, and CommitAsync persists with optimistic concurrency, rebasing to preserve concurrent writers' untouched regions. All config writes go through it; one-shot callers use typed mutation helpers (UpdateSettings, UpdatePluginProfile, UpdateProcessProfile, ReplaceAll) rather than editing the draft directly.
+_Avoid_: config mutation, config patch
+
+**Slot Editor Workspace**:
+The pure-logic state machine of the Settings slot editor: which context is selected, the working slot list, slot CRUD + reorder, metadata/validation/presentation refresh, secret staging, and dirty tracking. The ViewModel owns dialogs, persistence, and notifications and projects the workspace's state for binding. Tested directly, no WPF shell.
+_Avoid_: SettingsViewModel (the god-object that used to own this), slot editing state
