@@ -173,6 +173,12 @@ export async function gitLogRange(repoRoot: string, from: string | null): Promis
 export interface VersionSuggestion {
   version: string;
   reason: string;
+  /** 上次 tag（无则 null），用于展示上下文 */
+  lastTag: string | null;
+  commitCount: number;
+  featCount: number;
+  fixCount: number;
+  perfCount: number;
 }
 
 export async function inferNextVersion(repoRoot: string, current: string): Promise<VersionSuggestion> {
@@ -181,13 +187,24 @@ export async function inferNextVersion(repoRoot: string, current: string): Promi
   const meaningful = lines.filter((l) => !/^chore:\s*bump version/i.test(l));
   const hasFeat = meaningful.some((l) => /^feat(\(|:)/.test(l));
   const hasFix = meaningful.some((l) => /^fix(\(|:)/.test(l));
+  const featCount = meaningful.filter((l) => /^feat(\(|:)/.test(l)).length;
+  const fixCount = meaningful.filter((l) => /^fix(\(|:)/.test(l)).length;
+  const perfCount = meaningful.filter((l) => /^perf(\(|:)/.test(l)).length;
   const which: BumpKind = hasFeat ? "minor" : "patch";
   const reason = hasFeat
-    ? "自上一 tag 以来包含 feat 提交 → minor"
+    ? `含 ${featCount} 个 feat 提交 → minor`
     : hasFix
-      ? "自上一 tag 以来包含 fix 提交 → patch"
-      : "自上一 tag 以来无 feat/fix → 保守 patch";
-  return { version: incrementVersion(current, which), reason };
+      ? `含 ${fixCount} 个 fix 提交 → patch`
+      : "无 feat/fix → 保守 patch";
+  return {
+    version: incrementVersion(current, which),
+    reason,
+    lastTag: from,
+    commitCount: lines.length,
+    featCount,
+    fixCount,
+    perfCount,
+  };
 }
 
 export async function remoteOwnerRepo(repoRoot: string): Promise<string | null> {
@@ -235,7 +252,51 @@ export function buildNotes(lines: string[], version: string): string {
   return out.join("\n").trimEnd() + "\n";
 }
 
+// 供扩展调 LLM 自动撰写 release notes 的提示词（纯函数，可冒烟测试）
+export function buildNotesPrompt(version: string, lines: string[], draft: string): string {
+  return [
+    `为 Pulsar（Windows 生产力启动器）的 v${version} 版本撰写 GitHub Release notes。`,
+    "",
+    "要求：",
+    '1. 使用简洁中文，面向最终用户；',
+    '2. 章节标题固定为：### 新功能 / ### 修复 / ### 性能优化 / ### 其他（无内容的章节省略）；',
+    '3. 每条变更一行，以 "- " 开头，基于下面的提交列表提炼用户可感知的改进；',
+    '4. 剔除版本号 bump、纯内部重构、文档类噪音；',
+    '5. 直接输出 notes 正文，不要任何前言或解释。',
+    "",
+    "## 版本",
+    `v${version}`,
+    "",
+    "## 提交列表",
+    ...lines.map((l) => `- ${l}`),
+    "",
+    "## 参考草稿（基于提交自动生成，可润色）",
+    draft,
+  ].join("\n");
+}
+
 // ---------- 校验 / 打包 ----------
+
+// Windows 下可靠的 zip 读写器：System32 的 bsdtar（libarchive）。
+// PATH 中的 tar 可能是 Git for Windows 的 GNU tar（无法读/写 zip，会生成假 .zip）。
+export function zipTarPath(): string {
+  const systemRoot = process.env.SystemRoot ?? "C:\\Windows";
+  const bsdtar = path.join(systemRoot, "System32", "tar.exe");
+  return fs.existsSync(bsdtar) ? bsdtar : "tar";
+}
+
+// 真实 zip 的魔数 "PK"（GNU tar 生成的伪 .zip 以 "./" 开头，可被此检查拦截）
+export function isZipFile(zipPath: string): boolean {
+  try {
+    const fd = fs.openSync(zipPath, "r");
+    const buf = Buffer.alloc(4);
+    fs.readSync(fd, buf, 0, 4, 0);
+    fs.closeSync(fd);
+    return buf[0] === 0x50 && buf[1] === 0x4b;
+  } catch {
+    return false;
+  }
+}
 
 export function verifyPublishDir(dir: string): string[] {
   const missing: string[] = [];
@@ -253,7 +314,8 @@ export function verifyPublishDir(dir: string): string[] {
 }
 
 export async function verifyZipEntries(zipPath: string): Promise<string[]> {
-  const r = await run("tar", ["-tf", zipPath], { cwd: path.dirname(zipPath) });
+  if (!isZipFile(zipPath)) return ["<zip 文件无效或缺失>"];
+  const r = await run(zipTarPath(), ["-tf", zipPath], { cwd: path.dirname(zipPath) });
   if (r.code !== 0) return ["<无法读取 zip>"];
   const entries = r.lastLines.map((l) => l.replace(/\\/g, "/"));
   const missing: string[] = [];
@@ -271,6 +333,34 @@ export async function zipDirContents(
   zipPath: string,
   onRecent?: (recent: string[]) => void,
 ): Promise<RunResult> {
-  const cmd = `Compress-Archive -Path '${dir}\\*' -DestinationPath '${zipPath}' -CompressionLevel Optimal -Force`;
-  return run("powershell", ["-NoProfile", "-Command", cmd], { cwd, onRecent });
+  const archiveCmd = `Compress-Archive -Path '${dir}\\*' -DestinationPath '${zipPath}' -CompressionLevel Optimal -Force`;
+  // PowerShell 5.1 的进程 PSModulePath 可能被 PS7 目录（先于 System32）污染：
+  // 5.1 会优先自动加载 PS7 的 Microsoft.PowerShell.Archive 副本，而被其
+  // 执行策略（Restricted）拦截 → CommandNotFoundException。逐级回退：
+  //   1. pwsh（模块在自己目录，默认 RemoteSigned，最可靠）
+  //   2. powershell -ExecutionPolicy Bypass（5.1 绕过脚本拦截）
+  //   3. 系统自带 bsdtar（Win10 1803+，无需 PowerShell 模块）
+  const attempts: Array<[string, string[]]> = [
+    ["pwsh", ["-NoProfile", "-Command", archiveCmd]],
+    ["powershell", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", archiveCmd]],
+  ];
+  for (const [cmd, args] of attempts) {
+    const r = await run(cmd, args, { cwd, onRecent });
+    if (r.code === 0 && fs.existsSync(zipPath)) return r;
+  }
+  // 兜底：System32 bsdtar 直接打 zip（条目相对 -C dir，无 ./ 前缀，可被 verifyZipEntries 识别）。
+  // 注意不能用 PATH 中的 tar（Git for Windows 的 GNU tar 只会生成假的 .zip），
+  // 且结果必须通过 PK 魔数校验。
+  fs.rmSync(zipPath, { force: true });
+  let entries: string[];
+  try {
+    entries = fs.readdirSync(dir);
+  } catch {
+    return { code: 1, killed: false, lastLines: [`目录不可读: ${dir}`] };
+  }
+  const r = await run(zipTarPath(), ["-a", "-c", "-f", zipPath, "-C", dir, ...entries], { cwd, onRecent });
+  if (r.code === 0 && !isZipFile(zipPath)) {
+    return { code: 1, killed: false, lastLines: ["tar 输出不是有效的 zip（PATH 中的 tar 可能是 GNU tar）"] };
+  }
+  return r;
 }

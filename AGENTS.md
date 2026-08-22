@@ -427,6 +427,8 @@ dotnet restore Pulsar/Pulsar/Pulsar.csproj
   - [WPF_RESOURCES_HYGIENE.md](./Docs/lessons/WPF_RESOURCES_HYGIENE.md)
   - [FOREGROUND_WINDOW_ACTIVATION_RELIABILITY.md](./Docs/lessons/FOREGROUND_WINDOW_ACTIVATION_RELIABILITY.md)
   - [SENDINPUT_FOREGROUND_ACTIVATION.md](./Docs/lessons/SENDINPUT_FOREGROUND_ACTIVATION.md)
+  - [POWERSHELL_5_1_COMPRESS_ARCHIVE_BROKEN.md](./Docs/lessons/POWERSHELL_5_1_COMPRESS_ARCHIVE_BROKEN.md) — Compress-Archive in 5.1 breaks when PS7 pollutes PSModulePath; use pwsh/bsdtar, never PATH GNU tar
+  - [GH_CLI_HASH_PATH_BUG.md](./Docs/lessons/GH_CLI_HASH_PATH_BUG.md) — gh CLI truncates local paths at `#` (URL fragment); upload from a `#`-free temp dir
 
 ### Operations & Decisions
 - **[Docs/decisions/](./Docs/decisions/)** - Architecture Decision Records (ADRs)

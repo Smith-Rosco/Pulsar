@@ -9,6 +9,8 @@ import {
   findRepoRoot,
   verifyPublishDir,
   buildNotes,
+  buildNotesPrompt,
+  inferNextVersion,
 } from "./core.ts";
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -50,6 +52,13 @@ check("notes has Fixes", notes.includes("### Fixes") && notes.includes("- measur
 check("notes excludes bump commit", !notes.includes("bump version to 1.4.2"));
 check("notes has Other", notes.includes("### Other") && notes.includes("- refactor(settings): extract SlotEditorWorkspace core"));
 
+// ---- AGENT release notes 提示词 ----
+const agentPrompt = buildNotesPrompt("1.6.0", ["feat(menu): right-drag summon gesture", "fix(quick-switch): measure window from menu visibility"], notes);
+check("prompt contains version", agentPrompt.includes("v1.6.0"));
+check("prompt contains commit lines", agentPrompt.includes("feat(menu): right-drag summon gesture"));
+check("prompt contains draft", agentPrompt.includes("### Features"));
+check("prompt has formatting rules", agentPrompt.includes("### 新功能") && agentPrompt.includes("- "));
+
 // ---- csproj 读写（临时副本，不碰真实文件）----
 const repoRoot = findRepoRoot(process.cwd());
 check("findRepoRoot", repoRoot !== null && path.resolve(process.cwd()) === repoRoot, String(repoRoot));
@@ -73,6 +82,14 @@ if (repoRoot) {
   );
   fs.rmSync(tmp, { force: true });
   console.log(`csproj 当前版本: ${before.Version}`);
+
+  // ---- 版本建议（真实 git 仓库，断言结构而非具体值）----
+  const sug = await inferNextVersion(repoRoot, before.Version);
+  check("suggestion version+reason", SEMVER_RE.test(sug.version) && sug.reason.length > 0, JSON.stringify(sug));
+  check(
+    "suggestion stats present",
+    typeof sug.commitCount === "number" && typeof sug.featCount === "number" && typeof sug.fixCount === "number",
+  );
 }
 
 // ---- 产物校验 ----
