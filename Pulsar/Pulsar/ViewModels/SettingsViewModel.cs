@@ -51,11 +51,17 @@ namespace Pulsar.ViewModels
         private readonly ILocalizationService _loc;
         private readonly ITutorialService _tutorialService;
         private readonly SlotEditorWorkspace _slotEditor;
-        private ProfilesConfig _config;
-        private ConfigEditSession? _editSession;
+        private readonly SettingsEditorSession _session;
+        private readonly ProfilesConfig _fallbackConfig = new();
 
         // ===== Drag & Drop =====
         private CancellationTokenSource? _notificationDebounceToken;
+
+        /// <summary>
+        /// The working draft, owned by the editor session. Falls back to an empty
+        /// config before the first load so bindings (theme, hotkeys) have a value.
+        /// </summary>
+        private ProfilesConfig Config => _session.Draft ?? _fallbackConfig;
 
         public string CurrentView => _settingsShell.CurrentLegacyViewName;
 
@@ -100,7 +106,7 @@ namespace Pulsar.ViewModels
         {
             if (value == null) return;
             _loc.SetLanguage(value.Code);
-            _config.Settings.Language = value.Code;
+            Config.Settings.Language = value.Code;
             MarkDirty();
         }
 
@@ -209,7 +215,8 @@ namespace Pulsar.ViewModels
             _loc = localizationService;
             _tutorialService = tutorialService;
             _processRegistryService = processRegistryService;
-            _config = new ProfilesConfig();
+
+            _session = new SettingsEditorSession(configService, secretStore);
 
             _slotEditor = new SlotEditorWorkspace(
                 pluginMetadataRegistry,
@@ -310,33 +317,24 @@ namespace Pulsar.ViewModels
 
         public async Task<ProfilesConfig> GetConfigAsync()
         {
-            if (_config == null)
-            {
-                _editSession = await ConfigEditSession.BeginAsync(_configService);
-                _config = _editSession.Draft;
-                _slotEditor.AttachConfig(_config);
-            }
-
-            return _config;
+            return await _session.EnsureLoadedAsync();
         }
 
         public async Task LoadSettings()
         {
             await _slotEditor.WithSuppressedDirtyAsync(async () =>
             {
-                _editSession = await ConfigEditSession.BeginAsync(_configService);
-                _config = _editSession.Draft;
+                var config = await _session.LoadAsync();
+                _slotEditor.Load(config, await _session.LoadSecretsAsync());
 
-                _slotEditor.Load(_config, await _secretStore.LoadAsync());
-
-                GeneralSettings = _config.Settings;
-                SelectedLanguage = SupportedLanguages.FirstOrDefault(l => l.Code == _config.Settings.Language) ?? SupportedLanguages.FirstOrDefault();
+                GeneralSettings = config.Settings;
+                SelectedLanguage = SupportedLanguages.FirstOrDefault(l => l.Code == config.Settings.Language) ?? SupportedLanguages.FirstOrDefault();
 
                 // Notify properties to trigger bindings/theme updates
                 OnPropertyChanged(nameof(CurrentTheme));
 
-                if (_config.Settings.ThemeEnum != _themeService.CurrentTheme)
-                    ApplySettingsTheme(_config.Settings.ThemeEnum);
+                if (config.Settings.ThemeEnum != _themeService.CurrentTheme)
+                    ApplySettingsTheme(config.Settings.ThemeEnum);
                 
                 // [New] Notify Hotkeys
                 OnPropertyChanged(nameof(ShowGridHotkey));
@@ -450,7 +448,7 @@ namespace Pulsar.ViewModels
         [RelayCommand]
         public async Task AddProfileDialog()
         {
-            var existingKeys = _config.Profiles.Keys.ToList();
+            var existingKeys = Config.Profiles.Keys.ToList();
             
             var vm = new InputProfileViewModel(_windowService, _dialogService, _searchService, _loc, existingKeys);
             var result = await _dialogService.ShowCustomAsync(_loc["Notification.NewProfile"], vm, DialogButtons.OkCancel);
@@ -463,13 +461,13 @@ namespace Pulsar.ViewModels
 
                 if (string.IsNullOrWhiteSpace(processName)) return;
 
-                if (_config.Profiles.ContainsKey(processName))
+                if (Config.Profiles.ContainsKey(processName))
                 {
                     SendNotification(_loc["Notification.Error"], string.Format(_loc["Notification.ProfileAlreadyExistsFormat"], processName), ControlAppearance.Danger);
                     return;
                 }
 
-                _config.Profiles[processName] = new ProcessProfile 
+                Config.Profiles[processName] = new ProcessProfile 
                 { 
                     Icon = iconKey,
                     Alias = alias,
@@ -516,10 +514,10 @@ namespace Pulsar.ViewModels
         [RelayCommand]
         public async Task EditProfile()
         {
-            if (CurrentContext?.IsProfile != true || _config.Profiles == null) return;
+            if (CurrentContext?.IsProfile != true || Config.Profiles == null) return;
             
             var profileKey = CurrentContext.Key;
-            if (!_config.Profiles.TryGetValue(profileKey, out var profileData)) return;
+            if (!Config.Profiles.TryGetValue(profileKey, out var profileData)) return;
 
             var vm = new EditProfileViewModel(_dialogService, _searchService, _loc, profileKey, profileData.Alias ?? string.Empty, profileData.Icon ?? string.Empty);
             var result = await _dialogService.ShowCustomAsync(_loc["Notification.EditProfile"], vm, DialogButtons.OkCancel);
@@ -543,12 +541,6 @@ namespace Pulsar.ViewModels
         {
             _logger.LogInformation("[Save] Method called. HasUnsavedChanges = {Value}", HasUnsavedChanges);
             
-            if (_config == null)
-            {
-                _logger.LogWarning("[Save] _config is null, returning");
-                return;
-            }
-            
             try
             {
                 // [Fix] Ensure current modifications are committed before saving
@@ -557,28 +549,14 @@ namespace Pulsar.ViewModels
                 // [Fix] Refresh slot metadata BEFORE saving to ensure valid actions are persisted
                 _slotEditor.RefreshSlotParameterMetadata();
 
-                var allSecrets = await _secretStore.LoadAsync();
-                foreach (var kvp in _slotEditor.PendingSecrets)
-                {
-                    allSecrets[kvp.Key] = kvp.Value;
-                }
-                
-                await _secretStore.SaveAsync(allSecrets);
+                var allSecrets = await _session.CommitAsync(_slotEditor.PendingSecrets);
                 _slotEditor.ReplacePersistedSecrets(allSecrets);
 
-                if (_editSession == null)
-                {
-                    _editSession = await ConfigEditSession.BeginAsync(_configService);
-                    _config = _editSession.Draft;
-                    _slotEditor.AttachConfig(_config);
-                }
-
-                await _editSession.CommitAsync();
                 ResyncSettingsReferences();
 
                 // [Architecture] Notify RadialMenuViewModel to reinitialize slots if count changed
                 // This ensures immediate visual feedback without requiring app restart
-                WeakReferenceMessenger.Default.Send(new SlotsPerPageChangedMessage(_config.Settings.SlotsPerPage));
+                WeakReferenceMessenger.Default.Send(new SlotsPerPageChangedMessage(Config.Settings.SlotsPerPage));
 
                 // [Fix] Refresh hotkey cache from current config instead of double-saving stale data
                 // HotkeyService._config was set during InitializeAsync and may reference an older
@@ -615,9 +593,9 @@ namespace Pulsar.ViewModels
         /// </summary>
         private void ResyncSettingsReferences()
         {
-            if (!ReferenceEquals(GeneralSettings, _config.Settings))
+            if (!ReferenceEquals(GeneralSettings, Config.Settings))
             {
-                _slotEditor.WithSuppressedDirty(() => GeneralSettings = _config.Settings);
+                _slotEditor.WithSuppressedDirty(() => GeneralSettings = Config.Settings);
             }
         }
 
@@ -939,17 +917,10 @@ namespace Pulsar.ViewModels
             // [Fix] Suppress sync to prevent zombie resurrection of the deleted profile
             await _slotEditor.WithSuppressedSlotSyncAsync(async () =>
             {
-                if (_config.Profiles.Remove(profileName))
+                if (Config.Profiles.Remove(profileName))
                 {
                     // [Fix] Save changes to disk through the active edit session
-                    if (_editSession == null)
-                    {
-                        _editSession = await ConfigEditSession.BeginAsync(_configService);
-                        _config = _editSession.Draft;
-                        _slotEditor.AttachConfig(_config);
-                    }
-
-                    await _editSession.CommitAsync();
+                    await _session.CommitConfigAsync();
                     ResyncSettingsReferences();
                     
                     SendNotification(_loc["Notification.Deleted"], string.Format(_loc["Notification.ProfileDeletedFormat"], profileName), ControlAppearance.Info);
@@ -1146,11 +1117,6 @@ namespace Pulsar.ViewModels
                 if (insertIndex < 0) insertIndex = 0;
                 if (insertIndex > CurrentSlots.Count) insertIndex = CurrentSlots.Count;
 
-                if (sourceIndex < insertIndex)
-                {
-                    insertIndex--;
-                }
-
                 if (sourceIndex == insertIndex)
                 {
                     _logger.LogDebug("Slot dropped at same position (index {Index}), ignoring", sourceIndex);
@@ -1185,30 +1151,30 @@ namespace Pulsar.ViewModels
                 return;
             }
 
-            var session = await ConfigEditSession.BeginAsync(_configService);
-            var config = session.Draft;
-            config.Settings.OnboardingState = "SetupWizardComplete";
-            config.Settings.HasCompletedTutorial = false;
-            config.Settings.TutorialCrashedAt = null;
-            config.Settings.LastTutorialStep = null;
-
-            if (config.Profiles.TryGetValue("Global", out var globalProfile)
-                && (globalProfile.SwitchMode == null || globalProfile.SwitchMode.Count == 0)
-                && (globalProfile.CommandMode == null || globalProfile.CommandMode.Count == 0))
+            await SettingsEditorSession.RunAsync(_configService, session =>
             {
-                globalProfile.SwitchMode =
-                [
-                    new PluginSlot { Slot = 1, PluginId = "com.pulsar.winswitcher", Action = "switch", Args = new Dictionary<string, string> { ["app"] = "notepad", ["path"] = "notepad.exe" }, Label = "Notepad", IconKey = "\uE70F" },
-                    new PluginSlot { Slot = 2, PluginId = "com.pulsar.winswitcher", Action = "switch", Args = new Dictionary<string, string> { ["app"] = "explorer", ["path"] = "explorer.exe" }, Label = "File Explorer", IconKey = "\uE8B7" },
-                    new PluginSlot { Slot = 3, PluginId = "com.pulsar.winswitcher", Action = "switch", Args = new Dictionary<string, string> { ["app"] = "calc", ["path"] = "calc.exe" }, Label = "Calculator", IconKey = "\uE8EF" }
-                ];
-                globalProfile.CommandMode =
-                [
-                    new PluginSlot { Slot = 1, PluginId = "com.pulsar.command", Action = "run", Args = new Dictionary<string, string> { ["path"] = "cmd.exe" }, Label = "Command Prompt", IconKey = "\uE756" }
-                ];
-            }
+                var config = session.Draft;
+                config.Settings.OnboardingState = "SetupWizardComplete";
+                config.Settings.HasCompletedTutorial = false;
+                config.Settings.TutorialCrashedAt = null;
+                config.Settings.LastTutorialStep = null;
 
-            await session.CommitAsync();
+                if (config.Profiles.TryGetValue("Global", out var globalProfile)
+                    && (globalProfile.SwitchMode == null || globalProfile.SwitchMode.Count == 0)
+                    && (globalProfile.CommandMode == null || globalProfile.CommandMode.Count == 0))
+                {
+                    globalProfile.SwitchMode =
+                    [
+                        new PluginSlot { Slot = 1, PluginId = "com.pulsar.winswitcher", Action = "switch", Args = new Dictionary<string, string> { ["app"] = "notepad", ["path"] = "notepad.exe" }, Label = "Notepad", IconKey = "\uE70F" },
+                        new PluginSlot { Slot = 2, PluginId = "com.pulsar.winswitcher", Action = "switch", Args = new Dictionary<string, string> { ["app"] = "explorer", ["path"] = "explorer.exe" }, Label = "File Explorer", IconKey = "\uE8B7" },
+                        new PluginSlot { Slot = 3, PluginId = "com.pulsar.winswitcher", Action = "switch", Args = new Dictionary<string, string> { ["app"] = "calc", ["path"] = "calc.exe" }, Label = "Calculator", IconKey = "\uE8EF" }
+                    ];
+                    globalProfile.CommandMode =
+                    [
+                        new PluginSlot { Slot = 1, PluginId = "com.pulsar.command", Action = "run", Args = new Dictionary<string, string> { ["path"] = "cmd.exe" }, Label = "Command Prompt", IconKey = "\uE756" }
+                    ];
+                }
+            });
 
             await _tutorialService.StartTutorialAsync();
         }

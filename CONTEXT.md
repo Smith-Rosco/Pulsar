@@ -94,5 +94,13 @@ A transactional workspace over a snapshot of Profiles.json; mutations target its
 _Avoid_: config mutation, config patch
 
 **Slot Editor Workspace**:
-The pure-logic state machine of the Settings slot editor: which context is selected, the working slot list, slot CRUD + reorder, metadata/validation/presentation refresh, secret staging, and dirty tracking. The ViewModel owns dialogs, persistence, and notifications and projects the workspace's state for binding. Tested directly, no WPF shell.
+The pure-logic state machine of the Settings slot editor: which context is selected, the working slot list, slot CRUD + reorder, metadata/validation/presentation refresh, secret staging, and dirty tracking. The ViewModel owns dialogs, persistence (through the Settings Editor Session) and notifications and projects the workspace's state for binding. Tested directly, no WPF shell.
 _Avoid_: SettingsViewModel (the god-object that used to own this), slot editing state
+
+**Settings Editor Session**:
+The persistence seam of the Settings editor. Owns the Config Edit Session lifecycle (load / lazy-begin / commit), the working config draft, and the secret-store pipeline (load → merge pending → save → adopt persisted). Slot editing state stays in the Slot Editor Workspace; the session only decides when a draft is loaded and when it is persisted, so one-shot flows (profile delete, tutorial reset) commit through the same seam.
+_Avoid_: the five "begin a session" dances that used to live in SettingsViewModel, the double-owner `_config`
+
+**Slot List Mutator**:
+The single owner of "move a Slot and renumber 1..N" semantics for every slot surface in the editor (the Settings slot list and the wheel preview). Both surfaces share the same underlying list, so the mutation math lives in one place and the insert-position convention (GongSolutions) is applied exactly once.
+_Avoid_: the five duplicated renumber loops in SlotEditorWorkspace / SlotWheelEditorViewModel / LegacySlotConverter

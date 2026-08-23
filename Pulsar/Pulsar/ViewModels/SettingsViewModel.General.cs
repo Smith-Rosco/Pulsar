@@ -21,12 +21,12 @@ namespace Pulsar.ViewModels
     {
         public AppTheme CurrentTheme
         {
-            get => _config.Settings.ThemeEnum;
+            get => Config.Settings.ThemeEnum;
             set
             {
-                if (_config.Settings.ThemeEnum != value)
+                if (Config.Settings.ThemeEnum != value)
                 {
-                    _config.Settings.Theme = value.ToString();
+                    Config.Settings.Theme = value.ToString();
                     OnPropertyChanged();
                     ApplySettingsTheme(value);
                     MarkDirty();
@@ -37,18 +37,18 @@ namespace Pulsar.ViewModels
         public void SyncThemeFromService()
         {
             var serviceTheme = _themeService.CurrentTheme;
-            if (_config.Settings.ThemeEnum == serviceTheme) return;
-            _config.Settings.Theme = serviceTheme.ToString();
+            if (Config.Settings.ThemeEnum == serviceTheme) return;
+            Config.Settings.Theme = serviceTheme.ToString();
             OnPropertyChanged(nameof(CurrentTheme));
             MarkDirty();
         }
 
         public HotkeyConfig ShowGridHotkey
         {
-            get => _config.Settings.Hotkeys.TryGetValue(HotkeyActionIds.ShowGrid, out var h) ? h : new HotkeyConfig();
+            get => Config.Settings.Hotkeys.TryGetValue(HotkeyActionIds.ShowGrid, out var h) ? h : new HotkeyConfig();
             set
             {
-                _config.Settings.Hotkeys[HotkeyActionIds.ShowGrid] = value;
+                Config.Settings.Hotkeys[HotkeyActionIds.ShowGrid] = value;
                 OnPropertyChanged();
                 _hotkeyService.ApplyHotkey(HotkeyActionIds.ShowGrid, value);
                 var validation = _hotkeyService.ValidateHotkey(HotkeyActionIds.ShowGrid, value);
@@ -59,10 +59,10 @@ namespace Pulsar.ViewModels
 
         public HotkeyConfig ShowSwitcherHotkey
         {
-            get => _config.Settings.Hotkeys.TryGetValue(HotkeyActionIds.ShowSwitcher, out var h) ? h : new HotkeyConfig();
+            get => Config.Settings.Hotkeys.TryGetValue(HotkeyActionIds.ShowSwitcher, out var h) ? h : new HotkeyConfig();
             set
             {
-                _config.Settings.Hotkeys[HotkeyActionIds.ShowSwitcher] = value;
+                Config.Settings.Hotkeys[HotkeyActionIds.ShowSwitcher] = value;
                 OnPropertyChanged();
                 _hotkeyService.ApplyHotkey(HotkeyActionIds.ShowSwitcher, value);
                 var validation = _hotkeyService.ValidateHotkey(HotkeyActionIds.ShowSwitcher, value);

@@ -456,12 +456,7 @@ namespace Pulsar.ViewModels.Settings
             var index = CurrentSlots.IndexOf(item);
             if (index <= 0) return;
 
-            CurrentSlots.Move(index, index - 1);
-
-            for (int i = 0; i < CurrentSlots.Count; i++)
-            {
-                CurrentSlots[i].Slot = i + 1;
-            }
+            SlotListMutator.MoveToIndex(CurrentSlots, index, index - 1);
 
             MarkDirty();
         }
@@ -482,12 +477,7 @@ namespace Pulsar.ViewModels.Settings
             var index = CurrentSlots.IndexOf(item);
             if (index < 0 || index >= CurrentSlots.Count - 1) return;
 
-            CurrentSlots.Move(index, index + 1);
-
-            for (int i = 0; i < CurrentSlots.Count; i++)
-            {
-                CurrentSlots[i].Slot = i + 1;
-            }
+            SlotListMutator.MoveToIndex(CurrentSlots, index, index + 1);
 
             MarkDirty();
         }
@@ -504,24 +494,14 @@ namespace Pulsar.ViewModels.Settings
         /// <summary>
         /// Drag &amp; drop reorder: move <paramref name="sourceIndex"/> to
         /// <paramref name="insertIndex"/> (the visual insert position) and renumber.
+        /// The insert-position convention is owned here — callers pass the raw
+        /// GongSolutions insert index and must NOT pre-adjust it.
         /// </summary>
         public void Reorder(int sourceIndex, int insertIndex)
         {
-            if (CurrentSlots == null) return;
-
-            var source = CurrentSlots.ElementAtOrDefault(sourceIndex);
-            if (source == null) return;
-
-            var clamped = Math.Clamp(insertIndex, 0, CurrentSlots.Count);
-            if (sourceIndex < clamped) clamped--;
-
-            if (sourceIndex == clamped) return;
-
-            CurrentSlots.Move(sourceIndex, clamped);
-
-            for (int i = 0; i < CurrentSlots.Count; i++)
+            if (CurrentSlots == null || !SlotListMutator.MoveToInsertPosition(CurrentSlots, sourceIndex, insertIndex))
             {
-                CurrentSlots[i].Slot = i + 1;
+                return;
             }
 
             MarkDirty();

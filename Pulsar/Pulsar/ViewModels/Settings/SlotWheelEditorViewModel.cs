@@ -10,6 +10,7 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Pulsar.Core.Localization;
 using Pulsar.Core.Messages;
+using Pulsar.Helpers;
 using Pulsar.Models;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
@@ -273,22 +274,7 @@ namespace Pulsar.ViewModels.Settings
 
         private void MoveAndRenumber(int sourceIndex, int targetIndex)
         {
-            if (_slots is ObservableCollection<PluginSlot> observable)
-            {
-                observable.Move(sourceIndex, targetIndex);
-            }
-            else
-            {
-                var item = _slots![sourceIndex];
-                _slots.RemoveAt(sourceIndex);
-                _slots.Insert(targetIndex, item);
-            }
-
-            for (int i = 0; i < _slots!.Count; i++)
-            {
-                _slots[i].Slot = i + 1;
-            }
-
+            SlotListMutator.MoveToIndex(_slots!, sourceIndex, targetIndex);
             RebuildItems();
         }
 
