@@ -108,7 +108,9 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                     if (trimmed.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
                     {
                         result.IsValid = false;
-                        result.Errors.Add($"Invalid process name '{trimmed}': contains illegal characters");
+                        result.Errors.Add(string.Format(
+                            _loc?["Plugin.WinSwitcher.InvalidProcessName"] ?? "Invalid process name '{0}': contains illegal characters",
+                            trimmed));
                     }
                     
                     // 警告：进程名不应包含 .exe 后缀（记录日志但不阻止）
@@ -121,7 +123,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                     if (trimmed.Length > 255)
                     {
                         result.IsValid = false;
-                        result.Errors.Add($"Process name '{trimmed}' exceeds maximum length (255 characters)");
+                        result.Errors.Add(_loc?["Plugin.WinSwitcher.ProcessNameTooLong"] ?? "Process name exceeds maximum length (255 characters)");
                     }
                 }
             }
@@ -224,13 +226,17 @@ namespace Pulsar.Plugins.Core.WinSwitcher
             // 验证路径格式
             if (!Path.IsPathRooted(exePath))
             {
-                return Task.FromResult(PluginResult.Error($"Path must be absolute: {exePath}", PluginErrorSeverity.Recoverable, PluginErrorCode.InvalidConfiguration));
+                return Task.FromResult(PluginResult.Error(
+                    string.Format(_loc?["Plugin.WinSwitcher.PathNotAbsolute"] ?? "Path must be absolute: {0}", exePath),
+                    PluginErrorSeverity.Recoverable, PluginErrorCode.InvalidConfiguration));
             }
             
             // 验证文件存在性
             if (!File.Exists(exePath))
             {
-                return Task.FromResult(PluginResult.Error($"Application not found: {exePath}", PluginErrorSeverity.Recoverable, PluginErrorCode.NotFound));
+                return Task.FromResult(PluginResult.Error(
+                    string.Format(_loc?["Plugin.WinSwitcher.AppNotFound"] ?? "Application not found: {0}", exePath),
+                    PluginErrorSeverity.Recoverable, PluginErrorCode.NotFound));
             }
             
             // 验证文件扩展名白名单
@@ -238,7 +244,8 @@ namespace Pulsar.Plugins.Core.WinSwitcher
             var ext = Path.GetExtension(exePath).ToLowerInvariant();
             if (!allowedExtensions.Contains(ext))
             {
-                return Task.FromResult(PluginResult.Error($"Unsupported file type: {ext}. Allowed: {string.Join(", ", allowedExtensions)}",
+                return Task.FromResult(PluginResult.Error(
+                    string.Format(_loc?["Plugin.WinSwitcher.UnsupportedFileType"] ?? "Unsupported file type: {0}. Allowed: {1}", ext, string.Join(", ", allowedExtensions)),
                     PluginErrorSeverity.Recoverable, PluginErrorCode.InvalidConfiguration));
             }
 
@@ -263,22 +270,30 @@ namespace Pulsar.Plugins.Core.WinSwitcher
             catch (System.IO.FileNotFoundException ex)
             {
                 _logger?.LogError(ex, $"{LogPrefix} File not found: {{ExePath}}", exePath);
-                return Task.FromResult(PluginResult.Error($"File not found: {ex.Message}", PluginErrorSeverity.Recoverable, PluginErrorCode.NotFound));
+                return Task.FromResult(PluginResult.Error(
+                    string.Format(_loc?["Plugin.WinSwitcher.FileNotFound"] ?? "File not found: {0}", ex.Message),
+                    PluginErrorSeverity.Recoverable, PluginErrorCode.NotFound));
             }
             catch (UnauthorizedAccessException ex)
             {
                 _logger?.LogError(ex, $"{LogPrefix} Access denied: {{ExePath}}", exePath);
-                return Task.FromResult(PluginResult.Error($"Access denied: {ex.Message}", PluginErrorSeverity.Critical, PluginErrorCode.AccessDenied));
+                return Task.FromResult(PluginResult.Error(
+                    string.Format(_loc?["Plugin.WinSwitcher.AccessDenied"] ?? "Access denied: {0}", ex.Message),
+                    PluginErrorSeverity.Critical, PluginErrorCode.AccessDenied));
             }
             catch (System.ComponentModel.Win32Exception ex)
             {
                 _logger?.LogError(ex, $"{LogPrefix} Win32 error launching: {{ExePath}}", exePath);
-                return Task.FromResult(PluginResult.Error($"Failed to launch: {ex.Message}", PluginErrorSeverity.Recoverable, PluginErrorCode.ExecutionFailed));
+                return Task.FromResult(PluginResult.Error(
+                    string.Format(_loc?["Plugin.WinSwitcher.LaunchFailed"] ?? "Launch failed: {0}", ex.Message),
+                    PluginErrorSeverity.Recoverable, PluginErrorCode.ExecutionFailed));
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, $"{LogPrefix} Unexpected error launching: {{ExePath}}", exePath);
-                return Task.FromResult(PluginResult.Error($"Launch failed: {ex.Message}", PluginErrorSeverity.Critical));
+                return Task.FromResult(PluginResult.Error(
+                    string.Format(_loc?["Plugin.WinSwitcher.LaunchFailed"] ?? "Launch failed: {0}", ex.Message),
+                    PluginErrorSeverity.Critical, PluginErrorCode.ExecutionFailed));
             }
         }
 
@@ -291,7 +306,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
         {
             if (!args.TryGetValue("app", out var processName) || string.IsNullOrEmpty(processName))
             {
-                return PluginResult.Error("Missing required parameter: app", PluginErrorSeverity.Recoverable, PluginErrorCode.MissingRequiredParameter);
+                return PluginResult.Error(_loc?["Plugin.WinSwitcher.MissingAppParam"] ?? "Missing required parameter: app", PluginErrorSeverity.Recoverable, PluginErrorCode.MissingRequiredParameter);
             }
 
             _logger?.LogDebug($"{LogPrefix} Smart switch for: {{ProcessName}}", processName);
@@ -307,15 +322,17 @@ namespace Pulsar.Plugins.Core.WinSwitcher
             // 2. 切换失败，尝试启动
             if (args.TryGetValue("path", out var exePath) && !string.IsNullOrEmpty(exePath))
             {
-                System.Diagnostics.Debug.WriteLine($"{LogPrefix} SmartSwitch - no window found for '{processName}', showing launch toast. _trayService={(_trayService != null ? "exists" : "NULL")}");
-                _trayService?.ShowNotification("Launching", $"Starting {processName}...", PulsarNotificationIcon.Info);
-                System.Diagnostics.Debug.WriteLine($"{LogPrefix} SmartSwitch - toast returned, launching app...");
+                _trayService?.ShowNotification(
+                    _loc?["Feedback.Launching"] ?? "Launching",
+                    string.Format(_loc?["Feedback.StartingFormat"] ?? "Starting {0}...", processName),
+                    PulsarNotificationIcon.Info);
                 return await LaunchApplicationAsync(args, context);
             }
             else
             {
                 _logger?.LogWarning($"{LogPrefix} Cannot launch: No path specified for {{ProcessName}}", processName);
-                return PluginResult.Error(string.Format(_loc?["Plugin.WinSwitcher.ProcessNotRunning"] ?? "Process '{0}' is not running", processName) + " and no launch path specified",
+                return PluginResult.Error(
+                    string.Format(_loc?["Plugin.WinSwitcher.ProcessNotRunningNoPath"] ?? "Process '{0}' is not running and no launch path specified", processName),
                     PluginErrorSeverity.Recoverable, PluginErrorCode.NotFound);
             }
         }

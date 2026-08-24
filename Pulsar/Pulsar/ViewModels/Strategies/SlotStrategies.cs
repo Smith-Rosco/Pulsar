@@ -73,7 +73,6 @@ namespace Pulsar.ViewModels.Strategies
             // which would otherwise re-trigger the hotkey hook while the menu is still visible.
             context.IsVisible = false;
 
-            System.Diagnostics.Debug.WriteLine($"[PluginActionStrategy] Executing: PluginId={_pluginSlot.PluginId}, Action='{_pluginSlot.Action}', Args={string.Join(", ", _pluginSlot.Args.Select(kv => $"{kv.Key}={kv.Value}"))}");
             var result = await _registry.ExecuteAsync(_pluginSlot.PluginId, _pluginSlot.Action, _pluginSlot.Args, _pulsarContext);
 
             if (result.Success)
@@ -105,13 +104,17 @@ namespace Pulsar.ViewModels.Strategies
         private readonly IPluginHealthMonitor? _healthMonitor;
         private readonly IPluginLogService? _logService;
         private readonly ILogger<WindowSwitchStrategy>? _logger;
+        private readonly IActionFeedbackService? _feedbackService;
+        private readonly IActionFeedbackPresenter? _feedbackPresenter;
 
         public WindowSwitchStrategy(ProcessWindowInfo window,
             IWindowService windowService,
             IPluginUsageTracker? usageTracker = null, 
             IPluginHealthMonitor? healthMonitor = null,
             IPluginLogService? logService = null,
-            ILogger<WindowSwitchStrategy>? logger = null)
+            ILogger<WindowSwitchStrategy>? logger = null,
+            IActionFeedbackService? feedbackService = null,
+            IActionFeedbackPresenter? feedbackPresenter = null)
         {
             _window = window;
             _windowService = windowService;
@@ -119,6 +122,8 @@ namespace Pulsar.ViewModels.Strategies
             _healthMonitor = healthMonitor;
             _logService = logService;
             _logger = logger;
+            _feedbackService = feedbackService;
+            _feedbackPresenter = feedbackPresenter;
         }
 
         public Task ExecuteAsync(SlotViewModel slot, IMenuSession context, CancellationToken cancellationToken = default)
@@ -145,7 +150,6 @@ namespace Pulsar.ViewModels.Strategies
                 if (!_windowService.ActivateWindow(_window))
                 {
                     _logger?.LogWarning("[WinSwitch] ActivateWindow FAILED for 0x{Hwnd:X}", _window.Handle.ToInt64());
-                    System.Media.SystemSounds.Exclamation.Play();
                     _logService?.Log("com.pulsar.winswitcher", PluginLogLevel.Warning,
                         "Window activation failed",
                         null,
@@ -156,6 +160,7 @@ namespace Pulsar.ViewModels.Strategies
                             ["title"] = _window.Title
                         },
                         stopwatch.ElapsedMilliseconds);
+                    PresentSwitchFailure();
                     return Task.CompletedTask;
                 }
 
@@ -192,6 +197,22 @@ namespace Pulsar.ViewModels.Strategies
                 }
             }
         }
+
+        private void PresentSwitchFailure()
+        {
+            if (_feedbackService != null && _feedbackPresenter != null)
+            {
+                var result = PluginResult.Error(
+                    "Window activation failed",
+                    PluginErrorSeverity.Recoverable,
+                    PluginErrorCode.ExecutionFailed);
+                var feedback = _feedbackService.Create("com.pulsar.winswitcher", "switch", result);
+                _feedbackPresenter.Present(result, feedback);
+                return;
+            }
+
+            System.Media.SystemSounds.Exclamation.Play();
+        }
     }
 
     /// <summary>
@@ -205,13 +226,17 @@ namespace Pulsar.ViewModels.Strategies
         private readonly IPluginHealthMonitor? _healthMonitor;
         private readonly IPluginLogService? _logService;
         private readonly ILogger<ProcessGroupStrategy>? _logger;
+        private readonly IActionFeedbackService? _feedbackService;
+        private readonly IActionFeedbackPresenter? _feedbackPresenter;
 
         public ProcessGroupStrategy(List<ProcessWindowInfo> windows,
             IWindowService windowService,
             IPluginUsageTracker? usageTracker = null, 
             IPluginHealthMonitor? healthMonitor = null,
             IPluginLogService? logService = null,
-            ILogger<ProcessGroupStrategy>? logger = null)
+            ILogger<ProcessGroupStrategy>? logger = null,
+            IActionFeedbackService? feedbackService = null,
+            IActionFeedbackPresenter? feedbackPresenter = null)
         {
             _windows = windows;
             _windowService = windowService;
@@ -219,6 +244,8 @@ namespace Pulsar.ViewModels.Strategies
             _healthMonitor = healthMonitor;
             _logService = logService;
             _logger = logger;
+            _feedbackService = feedbackService;
+            _feedbackPresenter = feedbackPresenter;
         }
 
         public async Task ExecuteAsync(SlotViewModel slot, IMenuSession context, CancellationToken cancellationToken = default)
@@ -243,12 +270,31 @@ namespace Pulsar.ViewModels.Strategies
             
             if (target == null)
             {
-                System.Media.SystemSounds.Exclamation.Play();
-                context.IsVisible = false; 
+                context.IsVisible = false;
+                PresentNoTarget();
                 return;
             }
 
-            await new WindowSwitchStrategy(target, _windowService, _usageTracker, _healthMonitor, _logService).ExecuteAsync(slot, context);
+            await new WindowSwitchStrategy(
+                target, _windowService, _usageTracker, _healthMonitor, _logService,
+                feedbackService: _feedbackService,
+                feedbackPresenter: _feedbackPresenter).ExecuteAsync(slot, context);
+        }
+
+        private void PresentNoTarget()
+        {
+            if (_feedbackService != null && _feedbackPresenter != null)
+            {
+                var result = PluginResult.Error(
+                    "No matching window available",
+                    PluginErrorSeverity.Recoverable,
+                    PluginErrorCode.NotFound);
+                var feedback = _feedbackService.Create("com.pulsar.winswitcher", "switch", result);
+                _feedbackPresenter.Present(result, feedback);
+                return;
+            }
+
+            System.Media.SystemSounds.Exclamation.Play();
         }
         
         // Helper for the View Model to call explicitly for drill down
@@ -299,86 +345,6 @@ namespace Pulsar.ViewModels.Strategies
             {
                 context.IsVisible = false;
             }
-            return Task.CompletedTask;
-        }
-    }
-
-    /// <summary>
-    /// Strategy for launching a configured application that is not currently running.
-    /// </summary>
-    public class LaunchApplicationStrategy : IActionStrategy
-    {
-        private readonly PluginSlot _config;
-        private readonly ITrayService? _trayService;
-        private readonly ILocalizationService? _loc;
-
-        public LaunchApplicationStrategy(PluginSlot config, ITrayService? trayService = null, ILocalizationService? localizationService = null)
-        {
-            _config = config;
-            _trayService = trayService;
-            _loc = localizationService;
-        }
-
-        public Task ExecuteAsync(SlotViewModel slot, IMenuSession context, CancellationToken cancellationToken = default)
-        {
-            context.SetActionExecuted(true);
-            context.IsVisible = false;
-
-            try
-            {
-                // Extract path and arguments from config
-                string? path = null;
-                string? arguments = null;
-
-                if (_config.Args.TryGetValue("path", out var pathValue))
-                {
-                    path = pathValue;
-                }
-
-                if (_config.Args.TryGetValue("arguments", out var argsValue))
-                {
-                    arguments = argsValue;
-                }
-
-                if (string.IsNullOrWhiteSpace(path))
-                {
-                    System.Media.SystemSounds.Hand.Play();
-                    return Task.CompletedTask;
-                }
-
-                // Show launch toast before Process.Start
-                if (_trayService != null && _config.Args.TryGetValue("app", out var processName) && !string.IsNullOrEmpty(processName))
-                {
-                    _trayService.ShowNotification(
-                        _loc?["Feedback.Launching"] ?? "Launching",
-                        string.Format(_loc?["Feedback.StartingFormat"] ?? "Starting {0}...", processName),
-                        Models.PulsarNotificationIcon.Info);
-                }
-
-                // Launch the application
-                var startInfo = new ProcessStartInfo
-                {
-                    FileName = path,
-                    Arguments = arguments ?? string.Empty,
-                    UseShellExecute = true
-                };
-
-                Process.Start(startInfo);
-
-                if (string.Equals(_config.PluginId, "com.pulsar.winswitcher", System.StringComparison.OrdinalIgnoreCase))
-                {
-                    WeakReferenceMessenger.Default.Send(new ActionExecutionMessage(
-                        TutorialActionKind.Switch,
-                        _config.PluginId,
-                        _config.Action,
-                        success: true));
-                }
-            }
-            catch
-            {
-                System.Media.SystemSounds.Hand.Play();
-            }
-
             return Task.CompletedTask;
         }
     }

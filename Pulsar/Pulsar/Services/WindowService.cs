@@ -69,6 +69,9 @@ namespace Pulsar.Services
         // 实时追踪所有窗口激活事件，解决手动切换窗口后 Quick Switch 失效的问题
         private WindowActivationMonitor? _activationMonitor;
 
+        // [Deepen] 窗口事件输入管道：WinEvent 回调只 O(1) 入队，后台消费者负责过滤 + 去重 + 采样记录。
+        private WindowEventFeed _eventFeed = null!;
+
         public WindowService(ILogger<WindowService> logger, IFocusManager focusManager, IProcessRegistryService? processRegistryService = null, ILoggerFactory? loggerFactory = null)
         {
             _logger = logger;
@@ -107,43 +110,42 @@ namespace Pulsar.Services
                 _logger.LogWarning("[WindowService] LoggerFactory is null, WindowActivationMonitor will not have logging");
             }
             
+            _eventFeed = new WindowEventFeed(ConsumeHistoryEvent);
+
             _activationMonitor = new WindowActivationMonitor(monitorLogger);
-            _activationMonitor.WindowActivated += OnGlobalWindowActivated;
-            _activationMonitor.WindowShown += OnWindowShown;
+            _activationMonitor.WindowActivated += hwnd => _eventFeed.Enqueue(new WindowHistoryEvent(WindowEventKind.Foreground, hwnd));
+            _activationMonitor.WindowShown += hwnd => _eventFeed.Enqueue(new WindowHistoryEvent(WindowEventKind.Shown, hwnd));
             _activationMonitor.Start();
             
             _logger.LogInformation("[WindowService] Initialized with registry cleanup timer and global window tracking");
         }
         
         /// <summary>
-        /// [Fix] 全局窗口激活事件处理器
+        /// [Deepen] 消费管道事件（专用后台线程）：SHOWN 事件按 Alt-Tab 规则过滤，
+        /// FOREGROUND / SHOWN 都写入 MRU 历史栈。阻塞工作不再发生在 WinEvent 回调线程上。
         /// </summary>
-        private void OnGlobalWindowActivated(IntPtr hwnd)
+        private void ConsumeHistoryEvent(WindowHistoryEvent evt)
         {
-            _logger.LogDebug("[WindowService] 📥 OnGlobalWindowActivated called. HWND: {Hwnd}, Title: '{Title}'", 
-                hwnd, GetWindowTitle(hwnd));
-            
-            // 实时记录窗口激活到历史栈
-            RecordWindowActivation(hwnd);
-        }
-
-        /// <summary>
-        /// 窗口显示事件处理器 - 捕获附属窗口首次显示
-        /// 如 360 PDF Viewer 等 owned window 不会触发前台切换事件，
-        /// 但会触发 EVENT_OBJECT_SHOW，通过此处理器将其记录到历史栈
-        /// </summary>
-        private void OnWindowShown(IntPtr hwnd)
-        {
-            if (!IsAltTabWindow(hwnd))
+            if (evt.Kind == WindowEventKind.Shown)
             {
-                _logger.LogDebug("[WindowService] 📥 OnWindowShown filtered out. HWND: {Hwnd}, Title: '{Title}'",
-                    hwnd, GetWindowTitle(hwnd));
-                return;
+                if (!IsAltTabWindow(evt.Hwnd))
+                {
+                    if (_historyLogSampler.ShouldLog())
+                    {
+                        _logger.LogDebug("[WindowService] 📥 OnWindowShown filtered out. HWND: {Hwnd}, Title: '{Title}'",
+                            evt.Hwnd, GetWindowTitle(evt.Hwnd));
+                    }
+                    return;
+                }
+
+                if (_historyLogSampler.ShouldLog())
+                {
+                    _logger.LogDebug("[WindowService] 📥 OnWindowShown recording. HWND: {Hwnd}, Title: '{Title}'",
+                        evt.Hwnd, GetWindowTitle(evt.Hwnd));
+                }
             }
 
-            _logger.LogDebug("[WindowService] 📥 OnWindowShown recording. HWND: {Hwnd}, Title: '{Title}'",
-                hwnd, GetWindowTitle(hwnd));
-            RecordWindowActivation(hwnd);
+            RecordWindowActivation(evt.Hwnd);
         }
         
         /// <summary>
@@ -221,10 +223,13 @@ namespace Pulsar.Services
                 return;
             }
             
-            string title = GetWindowTitle(hwnd);
-            
             _quickSwitchEngine.RecordWindowActivation(hwnd, MaxHistorySize);
-            _logger.LogInformation("[WindowHistory] ✅ Recorded window: '{Title}'", title);
+
+            // [Deepen] 采样记录：标题抓取 + 日志只发生在被采样命中时，避免每次前台切换都做 GetWindowText。
+            if (_historyLogSampler.ShouldLog())
+            {
+                _logger.LogInformation("[WindowHistory] ✅ Recorded window: '{Title}'", GetWindowTitle(hwnd));
+            }
         }
 
         public IntPtr GetPreviousWindow()
@@ -311,56 +316,38 @@ namespace Pulsar.Services
             return Task.Run(async () =>
             {
                 string targetName = processName.ToLower().Replace(".exe", "");
-                var processes = Process.GetProcessesByName(targetName);
-                
-                if (processes.Length == 0)
+
+                // 单次枚举整个进程树（O(W)），进程元数据按进程预取一次，避免逐进程全桌面枚举。
+                List<ProcessWindowInfo> targetWindows;
+                try
                 {
-                    _logger?.LogDebug("[SwitchToProcess] Process not found: {ProcessName}", processName);
+                    targetWindows = await _inventoryService.GetProcessWindowsAsync(
+                        targetName,
+                        GetProcessActivationBlacklistPredicate(),
+                        _trackingService.SnapshotWindow,
+                        ExtractIcon);
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogWarning(ex, "[SwitchToProcess] Failed to enumerate windows for process {ProcessName}", processName);
                     return false;
                 }
-                
-                var targetWindows = new List<ProcessWindowInfo>();
-                var seenHandles = new HashSet<IntPtr>();
-                
-                foreach (var proc in processes)
-                {
-                    List<ProcessWindowInfo> processWindows;
-                    try
-                    {
-                        processWindows = await GetProcessWindowsAsync(proc.Id);
 
-                        if (_processRegistryService != null && processWindows.Count > 0)
-                        {
-                            _ = Task.Run(() => _processRegistryService.RegisterProcessesAsync(processWindows));
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger?.LogDebug(ex, "[SwitchToProcess] Failed to enumerate windows for process {ProcessName} ({ProcessId})",
-                            proc.ProcessName,
-                            proc.Id);
-                        continue;
-                    }
-
-                    foreach (var window in processWindows)
-                    {
-                        if (seenHandles.Add(window.Handle))
-                        {
-                            targetWindows.Add(window);
-                        }
-                    }
-                }
-                
                 if (targetWindows.Count == 0)
                 {
                     _logger?.LogWarning("[SwitchToProcess] No valid windows found for process: {ProcessName}", processName);
                     return false;
                 }
-                
-                // Log all candidate windows for debugging
-                if (targetWindows.Count > 1)
+
+                if (_processRegistryService != null)
                 {
-                    _logger?.LogInformation("[SwitchToProcess] Multi-window process detected: {ProcessName} ({Count} windows)", 
+                    _ = Task.Run(() => _processRegistryService.RegisterProcessesAsync(targetWindows));
+                }
+
+                // Log all candidate windows for debugging (only when debug logging is enabled)
+                if (targetWindows.Count > 1 && _logger.IsEnabled(LogLevel.Debug))
+                {
+                    _logger.LogInformation("[SwitchToProcess] Multi-window process detected: {ProcessName} ({Count} windows)", 
                         processName, targetWindows.Count);
 
                     IntPtr currentForeground = PulsarNative.GetForegroundWindow();
@@ -375,7 +362,7 @@ namespace Pulsar.Services
                     {
                         var w = sortedWindows[i];
                         bool isCurrent = (w.Handle == currentForeground);
-                        _logger?.LogDebug("[SwitchToProcess]   [{Index}] '{Title}' - RealActivation: {Time}, IsCurrent: {IsCurrent}", 
+                        _logger.LogDebug("[SwitchToProcess]   [{Index}] '{Title}' - RealActivation: {Time}, IsCurrent: {IsCurrent}", 
                             i, w.Title, w.RealActivationTime, isCurrent);
                     }
                 }

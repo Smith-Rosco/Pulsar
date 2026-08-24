@@ -7,6 +7,7 @@ using System.Windows.Media;
 using Microsoft.Extensions.Logging;
 using Pulsar.Helpers;
 using Pulsar.Models;
+using Pulsar.Services.ActionFeedback;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels.Strategies;
 
@@ -18,17 +19,23 @@ namespace Pulsar.ViewModels
         private readonly IPluginHealthMonitor? _healthMonitor;
         private readonly IWindowService _windowService;
         private readonly ILogger? _logger;
+        private readonly IActionFeedbackService? _feedbackService;
+        private readonly IActionFeedbackPresenter? _feedbackPresenter;
 
         public RadialMenuSubMenuCoordinator(
             IWindowService windowService,
             IPluginUsageTracker? usageTracker,
             IPluginHealthMonitor? healthMonitor,
-            ILogger? logger)
+            ILogger? logger,
+            IActionFeedbackService? feedbackService = null,
+            IActionFeedbackPresenter? feedbackPresenter = null)
         {
             _windowService = windowService;
             _usageTracker = usageTracker;
             _healthMonitor = healthMonitor;
             _logger = logger;
+            _feedbackService = feedbackService;
+            _feedbackPresenter = feedbackPresenter;
         }
 
         public ProcessWindowInfo? ConfigureSubMenu(
@@ -66,7 +73,10 @@ namespace Pulsar.ViewModels
                     _ = CaptureThumbnailAsync(slot, win.Handle, win.Title);
 
                     SubMenuColorPalette.Apply(slot, sortedWindows.Count > 1 ? i : -1);
-                    slot.ActionStrategy = new WindowSwitchStrategy(win, _windowService, _usageTracker, _healthMonitor);
+                    slot.ActionStrategy = new WindowSwitchStrategy(
+                        win, _windowService, _usageTracker, _healthMonitor,
+                        feedbackService: _feedbackService,
+                        feedbackPresenter: _feedbackPresenter);
                     slot.ResetAnimation();
                 }
                 else

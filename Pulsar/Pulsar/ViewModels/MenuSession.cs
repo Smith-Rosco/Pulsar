@@ -14,6 +14,7 @@ using Pulsar.Core.Plugin;
 using Pulsar.Models;
 using Pulsar.Native;
 using Pulsar.Services;
+using Pulsar.Services.ActionFeedback;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels.Strategies;
 
@@ -204,7 +205,13 @@ namespace Pulsar.ViewModels
             _logger = logger;
 
             _visualStateCoordinator = new RadialMenuVisualStateCoordinator(previewService, logger, _loc);
-            _subMenuCoordinator = new RadialMenuSubMenuCoordinator(windowService, usageTracker, healthMonitor, logger);
+            _subMenuCoordinator = new RadialMenuSubMenuCoordinator(
+                windowService,
+                usageTracker,
+                healthMonitor,
+                logger,
+                (IActionFeedbackService)serviceProvider.GetService(typeof(IActionFeedbackService))!,
+                serviceProvider.GetService(typeof(IActionFeedbackPresenter)) as IActionFeedbackPresenter);
             _layoutCoordinator = new RadialMenuLayoutCoordinator(slotLayoutEngine, animationController, logger);
 
             _pulsarText = _loc["RadialMenu.Pulsar"];
@@ -425,7 +432,7 @@ namespace Pulsar.ViewModels
 
                 if (mode == RadialMenuMode.Task)
                 {
-                    _pageProvider = new ProcessPageProvider(_windowService, _config, _serviceProvider);
+                    _pageProvider = new ProcessPageProvider(_windowService, _config, _serviceProvider, _lastContext);
                 }
                 else
                 {

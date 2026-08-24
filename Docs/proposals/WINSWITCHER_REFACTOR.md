@@ -1,5 +1,23 @@
 # WinSwitcher 插件重构方案
 
+## 实施状态
+
+> 更新于 2026-08-24。以下部分已落地，其余仍待实施。
+
+**已完成**
+- 反馈按 `PluginErrorCode` 匹配：删除 `CreateWinSwitcherFailure` 字符串匹配（第四节）；插件所有错误路径均携带 `PluginErrorCode`。
+- 错误消息本地化：补全 `Plugin.WinSwitcher.*` 资源键（第五节）。
+- 启动逻辑统一：删除 `LaunchApplicationStrategy`；Switch Mode 中"已配置但未运行"的 Slot 改走 `PluginActionStrategy` → 插件动作。
+- 调试残留清理：移除 `SmartSwitchAsync` 与 `PluginActionStrategy` 中的 `Debug.WriteLine`。
+- 额外深化（稳定性/性能）：窗口枚举单次化（`WindowInventoryService.GetProcessWindowsAsync(processName)`，O(P×W)→O(W)）；WinEvent 事件管道（`WindowEventFeed`，回调只入队、后台消费 + 采样日志）；策略层失败反馈统一走 `ActionFeedbackService`。
+
+**待实施**
+- 继承 `PluginBase<T>` + 构造函数注入（第一、二节）：`WinSwitcherPlugin` 仍为手动 4 接口 + Service Locator。
+- 提取 `WinSwitcherPluginMetadata` 工厂：`GetMetadata` 仍内联。
+- `WindowSwitchStrategy` / `ProcessGroupStrategy` 完全走插件管道：因插件缺少 HWND 级激活动作，逐窗口切换保留为薄适配器（直调共享激活路径），已统一反馈路径。
+
+---
+
 ## 现状概览
 
 当前 WinSwitcher 插件是 Pulsar 最早的插件之一，采用旧式架构（手动实现 4 个接口、Service Locator 反模式），存在三层重复逻辑、错误消息未本地化、调试残留等问题。

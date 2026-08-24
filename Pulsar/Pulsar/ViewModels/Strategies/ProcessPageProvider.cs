@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Pulsar.Core.Localization;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
+using Pulsar.Services.ActionFeedback;
 using Pulsar.Core.Plugin;
 using Pulsar.Helpers;
 using Pulsar.ViewModels;
@@ -21,27 +22,35 @@ namespace Pulsar.ViewModels.Strategies
         private readonly IPluginUsageTracker? _usageTracker;
         private readonly IPluginHealthMonitor? _healthMonitor;
         private readonly IPluginLogService? _logService;
-        private readonly ITrayService? _trayService;
+        private readonly ITrayService _trayService;
         private readonly ProcessWindowMatcher _matcher;
+        private readonly PulsarContext _context;
+        private readonly IPluginRegistry _pluginRegistry;
+        private readonly IActionFeedbackService _feedbackService;
+        private readonly IActionFeedbackPresenter? _feedbackPresenter;
 
         private List<MatchedWindowGroup> _matchedSlots = new();
 
         public override int TotalPages => (int)Math.Ceiling((double)_matchedSlots.Count / (double)ItemsPerPage);
 
-        public ProcessPageProvider(IWindowService windowService, ProfilesConfig config, System.IServiceProvider serviceProvider)
+        public ProcessPageProvider(IWindowService windowService, ProfilesConfig config, System.IServiceProvider serviceProvider, PulsarContext context)
             : base(serviceProvider.GetService(typeof(IConfigService)) as IConfigService)
         {
             _windowService = windowService;
             _config = config;
             _serviceProvider = serviceProvider;
+            _context = context;
             _loc = serviceProvider.GetService(typeof(ILocalizationService)) as ILocalizationService;
             _matcher = new ProcessWindowMatcher(config);
             
-            // Resolve analytics services
+            // Resolve analytics + plugin-pipe services
             _usageTracker = serviceProvider.GetService(typeof(IPluginUsageTracker)) as IPluginUsageTracker;
             _healthMonitor = serviceProvider.GetService(typeof(IPluginHealthMonitor)) as IPluginHealthMonitor;
             _logService = serviceProvider.GetService(typeof(IPluginLogService)) as IPluginLogService;
-            _trayService = serviceProvider.GetService(typeof(ITrayService)) as ITrayService;
+            _trayService = (ITrayService)serviceProvider.GetService(typeof(ITrayService))!;
+            _pluginRegistry = (IPluginRegistry)serviceProvider.GetService(typeof(IPluginRegistry))!;
+            _feedbackService = (IActionFeedbackService)serviceProvider.GetService(typeof(IActionFeedbackService))!;
+            _feedbackPresenter = serviceProvider.GetService(typeof(IActionFeedbackPresenter)) as IActionFeedbackPresenter;
         }
 
         public override async Task LoadAsync()
@@ -118,7 +127,9 @@ namespace Pulsar.ViewModels.Strategies
 
                     slotViewModel.Type = SlotType.Process;
                     slotViewModel.DataContext = slotItem.Windows;
-                    slotViewModel.ActionStrategy = new ProcessGroupStrategy(slotItem.Windows, _windowService, _usageTracker, _healthMonitor, _logService);
+                    slotViewModel.ActionStrategy = new ProcessGroupStrategy(slotItem.Windows, _windowService, _usageTracker, _healthMonitor, _logService,
+                        feedbackService: _feedbackService,
+                        feedbackPresenter: _feedbackPresenter);
                     slotViewModel.CurrentOpacity = 1.0;
                 }
                 else if (slotItem.IsConfigured && !slotItem.IsRunning && slotItem.Config != null)
@@ -140,7 +151,9 @@ namespace Pulsar.ViewModels.Strategies
 
                     slotViewModel.Type = SlotType.Process;
                     slotViewModel.DataContext = slotItem.Config;
-                    slotViewModel.ActionStrategy = new LaunchApplicationStrategy(slotItem.Config, _trayService, _loc);
+                    slotViewModel.ActionStrategy = new PluginActionStrategy(
+                        slotItem.Config, _pluginRegistry, _context, _trayService, _feedbackService,
+                        _usageTracker, _feedbackPresenter);
                     slotViewModel.CurrentOpacity = 0.5;
                 }
             }

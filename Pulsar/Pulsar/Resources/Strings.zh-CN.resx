@@ -4090,6 +4090,51 @@ Pulsar 会在你的浏览器中打开一个网页——这就是命令模式：�
     <value>已启动 {0}</value>
   </data>
   <data
+    name="Plugin.WinSwitcher.PathNotAbsolute"
+    xml:space="preserve">
+    <value>路径必须是绝对路径: {0}</value>
+  </data>
+  <data
+    name="Plugin.WinSwitcher.AppNotFound"
+    xml:space="preserve">
+    <value>找不到应用程序: {0}</value>
+  </data>
+  <data
+    name="Plugin.WinSwitcher.UnsupportedFileType"
+    xml:space="preserve">
+    <value>不支持的文件类型: {0}。允许: {1}</value>
+  </data>
+  <data
+    name="Plugin.WinSwitcher.FileNotFound"
+    xml:space="preserve">
+    <value>找不到文件: {0}</value>
+  </data>
+  <data
+    name="Plugin.WinSwitcher.AccessDenied"
+    xml:space="preserve">
+    <value>拒绝访问: {0}</value>
+  </data>
+  <data
+    name="Plugin.WinSwitcher.LaunchFailed"
+    xml:space="preserve">
+    <value>启动失败: {0}</value>
+  </data>
+  <data
+    name="Plugin.WinSwitcher.ProcessNotRunningNoPath"
+    xml:space="preserve">
+    <value>进程 '{0}' 未运行且未指定启动路径</value>
+  </data>
+  <data
+    name="Plugin.WinSwitcher.InvalidProcessName"
+    xml:space="preserve">
+    <value>无效的进程名 '{0}': 包含非法字符</value>
+  </data>
+  <data
+    name="Plugin.WinSwitcher.ProcessNameTooLong"
+    xml:space="preserve">
+    <value>进程名超过最大长度 (255 个字符)</value>
+  </data>
+  <data
     name="Plugin.SystemCommand.NotInitialized"
     xml:space="preserve">
     <value>系统插件未初始化</value>

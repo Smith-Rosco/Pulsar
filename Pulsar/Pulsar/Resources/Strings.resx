@@ -2523,6 +2523,33 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
   <data name="Plugin.WinSwitcher.Launched" xml:space="preserve">
     <value>Launched {0}</value>
   </data>
+  <data name="Plugin.WinSwitcher.PathNotAbsolute" xml:space="preserve">
+    <value>Path must be absolute: {0}</value>
+  </data>
+  <data name="Plugin.WinSwitcher.AppNotFound" xml:space="preserve">
+    <value>Application not found: {0}</value>
+  </data>
+  <data name="Plugin.WinSwitcher.UnsupportedFileType" xml:space="preserve">
+    <value>Unsupported file type: {0}. Allowed: {1}</value>
+  </data>
+  <data name="Plugin.WinSwitcher.FileNotFound" xml:space="preserve">
+    <value>File not found: {0}</value>
+  </data>
+  <data name="Plugin.WinSwitcher.AccessDenied" xml:space="preserve">
+    <value>Access denied: {0}</value>
+  </data>
+  <data name="Plugin.WinSwitcher.LaunchFailed" xml:space="preserve">
+    <value>Launch failed: {0}</value>
+  </data>
+  <data name="Plugin.WinSwitcher.ProcessNotRunningNoPath" xml:space="preserve">
+    <value>Process '{0}' is not running and no launch path specified</value>
+  </data>
+  <data name="Plugin.WinSwitcher.InvalidProcessName" xml:space="preserve">
+    <value>Invalid process name '{0}': contains illegal characters</value>
+  </data>
+  <data name="Plugin.WinSwitcher.ProcessNameTooLong" xml:space="preserve">
+    <value>Process name exceeds maximum length (255 characters)</value>
+  </data>
   <!-- ==================== SystemCommand Plugin ==================== -->
   <data name="Plugin.SystemCommand.NotInitialized" xml:space="preserve">
     <value>System plugin not initialized</value>

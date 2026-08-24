@@ -40,11 +40,6 @@ namespace Pulsar.Services.ActionFeedback
                     PulsarNotificationIcon.Warning);
             }
 
-            if (string.Equals(pluginId, "com.pulsar.winswitcher", StringComparison.OrdinalIgnoreCase))
-            {
-                return CreateWinSwitcherFailure(result.Message);
-            }
-
             if (string.Equals(pluginId, "com.pulsar.command", StringComparison.OrdinalIgnoreCase))
             {
                 return CreateCommandFailure(action, result.Message);
@@ -190,36 +185,6 @@ namespace Pulsar.Services.ActionFeedback
                 default:
                     return null;
             }
-        }
-
-        private ActionFeedback CreateWinSwitcherFailure(string? message)
-        {
-            if (ContainsAny(message, "Missing required parameter", "Path must be absolute", "Unsupported file type", "Application not found", "File not found"))
-            {
-                return new ActionFeedback(
-                    ActionFeedbackKind.ConfigurationError,
-                    _loc["Feedback.FixSlotSetup"],
-                    _loc["Feedback.FixSlotSetupBody"],
-                    _loc["Feedback.FixSlotSetupHelp"],
-                    PulsarNotificationIcon.Warning);
-            }
-
-            if (ContainsAny(message, "is not running and no launch path specified", "is not running"))
-            {
-                return new ActionFeedback(
-                    ActionFeedbackKind.RecoverableFailure,
-                    _loc["Feedback.AppNotAvailable"],
-                    _loc["Feedback.AppNotAvailableBody"],
-                    _loc["Feedback.AppNotAvailableHelp"],
-                    PulsarNotificationIcon.Warning);
-            }
-
-            return new ActionFeedback(
-                ActionFeedbackKind.RecoverableFailure,
-                _loc["Feedback.SwitchFailed"],
-                _loc["Feedback.SwitchFailedBody"],
-                _loc["Feedback.SwitchFailedHelp"],
-                PulsarNotificationIcon.Error);
         }
 
         private ActionFeedback CreateCommandFailure(string action, string? message)

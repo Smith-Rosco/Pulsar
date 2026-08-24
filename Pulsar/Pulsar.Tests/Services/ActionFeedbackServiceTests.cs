@@ -16,7 +16,10 @@ namespace Pulsar.Tests.Services
         [Fact]
         public void Create_ShouldReturnConfigurationError_ForWinSwitcherConfigProblems()
         {
-            var result = PluginResult.Error("Missing required parameter: app");
+            var result = PluginResult.Error(
+                "Missing required parameter: app",
+                PluginErrorSeverity.Recoverable,
+                PluginErrorCode.MissingRequiredParameter);
 
             var feedback = _service.Create("com.pulsar.winswitcher", "switch", result);
 
@@ -28,7 +31,10 @@ namespace Pulsar.Tests.Services
         [Fact]
         public void Create_ShouldReturnRecoverableFailure_ForWinSwitcherRuntimeProblems()
         {
-            var result = PluginResult.Error("Process 'chrome' is not running");
+            var result = PluginResult.Error(
+                "Process 'chrome' is not running",
+                PluginErrorSeverity.Recoverable,
+                PluginErrorCode.NotFound);
 
             var feedback = _service.Create("com.pulsar.winswitcher", "switch", result);
 

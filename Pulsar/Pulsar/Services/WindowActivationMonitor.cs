@@ -155,16 +155,25 @@ namespace Pulsar.Services
 
             try
             {
+                // [Deepen] 回调线程必须尽快返回：仅当 Debug 开启时才记录，避免每次事件都装箱/格式化。
+                bool debugEnabled = _logger?.IsEnabled(LogLevel.Debug) == true;
+
                 if (eventType == PulsarNative.EVENT_SYSTEM_FOREGROUND)
                 {
-                    _logger?.LogDebug("[WindowActivationMonitor] 🔔 EVENT_SYSTEM_FOREGROUND received. HWND: {Hwnd}, Thread: {Thread}",
-                        hwnd, dwEventThread);
+                    if (debugEnabled)
+                    {
+                        _logger!.LogDebug("[WindowActivationMonitor] 🔔 EVENT_SYSTEM_FOREGROUND received. HWND: {Hwnd}, Thread: {Thread}",
+                            hwnd, dwEventThread);
+                    }
                     WindowActivated?.Invoke(hwnd);
                 }
                 else if (eventType == PulsarNative.EVENT_OBJECT_SHOW)
                 {
-                    _logger?.LogDebug("[WindowActivationMonitor] 👁 EVENT_OBJECT_SHOW received. HWND: {Hwnd}, Thread: {Thread}",
-                        hwnd, dwEventThread);
+                    if (debugEnabled)
+                    {
+                        _logger!.LogDebug("[WindowActivationMonitor] 👁 EVENT_OBJECT_SHOW received. HWND: {Hwnd}, Thread: {Thread}",
+                            hwnd, dwEventThread);
+                    }
                     WindowShown?.Invoke(hwnd);
                 }
             }
