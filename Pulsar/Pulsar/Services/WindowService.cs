@@ -126,23 +126,24 @@ namespace Pulsar.Services
         /// </summary>
         private void ConsumeHistoryEvent(WindowHistoryEvent evt)
         {
-            if (evt.Kind == WindowEventKind.Shown)
+            // [Fix] Foreground events must pass the same Alt-Tab validity check as
+            // Shown events. Without this, helper/host windows (e.g. WPS's
+            // KxWppQuickHelpBarContainer) that briefly steal foreground focus would
+            // pollute the quick-switch MRU history and become quick-switch targets.
+            if (!IsAltTabWindow(evt.Hwnd))
             {
-                if (!IsAltTabWindow(evt.Hwnd))
-                {
-                    if (_historyLogSampler.ShouldLog())
-                    {
-                        _logger.LogDebug("[WindowService] 📥 OnWindowShown filtered out. HWND: {Hwnd}, Title: '{Title}'",
-                            evt.Hwnd, GetWindowTitle(evt.Hwnd));
-                    }
-                    return;
-                }
-
                 if (_historyLogSampler.ShouldLog())
                 {
-                    _logger.LogDebug("[WindowService] 📥 OnWindowShown recording. HWND: {Hwnd}, Title: '{Title}'",
-                        evt.Hwnd, GetWindowTitle(evt.Hwnd));
+                    _logger.LogDebug("[WindowService] 📥 {Kind} filtered out (not Alt-Tab window). HWND: {Hwnd}, Title: '{Title}'",
+                        evt.Kind, evt.Hwnd, GetWindowTitle(evt.Hwnd));
                 }
+                return;
+            }
+
+            if (_historyLogSampler.ShouldLog())
+            {
+                _logger.LogDebug("[WindowService] 📥 {Kind} recording. HWND: {Hwnd}, Title: '{Title}'",
+                    evt.Kind, evt.Hwnd, GetWindowTitle(evt.Hwnd));
             }
 
             RecordWindowActivation(evt.Hwnd);
@@ -197,6 +198,17 @@ namespace Pulsar.Services
             // [Fix] Ignore self (Pulsar) to prevent getting stuck in a loop
             PulsarNative.GetWindowThreadProcessId(handle, out uint processId);
             if (processId == _currentProcessId) return;
+
+            // [Fix] Only record Alt-Tab-valid windows as the previous window. Helper
+            // windows (e.g. WPS's KxWppQuickHelpBarContainer) can hold foreground focus
+            // without being user-facing; recording them makes quick-switch target an
+            // invisible host window instead of the real document.
+            if (!IsAltTabWindow(handle))
+            {
+                _logger.LogDebug("[WindowHistory] ❌ Skipped: not an Alt-Tab window (HWND: {Hwnd}, Title: '{Title}')",
+                    handle, GetWindowTitle(handle));
+                return;
+            }
 
             _trackingService.SetPreviousWindow(handle);
             
