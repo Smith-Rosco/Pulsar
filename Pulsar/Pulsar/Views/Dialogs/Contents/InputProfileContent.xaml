@@ -15,6 +15,10 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+            <!-- Self-contained: dialog content is template-loaded and cannot rely on
+                 per-window injected dictionaries at parse time (see WPF_RESOURCES_HYGIENE
+                 and the Multi-Headed UI architecture). -->
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         </ResourceDictionary>
     </UserControl.Resources>
 

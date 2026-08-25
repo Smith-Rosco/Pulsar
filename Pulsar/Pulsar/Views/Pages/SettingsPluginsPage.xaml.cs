@@ -168,18 +168,32 @@ namespace Pulsar.Views.Pages
 
             // Store original foreground
             var originalBrush = header.Foreground;
+            if (originalBrush is not SolidColorBrush originalSolidBrush)
+            {
+                return;
+            }
+
+            // Resolve the accent from the expander's own injected theme, never from
+            // Application.Resources: the Multi-Headed UI architecture deliberately keeps
+            // global styles out of App.xaml, so a global lookup returns null here and
+            // previously crashed with a NullReferenceException.
+            var accent = expander.TryFindResource("SystemAccentColor") as Color?;
+            if (accent is not Color accentColor)
+            {
+                accentColor = System.Windows.Media.Color.FromRgb(0x00, 0x78, 0xD4);
+            }
 
             // Create color animation to accent color and back
             var colorAnimation = new ColorAnimation
             {
-                To = (System.Windows.Media.Color)System.Windows.Application.Current.Resources["SystemAccentColor"],
+                To = accentColor,
                 Duration = TimeSpan.FromMilliseconds(200),
                 AutoReverse = true,
                 RepeatBehavior = new RepeatBehavior(2) // Pulse twice
             };
 
             // Apply animation to a new SolidColorBrush
-            var animatedBrush = new SolidColorBrush(((SolidColorBrush)originalBrush).Color);
+            var animatedBrush = new SolidColorBrush(originalSolidBrush.Color);
             header.Foreground = animatedBrush;
             
             colorAnimation.Completed += (s, e) =>

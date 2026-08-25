@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Extensions.Logging;
 using Pulsar.Helpers;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
@@ -18,6 +19,7 @@ namespace Pulsar.ViewModels.Dialogs
     {
         private readonly IWindowDiscoveryService _windowService;
         private readonly IProcessRegistryService _processRegistryService;
+        private readonly ILogger<ProcessBlacklistViewModel>? _logger;
         private readonly HashSet<string> _currentBlacklist;
 
         private static readonly ImageSource PlaceholderIcon = CreatePlaceholderIcon();
@@ -32,10 +34,11 @@ namespace Pulsar.ViewModels.Dialogs
 
         public string Result { get; private set; } = string.Empty;
 
-        public ProcessBlacklistViewModel(IWindowDiscoveryService windowService, IProcessRegistryService processRegistryService, string currentBlacklist)
+        public ProcessBlacklistViewModel(IWindowDiscoveryService windowService, IProcessRegistryService processRegistryService, string currentBlacklist, ILogger<ProcessBlacklistViewModel>? logger = null)
         {
             _windowService = windowService;
             _processRegistryService = processRegistryService;
+            _logger = logger;
             _currentBlacklist = currentBlacklist
                 .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                 .Select(value => value.Trim())
@@ -111,9 +114,14 @@ namespace Pulsar.ViewModels.Dialogs
                     .ToList();
 
                 Processes = new ObservableCollection<ProcessItemViewModel>(items);
-                IsLoading = false;
                 _ = LoadIconsAsync(items);
-                return;
+            }
+            catch (Exception ex)
+            {
+                // A load failure must surface as an empty list, never as an
+                // unobserved exception from the fire-and-forget constructor load.
+                _logger?.LogError(ex, "[ProcessBlacklist] Failed to load processes for the blacklist dialog");
+                Processes = new ObservableCollection<ProcessItemViewModel>();
             }
             finally
             {
@@ -123,40 +131,67 @@ namespace Pulsar.ViewModels.Dialogs
 
         private async Task LoadIconsAsync(IReadOnlyList<ProcessItemViewModel> items)
         {
-            foreach (var item in items)
+            // Icon resolution (memory-cache hit or synchronous disk extraction) runs
+            // off the UI thread and is marshaled back in batches, so the dialog stays
+            // responsive even with a large process registry.
+            const int BatchSize = 25;
+
+            for (int i = 0; i < items.Count; i += BatchSize)
             {
-                try
+                var batch = items.Skip(i).Take(BatchSize).ToArray();
+
+                var resolved = await Task.Run(() =>
                 {
-                    var icon = await _processRegistryService.GetIconAsync(item.ProcessName);
-                    if (icon == null && !string.IsNullOrWhiteSpace(item.ExecutablePath))
+                    var icons = new (ProcessItemViewModel Item, ImageSource? Icon)[batch.Length];
+                    for (int j = 0; j < batch.Length; j++)
                     {
-                        icon = IconHelper.GetIconFromPath(item.ExecutablePath);
-                    }
-
-                    if (icon == null)
-                    {
-                        item.HasResolvedIcon = true;
-                        continue;
-                    }
-
-                    if (System.Windows.Application.Current is App app)
-                    {
-                        await app.Dispatcher.InvokeAsync(() =>
+                        var item = batch[j];
+                        ImageSource? icon = null;
+                        try
                         {
-                            item.Icon = icon;
-                            item.HasResolvedIcon = true;
-                        });
+                            icon = _processRegistryService.GetIconAsync(item.ProcessName).GetAwaiter().GetResult();
+                            if (icon == null && !string.IsNullOrWhiteSpace(item.ExecutablePath))
+                            {
+                                icon = IconHelper.GetIconFromPath(item.ExecutablePath);
+                            }
+                        }
+                        catch
+                        {
+                            icon = null;
+                        }
+
+                        icons[j] = (item, icon);
                     }
-                    else
+
+                    return icons;
+                });
+
+                await ApplyIconsAsync(resolved);
+            }
+        }
+
+        private async Task ApplyIconsAsync(IReadOnlyList<(ProcessItemViewModel Item, ImageSource? Icon)> resolved)
+        {
+            void Apply()
+            {
+                foreach (var (item, icon) in resolved)
+                {
+                    if (icon != null)
                     {
                         item.Icon = icon;
-                        item.HasResolvedIcon = true;
                     }
-                }
-                catch
-                {
+
                     item.HasResolvedIcon = true;
                 }
+            }
+
+            if (System.Windows.Application.Current is App app)
+            {
+                await app.Dispatcher.InvokeAsync(Apply);
+            }
+            else
+            {
+                Apply();
             }
         }
 
