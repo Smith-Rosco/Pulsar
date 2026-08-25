@@ -57,6 +57,17 @@ namespace Pulsar.Services
             "yourphone",            // Phone Link background
             "calc"                  // Calculator often stays suspended
         };
+
+        // [Fix] Window-class blacklist for helper/host windows that pass the generic
+        // Alt-Tab heuristics (visible, not cloaked, no owner) but are NOT user-facing.
+        // WPS Presentation's KxWppQuickHelpBarContainer is WS_VISIBLE yet off-screen /
+        // zero-sized, so it slips through IsAltTabWindow and becomes a quick-switch
+        // target — stealing the switch from the Windows Security credential window.
+        // Process-name blacklisting is insufficient: "wps" would nuke every WPS window.
+        internal static readonly HashSet<string> SystemWindowClassBlacklist = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "KxWppQuickHelpBarContainer"
+        };
         
         // [Logging] Log samplers for high-frequency operations
         private readonly LogSampler _historyLogSampler = new LogSampler(5);      // Sample 1 in 5 for history recording
@@ -631,7 +642,30 @@ namespace Pulsar.Services
             IntPtr owner = PulsarNative.GetWindow(hWnd, PulsarNative.GW_OWNER);
             if (owner != IntPtr.Zero && (exStyle & PulsarNative.WS_EX_APPWINDOW) == 0) return false;
 
+            // [Fix] Exclude known non-user-facing helper/host windows by class name.
+            // These (e.g. WPS's KxWppQuickHelpBarContainer) are visible per WS_VISIBLE,
+            // not cloaked, not tool windows and ownerless — they pass every check above
+            // yet are invisible to the user. Left unchecked they pollute the quick-switch
+            // MRU and steal the target slot from the real (e.g. Windows Security) window.
+            if (IsWindowClassBlacklisted(hWnd)) return false;
+
             return true;
+        }
+
+        private bool IsWindowClassBlacklisted(IntPtr hWnd)
+        {
+            var className = new System.Text.StringBuilder(256);
+            PulsarNative.GetClassName(hWnd, className, className.Capacity);
+            return IsWindowClassBlacklisted(className.ToString());
+        }
+
+        /// <summary>
+        /// True when the given window class name is in the system blacklist of
+        /// non-user-facing helper/host windows. Pure (no P/Invoke) for testability.
+        /// </summary>
+        internal static bool IsWindowClassBlacklisted(string className)
+        {
+            return !string.IsNullOrEmpty(className) && SystemWindowClassBlacklist.Contains(className);
         }
 
         public async Task<ImageSource?> CaptureWindowAsync(IntPtr hWnd)

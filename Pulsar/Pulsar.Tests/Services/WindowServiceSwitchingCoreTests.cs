@@ -220,6 +220,21 @@ namespace Pulsar.Tests.Services
             result.Success.Should().BeFalse();
         }
 
+        [Fact]
+        public void IsWindowClassBlacklisted_ShouldExcludeWpsQuickHelpBarContainer()
+        {
+            WindowService.IsWindowClassBlacklisted("KxWppQuickHelpBarContainer").Should().BeTrue();
+        }
+
+        [Fact]
+        public void IsWindowClassBlacklisted_ShouldAllowNormalWindows_AndIgnoreCase()
+        {
+            WindowService.IsWindowClassBlacklisted("kXwppQuickHelpBarContainer").Should().BeTrue();
+            WindowService.IsWindowClassBlacklisted("PP12FrameClass").Should().BeFalse();
+            WindowService.IsWindowClassBlacklisted(string.Empty).Should().BeFalse();
+            WindowService.IsWindowClassBlacklisted(null!).Should().BeFalse();
+        }
+
         private static ProcessWindowInfo CreateWindow(
             IntPtr handle,
             DateTime? realActivationTime = null,
