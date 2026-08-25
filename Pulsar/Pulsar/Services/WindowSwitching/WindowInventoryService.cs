@@ -176,6 +176,13 @@ namespace Pulsar.Services.WindowSwitching
                     IntPtr owner = PulsarNative.GetWindow(hWnd, PulsarNative.GW_OWNER);
                     if (owner != IntPtr.Zero && (exStyle & PulsarNative.WS_EX_APPWINDOW) == 0) return true;
 
+                    // [Unify] Switch panel must respect the same window-class blacklist
+                    // as quick-switch (e.g. WPS's KxWppQuickHelpBarContainer), so a
+                    // helper/host window never appears as a switchable item.
+                    StringBuilder windowClass = new(256);
+                    PulsarNative.GetClassName(hWnd, windowClass, windowClass.Capacity);
+                    if (WindowService.IsWindowClassBlacklisted(windowClass.ToString())) return true;
+
                     int length = PulsarNative.GetWindowTextLength(hWnd);
                     if (length == 0) return true;
 
@@ -248,6 +255,13 @@ namespace Pulsar.Services.WindowSwitching
 
                 IntPtr owner = PulsarNative.GetWindow(hWnd, PulsarNative.GW_OWNER);
                 if (owner != IntPtr.Zero && (exStyle & PulsarNative.WS_EX_APPWINDOW) == 0) return true;
+
+                // [Unify] Switch panel must respect the same window-class blacklist
+                // as quick-switch (e.g. WPS's KxWppQuickHelpBarContainer), so a
+                // helper/host window never appears as a switchable item.
+                StringBuilder windowClass = new(256);
+                PulsarNative.GetClassName(hWnd, windowClass, windowClass.Capacity);
+                if (WindowService.IsWindowClassBlacklisted(windowClass.ToString())) return true;
 
                 PulsarNative.GetWindowThreadProcessId(hWnd, out uint processId);
                 if (processIdFilter != null && !processIdFilter.Contains((int)processId)) return true;

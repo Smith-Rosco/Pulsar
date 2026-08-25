@@ -210,19 +210,24 @@ namespace Pulsar.Services
             PulsarNative.GetWindowThreadProcessId(handle, out uint processId);
             if (processId == _currentProcessId) return;
 
-            // [Fix] Only record Alt-Tab-valid windows as the previous window. Helper
-            // windows (e.g. WPS's KxWppQuickHelpBarContainer) can hold foreground focus
-            // without being user-facing; recording them makes quick-switch target an
-            // invisible host window instead of the real document.
+            // Always track the real foreground window so PulsarContext can build
+            // the command panel for the program the user is actually on — even when
+            // it is not an Alt-Tab-valid window (e.g. the Windows Security
+            // credential window). The quick-switch engine independently re-checks
+            // Alt-Tab validity when resolving targets (ResolveTarget /
+            // FindValidHistoryWindow), so an invalid previous window is never chosen.
+            _trackingService.SetPreviousWindow(handle);
+
+            // Only feed the quick-switch MRU history with Alt-Tab-valid windows so
+            // helper/host windows (e.g. WPS's KxWppQuickHelpBarContainer) that
+            // briefly hold foreground focus never become quick-switch targets.
             if (!IsAltTabWindow(handle))
             {
-                _logger.LogDebug("[WindowHistory] ❌ Skipped: not an Alt-Tab window (HWND: {Hwnd}, Title: '{Title}')",
+                _logger.LogDebug("[WindowHistory] ❌ Skipped MRU: not an Alt-Tab window (HWND: {Hwnd}, Title: '{Title}')",
                     handle, GetWindowTitle(handle));
                 return;
             }
 
-            _trackingService.SetPreviousWindow(handle);
-            
             // [New] Also record to history stack
             RecordWindowActivation(handle);
         }
@@ -649,7 +654,53 @@ namespace Pulsar.Services
             // MRU and steal the target slot from the real (e.g. Windows Security) window.
             if (IsWindowClassBlacklisted(hWnd)) return false;
 
+            // [Unify] Quick-switch targets must respect the same process-name
+            // blacklist as the switch panel, so a blacklisted app is never a
+            // quick-switch candidate.
+            if (IsProcessNameBlacklisted(processId)) return false;
+
             return true;
+        }
+
+        private bool IsProcessNameBlacklisted(uint processId)
+        {
+            try
+            {
+                using var process = Process.GetProcessById((int)processId);
+                lock (_blacklistLock)
+                {
+                    return IsProcessNameBlacklisted(process.ProcessName, _dynamicBlacklist);
+                }
+            }
+            catch
+            {
+                // Process may have exited or be inaccessible; do not exclude by name.
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// True when the given process name appears in the blacklist. Pure (no
+        /// P/Invoke) for testability; case-insensitive to match the switch panel's
+        /// discovery predicate so quick-switch and the switch panel stay in sync.
+        /// </summary>
+        internal static bool IsProcessNameBlacklisted(string? processName, IEnumerable<string> blacklist)
+        {
+            if (string.IsNullOrWhiteSpace(processName))
+            {
+                return false;
+            }
+
+            foreach (var entry in blacklist)
+            {
+                if (!string.IsNullOrWhiteSpace(entry) &&
+                    string.Equals(entry, processName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private bool IsWindowClassBlacklisted(IntPtr hWnd)
@@ -895,7 +946,7 @@ namespace Pulsar.Services
         {
             lock (_blacklistLock)
             {
-                return _dynamicBlacklist.Contains(processName);
+                return IsProcessNameBlacklisted(processName, _dynamicBlacklist);
             }
         }
 

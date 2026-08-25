@@ -235,6 +235,52 @@ namespace Pulsar.Tests.Services
             WindowService.IsWindowClassBlacklisted(null!).Should().BeFalse();
         }
 
+        [Fact]
+        public void IsProcessNameBlacklisted_ShouldMatchExactProcess_AndIgnoreCase()
+        {
+            var blacklist = new HashSet<string>(new[] { "chrome", "wps" }, StringComparer.OrdinalIgnoreCase);
+
+            WindowService.IsProcessNameBlacklisted("chrome", blacklist).Should().BeTrue();
+            WindowService.IsProcessNameBlacklisted("CHROME", blacklist).Should().BeTrue();
+            WindowService.IsProcessNameBlacklisted("Wps", blacklist).Should().BeTrue();
+            WindowService.IsProcessNameBlacklisted("notepad", blacklist).Should().BeFalse();
+        }
+
+        [Fact]
+        public void IsProcessNameBlacklisted_ShouldIgnoreNullOrWhitespace()
+        {
+            var blacklist = new HashSet<string>(new[] { "chrome" }, StringComparer.OrdinalIgnoreCase);
+
+            WindowService.IsProcessNameBlacklisted(null!, blacklist).Should().BeFalse();
+            WindowService.IsProcessNameBlacklisted(string.Empty, blacklist).Should().BeFalse();
+            WindowService.IsProcessNameBlacklisted("   ", blacklist).Should().BeFalse();
+        }
+
+        [Fact]
+        public void IsProcessNameBlacklisted_ShouldIgnoreBlankEntriesInBlacklist()
+        {
+            var blacklist = new HashSet<string>(new[] { "", "  ", "chrome" }, StringComparer.OrdinalIgnoreCase);
+
+            WindowService.IsProcessNameBlacklisted("chrome", blacklist).Should().BeTrue();
+            WindowService.IsProcessNameBlacklisted("notepad", blacklist).Should().BeFalse();
+        }
+
+        [Fact]
+        public void QuickSwitchAndDiscoveryBlacklists_ShouldShareSameProcessPredicate()
+        {
+            // Quick-switch (IsAltTabWindow) and the switch panel (EnumerateWindows)
+            // must both respect the same process-name blacklist so an app hidden from
+            // one surface is never shown by the other.
+            var blacklist = new HashSet<string>(new[] { "calc", "systemsettings" }, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var process in blacklist)
+            {
+                WindowService.IsProcessNameBlacklisted(process, blacklist).Should().BeTrue();
+            }
+
+            WindowService.IsProcessNameBlacklisted("notepad", blacklist).Should().BeFalse();
+        }
+
         private static ProcessWindowInfo CreateWindow(
             IntPtr handle,
             DateTime? realActivationTime = null,
