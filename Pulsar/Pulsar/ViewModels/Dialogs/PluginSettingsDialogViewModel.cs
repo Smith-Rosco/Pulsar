@@ -3,10 +3,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin;
 using Pulsar.Models;
+using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels.Base;
 using Pulsar.ViewModels.Settings;
+using DialogButtons = Pulsar.Models.Enums.DialogButtons;
 using DialogResult = Pulsar.Models.Enums.DialogResult;
 
 namespace Pulsar.ViewModels.Dialogs
@@ -34,6 +39,9 @@ namespace Pulsar.ViewModels.Dialogs
         private bool _canSave = true;
 
         public Action<DialogResult>? RequestClose { get; set; }
+
+        /// <summary>仅 WinSwitcher 显示 "Window Inspector" 入口（诊断不可见窗口 + 一键排除）。</summary>
+        public bool IsWindowInspectorVisible => _pluginViewModel.Id == WindowInspectorViewModel.WinSwitcherPluginId;
 
         public PluginSettingsDialogViewModel(PluginViewModel pluginViewModel)
         {
@@ -83,6 +91,36 @@ namespace Pulsar.ViewModels.Dialogs
             {
                 setting.ResetToDefault();
             }
+        }
+
+        [RelayCommand]
+        private async Task OpenWindowInspectorAsync()
+        {
+            var serviceProvider = _pluginViewModel.ServiceProvider;
+            var dialogService = _pluginViewModel.DialogService;
+            if (serviceProvider == null || dialogService == null)
+            {
+                return;
+            }
+
+            var windowService = serviceProvider.GetService<IWindowService>();
+            if (windowService == null)
+            {
+                return;
+            }
+
+            var configService = serviceProvider.GetService<IConfigService>() ?? _pluginViewModel.ConfigService;
+            var loc = serviceProvider.GetService<ILocalizationService>();
+            var logger = serviceProvider.GetService<ILogger<WindowInspectorViewModel>>();
+
+            var inspector = new WindowInspectorViewModel(windowService, configService, loc, logger);
+            await inspector.InitializeAsync();
+
+            await dialogService.ShowCustomAsync(
+                loc?["Inspector.Title"] ?? "Window Inspector",
+                inspector,
+                DialogButtons.None,
+                new Models.DialogSizeConstraints { Width = 780, Height = 560, MinWidth = 600, MinHeight = 400 });
         }
 
         public Task<bool> CanCloseAsync(DialogResult result)

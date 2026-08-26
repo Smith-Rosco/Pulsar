@@ -1,6 +1,11 @@
+using System;
+using System.Collections.Generic;
 using FluentAssertions;
+using Moq;
+using Pulsar.Core.Plugin;
 using Pulsar.Plugins.Core.WinSwitcher;
-using Pulsar.Services;
+using Pulsar.Services.Interfaces;
+using Pulsar.Services.WindowSwitching;
 
 namespace Pulsar.Tests.Plugins.Core
 {
@@ -19,6 +24,17 @@ namespace Pulsar.Tests.Plugins.Core
         }
 
         [Fact]
+        public void SettingsDefinition_ShouldExposeExcludeRules()
+        {
+            var plugin = new WinSwitcherPlugin();
+
+            var setting = plugin.GetSettingsDefinition().Single(definition => definition.Key == "ExcludeRules");
+
+            setting.Type.Should().Be(PluginSettingType.String);
+            setting.Description.Should().Contain("JSON");
+        }
+
+        [Fact]
         public void Metadata_ShouldDescribeExcludeProcessesAsDiscoveryOnly()
         {
             var plugin = new WinSwitcherPlugin();
@@ -32,12 +48,49 @@ namespace Pulsar.Tests.Plugins.Core
         }
 
         [Fact]
-        public void ProcessActivationBlacklistPredicate_ShouldNotFilterDiscoveryBlacklistedProcesses()
+        public void UpdateSettings_WithExcludeRules_ShouldPushParsedRulesToWindowService()
         {
-            var predicate = WindowService.GetProcessActivationBlacklistPredicate();
+            var windowService = new Mock<IWindowService>();
+            var services = new Mock<IServiceProvider>();
+            services.Setup(s => s.GetService(typeof(IWindowService))).Returns(windowService.Object);
 
-            predicate("chrome").Should().BeFalse();
-            predicate("notepad").Should().BeFalse();
+            var plugin = new WinSwitcherPlugin();
+            plugin.Initialize(services.Object);
+
+            plugin.UpdateSettings(new Dictionary<string, object>
+            {
+                ["ExcludeRules"] = "[{\"Allow\":false,\"WindowClass\":\"GhostClass\"}]"
+            });
+
+            windowService.Verify(s => s.UpdateEligibilityRules(It.Is<IReadOnlyList<WindowEligibilityRule>>(rules =>
+                rules.Count == 1 && rules[0].WindowClass == "GhostClass")), Times.Once);
+        }
+
+        [Fact]
+        public void ValidateSettings_InvalidExcludeRulesJson_ShouldFail()
+        {
+            var plugin = new WinSwitcherPlugin();
+
+            var result = plugin.ValidateSettings(new Dictionary<string, object>
+            {
+                ["ExcludeRules"] = "{ not json"
+            });
+
+            result.IsValid.Should().BeFalse();
+            result.Errors.Should().NotBeEmpty();
+        }
+
+        [Fact]
+        public void ValidateSettings_ValidExcludeRulesJson_ShouldPass()
+        {
+            var plugin = new WinSwitcherPlugin();
+
+            var result = plugin.ValidateSettings(new Dictionary<string, object>
+            {
+                ["ExcludeRules"] = "[{\"Allow\":false,\"WindowClass\":\"GhostClass\"}]"
+            });
+
+            result.IsValid.Should().BeTrue();
         }
     }
 }

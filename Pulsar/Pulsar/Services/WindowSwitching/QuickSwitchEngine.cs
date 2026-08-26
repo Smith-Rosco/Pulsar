@@ -69,6 +69,34 @@ namespace Pulsar.Services.WindowSwitching
             }
         }
 
+        /// <summary>
+        /// 从 MRU 历史中移除指定窗口（保持其余顺序）。用于"切到了不可见窗口"后把幽灵逐出历史，
+        /// 打破"切到幽灵 → 又进历史 → 再切幽灵"的循环。
+        /// </summary>
+        public void RemoveFromHistory(IntPtr hwnd)
+        {
+            lock (_historyLock)
+            {
+                if (_windowHistory.Count == 0 || hwnd == IntPtr.Zero)
+                {
+                    return;
+                }
+
+                IntPtr[] current = _windowHistory.ToArray();
+                IntPtr[] kept = current.Where(handle => handle != hwnd).ToArray();
+                if (kept.Length == current.Length)
+                {
+                    return;
+                }
+
+                _windowHistory.Clear();
+                foreach (IntPtr handle in kept.Reverse())
+                {
+                    _windowHistory.Push(handle);
+                }
+            }
+        }
+
         public QuickSwitchResolution ResolveTarget(
             IntPtr currentWindow,
             IntPtr previousWindow,

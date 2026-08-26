@@ -1647,6 +1647,11 @@
     <value>保存</value>
   </data>
   <data
+    name="Dialog.PluginSettings.WindowInspector"
+    xml:space="preserve">
+    <value>窗口检查器...</value>
+  </data>
+  <data
     name="Dialog.PluginSettings.EnterPathPlaceholder"
     xml:space="preserve">
     <value>输入或浏览路径...</value>
@@ -4135,6 +4140,137 @@ Pulsar 会在你的浏览器中打开一个网页——这就是命令模式：�
     <value>进程名超过最大长度 (255 个字符)</value>
   </data>
   <data
+    name="Plugin.WinSwitcher.InvalidExcludeRules"
+    xml:space="preserve">
+    <value>ExcludeRules 必须是合法的规则对象 JSON 数组</value>
+  </data>
+  <!-- ==================== Window Inspector ==================== -->
+  <data
+    name="Inspector.Title"
+    xml:space="preserve">
+    <value>窗口检查器</value>
+  </data>
+  <data
+    name="Inspector.ColumnTitle"
+    xml:space="preserve">
+    <value>标题</value>
+  </data>
+  <data
+    name="Inspector.ColumnProcess"
+    xml:space="preserve">
+    <value>进程</value>
+  </data>
+  <data
+    name="Inspector.ColumnClass"
+    xml:space="preserve">
+    <value>窗口类</value>
+  </data>
+  <data
+    name="Inspector.ColumnHwnd"
+    xml:space="preserve">
+    <value>HWND</value>
+  </data>
+  <data
+    name="Inspector.ColumnRect"
+    xml:space="preserve">
+    <value>矩形</value>
+  </data>
+  <data
+    name="Inspector.ColumnVerdict"
+    xml:space="preserve">
+    <value>判定</value>
+  </data>
+  <data
+    name="Inspector.Flash"
+    xml:space="preserve">
+    <value>闪烁定位</value>
+  </data>
+  <data
+    name="Inspector.Exclude"
+    xml:space="preserve">
+    <value>排除</value>
+  </data>
+  <data
+    name="Inspector.Refresh"
+    xml:space="preserve">
+    <value>刷新</value>
+  </data>
+  <data
+    name="Inspector.Close"
+    xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data
+    name="Inspector.RuleCountFormat"
+    xml:space="preserve">
+    <value>{0} 条排除规则生效</value>
+  </data>
+  <data
+    name="Inspector.ExcludedFormat"
+    xml:space="preserve">
+    <value>已排除 '{0}' ({1})</value>
+  </data>
+  <data
+    name="Inspector.PersistFailed"
+    xml:space="preserve">
+    <value>规则已在本会话生效，但写入磁盘失败。</value>
+  </data>
+  <data
+    name="Inspector.Verdict.Eligible"
+    xml:space="preserve">
+    <value>可切换</value>
+  </data>
+  <data
+    name="Inspector.Verdict.ExcludedSelf"
+    xml:space="preserve">
+    <value>Pulsar 自身</value>
+  </data>
+  <data
+    name="Inspector.Verdict.ExcludedHidden"
+    xml:space="preserve">
+    <value>不可见</value>
+  </data>
+  <data
+    name="Inspector.Verdict.ExcludedCloaked"
+    xml:space="preserve">
+    <value>Cloaked（其他桌面/挂起）</value>
+  </data>
+  <data
+    name="Inspector.Verdict.ExcludedToolWindow"
+    xml:space="preserve">
+    <value>工具窗口</value>
+  </data>
+  <data
+    name="Inspector.Verdict.ExcludedOwned"
+    xml:space="preserve">
+    <value>附属弹窗</value>
+  </data>
+  <data
+    name="Inspector.Verdict.ExcludedOffScreen"
+    xml:space="preserve">
+    <value>屏幕外 / 零尺寸</value>
+  </data>
+  <data
+    name="Inspector.Verdict.ExcludedBlacklistedClass"
+    xml:space="preserve">
+    <value>类名黑名单</value>
+  </data>
+  <data
+    name="Inspector.Verdict.ExcludedBlacklistedProcess"
+    xml:space="preserve">
+    <value>进程黑名单</value>
+  </data>
+  <data
+    name="Inspector.Verdict.ExcludedByRule"
+    xml:space="preserve">
+    <value>命中排除规则</value>
+  </data>
+  <data
+    name="Inspector.Verdict.Unknown"
+    xml:space="preserve">
+    <value>未知</value>
+  </data>
+  <data
     name="Plugin.SystemCommand.NotInitialized"
     xml:space="preserve">
     <value>系统插件未初始化</value>
@@ -4456,5 +4592,11 @@ Pulsar 会在你的浏览器中打开一个网页——这就是命令模式：�
   </data>
   <data name="QuickSwitch.FailedBody" xml:space="preserve">
     <value>没有可切换的上一个窗口。</value>
+  </data>
+  <data name="QuickSwitch.HiddenWindowTitle" xml:space="preserve">
+    <value>切到了不可见窗口</value>
+  </data>
+  <data name="QuickSwitch.HiddenWindowBody" xml:space="preserve">
+    <value>'{0}' 屏幕外或零尺寸，已从快速切换历史中移除。可在 WinSwitcher 设置 → 窗口检查器中永久排除。</value>
   </data>
 </root>

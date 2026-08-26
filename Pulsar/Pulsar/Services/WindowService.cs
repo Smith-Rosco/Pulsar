@@ -11,6 +11,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.Extensions.Logging;
+using Pulsar.Core.Localization;
 using Pulsar.Services.Interfaces;
 using Pulsar.Models; // 确保引用了 WindowInfo 等模型
 using Pulsar.Native; // [New] Use centralized Native helper
@@ -26,10 +27,13 @@ namespace Pulsar.Services
         private readonly IProcessRegistryService? _processRegistryService;
         private readonly ILoggerFactory? _loggerFactory;
         private readonly IFocusManager _focusManager;
+        private readonly ITrayService? _trayService;
+        private readonly ILocalizationService? _loc;
         private readonly WindowSelectionEngine _selectionEngine = new();
-        private readonly WindowInventoryService _inventoryService = new();
+        private readonly WindowInventoryService _inventoryService;
         private readonly WindowTrackingService _trackingService = new();
         private readonly QuickSwitchEngine _quickSwitchEngine = new();
+        private readonly IWindowEligibilityPolicy _eligibilityPolicy;
 
         // [New] 状态管理字段
         private Action? _hideMainWindowAction;
@@ -83,17 +87,30 @@ namespace Pulsar.Services
         // [Deepen] 窗口事件输入管道：WinEvent 回调只 O(1) 入队，后台消费者负责过滤 + 去重 + 采样记录。
         private WindowEventFeed _eventFeed = null!;
 
-        public WindowService(ILogger<WindowService> logger, IFocusManager focusManager, IProcessRegistryService? processRegistryService = null, ILoggerFactory? loggerFactory = null)
+        public WindowService(
+            ILogger<WindowService> logger,
+            IFocusManager focusManager,
+            IProcessRegistryService? processRegistryService = null,
+            ILoggerFactory? loggerFactory = null,
+            ITrayService? trayService = null,
+            ILocalizationService? loc = null)
         {
             _logger = logger;
             _focusManager = focusManager;
             _processRegistryService = processRegistryService;
             _loggerFactory = loggerFactory;
+            _trayService = trayService;
+            _loc = loc;
             using (var currentProcess = Process.GetCurrentProcess())
             {
                 _currentProcessId = currentProcess.Id;
             }
-            
+
+            // [Deepen] "可切换窗口"判定收拢为单一 policy：结构规则 + 类名黑名单 + 物理可见性
+            // 对三个消费面（快速切换 / 发现枚举 / 进程激活枚举）一律生效；进程黑名单由调用方按需传入。
+            _eligibilityPolicy = new WindowEligibilityPolicy((uint)_currentProcessId, SystemWindowClassBlacklist);
+            _inventoryService = new WindowInventoryService(_eligibilityPolicy);
+
             // Initialize with default system blacklist
             lock (_blacklistLock)
             {
@@ -177,6 +194,46 @@ namespace Pulsar.Services
                 }
             }
             _logger.LogInformation("[WindowService] Blacklist updated. Total entries: {Count}", _dynamicBlacklist.Count);
+        }
+
+        /// <summary>
+        /// 原子替换用户窗口排除/放行规则（按身份维度匹配：类名 / 标题正则 / 矩形状态，进程名作限定）。
+        /// 规则对所有消费面生效（含显式激活），因为其语义是"这个窗口永远不是合法目标"。
+        /// </summary>
+        public void UpdateEligibilityRules(IReadOnlyList<WindowEligibilityRule> rules)
+        {
+            _eligibilityPolicy.UpdateRules(rules);
+            _logger.LogInformation("[WindowService] Eligibility rules updated. Count: {Count}", _eligibilityPolicy.Rules.Count);
+        }
+
+        /// <summary>当前生效的用户规则（有序，供 Inspector 展示与追加）。</summary>
+        public IReadOnlyList<WindowEligibilityRule> GetEligibilityRules()
+            => _eligibilityPolicy.Rules;
+
+        /// <summary>
+        /// 枚举全部顶层窗口并给出每窗口的"可切换"判定报告（含标题 / 类名 / 矩形 / 原因），
+        /// 供 Window Inspector 诊断用。进程黑名单不参与（Inspector 关注窗口身份而非进程可见性）。
+        /// </summary>
+        public Task<IReadOnlyList<WindowEligibilityReport>> GetWindowEligibilityReportAsync()
+            => _inventoryService.GetEligibilityReportAsync();
+
+        /// <summary>闪烁窗口（不抢焦点），用于 Inspector"定位这个窗口"。</summary>
+        public bool FlashWindow(IntPtr hwnd)
+        {
+            if (hwnd == IntPtr.Zero || !PulsarNative.IsWindow(hwnd))
+            {
+                return false;
+            }
+
+            var info = new PulsarNative.FLASHWINFO
+            {
+                cbSize = (uint)Marshal.SizeOf<PulsarNative.FLASHWINFO>(),
+                hwnd = hwnd,
+                dwFlags = PulsarNative.FLASHW_ALL,
+                uCount = 5,
+                dwTimeout = 0
+            };
+            return PulsarNative.FlashWindowEx(ref info);
         }
 
         // --- Native Import for Icon Extraction ---
@@ -351,7 +408,7 @@ namespace Pulsar.Services
                 {
                     targetWindows = await _inventoryService.GetProcessWindowsAsync(
                         targetName,
-                        GetProcessActivationBlacklistPredicate(),
+                        null,
                         _trackingService.SnapshotWindow,
                         ExtractIcon);
                 }
@@ -444,12 +501,7 @@ namespace Pulsar.Services
 
         public Task<List<ProcessWindowInfo>> GetProcessWindowsAsync(int targetProcessId)
         {
-            return _inventoryService.GetProcessWindowsAsync(targetProcessId, GetProcessActivationBlacklistPredicate(), _trackingService.SnapshotWindow, ExtractIcon);
-        }
-
-        internal static Func<string, bool> GetProcessActivationBlacklistPredicate()
-        {
-            return static _ => false;
+            return _inventoryService.GetProcessWindowsAsync(targetProcessId, null, _trackingService.SnapshotWindow, ExtractIcon);
         }
 
         // [New] Icon Cache to prevent redundant IO/GDI operations
@@ -621,69 +673,35 @@ namespace Pulsar.Services
 
         private bool IsAltTabWindow(IntPtr hWnd)
         {
-            // 排除自身（虽然 SwitchToPreviousWindow 通常在关闭后调用，但 Z-Order 可能还有残留）
-            PulsarNative.GetWindowThreadProcessId(hWnd, out uint processId);
-            if (processId == _currentProcessId) return false;
-
-            // 排除不可见窗口
-            if (!PulsarNative.IsWindowVisible(hWnd)) return false;
-            
-            // [Fix] Allow minimized windows (Alt-Tab includes them)
-            // if (PulsarNative.IsIconic(hWnd)) return false; 
-
-            // [Fix] Check for Cloaked (Virtual Desktop / UWP Suspended)
-            // Cloaked windows should NOT appear in Alt-Tab list
-            if (PulsarNative.DwmGetWindowAttribute(hWnd, PulsarNative.DWMWA_CLOAKED, out int isCloakedVal, sizeof(int)) == 0 && isCloakedVal != 0)
+            if (hWnd == IntPtr.Zero)
             {
-                // Window is cloaked (on another virtual desktop or suspended)
-                return false;  // [Fix] Changed from true to false
-            }
-            
-            // Check for Tool Window
-            long exStyle = PulsarNative.GetWindowLong(hWnd, PulsarNative.GWL_EXSTYLE);
-            if ((exStyle & PulsarNative.WS_EX_TOOLWINDOW) != 0) return false;
-            
-            // Check for Owner
-            IntPtr owner = PulsarNative.GetWindow(hWnd, PulsarNative.GW_OWNER);
-            if (owner != IntPtr.Zero && (exStyle & PulsarNative.WS_EX_APPWINDOW) == 0) return false;
-
-            // [Fix] Exclude known non-user-facing helper/host windows by class name.
-            // These (e.g. WPS's KxWppQuickHelpBarContainer) are visible per WS_VISIBLE,
-            // not cloaked, not tool windows and ownerless — they pass every check above
-            // yet are invisible to the user. Left unchecked they pollute the quick-switch
-            // MRU and steal the target slot from the real (e.g. Windows Security) window.
-            if (IsWindowClassBlacklisted(hWnd)) return false;
-
-            // [Unify] Quick-switch targets must respect the same process-name
-            // blacklist as the switch panel, so a blacklisted app is never a
-            // quick-switch candidate.
-            if (IsProcessNameBlacklisted(processId)) return false;
-
-            return true;
-        }
-
-        private bool IsProcessNameBlacklisted(uint processId)
-        {
-            try
-            {
-                using var process = Process.GetProcessById((int)processId);
-                lock (_blacklistLock)
-                {
-                    return IsProcessNameBlacklisted(process.ProcessName, _dynamicBlacklist);
-                }
-            }
-            catch
-            {
-                // Process may have exited or be inaccessible; do not exclude by name.
                 return false;
             }
+
+            // [Deepen] 判定委托给统一 policy：自身 PID / 可见性 / cloaked / 工具窗口 / owned /
+            // 物理可见性（屏幕内非零矩形，最小化豁免）/ 类名黑名单 / 进程黑名单 / 用户规则。
+            // 新增的物理可见性规则泛化解决了 KxWppQuickHelpBarContainer 与 Chrome Legacy Window
+            // 这类"WS_VISIBLE 但屏幕外/零尺寸"的幽灵窗口，不再需要逐个硬编码类名。
+            // 仅当存在标题依赖规则时才读取标题（避免热路径上的阻塞型 GetWindowText）。
+            var snapshot = WindowEligibilitySnapshot.FromHwnd(hWnd, _eligibilityPolicy.HasTitleDependentRules);
+            return _eligibilityPolicy.Evaluate(snapshot, BuildProcessBlacklistPredicate()).Included;
         }
 
         /// <summary>
-        /// True when the given process name appears in the blacklist. Pure (no
-        /// P/Invoke) for testability; case-insensitive to match the switch panel's
-        /// discovery predicate so quick-switch and the switch panel stay in sync.
+        /// 取当前进程黑名单的稳定引用，包成按进程名判定的谓词。锁内捕获引用（UpdateBlacklist 整体替换、
+        /// 不原地修改），谓词调用路径无锁。
         /// </summary>
+        private Func<string, bool> BuildProcessBlacklistPredicate()
+        {
+            IEnumerable<string> blacklist;
+            lock (_blacklistLock)
+            {
+                blacklist = _dynamicBlacklist;
+            }
+
+            return name => IsProcessNameBlacklisted(name, blacklist);
+        }
+
         internal static bool IsProcessNameBlacklisted(string? processName, IEnumerable<string> blacklist)
         {
             if (string.IsNullOrWhiteSpace(processName))
@@ -701,13 +719,6 @@ namespace Pulsar.Services
             }
 
             return false;
-        }
-
-        private bool IsWindowClassBlacklisted(IntPtr hWnd)
-        {
-            var className = new System.Text.StringBuilder(256);
-            PulsarNative.GetClassName(hWnd, className, className.Capacity);
-            return IsWindowClassBlacklisted(className.ToString());
         }
 
         /// <summary>
@@ -919,9 +930,38 @@ namespace Pulsar.Services
                 window.Title,
                 window.ProcessName);
 
+            // [Candidate 4] 激活后校验：先判定再入 MRU。目标前台窗口物理不可见（屏幕外 / 零尺寸
+            // 幽灵，如 Chrome Legacy Window）意味着用户什么都没看到 —— 幽灵从不进历史（即使已在
+            // 历史里也顺带剔除，作为安全网），并提示用户到 Window Inspector 永久排除。
+            if (WindowEligibilityPolicy.IsPhysicallyInvisible(WindowEligibilitySnapshot.FromHwnd(window.Handle)))
+            {
+                _quickSwitchEngine.RemoveFromHistory(window.Handle);
+                _logger.LogWarning("[ActivateWindow] ⚠️ Activated hidden window '{Title}' (0x{Hwnd:X}); elided from quick-switch history",
+                    GetWindowTitle(window.Handle),
+                    window.Handle.ToInt64());
+                NotifyHiddenWindowSwitch(window);
+                return result;
+            }
+
             RecordWindowActivation(window.Handle);
 
             return result;
+        }
+
+        /// <summary>提示用户刚切到了一个不可见窗口，并指引到 Window Inspector 排除。</summary>
+        private void NotifyHiddenWindowSwitch(ProcessWindowInfo window)
+        {
+            if (_trayService == null)
+            {
+                return;
+            }
+
+            string title = string.IsNullOrWhiteSpace(window.Title) ? GetWindowTitle(window.Handle) : window.Title;
+            _trayService.ShowNotification(
+                _loc?["QuickSwitch.HiddenWindowTitle"] ?? "Switched to a hidden window",
+                string.Format(_loc?["QuickSwitch.HiddenWindowBody"] ??
+                    "'{0}' is off-screen / zero-size and was removed from quick-switch history. Use WinSwitcher → Window Inspector to exclude it permanently.", title),
+                PulsarNotificationIcon.Warning);
         }
 
         public WindowActivationResult ActivateWindowDetailed(ProcessWindowInfo window)

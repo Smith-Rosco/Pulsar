@@ -149,5 +149,70 @@ namespace Pulsar.Tests.Services
 
             result.TargetWindow.Should().Be(IntPtr.Zero);
         }
+
+        [Fact]
+        public void RemoveFromHistory_ShouldRemoveWindow_PreservingOrder()
+        {
+            var engine = new QuickSwitchEngine();
+            IntPtr a = new(11);
+            IntPtr b = new(22);
+            IntPtr c = new(33);
+
+            // Activation order (most recent last): a, then b, then c.
+            engine.RecordWindowActivation(a, 10);
+            engine.RecordWindowActivation(b, 10);
+            engine.RecordWindowActivation(c, 10);
+
+            engine.RemoveFromHistory(b);
+
+            // 栈顶为最近激活：移除 b 后应为 [c, a]（最近在前的快照顺序）。
+            engine.SnapshotHistory().Should().ContainInOrder(c, a);
+            engine.SnapshotHistory().Should().NotContain(b);
+        }
+
+        [Fact]
+        public void RemoveFromHistory_ShouldNoOp_WhenWindowNotPresent()
+        {
+            var engine = new QuickSwitchEngine();
+            IntPtr a = new(11);
+            engine.RecordWindowActivation(a, 10);
+
+            engine.RemoveFromHistory(new IntPtr(99));
+
+            engine.SnapshotHistory().Should().ContainInOrder(a);
+        }
+
+        [Fact]
+        public void RemoveFromHistory_ShouldNoOp_ForZeroHandle()
+        {
+            var engine = new QuickSwitchEngine();
+            IntPtr a = new(11);
+            engine.RecordWindowActivation(a, 10);
+
+            engine.RemoveFromHistory(IntPtr.Zero);
+
+            engine.SnapshotHistory().Should().ContainInOrder(a);
+        }
+
+        [Fact]
+        public void RemoveFromHistory_ShouldNotReintroducePhantom_OnNextResolve()
+        {
+            var engine = new QuickSwitchEngine();
+            IntPtr current = new(11);
+            IntPtr phantom = new(22);
+            IntPtr next = new(33);
+
+            engine.RecordWindowActivation(current, 10);
+            engine.RecordWindowActivation(phantom, 10);
+            engine.RecordWindowActivation(next, 10);
+
+            engine.RemoveFromHistory(phantom);
+
+            var result = engine.ResolveTarget(current, IntPtr.Zero, 5000,
+                _ => true,
+                h => h != current);
+
+            result.TargetWindow.Should().Be(next);
+        }
     }
 }

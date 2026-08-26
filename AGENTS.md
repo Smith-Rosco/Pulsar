@@ -429,6 +429,7 @@ dotnet restore Pulsar/Pulsar/Pulsar.csproj
   - [SENDINPUT_FOREGROUND_ACTIVATION.md](./Docs/lessons/SENDINPUT_FOREGROUND_ACTIVATION.md)
   - [POWERSHELL_5_1_COMPRESS_ARCHIVE_BROKEN.md](./Docs/lessons/POWERSHELL_5_1_COMPRESS_ARCHIVE_BROKEN.md) — Compress-Archive in 5.1 breaks when PS7 pollutes PSModulePath; use pwsh/bsdtar, never PATH GNU tar
   - [GH_CLI_HASH_PATH_BUG.md](./Docs/lessons/GH_CLI_HASH_PATH_BUG.md) — gh CLI truncates local paths at `#` (URL fragment); upload from a `#`-free temp dir
+  - [WINDOW_ELIGIBILITY_PHYSICAL_RULE.md](./Docs/lessons/WINDOW_ELIGIBILITY_PHYSICAL_RULE.md) — phantom windows (off-screen/zero-size) are fixed by a general physical-validity rule in the shared eligibility policy, not by hardcoding class names
 
 ### Operations & Decisions
 - **[Docs/decisions/](./Docs/decisions/)** - Architecture Decision Records (ADRs)

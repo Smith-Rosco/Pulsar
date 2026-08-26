@@ -13,6 +13,7 @@ using Pulsar.Core.Plugin;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
+using Pulsar.Services.WindowSwitching;
 
 namespace Pulsar.Plugins.Core.WinSwitcher
 {
@@ -29,6 +30,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
         private ITrayService? _trayService;
         private ILocalizationService? _loc;
         private HashSet<string> _excludedProcesses = new();
+        private List<WindowEligibilityRule> _excludeRules = new();
 
         public string Id => "com.pulsar.winswitcher";
         public string DisplayName => "App Switcher";
@@ -71,6 +73,18 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                 MaxLength = 10000,
                 Pattern = @"^[a-zA-Z0-9_,.\s\-]*$"
             };
+
+            yield return new PluginSettingDefinition
+            {
+                Key = "ExcludeRules",
+                Label = "Exclusion Rules (JSON)",
+                Type = PluginSettingType.String,
+                DefaultValue = "",
+                Description = "JSON array of window-identity exclusion/allow rules, e.g. [{\"Allow\":false,\"ProcessName\":\"chrome\",\"WindowClass\":\"Chrome_WidgetWin_1\",\"TitlePattern\":\"^Chrome Legacy Window$\"}]. Fields: Allow, ProcessName, WindowClass, TitlePattern (regex), RectState (OffScreen|ZeroSize). First match wins; Allow overrides earlier Exclude. Use the Window Inspector to generate rules.",
+                MinLength = 0,
+                MaxLength = 20000,
+                Pattern = null
+            };
         }
 
         public void UpdateSettings(Dictionary<string, object> settings)
@@ -86,9 +100,25 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                 _windowService?.UpdateBlacklist(_excludedProcesses);
             }
 
+            if (settings.TryGetValue("ExcludeRules", out var rulesObj) && rulesObj != null)
+            {
+                var rulesJson = rulesObj.ToString() ?? string.Empty;
+                var rules = WindowEligibilityRuleSerializer.TryParse(rulesJson);
+                if (rules != null)
+                {
+                    _excludeRules = rules;
+                    _windowService?.UpdateEligibilityRules(_excludeRules);
+                }
+                else
+                {
+                    _logger?.LogWarning($"{LogPrefix} ExcludeRules JSON is invalid and was ignored");
+                }
+            }
+
             _logger?.LogInformation(
-                $"{LogPrefix} Settings updated. ExcludedCount={{ExcludedCount}}",
-                _excludedProcesses.Count);
+                $"{LogPrefix} Settings updated. ExcludedCount={{ExcludedCount}}, RuleCount={{RuleCount}}",
+                _excludedProcesses.Count,
+                _excludeRules.Count);
         }
 
         public PluginConfigValidationResult ValidateSettings(Dictionary<string, object> settings)
@@ -127,7 +157,17 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                     }
                 }
             }
-            
+
+            if (settings.TryGetValue("ExcludeRules", out var rulesObj) && rulesObj != null)
+            {
+                var rulesJson = rulesObj.ToString() ?? string.Empty;
+                if (WindowEligibilityRuleSerializer.TryParse(rulesJson) == null)
+                {
+                    result.IsValid = false;
+                    result.Errors.Add(_loc?["Plugin.WinSwitcher.InvalidExcludeRules"] ?? "ExcludeRules must be a valid JSON array of rule objects");
+                }
+            }
+
             return result;
         }
 
@@ -140,6 +180,13 @@ namespace Pulsar.Plugins.Core.WinSwitcher
             {
                 _windowService?.UpdateBlacklist(_excludedProcesses);
                 _logger?.LogDebug($"{LogPrefix} Blacklist synchronized: {{Count}} entries", _excludedProcesses.Count);
+            }
+
+            // 重新同步排除规则到 WindowService
+            if (_excludeRules.Count > 0)
+            {
+                _windowService?.UpdateEligibilityRules(_excludeRules);
+                _logger?.LogDebug($"{LogPrefix} Exclusion rules synchronized: {{Count}} entries", _excludeRules.Count);
             }
             
             await Task.CompletedTask;
@@ -368,6 +415,13 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                             Description = "Process names excluded from discovery lists only; direct activate and switch actions still target them.",
                             DefaultValue = "",
                             Placeholder = "Select processes to exclude..."
+                        },
+                        ["ExcludeRules"] = new PropertySchema
+                        {
+                            Type = "string",
+                            Description = "JSON array of window-identity exclusion/allow rules. Use the Window Inspector to generate rules.",
+                            DefaultValue = "",
+                            Placeholder = "[{\"Allow\":false,\"WindowClass\":\"...\"}]"
                         }
                     },
                     RequiredProperties = Array.Empty<string>()

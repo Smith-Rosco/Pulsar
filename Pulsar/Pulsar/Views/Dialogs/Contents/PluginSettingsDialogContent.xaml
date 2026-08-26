@@ -275,6 +275,11 @@
         </ScrollViewer>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <ui:Button Content="{lex:Locale Dialog.PluginSettings.WindowInspector}"
+                       Style="{StaticResource PulsarSecondaryButtonStyle}"
+                       Command="{Binding OpenWindowInspectorCommand}"
+                       Visibility="{Binding IsWindowInspectorVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                       Margin="0,0,8,0"/>
             <ui:Button Content="{lex:Locale Dialog.PluginSettings.ResetDefaults}"
                        Style="{StaticResource PulsarSecondaryButtonStyle}"
                        Command="{Binding ResetToDefaultsCommand}"

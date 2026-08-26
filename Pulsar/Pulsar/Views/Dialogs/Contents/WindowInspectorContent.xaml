@@ -1,0 +1,142 @@
+<UserControl x:Class="Pulsar.Views.Dialogs.Contents.WindowInspectorContent"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:lex="clr-namespace:Pulsar.Core.Localization"
+             mc:Ignorable="d"
+             d:DesignHeight="520" d:DesignWidth="760">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header: rule summary + status -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+            <TextBlock Text="{Binding RuleSummary}" FontWeight="SemiBold" FontSize="13"/>
+            <TextBlock Text="{Binding StatusMessage}"
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                       FontSize="12"
+                       TextWrapping="Wrap"
+                       Margin="0,4,0,0"/>
+        </StackPanel>
+
+        <!-- Window list -->
+        <ListView Grid.Row="1"
+                  ItemsSource="{Binding Rows}"
+                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                  ScrollViewer.VerticalScrollBarVisibility="Auto">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="{lex:Locale Inspector.ColumnTitle}" Width="240">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Title}"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="{lex:Locale Inspector.ColumnProcess}" Width="100">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding ProcessName}" TextTrimming="CharacterEllipsis" ToolTip="{Binding ProcessName}"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="{lex:Locale Inspector.ColumnClass}" Width="140">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding ClassName}" TextTrimming="CharacterEllipsis" ToolTip="{Binding ClassName}"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="{lex:Locale Inspector.ColumnHwnd}" Width="90">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding HwndText}" FontFamily="Consolas"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="{lex:Locale Inspector.ColumnRect}" Width="140">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding RectText}" FontFamily="Consolas" FontSize="11"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="{lex:Locale Inspector.ColumnVerdict}" Width="150">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse Width="8" Height="8" Margin="0,0,6,0" VerticalAlignment="Center">
+                                        <Ellipse.Style>
+                                            <Style TargetType="Ellipse">
+                                                <Setter Property="Fill" Value="#2e7d32"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsExcluded}" Value="True">
+                                                        <Setter Property="Fill" Value="#c62828"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+                                    <TextBlock Text="{Binding VerdictText}" TextTrimming="CharacterEllipsis" ToolTip="{Binding VerdictText}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="" Width="170">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:Button Content="{lex:Locale Inspector.Flash}"
+                                               Style="{StaticResource PulsarSecondaryButtonStyle}"
+                                               FontSize="11"
+                                               Padding="8,2"
+                                               Margin="0,0,6,0"
+                                               Command="{Binding DataContext.FlashCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                               CommandParameter="{Binding}"/>
+                                    <ui:Button Content="{lex:Locale Inspector.Exclude}"
+                                               Style="{StaticResource PulsarSecondaryButtonStyle}"
+                                               FontSize="11"
+                                               Padding="8,2"
+                                               IsEnabled="{Binding CanExclude}"
+                                               Command="{Binding DataContext.ExcludeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                               CommandParameter="{Binding}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                </GridView>
+            </ListView.View>
+        </ListView>
+
+        <!-- Loading overlay -->
+        <Grid Grid.Row="1" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}"
+              Background="{DynamicResource ApplicationBackgroundBrush}">
+            <ui:ProgressRing IsIndeterminate="True" Width="40" Height="40"/>
+        </Grid>
+
+        <!-- Footer -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <ui:Button Content="{lex:Locale Inspector.Refresh}"
+                       Style="{StaticResource PulsarSecondaryButtonStyle}"
+                       Command="{Binding RefreshCommand}"
+                       Margin="0,0,8,0"/>
+            <ui:Button Content="{lex:Locale Inspector.Close}"
+                       Style="{StaticResource PulsarPrimaryButtonStyle}"
+                       Command="{Binding CloseCommand}"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

@@ -89,6 +89,28 @@ App Switcher 是 Pulsar 的核心应用控制插件，用来切换到已运行�
 - **行为语义**: 这是 discovery blacklist，不是 activation denylist。它会影响自动枚举出来的窗口列表，但不会阻止显式 `activate` 或 `switch` 动作按进程名查找并切换。
 - **示例**: `"explorer,taskmgr,pulsar"`
 
+### ExcludeRules (String / JSON)
+- **默认值**: `""`
+- **说明**: JSON 数组形式的**窗口身份排除/放行规则**。用于精确排除某个特定窗口（如不可见的幽灵窗口），而不会像 `ExcludeProcesses` 那样一竿子打掉整个进程。
+- **规则字段**:
+  - `Allow` (bool): `true` = 放行（绝对优先，覆盖之前任何 Exclude）；`false` = 排除
+  - `ProcessName` (可选): 进程名限定
+  - `WindowClass` (可选): 窗口类名（精确，忽略大小写）
+  - `TitlePattern` (可选): 窗口标题正则（忽略大小写）
+- **语义**: 规则至少匹配一个身份维度（`WindowClass` / `TitlePattern`）。规则对发现、快速切换、显式激活全部生效——身份规则的语义是"这个窗口永远不是合法目标"。不能覆盖系统的硬规则（屏幕外/零尺寸等物理不可见、系统类名黑名单）。
+- **示例**: `[{"Allow":false,"ProcessName":"chrome","WindowClass":"Chrome_WidgetWin_1","TitlePattern":"^Chrome Legacy Window$"}]`
+- **推荐用法**: 用 **Window Inspector**（WinSwitcher 设置 → "窗口检查器..."）一键生成并持久化规则，而不是手写 JSON。
+
+## Window Inspector（窗口检查器）
+
+当快速切换落到不可见窗口时（如 `Chrome Legacy Window`、`KxWppQuickHelpBarContainer` 这类屏幕外/零尺寸的幽灵窗口），可到 **WinSwitcher 设置 → "窗口检查器..."** 诊断：
+
+- 列出全部顶层窗口，标注每窗口的判定结果（可切换 / 屏幕外 / 工具窗口 / 命中排除规则等）+ 标题 / 进程 / 类名 / HWND / 矩形坐标。
+- **闪烁定位**: 让目标窗口闪烁（不抢焦点），帮你"找到"那个看不见的窗口。
+- **排除**: 一键生成最具体的规则（进程 + 类 + 标题正则，只命中该窗口），立即生效并持久化到 `ExcludeRules`。
+
+激活后如果切到了屏幕外/零尺寸的窗口，Pulsar 会自动把它移出快速切换历史，并托盘提示你到 Window Inspector 永久排除。
+
 ## 依赖服务
 
 - `IWindowService`: 窗口管理服务
@@ -117,6 +139,14 @@ App Switcher 是 Pulsar 的核心应用控制插件，用来切换到已运行�
 **问题**: 启动失败  
 **解决**: 确认 `path` 参数指向有效的可执行文件
 
+**问题**: 快速切换切到了一个"看不见"的窗口  
+**解决**: 这是屏幕外/零尺寸的幽灵窗口（物理不可见）。Pulsar 已把它移出快速切换历史并托盘提示；
+到 **WinSwitcher 设置 → 窗口检查器** 用"排除"一键生成规则，之后该窗口不再参与任何切换。
+
+**问题**: `ExcludeRules` 里写了规则但没生效  
+**解决**: 确认 JSON 合法（WinSwitcher 设置校验会提示）、规则至少含 `WindowClass` 或 `TitlePattern` 之一，
+且未被前序 `Allow` 规则放行。
+
 ---
 
-**最后更新**: 2026-03-01
+**最后更新**: 2026-08-26

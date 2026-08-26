@@ -2,7 +2,7 @@
 
 ## 实施状态
 
-> 更新于 2026-08-24。以下部分已落地，其余仍待实施。
+> 更新于 2026-08-26。以下部分已落地，其余仍待实施。
 
 **已完成**
 - 反馈按 `PluginErrorCode` 匹配：删除 `CreateWinSwitcherFailure` 字符串匹配（第四节）；插件所有错误路径均携带 `PluginErrorCode`。
@@ -10,6 +10,32 @@
 - 启动逻辑统一：删除 `LaunchApplicationStrategy`；Switch Mode 中"已配置但未运行"的 Slot 改走 `PluginActionStrategy` → 插件动作。
 - 调试残留清理：移除 `SmartSwitchAsync` 与 `PluginActionStrategy` 中的 `Debug.WriteLine`。
 - 额外深化（稳定性/性能）：窗口枚举单次化（`WindowInventoryService.GetProcessWindowsAsync(processName)`，O(P×W)→O(W)）；WinEvent 事件管道（`WindowEventFeed`，回调只入队、后台消费 + 采样日志）；策略层失败反馈统一走 `ActionFeedbackService`。
+
+**窗口切换领域重构（Window Eligibility，2026-08-26 落地）**
+
+针对"快速切换落到不可见窗口"（KxWppQuickHelpBarContainer → Chrome Legacy Window）的四层闭环，全部落地：
+
+1. **统一判定模块（候选 1）**：`IWindowEligibilityPolicy` / `WindowEligibilityPolicy` / `WindowEligibilitySnapshot`。
+   原 `IsAltTabWindow` 与 `WindowInventoryService` 两处枚举的同一套 6 项判定，收敛为单一 policy 的
+   `Evaluate(snapshot, processBlacklist?)`。新增**物理可见性规则**（矩形在虚拟屏幕内且非零面积，最小化豁免）——
+   这是对"WS_VISIBLE 但屏幕外/零尺寸"幽灵的通用判定，取代逐个硬编码类名的补丁模式。
+   `HWND→Snapshot` 是唯一 native seam（`FromHwnd`）；进程黑名单保持调用方作用域（发现/快速切换传入，
+   显式激活传 null，文档语义不变）。删除了 `GetProcessActivationBlacklistPredicate` 死桩。
+2. **用户排除规则（候选 2）**：`WindowEligibilityRule`（WindowClass 精确 / TitlePattern 正则 / ProcessName 限定），
+   存储于 WinSwitcher `ExcludeRules` JSON 设置，`UpdateSettings` 解析后经 `WindowService.UpdateEligibilityRules`
+   原子替换 policy 规则链。`ExcludeProcesses` 保留向后兼容。
+3. **Window Inspector（候选 3）**：`GetWindowEligibilityReportAsync`（全桌面窗口 + 每窗口判定原因）+ `FlashWindow`；
+   WinSwitcher 设置对话框新增入口；每行"闪烁定位"+"一键排除"（生成最具体的进程+类+标题正则规则，运行时立即生效 + 经 `ConfigEditSession` 持久化）。
+4. **激活后校验 + MRU 剔除（候选 4）**：`ActivateWindowDetailedAsync` 激活成功后先复核物理可见性；
+   不可见 → 逐出 MRU（`QuickSwitchEngine.RemoveFromHistory`）、永不入历史、托盘提示指向 Inspector。
+
+**实现期设计决策（已定稿）**
+- **RectState 规则维度已删除**：屏幕外/零尺寸已被物理硬规则先行排除，规则再表达完全冗余。
+- **Allow 是绝对放行**：覆盖之前任何 Exclude；Exclude 为暂定排除，可被之后任何 Allow 救回；都不能覆盖硬规则。
+- **标题规则代价控制**：仅当存在 TitlePattern 规则（`HasTitleDependentRules`）时才在热路径读取标题，
+  无标题规则时零额外阻塞读取（`FromHwnd(captureTitle:)` + 发现路径二次判定）。
+- **物理可见性规则对全部消费面生效**（含显式激活）：其语义是"这个窗口永远不是合法目标"，不违背
+  "显式激活仍可达黑名单进程"的文档承诺。
 
 **待实施**
 - 继承 `PluginBase<T>` + 构造函数注入（第一、二节）：`WinSwitcherPlugin` 仍为手动 4 接口 + Service Locator。

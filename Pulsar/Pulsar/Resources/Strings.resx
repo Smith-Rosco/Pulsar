@@ -1003,6 +1003,9 @@
   <data name="Dialog.PluginSettings.Save" xml:space="preserve">
     <value>Save</value>
   </data>
+  <data name="Dialog.PluginSettings.WindowInspector" xml:space="preserve">
+    <value>Window Inspector...</value>
+  </data>
   <data name="Dialog.PluginSettings.EnterPathPlaceholder" xml:space="preserve">
     <value>Enter or browse path...</value>
   </data>
@@ -2550,6 +2553,85 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
   <data name="Plugin.WinSwitcher.ProcessNameTooLong" xml:space="preserve">
     <value>Process name exceeds maximum length (255 characters)</value>
   </data>
+  <data name="Plugin.WinSwitcher.InvalidExcludeRules" xml:space="preserve">
+    <value>ExcludeRules must be a valid JSON array of rule objects</value>
+  </data>
+  <!-- ==================== Window Inspector ==================== -->
+  <data name="Inspector.Title" xml:space="preserve">
+    <value>Window Inspector</value>
+  </data>
+  <data name="Inspector.ColumnTitle" xml:space="preserve">
+    <value>Title</value>
+  </data>
+  <data name="Inspector.ColumnProcess" xml:space="preserve">
+    <value>Process</value>
+  </data>
+  <data name="Inspector.ColumnClass" xml:space="preserve">
+    <value>Window Class</value>
+  </data>
+  <data name="Inspector.ColumnHwnd" xml:space="preserve">
+    <value>HWND</value>
+  </data>
+  <data name="Inspector.ColumnRect" xml:space="preserve">
+    <value>Rect</value>
+  </data>
+  <data name="Inspector.ColumnVerdict" xml:space="preserve">
+    <value>Verdict</value>
+  </data>
+  <data name="Inspector.Flash" xml:space="preserve">
+    <value>Flash</value>
+  </data>
+  <data name="Inspector.Exclude" xml:space="preserve">
+    <value>Exclude</value>
+  </data>
+  <data name="Inspector.Refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="Inspector.Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="Inspector.RuleCountFormat" xml:space="preserve">
+    <value>{0} exclusion rule(s) active</value>
+  </data>
+  <data name="Inspector.ExcludedFormat" xml:space="preserve">
+    <value>Excluded '{0}' ({1})</value>
+  </data>
+  <data name="Inspector.PersistFailed" xml:space="preserve">
+    <value>Rule is active for this session, but saving to disk failed.</value>
+  </data>
+  <data name="Inspector.Verdict.Eligible" xml:space="preserve">
+    <value>Switchable</value>
+  </data>
+  <data name="Inspector.Verdict.ExcludedSelf" xml:space="preserve">
+    <value>Pulsar itself</value>
+  </data>
+  <data name="Inspector.Verdict.ExcludedHidden" xml:space="preserve">
+    <value>Not visible</value>
+  </data>
+  <data name="Inspector.Verdict.ExcludedCloaked" xml:space="preserve">
+    <value>Cloaked (other desktop/suspended)</value>
+  </data>
+  <data name="Inspector.Verdict.ExcludedToolWindow" xml:space="preserve">
+    <value>Tool window</value>
+  </data>
+  <data name="Inspector.Verdict.ExcludedOwned" xml:space="preserve">
+    <value>Owned dialog</value>
+  </data>
+  <data name="Inspector.Verdict.ExcludedOffScreen" xml:space="preserve">
+    <value>Off-screen / zero-size</value>
+  </data>
+  <data name="Inspector.Verdict.ExcludedBlacklistedClass" xml:space="preserve">
+    <value>Blacklisted class</value>
+  </data>
+  <data name="Inspector.Verdict.ExcludedBlacklistedProcess" xml:space="preserve">
+    <value>Blacklisted process</value>
+  </data>
+  <data name="Inspector.Verdict.ExcludedByRule" xml:space="preserve">
+    <value>Excluded by rule</value>
+  </data>
+  <data name="Inspector.Verdict.Unknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
   <!-- ==================== SystemCommand Plugin ==================== -->
   <data name="Plugin.SystemCommand.NotInitialized" xml:space="preserve">
     <value>System plugin not initialized</value>
@@ -2841,5 +2923,11 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
   </data>
   <data name="QuickSwitch.FailedBody" xml:space="preserve">
     <value>No previous window to switch to.</value>
+  </data>
+  <data name="QuickSwitch.HiddenWindowTitle" xml:space="preserve">
+    <value>Switched to a hidden window</value>
+  </data>
+  <data name="QuickSwitch.HiddenWindowBody" xml:space="preserve">
+    <value>'{0}' is off-screen / zero-size and was removed from quick-switch history. Use WinSwitcher → Window Inspector to exclude it permanently.</value>
   </data>
 </root>

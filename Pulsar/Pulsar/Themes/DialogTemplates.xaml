@@ -57,6 +57,10 @@
         <contents:PluginSettingsDialogContent/>
     </DataTemplate>
 
+    <DataTemplate DataType="{x:Type dialogs:WindowInspectorViewModel}">
+        <contents:WindowInspectorContent/>
+    </DataTemplate>
+
     <DataTemplate DataType="{x:Type dialogs:FirstLaunchSetupWizardViewModel}">
         <contents:FirstLaunchSetupWizardContent/>
     </DataTemplate>

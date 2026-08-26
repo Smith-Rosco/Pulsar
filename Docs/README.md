@@ -33,6 +33,8 @@
 | **Fix button styling issues** | [lessons/WPFUI_BUTTON_PRIMARY_BUG.md](./lessons/WPFUI_BUTTON_PRIMARY_BUG.md) |
 | **Fix UserControl binding issues** | [lessons/WPF_USERCONTROL_BINDING_BREAKS.md](./lessons/WPF_USERCONTROL_BINDING_BREAKS.md) |
 | **Fix ContextMenu styling** | [lessons/CONTEXTMENU_RESOURCE_INHERITANCE.md](./lessons/CONTEXTMENU_RESOURCE_INHERITANCE.md) |
+| **Understand window switching / eligibility** | [guides/WINDOW_SWITCHING_REFACTORING.md](./guides/WINDOW_SWITCHING_REFACTORING.md) |
+| **Fix switching to invisible windows** | [lessons/WINDOW_ELIGIBILITY_PHYSICAL_RULE.md](./lessons/WINDOW_ELIGIBILITY_PHYSICAL_RULE.md) |
 | **Understand architectural decisions** | [decisions/](./decisions/) |
 | **Follow documentation standards** | [CONTRIBUTING.md](./CONTRIBUTING.md) |
 
@@ -68,6 +70,7 @@ Pain archive - known pitfalls and correct patterns:
 - **[CONTEXTMENU_RESOURCE_INHERITANCE.md](./lessons/CONTEXTMENU_RESOURCE_INHERITANCE.md)** - ContextMenu styling
 - **[WPF_SCROLLVIEWER_VISIBILITY.md](./lessons/WPF_SCROLLVIEWER_VISIBILITY.md)** - Hidden scrollbars workaround
 - **[CONFIG_EDIT_SESSION_STALE_REVISION.md](./lessons/CONFIG_EDIT_SESSION_STALE_REVISION.md)** - Settings save fails until tab switch
+- **[WINDOW_ELIGIBILITY_PHYSICAL_RULE.md](./lessons/WINDOW_ELIGIBILITY_PHYSICAL_RULE.md)** - Phantom windows fixed by a general physical-validity rule, not class-name patches
 
 ### Operations (Docs/ops/)
 Commands and operational procedures:

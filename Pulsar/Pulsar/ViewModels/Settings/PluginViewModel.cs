@@ -79,6 +79,15 @@ namespace Pulsar.ViewModels.Settings
             _ => ""
         };
 
+        /// <summary>设置对话框（含 Window Inspector）解析依赖用。</summary>
+        public IServiceProvider? ServiceProvider => _serviceProvider;
+
+        /// <summary>设置对话框（含 Window Inspector）解析依赖用。</summary>
+        public IDialogService? DialogService => _dialogService;
+
+        /// <summary>设置对话框（含 Window Inspector）解析依赖用。</summary>
+        public IConfigService ConfigService => _configService;
+
         public string HealthScoreText => _formatter?.FormatHealthScoreText(HealthReport) ?? $"{HealthReport.HealthScore}/100";
         public string HealthScoreColor => _formatter?.FormatHealthScoreColor(HealthReport) ?? HealthReport.HealthScore switch
         {

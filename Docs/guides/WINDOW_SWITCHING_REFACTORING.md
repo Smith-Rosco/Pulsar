@@ -939,3 +939,54 @@ namespace Pulsar.Native
 - 不阻止显式 `activate` / `switch` 通过进程名进行解析
 
 这与 WinSwitcher 设置文本、插件元数据和用户文档保持一致。
+
+## Window Eligibility（2026-08-26 落地）
+
+### 单一判定模块
+
+`IWindowEligibilityPolicy.Evaluate(WindowEligibilitySnapshot, Func<string,bool>? processBlacklist)` 是"可切换窗口"
+判定的唯一入口，三个消费面共用：
+
+- 快速切换：`WindowService.IsAltTabWindow` → 薄委托（传给 `ResolveTarget` 的 `Func<IntPtr,bool>` 签名不变）
+- 发现枚举：`WindowInventoryService.EnumerateWindows` / `GetRunningProcessesAsync`
+- 进程激活：`WindowService.SwitchToProcessAsync`（进程黑名单传 null）
+
+`WindowEligibilitySnapshot.FromHwnd` 是唯一 native seam（热路径不读标题；`IsDwmCloaked` / `TryGetWindowRect` /
+`GetVirtualScreenRect` 供枚举路径复用）。判定顺序：自身 PID → 可见 → cloaked → 工具窗口 → owned →
+**物理可见性**（屏幕内非零矩形，最小化豁免）→ 系统类名黑名单 → 进程黑名单谓词（可选）→ **用户规则**。
+
+### 用户排除规则（Exclusion Rules）
+
+`WindowEligibilityRule(Allow, ProcessName?, WindowClass?, TitlePattern?)`，存储于 WinSwitcher `ExcludeRules`
+JSON 设置，经 `UpdateEligibilityRules` 原子替换 policy 规则链。语义：
+
+- **Allow 是绝对放行**（覆盖之前任何 Exclude）；Exclude 为暂定排除（可被后置 Allow 救回）
+- 不能覆盖硬规则（结构 / 物理可见性 / 系统类名）
+- 标题规则（TitlePattern）仅在快照携带 Title 时命中；`HasTitleDependentRules` 决定调用方是否读取标题
+
+规则对**所有消费面生效（含显式激活）**——身份规则的语义是"这个窗口永远不是合法目标"。
+
+### Window Inspector
+
+`IWindowService.GetWindowEligibilityReportAsync()`（全桌面窗口 + 每窗口判定原因）、`FlashWindow(hwnd)`（不抢焦点）。
+入口在 WinSwitcher 设置对话框；"排除"生成最具体的进程+类+标题正则规则，运行时立即生效 + `ConfigEditSession` 持久化。
+
+### 激活后校验与 MRU 剔除
+
+`ActivateWindowDetailedAsync` 激活成功后先复核物理可见性：不可见（幽灵）→ 逐出 MRU（`QuickSwitchEngine.RemoveFromHistory`）、
+永不入历史、托盘提示指向 Inspector。读路径（`ResolveTarget`）已按 policy 过滤，此为"已发生的坏切换"兜底。
+
+### 关键文件
+
+```
+Services/WindowSwitching/WindowEligibilityPolicy.cs     IWindowEligibilityPolicy + 判定 + Verdict 枚举 + Report
+Services/WindowSwitching/WindowEligibilitySnapshot.cs   WindowEligibilitySnapshot + FromHwnd adapter
+Services/WindowSwitching/WindowEligibilityRule.cs       WindowEligibilityRule + JSON 序列化
+Services/WindowSwitching/WindowInventoryService.cs      EnumerateWindows / GetRunningProcessesAsync / GetEligibilityReportAsync
+Services/WindowSwitching/QuickSwitchEngine.cs           MRU 历史 + RemoveFromHistory
+ViewModels/Dialogs/WindowInspectorViewModel.cs          Inspector VM + WindowInspectorRow
+Views/Dialogs/Contents/WindowInspectorContent.xaml      Inspector 内容
+```
+
+**血泪教训**：见 `Docs/lessons/WINDOW_ELIGIBILITY_PHYSICAL_RULE.md` —— 幽灵窗口用通用物理规则根治，
+不要逐个硬编码类名打补丁。
