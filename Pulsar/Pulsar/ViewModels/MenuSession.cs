@@ -98,6 +98,12 @@ namespace Pulsar.ViewModels
         private int _logSampleCounter;
         private const int LOG_SAMPLE_RATE = 10;
 
+        /// <summary>
+        /// Loads at or above this duration are treated as a real (uncached) page
+        /// load and surfaced at Information level for latency monitoring.
+        /// </summary>
+        private const double SlowLoadThresholdMs = 40;
+
         private int _isLoading; // 0 = idle, 1 = loading (atomic guard)
 
         [ObservableProperty]
@@ -124,6 +130,20 @@ namespace Pulsar.ViewModels
         private DateTime _showStartTime;
         private DateTime _showVisibleTime;
         private bool _pendingQuickSwitch;
+
+        /// <summary>
+        /// Monotonically increasing show-session id. Each BeginSessionAsync bumps it;
+        /// the background content load captures the value it was started with and
+        /// discards its result when the counter has moved on (a newer session, or a
+        /// show that was cancelled and re-summoned).
+        /// </summary>
+        private int _sessionGeneration;
+
+        /// <summary>
+        /// Cancels the in-flight background content load when the menu is dismissed
+        /// so a slow provider can never apply stale visuals to a closed session.
+        /// </summary>
+        private CancellationTokenSource? _sessionCts;
 
         /// <summary>
         /// Set when a right-drag release resolved the session while the menu was still
@@ -235,6 +255,8 @@ namespace Pulsar.ViewModels
                         _invocationPointScreen = null;
                         _menuWatchdogCts?.Cancel();
                         _menuWatchdogCts = null;
+                        _sessionCts?.Cancel();
+                        _sessionCts = null;
                         _hotkeyService.ResetModifierState();
                         _subMenuTransitionCts?.Cancel();
                         _subMenuTransitionCts = null;
@@ -390,8 +412,15 @@ namespace Pulsar.ViewModels
             Debug.Assert(_ui.CheckAccess(), "BeginSessionAsync must run on UI thread");
             if (IsVisible || Interlocked.CompareExchange(ref _isLoading, 1, 0) != 0) return;
 
+            long beginTimestamp = Stopwatch.GetTimestamp();
+
             try
             {
+                // ============ Phase 1: surface the shell immediately ============
+                // Only lightweight work happens here: capture the invocation context,
+                // reset interaction state, lay out the slots, and show the window.
+                // Content is loaded in the background (Phase 2) so a slow data
+                // provider can never delay the moment the radial menu appears.
                 InvocationSource = invocationSource;
 
                 IntPtr foregroundHandle = PulsarNative.GetForegroundWindow();
@@ -422,8 +451,6 @@ namespace Pulsar.ViewModels
                 _animationController.SyncCurrentLayout(showLayout);
                 ApplyLayoutTarget(showLayout);
 
-                string activeProcess = _lastContext.TargetProcessName;
-
                 _menuState = MenuState.Root;
 
                 if (_config == null)
@@ -432,16 +459,93 @@ namespace Pulsar.ViewModels
                     _slotsPerPage = _configService.GetValidatedSlotsPerPage();
                 }
 
+                // A right-drag release may have resolved this session while the fast
+                // work above ran; never surface a menu for a session that already acted.
+                if (_gestureReleaseHandledDuringLoad)
+                {
+                    _logger?.LogDebug("[Show] Gesture release handled during load, aborting surface.");
+                    return;
+                }
+
+                // SHOW THE SHELL NOW — content is prepared in the background (Phase 2).
+                IsVisible = true;
+                _showVisibleTime = DateTime.Now;
+
+                // Seed cursor coordinates so IsWithinQuickSwitchZone works even when
+                // the first render frame hasn't fired yet (mouse stationary).
+                _lastMouseX = _menuCenterX;
+                _lastMouseY = _menuCenterY;
+
+                if (_gestureReleaseHandledDuringLoad)
+                {
+                    // Released between the check above and the surface; hide again so
+                    // the immediate quick switch that already ran is not obscured.
+                    _logger?.LogDebug("[Show] Gesture release resolved during surface, hiding menu.");
+                    IsVisible = false;
+                    return;
+                }
+
+                if (_pendingQuickSwitch)
+                {
+                    _logger?.LogDebug("[Show] Pending Quick Switch detected, executing immediately.");
+                    SetActionExecuted(true);
+                    bool switched = await _windowService.SwitchToPreviousWindow();
+                    if (!switched)
+                    {
+                        _trayService.ShowNotification(
+                            _loc?["QuickSwitch.FailedTitle"] ?? "Quick Switch",
+                            _loc?["QuickSwitch.FailedBody"] ?? "No previous window to switch to.",
+                            PulsarNotificationIcon.Warning);
+                    }
+                    IsVisible = false;
+                    return;
+                }
+
+                LogSegmentTiming("Show.Surface", beginTimestamp);
+            }
+            finally
+            {
+                // The loading flag only guards the synchronous surface phase. Phase 2
+                // runs asynchronously below with _isLoading already released so a
+                // dismiss followed by a quick re-summon is not blocked by the previous
+                // session's background load (the generation guard discards its result).
+                Interlocked.Exchange(ref _isLoading, 0);
+            }
+
+            // ============ Phase 2: prepare content in the background ============
+            await LoadPageContentAsync(mode);
+        }
+
+        /// <summary>
+        /// Loads the page model for the current session and applies it to the visual
+        /// layer. Runs only after the shell is already visible. Guarded by a session
+        /// generation counter and a cancellation token so a slow load can never
+        /// overwrite a newer session or a session that was dismissed while loading.
+        /// </summary>
+        private async Task LoadPageContentAsync(RadialMenuMode mode)
+        {
+            int generation = ++_sessionGeneration;
+
+            _sessionCts?.Cancel();
+            var cts = new CancellationTokenSource();
+            _sessionCts = cts;
+            var token = cts.Token;
+
+            try
+            {
+                long loadStart = Stopwatch.GetTimestamp();
+
                 if (mode == RadialMenuMode.Task)
                 {
-                    _pageProvider = new ProcessPageProvider(_windowService, _config, _serviceProvider, _lastContext);
+                    _pageProvider = new ProcessPageProvider(_windowService, _config!, _serviceProvider, _lastContext!);
                 }
                 else
                 {
+                    string activeProcess = _lastContext!.TargetProcessName;
                     var slots = LoadSlotsFromConfig(activeProcess);
 
                     bool foundProfile = !string.IsNullOrEmpty(activeProcess)
-                        && _config.Profiles.TryGetValue(activeProcess, out var _)
+                        && _config!.Profiles.TryGetValue(activeProcess, out var _)
                         && _config.Profiles[activeProcess].GetSlots(true).Count > 0;
 
                     if (!foundProfile)
@@ -460,48 +564,58 @@ namespace Pulsar.ViewModels
                 }
 
                 await _pageProvider.LoadAsync();
-                _pagingController.SetTotalPages(_pageProvider.TotalPages);
-                await _pagingController.GoToPageAsync(_pageProvider.CurrentPage);
-                ResetCenterSlotForRootMenu();
-                _pageProvider.RefreshVisuals(Slots, CenterSlot);
 
-                if (_gestureReleaseHandledDuringLoad)
+                if (token.IsCancellationRequested || generation != _sessionGeneration || !IsVisible)
                 {
-                    // A right-drag release already resolved this session while the menu
-                    // was loading (the switch ran immediately on release). Never surface
-                    // the menu: doing so would steal focus from the just-activated
-                    // window and then flash it back out.
-                    _logger?.LogDebug("[Show] Gesture release handled during load, aborting surface.");
+                    _logger?.LogDebug("[Show] Content load superseded or session closed; discarding result.");
                     return;
                 }
 
-                IsVisible = true;
-                _showVisibleTime = DateTime.Now;
-
-                // Seed cursor coordinates so IsWithinQuickSwitchZone works
-                // even when the first render frame hasn't fired yet (mouse stationary).
-                _lastMouseX = _menuCenterX;
-                _lastMouseY = _menuCenterY;
-
-                if (_pendingQuickSwitch)
+                double loadMs = (Stopwatch.GetTimestamp() - loadStart) * 1000.0 / Stopwatch.Frequency;
+                if (loadMs >= SlowLoadThresholdMs)
                 {
-                    _logger?.LogDebug("[Show] Pending Quick Switch detected, executing immediately.");
-                    SetActionExecuted(true);
-                    bool switched = await _windowService.SwitchToPreviousWindow();
-                    if (!switched)
-                    {
-                        _trayService.ShowNotification(
-                            _loc?["QuickSwitch.FailedTitle"] ?? "Quick Switch",
-                            _loc?["QuickSwitch.FailedBody"] ?? "No previous window to switch to.",
-                            PulsarNotificationIcon.Warning);
-                    }
-                    IsVisible = false;
+                    // A real enumeration ran (Switch-mode cache miss). Surfacing this
+                    // at Information lets latency regressions show up in normal logs
+                    // without requiring Debug logging. A fast load (cache hit) stays
+                    // silent here.
+                    _logger?.LogInformation("[MenuTiming] Show.Load: {Elapsed:F1} ms (cache miss)", loadMs);
                 }
+
+                LogSegmentTiming("Show.Load", loadStart);
+
+                var provider = _pageProvider;
+
+                // Apply the loaded model to the view layer on the UI thread. The
+                // generation/visibility guard is re-checked inside the delegate so a
+                // dismiss that lands while the apply is queued is still honoured.
+                await _ui.InvokeAsync(() =>
+                {
+                    if (token.IsCancellationRequested || generation != _sessionGeneration || !IsVisible)
+                    {
+                        return;
+                    }
+
+                    long applyStart = Stopwatch.GetTimestamp();
+                    _pagingController.SetTotalPages(provider.TotalPages);
+                    _ = _pagingController.GoToPageAsync(provider.CurrentPage);
+                    ResetCenterSlotForRootMenu();
+                    provider.RefreshVisuals(Slots, CenterSlot);
+                    LogSegmentTiming("Show.Apply", applyStart);
+                });
             }
-            finally
+            catch (OperationCanceledException)
             {
-                Interlocked.Exchange(ref _isLoading, 0);
             }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[Show] Failed to load menu content");
+            }
+        }
+
+        private void LogSegmentTiming(string segment, long startTimestamp)
+        {
+            double elapsedMs = (Stopwatch.GetTimestamp() - startTimestamp) * 1000.0 / Stopwatch.Frequency;
+            _logger?.LogDebug("[MenuTiming] {Segment}: {Elapsed:F1} ms", segment, elapsedMs);
         }
 
         public void RefreshConfig(ProfilesConfig? config)

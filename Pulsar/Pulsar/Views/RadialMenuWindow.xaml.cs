@@ -138,6 +138,8 @@ namespace Pulsar.Views
 
         private void Summon()
         {
+            long summonStart = System.Diagnostics.Stopwatch.GetTimestamp();
+
             // [Fix] Removed redundant SetPreviousWindow call.
             // The ViewModel captures PulsarContext BEFORE this window becomes visible.
 
@@ -188,6 +190,9 @@ namespace Pulsar.Views
             this.BeginAnimation(UIElement.OpacityProperty, fadeAnim);
 
             this.Focus();
+
+            double summonMs = (System.Diagnostics.Stopwatch.GetTimestamp() - summonStart) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+            _logger?.LogDebug("[MenuTiming] Window.Summon: {Elapsed:F1} ms", summonMs);
         }
 
         private void Dismiss()

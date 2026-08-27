@@ -34,6 +34,8 @@ namespace Pulsar.Services
         private readonly WindowTrackingService _trackingService = new();
         private readonly QuickSwitchEngine _quickSwitchEngine = new();
         private readonly IWindowEligibilityPolicy _eligibilityPolicy;
+        private readonly WindowInventoryCache _inventoryCache = new();
+        private int _inventoryRefreshInFlight;
         private volatile bool _switchDiagnosticsEnabled;
 
         // [New] 状态管理字段
@@ -142,7 +144,7 @@ namespace Pulsar.Services
             _eventFeed = new WindowEventFeed(ConsumeHistoryEvent);
 
             _activationMonitor = new WindowActivationMonitor(monitorLogger);
-            _activationMonitor.WindowActivated += hwnd => _eventFeed.Enqueue(new WindowHistoryEvent(WindowEventKind.Foreground, hwnd));
+            _activationMonitor.WindowActivated += OnWindowActivated;
             _activationMonitor.WindowShown += hwnd => _eventFeed.Enqueue(new WindowHistoryEvent(WindowEventKind.Shown, hwnd));
             _activationMonitor.Start();
             
@@ -153,6 +155,68 @@ namespace Pulsar.Services
         /// [Deepen] 消费管道事件（专用后台线程）：SHOWN 事件按 Alt-Tab 规则过滤，
         /// FOREGROUND / SHOWN 都写入 MRU 历史栈。阻塞工作不再发生在 WinEvent 回调线程上。
         /// </summary>
+        private IntPtr _lastInventoryInvalidationHwnd;
+
+        private void OnWindowActivated(IntPtr hwnd)
+        {
+            _eventFeed.Enqueue(new WindowHistoryEvent(WindowEventKind.Foreground, hwnd));
+
+            // Invalidate the Switch-mode inventory snapshot only on a real switch:
+            // the foreground moved to a *new* non-Pulsar window. The radial menu's
+            // own activation (same process) is ignored, and a window simply regaining
+            // focus after the menu dismisses is not a desktop change — so a
+            // peek→dismiss→reopen cycle keeps the warm cache instead of re-enumerating.
+            PulsarNative.GetWindowThreadProcessId(hwnd, out uint pid);
+            if ((int)pid == _currentProcessId || hwnd == _lastInventoryInvalidationHwnd)
+            {
+                return;
+            }
+
+            _lastInventoryInvalidationHwnd = hwnd;
+            _inventoryCache.Invalidate();
+            RefreshInventoryCacheInBackground();
+        }
+
+        private void RefreshInventoryCacheInBackground()
+        {
+            // Single-flight: at most one background enumeration at a time. A menu open
+            // that misses the cache enumerates inline and repopulates it, so this is
+            // only a pre-warm, never a correctness requirement.
+            if (System.Threading.Interlocked.Exchange(ref _inventoryRefreshInFlight, 1) != 0)
+            {
+                return;
+            }
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    // A menu open (or an earlier refresh) may have already repopulated
+                    // the cache while we queued; nothing to do then.
+                    if (_inventoryCache.TryGet(out _))
+                    {
+                        return;
+                    }
+
+                    var windows = await _inventoryService.GetActiveWindowsAsync(
+                        IsDiscoveryBlacklisted,
+                        _trackingService.SnapshotWindow,
+                        ExtractIcon,
+                        _processRegistryService);
+
+                    _inventoryCache.Store(windows);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "[WindowInventoryCache] Background refresh failed");
+                }
+                finally
+                {
+                    System.Threading.Interlocked.Exchange(ref _inventoryRefreshInFlight, 0);
+                }
+            });
+        }
+
         private void ConsumeHistoryEvent(WindowHistoryEvent evt)
         {
             // [Fix] Foreground events must pass the same Alt-Tab validity check as
@@ -500,9 +564,24 @@ namespace Pulsar.Services
             });
         }
 
-        public Task<List<ProcessWindowInfo>> GetActiveWindowsAsync()
+        public async Task<List<ProcessWindowInfo>> GetActiveWindowsAsync()
         {
-            return _inventoryService.GetActiveWindowsAsync(IsDiscoveryBlacklisted, _trackingService.SnapshotWindow, ExtractIcon, _processRegistryService);
+            // Serve a fresh snapshot from the cache when available (the Switch-mode
+            // menu and process picker open far more often than the desktop changes),
+            // otherwise enumerate and cache the result for the next caller.
+            if (_inventoryCache.TryGet(out var cached))
+            {
+                return cached!;
+            }
+
+            var windows = await _inventoryService.GetActiveWindowsAsync(
+                IsDiscoveryBlacklisted,
+                _trackingService.SnapshotWindow,
+                ExtractIcon,
+                _processRegistryService);
+
+            _inventoryCache.Store(windows);
+            return windows;
         }
 
         public Task<HashSet<string>> GetRunningProcessNamesAsync()

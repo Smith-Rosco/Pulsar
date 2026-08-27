@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
@@ -356,6 +357,12 @@ namespace Pulsar.Services
                     item.ReqAlt == e.IsAlt &&
                     item.ReqWin == e.IsWin)
                 {
+                    // Perf instrumentation: measure the queue latency between the
+                    // keyboard-hook thread and the UI-thread action dispatch. A jump
+                    // here means the UI thread is busy when the hotkey fires, not
+                    // that the menu's own data preparation is slow.
+                    long hookTimestamp = Stopwatch.GetTimestamp();
+
                     HotkeyInvoked?.Invoke(this, new HotkeyInvocationEventArgs(
                         item.ActionId,
                         item.MainVkCode,
@@ -365,7 +372,12 @@ namespace Pulsar.Services
                         item.ReqWin,
                         GetCursorPoint()));
 
-                    Application.Current.Dispatcher.InvokeAsync(() => item.Action.Invoke());
+                    Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        double queueMs = (Stopwatch.GetTimestamp() - hookTimestamp) * 1000.0 / Stopwatch.Frequency;
+                        _logger?.LogDebug("[MenuTiming] Hotkey.HookToUi: {Elapsed:F1} ms", queueMs);
+                        item.Action.Invoke();
+                    });
                     e.Handled = true;
                     return true;
                 }
