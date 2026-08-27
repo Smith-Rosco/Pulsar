@@ -53,7 +53,8 @@ namespace Pulsar.Services.Interfaces
     {
         None,
         InvalidHandle,
-        ForegroundSwitchFailed
+        ForegroundSwitchFailed,
+        Ineligible
     }
 
     public sealed class WindowActivationResult

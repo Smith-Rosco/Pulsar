@@ -1164,6 +1164,9 @@
   <data name="Dialog.ProcessBlacklist.Loading" xml:space="preserve">
     <value>Loading process list...</value>
   </data>
+  <data name="Dialog.ProcessBlacklist.EnableSwitchDiagnostics" xml:space="preserve">
+    <value>Record detailed WinSwitcher diagnostics in the application log</value>
+  </data>
   <!-- ==================== Dialog.IconPicker ==================== -->
   <data name="Dialog.IconPicker.SearchPlaceholder" xml:space="preserve">
     <value>Search icons...</value>

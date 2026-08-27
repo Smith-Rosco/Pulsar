@@ -49,6 +49,9 @@ namespace Pulsar.Services.Interfaces
         /// </summary>
         void UpdateEligibilityRules(IReadOnlyList<WindowEligibilityRule> rules);
 
+        /// <summary>启用窗口切换诊断日志（默认关闭，避免热路径额外开销）。</summary>
+        void SetSwitchDiagnosticsEnabled(bool enabled);
+
         /// <summary>当前生效的用户规则（有序）。</summary>
         IReadOnlyList<WindowEligibilityRule> GetEligibilityRules();
 

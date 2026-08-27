@@ -18,14 +18,19 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" 
-                   Text="{lex:Locale Dialog.ProcessBlacklist.SelectProcesses}" 
-                   TextWrapping="Wrap"
-                   Margin="0,0,0,15"
-                   Opacity="0.8"/>
+         <StackPanel Grid.Row="0" Margin="0,0,0,15">
+             <TextBlock Text="{lex:Locale Dialog.ProcessBlacklist.SelectProcesses}"
+                        TextWrapping="Wrap"
+                        Opacity="0.8"/>
+             <CheckBox IsChecked="{Binding EnableSwitchDiagnostics, Mode=TwoWay}"
+                       Content="{lex:Locale Dialog.ProcessBlacklist.EnableSwitchDiagnostics}"
+                       Margin="0,10,0,0"/>
+         </StackPanel>
 
         <ListBox Grid.Row="1" 
-                 ItemsSource="{Binding Processes}"
+             ItemsSource="{Binding Processes}"
+                 VirtualizingPanel.IsVirtualizing="False"
+                 VirtualizingPanel.IsVirtualizingWhenGrouping="False"
                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                  ScrollViewer.VerticalScrollBarVisibility="Auto">
             

@@ -188,7 +188,6 @@ namespace Pulsar.Views
             this.BeginAnimation(UIElement.OpacityProperty, fadeAnim);
 
             this.Focus();
-            this.UpdateLayout();
         }
 
         private void Dismiss()

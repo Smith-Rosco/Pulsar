@@ -35,6 +35,31 @@ namespace Pulsar.Tests.Plugins.Core
         }
 
         [Fact]
+        public void SettingsDefinition_ShouldExposeSwitchDiagnostics()
+        {
+            var plugin = new WinSwitcherPlugin();
+
+            var setting = plugin.GetSettingsDefinition().Single(definition => definition.Key == "EnableSwitchDiagnostics");
+
+            setting.Type.Should().Be(PluginSettingType.Boolean);
+            setting.DefaultValue.Should().Be(false);
+        }
+
+        [Fact]
+        public void UpdateSettings_ShouldToggleSwitchDiagnostics()
+        {
+            var windowService = new Mock<IWindowService>();
+            var services = new Mock<IServiceProvider>();
+            services.Setup(s => s.GetService(typeof(IWindowService))).Returns(windowService.Object);
+
+            var plugin = new WinSwitcherPlugin();
+            plugin.Initialize(services.Object);
+            plugin.UpdateSettings(new Dictionary<string, object> { ["EnableSwitchDiagnostics"] = true });
+
+            windowService.Verify(s => s.SetSwitchDiagnosticsEnabled(true), Times.Once);
+        }
+
+        [Fact]
         public void Metadata_ShouldDescribeExcludeProcessesAsDiscoveryOnly()
         {
             var plugin = new WinSwitcherPlugin();

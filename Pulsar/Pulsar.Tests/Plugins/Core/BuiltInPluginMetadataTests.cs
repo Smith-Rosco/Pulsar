@@ -40,13 +40,13 @@ namespace Pulsar.Tests.Plugins.Core
         }
 
         [Fact]
-        public void AppSwitcherMetadata_ShouldUseCanonicalDisplayIdentityAndActions()
+        public void WinSwitcherMetadata_ShouldUseCanonicalDisplayIdentityAndActions()
         {
             var plugin = new WinSwitcherPlugin();
 
             var metadata = plugin.GetMetadata();
 
-            metadata.Display.Name.Should().Be("App Switcher");
+            metadata.Display.Name.Should().Be("WinSwitcher");
             metadata.Capabilities.SupportedActions.Should().Equal("switch", "launch", "activate");
             metadata.Actions["switch"].Label.Should().Be("Switch Or Launch");
             metadata.Actions["launch"].Label.Should().Be("Launch App");

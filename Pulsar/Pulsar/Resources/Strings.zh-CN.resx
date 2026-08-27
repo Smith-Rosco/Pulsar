@@ -1902,6 +1902,11 @@
     <value>正在加载进程列表...</value>
   </data>
   <data
+    name="Dialog.ProcessBlacklist.EnableSwitchDiagnostics"
+    xml:space="preserve">
+    <value>在应用日志中记录详细的 WinSwitcher 诊断信息</value>
+  </data>
+  <data
     name="Dialog.IconPicker.SearchPlaceholder"
     xml:space="preserve">
     <value>搜索图标...</value>

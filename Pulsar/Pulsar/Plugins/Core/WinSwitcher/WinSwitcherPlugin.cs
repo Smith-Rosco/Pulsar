@@ -33,7 +33,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
         private List<WindowEligibilityRule> _excludeRules = new();
 
         public string Id => "com.pulsar.winswitcher";
-        public string DisplayName => "App Switcher";
+        public string DisplayName => "WinSwitcher";
         public string Version => "1.0.0";
         public string Author => "Pulsar Team";
         public string Description => "Switch to an existing app, launch one directly, or switch first and launch only when needed.";
@@ -76,6 +76,15 @@ namespace Pulsar.Plugins.Core.WinSwitcher
 
             yield return new PluginSettingDefinition
             {
+                Key = "EnableSwitchDiagnostics",
+                Label = "Window Switch Diagnostics",
+                Type = PluginSettingType.Boolean,
+                DefaultValue = false,
+                Description = "Record detailed window eligibility and activation information for troubleshooting."
+            };
+
+            yield return new PluginSettingDefinition
+            {
                 Key = "ExcludeRules",
                 Label = "Exclusion Rules (JSON)",
                 Type = PluginSettingType.String,
@@ -113,6 +122,12 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                 {
                     _logger?.LogWarning($"{LogPrefix} ExcludeRules JSON is invalid and was ignored");
                 }
+            }
+
+            if (settings.TryGetValue("EnableSwitchDiagnostics", out var diagnosticsObj)
+                && bool.TryParse(diagnosticsObj?.ToString(), out var diagnosticsEnabled))
+            {
+                _windowService?.SetSwitchDiagnosticsEnabled(diagnosticsEnabled);
             }
 
             _logger?.LogInformation(
@@ -428,7 +443,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                 },
                 UI = new UIHints
                 {
-                    Badge = "App",
+                    Badge = "WinSwitcher",
                     AccentColor = "#2196F3",
                     ShowInQuickAccess = true,
                     SortOrder = 5,

@@ -34,6 +34,7 @@ namespace Pulsar.Services
         private readonly WindowTrackingService _trackingService = new();
         private readonly QuickSwitchEngine _quickSwitchEngine = new();
         private readonly IWindowEligibilityPolicy _eligibilityPolicy;
+        private volatile bool _switchDiagnosticsEnabled;
 
         // [New] 状态管理字段
         private Action? _hideMainWindowAction;
@@ -885,6 +886,22 @@ namespace Pulsar.Services
                 return result;
             }
 
+            if (_switchDiagnosticsEnabled)
+            {
+                foreach (var candidate in windows)
+                {
+                    if (candidate.Handle == IntPtr.Zero)
+                    {
+                        continue;
+                    }
+
+                    var snapshot = WindowEligibilitySnapshot.FromHwnd(
+                        candidate.Handle,
+                        _eligibilityPolicy.HasTitleDependentRules);
+                    LogSwitchDiagnostics("selection-candidate", snapshot, _eligibilityPolicy.Evaluate(snapshot));
+                }
+            }
+
             _logger.LogInformation("[SelectTargetWindow] Selected '{Title}' (Process: {ProcessName}, Intent: {Intent}, SkipMode: {SkipMode}, Reason: {Reason})",
                 result.SelectedWindow!.Title,
                 result.SelectedWindow.ProcessName,
@@ -916,6 +933,33 @@ namespace Pulsar.Services
             _logger.LogInformation("[ActivateWindow] Activating hWnd=0x{Hwnd:X} title='{Title}' process='{Process}'",
                 window.Handle.ToInt64(), window.Title, window.ProcessName);
 
+            // An explicit candidate can outlive the inventory snapshot. Reject it
+            // before touching foreground state so a stale/off-screen HWND cannot
+            // be reported as a successful quick switch.
+            var eligibility = WindowEligibilitySnapshot.FromHwnd(
+                window.Handle,
+                _eligibilityPolicy.HasTitleDependentRules);
+            var eligibilityResult = _eligibilityPolicy.Evaluate(eligibility);
+            LogSwitchDiagnostics("activation-candidate", eligibility, eligibilityResult);
+            if (!eligibilityResult.Included)
+            {
+                _quickSwitchEngine.RemoveFromHistory(window.Handle);
+                _logger.LogWarning("[ActivateWindow] Refusing ineligible window '{Title}' (0x{Hwnd:X}, verdict={Verdict})",
+                    window.Title,
+                    window.Handle.ToInt64(),
+                    eligibilityResult.Verdict);
+                if (WindowEligibilityPolicy.IsPhysicallyInvisible(eligibility))
+                {
+                    NotifyHiddenWindowSwitch(window);
+                }
+                return new WindowActivationResult
+                {
+                    Window = window,
+                    Success = false,
+                    FailureReason = WindowActivationFailureReason.Ineligible
+                };
+            }
+
             var result = await ActivateWindowAsync(_focusManager, window, PulsarNative.IsWindow);
             if (!result.Success)
             {
@@ -933,14 +977,27 @@ namespace Pulsar.Services
             // [Candidate 4] 激活后校验：先判定再入 MRU。目标前台窗口物理不可见（屏幕外 / 零尺寸
             // 幽灵，如 Chrome Legacy Window）意味着用户什么都没看到 —— 幽灵从不进历史（即使已在
             // 历史里也顺带剔除，作为安全网），并提示用户到 Window Inspector 永久排除。
-            if (WindowEligibilityPolicy.IsPhysicallyInvisible(WindowEligibilitySnapshot.FromHwnd(window.Handle)))
+            var postActivationEligibility = WindowEligibilitySnapshot.FromHwnd(
+                window.Handle,
+                _eligibilityPolicy.HasTitleDependentRules);
+            var postActivationResult = _eligibilityPolicy.Evaluate(postActivationEligibility);
+            LogSwitchDiagnostics("activation-result", postActivationEligibility, postActivationResult);
+            if (!postActivationResult.Included)
             {
                 _quickSwitchEngine.RemoveFromHistory(window.Handle);
                 _logger.LogWarning("[ActivateWindow] ⚠️ Activated hidden window '{Title}' (0x{Hwnd:X}); elided from quick-switch history",
                     GetWindowTitle(window.Handle),
                     window.Handle.ToInt64());
-                NotifyHiddenWindowSwitch(window);
-                return result;
+                if (WindowEligibilityPolicy.IsPhysicallyInvisible(postActivationEligibility))
+                {
+                    NotifyHiddenWindowSwitch(window);
+                }
+                return new WindowActivationResult
+                {
+                    Window = window,
+                    Success = false,
+                    FailureReason = WindowActivationFailureReason.Ineligible
+                };
             }
 
             RecordWindowActivation(window.Handle);
@@ -962,6 +1019,37 @@ namespace Pulsar.Services
                 string.Format(_loc?["QuickSwitch.HiddenWindowBody"] ??
                     "'{0}' is off-screen / zero-size and was removed from quick-switch history. Use WinSwitcher → Window Inspector to exclude it permanently.", title),
                 PulsarNotificationIcon.Warning);
+        }
+
+        public void SetSwitchDiagnosticsEnabled(bool enabled)
+        {
+            _switchDiagnosticsEnabled = enabled;
+            _logger.LogInformation("[WindowSwitchDiagnostics] Enabled={Enabled}", enabled);
+        }
+
+        private void LogSwitchDiagnostics(string stage, WindowEligibilitySnapshot snapshot, EligibilityResult? result)
+        {
+            if (!_switchDiagnosticsEnabled)
+            {
+                return;
+            }
+
+            _logger.LogInformation(
+                "[WindowSwitchDiagnostics] Stage={Stage} Hwnd=0x{Hwnd:X} Pid={Pid} Process='{ProcessName}' Class='{ClassName}' Title='{Title}' Visible={Visible} Cloaked={Cloaked} Iconic={Iconic} Owner=0x{Owner:X} ExStyle=0x{ExStyle:X} Rect={Rect} Included={Included} Verdict={Verdict}",
+                stage,
+                snapshot.Hwnd.ToInt64(),
+                snapshot.Pid,
+                snapshot.ProcessName,
+                snapshot.ClassName,
+                snapshot.Title,
+                snapshot.IsVisible,
+                snapshot.IsCloaked,
+                snapshot.IsIconic,
+                snapshot.OwnerHwnd.ToInt64(),
+                snapshot.ExStyle,
+                snapshot.Rect?.ToString() ?? "null",
+                result?.Included,
+                result?.Verdict);
         }
 
         public WindowActivationResult ActivateWindowDetailed(ProcessWindowInfo window)

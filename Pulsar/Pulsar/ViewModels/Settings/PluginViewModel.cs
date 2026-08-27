@@ -405,8 +405,11 @@ namespace Pulsar.ViewModels.Settings
                     var currentBlacklist = currentConfig.TryGetValue("ExcludeProcesses", out var val)
                         ? val?.ToString() ?? string.Empty
                         : string.Empty;
+                    var enableSwitchDiagnostics = currentConfig.TryGetValue("EnableSwitchDiagnostics", out var diagnostics)
+                        && bool.TryParse(diagnostics?.ToString(), out var diagnosticsEnabled)
+                        && diagnosticsEnabled;
 
-                    var vm = new ProcessBlacklistViewModel(windowService, processRegistryService, currentBlacklist);
+                    var vm = new ProcessBlacklistViewModel(windowService, processRegistryService, currentBlacklist, enableSwitchDiagnostics);
                     var result = await _dialogService.ShowCustomAsync(
                         _loc?["Notification.ProcessBlacklistTitle"] ?? "Process Blacklist",
                         vm,
@@ -415,6 +418,7 @@ namespace Pulsar.ViewModels.Settings
                     if (result == Models.Enums.DialogResult.Confirmed)
                     {
                         OnSettingChanged("ExcludeProcesses", vm.Result);
+                        OnSettingChanged("EnableSwitchDiagnostics", vm.EnableSwitchDiagnostics);
                         var configurable = await EnsureConfigurablePluginAsync();
                         if (configurable != null)
                         {

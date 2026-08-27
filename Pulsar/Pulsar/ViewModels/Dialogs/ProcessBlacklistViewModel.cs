@@ -30,15 +30,24 @@ namespace Pulsar.ViewModels.Dialogs
         [ObservableProperty]
         private bool _isLoading;
 
+        [ObservableProperty]
+        private bool _enableSwitchDiagnostics;
+
         public Action<DialogResult>? RequestClose { get; set; }
 
         public string Result { get; private set; } = string.Empty;
 
-        public ProcessBlacklistViewModel(IWindowDiscoveryService windowService, IProcessRegistryService processRegistryService, string currentBlacklist, ILogger<ProcessBlacklistViewModel>? logger = null)
+        public ProcessBlacklistViewModel(
+            IWindowDiscoveryService windowService,
+            IProcessRegistryService processRegistryService,
+            string currentBlacklist,
+            bool enableSwitchDiagnostics = false,
+            ILogger<ProcessBlacklistViewModel>? logger = null)
         {
             _windowService = windowService;
             _processRegistryService = processRegistryService;
             _logger = logger;
+            EnableSwitchDiagnostics = enableSwitchDiagnostics;
             _currentBlacklist = currentBlacklist
                 .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                 .Select(value => value.Trim())

@@ -527,7 +527,7 @@ namespace Pulsar.Tests.ViewModels
                 Id = "com.pulsar.winswitcher",
                 Display = new DisplayInfo
                 {
-                    Name = "App Switcher",
+                    Name = "WinSwitcher",
                     Description = "Switch to an existing app, launch one directly, or switch first and launch only when needed.",
                     IconKey = "E8A7",
                     Category = "Apps",

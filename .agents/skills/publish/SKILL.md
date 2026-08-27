@@ -1,126 +1,282 @@
 ---
 name: publish
-description: Pulsar 发布/打包流程（版本决策→构建→校验→打包 zip→release notes→commit/tag→GitHub Release）。Use when the user says 发布/打包/publish a release/发到 GitHub，或运行 /publish 命令后。按本 skill 的流程逐步执行，每步用 bash 执行并展示结果，失败先排障再重试。
+description: Pulsar 发布与打包流程。支持 local-artifact、local-version 和 release 模式；按模式执行版本决策、绝对路径构建、产物校验、ZIP 打包以及可选的 commit/tag/GitHub Release。用户要求发布、打包、publish 或运行 /publish 时使用。
 ---
 
-# Pulsar 发布（Release）流程
+# Pulsar 发布流程
 
-发布 Pulsar 的完整流程。所有命令在仓库根目录执行（`git rev-parse --show-toplevel`）。**每一步用 bash 执行并展示结果**；失败时按「排障」节处理，修复后从失败步骤重试，不要重复已成功的步骤。
+所有命令从仓库根目录执行，但文件路径必须基于 `git rev-parse --show-toplevel` 生成绝对路径。每个阶段使用 bash 执行并展示结果；失败后先读取完整错误，再从失败阶段重试，不重复已成功的阶段。
 
-## 流程总览
+## 0. 发布模式
 
-| # | 步骤 | 说明 |
-|---|------|------|
-| 1 | 版本决策 | 询问用户确认（AI 建议 + 提交统计） |
-| 2 | 构建 | `dotnet publish`（Release / win-x64 / self-contained 单文件） |
-| 3 | 校验产物 | Pulsar.exe / Pulsar.pdb / `*_cor3.dll` / Assets/ |
-| 4 | 打包 zip | **用 pwsh**（见坑 1） |
-| 5 | 校验 zip | PK 魔数 + 条目 |
-| 6 | Release notes | AI 撰写中文 notes，**展示给用户确认** |
-| 7 | commit + tag | `chore: bump version to X.Y.Z`（本地发布可选） |
-| 8 | GitHub Release | **优先 push tag → CI 云端构建发布**（坑 2、3）；备选本地分步上传 |
+先判断模式。若用户没有明确说明，询问并说明影响：
 
-**gh-only 模式**：跳过 2-7，只执行第 8 步（用现有 zip 补发远端）。先确认 `Artifacts/Pulsar-v{ver}.zip` 与 csproj 版本一致、本地 tag 存在。**tag 已推送但 CI 未触发/失败时，删远端 tag 重推触发**（`git push origin :v{ver} && git push origin v{ver}`）。
+| 模式 | 行为 |
+|---|---|
+| `local-artifact` | 使用现有版本构建和打包；不修改版本号，不 commit，不 tag，不推送 |
+| `local-version` | 使用确认后的版本号更新项目版本，构建和打包；不 commit，不 tag，不推送 |
+| `release` | 更新版本，构建、打包、生成 release notes，并在用户确认后 commit/tag；推送和 GitHub Release 仍需明确授权 |
+
+用户说“发布一个本地版本”时，默认使用 `local-version`。
 
 ## 1. 版本决策
 
-- 用户给了显式版本（如 `/publish 1.6.1`）→ 直接使用
-- 否则：`grep -E "<Version>" Pulsar/Pulsar/Pulsar.csproj` 取当前版本；`git tag --sort=-creatordate | head -1` 取上次 tag；`git log --no-merges --pretty=format:%s <lastTag>..HEAD` 统计提交（剔除 `chore: bump version`）
-  - 含 `feat` 提交 → minor；含 `fix` → patch；否则保守 patch
-- **向用户展示建议版本和依据，确认后再继续**；用户指定版本时跳过
+先取得仓库根目录和当前项目版本：
 
-## 2. 构建
-
-```bash
-# 清空目标目录
-rm -rf "Artifacts/publish/v{ver}" && mkdir -p "Artifacts/publish/v{ver}"
-dotnet publish Pulsar/Pulsar/Pulsar.csproj -c Release -r win-x64 --self-contained true \
-  -p:PublishSingleFile=true -p:PublishReadyToRun=true \
-  "-p:PublishDir=Artifacts\publish\v{ver}\"
+```powershell
+$repo = (git rev-parse --show-toplevel).Trim()
+$csproj = Join-Path $repo 'Pulsar\Pulsar\Pulsar.csproj'
+$versionMatch = Select-String -Path $csproj -Pattern '<Version>([^<]+)</Version>'
+if ($versionMatch.Count -ne 1) { throw "Expected exactly one <Version> in $csproj" }
+$currentVersion = $versionMatch.Matches[0].Groups[1].Value
+Write-Output "Repository: $repo"
+Write-Output "Current version: $currentVersion"
 ```
 
-## 3. 校验产物
+- 用户给出显式版本 → 直接使用该版本。
+- 用户未给版本且是 `local-artifact` → 使用当前版本。
+- 用户未给版本且是 `local-version` 或 `release` → 查看最近 tag 和提交；包含 `feat` 时建议 minor，包含 `fix` 时建议 patch，否则建议保守 patch。
+- 向用户展示建议版本和依据，得到确认后再修改版本。
 
-`Artifacts/publish/v{ver}/` 下必须存在：`Pulsar.exe`、`Pulsar.pdb`、至少一个 `*_cor3.dll`（缺失则自包含应用无法启动）、`Assets/`。
+最近 tag 和提交检查：
 
-## 4. 打包 zip — 坑 1（PowerShell 5.1 Compress-Archive 失效）
+```powershell
+$lastTag = (git tag --sort=-creatordate | Select-Object -First 1).Trim()
+if ([string]::IsNullOrWhiteSpace($lastTag)) {
+    git log --no-merges --pretty=format:%s -20
+} else {
+    git log --no-merges --pretty=format:%s "$lastTag..HEAD"
+}
+```
 
-**不要**直接调 `powershell` 的 `Compress-Archive`：进程 PSModulePath 被 PS7 目录污染时，5.1 加载 PS7 的模块副本被执行策略拦截 → `CommandNotFoundException`。
+版本必须符合 `major.minor.patch`，并且不得低于当前版本，除非用户明确要求降级。
 
-按顺序尝试（成功后即止）：
+### 修改与校验版本
 
-```bash
-# 首选 pwsh（PowerShell 7，模块在自己目录）
-pwsh -NoProfile -Command "Compress-Archive -Path 'Artifacts\publish\v{ver}\*' -DestinationPath 'Artifacts\Pulsar-v{ver}.zip' -CompressionLevel Optimal -Force"
-# 备选 5.1 + Bypass
-powershell -NoProfile -ExecutionPolicy Bypass -Command "Compress-Archive -Path 'Artifacts\publish\v{ver}\*' -DestinationPath 'Artifacts\Pulsar-v{ver}.zip' -CompressionLevel Optimal -Force"
-# 兜底：System32 bsdtar（注意：PATH 里的 tar 是 Git 的 GNU tar，只会生成假 .zip，勿用）
-"C:\Windows\System32\tar.exe" -a -c -f "Artifacts/Pulsar-v{ver}.zip" -C "Artifacts/publish/v{ver}" <目录条目>
+只修改项目文件中的 `<Version>`。修改后使用结构化正则再次校验：
+
+```powershell
+$versionMatch = Select-String -Path $csproj -Pattern '<Version>([^<]+)</Version>'
+$actualVersion = $versionMatch.Matches[0].Groups[1].Value
+if ($actualVersion -ne $version) {
+    throw "Version mismatch: csproj=$actualVersion expected=$version"
+}
+```
+
+## 2. 初始化绝对路径
+
+每次发布都使用以下路径变量，不把相对路径传给 `PublishDir`：
+
+```powershell
+$repo = (git rev-parse --show-toplevel).Trim()
+$csproj = Join-Path $repo 'Pulsar\Pulsar\Pulsar.csproj'
+$publishDir = Join-Path $repo "Artifacts\publish\v$version"
+$zipPath = Join-Path $repo "Artifacts\Pulsar-v$version.zip"
+$projectArtifactsDir = Join-Path $repo 'Pulsar\Pulsar\Artifacts'
+
+if (-not (Test-Path -LiteralPath (Split-Path -Parent $publishDir))) {
+    New-Item -ItemType Directory -Path (Split-Path -Parent $publishDir) -Force | Out-Null
+}
+```
+
+`PublishDir` 必须是 `$publishDir\` 的绝对路径。不得依赖项目目录作为相对路径基准。
+
+## 3. 构建
+
+构建前清理目标版本目录和同名 ZIP。只清理本次版本的产物，不删除其他版本：
+
+```powershell
+if (Test-Path -LiteralPath $publishDir) {
+    Remove-Item -LiteralPath $publishDir -Recurse -Force
+}
+if (Test-Path -LiteralPath $zipPath) {
+    Remove-Item -LiteralPath $zipPath -Force
+}
+New-Item -ItemType Directory -Path $publishDir -Force | Out-Null
+
+dotnet publish $csproj `
+    -c Release `
+    -r win-x64 `
+    --self-contained true `
+    -p:PublishSingleFile=true `
+    -p:PublishReadyToRun=true `
+    "-p:PublishDir=$publishDir\"
+if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXITCODE" }
+```
+
+不要在发布后通过猜测路径复制产物。如果 `$publishDir` 不包含预期文件，应先检查 MSBuild 输出和项目文件，而不是静默搬运错误目录。
+
+## 4. 校验发布产物
+
+发布目录必须直接包含 `Pulsar.exe`、`Pulsar.pdb`、至少一个 `*_cor3.dll` 和 `Assets\`：
+
+```powershell
+$requiredFiles = @('Pulsar.exe', 'Pulsar.pdb')
+foreach ($name in $requiredFiles) {
+    $path = Join-Path $publishDir $name
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+        throw "Missing publish artifact: $path"
+    }
+}
+
+$assetsDir = Join-Path $publishDir 'Assets'
+if (-not (Test-Path -LiteralPath $assetsDir -PathType Container)) {
+    throw "Missing publish artifact directory: $assetsDir"
+}
+
+$cor3 = @(Get-ChildItem -LiteralPath $publishDir -Filter '*_cor3.dll' -File)
+if ($cor3.Count -eq 0) {
+    throw "No *_cor3.dll found in $publishDir"
+}
+
+$assetCount = @(Get-ChildItem -LiteralPath $assetsDir -Recurse -File).Count
+$exe = Get-Item -LiteralPath (Join-Path $publishDir 'Pulsar.exe')
+Write-Output "Publish artifacts valid: exe=$($exe.Length) bytes, cor3=$($cor3.Count), assets=$assetCount"
+```
+
+如果产物意外出现在 `$projectArtifactsDir`，停止并修正 `PublishDir` 为绝对路径；不得把嵌套目录作为成功产物。
+
+## 5. 打包 ZIP
+
+优先使用 PowerShell 7。`Compress-Archive` 的源路径可以使用通配符，但不要把该通配符传给 `-LiteralPath`：
+
+```powershell
+pwsh -NoProfile -Command "Compress-Archive -Path '$publishDir\*' -DestinationPath '$zipPath' -CompressionLevel Optimal -Force"
+if ($LASTEXITCODE -ne 0) { throw "pwsh Compress-Archive failed with exit code $LASTEXITCODE" }
+```
+
+如果 `pwsh` 不可用，再使用 PowerShell 5.1：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Compress-Archive -Path '$publishDir\*' -DestinationPath '$zipPath' -CompressionLevel Optimal -Force"
+if ($LASTEXITCODE -ne 0) { throw "powershell Compress-Archive failed with exit code $LASTEXITCODE" }
+```
+
+最后才使用 Windows 自带 bsdtar，不要使用 PATH 中可能来自 Git 的 GNU tar：
+
+```powershell
+& 'C:\Windows\System32\tar.exe' -a -c -f $zipPath -C $publishDir Assets Pulsar.exe Pulsar.pdb *.dll
+if ($LASTEXITCODE -ne 0) { throw "bsdtar failed with exit code $LASTEXITCODE" }
 ```
 
 详见 `Docs/lessons/POWERSHELL_5_1_COMPRESS_ARCHIVE_BROKEN.md`。
 
-## 5. 校验 zip
+如果必须复制目录，使用目录枚举，不要将 `*` 与 `-LiteralPath` 混用：
 
-- 魔数：`xxd Artifacts/Pulsar-v{ver}.zip | head -1` 必须 `504b`（PK）
-- 条目：`"C:\Windows\System32\tar.exe" -tf Artifacts/Pulsar-v{ver}.zip` 应含 `Pulsar.exe`、`Pulsar.pdb`、`Assets/`、`*_cor3.dll`
-
-## 6. Release notes
-
-用简洁中文撰写（面向最终用户），章节固定为 `### 新功能` / `### 修复` / `### 性能优化` / `### 其他`（无内容章节省略），每条 `- ` 一行，基于 git 提交提炼用户可感知的变化，剔除 bump/纯内部重构/文档噪音。**展示给用户确认**，确认后再用于 tag message 和 GitHub Release。
-
-## 7. commit + tag（本地发布；gh-only 跳过）
-
-```bash
-git add -- Pulsar/Pulsar/Pulsar.csproj
-git commit -m "chore: bump version to {ver}" -- Pulsar/Pulsar/Pulsar.csproj   # "nothing to commit" 则跳过
-git tag -a v{ver} -m "{notes}"                                                # 已存在则跳过
+```powershell
+Get-ChildItem -LiteralPath $sourceDir -Force |
+    Copy-Item -Destination $targetDir -Recurse -Force
 ```
 
-## 8. GitHub Release — 坑 2（顺序）与坑 3（# 路径）
+## 6. 校验 ZIP
 
-**推荐方式：push tag 后由 GitHub Actions 云端构建发布，本地不上传 zip**（80MB 上传慢且易超时；runner 到 GitHub 内网秒传）：
+```powershell
+if (-not (Test-Path -LiteralPath $zipPath -PathType Leaf)) {
+    throw "ZIP was not created: $zipPath"
+}
 
-```bash
-# 1. 第 7 步完成（或 tag 已存在）后推送 tag → 触发 .github/workflows/release.yml（匹配 v*）
-git push origin v{ver}
-# 2. 等待 CI：gh run list 查 run id，gh run watch <id>；失败则 gh run view --log-failed 排障
-# 3. 验证：gh release view v{ver} --json isDraft,assets （须非 draft 且含 Pulsar-v{ver}.zip）
+$bytes = [System.IO.File]::ReadAllBytes($zipPath)
+if ($bytes.Length -lt 2 -or $bytes[0] -ne 0x50 -or $bytes[1] -ne 0x4B) {
+    throw "ZIP magic is not PK"
+}
+
+Write-Output ('ZIP magic: {0:X2}{1:X2}' -f $bytes[0], $bytes[1])
+& 'C:\Windows\System32\tar.exe' -tf $zipPath
+if ($LASTEXITCODE -ne 0) { throw "ZIP listing failed with exit code $LASTEXITCODE" }
 ```
 
-CI 用 `--notes-from-tag` 读 notes，所以本地 tag 必须是 **annotated 且带 notes**（第 7 步已满足）。CI 对 draft/空资产半成品会自动清理接管；CI 产物校验（exe/pdb/cor3/Assets）与本地一致。
+条目必须包含 `Pulsar.exe`、`Pulsar.pdb`、`Assets/` 和 `*_cor3.dll`。最终报告 ZIP 绝对路径和字节大小。
 
-**备选（CI 不可用或要立即发本地产物）**：分步执行避免单次超时：
+## 7. Release notes
 
-```bash
-gh release create v{ver} --draft --title "Pulsar v{ver}" --notes-file <notes>  # 秒级
-gh release upload v{ver} <临时目录>/Pulsar-v{ver}.zip                          # 慢，耐心等
-gh release edit v{ver} --draft=false
+仅 `release` 模式需要 release notes。基于用户可感知的提交撰写简洁中文说明，固定使用以下章节，无内容章节省略：
+
+```markdown
+### 新功能
+- ...
+
+### 修复
+- ...
+
+### 性能优化
+- ...
+
+### 其他
+- ...
 ```
 
-**坑 2（顺序）**：`gh release create` 要求 tag 已推送，否则报 `tag exists locally but has not been pushed...`。**先 `git push origin v{ver}`**。
+展示 notes 并等待用户确认。未经确认不得用于 tag message 或 GitHub Release。
 
-**坑 3（# 路径）**：仓库路径含 `#`（如 `E:\8_Project\10_C#\Pulsar_Project`）时，gh CLI 把路径在 `#` 处截断（URL fragment）→ `GetFileAttributesEx E:\8_Project\10_C: ...`。**zip 和 notes 必须复制到无 # 的临时目录再传**：
+## 8. Commit 与 tag
 
-```bash
-mkdir -p "$TMP/pulsar-upload" && cp "Artifacts/Pulsar-v{ver}.zip" "$TMP/pulsar-upload/"
+`local-artifact` 和 `local-version` 模式跳过本节，并在最终报告中明确：`Commit: skipped`、`Tag: skipped`。
+
+`release` 模式在用户确认 release notes 后执行。提交前检查 `git status` 和 `git diff`，只暂存版本号文件：
+
+```powershell
+if ($LASTEXITCODE -ne 0) { throw "version commit failed" }
+git tag -a "v$version" -m "$notes"
+if ($LASTEXITCODE -ne 0) { throw "tag creation failed" }
+```
+
+若没有版本号变化，跳过 commit；若 tag 已存在，停止并询问用户，不覆盖已有 tag。
+
+## 9. GitHub Release
+
+只有用户明确授权推送或发布到 GitHub 时执行。优先推送 annotated tag，让 CI 构建：
+
+```powershell
+gh run watch <run-id>
+```
+
+若需要上传本地产物，因仓库路径包含 `#`，先复制到不含 `#` 的临时目录。不要直接把仓库路径传给 `gh`：
+
+```powershell
+$uploadDir = Join-Path $env:TEMP 'pulsar-upload'
+if (Test-Path -LiteralPath $uploadDir) { Remove-Item -LiteralPath $uploadDir -Recurse -Force }
+New-Item -ItemType Directory -Path $uploadDir -Force | Out-Null
+Copy-Item -LiteralPath $zipPath -Destination (Join-Path $uploadDir (Split-Path $zipPath -Leaf)) -Force
+```
+
+分步上传：
+
+```powershell
 ```
 
 详见 `Docs/lessons/GH_CLI_HASH_PATH_BUG.md`。
 
-## 9. 排障
+## 10. 排障
 
-- **失败后先读完整错误输出**，再查状态：
-  - 远端：`gh release list`、`git ls-remote --tags origin`
-  - 本地：`git status`、`git tag`、`git log --oneline -3`、`ls Artifacts/`
-- 已知坑：`Docs/lessons/POWERSHELL_5_1_COMPRESS_ARCHIVE_BROKEN.md`、`Docs/lessons/GH_CLI_HASH_PATH_BUG.md`
-- 常见情况：
-  - `tag exists locally but has not been pushed` → 先 `git push origin v{ver}`
-  - `GetFileAttributesEx <截断路径>` → gh 的 # 坑，走临时目录
-  - `CommandNotFoundException` → zip 的 PowerShell 坑，换 pwsh
-  - release 已存在 → 用 `gh release edit` 更新或 `gh release delete` 后重建（询问用户）
-- 扩展遗留的旧流程逻辑在 `.pi/extensions/publish-local/core.ts`（可参考/复用，smoke 测试：`node .pi/extensions/publish-local/smoke.ts`）
+失败后先执行并检查完整输出：
 
-## 10. 完成报告
+```powershell
+Get-ChildItem -LiteralPath (Join-Path $repo 'Artifacts') -Recurse
+```
 
-结束时向用户报告：产物路径与大小、zip 校验结果、commit/tag、GitHub Release 链接、推送状态。若有跳过/降级（如 gh 未登录、无 tag），明确说明。
+- `Pulsar.exe/PDB/Assets/cor3` 缺失：检查 `$publishDir` 是否为绝对路径，以及 `dotnet publish` 的最终输出路径。
+- 产物落在 `Pulsar/Pulsar/Artifacts`：清理该版本嵌套目录，修正 `PublishDir` 后从构建阶段重试。
+- `CommandNotFoundException` 或 `Compress-Archive` 失败：按 `pwsh` → `powershell -ExecutionPolicy Bypass` → System32 `tar.exe` 顺序降级。
+- ZIP 不是 `PK`：删除 ZIP，从打包阶段重试；不要使用 PATH 中的 GNU tar 生成伪 ZIP。
+- `GetFileAttributesEx` 路径被截断：将 ZIP/notes 复制到不含 `#` 的临时目录再调用 `gh`。
+- release 已存在或 tag 已存在：停止并询问用户，不删除、不覆盖。
+
+## 11. 完成报告
+
+最终报告必须包含：
+
+```text
+Mode: local-artifact | local-version | release
+Version: ...
+Publish directory: <absolute path>
+ZIP: <absolute path>
+ZIP size: ... bytes
+Pulsar.exe/PDB: present
+cor3 DLL count: ...
+Assets file count: ...
+Commit: created | skipped
+Tag: created | skipped
+GitHub Release: created | skipped
+Push: performed | skipped
+```
+
+若发生降级、跳过或路径纠正，必须在报告中明确说明。
