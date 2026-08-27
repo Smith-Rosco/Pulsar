@@ -44,6 +44,9 @@ namespace Pulsar.Services.WindowSwitching
 
         public long ExStyle { get; init; }
 
+        /// <summary>窗口样式（用于排除 WS_CHILD 子窗口）。</summary>
+        public long Style { get; init; }
+
         public IntPtr OwnerHwnd { get; init; }
 
         /// <summary>
@@ -71,6 +74,7 @@ namespace Pulsar.Services.WindowSwitching
                 IsVisible = PulsarNative.IsWindowVisible(hwnd),
                 IsCloaked = IsDwmCloaked(hwnd),
                 ExStyle = PulsarNative.GetWindowLong(hwnd, PulsarNative.GWL_EXSTYLE),
+                Style = PulsarNative.GetWindowLong(hwnd, PulsarNative.GWL_STYLE),
                 OwnerHwnd = PulsarNative.GetWindow(hwnd, PulsarNative.GW_OWNER),
                 Rect = TryGetWindowRect(hwnd),
                 VirtualScreenRect = GetVirtualScreenRect()
@@ -135,4 +139,3 @@ namespace Pulsar.Services.WindowSwitching
         }
     }
 }
-

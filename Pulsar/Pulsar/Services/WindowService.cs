@@ -308,6 +308,21 @@ namespace Pulsar.Services
                 _logger.LogDebug("[WindowHistory] ❌ Skipped: Pulsar itself (PID: {Pid})", processId);
                 return;
             }
+
+            // This is the final MRU write boundary. Event producers normally apply
+            // the same policy first, but a direct caller must not bypass it.
+            var snapshot = WindowEligibilitySnapshot.FromHwnd(
+                hwnd,
+                _eligibilityPolicy.HasTitleDependentRules);
+            var eligibility = _eligibilityPolicy.Evaluate(snapshot, BuildProcessBlacklistPredicate());
+            LogSwitchDiagnostics("history-record", snapshot, eligibility);
+            if (!eligibility.Included)
+            {
+                _logger.LogDebug("[WindowHistory] Skipped ineligible window (HWND: {Hwnd}, Verdict: {Verdict})",
+                    hwnd,
+                    eligibility.Verdict);
+                return;
+            }
             
             _quickSwitchEngine.RecordWindowActivation(hwnd, MaxHistorySize);
 
@@ -685,7 +700,9 @@ namespace Pulsar.Services
             // 这类"WS_VISIBLE 但屏幕外/零尺寸"的幽灵窗口，不再需要逐个硬编码类名。
             // 仅当存在标题依赖规则时才读取标题（避免热路径上的阻塞型 GetWindowText）。
             var snapshot = WindowEligibilitySnapshot.FromHwnd(hWnd, _eligibilityPolicy.HasTitleDependentRules);
-            return _eligibilityPolicy.Evaluate(snapshot, BuildProcessBlacklistPredicate()).Included;
+            var eligibility = _eligibilityPolicy.Evaluate(snapshot, BuildProcessBlacklistPredicate());
+            LogSwitchDiagnostics("alt-tab", snapshot, eligibility);
+            return eligibility.Included;
         }
 
         /// <summary>
@@ -1035,7 +1052,7 @@ namespace Pulsar.Services
             }
 
             _logger.LogInformation(
-                "[WindowSwitchDiagnostics] Stage={Stage} Hwnd=0x{Hwnd:X} Pid={Pid} Process='{ProcessName}' Class='{ClassName}' Title='{Title}' Visible={Visible} Cloaked={Cloaked} Iconic={Iconic} Owner=0x{Owner:X} ExStyle=0x{ExStyle:X} Rect={Rect} Included={Included} Verdict={Verdict}",
+                "[WindowSwitchDiagnostics] Stage={Stage} Hwnd=0x{Hwnd:X} Pid={Pid} Process='{ProcessName}' Class='{ClassName}' Title='{Title}' Visible={Visible} Cloaked={Cloaked} Iconic={Iconic} Owner=0x{Owner:X} Style=0x{Style:X} ExStyle=0x{ExStyle:X} Rect={Rect} Included={Included} Verdict={Verdict}",
                 stage,
                 snapshot.Hwnd.ToInt64(),
                 snapshot.Pid,
@@ -1046,6 +1063,7 @@ namespace Pulsar.Services
                 snapshot.IsCloaked,
                 snapshot.IsIconic,
                 snapshot.OwnerHwnd.ToInt64(),
+                snapshot.Style,
                 snapshot.ExStyle,
                 snapshot.Rect?.ToString() ?? "null",
                 result?.Included,

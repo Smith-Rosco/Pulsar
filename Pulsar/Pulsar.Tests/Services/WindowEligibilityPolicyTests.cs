@@ -88,6 +88,17 @@ namespace Pulsar.Tests.Services
         }
 
         [Fact]
+        public void ChildWindow_ShouldBeExcluded()
+        {
+            var policy = CreatePolicy();
+
+            var result = policy.Evaluate(EligibleSnapshot() with { Style = PulsarNative.WS_CHILD });
+
+            result.Included.Should().BeFalse();
+            result.Verdict.Should().Be(WindowEligibilityVerdict.ExcludedChild);
+        }
+
+        [Fact]
         public void OwnedNonAppWindow_ShouldBeExcluded()
         {
             var policy = CreatePolicy();

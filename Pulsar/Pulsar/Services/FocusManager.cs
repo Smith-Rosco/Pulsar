@@ -315,7 +315,17 @@ namespace Pulsar.Services
             _logger.LogInformation("[FocusManager] ActivateWindow: final result activated={Activated} actualForeground=0x{ActualFg:X} target=0x{Target:X}",
                 activated, actualFgAfter.ToInt64(), hWnd.ToInt64());
 
-            if (activated && options.FlashAfterActivation)
+            // SetForegroundWindow can return true for a child HWND while Windows
+            // keeps its top-level owner in the foreground. A switch only succeeds
+            // when the requested HWND is the actual foreground window.
+            bool foregroundMatchesTarget = actualFgAfter == hWnd;
+            if (activated && !foregroundMatchesTarget)
+            {
+                _logger.LogWarning("[FocusManager] ActivateWindow: foreground mismatch actual=0x{ActualFg:X} target=0x{Target:X}",
+                    actualFgAfter.ToInt64(), hWnd.ToInt64());
+            }
+
+            if (activated && foregroundMatchesTarget && options.FlashAfterActivation)
             {
                 var flashInfo = new PulsarNative.FLASHWINFO
                 {
@@ -328,8 +338,8 @@ namespace Pulsar.Services
                 _native.FlashWindowEx(ref flashInfo);
             }
 
-            bool verificationPassed = true;
-            IntPtr actualForeground = IntPtr.Zero;
+            bool verificationPassed = foregroundMatchesTarget;
+            IntPtr actualForeground = actualFgAfter;
 
             if (activated && options.VerifyAfterActivation)
             {

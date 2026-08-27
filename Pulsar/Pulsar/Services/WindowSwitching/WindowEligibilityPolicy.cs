@@ -22,6 +22,9 @@ namespace Pulsar.Services.WindowSwitching
         /// <summary>WS_EX_TOOLWINDOW（工具窗口，不参与 Alt-Tab）。</summary>
         ExcludedToolWindow,
 
+        /// <summary>WS_CHILD 子窗口，不是独立可切换窗口。</summary>
+        ExcludedChild,
+
         /// <summary>有 owner 且非 WS_EX_APPWINDOW（owned 弹窗，非独立任务）。</summary>
         ExcludedOwned,
 
@@ -123,6 +126,11 @@ namespace Pulsar.Services.WindowSwitching
             if ((snapshot.ExStyle & PulsarNative.WS_EX_TOOLWINDOW) != 0)
             {
                 return Excluded(WindowEligibilityVerdict.ExcludedToolWindow);
+            }
+
+            if ((snapshot.Style & PulsarNative.WS_CHILD) != 0)
+            {
+                return Excluded(WindowEligibilityVerdict.ExcludedChild);
             }
 
             if (snapshot.OwnerHwnd != IntPtr.Zero && (snapshot.ExStyle & PulsarNative.WS_EX_APPWINDOW) == 0)

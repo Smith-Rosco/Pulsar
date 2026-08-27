@@ -1,24 +1,9 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Repository-wide text policy: store and check out text as LF.
+# This is explicit so Windows core.autocrlf settings cannot reintroduce
+# CRLF-only working-tree files and recurring add/commit warnings.
+* text=auto eol=lf
 
-# C# source files - always use CRLF on Windows
-*.cs text eol=crlf
-*.csproj text eol=crlf
-*.sln text eol=crlf
-
-# XAML files - always use CRLF
-*.xaml text eol=crlf
-
-# Configuration files - always use CRLF
-*.json text eol=crlf
-*.xml text eol=crlf
-*.config text eol=crlf
-
-# Markdown and documentation - always use CRLF
-*.md text eol=crlf
-*.txt text eol=crlf
-
-# Scripts - use LF (cross-platform compatibility)
+# Scripts are explicitly LF for cross-platform execution.
 *.sh text eol=lf
 *.bash text eol=lf
 

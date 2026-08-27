@@ -1,10 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Pulsar.Core.Plugin;
+using Pulsar.Models;
 using Pulsar.Plugins.Core.WinSwitcher;
+using Pulsar.Services;
 using Pulsar.Services.Interfaces;
+using Pulsar.Services.Validation;
 using Pulsar.Services.WindowSwitching;
 
 namespace Pulsar.Tests.Plugins.Core
@@ -43,6 +48,41 @@ namespace Pulsar.Tests.Plugins.Core
 
             setting.Type.Should().Be(PluginSettingType.Boolean);
             setting.DefaultValue.Should().Be(false);
+        }
+
+        [Fact]
+        public void MetadataSchema_ShouldAllowSwitchDiagnostics()
+        {
+            var plugin = new WinSwitcherPlugin();
+
+            var property = plugin.GetMetadata().Schema!.Properties["EnableSwitchDiagnostics"];
+
+            property.Type.Should().Be("bool");
+            property.DefaultValue.Should().Be(false);
+        }
+
+        [Fact]
+        public async Task ConfigValidation_ShouldAllowPersistedSwitchDiagnostics()
+        {
+            var plugin = new WinSwitcherPlugin();
+            var metadataRegistry = new PluginMetadataRegistry(Mock.Of<ILogger<PluginMetadataRegistry>>());
+            metadataRegistry.Register(plugin.GetMetadata());
+            var pipeline = new ConfigValidationPipeline(
+                Mock.Of<IPluginRegistry>(),
+                metadataRegistry,
+                Mock.Of<ILogger<ConfigValidationPipeline>>());
+            var config = new ProfilesConfig();
+            config.Plugins[plugin.Id] = new PluginProfile
+            {
+                Config = new Dictionary<string, object>
+                {
+                    ["EnableSwitchDiagnostics"] = true
+                }
+            };
+
+            var result = await pipeline.ValidateAsync(config);
+
+            result.IsValid.Should().BeTrue();
         }
 
         [Fact]

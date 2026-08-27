@@ -1,0 +1,103 @@
+' --- CellCaster Script Template (Modified) ---
+' 作用: 全表设置等线字体 + 内容区域自动宽高
+' 性能优化: 面向大体量数据表
+'   1. 只对有内容的区域(UsedRange)设字体，绝不触碰 Cells(全表)
+'   2. 关闭分页符实时重算/事件/动画/告警，AutoFit 大幅提速
+'   3. 退出时完整恢复所有原始环境状态
+
+Sub Main()
+    ' 1. 错误处理
+    On Error GoTo ErrorHandler
+
+    ' 2. 保存原始环境状态(ExitHandler 中恢复)
+    Dim calcMode As XlCalculation
+    Dim evtEnabled As Boolean
+    Dim alertsEnabled As Boolean
+    Dim animEnabled As Boolean
+    Dim pageBreaksEnabled As Boolean
+
+    calcMode = Application.Calculation
+    evtEnabled = Application.EnableEvents
+    alertsEnabled = Application.DisplayAlerts
+    animEnabled = Application.EnableAnimations
+    pageBreaksEnabled = ActiveSheet.DisplayPageBreaks
+
+    ' 3. 性能优化: 关闭屏幕刷新/动画/事件/分页符，切为手动计算
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    Application.DisplayAlerts = False
+    Application.EnableAnimations = False
+    Application.Calculation = xlCalculationManual
+    ' 关闭分页符实时重算——这是 AutoFit 大量行列时最大的性能杀手
+    ActiveSheet.DisplayPageBreaks = False
+    Application.Cursor = xlWait
+
+    ' --- [核心逻辑区域 START] ---
+
+    ' 【修改点 1】: 只对有内容的区域设置字体
+    ' 切勿对 Cells(全表) 设置字体：那会把整表 100万行×1.6万列 的空单元格全部标记为
+    ' “已使用”，UsedRange 随即膨胀成整表，文件体积剧增，后续 AutoFit 直接卡死。
+    ' UsedRange 已覆盖所有非空/已格式化单元格；对空单元格设字体没有任何可见效果。
+    Dim rng As Range
+    Set rng = ActiveSheet.UsedRange
+
+    With rng
+        .Font.Name = "等线"
+        ' 如果你也希望全表都取消换行，可以保留下面这行；否则可以移除
+        .WrapText = False
+    End With
+
+    ' 【修改点 2】: 仅针对有内容的区域调整行高列宽
+    ' 注意：千万不要对 Cells 使用 AutoFit，否则 Excel 会卡死
+    With rng
+        .EntireRow.AutoFit
+        .EntireColumn.AutoFit
+    End With
+
+    ' --- [核心逻辑区域 END] ---
+    ' ==========================================
+    ' 追加功能：设置当前工作簿的默认形状为“红框无填充”
+    ' ==========================================
+    Dim ws As Worksheet
+    Dim tempShape As Shape
+
+    ' 获取当前活动的工作表
+    Set ws = ActiveSheet
+
+    ' 在非常靠外的区域（比如 A1 单元格附近）插入一个临时矩形
+    ' 参数依次为: 类型(矩形), Left, Top, Width, Height
+    Set tempShape = ws.Shapes.AddShape(msoShapeRectangle, 10, 10, 50, 50)
+
+    With tempShape
+        ' 1. 设置内部无填充
+        .Fill.Visible = msoFalse
+
+        ' 2. 设置边框颜色为红色 (RGB: 255, 0, 0)
+        .Line.ForeColor.RGB = RGB(255, 0, 0)
+
+        ' 3. 设置边框粗细为 1.5 磅
+        .Line.Weight = 2.25
+
+        ' 4. 将当前形状的属性设置为该工作簿的默认形状属性
+        .SetShapesDefaultProperties
+    End With
+
+    ' 5. 过河拆桥：删掉这个临时矩形
+    tempShape.Delete
+
+ExitHandler:
+    ' 4. 恢复环境（逆序恢复，与改动顺序对应）
+    Application.Cursor = xlDefault
+    ActiveSheet.DisplayPageBreaks = pageBreaksEnabled
+    Application.EnableAnimations = animEnabled
+    Application.DisplayAlerts = alertsEnabled
+    Application.EnableEvents = evtEnabled
+    Application.Calculation = calcMode
+    Application.ScreenUpdating = True
+    Exit Sub
+
+ErrorHandler:
+    ' 5. 错误报告
+    MsgBox "脚本执行出错: " & Err.Description, vbCritical, "Script Error"
+    Resume ExitHandler
+End Sub

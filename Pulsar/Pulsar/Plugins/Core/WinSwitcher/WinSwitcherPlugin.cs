@@ -431,6 +431,12 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                             DefaultValue = "",
                             Placeholder = "Select processes to exclude..."
                         },
+                        ["EnableSwitchDiagnostics"] = new PropertySchema
+                        {
+                            Type = "bool",
+                            Description = "Record detailed window eligibility and activation information for troubleshooting.",
+                            DefaultValue = false
+                        },
                         ["ExcludeRules"] = new PropertySchema
                         {
                             Type = "string",
