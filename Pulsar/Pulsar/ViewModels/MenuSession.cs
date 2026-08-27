@@ -935,21 +935,25 @@ namespace Pulsar.ViewModels
             await slot.ExecuteAsync(this);
         }
 
-        public void HandleKeyUp(GlobalKeyStruct e)
+        public void HandleKeyUp(GlobalKeyStruct e, Vector? releasePosition = null)
         {
             if (IsVisible)
             {
                 _lastMenuInteractionUtc = DateTime.UtcNow;
+
+                // Rendering-based mouse tracking is intentionally throttled. Use the
+                // position captured at key release when available so a fast move to
+                // a submenu slot cannot resolve against the previous sampled point.
+                if (releasePosition.HasValue)
+                {
+                    _lastMouseX = releasePosition.Value.X;
+                    _lastMouseY = releasePosition.Value.Y;
+                }
             }
 
             if (++_logSampleCounter % LOG_SAMPLE_RATE == 0)
             {
                 _logger?.LogDebug("[HandleKeyUp] Key: {Key}, IsVisible: {IsVisible}", e.VkCode, IsVisible);
-            }
-
-            if (_isTransitioning)
-            {
-                return;
             }
 
             if (IsVisible && e.VkCode == VK_ESCAPE)
@@ -969,6 +973,55 @@ namespace Pulsar.ViewModels
             bool releaseTriggersExecution =
                 IsReleaseTriggerForActiveInvocation(e.VkCode)
                 || (_activeHotkeyInvocation == null && IsMajorModifierRelease(e.VkCode));
+
+            // A submenu transition is visual work only. It must never consume the
+            // release of the key that owns the menu lifetime. Cancel the transition
+            // and close synchronously so a slow animation cannot leave the panel up.
+            if (_isTransitioning && releaseTriggersExecution)
+            {
+                _logger?.LogDebug("[HandleKeyUp] Cancelling submenu transition on hotkey release");
+                _subMenuTransitionCts?.Cancel();
+                if (_menuState == MenuState.SubMenu)
+                {
+                    double releaseX = _lastMouseX;
+                    double releaseY = _lastMouseY;
+                    double submenuCenterX = _lastClickRelativeX;
+                    double submenuCenterY = _lastClickRelativeY;
+
+                    // Keep hit-testing and strategy execution on the UI thread. The
+                    // hook callback may run on a native hook thread, while the slot
+                    // collection and WPF-bound properties belong to the dispatcher.
+                    _ui.BeginInvoke(() =>
+                    {
+                        int releasedSlotIndex = HitTestAt(
+                            new Point(submenuCenterX, submenuCenterY),
+                            new Vector(releaseX, releaseY));
+                        UpdateActiveSlot(releasedSlotIndex);
+
+                        var selectionTask = ExecuteSelectionAsync();
+                        selectionTask.ContinueWith(t =>
+                        {
+                            if (t.IsFaulted)
+                            {
+                                _logger?.LogError(t.Exception, "[HandleKeyUp] Submenu release selection failed");
+                            }
+                        }, TaskScheduler.Default);
+                    });
+
+                    IsVisible = false;
+                }
+                else
+                {
+                    IsVisible = false;
+                }
+
+                return;
+            }
+
+            if (_isTransitioning)
+            {
+                return;
+            }
 
             if (!IsVisible)
             {
@@ -1100,11 +1153,13 @@ namespace Pulsar.ViewModels
 
         public void HandlePointerMoved(Vector relativePosition)
         {
-            if (!IsVisible || _isTransitioning) return;
+            if (!IsVisible) return;
 
             _lastMenuInteractionUtc = DateTime.UtcNow;
             _lastMouseX = relativePosition.X;
             _lastMouseY = relativePosition.Y;
+
+            if (_isTransitioning) return;
 
             _animationController.UpdateMagnetism(relativePosition);
 
@@ -1122,14 +1177,19 @@ namespace Pulsar.ViewModels
         /// </summary>
         public int HitTest(Vector relativePosition)
         {
-            double dx = relativePosition.X - _menuCenterX;
-            double dy = relativePosition.Y - _menuCenterY;
+            return HitTestAt(new Point(_menuCenterX, _menuCenterY), relativePosition);
+        }
+
+        private int HitTestAt(Point center, Vector relativePosition)
+        {
+            double dx = relativePosition.X - center.X;
+            double dy = relativePosition.Y - center.Y;
             if (Math.Sqrt(dx * dx + dy * dy) < GetDeadZoneRadius())
             {
                 return 0;
             }
 
-            var parameters = new LayoutParameters(_menuCenterX, _menuCenterY, _currentRadius, GetDeadZoneRadius(), _slotsPerPage);
+            var parameters = new LayoutParameters(center.X, center.Y, _currentRadius, GetDeadZoneRadius(), _slotsPerPage);
             return _slotLayoutEngine.HitTest(relativePosition, parameters);
         }
 
@@ -1582,6 +1642,13 @@ namespace Pulsar.ViewModels
                 var enterDuration = GetSubMenuEnterDuration(submenuDistance);
                 var bloomDuration = GetSubMenuBloomDuration(enterDuration);
 
+                // Prepare child slot actions before starting the visual morph. A
+                // release during the morph must still be able to resolve a child
+                // slot from the pointer position and execute it immediately.
+                var mostRecentWin = _subMenuCoordinator.ConfigureSubMenu(
+                    _subMenuWindows, processName, _slotsPerPage, _subMenuPage, CenterSlot, Slots);
+                UpdateSubMenuCenterLabel();
+
                 var glideViewportCenter = AnimateMenuCenterAsync(
                     submenuCenter,
                     enterDuration,
@@ -1645,10 +1712,6 @@ namespace Pulsar.ViewModels
                 }
 
                 CenterText = _loc["RadialMenu.Back"];
-                var mostRecentWin = _subMenuCoordinator.ConfigureSubMenu(
-                    _subMenuWindows, processName, _slotsPerPage, _subMenuPage, CenterSlot, Slots);
-                UpdateSubMenuCenterLabel();
-
                 CenterSlot.ResetAnimation();
                 foreach (var slot in childSlots)
                 {

@@ -80,6 +80,34 @@ namespace Pulsar.Tests.ViewModels
         }
 
         [Fact]
+        public void HandleKeyUp_ShouldDismissImmediately_DuringSubmenuTransition()
+        {
+            var session = CreateSession();
+            session.IsVisible = true;
+            session.OnHotkeyInvoked(new HotkeyInvocationEventArgs(
+                "show-switcher",
+                0x09,
+                requiresCtrl: false,
+                requiresShift: false,
+                requiresAlt: true,
+                requiresWin: false,
+                new Point(250, 250)));
+
+            typeof(MenuSession)
+                .GetField("_isTransitioning", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .SetValue(session, true);
+
+            session.HandleKeyUp(new GlobalKeyStruct(
+                0x09,
+                isCtrl: false,
+                isShift: false,
+                isAlt: false,
+                isWin: false));
+
+            session.IsVisible.Should().BeFalse();
+        }
+
+        [Fact]
         public async Task HandleGestureRightReleaseAsync_OverEmptySpace_ShouldDismissMenu()
         {
             var session = CreateSession();

@@ -121,7 +121,14 @@ namespace Pulsar.ViewModels
 
         private void OnGlobalKeyUp(object? sender, GlobalKeyStruct e)
         {
-            _session.HandleKeyUp(e);
+            Vector? releasePosition = null;
+            if (_session.IsVisible
+                && PulsarNative.GetCursorPos(out var cursorPoint))
+            {
+                releasePosition = _mouseTrackingService.ToRelative(cursorPoint.X, cursorPoint.Y);
+            }
+
+            _session.HandleKeyUp(e, releasePosition);
         }
 
         private void OnConfigUpdated()
