@@ -70,6 +70,9 @@ jobs:
               Write-Host "已清理半成品 release（draft 或无资产），由 CI 接管"
             }
           }
+          # runner 的 pwsh 包装器以 $LASTEXITCODE 作为步骤退出码；gh view 在
+          # release 不存在时返回 1，这里重置，避免把「不存在」当成步骤失败。
+          $LASTEXITCODE = 0
           Add-Content -Path $env:GITHUB_OUTPUT -Value "exists=$exists"
 
       - name: Create Release
