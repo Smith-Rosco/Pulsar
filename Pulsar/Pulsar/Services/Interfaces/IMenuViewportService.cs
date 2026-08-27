@@ -61,7 +61,7 @@ namespace Pulsar.Services.Interfaces
         /// Moves/resizes <paramref name="window"/> to cover the work area of the monitor
         /// under the cursor and calculates the clamped menu center.
         /// </summary>
-        MenuViewportLayout PrepareViewport(Window window, double menuExtentDip);
+        MenuViewportLayout PrepareViewport(Window window, double menuExtentDip, Point? cursorScreenPoint = null);
 
         /// <summary>
         /// Shrinks the window back to a 1x1 transparent surface. Must be called after

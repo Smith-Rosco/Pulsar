@@ -1,5 +1,6 @@
 using Pulsar.Models;
 using Pulsar.Native;
+using System.Windows;
 
 namespace Pulsar.Services.Interfaces
 {
@@ -11,7 +12,8 @@ namespace Pulsar.Services.Interfaces
             bool requiresCtrl,
             bool requiresShift,
             bool requiresAlt,
-            bool requiresWin)
+            bool requiresWin,
+            Point invocationPoint)
         {
             ActionId = actionId;
             MainVkCode = mainVkCode;
@@ -19,6 +21,7 @@ namespace Pulsar.Services.Interfaces
             RequiresShift = requiresShift;
             RequiresAlt = requiresAlt;
             RequiresWin = requiresWin;
+            InvocationPoint = invocationPoint;
         }
 
         public string ActionId { get; }
@@ -27,6 +30,7 @@ namespace Pulsar.Services.Interfaces
         public bool RequiresShift { get; }
         public bool RequiresAlt { get; }
         public bool RequiresWin { get; }
+        public Point InvocationPoint { get; }
     }
 
     public interface IHotkeyService

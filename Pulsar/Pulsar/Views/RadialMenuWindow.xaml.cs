@@ -144,7 +144,7 @@ namespace Pulsar.Views
             // 1. Expand the resident 1x1 window to the work area of the monitor under
             //    the cursor, then place the 500x500 menu canvas around the clamped
             //    pointer position.
-            var viewport = _menuViewportService.PrepareViewport(this, MenuVisualExtentDip);
+            var viewport = _menuViewportService.PrepareViewport(this, MenuVisualExtentDip, _viewModel.GetInvocationPointScreen());
             _viewModel.SetMenuCenter(viewport.MenuCenterDip);
 
             // Kando-style pointer correction: when the menu center had to move away

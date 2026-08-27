@@ -160,6 +160,7 @@ namespace Pulsar.ViewModels
         private CancellationTokenSource? _menuWatchdogCts;
         private DateTime _lastMenuInteractionUtc = DateTime.UtcNow;
         private HotkeyInvocationSnapshot? _activeHotkeyInvocation;
+        private Point? _invocationPointScreen;
 
         /// <summary>
         /// How this session was summoned. Drives the input policy: gesture sessions
@@ -231,6 +232,7 @@ namespace Pulsar.ViewModels
                     {
                         InvocationSource = MenuInvocationSource.Hotkey;
                         _activeHotkeyInvocation = null;
+                        _invocationPointScreen = null;
                         _menuWatchdogCts?.Cancel();
                         _menuWatchdogCts = null;
                         _hotkeyService.ResetModifierState();
@@ -881,7 +883,12 @@ namespace Pulsar.ViewModels
         public void OnHotkeyInvoked(HotkeyInvocationEventArgs e)
         {
             _activeHotkeyInvocation = new HotkeyInvocationSnapshot(e);
+            _invocationPointScreen = e.InvocationPoint;
         }
+
+        public Point? GetInvocationPointScreen() => _invocationPointScreen;
+
+        public void SetInvocationPointScreen(Point point) => _invocationPointScreen = point;
 
         public bool HandlePagingKey(int direction)
         {

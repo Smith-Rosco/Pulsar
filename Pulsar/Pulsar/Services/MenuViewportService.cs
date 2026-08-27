@@ -16,7 +16,7 @@ namespace Pulsar.Services
 
         public MenuViewportLayout? CurrentLayout { get; private set; }
 
-        public MenuViewportLayout PrepareViewport(Window window, double menuExtentDip)
+        public MenuViewportLayout PrepareViewport(Window window, double menuExtentDip, Point? cursorScreenPoint = null)
         {
             if (window == null)
             {
@@ -28,7 +28,16 @@ namespace Pulsar.Services
                 throw new ArgumentOutOfRangeException(nameof(menuExtentDip));
             }
 
-            if (!PulsarNative.GetCursorPos(out var cursor))
+            PulsarNative.POINT cursor;
+            if (cursorScreenPoint.HasValue)
+            {
+                cursor = new PulsarNative.POINT
+                {
+                    X = (int)Math.Round(cursorScreenPoint.Value.X),
+                    Y = (int)Math.Round(cursorScreenPoint.Value.Y)
+                };
+            }
+            else if (!PulsarNative.GetCursorPos(out cursor))
             {
                 cursor = default;
             }

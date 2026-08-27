@@ -219,7 +219,7 @@ namespace Pulsar.ViewModels
                 return;
             }
 
-            dispatcher.Invoke(action);
+            _ = dispatcher.InvokeAsync(action);
         }
 
         // ============ Right-drag summon gesture ============
@@ -268,6 +268,7 @@ namespace Pulsar.ViewModels
                 {
                     e.Handled = true;
                     _logger?.LogDebug("[RightDragGesture] Action summon: swallowed right-down at ({X},{Y})", e.X, e.Y);
+                    _session.SetInvocationPointScreen(new System.Windows.Point(e.X, e.Y));
                     InvokeOnUi(() => _ = ShowAsync(RadialMenuMode.Action, MenuInvocationSource.RightDragGesture));
                     return true;
                 }
@@ -276,6 +277,7 @@ namespace Pulsar.ViewModels
                 {
                     e.Handled = true;
                     _logger?.LogDebug("[RightDragGesture] Switcher summon: swallowed right-down at ({X},{Y})", e.X, e.Y);
+                    _session.SetInvocationPointScreen(new System.Windows.Point(e.X, e.Y));
                     InvokeOnUi(() => _ = ShowAsync(RadialMenuMode.Task, MenuInvocationSource.RightDragGesture));
                     return true;
                 }
@@ -395,6 +397,8 @@ namespace Pulsar.ViewModels
         }
 
         public void SetMenuCenter(Point center) => _session.SetMenuCenter(center);
+
+        public Point? GetInvocationPointScreen() => _session.GetInvocationPointScreen();
 
         public PreviewHostContext GetPreviewHostContext() => _session.GetPreviewHostContext();
 

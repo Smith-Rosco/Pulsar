@@ -362,7 +362,8 @@ namespace Pulsar.Services
                         item.ReqCtrl,
                         item.ReqShift,
                         item.ReqAlt,
-                        item.ReqWin));
+                        item.ReqWin,
+                        GetCursorPoint()));
 
                     Application.Current.Dispatcher.InvokeAsync(() => item.Action.Invoke());
                     e.Handled = true;
@@ -371,6 +372,13 @@ namespace Pulsar.Services
             }
 
             return false;
+        }
+
+        private static System.Windows.Point GetCursorPoint()
+        {
+            return PulsarNative.GetCursorPos(out var point)
+                ? new System.Windows.Point(point.X, point.Y)
+                : new System.Windows.Point();
         }
 
         private bool IsModifierKey(int vkCode)
