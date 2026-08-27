@@ -51,25 +51,34 @@ jobs:
         run: |
           # 有效 release = 非 draft 且至少 1 个资产。draft / 空资产视为半成品
           # （如本地上传中断留下的草稿），清理后由 CI 接管，避免 CI 被空 draft 阻塞。
+          # runner 的 pwsh 默认 $PSNativeCommandUseErrorActionPreference=$true 且
+          # ErrorActionPreference=Stop，任何 gh 命令非零退出（如 release 不存在）都会抛错终止。
+          # 关闭该行为，改用 $LASTEXITCODE 显式判断。
+          $PSNativeCommandUseErrorActionPreference = $false
           $exists = $false
+          $info = $null
           try {
-            # 注意：runner 的 pwsh 设 ErrorActionPreference=Stop，原生命令写 stderr 会抛错，
-            # 必须用 2>&1 合并重定向（2>$null 仍可能触发 NativeCommandError）。
-            $info = gh release view "${{ github.ref_name }}" --json isDraft,assets 2>&1 | ConvertFrom-Json
-            if ($info -and -not $info.isDraft -and $info.assets.Count -gt 0) {
+            $info = gh release view "${{ github.ref_name }}" --json isDraft,assets 2>$null | ConvertFrom-Json
+          } catch { }
+          if ($info) {
+            if (-not $info.isDraft -and $info.assets.Count -gt 0) {
               $exists = $true
-            } elseif ($info) {
-              gh release delete "${{ github.ref_name }}" --yes 2>&1 | Out-Null
+            } else {
+              # 有效 release = 非 draft 且至少 1 个资产。draft / 空资产视为半成品
+              # （如本地上传中断留下的草稿），清理后由 CI 接管，避免 CI 被空 draft 阻塞。
+              gh release delete "${{ github.ref_name }}" --yes 2>$null | Out-Null
               Write-Host "已清理半成品 release（draft 或无资产），由 CI 接管"
             }
-          } catch { }
+          }
           Add-Content -Path $env:GITHUB_OUTPUT -Value "exists=$exists"
 
       - name: Create Release
         if: steps.release_check.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
+        shell: pwsh
         run: |
+          $PSNativeCommandUseErrorActionPreference = $false
           $tag = "${{ github.ref_name }}"
           $name = "Pulsar $tag"
           gh release create $tag --title "$name" --notes-from-tag
@@ -80,5 +89,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
+          $PSNativeCommandUseErrorActionPreference = $false
           Compress-Archive -Path publish\* -DestinationPath Pulsar-${{ github.ref_name }}.zip
           gh release upload ${{ github.ref_name }} Pulsar-${{ github.ref_name }}.zip
