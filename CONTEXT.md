@@ -78,6 +78,12 @@ _Avoid_: Context, window state, environment
 A stack-scoped per-execution scope carrying correlation data (plugin ID, Action, execution ID). Distinct from PulsarContext, which never holds per-execution data.
 _Avoid_: Context
 
+### Statistics
+
+**Usage Stats Read Model**:
+The pure-logic module that projects plugin usage statistics into display rows, heatmaps, and summary metrics. Loads a snapshot from the usage tracker once, then re-projects in memory for time-range filters and sort order; also renders CSV. The ViewModel holds binding collections and forwards filter/sort intent.
+_Avoid_: analytics page logic, statistics service
+
 ### Configuration & Secrets
 
 **Profile**:

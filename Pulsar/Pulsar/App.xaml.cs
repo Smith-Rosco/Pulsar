@@ -204,6 +204,7 @@ namespace Pulsar
             serviceCollection.AddTransient<SettingsPluginsPage>();
             
             // [New] Usage Analytics UI
+            serviceCollection.AddTransient<UsageStatsReadModel>();
             serviceCollection.AddTransient<SettingsAnalyticsPageViewModel>();
             serviceCollection.AddTransient<SettingsAnalyticsPage>();
 

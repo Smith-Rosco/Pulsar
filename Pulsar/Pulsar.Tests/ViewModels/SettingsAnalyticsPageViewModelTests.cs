@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -61,162 +60,50 @@ namespace Pulsar.Tests.ViewModels
             };
         }
 
-        [Fact]
-        public async Task LoadAsync_PopulatesMostUsedPlugins_FromTrackerData()
+        private void SetupTracker(IEnumerable<IPulsarPlugin> plugins, Dictionary<string, PluginUsageStats> allStats)
         {
-            var plugins = new List<IPulsarPlugin>
-            {
-                CreatePlugin("plugin.a", "Plugin A"),
-                CreatePlugin("plugin.b", "Plugin B"),
-                CreatePlugin("plugin.c", "Plugin C")
-            };
-
-            var stats = new List<PluginUsageStats>
-            {
-                CreateStats("plugin.a", 100),
-                CreateStats("plugin.b", 50),
-                CreateStats("plugin.c", 25)
-            };
-
-            var allStats = stats.ToDictionary(s => s.PluginId);
-
-            _registryMock.Setup(r => r.GetAllPlugins()).Returns(plugins);
-            _usageTrackerMock.Setup(u => u.GetMostUsedPlugins(20)).Returns(stats);
+            _registryMock.Setup(r => r.GetAllPlugins()).Returns(new List<IPulsarPlugin>(plugins));
             _usageTrackerMock.Setup(u => u.GetAllStats()).Returns(allStats);
+        }
 
-            var vm = new SettingsAnalyticsPageViewModel(
-                _usageTrackerMock.Object,
+        private SettingsAnalyticsPageViewModel CreateViewModel(
+            IPluginRecommendationEngine? recommendationEngine = null)
+        {
+            var readModel = new UsageStatsReadModel(_usageTrackerMock.Object, _registryMock.Object, _loc);
+            return new SettingsAnalyticsPageViewModel(
+                readModel,
                 _registryMock.Object,
                 _loggerMock.Object,
                 _loc,
-                _recEngineMock.Object);
+                recommendationEngine);
+        }
 
+        [Fact]
+        public async Task LoadAsync_RefreshesData_FromReadModel()
+        {
+            var plugins = new List<IPulsarPlugin> { CreatePlugin("plugin.a", "Plugin A") };
+            var stats = new Dictionary<string, PluginUsageStats>
+            {
+                { "plugin.a", CreateStats("plugin.a", 100) }
+            };
+            SetupTracker(plugins, stats);
+
+            var vm = CreateViewModel(_recEngineMock.Object);
             await vm.LoadAsync();
 
-            vm.MostUsedPlugins.Should().HaveCount(3);
-            vm.MostUsedPlugins[0].PluginId.Should().Be("plugin.a");
-            vm.MostUsedPlugins[0].DisplayName.Should().Be("Plugin A");
-            vm.MostUsedPlugins[0].Rank.Should().Be(1);
-            vm.MostUsedPlugins[0].TotalExecutions.Should().Be(100);
             vm.HasData.Should().BeTrue();
-        }
-
-        [Fact]
-        public async Task LoadAsync_PopulatesSlotHeatmapAndHourlyHeatmap()
-        {
-            var plugins = new List<IPulsarPlugin>
-            {
-                CreatePlugin("plugin.a", "Plugin A")
-            };
-
-            var stats = new List<PluginUsageStats>
-            {
-                CreateStats("plugin.a", 100, favoriteSlot: 2)
-            };
-
-            var allStats = stats.ToDictionary(s => s.PluginId);
-
-            _registryMock.Setup(r => r.GetAllPlugins()).Returns(plugins);
-            _usageTrackerMock.Setup(u => u.GetMostUsedPlugins(20)).Returns(stats);
-            _usageTrackerMock.Setup(u => u.GetAllStats()).Returns(allStats);
-
-            var vm = new SettingsAnalyticsPageViewModel(
-                _usageTrackerMock.Object,
-                _registryMock.Object,
-                _loggerMock.Object,
-                _loc,
-                _recEngineMock.Object);
-
-            await vm.LoadAsync();
-
+            vm.MostUsedPlugins.Should().HaveCount(1);
             vm.SlotHeatmap.Should().NotBeEmpty();
-            vm.HasHeatmap.Should().BeTrue();
             vm.HourlyHeatmap.Should().HaveCount(24);
-            vm.HasHourlyHeatmap.Should().BeTrue();
-        }
-
-        [Fact]
-        public async Task LoadAsync_ComputesSummaryMetrics()
-        {
-            var plugins = new List<IPulsarPlugin>
-            {
-                CreatePlugin("plugin.a", "Plugin A"),
-                CreatePlugin("plugin.b", "Plugin B")
-            };
-
-            var todayKey = DateTime.Now.ToString("yyyy-MM-dd");
-            var day2Key = DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd");
-            var day3Key = DateTime.Now.AddDays(-2).ToString("yyyy-MM-dd");
-
-            var statA = new PluginUsageStats
-            {
-                PluginId = "plugin.a",
-                TotalExecutions = 100,
-                SuccessCount = 100,
-                AverageExecutionTimeMs = 100,
-                LastUsed = DateTime.UtcNow,
-                DailyStats = new Dictionary<string, int>
-                {
-                    { todayKey, 10 },
-                    { day2Key, 10 },
-                    { day3Key, 10 }
-                },
-                SlotUsage = new Dictionary<int, int> { { 1, 100 } },
-                HourlyUsage = new Dictionary<int, int> { { DateTime.Now.Hour, 100 } }
-            };
-
-            var statB = new PluginUsageStats
-            {
-                PluginId = "plugin.b",
-                TotalExecutions = 50,
-                SuccessCount = 50,
-                AverageExecutionTimeMs = 100,
-                LastUsed = DateTime.UtcNow,
-                DailyStats = new Dictionary<string, int>
-                {
-                    { todayKey, 5 },
-                    { day2Key, 5 },
-                    { day3Key, 5 }
-                },
-                SlotUsage = new Dictionary<int, int> { { 2, 50 } },
-                HourlyUsage = new Dictionary<int, int> { { DateTime.Now.Hour, 50 } }
-            };
-
-            var stats = new List<PluginUsageStats> { statA, statB };
-            var allStats = stats.ToDictionary(s => s.PluginId);
-
-            _registryMock.Setup(r => r.GetAllPlugins()).Returns(plugins);
-            _usageTrackerMock.Setup(u => u.GetMostUsedPlugins(20)).Returns(stats);
-            _usageTrackerMock.Setup(u => u.GetAllStats()).Returns(allStats);
-
-            var vm = new SettingsAnalyticsPageViewModel(
-                _usageTrackerMock.Object,
-                _registryMock.Object,
-                _loggerMock.Object,
-                _loc,
-                _recEngineMock.Object);
-
-            await vm.LoadAsync();
-
-            vm.TotalOverallExecutions.Should().Be(150);
-            vm.ActivePluginCount.Should().Be(2);
-            vm.TotalTodayExecutions.Should().Be(15);
-            vm.TotalWeekExecutions.Should().Be(45);
+            vm.TotalOverallExecutions.Should().Be(100);
         }
 
         [Fact]
         public async Task LoadAsync_HandlesEmptyData_Gracefully()
         {
-            _registryMock.Setup(r => r.GetAllPlugins()).Returns(new List<IPulsarPlugin>());
-            _usageTrackerMock.Setup(u => u.GetMostUsedPlugins(20)).Returns(new List<PluginUsageStats>());
-            _usageTrackerMock.Setup(u => u.GetAllStats()).Returns(new Dictionary<string, PluginUsageStats>());
+            SetupTracker(new List<IPulsarPlugin>(), new Dictionary<string, PluginUsageStats>());
 
-            var vm = new SettingsAnalyticsPageViewModel(
-                _usageTrackerMock.Object,
-                _registryMock.Object,
-                _loggerMock.Object,
-                _loc);
-
+            var vm = CreateViewModel();
             await vm.LoadAsync();
 
             vm.HasData.Should().BeFalse();
@@ -227,14 +114,9 @@ namespace Pulsar.Tests.ViewModels
         [Fact]
         public async Task LoadAsync_SetsErrorState_OnException()
         {
-            _usageTrackerMock.Setup(u => u.GetMostUsedPlugins(20)).Throws(new InvalidOperationException("test error"));
+            _usageTrackerMock.Setup(u => u.GetAllStats()).Throws(new InvalidOperationException("test error"));
 
-            var vm = new SettingsAnalyticsPageViewModel(
-                _usageTrackerMock.Object,
-                _registryMock.Object,
-                _loggerMock.Object,
-                _loc);
-
+            var vm = CreateViewModel();
             await vm.LoadAsync();
 
             vm.HasError.Should().BeTrue();
@@ -242,33 +124,57 @@ namespace Pulsar.Tests.ViewModels
         }
 
         [Fact]
+        public async Task TimeRangeChange_RepositionsRows_FromReadModel()
+        {
+            var plugins = new List<IPulsarPlugin> { CreatePlugin("plugin.a", "Plugin A") };
+            var stat = CreateStats("plugin.a", 30, today: 5);
+            SetupTracker(plugins, new Dictionary<string, PluginUsageStats> { { "plugin.a", stat } });
+
+            var vm = CreateViewModel();
+            await vm.LoadAsync();
+
+            vm.TimeRange = AnalyticsTimeRange.Today;
+            vm.MostUsedPlugins.Should().HaveCount(1);
+            vm.MostUsedPlugins[0].TotalExecutions.Should().Be(5);
+        }
+
+        [Fact]
         public async Task RefreshCommand_ReinvokesLoadAsync()
         {
-            _registryMock.Setup(r => r.GetAllPlugins()).Returns(new List<IPulsarPlugin>());
-            _usageTrackerMock.Setup(u => u.GetMostUsedPlugins(20)).Returns(new List<PluginUsageStats>());
-            _usageTrackerMock.Setup(u => u.GetAllStats()).Returns(new Dictionary<string, PluginUsageStats>());
+            SetupTracker(new List<IPulsarPlugin>(), new Dictionary<string, PluginUsageStats>());
 
-            var vm = new SettingsAnalyticsPageViewModel(
-                _usageTrackerMock.Object,
-                _registryMock.Object,
-                _loggerMock.Object,
-                _loc);
-
+            var vm = CreateViewModel();
             await vm.LoadAsync();
             vm.HasData.Should().BeFalse();
 
             var plugins = new List<IPulsarPlugin> { CreatePlugin("plugin.a", "Plugin A") };
-            var stats = new List<PluginUsageStats> { CreateStats("plugin.a", 100) };
-            var allStats = stats.ToDictionary(s => s.PluginId);
-
-            _registryMock.Setup(r => r.GetAllPlugins()).Returns(plugins);
-            _usageTrackerMock.Setup(u => u.GetMostUsedPlugins(20)).Returns(stats);
-            _usageTrackerMock.Setup(u => u.GetAllStats()).Returns(allStats);
+            var stats = new Dictionary<string, PluginUsageStats> { { "plugin.a", CreateStats("plugin.a", 100) } };
+            SetupTracker(plugins, stats);
 
             await vm.RefreshCommand.ExecuteAsync(null);
 
             vm.HasData.Should().BeTrue();
             vm.MostUsedPlugins.Should().HaveCount(1);
+        }
+
+        [Fact]
+        public async Task LoadAsync_PopulatesRecommendations_WhenEngineProvided()
+        {
+            SetupTracker(new List<IPulsarPlugin>(), new Dictionary<string, PluginUsageStats>());
+
+            var rec = new PluginRecommendation
+            {
+                Type = RecommendationType.DisableUnusedPlugin,
+                Title = "Title",
+                PluginId = "plugin.a"
+            };
+            _recEngineMock.Setup(r => r.GetRecommendations()).Returns(new List<PluginRecommendation> { rec });
+
+            var vm = CreateViewModel(_recEngineMock.Object);
+            await vm.LoadAsync();
+
+            vm.HasRecommendations.Should().BeTrue();
+            vm.Recommendations.Should().HaveCount(1);
         }
     }
 }

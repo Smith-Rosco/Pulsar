@@ -15,98 +15,13 @@ using Microsoft.Win32;
 
 namespace Pulsar.ViewModels.Settings
 {
-    public enum AnalyticsTimeRange
-    {
-        AllTime,
-        Today,
-        ThisWeek,
-        ThisMonth
-    }
-
-    public enum SortColumn
-    {
-        Executions,
-        SuccessRate,
-        Duration,
-        LastUsed
-    }
-
-    public class AnalyticsItem
-    {
-        public string PluginId { get; set; } = string.Empty;
-        public string DisplayName { get; set; } = string.Empty;
-        public int Rank { get; set; }
-        public int TotalExecutions { get; set; }
-        public int TodayExecutions { get; set; }
-        public int RecentExecutions { get; set; }
-        public double AverageExecutionTimeMs { get; set; }
-        public double SuccessRate { get; set; }
-        public int FavoriteSlot { get; set; }
-        public string PrimaryMode { get; set; } = string.Empty;
-        public int TaskModeCount { get; set; }
-        public int ActionModeCount { get; set; }
-        public DateTime? LastUsed { get; set; }
-        public Dictionary<int, int> SlotUsage { get; set; } = new();
-
-        public string TotalFormatted { get; set; } = string.Empty;
-        public string TodayFormatted { get; set; } = string.Empty;
-        public string RecentFormatted { get; set; } = string.Empty;
-        public string DurationFormatted { get; set; } = string.Empty;
-
-        public bool IsTopThree => Rank <= 3;
-        public string RankLabel { get; set; } = string.Empty;
-
-        public string SuccessRateColor { get; set; } = "Green";
-
-        public string SlotBreakdown { get; set; } = string.Empty;
-        public string SlotSummary { get; set; } = string.Empty;
-        public string ModeSummary { get; set; } = string.Empty;
-        public string LastUsedFormatted { get; set; } = string.Empty;
-        public List<DailyTrendItem> TrendData { get; set; } = new();
-    }
-
-    public class DailyTrendItem
-    {
-        public string Date { get; init; } = string.Empty;
-        public int Count { get; init; }
-        public int MaxCount { get; init; }
-        public double BarHeight => MaxCount > 0 ? Math.Max(2, (double)Count / MaxCount * 14) : 0;
-        public bool HasData => Count > 0;
-    }
-
-    public class SlotHeatmapItem
-    {
-        public int SlotIndex { get; init; }
-        public int TotalExecutions { get; init; }
-        public int PluginCount { get; init; }
-        public double Percentage { get; init; }
-
-        public double BarWidth => Math.Max(4, Percentage * 2.2);
-        public string Label => $"Slot #{SlotIndex}";
-        public string PercentageText => $"{Percentage:F0}%";
-    }
-
-    public class HourlyHeatmapItem
-    {
-        public int Hour { get; init; }
-        public int TotalExecutions { get; init; }
-        public double Percentage { get; init; }
-
-        public double BarWidth => Math.Max(4, Percentage * 2.2);
-        public string Label => $"{Hour:D2}:00";
-        public string PercentageText => $"{Percentage:F0}%";
-    }
-
     public partial class SettingsAnalyticsPageViewModel : ObservableObject
     {
-        private readonly IPluginUsageTracker _usageTracker;
+        private readonly UsageStatsReadModel _readModel;
         private readonly IPluginRegistry _pluginRegistry;
         private readonly IPluginRecommendationEngine? _recommendationEngine;
         private readonly ILogger<SettingsAnalyticsPageViewModel> _logger;
         private readonly ILocalizationService _loc;
-
-        private List<PluginUsageStats> _allPluginStats = new();
-        private Dictionary<string, string> _displayNames = new();
 
         public ObservableCollection<AnalyticsItem> MostUsedPlugins { get; } = new();
         public ObservableCollection<SlotHeatmapItem> SlotHeatmap { get; } = new();
@@ -156,13 +71,13 @@ namespace Pulsar.ViewModels.Settings
         private bool _sortAscending;
 
         public SettingsAnalyticsPageViewModel(
-            IPluginUsageTracker usageTracker,
+            UsageStatsReadModel readModel,
             IPluginRegistry pluginRegistry,
             ILogger<SettingsAnalyticsPageViewModel> logger,
             ILocalizationService localizationService,
             IPluginRecommendationEngine? recommendationEngine = null)
         {
-            _usageTracker = usageTracker;
+            _readModel = readModel;
             _pluginRegistry = pluginRegistry;
             _logger = logger;
             _loc = localizationService;
@@ -171,17 +86,17 @@ namespace Pulsar.ViewModels.Settings
 
         partial void OnTimeRangeChanged(AnalyticsTimeRange value)
         {
-            ApplyFilter();
+            Reposition();
         }
 
         partial void OnSortColumnChanged(SortColumn value)
         {
-            ApplySort();
+            Reposition();
         }
 
         partial void OnSortAscendingChanged(bool value)
         {
-            ApplySort();
+            Reposition();
         }
 
         public async Task LoadAsync()
@@ -191,124 +106,13 @@ namespace Pulsar.ViewModels.Settings
             ErrorMessage = string.Empty;
             try
             {
-                MostUsedPlugins.Clear();
-                SlotHeatmap.Clear();
-                HourlyHeatmap.Clear();
-                Recommendations.Clear();
-
-                var stats = await Task.Run(() => _usageTracker.GetMostUsedPlugins(20));
-                var allStats = await Task.Run(() => _usageTracker.GetAllStats());
-                var allPlugins = _pluginRegistry.GetAllPlugins();
-                _displayNames = allPlugins.ToDictionary(p => p.Id, p => p.DisplayName, StringComparer.OrdinalIgnoreCase);
-                _allPluginStats = allStats.Values.ToList();
-
-                var activeStats = stats.Where(s => s.TotalExecutions > 0).OrderByDescending(s => s.TotalExecutions).ToList();
-
-                int rank = 0;
-                foreach (var stat in activeStats)
-                {
-                    rank++;
-                    var displayName = _displayNames.TryGetValue(stat.PluginId, out var name) ? name : stat.PluginId;
-                    var trendData = BuildTrendData(stat);
-                    MostUsedPlugins.Add(new AnalyticsItem
-                    {
-                        PluginId = stat.PluginId,
-                        DisplayName = displayName,
-                        Rank = rank,
-                        TotalExecutions = stat.TotalExecutions,
-                        TodayExecutions = stat.TodayExecutions,
-                        RecentExecutions = stat.RecentExecutions,
-                        AverageExecutionTimeMs = stat.AverageExecutionTimeMs,
-                        SuccessRate = stat.SuccessRate,
-                        FavoriteSlot = stat.FavoriteSlot,
-                        PrimaryMode = stat.PrimaryMode,
-                        TaskModeCount = stat.TaskModeExecutions,
-                        ActionModeCount = stat.ActionModeExecutions,
-                        LastUsed = stat.LastUsed,
-                        SlotUsage = new Dictionary<int, int>(stat.SlotUsage),
-                        TrendData = trendData,
-                        TotalFormatted = FormatCount(stat.TotalExecutions),
-                        TodayFormatted = FormatCount(stat.TodayExecutions),
-                        RecentFormatted = FormatCount(stat.RecentExecutions),
-                        DurationFormatted = stat.AverageExecutionTimeMs < 1000
-                            ? string.Format(_loc["Settings.Analytics.DurationMs"], $"{stat.AverageExecutionTimeMs:F0}")
-                            : string.Format(_loc["Settings.Analytics.DurationS"], $"{stat.AverageExecutionTimeMs / 1000:F1}"),
-                        RankLabel = rank switch { 1 => "#1", 2 => "#2", 3 => "#3", _ => $"#{rank}" },
-                        SuccessRateColor = stat.SuccessRate >= 95 ? "Green" : stat.SuccessRate >= 80 ? "Orange" : "Red",
-                        SlotBreakdown = stat.SlotUsage.Count > 0
-                            ? string.Join("  ", stat.SlotUsage.OrderBy(kv => kv.Key).Select(kv => $"#{kv.Key}:{kv.Value}"))
-                            : "",
-                        SlotSummary = stat.FavoriteSlot > 0
-                            ? string.Format(_loc["Settings.Analytics.FavoriteSlotFormat"], stat.FavoriteSlot)
-                            : "",
-                        ModeSummary = (stat.TaskModeExecutions > 0 || stat.ActionModeExecutions > 0)
-                            ? $"{stat.PrimaryMode} ({Math.Max(stat.TaskModeExecutions, stat.ActionModeExecutions)})"
-                            : "",
-                        LastUsedFormatted = FormatLastUsed(stat.LastUsed)
-                    });
-                }
-
-                var aggregatedSlots = new Dictionary<int, (int Total, int Plugins)>();
-                foreach (var stat in allStats.Values.Where(s => s.SlotUsage.Count > 0))
-                {
-                    foreach (var kv in stat.SlotUsage)
-                    {
-                        if (!aggregatedSlots.ContainsKey(kv.Key))
-                            aggregatedSlots[kv.Key] = (0, 0);
-                        aggregatedSlots[kv.Key] = (
-                            aggregatedSlots[kv.Key].Total + kv.Value,
-                            aggregatedSlots[kv.Key].Plugins + 1);
-                    }
-                }
-
-                var totalAllSlotExecutions = aggregatedSlots.Values.Sum(v => v.Total);
-                foreach (var kv in aggregatedSlots.OrderBy(kv => kv.Key))
-                {
-                    SlotHeatmap.Add(new SlotHeatmapItem
-                    {
-                        SlotIndex = kv.Key,
-                        TotalExecutions = kv.Value.Total,
-                        PluginCount = kv.Value.Plugins,
-                        Percentage = totalAllSlotExecutions > 0 ? (double)kv.Value.Total / totalAllSlotExecutions * 100.0 : 0
-                    });
-                }
-
-                var hourlyData = new Dictionary<int, int>();
-                foreach (var stat in allStats.Values.Where(s => s.HourlyUsage.Count > 0))
-                {
-                    foreach (var kv in stat.HourlyUsage)
-                    {
-                        if (hourlyData.ContainsKey(kv.Key))
-                            hourlyData[kv.Key] += kv.Value;
-                        else
-                            hourlyData[kv.Key] = kv.Value;
-                    }
-                }
-
-                var maxHourly = hourlyData.Values.Any() ? hourlyData.Values.Max() : 1;
-                for (int h = 0; h < 24; h++)
-                {
-                    var count = hourlyData.GetValueOrDefault(h, 0);
-                    HourlyHeatmap.Add(new HourlyHeatmapItem
-                    {
-                        Hour = h,
-                        TotalExecutions = count,
-                        Percentage = maxHourly > 0 ? (double)count / maxHourly * 100.0 : 0
-                    });
-                }
-
-                HasData = MostUsedPlugins.Count > 0;
-                HasHeatmap = SlotHeatmap.Count > 0;
-                HasHourlyHeatmap = hourlyData.Values.Any(v => v > 0);
-
-                TotalOverallExecutions = activeStats.Sum(s => s.TotalExecutions);
-                ActivePluginCount = activeStats.Count;
-                TotalTodayExecutions = activeStats.Sum(s => s.TodayExecutions);
-                TotalWeekExecutions = activeStats.Sum(s => s.RecentExecutions);
+                await _readModel.LoadAsync();
+                Reposition();
 
                 if (_recommendationEngine != null)
                 {
                     var recs = _recommendationEngine.GetRecommendations();
+                    Recommendations.Clear();
                     foreach (var rec in recs)
                         Recommendations.Add(rec);
                     HasRecommendations = Recommendations.Count > 0;
@@ -326,114 +130,29 @@ namespace Pulsar.ViewModels.Settings
             }
         }
 
-        private void ApplyFilter()
+        private void Reposition()
         {
-            var cutoff = TimeRange switch
-            {
-                AnalyticsTimeRange.Today => DateTime.Now.Date,
-                AnalyticsTimeRange.ThisWeek => DateTime.Now.AddDays(-6).Date,
-                AnalyticsTimeRange.ThisMonth => DateTime.Now.AddDays(-29).Date,
-                _ => DateTime.MinValue
-            };
-
-            var filteredStats = _allPluginStats
-                .Where(s => s.TotalExecutions > 0)
-                .Select(s => new
-                {
-                    Stats = s,
-                    FilteredExecutions = TimeRange == AnalyticsTimeRange.AllTime
-                        ? s.TotalExecutions
-                        : s.DailyStats
-                            .Where(d => DateTime.TryParse(d.Key, out var date) && date >= cutoff)
-                            .Sum(d => d.Value)
-                })
-                .Where(x => x.FilteredExecutions > 0)
-                .OrderByDescending(x => x.FilteredExecutions)
-                .ToList();
+            var projection = _readModel.Project(TimeRange, SortColumn, SortAscending);
 
             MostUsedPlugins.Clear();
-            int rank = 0;
-            foreach (var item in filteredStats)
-            {
-                rank++;
-                var stat = item.Stats;
-                    var displayName = _displayNames.TryGetValue(stat.PluginId, out var name) ? name : stat.PluginId;
-                    var trendData = BuildTrendData(stat);
-                MostUsedPlugins.Add(new AnalyticsItem
-                {
-                    PluginId = stat.PluginId,
-                    DisplayName = displayName,
-                    Rank = rank,
-                    TotalExecutions = item.FilteredExecutions,
-                    TodayExecutions = stat.TodayExecutions,
-                    RecentExecutions = stat.RecentExecutions,
-                    AverageExecutionTimeMs = stat.AverageExecutionTimeMs,
-                    SuccessRate = stat.SuccessRate,
-                    FavoriteSlot = stat.FavoriteSlot,
-                    PrimaryMode = stat.PrimaryMode,
-                    TaskModeCount = stat.TaskModeExecutions,
-                    ActionModeCount = stat.ActionModeExecutions,
-                    LastUsed = stat.LastUsed,
-                    SlotUsage = new Dictionary<int, int>(stat.SlotUsage),
-                    TrendData = trendData,
-                    TotalFormatted = FormatCount(item.FilteredExecutions),
-                    TodayFormatted = FormatCount(stat.TodayExecutions),
-                    RecentFormatted = FormatCount(stat.RecentExecutions),
-                    DurationFormatted = stat.AverageExecutionTimeMs < 1000
-                        ? string.Format(_loc["Settings.Analytics.DurationMs"], $"{stat.AverageExecutionTimeMs:F0}")
-                        : string.Format(_loc["Settings.Analytics.DurationS"], $"{stat.AverageExecutionTimeMs / 1000:F1}"),
-                    RankLabel = rank switch { 1 => "#1", 2 => "#2", 3 => "#3", _ => $"#{rank}" },
-                    SuccessRateColor = stat.SuccessRate >= 95 ? "Green" : stat.SuccessRate >= 80 ? "Orange" : "Red",
-                    SlotBreakdown = stat.SlotUsage.Count > 0
-                        ? string.Join("  ", stat.SlotUsage.OrderBy(kv => kv.Key).Select(kv => $"#{kv.Key}:{kv.Value}"))
-                        : "",
-                    SlotSummary = stat.FavoriteSlot > 0
-                        ? string.Format(_loc["Settings.Analytics.FavoriteSlotFormat"], stat.FavoriteSlot)
-                        : "",
-                    ModeSummary = (stat.TaskModeExecutions > 0 || stat.ActionModeExecutions > 0)
-                        ? $"{stat.PrimaryMode} ({Math.Max(stat.TaskModeExecutions, stat.ActionModeExecutions)})"
-                        : "",
-                    LastUsedFormatted = FormatLastUsed(stat.LastUsed)
-                });
-            }
+            foreach (var row in projection.Rows)
+                MostUsedPlugins.Add(row);
 
-            HasData = MostUsedPlugins.Count > 0;
-            TotalOverallExecutions = filteredStats.Sum(x => x.FilteredExecutions);
-            ActivePluginCount = filteredStats.Count;
-            TotalTodayExecutions = filteredStats.Sum(x => x.Stats.TodayExecutions);
-            TotalWeekExecutions = filteredStats.Sum(x => x.Stats.RecentExecutions);
+            SlotHeatmap.Clear();
+            foreach (var item in projection.SlotHeatmap)
+                SlotHeatmap.Add(item);
 
-            ApplySort();
-        }
+            HourlyHeatmap.Clear();
+            foreach (var item in projection.HourlyHeatmap)
+                HourlyHeatmap.Add(item);
 
-        private void ApplySort()
-        {
-            var sorted = MostUsedPlugins.ToList();
-            sorted = SortColumn switch
-            {
-                SortColumn.SuccessRate => SortAscending
-                    ? sorted.OrderBy(x => x.SuccessRate).ToList()
-                    : sorted.OrderByDescending(x => x.SuccessRate).ToList(),
-                SortColumn.Duration => SortAscending
-                    ? sorted.OrderBy(x => x.AverageExecutionTimeMs).ToList()
-                    : sorted.OrderByDescending(x => x.AverageExecutionTimeMs).ToList(),
-                SortColumn.LastUsed => SortAscending
-                    ? sorted.OrderBy(x => x.LastUsed ?? DateTime.MinValue).ToList()
-                    : sorted.OrderByDescending(x => x.LastUsed ?? DateTime.MinValue).ToList(),
-                _ => SortAscending
-                    ? sorted.OrderBy(x => x.TotalExecutions).ToList()
-                    : sorted.OrderByDescending(x => x.TotalExecutions).ToList()
-            };
-
-            for (int i = 0; i < sorted.Count; i++)
-            {
-                sorted[i].Rank = i + 1;
-                sorted[i].RankLabel = (i + 1) switch { 1 => "#1", 2 => "#2", 3 => "#3", _ => $"#{i + 1}" };
-            }
-
-            MostUsedPlugins.Clear();
-            foreach (var item in sorted)
-                MostUsedPlugins.Add(item);
+            HasData = projection.HasData;
+            HasHeatmap = projection.HasHeatmap;
+            HasHourlyHeatmap = projection.HasHourlyHeatmap;
+            TotalOverallExecutions = projection.TotalOverallExecutions;
+            ActivePluginCount = projection.ActivePluginCount;
+            TotalTodayExecutions = projection.TotalTodayExecutions;
+            TotalWeekExecutions = projection.TotalWeekExecutions;
         }
 
         [RelayCommand]
@@ -460,44 +179,6 @@ namespace Pulsar.ViewModels.Settings
             {
                 TimeRange = parsed;
             }
-        }
-
-        private static List<DailyTrendItem> BuildTrendData(PluginUsageStats stat)
-        {
-            var now = DateTime.UtcNow;
-            var entries = new List<(DateTime Date, int Count)>();
-            for (int i = 6; i >= 0; i--)
-            {
-                var key = now.AddDays(-i).ToString("yyyy-MM-dd");
-                var count = stat.DailyStats.TryGetValue(key, out var c) ? c : 0;
-                entries.Add((now.AddDays(-i), count));
-            }
-            var maxCount = entries.Any() ? entries.Max(e => e.Count) : 1;
-            return entries.Select(e => new DailyTrendItem
-            {
-                Date = e.Date.ToString("MM-dd"),
-                Count = e.Count,
-                MaxCount = maxCount
-            }).ToList();
-        }
-
-        private static string FormatCount(int count)
-        {
-            if (count >= 1_000_000) return $"{(double)count / 1_000_000:F1}M";
-            if (count >= 1_000) return $"{(double)count / 1_000:F1}K";
-            return count.ToString();
-        }
-
-        private string FormatLastUsed(DateTime? lastUsed)
-        {
-            if (!lastUsed.HasValue) return "";
-            var local = lastUsed.Value.ToLocalTime();
-            var diff = DateTime.Now - local;
-            if (diff.TotalMinutes < 1) return _loc["Settings.Analytics.JustNow"];
-            if (diff.TotalMinutes < 60) return string.Format(_loc["Settings.Analytics.MinutesAgoFormat"], (int)diff.TotalMinutes);
-            if (diff.TotalHours < 24) return string.Format(_loc["Settings.Analytics.HoursAgoFormat"], (int)diff.TotalHours);
-            if (diff.TotalDays < 7) return string.Format(_loc["Settings.Analytics.DaysAgoFormat"], (int)diff.TotalDays);
-            return local.ToString("MM-dd");
         }
 
         [RelayCommand]
@@ -542,7 +223,7 @@ namespace Pulsar.ViewModels.Settings
             {
                 try
                 {
-                    var csv = GenerateCsv();
+                    var csv = _readModel.GenerateCsv(MostUsedPlugins);
                     await File.WriteAllTextAsync(dialog.FileName, csv, Encoding.UTF8);
                 }
                 catch (Exception ex)
@@ -552,30 +233,6 @@ namespace Pulsar.ViewModels.Settings
                     ErrorMessage = $"Failed to export CSV: {ex.Message}";
                 }
             }
-        }
-
-        private string GenerateCsv()
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine("Rank,PluginId,DisplayName,TotalExecutions,SuccessRate,AvgDurationMs,FavoriteSlot,PrimaryMode,LastUsed");
-
-            foreach (var item in MostUsedPlugins)
-            {
-                var name = EscapeCsvField(item.DisplayName);
-                var lastUsed = item.LastUsed?.ToString("yyyy-MM-dd HH:mm:ss") ?? "";
-                sb.AppendLine($"{item.Rank},{item.PluginId},{name},{item.TotalExecutions},{item.SuccessRate:F1},{item.AverageExecutionTimeMs:F0},{item.FavoriteSlot},{item.PrimaryMode},{lastUsed}");
-            }
-
-            return sb.ToString();
-        }
-
-        private static string EscapeCsvField(string field)
-        {
-            if (field.Contains(',') || field.Contains('"') || field.Contains('\n'))
-            {
-                return $"\"{field.Replace("\"", "\"\"")}\"";
-            }
-            return field;
         }
 
         [RelayCommand]
