@@ -153,6 +153,15 @@ namespace Pulsar.Services
                 {
                     _logger.LogInformation("[ConfigService] No persisted configuration file found; reset will regenerate defaults in-memory and on disk");
                 }
+
+                // An explicit reset must also clear the rolling backup, otherwise the
+                // next launch would resurrect the pre-reset configuration.
+                var backupPath = _configPath + ".bak";
+                if (File.Exists(backupPath))
+                {
+                    File.Delete(backupPath);
+                    _logger.LogInformation("[ConfigService] Deleted configuration backup at {Path} before reset reload", backupPath);
+                }
             }
             finally
             {
@@ -175,6 +184,25 @@ namespace Pulsar.Services
             if (!File.Exists(_configPath))
             {
                 bool isResetReload = string.Equals(reloadReason, ResetReloadReason, StringComparison.OrdinalIgnoreCase);
+
+                // [Fix] The file can be missing for reasons other than an explicit user
+                // reset (external tooling, a build/clean step, a crashed save). Treating
+                // it as first-launch would persist defaults and destroy every setting
+                // (log level, hotkeys, onboarding state) and re-trigger the wizard.
+                // Recover the last known-good backup first.
+                if (!isResetReload && TryRestoreBackup())
+                {
+                    _logger.LogWarning(
+                        "[ConfigService] Missing configuration; restored previous backup at {Path}",
+                        _configPath);
+
+                    lock (_cacheLock)
+                    {
+                        _cachedConfig = null;
+                    }
+
+                    return await LoadInternalAsync(reloadReason, forceReload: true);
+                }
 
                 if (isResetReload)
                 {
@@ -323,6 +351,48 @@ namespace Pulsar.Services
         }
 
         /// <summary>
+        /// Copies the active configuration to a rolling backup. Best-effort: a failed
+        /// backup must never fail the save that produced it.
+        /// </summary>
+        private void TryWriteBackup()
+        {
+            try
+            {
+                if (File.Exists(_configPath))
+                {
+                    File.Copy(_configPath, _configPath + ".bak", overwrite: true);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "[ConfigService] Failed to write configuration backup to {Path}", _configPath + ".bak");
+            }
+        }
+
+        /// <summary>
+        /// Restores the rolling backup over the missing active file. Returns true when
+        /// a backup existed and was copied. Best-effort.
+        /// </summary>
+        private bool TryRestoreBackup()
+        {
+            try
+            {
+                var backupPath = _configPath + ".bak";
+                if (File.Exists(backupPath))
+                {
+                    File.Copy(backupPath, _configPath, overwrite: true);
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[ConfigService] Failed to restore configuration backup from {Path}", _configPath + ".bak");
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Saves a config, optionally guarded by an optimistic-concurrency revision.
         /// When <paramref name="expectedRevision"/> is provided and no longer matches
         /// the current revision, the save is rejected with
@@ -432,6 +502,11 @@ namespace Pulsar.Services
                             // 原子性替换文件
                             File.Move(tempPath, _configPath, overwrite: true);
                             tempPath = string.Empty;
+
+                            // [Fix] Keep a rolling backup of every successful save so a
+                            // later lost/corrupt config can be recovered instead of being
+                            // silently factory-reset on the next launch.
+                            TryWriteBackup();
 
                             _logger.LogDebug("[ConfigService] Configuration saved successfully");
                             break; // 成功，退出重试循环

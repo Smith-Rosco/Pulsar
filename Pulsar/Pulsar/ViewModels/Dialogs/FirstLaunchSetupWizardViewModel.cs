@@ -165,17 +165,32 @@ namespace Pulsar.ViewModels.Dialogs
             var scenario = _scenarioRegistry.Default;
             var apps = BuildScenarioApps(scenario);
             var template = _templateService.BuildInitialConfig(scenario, apps);
-            template.Settings.SelectedTutorialScenarioId = scenario.Id;
-
-            if (SelectedLanguage != null)
-                template.Settings.Language = SelectedLanguage.Code;
-
-            template.Settings.HasCompletedInitialDetection = true;
 
             await ConfigEditSession.RunAsync(_configService, session =>
             {
-                session.ReplaceAll(template);
-                session.UpdateSettings(settings => settings.OnboardingState = "SetupWizardComplete");
+                // [Fix] Replace only the launch profiles the onboarding template defines
+                // and preserve the user's existing Settings (log level, hotkeys, input,
+                // theme, ...). The previous ReplaceAll wiped them whenever the wizard ran
+                // over a config that still had a pre-setup onboarding state.
+                session.Draft.Profiles = new Dictionary<string, ProcessProfile>(
+                    template.Profiles,
+                    StringComparer.OrdinalIgnoreCase);
+
+                if (template.Plugins != null && template.Plugins.Count > 0)
+                {
+                    session.Draft.Plugins = new Dictionary<string, PluginProfile>(
+                        template.Plugins,
+                        StringComparer.OrdinalIgnoreCase);
+                }
+
+                session.UpdateSettings(settings =>
+                {
+                    settings.SelectedTutorialScenarioId = scenario.Id;
+                    settings.HasCompletedInitialDetection = true;
+                    settings.OnboardingState = "SetupWizardComplete";
+                    if (SelectedLanguage != null)
+                        settings.Language = SelectedLanguage.Code;
+                });
             });
 
             RequestClose?.Invoke(DialogResult.Confirmed);

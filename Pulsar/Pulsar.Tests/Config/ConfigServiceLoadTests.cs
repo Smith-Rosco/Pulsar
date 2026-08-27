@@ -248,6 +248,84 @@ namespace Pulsar.Tests.Config
         }
 
         [Fact]
+        public async Task LoadAsync_ShouldRestoreFromBackup_WhenFileMissing()
+        {
+            // Arrange — save a distinctive config so the backup gets written.
+            var originalConfig = new ProfilesConfig
+            {
+                Settings = new ProfileSettings
+                {
+                    Language = "zh-CN",
+                    Logging = new LoggingSettings { MinimumLevel = "Debug" }
+                },
+                Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["Custom"] = new ProcessProfile { Alias = "Custom App" }
+                }
+            };
+
+            var writer = CreateConfigService();
+            await writer.SaveAsync(originalConfig, expectedRevision: null);
+
+            File.Exists(_configPath + ".bak").Should().BeTrue("every save must produce a rolling backup");
+
+            // Simulate the external deletion that happens between runs.
+            File.Delete(_configPath);
+
+            // A fresh service instance must recover from the backup instead of
+            // factory-resetting (which would lose settings and re-trigger onboarding).
+            var reader = CreateConfigService();
+
+            // Act
+            var config = await reader.LoadAsync();
+
+            // Assert
+            config.Settings.Language.Should().Be("zh-CN");
+            config.Settings.Logging.MinimumLevel.Should().Be("Debug");
+            config.Profiles.Should().ContainKey("Custom");
+            File.Exists(_configPath).Should().BeTrue("restored config should be persisted");
+        }
+
+        [Fact]
+        public async Task LoadAsync_ShouldNotRestoreBackup_WhenNoneExists()
+        {
+            // Arrange — no file, no backup.
+            var service = CreateConfigService();
+
+            // Act
+            var config = await service.LoadAsync();
+
+            // Assert — genuine first launch, no recovery.
+            config.Settings.OnboardingState.Should().Be("NotStarted");
+            File.Exists(_configPath).Should().BeTrue("first launch persists defaults");
+        }
+
+        [Fact]
+        public async Task ResetToFirstLaunchAsync_ShouldReplaceBackupWithResetContent()
+        {
+            // Arrange
+            var existingConfig = new ProfilesConfig
+            {
+                Settings = new ProfileSettings { Theme = "Dark" }
+            };
+            var writer = CreateConfigService();
+            await writer.SaveAsync(existingConfig, expectedRevision: null);
+            File.Exists(_configPath + ".bak").Should().BeTrue();
+
+            // Act
+            var service = CreateConfigService();
+            await service.ResetToFirstLaunchAsync();
+
+            // Assert — the stale pre-reset backup must not survive the reset (otherwise
+            // the next launch would resurrect it). The reset regenerates a fresh
+            // fallback config and its backup, so the backup now carries the reset state.
+            var backupJson = await File.ReadAllTextAsync(_configPath + ".bak");
+            var backupConfig = JsonSerializer.Deserialize<ProfilesConfig>(backupJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            backupConfig.Should().NotBeNull();
+            backupConfig!.Settings.Theme.Should().Be(ProfileSettings.DefaultTheme, "stale pre-reset backup must not survive an explicit reset");
+        }
+
+        [Fact]
         public void Current_ShouldReturnDefaultConfig_WhenNotLoaded()
         {
             // Arrange
