@@ -21,6 +21,9 @@ namespace Pulsar.Tests.ViewModels
     public class MenuSessionGestureTests
     {
         private const int VK_MENU = 0x12;
+        private const int VK_Q = 0x51;
+        private const int VK_CTRL = 0xA2;
+        private const int VK_SHIFT = 0xA0;
 
         [Fact]
         public void InvocationSource_Default_ShouldBeHotkey()
@@ -83,7 +86,6 @@ namespace Pulsar.Tests.ViewModels
         public void HandleKeyUp_ShouldDismissImmediately_DuringSubmenuTransition()
         {
             var session = CreateSession();
-            session.IsVisible = true;
             session.OnHotkeyInvoked(new HotkeyInvocationEventArgs(
                 "show-switcher",
                 0x09,
@@ -92,6 +94,7 @@ namespace Pulsar.Tests.ViewModels
                 requiresAlt: true,
                 requiresWin: false,
                 new Point(250, 250)));
+            session.IsVisible = true;
 
             typeof(MenuSession)
                 .GetField("_isTransitioning", BindingFlags.NonPublic | BindingFlags.Instance)!
@@ -105,6 +108,141 @@ namespace Pulsar.Tests.ViewModels
                 isWin: false));
 
             session.IsVisible.Should().BeFalse();
+        }
+
+        [Fact]
+        public void OnHotkeyInvoked_WhileMenuVisible_ShouldNotReplaceReleaseTrigger()
+        {
+            var session = CreateSession();
+
+            session.OnHotkeyInvoked(new HotkeyInvocationEventArgs(
+                "show-grid",
+                0x51,
+                requiresCtrl: true,
+                requiresShift: true,
+                requiresAlt: false,
+                requiresWin: false,
+                new Point(250, 250)));
+
+            session.IsVisible = true;
+
+            // Simulate Ctrl+Q while the Ctrl+Shift+Q menu is already open.
+            session.OnHotkeyInvoked(new HotkeyInvocationEventArgs(
+                "show-switcher",
+                0x51,
+                requiresCtrl: true,
+                requiresShift: false,
+                requiresAlt: false,
+                requiresWin: false,
+                new Point(250, 250)));
+
+            session.HandleKeyUp(new GlobalKeyStruct(
+                0x51,
+                isCtrl: false,
+                isShift: false,
+                isAlt: false,
+                isWin: false));
+
+            session.HandleKeyUp(new GlobalKeyStruct(
+                0xA2,
+                isCtrl: false,
+                isShift: true,
+                isAlt: false,
+                isWin: false));
+
+            session.IsVisible.Should().BeTrue();
+        }
+
+        [Fact]
+        public void OnHotkeyInvoked_DuringPendingSurface_ShouldNotReplaceReleaseTrigger()
+        {
+            var session = CreateSession();
+
+            // Ctrl+Shift+Q fires; the menu has not surfaced yet (IsVisible is still
+            // false because the slot load is slow). This is the owner of the session.
+            session.OnHotkeyInvoked(new HotkeyInvocationEventArgs(
+                "show-grid",
+                VK_Q,
+                requiresCtrl: true,
+                requiresShift: true,
+                requiresAlt: false,
+                requiresWin: false,
+                new Point(250, 250)));
+
+            // Ctrl+Q fires in the same window, before the first menu became visible.
+            // It must be suppressed, not promoted to the session owner.
+            session.OnHotkeyInvoked(new HotkeyInvocationEventArgs(
+                "show-switcher",
+                VK_Q,
+                requiresCtrl: true,
+                requiresShift: false,
+                requiresAlt: false,
+                requiresWin: false,
+                new Point(250, 250)));
+
+            session.IsVisible = true;
+
+            // Releasing the second hotkey's keys must not resolve the session.
+            session.HandleKeyUp(new GlobalKeyStruct(VK_Q, isCtrl: false, isShift: false, isAlt: false, isWin: false));
+            session.HandleKeyUp(new GlobalKeyStruct(VK_CTRL, isCtrl: false, isShift: true, isAlt: false, isWin: false));
+
+            session.IsVisible.Should().BeTrue();
+        }
+
+        [Fact]
+        public void OnHotkeyInvoked_AfterDismissal_ShouldResolveReleaseNormally()
+        {
+            var windowService = new Mock<IWindowService>();
+            windowService.Setup(service => service.SwitchToPreviousWindow()).ReturnsAsync(true);
+            var session = CreateSession(windowService);
+            session.SetMenuCenter(new Point(250, 250));
+            session.HandlePointerMoved(new Vector(250, 250));
+
+            // First session: opened by Ctrl+Shift+Q, a Ctrl+Q is suppressed, then
+            // the menu is dismissed.
+            session.OnHotkeyInvoked(new HotkeyInvocationEventArgs(
+                "show-grid",
+                VK_Q,
+                requiresCtrl: true,
+                requiresShift: true,
+                requiresAlt: false,
+                requiresWin: false,
+                new Point(250, 250)));
+            session.IsVisible = true;
+            session.OnHotkeyInvoked(new HotkeyInvocationEventArgs(
+                "show-switcher",
+                VK_Q,
+                requiresCtrl: true,
+                requiresShift: false,
+                requiresAlt: false,
+                requiresWin: false,
+                new Point(250, 250)));
+            session.HandleKeyUp(new GlobalKeyStruct(VK_Q, isCtrl: false, isShift: false, isAlt: false, isWin: false));
+            session.HandleKeyUp(new GlobalKeyStruct(VK_CTRL, isCtrl: false, isShift: true, isAlt: false, isWin: false));
+            session.IsVisible = false;
+
+            // Second session: a fresh hotkey must become the owner again and its
+            // release must resolve normally (quick switch) instead of being swallowed
+            // by stale suppression state from the dismissed session.
+            session.OnHotkeyInvoked(new HotkeyInvocationEventArgs(
+                "show-grid",
+                VK_Q,
+                requiresCtrl: true,
+                requiresShift: true,
+                requiresAlt: false,
+                requiresWin: false,
+                new Point(250, 250)));
+            session.IsVisible = true;
+            session.SetMenuCenter(new Point(250, 250));
+            session.HandlePointerMoved(new Vector(250, 250));
+            typeof(MenuSession)
+                .GetField("_showVisibleTime", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .SetValue(session, DateTime.Now);
+            session.HandleKeyUp(new GlobalKeyStruct(VK_Q, isCtrl: false, isShift: false, isAlt: false, isWin: false));
+            session.HandleKeyUp(new GlobalKeyStruct(VK_CTRL, isCtrl: false, isShift: true, isAlt: false, isWin: false));
+            session.HandleKeyUp(new GlobalKeyStruct(VK_SHIFT, isCtrl: true, isShift: false, isAlt: false, isWin: false));
+
+            windowService.Verify(service => service.SwitchToPreviousWindow(), Times.Once);
         }
 
         [Fact]

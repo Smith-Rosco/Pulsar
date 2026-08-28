@@ -180,6 +180,7 @@ namespace Pulsar.ViewModels
         private CancellationTokenSource? _menuWatchdogCts;
         private DateTime _lastMenuInteractionUtc = DateTime.UtcNow;
         private HotkeyInvocationSnapshot? _activeHotkeyInvocation;
+        private readonly List<HotkeyInvocationSnapshot> _suppressedHotkeyReleases = new();
         private Point? _invocationPointScreen;
 
         /// <summary>
@@ -252,6 +253,7 @@ namespace Pulsar.ViewModels
                     {
                         InvocationSource = MenuInvocationSource.Hotkey;
                         _activeHotkeyInvocation = null;
+                        _suppressedHotkeyReleases.Clear();
                         _invocationPointScreen = null;
                         _menuWatchdogCts?.Cancel();
                         _menuWatchdogCts = null;
@@ -464,6 +466,8 @@ namespace Pulsar.ViewModels
                 if (_gestureReleaseHandledDuringLoad)
                 {
                     _logger?.LogDebug("[Show] Gesture release handled during load, aborting surface.");
+                    _activeHotkeyInvocation = null;
+                    _suppressedHotkeyReleases.Clear();
                     return;
                 }
 
@@ -970,6 +974,14 @@ namespace Pulsar.ViewModels
                 return;
             }
 
+            // A hotkey received while this session is already visible belongs to a
+            // new invocation, not to the menu currently on screen. Consume its
+            // matching release so it cannot execute the currently hovered slot.
+            if (TryConsumeSuppressedHotkeyRelease(e.VkCode))
+            {
+                return;
+            }
+
             bool releaseTriggersExecution =
                 IsReleaseTriggerForActiveInvocation(e.VkCode)
                 || (_activeHotkeyInvocation == null && IsMajorModifierRelease(e.VkCode));
@@ -1049,8 +1061,36 @@ namespace Pulsar.ViewModels
 
         public void OnHotkeyInvoked(HotkeyInvocationEventArgs e)
         {
+            // The menu owns the hotkey that opened the current session. A second
+            // hotkey may be observed while this session is pending (the first menu
+            // is still surfacing) or already open, but it must never replace the
+            // release key that controls the current session.
+            if (_activeHotkeyInvocation != null || IsVisible)
+            {
+                _suppressedHotkeyReleases.Add(new HotkeyInvocationSnapshot(e));
+                return;
+            }
+
             _activeHotkeyInvocation = new HotkeyInvocationSnapshot(e);
             _invocationPointScreen = e.InvocationPoint;
+        }
+
+        private bool TryConsumeSuppressedHotkeyRelease(int vkCode)
+        {
+            for (int i = 0; i < _suppressedHotkeyReleases.Count; i++)
+            {
+                if (_suppressedHotkeyReleases[i].ConsumeRelease(vkCode))
+                {
+                    if (_suppressedHotkeyReleases[i].IsReleased)
+                    {
+                        _suppressedHotkeyReleases.RemoveAt(i);
+                    }
+
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public Point? GetInvocationPointScreen() => _invocationPointScreen;
@@ -1991,6 +2031,11 @@ namespace Pulsar.ViewModels
             private readonly bool _requiresShift;
             private readonly bool _requiresAlt;
             private readonly bool _requiresWin;
+            private bool _mainReleased;
+            private bool _ctrlReleased;
+            private bool _shiftReleased;
+            private bool _altReleased;
+            private bool _winReleased;
 
             public HotkeyInvocationSnapshot(HotkeyInvocationEventArgs e)
             {
@@ -1999,6 +2044,47 @@ namespace Pulsar.ViewModels
                 _requiresShift = e.RequiresShift;
                 _requiresAlt = e.RequiresAlt;
                 _requiresWin = e.RequiresWin;
+            }
+
+            public bool IsReleased => _mainReleased
+                && (!_requiresCtrl || _ctrlReleased)
+                && (!_requiresShift || _shiftReleased)
+                && (!_requiresAlt || _altReleased)
+                && (!_requiresWin || _winReleased);
+
+            public bool ConsumeRelease(int vkCode)
+            {
+                if (vkCode == _mainVkCode)
+                {
+                    _mainReleased = true;
+                    return true;
+                }
+
+                if (_requiresCtrl && (vkCode == VK_LCONTROL || vkCode == VK_RCONTROL || vkCode == VK_CONTROL))
+                {
+                    _ctrlReleased = true;
+                    return true;
+                }
+
+                if (_requiresShift && (vkCode == VK_LSHIFT || vkCode == VK_RSHIFT || vkCode == VK_SHIFT))
+                {
+                    _shiftReleased = true;
+                    return true;
+                }
+
+                if (_requiresAlt && (vkCode == VK_LMENU || vkCode == VK_RMENU || vkCode == VK_MENU))
+                {
+                    _altReleased = true;
+                    return true;
+                }
+
+                if (_requiresWin && (vkCode == VK_LWIN || vkCode == VK_RWIN))
+                {
+                    _winReleased = true;
+                    return true;
+                }
+
+                return false;
             }
 
             public bool MatchesRelease(int vkCode)
