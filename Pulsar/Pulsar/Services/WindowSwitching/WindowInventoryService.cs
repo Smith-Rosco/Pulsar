@@ -10,16 +10,6 @@ using Pulsar.Services.Interfaces;
 
 namespace Pulsar.Services.WindowSwitching
 {
-    /// <summary>
-    /// 进程级元数据，按进程预取一次，避免每个窗口重复 GetProcessById / MainModule。
-    /// </summary>
-    internal sealed class ProcessMeta
-    {
-        public string ProcessName { get; init; } = string.Empty;
-
-        public string ExePath { get; init; } = string.Empty;
-    }
-
     internal sealed class WindowInventoryService
     {
         private readonly IWindowEligibilityPolicy _eligibilityPolicy;
@@ -62,19 +52,13 @@ namespace Pulsar.Services.WindowSwitching
                 var pidSet = new HashSet<int> { targetProcessId };
                 var metaByPid = new Dictionary<int, ProcessMeta>();
 
-                try
-                {
-                    using var proc = Process.GetProcessById(targetProcessId);
-                    metaByPid[targetProcessId] = new ProcessMeta
-                    {
-                        ProcessName = proc.ProcessName,
-                        ExePath = SafeMainModule(proc)
-                    };
-                }
-                catch
+                var meta = new ProcessMetaResolver(capacity: 1).Resolve(targetProcessId);
+                if (meta == null)
                 {
                     return new List<ProcessWindowInfo>();
                 }
+
+                metaByPid[targetProcessId] = meta;
 
                 return EnumerateWindows(pidSet, metaByPid, isBlacklisted, snapshotWindow, extractIcon);
             });
@@ -120,17 +104,20 @@ namespace Pulsar.Services.WindowSwitching
 
                 var pidSet = new HashSet<int>(processes.Length);
                 var metaByPid = new Dictionary<int, ProcessMeta>(processes.Length);
+                var resolver = new ProcessMetaResolver(processes.Length);
 
                 foreach (var proc in processes)
                 {
                     try
                     {
-                        pidSet.Add(proc.Id);
-                        metaByPid[proc.Id] = new ProcessMeta
+                        var meta = resolver.Resolve(proc.Id);
+                        if (meta == null)
                         {
-                            ProcessName = proc.ProcessName,
-                            ExePath = SafeMainModule(proc)
-                        };
+                            continue;
+                        }
+
+                        pidSet.Add(proc.Id);
+                        metaByPid[proc.Id] = meta;
                     }
                     catch
                     {
@@ -169,6 +156,7 @@ namespace Pulsar.Services.WindowSwitching
                 Dictionary<string, RunningProcessInfo> results = new(StringComparer.OrdinalIgnoreCase);
 
                 var virtualScreen = WindowEligibilitySnapshot.GetVirtualScreenRect();
+                var resolver = new ProcessMetaResolver();
 
                 PulsarNative.EnumWindows((hWnd, _) =>
                 {
@@ -177,16 +165,22 @@ namespace Pulsar.Services.WindowSwitching
 
                     try
                     {
-                        using Process proc = Process.GetProcessById((int)processId);
-                        if (proc.HasExited) return true;
-
                         var classBuilder = new StringBuilder(256);
                         PulsarNative.GetClassName(hWnd, classBuilder, classBuilder.Capacity);
 
+                        // 先用廉价结构判定筛掉绝大多数窗口，再解析进程元数据（见 EnumerateWindows 同款注释）。
+                        var snapshot = BuildSnapshot(hWnd, classBuilder.ToString(), virtualScreen);
+                        if (!_eligibilityPolicy.EvaluateStructural(snapshot).Included)
+                        {
+                            return true;
+                        }
+
+                        var meta = resolver.Resolve((int)processId);
+                        if (meta == null) return true;
+
                         // [Deepen] 与快速切换共用同一"可切换窗口"判定（结构规则 + 物理可见性 + 类名黑名单 + 进程黑名单）。
-                        if (!_eligibilityPolicy.Evaluate(
-                                BuildSnapshot(hWnd, processId, proc.ProcessName, classBuilder.ToString(), virtualScreen),
-                                isBlacklisted).Included)
+                        if (!_eligibilityPolicy.EvaluateIdentity(
+                                snapshot with { ProcessName = meta.ProcessName }, isBlacklisted).Included)
                         {
                             return true;
                         }
@@ -200,19 +194,19 @@ namespace Pulsar.Services.WindowSwitching
                         string title = sb.ToString();
                         if (string.IsNullOrWhiteSpace(title) || title == "Program Manager") return true;
 
-                        string fullPath = SafeMainModule(proc);
+                        string fullPath = meta.ExePath;
 
-                        if (!results.ContainsKey(proc.ProcessName))
+                        if (!results.ContainsKey(meta.ProcessName))
                         {
-                            results[proc.ProcessName] = new RunningProcessInfo
+                            results[meta.ProcessName] = new RunningProcessInfo
                             {
-                                ProcessName = proc.ProcessName,
+                                ProcessName = meta.ProcessName,
                                 ExePath = fullPath
                             };
                         }
-                        else if (string.IsNullOrEmpty(results[proc.ProcessName].ExePath) && !string.IsNullOrEmpty(fullPath))
+                        else if (string.IsNullOrEmpty(results[meta.ProcessName].ExePath) && !string.IsNullOrEmpty(fullPath))
                         {
-                            results[proc.ProcessName].ExePath = fullPath;
+                            results[meta.ProcessName].ExePath = fullPath;
                         }
                     }
                     catch
@@ -226,11 +220,6 @@ namespace Pulsar.Services.WindowSwitching
             });
         }
 
-        private static string SafeMainModule(Process proc)
-        {
-            try { return proc.MainModule?.FileName ?? string.Empty; } catch { return string.Empty; }
-        }
-
         /// <summary>
         /// 枚举全部顶层窗口并给出每窗口的判定报告（含标题 / 类名 / 矩形 / 原因），
         /// 供 Window Inspector 诊断。进程黑名单不参与；标题为诊断需要所以总是读取。
@@ -242,45 +231,23 @@ namespace Pulsar.Services.WindowSwitching
                 List<WindowEligibilityReport> results = new();
                 var virtualScreen = WindowEligibilitySnapshot.GetVirtualScreenRect();
 
+                // Inspector 是诊断面：它要报告"每个窗口为何被纳入/排除"，因此不做提前返回，
+                // 逐窗口解析进程名与标题。这里的成本不重要（人工触发、非热路径），
+                // 但字段组装必须与枚举路径同源，否则诊断结论会与真实判定分叉。
+                var resolver = new ProcessMetaResolver();
+
                 PulsarNative.EnumWindows((hWnd, _) =>
                 {
-                    PulsarNative.GetWindowThreadProcessId(hWnd, out uint processId);
-
-                    string className;
                     var classBuilder = new StringBuilder(256);
                     PulsarNative.GetClassName(hWnd, classBuilder, classBuilder.Capacity);
-                    className = classBuilder.ToString();
 
-                    string processName = string.Empty;
-                    if (processId != 0)
-                    {
-                        try
-                        {
-                            using Process proc = Process.GetProcessById((int)processId);
-                            processName = proc.ProcessName;
-                        }
-                        catch
-                        {
-                        }
-                    }
+                    var snapshot = BuildSnapshot(hWnd, classBuilder.ToString(), virtualScreen);
 
+                    string processName = resolver.Resolve((int)snapshot.Pid)?.ProcessName ?? string.Empty;
                     string title = WindowEligibilitySnapshot.ReadWindowText(hWnd);
+                    string className = snapshot.ClassName;
 
-                    var snapshot = new WindowEligibilitySnapshot
-                    {
-                        Hwnd = hWnd,
-                        Pid = processId,
-                        ProcessName = processName,
-                        ClassName = className,
-                        Title = title,
-                        IsIconic = PulsarNative.IsIconic(hWnd),
-                        IsVisible = PulsarNative.IsWindowVisible(hWnd),
-                        IsCloaked = WindowEligibilitySnapshot.IsDwmCloaked(hWnd),
-                        ExStyle = PulsarNative.GetWindowLong(hWnd, PulsarNative.GWL_EXSTYLE),
-                        OwnerHwnd = PulsarNative.GetWindow(hWnd, PulsarNative.GW_OWNER),
-                        Rect = WindowEligibilitySnapshot.TryGetWindowRect(hWnd),
-                        VirtualScreenRect = virtualScreen
-                    };
+                    snapshot = snapshot with { ProcessName = processName, Title = title };
 
                     var verdict = _eligibilityPolicy.Evaluate(snapshot, processBlacklist: null);
                     results.Add(new WindowEligibilityReport(
@@ -310,15 +277,32 @@ namespace Pulsar.Services.WindowSwitching
             int zOrderIndex = 0;
             var virtualScreen = WindowEligibilitySnapshot.GetVirtualScreenRect();
 
+            // 单次枚举内按 pid 记忆化进程元数据：同一进程的多窗口只解析一次。
+            var resolver = new ProcessMetaResolver();
+
             PulsarNative.EnumWindows((hWnd, _) =>
             {
                 PulsarNative.GetWindowThreadProcessId(hWnd, out uint processId);
+
+                // pid 过滤是纯字典/集合查找，放在最前面：按进程枚举时它一次就排除掉
+                // 桌面上绝大多数窗口，连类名都不必读。
+                if (processIdFilter != null && !processIdFilter.Contains((int)processId)) return true;
 
                 string className;
                 var classBuilder = new StringBuilder(256);
                 PulsarNative.GetClassName(hWnd, classBuilder, classBuilder.Capacity);
                 className = classBuilder.ToString();
 
+                // ============ 第一道筛：只用廉价 native 事实 ============
+                // 不含进程名 —— 解析进程元数据（全系统进程快照 + 打开进程句柄）比这里
+                // 所有 native 读取加起来还贵一个量级，而它会淘汰掉桌面上 90%+ 的顶层窗口。
+                var snapshot = BuildSnapshot(hWnd, className, virtualScreen);
+                if (!_eligibilityPolicy.EvaluateStructural(snapshot).Included)
+                {
+                    return true;
+                }
+
+                // ============ 第二道筛：只对幸存窗口解析进程元数据 ============
                 string processName;
                 string fullPath;
 
@@ -335,36 +319,25 @@ namespace Pulsar.Services.WindowSwitching
                 }
                 else
                 {
-                    if (processId == 0)
+                    var meta = resolver.Resolve((int)processId);
+                    if (meta == null)
                     {
+                        // 进程已退出或无法解析。
                         return true;
                     }
 
-                    try
-                    {
-                        using Process proc = Process.GetProcessById((int)processId);
-                        if (proc.HasExited) return true;
-
-                        processName = proc.ProcessName;
-                        fullPath = SafeMainModule(proc);
-                    }
-                    catch
-                    {
-                        return true;
-                    }
+                    processName = meta.ProcessName;
+                    fullPath = meta.ExePath;
                 }
 
+                snapshot = snapshot with { ProcessName = processName };
+
                 // [Deepen] 与快速切换共用同一"可切换窗口"判定。
-                // 类名黑名单与物理可见性对全部消费面生效；进程黑名单由调用方决定作用域
-                // （发现路径传入 isBlacklisted，显式激活路径传 null）。
-                if (!_eligibilityPolicy.Evaluate(
-                        BuildSnapshot(hWnd, processId, processName, className, virtualScreen),
-                        isBlacklisted).Included)
+                // 进程黑名单由调用方决定作用域（发现路径传入 isBlacklisted，显式激活路径传 null）。
+                if (!_eligibilityPolicy.EvaluateIdentity(snapshot, isBlacklisted).Included)
                 {
                     return true;
                 }
-
-                if (processIdFilter != null && !processIdFilter.Contains((int)processId)) return true;
 
                 int length = PulsarNative.GetWindowTextLength(hWnd);
                 if (processIdFilter == null && length == 0) return true;
@@ -380,13 +353,11 @@ namespace Pulsar.Services.WindowSwitching
 
                 // [Deepen] 标题依赖规则（TitlePattern）：仅在存在此类规则时二次判定，
                 // 使发现路径的标题规则生效，同时保持无标题规则时零额外读取（首次判定快照不含标题）。
-                if (_eligibilityPolicy.HasTitleDependentRules)
+                // 复用已有快照 —— 重新 BuildSnapshot 会把全部 native 读取再做一遍。
+                if (_eligibilityPolicy.HasTitleDependentRules
+                    && !_eligibilityPolicy.EvaluateIdentity(snapshot with { Title = title }, isBlacklisted).Included)
                 {
-                    var titledSnapshot = BuildSnapshot(hWnd, processId, processName, className, virtualScreen) with { Title = title };
-                    if (!_eligibilityPolicy.Evaluate(titledSnapshot, isBlacklisted).Included)
-                    {
-                        return true;
-                    }
+                    return true;
                 }
 
                 ImageSource? iconSource = string.IsNullOrEmpty(fullPath) ? null : extractIcon(fullPath);
@@ -414,31 +385,16 @@ namespace Pulsar.Services.WindowSwitching
         }
 
         /// <summary>
-        /// 从枚举路径已取得的事实组装判定快照（避免像 FromHwnd 那样逐窗口重解析进程名/重读标题）。
-        /// 标题由调用方在判定通过后按需读取，这里不填（GetWindowText 是阻塞调用）。
+        /// 从枚举路径已取得的事实组装结构判定快照。字段组装统一由
+        /// <see cref="WindowEligibilitySnapshot.FromHwndStructural"/> 负责 —— 枚举路径只负责
+        /// 把已读到的类名和循环外读取的虚拟屏幕矩形传进去，避免重复读取。
+        /// 进程名与标题由调用方在结构筛通过后按需填充。
         /// </summary>
         private static WindowEligibilitySnapshot BuildSnapshot(
             IntPtr hwnd,
-            uint pid,
-            string processName,
             string className,
             PulsarNative.RECT virtualScreen)
-        {
-            return new WindowEligibilitySnapshot
-            {
-                Hwnd = hwnd,
-                Pid = pid,
-                ProcessName = processName,
-                ClassName = className,
-                IsIconic = PulsarNative.IsIconic(hwnd),
-                IsVisible = PulsarNative.IsWindowVisible(hwnd),
-                IsCloaked = WindowEligibilitySnapshot.IsDwmCloaked(hwnd),
-                ExStyle = PulsarNative.GetWindowLong(hwnd, PulsarNative.GWL_EXSTYLE),
-                OwnerHwnd = PulsarNative.GetWindow(hwnd, PulsarNative.GW_OWNER),
-                Rect = WindowEligibilitySnapshot.TryGetWindowRect(hwnd),
-                VirtualScreenRect = virtualScreen
-            };
-        }
+            => WindowEligibilitySnapshot.FromHwndStructural(hwnd, className, virtualScreen);
     }
 }
 

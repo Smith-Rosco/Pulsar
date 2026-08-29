@@ -59,6 +59,18 @@ namespace Pulsar.ViewModels
 
         private static readonly TimeSpan MenuWatchdogTimeout = TimeSpan.FromSeconds(60);
 
+        /// <summary>
+        /// Single-phase first-frame budget for the Switch-mode content load. The
+        /// deadline-bounded show path races the page load against this budget: when
+        /// the load lands inside it the model is applied before the shell surfaces
+        /// (menu appears fully populated), and when it misses the shell surfaces
+        /// within the budget with the in-flight load patching content in — so a slow
+        /// enumeration can never delay the menu's appearance beyond the budget.
+        /// </summary>
+        private const int FirstFrameBudgetMsDefault = 50;
+
+        private readonly TimeSpan _firstFrameBudget;
+
         // 按键常量
         private const int VK_LCONTROL = 0xA2;
         private const int VK_RCONTROL = 0xA3;
@@ -210,7 +222,8 @@ namespace Pulsar.ViewModels
             IUiDispatcher uiDispatcher,
             ILogger<MenuSession>? logger = null,
             IPluginUsageTracker? usageTracker = null,
-            IPluginHealthMonitor? healthMonitor = null)
+            IPluginHealthMonitor? healthMonitor = null,
+            TimeSpan? firstFrameBudget = null)
         {
             _configService = configService;
             _windowService = windowService;
@@ -225,6 +238,7 @@ namespace Pulsar.ViewModels
             _loc = localizationService;
             _ui = uiDispatcher;
             _logger = logger;
+            _firstFrameBudget = firstFrameBudget ?? TimeSpan.FromMilliseconds(FirstFrameBudgetMsDefault);
 
             _visualStateCoordinator = new RadialMenuVisualStateCoordinator(previewService, logger, _loc);
             _subMenuCoordinator = new RadialMenuSubMenuCoordinator(
@@ -266,6 +280,15 @@ namespace Pulsar.ViewModels
 
                         foreach (var slot in Slots) slot.ResetAnimation();
                         CenterSlot?.ResetAnimation();
+
+                        // Keep the Switch-mode inventory warm for the next summon:
+                        // the menu's own dismiss is not a desktop change, so without
+                        // this a peek→dismiss→reopen cycle would re-enumerate the
+                        // desktop instead of reusing the fresh snapshot.
+                        if (CurrentMode == RadialMenuMode.Task)
+                        {
+                            _windowService.PreWarmWindowInventory();
+                        }
                     }
                     else
                     {
@@ -415,14 +438,17 @@ namespace Pulsar.ViewModels
             if (IsVisible || Interlocked.CompareExchange(ref _isLoading, 1, 0) != 0) return;
 
             long beginTimestamp = Stopwatch.GetTimestamp();
+            Task<bool> loadTask = Task.FromResult(false);
+            bool appliedBeforeSurface = false;
+            int firstLoadGeneration = 0;
 
             try
             {
                 // ============ Phase 1: surface the shell immediately ============
                 // Only lightweight work happens here: capture the invocation context,
                 // reset interaction state, lay out the slots, and show the window.
-                // Content is loaded in the background (Phase 2) so a slow data
-                // provider can never delay the moment the radial menu appears.
+                // Content is prepared in parallel (below) so a slow data provider can
+                // never delay the moment the radial menu appears.
                 InvocationSource = invocationSource;
 
                 IntPtr foregroundHandle = PulsarNative.GetForegroundWindow();
@@ -461,6 +487,25 @@ namespace Pulsar.ViewModels
                     _slotsPerPage = _configService.GetValidatedSlotsPerPage();
                 }
 
+                // ============ Deadline-bounded single-phase load ============
+                // One path for warm and cold caches: start the content load now,
+                // seeding the page provider from the cached Switch-mode inventory when
+                // one is available (a warm cache completes inside the budget), and race
+                // it against a short first-frame budget. When the load lands inside the
+                // budget the model is applied before the shell surfaces — a fully
+                // populated first frame. When it misses, the shell surfaces within the
+                // budget and the in-flight load patches the content in (bounded
+                // two-phase fallback for the pathological case).
+                List<ProcessWindowInfo>? cachedWindows = null;
+                if (mode == RadialMenuMode.Task)
+                {
+                    _windowService.TryGetCachedActiveWindows(out cachedWindows);
+                }
+
+                loadTask = LoadPageContentAsync(mode, seededWindows: cachedWindows);
+                firstLoadGeneration = _sessionGeneration;
+                appliedBeforeSurface = await RaceFirstFrameBudget(loadTask);
+
                 // A right-drag release may have resolved this session while the fast
                 // work above ran; never surface a menu for a session that already acted.
                 if (_gestureReleaseHandledDuringLoad)
@@ -471,7 +516,9 @@ namespace Pulsar.ViewModels
                     return;
                 }
 
-                // SHOW THE SHELL NOW — content is prepared in the background (Phase 2).
+                // SHOW THE SHELL NOW — content is already applied when the load won
+                // the budget race (single-phase); otherwise it is being prepared in the
+                // background and will patch in.
                 IsVisible = true;
                 _showVisibleTime = DateTime.Now;
 
@@ -509,24 +556,68 @@ namespace Pulsar.ViewModels
             }
             finally
             {
-                // The loading flag only guards the synchronous surface phase. Phase 2
-                // runs asynchronously below with _isLoading already released so a
-                // dismiss followed by a quick re-summon is not blocked by the previous
-                // session's background load (the generation guard discards its result).
+                // The loading flag only guards the synchronous surface phase. The
+                // deadline-missed load continues asynchronously below with _isLoading
+                // already released so a dismiss followed by a quick re-summon is not
+                // blocked by the previous session's background load (the generation
+                // guard discards its result).
                 Interlocked.Exchange(ref _isLoading, 0);
             }
 
-            // ============ Phase 2: prepare content in the background ============
-            await LoadPageContentAsync(mode);
+            // ============ Phase 2: patch content in if the budget was missed ============
+            // When the load missed the first-frame budget it is still running; await it
+            // here so it applies to the already-visible shell. When the budget was won
+            // the model was applied before the surface and there is nothing to patch.
+            if (!appliedBeforeSurface)
+            {
+                bool patched = await loadTask;
+
+                // Genuine failure (exception) while the session is still the current,
+                // visible one: retry once in the background so the shell is never left
+                // empty. A dismissal (IsVisible false) or a newer session (generation
+                // bumped) must not trigger a retry — those discard the load by design.
+                if (!patched && IsVisible && firstLoadGeneration == _sessionGeneration)
+                {
+                    _logger?.LogDebug("[Show] First-frame load did not apply; retrying content in background.");
+                    await LoadPageContentAsync(mode);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Races the content load against the single-phase first-frame budget. Returns
+        /// true when the load completed and applied its model within the budget (the
+        /// shell surfaces fully populated); false when the budget elapsed first, in
+        /// which case the caller surfaces immediately and lets the still-running load
+        /// patch the shell in.
+        /// </summary>
+        private async Task<bool> RaceFirstFrameBudget(Task<bool> loadTask)
+        {
+            Task completed = await Task.WhenAny(loadTask, Task.Delay(_firstFrameBudget));
+            if (completed != loadTask)
+            {
+                _logger?.LogDebug("[Show] Content load exceeded first-frame budget; surfacing two-phase.");
+                return false;
+            }
+
+            bool applied = await loadTask;
+            if (applied)
+            {
+                _logger?.LogDebug("[Show] Content loaded within first-frame budget; single-phase surface.");
+            }
+
+            return applied;
         }
 
         /// <summary>
         /// Loads the page model for the current session and applies it to the visual
-        /// layer. Runs only after the shell is already visible. Guarded by a session
-        /// generation counter and a cancellation token so a slow load can never
-        /// overwrite a newer session or a session that was dismissed while loading.
+        /// layer. Called from BeginSessionAsync's deadline race, so it may complete
+        /// either before (budget won) or after (budget missed) the shell surfaces.
+        /// Guarded by a session generation counter and a cancellation token so a slow
+        /// load can never overwrite a newer session or a session that was dismissed
+        /// while loading. Returns true when the model was applied to the visual layer.
         /// </summary>
-        private async Task LoadPageContentAsync(RadialMenuMode mode)
+        private async Task<bool> LoadPageContentAsync(RadialMenuMode mode, List<ProcessWindowInfo>? seededWindows = null)
         {
             int generation = ++_sessionGeneration;
 
@@ -541,7 +632,7 @@ namespace Pulsar.ViewModels
 
                 if (mode == RadialMenuMode.Task)
                 {
-                    _pageProvider = new ProcessPageProvider(_windowService, _config!, _serviceProvider, _lastContext!);
+                    _pageProvider = new ProcessPageProvider(_windowService, _config!, _serviceProvider, _lastContext!, seededWindows);
                 }
                 else
                 {
@@ -569,10 +660,10 @@ namespace Pulsar.ViewModels
 
                 await _pageProvider.LoadAsync();
 
-                if (token.IsCancellationRequested || generation != _sessionGeneration || !IsVisible)
+                if (token.IsCancellationRequested || generation != _sessionGeneration)
                 {
-                    _logger?.LogDebug("[Show] Content load superseded or session closed; discarding result.");
-                    return;
+                    _logger?.LogDebug("[Show] Content load superseded; discarding result.");
+                    return false;
                 }
 
                 double loadMs = (Stopwatch.GetTimestamp() - loadStart) * 1000.0 / Stopwatch.Frequency;
@@ -589,31 +680,43 @@ namespace Pulsar.ViewModels
 
                 var provider = _pageProvider;
 
-                // Apply the loaded model to the view layer on the UI thread. The
-                // generation/visibility guard is re-checked inside the delegate so a
-                // dismiss that lands while the apply is queued is still honoured.
+                // Single apply path for both the pre-surface (budget won) and
+                // post-surface (budget missed) cases. Dismissal cancels the session
+                // token via the IsVisible setter and a newer session bumps the
+                // generation counter, so the token/generation guard alone covers both
+                // "closed while loading" and "superseded" — no separate IsVisible
+                // check is needed (and none may be used: the pre-surface apply runs
+                // while IsVisible is still false by design).
                 await _ui.InvokeAsync(() =>
                 {
-                    if (token.IsCancellationRequested || generation != _sessionGeneration || !IsVisible)
+                    if (token.IsCancellationRequested || generation != _sessionGeneration)
                     {
                         return;
                     }
 
-                    long applyStart = Stopwatch.GetTimestamp();
-                    _pagingController.SetTotalPages(provider.TotalPages);
-                    _ = _pagingController.GoToPageAsync(provider.CurrentPage);
-                    ResetCenterSlotForRootMenu();
-                    provider.RefreshVisuals(Slots, CenterSlot);
-                    LogSegmentTiming("Show.Apply", applyStart);
+                    ApplyPageModel(provider);
                 });
+                return true;
             }
             catch (OperationCanceledException)
             {
+                return false;
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "[Show] Failed to load menu content");
+                return false;
             }
+        }
+
+        private void ApplyPageModel(IPageProvider provider)
+        {
+            long applyStart = Stopwatch.GetTimestamp();
+            _pagingController.SetTotalPages(provider.TotalPages);
+            _ = _pagingController.GoToPageAsync(provider.CurrentPage);
+            ResetCenterSlotForRootMenu();
+            provider.RefreshVisuals(Slots, CenterSlot);
+            LogSegmentTiming("Show.Apply", applyStart);
         }
 
         private void LogSegmentTiming(string segment, long startTimestamp)

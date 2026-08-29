@@ -345,6 +345,24 @@ namespace Pulsar.Native
         [DllImport("kernel32.dll")]
         public static extern IntPtr GetCurrentProcess();
 
+        // --- Process image path resolution ---
+        // PROCESS_QUERY_LIMITED_INFORMATION (0x1000) is the minimum right needed by
+        // QueryFullProcessImageName and, unlike PROCESS_QUERY_INFORMATION, it succeeds
+        // against elevated / protected processes from a non-elevated caller.
+        public const uint PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr OpenProcess(uint processAccess, bool bInheritHandle, int processId);
+
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool QueryFullProcessImageName(
+            IntPtr hProcess, uint dwFlags, System.Text.StringBuilder lpExeName, ref int lpdwSize);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool CloseHandle(IntPtr hObject);
+
         public static void CheckSystemIntegrity()
         {
         }

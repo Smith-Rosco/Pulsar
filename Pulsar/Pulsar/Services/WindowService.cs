@@ -177,7 +177,7 @@ namespace Pulsar.Services
             RefreshInventoryCacheInBackground();
         }
 
-        private void RefreshInventoryCacheInBackground()
+        private void RefreshInventoryCacheInBackground(bool force = false)
         {
             // Single-flight: at most one background enumeration at a time. A menu open
             // that misses the cache enumerates inline and repopulates it, so this is
@@ -192,8 +192,10 @@ namespace Pulsar.Services
                 try
                 {
                     // A menu open (or an earlier refresh) may have already repopulated
-                    // the cache while we queued; nothing to do then.
-                    if (_inventoryCache.TryGet(out _))
+                    // the cache while we queued; nothing to do then — unless the caller
+                    // asked for a forced refresh (menu-dismiss pre-warm) to keep the
+                    // next Switch-mode open on a warm cache.
+                    if (!force && _inventoryCache.TryGet(out _))
                     {
                         return;
                     }
@@ -582,6 +584,23 @@ namespace Pulsar.Services
 
             _inventoryCache.Store(windows);
             return windows;
+        }
+
+        public bool TryGetCachedActiveWindows(out List<ProcessWindowInfo> windows)
+        {
+            if (_inventoryCache.TryGet(out var cached))
+            {
+                windows = cached!;
+                return true;
+            }
+
+            windows = new List<ProcessWindowInfo>();
+            return false;
+        }
+
+        public void PreWarmWindowInventory()
+        {
+            RefreshInventoryCacheInBackground(force: true);
         }
 
         public Task<HashSet<string>> GetRunningProcessNamesAsync()

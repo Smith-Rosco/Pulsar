@@ -70,6 +70,25 @@ namespace Pulsar.Services.WindowSwitching
         EligibilityResult Evaluate(WindowEligibilitySnapshot snapshot, Func<string, bool>? processBlacklist = null);
 
         /// <summary>
+        /// 只判定不依赖进程名的硬规则（自身窗口 / 可见性 / cloaked / 样式 / owner /
+        /// 物理可见性 / 类名黑名单）。快照的 <see cref="WindowEligibilitySnapshot.ProcessName"/>
+        /// 可以为空。
+        /// <para>
+        /// 全桌面枚举用它做第一道筛：这些事实全部来自廉价的 native 读取，而解析进程元数据
+        /// （<c>Process.ProcessName</c> 会触发全系统进程快照）昂贵得多。典型桌面有数百个顶层窗口、
+        /// 其中只有十几个可切换，先筛后解析把昂贵调用的次数降低一个量级。
+        /// </para>
+        /// </summary>
+        EligibilityResult EvaluateStructural(WindowEligibilitySnapshot snapshot);
+
+        /// <summary>
+        /// 判定依赖进程名/标题的规则（进程黑名单 + 用户规则链）。调用方须先通过
+        /// <see cref="EvaluateStructural"/>，并在快照中填好 ProcessName
+        /// （以及存在标题依赖规则时的 Title）。
+        /// </summary>
+        EligibilityResult EvaluateIdentity(WindowEligibilitySnapshot snapshot, Func<string, bool>? processBlacklist = null);
+
+        /// <summary>
         /// 是否存在依赖标题的规则（TitlePattern）。为 true 时，调用方应读取窗口标题填入快照，
         /// 否则标题规则永不命中（快照 Title 为空）。
         /// </summary>
@@ -106,7 +125,19 @@ namespace Pulsar.Services.WindowSwitching
             HasTitleDependentRules = normalized.Any(rule => !string.IsNullOrWhiteSpace(rule.TitlePattern));
         }
 
+        /// <summary>
+        /// 完整判定 = 结构判定 + 身份判定。两段的顺序与合并前完全一致，
+        /// 因此单次判定的调用方（快速切换、Inspector）语义不变。
+        /// </summary>
         public EligibilityResult Evaluate(WindowEligibilitySnapshot snapshot, Func<string, bool>? processBlacklist = null)
+        {
+            var structural = EvaluateStructural(snapshot);
+            return structural.Included
+                ? EvaluateIdentity(snapshot, processBlacklist)
+                : structural;
+        }
+
+        public EligibilityResult EvaluateStructural(WindowEligibilitySnapshot snapshot)
         {
             if (snapshot.Pid == _ownPid)
             {
@@ -148,6 +179,11 @@ namespace Pulsar.Services.WindowSwitching
                 return Excluded(WindowEligibilityVerdict.ExcludedBlacklistedClass);
             }
 
+            return new EligibilityResult(true, WindowEligibilityVerdict.Eligible);
+        }
+
+        public EligibilityResult EvaluateIdentity(WindowEligibilitySnapshot snapshot, Func<string, bool>? processBlacklist = null)
+        {
             if (processBlacklist?.Invoke(snapshot.ProcessName) == true)
             {
                 return Excluded(WindowEligibilityVerdict.ExcludedBlacklistedProcess);

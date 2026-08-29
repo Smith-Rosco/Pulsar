@@ -30,16 +30,23 @@ namespace Pulsar.ViewModels.Strategies
         private readonly IActionFeedbackPresenter? _feedbackPresenter;
 
         private List<MatchedWindowGroup> _matchedSlots = new();
+        private readonly List<ProcessWindowInfo>? _seededWindows;
 
         public override int TotalPages => (int)Math.Ceiling((double)_matchedSlots.Count / (double)ItemsPerPage);
 
-        public ProcessPageProvider(IWindowService windowService, ProfilesConfig config, System.IServiceProvider serviceProvider, PulsarContext context)
+        public ProcessPageProvider(
+            IWindowService windowService,
+            ProfilesConfig config,
+            System.IServiceProvider serviceProvider,
+            PulsarContext context,
+            List<ProcessWindowInfo>? seededWindows = null)
             : base(serviceProvider.GetService(typeof(IConfigService)) as IConfigService)
         {
             _windowService = windowService;
             _config = config;
             _serviceProvider = serviceProvider;
             _context = context;
+            _seededWindows = seededWindows;
             _loc = serviceProvider.GetService(typeof(ILocalizationService)) as ILocalizationService;
             _matcher = new ProcessWindowMatcher(config);
             
@@ -55,6 +62,16 @@ namespace Pulsar.ViewModels.Strategies
 
         public override async Task LoadAsync()
         {
+            if (_seededWindows != null)
+            {
+                // Warm-cache fast path: the caller already holds a fresh inventory
+                // snapshot (served from WindowInventoryCache), so skip the desktop
+                // enumeration entirely and build the matched slot list from it.
+                _matchedSlots = _matcher.BuildSlotList(_seededWindows);
+                _currentPage = 0;
+                return;
+            }
+
             var windows = await _windowService.GetActiveWindowsAsync();
             _matchedSlots = _matcher.BuildSlotList(windows);
             _currentPage = 0;

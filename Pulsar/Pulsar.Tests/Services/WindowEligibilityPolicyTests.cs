@@ -400,5 +400,124 @@ namespace Pulsar.Tests.Services
 
             policy.Evaluate(EligibleSnapshot()).Included.Should().BeTrue();
         }
+
+        // ===== 两段式判定：结构筛（无需进程名）+ 身份筛（需要进程名） =====
+        // 全桌面枚举先做结构筛、只对幸存窗口解析进程元数据，因此结构筛必须在
+        // ProcessName 为空时也能给出与合并判定一致的结论。
+
+        [Fact]
+        public void EvaluateStructural_ShouldNotRequireProcessName()
+        {
+            var policy = CreatePolicy();
+
+            var result = policy.EvaluateStructural(EligibleSnapshot() with { ProcessName = string.Empty });
+
+            result.Included.Should().BeTrue();
+            result.Verdict.Should().Be(WindowEligibilityVerdict.Eligible);
+        }
+
+        [Fact]
+        public void EvaluateStructural_ShouldCatchHardRules_WithoutProcessName()
+        {
+            var policy = CreatePolicy(ownPid: 999);
+            var s = EligibleSnapshot() with { ProcessName = string.Empty };
+
+            var cases = new (WindowEligibilitySnapshot Snapshot, WindowEligibilityVerdict Expected)[]
+            {
+                (s with { IsVisible = false }, WindowEligibilityVerdict.ExcludedHidden),
+                (s with { IsCloaked = true }, WindowEligibilityVerdict.ExcludedCloaked),
+                (s with { ExStyle = PulsarNative.WS_EX_TOOLWINDOW }, WindowEligibilityVerdict.ExcludedToolWindow),
+                (s with { Style = PulsarNative.WS_CHILD }, WindowEligibilityVerdict.ExcludedChild),
+                (s with { OwnerHwnd = new IntPtr(7) }, WindowEligibilityVerdict.ExcludedOwned),
+                (s with { Rect = null }, WindowEligibilityVerdict.ExcludedOffScreen),
+                (s with { Pid = 999 }, WindowEligibilityVerdict.ExcludedSelf)
+            };
+
+            foreach (var (snapshot, expected) in cases)
+            {
+                var result = policy.EvaluateStructural(snapshot);
+
+                result.Included.Should().BeFalse("{0} 应在结构筛被排除", expected);
+                result.Verdict.Should().Be(expected);
+            }
+        }
+
+        [Fact]
+        public void EvaluateStructural_ShouldNotApplyProcessBlacklist()
+        {
+            var policy = CreatePolicy();
+            var snapshot = EligibleSnapshot(processName: "blacklisted");
+
+            // 结构筛不接受黑名单谓词；进程黑名单只在身份筛生效。
+            policy.EvaluateStructural(snapshot).Included.Should().BeTrue();
+            policy.EvaluateIdentity(snapshot, name => name == "blacklisted").Included.Should().BeFalse();
+        }
+
+        [Fact]
+        public void EvaluateStructural_ShouldNotApplyRuleChain()
+        {
+            var policy = CreatePolicy();
+            policy.UpdateRules(new[] { new WindowEligibilityRule(false, null, "NotepadClass", null) });
+
+            // 规则链依赖进程名限定，因此整体留在身份筛；结构筛必须放行。
+            policy.EvaluateStructural(EligibleSnapshot()).Included.Should().BeTrue();
+            policy.EvaluateIdentity(EligibleSnapshot()).Included.Should().BeFalse();
+        }
+
+        /// <summary>
+        /// 回归护栏：合并判定必须严格等于"结构筛 → 身份筛"的两段组合。
+        /// 枚举路径走两段、快速切换/Inspector 走合并，两者结论不得分叉。
+        /// </summary>
+        [Fact]
+        public void Evaluate_ShouldEqual_StructuralThenIdentity_ForAllVariants()
+        {
+            var policy = CreatePolicy(
+                ownPid: 999,
+                classBlacklist: new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "BlockedClass" });
+            policy.UpdateRules(new[]
+            {
+                new WindowEligibilityRule(false, null, "RuledClass", null),
+                new WindowEligibilityRule(true, "allowme", "AllowedClass", null)
+            });
+
+            var baseline = EligibleSnapshot();
+            var variants = new[]
+            {
+                baseline,
+                baseline with { IsVisible = false },
+                baseline with { IsCloaked = true },
+                baseline with { ExStyle = PulsarNative.WS_EX_TOOLWINDOW },
+                baseline with { Style = PulsarNative.WS_CHILD },
+                baseline with { OwnerHwnd = new IntPtr(7) },
+                baseline with { OwnerHwnd = new IntPtr(7), ExStyle = PulsarNative.WS_EX_APPWINDOW },
+                baseline with { Rect = null },
+                baseline with { IsIconic = true, Rect = null },
+                baseline with { Pid = 999 },
+                baseline with { ClassName = "BlockedClass" },
+                baseline with { ClassName = "RuledClass" },
+                baseline with { ClassName = "AllowedClass", ProcessName = "allowme" },
+                baseline with { ClassName = "RuledClass", ProcessName = "blocked" },
+                baseline with { ProcessName = "blocked" },
+                baseline with { ProcessName = string.Empty }
+            };
+
+            Func<string, bool> blacklist = name => name == "blocked";
+
+            foreach (var snapshot in variants)
+            {
+                var combined = policy.Evaluate(snapshot, blacklist);
+
+                var structural = policy.EvaluateStructural(snapshot);
+                var twoStage = structural.Included
+                    ? policy.EvaluateIdentity(snapshot, blacklist)
+                    : structural;
+
+                combined.Should().Be(
+                    twoStage,
+                    "合并判定与两段判定在 {0} / {1} 上必须一致",
+                    snapshot.ClassName,
+                    snapshot.ProcessName);
+            }
+        }
     }
 }

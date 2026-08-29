@@ -58,18 +58,51 @@ namespace Pulsar.Services.WindowSwitching
         /// 可能在无响应应用上阻塞 —— 仅当存在标题依赖规则（TitlePattern）时传入 true。</param>
         public static WindowEligibilitySnapshot FromHwnd(IntPtr hwnd, bool captureTitle = false)
         {
+            // 单窗口路径：进程名在这里解析（调用方只判定一个窗口，成本无关紧要）。
+            // 全桌面枚举请改用 FromHwndStructural + 幸存后再解析进程名。
+            var snapshot = FromHwndStructural(hwnd);
+
+            return snapshot with
+            {
+                ProcessName = ResolveProcessName(snapshot.Pid),
+                Title = captureTitle ? ReadWindowText(hwnd) : string.Empty
+            };
+        }
+
+        /// <summary>
+        /// 抓取<b>不依赖进程名</b>的结构事实 —— 结构判定
+        /// （<see cref="IWindowEligibilityPolicy.EvaluateStructural"/>）的完整输入。
+        /// <para>
+        /// 这是唯一读取 native 结构事实的地方：<see cref="FromHwnd"/> 与全桌面枚举都经由它，
+        /// 因此不存在"两个组装器各写一份字段、漏填一个就让对应规则静默失效"的风险
+        /// （历史上枚举路径漏填 Style，使 WS_CHILD 规则在该路径上从未命中）。
+        /// </para>
+        /// </summary>
+        /// <param name="hwnd">目标窗口。</param>
+        /// <param name="className">已读取的窗口类名；null 时由本方法读取。</param>
+        /// <param name="virtualScreenRect">已读取的虚拟屏幕矩形；null 时由本方法读取。
+        /// 枚举路径应在循环外读取一次并传入 —— 它是 4 次 GetSystemMetrics。</param>
+        public static WindowEligibilitySnapshot FromHwndStructural(
+            IntPtr hwnd,
+            string? className = null,
+            PulsarNative.RECT? virtualScreenRect = null)
+        {
             PulsarNative.GetWindowThreadProcessId(hwnd, out uint pid);
 
-            var className = new StringBuilder(256);
-            PulsarNative.GetClassName(hwnd, className, className.Capacity);
+            if (className == null)
+            {
+                var classBuilder = new StringBuilder(256);
+                PulsarNative.GetClassName(hwnd, classBuilder, classBuilder.Capacity);
+                className = classBuilder.ToString();
+            }
 
             return new WindowEligibilitySnapshot
             {
                 Hwnd = hwnd,
                 Pid = pid,
-                ProcessName = ResolveProcessName(pid),
-                ClassName = className.ToString(),
-                Title = captureTitle ? ReadWindowText(hwnd) : string.Empty,
+                ProcessName = string.Empty,
+                ClassName = className,
+                Title = string.Empty,
                 IsIconic = PulsarNative.IsIconic(hwnd),
                 IsVisible = PulsarNative.IsWindowVisible(hwnd),
                 IsCloaked = IsDwmCloaked(hwnd),
@@ -77,7 +110,7 @@ namespace Pulsar.Services.WindowSwitching
                 Style = PulsarNative.GetWindowLong(hwnd, PulsarNative.GWL_STYLE),
                 OwnerHwnd = PulsarNative.GetWindow(hwnd, PulsarNative.GW_OWNER),
                 Rect = TryGetWindowRect(hwnd),
-                VirtualScreenRect = GetVirtualScreenRect()
+                VirtualScreenRect = virtualScreenRect ?? GetVirtualScreenRect()
             };
         }
 
