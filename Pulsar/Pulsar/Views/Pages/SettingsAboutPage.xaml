@@ -80,6 +80,28 @@
                     </Grid>
                 </ui:CardControl>
 
+                <!-- Configuration Backup -->
+                <ui:CardExpander Icon="Archive24" Header="{lex:Locale Settings.About.ConfigBackupTitle}" Margin="0,0,0,12" IsExpanded="True">
+                    <StackPanel>
+                        <TextBlock Text="{lex:Locale Settings.About.ConfigBackupDescription}"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   FontSize="12"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,12"/>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:Button Content="{lex:Locale Settings.About.ExportConfig}"
+                                       Icon="{ui:SymbolIcon SaveArrowRight24}"
+                                       Command="{Binding ExportConfigCommand}"
+                                       Style="{StaticResource PulsarPrimaryButtonStyle}"
+                                       Margin="0,0,8,0"/>
+                            <ui:Button Content="{lex:Locale Settings.About.ImportConfig}"
+                                       Icon="{ui:SymbolIcon FolderOpen24}"
+                                       Command="{Binding ImportConfigCommand}"
+                                       Style="{StaticResource PulsarSecondaryButtonStyle}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ui:CardExpander>
+
                 <!-- Links -->
                 <ui:CardExpander Icon="Link24" Header="{lex:Locale Settings.About.Links}" Margin="0,0,0,12" IsExpanded="True">
                     <StackPanel>

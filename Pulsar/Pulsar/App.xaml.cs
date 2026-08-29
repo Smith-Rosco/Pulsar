@@ -180,6 +180,9 @@ namespace Pulsar
             // [New] Configuration Validation
             serviceCollection.AddSingleton<Services.Validation.ConfigValidationPipeline>();
 
+            // [New] Configuration Backup / Restore
+            serviceCollection.AddSingleton<IConfigBackupService, ConfigBackupService>();
+
             // 3. Focus Management
             serviceCollection.AddSingleton<IFocusNativeAdapter, WindowsFocusNativeAdapter>();
             serviceCollection.AddSingleton<IModifierStateTracker>(sp => sp.GetRequiredService<GlobalKeyboardHook>());

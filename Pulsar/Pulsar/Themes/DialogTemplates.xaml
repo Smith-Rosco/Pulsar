@@ -64,4 +64,8 @@
     <DataTemplate DataType="{x:Type dialogs:FirstLaunchSetupWizardViewModel}">
         <contents:FirstLaunchSetupWizardContent/>
     </DataTemplate>
+
+    <DataTemplate DataType="{x:Type dialogs:ConfigBackupOptionsViewModel}">
+        <contents:ConfigBackupOptionsContent/>
+    </DataTemplate>
 </ResourceDictionary>

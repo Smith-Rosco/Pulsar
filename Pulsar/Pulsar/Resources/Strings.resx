@@ -2933,4 +2933,110 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
   <data name="QuickSwitch.HiddenWindowBody" xml:space="preserve">
     <value>'{0}' is off-screen / zero-size and was removed from quick-switch history. Use WinSwitcher → Window Inspector to exclude it permanently.</value>
   </data>
-</root>
+  <data name="Settings.About.ConfigBackupTitle" xml:space="preserve">
+    <value>Configuration Backup</value>
+  </data>
+  <data name="Settings.About.ConfigBackupDescription" xml:space="preserve">
+    <value>Export or restore Profiles.json and the encrypted credential store as a ZIP package. Password-protected backups can be restored on another machine.</value>
+  </data>
+  <data name="Settings.About.ExportConfig" xml:space="preserve">
+    <value>Export Configuration</value>
+  </data>
+  <data name="Settings.About.ImportConfig" xml:space="preserve">
+    <value>Restore Configuration</value>
+  </data>
+  <data name="Settings.About.BackupFileFilter" xml:space="preserve">
+    <value>Pulsar backup (*.zip)|*.zip|All files (*.*)|*.*</value>
+  </data>
+  <data name="Settings.About.ExportOptionsTitle" xml:space="preserve">
+    <value>Export Options</value>
+  </data>
+  <data name="Settings.About.ExportSuccess" xml:space="preserve">
+    <value>Export Successful</value>
+  </data>
+  <data name="Settings.About.ExportSuccessBodyFormat" xml:space="preserve">
+    <value>Backup contains {0} profiles, {1} slots and {2} secrets.</value>
+  </data>
+  <data name="Settings.About.ExportFailed" xml:space="preserve">
+    <value>Export Failed</value>
+  </data>
+  <data name="Settings.About.ImportFailed" xml:space="preserve">
+    <value>Restore Failed</value>
+  </data>
+  <data name="Settings.About.BackupPasswordTitle" xml:space="preserve">
+    <value>Backup Password</value>
+  </data>
+  <data name="Settings.About.ImportConfirmTitle" xml:space="preserve">
+    <value>Restore Configuration?</value>
+  </data>
+  <data name="Settings.About.ImportConfirmBodyFormat" xml:space="preserve">
+    <value>This backup was created by Pulsar {3} on {4} and contains {0} profiles, {1} slots and {2} secrets. Your current configuration will be replaced (a safety copy is kept). Continue?</value>
+  </data>
+  <data name="Settings.About.ImportConfirmYes" xml:space="preserve">
+    <value>Restore</value>
+  </data>
+  <data name="Settings.About.ImportSuccess" xml:space="preserve">
+    <value>Restore Successful</value>
+  </data>
+  <data name="Settings.About.ImportRestartBody" xml:space="preserve">
+    <value>Pulsar needs to restart for the restored configuration to take full effect. Restart now?</value>
+  </data>
+  <data name="Settings.About.RestartNow" xml:space="preserve">
+    <value>Restart Now</value>
+  </data>
+  <data name="Settings.About.BackupError.FileNotFound" xml:space="preserve">
+    <value>The selected file does not exist.</value>
+  </data>
+  <data name="Settings.About.BackupError.InvalidPackage" xml:space="preserve">
+    <value>This is not a valid Pulsar backup package.</value>
+  </data>
+  <data name="Settings.About.BackupError.UnsupportedVersion" xml:space="preserve">
+    <value>This backup was created by a newer Pulsar version and cannot be restored here.</value>
+  </data>
+  <data name="Settings.About.BackupError.InvalidConfig" xml:space="preserve">
+    <value>The configuration inside the backup could not be read or failed validation.</value>
+  </data>
+  <data name="Settings.About.BackupError.InvalidSecrets" xml:space="preserve">
+    <value>The credential store inside the backup could not be read.</value>
+  </data>
+  <data name="Settings.About.BackupError.WrongPassword" xml:space="preserve">
+    <value>The password is incorrect or the backup has been modified.</value>
+  </data>
+  <data name="Settings.About.BackupError.SecretProtectionFailed" xml:space="preserve">
+    <value>One or more secrets could not be decrypted for export on this machine.</value>
+  </data>
+  <data name="Settings.About.BackupError.IoError" xml:space="preserve">
+    <value>The operation failed while reading or writing files.</value>
+  </data>
+  <data name="Dialog.ConfigBackup.ExportIncludeSecrets" xml:space="preserve">
+    <value>Include secrets (recommended)</value>
+  </data>
+  <data name="Dialog.ConfigBackup.ExportIncludeSecretsDescription" xml:space="preserve">
+    <value>Exports the DPAPI-encrypted credential store. Without password protection, raw backups only restore on the same Windows user account.</value>
+  </data>
+  <data name="Dialog.ConfigBackup.ExportUsePassword" xml:space="preserve">
+    <value>Protect with password</value>
+  </data>
+  <data name="Dialog.ConfigBackup.ExportUsePasswordDescription" xml:space="preserve">
+    <value>Seals secrets with a password (PBKDF2 + AES-GCM) so the backup can be restored on another machine.</value>
+  </data>
+  <data name="Dialog.ConfigBackup.Password" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="Dialog.ConfigBackup.ConfirmPassword" xml:space="preserve">
+    <value>Confirm password</value>
+  </data>
+  <data name="Dialog.ConfigBackup.PasswordRequiredHint" xml:space="preserve">
+    <value>Please enter a password.</value>
+  </data>
+  <data name="Dialog.ConfigBackup.PasswordMismatchHint" xml:space="preserve">
+    <value>Passwords do not match.</value>
+  </data>
+  <data name="Dialog.ConfigBackup.ImportPasswordHint" xml:space="preserve">
+    <value>This backup is password-protected. Enter the password used when it was created.</value>
+  </data>  <data name="Settings.About.RestartFailedTitle" xml:space="preserve">
+    <value>Restart Failed</value>
+  </data>
+  <data name="Settings.About.RestartFailedBodyFormat" xml:space="preserve">
+    <value>Pulsar could not be restarted automatically. Please restart it manually. ({0})</value>
+  </data></root>

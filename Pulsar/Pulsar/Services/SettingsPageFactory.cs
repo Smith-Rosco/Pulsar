@@ -12,17 +12,20 @@ namespace Pulsar.Services
         private readonly PluginManagerViewModel _pluginManagerViewModel;
         private readonly ExternalPluginManagerViewModel _externalPluginManagerViewModel;
         private readonly SettingsAnalyticsPageViewModel _analyticsViewModel;
+        private readonly AboutViewModel _aboutViewModel;
         private readonly IThemeService _themeService;
 
         public SettingsPageFactory(
             PluginManagerViewModel pluginManagerViewModel,
             ExternalPluginManagerViewModel externalPluginManagerViewModel,
             SettingsAnalyticsPageViewModel analyticsViewModel,
+            AboutViewModel aboutViewModel,
             IThemeService themeService)
         {
             _pluginManagerViewModel = pluginManagerViewModel;
             _externalPluginManagerViewModel = externalPluginManagerViewModel;
             _analyticsViewModel = analyticsViewModel;
+            _aboutViewModel = aboutViewModel;
             _themeService = themeService;
         }
 
@@ -34,7 +37,7 @@ namespace Pulsar.Services
                 SettingsPageIds.Slots => new SettingsSlotsPage(settingsViewModel, _themeService),
                 SettingsPageIds.Plugins => new SettingsPluginsPage(_pluginManagerViewModel, _themeService, _externalPluginManagerViewModel),
                 SettingsPageIds.Analytics => new SettingsAnalyticsPage(_analyticsViewModel, _themeService),
-                SettingsPageIds.About => new SettingsAboutPage(new AboutViewModel(), _themeService),
+                SettingsPageIds.About => new SettingsAboutPage(_aboutViewModel, _themeService),
                 _ => throw new InvalidOperationException($"Unknown settings page id '{pageId}'.")
             };
         }

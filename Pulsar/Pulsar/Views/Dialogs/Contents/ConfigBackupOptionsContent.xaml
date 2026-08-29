@@ -1,0 +1,77 @@
+<UserControl x:Class="Pulsar.Views.Dialogs.Contents.ConfigBackupOptionsContent"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:vm="clr-namespace:Pulsar.ViewModels.Dialogs"
+             xmlns:lex="clr-namespace:Pulsar.Core.Localization"
+             xmlns:converters="clr-namespace:Pulsar.Core.Converters"
+             mc:Ignorable="d"
+             MinWidth="420"
+             d:DataContext="{d:DesignInstance Type=vm:ConfigBackupOptionsViewModel}">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVis"/>
+    </UserControl.Resources>
+
+    <StackPanel Margin="0,4">
+
+        <!-- Export mode -->
+        <StackPanel Visibility="{Binding IsExportMode, Converter={StaticResource BoolToVis}}">
+            <CheckBox IsChecked="{Binding IncludeSecrets, Mode=TwoWay}"
+                      Margin="0,0,0,4">
+                <StackPanel>
+                    <TextBlock Text="{lex:Locale Dialog.ConfigBackup.ExportIncludeSecrets}" FontWeight="SemiBold"/>
+                    <TextBlock Text="{lex:Locale Dialog.ConfigBackup.ExportIncludeSecretsDescription}"
+                               FontSize="12"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               TextWrapping="Wrap"
+                               Margin="0,2,0,0"/>
+                </StackPanel>
+            </CheckBox>
+
+            <CheckBox IsChecked="{Binding UsePassword, Mode=TwoWay}"
+                      Margin="0,12,0,4">
+                <StackPanel>
+                    <TextBlock Text="{lex:Locale Dialog.ConfigBackup.ExportUsePassword}" FontWeight="SemiBold"/>
+                    <TextBlock Text="{lex:Locale Dialog.ConfigBackup.ExportUsePasswordDescription}"
+                               FontSize="12"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               TextWrapping="Wrap"
+                               Margin="0,2,0,0"/>
+                </StackPanel>
+            </CheckBox>
+
+            <StackPanel Visibility="{Binding IsPasswordSectionVisible, Converter={StaticResource BoolToVis}}"
+                        Margin="0,12,0,0">
+                <TextBlock Text="{lex:Locale Dialog.ConfigBackup.Password}" Margin="0,0,0,4"/>
+                <ui:PasswordBox Password="{Binding Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                PlaceholderText="{lex:Locale Dialog.ConfigBackup.Password}"
+                                Margin="0,0,0,8"/>
+                <TextBlock Text="{lex:Locale Dialog.ConfigBackup.ConfirmPassword}" Margin="0,0,0,4"/>
+                <ui:PasswordBox Password="{Binding ConfirmPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                PlaceholderText="{lex:Locale Dialog.ConfigBackup.ConfirmPassword}"/>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Import password mode -->
+        <StackPanel Visibility="{Binding IsImportPasswordMode, Converter={StaticResource BoolToVis}}">
+            <TextBlock Text="{lex:Locale Dialog.ConfigBackup.ImportPasswordHint}"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                       Margin="0,0,0,10"/>
+            <ui:PasswordBox Password="{Binding Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            PlaceholderText="{lex:Locale Dialog.ConfigBackup.Password}"/>
+        </StackPanel>
+
+        <!-- Validation hint -->
+        <TextBlock Text="{Binding ValidationHint}"
+                   Foreground="{DynamicResource PaletteRedBrush}"
+                   FontSize="12"
+                   TextWrapping="Wrap"
+                   Margin="0,10,0,0"
+                   Visibility="{Binding ValidationHint, Converter={StaticResource StringEmptyToVis}}"/>
+    </StackPanel>
+</UserControl>
