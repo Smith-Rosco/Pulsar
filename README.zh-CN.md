@@ -21,10 +21,10 @@
 
 | 功能 | 描述 |
 |------|------|
-| **径向菜单** | 热键唤起的圆形启动器。两种模式：命令模式 (`Ctrl+Q`) 显示上下文操作，切换模式 (`Ctrl+Shift+Q`) 带 MRU 中心窗口用于应用切换 |
+| **径向菜单** | 热键唤起的圆形启动器。两种模式：命令模式 (`Ctrl+Shift+Q`) 显示上下文操作，切换模式 (`Ctrl+Q`) 带 MRU 中心窗口用于应用切换 |
 | **可扩展插件系统** | 双层架构：核心插件（基础设施，必须）和扩展插件（可选，断路器保护） |
 | **PKI / 秘密管理** | 使用 DPAPI 加密安全存储凭据，通过 UI 自动化注入，支持自动提交和可配置延迟 |
-| **全局热键** | 系统级热键绑定，默认 `Ctrl+Alt+P` |
+| **全局热键** | 系统级热键绑定，默认 `Ctrl+Shift+Q`（命令模式）/ `Ctrl+Q`（切换模式） |
 | **应用与窗口切换** | 智能窗口切换（含发现黑名单），未运行时自动启动应用 |
 | **插件模拟器** | 无头模式执行插件，输出结构化 JSON，无需 WPF 界面即可进行 AI 驱动的测试 |
 | **插件扩展** | 命令启动器（应用/文件/文件夹/URL/按键序列）、VBA 脚本执行器（Excel/WPS）、书签执行器（浏览器 JS） |
@@ -42,7 +42,7 @@
 dotnet restore Pulsar/Pulsar/Pulsar.csproj
 dotnet build Pulsar/Pulsar/Pulsar.csproj
 
-# 运行（默认热键：Ctrl+Alt+P）
+# 运行（默认热键：Ctrl+Shift+Q 命令模式、Ctrl+Q 切换模式）
 dotnet run --project Pulsar/Pulsar/Pulsar.csproj
 
 # 运行测试

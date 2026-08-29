@@ -22,10 +22,10 @@
 
 | Feature | Description |
 |---------|-------------|
-| **Radial Menu** | Hotkey-invoked circular launcher. Two modes: Command mode (`Ctrl+Q`) for contextual actions, Switch mode (`Ctrl+Shift+Q`) with MRU center window for app switching |
+| **Radial Menu** | Hotkey-invoked circular launcher. Two modes: Command mode (`Ctrl+Shift+Q`) for contextual actions, Switch mode (`Ctrl+Q`) with MRU center window for app switching |
 | **Extensible Plugin System** | Two-tier architecture: Core plugins (essential infrastructure) and Extension plugins (optional, Circuit Breaker protected) |
 | **PKI / Secret Management** | Securely store credentials with DPAPI encryption. Inject via UI Automation with auto-submit and configurable delay |
-| **Global Hotkeys** | System-wide bindings for instant access — default `Ctrl+Alt+P` |
+| **Global Hotkeys** | System-wide bindings for instant access — default `Ctrl+Shift+Q` (Command mode) and `Ctrl+Q` (Switch mode) |
 | **App & Window Switching** | Smart window switching with discovery blacklist, launch apps if not running |
 | **Plugin Simulator** | Headless plugin execution + structured JSON output for AI-driven testing without the WPF shell |
 | **Plugin System Extensions** | Command Runner (apps/files/folders/URLs/keystrokes), VBA Script Runner (Excel/WPS), Bookmarklet Runner (browser JS) |
@@ -43,7 +43,7 @@
 dotnet restore Pulsar/Pulsar/Pulsar.csproj
 dotnet build Pulsar/Pulsar/Pulsar.csproj
 
-# Run (default hotkey: Ctrl+Alt+P)
+# Run (default hotkeys: Ctrl+Shift+Q = Command mode, Ctrl+Q = Switch mode)
 dotnet run --project Pulsar/Pulsar/Pulsar.csproj
 
 # Run tests

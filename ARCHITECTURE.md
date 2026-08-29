@@ -21,12 +21,12 @@ Pulsar is a high-performance desktop productivity tool built with C# WPF.
 
 Pulsar triggers two independent modes via different hotkeys, with strictly isolated data structures:
 
-#### 1. Command Mode - `Ctrl + Q`
+#### 1. Command Mode - `Ctrl + Shift + Q`
 * **Logic**: Based on currently active window (context), loads statically configured actions
 * **Use Cases**: Execute VBA scripts, fill passwords (PKI), data transformation, etc.
 * **Layout**: Strictly corresponds to `Profiles.json` configuration, position does not change with usage frequency
 
-#### 2. Switch Mode - `Ctrl + Shift + Q`
+#### 2. Switch Mode - `Ctrl + Q`
 * **Logic**: Quickly activate other applications
 * **Layout**:
   * **Outer Ring**: Static configuration (e.g., Chrome fixed on left, VS Code fixed on right)

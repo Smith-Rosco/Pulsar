@@ -11,12 +11,12 @@ A circular menu invoked by a global hotkey, arranging Slots spatially around a c
 _Avoid_: Grid, wheel, pie menu
 
 **Command Mode**:
-The radial menu mode (default `Ctrl+Q`) that presents the statically configured Slots of the active window's Profile.
-_Avoid_: Action mode, ShowSwitcher (legacy hotkey ID)
+The radial menu mode (default `Ctrl+Shift+Q`) that presents the statically configured Slots of the active window's Profile.
+_Avoid_: Action mode, ShowGrid (legacy hotkey ID)
 
 **Switch Mode**:
-The radial menu mode (default `Ctrl+Shift+Q`) for activating other applications: static Slots on the outer ring, the MRU Window in the center.
-_Avoid_: Task mode, ShowGrid (legacy hotkey ID)
+The radial menu mode (default `Ctrl+Q`) for activating other applications: static Slots on the outer ring, the MRU Window in the center.
+_Avoid_: Task mode, ShowSwitcher (legacy hotkey ID)
 
 **Slot**:
 A fixed radial position within a mode, bound to one plugin Action and its arguments. Positions never move, so layout can be learned by feel.
