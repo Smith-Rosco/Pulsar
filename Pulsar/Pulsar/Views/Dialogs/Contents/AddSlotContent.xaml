@@ -582,14 +582,10 @@
                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                        VerticalAlignment="Center"/>
                             <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                <Border Width="56" Height="36"
-                                        CornerRadius="8"
-                                        BorderBrush="{DynamicResource ControlElevationBorderBrush}"
-                                        BorderThickness="1"
-                                        Background="{Binding Slot.Color, Converter={StaticResource HexToBrush}}"
-                                        Cursor="Hand"
-                                        ToolTip="{lex:Locale Dialog.AddSlot.PickColor}"
-                                        MouseLeftButtonDown="ColorSwatch_MouseLeftButtonDown">
+                                <Button Width="56" Height="36"
+                                        Background="{Binding Slot.CustomColor, Converter={StaticResource HexToBrush}}"
+                                        Command="{Binding PickColorCommand}"
+                                        ToolTip="{lex:Locale Dialog.AddSlot.PickColor}">
                                     <Grid>
                                         <ui:SymbolIcon Symbol="Drop24"
                                                        FontSize="16"
@@ -597,7 +593,7 @@
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center"/>
                                     </Grid>
-                                </Border>
+                                </Button>
                             </StackPanel>
                         </Grid>
 

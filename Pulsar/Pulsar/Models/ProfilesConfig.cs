@@ -483,8 +483,25 @@ namespace Pulsar.Models
         public string Color
         {
             get => _color;
-            set => SetProperty(ref _color, value);
+            set
+            {
+                if (SetProperty(ref _color, value))
+                {
+                    OnPropertyChanged(nameof(HasCustomColor));
+                    OnPropertyChanged(nameof(UsesAutomaticColor));
+                    OnPropertyChanged(nameof(CustomColor));
+                }
+            }
         }
+
+        [JsonIgnore]
+        public bool HasCustomColor => !string.IsNullOrWhiteSpace(Color);
+
+        [JsonIgnore]
+        public bool UsesAutomaticColor => !HasCustomColor;
+
+        [JsonIgnore]
+        public string? CustomColor => HasCustomColor ? Color : null;
 
         private SlotPresentation _presentation = SlotPresentation.Empty;
 

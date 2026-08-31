@@ -964,11 +964,7 @@ namespace Pulsar.ViewModels
             var selectedColor = await _dialogService.ShowColorPickerAsync(_loc["Notification.PickColor"], item.Color);
             
             if (selectedColor != null)
-            {
-                item.Color = string.Equals(selectedColor, "#FFFFFF", StringComparison.OrdinalIgnoreCase)
-                    ? string.Empty
-                    : selectedColor;
-            }
+                item.Color = selectedColor;
         }
 
         [RelayCommand]

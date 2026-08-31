@@ -41,6 +41,7 @@ namespace Pulsar.ViewModels.Settings
                     break;
                 case nameof(PluginSlot.Color):
                     OnPropertyChanged(nameof(ColorHex));
+                    OnPropertyChanged(nameof(HasCustomColor));
                     break;
             }
         }
@@ -84,6 +85,8 @@ namespace Pulsar.ViewModels.Settings
         public string? IconKey => Slot?.IconKey;
 
         public string? ColorHex => Slot?.Color;
+
+        public bool HasCustomColor => Slot?.HasCustomColor == true;
 
         public string? Tooltip => IsEmpty
             ? string.Format(_loc["Settings.Slots.Wheel.EmptySlotTooltipFormat"], Position)

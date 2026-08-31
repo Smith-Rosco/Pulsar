@@ -394,8 +394,8 @@ namespace Pulsar.Services
                 var dialogResult = ShowDialogInternal(vm, DialogPlacement.CenterOwner, DialogSizeConstraints.Medium);
 
                 // Return the selected hex color if user confirmed, otherwise null
-                return dialogResult == Pulsar.Models.Enums.DialogResult.Confirmed 
-                    ? colorPickerVm.SelectedHex 
+                return dialogResult == Pulsar.Models.Enums.DialogResult.Confirmed
+                    ? colorPickerVm.HasCustomColor ? colorPickerVm.SelectedHex : string.Empty
                     : null;
             });
         }

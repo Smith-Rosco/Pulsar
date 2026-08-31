@@ -46,6 +46,11 @@
                            FontSize="12" 
                            Margin="0,4,0,0"
                            Visibility="{Binding IsHexError, Converter={StaticResource BoolToVis}}"/>
+                <Button Content="{lex:Locale Dialog.ColorPicker.UseAutomaticColor}"
+                        Command="{Binding ClearColorCommand}"
+                        Margin="0,8,0,0"
+                        HorizontalAlignment="Left"
+                        ToolTip="{Binding ClearColorText}"/>
             </StackPanel>
         </Grid>
 

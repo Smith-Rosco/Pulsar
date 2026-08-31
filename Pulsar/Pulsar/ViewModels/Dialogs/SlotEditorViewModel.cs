@@ -367,12 +367,14 @@ namespace Pulsar.ViewModels.Dialogs
             NotifyAll();
         }
 
+        [RelayCommand]
         public async Task PickColorAsync()
         {
             if (Slot == null)
                 return;
 
             await _pickColorAsync(Slot);
+            _lastSuggestedColor = Slot.Color;
             NotifyAll();
         }
 

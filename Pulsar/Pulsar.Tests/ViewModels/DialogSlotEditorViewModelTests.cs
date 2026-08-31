@@ -134,6 +134,36 @@ namespace Pulsar.Tests.ViewModels
         }
 
         [Fact]
+        public void ColorPicker_ClearColor_ShouldRepresentAutomaticColor()
+        {
+            var vm = new ColorPickerViewModel("#123456");
+
+            vm.ClearColorCommand.Execute(null);
+
+            vm.HasCustomColor.Should().BeFalse();
+            vm.IsClearColorSelected.Should().BeTrue();
+        }
+
+        [Fact]
+        public void PluginSlot_Color_ShouldExposeAutomaticAndCustomStates()
+        {
+            var slot = new PluginSlot();
+
+            slot.UsesAutomaticColor.Should().BeTrue();
+            slot.HasCustomColor.Should().BeFalse();
+            slot.CustomColor.Should().BeNull();
+
+            slot.Color = "#FFFFFF";
+
+            slot.UsesAutomaticColor.Should().BeFalse();
+            slot.HasCustomColor.Should().BeTrue();
+            slot.CustomColor.Should().Be("#FFFFFF");
+
+            slot.Color = string.Empty;
+            slot.UsesAutomaticColor.Should().BeTrue();
+        }
+
+        [Fact]
         public void SlotEditorViewModel_CreateMode_SelectSlotTypeShouldTransitionToConfiguration()
         {
             var loc = CreateLoc();

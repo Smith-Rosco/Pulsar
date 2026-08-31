@@ -1157,6 +1157,9 @@
   <data name="Dialog.ColorPicker.Presets" xml:space="preserve">
     <value>Presets</value>
   </data>
+  <data name="Dialog.ColorPicker.UseAutomaticColor" xml:space="preserve">
+    <value>Use automatic color</value>
+  </data>
   <!-- ==================== Dialog.ProcessBlacklist ==================== -->
   <data name="Dialog.ProcessBlacklist.SelectProcesses" xml:space="preserve">
     <value>Select processes to exclude from the window switcher:</value>

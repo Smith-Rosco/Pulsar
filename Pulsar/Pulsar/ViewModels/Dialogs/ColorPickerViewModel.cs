@@ -38,12 +38,16 @@ namespace Pulsar.ViewModels.Dialogs
 
         public Action<Pulsar.Models.Enums.DialogResult>? RequestClose { get; set; }
 
+        public bool HasCustomColor { get; private set; }
+
+        public bool IsClearColorSelected => !HasCustomColor;
 
         public string SelectedHex => CurrentColor.ToString();
 
         public ColorPickerViewModel(string initialHex = "")
         {
             InitializePresets();
+            HasCustomColor = !string.IsNullOrWhiteSpace(initialHex);
 
             if (!string.IsNullOrEmpty(initialHex))
             {
@@ -70,18 +74,29 @@ namespace Pulsar.ViewModels.Dialogs
             _isUpdating = false;
         }
 
+        [RelayCommand]
+        private void ClearColor()
+        {
+            HasCustomColor = false;
+            OnPropertyChanged(nameof(HasCustomColor));
+            OnPropertyChanged(nameof(IsClearColorSelected));
+        }
+
         partial void OnRChanged(byte value)
         {
+            HasCustomColor = true;
             UpdateColorFromRgb();
         }
 
         partial void OnGChanged(byte value)
         {
+            HasCustomColor = true;
             UpdateColorFromRgb();
         }
 
         partial void OnBChanged(byte value)
         {
+            HasCustomColor = true;
             UpdateColorFromRgb();
         }
 
@@ -94,12 +109,15 @@ namespace Pulsar.ViewModels.Dialogs
             {
                 var color = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(value);
                 _isUpdating = true;
+                HasCustomColor = true;
                 CurrentColor = color;
                 R = color.R;
                 G = color.G;
                 B = color.B;
                 IsHexError = false;
                 _isUpdating = false;
+                OnPropertyChanged(nameof(HasCustomColor));
+                OnPropertyChanged(nameof(IsClearColorSelected));
             }
             catch
             {
@@ -111,21 +129,27 @@ namespace Pulsar.ViewModels.Dialogs
         {
             if (_isUpdating) return;
             _isUpdating = true;
+            HasCustomColor = true;
             CurrentColor = System.Windows.Media.Color.FromRgb(R, G, B);
             HexInput = CurrentColor.ToString();
             _isUpdating = false;
+            OnPropertyChanged(nameof(HasCustomColor));
+            OnPropertyChanged(nameof(IsClearColorSelected));
         }
 
         [RelayCommand]
         private void SelectPreset(PresetItem preset)
         {
             _isUpdating = true;
+            HasCustomColor = true;
             CurrentColor = preset.Color;
             R = preset.Color.R;
             G = preset.Color.G;
             B = preset.Color.B;
             HexInput = preset.Color.ToString();
             _isUpdating = false;
+            OnPropertyChanged(nameof(HasCustomColor));
+            OnPropertyChanged(nameof(IsClearColorSelected));
         }
 
         private void InitializePresets()
