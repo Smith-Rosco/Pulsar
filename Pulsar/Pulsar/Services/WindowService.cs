@@ -32,7 +32,7 @@ namespace Pulsar.Services
         private readonly IWindowInventoryService _inventoryService;
         private readonly WindowTrackingService _trackingService;
         private readonly QuickSwitchEngine _quickSwitchEngine;
-        private readonly IWindowEligibilityPolicy _eligibilityPolicy;
+        private readonly IWindowEligibilityEvaluator _eligibilityEvaluator;
         private readonly WindowInventoryCache _inventoryCache;
         private readonly Func<IntPtr, bool> _isWindow;
         private int _inventoryRefreshInFlight;
@@ -46,25 +46,6 @@ namespace Pulsar.Services
         private const int QuickSwitchTimeoutMs = 5000; // 5秒内的连续切换视为同一对
         private const int MaxQuickSwitchAttempts = 5;  // 最多尝试 5 个历史窗口
         
-        // [New] Dynamic blacklist - can be updated by plugins
-        private HashSet<string> _dynamicBlacklist = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        private readonly object _blacklistLock = new object();
-
-        // System blacklist for known problematic processes (always excluded)
-        private static readonly HashSet<string> _systemBlacklist = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            "applicationframehost", // UWP shell
-            "systemsettings",       // Settings (when suspended)
-            "searchapp",            // Search
-            "textinputhost",        // Input Method / Emoji Panel
-            "shellexperiencehost",  // Start Menu etc.
-            "lockapp",              // Lock Screen
-            "video.ui",             // Xbox Game Bar / Video Overlay
-            "gamebar",              // Game Bar
-            "yourphone",            // Phone Link background
-            "calc"                  // Calculator often stays suspended
-        };
-
         // [Logging] Log samplers for high-frequency operations
         private readonly LogSampler _historyLogSampler = new LogSampler(5);      // Sample 1 in 5 for history recording
         private readonly LogSampler _captureLogSampler = new LogSampler(20);     // Sample 1 in 20 for capture failures
@@ -82,7 +63,7 @@ namespace Pulsar.Services
         public WindowService(
             ILogger<WindowService> logger,
             IFocusManager focusManager,
-            IWindowEligibilityPolicy eligibilityPolicy,
+            IWindowEligibilityEvaluator eligibilityEvaluator,
             IWindowInventoryService inventoryService,
             WindowInventoryCache inventoryCache,
             QuickSwitchEngine quickSwitchEngine,
@@ -105,20 +86,13 @@ namespace Pulsar.Services
                 _currentProcessId = currentProcess.Id;
             }
 
-            // [Deepen] "可切换窗口"判定收拢为单一 policy：结构规则 + 类名黑名单 + 物理可见性。
-            // 类名黑名单由 policy 默认值承担（SystemWindowClassBlacklist 移入 WindowEligibilityPolicy）。
-            // 进程黑名单由调用方按需传入。
-            _eligibilityPolicy = eligibilityPolicy;
+            // [Deepen] "可切换窗口"判定收拢为单一 evaluator：组合 policy（结构规则 + 类名黑名单 + 物理可见性）
+            // + 进程黑名单 + 快照组装。类名黑名单由 policy 默认值承担。
+            _eligibilityEvaluator = eligibilityEvaluator;
             _inventoryService = inventoryService;
             _inventoryCache = inventoryCache;
             _quickSwitchEngine = quickSwitchEngine;
             _trackingService = trackingService;
-
-            // Initialize with default system blacklist
-            lock (_blacklistLock)
-            {
-                _dynamicBlacklist = new HashSet<string>(_systemBlacklist, StringComparer.OrdinalIgnoreCase);
-            }
             
             // [Refactor] Initialize cleanup timer for window registry
             _cleanupTimer = new System.Threading.Timer(
@@ -201,7 +175,7 @@ namespace Pulsar.Services
                     }
 
                     var windows = await _inventoryService.GetActiveWindowsAsync(
-                        IsDiscoveryBlacklisted,
+                        _eligibilityEvaluator.IsDiscoveryBlacklisted,
                         _trackingService.SnapshotWindow,
                         ExtractIcon,
                         _processRegistryService);
@@ -245,22 +219,13 @@ namespace Pulsar.Services
         }
         
         /// <summary>
-        /// Updates the dynamic blacklist (merges with system blacklist)
+        /// Updates the dynamic blacklist (merges with system blacklist). Delegates to
+        /// the eligibility evaluator, which owns the blacklist state + predicate.
         /// </summary>
         public void UpdateBlacklist(IEnumerable<string> userBlacklist)
         {
-            lock (_blacklistLock)
-            {
-                _dynamicBlacklist = new HashSet<string>(_systemBlacklist, StringComparer.OrdinalIgnoreCase);
-                foreach (var process in userBlacklist)
-                {
-                    if (!string.IsNullOrWhiteSpace(process))
-                    {
-                        _dynamicBlacklist.Add(process.Trim());
-                    }
-                }
-            }
-            _logger.LogInformation("[WindowService] Blacklist updated. Total entries: {Count}", _dynamicBlacklist.Count);
+            _eligibilityEvaluator.UpdateBlacklist(userBlacklist);
+            _logger.LogInformation("[WindowService] Blacklist updated via eligibility evaluator");
         }
 
         /// <summary>
@@ -269,13 +234,13 @@ namespace Pulsar.Services
         /// </summary>
         public void UpdateEligibilityRules(IReadOnlyList<WindowEligibilityRule> rules)
         {
-            _eligibilityPolicy.UpdateRules(rules);
-            _logger.LogInformation("[WindowService] Eligibility rules updated. Count: {Count}", _eligibilityPolicy.Rules.Count);
+            _eligibilityEvaluator.UpdateRules(rules);
+            _logger.LogInformation("[WindowService] Eligibility rules updated. Count: {Count}", _eligibilityEvaluator.Rules.Count);
         }
 
         /// <summary>当前生效的用户规则（有序，供 Inspector 展示与追加）。</summary>
         public IReadOnlyList<WindowEligibilityRule> GetEligibilityRules()
-            => _eligibilityPolicy.Rules;
+            => _eligibilityEvaluator.Rules;
 
         /// <summary>
         /// 枚举全部顶层窗口并给出每窗口的"可切换"判定报告（含标题 / 类名 / 矩形 / 原因），
@@ -377,10 +342,7 @@ namespace Pulsar.Services
 
             // This is the final MRU write boundary. Event producers normally apply
             // the same policy first, but a direct caller must not bypass it.
-            var snapshot = WindowEligibilitySnapshot.FromHwnd(
-                hwnd,
-                _eligibilityPolicy.HasTitleDependentRules);
-            var eligibility = _eligibilityPolicy.Evaluate(snapshot, BuildProcessBlacklistPredicate());
+            var (eligibility, snapshot) = _eligibilityEvaluator.EvaluateWithSnapshot(hwnd, EligibilityScope.Discovery);
             LogSwitchDiagnostics("history-record", snapshot, eligibility);
             if (!eligibility.Included)
             {
@@ -577,7 +539,7 @@ namespace Pulsar.Services
             }
 
             var windows = await _inventoryService.GetActiveWindowsAsync(
-                IsDiscoveryBlacklisted,
+                _eligibilityEvaluator.IsDiscoveryBlacklisted,
                 _trackingService.SnapshotWindow,
                 ExtractIcon,
                 _processRegistryService);
@@ -605,12 +567,12 @@ namespace Pulsar.Services
 
         public Task<HashSet<string>> GetRunningProcessNamesAsync()
         {
-            return _inventoryService.GetRunningProcessNamesAsync(IsDiscoveryBlacklisted);
+            return _inventoryService.GetRunningProcessNamesAsync(_eligibilityEvaluator.IsDiscoveryBlacklisted);
         }
 
         public Task<List<RunningProcessInfo>> GetRunningProcessesAsync()
         {
-            return _inventoryService.GetRunningProcessesAsync(IsDiscoveryBlacklisted);
+            return _inventoryService.GetRunningProcessesAsync(_eligibilityEvaluator.IsDiscoveryBlacklisted);
         }
 
         public Task<List<ProcessWindowInfo>> GetProcessWindowsAsync(int targetProcessId)
@@ -770,30 +732,14 @@ namespace Pulsar.Services
                 return false;
             }
 
-            // [Deepen] 判定委托给统一 policy：自身 PID / 可见性 / cloaked / 工具窗口 / owned /
+            // [Deepen] 判定委托给统一 evaluator：自身 PID / 可见性 / cloaked / 工具窗口 / owned /
             // 物理可见性（屏幕内非零矩形，最小化豁免）/ 类名黑名单 / 进程黑名单 / 用户规则。
             // 新增的物理可见性规则泛化解决了 KxWppQuickHelpBarContainer 与 Chrome Legacy Window
             // 这类"WS_VISIBLE 但屏幕外/零尺寸"的幽灵窗口，不再需要逐个硬编码类名。
-            // 仅当存在标题依赖规则时才读取标题（避免热路径上的阻塞型 GetWindowText）。
-            var snapshot = WindowEligibilitySnapshot.FromHwnd(hWnd, _eligibilityPolicy.HasTitleDependentRules);
-            var eligibility = _eligibilityPolicy.Evaluate(snapshot, BuildProcessBlacklistPredicate());
+            // 快照组装与标题条件读取由 evaluator 负责（仅当存在标题依赖规则时才读标题）。
+            var (eligibility, snapshot) = _eligibilityEvaluator.EvaluateWithSnapshot(hWnd, EligibilityScope.Discovery);
             LogSwitchDiagnostics("alt-tab", snapshot, eligibility);
             return eligibility.Included;
-        }
-
-        /// <summary>
-        /// 取当前进程黑名单的稳定引用，包成按进程名判定的谓词。锁内捕获引用（UpdateBlacklist 整体替换、
-        /// 不原地修改），谓词调用路径无锁。
-        /// </summary>
-        private Func<string, bool> BuildProcessBlacklistPredicate()
-        {
-            IEnumerable<string> blacklist;
-            lock (_blacklistLock)
-            {
-                blacklist = _dynamicBlacklist;
-            }
-
-            return name => IsProcessNameBlacklisted(name, blacklist);
         }
 
         internal static bool IsProcessNameBlacklisted(string? processName, IEnumerable<string> blacklist)
@@ -989,10 +935,8 @@ namespace Pulsar.Services
                         continue;
                     }
 
-                    var snapshot = WindowEligibilitySnapshot.FromHwnd(
-                        candidate.Handle,
-                        _eligibilityPolicy.HasTitleDependentRules);
-                    LogSwitchDiagnostics("selection-candidate", snapshot, _eligibilityPolicy.Evaluate(snapshot));
+                    var (eligibility, snapshot) = _eligibilityEvaluator.EvaluateWithSnapshot(candidate.Handle, EligibilityScope.Explicit);
+                    LogSwitchDiagnostics("selection-candidate", snapshot, eligibility);
                 }
             }
 
@@ -1030,10 +974,7 @@ namespace Pulsar.Services
             // An explicit candidate can outlive the inventory snapshot. Reject it
             // before touching foreground state so a stale/off-screen HWND cannot
             // be reported as a successful quick switch.
-            var eligibility = WindowEligibilitySnapshot.FromHwnd(
-                window.Handle,
-                _eligibilityPolicy.HasTitleDependentRules);
-            var eligibilityResult = _eligibilityPolicy.Evaluate(eligibility);
+            var (eligibilityResult, eligibility) = _eligibilityEvaluator.EvaluateWithSnapshot(window.Handle, EligibilityScope.Explicit);
             LogSwitchDiagnostics("activation-candidate", eligibility, eligibilityResult);
             if (!eligibilityResult.Included)
             {
@@ -1071,10 +1012,7 @@ namespace Pulsar.Services
             // [Candidate 4] 激活后校验：先判定再入 MRU。目标前台窗口物理不可见（屏幕外 / 零尺寸
             // 幽灵，如 Chrome Legacy Window）意味着用户什么都没看到 —— 幽灵从不进历史（即使已在
             // 历史里也顺带剔除，作为安全网），并提示用户到 Window Inspector 永久排除。
-            var postActivationEligibility = WindowEligibilitySnapshot.FromHwnd(
-                window.Handle,
-                _eligibilityPolicy.HasTitleDependentRules);
-            var postActivationResult = _eligibilityPolicy.Evaluate(postActivationEligibility);
+            var (postActivationResult, postActivationEligibility) = _eligibilityEvaluator.EvaluateWithSnapshot(window.Handle, EligibilityScope.Explicit);
             LogSwitchDiagnostics("activation-result", postActivationEligibility, postActivationResult);
             if (!postActivationResult.Included)
             {
@@ -1161,18 +1099,6 @@ namespace Pulsar.Services
         // [Refactor] Window Registry Management
         // ==========================================
         
-        /// <summary>
-        /// 注册或更新窗口到全局注册表
-        /// 首次出现时记录 FirstSeenTime，后续更新仅更新 LastActivationTime
-        /// </summary>
-        private bool IsDiscoveryBlacklisted(string processName)
-        {
-            lock (_blacklistLock)
-            {
-                return IsProcessNameBlacklisted(processName, _dynamicBlacklist);
-            }
-        }
-
         /// <summary>
         /// 清理已关闭窗口的注册表条目 (定期调用)
         /// 防止内存泄漏

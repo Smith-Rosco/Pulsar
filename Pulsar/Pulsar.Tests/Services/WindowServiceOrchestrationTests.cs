@@ -25,7 +25,7 @@ namespace Pulsar.Tests.Services
         [Fact]
         public async Task SwitchToProcessAsync_WhenInventoryReturnsWindow_ShouldActivateAndReturnTrue()
         {
-            var (service, policy, inventory, focusManager, _, _, _) = CreateService(isWindow: _ => true);
+            var (service, evaluator, inventory, focusManager, _, _, _) = CreateService(isWindow: _ => true);
             try
             {
                 var handle = new IntPtr(0x1234);
@@ -43,9 +43,7 @@ namespace Pulsar.Tests.Services
                         It.IsAny<Func<IntPtr, WindowTrackingSnapshot>>(),
                         It.IsAny<Func<string, ImageSource?>>()))
                     .ReturnsAsync(new List<ProcessWindowInfo> { window });
-                policy
-                    .Setup(p => p.Evaluate(It.IsAny<WindowEligibilitySnapshot>(), It.IsAny<Func<string, bool>?>()))
-                    .Returns(new EligibilityResult(true, WindowEligibilityVerdict.Eligible));
+                SetupEligible(evaluator);
                 focusManager
                     .Setup(f => f.ActivateWindowAsync(handle, It.IsAny<FocusActivationOptions?>()))
                     .ReturnsAsync(new FocusActivationResult { Success = true, VerificationPassed = true });
@@ -111,12 +109,10 @@ namespace Pulsar.Tests.Services
         public void RecordWindowActivation_WhenEligible_ShouldWriteQuickSwitchHistory()
         {
             var hwnd = new IntPtr(0x1001);
-            var (service, policy, _, _, _, quickSwitch, _) = CreateService();
+            var (service, evaluator, _, _, _, quickSwitch, _) = CreateService();
             try
             {
-                policy
-                    .Setup(p => p.Evaluate(It.IsAny<WindowEligibilitySnapshot>(), It.IsAny<Func<string, bool>?>()))
-                    .Returns(new EligibilityResult(true, WindowEligibilityVerdict.Eligible));
+                SetupEligible(evaluator);
 
                 service.RecordWindowActivation(hwnd);
 
@@ -132,12 +128,10 @@ namespace Pulsar.Tests.Services
         public void RecordWindowActivation_WhenIneligible_ShouldNotWriteQuickSwitchHistory()
         {
             var hwnd = new IntPtr(0x1002);
-            var (service, policy, _, _, _, quickSwitch, _) = CreateService();
+            var (service, evaluator, _, _, _, quickSwitch, _) = CreateService();
             try
             {
-                policy
-                    .Setup(p => p.Evaluate(It.IsAny<WindowEligibilitySnapshot>(), It.IsAny<Func<string, bool>?>()))
-                    .Returns(new EligibilityResult(false, WindowEligibilityVerdict.ExcludedByRule));
+                SetupEligible(evaluator, included: false, verdict: WindowEligibilityVerdict.ExcludedByRule);
 
                 service.RecordWindowActivation(hwnd);
 
@@ -154,12 +148,10 @@ namespace Pulsar.Tests.Services
         {
             using var win1 = new TestWindow("First");
             using var win2 = new TestWindow("Second");
-            var (service, policy, _, focusManager, _, quickSwitch, _) = CreateService();
+            var (service, evaluator, _, focusManager, _, quickSwitch, _) = CreateService();
             try
             {
-                policy
-                    .Setup(p => p.Evaluate(It.IsAny<WindowEligibilitySnapshot>(), It.IsAny<Func<string, bool>?>()))
-                    .Returns(new EligibilityResult(true, WindowEligibilityVerdict.Eligible));
+                SetupEligible(evaluator);
 
                 // Seed history so the MRU (top) is win1, then win2.
                 quickSwitch.RecordWindowActivation(win2.Handle, 10);
@@ -189,23 +181,15 @@ namespace Pulsar.Tests.Services
         }
 
         [Fact]
-        public void UpdateBlacklist_ShouldApplyNewEntriesToEvaluatePredicate()
+        public void UpdateBlacklist_ShouldForwardEntriesToEvaluator()
         {
-            var (service, policy, _, _, _, _, _) = CreateService();
+            var (service, evaluator, _, _, _, _, _) = CreateService();
             try
             {
-                Func<string, bool>? capturedPredicate = null;
-                policy
-                    .Setup(p => p.Evaluate(It.IsAny<WindowEligibilitySnapshot>(), It.IsAny<Func<string, bool>?>()))
-                    .Callback<WindowEligibilitySnapshot, Func<string, bool>?>((_, predicate) => capturedPredicate = predicate)
-                    .Returns(new EligibilityResult(true, WindowEligibilityVerdict.Eligible));
-
                 service.UpdateBlacklist(new[] { "myapp" });
-                service.RecordWindowActivation(new IntPtr(0x2001));
 
-                capturedPredicate.Should().NotBeNull();
-                capturedPredicate!("myapp").Should().BeTrue();
-                capturedPredicate!("notepad").Should().BeFalse();
+                evaluator.Verify(e => e.UpdateBlacklist(
+                    It.Is<IEnumerable<string>>(entries => entries.Contains("myapp"))), Times.Once);
             }
             finally
             {
@@ -214,17 +198,17 @@ namespace Pulsar.Tests.Services
         }
 
         [Fact]
-        public void UpdateEligibilityRules_ShouldPropagateToPolicy()
+        public void UpdateEligibilityRules_ShouldPropagateToEvaluator()
         {
             var rules = new List<WindowEligibilityRule> { new(false, null, "GhostClass", null) };
-            var (service, policy, _, _, _, _, _) = CreateService();
+            var (service, evaluator, _, _, _, _, _) = CreateService();
             try
             {
-                policy.SetupGet(p => p.Rules).Returns(rules);
+                evaluator.SetupGet(e => e.Rules).Returns(rules);
 
                 service.UpdateEligibilityRules(rules);
 
-                policy.Verify(p => p.UpdateRules(rules), Times.Once);
+                evaluator.Verify(e => e.UpdateRules(rules), Times.Once);
             }
             finally
             {
@@ -302,7 +286,7 @@ namespace Pulsar.Tests.Services
         }
 
         private static (WindowService Service,
-            Mock<IWindowEligibilityPolicy> Policy,
+            Mock<IWindowEligibilityEvaluator> Evaluator,
             Mock<IWindowInventoryService> Inventory,
             Mock<IFocusManager> FocusManager,
             WindowInventoryCache Cache,
@@ -310,7 +294,7 @@ namespace Pulsar.Tests.Services
             WindowTrackingService Tracking) CreateService(
             Func<IntPtr, bool>? isWindow = null)
         {
-            var policy = new Mock<IWindowEligibilityPolicy>();
+            var evaluator = new Mock<IWindowEligibilityEvaluator>();
             var inventory = new Mock<IWindowInventoryService>();
             var focusManager = new Mock<IFocusManager>();
             var logger = new Mock<ILogger<WindowService>>();
@@ -321,14 +305,29 @@ namespace Pulsar.Tests.Services
             var service = new WindowService(
                 logger.Object,
                 focusManager.Object,
-                policy.Object,
+                evaluator.Object,
                 inventory.Object,
                 cache,
                 quickSwitch,
                 tracking,
                 isWindow: isWindow);
 
-            return (service, policy, inventory, focusManager, cache, quickSwitch, tracking);
+            return (service, evaluator, inventory, focusManager, cache, quickSwitch, tracking);
+        }
+
+        /// <summary>
+        /// Configures the mocked evaluator so every window is judged eligible (or with
+        /// the given verdict), regardless of HWND or scope. Eligibility now flows
+        /// through the <see cref="IWindowEligibilityEvaluator"/> seam.
+        /// </summary>
+        private static void SetupEligible(
+            Mock<IWindowEligibilityEvaluator> evaluator,
+            bool included = true,
+            WindowEligibilityVerdict verdict = WindowEligibilityVerdict.Eligible)
+        {
+            evaluator
+                .Setup(e => e.EvaluateWithSnapshot(It.IsAny<IntPtr>(), It.IsAny<EligibilityScope>()))
+                .Returns((new EligibilityResult(included, verdict), new WindowEligibilitySnapshot()));
         }
 
         /// <summary>A real hidden top-level window so native IsWindow/GetWindowRect gates pass.</summary>

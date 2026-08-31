@@ -118,6 +118,7 @@ namespace Pulsar
             // [WindowService Deepening] 纯逻辑协作者注册为单例；WindowService 通过构造注入而非手 new。
             serviceCollection.AddSingleton<IWindowEligibilityPolicy>(sp =>
                 new WindowEligibilityPolicy((uint)Process.GetCurrentProcess().Id));
+            serviceCollection.AddSingleton<IWindowEligibilityEvaluator, WindowEligibilityEvaluator>();
             serviceCollection.AddSingleton<WindowInventoryCache>();
             serviceCollection.AddSingleton<QuickSwitchEngine>();
             serviceCollection.AddSingleton<WindowTrackingService>();
