@@ -1,171 +1,292 @@
+<div align="center">
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="Pulsar/Pulsar/Assets/Brand/wordmark.png">
   <img alt="Pulsar" src="Pulsar/Pulsar/Assets/Brand/wordmark.png">
 </picture>
 
-> **English** | [简体中文](README.zh-CN.md)
+# Pulsar
 
-**Pulsar** — a high-performance productivity launcher for Windows featuring a hotkey-invoked radial menu interface. Built for muscle memory: abandon traditional Alt-Tab linear traversal and navigate with spatial positioning.
+### 高性能 Windows 生产力启动器 · 热键唤起的径向菜单
+**A high-performance productivity launcher for Windows featuring a hotkey-invoked radial menu**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![.NET 8.0](https://img.shields.io/badge/.NET-8.0-512BD4)](https://dotnet.microsoft.com/download/dotnet/8.0)
-[![Platform: Windows](https://img.shields.io/badge/Platform-Windows-0078D6)](https://www.microsoft.com/windows)
+[![Release Version](https://img.shields.io/badge/Release-v1.8.0-2563EB.svg?style=flat-square&logo=github)](https://github.com/anomalyco/Pulsar/releases)
+[![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(x64)-0078D4.svg?style=flat-square&logo=windows)](https://www.microsoft.com/windows)
+[![.NET](https://img.shields.io/badge/.NET-8.0%20WPF-512BD4.svg?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
+[![License](https://img.shields.io/badge/License-MIT-10B981.svg?style=flat-square)](LICENSE)
 [![CI](https://github.com/anomalyco/Pulsar/actions/workflows/ci.yml/badge.svg)](.github/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/Tests-330%2B%20xUnit-success.svg?style=flat-square&logo=xunit)](Pulsar/Pulsar.Tests)
+[![Language](https://img.shields.io/badge/Language-zh--CN%20%7C%20en-8B5CF6.svg?style=flat-square)](#-多语言支持-internationalization)
+
+<br/>
+
+**[简体中文](README.md)** • **[English](README_EN.md)**
+
+<br/>
+
+[🚀 快速开始](#快速开始-快速开始) · [✨ 功能特性](#-功能特性) · [🎬 演示视频](#-演示视频) · [📸 截图](#-截图) · [🛠️ 本地构建](#-本地构建与开发) · [📋 更新日志](CHANGELOG.md)
+
+</div>
 
 ---
 
-<p align="center">
-  <img src="Pulsar/Pulsar/Assets/Brand/demo.gif" alt="Pulsar Demo" width="600">
-</p>
+## 📖 简介
 
-## Key Features
+**Pulsar** 是一款面向 Windows 的高性能生产力启动器，采用热键唤起的径向菜单（Radial Menu）界面。
 
-| Feature | Description |
-|---------|-------------|
-| **Radial Menu** | Hotkey-invoked circular launcher. Two modes: Command mode (`Ctrl+Shift+Q`) for contextual actions, Switch mode (`Ctrl+Q`) with MRU center window for app switching |
-| **Extensible Plugin System** | Two-tier architecture: Core plugins (essential infrastructure) and Extension plugins (optional, Circuit Breaker protected) |
-| **PKI / Secret Management** | Securely store credentials with DPAPI encryption. Inject via UI Automation with auto-submit and configurable delay |
-| **Global Hotkeys** | System-wide bindings for instant access — default `Ctrl+Shift+Q` (Command mode) and `Ctrl+Q` (Switch mode) |
-| **App & Window Switching** | Smart window switching with discovery blacklist, launch apps if not running |
-| **Plugin Simulator** | Headless plugin execution + structured JSON output for AI-driven testing without the WPF shell |
-| **Plugin System Extensions** | Command Runner (apps/files/folders/URLs/keystrokes), VBA Script Runner (Excel/WPS), Bookmarklet Runner (browser JS) |
-| **Localization** | English + Simplified Chinese, convention-based lookup for plugin metadata |
+专为肌肉记忆打造——告别传统 Alt-Tab 的线性切换，改用空间定位导航。支持插件化扩展、PKI 凭据安全注入、全局热键与应用窗口智能切换。
 
-## Prerequisites
+> 💡 **设计重点**：
+> - **空间定位优先**：径向菜单配合空间记忆，高频操作一触即达，替代线性 Alt-Tab 遍历；
+> - **插件化分层架构**：核心插件（基础设施）与扩展插件（可选）分层，扩展插件由断路器（Circuit Breaker）保护；
+> - **AI 友好开发**：无头插件模拟器 + 结构化 JSON 输出，330+ xUnit 测试，专为 AI Agent 协作优化。
 
-- Windows 10 or later (x64)
-- [.NET 8.0 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) (SDK required for building)
+---
 
-## Quick Start
+## 🚀 快速开始
+
+### 下载与安装
+
+| 版本包 | 适用场景 | 说明 | 下载入口 |
+| :--- | :--- | :--- | :--- |
+| **最新正式版** | 所有用户 | 最新稳定发布包 | [⬇️ 前往 Releases 下载](https://github.com/anomalyco/Pulsar/releases) |
+| **源码构建** | 开发者 | 从源码编译运行 | [🛠️ 见下方构建指南](#-本地构建与开发) |
+
+### 基础使用流程
+
+1. 下载并运行 `Pulsar`，程序会在系统托盘中后台运行；
+2. 按下默认热键 **`Ctrl+Shift+Q`**（命令模式）或 **`Ctrl+Q`**（切换模式）唤出径向菜单；
+3. 通过空间方位滑向目标扇区，松开触发对应动作；
+4. 如需详细配置，可在 Pulsar 控制（`com.pulsar.system`）中打开设置。
+
+---
+
+## ✨ 功能特性
+
+### 1. 🌟 径向菜单（Radial Menu）
+
+热键唤起的圆形启动器，两种模式：
+- **命令模式**（`Ctrl+Shift+Q`）：显示上下文相关操作；
+- **切换模式**（`Ctrl+Q`）：带 MRU 中心窗口的应用切换，支持智能窗口发现、黑名单过滤，未运行时自动启动应用。
+
+<div align="center">
+  <img src="Pulsar/Pulsar/Assets/Brand/demo.gif" width="640" alt="Pulsar 径向菜单演示" />
+</div>
+
+---
+
+### 2. 🧩 可扩展插件系统
+
+双层架构：
+- **核心插件（Core）**：基础设施，始终加载，崩溃即致命（fail-fast）；
+- **扩展插件（Extension）**：可选，由断路器保护——1 分钟内崩溃 3 次自动禁用 60 秒，冷却后半开状态单次重试，并通过 Windows Toast 通知用户。
+
+**内置插件**：
+
+| 插件 | ID | 描述 | 类型 |
+|------|----|------|------|
+| **秘密填充 (PKI)** | `com.pulsar.pki` | DPAPI 加密凭据库，通过 UI 自动化注入用户名/密码，支持延迟与自动提交 | 核心 |
+| **应用切换器** | `com.pulsar.winswitcher` | 智能窗口切换（模糊搜索），未运行时自动启动，支持发现黑名单 | 核心 |
+| **Pulsar 控制** | `com.pulsar.system` | 打开设置、快速添加上下文应用、系统命令 | 核心 |
+| **命令启动器** | `com.pulsar.command` | 启动应用/文件/文件夹/URL，向前台窗口发送按键序列 | 扩展 |
+| **VBA 脚本执行器** | `com.pulsar.vbarunner` | 在 Excel/WPS 中执行 VBA 宏，支持智能指令 | 扩展 |
+| **书签执行器** | `com.pulsar.bookmarklet` | 通过 UI 自动化在当前浏览器执行 JavaScript 书签 | 扩展 |
+
+---
+
+### 3. 🔐 PKI / 秘密管理
+
+DPAPI 加密安全存储凭据，通过 UI 自动化注入任意窗口，支持自动提交与可配置延迟。遵循 **焦点回旋镖（Focus Boomerang）** 循环：捕获 → 执行 → 隐藏 → 恢复焦点 → 延迟 → 注入，可靠地将焦点返回到原始窗口。
+
+---
+
+### 4. 🔑 全局热键
+
+系统级热键绑定，默认 `Ctrl+Shift+Q`（命令模式）/ `Ctrl+Q`（切换模式），即时唤起菜单。
+
+---
+
+### 5. 🖥️ 应用与窗口切换
+
+智能窗口切换（含发现黑名单），未运行时自动启动应用。
+
+---
+
+### 6. 🤖 插件模拟器
+
+无头模式执行插件，输出结构化 JSON，无需 WPF 界面即可进行 AI 驱动的测试与自纠错循环（模拟器 → 解析错误 → 修复代码 → 重新运行）。
+
+---
+
+### 7. 🌐 本地化
+
+简体中文 + 英文，插件元数据基于约定的自动键查找。
+
+---
+
+## 🎬 演示视频
+
+<!-- TODO: 替换为真实的演示视频封面与链接 -->
+<div align="center">
+  <a href="https://github.com/anomalyco/Pulsar" target="_blank">
+    <img src="Pulsar/Pulsar/Assets/Brand/demo.gif" width="640" alt="Pulsar 演示视频封面（占位）" />
+  </a>
+  <p>
+    <a href="https://github.com/anomalyco/Pulsar"><b>📺 点击观看演示视频（占位链接）</b></a>
+  </p>
+</div>
+
+---
+
+## 📸 截图
+
+<!-- TODO: 添加真实截图，替换以下占位符 -->
+| 径向菜单 | 设置界面 | 插件编辑 |
+|---------|---------|---------|
+| `[截图_径向菜单]` | `[截图_设置界面]` | `[截图_插件编辑]` |
+
+---
+
+## 🛠️ 本地构建与开发
+
+### 环境要求
+
+- Windows 10 或更高版本（x64）
+- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)（运行仅需 Runtime，编译需 SDK）
+
+### 编译、运行与测试
 
 ```bash
-# Restore & Build
+# 还原依赖 & 编译
 dotnet restore Pulsar/Pulsar/Pulsar.csproj
 dotnet build Pulsar/Pulsar/Pulsar.csproj
 
-# Run (default hotkeys: Ctrl+Shift+Q = Command mode, Ctrl+Q = Switch mode)
+# 运行（默认热键：Ctrl+Shift+Q 命令模式、Ctrl+Q 切换模式）
 dotnet run --project Pulsar/Pulsar/Pulsar.csproj
 
-# Run tests
+# 运行测试（330+ xUnit 测试）
 dotnet test Pulsar/Pulsar.Tests/Pulsar.Tests.csproj
 
-# Headless plugin simulation
+# 无头插件模拟（AI 驱动的插件测试）
 dotnet run --project Pulsar/Pulsar.Simulator -- --plugin "com.pulsar.winswitcher" --action "activate" --args "{\"app\":\"chrome\"}"
 
-# Publish self-contained release (see Docs/ops/BUILD_AND_RUN.md for the full Artifacts workflow)
+# 发布自包含版本（完整发布工作流见 Docs/ops/BUILD_AND_RUN.md）
 dotnet publish Pulsar/Pulsar/Pulsar.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:PublishDir="Artifacts\publish\v<Version>"
 ```
 
-## Built-in Plugins
+---
 
-### Core Plugins (always loaded, crashes are fatal)
-
-| Plugin | ID | Description |
-|--------|----|-------------|
-| **Secret Fill (PKI)** | `com.pulsar.pki` | DPAPI-encrypted credential vault. Inject username/password into any window via UI Automation with configurable delay and auto-submit |
-| **App Switcher** | `com.pulsar.winswitcher` | Smart window switching with fuzzy search. Launch app if not running. Supports discovery blacklist |
-| **Pulsar Control** | `com.pulsar.system` | Open settings, quick-add context apps, system commands |
-
-### Extension Plugins (Circuit Breaker protected — 3 crashes/min = 60s disable)
-
-| Plugin | ID | Description |
-|--------|----|-------------|
-| **Command Runner** | `com.pulsar.command` | Launch apps, files, folders, URLs; send keystroke sequences to foreground window |
-| **VBA Script Runner** | `com.pulsar.vbarunner` | Execute VBA macros in Excel/WPS with smart directives |
-| **Bookmarklet Runner** | `com.pulsar.bookmarklet` | Run JavaScript bookmarklets in the active browser via UI Automation |
-
-## Architecture
+## 📂 项目结构
 
 ```
 Pulsar/
-├── Core/                      # Interfaces, base types, plugin system core
+├── Core/                      # 接口、基础类型、插件系统核心
 │   ├── Plugin/                #   IPulsarPlugin, PluginBase<T>, PulsarContext, PluginResult
 │   │   └── Metadata/          #   IPluginMetadataProvider, PluginMetadata, ConfigSchema
 │   ├── Localization/          #   ILocalizationService (resx: EN + zh-CN)
-│   ├── Focus/                 #   Focus management abstractions
-│   ├── Converters/            #   WPF value converters
-│   └── Messages/              #   CommunityToolkit.Mvvm weak-reference messages
+│   ├── Focus/                 #   焦点管理抽象
+│   ├── Converters/            #   WPF 值转换器
+│   └── Messages/              #   CommunityToolkit.Mvvm 弱引用消息
 │
 ├── Plugins/
-│   ├── Core/                  #   Core plugins (always loaded, no circuit breaker)
-│   └── Extensions/            #   Extension plugins (circuit breaker protected)
+│   ├── Core/                  #   核心插件（始终加载，无断路器）
+│   └── Extensions/            #   扩展插件（断路器保护）
 │
-├── Services/                  # Business logic layer
-│   ├── PluginRegistry.cs      #   Plugin lifecycle + circuit breaker (Facade pattern)
-│   ├── ConfigService.cs       #   Configuration management (Profiles.json)
-│   ├── HotkeyService.cs       #   Global hotkey bindings
-│   ├── ThemeService.cs        #   Light/Dark theme injection
-│   ├── DialogService.cs       #   Unified dialog system
-│   ├── SlotLayoutEngine.cs    #   Radial menu layout computation
-│   └── ... (40+ services)
+├── Services/                  # 业务逻辑层
+│   ├── PluginRegistry.cs      #   插件生命周期 + 断路器（外观模式）
+│   ├── ConfigService.cs       #   配置管理（Profiles.json）
+│   ├── HotkeyService.cs       #   全局热键绑定
+│   ├── ThemeService.cs        #   亮/暗主题注入
+│   ├── DialogService.cs       #   统一对话框系统
+│   ├── SlotLayoutEngine.cs    #   径向菜单布局计算
+│   └── ... (40+ 服务)
 │
-├── ViewModels/                # MVVM ViewModels
-│   ├── RadialMenuViewModel.cs #   Main radial menu state
-│   ├── SettingsViewModel.cs   #   Settings editor (transient)
-│   └── Dialogs/               #   Dialog ViewModels
+├── ViewModels/                # MVVM ViewModel 层
+│   ├── RadialMenuViewModel.cs #   主径向菜单状态
+│   ├── SettingsViewModel.cs   #   设置编辑器（瞬态）
+│   └── Dialogs/               #   对话框 ViewModel
 │
-├── Views/                     # XAML views
-│   ├── RadialMenuWindow.xaml  #   Main radial menu window
-│   ├── SettingsWindow.xaml    #   Settings window
-│   └── Dialogs/ Controls/    #   Dialog contents, reusable controls
+├── Views/                     # XAML 视图
+│   ├── RadialMenuWindow.xaml  #   主径向菜单窗口
+│   ├── SettingsWindow.xaml    #   设置窗口
+│   └── Dialogs/ Controls/    #   对话框内容、可复用控件
 │
-├── Models/                    # DTOs and configuration models
-├── Helpers/                   # Static utilities (IconHelper, RadialLayoutHelper, etc.)
-├── Features/                  # Feature modules
-│   └── Tutorial/              #   Interactive onboarding system
-├── Styles/                    # Custom WPF styles (Pulsar buttons, slots, scrollbars)
-├── Themes/                    # Theme.XAML (Dark + Light)
-└── Resources/                 # Localization (.resx files)
-    ├── Strings.resx           # English (base)
-    └── Strings.zh-CN.resx     # Simplified Chinese
+├── Models/                    # DTO 和配置模型
+├── Helpers/                   # 静态工具类（IconHelper, RadialLayoutHelper 等）
+├── Features/                  # 功能模块
+│   └── Tutorial/              #   交互式入门引导系统
+├── Styles/                    # 自定义 WPF 样式（Pulsar 按钮、插槽、滚动条）
+├── Themes/                    # 主题 XAML（深色 + 浅色）
+└── Resources/                 # 本地化资源 (.resx)
+    ├── Strings.resx           # 英文（基础语言）
+    └── Strings.zh-CN.resx     # 简体中文
 ```
 
-## Key Design Concepts
+---
 
-### PulsarContext — Immutable Context Snapshot
-When the radial menu is invoked, Pulsar freezes the system state into an immutable `PulsarContext` — eliminating race conditions. Heavy properties (clipboard, window list) are lazy-loaded. Per-execution mutable data lives in `PluginExecutionContext` (AsyncLocal scope), not on the context itself.
+## 🧠 核心设计理念
 
-### Focus Boomerang
-Plugins that inject input (e.g., PKI) operate on a capture → execute → hide → restore → delay → inject cycle, reliably returning focus to the original window.
+### PulsarContext — 不可变上下文快照
 
-### Circuit Breaker for Extensions
-Extension plugins are wrapped in a Circuit Breaker: 3 crashes within 1 minute triggers a 60-second disable period, after which the plugin enters half-open state for a single retry. Users are notified via Windows toast notifications.
+径向菜单唤起时，Pulsar 将系统状态冻结为不可变的 `PulsarContext`，消除竞态条件。重型属性（剪贴板、窗口列表）采用懒加载。每次执行的可变数据存储在 `PluginExecutionContext`（AsyncLocal 范围）中，而非上下文本体。
 
-### AI-First Development
-The entire project is optimized for AI-agent collaboration:
-- **Headless Simulator**: Test plugins without the WPF shell, parse structured JSON output
-- **Isolated Side-Effects**: All OS coupling behind interfaces (`IInputSimulator`, `IProcessLauncher`, etc.) — mockable with Moq
-- **Comprehensive test suite**: 330+ xUnit tests covering ViewModels, services, and plugin logic
-- **Self-Correction loop**: Simulator → parse errors → fix code → re-run until green
+### 焦点回旋镖（Focus Boomerang）
 
-## Documentation
+执行输入注入的插件（如 PKI）遵循捕获 → 执行 → 隐藏 → 恢复焦点 → 延迟 → 注入的循环，可靠地将焦点返回到原始窗口。
 
-| Resource | Description |
-|----------|-------------|
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | System architecture deep-dive |
-| [PLUGIN_DEVELOPMENT.md](./PLUGIN_DEVELOPMENT.md) | Plugin development guide |
-| [AGENTS.md](./AGENTS.md) | AI-assisted development conventions |
-| [Docs/](./Docs/) | Full documentation index |
-| [Docs/lessons/](./Docs/lessons/) | WPF pitfalls & known issues archive |
-| [Docs/architecture/](./Docs/architecture/) | Architecture details (Plugin System, Dialog System, etc.) |
-| [Docs/ops/BUILD_AND_RUN.md](./Docs/ops/BUILD_AND_RUN.md) | Build & run reference |
+### 扩展插件断路器
 
-## Screenshots
+扩展插件由断路器保护：1 分钟内崩溃 3 次触发 60 秒禁用期，之后进入半开状态允许单次重试。用户通过 Windows 通知接收提醒。
 
-<!-- TODO: Add screenshots -->
-| Radial Menu | Settings | Plugin Editor |
-|-------------|----------|---------------|
-| `[Screenshot_RadialMenu]` | `[Screenshot_Settings]` | `[Screenshot_PluginEditor]` |
+### AI 优先开发
 
-## Video Demo
+整个项目为 AI 智能体协作进行了优化：
+- **无头模拟器**：无需 WPF 界面即可测试插件，解析结构化 JSON 输出；
+- **隔离副作用**：所有 OS 操作通过接口抽象（`IInputSimulator`、`IProcessLauncher` 等），可用 Moq 进行单元测试；
+- **全面测试套件**：330+ 个 xUnit 测试覆盖 ViewModel、服务和插件逻辑；
+- **自纠错循环**：模拟器 → 解析错误 → 修复代码 → 重新运行直到通过。
 
-<!-- TODO: Add video link -->
-`[Video_Demo_Link]`
+---
 
-## Project Status
+## 🌐 多语言支持 (Internationalization)
 
-Pulsar is in active development. The architecture, plugin API, and core features are stable. Extension plugin ecosystem is growing.
+可在设置页面中随时切换界面语言：
 
-## License
+| 语言代码 | 显示名称 | 支持状态 |
+| :--- | :--- | :---: |
+| `zh-CN` | 🇨🇳 简体中文 | 🟢 完整支持 |
+| `en` | 🇺🇸 English | 🟢 完整支持 |
 
-MIT — see [LICENSE](./LICENSE).
+---
+
+## 📚 文档
+
+| 资源 | 描述 |
+|------|------|
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | 系统架构深入解析 |
+| [PLUGIN_DEVELOPMENT.md](./PLUGIN_DEVELOPMENT.md) | 插件开发指南 |
+| [AGENTS.md](./AGENTS.md) | AI 辅助开发规范 |
+| [Docs/](./Docs/) | 完整文档索引 |
+| [Docs/lessons/](./Docs/lessons/) | WPF 坑点与已知问题归档 |
+| [Docs/architecture/](./Docs/architecture/) | 架构细节（插件系统、对话框系统等） |
+| [Docs/ops/BUILD_AND_RUN.md](./Docs/ops/BUILD_AND_RUN.md) | 构建与运行参考 |
+
+---
+
+## 🤝 社区与贡献
+
+- **更新日志**：[CHANGELOG.md](./CHANGELOG.md) — 版本更新记录
+- **贡献指南**：[CONTRIBUTING.md](./Docs/CONTRIBUTING.md) — 如何参与贡献
+- **安全问题**：通过 GitHub Issue 或邮件报告安全问题
+
+---
+
+## 📌 项目状态
+
+Pulsar 正在活跃开发中。架构、插件 API 和核心功能已趋于稳定。扩展插件生态正在持续增长。
+
+---
+
+## 📄 开源许可证
+
+本项目采用 [MIT License](LICENSE) 开源。
