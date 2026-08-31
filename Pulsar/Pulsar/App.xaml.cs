@@ -119,6 +119,7 @@ namespace Pulsar
             serviceCollection.AddSingleton<IWindowEligibilityPolicy>(sp =>
                 new WindowEligibilityPolicy((uint)Process.GetCurrentProcess().Id));
             serviceCollection.AddSingleton<IWindowEligibilityEvaluator, WindowEligibilityEvaluator>();
+            serviceCollection.AddSingleton<IWindowCaptureService, WindowCaptureService>();
             serviceCollection.AddSingleton<WindowInventoryCache>();
             serviceCollection.AddSingleton<QuickSwitchEngine>();
             serviceCollection.AddSingleton<WindowTrackingService>();

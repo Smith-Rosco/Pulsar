@@ -243,6 +243,7 @@ namespace Pulsar.ViewModels
             _visualStateCoordinator = new RadialMenuVisualStateCoordinator(previewService, logger, _loc);
             _subMenuCoordinator = new RadialMenuSubMenuCoordinator(
                 windowService,
+                serviceProvider.GetService(typeof(IWindowCaptureService)) as IWindowCaptureService,
                 usageTracker,
                 healthMonitor,
                 logger,

@@ -18,12 +18,14 @@ namespace Pulsar.ViewModels
         private readonly IPluginUsageTracker? _usageTracker;
         private readonly IPluginHealthMonitor? _healthMonitor;
         private readonly IWindowService _windowService;
+        private readonly IWindowCaptureService? _captureService;
         private readonly ILogger? _logger;
         private readonly IActionFeedbackService? _feedbackService;
         private readonly IActionFeedbackPresenter? _feedbackPresenter;
 
         public RadialMenuSubMenuCoordinator(
             IWindowService windowService,
+            IWindowCaptureService? captureService,
             IPluginUsageTracker? usageTracker,
             IPluginHealthMonitor? healthMonitor,
             ILogger? logger,
@@ -31,6 +33,7 @@ namespace Pulsar.ViewModels
             IActionFeedbackPresenter? feedbackPresenter = null)
         {
             _windowService = windowService;
+            _captureService = captureService;
             _usageTracker = usageTracker;
             _healthMonitor = healthMonitor;
             _logger = logger;
@@ -128,9 +131,14 @@ namespace Pulsar.ViewModels
 
         private async Task CaptureThumbnailAsync(SlotViewModel slot, IntPtr hWnd, string title)
         {
+            if (_captureService == null)
+            {
+                return;
+            }
+
             try
             {
-                var thumb = await _windowService.CaptureWindowAsync(hWnd);
+                var thumb = await _captureService.CaptureWindowAsync(hWnd);
                 if (thumb == null)
                 {
                     _logger?.LogDebug("[SubMenu] CaptureWindowAsync returned null for {Hwnd} '{Title}'", hWnd, title);

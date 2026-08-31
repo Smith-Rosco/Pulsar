@@ -310,6 +310,7 @@ namespace Pulsar.Tests.Services
                 cache,
                 quickSwitch,
                 tracking,
+                Mock.Of<IWindowCaptureService>(),
                 isWindow: isWindow);
 
             return (service, evaluator, inventory, focusManager, cache, quickSwitch, tracking);

@@ -6,10 +6,6 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Interop;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Localization;
 using Pulsar.Services.Interfaces;
@@ -34,6 +30,7 @@ namespace Pulsar.Services
         private readonly QuickSwitchEngine _quickSwitchEngine;
         private readonly IWindowEligibilityEvaluator _eligibilityEvaluator;
         private readonly WindowInventoryCache _inventoryCache;
+        private readonly IWindowCaptureService _captureService;
         private readonly Func<IntPtr, bool> _isWindow;
         private int _inventoryRefreshInFlight;
         private volatile bool _switchDiagnosticsEnabled;
@@ -68,6 +65,7 @@ namespace Pulsar.Services
             WindowInventoryCache inventoryCache,
             QuickSwitchEngine quickSwitchEngine,
             WindowTrackingService trackingService,
+            IWindowCaptureService captureService,
             IProcessRegistryService? processRegistryService = null,
             ILoggerFactory? loggerFactory = null,
             ITrayService? trayService = null,
@@ -93,7 +91,7 @@ namespace Pulsar.Services
             _inventoryCache = inventoryCache;
             _quickSwitchEngine = quickSwitchEngine;
             _trackingService = trackingService;
-            
+            _captureService = captureService;
             // [Refactor] Initialize cleanup timer for window registry
             _cleanupTimer = new System.Threading.Timer(
                 _ => CleanupWindowRegistry(),
@@ -177,7 +175,7 @@ namespace Pulsar.Services
                     var windows = await _inventoryService.GetActiveWindowsAsync(
                         _eligibilityEvaluator.IsDiscoveryBlacklisted,
                         _trackingService.SnapshotWindow,
-                        ExtractIcon,
+                        _captureService.ExtractIcon,
                         _processRegistryService);
 
                     _inventoryCache.Store(windows);
@@ -267,27 +265,6 @@ namespace Pulsar.Services
             };
             return PulsarNative.FlashWindowEx(ref info);
         }
-
-        // --- Native Import for Icon Extraction ---
-        [DllImport("shell32.dll", CharSet = CharSet.Auto)]
-        private static extern IntPtr SHGetFileInfo(string pszPath, uint dwFileAttributes, ref SHFILEINFO psfi, uint cbFileInfo, uint uFlags);
-
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-        private struct SHFILEINFO
-        {
-            public IntPtr hIcon;
-            public int iIcon;
-            public uint dwAttributes;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
-            public string szDisplayName;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)]
-            public string szTypeName;
-        }
-
-        private const uint SHGFI_ICON = 0x100;
-        private const uint SHGFI_LARGEICON = 0x0; // 32x32
-        private const uint SHGFI_SMALLICON = 0x1; // 16x16
-        private const uint SHGFI_USEFILEATTRIBUTES = 0x10;
 
         // ==========================================
         // 1. [New] 状态管理与上下文感知实现
@@ -454,7 +431,7 @@ namespace Pulsar.Services
                         targetName,
                         null,
                         _trackingService.SnapshotWindow,
-                        ExtractIcon);
+                        _captureService.ExtractIcon);
                 }
                 catch (Exception ex)
                 {
@@ -541,7 +518,7 @@ namespace Pulsar.Services
             var windows = await _inventoryService.GetActiveWindowsAsync(
                 _eligibilityEvaluator.IsDiscoveryBlacklisted,
                 _trackingService.SnapshotWindow,
-                ExtractIcon,
+                _captureService.ExtractIcon,
                 _processRegistryService);
 
             _inventoryCache.Store(windows);
@@ -577,46 +554,7 @@ namespace Pulsar.Services
 
         public Task<List<ProcessWindowInfo>> GetProcessWindowsAsync(int targetProcessId)
         {
-            return _inventoryService.GetProcessWindowsAsync(targetProcessId, null, _trackingService.SnapshotWindow, ExtractIcon);
-        }
-
-        // [New] Icon Cache to prevent redundant IO/GDI operations
-        // Key: ExePath, Value: ImageSource
-        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ImageSource?> _iconCache = new();
-
-        private ImageSource? ExtractIcon(string path)
-        {
-            if (string.IsNullOrEmpty(path)) return null;
-
-            // 1. Check Cache
-            if (_iconCache.TryGetValue(path, out var cachedIcon))
-            {
-                return cachedIcon;
-            }
-
-            try
-            {
-                var shinfo = new SHFILEINFO();
-                IntPtr hIcon = SHGetFileInfo(path, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_ICON | SHGFI_LARGEICON);
-                if (shinfo.hIcon != IntPtr.Zero)
-                {
-                    var image = Imaging.CreateBitmapSourceFromHIcon(
-                        shinfo.hIcon,
-                        Int32Rect.Empty,
-                        BitmapSizeOptions.FromEmptyOptions());
-                    image.Freeze();
-                    PulsarNative.DestroyIcon(shinfo.hIcon);
-                    
-                    // 2. Add to Cache
-                    _iconCache.TryAdd(path, image);
-                    return image;
-                }
-            }
-            catch { }
-
-            // Cache null result to prevent retrying bad paths
-            _iconCache.TryAdd(path, null);
-            return null;
+            return _inventoryService.GetProcessWindowsAsync(targetProcessId, null, _trackingService.SnapshotWindow, _captureService.ExtractIcon);
         }
 
         // --- Native Helpers ---
@@ -771,103 +709,6 @@ namespace Pulsar.Services
             return !string.IsNullOrEmpty(className) && WindowEligibilityPolicy.DefaultWindowClassBlacklist.Contains(className);
         }
 
-        public async Task<ImageSource?> CaptureWindowAsync(IntPtr hWnd)
-        {
-            return await Task.Run(() =>
-            {
-                if (hWnd == IntPtr.Zero || !_isWindow(hWnd))
-                {
-                    _logger.LogWarning("[CaptureWindow] Invalid handle: {Hwnd}", hWnd);
-                    return null;
-                }
-
-                try
-                {
-                    if (!PulsarNative.GetWindowRect(hWnd, out var rect))
-                    {
-                        _logger.LogWarning("[CaptureWindow] GetWindowRect failed for {Hwnd}", hWnd);
-                        return null;
-                    }
-                    int w = rect.Right - rect.Left, h = rect.Bottom - rect.Top;
-                    if (w <= 0 || h <= 0)
-                    {
-                        _logger.LogWarning("[CaptureWindow] Invalid dimensions {W}x{H} for {Hwnd}", w, h, hWnd);
-                        return null;
-                    }
-
-                    var bmp = CaptureViaPrintWindow(hWnd, w, h);
-                    if (bmp == null)
-                    {
-                        _logger.LogWarning("[CaptureWindow] PrintWindow failed for {Hwnd}", hWnd);
-                        return null;
-                    }
-
-                    return DownscaleAndFreeze(bmp);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "[CaptureWindow] Exception for {Hwnd}", hWnd);
-                    return null;
-                }
-            });
-        }
-
-        private static System.Drawing.Bitmap? CaptureViaPrintWindow(IntPtr hWnd, int w, int h)
-        {
-            var bmp = new System.Drawing.Bitmap(w, h);
-            using var g = System.Drawing.Graphics.FromImage(bmp);
-            IntPtr hdc = g.GetHdc();
-            bool ok = false;
-            try
-            {
-                ok = PulsarNative.PrintWindow(hWnd, hdc, 0x00000002)
-                    || PulsarNative.PrintWindow(hWnd, hdc, 0);
-            }
-            finally
-            {
-                g.ReleaseHdc(hdc);
-            }
-            if (!ok) { bmp.Dispose(); return null; }
-            return bmp;
-        }
-
-        private static ImageSource DownscaleAndFreeze(System.Drawing.Bitmap bmp)
-        {
-            int w = bmp.Width, h = bmp.Height, maxDim = 400;
-            if (w > maxDim || h > maxDim)
-            {
-                double ratio = (double)w / h;
-                if (w > h) { w = maxDim; h = (int)(maxDim / ratio); }
-                else { h = maxDim; w = (int)(maxDim * ratio); }
-                using var scaled = new System.Drawing.Bitmap(w, h);
-                using (var g = System.Drawing.Graphics.FromImage(scaled))
-                {
-                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                    g.DrawImage(bmp, 0, 0, w, h);
-                }
-                bmp.Dispose();
-                return BmpToSource(scaled);
-            }
-            return BmpToSource(bmp);
-        }
-
-        private static ImageSource BmpToSource(System.Drawing.Bitmap bmp)
-        {
-            IntPtr hBitmap = bmp.GetHbitmap();
-            bmp.Dispose();
-            try
-            {
-                var wpfBitmap = Imaging.CreateBitmapSourceFromHBitmap(
-                    hBitmap, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
-                wpfBitmap.Freeze();
-                return wpfBitmap;
-            }
-            finally
-            {
-                PulsarNative.DeleteObject(hBitmap);
-            }
-        }
-        
         /// <summary>
         /// 智能选择目标窗口：从窗口列表中选择最合适的窗口进行切换
         /// 如果之前记录的窗口（Pulsar 唤起前的窗口）在列表中，则跳过它，选择次最近激活的窗口

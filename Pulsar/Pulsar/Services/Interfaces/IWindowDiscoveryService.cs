@@ -77,10 +77,5 @@ namespace Pulsar.Services.Interfaces
 
         /// <summary>闪烁窗口（不抢焦点），用于 Inspector"定位这个窗口"。</summary>
         bool FlashWindow(IntPtr hwnd);
-
-        /// <summary>
-        /// 捕获指定窗口的静态快照
-        /// </summary>
-        Task<System.Windows.Media.ImageSource?> CaptureWindowAsync(System.IntPtr hWnd);
     }
 }
