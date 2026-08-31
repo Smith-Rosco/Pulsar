@@ -34,10 +34,18 @@ Sub Main()
 
     ' --- [核心逻辑区域 START] ---
 
-    ' 【修改点 1】: 只对有内容的区域设置字体
-    ' 切勿对 Cells(全表) 设置字体：那会把整表 100万行×1.6万列 的空单元格全部标记为
+    ' 【修改点 1】: 默认样式继承 —— 让“全量格式化”零成本生效
+    ' 直接对 Cells(全表) 设字体，会把整表 100万行×1.6万列 的空单元格全部标记为
     ' “已使用”，UsedRange 随即膨胀成整表，文件体积剧增，后续 AutoFit 直接卡死。
-    ' UsedRange 已覆盖所有非空/已格式化单元格；对空单元格设字体没有任何可见效果。
+    ' 更优做法：改工作簿 Normal 样式 —— 之后新建/粘贴的单元格(含新工作表)自动继承等线字体，
+    ' 且不触碰任何单元格、不污染 UsedRange。需要还原时把字体改回原值即可。
+    Dim origFontName As String
+    origFontName = ActiveWorkbook.Styles(xlNormal).Font.Name
+
+    ActiveWorkbook.Styles(xlNormal).Font.Name = "等线"
+
+    ' 现有有内容的区域也统一设为等线（继承 Normal 样式后通常已生效，这里兜底，
+    ' 同时去掉旧内容上的自动换行，保持版面统一）
     Dim rng As Range
     Set rng = ActiveSheet.UsedRange
 
@@ -87,6 +95,8 @@ Sub Main()
 
 ExitHandler:
     ' 4. 恢复环境（逆序恢复，与改动顺序对应）
+    ' 注意: Normal 样式字体有意保留为等线 —— 这是"新单元格也全量等线"的实现关键，
+    '       不要在这里恢复。如需还原，把 ActiveWorkbook.Styles(xlNormal).Font.Name 改回 origFontName。
     Application.Cursor = xlDefault
     ActiveSheet.DisplayPageBreaks = pageBreaksEnabled
     Application.EnableAnimations = animEnabled
