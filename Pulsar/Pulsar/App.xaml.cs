@@ -121,6 +121,15 @@ namespace Pulsar
             serviceCollection.AddSingleton<IWindowEligibilityEvaluator, WindowEligibilityEvaluator>();
             serviceCollection.AddSingleton<IWindowCaptureService, WindowCaptureService>();
             serviceCollection.AddSingleton<WindowInventoryCache>();
+            serviceCollection.AddSingleton<IWindowInventoryCoordinator>(sp =>
+                new WindowInventoryCoordinator(
+                    sp.GetRequiredService<IWindowInventoryService>(),
+                    sp.GetRequiredService<IWindowEligibilityEvaluator>(),
+                    sp.GetRequiredService<WindowTrackingService>(),
+                    sp.GetRequiredService<IWindowCaptureService>(),
+                    sp.GetRequiredService<WindowInventoryCache>(),
+                    sp.GetRequiredService<ILogger<WindowInventoryCoordinator>>(),
+                    Process.GetCurrentProcess().Id));
             serviceCollection.AddSingleton<QuickSwitchEngine>();
             serviceCollection.AddSingleton<WindowTrackingService>();
             serviceCollection.AddSingleton<IWindowInventoryService, WindowInventoryService>();

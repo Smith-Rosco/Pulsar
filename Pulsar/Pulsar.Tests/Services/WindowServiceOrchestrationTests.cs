@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Media;
@@ -302,12 +303,21 @@ namespace Pulsar.Tests.Services
             var quickSwitch = new QuickSwitchEngine();
             var tracking = new WindowTrackingService();
 
+            var coordinator = new WindowInventoryCoordinator(
+                inventory.Object,
+                evaluator.Object,
+                tracking,
+                Mock.Of<IWindowCaptureService>(),
+                cache,
+                Mock.Of<ILogger<WindowInventoryCoordinator>>(),
+                Process.GetCurrentProcess().Id);
+
             var service = new WindowService(
                 logger.Object,
                 focusManager.Object,
                 evaluator.Object,
                 inventory.Object,
-                cache,
+                coordinator,
                 quickSwitch,
                 tracking,
                 Mock.Of<IWindowCaptureService>(),

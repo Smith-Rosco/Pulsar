@@ -87,6 +87,7 @@ namespace Pulsar.ViewModels
 
         private readonly IConfigService _configService;
         private readonly IWindowService _windowService;
+        private readonly IWindowInventoryCoordinator _inventoryCoordinator;
         private readonly IPluginRegistry _pluginRegistry;
         private readonly IHotkeyService _hotkeyService;
         private readonly ITrayService _trayService;
@@ -210,6 +211,7 @@ namespace Pulsar.ViewModels
         public MenuSession(
             IConfigService configService,
             IWindowService windowService,
+            IWindowInventoryCoordinator inventoryCoordinator,
             IPluginRegistry pluginRegistry,
             IHotkeyService hotkeyService,
             ITrayService trayService,
@@ -227,6 +229,7 @@ namespace Pulsar.ViewModels
         {
             _configService = configService;
             _windowService = windowService;
+            _inventoryCoordinator = inventoryCoordinator;
             _pluginRegistry = pluginRegistry;
             _hotkeyService = hotkeyService;
             _trayService = trayService;
@@ -288,7 +291,7 @@ namespace Pulsar.ViewModels
                         // desktop instead of reusing the fresh snapshot.
                         if (CurrentMode == RadialMenuMode.Task)
                         {
-                            _windowService.PreWarmWindowInventory();
+                            _inventoryCoordinator.PrewarmOnMenuDismiss();
                         }
                     }
                     else
@@ -503,7 +506,7 @@ namespace Pulsar.ViewModels
                 // valid warm cache — which would gray out every running app.
                 List<ProcessWindowInfo>? cachedWindows = null;
                 if (mode == RadialMenuMode.Task
-                    && _windowService.TryGetCachedActiveWindows(out var cachedWindowsSnapshot))
+                    && _inventoryCoordinator.TryGetCached(out var cachedWindowsSnapshot))
                 {
                     cachedWindows = cachedWindowsSnapshot;
                 }
@@ -638,7 +641,7 @@ namespace Pulsar.ViewModels
 
                 if (mode == RadialMenuMode.Task)
                 {
-                    _pageProvider = new ProcessPageProvider(_windowService, _config!, _serviceProvider, _lastContext!, seededWindows);
+                    _pageProvider = new ProcessPageProvider(_windowService, _inventoryCoordinator, _config!, _serviceProvider, _lastContext!, seededWindows);
                 }
                 else
                 {

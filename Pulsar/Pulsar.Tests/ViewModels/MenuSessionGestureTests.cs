@@ -360,6 +360,7 @@ namespace Pulsar.Tests.ViewModels
             var session = new MenuSession(
                 configService.Object,
                 windowService?.Object ?? Mock.Of<IWindowService>(),
+                Mock.Of<IWindowInventoryCoordinator>(),
                 Mock.Of<IPluginRegistry>(),
                 Mock.Of<IHotkeyService>(),
                 Mock.Of<ITrayService>(),

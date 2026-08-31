@@ -29,10 +29,9 @@ namespace Pulsar.Services
         private readonly WindowTrackingService _trackingService;
         private readonly QuickSwitchEngine _quickSwitchEngine;
         private readonly IWindowEligibilityEvaluator _eligibilityEvaluator;
-        private readonly WindowInventoryCache _inventoryCache;
+        private readonly IWindowInventoryCoordinator _inventoryCoordinator;
         private readonly IWindowCaptureService _captureService;
         private readonly Func<IntPtr, bool> _isWindow;
-        private int _inventoryRefreshInFlight;
         private volatile bool _switchDiagnosticsEnabled;
 
         // [New] 状态管理字段
@@ -62,7 +61,7 @@ namespace Pulsar.Services
             IFocusManager focusManager,
             IWindowEligibilityEvaluator eligibilityEvaluator,
             IWindowInventoryService inventoryService,
-            WindowInventoryCache inventoryCache,
+            IWindowInventoryCoordinator inventoryCoordinator,
             QuickSwitchEngine quickSwitchEngine,
             WindowTrackingService trackingService,
             IWindowCaptureService captureService,
@@ -88,7 +87,7 @@ namespace Pulsar.Services
             // + 进程黑名单 + 快照组装。类名黑名单由 policy 默认值承担。
             _eligibilityEvaluator = eligibilityEvaluator;
             _inventoryService = inventoryService;
-            _inventoryCache = inventoryCache;
+            _inventoryCoordinator = inventoryCoordinator;
             _quickSwitchEngine = quickSwitchEngine;
             _trackingService = trackingService;
             _captureService = captureService;
@@ -127,68 +126,13 @@ namespace Pulsar.Services
         /// [Deepen] 消费管道事件（专用后台线程）：SHOWN 事件按 Alt-Tab 规则过滤，
         /// FOREGROUND / SHOWN 都写入 MRU 历史栈。阻塞工作不再发生在 WinEvent 回调线程上。
         /// </summary>
-        private IntPtr _lastInventoryInvalidationHwnd;
-
         private void OnWindowActivated(IntPtr hwnd)
         {
             _eventFeed.Enqueue(new WindowHistoryEvent(WindowEventKind.Foreground, hwnd));
 
-            // Invalidate the Switch-mode inventory snapshot only on a real switch:
-            // the foreground moved to a *new* non-Pulsar window. The radial menu's
-            // own activation (same process) is ignored, and a window simply regaining
-            // focus after the menu dismisses is not a desktop change — so a
-            // peek→dismiss→reopen cycle keeps the warm cache instead of re-enumerating.
-            PulsarNative.GetWindowThreadProcessId(hwnd, out uint pid);
-            if ((int)pid == _currentProcessId || hwnd == _lastInventoryInvalidationHwnd)
-            {
-                return;
-            }
-
-            _lastInventoryInvalidationHwnd = hwnd;
-            _inventoryCache.Invalidate();
-            RefreshInventoryCacheInBackground();
-        }
-
-        private void RefreshInventoryCacheInBackground(bool force = false)
-        {
-            // Single-flight: at most one background enumeration at a time. A menu open
-            // that misses the cache enumerates inline and repopulates it, so this is
-            // only a pre-warm, never a correctness requirement.
-            if (System.Threading.Interlocked.Exchange(ref _inventoryRefreshInFlight, 1) != 0)
-            {
-                return;
-            }
-
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    // A menu open (or an earlier refresh) may have already repopulated
-                    // the cache while we queued; nothing to do then — unless the caller
-                    // asked for a forced refresh (menu-dismiss pre-warm) to keep the
-                    // next Switch-mode open on a warm cache.
-                    if (!force && _inventoryCache.TryGet(out _))
-                    {
-                        return;
-                    }
-
-                    var windows = await _inventoryService.GetActiveWindowsAsync(
-                        _eligibilityEvaluator.IsDiscoveryBlacklisted,
-                        _trackingService.SnapshotWindow,
-                        _captureService.ExtractIcon,
-                        _processRegistryService);
-
-                    _inventoryCache.Store(windows);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "[WindowInventoryCache] Background refresh failed");
-                }
-                finally
-                {
-                    System.Threading.Interlocked.Exchange(ref _inventoryRefreshInFlight, 0);
-                }
-            });
+            // Invalidation + single-flight background prewarm are owned by the
+            // inventory coordinator (invalidate-on-real-switch semantics).
+            _inventoryCoordinator.OnForegroundChanged(hwnd);
         }
 
         private void ConsumeHistoryEvent(WindowHistoryEvent evt)
@@ -505,31 +449,14 @@ namespace Pulsar.Services
             });
         }
 
-        public async Task<List<ProcessWindowInfo>> GetActiveWindowsAsync()
-        {
-            // Serve a fresh snapshot from the cache when available (the Switch-mode
-            // menu and process picker open far more often than the desktop changes),
-            // otherwise enumerate and cache the result for the next caller.
-            if (_inventoryCache.TryGet(out var cached))
-            {
-                return cached!;
-            }
-
-            var windows = await _inventoryService.GetActiveWindowsAsync(
-                _eligibilityEvaluator.IsDiscoveryBlacklisted,
-                _trackingService.SnapshotWindow,
-                _captureService.ExtractIcon,
-                _processRegistryService);
-
-            _inventoryCache.Store(windows);
-            return windows;
-        }
+        public Task<List<ProcessWindowInfo>> GetActiveWindowsAsync()
+            => _inventoryCoordinator.GetActiveWindowsAsync();
 
         public bool TryGetCachedActiveWindows(out List<ProcessWindowInfo> windows)
         {
-            if (_inventoryCache.TryGet(out var cached))
+            if (_inventoryCoordinator.TryGetCached(out var cached) && cached != null)
             {
-                windows = cached!;
+                windows = cached;
                 return true;
             }
 
@@ -539,7 +466,7 @@ namespace Pulsar.Services
 
         public void PreWarmWindowInventory()
         {
-            RefreshInventoryCacheInBackground(force: true);
+            _inventoryCoordinator.PrewarmOnMenuDismiss();
         }
 
         public Task<HashSet<string>> GetRunningProcessNamesAsync()
