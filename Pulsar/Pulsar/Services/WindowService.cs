@@ -29,7 +29,6 @@ namespace Pulsar.Services
         private readonly IFocusManager _focusManager;
         private readonly ITrayService? _trayService;
         private readonly ILocalizationService? _loc;
-        private readonly WindowSelectionEngine _selectionEngine = new();
         private readonly WindowInventoryService _inventoryService;
         private readonly WindowTrackingService _trackingService = new();
         private readonly QuickSwitchEngine _quickSwitchEngine = new();
@@ -659,11 +658,6 @@ namespace Pulsar.Services
 
         // --- Native Helpers ---
 
-        private async Task ForceForegroundWindowAsync(IntPtr hWnd)
-        {
-            await _focusManager.ActivateWindowAsync(hWnd);
-        }
-
         internal static WindowSelectionResult SelectTargetWindow(
             IEnumerable<ProcessWindowInfo> windows,
             WindowSelectionRequest request,
@@ -766,23 +760,6 @@ namespace Pulsar.Services
             StringBuilder sb = new StringBuilder(length + 1);
             PulsarNative.GetWindowText(hWnd, sb, sb.Capacity);
             return sb.ToString();
-        }
-
-        private IntPtr GetNextWindowInZOrder(IntPtr current)
-        {
-            if (current == IntPtr.Zero) return IntPtr.Zero;
-
-            IntPtr next = PulsarNative.GetWindow(current, PulsarNative.GW_HWNDNEXT);
-            int scanLimit = 50; // Safety limit
-            int scanned = 0;
-            
-            while (next != IntPtr.Zero && scanned < scanLimit)
-            {
-                if (IsAltTabWindow(next)) return next;
-                next = PulsarNative.GetWindow(next, PulsarNative.GW_HWNDNEXT);
-                scanned++;
-            }
-            return IntPtr.Zero;
         }
 
         private bool IsAltTabWindow(IntPtr hWnd)
@@ -1194,11 +1171,6 @@ namespace Pulsar.Services
             }
         }
 
-        private WindowTrackingSnapshot RegisterOrUpdateWindow(IntPtr hwnd)
-        {
-            return _trackingService.RegisterOrUpdateWindow(hwnd);
-        }
-        
         /// <summary>
         /// 清理已关闭窗口的注册表条目 (定期调用)
         /// 防止内存泄漏
