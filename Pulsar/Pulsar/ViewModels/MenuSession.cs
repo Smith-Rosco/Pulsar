@@ -496,10 +496,15 @@ namespace Pulsar.ViewModels
                 // populated first frame. When it misses, the shell surfaces within the
                 // budget and the in-flight load patches the content in (bounded
                 // two-phase fallback for the pathological case).
+                // A cache hit seeds the page provider from the snapshot; a miss must
+                // keep the seed null so ProcessPageProvider falls through to a live
+                // enumeration instead of treating the (non-null, empty) miss list as a
+                // valid warm cache — which would gray out every running app.
                 List<ProcessWindowInfo>? cachedWindows = null;
-                if (mode == RadialMenuMode.Task)
+                if (mode == RadialMenuMode.Task
+                    && _windowService.TryGetCachedActiveWindows(out var cachedWindowsSnapshot))
                 {
-                    _windowService.TryGetCachedActiveWindows(out cachedWindows);
+                    cachedWindows = cachedWindowsSnapshot;
                 }
 
                 loadTask = LoadPageContentAsync(mode, seededWindows: cachedWindows);
