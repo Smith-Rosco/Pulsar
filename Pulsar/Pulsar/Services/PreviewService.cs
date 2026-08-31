@@ -10,26 +10,26 @@ namespace Pulsar.Services
 {
     public class PreviewService : IPreviewService
     {
-        private readonly IWindowDiscoveryService _windowService;
+        private readonly IWindowCaptureService _captureService;
         private readonly ILiveWindowPreviewHost _liveWindowPreviewHost;
         private readonly Func<IntPtr, bool> _isWindow;
         private readonly Func<IntPtr, bool> _isIconic;
         private readonly Func<IntPtr, bool> _isCloaked;
         private readonly Dictionary<IntPtr, BitmapSource> _cache = new();
 
-        public PreviewService(IWindowDiscoveryService windowService)
-            : this(windowService, new LiveWindowPreviewHost(), PulsarNative.IsWindow, PulsarNative.IsIconic, IsCloaked)
+        public PreviewService(IWindowCaptureService captureService)
+            : this(captureService, new LiveWindowPreviewHost(), PulsarNative.IsWindow, PulsarNative.IsIconic, IsCloaked)
         {
         }
 
         internal PreviewService(
-            IWindowDiscoveryService windowService,
+            IWindowCaptureService captureService,
             ILiveWindowPreviewHost liveWindowPreviewHost,
             Func<IntPtr, bool> isWindow,
             Func<IntPtr, bool> isIconic,
             Func<IntPtr, bool> isCloaked)
         {
-            _windowService = windowService;
+            _captureService = captureService;
             _liveWindowPreviewHost = liveWindowPreviewHost;
             _isWindow = isWindow;
             _isIconic = isIconic;
@@ -62,7 +62,7 @@ namespace Pulsar.Services
                 return ResolvedWindowPreview.Icon(icon);
             }
 
-            var snapshot = await _windowService.CaptureWindowAsync(hWnd);
+            var snapshot = await _captureService.CaptureWindowAsync(hWnd);
             if (snapshot is BitmapSource bitmap)
             {
                 _cache[hWnd] = bitmap;

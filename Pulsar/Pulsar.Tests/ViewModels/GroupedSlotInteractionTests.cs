@@ -153,6 +153,7 @@ namespace Pulsar.Tests.ViewModels
             var session = new MenuSession(
                 configService.Object,
                 windowService.Object,
+                Mock.Of<IWindowInventoryCoordinator>(),
                 Mock.Of<IPluginRegistry>(),
                 hotkeyService.Object,
                 trayService.Object,

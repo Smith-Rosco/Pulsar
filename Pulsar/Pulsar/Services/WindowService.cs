@@ -6,10 +6,6 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Interop;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Localization;
 using Pulsar.Services.Interfaces;
@@ -21,7 +17,7 @@ using Pulsar.Core.Focus;
 
 namespace Pulsar.Services
 {
-    public class WindowService : IWindowService
+    public class WindowService : IWindowService, IDisposable
     {
         private readonly ILogger<WindowService> _logger;
         private readonly IProcessRegistryService? _processRegistryService;
@@ -29,13 +25,13 @@ namespace Pulsar.Services
         private readonly IFocusManager _focusManager;
         private readonly ITrayService? _trayService;
         private readonly ILocalizationService? _loc;
-        private readonly WindowSelectionEngine _selectionEngine = new();
-        private readonly WindowInventoryService _inventoryService;
-        private readonly WindowTrackingService _trackingService = new();
-        private readonly QuickSwitchEngine _quickSwitchEngine = new();
-        private readonly IWindowEligibilityPolicy _eligibilityPolicy;
-        private readonly WindowInventoryCache _inventoryCache = new();
-        private int _inventoryRefreshInFlight;
+        private readonly IWindowInventoryService _inventoryService;
+        private readonly WindowTrackingService _trackingService;
+        private readonly QuickSwitchEngine _quickSwitchEngine;
+        private readonly IWindowEligibilityEvaluator _eligibilityEvaluator;
+        private readonly IWindowInventoryCoordinator _inventoryCoordinator;
+        private readonly IWindowCaptureService _captureService;
+        private readonly Func<IntPtr, bool> _isWindow;
         private volatile bool _switchDiagnosticsEnabled;
 
         // [New] 状态管理字段
@@ -45,36 +41,6 @@ namespace Pulsar.Services
         private const int MaxHistorySize = 10;
         private const int QuickSwitchTimeoutMs = 5000; // 5秒内的连续切换视为同一对
         private const int MaxQuickSwitchAttempts = 5;  // 最多尝试 5 个历史窗口
-        
-        // [New] Dynamic blacklist - can be updated by plugins
-        private HashSet<string> _dynamicBlacklist = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        private readonly object _blacklistLock = new object();
-
-        // System blacklist for known problematic processes (always excluded)
-        private static readonly HashSet<string> _systemBlacklist = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            "applicationframehost", // UWP shell
-            "systemsettings",       // Settings (when suspended)
-            "searchapp",            // Search
-            "textinputhost",        // Input Method / Emoji Panel
-            "shellexperiencehost",  // Start Menu etc.
-            "lockapp",              // Lock Screen
-            "video.ui",             // Xbox Game Bar / Video Overlay
-            "gamebar",              // Game Bar
-            "yourphone",            // Phone Link background
-            "calc"                  // Calculator often stays suspended
-        };
-
-        // [Fix] Window-class blacklist for helper/host windows that pass the generic
-        // Alt-Tab heuristics (visible, not cloaked, no owner) but are NOT user-facing.
-        // WPS Presentation's KxWppQuickHelpBarContainer is WS_VISIBLE yet off-screen /
-        // zero-sized, so it slips through IsAltTabWindow and becomes a quick-switch
-        // target — stealing the switch from the Windows Security credential window.
-        // Process-name blacklisting is insufficient: "wps" would nuke every WPS window.
-        internal static readonly HashSet<string> SystemWindowClassBlacklist = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            "KxWppQuickHelpBarContainer"
-        };
         
         // [Logging] Log samplers for high-frequency operations
         private readonly LogSampler _historyLogSampler = new LogSampler(5);      // Sample 1 in 5 for history recording
@@ -93,10 +59,17 @@ namespace Pulsar.Services
         public WindowService(
             ILogger<WindowService> logger,
             IFocusManager focusManager,
+            IWindowEligibilityEvaluator eligibilityEvaluator,
+            IWindowInventoryService inventoryService,
+            IWindowInventoryCoordinator inventoryCoordinator,
+            QuickSwitchEngine quickSwitchEngine,
+            WindowTrackingService trackingService,
+            IWindowCaptureService captureService,
             IProcessRegistryService? processRegistryService = null,
             ILoggerFactory? loggerFactory = null,
             ITrayService? trayService = null,
-            ILocalizationService? loc = null)
+            ILocalizationService? loc = null,
+            Func<IntPtr, bool>? isWindow = null)
         {
             _logger = logger;
             _focusManager = focusManager;
@@ -104,22 +77,20 @@ namespace Pulsar.Services
             _loggerFactory = loggerFactory;
             _trayService = trayService;
             _loc = loc;
+            _isWindow = isWindow ?? PulsarNative.IsWindow;
             using (var currentProcess = Process.GetCurrentProcess())
             {
                 _currentProcessId = currentProcess.Id;
             }
 
-            // [Deepen] "可切换窗口"判定收拢为单一 policy：结构规则 + 类名黑名单 + 物理可见性
-            // 对三个消费面（快速切换 / 发现枚举 / 进程激活枚举）一律生效；进程黑名单由调用方按需传入。
-            _eligibilityPolicy = new WindowEligibilityPolicy((uint)_currentProcessId, SystemWindowClassBlacklist);
-            _inventoryService = new WindowInventoryService(_eligibilityPolicy);
-
-            // Initialize with default system blacklist
-            lock (_blacklistLock)
-            {
-                _dynamicBlacklist = new HashSet<string>(_systemBlacklist, StringComparer.OrdinalIgnoreCase);
-            }
-            
+            // [Deepen] "可切换窗口"判定收拢为单一 evaluator：组合 policy（结构规则 + 类名黑名单 + 物理可见性）
+            // + 进程黑名单 + 快照组装。类名黑名单由 policy 默认值承担。
+            _eligibilityEvaluator = eligibilityEvaluator;
+            _inventoryService = inventoryService;
+            _inventoryCoordinator = inventoryCoordinator;
+            _quickSwitchEngine = quickSwitchEngine;
+            _trackingService = trackingService;
+            _captureService = captureService;
             // [Refactor] Initialize cleanup timer for window registry
             _cleanupTimer = new System.Threading.Timer(
                 _ => CleanupWindowRegistry(),
@@ -155,68 +126,13 @@ namespace Pulsar.Services
         /// [Deepen] 消费管道事件（专用后台线程）：SHOWN 事件按 Alt-Tab 规则过滤，
         /// FOREGROUND / SHOWN 都写入 MRU 历史栈。阻塞工作不再发生在 WinEvent 回调线程上。
         /// </summary>
-        private IntPtr _lastInventoryInvalidationHwnd;
-
         private void OnWindowActivated(IntPtr hwnd)
         {
             _eventFeed.Enqueue(new WindowHistoryEvent(WindowEventKind.Foreground, hwnd));
 
-            // Invalidate the Switch-mode inventory snapshot only on a real switch:
-            // the foreground moved to a *new* non-Pulsar window. The radial menu's
-            // own activation (same process) is ignored, and a window simply regaining
-            // focus after the menu dismisses is not a desktop change — so a
-            // peek→dismiss→reopen cycle keeps the warm cache instead of re-enumerating.
-            PulsarNative.GetWindowThreadProcessId(hwnd, out uint pid);
-            if ((int)pid == _currentProcessId || hwnd == _lastInventoryInvalidationHwnd)
-            {
-                return;
-            }
-
-            _lastInventoryInvalidationHwnd = hwnd;
-            _inventoryCache.Invalidate();
-            RefreshInventoryCacheInBackground();
-        }
-
-        private void RefreshInventoryCacheInBackground(bool force = false)
-        {
-            // Single-flight: at most one background enumeration at a time. A menu open
-            // that misses the cache enumerates inline and repopulates it, so this is
-            // only a pre-warm, never a correctness requirement.
-            if (System.Threading.Interlocked.Exchange(ref _inventoryRefreshInFlight, 1) != 0)
-            {
-                return;
-            }
-
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    // A menu open (or an earlier refresh) may have already repopulated
-                    // the cache while we queued; nothing to do then — unless the caller
-                    // asked for a forced refresh (menu-dismiss pre-warm) to keep the
-                    // next Switch-mode open on a warm cache.
-                    if (!force && _inventoryCache.TryGet(out _))
-                    {
-                        return;
-                    }
-
-                    var windows = await _inventoryService.GetActiveWindowsAsync(
-                        IsDiscoveryBlacklisted,
-                        _trackingService.SnapshotWindow,
-                        ExtractIcon,
-                        _processRegistryService);
-
-                    _inventoryCache.Store(windows);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "[WindowInventoryCache] Background refresh failed");
-                }
-                finally
-                {
-                    System.Threading.Interlocked.Exchange(ref _inventoryRefreshInFlight, 0);
-                }
-            });
+            // Invalidation + single-flight background prewarm are owned by the
+            // inventory coordinator (invalidate-on-real-switch semantics).
+            _inventoryCoordinator.OnForegroundChanged(hwnd);
         }
 
         private void ConsumeHistoryEvent(WindowHistoryEvent evt)
@@ -245,22 +161,13 @@ namespace Pulsar.Services
         }
         
         /// <summary>
-        /// Updates the dynamic blacklist (merges with system blacklist)
+        /// Updates the dynamic blacklist (merges with system blacklist). Delegates to
+        /// the eligibility evaluator, which owns the blacklist state + predicate.
         /// </summary>
         public void UpdateBlacklist(IEnumerable<string> userBlacklist)
         {
-            lock (_blacklistLock)
-            {
-                _dynamicBlacklist = new HashSet<string>(_systemBlacklist, StringComparer.OrdinalIgnoreCase);
-                foreach (var process in userBlacklist)
-                {
-                    if (!string.IsNullOrWhiteSpace(process))
-                    {
-                        _dynamicBlacklist.Add(process.Trim());
-                    }
-                }
-            }
-            _logger.LogInformation("[WindowService] Blacklist updated. Total entries: {Count}", _dynamicBlacklist.Count);
+            _eligibilityEvaluator.UpdateBlacklist(userBlacklist);
+            _logger.LogInformation("[WindowService] Blacklist updated via eligibility evaluator");
         }
 
         /// <summary>
@@ -269,13 +176,13 @@ namespace Pulsar.Services
         /// </summary>
         public void UpdateEligibilityRules(IReadOnlyList<WindowEligibilityRule> rules)
         {
-            _eligibilityPolicy.UpdateRules(rules);
-            _logger.LogInformation("[WindowService] Eligibility rules updated. Count: {Count}", _eligibilityPolicy.Rules.Count);
+            _eligibilityEvaluator.UpdateRules(rules);
+            _logger.LogInformation("[WindowService] Eligibility rules updated. Count: {Count}", _eligibilityEvaluator.Rules.Count);
         }
 
         /// <summary>当前生效的用户规则（有序，供 Inspector 展示与追加）。</summary>
         public IReadOnlyList<WindowEligibilityRule> GetEligibilityRules()
-            => _eligibilityPolicy.Rules;
+            => _eligibilityEvaluator.Rules;
 
         /// <summary>
         /// 枚举全部顶层窗口并给出每窗口的"可切换"判定报告（含标题 / 类名 / 矩形 / 原因），
@@ -287,7 +194,7 @@ namespace Pulsar.Services
         /// <summary>闪烁窗口（不抢焦点），用于 Inspector"定位这个窗口"。</summary>
         public bool FlashWindow(IntPtr hwnd)
         {
-            if (hwnd == IntPtr.Zero || !PulsarNative.IsWindow(hwnd))
+            if (hwnd == IntPtr.Zero || !_isWindow(hwnd))
             {
                 return false;
             }
@@ -302,27 +209,6 @@ namespace Pulsar.Services
             };
             return PulsarNative.FlashWindowEx(ref info);
         }
-
-        // --- Native Import for Icon Extraction ---
-        [DllImport("shell32.dll", CharSet = CharSet.Auto)]
-        private static extern IntPtr SHGetFileInfo(string pszPath, uint dwFileAttributes, ref SHFILEINFO psfi, uint cbFileInfo, uint uFlags);
-
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-        private struct SHFILEINFO
-        {
-            public IntPtr hIcon;
-            public int iIcon;
-            public uint dwAttributes;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
-            public string szDisplayName;
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)]
-            public string szTypeName;
-        }
-
-        private const uint SHGFI_ICON = 0x100;
-        private const uint SHGFI_LARGEICON = 0x0; // 32x32
-        private const uint SHGFI_SMALLICON = 0x1; // 16x16
-        private const uint SHGFI_USEFILEATTRIBUTES = 0x10;
 
         // ==========================================
         // 1. [New] 状态管理与上下文感知实现
@@ -377,10 +263,7 @@ namespace Pulsar.Services
 
             // This is the final MRU write boundary. Event producers normally apply
             // the same policy first, but a direct caller must not bypass it.
-            var snapshot = WindowEligibilitySnapshot.FromHwnd(
-                hwnd,
-                _eligibilityPolicy.HasTitleDependentRules);
-            var eligibility = _eligibilityPolicy.Evaluate(snapshot, BuildProcessBlacklistPredicate());
+            var (eligibility, snapshot) = _eligibilityEvaluator.EvaluateWithSnapshot(hwnd, EligibilityScope.Discovery);
             LogSwitchDiagnostics("history-record", snapshot, eligibility);
             if (!eligibility.Included)
             {
@@ -492,7 +375,7 @@ namespace Pulsar.Services
                         targetName,
                         null,
                         _trackingService.SnapshotWindow,
-                        ExtractIcon);
+                        _captureService.ExtractIcon);
                 }
                 catch (Exception ex)
                 {
@@ -566,31 +449,14 @@ namespace Pulsar.Services
             });
         }
 
-        public async Task<List<ProcessWindowInfo>> GetActiveWindowsAsync()
-        {
-            // Serve a fresh snapshot from the cache when available (the Switch-mode
-            // menu and process picker open far more often than the desktop changes),
-            // otherwise enumerate and cache the result for the next caller.
-            if (_inventoryCache.TryGet(out var cached))
-            {
-                return cached!;
-            }
-
-            var windows = await _inventoryService.GetActiveWindowsAsync(
-                IsDiscoveryBlacklisted,
-                _trackingService.SnapshotWindow,
-                ExtractIcon,
-                _processRegistryService);
-
-            _inventoryCache.Store(windows);
-            return windows;
-        }
+        public Task<List<ProcessWindowInfo>> GetActiveWindowsAsync()
+            => _inventoryCoordinator.GetActiveWindowsAsync();
 
         public bool TryGetCachedActiveWindows(out List<ProcessWindowInfo> windows)
         {
-            if (_inventoryCache.TryGet(out var cached))
+            if (_inventoryCoordinator.TryGetCached(out var cached) && cached != null)
             {
-                windows = cached!;
+                windows = cached;
                 return true;
             }
 
@@ -600,69 +466,25 @@ namespace Pulsar.Services
 
         public void PreWarmWindowInventory()
         {
-            RefreshInventoryCacheInBackground(force: true);
+            _inventoryCoordinator.PrewarmOnMenuDismiss();
         }
 
         public Task<HashSet<string>> GetRunningProcessNamesAsync()
         {
-            return _inventoryService.GetRunningProcessNamesAsync(IsDiscoveryBlacklisted);
+            return _inventoryService.GetRunningProcessNamesAsync(_eligibilityEvaluator.IsDiscoveryBlacklisted);
         }
 
         public Task<List<RunningProcessInfo>> GetRunningProcessesAsync()
         {
-            return _inventoryService.GetRunningProcessesAsync(IsDiscoveryBlacklisted);
+            return _inventoryService.GetRunningProcessesAsync(_eligibilityEvaluator.IsDiscoveryBlacklisted);
         }
 
         public Task<List<ProcessWindowInfo>> GetProcessWindowsAsync(int targetProcessId)
         {
-            return _inventoryService.GetProcessWindowsAsync(targetProcessId, null, _trackingService.SnapshotWindow, ExtractIcon);
-        }
-
-        // [New] Icon Cache to prevent redundant IO/GDI operations
-        // Key: ExePath, Value: ImageSource
-        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ImageSource?> _iconCache = new();
-
-        private ImageSource? ExtractIcon(string path)
-        {
-            if (string.IsNullOrEmpty(path)) return null;
-
-            // 1. Check Cache
-            if (_iconCache.TryGetValue(path, out var cachedIcon))
-            {
-                return cachedIcon;
-            }
-
-            try
-            {
-                var shinfo = new SHFILEINFO();
-                IntPtr hIcon = SHGetFileInfo(path, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_ICON | SHGFI_LARGEICON);
-                if (shinfo.hIcon != IntPtr.Zero)
-                {
-                    var image = Imaging.CreateBitmapSourceFromHIcon(
-                        shinfo.hIcon,
-                        Int32Rect.Empty,
-                        BitmapSizeOptions.FromEmptyOptions());
-                    image.Freeze();
-                    PulsarNative.DestroyIcon(shinfo.hIcon);
-                    
-                    // 2. Add to Cache
-                    _iconCache.TryAdd(path, image);
-                    return image;
-                }
-            }
-            catch { }
-
-            // Cache null result to prevent retrying bad paths
-            _iconCache.TryAdd(path, null);
-            return null;
+            return _inventoryService.GetProcessWindowsAsync(targetProcessId, null, _trackingService.SnapshotWindow, _captureService.ExtractIcon);
         }
 
         // --- Native Helpers ---
-
-        private async Task ForceForegroundWindowAsync(IntPtr hWnd)
-        {
-            await _focusManager.ActivateWindowAsync(hWnd);
-        }
 
         internal static WindowSelectionResult SelectTargetWindow(
             IEnumerable<ProcessWindowInfo> windows,
@@ -704,7 +526,7 @@ namespace Pulsar.Services
                     _trackingService.PreviousWindowHandle,
                     QuickSwitchTimeoutMs,
                     IsAltTabWindow,
-                    PulsarNative.IsWindow,
+                    _isWindow,
                     excludeTarget);
 
                 if (resolution.TargetWindow == IntPtr.Zero)
@@ -768,23 +590,6 @@ namespace Pulsar.Services
             return sb.ToString();
         }
 
-        private IntPtr GetNextWindowInZOrder(IntPtr current)
-        {
-            if (current == IntPtr.Zero) return IntPtr.Zero;
-
-            IntPtr next = PulsarNative.GetWindow(current, PulsarNative.GW_HWNDNEXT);
-            int scanLimit = 50; // Safety limit
-            int scanned = 0;
-            
-            while (next != IntPtr.Zero && scanned < scanLimit)
-            {
-                if (IsAltTabWindow(next)) return next;
-                next = PulsarNative.GetWindow(next, PulsarNative.GW_HWNDNEXT);
-                scanned++;
-            }
-            return IntPtr.Zero;
-        }
-
         private bool IsAltTabWindow(IntPtr hWnd)
         {
             if (hWnd == IntPtr.Zero)
@@ -792,30 +597,14 @@ namespace Pulsar.Services
                 return false;
             }
 
-            // [Deepen] 判定委托给统一 policy：自身 PID / 可见性 / cloaked / 工具窗口 / owned /
+            // [Deepen] 判定委托给统一 evaluator：自身 PID / 可见性 / cloaked / 工具窗口 / owned /
             // 物理可见性（屏幕内非零矩形，最小化豁免）/ 类名黑名单 / 进程黑名单 / 用户规则。
             // 新增的物理可见性规则泛化解决了 KxWppQuickHelpBarContainer 与 Chrome Legacy Window
             // 这类"WS_VISIBLE 但屏幕外/零尺寸"的幽灵窗口，不再需要逐个硬编码类名。
-            // 仅当存在标题依赖规则时才读取标题（避免热路径上的阻塞型 GetWindowText）。
-            var snapshot = WindowEligibilitySnapshot.FromHwnd(hWnd, _eligibilityPolicy.HasTitleDependentRules);
-            var eligibility = _eligibilityPolicy.Evaluate(snapshot, BuildProcessBlacklistPredicate());
+            // 快照组装与标题条件读取由 evaluator 负责（仅当存在标题依赖规则时才读标题）。
+            var (eligibility, snapshot) = _eligibilityEvaluator.EvaluateWithSnapshot(hWnd, EligibilityScope.Discovery);
             LogSwitchDiagnostics("alt-tab", snapshot, eligibility);
             return eligibility.Included;
-        }
-
-        /// <summary>
-        /// 取当前进程黑名单的稳定引用，包成按进程名判定的谓词。锁内捕获引用（UpdateBlacklist 整体替换、
-        /// 不原地修改），谓词调用路径无锁。
-        /// </summary>
-        private Func<string, bool> BuildProcessBlacklistPredicate()
-        {
-            IEnumerable<string> blacklist;
-            lock (_blacklistLock)
-            {
-                blacklist = _dynamicBlacklist;
-            }
-
-            return name => IsProcessNameBlacklisted(name, blacklist);
         }
 
         internal static bool IsProcessNameBlacklisted(string? processName, IEnumerable<string> blacklist)
@@ -840,109 +629,13 @@ namespace Pulsar.Services
         /// <summary>
         /// True when the given window class name is in the system blacklist of
         /// non-user-facing helper/host windows. Pure (no P/Invoke) for testability.
+        /// The class blacklist constant lives in the policy default (single source).
         /// </summary>
         internal static bool IsWindowClassBlacklisted(string className)
         {
-            return !string.IsNullOrEmpty(className) && SystemWindowClassBlacklist.Contains(className);
+            return !string.IsNullOrEmpty(className) && WindowEligibilityPolicy.DefaultWindowClassBlacklist.Contains(className);
         }
 
-        public async Task<ImageSource?> CaptureWindowAsync(IntPtr hWnd)
-        {
-            return await Task.Run(() =>
-            {
-                if (hWnd == IntPtr.Zero || !PulsarNative.IsWindow(hWnd))
-                {
-                    _logger.LogWarning("[CaptureWindow] Invalid handle: {Hwnd}", hWnd);
-                    return null;
-                }
-
-                try
-                {
-                    if (!PulsarNative.GetWindowRect(hWnd, out var rect))
-                    {
-                        _logger.LogWarning("[CaptureWindow] GetWindowRect failed for {Hwnd}", hWnd);
-                        return null;
-                    }
-                    int w = rect.Right - rect.Left, h = rect.Bottom - rect.Top;
-                    if (w <= 0 || h <= 0)
-                    {
-                        _logger.LogWarning("[CaptureWindow] Invalid dimensions {W}x{H} for {Hwnd}", w, h, hWnd);
-                        return null;
-                    }
-
-                    var bmp = CaptureViaPrintWindow(hWnd, w, h);
-                    if (bmp == null)
-                    {
-                        _logger.LogWarning("[CaptureWindow] PrintWindow failed for {Hwnd}", hWnd);
-                        return null;
-                    }
-
-                    return DownscaleAndFreeze(bmp);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "[CaptureWindow] Exception for {Hwnd}", hWnd);
-                    return null;
-                }
-            });
-        }
-
-        private static System.Drawing.Bitmap? CaptureViaPrintWindow(IntPtr hWnd, int w, int h)
-        {
-            var bmp = new System.Drawing.Bitmap(w, h);
-            using var g = System.Drawing.Graphics.FromImage(bmp);
-            IntPtr hdc = g.GetHdc();
-            bool ok = false;
-            try
-            {
-                ok = PulsarNative.PrintWindow(hWnd, hdc, 0x00000002)
-                    || PulsarNative.PrintWindow(hWnd, hdc, 0);
-            }
-            finally
-            {
-                g.ReleaseHdc(hdc);
-            }
-            if (!ok) { bmp.Dispose(); return null; }
-            return bmp;
-        }
-
-        private static ImageSource DownscaleAndFreeze(System.Drawing.Bitmap bmp)
-        {
-            int w = bmp.Width, h = bmp.Height, maxDim = 400;
-            if (w > maxDim || h > maxDim)
-            {
-                double ratio = (double)w / h;
-                if (w > h) { w = maxDim; h = (int)(maxDim / ratio); }
-                else { h = maxDim; w = (int)(maxDim * ratio); }
-                using var scaled = new System.Drawing.Bitmap(w, h);
-                using (var g = System.Drawing.Graphics.FromImage(scaled))
-                {
-                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                    g.DrawImage(bmp, 0, 0, w, h);
-                }
-                bmp.Dispose();
-                return BmpToSource(scaled);
-            }
-            return BmpToSource(bmp);
-        }
-
-        private static ImageSource BmpToSource(System.Drawing.Bitmap bmp)
-        {
-            IntPtr hBitmap = bmp.GetHbitmap();
-            bmp.Dispose();
-            try
-            {
-                var wpfBitmap = Imaging.CreateBitmapSourceFromHBitmap(
-                    hBitmap, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
-                wpfBitmap.Freeze();
-                return wpfBitmap;
-            }
-            finally
-            {
-                PulsarNative.DeleteObject(hBitmap);
-            }
-        }
-        
         /// <summary>
         /// 智能选择目标窗口：从窗口列表中选择最合适的窗口进行切换
         /// 如果之前记录的窗口（Pulsar 唤起前的窗口）在列表中，则跳过它，选择次最近激活的窗口
@@ -992,7 +685,7 @@ namespace Pulsar.Services
             var result = SelectTargetWindow(
                 windows,
                 request,
-                PulsarNative.IsWindow,
+                _isWindow,
                 message => _logger.LogDebug(message));
 
             if (!result.HasSelection)
@@ -1010,10 +703,8 @@ namespace Pulsar.Services
                         continue;
                     }
 
-                    var snapshot = WindowEligibilitySnapshot.FromHwnd(
-                        candidate.Handle,
-                        _eligibilityPolicy.HasTitleDependentRules);
-                    LogSwitchDiagnostics("selection-candidate", snapshot, _eligibilityPolicy.Evaluate(snapshot));
+                    var (eligibility, snapshot) = _eligibilityEvaluator.EvaluateWithSnapshot(candidate.Handle, EligibilityScope.Explicit);
+                    LogSwitchDiagnostics("selection-candidate", snapshot, eligibility);
                 }
             }
 
@@ -1051,10 +742,7 @@ namespace Pulsar.Services
             // An explicit candidate can outlive the inventory snapshot. Reject it
             // before touching foreground state so a stale/off-screen HWND cannot
             // be reported as a successful quick switch.
-            var eligibility = WindowEligibilitySnapshot.FromHwnd(
-                window.Handle,
-                _eligibilityPolicy.HasTitleDependentRules);
-            var eligibilityResult = _eligibilityPolicy.Evaluate(eligibility);
+            var (eligibilityResult, eligibility) = _eligibilityEvaluator.EvaluateWithSnapshot(window.Handle, EligibilityScope.Explicit);
             LogSwitchDiagnostics("activation-candidate", eligibility, eligibilityResult);
             if (!eligibilityResult.Included)
             {
@@ -1075,7 +763,7 @@ namespace Pulsar.Services
                 };
             }
 
-            var result = await ActivateWindowAsync(_focusManager, window, PulsarNative.IsWindow);
+            var result = await ActivateWindowAsync(_focusManager, window, _isWindow);
             if (!result.Success)
             {
                 _logger.LogWarning("[ActivateWindow] FAILED to activate '{Title}' (Handle: 0x{Hwnd:X}, Reason: {Reason})",
@@ -1092,10 +780,7 @@ namespace Pulsar.Services
             // [Candidate 4] 激活后校验：先判定再入 MRU。目标前台窗口物理不可见（屏幕外 / 零尺寸
             // 幽灵，如 Chrome Legacy Window）意味着用户什么都没看到 —— 幽灵从不进历史（即使已在
             // 历史里也顺带剔除，作为安全网），并提示用户到 Window Inspector 永久排除。
-            var postActivationEligibility = WindowEligibilitySnapshot.FromHwnd(
-                window.Handle,
-                _eligibilityPolicy.HasTitleDependentRules);
-            var postActivationResult = _eligibilityPolicy.Evaluate(postActivationEligibility);
+            var (postActivationResult, postActivationEligibility) = _eligibilityEvaluator.EvaluateWithSnapshot(window.Handle, EligibilityScope.Explicit);
             LogSwitchDiagnostics("activation-result", postActivationEligibility, postActivationResult);
             if (!postActivationResult.Included)
             {
@@ -1183,23 +868,6 @@ namespace Pulsar.Services
         // ==========================================
         
         /// <summary>
-        /// 注册或更新窗口到全局注册表
-        /// 首次出现时记录 FirstSeenTime，后续更新仅更新 LastActivationTime
-        /// </summary>
-        private bool IsDiscoveryBlacklisted(string processName)
-        {
-            lock (_blacklistLock)
-            {
-                return IsProcessNameBlacklisted(processName, _dynamicBlacklist);
-            }
-        }
-
-        private WindowTrackingSnapshot RegisterOrUpdateWindow(IntPtr hwnd)
-        {
-            return _trackingService.RegisterOrUpdateWindow(hwnd);
-        }
-        
-        /// <summary>
         /// 清理已关闭窗口的注册表条目 (定期调用)
         /// 防止内存泄漏
         /// </summary>
@@ -1218,6 +886,16 @@ namespace Pulsar.Services
             {
                 _logger.LogWarning(ex, "[WindowRegistry] Cleanup failed");
             }
+        }
+
+        /// <summary>
+        /// 释放 WindowService 持有的生命周期：停止事件管道、释放激活监听器、停止清理计时器。
+        /// </summary>
+        public void Dispose()
+        {
+            _eventFeed?.Stop();
+            _activationMonitor?.Dispose();
+            _cleanupTimer?.Dispose();
         }
     }
 }

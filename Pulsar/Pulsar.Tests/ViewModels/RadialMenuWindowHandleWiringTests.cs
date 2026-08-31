@@ -101,6 +101,7 @@ namespace Pulsar.Tests.ViewModels
             var session = new MenuSession(
                 configService.Object,
                 Mock.Of<IWindowService>(),
+                Mock.Of<IWindowInventoryCoordinator>(),
                 Mock.Of<IPluginRegistry>(),
                 new Mock<IHotkeyService>().Object,
                 Mock.Of<ITrayService>(),
@@ -137,6 +138,7 @@ namespace Pulsar.Tests.ViewModels
             var session = new MenuSession(
                 configService.Object,
                 Mock.Of<IWindowService>(),
+                Mock.Of<IWindowInventoryCoordinator>(),
                 Mock.Of<IPluginRegistry>(),
                 new Mock<IHotkeyService>().Object,
                 Mock.Of<ITrayService>(),

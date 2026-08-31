@@ -107,6 +107,17 @@ namespace Pulsar.Services.WindowSwitching
         private readonly IReadOnlySet<string> _windowClassBlacklist;
         private volatile IReadOnlyList<WindowEligibilityRule> _rules = Array.Empty<WindowEligibilityRule>();
 
+        /// <summary>
+        /// 系统类名黑名单（非用户可见的 helper/host 窗口），作为策略的默认值。
+        /// WPS Presentation 的 KxWppQuickHelpBarContainer 是 WS_VISIBLE 却屏幕外/零尺寸的
+        /// 幽灵窗口，会从 Alt-Tab 启发式中漏过 —— 进程名黑名单不足以覆盖（"wps" 会误伤所有 WPS 窗口）。
+        /// </summary>
+        internal static readonly IReadOnlySet<string> DefaultWindowClassBlacklist =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "KxWppQuickHelpBarContainer"
+            };
+
         public bool HasTitleDependentRules { get; private set; }
 
         public IReadOnlyList<WindowEligibilityRule> Rules => _rules;
@@ -114,7 +125,7 @@ namespace Pulsar.Services.WindowSwitching
         public WindowEligibilityPolicy(uint ownPid, IReadOnlySet<string>? windowClassBlacklist = null)
         {
             _ownPid = ownPid;
-            _windowClassBlacklist = windowClassBlacklist ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            _windowClassBlacklist = windowClassBlacklist ?? DefaultWindowClassBlacklist;
         }
 
         public void UpdateRules(IReadOnlyList<WindowEligibilityRule>? rules)

@@ -16,6 +16,7 @@ namespace Pulsar.ViewModels.Strategies
     public class ProcessPageProvider : BasePageProvider
     {
         private readonly IWindowService _windowService;
+        private readonly IWindowInventoryCoordinator _inventoryCoordinator;
         private readonly ILocalizationService? _loc;
         private readonly ProfilesConfig _config;
         private readonly System.IServiceProvider _serviceProvider;
@@ -36,6 +37,7 @@ namespace Pulsar.ViewModels.Strategies
 
         public ProcessPageProvider(
             IWindowService windowService,
+            IWindowInventoryCoordinator inventoryCoordinator,
             ProfilesConfig config,
             System.IServiceProvider serviceProvider,
             PulsarContext context,
@@ -43,6 +45,7 @@ namespace Pulsar.ViewModels.Strategies
             : base(serviceProvider.GetService(typeof(IConfigService)) as IConfigService)
         {
             _windowService = windowService;
+            _inventoryCoordinator = inventoryCoordinator;
             _config = config;
             _serviceProvider = serviceProvider;
             _context = context;
@@ -65,14 +68,15 @@ namespace Pulsar.ViewModels.Strategies
             if (_seededWindows != null)
             {
                 // Warm-cache fast path: the caller already holds a fresh inventory
-                // snapshot (served from WindowInventoryCache), so skip the desktop
-                // enumeration entirely and build the matched slot list from it.
+                // snapshot (served from the inventory coordinator's cache), so skip
+                // the desktop enumeration entirely and build the matched slot list
+                // from it.
                 _matchedSlots = _matcher.BuildSlotList(_seededWindows);
                 _currentPage = 0;
                 return;
             }
 
-            var windows = await _windowService.GetActiveWindowsAsync();
+            var windows = await _inventoryCoordinator.GetActiveWindowsAsync();
             _matchedSlots = _matcher.BuildSlotList(windows);
             _currentPage = 0;
         }

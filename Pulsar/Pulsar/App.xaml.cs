@@ -9,6 +9,7 @@ using Pulsar.Models;
 using Pulsar.Native;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
+using Pulsar.Services.WindowSwitching;
 using Pulsar.ViewModels;
 using Pulsar.ViewModels.Settings; // Added
 using Pulsar.Views;
@@ -113,6 +114,25 @@ namespace Pulsar
             serviceCollection.AddSingleton<IWindowActivationService>(sp => sp.GetRequiredService<IWindowService>());
             serviceCollection.AddSingleton<IWindowFocusContextService>(sp => sp.GetRequiredService<IWindowService>());
             serviceCollection.AddSingleton<IWindowShellService>(sp => sp.GetRequiredService<IWindowService>());
+
+            // [WindowService Deepening] 纯逻辑协作者注册为单例；WindowService 通过构造注入而非手 new。
+            serviceCollection.AddSingleton<IWindowEligibilityPolicy>(sp =>
+                new WindowEligibilityPolicy((uint)Process.GetCurrentProcess().Id));
+            serviceCollection.AddSingleton<IWindowEligibilityEvaluator, WindowEligibilityEvaluator>();
+            serviceCollection.AddSingleton<IWindowCaptureService, WindowCaptureService>();
+            serviceCollection.AddSingleton<WindowInventoryCache>();
+            serviceCollection.AddSingleton<IWindowInventoryCoordinator>(sp =>
+                new WindowInventoryCoordinator(
+                    sp.GetRequiredService<IWindowInventoryService>(),
+                    sp.GetRequiredService<IWindowEligibilityEvaluator>(),
+                    sp.GetRequiredService<WindowTrackingService>(),
+                    sp.GetRequiredService<IWindowCaptureService>(),
+                    sp.GetRequiredService<WindowInventoryCache>(),
+                    sp.GetRequiredService<ILogger<WindowInventoryCoordinator>>(),
+                    Process.GetCurrentProcess().Id));
+            serviceCollection.AddSingleton<QuickSwitchEngine>();
+            serviceCollection.AddSingleton<WindowTrackingService>();
+            serviceCollection.AddSingleton<IWindowInventoryService, WindowInventoryService>();
             serviceCollection.AddSingleton<ITrayService, TrayIconService>();
             serviceCollection.AddSingleton<IActionFeedbackService, ActionFeedbackService>();
             serviceCollection.AddSingleton<IActionFeedbackPresenter, ActionFeedbackPresenter>();

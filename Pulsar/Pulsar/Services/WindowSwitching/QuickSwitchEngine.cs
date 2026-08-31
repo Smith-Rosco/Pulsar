@@ -4,14 +4,18 @@ using System.Linq;
 
 namespace Pulsar.Services.WindowSwitching
 {
-    internal sealed class QuickSwitchResolution
+    public sealed class QuickSwitchResolution
     {
         public IntPtr TargetWindow { get; init; }
 
         public bool UsedFallbackPreviousWindow { get; init; }
     }
 
-    internal sealed class QuickSwitchEngine
+    /// <summary>
+    /// 快速切换的 MRU 历史栈与"上一对窗口"记忆（无 P/Invoke、无锁竞争外的副作用）。
+    /// 经 DI 注入 WindowService；构造函数公开以便容器实例化。
+    /// </summary>
+    public sealed class QuickSwitchEngine
     {
         private sealed class SwitchPairSnapshot
         {
