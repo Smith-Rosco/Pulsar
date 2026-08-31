@@ -107,6 +107,51 @@
     <value>浅色</value>
   </data>
   <data
+    name="Settings.General.Logging"
+    xml:space="preserve">
+    <value>日志</value>
+  </data>
+  <data
+    name="Settings.General.LogLevel"
+    xml:space="preserve">
+    <value>日志级别</value>
+  </data>
+  <data
+    name="Settings.General.LogLevelDescription"
+    xml:space="preserve">
+    <value>写入应用程序日志的最低详细级别。更改立即生效，并保存到 Profiles.json。</value>
+  </data>
+  <data
+    name="Settings.General.LogLevel.Verbose"
+    xml:space="preserve">
+    <value>详细</value>
+  </data>
+  <data
+    name="Settings.General.LogLevel.Debug"
+    xml:space="preserve">
+    <value>调试</value>
+  </data>
+  <data
+    name="Settings.General.LogLevel.Information"
+    xml:space="preserve">
+    <value>信息</value>
+  </data>
+  <data
+    name="Settings.General.LogLevel.Warning"
+    xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data
+    name="Settings.General.LogLevel.Error"
+    xml:space="preserve">
+    <value>错误</value>
+  </data>
+  <data
+    name="Settings.General.LogLevel.Fatal"
+    xml:space="preserve">
+    <value>严重</value>
+  </data>
+  <data
     name="Settings.General.RadialMenuLayout"
     xml:space="preserve">
     <value>径向菜单布局</value>

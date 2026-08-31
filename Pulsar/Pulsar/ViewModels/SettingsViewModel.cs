@@ -50,6 +50,7 @@ namespace Pulsar.ViewModels
         private readonly ILogger<SettingsViewModel> _logger;
         private readonly ILocalizationService _loc;
         private readonly ITutorialService _tutorialService;
+        private readonly ILoggingConfigService _loggingConfigService;
         private readonly SlotEditorWorkspace _slotEditor;
         private readonly SettingsEditorSession _session;
         private readonly ProfilesConfig _fallbackConfig = new();
@@ -198,6 +199,7 @@ namespace Pulsar.ViewModels
             ILogger<SettingsViewModel> logger,
             ILocalizationService localizationService,
             ITutorialService tutorialService,
+            ILoggingConfigService loggingConfigService,
             IProcessRegistryService? processRegistryService = null)
         {
             _configService = configService;
@@ -214,6 +216,7 @@ namespace Pulsar.ViewModels
             _logger = logger;
             _loc = localizationService;
             _tutorialService = tutorialService;
+            _loggingConfigService = loggingConfigService;
             _processRegistryService = processRegistryService;
 
             _session = new SettingsEditorSession(configService, secretStore);

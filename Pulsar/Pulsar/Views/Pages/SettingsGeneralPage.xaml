@@ -339,6 +339,47 @@
                     </StackPanel>
                 </ui:CardExpander>
 
+                <!-- Logging Section -->
+                <ui:CardExpander Icon="Code24" Header="{lex:Locale Settings.General.Logging}" Margin="0,0,0,12" IsExpanded="False">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="{lex:Locale Settings.General.LogLevel}" FontWeight="Medium"/>
+                                <TextBlock Text="{lex:Locale Settings.General.LogLevelDescription}" 
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
+                                           FontSize="12" TextWrapping="Wrap" MaxWidth="420"/>
+                            </StackPanel>
+                            <ComboBox Grid.Column="1" Width="160"
+                                      SelectedValue="{Binding DataContext.SelectedLogLevel, RelativeSource={RelativeSource AncestorType=Page}, Mode=TwoWay}"
+                                      SelectedValuePath="Tag"
+                                      AutomationProperties.Name="{lex:Locale Settings.General.LogLevel}">
+                                <ComboBoxItem Tag="Verbose">
+                                    <TextBlock Text="{lex:Locale Settings.General.LogLevel.Verbose}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="Debug">
+                                    <TextBlock Text="{lex:Locale Settings.General.LogLevel.Debug}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="Information">
+                                    <TextBlock Text="{lex:Locale Settings.General.LogLevel.Information}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="Warning">
+                                    <TextBlock Text="{lex:Locale Settings.General.LogLevel.Warning}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="Error">
+                                    <TextBlock Text="{lex:Locale Settings.General.LogLevel.Error}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="Fatal">
+                                    <TextBlock Text="{lex:Locale Settings.General.LogLevel.Fatal}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                            </ComboBox>
+                        </Grid>
+                    </StackPanel>
+                </ui:CardExpander>
+
             </StackPanel>
         </ScrollViewer>
     </Grid>

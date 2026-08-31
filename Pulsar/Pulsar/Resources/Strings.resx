@@ -68,6 +68,33 @@
   <data name="Settings.General.Light" xml:space="preserve">
     <value>Light</value>
   </data>
+  <data name="Settings.General.Logging" xml:space="preserve">
+    <value>Logging</value>
+  </data>
+  <data name="Settings.General.LogLevel" xml:space="preserve">
+    <value>Log level</value>
+  </data>
+  <data name="Settings.General.LogLevelDescription" xml:space="preserve">
+    <value>Minimum level of detail written to the application log. Changes apply immediately and are saved to Profiles.json.</value>
+  </data>
+  <data name="Settings.General.LogLevel.Verbose" xml:space="preserve">
+    <value>Verbose</value>
+  </data>
+  <data name="Settings.General.LogLevel.Debug" xml:space="preserve">
+    <value>Debug</value>
+  </data>
+  <data name="Settings.General.LogLevel.Information" xml:space="preserve">
+    <value>Information</value>
+  </data>
+  <data name="Settings.General.LogLevel.Warning" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="Settings.General.LogLevel.Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="Settings.General.LogLevel.Fatal" xml:space="preserve">
+    <value>Fatal</value>
+  </data>
   <data name="Settings.General.RadialMenuLayout" xml:space="preserve">
     <value>Radial Menu Layout</value>
   </data>

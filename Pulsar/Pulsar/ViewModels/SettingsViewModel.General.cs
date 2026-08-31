@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.Input;
 using Pulsar.Helpers;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
+using Serilog.Events;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
 using DialogResult = Pulsar.Models.Enums.DialogResult;
@@ -152,10 +153,40 @@ namespace Pulsar.ViewModels
         private void ApplySettingsTheme(AppTheme theme)
         {
             // Apply theme immediately to the active window (SettingsWindow)
-            System.Windows.Application.Current.Dispatcher.Invoke(() => 
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
                 _themeService.SetGlobalTheme(theme);
             });
+        }
+
+        // ===== Logging Management =====
+
+        /// <summary>
+        /// Gets or sets the minimum application log level (bound to Settings.Logging.MinimumLevel).
+        /// Changing it applies the level immediately via ILoggingConfigService and marks the config dirty.
+        /// </summary>
+        public string SelectedLogLevel
+        {
+            get => Config.Settings.Logging.MinimumLevel;
+            set
+            {
+                var current = Config.Settings.Logging.MinimumLevel;
+                if (string.Equals(current, value, StringComparison.OrdinalIgnoreCase)) return;
+
+                Config.Settings.Logging.MinimumLevel = value;
+                OnPropertyChanged();
+
+                if (Enum.TryParse<LogEventLevel>(value, true, out var level))
+                {
+                    _loggingConfigService.SetLogLevel(level);
+                }
+                else
+                {
+                    _logger.LogWarning("[SettingsViewModel] Invalid log level value: {Value}", value);
+                }
+
+                MarkDirty();
+            }
         }
 
 

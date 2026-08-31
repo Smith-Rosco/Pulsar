@@ -355,6 +355,7 @@ namespace Pulsar.Tests.ViewModels
                 NullLogger<SettingsViewModel>.Instance,
                 CreateLoc(),
                 new Mock<ITutorialService>().Object,
+                new Mock<ILoggingConfigService>().Object,
                 processRegistryService.Object);
 
             return new SettingsViewModelHarness(viewModel, configService, dialogService);
