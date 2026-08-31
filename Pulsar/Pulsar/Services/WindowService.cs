@@ -21,7 +21,7 @@ using Pulsar.Core.Focus;
 
 namespace Pulsar.Services
 {
-    public class WindowService : IWindowService
+    public class WindowService : IWindowService, IDisposable
     {
         private readonly ILogger<WindowService> _logger;
         private readonly IProcessRegistryService? _processRegistryService;
@@ -29,11 +29,12 @@ namespace Pulsar.Services
         private readonly IFocusManager _focusManager;
         private readonly ITrayService? _trayService;
         private readonly ILocalizationService? _loc;
-        private readonly WindowInventoryService _inventoryService;
-        private readonly WindowTrackingService _trackingService = new();
-        private readonly QuickSwitchEngine _quickSwitchEngine = new();
+        private readonly IWindowInventoryService _inventoryService;
+        private readonly WindowTrackingService _trackingService;
+        private readonly QuickSwitchEngine _quickSwitchEngine;
         private readonly IWindowEligibilityPolicy _eligibilityPolicy;
-        private readonly WindowInventoryCache _inventoryCache = new();
+        private readonly WindowInventoryCache _inventoryCache;
+        private readonly Func<IntPtr, bool> _isWindow;
         private int _inventoryRefreshInFlight;
         private volatile bool _switchDiagnosticsEnabled;
 
@@ -64,17 +65,6 @@ namespace Pulsar.Services
             "calc"                  // Calculator often stays suspended
         };
 
-        // [Fix] Window-class blacklist for helper/host windows that pass the generic
-        // Alt-Tab heuristics (visible, not cloaked, no owner) but are NOT user-facing.
-        // WPS Presentation's KxWppQuickHelpBarContainer is WS_VISIBLE yet off-screen /
-        // zero-sized, so it slips through IsAltTabWindow and becomes a quick-switch
-        // target — stealing the switch from the Windows Security credential window.
-        // Process-name blacklisting is insufficient: "wps" would nuke every WPS window.
-        internal static readonly HashSet<string> SystemWindowClassBlacklist = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            "KxWppQuickHelpBarContainer"
-        };
-        
         // [Logging] Log samplers for high-frequency operations
         private readonly LogSampler _historyLogSampler = new LogSampler(5);      // Sample 1 in 5 for history recording
         private readonly LogSampler _captureLogSampler = new LogSampler(20);     // Sample 1 in 20 for capture failures
@@ -92,10 +82,16 @@ namespace Pulsar.Services
         public WindowService(
             ILogger<WindowService> logger,
             IFocusManager focusManager,
+            IWindowEligibilityPolicy eligibilityPolicy,
+            IWindowInventoryService inventoryService,
+            WindowInventoryCache inventoryCache,
+            QuickSwitchEngine quickSwitchEngine,
+            WindowTrackingService trackingService,
             IProcessRegistryService? processRegistryService = null,
             ILoggerFactory? loggerFactory = null,
             ITrayService? trayService = null,
-            ILocalizationService? loc = null)
+            ILocalizationService? loc = null,
+            Func<IntPtr, bool>? isWindow = null)
         {
             _logger = logger;
             _focusManager = focusManager;
@@ -103,15 +99,20 @@ namespace Pulsar.Services
             _loggerFactory = loggerFactory;
             _trayService = trayService;
             _loc = loc;
+            _isWindow = isWindow ?? PulsarNative.IsWindow;
             using (var currentProcess = Process.GetCurrentProcess())
             {
                 _currentProcessId = currentProcess.Id;
             }
 
-            // [Deepen] "可切换窗口"判定收拢为单一 policy：结构规则 + 类名黑名单 + 物理可见性
-            // 对三个消费面（快速切换 / 发现枚举 / 进程激活枚举）一律生效；进程黑名单由调用方按需传入。
-            _eligibilityPolicy = new WindowEligibilityPolicy((uint)_currentProcessId, SystemWindowClassBlacklist);
-            _inventoryService = new WindowInventoryService(_eligibilityPolicy);
+            // [Deepen] "可切换窗口"判定收拢为单一 policy：结构规则 + 类名黑名单 + 物理可见性。
+            // 类名黑名单由 policy 默认值承担（SystemWindowClassBlacklist 移入 WindowEligibilityPolicy）。
+            // 进程黑名单由调用方按需传入。
+            _eligibilityPolicy = eligibilityPolicy;
+            _inventoryService = inventoryService;
+            _inventoryCache = inventoryCache;
+            _quickSwitchEngine = quickSwitchEngine;
+            _trackingService = trackingService;
 
             // Initialize with default system blacklist
             lock (_blacklistLock)
@@ -286,7 +287,7 @@ namespace Pulsar.Services
         /// <summary>闪烁窗口（不抢焦点），用于 Inspector"定位这个窗口"。</summary>
         public bool FlashWindow(IntPtr hwnd)
         {
-            if (hwnd == IntPtr.Zero || !PulsarNative.IsWindow(hwnd))
+            if (hwnd == IntPtr.Zero || !_isWindow(hwnd))
             {
                 return false;
             }
@@ -698,7 +699,7 @@ namespace Pulsar.Services
                     _trackingService.PreviousWindowHandle,
                     QuickSwitchTimeoutMs,
                     IsAltTabWindow,
-                    PulsarNative.IsWindow,
+                    _isWindow,
                     excludeTarget);
 
                 if (resolution.TargetWindow == IntPtr.Zero)
@@ -817,17 +818,18 @@ namespace Pulsar.Services
         /// <summary>
         /// True when the given window class name is in the system blacklist of
         /// non-user-facing helper/host windows. Pure (no P/Invoke) for testability.
+        /// The class blacklist constant lives in the policy default (single source).
         /// </summary>
         internal static bool IsWindowClassBlacklisted(string className)
         {
-            return !string.IsNullOrEmpty(className) && SystemWindowClassBlacklist.Contains(className);
+            return !string.IsNullOrEmpty(className) && WindowEligibilityPolicy.DefaultWindowClassBlacklist.Contains(className);
         }
 
         public async Task<ImageSource?> CaptureWindowAsync(IntPtr hWnd)
         {
             return await Task.Run(() =>
             {
-                if (hWnd == IntPtr.Zero || !PulsarNative.IsWindow(hWnd))
+                if (hWnd == IntPtr.Zero || !_isWindow(hWnd))
                 {
                     _logger.LogWarning("[CaptureWindow] Invalid handle: {Hwnd}", hWnd);
                     return null;
@@ -969,7 +971,7 @@ namespace Pulsar.Services
             var result = SelectTargetWindow(
                 windows,
                 request,
-                PulsarNative.IsWindow,
+                _isWindow,
                 message => _logger.LogDebug(message));
 
             if (!result.HasSelection)
@@ -1052,7 +1054,7 @@ namespace Pulsar.Services
                 };
             }
 
-            var result = await ActivateWindowAsync(_focusManager, window, PulsarNative.IsWindow);
+            var result = await ActivateWindowAsync(_focusManager, window, _isWindow);
             if (!result.Success)
             {
                 _logger.LogWarning("[ActivateWindow] FAILED to activate '{Title}' (Handle: 0x{Hwnd:X}, Reason: {Reason})",
@@ -1190,6 +1192,16 @@ namespace Pulsar.Services
             {
                 _logger.LogWarning(ex, "[WindowRegistry] Cleanup failed");
             }
+        }
+
+        /// <summary>
+        /// 释放 WindowService 持有的生命周期：停止事件管道、释放激活监听器、停止清理计时器。
+        /// </summary>
+        public void Dispose()
+        {
+            _eventFeed?.Stop();
+            _activationMonitor?.Dispose();
+            _cleanupTimer?.Dispose();
         }
     }
 }

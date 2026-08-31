@@ -6,14 +6,18 @@ using Pulsar.Native;
 
 namespace Pulsar.Services.WindowSwitching
 {
-    internal sealed class WindowTrackingSnapshot
+    public sealed class WindowTrackingSnapshot
     {
         public DateTime FirstSeenTime { get; init; }
 
         public DateTime ActivationTime { get; init; }
     }
 
-    internal sealed class WindowTrackingService
+    /// <summary>
+    /// 窗口追踪注册表（FirstSeen / LastActivation）与上一窗口句柄。
+    /// 经 DI 注入 WindowService；构造函数公开以便容器实例化。
+    /// </summary>
+    public sealed class WindowTrackingService
     {
         private sealed class WindowRegistryEntry
         {

@@ -10,7 +10,7 @@ using Pulsar.Services.Interfaces;
 
 namespace Pulsar.Services.WindowSwitching
 {
-    internal sealed class WindowInventoryService
+    internal sealed class WindowInventoryService : IWindowInventoryService
     {
         private readonly IWindowEligibilityPolicy _eligibilityPolicy;
 
