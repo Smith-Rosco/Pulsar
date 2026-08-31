@@ -227,6 +227,52 @@ namespace Pulsar.Tests.Config
             slot.Args["autoSubmit"].Should().Be("true");
         }
 
+        [Fact]
+        public async Task LoadAndSave_ShouldRoundTrip_GestureSummonSettings()
+        {
+            // Arrange
+            var service = CreateConfigService();
+            var config = new ProfilesConfig
+            {
+                Settings = new ProfileSettings
+                {
+                    EnableRightDragSummon = true,
+                    SummonMode = GestureSummonMode.OnThreshold,
+                    GestureDragThreshold = 40.0
+                }
+            };
+
+            // Act - Save and reload
+            await service.SaveAsync(config);
+
+            var savedJson = await File.ReadAllTextAsync(_configPath);
+            savedJson.Should().Contain("\"summonMode\"", "property name should be camelCase");
+            savedJson.Should().Contain("\"OnThreshold\"", "enum should persist as its member name");
+            savedJson.Should().Contain("\"gestureDragThreshold\"", "property name should be camelCase");
+
+            var service2 = CreateConfigService();
+            var loadedConfig = await service2.LoadAsync();
+
+            // Assert
+            loadedConfig.Settings.SummonMode.Should().Be(GestureSummonMode.OnThreshold);
+            loadedConfig.Settings.GestureDragThreshold.Should().Be(40.0);
+        }
+
+        [Fact]
+        public async Task Save_ShouldPersist_DefaultSummonMode_AsImmediate()
+        {
+            // Arrange
+            var service = CreateConfigService();
+            var config = new ProfilesConfig();
+
+            // Act
+            await service.SaveAsync(config);
+
+            // Assert
+            var savedJson = await File.ReadAllTextAsync(_configPath);
+            savedJson.Should().Contain("\"summonMode\": \"Immediate\"", "default summon mode must round-trip as Immediate");
+        }
+
         /// <summary>
         /// Create ConfigService with test directory
         /// </summary>

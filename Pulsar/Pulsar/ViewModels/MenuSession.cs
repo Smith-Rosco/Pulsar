@@ -60,6 +60,15 @@ namespace Pulsar.ViewModels
         private static readonly TimeSpan MenuWatchdogTimeout = TimeSpan.FromSeconds(60);
 
         /// <summary>
+        /// Dismiss fade duration (matches <c>RadialMenuWindow.Dismiss</c>) plus a
+        /// small margin. The gesture release must let this fade play out before
+        /// running the selection: slot strategies block the UI thread during window
+        /// activation (~300ms), which would otherwise starve the fade animation and
+        /// make the menu linger visibly after release.
+        /// </summary>
+        private const int GestureReleaseFadeDelayMs = 180;
+
+        /// <summary>
         /// Single-phase first-frame budget for the Switch-mode content load. The
         /// deadline-bounded show path races the page load against this budget: when
         /// the load lands inside it the model is applied before the shell surfaces
@@ -968,7 +977,21 @@ namespace Pulsar.ViewModels
         {
             InvocationSource = MenuInvocationSource.Hotkey;
 
-            if (!IsVisible)
+            // Capture the release's spatial resolution state before hiding.
+            bool wasVisible = IsVisible;
+            bool inCenterZone = _menuState == MenuState.Root
+                && IsWithinQuickSwitchZone(QuickSwitchPolicy.FromSettings(_config?.Settings).CenterZoneRadius);
+
+            _logger?.LogDebug(
+                "[DEBUG-RDX] release handler enter wasVisible={WasVisible} isLoading={Loading} inCenterZone={InCenter} activeSlot={Slot} menuState={State}",
+                wasVisible, _isLoading, inCenterZone, _activeSlotIndex, _menuState);
+
+            // D4: hide the menu synchronously on release, before any await. The menu
+            // disappears immediately and the awaits below only drive the action —
+            // they never delay the hide (hotkey-path parity).
+            IsVisible = false;
+
+            if (!wasVisible)
             {
                 // Released while the menu was still loading. The user has not aimed at
                 // any slot, so the gesture resolves to a quick switch back to the
@@ -994,8 +1017,13 @@ namespace Pulsar.ViewModels
                 return;
             }
 
-            if (_menuState == MenuState.Root
-                && IsWithinQuickSwitchZone(QuickSwitchPolicy.FromSettings(_config?.Settings).CenterZoneRadius))
+            // The menu was visible: let the dismiss fade play out before running the
+            // selection. Slot strategies block the UI thread during window activation
+            // (~300ms); without this yield the fade animation is starved and the menu
+            // lingers visibly after release instead of disappearing immediately.
+            await Task.Delay(GestureReleaseFadeDelayMs);
+
+            if (inCenterZone)
             {
                 _logger?.LogDebug("[RightDragGesture] Spatial quick switch on right release.");
                 SetActionExecuted(true);
@@ -1007,12 +1035,11 @@ namespace Pulsar.ViewModels
                         _loc["QuickSwitch.FailedBody"],
                         PulsarNotificationIcon.Warning);
                 }
-                IsVisible = false;
+
                 return;
             }
 
             await ExecuteSelectionAsync();
-            IsVisible = false;
         }
 
         public async Task ExecuteSelectionAsync()

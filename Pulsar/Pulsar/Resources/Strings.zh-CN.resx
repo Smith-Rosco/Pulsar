@@ -4579,6 +4579,24 @@ Pulsar 会在你的浏览器中打开一个网页——这就是命令模式：�
   <data name="Settings.General.ModifierWin" xml:space="preserve">
     <value>Win</value>
   </data>
+  <data name="Settings.General.GestureSummonMode" xml:space="preserve">
+    <value>唤起方式</value>
+  </data>
+  <data name="Settings.General.GestureSummonModeDescription" xml:space="preserve">
+    <value>控制手势过程中菜单何时打开。"立即"在右键按下时唤起；"拖动越过阈值后"在光标位移超过拖拽阈值时唤起，此时按住修饰键的普通右键会重新注入给源程序，原生右键菜单照常弹出。</value>
+  </data>
+  <data name="Settings.General.SummonModeImmediate" xml:space="preserve">
+    <value>立即</value>
+  </data>
+  <data name="Settings.General.SummonModeOnThreshold" xml:space="preserve">
+    <value>拖动越过阈值后</value>
+  </data>
+  <data name="Settings.General.GestureDragThreshold" xml:space="preserve">
+    <value>拖拽阈值</value>
+  </data>
+  <data name="Settings.General.GestureDragThresholdDescription" xml:space="preserve">
+    <value>在"拖动越过阈值后"模式下，光标需移动的距离（像素）才会唤起菜单。在此之前松开将显示源程序的原生右键菜单。</value>
+  </data>
   <data name="RadialMenu.SubMenuPageFormat" xml:space="preserve">
     <value>{0}（{1}/{2}）</value>
   </data>

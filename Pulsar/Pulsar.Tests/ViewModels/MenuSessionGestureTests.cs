@@ -323,6 +323,55 @@ namespace Pulsar.Tests.ViewModels
             session.IsVisible.Should().BeFalse();
         }
 
+        [Fact]
+        public async Task HandleGestureRightReleaseAsync_ShouldHideMenuSynchronously_WhileActionStillRunning()
+        {
+            // D4: the menu must be hidden synchronously on release — before the
+            // action (here a deliberately slow quick switch) completes — so the
+            // hide is never gated behind the awaited work.
+            var tcs = new TaskCompletionSource<bool>();
+            var windowService = new Mock<IWindowService>();
+            windowService.Setup(service => service.SwitchToPreviousWindow()).Returns(tcs.Task);
+            var session = CreateSession(windowService);
+            session.IsVisible = true;
+            session.InvocationSource = MenuInvocationSource.RightDragGesture;
+            session.SetMenuCenter(new Point(250, 250));
+            session.HandlePointerMoved(new Vector(250, 250));
+
+            var releaseTask = session.HandleGestureRightReleaseAsync();
+
+            // The action is still in flight (tcs incomplete), but the menu must
+            // already be hidden.
+            session.IsVisible.Should().BeFalse();
+
+            tcs.SetResult(true);
+            await releaseTask;
+            session.IsVisible.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task HandleGestureRightReleaseAsync_WhileLoading_ShouldHideBeforeQuickSwitch()
+        {
+            // D4/4.2: the loading-release quick-switch path must hide the menu
+            // synchronously before switching, and the switch must not wait for the
+            // page load.
+            var tcs = new TaskCompletionSource<bool>();
+            var windowService = new Mock<IWindowService>();
+            windowService.Setup(service => service.SwitchToPreviousWindow()).Returns(tcs.Task);
+            var session = CreateSession(windowService);
+            session.InvocationSource = MenuInvocationSource.RightDragGesture;
+            SetLoading(session, loading: true);
+
+            var releaseTask = session.HandleGestureRightReleaseAsync();
+
+            session.IsVisible.Should().BeFalse();
+
+            tcs.SetResult(true);
+            await releaseTask;
+            windowService.Verify(service => service.SwitchToPreviousWindow(), Times.Once);
+            session.IsVisible.Should().BeFalse();
+        }
+
         private static void SetLoading(MenuSession session, bool loading)
         {
             typeof(MenuSession)

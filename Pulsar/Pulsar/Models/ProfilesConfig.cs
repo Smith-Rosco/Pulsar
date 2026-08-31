@@ -133,6 +133,24 @@ namespace Pulsar.Models
             !string.IsNullOrWhiteSpace(RightDragSwitcherModifier)
             && string.Equals(RightDragSwitcherModifier, RightDragActionModifier, StringComparison.OrdinalIgnoreCase);
 
+        /// <summary>
+        /// When the right-drag gesture summons the menu. <see cref="GestureSummonMode.Immediate"/>
+        /// (default) summons at button-down (current behavior); <see cref="GestureSummonMode.OnThreshold"/>
+        /// waits until the drag crosses <see cref="GestureDragThreshold"/> so a plain
+        /// modifier+click can be replayed to the source app as a native right-click.
+        /// Persisted as a string (e.g. "Immediate" / "OnThreshold").
+        /// </summary>
+        [ObservableProperty]
+        private GestureSummonMode _summonMode = GestureSummonMode.Immediate;
+
+        /// <summary>
+        /// Cursor displacement (DIPs) from the button-down position that must be
+        /// exceeded before an <see cref="GestureSummonMode.OnThreshold"/> gesture
+        /// summons the menu. Releases below this threshold replay a right-click.
+        /// </summary>
+        [ObservableProperty]
+        private double _gestureDragThreshold = 25.0;
+
         // [RDP Fix] Input System Configuration
         public InputSettings Input { get; set; } = new();
 

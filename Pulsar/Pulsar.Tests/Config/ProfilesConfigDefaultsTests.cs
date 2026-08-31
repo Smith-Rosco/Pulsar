@@ -87,6 +87,17 @@ namespace Pulsar.Tests.Config
         }
 
         [Fact]
+        public void ProfileSettings_GestureSummon_ShouldHaveSaneDefaults()
+        {
+            // Act
+            var settings = new ProfileSettings();
+
+            // Assert
+            settings.SummonMode.Should().Be(GestureSummonMode.Immediate);
+            settings.GestureDragThreshold.Should().Be(25.0);
+        }
+
+        [Fact]
         public void ProfileSettings_RightDragModifiersConflict_ShouldDetectDuplicateModifier()
         {
             // Arrange

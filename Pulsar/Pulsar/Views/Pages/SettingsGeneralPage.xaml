@@ -224,6 +224,67 @@
                             </TextBlock.Style>
                         </TextBlock>
 
+                        <!-- Summon mode (only when the gesture is enabled) -->
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="{lex:Locale Settings.General.GestureSummonMode}" FontWeight="Medium"/>
+                                <TextBlock Text="{lex:Locale Settings.General.GestureSummonModeDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" TextWrapping="Wrap" MaxWidth="420"/>
+                            </StackPanel>
+                            <ComboBox Grid.Column="1" Width="180"
+                                      IsEnabled="{Binding EnableRightDragSummon}"
+                                      SelectedValue="{Binding SummonMode, Mode=TwoWay}"
+                                      SelectedValuePath="Tag"
+                                      AutomationProperties.Name="{lex:Locale Settings.General.GestureSummonMode}">
+                                <ComboBoxItem Tag="{x:Static models:GestureSummonMode.Immediate}">
+                                    <TextBlock Text="{lex:Locale Settings.General.SummonModeImmediate}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="{x:Static models:GestureSummonMode.OnThreshold}">
+                                    <TextBlock Text="{lex:Locale Settings.General.SummonModeOnThreshold}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                            </ComboBox>
+                        </Grid>
+
+                        <!-- Drag threshold (only for OnThreshold mode) -->
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="{lex:Locale Settings.General.GestureDragThreshold}" FontWeight="Medium"/>
+                                <TextBlock Text="{lex:Locale Settings.General.GestureDragThresholdDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" TextWrapping="Wrap" MaxWidth="420"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SummonMode}" Value="{x:Static models:GestureSummonMode.OnThreshold}">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                                <Slider Width="140"
+                                        Minimum="5"
+                                        Maximum="100"
+                                        IsSnapToTickEnabled="True"
+                                        TickFrequency="1"
+                                        Value="{Binding GestureDragThreshold, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        IsEnabled="{Binding EnableRightDragSummon}"
+                                        VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding GestureDragThreshold, StringFormat={}{0:0}px}"
+                                           Margin="8,0,0,0"
+                                           VerticalAlignment="Center"
+                                           MinWidth="40"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                            </StackPanel>
+                        </Grid>
+
                         <Separator Margin="0,12"/>
 
                         <!-- Switcher modifier -->

@@ -2888,6 +2888,24 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
   <data name="Settings.General.ModifierWin" xml:space="preserve">
     <value>Win</value>
   </data>
+  <data name="Settings.General.GestureSummonMode" xml:space="preserve">
+    <value>Summon mode</value>
+  </data>
+  <data name="Settings.General.GestureSummonModeDescription" xml:space="preserve">
+    <value>When the menu opens during the gesture. Immediately summons on right-click; after dragging opens once the cursor passes the drag threshold, letting a plain modifier+click show the app's native context menu.</value>
+  </data>
+  <data name="Settings.General.SummonModeImmediate" xml:space="preserve">
+    <value>Immediately</value>
+  </data>
+  <data name="Settings.General.SummonModeOnThreshold" xml:space="preserve">
+    <value>After dragging past the threshold</value>
+  </data>
+  <data name="Settings.General.GestureDragThreshold" xml:space="preserve">
+    <value>Drag threshold</value>
+  </data>
+  <data name="Settings.General.GestureDragThresholdDescription" xml:space="preserve">
+    <value>Distance (in pixels) the cursor must travel before an "after dragging" gesture summons the menu. Releasing before this shows the app's native context menu.</value>
+  </data>
   <data name="RadialMenu.SubMenuPageFormat" xml:space="preserve">
     <value>{0} ({1}/{2})</value>
   </data>

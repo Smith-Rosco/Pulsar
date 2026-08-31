@@ -13,6 +13,8 @@ namespace Pulsar.Services
 
         public event EventHandler<GlobalMouseEventArgs>? OnMouseEvent;
 
+        public event EventHandler<GlobalMouseEventArgs>? OnMouseMove;
+
         public GlobalMouseService(ILogger<GlobalMouseService> logger, GlobalMouseHook hook)
         {
             _logger = logger;
@@ -24,6 +26,7 @@ namespace Pulsar.Services
             if (_isInitialized) return;
 
             _hook.OnMouseEvent += Hook_OnMouseEvent;
+            _hook.OnMouseMove += Hook_OnMouseMove;
             _isInitialized = true;
             _logger.LogInformation("GlobalMouseService initialized.");
         }
@@ -33,11 +36,23 @@ namespace Pulsar.Services
             OnMouseEvent?.Invoke(this, e);
         }
 
+        private void Hook_OnMouseMove(object? sender, GlobalMouseEventArgs e)
+        {
+            OnMouseMove?.Invoke(this, e);
+        }
+
+        public void ReplayRightClick()
+        {
+            _logger.LogInformation("[DEBUG-RDX] service ReplayRightClick -> delegating to hook");
+            _hook.ReplayRightClick();
+        }
+
         public void Dispose()
         {
             if (_isInitialized)
             {
                 _hook.OnMouseEvent -= Hook_OnMouseEvent;
+                _hook.OnMouseMove -= Hook_OnMouseMove;
                 _hook.Dispose();
             }
         }
