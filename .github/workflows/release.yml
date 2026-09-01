@@ -12,10 +12,10 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup .NET 8
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 8.0.x
 
@@ -59,14 +59,14 @@ jobs:
           }
 
       - name: Upload artifact (Full)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: Pulsar-${{ steps.version.outputs.version }}-full
           path: publish/full/
           if-no-files-found: error
 
       - name: Upload artifact (Portable)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: Pulsar-${{ steps.version.outputs.version }}-portable
           path: publish/portable/

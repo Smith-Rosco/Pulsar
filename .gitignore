@@ -504,3 +504,6 @@ reference/
 
 # WorkBuddy workspace memory (project-local, not source)
 .workbuddy/
+
+# Local temp scratch dir (logs, throwaway scripts)
+Temp/
