@@ -67,72 +67,104 @@ if ($actualVersion -ne $version) {
 
 每次发布都使用以下路径变量，不把相对路径传给 `PublishDir`：
 
+每次发布构建两个版本：
+
+| 版本 | 含义 | 命名 |
+|---|---|---|
+| `full` | 自包含单文件，含 .NET 运行时（cor3 DLL） | `Pulsar-$version-full.zip` |
+| `portable` | framework-dependent 单文件，不含运行时（需本机装 .NET 8 Desktop Runtime） | `Pulsar-$version-portable.zip` |
+
 ```powershell
 $repo = (git rev-parse --show-toplevel).Trim()
 $csproj = Join-Path $repo 'Pulsar\Pulsar\Pulsar.csproj'
-$publishDir = Join-Path $repo "Artifacts\publish\v$version"
-$zipPath = Join-Path $repo "Artifacts\Pulsar-v$version.zip"
+$publishRoot = Join-Path $repo "Artifacts\publish\v$version"
+$fullDir = Join-Path $publishRoot 'full'
+$portableDir = Join-Path $publishRoot 'portable'
+$zipFull = Join-Path $repo "Artifacts\Pulsar-$version-full.zip"
+$zipPortable = Join-Path $repo "Artifacts\Pulsar-$version-portable.zip"
 $projectArtifactsDir = Join-Path $repo 'Pulsar\Pulsar\Artifacts'
 
-if (-not (Test-Path -LiteralPath (Split-Path -Parent $publishDir))) {
-    New-Item -ItemType Directory -Path (Split-Path -Parent $publishDir) -Force | Out-Null
+if (-not (Test-Path -LiteralPath (Split-Path -Parent $publishRoot))) {
+    New-Item -ItemType Directory -Path (Split-Path -Parent $publishRoot) -Force | Out-Null
 }
 ```
 
-`PublishDir` 必须是 `$publishDir\` 的绝对路径。不得依赖项目目录作为相对路径基准。
+`PublishDir` 必须是 `$fullDir\` / `$portableDir\` 的绝对路径。不得依赖项目目录作为相对路径基准。
 
 ## 3. 构建
 
 构建前清理目标版本目录和同名 ZIP。只清理本次版本的产物，不删除其他版本：
 
 ```powershell
-if (Test-Path -LiteralPath $publishDir) {
-    Remove-Item -LiteralPath $publishDir -Recurse -Force
+if (Test-Path -LiteralPath $publishRoot) {
+    Remove-Item -LiteralPath $publishRoot -Recurse -Force
 }
-if (Test-Path -LiteralPath $zipPath) {
-    Remove-Item -LiteralPath $zipPath -Force
+foreach ($zip in @($zipFull, $zipPortable)) {
+    if (Test-Path -LiteralPath $zip) {
+        Remove-Item -LiteralPath $zip -Force
+    }
 }
-New-Item -ItemType Directory -Path $publishDir -Force | Out-Null
+New-Item -ItemType Directory -Path $fullDir -Force | Out-Null
+New-Item -ItemType Directory -Path $portableDir -Force | Out-Null
 
+# full：自包含单文件，含运行时
 dotnet publish $csproj `
     -c Release `
     -r win-x64 `
     --self-contained true `
     -p:PublishSingleFile=true `
     -p:PublishReadyToRun=true `
-    "-p:PublishDir=$publishDir\"
-if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXITCODE" }
+    "-p:PublishDir=$fullDir\"
+if ($LASTEXITCODE -ne 0) { throw "dotnet publish (full) failed with exit code $LASTEXITCODE" }
+
+# portable：framework-dependent 单文件，不含运行时
+dotnet publish $csproj `
+    -c Release `
+    -r win-x64 `
+    --self-contained false `
+    -p:PublishSingleFile=true `
+    "-p:PublishDir=$portableDir\"
+if ($LASTEXITCODE -ne 0) { throw "dotnet publish (portable) failed with exit code $LASTEXITCODE" }
 ```
 
-不要在发布后通过猜测路径复制产物。如果 `$publishDir` 不包含预期文件，应先检查 MSBuild 输出和项目文件，而不是静默搬运错误目录。
+不要在发布后通过猜测路径复制产物。如果发布目录不包含预期文件，应先检查 MSBuild 输出和项目文件，而不是静默搬运错误目录。
 
 ## 4. 校验发布产物
 
-发布目录必须直接包含 `Pulsar.exe`、`Pulsar.pdb`、至少一个 `*_cor3.dll` 和 `Assets\`：
+`full` 目录必须直接包含 `Pulsar.exe`、`Pulsar.pdb`、至少一个 `*_cor3.dll` 和 `Assets\`；`portable` 目录必须直接包含 `Pulsar.exe`、`Pulsar.pdb` 和 `Assets\`，且**不得**包含 `*_cor3.dll`：
 
 ```powershell
-$requiredFiles = @('Pulsar.exe', 'Pulsar.pdb')
-foreach ($name in $requiredFiles) {
-    $path = Join-Path $publishDir $name
-    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
-        throw "Missing publish artifact: $path"
+function Assert-Publish {
+    param(
+        [string]$Dir,
+        [bool]$RequireCor3
+    )
+    foreach ($name in @('Pulsar.exe', 'Pulsar.pdb')) {
+        if (-not (Test-Path -LiteralPath (Join-Path $Dir $name) -PathType Leaf)) {
+            throw "Missing publish artifact: $(Join-Path $Dir $name)"
+        }
     }
+    $assetsDir = Join-Path $Dir 'Assets'
+    if (-not (Test-Path -LiteralPath $assetsDir -PathType Container)) {
+        throw "Missing publish artifact directory: $assetsDir"
+    }
+    $cor3 = @(Get-ChildItem -LiteralPath $Dir -Filter '*_cor3.dll' -File)
+    if ($RequireCor3 -and $cor3.Count -eq 0) {
+        throw "No *_cor3.dll found in $Dir (full)"
+    }
+    if (-not $RequireCor3 -and $cor3.Count -gt 0) {
+        throw "portable must not contain *_cor3.dll: $Dir"
+    }
+    $assetCount = @(Get-ChildItem -LiteralPath $assetsDir -Recurse -File).Count
+    $exe = Get-Item -LiteralPath (Join-Path $Dir 'Pulsar.exe')
+    Write-Output "Valid: $Dir exe=$($exe.Length) bytes, cor3=$($cor3.Count), assets=$assetCount"
 }
 
-$assetsDir = Join-Path $publishDir 'Assets'
-if (-not (Test-Path -LiteralPath $assetsDir -PathType Container)) {
-    throw "Missing publish artifact directory: $assetsDir"
-}
-
-$cor3 = @(Get-ChildItem -LiteralPath $publishDir -Filter '*_cor3.dll' -File)
-if ($cor3.Count -eq 0) {
-    throw "No *_cor3.dll found in $publishDir"
-}
-
-$assetCount = @(Get-ChildItem -LiteralPath $assetsDir -Recurse -File).Count
-$exe = Get-Item -LiteralPath (Join-Path $publishDir 'Pulsar.exe')
-Write-Output "Publish artifacts valid: exe=$($exe.Length) bytes, cor3=$($cor3.Count), assets=$assetCount"
+Assert-Publish -Dir $fullDir -RequireCor3 $true
+Assert-Publish -Dir $portableDir -RequireCor3 $false
 ```
+
+portable 版构建后建议做冒烟测试（`Start-Process` 启动 6 秒不崩溃即通过），确认本机 .NET 8 Desktop Runtime 兼容。
 
 如果产物意外出现在 `$projectArtifactsDir`，停止并修正 `PublishDir` 为绝对路径；不得把嵌套目录作为成功产物。
 
@@ -141,21 +173,27 @@ Write-Output "Publish artifacts valid: exe=$($exe.Length) bytes, cor3=$($cor3.Co
 优先使用 PowerShell 7。`Compress-Archive` 的源路径可以使用通配符，但不要把该通配符传给 `-LiteralPath`：
 
 ```powershell
-pwsh -NoProfile -Command "Compress-Archive -Path '$publishDir\*' -DestinationPath '$zipPath' -CompressionLevel Optimal -Force"
-if ($LASTEXITCODE -ne 0) { throw "pwsh Compress-Archive failed with exit code $LASTEXITCODE" }
+foreach ($pair in @(
+    @{ Dir = $fullDir; Zip = $zipFull },
+    @{ Dir = $portableDir; Zip = $zipPortable }
+)) {
+    pwsh -NoProfile -Command "Compress-Archive -Path '$($pair.Dir)\*' -DestinationPath '$($pair.Zip)' -CompressionLevel Optimal -Force"
+    if ($LASTEXITCODE -ne 0) { throw "pwsh Compress-Archive failed with exit code $LASTEXITCODE" }
+}
 ```
 
 如果 `pwsh` 不可用，再使用 PowerShell 5.1：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -Command "Compress-Archive -Path '$publishDir\*' -DestinationPath '$zipPath' -CompressionLevel Optimal -Force"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Compress-Archive -Path '$($pair.Dir)\*' -DestinationPath '$($pair.Zip)' -CompressionLevel Optimal -Force"
 if ($LASTEXITCODE -ne 0) { throw "powershell Compress-Archive failed with exit code $LASTEXITCODE" }
 ```
 
 最后才使用 Windows 自带 bsdtar，不要使用 PATH 中可能来自 Git 的 GNU tar：
 
 ```powershell
-& 'C:\Windows\System32\tar.exe' -a -c -f $zipPath -C $publishDir Assets Pulsar.exe Pulsar.pdb *.dll
+& 'C:\Windows\System32\tar.exe' -a -c -f $zipFull -C $fullDir Assets Pulsar.exe Pulsar.pdb *.dll
+& 'C:\Windows\System32\tar.exe' -a -c -f $zipPortable -C $portableDir Assets Pulsar.exe Pulsar.pdb
 if ($LASTEXITCODE -ne 0) { throw "bsdtar failed with exit code $LASTEXITCODE" }
 ```
 
@@ -170,22 +208,28 @@ Get-ChildItem -LiteralPath $sourceDir -Force |
 
 ## 6. 校验 ZIP
 
+两个 ZIP 都须校验：
+
 ```powershell
-if (-not (Test-Path -LiteralPath $zipPath -PathType Leaf)) {
-    throw "ZIP was not created: $zipPath"
+function Assert-Zip {
+    param([string]$ZipPath)
+    if (-not (Test-Path -LiteralPath $ZipPath -PathType Leaf)) {
+        throw "ZIP was not created: $ZipPath"
+    }
+    $bytes = [System.IO.File]::ReadAllBytes($ZipPath)
+    if ($bytes.Length -lt 2 -or $bytes[0] -ne 0x50 -or $bytes[1] -ne 0x4B) {
+        throw "ZIP magic is not PK: $ZipPath"
+    }
+    Write-Output ('ZIP magic: {0:X2}{1:X2} size={2} path={3}' -f $bytes[0], $bytes[1], $bytes.Length, $ZipPath)
+    & 'C:\Windows\System32\tar.exe' -tf $ZipPath
+    if ($LASTEXITCODE -ne 0) { throw "ZIP listing failed with exit code $LASTEXITCODE" }
 }
 
-$bytes = [System.IO.File]::ReadAllBytes($zipPath)
-if ($bytes.Length -lt 2 -or $bytes[0] -ne 0x50 -or $bytes[1] -ne 0x4B) {
-    throw "ZIP magic is not PK"
-}
-
-Write-Output ('ZIP magic: {0:X2}{1:X2}' -f $bytes[0], $bytes[1])
-& 'C:\Windows\System32\tar.exe' -tf $zipPath
-if ($LASTEXITCODE -ne 0) { throw "ZIP listing failed with exit code $LASTEXITCODE" }
+Assert-Zip -ZipPath $zipFull
+Assert-Zip -ZipPath $zipPortable
 ```
 
-条目必须包含 `Pulsar.exe`、`Pulsar.pdb`、`Assets/` 和 `*_cor3.dll`。最终报告 ZIP 绝对路径和字节大小。
+`full` 条目必须包含 `Pulsar.exe`、`Pulsar.pdb`、`Assets/` 和 `*_cor3.dll`；`portable` 条目必须包含 `Pulsar.exe`、`Pulsar.pdb`、`Assets/` 且无 `*_cor3.dll`。最终报告两个 ZIP 的绝对路径和字节大小。
 
 ## 7. Release notes
 
@@ -235,7 +279,8 @@ gh run watch <run-id>
 $uploadDir = Join-Path $env:TEMP 'pulsar-upload'
 if (Test-Path -LiteralPath $uploadDir) { Remove-Item -LiteralPath $uploadDir -Recurse -Force }
 New-Item -ItemType Directory -Path $uploadDir -Force | Out-Null
-Copy-Item -LiteralPath $zipPath -Destination (Join-Path $uploadDir (Split-Path $zipPath -Leaf)) -Force
+Copy-Item -LiteralPath $zipFull -Destination (Join-Path $uploadDir (Split-Path $zipFull -Leaf)) -Force
+Copy-Item -LiteralPath $zipPortable -Destination (Join-Path $uploadDir (Split-Path $zipPortable -Leaf)) -Force
 ```
 
 分步上传：
@@ -253,7 +298,7 @@ Copy-Item -LiteralPath $zipPath -Destination (Join-Path $uploadDir (Split-Path $
 Get-ChildItem -LiteralPath (Join-Path $repo 'Artifacts') -Recurse
 ```
 
-- `Pulsar.exe/PDB/Assets/cor3` 缺失：检查 `$publishDir` 是否为绝对路径，以及 `dotnet publish` 的最终输出路径。
+- `Pulsar.exe/PDB/Assets/cor3` 缺失：检查 `$fullDir`/`$portableDir` 是否为绝对路径，以及 `dotnet publish` 的最终输出路径。
 - 产物落在 `Pulsar/Pulsar/Artifacts`：清理该版本嵌套目录，修正 `PublishDir` 后从构建阶段重试。
 - `CommandNotFoundException` 或 `Compress-Archive` 失败：按 `pwsh` → `powershell -ExecutionPolicy Bypass` → System32 `tar.exe` 顺序降级。
 - ZIP 不是 `PK`：删除 ZIP，从打包阶段重试；不要使用 PATH 中的 GNU tar 生成伪 ZIP。
@@ -267,11 +312,13 @@ Get-ChildItem -LiteralPath (Join-Path $repo 'Artifacts') -Recurse
 ```text
 Mode: local-artifact | local-version | release
 Version: ...
-Publish directory: <absolute path>
-ZIP: <absolute path>
-ZIP size: ... bytes
+Publish directories: <fullDir> | <portableDir>
+ZIP (full): <absolute path>
+ZIP (full) size: ... bytes
+ZIP (portable): <absolute path>
+ZIP (portable) size: ... bytes
 Pulsar.exe/PDB: present
-cor3 DLL count: ...
+cor3 DLL count (full): ...
 Assets file count: ...
 Commit: created | skipped
 Tag: created | skipped
