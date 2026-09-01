@@ -39,6 +39,7 @@
                        Icon="{ui:SymbolIcon TargetEdit20}"
                        Command="{Binding PickProcessCommand}"
                        ToolTip="{lex:Locale Dialog.InputProfile.PickProcess}"
+                       AutomationProperties.Name="{lex:Locale Dialog.InputProfile.PickProcess}"
                        Style="{StaticResource PulsarSecondaryButtonStyle}"/>
         </Grid>
         

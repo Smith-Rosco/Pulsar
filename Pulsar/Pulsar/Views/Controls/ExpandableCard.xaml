@@ -77,6 +77,7 @@
                            Command="{Binding PrimaryActionCommand, ElementName=Root}"
                            CommandParameter="{Binding PrimaryActionCommandParameter, ElementName=Root}"
                            ToolTip="{Binding PrimaryActionTooltip, ElementName=Root}"
+                           AutomationProperties.Name="{Binding PrimaryActionTooltip, ElementName=Root}"
                            Visibility="{Binding PrimaryActionVisibility, ElementName=Root}"
                            VerticalAlignment="Center"
                            Margin="{StaticResource Pulsar.Gap.Right.XS}">
@@ -90,6 +91,7 @@
                            Style="{StaticResource PulsarIconButtonStyle}"
                            Command="{Binding SecondaryActionCommand, ElementName=Root}"
                            ToolTip="{Binding SecondaryActionTooltip, ElementName=Root}"
+                           AutomationProperties.Name="{Binding SecondaryActionTooltip, ElementName=Root}"
                            Visibility="{Binding SecondaryActionVisibility, ElementName=Root}"
                            VerticalAlignment="Center"
                            Margin="{StaticResource Pulsar.Gap.Right.XS}">

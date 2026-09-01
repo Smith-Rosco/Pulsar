@@ -108,6 +108,7 @@
                                        FontSize="24"
                                        Padding="{StaticResource Pulsar.Pad.XS}" Margin="{StaticResource Pulsar.Pad.XXS}"
                                        ToolTip="{Binding Name}"
+                                       AutomationProperties.Name="{Binding Name}"
                                        Height="56" Width="56"
                                        CornerRadius="{StaticResource Pulsar.Radius.SM}"
                                        HorizontalContentAlignment="Center"

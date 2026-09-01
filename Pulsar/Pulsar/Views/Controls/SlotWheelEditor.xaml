@@ -207,13 +207,15 @@
                                                Tag="{Binding}"
                                                Click="HoverEdit_Click"
                                                Margin="{StaticResource Pulsar.Gap.Right.XS}"
-                                               ToolTip="{lex:Locale Settings.Slots.EditSlot}"/>
+                                               ToolTip="{lex:Locale Settings.Slots.EditSlot}"
+                                               AutomationProperties.Name="{lex:Locale Settings.Slots.EditSlot}"/>
                                     <ui:Button Style="{StaticResource PulsarIconButtonStyle}"
                                                Icon="{ui:SymbolIcon Delete24}"
                                                Tag="{Binding}"
                                                Click="HoverDelete_Click"
                                                Foreground="{DynamicResource SystemFillColorCriticalBrush}"
-                                               ToolTip="{lex:Locale Settings.Slots.RemoveSlot}"/>
+                                               ToolTip="{lex:Locale Settings.Slots.RemoveSlot}"
+                                               AutomationProperties.Name="{lex:Locale Settings.Slots.RemoveSlot}"/>
                                 </StackPanel>
                             </Grid>
 
@@ -409,7 +411,8 @@
                            Icon="{ui:SymbolIcon ArrowLeft24}"
                            Command="{Binding GoPreviousPageCommand}"
                            IsEnabled="{Binding HasPreviousPage}"
-                           ToolTip="{lex:Locale Settings.Slots.Wheel.PreviousPage}"/>
+                           ToolTip="{lex:Locale Settings.Slots.Wheel.PreviousPage}"
+                           AutomationProperties.Name="{lex:Locale Settings.Slots.Wheel.PreviousPage}"/>
                 <TextBlock VerticalAlignment="Center"
                            Margin="{StaticResource Pulsar.Thk.L12R8}"
                            FontSize="{StaticResource Pulsar.Type.Body}"
@@ -427,7 +430,8 @@
                            Icon="{ui:SymbolIcon ArrowRight24}"
                            Command="{Binding GoNextPageCommand}"
                            IsEnabled="{Binding HasNextPage}"
-                           ToolTip="{lex:Locale Settings.Slots.Wheel.NextPage}"/>
+                           ToolTip="{lex:Locale Settings.Slots.Wheel.NextPage}"
+                           AutomationProperties.Name="{lex:Locale Settings.Slots.Wheel.NextPage}"/>
                 <Rectangle Width="1" Height="16"
                            Fill="{DynamicResource SurfaceStrokeColorDefaultBrush}"
                            Margin="{StaticResource Pulsar.Gap.Horizontal.MD}"

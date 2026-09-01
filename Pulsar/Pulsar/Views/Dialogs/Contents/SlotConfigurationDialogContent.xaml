@@ -148,6 +148,7 @@
                                    Icon="{ui:SymbolIcon FolderOpen16}"
                                    Style="{StaticResource PulsarIconButtonStyle}"
                                    ToolTip="{lex:Locale Dialog.PluginSettings.Browse}"
+                                   AutomationProperties.Name="{lex:Locale Dialog.PluginSettings.Browse}"
                                    Command="{Binding Tag.PickParameterValueCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                    CommandParameter="{Binding}"
                                    Visibility="{Binding HasPicker, Converter={StaticResource BoolToVis}}"/>

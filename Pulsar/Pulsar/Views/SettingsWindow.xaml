@@ -71,7 +71,8 @@
                                    PaneDisplayMode="Left"
                                    IsPaneOpen="True"
                                    OpenPaneLength="250"
-                                   IsBackButtonVisible="Collapsed">
+                                   IsBackButtonVisible="Collapsed"
+                                   KeyboardNavigation.DirectionalNavigation="Contained">
                     <ui:NavigationView.Resources>
                         <SolidColorBrush x:Key="NavigationViewSelectionIndicatorForeground" Color="Transparent"/>
                     </ui:NavigationView.Resources>

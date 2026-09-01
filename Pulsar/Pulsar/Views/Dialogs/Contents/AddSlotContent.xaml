@@ -223,6 +223,7 @@
                                    Icon="{ui:SymbolIcon FolderOpen16}"
                                    Style="{StaticResource PulsarIconButtonStyle}"
                                    ToolTip="{lex:Locale Dialog.AddSlot.BrowseIcon}"
+                                   AutomationProperties.Name="{lex:Locale Dialog.AddSlot.BrowseIcon}"
                                    Command="{Binding Tag.PickParameterValueCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                    CommandParameter="{Binding}"
                                    Visibility="{Binding HasPicker, Converter={StaticResource BoolToVis}}"/>
@@ -424,7 +425,8 @@
                                    Command="{Binding GoBackToPickerCommand}"
                                    Visibility="{Binding IsCreateMode, Converter={StaticResource BoolToVis}}"
                                    Margin="{StaticResource Pulsar.Gap.Right.MD}"
-                                   ToolTip="{lex:Locale Dialog.AddSlot.BackToPicker}"/>
+                                   ToolTip="{lex:Locale Dialog.AddSlot.BackToPicker}"
+                                   AutomationProperties.Name="{lex:Locale Dialog.AddSlot.BackToPicker}"/>
 
                         <!-- Orb -->
                         <controls:SlotOrb Grid.Column="1"

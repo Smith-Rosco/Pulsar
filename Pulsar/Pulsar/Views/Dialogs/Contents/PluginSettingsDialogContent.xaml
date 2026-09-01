@@ -120,6 +120,7 @@
                     <ui:Button Grid.Column="1"
                                Icon="{ui:SymbolIcon FolderOpen24}"
                                 ToolTip="{lex:Locale Dialog.PluginSettings.Browse}"
+                               AutomationProperties.Name="{lex:Locale Dialog.PluginSettings.Browse}"
                                Style="{StaticResource PulsarIconButtonStyle}"
                                Margin="{StaticResource Pulsar.Gap.Left.XS}"
                                Tag="{Binding}"

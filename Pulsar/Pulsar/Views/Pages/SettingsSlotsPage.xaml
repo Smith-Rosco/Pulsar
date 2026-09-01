@@ -97,6 +97,7 @@
                                Command="{Binding EditProfileCommand}"
                                Visibility="{Binding CanEditProfile, Converter={StaticResource BoolToVis}}"
                                ToolTip="{lex:Locale Settings.Slots.EditProfile}"
+                               AutomationProperties.Name="{lex:Locale Settings.Slots.EditProfile}"
                                Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
 
                     <!-- Add Profile -->
@@ -112,6 +113,7 @@
                                Icon="{ui:SymbolIcon Delete24}"
                                Command="{Binding DeleteProfileCommand}"
                                ToolTip="{lex:Locale Settings.Slots.DeleteProfileTooltip}"
+                               AutomationProperties.Name="{lex:Locale Settings.Slots.DeleteProfileTooltip}"
                                Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                                Visibility="{Binding CanDeleteProfile, Converter={StaticResource BoolToVis}}"/>
 
