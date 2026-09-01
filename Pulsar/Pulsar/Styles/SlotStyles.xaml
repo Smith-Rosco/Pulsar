@@ -18,14 +18,14 @@
     </Style>
 
     <Style x:Key="SlotValueChipTextStyle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="FontSize" Value="{StaticResource Pulsar.Type.Caption}"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 
     <Style x:Key="SlotCaptionChipTextStyle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="FontSize" Value="{StaticResource Pulsar.Type.Caption}"/>
         <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
@@ -87,7 +87,7 @@
     </Style>
 
     <Style x:Key="SlotPositionBadgeTextStyle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="9"/>
+        <Setter Property="FontSize" Value="{StaticResource Pulsar.Type.Caption}"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
         <Setter Property="HorizontalAlignment" Value="Center"/>

@@ -52,13 +52,13 @@
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <!-- Title -->
                     <TextBlock Text="{Binding Title, ElementName=Root}" 
-                               FontSize="14" 
+                               FontSize="{StaticResource Pulsar.Type.Subtitle}" 
                                FontWeight="SemiBold"/>
                     
                     <!-- Subtitle + HeaderContent on same row -->
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="{Binding Subtitle, ElementName=Root}" 
-                                   FontSize="12" 
+                                   FontSize="{StaticResource Pulsar.Type.Body}" 
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    VerticalAlignment="Center"
                                    Visibility="{Binding Subtitle, ElementName=Root, Converter={StaticResource StringEmptyToVisibilityConverter}}"/>
@@ -81,7 +81,7 @@
                            VerticalAlignment="Center"
                            Margin="0,0,4,0">
                     <ui:Button.Icon>
-                        <ui:SymbolIcon Symbol="{Binding PrimaryActionIcon, ElementName=Root, FallbackValue=Settings24, TargetNullValue=Settings24}" FontSize="16"/>
+                        <ui:SymbolIcon Symbol="{Binding PrimaryActionIcon, ElementName=Root, FallbackValue=Settings24, TargetNullValue=Settings24}" FontSize="{StaticResource Pulsar.Type.Subtitle}"/>
                     </ui:Button.Icon>
                 </ui:Button>
                 
@@ -94,7 +94,7 @@
                            VerticalAlignment="Center"
                            Margin="0,0,4,0">
                     <ui:Button.Icon>
-                        <ui:SymbolIcon Symbol="{Binding SecondaryActionIcon, ElementName=Root, FallbackValue=DocumentText24, TargetNullValue=DocumentText24}" FontSize="16"/>
+                        <ui:SymbolIcon Symbol="{Binding SecondaryActionIcon, ElementName=Root, FallbackValue=DocumentText24, TargetNullValue=DocumentText24}" FontSize="{StaticResource Pulsar.Type.Subtitle}"/>
                     </ui:Button.Icon>
                 </ui:Button>
 

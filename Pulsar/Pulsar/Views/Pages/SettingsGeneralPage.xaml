@@ -58,7 +58,7 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel>
                                 <TextBlock Text="{lex:Locale Settings.General.Theme}" FontWeight="Medium"/>
-                                <TextBlock Text="{lex:Locale Settings.General.ThemeDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                                <TextBlock Text="{lex:Locale Settings.General.ThemeDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="{StaticResource Pulsar.Type.Body}"/>
                             </StackPanel>
                             <ComboBox Grid.Column="1" Width="150"
                                       SelectedValue="{Binding DataContext.CurrentTheme, RelativeSource={RelativeSource AncestorType=Page}}"
@@ -66,13 +66,13 @@
                                       AutomationProperties.Name="{lex:Locale Settings.General.Theme}">
                                 <ComboBoxItem Tag="Dark">
                                     <StackPanel Orientation="Horizontal">
-                                        <ui:SymbolIcon Symbol="WeatherMoon20" FontSize="14" Margin="0,0,8,0"/>
+                                        <ui:SymbolIcon Symbol="WeatherMoon20" FontSize="{StaticResource Pulsar.Type.Subtitle}" Margin="0,0,8,0"/>
                                         <TextBlock Text="{lex:Locale Settings.General.Dark}" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </ComboBoxItem>
                                 <ComboBoxItem Tag="Light">
                                     <StackPanel Orientation="Horizontal">
-                                        <ui:SymbolIcon Symbol="WeatherSunny20" FontSize="14" Margin="0,0,8,0"/>
+                                        <ui:SymbolIcon Symbol="WeatherSunny20" FontSize="{StaticResource Pulsar.Type.Subtitle}" Margin="0,0,8,0"/>
                                         <TextBlock Text="{lex:Locale Settings.General.Light}" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </ComboBoxItem>
@@ -109,7 +109,7 @@
                                 <TextBlock Text="{lex:Locale Settings.General.SlotsPerPage}" FontWeight="Medium"/>
                                 <TextBlock Text="{Binding DataContext.SlotsPerPagePreview, RelativeSource={RelativeSource AncestorType=Page}}" 
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
-                                           FontSize="12"
+                                           FontSize="{StaticResource Pulsar.Type.Body}"
                                            Margin="0,4,0,0"/>
                             </StackPanel>
                             <ui:NumberBox Grid.Column="1"
@@ -123,7 +123,7 @@
                         <TextBlock Text="{lex:Locale Settings.General.SlotsPerPageDescription}" 
                                    TextWrapping="Wrap"
                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}" 
-                                   FontSize="11"
+                                   FontSize="{StaticResource Pulsar.Type.Caption}"
                                    Margin="0,0,0,0"/>
 
                         <Separator Margin="0,12"/>
@@ -137,7 +137,7 @@
                                 <TextBlock Text="{lex:Locale Settings.General.QuickSwitchTimeout}" FontWeight="Medium"/>
                                 <TextBlock Text="{lex:Locale Settings.General.QuickSwitchTimeoutDescription}"
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                           FontSize="12"
+                                           FontSize="{StaticResource Pulsar.Type.Body}"
                                            TextWrapping="Wrap"
                                            MaxWidth="420"
                                            Margin="0,4,0,0"/>
@@ -163,7 +163,7 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel>
                                 <TextBlock Text="{lex:Locale Settings.General.ShowMenu}" FontWeight="Medium"/>
-                                <TextBlock Text="{lex:Locale Settings.General.ShowMenuDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                                <TextBlock Text="{lex:Locale Settings.General.ShowMenuDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="{StaticResource Pulsar.Type.Body}"/>
                             </StackPanel>
                             <controls:HotkeyBox Grid.Column="1" Width="200"
                                                  Hotkey="{Binding DataContext.ShowGridHotkey, RelativeSource={RelativeSource AncestorType=Page}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -181,7 +181,7 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel>
                                 <TextBlock Text="{lex:Locale Settings.General.ShowSwitcher}" FontWeight="Medium"/>
-                                <TextBlock Text="{lex:Locale Settings.General.ShowSwitcherDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                                <TextBlock Text="{lex:Locale Settings.General.ShowSwitcherDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="{StaticResource Pulsar.Type.Body}"/>
                             </StackPanel>
                             <controls:HotkeyBox Grid.Column="1" Width="200"
                                                  Hotkey="{Binding DataContext.ShowSwitcherHotkey, RelativeSource={RelativeSource AncestorType=Page}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -201,14 +201,14 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel>
                                 <TextBlock Text="{lex:Locale Settings.General.RightDragSummonToggle}" FontWeight="Medium"/>
-                                <TextBlock Text="{lex:Locale Settings.General.RightDragSummonDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" TextWrapping="Wrap" MaxWidth="420"/>
+                                <TextBlock Text="{lex:Locale Settings.General.RightDragSummonDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="{StaticResource Pulsar.Type.Body}" TextWrapping="Wrap" MaxWidth="420"/>
                             </StackPanel>
                             <ui:ToggleSwitch Grid.Column="1" IsChecked="{Binding EnableRightDragSummon, Mode=TwoWay}"/>
                         </Grid>
 
                         <TextBlock Text="{lex:Locale Settings.General.RightDragModifiersConflict}"
                                    Foreground="{DynamicResource DangerForegroundBrush}"
-                                   FontSize="12"
+                                   FontSize="{StaticResource Pulsar.Type.Body}"
                                    TextWrapping="Wrap"
                                    MaxWidth="420"
                                    Margin="0,0,0,12">
@@ -232,7 +232,7 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel>
                                 <TextBlock Text="{lex:Locale Settings.General.GestureSummonMode}" FontWeight="Medium"/>
-                                <TextBlock Text="{lex:Locale Settings.General.GestureSummonModeDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" TextWrapping="Wrap" MaxWidth="420"/>
+                                <TextBlock Text="{lex:Locale Settings.General.GestureSummonModeDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="{StaticResource Pulsar.Type.Body}" TextWrapping="Wrap" MaxWidth="420"/>
                             </StackPanel>
                             <ComboBox Grid.Column="1" Width="180"
                                       IsEnabled="{Binding EnableRightDragSummon}"
@@ -256,7 +256,7 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel>
                                 <TextBlock Text="{lex:Locale Settings.General.GestureDragThreshold}" FontWeight="Medium"/>
-                                <TextBlock Text="{lex:Locale Settings.General.GestureDragThresholdDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" TextWrapping="Wrap" MaxWidth="420"/>
+                                <TextBlock Text="{lex:Locale Settings.General.GestureDragThresholdDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="{StaticResource Pulsar.Type.Body}" TextWrapping="Wrap" MaxWidth="420"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                                 <StackPanel.Style>
@@ -295,7 +295,7 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel>
                                 <TextBlock Text="{lex:Locale Settings.General.RightDragSwitcherModifier}" FontWeight="Medium"/>
-                                <TextBlock Text="{lex:Locale Settings.General.RightDragSwitcherModifierDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" TextWrapping="Wrap" MaxWidth="420"/>
+                                <TextBlock Text="{lex:Locale Settings.General.RightDragSwitcherModifierDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="{StaticResource Pulsar.Type.Body}" TextWrapping="Wrap" MaxWidth="420"/>
                             </StackPanel>
                             <ComboBox Grid.Column="1" Width="140"
                                       IsEnabled="{Binding EnableRightDragSummon}"
@@ -327,7 +327,7 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel>
                                 <TextBlock Text="{lex:Locale Settings.General.RightDragActionModifier}" FontWeight="Medium"/>
-                                <TextBlock Text="{lex:Locale Settings.General.RightDragActionModifierDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" TextWrapping="Wrap" MaxWidth="420"/>
+                                <TextBlock Text="{lex:Locale Settings.General.RightDragActionModifierDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="{StaticResource Pulsar.Type.Body}" TextWrapping="Wrap" MaxWidth="420"/>
                             </StackPanel>
                             <ComboBox Grid.Column="1" Width="140"
                                       IsEnabled="{Binding EnableRightDragSummon}"
@@ -363,7 +363,7 @@
                                 <TextBlock Text="{lex:Locale Settings.General.IconCacheStatistics}" FontWeight="Medium"/>
                                 <TextBlock Text="{Binding DataContext.CacheStatistics, RelativeSource={RelativeSource AncestorType=Page}}" 
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
-                                           FontSize="12"/>
+                                           FontSize="{StaticResource Pulsar.Type.Body}"/>
                             </StackPanel>
                             <ui:Button Grid.Column="1" 
                                        Content="{lex:Locale Settings.General.CleanCache}"
@@ -375,7 +375,7 @@
                         <TextBlock Text="{lex:Locale Settings.General.CleanCacheDescription}" 
                                    TextWrapping="Wrap"
                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}" 
-                                   FontSize="11"
+                                   FontSize="{StaticResource Pulsar.Type.Caption}"
                                    Margin="0,0,0,0"/>
 
                         <Separator Margin="0,12"/>
@@ -389,7 +389,7 @@
                                 <TextBlock Text="{lex:Locale Settings.General.ResetTutorial}" FontWeight="Medium"/>
                                 <TextBlock Text="{lex:Locale Settings.General.ResetTutorialDescription}" 
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
-                                           FontSize="12"/>
+                                           FontSize="{StaticResource Pulsar.Type.Body}"/>
                             </StackPanel>
                             <ui:Button Grid.Column="1" 
                                        Content="{lex:Locale Settings.General.ResetTutorial}"
@@ -412,7 +412,7 @@
                                 <TextBlock Text="{lex:Locale Settings.General.LogLevel}" FontWeight="Medium"/>
                                 <TextBlock Text="{lex:Locale Settings.General.LogLevelDescription}" 
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
-                                           FontSize="12" TextWrapping="Wrap" MaxWidth="420"/>
+                                           FontSize="{StaticResource Pulsar.Type.Body}" TextWrapping="Wrap" MaxWidth="420"/>
                             </StackPanel>
                             <ComboBox Grid.Column="1" Width="160"
                                       SelectedValue="{Binding DataContext.SelectedLogLevel, RelativeSource={RelativeSource AncestorType=Page}, Mode=TwoWay}"

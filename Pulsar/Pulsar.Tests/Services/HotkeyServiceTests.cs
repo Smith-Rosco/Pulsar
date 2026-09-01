@@ -20,7 +20,7 @@ namespace Pulsar.Tests.Services
             configServiceMock.Setup(x => x.LoadSnapshotAsync(It.IsAny<bool>())).ReturnsAsync(config);
             configServiceMock.Setup(x => x.GetSnapshot()).Returns(config);
 
-            var hook = new Native.GlobalKeyboardHook();
+            var hook = new Native.GlobalKeyboardHook(installHook: false);
             var logger = NullLogger<HotkeyService>.Instance;
 
             var service = new HotkeyService(hook, configServiceMock.Object, logger);

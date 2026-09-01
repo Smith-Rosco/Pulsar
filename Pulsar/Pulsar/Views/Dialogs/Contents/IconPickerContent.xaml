@@ -124,7 +124,7 @@
                 <TextBlock Text="{lex:Locale Dialog.IconPicker.Preview}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,12,0" VerticalAlignment="Center"/>
                 <controls:SlotOrb Size="42" IsActive="False" Margin="0,0,12,0" IconKey="{Binding SelectedKey}"/>
                 <StackPanel VerticalAlignment="Center">
-                     <TextBlock Text="{lex:Locale Dialog.IconPicker.SelectedIcon}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                     <TextBlock Text="{lex:Locale Dialog.IconPicker.SelectedIcon}" FontSize="{StaticResource Pulsar.Type.Body}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                      <TextBlock Text="{Binding SelectedKey}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxWidth="300"/>
                 </StackPanel>
             </StackPanel>

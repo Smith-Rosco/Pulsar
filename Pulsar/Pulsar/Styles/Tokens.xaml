@@ -1,0 +1,115 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- ============================================================
+         Pulsar Design Tokens — 数值令牌（主题无关）
+         ============================================================
+         本文件在 App.xaml 全局加载，因此可被所有窗口/页面直接引用。
+         只放与主题无关的数值：排版 · 时长 · 间距 · 圆角 · 缓动。
+
+         色彩令牌请勿放这里 —— 主题相关资源必须在 ThemeService 中
+         按窗口手动注入，否则会污染径向菜单的透明画布。
+         参见 App.xaml 中的 GLOBAL STYLE ISOLATION 说明。
+
+         历史教训：Pulsar.Spacing.* 与 Pulsar.Animation.Duration.*
+         曾在 Theme.Dark/Light.xaml 中定义但从未被任何界面引用。
+         令牌若未被接入，等于不存在。
+         ============================================================ -->
+
+    <!-- ==================== 排版比例 (1.25 倍率) ====================
+         用于替代散落的 11 种字号（9/10/11/12/13/14/16/18/20/22/36/64）。
+         原分布中 11px(86) 与 12px(128) 合计 214 处，仅差 1px 无法形成
+         视觉层级 —— 这是典型的「视觉噪音地板」。
+         ============================================================ -->
+
+    <sys:Double x:Key="Pulsar.Type.Caption">11</sys:Double>
+    <sys:Double x:Key="Pulsar.Type.Body">13</sys:Double>
+    <sys:Double x:Key="Pulsar.Type.Subtitle">16</sys:Double>
+    <sys:Double x:Key="Pulsar.Type.Title">20</sys:Double>
+    <sys:Double x:Key="Pulsar.Type.Display">28</sys:Double>
+    <sys:Double x:Key="Pulsar.Type.Hero">36</sys:Double>
+
+    <!-- 排版 Style：界面请引用 Style，不要裸写 FontSize -->
+    <Style x:Key="PulsarTextCaptionStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource Pulsar.Type.Caption}"/>
+        <Setter Property="LineHeight" Value="16"/>
+    </Style>
+
+    <Style x:Key="PulsarTextBodyStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource Pulsar.Type.Body}"/>
+        <Setter Property="LineHeight" Value="20"/>
+    </Style>
+
+    <Style x:Key="PulsarTextSubtitleStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource Pulsar.Type.Subtitle}"/>
+        <Setter Property="LineHeight" Value="24"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <Style x:Key="PulsarTextTitleStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource Pulsar.Type.Title}"/>
+        <Setter Property="LineHeight" Value="28"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <Style x:Key="PulsarTextDisplayStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource Pulsar.Type.Display}"/>
+        <Setter Property="LineHeight" Value="38"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <Style x:Key="PulsarTextHeroStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource Pulsar.Type.Hero}"/>
+        <Setter Property="LineHeight" Value="46"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <!-- ==================== 动效时长 ====================
+         替代 33 处硬编码 Duration（0.15×9 / 0.2×8 / 0.25×6 /
+         0.3×5 / 0.18×3 / 0.4 / 0.5）。
+         高频工具的下限约束：Fast 必须短到「感觉不到等待」。
+         ============================================================ -->
+
+    <Duration x:Key="Pulsar.Duration.Fast">0:0:0.12</Duration>
+    <Duration x:Key="Pulsar.Duration.Normal">0:0:0.22</Duration>
+    <Duration x:Key="Pulsar.Duration.Slow">0:0:0.38</Duration>
+
+    <!-- ==================== 缓动曲线 ====================
+         一律指数缓动，让元素尽快抵达终态。
+         禁止回弹/弹性缓动（BackEase、ElasticEase）：
+         本产品主打肌肉记忆与空间定位，用户已经知道答案了，
+         动画不该还在晃 —— 回弹会推迟终态感知。
+         x:Shared="False" 因 EasingFunction 是 Freezable。
+         ============================================================ -->
+
+    <QuarticEase x:Key="Pulsar.Easing.Standard" EasingMode="EaseOut" x:Shared="False"/>
+    <ExponentialEase x:Key="Pulsar.Easing.Emphasis" EasingMode="EaseOut" Exponent="5" x:Shared="False"/>
+    <CubicEase x:Key="Pulsar.Easing.Subtle" EasingMode="EaseOut" x:Shared="False"/>
+
+    <!-- ==================== 间距 (4px 网格) ==================== -->
+
+    <sys:Double x:Key="Pulsar.Space.XS">4</sys:Double>
+    <sys:Double x:Key="Pulsar.Space.SM">8</sys:Double>
+    <sys:Double x:Key="Pulsar.Space.MD">16</sys:Double>
+    <sys:Double x:Key="Pulsar.Space.LG">24</sys:Double>
+    <sys:Double x:Key="Pulsar.Space.XL">32</sys:Double>
+
+    <!-- 统一值 Thickness，用于 Margin / Padding -->
+    <Thickness x:Key="Pulsar.Pad.XS">4</Thickness>
+    <Thickness x:Key="Pulsar.Pad.SM">8</Thickness>
+    <Thickness x:Key="Pulsar.Pad.MD">16</Thickness>
+    <Thickness x:Key="Pulsar.Pad.LG">24</Thickness>
+    <Thickness x:Key="Pulsar.Pad.XL">32</Thickness>
+
+    <!-- ==================== 圆角刻度 ====================
+         替代散落的 5 / 6 / 8 / 10（其中 5 不在任何既有刻度内）。
+         ============================================================ -->
+
+    <CornerRadius x:Key="Pulsar.Radius.XS">3</CornerRadius>
+    <CornerRadius x:Key="Pulsar.Radius.SM">4</CornerRadius>
+    <CornerRadius x:Key="Pulsar.Radius.MD">6</CornerRadius>
+    <CornerRadius x:Key="Pulsar.Radius.LG">8</CornerRadius>
+    <CornerRadius x:Key="Pulsar.Radius.XL">12</CornerRadius>
+
+</ResourceDictionary>

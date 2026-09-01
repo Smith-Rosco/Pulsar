@@ -14,6 +14,9 @@
                      Themes are now injected manually per-window in ThemeService to prevent
                      style contamination between the Radial Menu (Transparent) and Settings (Mica).
                 -->
+                <!-- 数值令牌（排版/时长/间距/圆角/缓动）与主题无关，可安全全局加载。
+                     置于首位以便被后续样式引用。 -->
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/Tokens.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ScrollViewerStyles.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/TooltipStyles.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Themes/DialogTemplates.xaml"/>

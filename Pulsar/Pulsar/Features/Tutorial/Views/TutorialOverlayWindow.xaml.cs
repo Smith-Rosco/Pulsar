@@ -45,7 +45,7 @@ namespace Pulsar.Features.Tutorial.Views
         private System.Windows.Shapes.Rectangle? _confettiLayer;
         private Border? _toastNotification;
         private TextBlock? _toastMessage;
-        private TextBlock? _toastIcon;
+        private Wpf.Ui.Controls.SymbolIcon? _toastIcon;
         private OverlayState _currentState = OverlayState.Focused;
 
         private HwndSource? _hwndSource;
@@ -97,7 +97,7 @@ namespace Pulsar.Features.Tutorial.Views
             _confettiLayer = (System.Windows.Shapes.Rectangle)FindName("ConfettiLayer");
             _toastNotification = (Border)FindName("ToastNotification");
             _toastMessage = (TextBlock)FindName("ToastMessage");
-            _toastIcon = (TextBlock)FindName("ToastIcon");
+            _toastIcon = (Wpf.Ui.Controls.SymbolIcon)FindName("ToastIcon");
             
             Loaded += OnLoaded;
         }
@@ -653,7 +653,9 @@ namespace Pulsar.Features.Tutorial.Views
         }
         
         /// <summary>
-        /// 显示 toast 通知
+        /// 显示 toast 通知。
+        /// <paramref name="icon"/> 保留以兼容旧调用方；图标固定为 Fluent Checkmark20
+        /// （Emoji ✓ 是彩色位图，与单色矢量 SymbolIcon 同屏混用渲染口径不一致）。
         /// </summary>
         public async Task ShowToast(string message, string icon = "\u2714")
         {
@@ -661,7 +663,7 @@ namespace Pulsar.Features.Tutorial.Views
                 return;
 
             _toastMessage.Text = message;
-            _toastIcon.Text = icon;
+            _toastIcon.Symbol = Wpf.Ui.Controls.SymbolRegular.Checkmark20;
             _toastNotification.Visibility = Visibility.Visible;
             _toastNotification.Opacity = 0;
 

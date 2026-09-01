@@ -6,6 +6,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:lex="clr-namespace:Pulsar.Core.Localization"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         mc:Ignorable="d"
         Title="{lex:Locale Tutorial.OverlayTitle}"
         WindowStyle="None"
@@ -15,11 +16,18 @@
         ShowInTaskbar="False"
         WindowState="Maximized"
         ResizeMode="NoResize">
-    
+
+    <Window.Resources>
+        <!-- 教程遮罩是固定深色浮层（不跟随应用主题），颜色定义为本地令牌。 -->
+        <SolidColorBrush x:Key="Tutorial.Overlay.Scrim" Color="#B4000000"/>
+        <SolidColorBrush x:Key="Tutorial.Toast.Background" Color="#27AE60"/>
+        <SolidColorBrush x:Key="Tutorial.Toast.Foreground" Color="#FFFFFF"/>
+    </Window.Resources>
+
     <Grid x:Name="RootGrid">
         <!-- Semi-transparent overlay background -->
         <Rectangle x:Name="OverlayBackground" 
-                   Fill="#B4000000"
+                   Fill="{StaticResource Tutorial.Overlay.Scrim}"
                    IsHitTestVisible="False"/>
         
         <!-- Content container for tutorial card (centered) -->
@@ -38,7 +46,7 @@
                 HorizontalAlignment="Center"
                 VerticalAlignment="Top"
                 Margin="0,40,0,0"
-                Background="#27AE60"
+                Background="{StaticResource Tutorial.Toast.Background}"
                 CornerRadius="20"
                 Padding="16,10,20,10"
                 BorderThickness="0"
@@ -47,18 +55,19 @@
                 <DropShadowEffect Color="Black" Opacity="0.3" BlurRadius="16" ShadowDepth="4" Direction="270"/>
             </Border.Effect>
             <StackPanel Orientation="Horizontal">
-                <TextBlock x:Name="ToastIcon"
-                           Text="✓"
-                           FontSize="16"
-                           FontWeight="Bold"
-                           Foreground="White"
-                           VerticalAlignment="Center"
-                           Margin="0,0,8,0"/>
+                <!-- Emoji ✓ 是彩色位图，与 Fluent 单色矢量图标渲染口径不一致，
+                     改为 SymbolIcon（Checkmark20）。 -->
+                <ui:SymbolIcon x:Name="ToastIcon"
+                               Symbol="Checkmark20"
+                               FontSize="{StaticResource Pulsar.Type.Subtitle}"
+                               Foreground="{StaticResource Tutorial.Toast.Foreground}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,0"/>
                 <TextBlock x:Name="ToastMessage"
                            Text=""
-                           FontSize="14"
+                           FontSize="{StaticResource Pulsar.Type.Subtitle}"
                            FontWeight="SemiBold"
-                           Foreground="White"
+                           Foreground="{StaticResource Tutorial.Toast.Foreground}"
                            VerticalAlignment="Center"/>
             </StackPanel>
         </Border>

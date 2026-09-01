@@ -26,7 +26,7 @@
         <!-- Top Row: Title and Description -->
         <StackPanel Grid.Row="0" Margin="0,0,0,12">
             <TextBlock Text="{Binding Title, ElementName=Root}" 
-                       FontSize="28" 
+                       FontSize="{StaticResource Pulsar.Type.Display}" 
                        FontWeight="SemiBold" 
                        Margin="0,0,0,8"/>
             <TextBlock Text="{Binding Description, ElementName=Root}" 

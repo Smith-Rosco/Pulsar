@@ -20,8 +20,10 @@ namespace Pulsar.Tests.Services
         public PluginUsageTrackerTests()
         {
             _testFilePath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "Pulsar",
+                Path.GetTempPath(),
+                "PulsarTests",
+                "PluginUsageTracker",
+                Guid.NewGuid().ToString("N"),
                 "PluginUsageStats.json");
             CleanupTestFile();
         }
@@ -33,14 +35,31 @@ namespace Pulsar.Tests.Services
 
         private void CleanupTestFile()
         {
-            try { if (File.Exists(_testFilePath)) File.Delete(_testFilePath); }
+            try
+            {
+                var dir = Path.GetDirectoryName(_testFilePath);
+                if (dir != null && Directory.Exists(dir))
+                {
+                    Directory.Delete(dir, recursive: true);
+                }
+            }
             catch { /* ignore */ }
+        }
+
+        /// <summary>
+        /// Every tracker in this suite must write to the per-test temp file, never the
+        /// real %AppData%\Pulsar\PluginUsageStats.json shared with the running app
+        /// (parallel test sessions and the live app contend on that file and hang).
+        /// </summary>
+        private PluginUsageTracker CreateTracker()
+        {
+            return new PluginUsageTracker(_loggerMock.Object, statsFilePath: _testFilePath);
         }
 
         [Fact]
         public void RecordExecution_SingleCall_UpdatesAllFields()
         {
-            using var tracker = new PluginUsageTracker(_loggerMock.Object);
+            using var tracker = CreateTracker();
             tracker.RecordExecution("test.plugin.1", true, 150, "default", 2, "Task");
 
             var stats = tracker.GetStats("test.plugin.1");
@@ -71,7 +90,7 @@ namespace Pulsar.Tests.Services
         [Fact]
         public void RecordExecution_Failure_IncrementsFailureCount()
         {
-            using var tracker = new PluginUsageTracker(_loggerMock.Object);
+            using var tracker = CreateTracker();
             tracker.RecordExecution("test.plugin.2", false, 200, "default", 1, "Action");
 
             var stats = tracker.GetStats("test.plugin.2");
@@ -86,7 +105,7 @@ namespace Pulsar.Tests.Services
         [Fact]
         public async Task ConcurrentRecording_IsThreadSafe()
         {
-            using var tracker = new PluginUsageTracker(_loggerMock.Object);
+            using var tracker = CreateTracker();
             const int ThreadCount = 4;
             const int CallsPerThread = 100;
             var tasks = new Task[ThreadCount];
@@ -113,7 +132,7 @@ namespace Pulsar.Tests.Services
         [Fact]
         public void GetStats_ReturnsClonedCopy_DoesNotMutateInternalState()
         {
-            using var tracker = new PluginUsageTracker(_loggerMock.Object);
+            using var tracker = CreateTracker();
             tracker.RecordExecution("clone.test", true, 100, "default", 1, "Task");
 
             var clonedStats = tracker.GetStats("clone.test");
@@ -128,7 +147,7 @@ namespace Pulsar.Tests.Services
         [Fact]
         public void GetAllStats_ReturnsAllPlugins()
         {
-            using var tracker = new PluginUsageTracker(_loggerMock.Object);
+            using var tracker = CreateTracker();
             tracker.RecordExecution("plugin.a", true, 10);
             tracker.RecordExecution("plugin.b", true, 20);
             tracker.RecordExecution("plugin.c", true, 30);
@@ -142,7 +161,7 @@ namespace Pulsar.Tests.Services
         [Fact]
         public void GetMostUsedPlugins_ReturnsTopN_SortedByTotalExecutions()
         {
-            using var tracker = new PluginUsageTracker(_loggerMock.Object);
+            using var tracker = CreateTracker();
             for (int i = 1; i <= 10; i++)
             {
                 for (int j = 0; j < i; j++)
@@ -163,10 +182,9 @@ namespace Pulsar.Tests.Services
         [Fact]
         public async Task GetUnusedPlugins_FiltersByLastUsedThreshold()
         {
-            var dir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Pulsar");
-            Directory.CreateDirectory(dir);
-            var filePath = Path.Combine(dir, "PluginUsageStats.json");
+            CleanupTestFile();
+            Directory.CreateDirectory(Path.GetDirectoryName(_testFilePath)!);
+            var filePath = _testFilePath;
 
             var preloadedStats = new List<PluginUsageStats>
             {
@@ -190,7 +208,7 @@ namespace Pulsar.Tests.Services
 
             try
             {
-                using var tracker = new PluginUsageTracker(_loggerMock.Object);
+                using var tracker = CreateTracker();
                 await tracker.LoadAsync();
 
                 var unused = tracker.GetUnusedPlugins(30);
@@ -234,14 +252,14 @@ namespace Pulsar.Tests.Services
         public async Task SaveAsync_LoadAsync_Roundtrip_PreservesAllData()
         {
             CleanupTestFile();
-            using (var tracker = new PluginUsageTracker(_loggerMock.Object))
+            using (var tracker = CreateTracker())
             {
                 tracker.RecordExecution("roundtrip.test", true, 150, "profile", 2, "Task");
                 tracker.RecordExecution("roundtrip.test", false, 200, "profile", 1, "Action");
                 await tracker.SaveAsync();
             }
 
-            using (var tracker2 = new PluginUsageTracker(_loggerMock.Object))
+            using (var tracker2 = CreateTracker())
             {
                 await tracker2.LoadAsync();
                 var stats = tracker2.GetStats("roundtrip.test");
@@ -310,15 +328,13 @@ namespace Pulsar.Tests.Services
                 new List<PluginUsageStats> { preloadedStats },
                 new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
 
-            var dir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Pulsar");
-            Directory.CreateDirectory(dir);
-            await File.WriteAllTextAsync(
-                Path.Combine(dir, "PluginUsageStats.json"), json);
+            CleanupTestFile();
+            Directory.CreateDirectory(Path.GetDirectoryName(_testFilePath)!);
+            await File.WriteAllTextAsync(_testFilePath, json);
 
             try
             {
-                using var tracker = new PluginUsageTracker(_loggerMock.Object);
+                using var tracker = CreateTracker();
                 await tracker.LoadAsync();
                 tracker.RecordExecution("cleanup.test", true, 10);
 
@@ -337,13 +353,13 @@ namespace Pulsar.Tests.Services
         public async Task SaveAsync_PersistsData_Reloadable()
         {
             CleanupTestFile();
-            using (var tracker = new PluginUsageTracker(_loggerMock.Object))
+            using (var tracker = CreateTracker())
             {
                 tracker.RecordExecution("persist.test", true, 50);
                 await tracker.SaveAsync();
             }
 
-            using (var tracker2 = new PluginUsageTracker(_loggerMock.Object))
+            using (var tracker2 = CreateTracker())
             {
                 await tracker2.LoadAsync();
                 var stats = tracker2.GetStats("persist.test");

@@ -6,7 +6,7 @@
 
     <!-- Default String Template -->
     <DataTemplate DataType="{x:Type sys:String}">
-        <TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="14" Foreground="{DynamicResource Theme.Text.Primary}"/>
+        <TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="{StaticResource Pulsar.Type.Subtitle}" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
     </DataTemplate>
 
     <DataTemplate DataType="{x:Type dialogs:ProcessBlacklistViewModel}">

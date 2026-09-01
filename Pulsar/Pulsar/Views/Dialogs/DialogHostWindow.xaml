@@ -34,9 +34,9 @@
                    BasedOn="{StaticResource PulsarSecondaryButtonStyle}">
                 <Style.Triggers>
                     <DataTrigger Binding="{Binding UseDangerStyleForTertiary}" Value="True">
-                        <Setter Property="Background" Value="{DynamicResource Theme.Destructive}"/>
+                        <Setter Property="Background" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
                         <Setter Property="Foreground" Value="White"/>
-                        <Setter Property="BorderBrush" Value="{DynamicResource Theme.Destructive}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
                     </DataTrigger>
                 </Style.Triggers>
             </Style>
@@ -44,8 +44,8 @@
     </Window.Resources>
 
 
-    <Border Background="{DynamicResource Theme.Window.Background}"
-            BorderBrush="{DynamicResource Theme.Border.Brush}"
+    <Border Background="{DynamicResource ApplicationBackgroundBrush}"
+            BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
             BorderThickness="1"
             CornerRadius="8">
         <Grid>
@@ -57,7 +57,7 @@
 
             <!-- Header -->
             <ui:TitleBar Title="{Binding Title}"
-                         Foreground="{DynamicResource Theme.Window.Foreground}"
+                         Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                           Grid.Row="0"
                           ShowMaximize="{Binding ShowMaximizeButton, RelativeSource={RelativeSource AncestorType=Window}}"
                           ShowMinimize="{Binding ShowMaximizeButton, RelativeSource={RelativeSource AncestorType=Window}}"/>
@@ -69,7 +69,7 @@
 
             <!-- Footer -->
             <Border Grid.Row="2"
-                    Background="{DynamicResource Theme.Control.Background}"
+                    Background="{DynamicResource ControlFillColorDefaultBrush}"
                     Padding="16,10"
                     CornerRadius="0,0,8,8">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">

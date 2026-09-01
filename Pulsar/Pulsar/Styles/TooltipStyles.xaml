@@ -5,12 +5,12 @@
     <Style TargetType="ToolTip">
         <Setter Property="OverridesDefaultStyle" Value="True"/>
         <Setter Property="HasDropShadow" Value="True"/>
-        <Setter Property="Background" Value="{DynamicResource Theme.Control.Background}"/>
-        <Setter Property="Foreground" Value="{DynamicResource Theme.Text.Primary}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource Theme.Border.Brush}"/>
+        <Setter Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="8,4"/>
-        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontSize" Value="{StaticResource Pulsar.Type.Body}"/>
         <Setter Property="FontFamily" Value="Segoe UI, Microsoft YaHei UI"/>
         <Setter Property="Template">
             <Setter.Value>

@@ -43,7 +43,7 @@
                             Icon="{ui:SymbolIcon Color24}"/>
                 <TextBlock Text="{lex:Locale Dialog.ColorPicker.InvalidHex}" 
                            Foreground="{DynamicResource PaletteRedBrush}" 
-                           FontSize="12" 
+                           FontSize="{StaticResource Pulsar.Type.Body}" 
                            Margin="0,4,0,0"
                            Visibility="{Binding IsHexError, Converter={StaticResource BoolToVis}}"/>
                 <Button Content="{lex:Locale Dialog.ColorPicker.UseAutomaticColor}"
@@ -62,6 +62,8 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="40"/>
                 </Grid.ColumnDefinitions>
+                <!-- R/G/B 通道标识色是"颜色语义"本身（红/绿/蓝通道指示），非主题色，
+                     刻意保留纯色 —— 若跟随 Fluent 令牌反而失去通道含义。 -->
                 <TextBlock Text="{lex:Locale Dialog.ColorPicker.R}" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="#FF5555"/>
                 <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding R}" Margin="8,0"/>
                 <TextBlock Grid.Column="2" Text="{Binding R}" VerticalAlignment="Center" HorizontalAlignment="Right"/>

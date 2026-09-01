@@ -22,7 +22,8 @@ namespace Pulsar.Tests.Views
     /// dispatcher pump) exactly like SlotWheelRingClippingTests, so they stay safe
     /// under xUnit's parallel execution (a shared Application.Current across STA
     /// threads hangs otherwise). Styles come from a constructed AddSlotContent, and
-    /// the Theme.* resources are built programmatically to match Theme.Light.xaml.
+    /// the colour tokens come from WPF-UI's real ThemesDictionary (Light) plus
+    /// Pulsar's Theme.Light.xaml — see <see cref="BuildLightTheme"/>.
     /// </summary>
     public class ButtonThemeContrastTests
     {
@@ -157,22 +158,50 @@ namespace Pulsar.Tests.Views
             return text!;
         }
 
+        /// <summary>
+        /// Supplies the Light theme's colour tokens.
+        ///
+        /// This loads WPF-UI's real <c>ThemesDictionary</c> rather than hand-copying
+        /// key/value pairs. That matters: the button templates reference Fluent tokens
+        /// (AccentFillColorDefaultBrush, AccentTextFillColorPrimaryBrush, ...), and a
+        /// hand-rolled dictionary silently drifts out of sync — DynamicResource lookups
+        /// fail *quietly*, so a stale copy would degrade the button to its fallback
+        /// colours rather than fail loudly. Building it here also keeps the test
+        /// independent of any Application instance.
+        ///
+        /// WPF-UI deliberately omits the <c>Accent*</c> keys from <c>ThemesDictionary</c>:
+        /// at runtime <see cref="Pulsar.Services.ThemeService.ApplyAccent"/> injects them
+        /// through <c>ApplicationAccentColorManager</c> so they track the user's Windows
+        /// accent. Tests have no Application instance, so the Accent* keys would be
+        /// missing here and resolve to null (silent DynamicResource failure). We seed the
+        /// documented Fluent Light defaults — the same values ThemeService falls back to
+        /// when the system accent is unavailable.
+        ///
+        /// Pulsar's own Theme.Light.xaml is added on top because a few states
+        /// (e.g. Theme.Destructive.Hover) have no Fluent equivalent.
+        /// </summary>
         private static ResourceDictionary BuildLightTheme()
         {
-            var theme = new ResourceDictionary();
-            theme["Theme.Border.Brush"] = new SolidColorBrush(Color.FromRgb(0xE0, 0xE0, 0xE0));
-            theme["Theme.Control.Background"] = new SolidColorBrush(Color.FromRgb(0xFF, 0xFF, 0xFF));
-            theme["Theme.Control.Hover"] = new SolidColorBrush(Color.FromRgb(0xEA, 0xEA, 0xEA));
-            theme["Theme.Control.Pressed"] = new SolidColorBrush(Color.FromRgb(0xDA, 0xDA, 0xDA));
-            theme["Theme.Text.Primary"] = new SolidColorBrush(Color.FromRgb(0x00, 0x00, 0x00));
-            theme["Theme.Text.Secondary"] = new SolidColorBrush(Color.FromRgb(0x66, 0x66, 0x66));
-            theme["Theme.Accent"] = new SolidColorBrush(Color.FromRgb(0x00, 0x67, 0xC0));
-            theme["Theme.Accent.Hover"] = new SolidColorBrush(Color.FromRgb(0x19, 0x7C, 0xCB));
-            theme["Theme.Accent.Foreground"] = new SolidColorBrush(Color.FromRgb(0xFF, 0xFF, 0xFF));
-            theme["Theme.Accent.Pressed"] = new SolidColorBrush(Color.FromRgb(0x00, 0x5B, 0xA3));
-            theme["Theme.Destructive"] = new SolidColorBrush(Color.FromRgb(0xC4, 0x2B, 0x1C));
-            theme["Theme.Destructive.Hover"] = new SolidColorBrush(Color.FromRgb(0xD8, 0x3B, 0x2A));
-            return theme;
+            var merged = new ResourceDictionary();
+
+            // WPF-UI's Light token set — the same dictionary ThemeService injects at runtime.
+            merged.MergedDictionaries.Add(new Wpf.Ui.Markup.ThemesDictionary
+            {
+                Theme = Wpf.Ui.Appearance.ApplicationTheme.Light
+            });
+
+            // Runtime-only accent keys (see summary above for why we seed them).
+            merged["AccentFillColorDefaultBrush"] = new SolidColorBrush(Color.FromRgb(0x00, 0x67, 0xC0));
+            merged["AccentFillColorSecondaryBrush"] = new SolidColorBrush(Color.FromRgb(0x19, 0x7C, 0xCB));
+            merged["AccentTextFillColorPrimaryBrush"] = new SolidColorBrush(Colors.White);
+
+            // Pulsar's own tokens layer on top (Pulsar keys must win).
+            merged.MergedDictionaries.Add(new ResourceDictionary
+            {
+                Source = new Uri("pack://application:,,,/Pulsar;component/Themes/Theme.Light.xaml", UriKind.Absolute)
+            });
+
+            return merged;
         }
 
         private static IEnumerable<T> FindDescendants<T>(DependencyObject root)
@@ -194,37 +223,7 @@ namespace Pulsar.Tests.Views
             }
         }
 
-        private static void RunInSta(Action action)
-        {
-            Exception? capturedException = null;
-            using var completed = new ManualResetEventSlim(false);
-
-            var thread = new Thread(() =>
-            {
-                try
-                {
-                    action();
-                }
-                catch (Exception ex)
-                {
-                    capturedException = ex;
-                }
-                finally
-                {
-                    completed.Set();
-                }
-            });
-
-            thread.SetApartmentState(ApartmentState.STA);
-            thread.Start();
-            completed.Wait();
-            thread.Join();
-
-            if (capturedException != null)
-            {
-                ExceptionDispatchInfo.Capture(capturedException).Throw();
-            }
-        }
+        private static void RunInSta(Action action) => StaTestRunner.RunInSta(action);
 
         private sealed class ButtonRenderResult
         {

@@ -12,12 +12,12 @@
         <TextBlock Text="{Binding Message}" 
                    TextWrapping="Wrap"
                    Margin="0,0,0,15"
-                   FontSize="14"/>
+                   FontSize="{StaticResource Pulsar.Type.Subtitle}"/>
         
         <ui:TextBox Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}"
                     PlaceholderText="{Binding Placeholder}"
                     Padding="10"
-                    FontSize="14"
+                    FontSize="{StaticResource Pulsar.Type.Subtitle}"
                     Loaded="InputTextBox_Loaded"/>
     </StackPanel>
 </UserControl>

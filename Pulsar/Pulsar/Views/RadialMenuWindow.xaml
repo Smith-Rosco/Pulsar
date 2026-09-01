@@ -19,9 +19,13 @@
     ResizeMode="NoResize"
     x:Name="RootWindow"
     Style="{x:Null}"
-    RenderOptions.BitmapScalingMode="LowQuality"
     RenderOptions.CacheInvalidationThresholdMinimum="0.5"
     RenderOptions.CacheInvalidationThresholdMaximum="2.0">
+
+    <!-- 已移除窗口级 RenderOptions.BitmapScalingMode="LowQuality"：
+         它与 SlotOrb 局部的 HighQuality 冲突，且会让最熟悉的图标边缘发糊
+         （Persona 张每天唤起 200 次的抱怨点）。默认继承 Linear，
+         图标渲染统一走 SlotOrb 内的高质量路径。 -->
 
     <Window.Resources>
         <ResourceDictionary>
@@ -89,8 +93,9 @@
                                      Padding="6,2"
                                      Visibility="{Binding ShowTypeBadge, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
                                 <TextBlock Text="{Binding TypeBadge}"
-                                           Style="{StaticResource SlotValueChipTextStyle}"
-                                           FontSize="9">
+                                           Style="{StaticResource SlotValueChipTextStyle}">
+                                    <!-- FontSize 跟随 SlotValueChipTextStyle（令牌 11px）；
+                                         此前显式覆盖为 9px 属散值，已删除。 -->
                                     <TextBlock.Foreground>
                                         <MultiBinding Converter="{StaticResource SlotBrushConverter}" ConverterParameter="Type">
                                             <Binding Path="TypeToneKey"/>
@@ -170,27 +175,32 @@
                                         <DataTrigger Binding="{Binding HasPreview}" Value="True">
                                             <DataTrigger.EnterActions>
                                                 <BeginStoryboard>
+                                                    <!-- 回弹缓动（BackEase）推迟终态感知，与肌肉记忆定位冲突，改指数缓动 -->
                                                     <Storyboard>
-                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2"/>
-                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.25">
-                                                            <DoubleAnimation.EasingFunction>
-                                                                <BackEase EasingMode="EaseOut" Amplitude="0.4"/>
-                                                            </DoubleAnimation.EasingFunction>
-                                                        </DoubleAnimation>
-                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.25">
-                                                            <DoubleAnimation.EasingFunction>
-                                                                <BackEase EasingMode="EaseOut" Amplitude="0.4"/>
-                                                            </DoubleAnimation.EasingFunction>
-                                                        </DoubleAnimation>
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1"
+                                                                         Duration="{StaticResource Pulsar.Duration.Normal}"
+                                                                         EasingFunction="{StaticResource Pulsar.Easing.Standard}"/>
+                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1"
+                                                                         Duration="{StaticResource Pulsar.Duration.Normal}"
+                                                                         EasingFunction="{StaticResource Pulsar.Easing.Standard}"/>
+                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1"
+                                                                         Duration="{StaticResource Pulsar.Duration.Normal}"
+                                                                         EasingFunction="{StaticResource Pulsar.Easing.Standard}"/>
                                                     </Storyboard>
                                                 </BeginStoryboard>
                                             </DataTrigger.EnterActions>
                                             <DataTrigger.ExitActions>
                                                 <BeginStoryboard>
                                                     <Storyboard>
-                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.15"/>
-                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="0.8" Duration="0:0:0.15"/>
-                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="0.8" Duration="0:0:0.15"/>
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0"
+                                                                         Duration="{StaticResource Pulsar.Duration.Fast}"
+                                                                         EasingFunction="{StaticResource Pulsar.Easing.Standard}"/>
+                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="0.8"
+                                                                         Duration="{StaticResource Pulsar.Duration.Fast}"
+                                                                         EasingFunction="{StaticResource Pulsar.Easing.Standard}"/>
+                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="0.8"
+                                                                         Duration="{StaticResource Pulsar.Duration.Fast}"
+                                                                         EasingFunction="{StaticResource Pulsar.Easing.Standard}"/>
                                                     </Storyboard>
                                                 </BeginStoryboard>
                                             </DataTrigger.ExitActions>
@@ -238,7 +248,7 @@
                 <Border HorizontalAlignment="Center"
                         VerticalAlignment="Top"
                         Padding="10,3"
-                        CornerRadius="6"
+                        CornerRadius="{StaticResource Pulsar.Radius.MD}"
                         Background="{DynamicResource Theme.Radial.Title.Scrim}"
                         Visibility="{Binding DynamicTitle, Converter={StaticResource StringEmptyToVisibilityConverter}}">
                     <Grid>
@@ -246,14 +256,17 @@
                         <TextBlock Text="{Binding DynamicTitle, NotifyOnTargetUpdated=True}"
                                    TextAlignment="Center"
                                    Foreground="{DynamicResource Theme.Radial.Title.Shadow}"
-                                   FontSize="16" FontWeight="SemiBold"
+                                   FontSize="{StaticResource Pulsar.Type.Subtitle}"
+                                   FontWeight="SemiBold"
                                    Opacity="0.5"
                                    Margin="1,1,0,0">
                             <TextBlock.Triggers>
                                 <EventTrigger RoutedEvent="Binding.TargetUpdated">
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="0.5" Duration="0:0:0.15" />
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="0.5"
+                                                         Duration="{StaticResource Pulsar.Duration.Fast}"
+                                                         EasingFunction="{StaticResource Pulsar.Easing.Standard}"/>
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </EventTrigger>
@@ -264,12 +277,15 @@
                         <TextBlock Text="{Binding DynamicTitle, NotifyOnTargetUpdated=True}"
                                    TextAlignment="Center"
                                    Foreground="{DynamicResource Theme.Radial.Title.Foreground}"
-                                   FontSize="16" FontWeight="SemiBold">
+                                   FontSize="{StaticResource Pulsar.Type.Subtitle}"
+                                   FontWeight="SemiBold">
                             <TextBlock.Triggers>
                                 <EventTrigger RoutedEvent="Binding.TargetUpdated">
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.4" To="1" Duration="0:0:0.15" />
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.4" To="1"
+                                                         Duration="{StaticResource Pulsar.Duration.Fast}"
+                                                         EasingFunction="{StaticResource Pulsar.Easing.Standard}"/>
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </EventTrigger>

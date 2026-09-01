@@ -13,6 +13,16 @@
              ToolTip="{lex:Locale Dialog.IconPicker.ChangeIcon}"
              d:DesignHeight="42" d:DesignWidth="280">
 
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- 自带数值令牌：SlotIconPreviewTests 在无 Application 上下文中
+                     直接实例化本控件（其内嵌 SlotOrb 亦如此）。 -->
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/Tokens.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
@@ -30,7 +40,7 @@
                    Text="{Binding DisplayText, ElementName=Root}"
                    VerticalAlignment="Center"
                    Margin="10,0,0,0"
-                   FontSize="13"
+                   FontSize="{StaticResource Pulsar.Type.Body}"
                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                    TextTrimming="CharacterEllipsis"/>
     </Grid>

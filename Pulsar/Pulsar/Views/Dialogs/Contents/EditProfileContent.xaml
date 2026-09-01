@@ -20,7 +20,7 @@
 
     <StackPanel Margin="0">
         <TextBlock Text="{lex:Locale Dialog.EditProfile.ProcessName}" FontWeight="Medium"/>
-        <TextBlock Text="{Binding DisplayProcessName}" Margin="0,4,0,16" Opacity="0.7" FontSize="14"/>
+        <TextBlock Text="{Binding DisplayProcessName}" Margin="0,4,0,16" Opacity="0.7" FontSize="{StaticResource Pulsar.Type.Subtitle}"/>
 
         <!-- Alias Input -->
         <TextBlock Text="{lex:Locale Dialog.EditProfile.Alias}" FontWeight="Medium" Margin="0,0,0,8"/>
@@ -47,7 +47,7 @@
 
             <!-- Info -->
             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                <TextBlock Text="{lex:Locale Dialog.EditProfile.SelectedIcon}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                <TextBlock Text="{lex:Locale Dialog.EditProfile.SelectedIcon}" FontSize="{StaticResource Pulsar.Type.Body}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                 <TextBlock Text="{Binding IconDisplayText}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
             </StackPanel>
 

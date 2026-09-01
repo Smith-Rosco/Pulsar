@@ -17,14 +17,14 @@
         <!-- 基础属性 -->
         <Setter Property="Padding" Value="12,6"/>
         <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontSize" Value="{StaticResource Pulsar.Type.Subtitle}"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="BorderBrush" Value="Transparent"/>
         
         <!-- 明确的颜色定义 - 不依赖系统强调色 -->
-        <Setter Property="Background" Value="{DynamicResource Theme.Accent}"/>
-        <Setter Property="Foreground" Value="{DynamicResource Theme.Accent.Foreground}"/>
+        <Setter Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
         
         <Setter Property="Template">
             <Setter.Value>
@@ -67,28 +67,28 @@
                     <ControlTemplate.Triggers>
                         <!-- Normal 状态 -->
                         <Trigger Property="IsMouseOver" Value="False">
-                            <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource Theme.Accent}"/>
-                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource Theme.Accent.Foreground}"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
                         </Trigger>
                         
                         <!-- Hover 状态 - 明确指定颜色，不依赖默认行为 -->
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource Theme.Accent.Hover}"/>
-                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource Theme.Accent.Foreground}"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource AccentFillColorSecondaryBrush}"/>
+                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
                         </Trigger>
                         
                         <!-- Pressed 状态 -->
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource Theme.Accent}"/>
-                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource Theme.Accent.Foreground}"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
                             <Setter TargetName="RootBorder" Property="Opacity" Value="0.9"/>
                         </Trigger>
                         
                         <!-- Disabled 状态 -->
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource Theme.Control.Background}"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}"/>
                             <Setter TargetName="RootBorder" Property="Opacity" Value="0.5"/>
-                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource Theme.Text.Secondary}"/>
+                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -103,12 +103,12 @@
     <Style x:Key="PulsarSecondaryButtonStyle" TargetType="ui:Button">
         <Setter Property="Padding" Value="12,6"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontSize" Value="{StaticResource Pulsar.Type.Subtitle}"/>
         <Setter Property="FontWeight" Value="Normal"/>
         <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource Theme.Border.Brush}"/>
-        <Setter Property="Background" Value="{DynamicResource Theme.Control.Background}"/>
-        <Setter Property="Foreground" Value="{DynamicResource Theme.Text.Primary}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
         
         <Setter Property="Template">
             <Setter.Value>
@@ -150,12 +150,12 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource Theme.Control.Hover}"/>
-                            <Setter TargetName="RootBorder" Property="BorderBrush" Value="{DynamicResource Theme.Accent}"/>
-                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource Theme.Text.Primary}"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}"/>
+                            <Setter TargetName="RootBorder" Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource Theme.Control.Pressed}"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource ControlFillColorTertiaryBrush}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="RootBorder" Property="Opacity" Value="0.5"/>
@@ -174,7 +174,7 @@
         <Setter Property="Padding" Value="6"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="Foreground" Value="{DynamicResource Theme.Text.Primary}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
         <Setter Property="Cursor" Value="Hand"/>
 
         <Setter Property="Template">
@@ -228,10 +228,10 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource Theme.Control.Hover}"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource Theme.Control.Pressed}"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource ControlFillColorTertiaryBrush}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="RootBorder" Property="Opacity" Value="0.4"/>
@@ -247,7 +247,7 @@
         用于删除等危险操作
     -->
     <Style x:Key="PulsarDangerButtonStyle" TargetType="ui:Button" BasedOn="{StaticResource PulsarPrimaryButtonStyle}">
-        <Setter Property="Background" Value="{DynamicResource Theme.Destructive}"/>
+        <Setter Property="Background" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ui:Button">
@@ -288,22 +288,24 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="False">
-                            <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource Theme.Destructive}"/>
-                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="White"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
+                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
                         </Trigger>
+                        <!-- Fluent 未定义 critical 的 hover 态，故沿用 Pulsar 自有令牌（与 Theme.Orb.* 同属有意保留的例外）。
+                             此前此处硬编码 #FF5C2B —— 那是深色主题的取值，浅色主题下 hover 会跳成深色红。 -->
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="RootBorder" Property="Background" Value="#FF5C2B"/>
-                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="White"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource Theme.Destructive.Hover}"/>
+                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource Theme.Destructive}"/>
-                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="White"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
+                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
                             <Setter TargetName="RootBorder" Property="Opacity" Value="0.9"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource Theme.Control.Background}"/>
+                            <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}"/>
                             <Setter TargetName="RootBorder" Property="Opacity" Value="0.5"/>
-                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource Theme.Text.Secondary}"/>
+                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

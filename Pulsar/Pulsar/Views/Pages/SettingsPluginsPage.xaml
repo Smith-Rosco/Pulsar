@@ -33,10 +33,10 @@
                         <BeginStoryboard>
                             <Storyboard>
                                 <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                 From="0" To="1" Duration="0:0:0.2"/>
+                                                 From="0" To="1" Duration="{StaticResource Pulsar.Duration.Normal}"/>
                                 <ThicknessAnimation Storyboard.TargetProperty="Margin"
                                                     From="0,20,0,-20" To="0,0,0,0"
-                                                    Duration="0:0:0.25">
+                                                    Duration="{StaticResource Pulsar.Duration.Normal}">
                                     <ThicknessAnimation.EasingFunction>
                                         <CubicEase EasingMode="EaseOut"/>
                                     </ThicknessAnimation.EasingFunction>
@@ -118,7 +118,7 @@
 
         <!-- Lightweight Group Header Style -->
         <Style x:Key="GroupHeaderStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontSize" Value="{StaticResource Pulsar.Type.Subtitle}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
             <Setter Property="Margin" Value="0,0,0,0"/>
@@ -153,7 +153,7 @@
                         <TextBlock Text="{Binding Label}" FontWeight="Medium"/>
                         <TextBlock Text="{Binding Description}" 
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
-                                   FontSize="12" 
+                                   FontSize="{StaticResource Pulsar.Type.Body}" 
                                    TextWrapping="Wrap"
                                    Visibility="{Binding Description, Converter={StaticResource StringEmptyToVisibilityConverter}}"/>
                     </StackPanel>
@@ -169,12 +169,12 @@
                         <TextBlock Text="{Binding Label}" FontWeight="Medium"/>
                         <TextBlock Text="{Binding Description}" 
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
-                                   FontSize="12" 
+                                   FontSize="{StaticResource Pulsar.Type.Body}" 
                                    TextWrapping="Wrap"
                                    Visibility="{Binding Description, Converter={StaticResource StringEmptyToVisibilityConverter}}"/>
                         <TextBlock Text="{Binding ValidationMessage}"
-                                   Foreground="#dc3545"
-                                   FontSize="11"
+                                   Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                                   FontSize="{StaticResource Pulsar.Type.Caption}"
                                    TextWrapping="Wrap"
                                    Visibility="{Binding HasValidation, Converter={StaticResource BooleanToVisibilityConverter}}"
                                    Margin="0,2,0,0"/>
@@ -193,12 +193,12 @@
                         <TextBlock Text="{Binding Label}" FontWeight="Medium"/>
                         <TextBlock Text="{Binding Description}" 
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
-                                   FontSize="12" 
+                                   FontSize="{StaticResource Pulsar.Type.Body}" 
                                    TextWrapping="Wrap"
                                    Visibility="{Binding Description, Converter={StaticResource StringEmptyToVisibilityConverter}}"/>
                         <TextBlock Text="{Binding ValidationMessage}"
-                                   Foreground="#dc3545"
-                                   FontSize="11"
+                                   Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                                   FontSize="{StaticResource Pulsar.Type.Caption}"
                                    TextWrapping="Wrap"
                                    Visibility="{Binding HasValidation, Converter={StaticResource BooleanToVisibilityConverter}}"
                                    Margin="0,2,0,0"/>
@@ -218,12 +218,12 @@
                         <TextBlock Text="{Binding Label}" FontWeight="Medium"/>
                         <TextBlock Text="{Binding Description}" 
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
-                                   FontSize="12" 
+                                   FontSize="{StaticResource Pulsar.Type.Body}" 
                                    TextWrapping="Wrap"
                                    Visibility="{Binding Description, Converter={StaticResource StringEmptyToVisibilityConverter}}"/>
                         <TextBlock Text="{Binding ValidationMessage}"
-                                   Foreground="#dc3545"
-                                   FontSize="11"
+                                   Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                                   FontSize="{StaticResource Pulsar.Type.Caption}"
                                    TextWrapping="Wrap"
                                    Visibility="{Binding HasValidation, Converter={StaticResource BooleanToVisibilityConverter}}"
                                    Margin="0,2,0,0"/>
@@ -256,12 +256,12 @@
                         <TextBlock Text="{Binding Label}" FontWeight="Medium"/>
                         <TextBlock Text="{Binding Description}" 
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
-                                   FontSize="12" 
+                                   FontSize="{StaticResource Pulsar.Type.Body}" 
                                    TextWrapping="Wrap"
                                    Visibility="{Binding Description, Converter={StaticResource StringEmptyToVisibilityConverter}}"/>
                         <TextBlock Text="{Binding ValidationMessage}"
-                                   Foreground="#dc3545"
-                                   FontSize="11"
+                                   Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                                   FontSize="{StaticResource Pulsar.Type.Caption}"
                                    TextWrapping="Wrap"
                                    Visibility="{Binding HasValidation, Converter={StaticResource BooleanToVisibilityConverter}}"
                                    Margin="0,2,0,0"/>
@@ -283,12 +283,12 @@
                         <TextBlock Text="{Binding Label}" FontWeight="Medium"/>
                         <TextBlock Text="{Binding Description}" 
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
-                                   FontSize="12" 
+                                   FontSize="{StaticResource Pulsar.Type.Body}" 
                                    TextWrapping="Wrap"
                                    Visibility="{Binding Description, Converter={StaticResource StringEmptyToVisibilityConverter}}"/>
                         <TextBlock Text="{Binding ValidationMessage}"
-                                   Foreground="#dc3545"
-                                   FontSize="11"
+                                   Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                                   FontSize="{StaticResource Pulsar.Type.Caption}"
                                    TextWrapping="Wrap"
                                    Visibility="{Binding HasValidation, Converter={StaticResource BooleanToVisibilityConverter}}"
                                    Margin="0,2,0,0"/>
@@ -425,13 +425,13 @@
                                                             Margin="0,0,8,0"
                                                             VerticalAlignment="Center">
                                                         <TextBlock Text="{lex:Locale Settings.Plugins.Core}" 
-                                                                   FontSize="10" 
+                                                                   FontSize="{StaticResource Pulsar.Type.Caption}" 
                                                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                                                     </Border>
                                                     
                                                     <!-- Health Badge -->
                                                     <TextBlock Text="{Binding HealthBadge}" 
-                                                               FontSize="14"
+                                                               FontSize="{StaticResource Pulsar.Type.Subtitle}"
                                                                ToolTip="{Binding HealthReport.Status}"
                                                                AutomationProperties.Name="{Binding HealthReport.Status}"
                                                                Margin="0,0,8,0"
@@ -439,7 +439,7 @@
                                                     
                                                     <!-- Health Score with Progress Bar -->
                                                     <TextBlock Text="{lex:Locale Settings.Plugins.HealthLabel}" 
-                                                               FontSize="11" 
+                                                               FontSize="{StaticResource Pulsar.Type.Caption}" 
                                                                Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                                Margin="0,0,6,0"
                                                                VerticalAlignment="Center"/>
@@ -453,7 +453,7 @@
                                                                  Margin="0,0,6,0"/>
                                                     
                                                     <TextBlock Text="{Binding HealthScoreText}" 
-                                                               FontSize="11" 
+                                                               FontSize="{StaticResource Pulsar.Type.Caption}" 
                                                                FontWeight="SemiBold"
                                                                Foreground="{Binding HealthScoreColor, Converter={StaticResource HexToBrushConverter}}"
                                                                VerticalAlignment="Center"/>
@@ -465,7 +465,7 @@
                                                 <StackPanel>
                                                     <!-- Description -->
                                                     <TextBlock Text="{Binding Description}" 
-                                                               FontSize="12" 
+                                                               FontSize="{StaticResource Pulsar.Type.Body}" 
                                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
                                                                TextWrapping="Wrap"
                                                                Margin="0,0,0,12"/>
@@ -474,36 +474,36 @@
                                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                                         <StackPanel Orientation="Horizontal" Margin="0,0,24,0">
                                                             <ui:SymbolIcon Symbol="ChartMultiple24" 
-                                                                           FontSize="14" 
+                                                                           FontSize="{StaticResource Pulsar.Type.Subtitle}" 
                                                                            Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                                            Margin="0,0,6,0"
                                                                            VerticalAlignment="Center"/>
                                                             <TextBlock Text="{Binding UsageSummary}" 
-                                                                       FontSize="12" 
+                                                                       FontSize="{StaticResource Pulsar.Type.Body}" 
                                                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                                        VerticalAlignment="Center"/>
                                                         </StackPanel>
 
                                                         <StackPanel Orientation="Horizontal" Margin="0,0,24,0">
                                                             <ui:SymbolIcon Symbol="Folder24" 
-                                                                           FontSize="14" 
+                                                                           FontSize="{StaticResource Pulsar.Type.Subtitle}" 
                                                                            Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                                            Margin="0,0,6,0"
                                                                            VerticalAlignment="Center"/>
                                                             <TextBlock Text="{Binding ProfilesSummary}" 
-                                                                       FontSize="12" 
+                                                                       FontSize="{StaticResource Pulsar.Type.Body}" 
                                                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                                        VerticalAlignment="Center"/>
                                                         </StackPanel>
 
                                                         <StackPanel Orientation="Horizontal">
                                                             <ui:SymbolIcon Symbol="Clock24" 
-                                                                           FontSize="14" 
+                                                                           FontSize="{StaticResource Pulsar.Type.Subtitle}" 
                                                                            Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                                            Margin="0,0,6,0"
                                                                            VerticalAlignment="Center"/>
                                                             <TextBlock Text="{Binding LastUsedSummary}" 
-                                                                       FontSize="12" 
+                                                                       FontSize="{StaticResource Pulsar.Type.Body}" 
                                                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                                        VerticalAlignment="Center"/>
                                                         </StackPanel>
@@ -512,17 +512,26 @@
                                                     <!-- Performance Metrics Row -->
                                                     <StackPanel Orientation="Horizontal">
                                                         <StackPanel Orientation="Horizontal" Margin="0,0,24,0">
-                                                            <TextBlock Text="⚡" FontSize="12" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                                            <!-- Emoji ⚡ 是彩色位图，与 Fluent 单色矢量图标混用渲染口径不一致，改 SymbolIcon -->
+                                                            <ui:SymbolIcon Symbol="Flash24"
+                                                                           FontSize="{StaticResource Pulsar.Type.Body}"
+                                                                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                                           Margin="0,0,6,0"
+                                                                           VerticalAlignment="Center"/>
                                                             <TextBlock Text="{Binding AvgExecutionTimeText}" 
-                                                                       FontSize="12" 
+                                                                       FontSize="{StaticResource Pulsar.Type.Body}" 
                                                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                                        VerticalAlignment="Center"/>
                                                         </StackPanel>
 
                                                         <StackPanel Orientation="Horizontal" Margin="0,0,24,0">
-                                                            <TextBlock Text="✓" FontSize="12" Foreground="#28a745" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                                            <ui:SymbolIcon Symbol="Checkmark24"
+                                                                           FontSize="{StaticResource Pulsar.Type.Body}"
+                                                                           Foreground="{DynamicResource SystemFillColorSuccessBrush}"
+                                                                           Margin="0,0,6,0"
+                                                                           VerticalAlignment="Center"/>
                                                             <TextBlock Text="{Binding SuccessRateText}" 
-                                                                       FontSize="12" 
+                                                                       FontSize="{StaticResource Pulsar.Type.Body}" 
                                                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                                        VerticalAlignment="Center"/>
                                                         </StackPanel>
@@ -533,9 +542,13 @@
                                                                 Padding="8,2"
                                                                 Visibility="{Binding IsViewLogsVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
                                                             <StackPanel Orientation="Horizontal">
-                                                                <TextBlock Text="⚠" FontSize="12" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                                                <ui:SymbolIcon Symbol="Warning24"
+                                                                               FontSize="{StaticResource Pulsar.Type.Body}"
+                                                                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                                                               Margin="0,0,4,0"
+                                                                               VerticalAlignment="Center"/>
                                                                 <TextBlock Text="{Binding ViewLogsLabel}" 
-                                                                           FontSize="11" 
+                                                                           FontSize="{StaticResource Pulsar.Type.Caption}" 
                                                                            FontWeight="Medium"
                                                                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                                                            VerticalAlignment="Center"/>
@@ -563,13 +576,13 @@
                                    HorizontalAlignment="Center"
                                    Margin="0,0,0,16"/>
                     <TextBlock Text="{lex:Locale Settings.Plugins.NoPluginsFound}" 
-                               FontSize="16" 
+                               FontSize="{StaticResource Pulsar.Type.Subtitle}" 
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                HorizontalAlignment="Center"
                                Margin="0,0,0,8"/>
                     <TextBlock Text="{lex:Locale Settings.Plugins.AdjustSearch}" 
-                               FontSize="12" 
+                               FontSize="{StaticResource Pulsar.Type.Body}" 
                                Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                HorizontalAlignment="Center"
                                Margin="0,0,0,12"/>
@@ -597,7 +610,7 @@
                     <!-- External: Title + Install Button Row -->
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,8,0,8" VerticalAlignment="Center">
                         <TextBlock Text="{lex:Locale Settings.Plugins.ExternalPlugins}"
-                                   FontSize="18" FontWeight="SemiBold"
+                                   FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="SemiBold"
                                    VerticalAlignment="Center"
                                    Margin="0,0,12,0"/>
                         <ui:Button Content="{lex:Locale Settings.Plugins.InstallFromFile}"
@@ -618,7 +631,7 @@
                                         HorizontalAlignment="Center" Margin="0,48,0,0">
                                 <ui:ProgressRing IsIndeterminate="True" Width="48" Height="48"/>
                                 <TextBlock Text="{lex:Locale Settings.Plugins.LoadingPlugins}"
-                                           FontSize="14"
+                                           FontSize="{StaticResource Pulsar.Type.Subtitle}"
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                            HorizontalAlignment="Center"
                                            Margin="0,16,0,0"/>
@@ -645,14 +658,14 @@
                                                                        VerticalAlignment="Top"/>
                                                     <StackPanel Grid.Column="1">
                                                         <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                                            <TextBlock Text="{Binding Name}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                                            <TextBlock Text="{Binding Version, StringFormat='v{0}'}" FontSize="12"
+                                                            <TextBlock Text="{Binding Name}" FontSize="{StaticResource Pulsar.Type.Subtitle}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{Binding Version, StringFormat='v{0}'}" FontSize="{StaticResource Pulsar.Type.Body}"
                                                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                                        VerticalAlignment="Center" Margin="8,0,0,0"/>
                                                         </StackPanel>
-                                                        <TextBlock Text="{Binding Author, StringFormat='by {0}'}" FontSize="12"
+                                                        <TextBlock Text="{Binding Author, StringFormat='by {0}'}" FontSize="{StaticResource Pulsar.Type.Body}"
                                                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,8"/>
-                                                        <TextBlock Text="{Binding Description}" FontSize="13"
+                                                        <TextBlock Text="{Binding Description}" FontSize="{StaticResource Pulsar.Type.Body}"
                                                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                                    TextWrapping="Wrap" Margin="0,0,0,8"/>
                                                     </StackPanel>
@@ -679,11 +692,11 @@
                                         <ui:SymbolIcon Symbol="Apps24" FontSize="64"
                                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                        HorizontalAlignment="Center" Margin="0,0,0,16"/>
-                                        <TextBlock Text="{lex:Locale Settings.Plugins.NoExternalPlugins}" FontSize="18" FontWeight="SemiBold"
+                                        <TextBlock Text="{lex:Locale Settings.Plugins.NoExternalPlugins}" FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                    HorizontalAlignment="Center" Margin="0,0,0,8"/>
                                         <TextBlock Text="{lex:Locale Settings.Plugins.InstallHint}"
-                                                   FontSize="13" Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                   FontSize="{StaticResource Pulsar.Type.Body}" Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                    HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"
                                                    MaxWidth="400" Margin="0,0,0,16"/>
                                         <ui:Button Content="{lex:Locale Settings.Plugins.InstallFromFile}"
@@ -703,7 +716,7 @@
                             BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}"
                             BorderThickness="0,1,0,0" Padding="16,8">
                         <TextBlock Text="{Binding ExternalPluginManager.StatusMessage}"
-                                   FontSize="12"
+                                   FontSize="{StaticResource Pulsar.Type.Body}"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    VerticalAlignment="Center"/>
                     </Border>

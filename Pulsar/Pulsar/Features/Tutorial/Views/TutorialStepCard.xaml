@@ -14,14 +14,29 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+                <!-- 动画时长统一引用令牌；本控件可能脱离 Application 实例化，故自带 Tokens -->
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/Tokens.xaml"/>
             </ResourceDictionary.MergedDictionaries>
-            
+
+            <!-- 教程卡片是覆盖在暗色遮罩之上的固定浅色浮层（不跟随应用主题），
+                 故颜色定义为本地令牌而非 Fluent 动态令牌 —— Fluent 令牌会随主题
+                 切换而变，破坏教程的固定对比度。 -->
+            <SolidColorBrush x:Key="TutorialCard.Background" Color="#FFFFFF"/>
+            <SolidColorBrush x:Key="TutorialCard.Border" Color="#E0E0E0"/>
+            <SolidColorBrush x:Key="TutorialCard.Title" Color="#1A1A1A"/>
+            <SolidColorBrush x:Key="TutorialCard.Body" Color="#4A4A4A"/>
+            <SolidColorBrush x:Key="TutorialCard.Muted" Color="#666666"/>
+            <SolidColorBrush x:Key="TutorialCard.MutedLight" Color="#6A6A6A"/>
+            <!-- ColorAnimation 需要纯色值，与 BorderBrush 分开定义 -->
+            <Color x:Key="TutorialCard.SuccessColor">#27AE60</Color>
+            <Color x:Key="TutorialCard.BorderColor">#E0E0E0</Color>
+
             <!-- Card entrance animation -->
             <Storyboard x:Key="CardEntranceAnimation">
                 <DoubleAnimation Storyboard.TargetName="CardBorder"
                                 Storyboard.TargetProperty="Opacity"
                                 From="0" To="1"
-                                Duration="0:0:0.3">
+                                Duration="{StaticResource Pulsar.Duration.Slow}">
                     <DoubleAnimation.EasingFunction>
                         <CubicEase EasingMode="EaseOut"/>
                     </DoubleAnimation.EasingFunction>
@@ -29,7 +44,7 @@
                 <DoubleAnimation Storyboard.TargetName="ScaleTransform"
                                 Storyboard.TargetProperty="ScaleX"
                                 From="0.9" To="1"
-                                Duration="0:0:0.3">
+                                Duration="{StaticResource Pulsar.Duration.Slow}">
                     <DoubleAnimation.EasingFunction>
                         <CubicEase EasingMode="EaseOut"/>
                     </DoubleAnimation.EasingFunction>
@@ -37,7 +52,7 @@
                 <DoubleAnimation Storyboard.TargetName="ScaleTransform"
                                 Storyboard.TargetProperty="ScaleY"
                                 From="0.9" To="1"
-                                Duration="0:0:0.3">
+                                Duration="{StaticResource Pulsar.Duration.Slow}">
                     <DoubleAnimation.EasingFunction>
                         <CubicEase EasingMode="EaseOut"/>
                     </DoubleAnimation.EasingFunction>
@@ -49,7 +64,7 @@
                 <DoubleAnimation Storyboard.TargetName="CardBorder"
                                 Storyboard.TargetProperty="Opacity"
                                 From="1" To="0"
-                                Duration="0:0:0.2">
+                                Duration="{StaticResource Pulsar.Duration.Normal}">
                     <DoubleAnimation.EasingFunction>
                         <CubicEase EasingMode="EaseOut"/>
                     </DoubleAnimation.EasingFunction>
@@ -58,14 +73,15 @@
 
             <!-- Success border flash animation -->
             <Storyboard x:Key="SuccessBorderFlashAnimation">
+                <!-- 零时长 = 立即变绿（刻意为之，非疏漏） -->
                 <ColorAnimation Storyboard.TargetName="CardBorder"
                                Storyboard.TargetProperty="BorderBrush.Color"
-                               To="#27AE60"
+                               To="{StaticResource TutorialCard.SuccessColor}"
                                Duration="0:0:0"/>
                 <ColorAnimation Storyboard.TargetName="CardBorder"
                                Storyboard.TargetProperty="BorderBrush.Color"
-                               To="#E0E0E0"
-                               Duration="0:0:0.3"
+                               To="{StaticResource TutorialCard.BorderColor}"
+                               Duration="{StaticResource Pulsar.Duration.Slow}"
                                BeginTime="0:0:0.15"/>
             </Storyboard>
         </ResourceDictionary>
@@ -73,8 +89,8 @@
     
     <Grid>
         <Border x:Name="CardBorder"
-                Background="White"
-                BorderBrush="#E0E0E0"
+                Background="{StaticResource TutorialCard.Background}"
+                BorderBrush="{StaticResource TutorialCard.Border}"
                 BorderThickness="1"
                 CornerRadius="12"
                 MaxWidth="540"
@@ -107,9 +123,9 @@
                 <TextBlock x:Name="StepCounter"
                           Grid.Row="0"
                           Text="Step 1/9"
-                          FontSize="12"
+                          FontSize="{StaticResource Pulsar.Type.Body}"
                           FontWeight="Medium"
-                          Foreground="#666666"
+                          Foreground="{StaticResource TutorialCard.Muted}"
                           Margin="0,0,0,4"/>
                 
                 <!-- Progress bar -->
@@ -129,9 +145,9 @@
                 <TextBlock x:Name="TitleText"
                           Grid.Row="2"
                           Text="{lex:Locale Tutorial.Welcome}"
-                          FontSize="18"
+                          FontSize="{StaticResource Pulsar.Type.Title}"
                           FontWeight="SemiBold"
-                          Foreground="#1A1A1A"
+                          Foreground="{StaticResource TutorialCard.Title}"
                           TextWrapping="Wrap"
                           Margin="0,0,0,12"/>
                 
@@ -142,8 +158,8 @@
                               Margin="0,0,0,20">
                     <TextBlock x:Name="DescriptionText"
                               Text="{lex:Locale Tutorial.DescriptionPlaceholder}"
-                              FontSize="14"
-                              Foreground="#4A4A4A"
+                              FontSize="{StaticResource Pulsar.Type.Subtitle}"
+                              Foreground="{StaticResource TutorialCard.Body}"
                               TextWrapping="Wrap"
                               LineHeight="20"/>
                 </ScrollViewer>
@@ -152,8 +168,8 @@
                 <TextBlock x:Name="WaitHintText"
                            Grid.Row="4"
                            Text="{lex:Locale Tutorial.AutoContinue}"
-                           FontSize="12"
-                           Foreground="#6A6A6A"
+                           FontSize="{StaticResource Pulsar.Type.Body}"
+                           Foreground="{StaticResource TutorialCard.MutedLight}"
                            TextWrapping="Wrap"
                            Visibility="Collapsed"
                            Margin="0,0,0,16"/>

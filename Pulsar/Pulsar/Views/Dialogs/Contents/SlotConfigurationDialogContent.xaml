@@ -28,14 +28,14 @@
             <converters:StringToBoolConverter x:Key="StringToBool"/>
 
             <Style x:Key="SectionEyebrowTextStyle" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="11"/>
+                <Setter Property="FontSize" Value="{StaticResource Pulsar.Type.Caption}"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
                 <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
                 <Setter Property="Margin" Value="0,0,0,6"/>
             </Style>
 
             <Style x:Key="CompactSectionTitleTextStyle" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="FontSize" Value="{StaticResource Pulsar.Type.Subtitle}"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
                 <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
             </Style>
@@ -50,7 +50,7 @@
             </Style>
 
             <Style x:Key="HeaderStatusBadgeTextStyle" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="11"/>
+                <Setter Property="FontSize" Value="{StaticResource Pulsar.Type.Caption}"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
                 <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
             </Style>
@@ -70,7 +70,7 @@
             </Style>
 
             <Style x:Key="CompactStatusTextStyle" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="11"/>
+                <Setter Property="FontSize" Value="{StaticResource Pulsar.Type.Caption}"/>
                 <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
                 <Setter Property="TextWrapping" Value="Wrap"/>
                 <Style.Triggers>
@@ -120,14 +120,14 @@
                     <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{Binding Label}"
-                                       FontSize="13"
+                                       FontSize="{StaticResource Pulsar.Type.Body}"
                                        FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                        TextTrimming="CharacterEllipsis"
                                        ToolTip="{Binding Label}"
                                        VerticalAlignment="Center"/>
                             <TextBlock Text=" *"
-                                       FontSize="13"
+                                       FontSize="{StaticResource Pulsar.Type.Body}"
                                        FontWeight="Bold"
                                        Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                                        Visibility="{Binding IsRequired, Converter={StaticResource BoolToVis}}"
@@ -181,12 +181,12 @@
                                 VerticalAlignment="Center">
                             <StackPanel>
                                 <TextBlock Text="{Binding DisplayValue}"
-                                           FontSize="13"
+                                           FontSize="{StaticResource Pulsar.Type.Body}"
                                            FontWeight="SemiBold"
                                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                            TextTrimming="CharacterEllipsis"/>
                                 <TextBlock Text="{Binding SecondaryDisplayValue}"
-                                           FontSize="11"
+                                           FontSize="{StaticResource Pulsar.Type.Caption}"
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                            TextTrimming="CharacterEllipsis"
                                            Visibility="{Binding HasSecondaryDisplayValue, Converter={StaticResource BoolToVis}}"/>
@@ -229,7 +229,7 @@
 
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <TextBlock Text="{Binding HeaderText}"
-                                       FontSize="16" FontWeight="SemiBold"
+                                       FontSize="{StaticResource Pulsar.Type.Subtitle}" FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                         </StackPanel>
 
@@ -251,7 +251,7 @@
                     <StackPanel>
                         <!-- Single action: read-only label -->
                         <TextBlock Text="{Binding Slot.ActionLabel}"
-                                   FontSize="13" FontWeight="SemiBold"
+                                   FontSize="{StaticResource Pulsar.Type.Body}" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                    Visibility="{Binding HasSingleAction, Converter={StaticResource BoolToVis}}"
                                    Margin="0,4,0,0"/>
@@ -301,7 +301,7 @@
                                     BorderThickness="1"
                                     Margin="0,0,6,4">
                                 <TextBlock Text="{Binding}"
-                                           FontSize="11"
+                                           FontSize="{StaticResource Pulsar.Type.Caption}"
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                             </Border>
                         </DataTemplate>
@@ -336,7 +336,7 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
                                        Text="{lex:Locale Dialog.AddSlot.Label}"
-                                       FontSize="13" FontWeight="SemiBold"
+                                       FontSize="{StaticResource Pulsar.Type.Body}" FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                        VerticalAlignment="Center"/>
                             <ui:TextBox Grid.Column="1"
@@ -352,7 +352,7 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
                                        Text="{lex:Locale Dialog.AddSlot.Color}"
-                                       FontSize="13" FontWeight="SemiBold"
+                                       FontSize="{StaticResource Pulsar.Type.Body}" FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                        VerticalAlignment="Center"/>
                             <StackPanel Grid.Column="1" Orientation="Horizontal">
@@ -362,7 +362,7 @@
                                         ToolTip="{lex:Locale Dialog.AddSlot.PickColor}">
                                     <Grid>
                                         <ui:SymbolIcon Symbol="Drop24"
-                                                       FontSize="16"
+                                                       FontSize="{StaticResource Pulsar.Type.Subtitle}"
                                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center"/>
@@ -379,7 +379,7 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
                                        Text="{lex:Locale Dialog.AddSlot.Icon}"
-                                       FontSize="13" FontWeight="SemiBold"
+                                       FontSize="{StaticResource Pulsar.Type.Body}" FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                        VerticalAlignment="Center"/>
                             <controls:IconSelector Grid.Column="1"

@@ -26,7 +26,39 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <ui:TitleBar Title="{lex:Locale SettingsWindow.Title}" Grid.Row="0"/>
+        <ui:TitleBar Title="{lex:Locale SettingsWindow.Title}" Grid.Row="0">
+            <!-- 保存操作从导航页脚（FooterMenuItems，非常规位置）上移到 TitleBar 右侧，
+                 未保存状态改为文字徽章 —— 原先只有 8px 红点，用户看不懂含义。
+                 （P1 保存位置 / 未保存可见性） -->
+            <ui:TitleBar.TrailingContent>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
+                    <Border Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
+                            CornerRadius="{StaticResource Pulsar.Radius.SM}"
+                            Padding="8,3"
+                            Margin="0,0,12,0"
+                            VerticalAlignment="Center"
+                            Visibility="{Binding DataContext.HasUnsavedChanges, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="Edit24"
+                                           FontSize="{StaticResource Pulsar.Type.Body}"
+                                           Foreground="{DynamicResource SystemFillColorCautionBrush}"
+                                           Margin="0,0,5,0"
+                                           VerticalAlignment="Center"/>
+                            <TextBlock Text="{lex:Locale Notification.UnsavedChanges}"
+                                       FontSize="{StaticResource Pulsar.Type.Body}"
+                                       FontWeight="Medium"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <ui:Button Content="{lex:Locale SettingsWindow.SaveChanges}"
+                               Icon="{ui:SymbolIcon Save24}"
+                               Appearance="Primary"
+                               Command="{Binding DataContext.SaveCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                               ToolTip="{lex:Locale SettingsWindow.SaveChangesTooltip}"/>
+                </StackPanel>
+            </ui:TitleBar.TrailingContent>
+        </ui:TitleBar>
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
@@ -44,31 +76,15 @@
                         <SolidColorBrush x:Key="NavigationViewSelectionIndicatorForeground" Color="Transparent"/>
                     </ui:NavigationView.Resources>
 
-                    <ui:NavigationView.FooterMenuItems>
-                        <ui:NavigationViewItem
-                            Content="{lex:Locale SettingsWindow.SaveChanges}"
-                            Icon="{ui:SymbolIcon Save24}"
-                            Command="{Binding DataContext.SaveCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                            ToolTip="{lex:Locale SettingsWindow.SaveChangesTooltip}">
-                            <ui:NavigationViewItem.InfoBadge>
-                                <ui:InfoBadge>
-                                    <ui:InfoBadge.Template>
-                                        <ControlTemplate TargetType="ui:InfoBadge">
-                                            <Ellipse Width="8" Height="8"
-                                                     Fill="#E74856"
-                                                     Visibility="{Binding DataContext.HasUnsavedChanges, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}"/>
-                                        </ControlTemplate>
-                                    </ui:InfoBadge.Template>
-                                </ui:InfoBadge>
-                            </ui:NavigationViewItem.InfoBadge>
-                        </ui:NavigationViewItem>
-                    </ui:NavigationView.FooterMenuItems>
+                    <!-- 保存操作已上移至 TitleBar 右侧（见上方 TitleBar.RightHeader）。
+                         原位于 FooterMenuItems（左下角页脚）是违反惯例的位置，
+                         First-Timer 用户找不到保存按钮。 -->
                 </ui:NavigationView>
 
                 <Canvas IsHitTestVisible="False">
                     <Rectangle x:Name="NavIndicator"
                                Width="3"
-                               Fill="{DynamicResource Theme.Accent}"
+                               Fill="{DynamicResource AccentFillColorDefaultBrush}"
                                RadiusX="1.5" RadiusY="1.5"
                                IsHitTestVisible="False"
                                Visibility="Collapsed"/>

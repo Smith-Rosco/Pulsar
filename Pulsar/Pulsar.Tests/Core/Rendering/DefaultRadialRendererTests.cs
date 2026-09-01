@@ -145,37 +145,7 @@ namespace Pulsar.Tests.Rendering
             });
         }
 
-        private static void RunInSta(Action action)
-        {
-            Exception? capturedException = null;
-            using var completed = new ManualResetEventSlim(false);
-
-            var thread = new Thread(() =>
-            {
-                try
-                {
-                    action();
-                }
-                catch (Exception ex)
-                {
-                    capturedException = ex;
-                }
-                finally
-                {
-                    completed.Set();
-                }
-            });
-
-            thread.SetApartmentState(ApartmentState.STA);
-            thread.Start();
-            completed.Wait();
-            thread.Join();
-
-            if (capturedException != null)
-            {
-                ExceptionDispatchInfo.Capture(capturedException).Throw();
-            }
-        }
+        private static void RunInSta(Action action) => StaTestRunner.RunInSta(action);
     }
 }
 

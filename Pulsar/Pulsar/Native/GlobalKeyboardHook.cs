@@ -94,9 +94,22 @@ namespace Pulsar.Native
         private const int VK_RWIN = 0x5C;
 
         public GlobalKeyboardHook()
+            : this(installHook: true)
+        {
+        }
+
+        /// <summary>
+        /// Test seam: when <paramref name="installHook"/> is false, no real
+        /// low-level keyboard hook is installed (no native interaction in unit
+        /// tests / headless CI). Dispose then unhooks a zero handle, which is a no-op.
+        /// </summary>
+        internal GlobalKeyboardHook(bool installHook)
         {
             _proc = HookCallback;
-            _hookID = SetHook(_proc);
+            if (installHook)
+            {
+                _hookID = SetHook(_proc);
+            }
         }
 
         public void Dispose()

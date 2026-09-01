@@ -74,7 +74,7 @@
                             Margin="0,48,0,0">
                     <ui:ProgressRing IsIndeterminate="True" Width="48" Height="48"/>
                     <TextBlock Text="{lex:Locale Settings.ExternalPlugins.LoadingPlugins}"
-                               FontSize="14"
+                               FontSize="{StaticResource Pulsar.Type.Subtitle}"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                HorizontalAlignment="Center"
                                Margin="0,16,0,0"/>
@@ -85,10 +85,10 @@
                     <!-- Section Header -->
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                         <TextBlock Text="{lex:Locale Settings.ExternalPlugins.InstalledPluginsHeader}"
-                                   FontSize="16"
+                                   FontSize="{StaticResource Pulsar.Type.Subtitle}"
                                    FontWeight="SemiBold"/>
                         <TextBlock Text="{Binding InstalledPlugins.Count}"
-                                   FontSize="16"
+                                   FontSize="{StaticResource Pulsar.Type.Subtitle}"
                                    FontWeight="SemiBold"
                                    Margin="8,0,0,0"/>
                     </StackPanel>
@@ -120,12 +120,12 @@
                                             <!-- Title and Version -->
                                             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                                 <TextBlock Text="{Binding Name}"
-                                                           FontSize="16"
+                                                           FontSize="{StaticResource Pulsar.Type.Subtitle}"
                                                            FontWeight="SemiBold"
                                                            VerticalAlignment="Center"/>
                                                 
                                                 <TextBlock Text="{Binding Version, StringFormat='v{0}'}"
-                                                           FontSize="12"
+                                                           FontSize="{StaticResource Pulsar.Type.Body}"
                                                            Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                            VerticalAlignment="Center"
                                                            Margin="8,0,0,0"/>
@@ -136,13 +136,13 @@
                                                         Padding="6,2"
                                                         Margin="8,0,0,0">
                                                     <TextBlock Text="{lex:Locale Settings.ExternalPlugins.Installed}"
-                                                               FontSize="10"
+                                                               FontSize="{StaticResource Pulsar.Type.Caption}"
                                                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                                                 </Border>
                                             </StackPanel>
 
                                             <!-- Author -->
-                                            <TextBlock FontSize="12"
+                                            <TextBlock FontSize="{StaticResource Pulsar.Type.Body}"
                                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                        Margin="0,0,0,8">
                                                 <Run Text="{lex:Locale Settings.ExternalPlugins.ByAuthor}"/>
@@ -151,16 +151,16 @@
 
                                             <!-- Description -->
                                             <TextBlock Text="{Binding Description}"
-                                                       FontSize="13"
+                                                       FontSize="{StaticResource Pulsar.Type.Body}"
                                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                        TextWrapping="Wrap"
                                                        Margin="0,0,0,8"/>
 
                                             <!-- Installation Path -->
                                             <StackPanel Orientation="Horizontal">
-                                                <ui:SymbolIcon Symbol="Folder24" FontSize="12" Margin="0,0,6,0"/>
+                                                <ui:SymbolIcon Symbol="Folder24" FontSize="{StaticResource Pulsar.Type.Body}" Margin="0,0,6,0"/>
                                                 <TextBlock Text="{Binding LocalPath}"
-                                                           FontSize="11"
+                                                           FontSize="{StaticResource Pulsar.Type.Caption}"
                                                            Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
                                             </StackPanel>
                                         </StackPanel>
@@ -204,13 +204,13 @@
                                            HorizontalAlignment="Center"
                                            Margin="0,0,0,16"/>
                             <TextBlock Text="{lex:Locale Settings.ExternalPlugins.NoPlugins}"
-                                       FontSize="18"
+                                       FontSize="{StaticResource Pulsar.Type.Title}"
                                        FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                        HorizontalAlignment="Center"
                                        Margin="0,0,0,8"/>
                             <TextBlock Text="{lex:Locale Settings.ExternalPlugins.InstallHint}"
-                                       FontSize="13"
+                                       FontSize="{StaticResource Pulsar.Type.Body}"
                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                        HorizontalAlignment="Center"
                                        TextWrapping="Wrap"
@@ -235,16 +235,16 @@
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                 <ui:SymbolIcon Symbol="Info24" 
-                                               FontSize="16" 
+                                               FontSize="{StaticResource Pulsar.Type.Subtitle}" 
                                                Foreground="{DynamicResource SystemAccentColorBrush}"
                                                Margin="0,0,8,0"/>
                                 <TextBlock Text="{lex:Locale Settings.ExternalPlugins.AboutTitle}" 
                                            FontWeight="SemiBold"
-                                           FontSize="14"/>
+                                           FontSize="{StaticResource Pulsar.Type.Subtitle}"/>
                             </StackPanel>
                             <TextBlock TextWrapping="Wrap" 
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                       FontSize="12"
+                                       FontSize="{StaticResource Pulsar.Type.Body}"
                                        LineHeight="18">
                                 <Run Text="{lex:Locale Settings.ExternalPlugins.AboutLine1}"/>
                                 <LineBreak/>
@@ -277,13 +277,13 @@
                 <!-- Status Message -->
                 <TextBlock Grid.Column="0"
                            Text="{Binding StatusMessage}"
-                           FontSize="12"
+                           FontSize="{StaticResource Pulsar.Type.Body}"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                            VerticalAlignment="Center"/>
 
                 <!-- Plugin Count -->
                 <TextBlock Grid.Column="1"
-                           FontSize="12"
+                           FontSize="{StaticResource Pulsar.Type.Body}"
                            Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                            VerticalAlignment="Center">
                     <Run Text="{Binding InstalledPlugins.Count, Mode=OneWay}"/>

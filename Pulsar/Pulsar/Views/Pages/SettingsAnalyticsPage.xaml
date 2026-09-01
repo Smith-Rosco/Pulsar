@@ -38,7 +38,7 @@
                             HorizontalAlignment="Center" Margin="0,40,0,0">
                     <ui:ProgressRing IsIndeterminate="True" Width="40" Height="40" HorizontalAlignment="Center"/>
                     <TextBlock Text="{lex:Locale Settings.Analytics.Loading}"
-                               FontSize="13" Margin="0,12,0,0"
+                               FontSize="{StaticResource Pulsar.Type.Body}" Margin="0,12,0,0"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                HorizontalAlignment="Center"/>
                 </StackPanel>
@@ -64,7 +64,7 @@
                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                        HorizontalAlignment="Center"/>
                         <TextBlock Text="{lex:Locale Settings.Analytics.NoData}"
-                                   FontSize="13" Margin="0,12,0,0"
+                                   FontSize="{StaticResource Pulsar.Type.Body}" Margin="0,12,0,0"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    HorizontalAlignment="Center" TextAlignment="Center"
                                    TextWrapping="Wrap" MaxWidth="360"/>
@@ -79,7 +79,7 @@
                                        Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                                        HorizontalAlignment="Center"/>
                         <TextBlock Text="{Binding ErrorMessage}"
-                                   FontSize="13" Margin="0,12,0,0"
+                                   FontSize="{StaticResource Pulsar.Type.Body}" Margin="0,12,0,0"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    HorizontalAlignment="Center" TextAlignment="Center"
                                    TextWrapping="Wrap" MaxWidth="360"/>
@@ -105,10 +105,10 @@
                     <ui:CardControl Grid.Column="0" Padding="14,12" Margin="0,0,6,0">
                         <StackPanel>
                             <TextBlock Text="{Binding TotalOverallExecutions}"
-                                       FontSize="22" FontWeight="Bold"
+                                       FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="Bold"
                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                             <TextBlock Text="{lex:Locale Settings.Analytics.SummaryTotalExec}"
-                                       FontSize="11"
+                                       FontSize="{StaticResource Pulsar.Type.Caption}"
                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                        Margin="0,2,0,0"/>
                         </StackPanel>
@@ -117,10 +117,10 @@
                     <ui:CardControl Grid.Column="1" Padding="14,12" Margin="3,0">
                         <StackPanel>
                             <TextBlock Text="{Binding ActivePluginCount}"
-                                       FontSize="22" FontWeight="Bold"
+                                       FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="Bold"
                                        Foreground="{DynamicResource SystemFillColorAccentBrush}"/>
                             <TextBlock Text="{lex:Locale Settings.Analytics.SummaryActivePlugins}"
-                                       FontSize="11"
+                                       FontSize="{StaticResource Pulsar.Type.Caption}"
                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                        Margin="0,2,0,0"/>
                         </StackPanel>
@@ -129,10 +129,10 @@
                     <ui:CardControl Grid.Column="2" Padding="14,12" Margin="3,0">
                         <StackPanel>
                             <TextBlock Text="{Binding TotalTodayExecutions}"
-                                       FontSize="22" FontWeight="Bold"
+                                       FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="Bold"
                                        Foreground="{DynamicResource SystemFillColorSuccessBrush}"/>
                             <TextBlock Text="{lex:Locale Settings.Analytics.SummaryToday}"
-                                       FontSize="11"
+                                       FontSize="{StaticResource Pulsar.Type.Caption}"
                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                        Margin="0,2,0,0"/>
                         </StackPanel>
@@ -141,10 +141,10 @@
                     <ui:CardControl Grid.Column="3" Padding="14,12" Margin="6,0,0,0">
                         <StackPanel>
                             <TextBlock Text="{Binding TotalWeekExecutions}"
-                                       FontSize="22" FontWeight="Bold"
+                                       FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="Bold"
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                             <TextBlock Text="{lex:Locale Settings.Analytics.SummaryWeek}"
-                                       FontSize="11"
+                                       FontSize="{StaticResource Pulsar.Type.Caption}"
                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                        Margin="0,2,0,0"/>
                         </StackPanel>
@@ -159,7 +159,7 @@
                             <ui:SymbolIcon Symbol="DataPie24" Margin="0,0,8,0"
                                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                             <TextBlock Text="{lex:Locale Settings.Analytics.SlotHeatmap}"
-                                       FontWeight="SemiBold" FontSize="14"
+                                       FontWeight="SemiBold" FontSize="{StaticResource Pulsar.Type.Subtitle}"
                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                         </StackPanel>
                     </ui:CardControl.Header>
@@ -176,7 +176,7 @@
                                     <TextBlock Grid.Column="0"
                                                Text="{Binding Label}"
                                                FontWeight="Medium"
-                                               FontSize="12"
+                                               FontSize="{StaticResource Pulsar.Type.Body}"
                                                VerticalAlignment="Center"
                                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
 
@@ -203,7 +203,7 @@
                                     </Grid>
 
                                     <TextBlock Grid.Column="2"
-                                               FontSize="11"
+                                               FontSize="{StaticResource Pulsar.Type.Caption}"
                                                VerticalAlignment="Center"
                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                MinWidth="130"
@@ -230,7 +230,7 @@
                             <ui:SymbolIcon Symbol="DataTrending24" Margin="0,0,8,0"
                                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                             <TextBlock Text="{lex:Locale Settings.Analytics.Title}"
-                                       FontWeight="SemiBold" FontSize="14"
+                                       FontWeight="SemiBold" FontSize="{StaticResource Pulsar.Type.Subtitle}"
                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                         </StackPanel>
                     </ui:CardControl.Header>
@@ -246,7 +246,7 @@
 
                                     <TextBlock Grid.Column="0"
                                                Text="{Binding Label}"
-                                               FontSize="11"
+                                               FontSize="{StaticResource Pulsar.Type.Caption}"
                                                VerticalAlignment="Center"
                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
 
@@ -273,7 +273,7 @@
                                     </Grid>
 
                                     <TextBlock Grid.Column="2"
-                                               FontSize="11"
+                                               FontSize="{StaticResource Pulsar.Type.Caption}"
                                                VerticalAlignment="Center"
                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                MinWidth="60"
@@ -297,7 +297,7 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0" Text="{lex:Locale Settings.Analytics.FilterAllTime}"
-                               FontSize="12" VerticalAlignment="Center"
+                               FontSize="{StaticResource Pulsar.Type.Body}" VerticalAlignment="Center"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                Margin="0,0,8,0"/>
                     <ComboBox Grid.Column="1" MinWidth="140"
@@ -319,23 +319,23 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="#" FontSize="11" FontWeight="SemiBold"
+                    <TextBlock Grid.Column="0" Text="#" FontSize="{StaticResource Pulsar.Type.Caption}" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextFillColorTertiaryBrush}" Width="32"/>
                     <ui:Button Grid.Column="1" Style="{StaticResource PulsarSecondaryButtonStyle}"
                              Command="{Binding SetSortCommand}" CommandParameter="Executions"
-                             HorizontalAlignment="Left" FontSize="11" FontWeight="SemiBold"
+                             HorizontalAlignment="Left" FontSize="{StaticResource Pulsar.Type.Caption}" FontWeight="SemiBold"
                              Content="{lex:Locale Settings.Analytics.SortByExecutions}"/>
                     <ui:Button Grid.Column="2" Style="{StaticResource PulsarSecondaryButtonStyle}"
                              Command="{Binding SetSortCommand}" CommandParameter="SuccessRate"
-                             HorizontalAlignment="Left" FontSize="11" FontWeight="SemiBold"
+                             HorizontalAlignment="Left" FontSize="{StaticResource Pulsar.Type.Caption}" FontWeight="SemiBold"
                              Content="{lex:Locale Settings.Analytics.SortBySuccessRate}"/>
                     <ui:Button Grid.Column="3" Style="{StaticResource PulsarSecondaryButtonStyle}"
                              Command="{Binding SetSortCommand}" CommandParameter="Duration"
-                             HorizontalAlignment="Left" FontSize="11" FontWeight="SemiBold"
+                             HorizontalAlignment="Left" FontSize="{StaticResource Pulsar.Type.Caption}" FontWeight="SemiBold"
                              Content="{lex:Locale Settings.Analytics.SortByDuration}"/>
                     <ui:Button Grid.Column="4" Style="{StaticResource PulsarSecondaryButtonStyle}"
                              Command="{Binding SetSortCommand}" CommandParameter="LastUsed"
-                             HorizontalAlignment="Left" FontSize="11" FontWeight="SemiBold"
+                             HorizontalAlignment="Left" FontSize="{StaticResource Pulsar.Type.Caption}" FontWeight="SemiBold"
                              Content="{lex:Locale Settings.Analytics.SortByLastUsed}"/>
                 </Grid>
 
@@ -372,7 +372,7 @@
                                             </Style>
                                         </Border.Style>
                                         <TextBlock Text="{Binding RankLabel}"
-                                                   FontSize="12" FontWeight="Bold"
+                                                   FontSize="{StaticResource Pulsar.Type.Body}" FontWeight="Bold"
                                                    HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
@@ -390,16 +390,16 @@
                                     <!-- Plugin Name + Last Used -->
                                     <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,6">
                                         <TextBlock Text="{Binding DisplayName}"
-                                                   FontWeight="SemiBold" FontSize="14"
+                                                   FontWeight="SemiBold" FontSize="{StaticResource Pulsar.Type.Subtitle}"
                                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                                         <TextBlock Margin="8,0,0,0"
-                                                   FontSize="11"
+                                                   FontSize="{StaticResource Pulsar.Type.Caption}"
                                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                    VerticalAlignment="Center"
                                                    Text="{Binding PluginId, StringFormat='({0})'}"/>
                                         <TextBlock Margin="12,0,0,0"
                                                    Text="{Binding LastUsedFormatted, StringFormat='{}{0}'}"
-                                                   FontSize="11"
+                                                   FontSize="{StaticResource Pulsar.Type.Caption}"
                                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                    VerticalAlignment="Center"/>
                                     </StackPanel>
@@ -410,16 +410,16 @@
                                         <!-- Executions -->
                                         <StackPanel>
                                             <TextBlock Text="{Binding TotalFormatted}"
-                                                       FontSize="20" FontWeight="Bold"
+                                                       FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="Bold"
                                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                                             <TextBlock Text="{lex:Locale Settings.Analytics.Executions}"
-                                                       FontSize="11"
+                                                       FontSize="{StaticResource Pulsar.Type.Caption}"
                                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
                                         </StackPanel>
 
                                         <!-- Success Rate -->
                                         <StackPanel>
-                                            <TextBlock FontSize="20" FontWeight="Bold">
+                                            <TextBlock FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="Bold">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
                                                         <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}"/>
@@ -436,17 +436,17 @@
                                                 <Run Text="{Binding SuccessRate, StringFormat='{}{0:F0}'}"/><Run Text="%"/>
                                             </TextBlock>
                                             <TextBlock Text="{lex:Locale Settings.Analytics.SuccessRate}"
-                                                       FontSize="11"
+                                                       FontSize="{StaticResource Pulsar.Type.Caption}"
                                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
                                         </StackPanel>
 
                                         <!-- Avg Duration -->
                                         <StackPanel>
                                             <TextBlock Text="{Binding DurationFormatted}"
-                                                       FontSize="20" FontWeight="Bold"
+                                                       FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="Bold"
                                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                                             <TextBlock Text="{lex:Locale Settings.Analytics.AvgDuration}"
-                                                       FontSize="11"
+                                                       FontSize="{StaticResource Pulsar.Type.Caption}"
                                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
                                         </StackPanel>
                                     </UniformGrid>
@@ -454,10 +454,10 @@
                                     <!-- Bottom Row: Slot + Mode Summary + Sparkline -->
                                     <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,6,0,0">
                                         <TextBlock Text="{Binding SlotBreakdown}"
-                                                   FontSize="11"
+                                                   FontSize="{StaticResource Pulsar.Type.Caption}"
                                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
                                         <TextBlock Text="{Binding ModeSummary}"
-                                                   FontSize="11"
+                                                   FontSize="{StaticResource Pulsar.Type.Caption}"
                                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                    Margin="12,0,0,0"/>
                                         <ItemsControl ItemsSource="{Binding TrendData}" Margin="16,0,0,0">
@@ -505,7 +505,7 @@
                         <StackPanel Orientation="Horizontal">
                             <ui:SymbolIcon Symbol="Lightbulb16" Margin="0,0,8,0"/>
                             <TextBlock Text="{lex:Locale Settings.Analytics.Recommendations}"
-                                       FontWeight="SemiBold" FontSize="14"
+                                       FontWeight="SemiBold" FontSize="{StaticResource Pulsar.Type.Subtitle}"
                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                         </StackPanel>
                     </ui:CardControl.Header>
@@ -542,7 +542,7 @@
 
                                         <StackPanel Grid.Column="1">
                                             <TextBlock Text="{Binding PluginName}"
-                                                       FontWeight="SemiBold" FontSize="12"
+                                                       FontWeight="SemiBold" FontSize="{StaticResource Pulsar.Type.Body}"
                                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
@@ -558,10 +558,10 @@
                                                 </TextBlock.Style>
                                             </TextBlock>
                                             <TextBlock Text="{Binding Title}"
-                                                       FontSize="12"
+                                                       FontSize="{StaticResource Pulsar.Type.Body}"
                                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                                             <TextBlock Text="{Binding Message}"
-                                                       FontSize="11" Margin="0,2,0,0"
+                                                       FontSize="{StaticResource Pulsar.Type.Caption}" Margin="0,2,0,0"
                                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                        TextWrapping="Wrap"/>
                                         </StackPanel>
@@ -570,7 +570,7 @@
                                             <ui:Button Content="{lex:Locale Settings.Analytics.DisablePlugin}"
                                                        Command="{Binding DataContext.DisablePluginCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                        CommandParameter="{Binding PluginId}"
-                                                       FontSize="11" Margin="4,0">
+                                                       FontSize="{StaticResource Pulsar.Type.Caption}" Margin="4,0">
                                                 <ui:Button.Style>
                                                     <Style TargetType="ui:Button" BasedOn="{StaticResource PulsarDangerButtonStyle}">
                                                         <Style.Triggers>
@@ -590,7 +590,7 @@
                                             <ui:Button Content="{lex:Locale Settings.Analytics.ViewLogs}"
                                                        Command="{Binding DataContext.ViewLogsCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                        CommandParameter="{Binding PluginId}"
-                                                       FontSize="11">
+                                                       FontSize="{StaticResource Pulsar.Type.Caption}">
                                                 <ui:Button.Style>
                                                     <Style TargetType="ui:Button" BasedOn="{StaticResource PulsarSecondaryButtonStyle}">
                                                         <Style.Triggers>

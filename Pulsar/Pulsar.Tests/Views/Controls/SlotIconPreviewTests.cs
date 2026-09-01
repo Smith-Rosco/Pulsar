@@ -31,29 +31,6 @@ namespace Pulsar.Tests.Views.Controls
             });
         }
 
-        private static void RunInSta(Action action)
-        {
-            Exception? capturedException = null;
-            var thread = new Thread(() =>
-            {
-                try
-                {
-                    action();
-                }
-                catch (Exception ex)
-                {
-                    capturedException = ex;
-                }
-            });
-
-            thread.SetApartmentState(ApartmentState.STA);
-            thread.Start();
-            thread.Join();
-
-            if (capturedException != null)
-            {
-                ExceptionDispatchInfo.Capture(capturedException).Throw();
-            }
-        }
+        private static void RunInSta(Action action) => StaTestRunner.RunInSta(action);
     }
 }

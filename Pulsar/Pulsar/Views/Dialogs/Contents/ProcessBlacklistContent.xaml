@@ -80,7 +80,7 @@
                                        FontWeight="SemiBold" 
                                        TextTrimming="CharacterEllipsis"/>
                             <TextBlock Text="{Binding ProcessName}" 
-                                       FontSize="11" 
+                                       FontSize="{StaticResource Pulsar.Type.Caption}" 
                                        Opacity="0.7"
                                        TextTrimming="CharacterEllipsis"/>
                         </StackPanel>
@@ -88,7 +88,7 @@
                         <!-- Status text -->
                         <TextBlock Grid.Column="2" 
                                    Text="{Binding StatusText}" 
-                                   FontSize="11" 
+                                   FontSize="{StaticResource Pulsar.Type.Caption}" 
                                    Opacity="0.7" 
                                    VerticalAlignment="Center"
                                    Margin="0,0,12,0"/>
@@ -112,7 +112,7 @@
                 Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
             <StackPanel Orientation="Horizontal">
                 <ui:ProgressRing IsIndeterminate="True" Width="16" Height="16" Margin="0,0,8,0"/>
-                <TextBlock Text="{lex:Locale Dialog.ProcessBlacklist.Loading}" VerticalAlignment="Center" FontSize="11"/>
+                <TextBlock Text="{lex:Locale Dialog.ProcessBlacklist.Loading}" VerticalAlignment="Center" FontSize="{StaticResource Pulsar.Type.Caption}"/>
             </StackPanel>
         </Border>
     </Grid>

@@ -25,10 +25,10 @@
 
         <!-- Header: rule summary + status -->
         <StackPanel Grid.Row="0" Margin="0,0,0,12">
-            <TextBlock Text="{Binding RuleSummary}" FontWeight="SemiBold" FontSize="13"/>
+            <TextBlock Text="{Binding RuleSummary}" FontWeight="SemiBold" FontSize="{StaticResource Pulsar.Type.Body}"/>
             <TextBlock Text="{Binding StatusMessage}"
                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                       FontSize="12"
+                       FontSize="{StaticResource Pulsar.Type.Body}"
                        TextWrapping="Wrap"
                        Margin="0,4,0,0"/>
         </StackPanel>
@@ -71,7 +71,7 @@
                     <GridViewColumn Header="{lex:Locale Inspector.ColumnRect}" Width="140">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding RectText}" FontFamily="Consolas" FontSize="11"/>
+                                <TextBlock Text="{Binding RectText}" FontFamily="Consolas" FontSize="{StaticResource Pulsar.Type.Caption}"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -82,10 +82,10 @@
                                     <Ellipse Width="8" Height="8" Margin="0,0,6,0" VerticalAlignment="Center">
                                         <Ellipse.Style>
                                             <Style TargetType="Ellipse">
-                                                <Setter Property="Fill" Value="#2e7d32"/>
+                                                <Setter Property="Fill" Value="{DynamicResource SystemFillColorSuccessBrush}"/>
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsExcluded}" Value="True">
-                                                        <Setter Property="Fill" Value="#c62828"/>
+                                                        <Setter Property="Fill" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
@@ -102,14 +102,14 @@
                                 <StackPanel Orientation="Horizontal">
                                     <ui:Button Content="{lex:Locale Inspector.Flash}"
                                                Style="{StaticResource PulsarSecondaryButtonStyle}"
-                                               FontSize="11"
+                                               FontSize="{StaticResource Pulsar.Type.Caption}"
                                                Padding="8,2"
                                                Margin="0,0,6,0"
                                                Command="{Binding DataContext.FlashCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                CommandParameter="{Binding}"/>
                                     <ui:Button Content="{lex:Locale Inspector.Exclude}"
                                                Style="{StaticResource PulsarSecondaryButtonStyle}"
-                                               FontSize="11"
+                                               FontSize="{StaticResource Pulsar.Type.Caption}"
                                                Padding="8,2"
                                                IsEnabled="{Binding CanExclude}"
                                                Command="{Binding DataContext.ExcludeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"

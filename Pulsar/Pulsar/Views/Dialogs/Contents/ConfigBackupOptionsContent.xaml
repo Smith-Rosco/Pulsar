@@ -25,7 +25,7 @@
                 <StackPanel>
                     <TextBlock Text="{lex:Locale Dialog.ConfigBackup.ExportIncludeSecrets}" FontWeight="SemiBold"/>
                     <TextBlock Text="{lex:Locale Dialog.ConfigBackup.ExportIncludeSecretsDescription}"
-                               FontSize="12"
+                               FontSize="{StaticResource Pulsar.Type.Body}"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                TextWrapping="Wrap"
                                Margin="0,2,0,0"/>
@@ -37,7 +37,7 @@
                 <StackPanel>
                     <TextBlock Text="{lex:Locale Dialog.ConfigBackup.ExportUsePassword}" FontWeight="SemiBold"/>
                     <TextBlock Text="{lex:Locale Dialog.ConfigBackup.ExportUsePasswordDescription}"
-                               FontSize="12"
+                               FontSize="{StaticResource Pulsar.Type.Body}"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                TextWrapping="Wrap"
                                Margin="0,2,0,0"/>
@@ -69,7 +69,7 @@
         <!-- Validation hint -->
         <TextBlock Text="{Binding ValidationHint}"
                    Foreground="{DynamicResource PaletteRedBrush}"
-                   FontSize="12"
+                   FontSize="{StaticResource Pulsar.Type.Body}"
                    TextWrapping="Wrap"
                    Margin="0,10,0,0"
                    Visibility="{Binding ValidationHint, Converter={StaticResource StringEmptyToVis}}"/>

@@ -13,6 +13,10 @@
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <!-- 自带数值令牌：使本控件可脱离 Application 上下文独立实例化
+                     （SlotWheelEditorSmokeTests 直接 new SlotWheelEditor()）。
+                     动画时长统一引用 Pulsar.Duration.*，禁止裸 Duration。 -->
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/Tokens.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/SlotStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
@@ -60,7 +64,7 @@
                         BorderThickness="1"
                         HorizontalAlignment="Center">
                     <ui:SymbolIcon Symbol="DialPad24"
-                                   FontSize="20"
+                                   FontSize="{StaticResource Pulsar.Type.Title}"
                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"/>
@@ -68,7 +72,7 @@
                 <TextBlock Text="{lex:Locale Settings.Slots.Wheel.CenterHint}"
                            HorizontalAlignment="Center"
                            Margin="0,6,0,0"
-                           FontSize="11"
+                           FontSize="{StaticResource Pulsar.Type.Caption}"
                            Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
             </StackPanel>
 
@@ -115,13 +119,13 @@
                                                 <BeginStoryboard>
                                                     <Storyboard>
                                                         <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                                         To="1.08" Duration="0:0:0.18">
+                                                                         To="1.08" Duration="{StaticResource Pulsar.Duration.Fast}">
                                                             <DoubleAnimation.EasingFunction>
                                                                 <CubicEase EasingMode="EaseOut"/>
                                                             </DoubleAnimation.EasingFunction>
                                                         </DoubleAnimation>
                                                         <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                                         To="1.08" Duration="0:0:0.18">
+                                                                         To="1.08" Duration="{StaticResource Pulsar.Duration.Fast}">
                                                             <DoubleAnimation.EasingFunction>
                                                                 <CubicEase EasingMode="EaseOut"/>
                                                             </DoubleAnimation.EasingFunction>
@@ -133,13 +137,13 @@
                                                 <BeginStoryboard>
                                                     <Storyboard>
                                                         <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                                         To="1" Duration="0:0:0.2">
+                                                                         To="1" Duration="{StaticResource Pulsar.Duration.Normal}">
                                                             <DoubleAnimation.EasingFunction>
                                                                 <CubicEase EasingMode="EaseOut"/>
                                                             </DoubleAnimation.EasingFunction>
                                                         </DoubleAnimation>
                                                         <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                                         To="1" Duration="0:0:0.2">
+                                                                         To="1" Duration="{StaticResource Pulsar.Duration.Normal}">
                                                             <DoubleAnimation.EasingFunction>
                                                                 <CubicEase EasingMode="EaseOut"/>
                                                             </DoubleAnimation.EasingFunction>
@@ -231,14 +235,14 @@
                                                 <MultiDataTrigger.EnterActions>
                                                     <BeginStoryboard>
                                                         <Storyboard>
-                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.15"/>
+                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="{StaticResource Pulsar.Duration.Fast}"/>
                                                         </Storyboard>
                                                     </BeginStoryboard>
                                                 </MultiDataTrigger.EnterActions>
                                                 <MultiDataTrigger.ExitActions>
                                                     <BeginStoryboard>
                                                         <Storyboard>
-                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0.55" Duration="0:0:0.2"/>
+                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0.55" Duration="{StaticResource Pulsar.Duration.Normal}"/>
                                                         </Storyboard>
                                                     </BeginStoryboard>
                                                 </MultiDataTrigger.ExitActions>
@@ -274,7 +278,7 @@
                                                         <Condition Binding="{Binding IsEmpty}" Value="True"/>
                                                         <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Grid}}" Value="True"/>
                                                     </MultiDataTrigger.Conditions>
-                                                    <Setter Property="Foreground" Value="{DynamicResource Theme.Accent}"/>
+                                                    <Setter Property="Foreground" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
                                                 </MultiDataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -287,7 +291,7 @@
                                      Height="{Binding Size, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=1.3}"
                                      HorizontalAlignment="Center"
                                      VerticalAlignment="Center"
-                                     Stroke="{DynamicResource Theme.Accent}"
+                                     Stroke="{DynamicResource AccentFillColorDefaultBrush}"
                                      StrokeThickness="2"
                                      StrokeDashArray="4 3"
                                      IsHitTestVisible="False">
@@ -308,7 +312,7 @@
                                      Height="{Binding Size, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=1.3}"
                                      HorizontalAlignment="Center"
                                      VerticalAlignment="Center"
-                                     Stroke="{DynamicResource Theme.Accent}"
+                                     Stroke="{DynamicResource AccentFillColorDefaultBrush}"
                                      StrokeThickness="2"
                                      IsHitTestVisible="False">
                                 <Ellipse.Style>
@@ -323,14 +327,14 @@
                                                 <MultiDataTrigger.EnterActions>
                                                     <BeginStoryboard>
                                                         <Storyboard>
-                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0.75" Duration="0:0:0.15"/>
+                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0.75" Duration="{StaticResource Pulsar.Duration.Fast}"/>
                                                         </Storyboard>
                                                     </BeginStoryboard>
                                                 </MultiDataTrigger.EnterActions>
                                                 <MultiDataTrigger.ExitActions>
                                                     <BeginStoryboard>
                                                         <Storyboard>
-                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2"/>
+                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="{StaticResource Pulsar.Duration.Normal}"/>
                                                         </Storyboard>
                                                     </BeginStoryboard>
                                                 </MultiDataTrigger.ExitActions>
@@ -345,7 +349,7 @@
                                      Height="{Binding Size, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=1.35}"
                                      HorizontalAlignment="Center"
                                      VerticalAlignment="Center"
-                                     Stroke="{DynamicResource Theme.Accent}"
+                                     Stroke="{DynamicResource AccentFillColorDefaultBrush}"
                                      StrokeThickness="2.5"
                                      IsHitTestVisible="False">
                                 <Ellipse.Style>
@@ -356,14 +360,14 @@
                                                 <DataTrigger.EnterActions>
                                                     <BeginStoryboard>
                                                         <Storyboard>
-                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.18"/>
+                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="{StaticResource Pulsar.Duration.Fast}"/>
                                                         </Storyboard>
                                                     </BeginStoryboard>
                                                 </DataTrigger.EnterActions>
                                                 <DataTrigger.ExitActions>
                                                     <BeginStoryboard>
                                                         <Storyboard>
-                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.4"/>
+                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="{StaticResource Pulsar.Duration.Slow}"/>
                                                         </Storyboard>
                                                     </BeginStoryboard>
                                                 </DataTrigger.ExitActions>
@@ -386,7 +390,7 @@
                    Text="{lex:Locale Settings.Slots.Wheel.DragDropHint}"
                    HorizontalAlignment="Center"
                    Margin="0,6,0,0"
-                   FontSize="11"
+                   FontSize="{StaticResource Pulsar.Type.Caption}"
                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
 
         <!-- Pager -->
@@ -406,14 +410,14 @@
                            ToolTip="{lex:Locale Settings.Slots.Wheel.PreviousPage}"/>
                 <TextBlock VerticalAlignment="Center"
                            Margin="10,0,6,0"
-                           FontSize="12"
+                           FontSize="{StaticResource Pulsar.Type.Body}"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}">
                     <Run Text="{lex:Locale Settings.Slots.Wheel.PageLabel}"/>
                 </TextBlock>
                 <TextBlock VerticalAlignment="Center"
                            Margin="0,0,10,0"
                            FontWeight="SemiBold"
-                           FontSize="14"
+                           FontSize="{StaticResource Pulsar.Type.Subtitle}"
                            Foreground="{DynamicResource TextFillColorPrimaryBrush}">
                     <Run Text="{Binding PageDisplayText, Mode=OneWay}"/>
                 </TextBlock>

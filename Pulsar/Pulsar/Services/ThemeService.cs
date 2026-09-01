@@ -17,6 +17,12 @@ namespace Pulsar.Services
     {
         private readonly ILogger<ThemeService> _logger;
 
+        /// <summary>Documented Windows 11 Fluent accent (Light) — the value WPF-UI's light theme assumes.</summary>
+        private static readonly Color FluentLightAccent = Color.FromRgb(0x00, 0x67, 0xC0);
+
+        /// <summary>Documented Windows 11 Fluent accent (Dark) — the value WPF-UI's dark theme assumes.</summary>
+        private static readonly Color FluentDarkAccent = Color.FromRgb(0x4C, 0xC2, 0xFF);
+
         /// <summary>
         /// Runtime theme. Defaults to Light because first-launch Profiles.json uses Light;
         /// startup must call <see cref="Initialize"/> before creating themed UI so persisted
@@ -33,6 +39,11 @@ namespace Pulsar.Services
 
         public void Initialize(AppTheme theme)
         {
+            // Accent injection must happen before the early-return below: on a first launch
+            // with a persisted Light configuration the theme already matches the default, and
+            // returning early would leave every accent-coloured affordance invisible.
+            ApplyAccent(theme);
+
             if (CurrentTheme == theme)
             {
                 _logger.LogDebug("[ThemeService] Theme already initialized to {Theme}", theme);
@@ -55,8 +66,55 @@ namespace Pulsar.Services
             }
 
             CurrentTheme = theme;
+            ApplyAccent(theme);
             _logger.LogInformation("[ThemeService] Runtime theme changed to {Theme}", theme);
             ThemeChanged?.Invoke(this, theme);
+        }
+
+        /// <summary>
+        /// Fluent accent brushes (<c>AccentFillColorDefaultBrush</c>,
+        /// <c>AccentTextFillColorPrimaryBrush</c>, ...) are deliberately absent from WPF-UI's
+        /// <c>ThemesDictionary</c> — WPF-UI injects them at runtime through
+        /// <c>ApplicationAccentColorManager</c> so they can track the user's Windows accent
+        /// colour. Verified against Wpf.Ui 4.3.0: loading <c>ThemesDictionary { Theme = Light }</c>
+        /// resolves <c>TextFillColorPrimaryBrush</c> but leaves every <c>Accent*</c> key MISSING.
+        ///
+        /// Pulsar never made that call, so the ~30 <c>{DynamicResource Accent*}</c> references
+        /// in the XAML (primary buttons, SlotOrb badges, selected rows, tutorial highlights)
+        /// resolved to nothing. DynamicResource fails silently on a missing key, so those
+        /// elements rendered transparent or fell back to default greys with no error anywhere.
+        ///
+        /// Trying the system accent first is also what "follow the system" actually means:
+        /// the accent tracks whatever the user picked in Windows personalisation.
+        /// </summary>
+        private void ApplyAccent(AppTheme theme)
+        {
+            if (Application.Current is null)
+            {
+                // Unit tests and design-time hosts have no Application to inject resources into.
+                _logger.LogDebug("[ThemeService] No Application instance; skipping accent injection.");
+                return;
+            }
+
+            try
+            {
+                ApplicationAccentColorManager.ApplySystemAccent();
+                _logger.LogDebug("[ThemeService] System accent applied for {Theme}", theme);
+            }
+            catch (Exception ex)
+            {
+                // The system lookup goes through DWM/WinRT interop and can fail in remote
+                // sessions, service contexts and CI. Fall back to the documented Fluent accent
+                // for this theme so accents degrade to a known colour instead of vanishing.
+                _logger.LogWarning(ex,
+                    "[ThemeService] System accent unavailable; using Fluent default accent for {Theme}", theme);
+
+                ApplicationAccentColorManager.Apply(
+                    theme == AppTheme.Light ? FluentLightAccent : FluentDarkAccent,
+                    ToApplicationTheme(theme),
+                    false,
+                    false);
+            }
         }
 
         public void ApplyTheme(FrameworkElement element, AppTheme theme, WindowBackdropType backdrop = WindowBackdropType.None)
@@ -85,10 +143,30 @@ namespace Pulsar.Services
 
         private void ApplyRadialTheme(Window window, AppTheme theme)
         {
+             // Historically the radial menu loaded only Pulsar's own Theme.* dictionaries.
+             // That left every Fluent colour token referenced by Styles/SlotStyles.xaml
+             // UNRESOLVED — DynamicResource fails silently when a key is missing, so those
+             // styles quietly degraded to null brushes instead of raising an error.
+             // This is the root cause of "theme switching only covers part of the UI".
+             //
+             // Load WPF-UI's ThemesDictionary so colour tokens resolve here as well.
+             // Deliberately NOT loading ControlsDictionary: it injects control templates
+             // that would paint over the radial menu's transparent canvas.
+             var existingThemeDict = window.Resources.MergedDictionaries.OfType<ThemesDictionary>().FirstOrDefault();
+             if (existingThemeDict != null)
+             {
+                 existingThemeDict.Theme = ToApplicationTheme(theme);
+             }
+             else
+             {
+                 window.Resources.MergedDictionaries.Add(new ThemesDictionary { Theme = ToApplicationTheme(theme) });
+             }
+
              string themePath = theme == AppTheme.Light
                 ? "pack://application:,,,/Pulsar;component/Themes/Theme.Light.xaml"
                 : "pack://application:,,,/Pulsar;component/Themes/Theme.Dark.xaml";
 
+             // Pulsar theme added last so its keys win over Fluent defaults.
              window.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri(themePath, UriKind.Absolute) });
              
              window.Background = System.Windows.Media.Brushes.Transparent;

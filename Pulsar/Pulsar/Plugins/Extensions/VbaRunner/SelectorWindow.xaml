@@ -5,16 +5,55 @@
         Title="{lex:Locale VbaRunner.SelectorTitle}" Height="180" Width="400"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         WindowStartupLocation="CenterScreen" Topmost="True">
-    <Border Background="White" CornerRadius="8" BorderThickness="1" BorderBrush="#DDDDDD" Padding="20">
+    <Window.Resources>
+        <!-- 选择器是覆盖在工作区上的固定浅色浮层（不跟随应用主题），颜色定义为本地令牌。 -->
+        <SolidColorBrush x:Key="VbaSelector.Panel.Background" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="VbaSelector.Panel.Border" Color="#DDDDDD"/>
+        <SolidColorBrush x:Key="VbaSelector.Text.Primary" Color="#333333"/>
+        <SolidColorBrush x:Key="VbaSelector.Text.Muted" Color="#666666"/>
+        <SolidColorBrush x:Key="VbaSelector.Input.Border" Color="#CCCCCC"/>
+        <SolidColorBrush x:Key="VbaSelector.Button.Primary" Color="#007ACC"/>
+        <SolidColorBrush x:Key="VbaSelector.Button.PrimaryText" Color="#FFFFFF"/>
+    </Window.Resources>
+    <Border Background="{StaticResource VbaSelector.Panel.Background}"
+            CornerRadius="8"
+            BorderThickness="1"
+            BorderBrush="{StaticResource VbaSelector.Panel.Border}"
+            Padding="20">
         <Border.Effect>
             <DropShadowEffect BlurRadius="20" ShadowDepth="5" Opacity="0.2" Color="Black"/>
         </Border.Effect>
         <StackPanel>
-            <TextBlock Text="{lex:Locale VbaRunner.SelectTargetWorksheet}" FontWeight="SemiBold" Margin="0,0,0,15" Foreground="#333333" FontSize="16"/>
-            <ComboBox x:Name="SheetCombo" FontSize="14" Padding="8,5" Margin="0,0,0,25" Height="35" Background="White" BorderBrush="#CCCCCC" Foreground="#333333"/>
+            <TextBlock Text="{lex:Locale VbaRunner.SelectTargetWorksheet}"
+                       FontWeight="SemiBold"
+                       Margin="0,0,0,15"
+                       Foreground="{StaticResource VbaSelector.Text.Primary}"
+                       FontSize="{StaticResource Pulsar.Type.Subtitle}"/>
+            <ComboBox x:Name="SheetCombo"
+                      FontSize="{StaticResource Pulsar.Type.Subtitle}"
+                      Padding="8,5"
+                      Margin="0,0,0,25"
+                      Height="35"
+                      Background="{StaticResource VbaSelector.Panel.Background}"
+                      BorderBrush="{StaticResource VbaSelector.Input.Border}"
+                      Foreground="{StaticResource VbaSelector.Text.Primary}"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="{lex:Locale Dialog.AddSlot.Cancel}" Click="Cancel_Click" IsCancel="True" Margin="0,0,10,0" Padding="15,6" Background="Transparent" Foreground="#666666" BorderBrush="#DDDDDD" BorderThickness="1"/>
-                <Button Content="{lex:Locale Dialog.AddSlot.RunScript}" Click="Run_Click" IsDefault="True" Background="#007ACC" Foreground="White" Padding="20,6" BorderThickness="0">
+                <Button Content="{lex:Locale Dialog.AddSlot.Cancel}"
+                        Click="Cancel_Click"
+                        IsCancel="True"
+                        Margin="0,0,10,0"
+                        Padding="15,6"
+                        Background="Transparent"
+                        Foreground="{StaticResource VbaSelector.Text.Muted}"
+                        BorderBrush="{StaticResource VbaSelector.Panel.Border}"
+                        BorderThickness="1"/>
+                <Button Content="{lex:Locale Dialog.AddSlot.RunScript}"
+                        Click="Run_Click"
+                        IsDefault="True"
+                        Background="{StaticResource VbaSelector.Button.Primary}"
+                        Foreground="{StaticResource VbaSelector.Button.PrimaryText}"
+                        Padding="20,6"
+                        BorderThickness="0">
                     <Button.Resources>
                         <Style TargetType="Border">
                             <Setter Property="CornerRadius" Value="4"/>

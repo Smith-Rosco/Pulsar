@@ -11,9 +11,18 @@
              RenderTransformOrigin="0.5,0.5">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-        <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVisibilityConverter"/>
-        <converters:DoubleMultiplyConverter x:Key="SizeFactor"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- 自带数值令牌：使本控件可脱离 Application 上下文独立实例化
+                     （单元测试、XAML 设计器）。若仅依赖 App.xaml 的全局资源，
+                     StaticResource 在无 Application 时会抛 XamlParseException ——
+                     IconSelector 内嵌了本控件，曾因此导致 SlotIconPreviewTests 失败。 -->
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/Tokens.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVisibilityConverter"/>
+            <converters:DoubleMultiplyConverter x:Key="SizeFactor"/>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <UserControl.RenderTransform>
@@ -26,6 +35,10 @@
     <Grid Width="{Binding Size, ElementName=OrbRoot}" 
           Height="{Binding Size, ElementName=OrbRoot}">
 
+        <!-- 推荐态：进入时淡入一次后保持静态。
+             原实现是 RepeatBehavior="Forever" 的呼吸脉冲 —— 对主打肌肉记忆与
+             空间定位的工具而言，常驻动画是纯粹的注意力污染（用户靠位置找目标，
+             不需要闪烁提示），且 BlurEffect 每帧重绘，与高性能定位冲突。 -->
         <Ellipse x:Name="RecommendedShape" Fill="#FFFFD700" Opacity="0">
             <Ellipse.Effect>
                 <BlurEffect Radius="20"/>
@@ -35,43 +48,48 @@
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding IsRecommended, ElementName=OrbRoot}" Value="True">
                             <DataTrigger.EnterActions>
-                                <BeginStoryboard x:Name="RecommendedPulse">
+                                <BeginStoryboard>
                                     <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" 
-                                                         To="0.6" Duration="0:0:0.5" AutoReverse="True" RepeatBehavior="Forever"/>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                         To="0.45"
+                                                         Duration="{StaticResource Pulsar.Duration.Normal}"
+                                                         EasingFunction="{StaticResource Pulsar.Easing.Standard}"/>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </DataTrigger.EnterActions>
                             <DataTrigger.ExitActions>
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" 
-                                                         To="0.0" Duration="0:0:0.3"/>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                         To="0"
+                                                         Duration="{StaticResource Pulsar.Duration.Fast}"
+                                                         EasingFunction="{StaticResource Pulsar.Easing.Standard}"/>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </DataTrigger.ExitActions>
                         </DataTrigger>
-                        
-                        <!-- [UX Improvement] Reduce recommended glow when active to avoid visual overload -->
+
+                        <!-- 激活时压低推荐光晕，避免与激活反馈争夺注意力 -->
                         <MultiDataTrigger>
                             <MultiDataTrigger.Conditions>
                                 <Condition Binding="{Binding IsRecommended, ElementName=OrbRoot}" Value="True"/>
                                 <Condition Binding="{Binding IsActive, ElementName=OrbRoot}" Value="True"/>
                             </MultiDataTrigger.Conditions>
                             <MultiDataTrigger.EnterActions>
-                                <StopStoryboard BeginStoryboardName="RecommendedPulse"/>
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" 
-                                                         To="0.3" Duration="0:0:0.15"/>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                         To="0.2"
+                                                         Duration="{StaticResource Pulsar.Duration.Fast}"/>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </MultiDataTrigger.EnterActions>
                             <MultiDataTrigger.ExitActions>
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" 
-                                                         To="0.6" Duration="0:0:0.15"/>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                         To="0.45"
+                                                         Duration="{StaticResource Pulsar.Duration.Fast}"/>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </MultiDataTrigger.ExitActions>
@@ -81,53 +99,70 @@
             </Ellipse.Style>
         </Ellipse>
 
+        <!-- 激活反馈通道一（填充提亮）与通道二（描边加粗）。
+             已移除原先每个圆球挂一个 DropShadowEffect 的做法：N 个扇区即 N 次
+             模糊重绘，与本项目的高性能定位直接冲突 —— RadialMenuWindow 的标题
+             层早已因同样理由移除了阴影（见该文件 [Optimized] 注释）。
+             描边加粗是明暗主题下都可靠的最强通道。 -->
         <Ellipse x:Name="OrbFill"
                  StrokeThickness="1.5">
             <Ellipse.Style>
                 <Style TargetType="Ellipse">
-                    <!-- [New] Halo Effect: Drop Shadow for Contrast -->
-                    <Setter Property="Effect">
-                        <Setter.Value>
-                            <DropShadowEffect Color="Black" BlurRadius="2" ShadowDepth="0" Opacity="0.5"/>
-                        </Setter.Value>
-                    </Setter>
                     <!-- Default: Use Custom Bindings -->
                     <Setter Property="Fill" Value="{Binding CustomFill, ElementName=OrbRoot}"/>
                     <Setter Property="Stroke" Value="{Binding CustomStroke, ElementName=OrbRoot}"/>
-                    
+
                     <Style.Triggers>
                         <!-- Fallback: If CustomFill is Null, use Theme Resource -->
                         <DataTrigger Binding="{Binding CustomFill, ElementName=OrbRoot}" Value="{x:Null}">
                             <Setter Property="Fill" Value="{DynamicResource Theme.Orb.Fill}"/>
                             <Setter Property="Stroke" Value="{DynamicResource Theme.Orb.Stroke}"/>
-                            <!-- Remove Halo for default theme if needed, or keep it for better visibility -->
-                            <Setter Property="Effect" Value="{x:Null}"/>
+                        </DataTrigger>
+
+                        <!-- 通道一：填充提亮（仅默认配色；自定义色扇区保留用户选色） -->
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding CustomFill, ElementName=OrbRoot}" Value="{x:Null}"/>
+                                <Condition Binding="{Binding IsActive, ElementName=OrbRoot}" Value="True"/>
+                            </MultiDataTrigger.Conditions>
+                            <Setter Property="Fill" Value="{DynamicResource Theme.Orb.Active.Fill}"/>
+                            <Setter Property="Stroke" Value="{DynamicResource Theme.Orb.Active.Stroke}"/>
+                        </MultiDataTrigger>
+
+                        <!-- 通道二：描边加粗（对自定义色扇区同样生效） -->
+                        <DataTrigger Binding="{Binding IsActive, ElementName=OrbRoot}" Value="True">
+                            <Setter Property="StrokeThickness" Value="2.5"/>
                         </DataTrigger>
 
                         <!-- Transparent Override (Highest Priority) -->
                         <DataTrigger Binding="{Binding IsTransparent, ElementName=OrbRoot}" Value="True">
                             <Setter Property="Fill" Value="Transparent"/>
                             <Setter Property="Stroke" Value="Transparent"/>
-                            <Setter Property="Effect" Value="{x:Null}"/>
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>
             </Ellipse.Style>
         </Ellipse>
 
-        <Ellipse x:Name="ActiveShape">
+        <!-- 激活通道三：外圈同心环。
+             原实现用 Fill + Theme.Orb.Active.Glow 做辉光，而该键在浅色主题下
+             被设为 #00FFFFFF（全透明），导致浅色模式中激活反馈彻底消失 ——
+             径向菜单的整个交互契约因此断裂。改为描边环：不依赖发光，
+             明暗主题均可见。 -->
+        <Ellipse x:Name="ActiveShape" StrokeThickness="2">
             <Ellipse.Style>
                 <Style TargetType="Ellipse">
                     <Setter Property="Opacity" Value="0"/>
-                    
-                    <!-- 默认绑定到 CustomFill -->
-                    <Setter Property="Fill" Value="{Binding CustomFill, ElementName=OrbRoot}"/>
+                    <Setter Property="Fill" Value="Transparent"/>
                     <Setter Property="Margin" Value="-8"/>
+                    <Setter Property="Stroke" Value="{DynamicResource Theme.Orb.Active.Ring}"/>
 
                     <Style.Triggers>
-                        <!-- 如果 CustomFill 为空，回退到主题色 -->
-                        <DataTrigger Binding="{Binding CustomFill, ElementName=OrbRoot}" Value="{x:Null}">
-                            <Setter Property="Fill" Value="{DynamicResource Theme.Orb.Active.Glow}"/>
+                        <DataTrigger Binding="{Binding IsActive, ElementName=OrbRoot}" Value="True">
+                            <Setter Property="Opacity" Value="1"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding IsTransparent, ElementName=OrbRoot}" Value="True">
+                            <Setter Property="Opacity" Value="0"/>
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>
@@ -137,6 +172,10 @@
         <!-- [Architectural Fix] Use Viewbox for Scale-Agnostic Rendering -->
         <!-- We define a fixed "Design Coordinate System" (24x24) inside the Viewbox. -->
         <!-- The Viewbox then scales this entire visual tree to fit whatever 'Size' is set externally. -->
+        <!-- 24x24 是「设计坐标系」，由 Viewbox 统一缩放到实际 Size。
+             因此内部的 FontSize（14 / 11 / 8）是设计单位而非屏幕像素 ——
+             请勿套用 Styles/Tokens.xaml 的排版令牌（那些是屏幕像素值），
+             否则会破坏跨尺寸的等比缩放。 -->
         <Viewbox Stretch="Uniform">
             <Grid Width="24" Height="24">
                 
@@ -163,17 +202,18 @@
                     <EventTrigger RoutedEvent="Binding.TargetUpdated">
                         <BeginStoryboard>
                             <Storyboard>
-                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.25"/>
-                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" From="0.5" To="1" Duration="0:0:0.25">
-                                    <DoubleAnimation.EasingFunction>
-                                        <BackEase EasingMode="EaseOut" Amplitude="0.3"/>
-                                    </DoubleAnimation.EasingFunction>
-                                </DoubleAnimation>
-                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" From="0.5" To="1" Duration="0:0:0.25">
-                                    <DoubleAnimation.EasingFunction>
-                                        <BackEase EasingMode="EaseOut" Amplitude="0.3"/>
-                                    </DoubleAnimation.EasingFunction>
-                                </DoubleAnimation>
+                                <!-- 回弹缓动（BackEase）会推迟抵达终态的感知时间 ——
+                                     用户已经知道答案了，动画不该还在晃。
+                                     本项目主打肌肉记忆与空间定位，一律改用指数缓动。 -->
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1"
+                                                 Duration="{StaticResource Pulsar.Duration.Normal}"
+                                                 EasingFunction="{StaticResource Pulsar.Easing.Standard}"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" From="0.5" To="1"
+                                                 Duration="{StaticResource Pulsar.Duration.Normal}"
+                                                 EasingFunction="{StaticResource Pulsar.Easing.Standard}"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" From="0.5" To="1"
+                                                 Duration="{StaticResource Pulsar.Duration.Normal}"
+                                                 EasingFunction="{StaticResource Pulsar.Easing.Standard}"/>
                             </Storyboard>
                         </BeginStoryboard>
                     </EventTrigger>
@@ -194,7 +234,9 @@
                     <EventTrigger RoutedEvent="Binding.TargetUpdated">
                         <BeginStoryboard>
                             <Storyboard>
-                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.2"/>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1"
+                                                 Duration="{StaticResource Pulsar.Duration.Normal}"
+                                                 EasingFunction="{StaticResource Pulsar.Easing.Standard}"/>
                             </Storyboard>
                         </BeginStoryboard>
                     </EventTrigger>
@@ -221,8 +263,11 @@
             <!-- [Architectural Fix] Reduced Badge Size to fit Safe Area -->
             <!-- Previous: MinWidth=18, Height=18, Margin="0,-10,-10,0" (Too large for 24px container) -->
             <!-- New: MinWidth=12, Height=12, Margin="0,-2,-2,0" (Tightly integrated) -->
-            <Border Background="#FF0078D7" 
-                    CornerRadius="6" 
+            <!-- 徽章改跟随系统强调色，替代硬编码 #FF0078D7 ——
+                 该值与浅色主题的 Theme.Accent(#0067C0) 并不一致，
+                 导致同一个「强调色」在系统里存在两个值。 -->
+            <Border Background="{DynamicResource AccentFillColorDefaultBrush}" 
+                    CornerRadius="{StaticResource Pulsar.Radius.MD}" 
                     MinWidth="12" Height="12"
                     HorizontalAlignment="Right" VerticalAlignment="Top"
                     Margin="0,-2,-2,0"
@@ -246,7 +291,7 @@
                     </Style>
                 </Border.Style>
                 <TextBlock Text="{Binding BadgeCount, ElementName=OrbRoot}" 
-                           Foreground="White" 
+                           Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" 
                            FontSize="8" 
                            FontWeight="Bold"
                            HorizontalAlignment="Center" 
@@ -266,7 +311,7 @@
                      MaxHeight="{Binding Size, ElementName=OrbRoot, Converter={StaticResource SizeFactor}, ConverterParameter=0.64}"
                      HorizontalAlignment="Center"
                      VerticalAlignment="Center">
-                <Border CornerRadius="5"
+                <Border CornerRadius="{StaticResource Pulsar.Radius.MD}"
                         Padding="2,1"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center">

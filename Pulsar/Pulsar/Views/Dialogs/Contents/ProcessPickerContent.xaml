@@ -45,7 +45,7 @@
 
                         <Grid Width="32" Height="32" Margin="0,0,10,0">
                             <Border Background="{DynamicResource ControlFillColorDefaultBrush}" CornerRadius="4">
-                                <ui:SymbolIcon Symbol="AppGeneric24" FontSize="16" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                <ui:SymbolIcon Symbol="AppGeneric24" FontSize="{StaticResource Pulsar.Type.Subtitle}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                             </Border>
                             <Image RenderOptions.BitmapScalingMode="HighQuality">
                                 <Image.Style>
@@ -69,12 +69,12 @@
 
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="{Binding FormattedProcessName}" 
-                                           FontSize="11" Opacity="0.7"/>
+                                           FontSize="{StaticResource Pulsar.Type.Caption}" Opacity="0.7"/>
 
-                                <TextBlock Text=" • " FontSize="11" Opacity="0.5"/>
+                                <TextBlock Text=" • " FontSize="{StaticResource Pulsar.Type.Caption}" Opacity="0.5"/>
 
                                 <TextBlock Text="{Binding ExePath}" 
-                                           FontSize="11" Opacity="0.5" 
+                                           FontSize="{StaticResource Pulsar.Type.Caption}" Opacity="0.5" 
                                            TextTrimming="CharacterEllipsis"/>
                             </StackPanel>
                         </StackPanel>

@@ -44,7 +44,7 @@
         
         <TextBlock Text="{Binding ErrorMessage}" 
                    Foreground="{DynamicResource PaletteRedBrush}" 
-                   FontSize="12" 
+                   FontSize="{StaticResource Pulsar.Type.Body}" 
                    Margin="0,6,0,0"
                    Visibility="{Binding HasError, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
@@ -73,7 +73,7 @@
 
             <!-- Info -->
             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                <TextBlock Text="{lex:Locale Dialog.InputProfile.SelectedIcon}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                <TextBlock Text="{lex:Locale Dialog.InputProfile.SelectedIcon}" FontSize="{StaticResource Pulsar.Type.Body}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                 <TextBlock Text="{Binding IconDisplayText}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
             </StackPanel>
 

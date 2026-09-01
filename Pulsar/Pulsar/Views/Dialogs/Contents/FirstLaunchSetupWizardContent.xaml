@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:viewmodels="clr-namespace:Pulsar.ViewModels.Dialogs"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              mc:Ignorable="d"
              MinWidth="520"
              MinHeight="380"
@@ -36,11 +37,11 @@
                 BorderThickness="1"
                 HorizontalAlignment="Right">
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="🌐" FontSize="11" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                <TextBlock Text="🌐" FontSize="{StaticResource Pulsar.Type.Caption}" VerticalAlignment="Center" Margin="0,0,4,0"/>
                 <ComboBox ItemsSource="{Binding SupportedLanguages}"
                           SelectedItem="{Binding SelectedLanguage, Mode=TwoWay}"
                           DisplayMemberPath="DisplayName"
-                          FontSize="11"
+                          FontSize="{StaticResource Pulsar.Type.Caption}"
                           MinWidth="100"/>
             </StackPanel>
         </Border>
@@ -54,21 +55,21 @@
 
                 <!-- Title -->
                 <TextBlock Text="{Binding SetupTitle}"
-                           FontSize="22" FontWeight="SemiBold"
+                           FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="SemiBold"
                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                            Margin="0,0,0,8"/>
 
                 <!-- Description -->
                 <TextBlock Text="{Binding Description}"
                            TextWrapping="Wrap"
-                           FontSize="13"
+                           FontSize="{StaticResource Pulsar.Type.Body}"
                            LineHeight="20"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                            Margin="0,0,0,6"/>
 
                 <!-- Feature Intro -->
                 <TextBlock Text="{Binding FeatureIntro}"
-                           FontSize="13"
+                           FontSize="{StaticResource Pulsar.Type.Body}"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                            Margin="0,0,0,14"/>
 
@@ -89,16 +90,16 @@
                                     BorderThickness="1"
                                     Margin="0,0,14,0">
                                 <TextBlock Text="🔄"
-                                           FontSize="18"
+                                           FontSize="{StaticResource Pulsar.Type.Title}"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center"/>
                             </Border>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding FeatureSwitchModeTitle}"
-                                           FontSize="14" FontWeight="SemiBold"
+                                           FontSize="{StaticResource Pulsar.Type.Subtitle}" FontWeight="SemiBold"
                                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                                 <TextBlock Text="{Binding FeatureSwitchModeDesc}"
-                                           FontSize="12"
+                                           FontSize="{StaticResource Pulsar.Type.Body}"
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                            Margin="0,2,0,0"/>
                             </StackPanel>
@@ -119,17 +120,19 @@
                                     BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
                                     BorderThickness="1"
                                     Margin="0,0,14,0">
-                                <TextBlock Text="⚡"
-                                           FontSize="18"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"/>
+                                <!-- Emoji ⚡ 是彩色位图，与 Fluent 单色矢量图标混用渲染口径不一致，改 SymbolIcon -->
+                                <ui:SymbolIcon Symbol="Flash24"
+                                               FontSize="{StaticResource Pulsar.Type.Title}"
+                                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
                             </Border>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding FeatureCommandModeTitle}"
-                                           FontSize="14" FontWeight="SemiBold"
+                                           FontSize="{StaticResource Pulsar.Type.Subtitle}" FontWeight="SemiBold"
                                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                                 <TextBlock Text="{Binding FeatureCommandModeDesc}"
-                                           FontSize="12"
+                                           FontSize="{StaticResource Pulsar.Type.Body}"
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                            Margin="0,2,0,0"/>
                             </StackPanel>
@@ -140,7 +143,7 @@
                 <!-- Footer -->
                 <TextBlock Text="{Binding SetupFooter}"
                            TextWrapping="Wrap"
-                           FontSize="13"
+                           FontSize="{StaticResource Pulsar.Type.Body}"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
 
             </StackPanel>

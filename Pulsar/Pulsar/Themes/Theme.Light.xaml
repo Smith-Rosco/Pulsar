@@ -2,30 +2,25 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
-    <SolidColorBrush x:Key="Theme.Window.Background" Color="#F3F3F3"/>
-    <SolidColorBrush x:Key="Theme.Window.Foreground" Color="#1A1A1A"/>
-    <SolidColorBrush x:Key="Theme.Panel.Background" Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="Theme.Border.Brush" Color="#E0E0E0"/>
+    <!-- ============================================================
+         仅保留径向菜单专用 + 渲染器需要的令牌。
+         通用颜色已全部迁移至 WPF.Ui Fluent 令牌（跟随系统主题）：
+         AccentFillColorDefaultBrush / TextFillColorPrimaryBrush /
+         ControlFillColorDefaultBrush / SystemFillColorCriticalBrush 等。
+         曾经的 Theme.Window/Text/Accent/Control/Input/ScrollBar 系列
+         已清理 —— 界面层已零引用（此前与 Fluent 并存形成"两套产品观感"）。
+         ============================================================ -->
 
-    <SolidColorBrush x:Key="Theme.Control.Background" Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="Theme.Control.Hover" Color="#EAEAEA"/>
-    <SolidColorBrush x:Key="Theme.Control.Pressed" Color="#DADADA"/>
-
-    <SolidColorBrush x:Key="Theme.Input.Background" Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="Theme.Input.Foreground" Color="#1A1A1A"/>
-
-    <SolidColorBrush x:Key="Theme.Text.Primary" Color="#000000"/>
-    <SolidColorBrush x:Key="Theme.Text.Secondary" Color="#666666"/>
-
+    <!-- 强调色三元组：RadialThemeTokenSet 渲染器按键读取（菜单绘制用）。
+         界面按钮请用 Fluent 的 AccentFillColorDefaultBrush，勿用此键。 -->
     <SolidColorBrush x:Key="Theme.Accent" Color="#0067C0"/>
     <SolidColorBrush x:Key="Theme.Accent.Hover" Color="#197CCB"/>
     <SolidColorBrush x:Key="Theme.Accent.Foreground" Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="Theme.Accent.Pressed" Color="#005BA3"/>
+
+    <!-- 危险操作：Fluent 无 critical 的 hover 变体，ButtonStyles 依赖本键。
+         与 Theme.Orb.* 同属有意保留的例外。 -->
     <SolidColorBrush x:Key="Theme.Destructive" Color="#C42B1C"/>
     <SolidColorBrush x:Key="Theme.Destructive.Hover" Color="#D83B2A"/>
-
-    <SolidColorBrush x:Key="Theme.ScrollBar.Thumb" Color="#888888"/>
-    <SolidColorBrush x:Key="Theme.ScrollBar.Thumb.Hover" Color="#666666"/>
 
     <SolidColorBrush x:Key="SlotTypeBrushDefault" Color="#FF4B5563"/>
     <SolidColorBrush x:Key="SlotTypeBrushSecret" Color="#FFD4A017"/>
@@ -40,8 +35,17 @@
 
     <SolidColorBrush x:Key="Theme.Orb.Fill" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="Theme.Orb.Stroke" Color="#D1D1D1"/>
-    <SolidColorBrush x:Key="Theme.Orb.Active.Glow" Color="#00FFFFFF"/>
     <SolidColorBrush x:Key="Theme.Orb.Text" Color="#1A1A1A"/>
+
+    <!-- 激活态三通道 —— 浅色主题不使用发光。
+         半透明辉光在浅底上几乎不可见，曾导致 Theme.Orb.Active.Glow
+         被设为全透明 #00FFFFFF，使径向菜单的激活反馈彻底消失。
+         改为：填充提亮 + 描边加深 + 外圈环，三者均不依赖 BlurEffect。 -->
+    <SolidColorBrush x:Key="Theme.Orb.Active.Fill" Color="#FFD6E9F8"/>
+    <SolidColorBrush x:Key="Theme.Orb.Active.Stroke" Color="#FF0067C0"/>
+    <SolidColorBrush x:Key="Theme.Orb.Active.Ring" Color="#990067C0"/>
+    <!-- 保留以兼容旧引用，但浅色下已不作为激活反馈通道 -->
+    <SolidColorBrush x:Key="Theme.Orb.Active.Glow" Color="#00FFFFFF"/>
 
     <!-- Slot title (text-only orb) readability tokens: local semi-opaque backplate -->
     <SolidColorBrush x:Key="Theme.Orb.Label.Background" Color="#E6FFFFFF"/>
@@ -59,18 +63,11 @@
     <SolidColorBrush x:Key="Theme.Radial.Title.Scrim" Color="#B2000000"/>
     <SolidColorBrush x:Key="Theme.Orb.Chip.Background" Color="#CCFFFFFF"/>
 
-    <sys:Double x:Key="Theme.Orb.BlurOpacity">0.0</sys:Double>
-
-    <!-- Spacing Tokens (4px grid) -->
-    <sys:Double x:Key="Pulsar.Spacing.XS">4.0</sys:Double>
-    <sys:Double x:Key="Pulsar.Spacing.SM">8.0</sys:Double>
-    <sys:Double x:Key="Pulsar.Spacing.MD">16.0</sys:Double>
-    <sys:Double x:Key="Pulsar.Spacing.LG">24.0</sys:Double>
-    <sys:Double x:Key="Pulsar.Spacing.XL">32.0</sys:Double>
-
-    <!-- Animation Duration Tokens (milliseconds) -->
-    <sys:Double x:Key="Pulsar.Animation.Duration.Fast">120.0</sys:Double>
-    <sys:Double x:Key="Pulsar.Animation.Duration.Normal">220.0</sys:Double>
-    <sys:Double x:Key="Pulsar.Animation.Duration.Slow">380.0</sys:Double>
+    <!-- 数值令牌（排版 / 时长 / 间距 / 圆角 / 缓动）已迁移至 Styles/Tokens.xaml，
+         并在 App.xaml 全局加载。此前在此处定义但从未被任何界面引用 ——
+         令牌若未接入，等于不存在。
+         曾存在 Theme.Orb.BlurOpacity（Dark=1.0 / Light=0.0）—— 激活反馈已改
+         为三通道（填充/描边/外环，见 Theme.Orb.Active.*），该键已零引用，已删除：
+         它曾让浅色主题"关掉能力"，正是 P0 缺陷的根源。 -->
 
 </ResourceDictionary>
