@@ -73,11 +73,23 @@ namespace Pulsar.Views.Controls
         {
             if (ActiveShape == null) return;
 
+            // Opacity transition (matches the original 300ms enter / 320ms release feel).
+            var duration = highlight.Opacity > 0
+                ? TimeSpan.FromMilliseconds(300)
+                : TimeSpan.FromMilliseconds(320);
+            var easeOut = new QuadraticEase { EasingMode = EasingMode.EaseOut };
+
             // Glow brush: a custom fill wins over the theme-derived glow brush,
-            // matching the previous template precedence.
+            // matching the previous template precedence. A null glow (inactive
+            // highlight) clears the previous fill so no stale blue disc lingers
+            // while the ring fades out.
             if (highlight.GlowBrush != null)
             {
                 ActiveShape.Fill = CustomFill ?? highlight.GlowBrush;
+            }
+            else
+            {
+                ActiveShape.Fill = null;
             }
 
             // Effect kind (Blur by default, never a per-slot DropShadow in the default).
@@ -96,20 +108,41 @@ namespace Pulsar.Views.Controls
                     };
                     break;
                 default:
-                    ActiveShape.Effect = null;
+                    // Release: don't detach the blur instantly — that snaps a crisp
+                    // ring into view. Animate its radius down to 0 in the same rhythm
+                    // as the opacity fade, then detach the effect once it settles.
+                    if (ActiveShape.Effect is BlurEffect releaseBlur)
+                    {
+                        var blurEffect = ActiveShape.Effect;
+                        var radiusAnim = new DoubleAnimation(releaseBlur.Radius, 0, duration) { EasingFunction = easeOut };
+                        radiusAnim.Completed += (_, _) =>
+                        {
+                            if (ReferenceEquals(ActiveShape.Effect, blurEffect))
+                            {
+                                ActiveShape.Effect = null;
+                            }
+                        };
+                        releaseBlur.BeginAnimation(BlurEffect.RadiusProperty, radiusAnim);
+                    }
+                    else if (ActiveShape.Effect is DropShadowEffect releaseShadow)
+                    {
+                        var shadowEffect = ActiveShape.Effect;
+                        var radiusAnim = new DoubleAnimation(releaseShadow.BlurRadius, 0, duration) { EasingFunction = easeOut };
+                        radiusAnim.Completed += (_, _) =>
+                        {
+                            if (ReferenceEquals(ActiveShape.Effect, shadowEffect))
+                            {
+                                ActiveShape.Effect = null;
+                            }
+                        };
+                        releaseShadow.BeginAnimation(DropShadowEffect.BlurRadiusProperty, radiusAnim);
+                    }
                     break;
             }
 
-            // Opacity transition (matches the original 300ms enter / 320ms release feel).
-            var duration = highlight.Opacity > 0
-                ? TimeSpan.FromMilliseconds(300)
-                : TimeSpan.FromMilliseconds(320);
             ActiveShape.BeginAnimation(
                 OpacityProperty,
-                new DoubleAnimation(highlight.Opacity, duration)
-                {
-                    EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
-                });
+                new DoubleAnimation(highlight.Opacity, duration) { EasingFunction = easeOut });
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
