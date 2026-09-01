@@ -123,9 +123,16 @@
         <Grid Grid.Row="1">
 
             <!-- Empty State -->
-            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="{StaticResource Pulsar.Gap.Bottom.Hero}">
-                <StackPanel.Style>
-                    <Style TargetType="StackPanel">
+            <controls:EmptyState Icon="DialPadOff24"
+                                 Title="{lex:Locale Settings.Slots.NoSlotsConfigured}"
+                                 Hint="{lex:Locale Settings.Slots.AddSlotHint}"
+                                 ActionText="{lex:Locale Settings.Slots.AddFirstSlot}"
+                                 ActionIcon="Add24"
+                                 ActionButtonStyle="{StaticResource PulsarPrimaryButtonStyle}"
+                                 ActionCommand="{Binding AddSlotDialogCommand}"
+                                 Margin="{StaticResource Pulsar.Gap.Bottom.Hero}">
+                <controls:EmptyState.Style>
+                    <Style TargetType="controls:EmptyState">
                         <Setter Property="Visibility" Value="Collapsed"/>
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding CurrentSlots.Count}" Value="0">
@@ -136,16 +143,8 @@
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
-                </StackPanel.Style>
-                <ui:SymbolIcon Symbol="DialPadOff24" FontSize="64" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Margin="{StaticResource Pulsar.Gap.Bottom.LG}"/>
-                <TextBlock Text="{lex:Locale Settings.Slots.NoSlotsConfigured}" FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="{StaticResource Pulsar.Gap.Bottom.SM}"/>
-                <TextBlock Text="{lex:Locale Settings.Slots.AddSlotHint}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" Margin="{StaticResource Pulsar.Gap.Bottom.XL}"/>
-                <ui:Button Content="{lex:Locale Settings.Slots.AddFirstSlot}"
-                           Icon="{ui:SymbolIcon Add24}"
-                           Style="{StaticResource PulsarPrimaryButtonStyle}"
-                           Command="{Binding AddSlotDialogCommand}"
-                           HorizontalAlignment="Center"/>
-            </StackPanel>
+                </controls:EmptyState.Style>
+            </controls:EmptyState>
 
             <!-- Slot Wheel Editor (replaces the legacy card list) -->
             <controls:SlotWheelEditor x:Name="WheelEditor"

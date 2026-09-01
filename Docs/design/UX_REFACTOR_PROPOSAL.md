@@ -331,16 +331,21 @@ XAML 中出现 `✓`×2 · `⚡`×2 · `🔄` · `🌐` · `⚠`。Emoji 是彩�
 - `dotnet test`：**718 通过 / 0 失败**
 - 僵尸令牌复查：0 个（本轮新增部分）
 
-### 遗留（未在本轮处理，需你裁定）
+### 遗留（本轮已处理部分 · 2026-09-01 复核修正）
 
-1. **9 个僵尸令牌（上一轮遗留）**：`PulsarText*Style` ×6、`Pulsar.Type.Hero`、
-   `Pulsar.Easing.Emphasis`、`Pulsar.Easing.Subtle`。
-   注意：上一轮回归清单写的是"全部走 Style 资源"，但实际情况是
-   **338 处直接引用 `Pulsar.Type.*` 数值令牌，Style 零引用** —— 记录与事实不符。
-   二选一：迁移到 Style（会引入 LineHeight/FontWeight，**有布局变化**）或删除 Style。
-2. **`Theme.Destructive` / `Theme.Radial.Scrim` / `Theme.Radial.ScrimBrush`**
-   在 XAML 与 C# 中均无引用，属色彩令牌僵尸。
-3. **空状态覆盖不全**：外部插件页 / 密钥库 / 插件日志页三个列表仍无空状态；
-   已有的两处是内联重复实现，未抽成统一组件。
-4. **自制导航指示器**：`SettingsWindow.xaml.cs` 约 70 行手绘动画。
-5. **可访问性近乎为零**：44 个 XAML 仅 7 处 `AutomationProperties` / `KeyboardNavigation`。
+> 复核基线：工作区提交 `f9a85f0`（含第二轮 token 管道）。修正两处与代码不符的旧表述：
+> ① `Theme.Destructive` 基键、`Theme.Radial.Scrim/ScrimBrush` 此前已零引用，本轮已删（`.Hover`
+> 仍被 ButtonStyles.xaml:304 使用，保留）；② 空状态覆盖此前已齐（外部插件页 / 插件日志页 /
+> 密钥选择页 / 统计页 / 槽位页均有），本轮将 6 处内联实现统一为 `EmptyState` 组件。
+
+- [x] **僵尸令牌清理**：9 个（`PulsarText*Style` ×6、`Pulsar.Type.Hero`、`Pulsar.Easing.Emphasis/Subtle`）
+      零引用，已从 `Tokens.xaml` 删除 —— 数值令牌为唯一真相源，不走 Style 层（避免引入 LineHeight 布局变化）。
+- [x] **僵尸色彩令牌清理**：`Theme.Destructive`（基键）、`Theme.Radial.Scrim`、`Theme.Radial.ScrimBrush`
+      已从两套主题删除；`Theme.Destructive.Hover` 因 ButtonStyles 依赖保留。
+- [x] **空状态统一组件**：新建 `Views/Controls/EmptyState.xaml`（图标 + 标题 + 提示 + 可选主操作 +
+      可选卡片边框），替换 Slots / ExternalPlugins / Plugins / Analytics / PluginLog / SecretPicker 6 处内联实现。
+
+**仍遗留（待裁定）**
+
+1. **自制导航指示器**：`SettingsWindow.xaml.cs` 约 70 行手绘动画。
+2. **可访问性近乎为零**：45 个 XAML 仅 7 处 `AutomationProperties` / `KeyboardNavigation`。

@@ -59,16 +59,9 @@
                             </Style.Triggers>
                         </Style>
                     </ui:CardControl.Style>
-                    <StackPanel HorizontalAlignment="Center" Margin="{StaticResource Pulsar.Gap.Vertical.XXL}">
-                        <ui:SymbolIcon Symbol="DataPie24" FontSize="36"
-                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                       HorizontalAlignment="Center"/>
-                        <TextBlock Text="{lex:Locale Settings.Analytics.NoData}"
-                                   FontSize="{StaticResource Pulsar.Type.Body}" Margin="{StaticResource Pulsar.Gap.Top.MD}"
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                   HorizontalAlignment="Center" TextAlignment="Center"
-                                   TextWrapping="Wrap" MaxWidth="360"/>
-                    </StackPanel>
+                    <controls:EmptyState Icon="DataPie24"
+                                         Title="{lex:Locale Settings.Analytics.NoData}"
+                                         Margin="{StaticResource Pulsar.Gap.Vertical.XXL}"/>
                 </ui:CardControl>
 
                 <!-- Error State -->

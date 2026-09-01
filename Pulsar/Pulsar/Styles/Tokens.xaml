@@ -28,42 +28,6 @@
     <sys:Double x:Key="Pulsar.Type.Subtitle">16</sys:Double>
     <sys:Double x:Key="Pulsar.Type.Title">20</sys:Double>
     <sys:Double x:Key="Pulsar.Type.Display">28</sys:Double>
-    <sys:Double x:Key="Pulsar.Type.Hero">36</sys:Double>
-
-    <!-- 排版 Style：界面请引用 Style，不要裸写 FontSize -->
-    <Style x:Key="PulsarTextCaptionStyle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="{StaticResource Pulsar.Type.Caption}"/>
-        <Setter Property="LineHeight" Value="16"/>
-    </Style>
-
-    <Style x:Key="PulsarTextBodyStyle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="{StaticResource Pulsar.Type.Body}"/>
-        <Setter Property="LineHeight" Value="20"/>
-    </Style>
-
-    <Style x:Key="PulsarTextSubtitleStyle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="{StaticResource Pulsar.Type.Subtitle}"/>
-        <Setter Property="LineHeight" Value="24"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
-    </Style>
-
-    <Style x:Key="PulsarTextTitleStyle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="{StaticResource Pulsar.Type.Title}"/>
-        <Setter Property="LineHeight" Value="28"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
-    </Style>
-
-    <Style x:Key="PulsarTextDisplayStyle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="{StaticResource Pulsar.Type.Display}"/>
-        <Setter Property="LineHeight" Value="38"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
-    </Style>
-
-    <Style x:Key="PulsarTextHeroStyle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="{StaticResource Pulsar.Type.Hero}"/>
-        <Setter Property="LineHeight" Value="46"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
-    </Style>
 
     <!-- ==================== 动效时长 ====================
          替代 33 处硬编码 Duration（0.15×9 / 0.2×8 / 0.25×6 /
@@ -84,8 +48,6 @@
          ============================================================ -->
 
     <QuarticEase x:Key="Pulsar.Easing.Standard" EasingMode="EaseOut" x:Shared="False"/>
-    <ExponentialEase x:Key="Pulsar.Easing.Emphasis" EasingMode="EaseOut" Exponent="5" x:Shared="False"/>
-    <CubicEase x:Key="Pulsar.Easing.Subtle" EasingMode="EaseOut" x:Shared="False"/>
 
     <!-- ==================== 间距刻度 ====================
          数据驱动：原始 606 个非零间距分量的直方图决定了本刻度。

@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:lex="clr-namespace:Pulsar.Core.Localization"
+             xmlns:controls="clr-namespace:Pulsar.Views.Controls"
              xmlns:converters="clr-namespace:Pulsar.Core.Converters"
              mc:Ignorable="d"
              d:DesignHeight="520" d:DesignWidth="760">
@@ -171,13 +172,10 @@
                     </ListView.ItemTemplate>
                 </ListView>
 
-                <StackPanel HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Visibility="{Binding HasFilteredLogs, Converter={StaticResource InverseBoolToVisConverter}}">
-                    <ui:SymbolIcon Symbol="DocumentText24" FontSize="44" Opacity="0.35" HorizontalAlignment="Center" Margin="{StaticResource Pulsar.Gap.Bottom.MD}"/>
-                    <TextBlock Text="{lex:Locale PluginLogViewer.NoLogs}" FontSize="{StaticResource Pulsar.Type.Subtitle}" FontWeight="SemiBold" Opacity="0.8" HorizontalAlignment="Center" Margin="{StaticResource Pulsar.Gap.Bottom.SM}"/>
-                    <TextBlock Text="{lex:Locale PluginLogViewer.ExpandRange}" FontSize="{StaticResource Pulsar.Type.Caption}" Opacity="0.6" HorizontalAlignment="Center"/>
-                </StackPanel>
+                <controls:EmptyState Icon="DocumentText24"
+                                     Title="{lex:Locale PluginLogViewer.NoLogs}"
+                                     Hint="{lex:Locale PluginLogViewer.ExpandRange}"
+                                     Visibility="{Binding HasFilteredLogs, Converter={StaticResource InverseBoolToVisConverter}}"/>
 
                 <Grid Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
                       Background="Transparent">

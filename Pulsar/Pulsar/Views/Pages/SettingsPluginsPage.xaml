@@ -567,32 +567,15 @@
                 </ItemsControl>
                 
                 <!-- Empty State -->
-                <StackPanel HorizontalAlignment="Center" 
-                            VerticalAlignment="Center"
-                            Visibility="{Binding GroupedPlugins.Count, Converter={StaticResource CollectionEmptyToVisibilityConverter}}">
-                    <ui:SymbolIcon Symbol="Apps24" 
-                                   FontSize="48" 
-                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                   HorizontalAlignment="Center"
-                                   Margin="{StaticResource Pulsar.Gap.Bottom.LG}"/>
-                    <TextBlock Text="{lex:Locale Settings.Plugins.NoPluginsFound}" 
-                               FontSize="{StaticResource Pulsar.Type.Subtitle}" 
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               HorizontalAlignment="Center"
-                               Margin="{StaticResource Pulsar.Gap.Bottom.SM}"/>
-                    <TextBlock Text="{lex:Locale Settings.Plugins.AdjustSearch}" 
-                               FontSize="{StaticResource Pulsar.Type.Body}" 
-                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                               HorizontalAlignment="Center"
-                               Margin="{StaticResource Pulsar.Gap.Bottom.MD}"/>
-                    <ui:Button Content="{lex:Locale Settings.Plugins.ClearSearch}"
-                               Command="{Binding ClearSearchCommand}"
-                               Icon="{ui:SymbolIcon Dismiss24}"
-                               Style="{StaticResource PulsarSecondaryButtonStyle}"
-                               Visibility="{Binding SearchText, Converter={StaticResource StringEmptyToVisibilityConverter}}"
-                               HorizontalAlignment="Center"/>
-                </StackPanel>
+                <controls:EmptyState Icon="Apps24"
+                                     Title="{lex:Locale Settings.Plugins.NoPluginsFound}"
+                                     Hint="{lex:Locale Settings.Plugins.AdjustSearch}"
+                                     ActionText="{lex:Locale Settings.Plugins.ClearSearch}"
+                                     ActionIcon="Dismiss24"
+                                     ActionButtonStyle="{StaticResource PulsarSecondaryButtonStyle}"
+                                     ActionCommand="{Binding ClearSearchCommand}"
+                                     ActionVisibility="{Binding SearchText, Converter={StaticResource StringEmptyToVisibilityConverter}}"
+                                     Visibility="{Binding GroupedPlugins.Count, Converter={StaticResource CollectionEmptyToVisibilityConverter}}"/>
             </Grid>
         </ScrollViewer>
     </Grid>

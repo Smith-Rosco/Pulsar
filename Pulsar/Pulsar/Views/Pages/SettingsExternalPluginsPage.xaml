@@ -191,39 +191,15 @@
                     </ItemsControl>
 
                     <!-- Empty State -->
-                    <Border Background="{DynamicResource ControlFillColorDefaultBrush}"
-                            BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}"
-                            BorderThickness="1"
-                            CornerRadius="{StaticResource Pulsar.Radius.LG}"
-                            Padding="{StaticResource Pulsar.Pad.Hero}"
-                            Visibility="{Binding InstalledPlugins.Count, Converter={StaticResource CollectionEmptyToVisibilityConverter}}">
-                        <StackPanel HorizontalAlignment="Center">
-                            <ui:SymbolIcon Symbol="Apps24"
-                                           FontSize="64"
-                                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                           HorizontalAlignment="Center"
-                                           Margin="{StaticResource Pulsar.Gap.Bottom.LG}"/>
-                            <TextBlock Text="{lex:Locale Settings.ExternalPlugins.NoPlugins}"
-                                       FontSize="{StaticResource Pulsar.Type.Title}"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                       HorizontalAlignment="Center"
-                                       Margin="{StaticResource Pulsar.Gap.Bottom.SM}"/>
-                            <TextBlock Text="{lex:Locale Settings.ExternalPlugins.InstallHint}"
-                                       FontSize="{StaticResource Pulsar.Type.Body}"
-                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                       HorizontalAlignment="Center"
-                                       TextWrapping="Wrap"
-                                       TextAlignment="Center"
-                                       MaxWidth="400"
-                                       Margin="{StaticResource Pulsar.Gap.Bottom.LG}"/>
-                            <ui:Button Content="{lex:Locale Settings.ExternalPlugins.InstallFromFile}"
-                                       Command="{Binding InstallFromFileCommand}"
-                                       Icon="{ui:SymbolIcon FolderOpen24}"
-                                       Style="{StaticResource PulsarPrimaryButtonStyle}"
-                                       HorizontalAlignment="Center"/>
-                        </StackPanel>
-                    </Border>
+                    <controls:EmptyState Icon="Apps24"
+                                         Title="{lex:Locale Settings.ExternalPlugins.NoPlugins}"
+                                         Hint="{lex:Locale Settings.ExternalPlugins.InstallHint}"
+                                         ActionText="{lex:Locale Settings.ExternalPlugins.InstallFromFile}"
+                                         ActionIcon="FolderOpen24"
+                                         ActionButtonStyle="{StaticResource PulsarPrimaryButtonStyle}"
+                                         ActionCommand="{Binding InstallFromFileCommand}"
+                                         HasBorder="True"
+                                         Visibility="{Binding InstalledPlugins.Count, Converter={StaticResource CollectionEmptyToVisibilityConverter}}"/>
 
                     <!-- Info Note -->
                     <Border Background="{DynamicResource ControlFillColorDisabledBrush}"

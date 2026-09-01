@@ -17,9 +17,8 @@
     <SolidColorBrush x:Key="Theme.Accent.Hover" Color="#1084E3"/>
     <SolidColorBrush x:Key="Theme.Accent.Foreground" Color="#FFFFFF"/>
 
-    <!-- 危险操作：Fluent 无 critical 的 hover 变体，ButtonStyles 依赖本键。
-         与 Theme.Orb.* 同属有意保留的例外。 -->
-    <SolidColorBrush x:Key="Theme.Destructive" Color="#E81123"/>
+    <!-- 危险操作 hover：Fluent 无 critical 的 hover 变体，ButtonStyles.xaml:304 依赖本键。
+         与 Theme.Orb.* 同属有意保留的例外。（基键 Theme.Destructive 已零引用，已删。） -->
     <SolidColorBrush x:Key="Theme.Destructive.Hover" Color="#FF5C2B"/>
 
     <SolidColorBrush x:Key="SlotTypeBrushDefault" Color="#FF9CA3AF"/>
@@ -51,13 +50,6 @@
     <SolidColorBrush x:Key="Theme.Orb.Label.Background" Color="#CC1F1F1F"/>
     <SolidColorBrush x:Key="Theme.Orb.Label.Foreground" Color="#FFFFFFFF"/>
 
-    <SolidColorBrush x:Key="Theme.Radial.Scrim" Color="#26000000"/>
-    <RadialGradientBrush x:Key="Theme.Radial.ScrimBrush" Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
-        <GradientStop Color="#40000000" Offset="0.0"/>
-        <GradientStop Color="#2E000000" Offset="0.62"/>
-        <GradientStop Color="#1F000000" Offset="0.82"/>
-        <GradientStop Color="#00000000" Offset="0.96"/>
-    </RadialGradientBrush>
     <SolidColorBrush x:Key="Theme.Radial.Title.Foreground" Color="#FFFFFFFF"/>
     <SolidColorBrush x:Key="Theme.Radial.Title.Shadow" Color="#FF000000"/>
     <SolidColorBrush x:Key="Theme.Radial.Title.Scrim" Color="#B2000000"/>
