@@ -344,8 +344,13 @@ XAML 中出现 `✓`×2 · `⚡`×2 · `🔄` · `🌐` · `⚠`。Emoji 是彩�
       已从两套主题删除；`Theme.Destructive.Hover` 因 ButtonStyles 依赖保留。
 - [x] **空状态统一组件**：新建 `Views/Controls/EmptyState.xaml`（图标 + 标题 + 提示 + 可选主操作 +
       可选卡片边框），替换 Slots / ExternalPlugins / Plugins / Analytics / PluginLog / SecretPicker 6 处内联实现。
+- [x] **自制导航指示器（裁定：保留自绘，仅硬健化）**：保留 stretch+snap 动画；在
+      `PaneOpened/PaneClosed`、`NavPaneGrid.SizeChanged`、窗口 `DpiChanged` 后以 Render 优先级重新定位，
+      关闭时解除订阅（`SettingsWindow.xaml.cs` `HookNavIndicatorReposition`）。待人工视觉 QA 确认观感。
+- [~] **可访问性（部分）**：为 9 个仅图标按钮补 `AutomationProperties.Name`（复用本地化 ToolTip 键，
+      两套 resx 均已验证存在）+ 导航栏 `KeyboardNavigation.DirectionalNavigation="Contained"`。
 
 **仍遗留（待裁定）**
 
-1. **自制导航指示器**：`SettingsWindow.xaml.cs` 约 70 行手绘动画。
-2. **可访问性近乎为零**：45 个 XAML 仅 7 处 `AutomationProperties` / `KeyboardNavigation`。
+1. **可访问性（剩余）**：45 个 XAML 中约 7 处 → 已补至 ~17 处；其余图标按钮/语义控件可继续按需补齐，
+   或加静态扫描测试（如 `ButtonThemeContrastTests` 模式）防回退。
