@@ -126,7 +126,11 @@ namespace Pulsar.ViewModels
 
             WeakReferenceMessenger.Default.Register<SlotsPerPageChangedMessage>(this, (r, m) =>
             {
-                Application.Current.Dispatcher.Invoke(() =>
+                // InvokeOnUiInput is null-safe + non-blocking: the old unconditional
+                // Application.Current.Dispatcher.Invoke could deadlock when the
+                // Application's dispatcher belonged to a thread that never pumps
+                // (e.g. created inside a unit test but never Shutdown'd).
+                InvokeOnUiInput(() =>
                 {
                     _logger?.LogInformation("[RadialMenuViewModel] Received SlotsPerPageChangedMessage: {Count}", m.NewCount);
                     _session.UpdateSlotsPerPage(m.NewCount);
