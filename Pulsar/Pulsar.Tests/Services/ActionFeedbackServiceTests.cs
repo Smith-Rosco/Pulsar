@@ -24,8 +24,8 @@ namespace Pulsar.Tests.Services
             var feedback = _service.Create("com.pulsar.winswitcher", "switch", result);
 
             feedback.Kind.Should().Be(ActionFeedbackKind.ConfigurationError);
-            feedback.Title.Should().Be("Fix slot setup");
-            feedback.ToNotificationMessage().Should().Contain("Open the slot and verify the app name or launch path.");
+            feedback.Title.Should().Be("修复槽位设置");
+            feedback.ToNotificationMessage().Should().Contain("打开槽位并验证应用名称或启动路径。");
         }
 
         [Fact]
@@ -39,7 +39,7 @@ namespace Pulsar.Tests.Services
             var feedback = _service.Create("com.pulsar.winswitcher", "switch", result);
 
             feedback.Kind.Should().Be(ActionFeedbackKind.RecoverableFailure);
-            feedback.Title.Should().Be("App not available");
+            feedback.Title.Should().Be("应用不可用");
         }
 
         [Fact]
@@ -57,8 +57,8 @@ namespace Pulsar.Tests.Services
 
             commandFeedback.Kind.Should().Be(ActionFeedbackKind.ConfigurationError);
             pkiFeedback.Kind.Should().Be(ActionFeedbackKind.ConfigurationError);
-            commandFeedback.Title.Should().Be("Fix slot setup");
-            pkiFeedback.Title.Should().Be("Fix credential slot");
+            commandFeedback.Title.Should().Be("修复槽位设置");
+            pkiFeedback.Title.Should().Be("修复凭证槽位");
             commandFeedback.Kind.Should().Be(pkiFeedback.Kind);
         }
 
@@ -71,7 +71,7 @@ namespace Pulsar.Tests.Services
                 PluginResult.Error("Plugin disabled for safety. Try again in 42s."));
 
             feedback.Kind.Should().Be(ActionFeedbackKind.TemporaryUnavailable);
-            feedback.Title.Should().Be("Action unavailable");
+            feedback.Title.Should().Be("操作不可用");
         }
 
         [Fact]
@@ -99,8 +99,8 @@ namespace Pulsar.Tests.Services
                 PluginResult.Error("浏览器地址栏暂时未准备好接受书签脚本。请等待页面或浏览器完成加载后重试。"));
 
             feedback.Kind.Should().Be(ActionFeedbackKind.RecoverableFailure);
-            feedback.Title.Should().Be("Bookmarklet failed");
-            feedback.ToNotificationMessage().Should().Contain("finish loading");
+            feedback.Title.Should().Be("书签执行失败");
+            feedback.ToNotificationMessage().Should().Contain("加载完成");
         }
     }
 }

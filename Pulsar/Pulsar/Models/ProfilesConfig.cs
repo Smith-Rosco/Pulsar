@@ -56,7 +56,7 @@ namespace Pulsar.Models
     /// </summary>
     public partial class ProfileSettings : ObservableObject
     {
-        public string Language { get; set; } = "en";
+        public string Language { get; set; } = "zh-CN";
         public const string DefaultTheme = "Light";
 
         public string CenterSlotBehavior { get; set; } = "MRU_Window";

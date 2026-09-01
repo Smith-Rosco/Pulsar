@@ -12,7 +12,7 @@ namespace Pulsar.Core.Localization
     {
         private readonly ILogger<LocalizationService> _logger;
         private readonly ResourceManager _resourceManager;
-        private string _currentLanguage = "en";
+        private string _currentLanguage = "zh-CN";
 
         private static readonly IReadOnlyList<string> _supportedLanguages = new List<string> { "en", "zh-CN" }.AsReadOnly();
 

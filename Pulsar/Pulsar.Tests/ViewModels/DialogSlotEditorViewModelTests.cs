@@ -128,8 +128,8 @@ namespace Pulsar.Tests.ViewModels
 
             vm.IsPickerPhase.Should().BeTrue();
             vm.IsConfigurationPhase.Should().BeFalse();
-            vm.PrimaryButtonText.Should().Be("Save Slot");
-            vm.SecondaryButtonText.Should().Be("Cancel");
+            vm.PrimaryButtonText.Should().Be("保存槽位");
+            vm.SecondaryButtonText.Should().Be("取消");
             vm.PrimaryCards.Should().HaveCountGreaterThan(0);
         }
 

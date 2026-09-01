@@ -94,7 +94,7 @@ namespace Pulsar.ViewModels.Dialogs
             var osCulture = System.Globalization.CultureInfo.CurrentUICulture.Name;
             return SupportedLanguages.Any(l => string.Equals(l.Code, osCulture, StringComparison.OrdinalIgnoreCase))
                 ? osCulture
-                : "en";
+                : "zh-CN";
         }
 
         public ObservableCollection<LanguageDisplayModel> SupportedLanguages { get; }
