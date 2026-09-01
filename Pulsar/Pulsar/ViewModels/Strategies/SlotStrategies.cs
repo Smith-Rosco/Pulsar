@@ -77,8 +77,17 @@ namespace Pulsar.ViewModels.Strategies
 
             if (result.Success)
             {
+                // [Fix] winSwitcher's "switch" action launched from a not-running slot
+                // (plugin path) must publish TutorialActionKind.Switch so the tutorial
+                // advances on first launch — otherwise the first trigger silently fails
+                // to progress and only the second (switch) trigger works.
+                var kind = string.Equals(_pluginSlot.PluginId, "com.pulsar.winswitcher", StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(_pluginSlot.Action, "switch", StringComparison.OrdinalIgnoreCase)
+                        ? TutorialActionKind.Switch
+                        : TutorialActionKind.Command;
+
                 WeakReferenceMessenger.Default.Send(new ActionExecutionMessage(
-                    TutorialActionKind.Command,
+                    kind,
                     _pluginSlot.PluginId,
                     _pluginSlot.Action,
                     success: true));

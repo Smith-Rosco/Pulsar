@@ -82,35 +82,7 @@ namespace Pulsar.Features.Tutorial.Services
         }
 
         internal static string ResolveExePath(string processName, string launchPath)
-        {
-            if (!string.IsNullOrWhiteSpace(launchPath))
-            {
-                string fullPath = launchPath;
-                if (!Path.IsPathRooted(fullPath))
-                {
-                    string systemDir = Environment.GetFolderPath(Environment.SpecialFolder.System);
-                    string sysPath = Path.Combine(systemDir, fullPath);
-                    if (File.Exists(sysPath)) return sysPath;
-
-                    var paths = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator) ?? [];
-                    foreach (var dir in paths)
-                    {
-                        string candidate = Path.Combine(dir, fullPath);
-                        if (File.Exists(candidate)) return candidate;
-                    }
-                }
-                else if (File.Exists(fullPath))
-                {
-                    return fullPath;
-                }
-            }
-
-            string systemDir2 = Environment.GetFolderPath(Environment.SpecialFolder.System);
-            string exePath2 = Path.Combine(systemDir2, $"{processName}.exe");
-            if (File.Exists(exePath2)) return exePath2;
-
-            return launchPath ?? $"{processName}.exe";
-        }
+            => Pulsar.Helpers.ExecutablePathResolver.Resolve(processName, launchPath);
 
         private static string ResolveSystemDisplayName(string processName, string launchPath, string fallback)
         {
@@ -216,7 +188,7 @@ namespace Pulsar.Features.Tutorial.Services
                     Args = new Dictionary<string, string>
                     {
                         ["app"] = app.ProcessName,
-                        ["path"] = app.LaunchPath
+                        ["path"] = ResolveExePath(app.ProcessName, app.LaunchPath)
                     },
                     Label = displayName,
                     IconKey = iconKey

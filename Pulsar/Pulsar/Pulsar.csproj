@@ -38,6 +38,10 @@
       <Link>Assets\TutorialSteps.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Resources\Tutorial\TutorialSteps.notepad.json">
+      <Link>Assets\TutorialSteps.notepad.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Resources\Tutorial\TutorialSteps.excel.json">
       <Link>Assets\TutorialSteps.excel.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

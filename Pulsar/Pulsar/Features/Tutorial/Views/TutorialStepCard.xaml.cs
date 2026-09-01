@@ -7,6 +7,8 @@ using System.Windows.Controls;
 using System.Windows.Media.Animation;
 using Pulsar.Core.Localization;
 using Pulsar.Features.Tutorial.Models;
+using Pulsar.Features.Tutorial.Services;
+using Pulsar.Services.Interfaces;
 
 namespace Pulsar.Features.Tutorial.Views
 {
@@ -67,15 +69,33 @@ namespace Pulsar.Features.Tutorial.Views
             if (_currentStep == null) return;
 
             StepCounter.Text = string.Format(_loc?["Tutorial.StepFormat"] ?? "Step {0}/{1}", _currentIndex + 1, _totalSteps);
-            TitleText.Text = !string.IsNullOrEmpty(_currentStep.TitleKey)
+            TitleText.Text = ResolveHotkeys(!string.IsNullOrEmpty(_currentStep.TitleKey)
                 ? (_loc?[_currentStep.TitleKey] ?? _currentStep.Title)
-                : _currentStep.Title;
-            DescriptionText.Text = !string.IsNullOrEmpty(_currentStep.DescriptionKey)
+                : _currentStep.Title);
+            DescriptionText.Text = ResolveHotkeys(!string.IsNullOrEmpty(_currentStep.DescriptionKey)
                 ? (_loc?[_currentStep.DescriptionKey] ?? _currentStep.Description)
-                : _currentStep.Description;
+                : _currentStep.Description);
             NextButton.Content = ResolvePrimaryButtonText(_currentStep);
 
             ApplyWaitHint(_currentStep);
+        }
+
+        /// <summary>
+        /// 用用户实际配置的热键替换教程文案中的 {SwitchHotkey}/{CommandHotkey} 占位符。
+        /// </summary>
+        private string ResolveHotkeys(string? text)
+        {
+            try
+            {
+                var app = System.Windows.Application.Current as App;
+                var configService = app?.Services.GetService(typeof(IConfigService)) as IConfigService;
+                return TutorialHotkeyResolver.Resolve(text, configService?.GetSnapshot().Settings.Hotkeys);
+            }
+            catch
+            {
+                // 配置不可用时回退默认热键文案
+                return TutorialHotkeyResolver.Resolve(text, null);
+            }
         }
 
         public void SetWaitHintText(string text)
@@ -162,6 +182,8 @@ namespace Pulsar.Features.Tutorial.Views
             {
                 hintText = _loc?["Tutorial.WaitHintDefault"] ?? "It will continue automatically after completing the action.";
             }
+
+            hintText = ResolveHotkeys(hintText);
 
             if (string.IsNullOrWhiteSpace(hintText))
             {

@@ -239,13 +239,21 @@ namespace Pulsar.Services
 
             try
             {
-                using var stream = File.OpenRead(_configPath);
-                var options = new JsonSerializerOptions
+                ProfilesConfig? loadedFromDisk;
+                using (var stream = File.OpenRead(_configPath))
                 {
-                    WriteIndented = true,
-                    PropertyNameCaseInsensitive = true
-                };
-                loaded = await JsonSerializer.DeserializeAsync<ProfilesConfig>(stream, options);
+                    var options = new JsonSerializerOptions
+                    {
+                        WriteIndented = true,
+                        PropertyNameCaseInsensitive = true
+                    };
+                    loadedFromDisk = await JsonSerializer.DeserializeAsync<ProfilesConfig>(stream, options);
+                }
+
+                // Close the read stream before any migration save below; SaveAsync
+                // atomically moves a temp file over _configPath, which fails on Windows
+                // while a read handle is still open.
+                loaded = loadedFromDisk;
                 
                 // [Architectural Fix] Ensure Profiles dictionary is case-insensitive
                 // System.Text.Json always creates case-sensitive dictionaries by default.
@@ -255,10 +263,20 @@ namespace Pulsar.Services
                 {
                     loaded.Profiles = new Dictionary<string, ProcessProfile>(loaded.Profiles, StringComparer.OrdinalIgnoreCase);
 
+                    int migratedPathCount = 0;
                     foreach (var profile in loaded.Profiles.Values)
                     {
                         NormalizeSlotActions(profile.CommandMode);
                         NormalizeSlotActions(profile.SwitchMode);
+                        migratedPathCount += NormalizeSwitchLaunchPaths(profile.SwitchMode);
+                    }
+
+                    // [Migration] Persist the fix once so existing Profiles.json heals on
+                    // disk (idempotent: a second load finds nothing to fix and skips).
+                    if (migratedPathCount > 0 && !string.Equals(reloadReason, ResetReloadReason, StringComparison.OrdinalIgnoreCase))
+                    {
+                        _logger.LogInformation("[ConfigService] Migrated {Count} relative switch launch path(s) to absolute; persisting", migratedPathCount);
+                        await SaveAsync(loaded, expectedRevision: null);
                     }
                 }
 
@@ -437,6 +455,23 @@ namespace Pulsar.Services
                         {
                             pluginProfile.Config = NormalizeConfigDictionary(pluginProfile.Config);
                         }
+                    }
+                }
+
+                // [Migration] Normalize relative winSwitcher switch launch paths before
+                // persisting so the fixed values (not the broken ones) reach disk and
+                // existing users' Profiles.json heals on their next save.
+                if (config.Profiles != null)
+                {
+                    int fixedCount = 0;
+                    foreach (var profile in config.Profiles.Values)
+                    {
+                        fixedCount += NormalizeSwitchLaunchPaths(profile.SwitchMode);
+                    }
+
+                    if (fixedCount > 0)
+                    {
+                        _logger.LogInformation("[ConfigService] Normalized {Count} switch slot launch path(s) before saving", fixedCount);
                     }
                 }
 
@@ -1017,6 +1052,38 @@ namespace Pulsar.Services
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// 迁移：将 winSwitcher "switch" 槽位的相对启动路径解析为绝对路径。
+        /// 幂等 —— 已绝对或无法解析的路径保持原样，绝不抛异常。修复存量
+        /// Profiles.json（老版本新手引导写入的相对路径）同时作为保存前的
+        /// 写入规范化兜底，防止相对路径再次落盘。
+        /// </summary>
+        /// <returns>本次修复的槽位数。</returns>
+        private static int NormalizeSwitchLaunchPaths(IList<PluginSlot>? slots)
+        {
+            if (slots == null) return 0;
+
+            int fixedCount = 0;
+            foreach (var slot in slots)
+            {
+                if (slot == null) continue;
+                if (!string.Equals(slot.PluginId, "com.pulsar.winswitcher", StringComparison.OrdinalIgnoreCase)) continue;
+                if (!string.Equals(slot.Action, "switch", StringComparison.OrdinalIgnoreCase)) continue;
+                if (slot.Args == null) continue;
+                if (!slot.Args.TryGetValue("path", out var launchPath) || string.IsNullOrWhiteSpace(launchPath)) continue;
+                if (Path.IsPathRooted(launchPath)) continue;
+
+                var app = slot.Args.TryGetValue("app", out var appName) ? appName : launchPath;
+                string resolved = ExecutablePathResolver.Resolve(app, launchPath);
+                if (string.IsNullOrWhiteSpace(resolved) || !Path.IsPathRooted(resolved)) continue;
+
+                slot.Args["path"] = resolved;
+                fixedCount++;
+            }
+
+            return fixedCount;
         }
 
         private static object NormalizeNumber(JsonElement element)

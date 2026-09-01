@@ -32,6 +32,18 @@ namespace Pulsar.Tests.Tutorial
         }
 
         [Fact]
+        public void LoadStepsForScenario_WithNotepadScenarioId_ShouldLoadNotepadSteps()
+        {
+            var loader = CreateLoader();
+            var steps = loader.LoadStepsForScenario("notepad");
+
+            steps.Should().NotBeNull();
+            steps.Should().NotBeEmpty();
+            steps.Should().Contain(s => s.Id == "step2_switch_mode_intro");
+            steps.Should().HaveCount(6);
+        }
+
+        [Fact]
         public void LoadStepsForScenario_WithBrowserScenarioId_ShouldLoadBrowserSteps()
         {
             var loader = CreateLoader();

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using FluentAssertions;
 using Pulsar.Features.Tutorial.Models;
@@ -27,6 +28,24 @@ namespace Pulsar.Tests.Tutorial
             config.Profiles["Global"].CommandMode.Should().ContainSingle();
             config.Profiles["Global"].CommandMode[0].PluginId.Should().Be("com.pulsar.command");
             config.Profiles["Global"].CommandMode[0].Action.Should().Be("sendkeys");
+        }
+
+        [Fact]
+        public void BuildInitialConfig_ShouldResolveSwitchSlotPathToAbsoluteExecutable()
+        {
+            var service = new OnboardingTemplateService();
+            var apps = service.GetAvailableApps().Where(app => app.Id is "notepad" or "explorer").ToList();
+
+            var config = service.BuildInitialConfig(new OnboardingTemplateRequest
+            {
+                Profile = OnboardingUsageProfile.GeneralProductivity,
+                SelectedApps = apps
+            });
+
+            config.Profiles["Global"].SwitchMode.Should().OnlyContain(slot =>
+                Path.IsPathRooted(slot.Args["path"])
+                && File.Exists(slot.Args["path"])
+                && slot.Args["app"] == Path.GetFileNameWithoutExtension(slot.Args["path"]));
         }
 
         [Fact]

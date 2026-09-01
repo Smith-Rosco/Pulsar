@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -337,6 +338,73 @@ namespace Pulsar.Tests.Config
             // Assert
             config.Should().NotBeNull();
             config.Settings.Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task LoadAsync_ShouldMigrateRelativeSwitchPath_ToAbsolute()
+        {
+            // Arrange — legacy onboarding wrote relative "path" values that WinSwitcher
+            // rejects (must be absolute). Loading must resolve them (idempotently).
+            var legacyConfig = new ProfilesConfig
+            {
+                Settings = new ProfileSettings { HasCompletedTutorial = true },
+                Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["Global"] = new ProcessProfile
+                    {
+                        SwitchMode = new List<PluginSlot>
+                        {
+                            new PluginSlot { Slot = 1, PluginId = "com.pulsar.winswitcher", Action = "switch", Args = new Dictionary<string, string> { ["app"] = "notepad", ["path"] = "notepad.exe" }, Label = "Notepad" }
+                        }
+                    }
+                }
+            };
+
+            await File.WriteAllTextAsync(_configPath, JsonSerializer.Serialize(legacyConfig, new JsonSerializerOptions { WriteIndented = true }));
+            var service = CreateConfigService();
+
+            // Act
+            var config = await service.LoadAsync();
+
+            // Assert — in-memory migration
+            var slot = config.Profiles["Global"].SwitchMode.Single();
+            slot.Args["path"].Should().Be(Path.GetFullPath(Environment.GetFolderPath(Environment.SpecialFolder.System) + Path.DirectorySeparatorChar + "notepad.exe"), "relative launch path must be resolved to System32");
+            Path.IsPathRooted(slot.Args["path"]).Should().BeTrue();
+            File.Exists(slot.Args["path"]).Should().BeTrue();
+
+            // Assert — persisted once so disk heals without manual re-save
+            var persistedJson = await File.ReadAllTextAsync(_configPath);
+            var persisted = JsonSerializer.Deserialize<ProfilesConfig>(persistedJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            persisted!.Profiles["Global"].SwitchMode.Single().Args["path"].Should().Be(slot.Args["path"]);
+        }
+
+        [Fact]
+        public async Task LoadAsync_ShouldLeaveUnresolvableSwitchPath_Untouched()
+        {
+            // Arrange — a custom app with no matchable executable must not be clobbered.
+            var legacyConfig = new ProfilesConfig
+            {
+                Settings = new ProfileSettings { HasCompletedTutorial = true },
+                Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["Global"] = new ProcessProfile
+                    {
+                        SwitchMode = new List<PluginSlot>
+                        {
+                            new PluginSlot { Slot = 1, PluginId = "com.pulsar.winswitcher", Action = "switch", Args = new Dictionary<string, string> { ["app"] = "no-such-app", ["path"] = "no-such-app.exe" }, Label = "NoSuchApp" }
+                        }
+                    }
+                }
+            };
+
+            await File.WriteAllTextAsync(_configPath, JsonSerializer.Serialize(legacyConfig, new JsonSerializerOptions { WriteIndented = true }));
+            var service = CreateConfigService();
+
+            // Act
+            var config = await service.LoadAsync();
+
+            // Assert — unresolvable relative path preserved (caller/plugin will surface it)
+            config.Profiles["Global"].SwitchMode.Single().Args["path"].Should().Be("no-such-app.exe");
         }
 
         /// <summary>

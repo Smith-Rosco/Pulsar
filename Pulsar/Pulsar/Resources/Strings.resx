@@ -1587,16 +1587,16 @@
     <value>Open Settings</value>
   </data>
   <data name="Tutorial.WelcomeDesc" xml:space="preserve">
-    <value>Welcome! This tutorial will show you Pulsar's two modes in action. You'll switch to Notepad using Switch Mode (Ctrl+Q), then insert text into it using Command Mode (Ctrl+Shift+Q). Let's get started!</value>
+    <value>Welcome! This tutorial will show you Pulsar's two modes in action. You'll switch to Notepad using Switch Mode ({SwitchHotkey}), then insert text into it using Command Mode ({CommandHotkey}). Let's get started!</value>
   </data>
   <data name="Tutorial.SwitchMode" xml:space="preserve">
     <value>Switch Mode: app switching and launching</value>
   </data>
   <data name="Tutorial.SwitchModeDesc" xml:space="preserve">
-    <value>Press Ctrl+Q to open Switch Mode, hover over the Notepad icon, then release the hotkey to switch to it. Pulsar jumps straight to the app — no alt-tabbing needed.</value>
+    <value>Press {SwitchHotkey} to open Switch Mode, hover over the Notepad icon, then release the hotkey to switch to it. Pulsar jumps straight to the app — no alt-tabbing needed.</value>
   </data>
   <data name="Tutorial.SwitchModeHint" xml:space="preserve">
-    <value>Press Ctrl+Q, hover over the Notepad icon, and release the hotkey.</value>
+    <value>Press {SwitchHotkey}, hover over the Notepad icon, and release the hotkey.</value>
   </data>
   <data name="Tutorial.FirstSwitch" xml:space="preserve">
     <value>Switched to Notepad</value>
@@ -1611,10 +1611,10 @@
     <value>Command Mode: run an action</value>
   </data>
   <data name="Tutorial.CommandModeDesc" xml:space="preserve">
-    <value>Press Ctrl+Shift+Q to open Command Mode, hover over "Insert Sample Text", then release the hotkey. Pulsar will type "Hello from Pulsar!" into Notepad for you.</value>
+    <value>Press {CommandHotkey} to open Command Mode, hover over "Insert Sample Text", then release the hotkey. Pulsar will type "Hello from Pulsar!" into Notepad for you.</value>
   </data>
   <data name="Tutorial.CommandModeHint" xml:space="preserve">
-    <value>Press Ctrl+Shift+Q, hover over "Insert Sample Text", and release the hotkey.</value>
+    <value>Press {CommandHotkey}, hover over "Insert Sample Text", and release the hotkey.</value>
   </data>
   <data name="Tutorial.FirstCommand" xml:space="preserve">
     <value>Command executed!</value>
@@ -2393,18 +2393,18 @@
     <value>Welcome! This tutorial will show you Pulsar's two modes in action with Excel.
 
 You will:
-1. Press Ctrl+Q to open Switch Mode and switch to Excel
-2. Press Ctrl+Shift+Q to open Command Mode and run a VBA demo in Excel
+1. Press {SwitchHotkey} to open Switch Mode and switch to Excel
+2. Press {CommandHotkey} to open Command Mode and run a VBA demo in Excel
 
 You'll see how to switch to an app, then do something inside it.</value>
   </data>
   <data name="Tutorial.Excel.SwitchModeDesc" xml:space="preserve">
-    <value>Press Ctrl+Q to open Switch Mode, hover over the Excel icon, then release the hotkey to switch to it.
+    <value>Press {SwitchHotkey} to open Switch Mode, hover over the Excel icon, then release the hotkey to switch to it.
 
 That's all it takes — Pulsar jumps straight to Excel. No alt-tabbing, no searching.</value>
   </data>
   <data name="Tutorial.Excel.SwitchModeHint" xml:space="preserve">
-    <value>Press Ctrl+Q, hover over the Excel icon, and release the hotkey.</value>
+    <value>Press {SwitchHotkey}, hover over the Excel icon, and release the hotkey.</value>
   </data>
   <data name="Tutorial.Excel.FirstSwitch" xml:space="preserve">
     <value>Switched to Excel</value>
@@ -2417,26 +2417,26 @@ In the next step you'll use Command Mode to run a VBA demo in Excel.
 Click "Next" to continue.</value>
   </data>
   <data name="Tutorial.Excel.CommandModeDesc" xml:space="preserve">
-    <value>Press Ctrl+Shift+Q to open Command Mode, hover over "Run VBA Demo", then release the hotkey.
+    <value>Press {CommandHotkey} to open Command Mode, hover over "Run VBA Demo", then release the hotkey.
 
 Pulsar will execute a VBA script in Excel for you — that's Command Mode in action: running a plugin on the app you switched to.</value>
   </data>
   <data name="Tutorial.Excel.CommandModeHint" xml:space="preserve">
-    <value>Press Ctrl+Shift+Q, hover over "Run VBA Demo", and release the hotkey.</value>
+    <value>Press {CommandHotkey}, hover over "Run VBA Demo", and release the hotkey.</value>
   </data>
   <data name="Tutorial.Excel.FirstCommandDesc" xml:space="preserve">
     <value>Pulsar ran the VBA script in Excel! You just combined both modes:
 
-1. Switch Mode (Ctrl+Q) — got you to Excel
-2. Command Mode (Ctrl+Shift+Q) — ran a VBA demo inside it
+1. Switch Mode ({SwitchHotkey}) — got you to Excel
+2. Command Mode ({CommandHotkey}) — ran a VBA demo inside it
 
 That's the core Pulsar workflow.</value>
   </data>
   <data name="Tutorial.Excel.OnboardingCompleteDesc" xml:space="preserve">
     <value>You just combined both Pulsar modes:
 
-✔ Switched to Excel with Switch Mode (Ctrl+Q)
-✔ Ran a VBA demo with Command Mode (Ctrl+Shift+Q)
+✔ Switched to Excel with Switch Mode ({SwitchHotkey})
+✔ Ran a VBA demo with Command Mode ({CommandHotkey})
 
 That's the core workflow: switch to any app, then act inside it.
 
@@ -2448,18 +2448,18 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
     <value>Welcome! This tutorial will show you Pulsar's two modes in action with your browser.
 
 You will:
-1. Press Ctrl+Q to open Switch Mode and switch to your browser
-2. Press Ctrl+Shift+Q to open Command Mode and run a bookmarklet
+1. Press {SwitchHotkey} to open Switch Mode and switch to your browser
+2. Press {CommandHotkey} to open Command Mode and run a bookmarklet
 
 You'll see how to switch to an app, then do something inside it.</value>
   </data>
   <data name="Tutorial.Browser.SwitchModeDesc" xml:space="preserve">
-    <value>Press Ctrl+Q to open Switch Mode, hover over the browser icon (Chrome or Edge), then release the hotkey to switch to it.
+    <value>Press {SwitchHotkey} to open Switch Mode, hover over the browser icon (Chrome or Edge), then release the hotkey to switch to it.
 
 That's all it takes — Pulsar jumps straight to your browser. No alt-tabbing, no searching.</value>
   </data>
   <data name="Tutorial.Browser.SwitchModeHint" xml:space="preserve">
-    <value>Press Ctrl+Q, hover over your browser icon, and release the hotkey.</value>
+    <value>Press {SwitchHotkey}, hover over your browser icon, and release the hotkey.</value>
   </data>
   <data name="Tutorial.Browser.FirstSwitch" xml:space="preserve">
     <value>Switched to your browser</value>
@@ -2472,26 +2472,26 @@ In the next step you'll use Command Mode to open a bookmarklet.
 Click "Next" to continue.</value>
   </data>
   <data name="Tutorial.Browser.CommandModeDesc" xml:space="preserve">
-    <value>Press Ctrl+Shift+Q to open Command Mode, hover over "Open Bookmarklet", then release the hotkey.
+    <value>Press {CommandHotkey} to open Command Mode, hover over "Open Bookmarklet", then release the hotkey.
 
 Pulsar will open a webpage in your browser for you — that's Command Mode in action: running a plugin on the app you switched to.</value>
   </data>
   <data name="Tutorial.Browser.CommandModeHint" xml:space="preserve">
-    <value>Press Ctrl+Shift+Q, hover over "Open Bookmarklet", and release the hotkey.</value>
+    <value>Press {CommandHotkey}, hover over "Open Bookmarklet", and release the hotkey.</value>
   </data>
   <data name="Tutorial.Browser.FirstCommandDesc" xml:space="preserve">
     <value>Pulsar opened the bookmarklet in your browser! You just combined both modes:
 
-1. Switch Mode (Ctrl+Q) — got you to your browser
-2. Command Mode (Ctrl+Shift+Q) — opened a webpage inside it
+1. Switch Mode ({SwitchHotkey}) — got you to your browser
+2. Command Mode ({CommandHotkey}) — opened a webpage inside it
 
 That's the core Pulsar workflow.</value>
   </data>
   <data name="Tutorial.Browser.OnboardingCompleteDesc" xml:space="preserve">
     <value>You just combined both Pulsar modes:
 
-✔ Switched to your browser with Switch Mode (Ctrl+Q)
-✔ Opened a bookmarklet with Command Mode (Ctrl+Shift+Q)
+✔ Switched to your browser with Switch Mode ({SwitchHotkey})
+✔ Opened a bookmarklet with Command Mode ({CommandHotkey})
 
 That's the core workflow: switch to any app, then act inside it.
 

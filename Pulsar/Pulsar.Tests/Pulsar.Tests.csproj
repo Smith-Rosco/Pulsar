@@ -36,6 +36,9 @@
     <None Include="..\Pulsar\Resources\Tutorial\TutorialSteps.browser.json" Link="Assets\TutorialSteps.browser.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="..\Pulsar\Resources\Tutorial\TutorialSteps.notepad.json" Link="Assets\TutorialSteps.notepad.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

@@ -35,7 +35,7 @@ namespace Pulsar.Features.Tutorial.Services
                             IsTutorialPrimary = true
                         }
                     },
-                    StepsJsonPath = null
+                    StepsJsonPath = "TutorialSteps.notepad.json"
                 },
                 ["excel"] = new TutorialScenario
                 {
