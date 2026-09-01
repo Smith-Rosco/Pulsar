@@ -135,6 +135,51 @@ namespace Pulsar.Views
             DisableScrollViewers(NavPaneGrid);
             await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
             InitializeNavIndicator();
+            HookNavIndicatorReposition();
+        }
+
+        /// <summary>
+        /// 自绘指示器在 DPI 变化 / 窗格折叠展开 / 面板尺寸变化时会错位（提案 P2 已知缺陷）。
+        /// 在这些场景重排后重新定位，保持指示器贴紧选中项。
+        /// </summary>
+        private void HookNavIndicatorReposition()
+        {
+            RootNavigation.PaneOpened += OnNavPaneStateChanged;
+            RootNavigation.PaneClosed += OnNavPaneStateChanged;
+            NavPaneGrid.SizeChanged += OnNavPaneSizeChanged;
+            DpiChanged += OnWindowDpiChanged;
+        }
+
+        private void UnhookNavIndicatorReposition()
+        {
+            RootNavigation.PaneOpened -= OnNavPaneStateChanged;
+            RootNavigation.PaneClosed -= OnNavPaneStateChanged;
+            NavPaneGrid.SizeChanged -= OnNavPaneSizeChanged;
+            DpiChanged -= OnWindowDpiChanged;
+        }
+
+        private void OnNavPaneStateChanged(NavigationView sender, RoutedEventArgs e)
+        {
+            RepositionNavIndicator();
+        }
+
+        private void OnNavPaneSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            RepositionNavIndicator();
+        }
+
+        private void OnWindowDpiChanged(object? sender, DpiChangedEventArgs e)
+        {
+            RepositionNavIndicator();
+        }
+
+        private void RepositionNavIndicator()
+        {
+            // 等待本次布局/缩放完成后再读取最新坐标，避免用旧 bounds 定位
+            _ = Dispatcher.InvokeAsync(() =>
+            {
+                InitializeNavIndicator();
+            }, System.Windows.Threading.DispatcherPriority.Render);
         }
 
         private async void ShellViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -413,6 +458,7 @@ namespace Pulsar.Views
             _themeService.ThemeChanged -= OnThemeChanged;
             _shellViewModel.PropertyChanged -= ShellViewModel_PropertyChanged;
             _localizationService.LanguageChanged -= OnLanguageChanged;
+            UnhookNavIndicatorReposition();
 
             foreach (var item in RootNavigation.MenuItems.OfType<NavigationViewItem>())
             {
