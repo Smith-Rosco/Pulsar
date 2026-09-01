@@ -152,11 +152,20 @@ namespace Pulsar.ViewModels
 
         private void ApplySettingsTheme(AppTheme theme)
         {
-            // Apply theme immediately to the active window (SettingsWindow)
-            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            // Apply theme immediately to the active window (SettingsWindow).
+            // Null-safe + non-blocking: when Application.Current is missing (tests)
+            // or already on the UI thread, apply inline; otherwise queue on the
+            // dispatcher. The old unconditional synchronous Dispatcher.Invoke could
+            // deadlock forever when the Application's dispatcher belonged to a thread
+            // that never pumps (created inside a test but never Shutdown'd).
+            var dispatcher = System.Windows.Application.Current?.Dispatcher;
+            if (dispatcher == null || dispatcher.CheckAccess())
             {
                 _themeService.SetGlobalTheme(theme);
-            });
+                return;
+            }
+
+            _ = dispatcher.InvokeAsync(() => _themeService.SetGlobalTheme(theme));
         }
 
         // ===== Logging Management =====
