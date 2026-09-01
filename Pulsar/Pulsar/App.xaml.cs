@@ -137,6 +137,12 @@ namespace Pulsar
             serviceCollection.AddSingleton<IActionFeedbackService, ActionFeedbackService>();
             serviceCollection.AddSingleton<IActionFeedbackPresenter, ActionFeedbackPresenter>();
             serviceCollection.AddSingleton<IThemeService, ThemeService>();
+            // [RadialRenderer] Pluggable rendering seam + theme preset resolution.
+            // The default renderer reproduces the current look; presets are opt-in.
+            serviceCollection.AddSingleton<Core.Rendering.IRadialRenderer, Core.Rendering.DefaultRadialRenderer>();
+            serviceCollection.AddSingleton<Core.Rendering.RadialThemePresetResolver>();
+            serviceCollection.AddSingleton<Func<Pulsar.Models.AppTheme, Core.Rendering.IRadialThemeTokens>>(
+                _ => Core.Rendering.RadialThemeTokenSet.FromTheme);
             serviceCollection.AddSingleton<IWindowPlacementService, WindowPlacementService>();
             serviceCollection.AddSingleton<IMenuViewportService, MenuViewportService>();
             serviceCollection.AddSingleton<IAnimationController, AnimationController>();

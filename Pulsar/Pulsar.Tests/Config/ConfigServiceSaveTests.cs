@@ -273,6 +273,75 @@ namespace Pulsar.Tests.Config
             savedJson.Should().Contain("\"summonMode\": \"Immediate\"", "default summon mode must round-trip as Immediate");
         }
 
+        [Fact]
+        public async Task LoadAndSave_ShouldRoundTrip_RadialRendererSettings()
+        {
+            // Arrange
+            var service = CreateConfigService();
+            var config = new ProfilesConfig
+            {
+                Settings = new ProfileSettings
+                {
+                    RadialRenderer = "Default",
+                    RadialThemePreset = "MatchaForest"
+                }
+            };
+
+            // Act - Save and reload
+            await service.SaveAsync(config);
+
+            var savedJson = await File.ReadAllTextAsync(_configPath);
+            savedJson.Should().Contain("\"radialRenderer\"", "property name should be camelCase");
+            savedJson.Should().Contain("\"radialThemePreset\"", "property name should be camelCase");
+
+            var service2 = CreateConfigService();
+            var loadedConfig = await service2.LoadAsync();
+
+            // Assert
+            loadedConfig.Settings.RadialRenderer.Should().Be("Default");
+            loadedConfig.Settings.RadialThemePreset.Should().Be("MatchaForest");
+        }
+
+        [Fact]
+        public async Task Save_ShouldPersist_DefaultRadialRendererSettings()
+        {
+            // Arrange
+            var service = CreateConfigService();
+            var config = new ProfilesConfig();
+
+            // Act
+            await service.SaveAsync(config);
+
+            // Assert
+            var savedJson = await File.ReadAllTextAsync(_configPath);
+            savedJson.Should().Contain("\"radialRenderer\": \"Default\"", "default renderer must round-trip as Default");
+            savedJson.Should().Contain("\"radialThemePreset\": \"System\"", "default preset must round-trip as System");
+        }
+
+        [Fact]
+        public async Task Save_ShouldNotValidateRadialRendererSettings_AsErrors()
+        {
+            // Arrange
+            var service = CreateConfigService();
+            var config = new ProfilesConfig
+            {
+                Settings = new ProfileSettings
+                {
+                    RadialRenderer = "SomeFutureRenderer",
+                    RadialThemePreset = "SomeUnknownPreset"
+                }
+            };
+
+            // Act (should not throw validation errors)
+            await service.SaveAsync(config);
+
+            // Assert
+            var service2 = CreateConfigService();
+            var loadedConfig = await service2.LoadAsync();
+            loadedConfig.Settings.RadialRenderer.Should().Be("SomeFutureRenderer");
+            loadedConfig.Settings.RadialThemePreset.Should().Be("SomeUnknownPreset");
+        }
+
         /// <summary>
         /// Create ConfigService with test directory
         /// </summary>

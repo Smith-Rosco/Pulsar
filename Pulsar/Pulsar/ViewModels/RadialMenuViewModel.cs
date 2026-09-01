@@ -9,8 +9,10 @@ using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Localization;
 using Pulsar.Core.Messages;
+using Pulsar.Core.Rendering;
 using Pulsar.Helpers;
 using Pulsar.Models;
+using Pulsar.Models.Enums;
 using Pulsar.Native;
 using Pulsar.Services.Interfaces;
 
@@ -39,6 +41,13 @@ namespace Pulsar.ViewModels
         private readonly IMenuViewportService _menuViewportService;
         private readonly IConfigService _configService;
         private readonly ILogger<RadialMenuViewModel>? _logger;
+
+        // [RadialRenderer] Injected rendering seam + preset resolution, applied on
+        // menu open and on ConfigUpdated. Optional so existing tests that construct
+        // the VM without a renderer keep working unchanged.
+        private readonly IRadialRenderer? _renderer;
+        private readonly RadialThemePresetResolver? _presetResolver;
+        private readonly IThemeService? _themeService;
 
         // Right-drag summon gesture state. The detector is a pure state machine; the
         // ViewModel owns the modifier discrimination and the event swallowing.
@@ -80,7 +89,10 @@ namespace Pulsar.ViewModels
             IMenuViewportService menuViewportService,
             IConfigService configService,
             ILocalizationService localizationService,
-            ILogger<RadialMenuViewModel>? logger = null)
+            ILogger<RadialMenuViewModel>? logger = null,
+            IRadialRenderer? renderer = null,
+            RadialThemePresetResolver? presetResolver = null,
+            IThemeService? themeService = null)
         {
             _session = session;
             _hotkeyService = hotkeyService;
@@ -89,6 +101,13 @@ namespace Pulsar.ViewModels
             _menuViewportService = menuViewportService;
             _configService = configService;
             _logger = logger;
+            _renderer = renderer;
+            _presetResolver = presetResolver;
+            _themeService = themeService;
+
+            // [RadialRenderer] Initialize the seam so SlotOrb's OnIsActiveChanged can
+            // resolve highlights immediately on the first summon.
+            ApplyRadialRendering(CurrentMode);
 
             // Project every session state change onto this ViewModel's PropertyChanged
             // so existing view bindings and tutorial triggers keep working unchanged.
@@ -137,7 +156,34 @@ namespace Pulsar.ViewModels
 
         private async Task ShowAsync(RadialMenuMode mode, MenuInvocationSource invocationSource = MenuInvocationSource.Hotkey)
         {
+            // [RadialRenderer] Re-resolve tokens + mode tone for this summon and feed
+            // the renderer before slots are laid out.
+            ApplyRadialRendering(mode);
             await _session.BeginSessionAsync(mode, invocationSource);
+        }
+
+        /// <summary>
+        /// Resolves the configured theme preset to a token set, wraps it in the
+        /// mode-tone decorator (Task→cool, Action→warm) and hands it to the renderer.
+        /// Runs on menu open and on ConfigUpdated so preset/theme changes re-render.
+        /// Safe no-op when the renderer/resolver are not wired (tests, older DI).
+        /// </summary>
+        private void ApplyRadialRendering(RadialMenuMode mode)
+        {
+            if (_renderer == null || _presetResolver == null) return;
+
+            try
+            {
+                var settings = _configService.GetSnapshot().Settings;
+                var activeTheme = _themeService?.CurrentTheme ?? settings.ThemeEnum;
+                var baseTokens = _presetResolver.Resolve(settings.RadialThemePreset, activeTheme);
+                var modeTokens = new ModeToneTokenDecorator(baseTokens, mode);
+                _renderer.Initialize(modeTokens);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[RadialRenderer] Failed to apply renderer + preset");
+            }
         }
 
         private void OnHotkeyInvoked(object? sender, HotkeyInvocationEventArgs e)
@@ -164,6 +210,7 @@ namespace Pulsar.ViewModels
             {
                 _session.RefreshConfig(_configService.GetSnapshot());
                 RefreshGestureConfig();
+                ApplyRadialRendering(_session.CurrentMode);
                 return;
             }
 
@@ -171,6 +218,7 @@ namespace Pulsar.ViewModels
             {
                 _session.RefreshConfig(_configService.GetSnapshot());
                 RefreshGestureConfig();
+                ApplyRadialRendering(_session.CurrentMode);
             });
         }
 

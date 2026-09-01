@@ -247,6 +247,15 @@ namespace Pulsar.Tests.Config
         }
 
         [Fact]
+        public void ProfileSettings_RadialRenderer_ShouldDefaultToDefaultAndSystem()
+        {
+            var settings = new ProfileSettings();
+
+            settings.RadialRenderer.Should().Be("Default");
+            settings.RadialThemePreset.Should().Be("System");
+        }
+
+        [Fact]
         public void ProfileSettings_ThemeEnum_ShouldDefaultToLight()
         {
             var settings = new ProfileSettings();

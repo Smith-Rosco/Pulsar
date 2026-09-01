@@ -67,6 +67,11 @@ namespace Pulsar.Models
         public double Springiness { get; set; } = 6.0;
         public double MaxDisplacement { get; set; } = 20.0;
 
+        // [RadialRenderer] Pluggable radial renderer + theme preset.
+        // "Default" reproduces the current visuals; "System" follows the OS theme.
+        public string RadialRenderer { get; set; } = "Default";
+        public string RadialThemePreset { get; set; } = "System";
+
         // [New] Radial Menu Layout Configuration
         /// <summary>
         /// 每页显示的 slot 数量 (4-12)

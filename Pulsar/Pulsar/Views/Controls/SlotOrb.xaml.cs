@@ -1,3 +1,4 @@
+using Pulsar.Core.Rendering;
 using Pulsar.Helpers;
 using System;
 using System.Drawing;
@@ -5,6 +6,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media; // VisualTreeHelper, CompositionTarget
 using System.Windows.Media.Animation;
+using System.Windows.Media.Effects;
+using Microsoft.Extensions.DependencyInjection;
 
 // [����] ǿ��ָ�� Point Ϊ WPF ����
 using Point = System.Windows.Point;
@@ -44,6 +47,69 @@ namespace Pulsar.Views.Controls
 
             // [Fix 3.1] �����ɼ��Ա仯��������ʱ��������λ��
             this.IsVisibleChanged += OnIsVisibleChanged;
+        }
+
+        // ============================
+        // [RadialRenderer] Highlight seam
+        // ============================
+        // SlotOrb is instantiated inside XAML DataTemplates (not via DI), so it
+        // resolves the registered renderer through the app service provider, matching
+        // the existing service-locator pattern used elsewhere in the codebase.
+        private static IRadialRenderer? GetRenderer()
+        {
+            if (Application.Current is App app)
+            {
+                return app.Services.GetService<IRadialRenderer>();
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Writes the renderer-resolved highlight (glow brush / effect / opacity) onto
+        /// the <see cref="ActiveShape"/> glow layer. This replaces the hard-coded
+        /// highlight effect that used to live in the active-state XAML trigger.
+        /// </summary>
+        internal void ApplyHighlight(IRadialSlotHighlight highlight)
+        {
+            if (ActiveShape == null) return;
+
+            // Glow brush: a custom fill wins over the theme-derived glow brush,
+            // matching the previous template precedence.
+            if (highlight.GlowBrush != null)
+            {
+                ActiveShape.Fill = CustomFill ?? highlight.GlowBrush;
+            }
+
+            // Effect kind (Blur by default, never a per-slot DropShadow in the default).
+            switch (highlight.EffectKind)
+            {
+                case RadialSlotEffectKind.Blur:
+                    ActiveShape.Effect = new BlurEffect { Radius = highlight.BlurRadius };
+                    break;
+                case RadialSlotEffectKind.DropShadow:
+                    ActiveShape.Effect = new DropShadowEffect
+                    {
+                        Color = Colors.Black,
+                        BlurRadius = highlight.BlurRadius,
+                        ShadowDepth = 0,
+                        Opacity = highlight.Opacity
+                    };
+                    break;
+                default:
+                    ActiveShape.Effect = null;
+                    break;
+            }
+
+            // Opacity transition (matches the original 300ms enter / 320ms release feel).
+            var duration = highlight.Opacity > 0
+                ? TimeSpan.FromMilliseconds(300)
+                : TimeSpan.FromMilliseconds(320);
+            ActiveShape.BeginAnimation(
+                OpacityProperty,
+                new DoubleAnimation(highlight.Opacity, duration)
+                {
+                    EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+                });
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
@@ -126,6 +192,15 @@ namespace Pulsar.Views.Controls
             var enter = TimeSpan.FromMilliseconds(300);
             var release = TimeSpan.FromMilliseconds(320);
             var easeOut = new QuadraticEase { EasingMode = EasingMode.EaseOut };
+
+            // [RadialRenderer] Route the highlight through the injected renderer.
+            // ShowActiveGlow gates whether the glow is drawn at all (matches the
+            // removed XAML MultiDataTrigger condition).
+            var renderer = GetRenderer();
+            if (renderer != null)
+            {
+                orb.ApplyHighlight(renderer.ResolveHighlight(isActive && orb.ShowActiveGlow));
+            }
 
             if (isActive)
             {

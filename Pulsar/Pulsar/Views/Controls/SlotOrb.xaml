@@ -122,13 +122,6 @@
                     
                     <!-- 默认绑定到 CustomFill -->
                     <Setter Property="Fill" Value="{Binding CustomFill, ElementName=OrbRoot}"/>
-                    
-                    <!-- Default Glow Technique: Blur -->
-                    <Setter Property="Effect">
-                        <Setter.Value>
-                            <BlurEffect Radius="20"/>
-                        </Setter.Value>
-                    </Setter>
                     <Setter Property="Margin" Value="-8"/>
 
                     <Style.Triggers>
@@ -136,48 +129,6 @@
                         <DataTrigger Binding="{Binding CustomFill, ElementName=OrbRoot}" Value="{x:Null}">
                             <Setter Property="Fill" Value="{DynamicResource Theme.Orb.Active.Glow}"/>
                         </DataTrigger>
-
-                        <!-- Only show if IsActive is True AND ShowActiveGlow is True -->
-                        <MultiDataTrigger>
-                            <MultiDataTrigger.Conditions>
-                                <Condition Binding="{Binding IsActive, ElementName=OrbRoot}" Value="True"/>
-                                <Condition Binding="{Binding ShowActiveGlow, ElementName=OrbRoot}" Value="True"/>
-                            </MultiDataTrigger.Conditions>
-                            <MultiDataTrigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" 
-                                                         To="0.8" Duration="0:0:0.3">
-                                            <DoubleAnimation.EasingFunction>
-                                                <QuadraticEase EasingMode="EaseOut"/>
-                                            </DoubleAnimation.EasingFunction>
-                                        </DoubleAnimation>
-                                        <DoubleAnimation Storyboard.TargetProperty="Effect.Radius" 
-                                                         To="25" Duration="0:0:0.3">
-                                            <DoubleAnimation.EasingFunction>
-                                                <QuadraticEase EasingMode="EaseOut"/>
-                                            </DoubleAnimation.EasingFunction>
-                                        </DoubleAnimation>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </MultiDataTrigger.EnterActions>
-                            <MultiDataTrigger.ExitActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.8" To="0.0" Duration="0:0:0.32">
-                                            <DoubleAnimation.EasingFunction>
-                                                <QuadraticEase EasingMode="EaseOut"/>
-                                            </DoubleAnimation.EasingFunction>
-                                        </DoubleAnimation>
-                                        <DoubleAnimation Storyboard.TargetProperty="Effect.Radius" From="25" To="10" Duration="0:0:0.32">
-                                            <DoubleAnimation.EasingFunction>
-                                                <QuadraticEase EasingMode="EaseOut"/>
-                                            </DoubleAnimation.EasingFunction>
-                                        </DoubleAnimation>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </MultiDataTrigger.ExitActions>
-                        </MultiDataTrigger>
                     </Style.Triggers>
                 </Style>
             </Ellipse.Style>

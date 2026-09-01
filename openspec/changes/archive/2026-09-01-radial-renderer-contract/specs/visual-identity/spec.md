@@ -1,10 +1,4 @@
-# visual-identity Specification
-
-## Purpose
-
-Defines the visual differentiation contract between Task mode (Window Switcher) and Action mode (Command Toolbox).
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Mode-Based Visual Differentiation
 The system SHALL provide distinct visual themes for Task mode (Window Switcher) and Action mode (Command Toolbox) to clearly indicate the current operational context. Mode-based differentiation SHALL continue to hold when the radial menu renders through the typed theme-token and renderer seam: the active mode SHALL select the corresponding tone regardless of the configured renderer or theme preset.
