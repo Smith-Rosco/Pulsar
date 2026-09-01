@@ -16,6 +16,7 @@
                 <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVisibilityConverter"/>
+            <converters:ActionVisibilityMultiConverter x:Key="ActionVisibilityMultiConverter"/>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -81,18 +82,14 @@
 
             <ui:Button Content="{Binding ActionText, ElementName=Root}"
                        Command="{Binding ActionCommand, ElementName=Root}"
+                       Style="{Binding ActionButtonStyle, ElementName=Root, TargetNullValue={StaticResource PulsarSecondaryButtonStyle}}"
                        HorizontalAlignment="Center">
-                <ui:Button.Style>
-                    <Style TargetType="ui:Button"
-                           BasedOn="{Binding ActionButtonStyle, ElementName=Root, TargetNullValue={StaticResource PulsarSecondaryButtonStyle}}">
-                        <Setter Property="Visibility" Value="{Binding ActionVisibility, ElementName=Root}"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding ActionText, ElementName=Root}" Value="">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </ui:Button.Style>
+                <ui:Button.Visibility>
+                    <MultiBinding Converter="{StaticResource ActionVisibilityMultiConverter}">
+                        <Binding Path="ActionText" ElementName="Root"/>
+                        <Binding Path="ActionVisibility" ElementName="Root"/>
+                    </MultiBinding>
+                </ui:Button.Visibility>
                 <ui:Button.Icon>
                     <ui:SymbolIcon Symbol="{Binding ActionIcon, ElementName=Root}"/>
                 </ui:Button.Icon>
