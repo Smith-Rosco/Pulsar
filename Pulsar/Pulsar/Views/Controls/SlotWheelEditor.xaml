@@ -57,6 +57,7 @@
                         <Setter Property="Opacity" Value="0.75"/>
                     </Style>
                 </StackPanel.Style>
+                <!-- 几何正圆:半径 = 44/2,由尺寸决定而非圆角刻度,不套 Pulsar.Radius.* -->
                 <Border Width="44" Height="44"
                         CornerRadius="22"
                         Background="{DynamicResource ControlFillColorSecondaryBrush}"
@@ -71,7 +72,7 @@
                 </Border>
                 <TextBlock Text="{lex:Locale Settings.Slots.Wheel.CenterHint}"
                            HorizontalAlignment="Center"
-                           Margin="0,6,0,0"
+                           Margin="{StaticResource Pulsar.Gap.Top.SM}"
                            FontSize="{StaticResource Pulsar.Type.Caption}"
                            Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
             </StackPanel>
@@ -182,6 +183,7 @@
                                                   ToolTip="{Binding Tooltip}"/>
 
                                 <!-- Hover Edit/Delete Buttons (overlaid, do not affect slot layout) -->
+                                <!-- 光学对齐负值:把操作条压到容器下边缘外侧,不进间距刻度 -->
                                 <StackPanel Orientation="Horizontal"
                                             HorizontalAlignment="Center"
                                             VerticalAlignment="Bottom"
@@ -204,7 +206,7 @@
                                                Icon="{ui:SymbolIcon Edit24}"
                                                Tag="{Binding}"
                                                Click="HoverEdit_Click"
-                                               Margin="0,0,4,0"
+                                               Margin="{StaticResource Pulsar.Gap.Right.XS}"
                                                ToolTip="{lex:Locale Settings.Slots.EditSlot}"/>
                                     <ui:Button Style="{StaticResource PulsarIconButtonStyle}"
                                                Icon="{ui:SymbolIcon Delete24}"
@@ -389,18 +391,18 @@
         <TextBlock Grid.Row="1"
                    Text="{lex:Locale Settings.Slots.Wheel.DragDropHint}"
                    HorizontalAlignment="Center"
-                   Margin="0,6,0,0"
+                   Margin="{StaticResource Pulsar.Gap.Top.SM}"
                    FontSize="{StaticResource Pulsar.Type.Caption}"
                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
 
         <!-- Pager -->
         <Border Grid.Row="2"
-                Margin="0,10,0,0"
-                Padding="12,6"
+                Margin="{StaticResource Pulsar.Gap.Top.MD}"
+                Padding="{StaticResource Pulsar.Pad.H12V8}"
                 Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                 BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                 BorderThickness="1"
-                CornerRadius="8"
+                CornerRadius="{StaticResource Pulsar.Radius.LG}"
                 HorizontalAlignment="Center">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <ui:Button Style="{StaticResource PulsarIconButtonStyle}"
@@ -409,13 +411,13 @@
                            IsEnabled="{Binding HasPreviousPage}"
                            ToolTip="{lex:Locale Settings.Slots.Wheel.PreviousPage}"/>
                 <TextBlock VerticalAlignment="Center"
-                           Margin="10,0,6,0"
+                           Margin="{StaticResource Pulsar.Thk.L12R8}"
                            FontSize="{StaticResource Pulsar.Type.Body}"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}">
                     <Run Text="{lex:Locale Settings.Slots.Wheel.PageLabel}"/>
                 </TextBlock>
                 <TextBlock VerticalAlignment="Center"
-                           Margin="0,0,10,0"
+                           Margin="{StaticResource Pulsar.Gap.Right.MD}"
                            FontWeight="SemiBold"
                            FontSize="{StaticResource Pulsar.Type.Subtitle}"
                            Foreground="{DynamicResource TextFillColorPrimaryBrush}">
@@ -428,7 +430,7 @@
                            ToolTip="{lex:Locale Settings.Slots.Wheel.NextPage}"/>
                 <Rectangle Width="1" Height="16"
                            Fill="{DynamicResource SurfaceStrokeColorDefaultBrush}"
-                           Margin="12,0"
+                           Margin="{StaticResource Pulsar.Gap.Horizontal.MD}"
                            VerticalAlignment="Center"/>
                 <TextBlock VerticalAlignment="Center"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}">
@@ -436,7 +438,7 @@
                     <Run Text="{lex:Locale Settings.Slots.Wheel.SlotsUnit}"/>
                 </TextBlock>
                 <TextBlock VerticalAlignment="Center"
-                           Margin="10,0,0,0"
+                           Margin="{StaticResource Pulsar.Gap.Left.MD}"
                            Foreground="{DynamicResource TextFillColorTertiaryBrush}">
                     <Run Text="{Binding SlotsPerPage, Mode=OneWay}"/>
                     <Run Text="{lex:Locale Settings.Slots.Wheel.PerPage}"/>

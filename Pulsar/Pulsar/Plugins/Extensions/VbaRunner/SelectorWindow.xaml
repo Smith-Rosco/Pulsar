@@ -16,23 +16,23 @@
         <SolidColorBrush x:Key="VbaSelector.Button.PrimaryText" Color="#FFFFFF"/>
     </Window.Resources>
     <Border Background="{StaticResource VbaSelector.Panel.Background}"
-            CornerRadius="8"
+            CornerRadius="{StaticResource Pulsar.Radius.LG}"
             BorderThickness="1"
             BorderBrush="{StaticResource VbaSelector.Panel.Border}"
-            Padding="20">
+            Padding="{StaticResource Pulsar.Pad.XL}">
         <Border.Effect>
             <DropShadowEffect BlurRadius="20" ShadowDepth="5" Opacity="0.2" Color="Black"/>
         </Border.Effect>
         <StackPanel>
             <TextBlock Text="{lex:Locale VbaRunner.SelectTargetWorksheet}"
                        FontWeight="SemiBold"
-                       Margin="0,0,0,15"
+                       Margin="{StaticResource Pulsar.Gap.Bottom.LG}"
                        Foreground="{StaticResource VbaSelector.Text.Primary}"
                        FontSize="{StaticResource Pulsar.Type.Subtitle}"/>
             <ComboBox x:Name="SheetCombo"
                       FontSize="{StaticResource Pulsar.Type.Subtitle}"
-                      Padding="8,5"
-                      Margin="0,0,0,25"
+                      Padding="{StaticResource Pulsar.Pad.H8V4}"
+                      Margin="{StaticResource Pulsar.Gap.Bottom.XXL}"
                       Height="35"
                       Background="{StaticResource VbaSelector.Panel.Background}"
                       BorderBrush="{StaticResource VbaSelector.Input.Border}"
@@ -41,8 +41,8 @@
                 <Button Content="{lex:Locale Dialog.AddSlot.Cancel}"
                         Click="Cancel_Click"
                         IsCancel="True"
-                        Margin="0,0,10,0"
-                        Padding="15,6"
+                        Margin="{StaticResource Pulsar.Gap.Right.MD}"
+                        Padding="{StaticResource Pulsar.Pad.H16V8}"
                         Background="Transparent"
                         Foreground="{StaticResource VbaSelector.Text.Muted}"
                         BorderBrush="{StaticResource VbaSelector.Panel.Border}"
@@ -52,7 +52,7 @@
                         IsDefault="True"
                         Background="{StaticResource VbaSelector.Button.Primary}"
                         Foreground="{StaticResource VbaSelector.Button.PrimaryText}"
-                        Padding="20,6"
+                        Padding="{StaticResource Pulsar.Pad.H20V8}"
                         BorderThickness="0">
                     <Button.Resources>
                         <Style TargetType="Border">

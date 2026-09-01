@@ -65,32 +65,32 @@
         <ScrollViewer Grid.Row="1"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
-                      Padding="0,16,16,0">
+                      Padding="{StaticResource Pulsar.Thk.T16R16}">
             <StackPanel>
                 <!-- Loading Indicator -->
                 <StackPanel Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
-                            Margin="0,48,0,0">
+                            Margin="{StaticResource Pulsar.Gap.Top.Hero}">
                     <ui:ProgressRing IsIndeterminate="True" Width="48" Height="48"/>
                     <TextBlock Text="{lex:Locale Settings.ExternalPlugins.LoadingPlugins}"
                                FontSize="{StaticResource Pulsar.Type.Subtitle}"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                HorizontalAlignment="Center"
-                               Margin="0,16,0,0"/>
+                               Margin="{StaticResource Pulsar.Gap.Top.LG}"/>
                 </StackPanel>
 
                 <!-- Installed External Plugins List -->
                 <StackPanel Visibility="{Binding IsLoading, Converter={StaticResource InverseBoolToVisConverter}}">
                     <!-- Section Header -->
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                    <StackPanel Orientation="Horizontal" Margin="{StaticResource Pulsar.Gap.Bottom.LG}">
                         <TextBlock Text="{lex:Locale Settings.ExternalPlugins.InstalledPluginsHeader}"
                                    FontSize="{StaticResource Pulsar.Type.Subtitle}"
                                    FontWeight="SemiBold"/>
                         <TextBlock Text="{Binding InstalledPlugins.Count}"
                                    FontSize="{StaticResource Pulsar.Type.Subtitle}"
                                    FontWeight="SemiBold"
-                                   Margin="8,0,0,0"/>
+                                   Margin="{StaticResource Pulsar.Gap.Left.SM}"/>
                     </StackPanel>
 
                     <!-- Plugin Cards -->
@@ -112,13 +112,13 @@
                                                            Width="48" Height="48"
                                                            IsTransparent="True"
                                                            ShowActiveGlow="False"
-                                                           Margin="0,0,16,0"
+                                                           Margin="{StaticResource Pulsar.Gap.Right.LG}"
                                                            VerticalAlignment="Top"/>
 
                                         <!-- Plugin Info -->
                                         <StackPanel Grid.Column="1">
                                             <!-- Title and Version -->
-                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                            <StackPanel Orientation="Horizontal" Margin="{StaticResource Pulsar.Gap.Bottom.XS}">
                                                 <TextBlock Text="{Binding Name}"
                                                            FontSize="{StaticResource Pulsar.Type.Subtitle}"
                                                            FontWeight="SemiBold"
@@ -128,13 +128,13 @@
                                                            FontSize="{StaticResource Pulsar.Type.Body}"
                                                            Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                            VerticalAlignment="Center"
-                                                           Margin="8,0,0,0"/>
+                                                           Margin="{StaticResource Pulsar.Gap.Left.SM}"/>
 
                                                 <!-- Installed Badge -->
                                                 <Border Background="{DynamicResource SystemFillColorSuccessBackgroundBrush}"
-                                                        CornerRadius="4"
-                                                        Padding="6,2"
-                                                        Margin="8,0,0,0">
+                                                        CornerRadius="{StaticResource Pulsar.Radius.SM}"
+                                                        Padding="{StaticResource Pulsar.Pad.H8V2}"
+                                                        Margin="{StaticResource Pulsar.Gap.Left.SM}">
                                                     <TextBlock Text="{lex:Locale Settings.ExternalPlugins.Installed}"
                                                                FontSize="{StaticResource Pulsar.Type.Caption}"
                                                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
@@ -144,7 +144,7 @@
                                             <!-- Author -->
                                             <TextBlock FontSize="{StaticResource Pulsar.Type.Body}"
                                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                                       Margin="0,0,0,8">
+                                                       Margin="{StaticResource Pulsar.Gap.Bottom.SM}">
                                                 <Run Text="{lex:Locale Settings.ExternalPlugins.ByAuthor}"/>
                                                 <Run Text="{Binding Author, Mode=OneWay}"/>
                                             </TextBlock>
@@ -154,11 +154,11 @@
                                                        FontSize="{StaticResource Pulsar.Type.Body}"
                                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                        TextWrapping="Wrap"
-                                                       Margin="0,0,0,8"/>
+                                                       Margin="{StaticResource Pulsar.Gap.Bottom.SM}"/>
 
                                             <!-- Installation Path -->
                                             <StackPanel Orientation="Horizontal">
-                                                <ui:SymbolIcon Symbol="Folder24" FontSize="{StaticResource Pulsar.Type.Body}" Margin="0,0,6,0"/>
+                                                <ui:SymbolIcon Symbol="Folder24" FontSize="{StaticResource Pulsar.Type.Body}" Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
                                                 <TextBlock Text="{Binding LocalPath}"
                                                            FontSize="{StaticResource Pulsar.Type.Caption}"
                                                            Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
@@ -182,7 +182,7 @@
                                                        Icon="{ui:SymbolIcon Delete24}"
                                                        Style="{StaticResource PulsarDangerButtonStyle}"
                                                        MinWidth="140"
-                                                       Margin="0,8,0,0"/>
+                                                       Margin="{StaticResource Pulsar.Gap.Top.SM}"/>
                                         </StackPanel>
                                     </Grid>
                                 </Border>
@@ -194,21 +194,21 @@
                     <Border Background="{DynamicResource ControlFillColorDefaultBrush}"
                             BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}"
                             BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="48"
+                            CornerRadius="{StaticResource Pulsar.Radius.LG}"
+                            Padding="{StaticResource Pulsar.Pad.Hero}"
                             Visibility="{Binding InstalledPlugins.Count, Converter={StaticResource CollectionEmptyToVisibilityConverter}}">
                         <StackPanel HorizontalAlignment="Center">
                             <ui:SymbolIcon Symbol="Apps24"
                                            FontSize="64"
                                            Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                            HorizontalAlignment="Center"
-                                           Margin="0,0,0,16"/>
+                                           Margin="{StaticResource Pulsar.Gap.Bottom.LG}"/>
                             <TextBlock Text="{lex:Locale Settings.ExternalPlugins.NoPlugins}"
                                        FontSize="{StaticResource Pulsar.Type.Title}"
                                        FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                        HorizontalAlignment="Center"
-                                       Margin="0,0,0,8"/>
+                                       Margin="{StaticResource Pulsar.Gap.Bottom.SM}"/>
                             <TextBlock Text="{lex:Locale Settings.ExternalPlugins.InstallHint}"
                                        FontSize="{StaticResource Pulsar.Type.Body}"
                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
@@ -216,7 +216,7 @@
                                        TextWrapping="Wrap"
                                        TextAlignment="Center"
                                        MaxWidth="400"
-                                       Margin="0,0,0,16"/>
+                                       Margin="{StaticResource Pulsar.Gap.Bottom.LG}"/>
                             <ui:Button Content="{lex:Locale Settings.ExternalPlugins.InstallFromFile}"
                                        Command="{Binding InstallFromFileCommand}"
                                        Icon="{ui:SymbolIcon FolderOpen24}"
@@ -229,15 +229,15 @@
                     <Border Background="{DynamicResource ControlFillColorDisabledBrush}"
                             BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}"
                             BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="16"
-                            Margin="0,24,0,0">
+                            CornerRadius="{StaticResource Pulsar.Radius.LG}"
+                            Padding="{StaticResource Pulsar.Pad.LG}"
+                            Margin="{StaticResource Pulsar.Gap.Top.XXL}">
                         <StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <StackPanel Orientation="Horizontal" Margin="{StaticResource Pulsar.Gap.Bottom.SM}">
                                 <ui:SymbolIcon Symbol="Info24" 
                                                FontSize="{StaticResource Pulsar.Type.Subtitle}" 
                                                Foreground="{DynamicResource SystemAccentColorBrush}"
-                                               Margin="0,0,8,0"/>
+                                               Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
                                 <TextBlock Text="{lex:Locale Settings.ExternalPlugins.AboutTitle}" 
                                            FontWeight="SemiBold"
                                            FontSize="{StaticResource Pulsar.Type.Subtitle}"/>
@@ -267,7 +267,7 @@
                 Background="{DynamicResource ControlFillColorDefaultBrush}"
                 BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}"
                 BorderThickness="0,1,0,0"
-                Padding="16,8">
+                Padding="{StaticResource Pulsar.Pad.H16V8}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>

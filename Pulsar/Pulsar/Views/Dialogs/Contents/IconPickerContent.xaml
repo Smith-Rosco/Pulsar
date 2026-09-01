@@ -21,7 +21,7 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid Margin="0,0,0,0">
+    <Grid Margin="0">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/> 
             <RowDefinition Height="*"/>    
@@ -29,7 +29,7 @@
         </Grid.RowDefinitions>
 
         <!-- Search Section (primary - always visible) -->
-        <Grid Grid.Row="0" Margin="0,0,0,16">
+        <Grid Grid.Row="0" Margin="{StaticResource Pulsar.Gap.Bottom.LG}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
@@ -41,7 +41,7 @@
                         Icon="{ui:SymbolIcon Search24}"/>
 
             <!-- Upload Custom: secondary action, lower visual weight -->
-            <ui:Button Grid.Column="1" Command="{Binding BrowseFileCommand}" Margin="12,0,0,0"
+            <ui:Button Grid.Column="1" Command="{Binding BrowseFileCommand}" Margin="{StaticResource Pulsar.Gap.Left.MD}"
                        Icon="{ui:SymbolIcon ArrowUpload24}"
                        Content="{lex:Locale Dialog.IconPicker.UploadCustom}" 
                        Style="{StaticResource PulsarSecondaryButtonStyle}"
@@ -53,15 +53,15 @@
                 Background="{DynamicResource ControlFillColorDefaultBrush}" 
                 BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}" 
                 BorderThickness="1"
-                CornerRadius="8" 
-                Padding="12">
+                CornerRadius="{StaticResource Pulsar.Radius.LG}" 
+                Padding="{StaticResource Pulsar.Pad.MD}">
             <Grid>
                 <!-- Loading Indicator -->
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
                             Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
                     <ui:ProgressRing IsIndeterminate="True" Width="48" Height="48"/>
                     <TextBlock Text="{lex:Locale Dialog.IconPicker.Loading}" 
-                               Margin="0,12,0,0"
+                               Margin="{StaticResource Pulsar.Gap.Top.MD}"
                                HorizontalAlignment="Center"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                 </StackPanel>
@@ -106,10 +106,10 @@
                                        Content="{Binding Character}"
                                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                        FontSize="24"
-                                       Padding="4" Margin="2"
+                                       Padding="{StaticResource Pulsar.Pad.XS}" Margin="{StaticResource Pulsar.Pad.XXS}"
                                        ToolTip="{Binding Name}"
                                        Height="56" Width="56"
-                                       CornerRadius="4"
+                                       CornerRadius="{StaticResource Pulsar.Radius.SM}"
                                        HorizontalContentAlignment="Center"
                                        VerticalContentAlignment="Center"/>
                         </DataTemplate>
@@ -119,10 +119,10 @@
         </Border>
 
         <!-- Preview Section -->
-        <Grid Grid.Row="2" Margin="0,20,0,0">
+        <Grid Grid.Row="2" Margin="{StaticResource Pulsar.Gap.Top.XL}">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="{lex:Locale Dialog.IconPicker.Preview}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,12,0" VerticalAlignment="Center"/>
-                <controls:SlotOrb Size="42" IsActive="False" Margin="0,0,12,0" IconKey="{Binding SelectedKey}"/>
+                <TextBlock Text="{lex:Locale Dialog.IconPicker.Preview}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="{StaticResource Pulsar.Gap.Right.MD}" VerticalAlignment="Center"/>
+                <controls:SlotOrb Size="42" IsActive="False" Margin="{StaticResource Pulsar.Gap.Right.MD}" IconKey="{Binding SelectedKey}"/>
                 <StackPanel VerticalAlignment="Center">
                      <TextBlock Text="{lex:Locale Dialog.IconPicker.SelectedIcon}" FontSize="{StaticResource Pulsar.Type.Body}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                      <TextBlock Text="{Binding SelectedKey}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxWidth="300"/>

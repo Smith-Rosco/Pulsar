@@ -8,15 +8,15 @@
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:InputDialogViewModel}">
     
-    <StackPanel Margin="20">
+    <StackPanel Margin="{StaticResource Pulsar.Pad.XL}">
         <TextBlock Text="{Binding Message}" 
                    TextWrapping="Wrap"
-                   Margin="0,0,0,15"
+                   Margin="{StaticResource Pulsar.Gap.Bottom.LG}"
                    FontSize="{StaticResource Pulsar.Type.Subtitle}"/>
         
         <ui:TextBox Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}"
                     PlaceholderText="{Binding Placeholder}"
-                    Padding="10"
+                    Padding="{StaticResource Pulsar.Pad.MD}"
                     FontSize="{StaticResource Pulsar.Type.Subtitle}"
                     Loaded="InputTextBox_Loaded"/>
     </StackPanel>

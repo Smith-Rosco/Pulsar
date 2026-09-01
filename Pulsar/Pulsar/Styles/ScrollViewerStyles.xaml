@@ -1,5 +1,12 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- 数值令牌自给自足：本字典可能被脱离 Application 加载（单元测试手工构造
+         资源树、设计器预览）。ControlTemplate 内的 StaticResource 在模板加载时
+         即解析，届时若 Tokens.xaml 不在作用域会抛 XamlParseException ——
+         与 SlotOrb / IconSelector 等控件自带合并是同一条规则。 -->
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/Tokens.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
 
     <!-- Overlay ScrollViewer Style -->
     <!-- 
@@ -31,7 +38,7 @@
                                    Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
                                    HorizontalAlignment="Right"
                                    Width="10"
-                                   Margin="0,0,2,0">
+                                   Margin="{StaticResource Pulsar.Gap.Right.XXS}">
                             <ScrollBar.Style>
                                 <Style TargetType="ScrollBar">
                                     <Setter Property="Background" Value="Transparent"/>
@@ -49,7 +56,7 @@
                                                                                 <ControlTemplate TargetType="Thumb">
                                                                                     <Border x:Name="ThumbVisual" 
                                                                                             Background="{DynamicResource ControlStrokeColorDefaultBrush}" 
-                                                                                            CornerRadius="4" 
+                                                                                            CornerRadius="{StaticResource Pulsar.Radius.SM}" 
                                                                                             Opacity="0.4"
                                                                                             Width="6"
                                                                                             HorizontalAlignment="Center"/>
@@ -89,7 +96,7 @@
                                    Visibility="{TemplateBinding ComputedHorizontalScrollBarVisibility}"
                                    VerticalAlignment="Bottom"
                                    Height="10"
-                                   Margin="0,0,0,2">
+                                   Margin="{StaticResource Pulsar.Gap.Bottom.XXS}">
                              <ScrollBar.Style>
                                 <Style TargetType="ScrollBar">
                                     <Setter Property="Background" Value="Transparent"/>
@@ -107,7 +114,7 @@
                                                                                 <ControlTemplate TargetType="Thumb">
                                                                                     <Border x:Name="ThumbVisual" 
                                                                                             Background="{DynamicResource ControlStrokeColorDefaultBrush}" 
-                                                                                            CornerRadius="4" 
+                                                                                            CornerRadius="{StaticResource Pulsar.Radius.SM}" 
                                                                                             Opacity="0.4"
                                                                                             Height="6"
                                                                                             VerticalAlignment="Center"/>

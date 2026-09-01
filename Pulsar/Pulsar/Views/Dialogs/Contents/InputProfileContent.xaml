@@ -24,7 +24,7 @@
 
     <StackPanel Margin="0">
         <!-- Profile Name Input -->
-        <TextBlock Text="{lex:Locale Dialog.InputProfile.AppProcess}" FontWeight="Medium" Margin="0,0,0,8"/>
+        <TextBlock Text="{lex:Locale Dialog.InputProfile.AppProcess}" FontWeight="Medium" Margin="{StaticResource Pulsar.Gap.Bottom.SM}"/>
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -35,7 +35,7 @@
                         PlaceholderText="{lex:Locale Dialog.InputProfile.ProcessPlaceholder}"
                         Icon="{ui:SymbolIcon Apps24}"/>
             
-            <ui:Button Grid.Column="1" Margin="8,0,0,0"
+            <ui:Button Grid.Column="1" Margin="{StaticResource Pulsar.Gap.Left.SM}"
                        Icon="{ui:SymbolIcon TargetEdit20}"
                        Command="{Binding PickProcessCommand}"
                        ToolTip="{lex:Locale Dialog.InputProfile.PickProcess}"
@@ -45,17 +45,17 @@
         <TextBlock Text="{Binding ErrorMessage}" 
                    Foreground="{DynamicResource PaletteRedBrush}" 
                    FontSize="{StaticResource Pulsar.Type.Body}" 
-                   Margin="0,6,0,0"
+                   Margin="{StaticResource Pulsar.Gap.Top.SM}"
                    Visibility="{Binding HasError, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
         <!-- Alias Input -->
-        <TextBlock Text="{lex:Locale Dialog.InputProfile.AliasOptional}" FontWeight="Medium" Margin="0,16,0,8"/>
+        <TextBlock Text="{lex:Locale Dialog.InputProfile.AliasOptional}" FontWeight="Medium" Margin="{StaticResource Pulsar.Thk.T16B8}"/>
         <ui:TextBox Text="{Binding Alias, UpdateSourceTrigger=PropertyChanged}"
                     PlaceholderText="{lex:Locale Dialog.InputProfile.AliasPlaceholder}"
                     Icon="{ui:SymbolIcon Rename24}"/>
 
         <!-- Icon Selection -->
-        <TextBlock Text="{lex:Locale Dialog.InputProfile.ProfileIcon}" FontWeight="Medium" Margin="0,20,0,8"/>
+        <TextBlock Text="{lex:Locale Dialog.InputProfile.ProfileIcon}" FontWeight="Medium" Margin="{StaticResource Pulsar.Thk.T20B8}"/>
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -66,8 +66,8 @@
             <!-- Preview -->
             <Border Background="{DynamicResource ControlFillColorDefaultBrush}" 
                     BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}" 
-                    BorderThickness="1" CornerRadius="8"
-                    Width="64" Height="64" Margin="0,0,16,0">
+                    BorderThickness="1" CornerRadius="{StaticResource Pulsar.Radius.LG}"
+                    Width="64" Height="64" Margin="{StaticResource Pulsar.Gap.Right.LG}">
                 <controls:SlotOrb Size="48" IsActive="False" IsHitTestVisible="False" IconKey="{Binding IconKey}"/>
             </Border>
 

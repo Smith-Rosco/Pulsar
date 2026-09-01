@@ -47,7 +47,7 @@
     <Border Background="{DynamicResource ApplicationBackgroundBrush}"
             BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
             BorderThickness="1"
-            CornerRadius="8">
+            CornerRadius="{StaticResource Pulsar.Radius.LG}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/> <!-- Header -->
@@ -64,21 +64,21 @@
 
             <!-- Content -->
             <ContentPresenter Grid.Row="1"
-                              Margin="18,12,18,14"
+                              Margin="{StaticResource Pulsar.Thk.L20T12R20B16}"
                               Content="{Binding Content}"/>
 
             <!-- Footer -->
             <Border Grid.Row="2"
                     Background="{DynamicResource ControlFillColorDefaultBrush}"
-                    Padding="16,10"
-                    CornerRadius="0,0,8,8">
+                    Padding="{StaticResource Pulsar.Pad.H16V12}"
+                    CornerRadius="{StaticResource Pulsar.Radius.Bottom.LG}">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <!-- Tertiary Button (e.g., "Don't Save" or "No" in 3-button dialogs) -->
                     <ui:Button Content="{Binding TertiaryButtonText}"
                                Visibility="{Binding IsTertiaryButtonVisible, Converter={StaticResource BoolToVis}}"
                                Command="{Binding CloseCommand}"
                                Style="{StaticResource PulsarTertiaryDialogButtonStyle}"
-                               Margin="0,0,10,0">
+                               Margin="{StaticResource Pulsar.Gap.Right.MD}">
                         <ui:Button.CommandParameter>
                             <enums:DialogResult>No</enums:DialogResult>
                         </ui:Button.CommandParameter>
@@ -88,7 +88,7 @@
                     <ui:Button Content="{Binding SecondaryButtonText}"
                                Visibility="{Binding IsSecondaryButtonVisible, Converter={StaticResource BoolToVis}}"
                                Style="{StaticResource PulsarSecondaryButtonStyle}"
-                               Margin="0,0,10,0">
+                               Margin="{StaticResource Pulsar.Gap.Right.MD}">
                         <ui:Button.Command>
                             <Binding>
                                 <Binding.Path>WizardSecondaryCommand</Binding.Path>

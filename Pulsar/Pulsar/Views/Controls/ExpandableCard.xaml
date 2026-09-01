@@ -22,7 +22,7 @@
     
     <ui:CardExpander IsExpanded="{Binding IsExpanded, ElementName=Root, Mode=TwoWay}"
                      ContextMenu="{Binding CardContextMenu, ElementName=Root}"
-                     Margin="0,0,0,8"
+                     Margin="{StaticResource Pulsar.Gap.Bottom.SM}"
                      HorizontalContentAlignment="Stretch">
         <ui:CardExpander.Header>
             <Grid>
@@ -37,13 +37,13 @@
                 <!-- Icon (slot orb) -->
                 <Border Grid.Column="0"
                         Style="{StaticResource SlotOrbContainerStyle}"
-                        Margin="0,0,10,0"
+                        Margin="{StaticResource Pulsar.Gap.Right.MD}"
                         Background="{DynamicResource ControlFillColorSecondaryBrush}">
                     <controls:SlotOrb IconKey="{Binding IconKey, ElementName=Root}"
                                        Size="28"
                                        Width="28"
                                        Height="28"
-                                       Margin="5"
+                                       Margin="{StaticResource Pulsar.Pad.XS}"
                                        IsTransparent="True"
                                        ShowActiveGlow="False"/>
                 </Border>
@@ -66,7 +66,7 @@
                         <!-- Header Content (e.g. position badge, chips) -->
                         <ContentPresenter Content="{Binding HeaderContent, ElementName=Root}"
                                           ContentTemplate="{Binding HeaderContentTemplate, ElementName=Root}"
-                                          Margin="6,0,0,0"
+                                          Margin="{StaticResource Pulsar.Gap.Left.SM}"
                                           VerticalAlignment="Center"/>
                     </StackPanel>
                 </StackPanel>
@@ -79,7 +79,7 @@
                            ToolTip="{Binding PrimaryActionTooltip, ElementName=Root}"
                            Visibility="{Binding PrimaryActionVisibility, ElementName=Root}"
                            VerticalAlignment="Center"
-                           Margin="0,0,4,0">
+                           Margin="{StaticResource Pulsar.Gap.Right.XS}">
                     <ui:Button.Icon>
                         <ui:SymbolIcon Symbol="{Binding PrimaryActionIcon, ElementName=Root, FallbackValue=Settings24, TargetNullValue=Settings24}" FontSize="{StaticResource Pulsar.Type.Subtitle}"/>
                     </ui:Button.Icon>
@@ -92,7 +92,7 @@
                            ToolTip="{Binding SecondaryActionTooltip, ElementName=Root}"
                            Visibility="{Binding SecondaryActionVisibility, ElementName=Root}"
                            VerticalAlignment="Center"
-                           Margin="0,0,4,0">
+                           Margin="{StaticResource Pulsar.Gap.Right.XS}">
                     <ui:Button.Icon>
                         <ui:SymbolIcon Symbol="{Binding SecondaryActionIcon, ElementName=Root, FallbackValue=DocumentText24, TargetNullValue=DocumentText24}" FontSize="{StaticResource Pulsar.Type.Subtitle}"/>
                     </ui:Button.Icon>
@@ -105,7 +105,7 @@
                                  Visibility="{Binding IsToggleVisible, ElementName=Root, Converter={StaticResource BoolToVis}}"
                                  Content=""
                                  VerticalAlignment="Center"
-                                 Margin="8,0,0,0"
+                                 Margin="{StaticResource Pulsar.Gap.Left.SM}"
                                  MinWidth="40"/>
             </Grid>
         </ui:CardExpander.Header>
@@ -114,7 +114,7 @@
         <Grid Tag="{Binding PageDataContext, ElementName=Root}">
             <ContentPresenter Content="{Binding ExpandedContent, ElementName=Root}"
                               ContentTemplate="{Binding ExpandedContentTemplate, ElementName=Root}"
-                              Margin="0,8,0,0"/>
+                              Margin="{StaticResource Pulsar.Gap.Top.SM}"/>
         </Grid>
     </ui:CardExpander>
 </UserControl>

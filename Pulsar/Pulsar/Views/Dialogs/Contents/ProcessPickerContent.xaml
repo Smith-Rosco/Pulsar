@@ -21,7 +21,7 @@
         <ui:TextBox Grid.Row="0" x:Name="SearchBox" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
                     PlaceholderText="{lex:Locale Dialog.ProcessPicker.SearchPlaceholder}" 
                     Icon="{ui:SymbolIcon Search24}"
-                    Margin="0,0,0,15"/>
+                    Margin="{StaticResource Pulsar.Gap.Bottom.LG}"/>
 
         <ListBox Grid.Row="1" ItemsSource="{Binding FilteredProcesses}" 
                  SelectedItem="{Binding SelectedProcess}"
@@ -43,8 +43,8 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <Grid Width="32" Height="32" Margin="0,0,10,0">
-                            <Border Background="{DynamicResource ControlFillColorDefaultBrush}" CornerRadius="4">
+                        <Grid Width="32" Height="32" Margin="{StaticResource Pulsar.Gap.Right.MD}">
+                            <Border Background="{DynamicResource ControlFillColorDefaultBrush}" CornerRadius="{StaticResource Pulsar.Radius.SM}">
                                 <ui:SymbolIcon Symbol="AppGeneric24" FontSize="{StaticResource Pulsar.Type.Subtitle}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                             </Border>
                             <Image RenderOptions.BitmapScalingMode="HighQuality">

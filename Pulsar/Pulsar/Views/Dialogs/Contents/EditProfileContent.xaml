@@ -20,16 +20,16 @@
 
     <StackPanel Margin="0">
         <TextBlock Text="{lex:Locale Dialog.EditProfile.ProcessName}" FontWeight="Medium"/>
-        <TextBlock Text="{Binding DisplayProcessName}" Margin="0,4,0,16" Opacity="0.7" FontSize="{StaticResource Pulsar.Type.Subtitle}"/>
+        <TextBlock Text="{Binding DisplayProcessName}" Margin="{StaticResource Pulsar.Thk.T4B16}" Opacity="0.7" FontSize="{StaticResource Pulsar.Type.Subtitle}"/>
 
         <!-- Alias Input -->
-        <TextBlock Text="{lex:Locale Dialog.EditProfile.Alias}" FontWeight="Medium" Margin="0,0,0,8"/>
+        <TextBlock Text="{lex:Locale Dialog.EditProfile.Alias}" FontWeight="Medium" Margin="{StaticResource Pulsar.Gap.Bottom.SM}"/>
         <ui:TextBox Text="{Binding Alias, UpdateSourceTrigger=PropertyChanged}"
                     PlaceholderText="{lex:Locale Dialog.EditProfile.AliasPlaceholder}"
                     Icon="{ui:SymbolIcon Rename24}"/>
 
         <!-- Icon Selection -->
-        <TextBlock Text="{lex:Locale Dialog.EditProfile.ProfileIcon}" FontWeight="Medium" Margin="0,20,0,8"/>
+        <TextBlock Text="{lex:Locale Dialog.EditProfile.ProfileIcon}" FontWeight="Medium" Margin="{StaticResource Pulsar.Thk.T20B8}"/>
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -40,8 +40,8 @@
             <!-- Preview -->
             <Border Background="{DynamicResource ControlFillColorDefaultBrush}" 
                     BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}" 
-                    BorderThickness="1" CornerRadius="8"
-                    Width="64" Height="64" Margin="0,0,16,0">
+                    BorderThickness="1" CornerRadius="{StaticResource Pulsar.Radius.LG}"
+                    Width="64" Height="64" Margin="{StaticResource Pulsar.Gap.Right.LG}">
                 <controls:SlotOrb Size="48" IsActive="False" IsHitTestVisible="False" IconKey="{Binding IconKey}"/>
             </Border>
 

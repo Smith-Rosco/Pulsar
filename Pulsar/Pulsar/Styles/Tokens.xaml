@@ -87,29 +87,151 @@
     <ExponentialEase x:Key="Pulsar.Easing.Emphasis" EasingMode="EaseOut" Exponent="5" x:Shared="False"/>
     <CubicEase x:Key="Pulsar.Easing.Subtle" EasingMode="EaseOut" x:Shared="False"/>
 
-    <!-- ==================== 间距 (4px 网格) ==================== -->
+    <!-- ==================== 间距刻度 ====================
+         数据驱动：原始 606 个非零间距分量的直方图决定了本刻度。
+         旧刻度（4/8/16/24/32）与真实用量错位，这正是它零引用的根因之一：
+           · 12 出现 89 次，是第二高频值，旧刻度却从 8 直接跳到 16，把它跳过了；
+           · 32 需求为 0 次，却占着一个档位。
+         改为 4px 基准 + 低区 2px 细分，并保留 20/24/48 覆盖卡片内边距与空状态留白。
 
-    <sys:Double x:Key="Pulsar.Space.XS">4</sys:Double>
-    <sys:Double x:Key="Pulsar.Space.SM">8</sys:Double>
-    <sys:Double x:Key="Pulsar.Space.MD">16</sys:Double>
-    <sys:Double x:Key="Pulsar.Space.LG">24</sys:Double>
-    <sys:Double x:Key="Pulsar.Space.XL">32</sys:Double>
+         档位   2    4    8    12   16   20   24   48
+         需求  48   86  133   89   58   27    9    7
 
-    <!-- 统一值 Thickness，用于 Margin / Padding -->
+         注意：本刻度不另设 Pulsar.Space.* 双精度令牌 —— XAML 无法对
+         Thickness 做算术，抽象层接不进去，只会变成又一组僵尸令牌。
+         刻度直接体现在下方 Pad / Gap / Thk 系列 Thickness 的取值上。
+         ================================================ -->
+
+
+    <!-- 四边等距 -->
+    <Thickness x:Key="Pulsar.Pad.XXS">2</Thickness>
     <Thickness x:Key="Pulsar.Pad.XS">4</Thickness>
     <Thickness x:Key="Pulsar.Pad.SM">8</Thickness>
-    <Thickness x:Key="Pulsar.Pad.MD">16</Thickness>
-    <Thickness x:Key="Pulsar.Pad.LG">24</Thickness>
-    <Thickness x:Key="Pulsar.Pad.XL">32</Thickness>
+    <Thickness x:Key="Pulsar.Pad.MD">12</Thickness>
+    <Thickness x:Key="Pulsar.Pad.LG">16</Thickness>
+    <Thickness x:Key="Pulsar.Pad.XL">20</Thickness>
+    <Thickness x:Key="Pulsar.Pad.XXL">24</Thickness>
+    <Thickness x:Key="Pulsar.Pad.Hero">48</Thickness>
+
+    <!-- ==================== 单边 / 轴向间距 ====================
+         旧版 Pulsar.Pad.* 只有四边等距的 Thickness，而全库 90% 的 Margin
+         用法是单边的（"0,0,8,0" 出现 44 次）—— 均匀 Thickness 表达不了
+         单边间隙，这才是间距令牌引用数为 0 的根本原因：令牌形状必须匹配
+         真实用法，否则定义了也用不上。
+
+         Pulsar.Gap.<方向>.<档位>
+         方向 = Left / Top / Right / Bottom / Horizontal / Vertical
+         仅生成有真实需求的 46 个组合，不做全矩阵铺开。
+         ===================================================== -->
+
+    <Thickness x:Key="Pulsar.Gap.Left.XS">4,0,0,0</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Left.SM">8,0,0,0</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Left.MD">12,0,0,0</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Left.LG">16,0,0,0</Thickness>
+
+    <Thickness x:Key="Pulsar.Gap.Top.XXS">0,2,0,0</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Top.XS">0,4,0,0</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Top.SM">0,8,0,0</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Top.MD">0,12,0,0</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Top.LG">0,16,0,0</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Top.XL">0,20,0,0</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Top.XXL">0,24,0,0</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Top.Hero">0,48,0,0</Thickness>
+
+    <Thickness x:Key="Pulsar.Gap.Right.XXS">0,0,2,0</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Right.XS">0,0,4,0</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Right.SM">0,0,8,0</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Right.MD">0,0,12,0</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Right.LG">0,0,16,0</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Right.XL">0,0,20,0</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Right.XXL">0,0,24,0</Thickness>
+
+    <Thickness x:Key="Pulsar.Gap.Bottom.XXS">0,0,0,2</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Bottom.XS">0,0,0,4</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Bottom.SM">0,0,0,8</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Bottom.MD">0,0,0,12</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Bottom.LG">0,0,0,16</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Bottom.XL">0,0,0,20</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Bottom.XXL">0,0,0,24</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Bottom.Hero">0,0,0,48</Thickness>
+
+    <Thickness x:Key="Pulsar.Gap.Horizontal.XXS">2,0</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Horizontal.XS">4,0</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Horizontal.SM">8,0</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Horizontal.MD">12,0</Thickness>
+
+    <Thickness x:Key="Pulsar.Gap.Vertical.XXS">0,2</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Vertical.XS">0,4</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Vertical.SM">0,8</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Vertical.MD">0,12</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Vertical.LG">0,16</Thickness>
+    <Thickness x:Key="Pulsar.Gap.Vertical.XXL">0,24</Thickness>
+
+    <!-- ==================== 对称两值间距 ====================
+         形如 Padding="10,7"（水平,垂直）。命名 Pulsar.Pad.H<h>V<v>，
+         按真实需求生成 12 个，覆盖 39 处声明。
+         ==================================================== -->
+
+    <Thickness x:Key="Pulsar.Pad.H2V2">2,2</Thickness>
+    <Thickness x:Key="Pulsar.Pad.H4V2">4,2</Thickness>
+    <Thickness x:Key="Pulsar.Pad.H8V2">8,2</Thickness>
+    <Thickness x:Key="Pulsar.Pad.H8V4">8,4</Thickness>
+    <Thickness x:Key="Pulsar.Pad.H12V4">12,4</Thickness>
+    <Thickness x:Key="Pulsar.Pad.H12V8">12,8</Thickness>
+    <Thickness x:Key="Pulsar.Pad.H12V12">12,12</Thickness>
+    <Thickness x:Key="Pulsar.Pad.H16V8">16,8</Thickness>
+    <Thickness x:Key="Pulsar.Pad.H16V12">16,12</Thickness>
+    <Thickness x:Key="Pulsar.Pad.H16V16">16,16</Thickness>
+    <Thickness x:Key="Pulsar.Pad.H20V8">20,8</Thickness>
+    <Thickness x:Key="Pulsar.Pad.H20V16">20,16</Thickness>
+
+    <!-- ==================== 多轴组合间距 ====================
+         同时作用于两个以上方向、且不对称的组合。
+         命名 Pulsar.Thk.<轴><值>…，轴序固定 L(eft)/T(op)/R(ight)/B(ottom)，
+         值为 0 的轴省略。例：Pulsar.Thk.T8B4 = "0,8,0,4"（上 8 下 4）。
+         分量已全部吸附到本刻度。
+         ==================================================== -->
+
+    <Thickness x:Key="Pulsar.Thk.L16B8">16,0,0,8</Thickness>
+    <Thickness x:Key="Pulsar.Thk.R8B4">0,0,8,4</Thickness>
+    <Thickness x:Key="Pulsar.Thk.R8B8">0,0,8,8</Thickness>
+    <Thickness x:Key="Pulsar.Thk.R20B20">0,0,20,20</Thickness>
+    <Thickness x:Key="Pulsar.Thk.R24B20">0,0,24,20</Thickness>
+    <Thickness x:Key="Pulsar.Thk.T4B8">0,4,0,8</Thickness>
+    <Thickness x:Key="Pulsar.Thk.T4B16">0,4,0,16</Thickness>
+    <Thickness x:Key="Pulsar.Thk.T8B2">0,8,0,2</Thickness>
+    <Thickness x:Key="Pulsar.Thk.T8B4">0,8,0,4</Thickness>
+    <Thickness x:Key="Pulsar.Thk.T8B24">0,8,0,24</Thickness>
+    <Thickness x:Key="Pulsar.Thk.T8R8">0,8,8,0</Thickness>
+    <Thickness x:Key="Pulsar.Thk.T8R16">0,8,16,0</Thickness>
+    <Thickness x:Key="Pulsar.Thk.T12B4">0,12,0,4</Thickness>
+    <Thickness x:Key="Pulsar.Thk.T12B8">0,12,0,8</Thickness>
+    <Thickness x:Key="Pulsar.Thk.T16B8">0,16,0,8</Thickness>
+    <Thickness x:Key="Pulsar.Thk.T16R16">0,16,16,0</Thickness>
+    <Thickness x:Key="Pulsar.Thk.T20B8">0,20,0,8</Thickness>
+    <Thickness x:Key="Pulsar.Thk.T2R4B2">0,2,4,2</Thickness>
+    <Thickness x:Key="Pulsar.Thk.L2T2">2,2,0,0</Thickness>
+    <Thickness x:Key="Pulsar.Thk.L12R8">12,0,8,0</Thickness>
+    <Thickness x:Key="Pulsar.Thk.L16R16B4">16,0,16,4</Thickness>
+    <Thickness x:Key="Pulsar.Thk.L16T12R20B12">16,12,20,12</Thickness>
+    <Thickness x:Key="Pulsar.Thk.L20T12R20B16">20,12,20,16</Thickness>
 
     <!-- ==================== 圆角刻度 ====================
-         替代散落的 5 / 6 / 8 / 10（其中 5 不在任何既有刻度内）。
-         ============================================================ -->
+         对齐 Fluent 2。原始分布：4(17) 8(14) 6(13) 10(4) 12(3) 16(2)
+         3(2) 1(2) 20(1) 22(1) 9(1)。
+         吸附规则：1→2、3→4、9→8、10→12、20→16。
+         豁免：几何半径（如 44×44 元素上的 CornerRadius=22 构成正圆）
+         由尺寸决定而非设计刻度，保留裸值并注释。
+         ================================================ -->
 
-    <CornerRadius x:Key="Pulsar.Radius.XS">3</CornerRadius>
+    <CornerRadius x:Key="Pulsar.Radius.XS">2</CornerRadius>
     <CornerRadius x:Key="Pulsar.Radius.SM">4</CornerRadius>
     <CornerRadius x:Key="Pulsar.Radius.MD">6</CornerRadius>
     <CornerRadius x:Key="Pulsar.Radius.LG">8</CornerRadius>
     <CornerRadius x:Key="Pulsar.Radius.XL">12</CornerRadius>
+    <CornerRadius x:Key="Pulsar.Radius.XXL">16</CornerRadius>
+
+    <!-- 仅下方两角圆角（对话框底栏 / 底部容器） -->
+    <CornerRadius x:Key="Pulsar.Radius.Bottom.LG">0,0,8,8</CornerRadius>
 
 </ResourceDictionary>

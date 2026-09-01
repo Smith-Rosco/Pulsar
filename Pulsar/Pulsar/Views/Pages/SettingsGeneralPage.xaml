@@ -36,7 +36,7 @@
                                Icon="{ui:SymbolIcon FolderOpen24}"
                                Command="{Binding OpenLogsFolderCommand}"
                                Style="{StaticResource PulsarSecondaryButtonStyle}"
-                               Margin="0,0,8,0"/>
+                               Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
                     <ui:Button Content="{lex:Locale Settings.General.ResetDefaults}"
                                Icon="{ui:SymbolIcon ArrowReset24}"
                                Command="{Binding ResetConfigCommand}"
@@ -46,10 +46,10 @@
         </controls:SettingsPageHeader>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel DataContext="{Binding GeneralSettings}" Margin="0,0,20,0">
+            <StackPanel DataContext="{Binding GeneralSettings}" Margin="{StaticResource Pulsar.Gap.Right.XL}">
                 
                 <!-- Appearance Section -->
-                <ui:CardExpander Icon="Color24" Header="{lex:Locale Settings.General.Appearance}" Margin="0,0,0,12" IsExpanded="True">
+                <ui:CardExpander Icon="Color24" Header="{lex:Locale Settings.General.Appearance}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="True">
                     <StackPanel>
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -66,20 +66,20 @@
                                       AutomationProperties.Name="{lex:Locale Settings.General.Theme}">
                                 <ComboBoxItem Tag="Dark">
                                     <StackPanel Orientation="Horizontal">
-                                        <ui:SymbolIcon Symbol="WeatherMoon20" FontSize="{StaticResource Pulsar.Type.Subtitle}" Margin="0,0,8,0"/>
+                                        <ui:SymbolIcon Symbol="WeatherMoon20" FontSize="{StaticResource Pulsar.Type.Subtitle}" Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
                                         <TextBlock Text="{lex:Locale Settings.General.Dark}" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </ComboBoxItem>
                                 <ComboBoxItem Tag="Light">
                                     <StackPanel Orientation="Horizontal">
-                                        <ui:SymbolIcon Symbol="WeatherSunny20" FontSize="{StaticResource Pulsar.Type.Subtitle}" Margin="0,0,8,0"/>
+                                        <ui:SymbolIcon Symbol="WeatherSunny20" FontSize="{StaticResource Pulsar.Type.Subtitle}" Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
                                         <TextBlock Text="{lex:Locale Settings.General.Light}" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </ComboBoxItem>
                             </ComboBox>
                         </Grid>
 
-                        <Separator Margin="0,12"/>
+                        <Separator Margin="{StaticResource Pulsar.Gap.Vertical.MD}"/>
 
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -98,9 +98,9 @@
                 </ui:CardExpander>
 
                 <!-- Radial Menu Layout Section -->
-                <ui:CardExpander Icon="Apps24" Header="{lex:Locale Settings.General.RadialMenuLayout}" Margin="0,0,0,12" IsExpanded="False">
+                <ui:CardExpander Icon="Apps24" Header="{lex:Locale Settings.General.RadialMenuLayout}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="False">
                     <StackPanel>
-                        <Grid Margin="0,0,0,12">
+                        <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -110,7 +110,7 @@
                                 <TextBlock Text="{Binding DataContext.SlotsPerPagePreview, RelativeSource={RelativeSource AncestorType=Page}}" 
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
                                            FontSize="{StaticResource Pulsar.Type.Body}"
-                                           Margin="0,4,0,0"/>
+                                           Margin="{StaticResource Pulsar.Gap.Top.XS}"/>
                             </StackPanel>
                             <ui:NumberBox Grid.Column="1"
                                           Value="{Binding SlotsPerPage, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -124,9 +124,9 @@
                                    TextWrapping="Wrap"
                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}" 
                                    FontSize="{StaticResource Pulsar.Type.Caption}"
-                                   Margin="0,0,0,0"/>
+                                   Margin="0"/>
 
-                        <Separator Margin="0,12"/>
+                        <Separator Margin="{StaticResource Pulsar.Gap.Vertical.MD}"/>
 
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -140,7 +140,7 @@
                                            FontSize="{StaticResource Pulsar.Type.Body}"
                                            TextWrapping="Wrap"
                                            MaxWidth="420"
-                                           Margin="0,4,0,0"/>
+                                           Margin="{StaticResource Pulsar.Gap.Top.XS}"/>
                             </StackPanel>
                             <ui:NumberBox Grid.Column="1"
                                           Value="{Binding QuickSwitchTimeoutMs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -153,10 +153,10 @@
                 </ui:CardExpander>
 
                 <!-- Hotkeys Section -->
-                <ui:CardExpander Icon="Keyboard24" Header="{lex:Locale Settings.General.GlobalHotkeys}" Margin="0,0,0,12" IsExpanded="True">
+                <ui:CardExpander Icon="Keyboard24" Header="{lex:Locale Settings.General.GlobalHotkeys}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="True">
                     <StackPanel>
                         <!-- Grid Hotkey -->
-                        <Grid Margin="0,0,0,12">
+                        <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -171,7 +171,7 @@
                                                  ActionId="ShowGrid"/>
                         </Grid>
                         
-                        <Separator Margin="0,12"/>
+                        <Separator Margin="{StaticResource Pulsar.Gap.Vertical.MD}"/>
 
                         <!-- Switcher Hotkey -->
                         <Grid>
@@ -192,9 +192,9 @@
                 </ui:CardExpander>
 
                 <!-- Right-Drag Gesture Section -->
-                <ui:CardExpander Icon="DialPad24" Header="{lex:Locale Settings.General.RightDragSummon}" Margin="0,0,0,12" IsExpanded="False">
+                <ui:CardExpander Icon="DialPad24" Header="{lex:Locale Settings.General.RightDragSummon}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="False">
                     <StackPanel>
-                        <Grid Margin="0,0,0,12">
+                        <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -211,7 +211,7 @@
                                    FontSize="{StaticResource Pulsar.Type.Body}"
                                    TextWrapping="Wrap"
                                    MaxWidth="420"
-                                   Margin="0,0,0,12">
+                                   Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Visibility" Value="Collapsed"/>
@@ -225,7 +225,7 @@
                         </TextBlock>
 
                         <!-- Summon mode (only when the gesture is enabled) -->
-                        <Grid Margin="0,0,0,12">
+                        <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -249,7 +249,7 @@
                         </Grid>
 
                         <!-- Drag threshold (only for OnThreshold mode) -->
-                        <Grid Margin="0,0,0,12">
+                        <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -278,17 +278,17 @@
                                         IsEnabled="{Binding EnableRightDragSummon}"
                                         VerticalAlignment="Center"/>
                                 <TextBlock Text="{Binding GestureDragThreshold, StringFormat={}{0:0}px}"
-                                           Margin="8,0,0,0"
+                                           Margin="{StaticResource Pulsar.Gap.Left.SM}"
                                            VerticalAlignment="Center"
                                            MinWidth="40"
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                             </StackPanel>
                         </Grid>
 
-                        <Separator Margin="0,12"/>
+                        <Separator Margin="{StaticResource Pulsar.Gap.Vertical.MD}"/>
 
                         <!-- Switcher modifier -->
-                        <Grid Margin="0,0,0,12">
+                        <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -317,7 +317,7 @@
                             </ComboBox>
                         </Grid>
 
-                        <Separator Margin="0,12"/>
+                        <Separator Margin="{StaticResource Pulsar.Gap.Vertical.MD}"/>
 
                         <!-- Action modifier -->
                         <Grid>
@@ -352,9 +352,9 @@
                 </ui:CardExpander>
 
                 <!-- Cache Management Section -->
-                <ui:CardExpander Icon="Database24" Header="{lex:Locale Settings.General.CacheManagement}" Margin="0,0,0,12" IsExpanded="False">
+                <ui:CardExpander Icon="Database24" Header="{lex:Locale Settings.General.CacheManagement}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="False">
                     <StackPanel>
-                        <Grid Margin="0,0,0,12">
+                        <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -376,9 +376,9 @@
                                    TextWrapping="Wrap"
                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}" 
                                    FontSize="{StaticResource Pulsar.Type.Caption}"
-                                   Margin="0,0,0,0"/>
+                                   Margin="0"/>
 
-                        <Separator Margin="0,12"/>
+                        <Separator Margin="{StaticResource Pulsar.Gap.Vertical.MD}"/>
 
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -401,7 +401,7 @@
                 </ui:CardExpander>
 
                 <!-- Logging Section -->
-                <ui:CardExpander Icon="Code24" Header="{lex:Locale Settings.General.Logging}" Margin="0,0,0,12" IsExpanded="False">
+                <ui:CardExpander Icon="Code24" Header="{lex:Locale Settings.General.Logging}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="False">
                     <StackPanel>
                         <Grid>
                             <Grid.ColumnDefinitions>

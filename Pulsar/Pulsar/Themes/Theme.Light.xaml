@@ -46,6 +46,8 @@
     <SolidColorBrush x:Key="Theme.Orb.Active.Ring" Color="#990067C0"/>
     <!-- 保留以兼容旧引用，但浅色下已不作为激活反馈通道 -->
     <SolidColorBrush x:Key="Theme.Orb.Active.Glow" Color="#00FFFFFF"/>
+    <!-- 推荐态光晕。明暗两版取值暂同，待浅色下对比度实测后再分色。 -->
+    <SolidColorBrush x:Key="Theme.Orb.Recommended" Color="#FFFFD700"/>
 
     <!-- Slot title (text-only orb) readability tokens: local semi-opaque backplate -->
     <SolidColorBrush x:Key="Theme.Orb.Label.Background" Color="#E6FFFFFF"/>

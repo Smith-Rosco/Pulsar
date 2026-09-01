@@ -30,10 +30,10 @@
                                      Description="{lex:Locale Settings.About.Description}"/>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel Margin="0,0,20,0" MaxWidth="700" HorizontalAlignment="Left">
+            <StackPanel Margin="{StaticResource Pulsar.Gap.Right.XL}" MaxWidth="700" HorizontalAlignment="Left">
 
                 <!-- App Identity Card -->
-                <ui:CardControl Margin="0,0,0,16">
+                <ui:CardControl Margin="{StaticResource Pulsar.Gap.Bottom.LG}">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -46,8 +46,8 @@
                                 Background="{DynamicResource ControlFillColorDefaultBrush}"
                                 BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
                                 BorderThickness="1"
-                                CornerRadius="16"
-                                Margin="0,0,20,0">
+                                CornerRadius="{StaticResource Pulsar.Radius.XXL}"
+                                Margin="{StaticResource Pulsar.Gap.Right.XL}">
                             <Image Width="52"
                                    Height="52"
                                    HorizontalAlignment="Center"
@@ -58,18 +58,18 @@
 
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <Image Height="26"
-                                   Margin="0,0,0,2"
+                                   Margin="{StaticResource Pulsar.Gap.Bottom.XXS}"
                                    HorizontalAlignment="Left"
                                    Source="pack://application:,,,/Pulsar;component/Assets/Brand/wordmark.png"
                                    Stretch="Uniform" />
                             <TextBlock Text="{Binding ProductName}" 
                                        FontSize="{StaticResource Pulsar.Type.Body}" 
                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                       Margin="0,0,0,6"/>
+                                       Margin="{StaticResource Pulsar.Gap.Bottom.SM}"/>
                             <TextBlock Text="{Binding AppVersion}" 
                                        FontSize="{StaticResource Pulsar.Type.Subtitle}" 
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                       Margin="0,0,0,8"/>
+                                       Margin="{StaticResource Pulsar.Gap.Bottom.SM}"/>
                             <TextBlock Text="{Binding AppDescription}" 
                                        FontSize="{StaticResource Pulsar.Type.Body}" 
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
@@ -81,19 +81,19 @@
                 </ui:CardControl>
 
                 <!-- Configuration Backup -->
-                <ui:CardExpander Icon="Archive24" Header="{lex:Locale Settings.About.ConfigBackupTitle}" Margin="0,0,0,12" IsExpanded="True">
+                <ui:CardExpander Icon="Archive24" Header="{lex:Locale Settings.About.ConfigBackupTitle}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="True">
                     <StackPanel>
                         <TextBlock Text="{lex:Locale Settings.About.ConfigBackupDescription}"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    FontSize="{StaticResource Pulsar.Type.Body}"
                                    TextWrapping="Wrap"
-                                   Margin="0,0,0,12"/>
+                                   Margin="{StaticResource Pulsar.Gap.Bottom.MD}"/>
                         <StackPanel Orientation="Horizontal">
                             <ui:Button Content="{lex:Locale Settings.About.ExportConfig}"
                                        Icon="{ui:SymbolIcon SaveArrowRight24}"
                                        Command="{Binding ExportConfigCommand}"
                                        Style="{StaticResource PulsarPrimaryButtonStyle}"
-                                       Margin="0,0,8,0"/>
+                                       Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
                             <ui:Button Content="{lex:Locale Settings.About.ImportConfig}"
                                        Icon="{ui:SymbolIcon FolderOpen24}"
                                        Command="{Binding ImportConfigCommand}"
@@ -103,9 +103,9 @@
                 </ui:CardExpander>
 
                 <!-- Links -->
-                <ui:CardExpander Icon="Link24" Header="{lex:Locale Settings.About.Links}" Margin="0,0,0,12" IsExpanded="True">
+                <ui:CardExpander Icon="Link24" Header="{lex:Locale Settings.About.Links}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="True">
                     <StackPanel>
-                        <Grid Margin="0,0,0,8">
+                        <Grid Margin="{StaticResource Pulsar.Gap.Bottom.SM}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -123,9 +123,9 @@
                                        Style="{StaticResource PulsarSecondaryButtonStyle}"/>
                         </Grid>
 
-                        <Separator Margin="0,8"/>
+                        <Separator Margin="{StaticResource Pulsar.Gap.Vertical.SM}"/>
 
-                        <Grid Margin="0,8,0,8">
+                        <Grid Margin="{StaticResource Pulsar.Gap.Vertical.SM}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -143,9 +143,9 @@
                                        Style="{StaticResource PulsarSecondaryButtonStyle}"/>
                         </Grid>
 
-                        <Separator Margin="0,8"/>
+                        <Separator Margin="{StaticResource Pulsar.Gap.Vertical.SM}"/>
 
-                        <Grid Margin="0,8,0,0">
+                        <Grid Margin="{StaticResource Pulsar.Gap.Top.SM}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -166,9 +166,9 @@
                 </ui:CardExpander>
 
                 <!-- System Information -->
-                <ui:CardExpander Icon="Info24" Header="{lex:Locale Settings.About.SystemInfo}" Margin="0,0,0,12" IsExpanded="False">
+                <ui:CardExpander Icon="Info24" Header="{lex:Locale Settings.About.SystemInfo}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="False">
                     <StackPanel>
-                        <Grid Margin="0,0,0,12">
+                        <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="140"/>
                                 <ColumnDefinition Width="*"/>
@@ -182,7 +182,7 @@
                                        FontSize="{StaticResource Pulsar.Type.Body}"/>
                         </Grid>
 
-                        <Grid Margin="0,0,0,12">
+                        <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="140"/>
                                 <ColumnDefinition Width="*"/>
@@ -196,7 +196,7 @@
                                        FontSize="{StaticResource Pulsar.Type.Body}"/>
                         </Grid>
 
-                        <Grid Margin="0,0,0,12">
+                        <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="140"/>
                                 <ColumnDefinition Width="*"/>
@@ -210,7 +210,7 @@
                                        FontSize="{StaticResource Pulsar.Type.Body}"/>
                         </Grid>
 
-                        <Grid Margin="0,0,0,12">
+                        <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="140"/>
                                 <ColumnDefinition Width="*"/>
@@ -238,7 +238,7 @@
                                        FontSize="{StaticResource Pulsar.Type.Body}"/>
                         </Grid>
 
-                        <Separator Margin="0,16"/>
+                        <Separator Margin="{StaticResource Pulsar.Gap.Vertical.LG}"/>
 
                         <ui:Button Content="{lex:Locale Settings.About.CopySystemInfo}"
                                    Icon="{ui:SymbolIcon Copy24}"
@@ -249,33 +249,33 @@
                 </ui:CardExpander>
 
                 <!-- Credits -->
-                <ui:CardExpander Icon="People24" Header="{lex:Locale Settings.About.Credits}" Margin="0,0,0,12" IsExpanded="False">
+                <ui:CardExpander Icon="People24" Header="{lex:Locale Settings.About.Credits}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="False">
                     <StackPanel>
                         <TextBlock Text="{lex:Locale Settings.About.BuiltWith}" 
                                    FontSize="{StaticResource Pulsar.Type.Body}" 
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                   Margin="0,0,0,12"/>
+                                   Margin="{StaticResource Pulsar.Gap.Bottom.MD}"/>
 
                         <!-- UI & Input -->
                         <TextBlock Text="{lex:Locale Settings.About.CreditsGroupUi}" 
                                    FontSize="{StaticResource Pulsar.Type.Caption}" 
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                   Margin="0,0,0,4"/>
-                        <StackPanel Margin="16,0,0,8">
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
-                                <TextBlock Text="•" Margin="0,0,8,0" FontSize="{StaticResource Pulsar.Type.Body}"/>
-                                <TextBlock Text="{lex:Locale Settings.About.WpfUi}" FontWeight="Medium" FontSize="{StaticResource Pulsar.Type.Body}" Margin="0,0,4,0"/>
+                                   Margin="{StaticResource Pulsar.Gap.Bottom.XS}"/>
+                        <StackPanel Margin="{StaticResource Pulsar.Thk.L16B8}">
+                            <StackPanel Orientation="Horizontal" Margin="{StaticResource Pulsar.Gap.Bottom.XXS}">
+                                <TextBlock Text="•" Margin="{StaticResource Pulsar.Gap.Right.SM}" FontSize="{StaticResource Pulsar.Type.Body}"/>
+                                <TextBlock Text="{lex:Locale Settings.About.WpfUi}" FontWeight="Medium" FontSize="{StaticResource Pulsar.Type.Body}" Margin="{StaticResource Pulsar.Gap.Right.XS}"/>
                                 <TextBlock Text="{lex:Locale Settings.About.WpfUiDescription}" FontSize="{StaticResource Pulsar.Type.Body}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
-                                <TextBlock Text="•" Margin="0,0,8,0" FontSize="{StaticResource Pulsar.Type.Body}"/>
-                                <TextBlock Text="{lex:Locale Settings.About.HardcodetNotifyIcon}" FontWeight="Medium" FontSize="{StaticResource Pulsar.Type.Body}" Margin="0,0,4,0"/>
+                            <StackPanel Orientation="Horizontal" Margin="{StaticResource Pulsar.Gap.Bottom.XXS}">
+                                <TextBlock Text="•" Margin="{StaticResource Pulsar.Gap.Right.SM}" FontSize="{StaticResource Pulsar.Type.Body}"/>
+                                <TextBlock Text="{lex:Locale Settings.About.HardcodetNotifyIcon}" FontWeight="Medium" FontSize="{StaticResource Pulsar.Type.Body}" Margin="{StaticResource Pulsar.Gap.Right.XS}"/>
                                 <TextBlock Text="{lex:Locale Settings.About.HardcodetNotifyIconDescription}" FontSize="{StaticResource Pulsar.Type.Body}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="•" Margin="0,0,8,0" FontSize="{StaticResource Pulsar.Type.Body}"/>
-                                <TextBlock Text="{lex:Locale Settings.About.GongDragDrop}" FontWeight="Medium" FontSize="{StaticResource Pulsar.Type.Body}" Margin="0,0,4,0"/>
+                                <TextBlock Text="•" Margin="{StaticResource Pulsar.Gap.Right.SM}" FontSize="{StaticResource Pulsar.Type.Body}"/>
+                                <TextBlock Text="{lex:Locale Settings.About.GongDragDrop}" FontWeight="Medium" FontSize="{StaticResource Pulsar.Type.Body}" Margin="{StaticResource Pulsar.Gap.Right.XS}"/>
                                 <TextBlock Text="{lex:Locale Settings.About.GongDragDropDescription}" FontSize="{StaticResource Pulsar.Type.Body}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                             </StackPanel>
                         </StackPanel>
@@ -285,16 +285,16 @@
                                    FontSize="{StaticResource Pulsar.Type.Caption}" 
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                   Margin="0,8,0,4"/>
-                        <StackPanel Margin="16,0,0,8">
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
-                                <TextBlock Text="•" Margin="0,0,8,0" FontSize="{StaticResource Pulsar.Type.Body}"/>
-                                <TextBlock Text="{lex:Locale Settings.About.CommunityToolkit}" FontWeight="Medium" FontSize="{StaticResource Pulsar.Type.Body}" Margin="0,0,4,0"/>
+                                   Margin="{StaticResource Pulsar.Thk.T8B4}"/>
+                        <StackPanel Margin="{StaticResource Pulsar.Thk.L16B8}">
+                            <StackPanel Orientation="Horizontal" Margin="{StaticResource Pulsar.Gap.Bottom.XXS}">
+                                <TextBlock Text="•" Margin="{StaticResource Pulsar.Gap.Right.SM}" FontSize="{StaticResource Pulsar.Type.Body}"/>
+                                <TextBlock Text="{lex:Locale Settings.About.CommunityToolkit}" FontWeight="Medium" FontSize="{StaticResource Pulsar.Type.Body}" Margin="{StaticResource Pulsar.Gap.Right.XS}"/>
                                 <TextBlock Text="{lex:Locale Settings.About.CommunityToolkitDescription}" FontSize="{StaticResource Pulsar.Type.Body}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="•" Margin="0,0,8,0" FontSize="{StaticResource Pulsar.Type.Body}"/>
-                                <TextBlock Text="{lex:Locale Settings.About.MsDi}" FontWeight="Medium" FontSize="{StaticResource Pulsar.Type.Body}" Margin="0,0,4,0"/>
+                                <TextBlock Text="•" Margin="{StaticResource Pulsar.Gap.Right.SM}" FontSize="{StaticResource Pulsar.Type.Body}"/>
+                                <TextBlock Text="{lex:Locale Settings.About.MsDi}" FontWeight="Medium" FontSize="{StaticResource Pulsar.Type.Body}" Margin="{StaticResource Pulsar.Gap.Right.XS}"/>
                                 <TextBlock Text="{lex:Locale Settings.About.MsDiDescription}" FontSize="{StaticResource Pulsar.Type.Body}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                             </StackPanel>
                         </StackPanel>
@@ -304,16 +304,16 @@
                                    FontSize="{StaticResource Pulsar.Type.Caption}" 
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                   Margin="0,8,0,4"/>
-                        <StackPanel Margin="16,0,0,8">
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
-                                <TextBlock Text="•" Margin="0,0,8,0" FontSize="{StaticResource Pulsar.Type.Body}"/>
-                                <TextBlock Text="{lex:Locale Settings.About.Serilog}" FontWeight="Medium" FontSize="{StaticResource Pulsar.Type.Body}" Margin="0,0,4,0"/>
+                                   Margin="{StaticResource Pulsar.Thk.T8B4}"/>
+                        <StackPanel Margin="{StaticResource Pulsar.Thk.L16B8}">
+                            <StackPanel Orientation="Horizontal" Margin="{StaticResource Pulsar.Gap.Bottom.XXS}">
+                                <TextBlock Text="•" Margin="{StaticResource Pulsar.Gap.Right.SM}" FontSize="{StaticResource Pulsar.Type.Body}"/>
+                                <TextBlock Text="{lex:Locale Settings.About.Serilog}" FontWeight="Medium" FontSize="{StaticResource Pulsar.Type.Body}" Margin="{StaticResource Pulsar.Gap.Right.XS}"/>
                                 <TextBlock Text="{lex:Locale Settings.About.SerilogDescription}" FontSize="{StaticResource Pulsar.Type.Body}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="•" Margin="0,0,8,0" FontSize="{StaticResource Pulsar.Type.Body}"/>
-                                <TextBlock Text="{lex:Locale Settings.About.OpenTelemetry}" FontWeight="Medium" FontSize="{StaticResource Pulsar.Type.Body}" Margin="0,0,4,0"/>
+                                <TextBlock Text="•" Margin="{StaticResource Pulsar.Gap.Right.SM}" FontSize="{StaticResource Pulsar.Type.Body}"/>
+                                <TextBlock Text="{lex:Locale Settings.About.OpenTelemetry}" FontWeight="Medium" FontSize="{StaticResource Pulsar.Type.Body}" Margin="{StaticResource Pulsar.Gap.Right.XS}"/>
                                 <TextBlock Text="{lex:Locale Settings.About.OpenTelemetryDescription}" FontSize="{StaticResource Pulsar.Type.Body}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                             </StackPanel>
                         </StackPanel>
@@ -323,26 +323,26 @@
                                    FontSize="{StaticResource Pulsar.Type.Caption}" 
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                   Margin="0,8,0,4"/>
-                        <StackPanel Margin="16,0,0,8">
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
-                                <TextBlock Text="•" Margin="0,0,8,0" FontSize="{StaticResource Pulsar.Type.Body}"/>
-                                <TextBlock Text="{lex:Locale Settings.About.DataSqlite}" FontWeight="Medium" FontSize="{StaticResource Pulsar.Type.Body}" Margin="0,0,4,0"/>
+                                   Margin="{StaticResource Pulsar.Thk.T8B4}"/>
+                        <StackPanel Margin="{StaticResource Pulsar.Thk.L16B8}">
+                            <StackPanel Orientation="Horizontal" Margin="{StaticResource Pulsar.Gap.Bottom.XXS}">
+                                <TextBlock Text="•" Margin="{StaticResource Pulsar.Gap.Right.SM}" FontSize="{StaticResource Pulsar.Type.Body}"/>
+                                <TextBlock Text="{lex:Locale Settings.About.DataSqlite}" FontWeight="Medium" FontSize="{StaticResource Pulsar.Type.Body}" Margin="{StaticResource Pulsar.Gap.Right.XS}"/>
                                 <TextBlock Text="{lex:Locale Settings.About.DataSqliteDescription}" FontSize="{StaticResource Pulsar.Type.Body}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
-                                <TextBlock Text="•" Margin="0,0,8,0" FontSize="{StaticResource Pulsar.Type.Body}"/>
-                                <TextBlock Text="{lex:Locale Settings.About.Tomlyn}" FontWeight="Medium" FontSize="{StaticResource Pulsar.Type.Body}" Margin="0,0,4,0"/>
+                            <StackPanel Orientation="Horizontal" Margin="{StaticResource Pulsar.Gap.Bottom.XXS}">
+                                <TextBlock Text="•" Margin="{StaticResource Pulsar.Gap.Right.SM}" FontSize="{StaticResource Pulsar.Type.Body}"/>
+                                <TextBlock Text="{lex:Locale Settings.About.Tomlyn}" FontWeight="Medium" FontSize="{StaticResource Pulsar.Type.Body}" Margin="{StaticResource Pulsar.Gap.Right.XS}"/>
                                 <TextBlock Text="{lex:Locale Settings.About.TomlynDescription}" FontSize="{StaticResource Pulsar.Type.Body}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
-                                <TextBlock Text="•" Margin="0,0,8,0" FontSize="{StaticResource Pulsar.Type.Body}"/>
-                                <TextBlock Text="{lex:Locale Settings.About.NUglify}" FontWeight="Medium" FontSize="{StaticResource Pulsar.Type.Body}" Margin="0,0,4,0"/>
+                            <StackPanel Orientation="Horizontal" Margin="{StaticResource Pulsar.Gap.Bottom.XXS}">
+                                <TextBlock Text="•" Margin="{StaticResource Pulsar.Gap.Right.SM}" FontSize="{StaticResource Pulsar.Type.Body}"/>
+                                <TextBlock Text="{lex:Locale Settings.About.NUglify}" FontWeight="Medium" FontSize="{StaticResource Pulsar.Type.Body}" Margin="{StaticResource Pulsar.Gap.Right.XS}"/>
                                 <TextBlock Text="{lex:Locale Settings.About.NUglifyDescription}" FontSize="{StaticResource Pulsar.Type.Body}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="•" Margin="0,0,8,0" FontSize="{StaticResource Pulsar.Type.Body}"/>
-                                <TextBlock Text="{lex:Locale Settings.About.NuGetVersioning}" FontWeight="Medium" FontSize="{StaticResource Pulsar.Type.Body}" Margin="0,0,4,0"/>
+                                <TextBlock Text="•" Margin="{StaticResource Pulsar.Gap.Right.SM}" FontSize="{StaticResource Pulsar.Type.Body}"/>
+                                <TextBlock Text="{lex:Locale Settings.About.NuGetVersioning}" FontWeight="Medium" FontSize="{StaticResource Pulsar.Type.Body}" Margin="{StaticResource Pulsar.Gap.Right.XS}"/>
                                 <TextBlock Text="{lex:Locale Settings.About.NuGetVersioningDescription}" FontSize="{StaticResource Pulsar.Type.Body}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                             </StackPanel>
                         </StackPanel>
@@ -352,16 +352,16 @@
                                    FontSize="{StaticResource Pulsar.Type.Caption}" 
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                   Margin="0,8,0,4"/>
-                        <StackPanel Margin="16,0,0,0">
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
-                                <TextBlock Text="•" Margin="0,0,8,0" FontSize="{StaticResource Pulsar.Type.Body}"/>
-                                <TextBlock Text="{lex:Locale Settings.About.CsWin32}" FontWeight="Medium" FontSize="{StaticResource Pulsar.Type.Body}" Margin="0,0,4,0"/>
+                                   Margin="{StaticResource Pulsar.Thk.T8B4}"/>
+                        <StackPanel Margin="{StaticResource Pulsar.Gap.Left.LG}">
+                            <StackPanel Orientation="Horizontal" Margin="{StaticResource Pulsar.Gap.Bottom.XXS}">
+                                <TextBlock Text="•" Margin="{StaticResource Pulsar.Gap.Right.SM}" FontSize="{StaticResource Pulsar.Type.Body}"/>
+                                <TextBlock Text="{lex:Locale Settings.About.CsWin32}" FontWeight="Medium" FontSize="{StaticResource Pulsar.Type.Body}" Margin="{StaticResource Pulsar.Gap.Right.XS}"/>
                                 <TextBlock Text="{lex:Locale Settings.About.CsWin32Description}" FontSize="{StaticResource Pulsar.Type.Body}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="•" Margin="0,0,8,0" FontSize="{StaticResource Pulsar.Type.Body}"/>
-                                <TextBlock Text="{lex:Locale Settings.About.DrawingCommon}" FontWeight="Medium" FontSize="{StaticResource Pulsar.Type.Body}" Margin="0,0,4,0"/>
+                                <TextBlock Text="•" Margin="{StaticResource Pulsar.Gap.Right.SM}" FontSize="{StaticResource Pulsar.Type.Body}"/>
+                                <TextBlock Text="{lex:Locale Settings.About.DrawingCommon}" FontWeight="Medium" FontSize="{StaticResource Pulsar.Type.Body}" Margin="{StaticResource Pulsar.Gap.Right.XS}"/>
                                 <TextBlock Text="{lex:Locale Settings.About.DrawingCommonDescription}" FontSize="{StaticResource Pulsar.Type.Body}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                             </StackPanel>
                         </StackPanel>

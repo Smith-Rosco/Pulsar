@@ -1,5 +1,12 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- 数值令牌自给自足：本字典可能被脱离 Application 加载（单元测试手工构造
+         资源树、设计器预览）。ControlTemplate 内的 StaticResource 在模板加载时
+         即解析，届时若 Tokens.xaml 不在作用域会抛 XamlParseException ——
+         与 SlotOrb / IconSelector 等控件自带合并是同一条规则。 -->
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/Tokens.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
 
     <!-- Global ToolTip Style -->
     <Style TargetType="ToolTip">
@@ -20,7 +27,7 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             Padding="{TemplateBinding Padding}"
-                            CornerRadius="4"
+                            CornerRadius="{StaticResource Pulsar.Radius.SM}"
                             SnapsToDevicePixels="True">
                         <ContentPresenter HorizontalAlignment="Center" 
                                           VerticalAlignment="Center"/>

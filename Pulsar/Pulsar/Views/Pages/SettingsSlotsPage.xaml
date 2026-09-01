@@ -48,7 +48,7 @@
                               MinWidth="160"
                               MaxWidth="240"
                               VerticalAlignment="Center"
-                              Margin="0,0,12,0">
+                              Margin="{StaticResource Pulsar.Gap.Right.MD}">
                         <ComboBox.ItemContainerStyle>
                             <Style TargetType="ComboBoxItem">
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -69,7 +69,7 @@
                                                        Width="20" Height="20"
                                                        IsTransparent="True"
                                                        ShowActiveGlow="False"
-                                                       Margin="0,0,8,0"
+                                                       Margin="{StaticResource Pulsar.Gap.Right.SM}"
                                                        VerticalAlignment="Center"/>
                                     <TextBlock Grid.Column="1"
                                                Text="{Binding DisplayName}"
@@ -78,7 +78,7 @@
                                                Text="{Binding SlotCount, StringFormat={lex:Locale Settings.Slots.SlotCountFormat}}"
                                                FontSize="{StaticResource Pulsar.Type.Caption}"
                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                               Margin="8,0,0,0"
+                                               Margin="{StaticResource Pulsar.Gap.Left.SM}"
                                                VerticalAlignment="Center"/>
                                 </Grid>
                             </DataTemplate>
@@ -88,7 +88,7 @@
                     <!-- Divider -->
                     <Rectangle Width="1" Height="18"
                                Fill="{DynamicResource SurfaceStrokeColorDefaultBrush}"
-                               Margin="0,0,12,0"
+                               Margin="{StaticResource Pulsar.Gap.Right.MD}"
                                VerticalAlignment="Center"/>
 
                     <!-- Edit Profile -->
@@ -97,7 +97,7 @@
                                Command="{Binding EditProfileCommand}"
                                Visibility="{Binding CanEditProfile, Converter={StaticResource BoolToVis}}"
                                ToolTip="{lex:Locale Settings.Slots.EditProfile}"
-                               Margin="0,0,6,0"/>
+                               Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
 
                     <!-- Add Profile -->
                     <ui:Button Content="{lex:Locale Settings.Slots.NewProfile}"
@@ -105,7 +105,7 @@
                                Style="{StaticResource PulsarSecondaryButtonStyle}"
                                ToolTip="{lex:Locale Settings.Slots.NewProfileTooltip}"
                                Command="{Binding AddProfileDialogCommand}"
-                               Margin="0,0,6,0"/>
+                               Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
 
                     <!-- Delete Profile -->
                     <ui:Button Style="{StaticResource PulsarIconButtonStyle}"
@@ -123,7 +123,7 @@
         <Grid Grid.Row="1">
 
             <!-- Empty State -->
-            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,64">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="{StaticResource Pulsar.Gap.Bottom.Hero}">
                 <StackPanel.Style>
                     <Style TargetType="StackPanel">
                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -137,9 +137,9 @@
                         </Style.Triggers>
                     </Style>
                 </StackPanel.Style>
-                <ui:SymbolIcon Symbol="DialPadOff24" FontSize="64" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Margin="0,0,0,16"/>
-                <TextBlock Text="{lex:Locale Settings.Slots.NoSlotsConfigured}" FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,6"/>
-                <TextBlock Text="{lex:Locale Settings.Slots.AddSlotHint}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+                <ui:SymbolIcon Symbol="DialPadOff24" FontSize="64" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Margin="{StaticResource Pulsar.Gap.Bottom.LG}"/>
+                <TextBlock Text="{lex:Locale Settings.Slots.NoSlotsConfigured}" FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="{StaticResource Pulsar.Gap.Bottom.SM}"/>
+                <TextBlock Text="{lex:Locale Settings.Slots.AddSlotHint}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" Margin="{StaticResource Pulsar.Gap.Bottom.XL}"/>
                 <ui:Button Content="{lex:Locale Settings.Slots.AddFirstSlot}"
                            Icon="{ui:SymbolIcon Add24}"
                            Style="{StaticResource PulsarPrimaryButtonStyle}"
@@ -149,7 +149,7 @@
 
             <!-- Slot Wheel Editor (replaces the legacy card list) -->
             <controls:SlotWheelEditor x:Name="WheelEditor"
-                                      Margin="0,8,0,0"
+                                      Margin="{StaticResource Pulsar.Gap.Top.SM}"
                                       VerticalAlignment="Center"
                                       EditRequested="WheelEditor_EditRequested"
                                       DeleteRequested="WheelEditor_DeleteRequested"
@@ -172,7 +172,7 @@
                        Style="{StaticResource PulsarPrimaryButtonStyle}"
                        HorizontalAlignment="Right"
                        VerticalAlignment="Bottom"
-                       Margin="0,0,24,20"
+                       Margin="{StaticResource Pulsar.Thk.R24B20}"
                        Command="{Binding AddSlotDialogCommand}"
                        tutorial:TutorialMarker.Id="AddSlotButton"/>
 

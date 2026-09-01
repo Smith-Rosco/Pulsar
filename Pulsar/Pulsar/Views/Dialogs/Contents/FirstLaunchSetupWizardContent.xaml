@@ -30,14 +30,14 @@
 
         <!-- Language picker -->
         <Border Grid.Row="0"
-                Padding="8,5"
-                CornerRadius="6"
+                Padding="{StaticResource Pulsar.Pad.H8V4}"
+                CornerRadius="{StaticResource Pulsar.Radius.MD}"
                 Background="{DynamicResource ControlFillColorDefaultBrush}"
                 BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
                 BorderThickness="1"
                 HorizontalAlignment="Right">
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="🌐" FontSize="{StaticResource Pulsar.Type.Caption}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                <TextBlock Text="🌐" FontSize="{StaticResource Pulsar.Type.Caption}" VerticalAlignment="Center" Margin="{StaticResource Pulsar.Gap.Right.XS}"/>
                 <ComboBox ItemsSource="{Binding SupportedLanguages}"
                           SelectedItem="{Binding SelectedLanguage, Mode=TwoWay}"
                           DisplayMemberPath="DisplayName"
@@ -50,14 +50,14 @@
         <ScrollViewer Grid.Row="1"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
-                      Margin="0,20,0,0">
+                      Margin="{StaticResource Pulsar.Gap.Top.XL}">
             <StackPanel>
 
                 <!-- Title -->
                 <TextBlock Text="{Binding SetupTitle}"
                            FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="SemiBold"
                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                           Margin="0,0,0,8"/>
+                           Margin="{StaticResource Pulsar.Gap.Bottom.SM}"/>
 
                 <!-- Description -->
                 <TextBlock Text="{Binding Description}"
@@ -65,30 +65,30 @@
                            FontSize="{StaticResource Pulsar.Type.Body}"
                            LineHeight="20"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                           Margin="0,0,0,6"/>
+                           Margin="{StaticResource Pulsar.Gap.Bottom.SM}"/>
 
                 <!-- Feature Intro -->
                 <TextBlock Text="{Binding FeatureIntro}"
                            FontSize="{StaticResource Pulsar.Type.Body}"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                           Margin="0,0,0,14"/>
+                           Margin="{StaticResource Pulsar.Gap.Bottom.LG}"/>
 
                 <!-- Feature Cards -->
                 <StackPanel>
                     <!-- Switch Mode -->
                     <Border Style="{StaticResource FeatureCardStyle}"
-                            Margin="0,0,0,10">
+                            Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <Border Width="40" Height="40"
-                                    CornerRadius="10"
+                                    CornerRadius="{StaticResource Pulsar.Radius.XL}"
                                     Background="{DynamicResource ControlFillColorSecondaryBrush}"
                                     BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
                                     BorderThickness="1"
-                                    Margin="0,0,14,0">
+                                    Margin="{StaticResource Pulsar.Gap.Right.LG}">
                                 <TextBlock Text="🔄"
                                            FontSize="{StaticResource Pulsar.Type.Title}"
                                            HorizontalAlignment="Center"
@@ -101,25 +101,25 @@
                                 <TextBlock Text="{Binding FeatureSwitchModeDesc}"
                                            FontSize="{StaticResource Pulsar.Type.Body}"
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                           Margin="0,2,0,0"/>
+                                           Margin="{StaticResource Pulsar.Gap.Top.XXS}"/>
                             </StackPanel>
                         </Grid>
                     </Border>
 
                     <!-- Command Mode -->
                     <Border Style="{StaticResource FeatureCardStyle}"
-                            Margin="0,0,0,14">
+                            Margin="{StaticResource Pulsar.Gap.Bottom.LG}">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <Border Width="40" Height="40"
-                                    CornerRadius="10"
+                                    CornerRadius="{StaticResource Pulsar.Radius.XL}"
                                     Background="{DynamicResource ControlFillColorSecondaryBrush}"
                                     BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
                                     BorderThickness="1"
-                                    Margin="0,0,14,0">
+                                    Margin="{StaticResource Pulsar.Gap.Right.LG}">
                                 <!-- Emoji ⚡ 是彩色位图，与 Fluent 单色矢量图标混用渲染口径不一致，改 SymbolIcon -->
                                 <ui:SymbolIcon Symbol="Flash24"
                                                FontSize="{StaticResource Pulsar.Type.Title}"
@@ -134,7 +134,7 @@
                                 <TextBlock Text="{Binding FeatureCommandModeDesc}"
                                            FontSize="{StaticResource Pulsar.Type.Body}"
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                           Margin="0,2,0,0"/>
+                                           Margin="{StaticResource Pulsar.Gap.Top.XXS}"/>
                             </StackPanel>
                         </Grid>
                     </Border>

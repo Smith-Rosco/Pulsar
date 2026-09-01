@@ -18,13 +18,13 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-         <StackPanel Grid.Row="0" Margin="0,0,0,15">
+         <StackPanel Grid.Row="0" Margin="{StaticResource Pulsar.Gap.Bottom.LG}">
              <TextBlock Text="{lex:Locale Dialog.ProcessBlacklist.SelectProcesses}"
                         TextWrapping="Wrap"
                         Opacity="0.8"/>
              <CheckBox IsChecked="{Binding EnableSwitchDiagnostics, Mode=TwoWay}"
                        Content="{lex:Locale Dialog.ProcessBlacklist.EnableSwitchDiagnostics}"
-                       Margin="0,10,0,0"/>
+                       Margin="{StaticResource Pulsar.Gap.Top.MD}"/>
          </StackPanel>
 
         <ListBox Grid.Row="1" 
@@ -52,10 +52,11 @@
                         </Grid.ColumnDefinitions>
 
                         <!-- Icon with running indicator -->
-                        <Grid Grid.Column="0" Width="32" Height="32" Margin="0,0,10,0">
-                            <Border Background="{DynamicResource ControlFillColorDefaultBrush}" CornerRadius="4"/>
+                        <Grid Grid.Column="0" Width="32" Height="32" Margin="{StaticResource Pulsar.Gap.Right.MD}">
+                            <Border Background="{DynamicResource ControlFillColorDefaultBrush}" CornerRadius="{StaticResource Pulsar.Radius.SM}"/>
                             <Image Source="{Binding Icon}" RenderOptions.BitmapScalingMode="HighQuality"/>
                             <!-- Running indicator (green dot) -->
+                            <!-- 光学对齐负值:状态点贴齐图标右下角,不进间距刻度 -->
                             <Ellipse Width="8" Height="8" 
                                      Fill="LimeGreen" 
                                      HorizontalAlignment="Right" 
@@ -91,7 +92,7 @@
                                    FontSize="{StaticResource Pulsar.Type.Caption}" 
                                    Opacity="0.7" 
                                    VerticalAlignment="Center"
-                                   Margin="0,0,12,0"/>
+                                   Margin="{StaticResource Pulsar.Gap.Right.MD}"/>
 
                         <!-- Blacklist checkbox -->
                         <CheckBox Grid.Column="3" 
@@ -105,13 +106,13 @@
         <Border Grid.Row="1"
                 VerticalAlignment="Top"
                 HorizontalAlignment="Right"
-                Margin="0,8,8,0"
-                Padding="8,4"
-                CornerRadius="12"
+                Margin="{StaticResource Pulsar.Thk.T8R8}"
+                Padding="{StaticResource Pulsar.Pad.H8V4}"
+                CornerRadius="{StaticResource Pulsar.Radius.XL}"
                 Background="{DynamicResource ControlFillColorSecondaryBrush}"
                 Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
             <StackPanel Orientation="Horizontal">
-                <ui:ProgressRing IsIndeterminate="True" Width="16" Height="16" Margin="0,0,8,0"/>
+                <ui:ProgressRing IsIndeterminate="True" Width="16" Height="16" Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
                 <TextBlock Text="{lex:Locale Dialog.ProcessBlacklist.Loading}" VerticalAlignment="Center" FontSize="{StaticResource Pulsar.Type.Caption}"/>
             </StackPanel>
         </Border>

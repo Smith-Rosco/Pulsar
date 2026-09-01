@@ -11,5 +11,5 @@
                 Message="{Binding Message, ElementName=Root}"
                 Severity="{Binding Severity, ElementName=Root}"
                 IsClosable="True"
-                Margin="0,0,0,16"/>
+                Margin="{StaticResource Pulsar.Gap.Bottom.LG}"/>
 </UserControl>

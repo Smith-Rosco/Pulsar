@@ -31,18 +31,18 @@
                  未保存状态改为文字徽章 —— 原先只有 8px 红点，用户看不懂含义。
                  （P1 保存位置 / 未保存可见性） -->
             <ui:TitleBar.TrailingContent>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="{StaticResource Pulsar.Gap.Right.SM}">
                     <Border Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
                             CornerRadius="{StaticResource Pulsar.Radius.SM}"
-                            Padding="8,3"
-                            Margin="0,0,12,0"
+                            Padding="{StaticResource Pulsar.Pad.H8V4}"
+                            Margin="{StaticResource Pulsar.Gap.Right.MD}"
                             VerticalAlignment="Center"
                             Visibility="{Binding DataContext.HasUnsavedChanges, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}">
                         <StackPanel Orientation="Horizontal">
                             <ui:SymbolIcon Symbol="Edit24"
                                            FontSize="{StaticResource Pulsar.Type.Body}"
                                            Foreground="{DynamicResource SystemFillColorCautionBrush}"
-                                           Margin="0,0,5,0"
+                                           Margin="{StaticResource Pulsar.Gap.Right.XS}"
                                            VerticalAlignment="Center"/>
                             <TextBlock Text="{lex:Locale Notification.UnsavedChanges}"
                                        FontSize="{StaticResource Pulsar.Type.Body}"
@@ -93,14 +93,14 @@
 
             <Frame x:Name="RootFrame"
                    Grid.Column="1"
-                   Margin="24"
+                   Margin="{StaticResource Pulsar.Pad.XXL}"
                    NavigationUIVisibility="Hidden"/>
 
             <ui:SnackbarPresenter x:Name="MainSnackbarPresenter"
                                   Grid.Column="1"
                                   VerticalAlignment="Bottom"
                                   HorizontalAlignment="Right"
-                                  Margin="0,0,20,20"/>
+                                  Margin="{StaticResource Pulsar.Thk.R20B20}"/>
         </Grid>
     </Grid>
 </ui:FluentWindow>

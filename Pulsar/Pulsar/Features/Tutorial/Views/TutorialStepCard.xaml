@@ -92,9 +92,9 @@
                 Background="{StaticResource TutorialCard.Background}"
                 BorderBrush="{StaticResource TutorialCard.Border}"
                 BorderThickness="1"
-                CornerRadius="12"
+                CornerRadius="{StaticResource Pulsar.Radius.XL}"
                 MaxWidth="540"
-                Padding="20"
+                Padding="{StaticResource Pulsar.Pad.XL}"
                 RenderTransformOrigin="0.5,0.5">
             
             <Border.Effect>
@@ -126,7 +126,7 @@
                           FontSize="{StaticResource Pulsar.Type.Body}"
                           FontWeight="Medium"
                           Foreground="{StaticResource TutorialCard.Muted}"
-                          Margin="0,0,0,4"/>
+                          Margin="{StaticResource Pulsar.Gap.Bottom.XS}"/>
                 
                 <!-- Progress bar -->
                 <ProgressBar x:Name="StepProgressBar"
@@ -135,7 +135,7 @@
                             Maximum="1"
                             Value="0"
                             Height="3"
-                            Margin="0,0,0,8"
+                            Margin="{StaticResource Pulsar.Gap.Bottom.SM}"
                             Foreground="{DynamicResource AccentFillColorDefaultBrush}"
                             Background="Transparent"
                             BorderThickness="0"
@@ -149,13 +149,13 @@
                           FontWeight="SemiBold"
                           Foreground="{StaticResource TutorialCard.Title}"
                           TextWrapping="Wrap"
-                          Margin="0,0,0,12"/>
+                          Margin="{StaticResource Pulsar.Gap.Bottom.MD}"/>
                 
                 <!-- Description with ScrollViewer -->
                 <ScrollViewer Grid.Row="3"
                               VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled"
-                              Margin="0,0,0,20">
+                              Margin="{StaticResource Pulsar.Gap.Bottom.XL}">
                     <TextBlock x:Name="DescriptionText"
                               Text="{lex:Locale Tutorial.DescriptionPlaceholder}"
                               FontSize="{StaticResource Pulsar.Type.Subtitle}"
@@ -172,7 +172,7 @@
                            Foreground="{StaticResource TutorialCard.MutedLight}"
                            TextWrapping="Wrap"
                            Visibility="Collapsed"
-                           Margin="0,0,0,16"/>
+                           Margin="{StaticResource Pulsar.Gap.Bottom.LG}"/>
                  
                 <!-- Action buttons -->
                 <Grid Grid.Row="5">
@@ -187,7 +187,7 @@
                                 Content="{lex:Locale Tutorial.Previous}"
                                 Style="{StaticResource PulsarSecondaryButtonStyle}"
                                 Click="OnBackButtonClick"
-                                Margin="0,0,12,0"/>
+                                Margin="{StaticResource Pulsar.Gap.Right.MD}"/>
 
                     <StackPanel x:Name="ButtonPanel"
                                Grid.Column="2"
@@ -198,14 +198,14 @@
                               Content="{lex:Locale Tutorial.SkipTutorial}"
                               Style="{StaticResource PulsarSecondaryButtonStyle}"
                               Click="OnSkipButtonClick"
-                              Margin="0,0,12,0"/>
+                              Margin="{StaticResource Pulsar.Gap.Right.MD}"/>
                     
                      <ui:Button x:Name="ContinueButton"
                                Content="{lex:Locale Tutorial.Continue}"
                                Style="{StaticResource PulsarPrimaryButtonStyle}"
                                Click="OnContinueButtonClick"
                                Visibility="Collapsed"
-                               Margin="0,0,12,0"/>
+                               Margin="{StaticResource Pulsar.Gap.Right.MD}"/>
 
                      <ui:Button x:Name="NextButton"
                                  Content="{lex:Locale Tutorial.Next}"

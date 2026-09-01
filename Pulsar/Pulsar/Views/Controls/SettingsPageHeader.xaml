@@ -17,18 +17,18 @@
         </ResourceDictionary>
     </UserControl.Resources>
     
-    <Grid Margin="0,0,0,20">
+    <Grid Margin="{StaticResource Pulsar.Gap.Bottom.XL}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         
         <!-- Top Row: Title and Description -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+        <StackPanel Grid.Row="0" Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
             <TextBlock Text="{Binding Title, ElementName=Root}" 
                        FontSize="{StaticResource Pulsar.Type.Display}" 
                        FontWeight="SemiBold" 
-                       Margin="0,0,0,8"/>
+                       Margin="{StaticResource Pulsar.Gap.Bottom.SM}"/>
             <TextBlock Text="{Binding Description, ElementName=Root}" 
                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                        Visibility="{Binding Description, ElementName=Root, Converter={StaticResource StringEmptyToVisibilityConverter}}"/>

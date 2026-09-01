@@ -20,7 +20,7 @@
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
 
         <DataTemplate x:Key="BooleanSettingTemplate" DataType="{x:Type vm:BooleanSettingViewModel}">
-            <ui:CardControl Margin="0,4">
+            <ui:CardControl Margin="{StaticResource Pulsar.Gap.Vertical.XS}">
                 <ui:CardControl.Header>
                     <StackPanel>
                         <TextBlock Text="{Binding Label}" FontWeight="Medium"/>
@@ -34,7 +34,7 @@
                                    FontSize="{StaticResource Pulsar.Type.Caption}"
                                    TextWrapping="Wrap"
                                    Visibility="{Binding HasValidation, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                   Margin="0,2,0,0"/>
+                                   Margin="{StaticResource Pulsar.Gap.Top.XXS}"/>
                     </StackPanel>
                 </ui:CardControl.Header>
                 <ui:ToggleSwitch IsChecked="{Binding BoolValue, Mode=TwoWay}"/>
@@ -42,7 +42,7 @@
         </DataTemplate>
 
         <DataTemplate x:Key="StringSettingTemplate" DataType="{x:Type vm:StringSettingViewModel}">
-            <ui:CardControl Margin="0,4">
+            <ui:CardControl Margin="{StaticResource Pulsar.Gap.Vertical.XS}">
                 <ui:CardControl.Header>
                     <StackPanel>
                         <TextBlock Text="{Binding Label}" FontWeight="Medium"/>
@@ -56,7 +56,7 @@
                                    FontSize="{StaticResource Pulsar.Type.Caption}"
                                    TextWrapping="Wrap"
                                    Visibility="{Binding HasValidation, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                   Margin="0,2,0,0"/>
+                                   Margin="{StaticResource Pulsar.Gap.Top.XXS}"/>
                     </StackPanel>
                 </ui:CardControl.Header>
                 <ui:TextBox Text="{Binding StringValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
@@ -66,7 +66,7 @@
         </DataTemplate>
 
         <DataTemplate x:Key="SelectionSettingTemplate" DataType="{x:Type vm:SelectionSettingViewModel}">
-             <ui:CardControl Margin="0,4">
+             <ui:CardControl Margin="{StaticResource Pulsar.Gap.Vertical.XS}">
                 <ui:CardControl.Header>
                     <StackPanel>
                         <TextBlock Text="{Binding Label}" FontWeight="Medium"/>
@@ -80,7 +80,7 @@
                                    FontSize="{StaticResource Pulsar.Type.Caption}"
                                    TextWrapping="Wrap"
                                    Visibility="{Binding HasValidation, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                   Margin="0,2,0,0"/>
+                                   Margin="{StaticResource Pulsar.Gap.Top.XXS}"/>
                     </StackPanel>
                 </ui:CardControl.Header>
                 <ComboBox ItemsSource="{Binding Options}" 
@@ -91,7 +91,7 @@
         </DataTemplate>
 
         <DataTemplate x:Key="PathSettingTemplate" DataType="{x:Type vm:PathSettingViewModel}">
-            <ui:CardControl Margin="0,4">
+            <ui:CardControl Margin="{StaticResource Pulsar.Gap.Vertical.XS}">
                 <ui:CardControl.Header>
                     <StackPanel>
                         <TextBlock Text="{Binding Label}" FontWeight="Medium"/>
@@ -105,7 +105,7 @@
                                    FontSize="{StaticResource Pulsar.Type.Caption}"
                                    TextWrapping="Wrap"
                                    Visibility="{Binding HasValidation, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                   Margin="0,2,0,0"/>
+                                   Margin="{StaticResource Pulsar.Gap.Top.XXS}"/>
                     </StackPanel>
                 </ui:CardControl.Header>
                 <Grid>
@@ -121,7 +121,7 @@
                                Icon="{ui:SymbolIcon FolderOpen24}"
                                 ToolTip="{lex:Locale Dialog.PluginSettings.Browse}"
                                Style="{StaticResource PulsarIconButtonStyle}"
-                               Margin="4,0,0,0"
+                               Margin="{StaticResource Pulsar.Gap.Left.XS}"
                                Tag="{Binding}"
                                Click="BrowsePathButton_Click"/>
                 </Grid>
@@ -129,7 +129,7 @@
         </DataTemplate>
 
         <DataTemplate x:Key="IntegerSettingTemplate" DataType="{x:Type vm:IntegerSettingViewModel}">
-            <ui:CardControl Margin="0,4">
+            <ui:CardControl Margin="{StaticResource Pulsar.Gap.Vertical.XS}">
                 <ui:CardControl.Header>
                     <StackPanel>
                         <TextBlock Text="{Binding Label}" FontWeight="Medium"/>
@@ -143,7 +143,7 @@
                                    FontSize="{StaticResource Pulsar.Type.Caption}"
                                    TextWrapping="Wrap"
                                    Visibility="{Binding HasValidation, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                   Margin="0,2,0,0"/>
+                                   Margin="{StaticResource Pulsar.Gap.Top.XXS}"/>
                     </StackPanel>
                 </ui:CardControl.Header>
                 <ui:NumberBox Value="{Binding IntValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -156,7 +156,7 @@
         </DataTemplate>
 
         <DataTemplate x:Key="SecretSettingTemplate" DataType="{x:Type vm:SecretSettingViewModel}">
-            <ui:CardControl Margin="0,4">
+            <ui:CardControl Margin="{StaticResource Pulsar.Gap.Vertical.XS}">
                 <ui:CardControl.Header>
                     <StackPanel>
                         <TextBlock Text="{Binding Label}" FontWeight="Medium"/>
@@ -170,7 +170,7 @@
                                    FontSize="{StaticResource Pulsar.Type.Caption}"
                                    TextWrapping="Wrap"
                                    Visibility="{Binding HasValidation, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                   Margin="0,2,0,0"/>
+                                   Margin="{StaticResource Pulsar.Gap.Top.XXS}"/>
                     </StackPanel>
                 </ui:CardControl.Header>
                 <ui:PasswordBox Password="{Binding SecretValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -181,7 +181,7 @@
         </DataTemplate>
 
         <DataTemplate x:Key="MultiSelectSettingTemplate" DataType="{x:Type vm:MultiSelectSettingViewModel}">
-            <ui:CardControl Margin="0,4">
+            <ui:CardControl Margin="{StaticResource Pulsar.Gap.Vertical.XS}">
                 <ui:CardControl.Header>
                     <StackPanel>
                         <TextBlock Text="{Binding Label}" FontWeight="Medium"/>
@@ -195,14 +195,14 @@
                                    FontSize="{StaticResource Pulsar.Type.Caption}"
                                    TextWrapping="Wrap"
                                    Visibility="{Binding HasValidation, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                   Margin="0,2,0,0"/>
+                                   Margin="{StaticResource Pulsar.Gap.Top.XXS}"/>
                     </StackPanel>
                 </ui:CardControl.Header>
                 <StackPanel Orientation="Vertical" HorizontalAlignment="Right" Width="260">
                     <TextBlock Text="{lex:Locale Dialog.PluginSettings.ClickToggle}" 
                                FontSize="{StaticResource Pulsar.Type.Caption}" 
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               Margin="0,0,0,6"/>
+                               Margin="{StaticResource Pulsar.Gap.Bottom.SM}"/>
                     <ItemsControl ItemsSource="{Binding OptionItems}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -213,8 +213,8 @@
                             <DataTemplate>
                                 <ToggleButton IsChecked="{Binding IsSelected, Mode=TwoWay}"
                                               Content="{Binding Name}"
-                                              Margin="0,2,4,2"
-                                              Padding="8,4"
+                                              Margin="{StaticResource Pulsar.Thk.T2R4B2}"
+                                              Padding="{StaticResource Pulsar.Pad.H8V4}"
                                               FontSize="{StaticResource Pulsar.Type.Caption}"
                                               Cursor="Hand">
                                     <ToggleButton.Style>
@@ -236,7 +236,7 @@
                     <TextBlock Text="{lex:Locale Dialog.PluginSettings.EnterManually}" 
                                FontSize="{StaticResource Pulsar.Type.Caption}" 
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               Margin="0,8,0,2"/>
+                               Margin="{StaticResource Pulsar.Thk.T8B2}"/>
                     <ui:TextBox Text="{Binding CommaSeparatedValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                 PlaceholderText="{lex:Locale Dialog.PluginSettings.CommaSeparatedPlaceholder}"/>
                 </StackPanel>
@@ -261,12 +261,12 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+        <StackPanel Grid.Row="0" Margin="{StaticResource Pulsar.Gap.Bottom.LG}">
             <TextBlock Text="{Binding PluginName}" FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="SemiBold"/>
             <TextBlock Text="{Binding PluginDescription}" 
                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
                        TextWrapping="Wrap"
-                       Margin="0,4,0,0"/>
+                       Margin="{StaticResource Pulsar.Gap.Top.XS}"/>
         </StackPanel>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
@@ -274,20 +274,20 @@
                           ItemTemplateSelector="{StaticResource SettingSelector}"/>
         </ScrollViewer>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="{StaticResource Pulsar.Gap.Top.LG}">
             <ui:Button Content="{lex:Locale Dialog.PluginSettings.WindowInspector}"
                        Style="{StaticResource PulsarSecondaryButtonStyle}"
                        Command="{Binding OpenWindowInspectorCommand}"
                        Visibility="{Binding IsWindowInspectorVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
-                       Margin="0,0,8,0"/>
+                       Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
             <ui:Button Content="{lex:Locale Dialog.PluginSettings.ResetDefaults}"
                        Style="{StaticResource PulsarSecondaryButtonStyle}"
                        Command="{Binding ResetToDefaultsCommand}"
-                       Margin="0,0,8,0"/>
+                       Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
             <ui:Button Content="{lex:Locale Dialog.PluginSettings.Cancel}"
                        Style="{StaticResource PulsarSecondaryButtonStyle}"
                        Command="{Binding CancelCommand}"
-                       Margin="0,0,8,0"/>
+                       Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
             <ui:Button Content="{lex:Locale Dialog.PluginSettings.Save}"
                        Style="{StaticResource PulsarPrimaryButtonStyle}"
                        Command="{Binding SaveCommand}"

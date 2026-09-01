@@ -13,7 +13,7 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </UserControl.Resources>
     
-    <Grid Margin="20">
+    <Grid Margin="{StaticResource Pulsar.Pad.XL}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/> <!-- Preview & Hex -->
             <RowDefinition Height="Auto"/> <!-- Sliders -->
@@ -21,42 +21,42 @@
         </Grid.RowDefinitions>
 
         <!-- Preview & Hex Input -->
-        <Grid Grid.Row="0" Margin="0,0,0,20">
+        <Grid Grid.Row="0" Margin="{StaticResource Pulsar.Gap.Bottom.XL}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
             <!-- Preview Box -->
-            <Border Width="60" Height="60" CornerRadius="8" 
+            <Border Width="60" Height="60" CornerRadius="{StaticResource Pulsar.Radius.LG}" 
                     BorderBrush="{DynamicResource ControlElevationBorderBrush}" BorderThickness="1"
-                    Margin="0,0,16,0">
+                    Margin="{StaticResource Pulsar.Gap.Right.LG}">
                 <Border.Background>
                     <SolidColorBrush Color="{Binding CurrentColor}"/>
                 </Border.Background>
             </Border>
 
             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                <TextBlock Text="{lex:Locale Dialog.ColorPicker.HexCode}" Margin="0,0,0,4" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                <TextBlock Text="{lex:Locale Dialog.ColorPicker.HexCode}" Margin="{StaticResource Pulsar.Gap.Bottom.XS}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                 <ui:TextBox Text="{Binding HexInput, UpdateSourceTrigger=PropertyChanged}"
                             PlaceholderText="{lex:Locale Dialog.ColorPicker.HexPlaceholder}"
                             Icon="{ui:SymbolIcon Color24}"/>
                 <TextBlock Text="{lex:Locale Dialog.ColorPicker.InvalidHex}" 
                            Foreground="{DynamicResource PaletteRedBrush}" 
                            FontSize="{StaticResource Pulsar.Type.Body}" 
-                           Margin="0,4,0,0"
+                           Margin="{StaticResource Pulsar.Gap.Top.XS}"
                            Visibility="{Binding IsHexError, Converter={StaticResource BoolToVis}}"/>
                 <Button Content="{lex:Locale Dialog.ColorPicker.UseAutomaticColor}"
                         Command="{Binding ClearColorCommand}"
-                        Margin="0,8,0,0"
+                        Margin="{StaticResource Pulsar.Gap.Top.SM}"
                         HorizontalAlignment="Left"
                         ToolTip="{Binding ClearColorText}"/>
             </StackPanel>
         </Grid>
 
         <!-- RGB Sliders -->
-        <StackPanel Grid.Row="1" Margin="0,0,0,20">
-            <Grid Margin="0,0,0,8">
+        <StackPanel Grid.Row="1" Margin="{StaticResource Pulsar.Gap.Bottom.XL}">
+            <Grid Margin="{StaticResource Pulsar.Gap.Bottom.SM}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="30"/>
                     <ColumnDefinition Width="*"/>
@@ -65,18 +65,18 @@
                 <!-- R/G/B 通道标识色是"颜色语义"本身（红/绿/蓝通道指示），非主题色，
                      刻意保留纯色 —— 若跟随 Fluent 令牌反而失去通道含义。 -->
                 <TextBlock Text="{lex:Locale Dialog.ColorPicker.R}" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="#FF5555"/>
-                <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding R}" Margin="8,0"/>
+                <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding R}" Margin="{StaticResource Pulsar.Gap.Horizontal.SM}"/>
                 <TextBlock Grid.Column="2" Text="{Binding R}" VerticalAlignment="Center" HorizontalAlignment="Right"/>
             </Grid>
 
-            <Grid Margin="0,0,0,8">
+            <Grid Margin="{StaticResource Pulsar.Gap.Bottom.SM}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="30"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="40"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="{lex:Locale Dialog.ColorPicker.G}" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="#55FF55"/>
-                <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding G}" Margin="8,0"/>
+                <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding G}" Margin="{StaticResource Pulsar.Gap.Horizontal.SM}"/>
                 <TextBlock Grid.Column="2" Text="{Binding G}" VerticalAlignment="Center" HorizontalAlignment="Right"/>
             </Grid>
 
@@ -87,7 +87,7 @@
                     <ColumnDefinition Width="40"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="{lex:Locale Dialog.ColorPicker.B}" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="#5555FF"/>
-                <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding B}" Margin="8,0"/>
+                <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding B}" Margin="{StaticResource Pulsar.Gap.Horizontal.SM}"/>
                 <TextBlock Grid.Column="2" Text="{Binding B}" VerticalAlignment="Center" HorizontalAlignment="Right"/>
             </Grid>
         </StackPanel>
@@ -101,7 +101,7 @@
             
             <TextBlock Grid.Row="0" 
                        Text="{lex:Locale Dialog.ColorPicker.Presets}" 
-                       Margin="0,0,0,8" 
+                       Margin="{StaticResource Pulsar.Gap.Bottom.SM}" 
                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
             
             <ScrollViewer Grid.Row="1" 
@@ -115,13 +115,14 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Button Width="32" Height="32" Margin="0,0,8,8" 
+                            <Button Width="32" Height="32" Margin="{StaticResource Pulsar.Thk.R8B8}" 
                                     Command="{Binding Tag.SelectPresetCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                     CommandParameter="{Binding}"
                                     Cursor="Hand"
                                     ToolTip="{Binding Name}">
                                 <Button.Template>
                                     <ControlTemplate>
+                                        <!-- 几何正圆:按钮 32x32,半径 = 32/2,由尺寸决定,不套 Pulsar.Radius.* -->
                                         <Border CornerRadius="16" Background="{Binding Brush}" BorderThickness="1" BorderBrush="#30000000"/>
                                     </ControlTemplate>
                                 </Button.Template>

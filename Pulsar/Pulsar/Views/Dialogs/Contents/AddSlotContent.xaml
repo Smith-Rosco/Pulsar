@@ -109,7 +109,7 @@
                                     Background="{DynamicResource ControlFillColorDefaultBrush}"
                                     BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="12">
+                                    CornerRadius="{StaticResource Pulsar.Radius.XL}">
                                 <ContentPresenter/>
                             </Border>
                             <ControlTemplate.Triggers>
@@ -138,7 +138,7 @@
                                     Background="{DynamicResource ControlFillColorDefaultBrush}"
                                     BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="10">
+                                    CornerRadius="{StaticResource Pulsar.Radius.XL}">
                                 <ContentPresenter/>
                             </Border>
                             <ControlTemplate.Triggers>
@@ -165,7 +165,7 @@
                                     Background="{DynamicResource ControlFillColorDefaultBrush}"
                                     BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="6">
+                                    CornerRadius="{StaticResource Pulsar.Radius.MD}">
                                 <ContentPresenter/>
                             </Border>
                             <ControlTemplate.Triggers>
@@ -185,13 +185,13 @@
 
             <!-- Parameter field template -->
             <DataTemplate x:Key="SlotParameterFieldTemplate" DataType="{x:Type models:SlotParameterEditorField}">
-                <Grid Margin="0,0,0,8">
+                <Grid Margin="{StaticResource Pulsar.Gap.Bottom.SM}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" MinWidth="90"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+                    <StackPanel VerticalAlignment="Center" Margin="{StaticResource Pulsar.Gap.Right.MD}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{Binding Label}"
                                        FontSize="{StaticResource Pulsar.Type.Body}"
@@ -218,8 +218,8 @@
                         <ui:Button Grid.Column="0"
                                    Width="26"
                                    Height="26"
-                                   Padding="5"
-                                   Margin="0,0,6,0"
+                                   Padding="{StaticResource Pulsar.Pad.XS}"
+                                   Margin="{StaticResource Pulsar.Gap.Right.SM}"
                                    Icon="{ui:SymbolIcon FolderOpen16}"
                                    Style="{StaticResource PulsarIconButtonStyle}"
                                    ToolTip="{lex:Locale Dialog.AddSlot.BrowseIcon}"
@@ -248,8 +248,8 @@
 
                         <Border Grid.Column="1"
                                 Visibility="{Binding IsSecretSelector, Converter={StaticResource BoolToVis}}"
-                                Padding="10,7"
-                                CornerRadius="6"
+                                Padding="{StaticResource Pulsar.Pad.H12V8}"
+                                CornerRadius="{StaticResource Pulsar.Radius.MD}"
                                 Background="{DynamicResource ControlFillColorSecondaryBrush}"
                                 BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
                                 BorderThickness="1"
@@ -276,7 +276,7 @@
     <Grid>
         <ScrollViewer VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
-                      Padding="20,16,20,16">
+                      Padding="{StaticResource Pulsar.Pad.H20V16}">
 
             <Grid>
                 <!-- ===================== PHASE 1: PICKER ===================== -->
@@ -285,12 +285,12 @@
                            FontSize="{StaticResource Pulsar.Type.Title}"
                            FontWeight="SemiBold"
                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                           Margin="0,0,0,4"/>
+                           Margin="{StaticResource Pulsar.Gap.Bottom.XS}"/>
 
                 <!-- Search box -->
                 <ui:TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                             PlaceholderText="{lex:Locale Dialog.AddSlot.SearchPlaceholder}"
-                            Margin="0,0,0,16"/>
+                            Margin="{StaticResource Pulsar.Gap.Bottom.LG}"/>
 
                 <!-- Curated intent card grid (3×2) -->
                 <ItemsControl ItemsSource="{Binding PrimaryCards}">
@@ -310,7 +310,7 @@
                                         <RowDefinition Height="*"/>
                                     </Grid.RowDefinitions>
 
-                                    <Border Width="36" Height="36" CornerRadius="9"
+                                    <Border Width="36" Height="36" CornerRadius="{StaticResource Pulsar.Radius.LG}"
                                             BorderBrush="{DynamicResource ControlElevationBorderBrush}"
                                             BorderThickness="1"
                                             Background="{DynamicResource ControlFillColorSecondaryBrush}">
@@ -322,7 +322,7 @@
                                                           IconKey="{Binding IconKey}"/>
                                     </Border>
 
-                                    <StackPanel Grid.Row="1" Margin="0,8,0,0">
+                                    <StackPanel Grid.Row="1" Margin="{StaticResource Pulsar.Gap.Top.SM}">
                                         <TextBlock Text="{Binding Title}"
                                                    FontSize="{StaticResource Pulsar.Type.Body}" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
@@ -333,7 +333,7 @@
                                                    TextWrapping="Wrap"
                                                    TextTrimming="CharacterEllipsis"
                                                    MaxHeight="28"
-                                                   Margin="0,4,0,0"/>
+                                                   Margin="{StaticResource Pulsar.Gap.Top.XS}"/>
                                     </StackPanel>
                                 </Grid>
                             </Button>
@@ -344,16 +344,16 @@
                 <!-- Browse all slot types... -->
                 <ui:CardExpander Header="{lex:Locale Dialog.AddSlot.BrowseAll}"
                                  IsExpanded="{Binding IsBrowseExpanded, Mode=TwoWay}"
-                                 Margin="0,8,0,0"
+                                 Margin="{StaticResource Pulsar.Gap.Top.SM}"
                                  HorizontalContentAlignment="Stretch">
                     <ItemsControl ItemsSource="{Binding BrowseAllCategories}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <StackPanel Margin="0,0,0,12">
+                                <StackPanel Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
                                     <TextBlock Text="{Binding Key}"
                                                FontSize="{StaticResource Pulsar.Type.Body}" FontWeight="SemiBold"
                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                               Margin="0,0,0,4"/>
+                                               Margin="{StaticResource Pulsar.Gap.Bottom.XS}"/>
                                     <ItemsControl ItemsSource="{Binding .}">
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate>
@@ -366,11 +366,11 @@
                                                         Command="{Binding DataContext.SelectSlotTypeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                         CommandParameter="{Binding}">
                                                     <StackPanel Orientation="Horizontal">
-                                                        <Border Width="24" Height="24" CornerRadius="6"
+                                                        <Border Width="24" Height="24" CornerRadius="{StaticResource Pulsar.Radius.MD}"
                                                                 BorderBrush="{DynamicResource ControlElevationBorderBrush}"
                                                                 BorderThickness="1"
                                                                 Background="{DynamicResource ControlFillColorSecondaryBrush}"
-                                                                Margin="0,0,8,0">
+                                                                Margin="{StaticResource Pulsar.Gap.Right.SM}">
                                                             <controls:SlotOrb Size="18" Width="18" Height="18"
                                                                               Opacity="1" IsActive="False"
                                                                               IsHitTestVisible="False"
@@ -403,8 +403,8 @@
             <!-- ===================== PHASE 2: CONFIGURATION ===================== -->
             <StackPanel Visibility="{Binding IsConfigurationPhase, Converter={StaticResource BoolToVis}}">
                 <!-- Header: back arrow (create only) + orb + label + status badge -->
-                <Border Padding="0,0,0,16"
-                        Margin="0,0,0,16"
+                <Border Padding="{StaticResource Pulsar.Gap.Bottom.LG}"
+                        Margin="{StaticResource Pulsar.Gap.Bottom.LG}"
                         BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
                         BorderThickness="0,0,0,1">
                     <Grid>
@@ -418,12 +418,12 @@
                         <!-- Back arrow (Create mode only) -->
                         <ui:Button Grid.Column="0"
                                    Width="28" Height="28"
-                                   Padding="4"
+                                   Padding="{StaticResource Pulsar.Pad.XS}"
                                    Icon="{ui:SymbolIcon ArrowLeft24}"
                                    Style="{StaticResource PulsarIconButtonStyle}"
                                    Command="{Binding GoBackToPickerCommand}"
                                    Visibility="{Binding IsCreateMode, Converter={StaticResource BoolToVis}}"
-                                   Margin="0,0,10,0"
+                                   Margin="{StaticResource Pulsar.Gap.Right.MD}"
                                    ToolTip="{lex:Locale Dialog.AddSlot.BackToPicker}"/>
 
                         <!-- Orb -->
@@ -436,7 +436,7 @@
                                           IconKey="{Binding Slot.IconKey}"
                                           CustomFill="{Binding Slot.Color, Converter={StaticResource HexToBrush}}"
                                           CustomStroke="{Binding Slot.Color, Converter={StaticResource HexToBrush}}"
-                                          Margin="0,0,10,0"/>
+                                          Margin="{StaticResource Pulsar.Gap.Right.MD}"/>
 
                         <!-- Label + header text -->
                         <StackPanel Grid.Column="2" VerticalAlignment="Center">
@@ -448,7 +448,7 @@
                         <!-- Status badge -->
                         <Border Grid.Column="3"
                                 Style="{StaticResource HeaderStatusBadgeBorderStyle}"
-                                Margin="10,0,0,0">
+                                Margin="{StaticResource Pulsar.Gap.Left.MD}">
                             <TextBlock Text="{Binding HeaderStatusText}"
                                        Style="{StaticResource HeaderStatusBadgeTextStyle}"/>
                         </Border>
@@ -460,15 +460,15 @@
                            Style="{StaticResource SectionEyebrowTextStyle}"/>
 
                 <!-- Action selector -->
-                <Border Padding="0,0,0,10">
+                <Border Padding="{StaticResource Pulsar.Gap.Bottom.MD}">
                     <StackPanel>
                         <!-- Validation error banner -->
-                        <Border Margin="0,0,0,8"
-                                Padding="12,10"
+                        <Border Margin="{StaticResource Pulsar.Gap.Bottom.SM}"
+                                Padding="{StaticResource Pulsar.Pad.H12V12}"
                                 Background="{DynamicResource SystemFillColorCriticalBackgroundBrush}"
                                 BorderBrush="{DynamicResource SystemFillColorCriticalBrush}"
                                 BorderThickness="1"
-                                CornerRadius="8"
+                                CornerRadius="{StaticResource Pulsar.Radius.LG}"
                                 Visibility="{Binding HasActionValidationError, Converter={StaticResource BoolToVis}}">
                             <TextBlock Text="{Binding ActionValidationMessage}"
                                        FontSize="{StaticResource Pulsar.Type.Caption}"
@@ -481,7 +481,7 @@
                                    FontSize="{StaticResource Pulsar.Type.Body}" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                    Visibility="{Binding HasSingleAction, Converter={StaticResource BoolToVis}}"
-                                   Margin="0,4,0,0"/>
+                                   Margin="{StaticResource Pulsar.Gap.Top.XS}"/>
 
                         <!-- Segmented button group (2-4 actions) -->
                         <Grid Visibility="{Binding UseSegmentedButtons, Converter={StaticResource BoolToVis}}">
@@ -515,7 +515,7 @@
                 <!-- Summary tokens -->
                 <ItemsControl ItemsSource="{Binding SummaryTokens}"
                               Visibility="{Binding HasSummaryTokens, Converter={StaticResource BoolToVis}}"
-                              Margin="0,0,0,12">
+                              Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <WrapPanel/>
@@ -523,11 +523,11 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Padding="6,2" CornerRadius="4"
+                            <Border Padding="{StaticResource Pulsar.Pad.H8V2}" CornerRadius="{StaticResource Pulsar.Radius.SM}"
                                     Background="{DynamicResource ControlFillColorSecondaryBrush}"
                                     BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
                                     BorderThickness="1"
-                                    Margin="0,0,6,4">
+                                    Margin="{StaticResource Pulsar.Thk.R8B4}">
                                 <TextBlock Text="{Binding}"
                                            FontSize="{StaticResource Pulsar.Type.Caption}"
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
@@ -544,7 +544,7 @@
 
                 <!-- Compact status border -->
                 <Border Style="{StaticResource CompactStatusBorderStyle}"
-                        Margin="0,8,0,0"
+                        Margin="{StaticResource Pulsar.Gap.Top.SM}"
                         Visibility="{Binding HasValidationSummary, Converter={StaticResource BoolToVis}}">
                     <TextBlock Text="{Binding ValidationSummary}"
                                Style="{StaticResource CompactStatusTextStyle}"/>
@@ -553,12 +553,12 @@
                 <!-- === APPEARANCE SECTION === -->
                 <ui:CardExpander Header="{lex:Locale Dialog.AddSlot.Appearance}"
                                  IsExpanded="{Binding IsAppearanceExpanded, Mode=OneWay}"
-                                 Margin="0,14,0,0"
+                                 Margin="{StaticResource Pulsar.Gap.Top.LG}"
                                  HorizontalContentAlignment="Stretch"
                                  Visibility="{Binding HasAppearanceOptions, Converter={StaticResource BoolToVis}}">
-                    <StackPanel Margin="0,4,0,0">
+                    <StackPanel Margin="{StaticResource Pulsar.Gap.Top.XS}">
                         <!-- Label -->
-                        <Grid Margin="0,0,0,12">
+                        <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="90"/>
                                 <ColumnDefinition Width="*"/>
@@ -574,7 +574,7 @@
                         </Grid>
 
                         <!-- Color -->
-                        <Grid Margin="0,0,0,12">
+                        <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="90"/>
                                 <ColumnDefinition Width="*"/>
@@ -621,15 +621,15 @@
                 <!-- === ADVANCED SECTION === -->
                 <ui:CardExpander Header="{lex:Locale Dialog.AddSlot.Advanced}"
                                  IsExpanded="{Binding IsAdvancedExpanded, Mode=OneWay}"
-                                 Margin="0,10,0,0"
+                                 Margin="{StaticResource Pulsar.Gap.Top.MD}"
                                  HorizontalContentAlignment="Stretch"
                                  Visibility="{Binding HasOptionalSettings, Converter={StaticResource BoolToVis}}">
-                    <StackPanel Margin="0,4,0,0">
+                    <StackPanel Margin="{StaticResource Pulsar.Gap.Top.XS}">
                         <ItemsControl ItemsSource="{Binding OptionalParameters}"
                                       ItemTemplate="{StaticResource SlotParameterFieldTemplate}"
                                       Visibility="{Binding HasOptionalParameters, Converter={StaticResource BoolToVis}}"/>
 
-                        <Border Margin="0,14,0,0"
+                        <Border Margin="{StaticResource Pulsar.Gap.Top.LG}"
                                 Visibility="{Binding HasAdvancedParameters, Converter={StaticResource BoolToVis}}">
                             <StackPanel>
                                 <ItemsControl ItemsSource="{Binding AdvancedParameters}"

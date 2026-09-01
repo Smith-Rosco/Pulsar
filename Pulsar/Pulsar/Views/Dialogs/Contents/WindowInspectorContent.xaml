@@ -24,13 +24,13 @@
         </Grid.RowDefinitions>
 
         <!-- Header: rule summary + status -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+        <StackPanel Grid.Row="0" Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
             <TextBlock Text="{Binding RuleSummary}" FontWeight="SemiBold" FontSize="{StaticResource Pulsar.Type.Body}"/>
             <TextBlock Text="{Binding StatusMessage}"
                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                        FontSize="{StaticResource Pulsar.Type.Body}"
                        TextWrapping="Wrap"
-                       Margin="0,4,0,0"/>
+                       Margin="{StaticResource Pulsar.Gap.Top.XS}"/>
         </StackPanel>
 
         <!-- Window list -->
@@ -79,7 +79,7 @@
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
-                                    <Ellipse Width="8" Height="8" Margin="0,0,6,0" VerticalAlignment="Center">
+                                    <Ellipse Width="8" Height="8" Margin="{StaticResource Pulsar.Gap.Right.SM}" VerticalAlignment="Center">
                                         <Ellipse.Style>
                                             <Style TargetType="Ellipse">
                                                 <Setter Property="Fill" Value="{DynamicResource SystemFillColorSuccessBrush}"/>
@@ -103,14 +103,14 @@
                                     <ui:Button Content="{lex:Locale Inspector.Flash}"
                                                Style="{StaticResource PulsarSecondaryButtonStyle}"
                                                FontSize="{StaticResource Pulsar.Type.Caption}"
-                                               Padding="8,2"
-                                               Margin="0,0,6,0"
+                                               Padding="{StaticResource Pulsar.Pad.H8V2}"
+                                               Margin="{StaticResource Pulsar.Gap.Right.SM}"
                                                Command="{Binding DataContext.FlashCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                CommandParameter="{Binding}"/>
                                     <ui:Button Content="{lex:Locale Inspector.Exclude}"
                                                Style="{StaticResource PulsarSecondaryButtonStyle}"
                                                FontSize="{StaticResource Pulsar.Type.Caption}"
-                                               Padding="8,2"
+                                               Padding="{StaticResource Pulsar.Pad.H8V2}"
                                                IsEnabled="{Binding CanExclude}"
                                                Command="{Binding DataContext.ExcludeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                CommandParameter="{Binding}"/>
@@ -129,11 +129,11 @@
         </Grid>
 
         <!-- Footer -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="{StaticResource Pulsar.Gap.Top.LG}">
             <ui:Button Content="{lex:Locale Inspector.Refresh}"
                        Style="{StaticResource PulsarSecondaryButtonStyle}"
                        Command="{Binding RefreshCommand}"
-                       Margin="0,0,8,0"/>
+                       Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
             <ui:Button Content="{lex:Locale Inspector.Close}"
                        Style="{StaticResource PulsarPrimaryButtonStyle}"
                        Command="{Binding CloseCommand}"/>

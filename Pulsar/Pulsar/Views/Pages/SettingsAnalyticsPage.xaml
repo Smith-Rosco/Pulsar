@@ -31,20 +31,20 @@
                                      Description="{lex:Locale Settings.Analytics.Description}"/>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel Margin="0,0,20,0" MaxWidth="720" HorizontalAlignment="Left">
+            <StackPanel Margin="{StaticResource Pulsar.Gap.Right.XL}" MaxWidth="720" HorizontalAlignment="Left">
 
                 <!-- Loading Indicator -->
                 <StackPanel Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
-                            HorizontalAlignment="Center" Margin="0,40,0,0">
+                            HorizontalAlignment="Center" Margin="{StaticResource Pulsar.Gap.Top.Hero}">
                     <ui:ProgressRing IsIndeterminate="True" Width="40" Height="40" HorizontalAlignment="Center"/>
                     <TextBlock Text="{lex:Locale Settings.Analytics.Loading}"
-                               FontSize="{StaticResource Pulsar.Type.Body}" Margin="0,12,0,0"
+                               FontSize="{StaticResource Pulsar.Type.Body}" Margin="{StaticResource Pulsar.Gap.Top.MD}"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                HorizontalAlignment="Center"/>
                 </StackPanel>
 
                 <!-- No Data Message -->
-                <ui:CardControl Margin="0,0,0,16">
+                <ui:CardControl Margin="{StaticResource Pulsar.Gap.Bottom.LG}">
                     <ui:CardControl.Style>
                         <Style TargetType="ui:CardControl">
                             <Setter Property="Visibility" Value="Collapsed"/>
@@ -59,12 +59,12 @@
                             </Style.Triggers>
                         </Style>
                     </ui:CardControl.Style>
-                    <StackPanel HorizontalAlignment="Center" Margin="0,24">
+                    <StackPanel HorizontalAlignment="Center" Margin="{StaticResource Pulsar.Gap.Vertical.XXL}">
                         <ui:SymbolIcon Symbol="DataPie24" FontSize="36"
                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                        HorizontalAlignment="Center"/>
                         <TextBlock Text="{lex:Locale Settings.Analytics.NoData}"
-                                   FontSize="{StaticResource Pulsar.Type.Body}" Margin="0,12,0,0"
+                                   FontSize="{StaticResource Pulsar.Type.Body}" Margin="{StaticResource Pulsar.Gap.Top.MD}"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    HorizontalAlignment="Center" TextAlignment="Center"
                                    TextWrapping="Wrap" MaxWidth="360"/>
@@ -72,14 +72,14 @@
                 </ui:CardControl>
 
                 <!-- Error State -->
-                <ui:CardControl Margin="0,0,0,16"
+                <ui:CardControl Margin="{StaticResource Pulsar.Gap.Bottom.LG}"
                                Visibility="{Binding HasError, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <StackPanel HorizontalAlignment="Center" Margin="0,16">
+                    <StackPanel HorizontalAlignment="Center" Margin="{StaticResource Pulsar.Gap.Vertical.LG}">
                         <ui:SymbolIcon Symbol="ErrorCircle24" FontSize="36"
                                        Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                                        HorizontalAlignment="Center"/>
                         <TextBlock Text="{Binding ErrorMessage}"
-                                   FontSize="{StaticResource Pulsar.Type.Body}" Margin="0,12,0,0"
+                                   FontSize="{StaticResource Pulsar.Type.Body}" Margin="{StaticResource Pulsar.Gap.Top.MD}"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    HorizontalAlignment="Center" TextAlignment="Center"
                                    TextWrapping="Wrap" MaxWidth="360"/>
@@ -88,12 +88,12 @@
                                    Command="{Binding RefreshCommand}"
                                    Style="{StaticResource PulsarSecondaryButtonStyle}"
                                    HorizontalAlignment="Center"
-                                   Margin="0,12,0,0"/>
+                                   Margin="{StaticResource Pulsar.Gap.Top.MD}"/>
                     </StackPanel>
                 </ui:CardControl>
 
                 <!-- Summary Dashboard -->
-                <Grid Margin="0,0,0,16"
+                <Grid Margin="{StaticResource Pulsar.Gap.Bottom.LG}"
                       Visibility="{Binding HasData, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -102,7 +102,7 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <ui:CardControl Grid.Column="0" Padding="14,12" Margin="0,0,6,0">
+                    <ui:CardControl Grid.Column="0" Padding="{StaticResource Pulsar.Pad.H16V12}" Margin="{StaticResource Pulsar.Gap.Right.SM}">
                         <StackPanel>
                             <TextBlock Text="{Binding TotalOverallExecutions}"
                                        FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="Bold"
@@ -110,11 +110,11 @@
                             <TextBlock Text="{lex:Locale Settings.Analytics.SummaryTotalExec}"
                                        FontSize="{StaticResource Pulsar.Type.Caption}"
                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                       Margin="0,2,0,0"/>
+                                       Margin="{StaticResource Pulsar.Gap.Top.XXS}"/>
                         </StackPanel>
                     </ui:CardControl>
 
-                    <ui:CardControl Grid.Column="1" Padding="14,12" Margin="3,0">
+                    <ui:CardControl Grid.Column="1" Padding="{StaticResource Pulsar.Pad.H16V12}" Margin="{StaticResource Pulsar.Gap.Horizontal.XS}">
                         <StackPanel>
                             <TextBlock Text="{Binding ActivePluginCount}"
                                        FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="Bold"
@@ -122,11 +122,11 @@
                             <TextBlock Text="{lex:Locale Settings.Analytics.SummaryActivePlugins}"
                                        FontSize="{StaticResource Pulsar.Type.Caption}"
                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                       Margin="0,2,0,0"/>
+                                       Margin="{StaticResource Pulsar.Gap.Top.XXS}"/>
                         </StackPanel>
                     </ui:CardControl>
 
-                    <ui:CardControl Grid.Column="2" Padding="14,12" Margin="3,0">
+                    <ui:CardControl Grid.Column="2" Padding="{StaticResource Pulsar.Pad.H16V12}" Margin="{StaticResource Pulsar.Gap.Horizontal.XS}">
                         <StackPanel>
                             <TextBlock Text="{Binding TotalTodayExecutions}"
                                        FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="Bold"
@@ -134,11 +134,11 @@
                             <TextBlock Text="{lex:Locale Settings.Analytics.SummaryToday}"
                                        FontSize="{StaticResource Pulsar.Type.Caption}"
                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                       Margin="0,2,0,0"/>
+                                       Margin="{StaticResource Pulsar.Gap.Top.XXS}"/>
                         </StackPanel>
                     </ui:CardControl>
 
-                    <ui:CardControl Grid.Column="3" Padding="14,12" Margin="6,0,0,0">
+                    <ui:CardControl Grid.Column="3" Padding="{StaticResource Pulsar.Pad.H16V12}" Margin="{StaticResource Pulsar.Gap.Left.SM}">
                         <StackPanel>
                             <TextBlock Text="{Binding TotalWeekExecutions}"
                                        FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="Bold"
@@ -146,17 +146,17 @@
                             <TextBlock Text="{lex:Locale Settings.Analytics.SummaryWeek}"
                                        FontSize="{StaticResource Pulsar.Type.Caption}"
                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                       Margin="0,2,0,0"/>
+                                       Margin="{StaticResource Pulsar.Gap.Top.XXS}"/>
                         </StackPanel>
                     </ui:CardControl>
                 </Grid>
 
                 <!-- Slot Usage Heatmap -->
-                <ui:CardControl Margin="0,0,0,16"
+                <ui:CardControl Margin="{StaticResource Pulsar.Gap.Bottom.LG}"
                                 Visibility="{Binding HasHeatmap, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <ui:CardControl.Header>
                         <StackPanel Orientation="Horizontal">
-                            <ui:SymbolIcon Symbol="DataPie24" Margin="0,0,8,0"
+                            <ui:SymbolIcon Symbol="DataPie24" Margin="{StaticResource Pulsar.Gap.Right.SM}"
                                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                             <TextBlock Text="{lex:Locale Settings.Analytics.SlotHeatmap}"
                                        FontWeight="SemiBold" FontSize="{StaticResource Pulsar.Type.Subtitle}"
@@ -166,7 +166,7 @@
                     <ItemsControl ItemsSource="{Binding SlotHeatmap}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Grid Margin="0,3,0,4">
+                                <Grid Margin="{StaticResource Pulsar.Gap.Vertical.XS}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="60"/>
                                         <ColumnDefinition Width="*"/>
@@ -180,13 +180,13 @@
                                                VerticalAlignment="Center"
                                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
 
-                                    <Grid Grid.Column="1" Margin="10,0">
+                                    <Grid Grid.Column="1" Margin="{StaticResource Pulsar.Gap.Horizontal.MD}">
                                         <Border Height="20"
-                                                CornerRadius="4"
+                                                CornerRadius="{StaticResource Pulsar.Radius.SM}"
                                                 Background="{DynamicResource ControlFillColorDisabledBrush}">
                                             <Border Width="{Binding BarWidth, FallbackValue=0}"
                                                     HorizontalAlignment="Left"
-                                                    CornerRadius="4"
+                                                    CornerRadius="{StaticResource Pulsar.Radius.SM}"
                                                     Background="{DynamicResource SystemFillColorAccentBrush}"
                                                     MinWidth="4">
                                                 <Border.Style>
@@ -223,11 +223,11 @@
                 </ui:CardControl>
 
                 <!-- Hourly Usage Heatmap -->
-                <ui:CardControl Margin="0,0,0,16"
+                <ui:CardControl Margin="{StaticResource Pulsar.Gap.Bottom.LG}"
                                 Visibility="{Binding HasHourlyHeatmap, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <ui:CardControl.Header>
                         <StackPanel Orientation="Horizontal">
-                            <ui:SymbolIcon Symbol="DataTrending24" Margin="0,0,8,0"
+                            <ui:SymbolIcon Symbol="DataTrending24" Margin="{StaticResource Pulsar.Gap.Right.SM}"
                                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                             <TextBlock Text="{lex:Locale Settings.Analytics.Title}"
                                        FontWeight="SemiBold" FontSize="{StaticResource Pulsar.Type.Subtitle}"
@@ -237,7 +237,7 @@
                     <ItemsControl ItemsSource="{Binding HourlyHeatmap}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Grid Margin="0,2,0,2">
+                                <Grid Margin="{StaticResource Pulsar.Gap.Vertical.XXS}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="40"/>
                                         <ColumnDefinition Width="*"/>
@@ -250,13 +250,13 @@
                                                VerticalAlignment="Center"
                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
 
-                                    <Grid Grid.Column="1" Margin="8,0">
+                                    <Grid Grid.Column="1" Margin="{StaticResource Pulsar.Gap.Horizontal.SM}">
                                         <Border Height="16"
-                                                CornerRadius="3"
+                                                CornerRadius="{StaticResource Pulsar.Radius.SM}"
                                                 Background="{DynamicResource ControlFillColorDisabledBrush}">
                                             <Border Width="{Binding BarWidth, FallbackValue=0}"
                                                     HorizontalAlignment="Left"
-                                                    CornerRadius="3"
+                                                    CornerRadius="{StaticResource Pulsar.Radius.SM}"
                                                     Background="{DynamicResource SystemFillColorAccentBrush}"
                                                     MinWidth="2">
                                                 <Border.Style>
@@ -289,7 +289,7 @@
                 </ui:CardControl>
 
                 <!-- Filter Row -->
-                <Grid Margin="0,0,0,12"
+                <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}"
                       Visibility="{Binding HasData, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -299,7 +299,7 @@
                     <TextBlock Grid.Column="0" Text="{lex:Locale Settings.Analytics.FilterAllTime}"
                                FontSize="{StaticResource Pulsar.Type.Body}" VerticalAlignment="Center"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               Margin="0,0,8,0"/>
+                               Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
                     <ComboBox Grid.Column="1" MinWidth="140"
                               SelectedIndex="{Binding TimeRange}">
                         <ComboBoxItem Content="{lex:Locale Settings.Analytics.FilterAllTime}"/>
@@ -310,7 +310,7 @@
                 </Grid>
 
                 <!-- Sort Column Headers -->
-                <Grid Margin="14,0,14,4"
+                <Grid Margin="{StaticResource Pulsar.Thk.L16R16B4}"
                       Visibility="{Binding HasData, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -344,7 +344,7 @@
                               Visibility="{Binding HasData, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <ui:CardControl Margin="0,0,0,10" Padding="16,14">
+                            <ui:CardControl Margin="{StaticResource Pulsar.Gap.Bottom.MD}" Padding="{StaticResource Pulsar.Pad.H16V16}">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
@@ -358,8 +358,8 @@
 
                                     <!-- Rank Badge -->
                                     <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
-                                            Width="32" Height="32" CornerRadius="8"
-                                            Margin="0,0,14,0" VerticalAlignment="Center"
+                                            Width="32" Height="32" CornerRadius="{StaticResource Pulsar.Radius.LG}"
+                                            Margin="{StaticResource Pulsar.Gap.Right.LG}" VerticalAlignment="Center"
                                             Background="{DynamicResource ControlFillColorDisabledBrush}">
                                         <Border.Style>
                                             <Style TargetType="Border">
@@ -388,16 +388,16 @@
                                     </Border>
 
                                     <!-- Plugin Name + Last Used -->
-                                    <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,6">
+                                    <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Margin="{StaticResource Pulsar.Gap.Bottom.SM}">
                                         <TextBlock Text="{Binding DisplayName}"
                                                    FontWeight="SemiBold" FontSize="{StaticResource Pulsar.Type.Subtitle}"
                                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                                        <TextBlock Margin="8,0,0,0"
+                                        <TextBlock Margin="{StaticResource Pulsar.Gap.Left.SM}"
                                                    FontSize="{StaticResource Pulsar.Type.Caption}"
                                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                    VerticalAlignment="Center"
                                                    Text="{Binding PluginId, StringFormat='({0})'}"/>
-                                        <TextBlock Margin="12,0,0,0"
+                                        <TextBlock Margin="{StaticResource Pulsar.Gap.Left.MD}"
                                                    Text="{Binding LastUsedFormatted, StringFormat='{}{0}'}"
                                                    FontSize="{StaticResource Pulsar.Type.Caption}"
                                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"
@@ -405,7 +405,7 @@
                                     </StackPanel>
 
                                     <!-- Metrics Row -->
-                                    <UniformGrid Grid.Row="1" Grid.Column="1" Columns="3" Margin="0,6,0,2">
+                                    <UniformGrid Grid.Row="1" Grid.Column="1" Columns="3" Margin="{StaticResource Pulsar.Thk.T8B2}">
 
                                         <!-- Executions -->
                                         <StackPanel>
@@ -452,15 +452,15 @@
                                     </UniformGrid>
 
                                     <!-- Bottom Row: Slot + Mode Summary + Sparkline -->
-                                    <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,6,0,0">
+                                    <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="{StaticResource Pulsar.Gap.Top.SM}">
                                         <TextBlock Text="{Binding SlotBreakdown}"
                                                    FontSize="{StaticResource Pulsar.Type.Caption}"
                                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
                                         <TextBlock Text="{Binding ModeSummary}"
                                                    FontSize="{StaticResource Pulsar.Type.Caption}"
                                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                                   Margin="12,0,0,0"/>
-                                        <ItemsControl ItemsSource="{Binding TrendData}" Margin="16,0,0,0">
+                                                   Margin="{StaticResource Pulsar.Gap.Left.MD}"/>
+                                        <ItemsControl ItemsSource="{Binding TrendData}" Margin="{StaticResource Pulsar.Gap.Left.LG}">
                                             <ItemsControl.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <StackPanel Orientation="Horizontal"/>
@@ -468,13 +468,13 @@
                                             </ItemsControl.ItemsPanel>
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
-                                                    <Border Width="4" Height="14" CornerRadius="1" Margin="1,0"
+                                                    <Border Width="4" Height="14" CornerRadius="{StaticResource Pulsar.Radius.XS}" Margin="{StaticResource Pulsar.Gap.Horizontal.XXS}"
                                                             Background="{DynamicResource ControlFillColorDisabledBrush}"
                                                             VerticalAlignment="Bottom">
                                                         <Border Width="4"
                                                                 HorizontalAlignment="Left"
                                                                 VerticalAlignment="Bottom"
-                                                                CornerRadius="1"
+                                                                CornerRadius="{StaticResource Pulsar.Radius.XS}"
                                                                 Background="{DynamicResource SystemFillColorAccentBrush}"
                                                                 Height="{Binding BarHeight, FallbackValue=0}">
                                                             <Border.Style>
@@ -499,11 +499,11 @@
                 </ItemsControl>
 
                 <!-- Recommendations Section -->
-                <ui:CardControl Margin="0,12,0,8"
+                <ui:CardControl Margin="{StaticResource Pulsar.Thk.T12B8}"
                                 Visibility="{Binding HasRecommendations, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <ui:CardControl.Header>
                         <StackPanel Orientation="Horizontal">
-                            <ui:SymbolIcon Symbol="Lightbulb16" Margin="0,0,8,0"/>
+                            <ui:SymbolIcon Symbol="Lightbulb16" Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
                             <TextBlock Text="{lex:Locale Settings.Analytics.Recommendations}"
                                        FontWeight="SemiBold" FontSize="{StaticResource Pulsar.Type.Subtitle}"
                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
@@ -512,7 +512,7 @@
                     <ItemsControl ItemsSource="{Binding Recommendations}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Margin="0,4" Padding="10,8" CornerRadius="6"
+                                <Border Margin="{StaticResource Pulsar.Gap.Vertical.XS}" Padding="{StaticResource Pulsar.Pad.H12V8}" CornerRadius="{StaticResource Pulsar.Radius.MD}"
                                         Background="{DynamicResource ControlFillColorDefaultBrush}">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -521,7 +521,7 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
 
-                                        <ui:SymbolIcon Grid.Column="0" Margin="0,0,10,0" VerticalAlignment="Center">
+                                        <ui:SymbolIcon Grid.Column="0" Margin="{StaticResource Pulsar.Gap.Right.MD}" VerticalAlignment="Center">
                                             <ui:SymbolIcon.Style>
                                                 <Style TargetType="ui:SymbolIcon">
                                                     <Setter Property="Symbol" Value="Info24"/>
@@ -561,16 +561,16 @@
                                                        FontSize="{StaticResource Pulsar.Type.Body}"
                                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                                             <TextBlock Text="{Binding Message}"
-                                                       FontSize="{StaticResource Pulsar.Type.Caption}" Margin="0,2,0,0"
+                                                       FontSize="{StaticResource Pulsar.Type.Caption}" Margin="{StaticResource Pulsar.Gap.Top.XXS}"
                                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                        TextWrapping="Wrap"/>
                                         </StackPanel>
 
-                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="10,0,0,0">
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="{StaticResource Pulsar.Gap.Left.MD}">
                                             <ui:Button Content="{lex:Locale Settings.Analytics.DisablePlugin}"
                                                        Command="{Binding DataContext.DisablePluginCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                        CommandParameter="{Binding PluginId}"
-                                                       FontSize="{StaticResource Pulsar.Type.Caption}" Margin="4,0">
+                                                       FontSize="{StaticResource Pulsar.Type.Caption}" Margin="{StaticResource Pulsar.Gap.Horizontal.XS}">
                                                 <ui:Button.Style>
                                                     <Style TargetType="ui:Button" BasedOn="{StaticResource PulsarDangerButtonStyle}">
                                                         <Style.Triggers>
@@ -616,7 +616,7 @@
                 </ui:CardControl>
 
                 <!-- Action Buttons Row -->
-                <StackPanel Orientation="Horizontal" Margin="0,8,0,24">
+                <StackPanel Orientation="Horizontal" Margin="{StaticResource Pulsar.Thk.T8B24}">
                     <ui:Button Content="{lex:Locale Settings.Analytics.Refresh}"
                                Icon="{ui:SymbolIcon ArrowSync24}"
                                Command="{Binding RefreshCommand}"
@@ -627,7 +627,7 @@
                                Command="{Binding ExportCsvCommand}"
                                Style="{StaticResource PulsarSecondaryButtonStyle}"
                                HorizontalAlignment="Left"
-                               Margin="10,0,0,0"
+                               Margin="{StaticResource Pulsar.Gap.Left.MD}"
                                IsEnabled="{Binding HasData}"/>
                 </StackPanel>
 

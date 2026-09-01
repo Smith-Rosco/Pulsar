@@ -39,7 +39,7 @@
              原实现是 RepeatBehavior="Forever" 的呼吸脉冲 —— 对主打肌肉记忆与
              空间定位的工具而言，常驻动画是纯粹的注意力污染（用户靠位置找目标，
              不需要闪烁提示），且 BlurEffect 每帧重绘，与高性能定位冲突。 -->
-        <Ellipse x:Name="RecommendedShape" Fill="#FFFFD700" Opacity="0">
+        <Ellipse x:Name="RecommendedShape" Fill="{DynamicResource Theme.Orb.Recommended}" Opacity="0">
             <Ellipse.Effect>
                 <BlurEffect Radius="20"/>
             </Ellipse.Effect>
@@ -266,12 +266,13 @@
             <!-- 徽章改跟随系统强调色，替代硬编码 #FF0078D7 ——
                  该值与浅色主题的 Theme.Accent(#0067C0) 并不一致，
                  导致同一个「强调色」在系统里存在两个值。 -->
+            <!-- 光学对齐负值:徽章贴齐 24x24 圆球右上角,不进间距刻度 -->
             <Border Background="{DynamicResource AccentFillColorDefaultBrush}" 
                     CornerRadius="{StaticResource Pulsar.Radius.MD}" 
                     MinWidth="12" Height="12"
                     HorizontalAlignment="Right" VerticalAlignment="Top"
                     Margin="0,-2,-2,0"
-                    Padding="2,0"
+                    Padding="{StaticResource Pulsar.Gap.Horizontal.XXS}"
                     Panel.ZIndex="100">
                 <Border.Style>
                     <Style TargetType="Border">
@@ -312,7 +313,7 @@
                      HorizontalAlignment="Center"
                      VerticalAlignment="Center">
                 <Border CornerRadius="{StaticResource Pulsar.Radius.MD}"
-                        Padding="2,1"
+                        Padding="{StaticResource Pulsar.Pad.H2V2}"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center">
                     <Border.Style>
