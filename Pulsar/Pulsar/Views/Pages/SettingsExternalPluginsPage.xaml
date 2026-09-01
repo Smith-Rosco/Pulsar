@@ -34,7 +34,7 @@
                 <Style.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
                         <Setter Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}"/>
-                        <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorBrush}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentBrush}"/>
                     </Trigger>
                 </Style.Triggers>
             </Style>
@@ -212,7 +212,7 @@
                             <StackPanel Orientation="Horizontal" Margin="{StaticResource Pulsar.Gap.Bottom.SM}">
                                 <ui:SymbolIcon Symbol="Info24" 
                                                FontSize="{StaticResource Pulsar.Type.Subtitle}" 
-                                               Foreground="{DynamicResource SystemAccentColorBrush}"
+                                               Foreground="{DynamicResource SystemAccentBrush}"
                                                Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
                                 <TextBlock Text="{lex:Locale Settings.ExternalPlugins.AboutTitle}" 
                                            FontWeight="SemiBold"

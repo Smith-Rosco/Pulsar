@@ -115,6 +115,39 @@ namespace Pulsar.Services
                     false,
                     false);
             }
+
+            BridgeAccentResources(theme);
+        }
+
+        /// <summary>
+        /// Wpf.Ui's accent manager writes the <c>Accent*</c> brushes into
+        /// <c>UiApplication.Current.Resources</c>. For a plain <see cref="System.Windows.Application"/>
+        /// whose <c>Application.Resources</c> merges no <c>"wpf.ui;"</c>-namespaced dictionary
+        /// (Pulsar's Multi-Headed <c>App.xaml</c>), <c>UiApplication</c> refuses to bind the
+        /// Application instance (<see cref="Wpf.Ui.UiApplication"/> checks
+        /// <c>ApplicationHasResources</c>) and returns a detached dictionary that no window or
+        /// dialog ever resolves. Every <c>{DynamicResource Accent*}</c> reference would then
+        /// fail silently and degrade to fallback colours — the exact regression introduced when
+        /// buttons moved from Pulsar's self-owned <c>Theme.Accent</c> keys to Fluent accent tokens.
+        ///
+        /// Bridge the injected values into <c>Application.Current.Resources</c> so accent colours
+        /// resolve in every window, dialog and context menu and keep tracking the user's accent.
+        /// </summary>
+        private void BridgeAccentResources(AppTheme theme)
+        {
+            try
+            {
+                foreach (System.Collections.DictionaryEntry entry in Wpf.Ui.UiApplication.Current.Resources)
+                {
+                    Application.Current!.Resources[entry.Key] = entry.Value;
+                }
+                _logger.LogDebug("[ThemeService] Bridged runtime accent resources for {Theme}", theme);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "[ThemeService] Failed to bridge runtime accent resources for {Theme}", theme);
+            }
         }
 
         public void ApplyTheme(FrameworkElement element, AppTheme theme, WindowBackdropType backdrop = WindowBackdropType.None)

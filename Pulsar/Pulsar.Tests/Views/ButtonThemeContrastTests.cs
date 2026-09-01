@@ -163,19 +163,23 @@ namespace Pulsar.Tests.Views
         ///
         /// This loads WPF-UI's real <c>ThemesDictionary</c> rather than hand-copying
         /// key/value pairs. That matters: the button templates reference Fluent tokens
-        /// (AccentFillColorDefaultBrush, AccentTextFillColorPrimaryBrush, ...), and a
+        /// (AccentFillColorDefaultBrush, TextOnAccentFillColorPrimaryBrush, ...), and a
         /// hand-rolled dictionary silently drifts out of sync — DynamicResource lookups
         /// fail *quietly*, so a stale copy would degrade the button to its fallback
         /// colours rather than fail loudly. Building it here also keeps the test
         /// independent of any Application instance.
         ///
-        /// WPF-UI deliberately omits the <c>Accent*</c> keys from <c>ThemesDictionary</c>:
-        /// at runtime <see cref="Pulsar.Services.ThemeService.ApplyAccent"/> injects them
-        /// through <c>ApplicationAccentColorManager</c> so they track the user's Windows
-        /// accent. Tests have no Application instance, so the Accent* keys would be
-        /// missing here and resolve to null (silent DynamicResource failure). We seed the
-        /// documented Fluent Light defaults — the same values ThemeService falls back to
-        /// when the system accent is unavailable.
+        /// WPF-UI's <c>ThemesDictionary</c> omits the runtime-only <c>AccentFill*</c>
+        /// keys: at runtime <see cref="Pulsar.Services.ThemeService.ApplyAccent"/> injects
+        /// them (bridging WPF-UI's accent manager output into Application resources, see
+        /// <see cref="Pulsar.Services.ThemeService.BridgeAccentResources"/>). These tests
+        /// have no Application instance, so we seed the documented Fluent Light defaults —
+        /// the same values ThemeService falls back to when the system accent is unavailable.
+        ///
+        /// NOTE: we deliberately do NOT seed <c>AccentTextFillColorPrimaryBrush</c>. That
+        /// key is a shade of the accent colour itself (it is for accent-coloured text, not
+        /// text on accent fills); button text resolves <c>TextOnAccentFillColorPrimaryBrush</c>,
+        /// which WPF-UI's ThemesDictionary provides natively (white in Light).
         ///
         /// Pulsar's own Theme.Light.xaml is added on top because a few states
         /// (e.g. Theme.Destructive.Hover) have no Fluent equivalent.
@@ -193,7 +197,6 @@ namespace Pulsar.Tests.Views
             // Runtime-only accent keys (see summary above for why we seed them).
             merged["AccentFillColorDefaultBrush"] = new SolidColorBrush(Color.FromRgb(0x00, 0x67, 0xC0));
             merged["AccentFillColorSecondaryBrush"] = new SolidColorBrush(Color.FromRgb(0x19, 0x7C, 0xCB));
-            merged["AccentTextFillColorPrimaryBrush"] = new SolidColorBrush(Colors.White);
 
             // Pulsar's own tokens layer on top (Pulsar keys must win).
             merged.MergedDictionaries.Add(new ResourceDictionary

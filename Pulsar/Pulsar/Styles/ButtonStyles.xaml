@@ -31,7 +31,7 @@
         
         <!-- 明确的颜色定义 - 不依赖系统强调色 -->
         <Setter Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
-        <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
         
         <Setter Property="Template">
             <Setter.Value>
@@ -75,19 +75,19 @@
                         <!-- Normal 状态 -->
                         <Trigger Property="IsMouseOver" Value="False">
                             <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
-                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
+                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
                         </Trigger>
                         
                         <!-- Hover 状态 - 明确指定颜色，不依赖默认行为 -->
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource AccentFillColorSecondaryBrush}"/>
-                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
+                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
                         </Trigger>
                         
                         <!-- Pressed 状态 -->
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
-                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
+                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
                             <Setter TargetName="RootBorder" Property="Opacity" Value="0.9"/>
                         </Trigger>
                         
@@ -296,17 +296,17 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="False">
                             <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
-                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
+                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
                         </Trigger>
                         <!-- Fluent 未定义 critical 的 hover 态，故沿用 Pulsar 自有令牌（与 Theme.Orb.* 同属有意保留的例外）。
                              此前此处硬编码 #FF5C2B —— 那是深色主题的取值，浅色主题下 hover 会跳成深色红。 -->
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource Theme.Destructive.Hover}"/>
-                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
+                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
-                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
+                            <Setter TargetName="TextPresenter" Property="TextElement.Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
                             <Setter TargetName="RootBorder" Property="Opacity" Value="0.9"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">

@@ -292,7 +292,7 @@
                     </Style>
                 </Border.Style>
                 <TextBlock Text="{Binding BadgeCount, ElementName=OrbRoot}" 
-                           Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" 
+                           Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}" 
                            FontSize="8" 
                            FontWeight="Bold"
                            HorizontalAlignment="Center" 
