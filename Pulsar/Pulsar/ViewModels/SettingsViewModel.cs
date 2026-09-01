@@ -615,8 +615,14 @@ namespace Pulsar.ViewModels
                 try
                 {
                     // 1. Create Backup
-                    var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                    var configPath = Path.Combine(appData, "Pulsar", "Profiles.json");
+                    // Use the ConfigService's single source of truth for the file path
+                    // so tests (and future relocations of the config file) redirect it
+                    // without touching the real AppData file.
+                    var configPath = _configService.ConfigFilePath
+                        ?? Path.Combine(
+                            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                            "Pulsar",
+                            "Profiles.json");
                     if (File.Exists(configPath))
                     {
                         var backupPath = configPath + ".bak";

@@ -38,6 +38,13 @@ namespace Pulsar.Services
         public event Action? ConfigUpdated;
 
         /// <summary>
+        /// Full path to Profiles.json, resolved once in the constructor (explicit
+        /// <c>configPath</c> or the default AppData path). Exposed so consumers and
+        /// tests share the single source of truth instead of recomputing the path.
+        /// </summary>
+        public string ConfigFilePath => _configPath;
+
+        /// <summary>
         /// Monotonically increasing write revision. Bumped on every successful save;
         /// consumed by <see cref="ConfigEditSession"/> to detect optimistic-concurrency
         /// conflicts (lost updates from concurrent editors).

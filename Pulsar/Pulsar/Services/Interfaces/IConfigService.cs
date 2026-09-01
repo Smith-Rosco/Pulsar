@@ -28,6 +28,14 @@ namespace Pulsar.Services.Interfaces
         Task<ProfilesConfig> LoadSnapshotAsync(bool forceReload = false);
 
         /// <summary>
+        /// Full path to the persisted configuration file (Profiles.json). This is the
+        /// single source of truth for where configuration lives — consumers (e.g.
+        /// <c>ResetConfig</c>) must use this instead of recomputing the AppData path
+        /// themselves, otherwise tests cannot redirect the file to a temp directory.
+        /// </summary>
+        string ConfigFilePath { get; }
+
+        /// <summary>
         /// Saves with an optimistic-concurrency guard: throws
         /// <see cref="ConfigConcurrencyException"/> if <paramref name="expectedRevision"/>
         /// no longer matches the store's current revision.

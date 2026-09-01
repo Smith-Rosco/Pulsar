@@ -217,17 +217,18 @@ namespace Pulsar.Tests.ViewModels
                 .Setup(service => service.ShowConfirmationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(DialogResult.Confirmed);
 
-            var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            var pulsarDirectory = Path.Combine(appData, "Pulsar");
-            var configPath = Path.Combine(pulsarDirectory, "Profiles.json");
+            // Redirect the config file to a per-test temp directory so this test never
+            // touches (or deletes) the real %AppData%\Pulsar\Profiles.json.
+            var tempDir = Path.Combine(Path.GetTempPath(), "PulsarTests", "ResetConfig", Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            var configPath = Path.Combine(tempDir, "Profiles.json");
             var backupPath = configPath + ".bak";
 
-            Directory.CreateDirectory(pulsarDirectory);
+            harness.ConfigService
+                .Setup(service => service.ConfigFilePath)
+                .Returns(configPath);
+
             await File.WriteAllTextAsync(configPath, "{\"profiles\":{\"Custom\":{}}}");
-            if (File.Exists(backupPath))
-            {
-                File.Delete(backupPath);
-            }
 
             try
             {
@@ -244,15 +245,14 @@ namespace Pulsar.Tests.ViewModels
             }
             finally
             {
-                if (File.Exists(configPath))
+                try
                 {
-                    File.Delete(configPath);
+                    if (Directory.Exists(tempDir))
+                    {
+                        Directory.Delete(tempDir, recursive: true);
+                    }
                 }
-
-                if (File.Exists(backupPath))
-                {
-                    File.Delete(backupPath);
-                }
+                catch { /* ignore */ }
             }
         }
 
