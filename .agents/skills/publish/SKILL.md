@@ -15,9 +15,11 @@ description: Pulsar 发布与打包流程。支持 local-artifact、local-versio
 |---|---|
 | `local-artifact` | 使用现有版本构建和打包；不修改版本号，不 commit，不 tag，不推送 |
 | `local-version` | 使用确认后的版本号更新项目版本，构建和打包；不 commit，不 tag，不推送 |
-| `release` | 更新版本，构建、打包、生成 release notes，并在用户确认后 commit/tag；推送和 GitHub Release 仍需明确授权 |
+| `release` | 更新版本、生成 release notes，用户确认后 commit/tag 并 push；构建、打包与 GitHub Release 由 CI 自动完成，本地**不重复**构建打包 |
 
 用户说“发布一个本地版本”时，默认使用 `local-version`。
+
+**release 模式自动化**：仓库已配置 CI（`.github/workflows/release.yml`）。push `v*` tag 时自动构建 full + portable、校验产物、压缩为 `Pulsar-$version-{full,portable}.zip` 并创建/填充 GitHub Release，release notes 取自 **tag message**（`--notes-from-tag`）。因此 release 模式的本地职责是：确认版本 → 生成并确认完整 notes → **把完整 notes 写入 tag message** → commit/tag → push → 等 CI 完成并验证 GitHub Release。不要重复本地构建打包（本地冒烟可选，见第 9 节）。
 
 ## 1. 版本决策
 
@@ -263,32 +265,42 @@ git tag -a "v$version" -m "$notes"
 if ($LASTEXITCODE -ne 0) { throw "tag creation failed" }
 ```
 
+**tag message 必须是用户确认过的完整 release notes**，不要只写一行摘要——CI 用 `--notes-from-tag` 生成 GitHub Release body，tag message 就是发布页展示的 notes。若事后需修正 notes，用 `gh release edit "v$version" --notes-file <path>`（中文验证见第 9 节）。
+
 若没有版本号变化，跳过 commit；若 tag 已存在，停止并询问用户，不覆盖已有 tag。
 
-## 9. GitHub Release
+## 9. GitHub Release（release 模式）
 
-只有用户明确授权推送或发布到 GitHub 时执行。优先推送 annotated tag，让 CI 构建：
-
-```powershell
-gh run watch <run-id>
-```
-
-若需要上传本地产物，因仓库路径包含 `#`，先复制到不含 `#` 的临时目录。不要直接把仓库路径传给 `gh`：
+**主路径（默认）：不手动上传，交给 CI。** 第 8 节 push tag 后，`release.yml` 自动触发（触发条件 `on.push.tags: v*`）。等待并验证：
 
 ```powershell
-$uploadDir = Join-Path $env:TEMP 'pulsar-upload'
-if (Test-Path -LiteralPath $uploadDir) { Remove-Item -LiteralPath $uploadDir -Recurse -Force }
-New-Item -ItemType Directory -Path $uploadDir -Force | Out-Null
-Copy-Item -LiteralPath $zipFull -Destination (Join-Path $uploadDir (Split-Path $zipFull -Leaf)) -Force
-Copy-Item -LiteralPath $zipPortable -Destination (Join-Path $uploadDir (Split-Path $zipPortable -Leaf)) -Force
+gh run list --workflow=release.yml --limit 1   # 取最新 run id
+gh run watch <run-id> --exit-status            # 等待 CI 构建、校验、上传完成
 ```
 
-分步上传：
+CI 完成后验证 Release 已创建且资产齐全：
 
 ```powershell
+gh release view "v$version" --json tagName,isDraft,assets
+# 期望：isDraft=false；assets 含 Pulsar-$version-full.zip 与 Pulsar-$version-portable.zip
 ```
 
-详见 `Docs/lessons/GH_CLI_HASH_PATH_BUG.md`。
+**中文 notes 验证**：PowerShell 控制台默认编码（GBK）会损坏 UTF-8 中文显示，切勿用终端输出判断乱码。把 release body 写入文件后直接用 Read 工具核对：
+
+```powershell
+gh release view "v$version" --json body | ConvertFrom-Json | ForEach-Object {
+    [System.IO.File]::WriteAllText("$env:TEMP\pulsar-upload\body_check.md", $_.body, [System.Text.Encoding]::UTF8)
+}
+# 然后 Read $env:TEMP\pulsar-upload\body_check.md
+```
+
+若 body 非完整 notes（例如历史上 tag message 只写了一行），修正：
+
+```powershell
+gh release edit "v$version" --notes-file (Join-Path $env:TEMP 'pulsar-upload\notes.md')
+```
+
+**回退路径（仅当 CI 不可用或用户明确要求本地产物上传）**：因仓库路径包含 `#`，先把 ZIP/notes 复制到不含 `#` 的临时目录再调用 `gh`，详见 `Docs/lessons/GH_CLI_HASH_PATH_BUG.md`。此时 release 模式才需要执行第 3-6 节的本地构建与 ZIP 校验（本地冒烟测试 `Start-Process` 启动 6 秒不崩溃）。
 
 ## 10. 排障
 
@@ -303,26 +315,30 @@ Get-ChildItem -LiteralPath (Join-Path $repo 'Artifacts') -Recurse
 - `CommandNotFoundException` 或 `Compress-Archive` 失败：按 `pwsh` → `powershell -ExecutionPolicy Bypass` → System32 `tar.exe` 顺序降级。
 - ZIP 不是 `PK`：删除 ZIP，从打包阶段重试；不要使用 PATH 中的 GNU tar 生成伪 ZIP。
 - `GetFileAttributesEx` 路径被截断：将 ZIP/notes 复制到不含 `#` 的临时目录再调用 `gh`。
+- GitHub Release body 只有一行 / 非完整 notes：tag message 用了单行摘要，而 CI 用 `--notes-from-tag` 生成 body。修正：`gh release edit "v$version" --notes-file <完整notes文件>`（不重建 tag）。
+- Release body 终端显示乱码：PowerShell 控制台 GBK 编码干扰，GitHub 端可能完好。用第 9 节方法写文件后用 Read 工具核对，不要凭终端输出判断。
 - release 已存在或 tag 已存在：停止并询问用户，不删除、不覆盖。
 
 ## 11. 完成报告
 
-最终报告必须包含：
+最终报告必须包含（`release` 模式用 CI 产物，`local-*` 模式用本地产物，不适用的行填 N/A）：
 
 ```text
 Mode: local-artifact | local-version | release
 Version: ...
-Publish directories: <fullDir> | <portableDir>
-ZIP (full): <absolute path>
-ZIP (full) size: ... bytes
-ZIP (portable): <absolute path>
+Local build: performed | skipped (release 默认 CI 构建，本地构建仅回退/冒烟)
+Publish directories: <fullDir> | <portableDir>  (local) 或 N/A (release, CI)
+ZIP (full): <绝对路径或 GitHub Release 资产链接>
+ZIP (full) size: ... bytes (release 用 CI 资产大小)
+ZIP (portable): <绝对路径或 GitHub Release 资产链接>
 ZIP (portable) size: ... bytes
 Pulsar.exe/PDB: present
 cor3 DLL count (full): ...
 Assets file count: ...
+Release notes: written to tag message | edited via gh release edit
 Commit: created | skipped
 Tag: created | skipped
-GitHub Release: created | skipped
+GitHub Release: created by CI | uploaded manually | skipped
 Push: performed | skipped
 ```
 
