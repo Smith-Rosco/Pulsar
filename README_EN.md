@@ -10,11 +10,11 @@
 ### A high-performance productivity launcher for Windows featuring a hotkey-invoked radial menu
 **高性能 Windows 生产力启动器 · 热键唤起的径向菜单**
 
-[![Release Version](https://img.shields.io/badge/Release-v1.8.0-2563EB.svg?style=flat-square&logo=github)](https://github.com/anomalyco/Pulsar/releases)
+[![Release Version](https://img.shields.io/badge/Release-v1.8.0-2563EB.svg?style=flat-square&logo=github)](https://github.com/Smith-Rosco/Pulsar/releases)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(x64)-0078D4.svg?style=flat-square&logo=windows)](https://www.microsoft.com/windows)
 [![.NET](https://img.shields.io/badge/.NET-8.0%20WPF-512BD4.svg?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-10B981.svg?style=flat-square)](LICENSE)
-[![CI](https://github.com/anomalyco/Pulsar/actions/workflows/ci.yml/badge.svg)](.github/workflows/ci.yml)
+[![CI](https://github.com/Smith-Rosco/Pulsar/actions/workflows/ci.yml/badge.svg)](.github/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/Tests-330%2B%20xUnit-success.svg?style=flat-square&logo=xunit)](Pulsar/Pulsar.Tests)
 [![Language](https://img.shields.io/badge/Language-zh--CN%20%7C%20en-8B5CF6.svg?style=flat-square)](#-internationalization)
 
@@ -49,7 +49,7 @@ Built for muscle memory: abandon traditional Alt-Tab linear traversal and naviga
 
 | Package | Use case | Description | Download |
 | :--- | :--- | :--- | :--- |
-| **Latest Release** | All users | Latest stable build | [⬇️ Go to Releases](https://github.com/anomalyco/Pulsar/releases) |
+| **Latest Release** | All users | Latest stable build | [⬇️ Go to Releases](https://github.com/Smith-Rosco/Pulsar/releases) |
 | **Build from source** | Developers | Compile and run from source | [🛠️ Build guide below](#-local-build--development) |
 
 ### Basic Usage
@@ -128,11 +128,11 @@ Simplified Chinese + English, with convention-based automatic key lookup for plu
 
 <!-- TODO: Replace with a real video cover and link -->
 <div align="center">
-  <a href="https://github.com/anomalyco/Pulsar" target="_blank">
+  <a href="https://github.com/Smith-Rosco/Pulsar" target="_blank">
     <img src="Pulsar/Pulsar/Assets/Brand/demo.gif" width="640" alt="Pulsar Demo Video Cover (placeholder)" />
   </a>
   <p>
-    <a href="https://github.com/anomalyco/Pulsar"><b>📺 Click to watch the demo video (placeholder link)</b></a>
+    <a href="https://github.com/Smith-Rosco/Pulsar"><b>📺 Click to watch the demo video (placeholder link)</b></a>
   </p>
 </div>
 

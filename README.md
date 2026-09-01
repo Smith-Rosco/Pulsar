@@ -10,11 +10,11 @@
 ### 高性能 Windows 生产力启动器 · 热键唤起的径向菜单
 **A high-performance productivity launcher for Windows featuring a hotkey-invoked radial menu**
 
-[![Release Version](https://img.shields.io/badge/Release-v1.8.0-2563EB.svg?style=flat-square&logo=github)](https://github.com/anomalyco/Pulsar/releases)
+[![Release Version](https://img.shields.io/badge/Release-v1.8.0-2563EB.svg?style=flat-square&logo=github)](https://github.com/Smith-Rosco/Pulsar/releases)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(x64)-0078D4.svg?style=flat-square&logo=windows)](https://www.microsoft.com/windows)
 [![.NET](https://img.shields.io/badge/.NET-8.0%20WPF-512BD4.svg?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-10B981.svg?style=flat-square)](LICENSE)
-[![CI](https://github.com/anomalyco/Pulsar/actions/workflows/ci.yml/badge.svg)](.github/workflows/ci.yml)
+[![CI](https://github.com/Smith-Rosco/Pulsar/actions/workflows/ci.yml/badge.svg)](.github/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/Tests-330%2B%20xUnit-success.svg?style=flat-square&logo=xunit)](Pulsar/Pulsar.Tests)
 [![Language](https://img.shields.io/badge/Language-zh--CN%20%7C%20en-8B5CF6.svg?style=flat-square)](#-多语言支持-internationalization)
 
@@ -24,7 +24,7 @@
 
 <br/>
 
-[🚀 快速开始](#快速开始-快速开始) · [✨ 功能特性](#-功能特性) · [🎬 演示视频](#-演示视频) · [📸 截图](#-截图) · [🛠️ 本地构建](#-本地构建与开发) · [📋 更新日志](CHANGELOG.md)
+[🚀 快速开始](#-快速开始) · [✨ 功能特性](#-功能特性) · [🎬 演示视频](#-演示视频) · [📸 截图](#-截图) · [🛠️ 本地构建](#-本地构建与开发) · [📋 更新日志](CHANGELOG.md)
 
 </div>
 
@@ -49,7 +49,7 @@
 
 | 版本包 | 适用场景 | 说明 | 下载入口 |
 | :--- | :--- | :--- | :--- |
-| **最新正式版** | 所有用户 | 最新稳定发布包 | [⬇️ 前往 Releases 下载](https://github.com/anomalyco/Pulsar/releases) |
+| **最新正式版** | 所有用户 | 最新稳定发布包 | [⬇️ 前往 Releases 下载](https://github.com/Smith-Rosco/Pulsar/releases) |
 | **源码构建** | 开发者 | 从源码编译运行 | [🛠️ 见下方构建指南](#-本地构建与开发) |
 
 ### 基础使用流程
@@ -128,11 +128,11 @@ DPAPI 加密安全存储凭据，通过 UI 自动化注入任意窗口，支持�
 
 <!-- TODO: 替换为真实的演示视频封面与链接 -->
 <div align="center">
-  <a href="https://github.com/anomalyco/Pulsar" target="_blank">
+  <a href="https://github.com/Smith-Rosco/Pulsar" target="_blank">
     <img src="Pulsar/Pulsar/Assets/Brand/demo.gif" width="640" alt="Pulsar 演示视频封面（占位）" />
   </a>
   <p>
-    <a href="https://github.com/anomalyco/Pulsar"><b>📺 点击观看演示视频（占位链接）</b></a>
+    <a href="https://github.com/Smith-Rosco/Pulsar"><b>📺 点击观看演示视频（占位链接）</b></a>
   </p>
 </div>
 
