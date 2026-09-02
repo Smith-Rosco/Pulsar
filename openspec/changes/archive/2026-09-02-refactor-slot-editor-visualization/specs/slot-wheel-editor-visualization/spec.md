@@ -1,9 +1,6 @@
 # slot-wheel-editor-visualization
 
-## Purpose
-Redefine the visual and interaction presentation of the slot configuration wheel editor in Settings → Slots so it matches the quality and hierarchy of the runtime radial menu while preserving the wheel layout and existing interaction model.
-
-## Requirements
+## ADDED Requirements
 
 ### Requirement: Occupied slots SHALL display a position identity badge
 Each occupied slot on the wheel SHALL display a small position badge (the slot's ring position, 1-based) so users can correlate wheel positions with slot numbers in the runtime menu and in "Move to" flows.
@@ -67,6 +64,7 @@ Every new or changed user-facing string introduced by this redesign SHALL go thr
 - **THEN** the text SHALL come from a localized resource, not a hardcoded literal
 
 ## Non-Requirements
+
 - No change to the wheel layout math or slot positioning behavior.
 - No change to the drag-reorder, pager, or right-click move-to interaction models.
 - No change to the runtime radial menu itself.
