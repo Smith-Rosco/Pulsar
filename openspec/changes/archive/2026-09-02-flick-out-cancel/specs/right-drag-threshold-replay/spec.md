@@ -1,25 +1,4 @@
-# right-drag-threshold-replay Specification
-
-## Purpose
-TBD - created by archiving change fix-right-drag-release-passthrough. Update Purpose after archive.
-
-## Requirements
-
-### Requirement: Right-drag gesture SHALL support displacement-threshold activation
-
-The right-drag gesture SHALL track cursor displacement from the button-down position. When `GestureSummonMode` is `OnThreshold`, the menu SHALL be summoned only after the displacement exceeds `GestureDragThreshold` (default 25 DIPs), matching the reference implementation's "menu appears once you drag" behavior.
-
-#### Scenario: OnThreshold summon on drag
-- **WHEN** `GestureSummonMode` is `OnThreshold`
-- **AND** the user presses the right button with the configured modifier
-- **AND** drags beyond `GestureDragThreshold` DIPs from the down position
-- **THEN** the menu SHALL be summoned at the down position
-- **AND** the summon SHALL happen exactly once per gesture
-
-#### Scenario: Immediate summon preserved by default
-- **WHEN** `GestureSummonMode` is `Immediate` (the default)
-- **AND** the user presses the right button with the configured modifier
-- **THEN** the menu SHALL be summoned at button-down (current behavior unchanged)
+## MODIFIED Requirements
 
 ### Requirement: Sub-threshold release SHALL replay a synthetic click to the source application
 
@@ -52,13 +31,3 @@ When a right-button gesture is active but the displacement never reached `Gestur
 - **AND** it denies the gesture at right-button down
 - **THEN** the right-button press SHALL pass through to the foreground application
 - **AND** the release SHALL NOT be swallowed and SHALL NOT resolve to any menu selection
-
-### Requirement: Replayed clicks SHALL NOT be re-intercepted
-
-The low-level hook SHALL suppress its own replayed input so it does not loop back through gesture detection.
-
-#### Scenario: Replayed click passes through the hook
-- **WHEN** the system replays a synthetic right-click after a sub-threshold release
-- **THEN** the synthetic down/up SHALL pass straight through `CallNextHookEx`
-- **AND** they SHALL NOT be raised to gesture or menu subscribers as user input
-- **AND** no second replay SHALL be triggered by the replayed events
