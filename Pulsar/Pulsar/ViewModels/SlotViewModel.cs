@@ -4,6 +4,7 @@ using Pulsar.Helpers;
 using Pulsar.Models;
 using Pulsar.ViewModels.Strategies;
 using System;
+using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -202,6 +203,12 @@ namespace Pulsar.ViewModels
         /// Identifies the type of data held
         /// </summary>
         public SlotType Type { get; set; } = SlotType.None;
+
+        /// <summary>
+        /// Declared cascade children for this slot. Always present (empty by default);
+        /// a root slot may carry its own sub-actions without runtime specialization.
+        /// </summary>
+        public ObservableCollection<SubSlotDescriptor> SubSlots { get; } = new();
 
         // [New] Animation Properties (Entrance & Physics)
         [ObservableProperty]

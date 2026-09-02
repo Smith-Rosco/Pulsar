@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Pulsar.Models;
 
@@ -15,6 +14,6 @@ namespace Pulsar.ViewModels
         bool IsInSubMenu { get; }
         void SetActionExecuted(bool value);
         void RestoreRootMenu();
-        Task EnterSubMenuAsync(List<ProcessWindowInfo> windows, string processName, int clickedSlotIndex);
+        Task EnterSubMenuAsync(SubMenuDescriptor descriptor, int clickedSlotIndex);
     }
 }

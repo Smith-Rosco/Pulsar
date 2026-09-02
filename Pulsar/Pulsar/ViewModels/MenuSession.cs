@@ -264,13 +264,9 @@ namespace Pulsar.ViewModels
 
             _visualStateCoordinator = new RadialMenuVisualStateCoordinator(previewService, logger, _loc);
             _subMenuCoordinator = new RadialMenuSubMenuCoordinator(
-                windowService,
-                serviceProvider.GetService(typeof(IWindowCaptureService)) as IWindowCaptureService,
-                usageTracker,
-                healthMonitor,
-                logger,
-                (IActionFeedbackService)serviceProvider.GetService(typeof(IActionFeedbackService))!,
-                serviceProvider.GetService(typeof(IActionFeedbackPresenter)) as IActionFeedbackPresenter);
+                (IEnumerable<ISubMenuStrategy>?)serviceProvider.GetService(typeof(IEnumerable<ISubMenuStrategy>))
+                    ?? Array.Empty<ISubMenuStrategy>(),
+                logger);
             _layoutCoordinator = new RadialMenuLayoutCoordinator(slotLayoutEngine, animationController, logger);
 
             _pulsarText = _loc["RadialMenu.Pulsar"];
@@ -440,9 +436,9 @@ namespace Pulsar.ViewModels
             _ = RestoreRootMenuAsync();
         }
 
-        public Task EnterSubMenuAsync(List<ProcessWindowInfo> windows, string processName, int clickedSlotIndex)
+        public Task EnterSubMenuAsync(SubMenuDescriptor descriptor, int clickedSlotIndex)
         {
-            return EnterSubMenuAsyncCore(windows, processName, clickedSlotIndex);
+            return EnterSubMenuAsyncCore(descriptor, clickedSlotIndex);
         }
 
         // ============ Session lifecycle ============
@@ -916,11 +912,11 @@ namespace Pulsar.ViewModels
                     return;
                 }
 
-                if (slot.ActionStrategy is ProcessGroupStrategy pgStrategy
+                if (slot.ActionStrategy is ProcessGroupStrategy
                     && slot.DataContext is List<ProcessWindowInfo> windows
                     && windows.Count(w => !string.IsNullOrWhiteSpace(w.Title)) > 1)
                 {
-                    await pgStrategy.EnterSubMenuAsync(this, slot.Label, clickSlotIndex);
+                    await EnterSubMenuAsync(new WindowSubMenuDescriptor(slot.Label, windows), clickSlotIndex);
                 }
             }
             else if (button == GlobalMouseButton.Right)
@@ -1345,7 +1341,8 @@ namespace Pulsar.ViewModels
 
             _subMenuPage += direction;
             _subMenuCoordinator.ConfigureSubMenu(
-                _subMenuWindows, _subMenuProcessName, _slotsPerPage, _subMenuPage, CenterSlot, Slots);
+                new WindowSubMenuDescriptor(_subMenuProcessName, _subMenuWindows),
+                _slotsPerPage, _subMenuPage, CenterSlot, Slots);
             UpdateSubMenuCenterLabel();
             _previewService.ClearCache();
             ApplyCenterPreview(ResolvedWindowPreview.Icon(null));
@@ -1830,7 +1827,7 @@ namespace Pulsar.ViewModels
         private static double Lerp(double from, double to, double progress) =>
             from + ((to - from) * progress);
 
-        private async Task EnterSubMenuAsyncCore(List<ProcessWindowInfo> windows, string processName, int clickedSlotIndex)
+        private async Task EnterSubMenuAsyncCore(SubMenuDescriptor descriptor, int clickedSlotIndex)
         {
             if (_isTransitioning)
             {
@@ -1845,9 +1842,16 @@ namespace Pulsar.ViewModels
 
             try
             {
-                _menuState = MenuState.SubMenu;
-                _subMenuWindows = windows ?? new List<ProcessWindowInfo>();
-                _subMenuProcessName = processName;
+                if (descriptor is WindowSubMenuDescriptor windowDescriptor)
+                {
+                    _subMenuWindows = windowDescriptor.Windows?.ToList() ?? new List<ProcessWindowInfo>();
+                    _subMenuProcessName = windowDescriptor.ProcessName;
+                }
+                else
+                {
+                    _subMenuWindows = new List<ProcessWindowInfo>();
+                    _subMenuProcessName = string.Empty;
+                }
                 _subMenuPage = 0;
                 _subMenuTotalPages = Math.Max(1, (int)Math.Ceiling(_subMenuWindows.Count / (double)_slotsPerPage));
 
@@ -1876,9 +1880,30 @@ namespace Pulsar.ViewModels
 
                 // Prepare child slot actions before starting the visual morph. A
                 // release during the morph must still be able to resolve a child
-                // slot from the pointer position and execute it immediately.
-                var mostRecentWin = _subMenuCoordinator.ConfigureSubMenu(
-                    _subMenuWindows, processName, _slotsPerPage, _subMenuPage, CenterSlot, Slots);
+                // slot from the pointer position and execute it immediately. An
+                // unregistered strategy id falls back to the root menu instead of
+                // entering a submenu (spec: submenu-coordinator-strategy).
+                var configResult = _subMenuCoordinator.ConfigureSubMenu(
+                    descriptor, _slotsPerPage, _subMenuPage, CenterSlot, Slots);
+
+                if (configResult.FallbackToRoot)
+                {
+                    _logger?.LogWarning(
+                        "[MenuSession] Submenu strategy '{StrategyId}' not available — restoring root menu",
+                        descriptor.StrategyId);
+                    _menuState = MenuState.Root;
+                    _subMenuWindows = new List<ProcessWindowInfo>();
+                    _subMenuProcessName = string.Empty;
+                    _subMenuPage = 0;
+                    _subMenuTotalPages = 1;
+                    _subMenuOriginSlotIndex = -1;
+                    _subMenuOriginX = 0;
+                    _subMenuOriginY = 0;
+                    return;
+                }
+
+                var mostRecentWin = configResult.SelectedWindow;
+                _menuState = MenuState.SubMenu;
                 UpdateSubMenuCenterLabel();
 
                 var glideViewportCenter = AnimateMenuCenterAsync(

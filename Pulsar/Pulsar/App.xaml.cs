@@ -12,6 +12,7 @@ using Pulsar.Services.Interfaces;
 using Pulsar.Services.WindowSwitching;
 using Pulsar.ViewModels;
 using Pulsar.ViewModels.Settings; // Added
+using Pulsar.ViewModels.Strategies;
 using Pulsar.Views;
 using Pulsar.Views.Pages; // Added
 using Pulsar.Helpers;
@@ -231,6 +232,10 @@ namespace Pulsar
             serviceCollection.AddSingleton<MenuSession>();
             serviceCollection.AddSingleton<RadialMenuViewModel>();
             serviceCollection.AddSingleton<RadialMenuWindow>();
+
+            // SubMenu strategies: window switching is the concrete strategy registered
+            // for this change; cascade forms (Change B) will register more.
+            serviceCollection.AddSingleton<ISubMenuStrategy, WindowSwitchSubMenuStrategy>();
             
             // [Fix] Register SettingsViewModel as Transient for fresh state on every open
             serviceCollection.AddTransient<AboutViewModel>();

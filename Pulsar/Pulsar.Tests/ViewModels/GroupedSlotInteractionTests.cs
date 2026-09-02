@@ -145,6 +145,10 @@ namespace Pulsar.Tests.ViewModels
             var pagingController = new Mock<IPagingController>();
             var serviceProvider = new Mock<System.IServiceProvider>();
 
+            serviceProvider
+                .Setup(sp => sp.GetService(typeof(IEnumerable<ISubMenuStrategy>)))
+                .Returns(new ISubMenuStrategy[] { new WindowSwitchSubMenuStrategy(windowService.Object) });
+
             var loc = new Mock<ILocalizationService>();
             loc.Setup(l => l["RadialMenu.Pulsar"]).Returns("Pulsar");
             loc.Setup(l => l["RadialMenu.Back"]).Returns("Back");

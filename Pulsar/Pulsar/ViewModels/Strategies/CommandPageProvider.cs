@@ -75,6 +75,14 @@ namespace Pulsar.ViewModels.Strategies
                 slot.ApplyPresentation(presentation);
                 slot.Type = SlotType.Action;
                 slot.DataContext = item;
+                slot.SubSlots.Clear();
+                if (item.SubActions != null)
+                {
+                    foreach (var subAction in item.SubActions)
+                    {
+                        slot.SubSlots.Add(subAction);
+                    }
+                }
 
                 if (item.PluginId == "internal:create_profile")
                 {

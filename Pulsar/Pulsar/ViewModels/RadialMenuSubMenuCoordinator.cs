@@ -2,111 +2,79 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Threading.Tasks;
-using System.Windows.Media;
 using Microsoft.Extensions.Logging;
 using Pulsar.Helpers;
 using Pulsar.Models;
-using Pulsar.Services.ActionFeedback;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels.Strategies;
 
 namespace Pulsar.ViewModels
 {
+    /// <summary>
+    /// Result of a coordinator <see cref="ConfigureSubMenu"/> pass. <see cref="FallbackToRoot"/>
+    /// is set when no strategy matched the descriptor — the session must restore the root
+    /// menu instead of entering a submenu. <see cref="SelectedWindow"/> is the default-target
+    /// window the strategy resolved (window strategies), used to prime the center preview.
+    /// </summary>
+    internal sealed class SubMenuConfigResult
+    {
+        public bool FallbackToRoot { get; init; }
+
+        public ProcessWindowInfo? SelectedWindow { get; init; }
+    }
+
+    /// <summary>
+    /// Host for submenu strategies. Selects the <see cref="ISubMenuStrategy"/> matching a
+    /// descriptor's <see cref="SubMenuDescriptor.StrategyId"/> and delegates slot
+    /// configuration to it. Window switching is one concrete strategy; cascade forms plug in
+    /// later without touching the session. Unknown strategies fall back to the root menu with
+    /// a logged warning — never throw.
+    /// </summary>
     internal sealed class RadialMenuSubMenuCoordinator
     {
-        private readonly IPluginUsageTracker? _usageTracker;
-        private readonly IPluginHealthMonitor? _healthMonitor;
-        private readonly IWindowService _windowService;
-        private readonly IWindowCaptureService? _captureService;
+        private readonly IReadOnlyDictionary<string, ISubMenuStrategy> _strategiesById;
         private readonly ILogger? _logger;
-        private readonly IActionFeedbackService? _feedbackService;
-        private readonly IActionFeedbackPresenter? _feedbackPresenter;
 
         public RadialMenuSubMenuCoordinator(
-            IWindowService windowService,
-            IWindowCaptureService? captureService,
-            IPluginUsageTracker? usageTracker,
-            IPluginHealthMonitor? healthMonitor,
-            ILogger? logger,
-            IActionFeedbackService? feedbackService = null,
-            IActionFeedbackPresenter? feedbackPresenter = null)
+            IEnumerable<ISubMenuStrategy> strategies,
+            ILogger? logger = null)
         {
-            _windowService = windowService;
-            _captureService = captureService;
-            _usageTracker = usageTracker;
-            _healthMonitor = healthMonitor;
+            _strategiesById = strategies
+                ?.Where(s => s != null)
+                .ToDictionary(s => s.StrategyId, s => s, StringComparer.OrdinalIgnoreCase)
+                ?? new Dictionary<string, ISubMenuStrategy>(StringComparer.OrdinalIgnoreCase);
             _logger = logger;
-            _feedbackService = feedbackService;
-            _feedbackPresenter = feedbackPresenter;
         }
 
-        public ProcessWindowInfo? ConfigureSubMenu(
-            List<ProcessWindowInfo> windows,
-            string processName,
+        /// <summary>
+        /// Routes a descriptor to the matching strategy and configures the submenu slots.
+        /// Returns <see cref="SubMenuConfigResult.FallbackToRoot"/>=true (with a logged warning)
+        /// when no strategy is registered for <paramref name="descriptor"/>.StrategyId.
+        /// </summary>
+        public SubMenuConfigResult ConfigureSubMenu(
+            SubMenuDescriptor descriptor,
             int slotsPerPage,
             int pageIndex,
             SlotViewModel centerSlot,
             ObservableCollection<SlotViewModel> slots)
         {
-            centerSlot.Label = processName;
-            centerSlot.Type = SlotType.Action;
-            centerSlot.ActionStrategy = new BackActionStrategy();
-
-            var sortedWindows = windows.OrderBy(w => w.FirstSeenTime).ToList();
-            int startIndex = Math.Max(0, pageIndex * Math.Max(1, slotsPerPage));
-            var pageWindows = sortedWindows.Skip(startIndex).Take(Math.Max(1, slotsPerPage)).ToList();
-
-            for (int i = 0; i < slotsPerPage; i++)
+            if (descriptor == null)
             {
-                var slot = slots.FirstOrDefault(s => s.SlotIndex == i + 1);
-                if (slot == null) continue;
-
-                if (i < pageWindows.Count)
-                {
-                    var win = pageWindows[i];
-                    var label = !string.IsNullOrWhiteSpace(win.Title) ? win.Title : win.ProcessName;
-                    slot.Label = label.Length > 40 ? label.Substring(0, 37) + "..." : label;
-                    slot.Type = SlotType.Window;
-                    slot.DataContext = win;
-                    slot.BadgeCount = 0;
-                    slot.ClearPresentation();
-
-                    slot.IconImage = win.AppIcon;
-                    _ = CaptureThumbnailAsync(slot, win.Handle, win.Title);
-
-                    SubMenuColorPalette.Apply(slot, sortedWindows.Count > 1 ? i : -1);
-                    slot.ActionStrategy = new WindowSwitchStrategy(
-                        win, _windowService, _usageTracker, _healthMonitor,
-                        feedbackService: _feedbackService,
-                        feedbackPresenter: _feedbackPresenter);
-                    slot.ResetAnimation();
-                }
-                else
-                {
-                    slot.Label = string.Empty;
-                    slot.LoadIconData(string.Empty);
-                    slot.Type = SlotType.None;
-                    slot.ActionStrategy = new NoOpStrategy();
-                    slot.BadgeCount = 0;
-                    slot.ClearPresentation();
-                    SubMenuColorPalette.Clear(slot);
-                    slot.ResetAnimation();
-                }
+                _logger?.LogWarning("[SubMenuCoordinator] Null descriptor — falling back to root menu");
+                return new SubMenuConfigResult { FallbackToRoot = true };
             }
 
-            int maxWindowsToShow = Math.Min(slotsPerPage, pageWindows.Count);
-            _logger?.LogDebug("[ConfigureSubMenu] Page {Page} displaying {WindowCount} of {TotalCount} windows across {SlotCount} slots",
-                pageIndex + 1, maxWindowsToShow, sortedWindows.Count, slotsPerPage);
+            if (!_strategiesById.TryGetValue(descriptor.StrategyId, out var strategy))
+            {
+                _logger?.LogWarning(
+                    "[SubMenuCoordinator] No strategy registered for StrategyId '{StrategyId}' — falling back to root menu",
+                    descriptor.StrategyId);
+                return new SubMenuConfigResult { FallbackToRoot = true };
+            }
 
-            return _windowService.SelectTargetWindow(
-                windows,
-                new WindowSelectionRequest
-                {
-                    Intent = WindowSelectionIntent.SubMenuDefault,
-                    SkipMode = WindowSelectionSkipMode.SkipPreviousWindow,
-                    PreviousWindowHandle = _windowService.GetPreviousWindow()
-                }).SelectedWindow;
+            var context = new SubMenuContext(centerSlot, slots, slotsPerPage, pageIndex);
+            var selectedWindow = strategy.ConfigureSubMenu(context, descriptor);
+            return new SubMenuConfigResult { SelectedWindow = selectedWindow };
         }
 
         public void RestoreRootMenu(
@@ -127,35 +95,6 @@ namespace Pulsar.ViewModels
             // halfway through the submenu exit morph.
             pagingController.SetTotalPages(pageProvider.TotalPages);
             pageProvider.RefreshVisuals(slots, centerSlot);
-        }
-
-        private async Task CaptureThumbnailAsync(SlotViewModel slot, IntPtr hWnd, string title)
-        {
-            if (_captureService == null)
-            {
-                return;
-            }
-
-            try
-            {
-                var thumb = await _captureService.CaptureWindowAsync(hWnd);
-                if (thumb == null)
-                {
-                    _logger?.LogDebug("[SubMenu] CaptureWindowAsync returned null for {Hwnd} '{Title}'", hWnd, title);
-                    return;
-                }
-                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
-                {
-                    if (slot.DataContext is ProcessWindowInfo win && win.Handle == hWnd)
-                    {
-                        slot.IconImage = thumb;
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "[SubMenu] CaptureThumbnailAsync failed for {Hwnd} '{Title}'", hWnd, title);
-            }
         }
     }
 }

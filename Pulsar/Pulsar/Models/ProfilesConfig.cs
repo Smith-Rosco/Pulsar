@@ -623,6 +623,17 @@ namespace Pulsar.Models
             set => SetProperty(ref _slot, value);
         }
 
+        /// <summary>
+        /// Optional cascade children persisted with the slot. Absent (null) in legacy
+        /// profiles — deserialization is tolerant and readers treat null as an empty
+        /// sub-action list. Serialized under the camelCase key <c>subActions</c>; the
+        /// key is omitted entirely when there are no sub-actions so legacy files stay
+        /// byte-compatible.
+        /// </summary>
+        [JsonPropertyName("subActions")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public List<SubSlotDescriptor>? SubActions { get; set; }
+
         // [UI Support] 徽章与颜色
         [JsonIgnore]
         public SlotPresentation Presentation

@@ -795,9 +795,9 @@ namespace Pulsar.ViewModels
 
         public void RestoreRootMenu() => _session.RestoreRootMenu();
 
-        public Task EnterSubMenuAsync(List<ProcessWindowInfo> windows, string processName, int clickedSlotIndex)
+        public Task EnterSubMenuAsync(SubMenuDescriptor descriptor, int clickedSlotIndex)
         {
-            return _session.EnterSubMenuAsync(windows, processName, clickedSlotIndex);
+            return _session.EnterSubMenuAsync(descriptor, clickedSlotIndex);
         }
 
         // ============ Binding projection ============

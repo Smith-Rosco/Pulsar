@@ -210,6 +210,7 @@ namespace Pulsar.Tests.Config
             slot.IconKey.Should().BeEmpty();
             slot.Color.Should().BeEmpty();
             slot.Slot.Should().Be(0);
+            slot.SubActions.Should().BeNull("sub-actions are optional and absent by default");
         }
 
         [Fact]
