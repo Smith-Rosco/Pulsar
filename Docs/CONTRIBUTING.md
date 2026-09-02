@@ -159,8 +159,8 @@ This guide defines standards and best practices for creating and maintaining Pul
   ```
 - **Use descriptive text** for links:
   ```markdown
-  ✅ See [Plugin Development Guide](./PLUGIN_DEVELOPMENT.md)
-  ❌ See [here](./PLUGIN_DEVELOPMENT.md)
+  ✅ See [Plugin Development Guide](../PLUGIN_DEVELOPMENT.md)
+  ❌ See [here](../PLUGIN_DEVELOPMENT.md)
   ```
 
 ---

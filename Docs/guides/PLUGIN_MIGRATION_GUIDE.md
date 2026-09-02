@@ -269,11 +269,11 @@ protected PluginResult UnknownActionError(string action, params string[] support
 
 ### 示例 1: 简单插件（无额外依赖）
 
-**文件**: `Pulsar/Pulsar/Plugins/Extensions/BasicCommand/SimpleCommandPlugin.cs`
+**文件**: `Pulsar/Pulsar/Plugins/Extensions/Command/CommandPlugin.cs`（原 `BasicCommand/SimpleCommandPlugin.cs`，已随插件重命名）
 
-查看完整的重构前后对比：
-- 重构后: `SimpleCommandPlugin.cs` (146 行)
-- 重构示例: `SimpleCommandPlugin.Refactored.cs` (168 行，包含详细注释)
+该插件即为本次重构的落地结果：
+- 重构后: `CommandPlugin.cs`
+- 元数据: `CommandPluginMetadata.cs`（原 `SimpleCommandPlugin.Refactored.cs` 的详细注释版已并入正式实现，不再单独保留）
 
 **关键改进**:
 - 代码量减少 35%
@@ -529,7 +529,7 @@ public class MyPlugin : PluginBase<MyPlugin>, IPluginLifecycle
 - [ARCHITECTURE.md](../../ARCHITECTURE.md) - 系统架构文档
 - [PluginBase.cs](../../Pulsar/Pulsar/Core/Plugin/PluginBase.cs) - 基类源码
 - [PluginFactory.cs](../../Pulsar/Pulsar/Core/Plugin/PluginFactory.cs) - 工厂源码
-- [SimpleCommandPlugin.cs](../../Pulsar/Pulsar/Plugins/Extensions/BasicCommand/SimpleCommandPlugin.cs) - 完整示例
+- [CommandPlugin.cs](../../Pulsar/Pulsar/Plugins/Extensions/Command/CommandPlugin.cs) - 完整示例（原 `BasicCommand/SimpleCommandPlugin.cs`）
 
 ---
 

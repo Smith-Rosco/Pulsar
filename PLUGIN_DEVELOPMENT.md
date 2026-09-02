@@ -855,7 +855,7 @@ public class MyPluginTests
 
 - [AGENTS.md](./AGENTS.md) - AI Agent 操作指南
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - 系统架构文档
-- [插件设置页重构指南.md](./插件设置页重构指南.md) - UI 重构文档
+- [插件设置页重构指南](./Docs/archive/2026-03-01-PLUGIN_SETTINGS_MIGRATION.md) - UI 重构文档（已归档）
 
 ---
 

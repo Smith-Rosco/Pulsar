@@ -378,7 +378,7 @@ Pulsar/
 
 - **[PLUGIN_DEVELOPMENT.md](./PLUGIN_DEVELOPMENT.md)** - Complete plugin development guide
 - **[AGENTS.md](./AGENTS.md)** - AI Agent operational guide and coding conventions
-- **[PKI Implementation Archive](./docs/archive/2026-01/PKI_IMPLEMENTATION.md)** - Historical PKI implementation details
+- **[PKI Implementation Archive](./Docs/archive/2026-03-01-PKI_IMPLEMENTATION.md)** - Historical PKI implementation details
 
 ---
 

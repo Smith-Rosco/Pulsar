@@ -505,9 +505,9 @@ javascript:(function(){alert("Hello from Pulsar Bookmarklet Runner!\n当前的�
 
 ## 📚 相关文档
 
-- [BookmarkletRunner.md](../Docs/Plugins/BookmarkletRunner.md) - 用户文档
-- [PLUGIN_DEVELOPMENT.md](../PLUGIN_DEVELOPMENT.md) - 插件开发指南
-- [ARCHITECTURE.md](../ARCHITECTURE.md) - 系统架构文档
+- [BookmarkletRunner.md](../Plugins/BookmarkletRunner.md) - 用户文档
+- [PLUGIN_DEVELOPMENT.md](../../PLUGIN_DEVELOPMENT.md) - 插件开发指南
+- [ARCHITECTURE.md](../../ARCHITECTURE.md) - 系统架构文档
 - [NUglify GitHub](https://github.com/trullock/NUglify) - NUglify 官方文档
 
 ---

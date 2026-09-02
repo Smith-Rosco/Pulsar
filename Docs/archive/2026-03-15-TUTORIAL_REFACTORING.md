@@ -417,9 +417,9 @@ public NavigationView GetNavigationView() => RootNavigation;
 
 ## 📚 **相关文档**
 
-- [ARCHITECTURE.md](../ARCHITECTURE.md) - 系统架构概览
+- [ARCHITECTURE.md](../../ARCHITECTURE.md) - 系统架构概览
 - [DIALOG_SYSTEM.md](../architecture/DIALOG_SYSTEM.md) - 对话框系统设计
-- [WPF_THEME_INJECTION_PITFALLS.md](./WPF_THEME_INJECTION_PITFALLS.md) - WPF 主题注入陷阱
+- [WPF_THEME_INJECTION_PITFALLS.md](../lessons/WPF_THEME_INJECTION_PITFALLS.md) - WPF 主题注入陷阱
 
 ---
 

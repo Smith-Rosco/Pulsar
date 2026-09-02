@@ -81,7 +81,7 @@ protected PluginResult MissingParameterError(string paramName)
 protected PluginResult UnknownActionError(string action, params string[] supportedActions)
 ```
 
-**迁移示例**: `Pulsar/Pulsar/Plugins/Extensions/BasicCommand/SimpleCommandPlugin.cs`
+**迁移示例**: `Pulsar/Pulsar/Plugins/Extensions/Command/CommandPlugin.cs`（原 `BasicCommand/SimpleCommandPlugin.cs`，已随插件重命名）
 
 ---
 
@@ -608,8 +608,8 @@ pulsar-lint check-plugin MyPlugin.cs
 ### 源码参考
 - [PluginBase.cs](../../Pulsar/Pulsar/Core/Plugin/PluginBase.cs) - 插件抽象基类 (247 行)
 - [PluginFactory.cs](../../Pulsar/Pulsar/Core/Plugin/PluginFactory.cs) - 插件工厂 (213 行)
-- [SimpleCommandPlugin.cs](../../Pulsar/Pulsar/Plugins/Extensions/BasicCommand/SimpleCommandPlugin.cs) - 重构示例 (146 行)
-- [SimpleCommandPlugin.Refactored.cs](../../Pulsar/Pulsar/Plugins/Extensions/BasicCommand/SimpleCommandPlugin.Refactored.cs) - 详细注释版 (168 行)
+- [CommandPlugin.cs](../../Pulsar/Pulsar/Plugins/Extensions/Command/CommandPlugin.cs) - 重构后的参考实现（原 `BasicCommand/SimpleCommandPlugin.cs`）
+- [CommandPluginMetadata.cs](../../Pulsar/Pulsar/Plugins/Extensions/Command/CommandPluginMetadata.cs) - 元数据定义（原 `SimpleCommandPlugin.Refactored.cs` 的详细注释版已并入正式实现，不再单独保留）
 
 ### 架构文档
 - [ARCHITECTURE.md](../../ARCHITECTURE.md) - 系统架构概览
@@ -813,7 +813,7 @@ namespace Pulsar.Plugins.Extensions.MyPlugin
 ### Q5: 遇到问题怎么办？
 **A**: 
 1. 查看迁移指南: `Docs/guides/PLUGIN_MIGRATION_GUIDE.md`
-2. 参考示例代码: `SimpleCommandPlugin.cs`
+2. 参考示例代码: `Pulsar/Pulsar/Plugins/Extensions/Command/CommandPlugin.cs`
 3. 查看日志: `%AppData%\Pulsar\Logs\`
 4. 提交 Issue
 

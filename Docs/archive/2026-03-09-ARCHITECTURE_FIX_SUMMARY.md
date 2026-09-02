@@ -93,7 +93,7 @@ if (Slots.Count != _slotsPerPage)
 
 ## 📚 文档
 
-- **架构分析**: `Docs/lessons/DYNAMIC_SLOTS_ARCHITECTURE_FIX.md`
+- **架构分析**: `Docs/archive/2026-03-09-DYNAMIC_SLOTS_ARCHITECTURE_FIX.md`
 - **测试指南**: `TODO_SLOTS_PER_PAGE.md`
 - **代码注释**: 所有修改都有详细的架构注释
 

@@ -519,7 +519,7 @@ public async Task NewFeature_ShouldWork_WhenConditionMet()
 - [xUnit 文档](https://xunit.net/)
 - [FluentAssertions 文档](https://fluentassertions.com/)
 - [Moq 文档](https://github.com/moq/moq4)
-- [Pulsar AGENTS.md](../AGENTS.md) - 项目架构和开发规范
+- [Pulsar AGENTS.md](../../AGENTS.md) - 项目架构和开发规范
 
 ---
 

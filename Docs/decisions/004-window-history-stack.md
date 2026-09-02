@@ -261,7 +261,7 @@ if (isCloakedVal != 0)
 
 - [Windows Z-Order Documentation](https://docs.microsoft.com/en-us/windows/win32/winmsg/window-features#z-order)
 - [Alt-Tab Window Filtering](https://devblogs.microsoft.com/oldnewthing/20071008-00/?p=24863)
-- [AGENTS.md](../AGENTS.md) - 架构决策指南
+- [AGENTS.md](../../AGENTS.md) - 架构决策指南
 
 ---
 

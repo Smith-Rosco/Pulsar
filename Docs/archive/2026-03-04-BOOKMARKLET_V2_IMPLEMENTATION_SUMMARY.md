@@ -42,7 +42,7 @@ notepad %AppData%\Pulsar\Logs\pulsar-20260304.log
 # - "Syntax error"
 ```
 
-**详细说明**: 请查看 `Docs/Plugins/test_error_explanation.md`
+**详细说明**: 请查看 `Docs/Plugins/test_error_explanation.md`（该文档已于 2026-09-02 清理移除）
 
 ---
 
@@ -161,7 +161,7 @@ dotnet build Pulsar/Pulsar/Pulsar.csproj
 ✅ Docs/decisions/003-bookmarklet-nuglify-refactor.md
    - 完整的架构决策记录
 
-✅ Docs/Plugins/test_error_explanation.md
+✅ Docs/Plugins/test_error_explanation.md（已于 2026-09-02 清理移除）
    - test_error.js 行为说明
 
 ✅ TESTING_GUIDE.md
@@ -229,7 +229,7 @@ notepad %AppData%\Pulsar\Logs\pulsar-20260304.log
 |------|------|
 | `Docs/Plugins/BookmarkletRunner.md` | 用户手册 |
 | `Docs/decisions/003-bookmarklet-nuglify-refactor.md` | 技术方案 |
-| `Docs/Plugins/test_error_explanation.md` | 错误测试说明 |
+| `Docs/Plugins/test_error_explanation.md`（已移除） | 错误测试说明 |
 | `TESTING_GUIDE.md` | 测试指南 |
 
 ---

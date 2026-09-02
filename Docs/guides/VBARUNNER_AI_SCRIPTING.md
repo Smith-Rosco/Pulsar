@@ -495,9 +495,9 @@ End Sub
 
 ## See Also
 
-- **[VbaRunner Plugin Documentation](./VbaRunner.md)** - User-facing plugin documentation
-- **[VbaRunner Directive Reference](./VbaRunner_Directives.md)** - Complete directive specification
-- **[Smart Directives Implementation](./VbaRunner_SmartDirectives_Implementation.md)** - Architecture details
+- **[VbaRunner Plugin Documentation](../Plugins/VbaRunner.md)** - User-facing plugin documentation
+- **[VbaRunner Directive Reference](../Plugins/VbaRunner_Directives.md)** - Complete directive specification
+- **[Smart Directives Implementation](../Plugins/VbaRunner_SmartDirectives_Implementation.md)** - Architecture details
 - **[Plugin Development Guide](../../PLUGIN_DEVELOPMENT.md)** - General plugin development
 
 ---

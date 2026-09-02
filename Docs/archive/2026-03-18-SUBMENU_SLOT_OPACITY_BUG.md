@@ -316,7 +316,7 @@ FillData();            // 填充新数据
 
 - [WPF Animation Overview](https://docs.microsoft.com/en-us/dotnet/desktop/wpf/graphics-multimedia/animation-overview)
 - [ObservableObject Pattern](https://learn.microsoft.com/en-us/dotnet/communitytoolkit/mvvm/observableobject)
-- [MULTI_WINDOW_SWITCHING_LOGIC.md](./MULTI_WINDOW_SWITCHING_LOGIC.md) - 相关的窗口切换问题
+- [MULTI_WINDOW_SWITCHING_LOGIC.md](./2026-03-18-MULTI_WINDOW_SWITCHING_LOGIC.md) - 相关的窗口切换问题
 
 ---
 

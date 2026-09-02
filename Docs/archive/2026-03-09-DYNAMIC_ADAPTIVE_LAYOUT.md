@@ -390,7 +390,7 @@ _logger.LogDebug(
 
 ## 📚 Related Documentation
 
-- **Original Fix**: `DYNAMIC_SLOTS_ARCHITECTURE_FIX.md` (Hardcoded slot count fix)
+- **Original Fix**: `2026-03-09-DYNAMIC_SLOTS_ARCHITECTURE_FIX.md` (Hardcoded slot count fix)
 - **Layout Algorithm**: `RadialLayoutHelper.cs` (Geometric calculations)
 - **Animation System**: `RadialMenuViewModel.cs` (UpdateLayoutAnimation)
 - **User Feedback**: GitHub Issue #XXX (Visual density complaints)

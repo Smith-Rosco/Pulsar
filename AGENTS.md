@@ -63,7 +63,7 @@ Operational guide for agents working on the **Pulsar** codebase (.NET 8, WPF/Win
 | Pulsar buttons: accent-on-accent text (蓝底蓝字) or fallback greys | `Accent*` Fluent tokens don't resolve: `ApplicationAccentColorManager` writes to a detached dict unless the `Application` merges a `"wpf.ui;"` dict (Pulsar's `App.xaml` doesn't). `ThemeService.ApplyAccent` must bridge `UiApplication.Current.Resources` → `Application.Current.Resources`; button text on accent fill must use `TextOnAccentFillColorPrimaryBrush`, never `AccentTextFillColorPrimaryBrush` (that's accent-coloured text for links). | [WPF_FLUENT_ACCENT_TOKENS_UNRESOLVED.md](./Docs/lessons/WPF_FLUENT_ACCENT_TOKENS_UNRESOLVED.md) |
 | Scrollbars visible despite `VerticalScrollBarVisibility="Hidden"` | Internal control templates override implicit styles. Hide ScrollViewers at runtime via code-behind visual-tree walk. | [WPF_SCROLLVIEWER_VISIBILITY.md](./Docs/lessons/WPF_SCROLLVIEWER_VISIBILITY.md) |
 
-**More lessons**: [ASYNC_SHUTDOWN_DEADLOCK.md](./Docs/lessons/ASYNC_SHUTDOWN_DEADLOCK.md) · [FOREGROUND_WINDOW_ACTIVATION_RELIABILITY.md](./Docs/lessons/FOREGROUND_WINDOW_ACTIVATION_RELIABILITY.md) · [SENDINPUT_FOREGROUND_ACTIVATION.md](./Docs/lessons/SENDINPUT_FOREGROUND_ACTIVATION.md) · [POWERSHELL_5_1_COMPRESS_ARCHIVE_BROKEN.md](./Docs/lessons/POWERSHELL_5_1_COMPRESS_ARCHIVE_BROKEN.md) · [GH_CLI_HASH_PATH_BUG.md](./Docs/lessons/GH_CLI_HASH_PATH_BUG.md) · [WINDOW_ELIGIBILITY_PHYSICAL_RULE.md](./Docs/lessons/WINDOW_ELIGIBILITY_PHYSICAL_RULE.md) · [WPF_FLUENT_ACCENT_TOKENS_UNRESOLVED.md](./Docs/lessons/WPF_FLUENT_ACCENT_TOKENS_UNRESOLVED.md)
+**More lessons**: [ASYNC_SHUTDOWN_DEADLOCK.md](./Docs/lessons/ASYNC_SHUTDOWN_DEADLOCK.md) · [FOREGROUND_WINDOW_ACTIVATION_RELIABILITY.md](./Docs/lessons/FOREGROUND_WINDOW_ACTIVATION_RELIABILITY.md) · [SENDINPUT_FOREGROUND_ACTIVATION.md](./Docs/lessons/SENDINPUT_FOREGROUND_ACTIVATION.md) · [POWERSHELL_5_1_COMPRESS_ARCHIVE_BROKEN.md](./Docs/lessons/POWERSHELL_5_1_COMPRESS_ARCHIVE_BROKEN.md) · [GH_CLI_HASH_PATH_BUG.md](./Docs/lessons/GH_CLI_HASH_PATH_BUG.md) · [WINDOW_ELIGIBILITY_PHYSICAL_RULE.md](./Docs/lessons/WINDOW_ELIGIBILITY_PHYSICAL_RULE.md) · [WPF_FLUENT_ACCENT_TOKENS_UNRESOLVED.md](./Docs/lessons/WPF_FLUENT_ACCENT_TOKENS_UNRESOLVED.md) · [WPF_COMBOBOX_SELECTEDVALUE_ONEWAY_BLANK.md](./Docs/lessons/WPF_COMBOBOX_SELECTEDVALUE_ONEWAY_BLANK.md) · [WPF_RADIOBUTTON_PROPERTYCHANGED_FEEDBACK_LOOP.md](./Docs/lessons/WPF_RADIOBUTTON_PROPERTYCHANGED_FEEDBACK_LOOP.md)
 
 ---
 
@@ -82,6 +82,9 @@ Operational guide for agents working on the **Pulsar** codebase (.NET 8, WPF/Win
 | Architectural decisions / docs standards | [Docs/decisions/](./Docs/decisions/), [Docs/CONTRIBUTING.md](./Docs/CONTRIBUTING.md) |
 | Architecture overview | [ARCHITECTURE.md](./ARCHITECTURE.md), [Docs/README.md](./Docs/README.md) |
 | Thread safety & concurrency | [Docs/architecture/PLUGIN_SYSTEM.md](./Docs/architecture/PLUGIN_SYSTEM.md) (`ConcurrentDictionary`, `Interlocked`, `Dispatcher.InvokeAsync`) |
+| Propose / track a spec change | [openspec/](./openspec/) — active work in `changes/`, completed in `changes/archive/`, merged truth in `specs/` |
+| Roadmap & design proposals | [Docs/roadmap/](./Docs/roadmap/), [Docs/proposals/](./Docs/proposals/) |
+| Historical fix reports (not current truth) | [Docs/archive/](./Docs/archive/) — date-prefixed `YYYY-MM-DD-NAME.md` |
 
 ---
 
@@ -177,10 +180,12 @@ dotnet restore Pulsar/Pulsar/Pulsar.csproj
 
 ## Agent skills
 
-- **Issue tracker**: Issues and PRDs live as GitHub issues; see `docs/agents/issue-tracker.md`.
-- **Domain docs**: single-context — `CONTEXT.md` + `docs/adr/` at the repo root; see `docs/agents/domain.md`.
+> **These two files are machine-consumed skill contracts, NOT reading material.** They are written and read by the vendored skills under `.agents/skills/` (notably `setup-matt-pocock-skills`, and the installed `domain-modeling` / `grill-with-docs` / `improve-codebase-architecture`). Do not relocate or delete them — the paths below are hardcoded in those skills, and re-running `setup-matt-pocock-skills` will recreate them.
+
+- **Issue tracker**: Issues and PRDs live as GitHub issues; see [`Docs/agents/issue-tracker.md`](./Docs/agents/issue-tracker.md) — `gh` CLI conventions for skill-driven issue operations.
+- **Domain docs**: single-context — `CONTEXT.md` + `docs/adr/` at the repo root; see [`Docs/agents/domain.md`](./Docs/agents/domain.md) — tells skills which domain docs to read before exploring the codebase.
 
 ---
 
-*Last Updated: 2026-08-28*
-*Version: 3.0.2 (Added debug-via-logs rule; generic agent rules moved to user-level AGENTS.md)*
+*Last Updated: 2026-09-02*
+*Version: 3.1.0 (Docs reorganized: 12 historical fix reports moved from `lessons/` to `archive/`, `handoff/` folded into `archive/`, `design/` merged into `proposals/`; added openspec + roadmap task-router rows; `Docs/agents/` confirmed as skill contracts)*

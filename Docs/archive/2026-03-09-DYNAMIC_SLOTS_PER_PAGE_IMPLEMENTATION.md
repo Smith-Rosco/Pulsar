@@ -370,8 +370,8 @@ private bool CanSave() => HasUnsavedChanges;
 
 - [PLUGIN_SYSTEM.md](../architecture/PLUGIN_SYSTEM.md) - Plugin architecture context
 - [UI_BEST_PRACTICES.md](../guides/UI_BEST_PRACTICES.md) - WPF binding patterns
-- [WPFUI_BUTTON_PRIMARY_BUG.md](./WPFUI_BUTTON_PRIMARY_BUG.md) - Similar UI binding issue
-- [WPF_THEME_INJECTION_PITFALLS.md](./WPF_THEME_INJECTION_PITFALLS.md) - DataContext timing issues
+- [WPFUI_BUTTON_PRIMARY_BUG.md](../lessons/WPFUI_BUTTON_PRIMARY_BUG.md) - Similar UI binding issue
+- [WPF_THEME_INJECTION_PITFALLS.md](../lessons/WPF_THEME_INJECTION_PITFALLS.md) - DataContext timing issues
 
 ---
 

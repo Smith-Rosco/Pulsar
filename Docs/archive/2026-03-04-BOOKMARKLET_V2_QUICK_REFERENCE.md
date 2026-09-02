@@ -36,7 +36,7 @@ notepad %AppData%\Pulsar\Logs\pulsar-20260304.log
 # 搜索: "validation failed" 或 "Syntax error"
 ```
 
-**详细说明**: `Docs/Plugins/test_error_explanation.md`
+**详细说明**: `Docs/Plugins/test_error_explanation.md`（该文档已于 2026-09-02 清理移除）
 
 ---
 
@@ -97,7 +97,7 @@ javascript:(function(){alert("text")})();
 |------|------|
 | `IMPLEMENTATION_SUMMARY.md` | 完整总结（本文档） |
 | `Docs/Plugins/BookmarkletRunner.md` | 用户手册 |
-| `Docs/Plugins/test_error_explanation.md` | 错误测试说明 |
+| `Docs/Plugins/test_error_explanation.md`（已移除） | 错误测试说明 |
 | `Docs/decisions/003-bookmarklet-nuglify-refactor.md` | 技术方案 |
 | `TESTING_GUIDE.md` | 测试指南 |
 
@@ -179,4 +179,4 @@ javascript:(function(){const links=document.querySelectorAll("a");links.forEach(
 
 ---
 
-**需要帮助？** 查看 `Docs/Plugins/test_error_explanation.md`
+**需要帮助？** 查看 `Docs/Plugins/test_error_explanation.md`（该文档已于 2026-09-02 清理移除）

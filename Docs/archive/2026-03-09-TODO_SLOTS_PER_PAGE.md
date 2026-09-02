@@ -39,7 +39,7 @@
    - Slot count verification
    - Graceful error handling
 
-3. **Documentation**: `Docs/lessons/DYNAMIC_SLOTS_ARCHITECTURE_FIX.md`
+3. **Documentation**: `Docs/archive/2026-03-09-DYNAMIC_SLOTS_ARCHITECTURE_FIX.md`
    - Complete architecture analysis
    - Debugging guide
    - Testing checklist
@@ -133,7 +133,7 @@ Check logs at `%AppData%\Pulsar\Logs\pulsar-yyyyMMdd.log`:
 
 ## 📚 Documentation
 
-- **Architecture Analysis**: `Docs/lessons/DYNAMIC_SLOTS_ARCHITECTURE_FIX.md`
+- **Architecture Analysis**: `Docs/archive/2026-03-09-DYNAMIC_SLOTS_ARCHITECTURE_FIX.md`
 - **Implementation Details**: See "Code Changes" section in architecture doc
 - **Debugging Guide**: See "Debugging Guide" section in architecture doc
 
