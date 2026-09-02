@@ -139,6 +139,118 @@ namespace Pulsar.Tests.Config
             slot!.SubActions.Should().BeNull();
         }
 
+        [Fact]
+        public async Task SaveLoad_ShouldRoundTrip_LayoutStyle()
+        {
+            var service = CreateConfigService();
+            var config = new ProfilesConfig();
+            config.Profiles["Global"] = new ProcessProfile
+            {
+                CommandMode =
+                [
+                    new PluginSlot
+                    {
+                        Slot = 1,
+                        PluginId = "com.pulsar.command",
+                        Action = "sendkeys",
+                        Label = "Clipboard",
+                        CascadeLayoutStyle = SubMenuLayoutStyle.Ring
+                    }
+                ]
+            };
+
+            await service.SaveAsync(config);
+            var savedJson = await File.ReadAllTextAsync(_configPath);
+            var service2 = CreateConfigService();
+            var loadedConfig = await service2.LoadAsync();
+
+            savedJson.Should().Contain("\"layoutStyle\"", "layout style must be persisted under the camelCase key");
+            var slot = loadedConfig.Profiles["Global"].GetSlots(isCommandMode: true).Single();
+            slot.CascadeLayoutStyle.Should().Be(SubMenuLayoutStyle.Ring);
+        }
+
+        [Fact]
+        public void Deserialize_LegacySlotWithoutLayoutStyle_ShouldLoadNull()
+        {
+            var json = """
+                {
+                  "slot": 1,
+                  "plugin": "com.pulsar.command",
+                  "action": "sendkeys",
+                  "label": "Clipboard"
+                }
+                """;
+
+            var slot = JsonSerializer.Deserialize<PluginSlot>(
+                json,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            slot!.CascadeLayoutStyle.Should().BeNull("absent key deserializes to null, which readers treat as Fan");
+        }
+
+        [Fact]
+        public void RoundTrip_SlotWithoutLayoutStyle_ShouldNotGainTheKey()
+        {
+            var options = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
+            var slot = new PluginSlot
+            {
+                Slot = 2,
+                PluginId = "com.pulsar.command",
+                Action = "run"
+            };
+
+            var json = JsonSerializer.Serialize(slot, options);
+
+            json.Should().NotContain("layoutStyle", "slots without an explicit layout must not emit the key");
+            var restored = JsonSerializer.Deserialize<PluginSlot>(json, options);
+            restored!.CascadeLayoutStyle.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task SaveLoad_ShouldRoundTrip_SubActionsUnchanged_WithLayoutStyle()
+        {
+            var service = CreateConfigService();
+            var config = new ProfilesConfig();
+            config.Profiles["Global"] = new ProcessProfile
+            {
+                CommandMode =
+                [
+                    new PluginSlot
+                    {
+                        Slot = 1,
+                        PluginId = "com.pulsar.command",
+                        Action = "sendkeys",
+                        Label = "Clipboard",
+                        CascadeLayoutStyle = SubMenuLayoutStyle.Ring,
+                        SubActions =
+                        [
+                            new SubSlotDescriptor(
+                                PluginId: "com.pulsar.command",
+                                Action: "sendkeys",
+                                Args: new Dictionary<string, string> { ["keys"] = "^c" },
+                                Label: "Copy",
+                                IconKey: "E8C8",
+                                ColorHex: "")
+                        ]
+                    }
+                ]
+            };
+
+            await service.SaveAsync(config);
+            var service2 = CreateConfigService();
+            var loadedConfig = await service2.LoadAsync();
+
+            var slot = loadedConfig.Profiles["Global"].GetSlots(isCommandMode: true).Single();
+            slot.CascadeLayoutStyle.Should().Be(SubMenuLayoutStyle.Ring);
+            slot.SubActions.Should().HaveCount(1);
+            slot.SubActions![0].Label.Should().Be("Copy");
+            slot.SubActions[0].Args.Should().ContainKey("keys");
+            slot.SubActions[0].Args!["keys"].Should().Be("^c");
+        }
+
         private ConfigService CreateConfigService()
         {
             return new ConfigService(_mockLogger.Object, configPath: _configPath);

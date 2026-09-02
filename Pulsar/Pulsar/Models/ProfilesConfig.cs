@@ -634,6 +634,17 @@ namespace Pulsar.Models
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public List<SubSlotDescriptor>? SubActions { get; set; }
 
+        /// <summary>
+        /// Optional layout style for this slot's cascade submenu. Absent (null) in
+        /// legacy profiles — deserialization is tolerant and readers treat null as
+        /// <see cref="SubMenuLayoutStyle.Fan"/>. Serialized under the camelCase key
+        /// <c>layoutStyle</c>; the key is omitted entirely when null so legacy files
+        /// stay byte-compatible.
+        /// </summary>
+        [JsonPropertyName("layoutStyle")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public SubMenuLayoutStyle? CascadeLayoutStyle { get; set; }
+
         // [UI Support] 徽章与颜色
         [JsonIgnore]
         public SlotPresentation Presentation

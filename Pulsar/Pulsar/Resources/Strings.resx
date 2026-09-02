@@ -2389,6 +2389,36 @@
   <data name="Dialog.AddSlot.BackToPicker" xml:space="preserve">
     <value>Back to picker</value>
   </data>
+  <data name="Dialog.AddSlot.SubActions" xml:space="preserve">
+    <value>Sub-Actions</value>
+  </data>
+  <data name="Dialog.AddSlot.SubActions.Add" xml:space="preserve">
+    <value>Add sub-action</value>
+  </data>
+  <data name="Dialog.AddSlot.SubActions.Empty" xml:space="preserve">
+    <value>No sub-actions. Add one to open a cascade menu from this slot.</value>
+  </data>
+  <data name="Dialog.AddSlot.SubActions.Remove" xml:space="preserve">
+    <value>Remove sub-action</value>
+  </data>
+  <data name="Dialog.AddSlot.SubActions.MoveUp" xml:space="preserve">
+    <value>Move up</value>
+  </data>
+  <data name="Dialog.AddSlot.SubActions.MoveDown" xml:space="preserve">
+    <value>Move down</value>
+  </data>
+  <data name="Dialog.AddSlot.SubActions.InvalidSelection" xml:space="preserve">
+    <value>Select a valid plugin and action.</value>
+  </data>
+  <data name="Dialog.AddSlot.LayoutStyle" xml:space="preserve">
+    <value>Cascade Layout</value>
+  </data>
+  <data name="Dialog.AddSlot.LayoutStyle.Fan" xml:space="preserve">
+    <value>Fan</value>
+  </data>
+  <data name="Dialog.AddSlot.LayoutStyle.Ring" xml:space="preserve">
+    <value>Ring</value>
+  </data>
   <!-- ==================== Scenario ==================== -->
   <data name="Scenario.Notepad.Title" xml:space="preserve">
     <value>Notepad &amp; Keys</value>

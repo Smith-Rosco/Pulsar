@@ -322,6 +322,192 @@
                                Style="{StaticResource CompactStatusTextStyle}"/>
                 </Border>
 
+                <!-- === SUB-ACTIONS SECTION === -->
+                <Border Margin="{StaticResource Pulsar.Gap.Top.LG}"
+                        Padding="{StaticResource Pulsar.Pad.H12V10}"
+                        CornerRadius="{StaticResource Pulsar.Radius.LG}"
+                        Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                        BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                        BorderThickness="1">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="{Binding SubActionsSectionTitle}"
+                                       Style="{StaticResource CompactSectionTitleTextStyle}"
+                                       VerticalAlignment="Center"/>
+                            <ui:Button Grid.Column="1"
+                                       Content="{lex:Locale Dialog.AddSlot.SubActions.Add}"
+                                       Style="{StaticResource PulsarSecondaryButtonStyle}"
+                                       Padding="{StaticResource Pulsar.Pad.H12V6}"
+                                       Command="{Binding AddSubActionCommand}"/>
+                        </Grid>
+
+                        <!-- Layout style picker -->
+                        <Grid Margin="{StaticResource Pulsar.Gap.Top.SM}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="{lex:Locale Dialog.AddSlot.LayoutStyle}"
+                                       FontSize="{StaticResource Pulsar.Type.Body}"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                       VerticalAlignment="Center"/>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <RadioButton Style="{StaticResource SegmentedActionButtonStyle}"
+                                             GroupName="SubActionsLayoutStyle"
+                                             Content="{lex:Locale Dialog.AddSlot.LayoutStyle.Fan}"
+                                             IsChecked="{Binding IsFanLayout, Mode=TwoWay}"/>
+                                <RadioButton Style="{StaticResource SegmentedActionButtonStyle}"
+                                             GroupName="SubActionsLayoutStyle"
+                                             Content="{lex:Locale Dialog.AddSlot.LayoutStyle.Ring}"
+                                             IsChecked="{Binding IsRingLayout, Mode=TwoWay}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Empty state -->
+                        <Border Margin="{StaticResource Pulsar.Gap.Top.MD}"
+                                Padding="{StaticResource Pulsar.Pad.H12V10}"
+                                CornerRadius="{StaticResource Pulsar.Radius.MD}"
+                                Background="{DynamicResource ControlFillColorDefaultBrush}"
+                                BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                                BorderThickness="1"
+                                Visibility="{Binding HasSubActions, Converter={StaticResource BoolToVisInverse}}">
+                            <StackPanel>
+                                <TextBlock Text="{lex:Locale Dialog.AddSlot.SubActions.Empty}"
+                                           FontSize="{StaticResource Pulsar.Type.Body}"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                           TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Rows -->
+                        <ItemsControl ItemsSource="{Binding SubActions}"
+                                      Margin="{StaticResource Pulsar.Gap.Top.MD}"
+                                      Visibility="{Binding HasSubActions, Converter={StaticResource BoolToVis}}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type viewmodels:SubSlotEditorRow}">
+                                    <Border Margin="0,0,0,8"
+                                            Padding="{StaticResource Pulsar.Pad.H10V8}"
+                                            CornerRadius="{StaticResource Pulsar.Radius.MD}"
+                                            Background="{DynamicResource ControlFillColorDefaultBrush}"
+                                            BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                                            BorderThickness="1">
+                                        <StackPanel>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="2*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <ComboBox Grid.Column="0"
+                                                          ItemsSource="{Binding AvailablePlugins}"
+                                                          DisplayMemberPath="DisplayName"
+                                                          SelectedValuePath="PluginId"
+                                                          SelectedValue="{Binding PluginId, Mode=TwoWay}"
+                                                          Margin="0,0,6,0"/>
+
+                                                <ComboBox Grid.Column="1"
+                                                          ItemsSource="{Binding AvailableActions}"
+                                                          DisplayMemberPath="Label"
+                                                          SelectedValuePath="Value"
+                                                          SelectedValue="{Binding Action, Mode=TwoWay}"
+                                                          Margin="0,0,6,0"/>
+
+                                                <ui:Button Grid.Column="2"
+                                                           Width="26" Height="26"
+                                                           Padding="{StaticResource Pulsar.Pad.XS}"
+                                                           Margin="0,0,2,0"
+                                                           Icon="{ui:SymbolIcon ArrowUp24}"
+                                                           Style="{StaticResource PulsarIconButtonStyle}"
+                                                           ToolTip="{lex:Locale Dialog.AddSlot.SubActions.MoveUp}"
+                                                           Command="{Binding DataContext.MoveSubActionUpCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                           CommandParameter="{Binding}"/>
+
+                                                <ui:Button Grid.Column="3"
+                                                           Width="26" Height="26"
+                                                           Padding="{StaticResource Pulsar.Pad.XS}"
+                                                           Margin="0,0,2,0"
+                                                           Icon="{ui:SymbolIcon ArrowDown24}"
+                                                           Style="{StaticResource PulsarIconButtonStyle}"
+                                                           ToolTip="{lex:Locale Dialog.AddSlot.SubActions.MoveDown}"
+                                                           Command="{Binding DataContext.MoveSubActionDownCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                           CommandParameter="{Binding}"/>
+
+                                                <ui:Button Grid.Column="4"
+                                                           Width="26" Height="26"
+                                                           Padding="{StaticResource Pulsar.Pad.XS}"
+                                                           Icon="{ui:SymbolIcon Delete24}"
+                                                           Style="{StaticResource PulsarIconButtonStyle}"
+                                                           ToolTip="{lex:Locale Dialog.AddSlot.SubActions.Remove}"
+                                                           Command="{Binding DataContext.RemoveSubActionCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                           CommandParameter="{Binding}"/>
+                                            </Grid>
+
+                                            <!-- Inline validation for unknown plugin/action -->
+                                            <TextBlock Text="{lex:Locale Dialog.AddSlot.SubActions.InvalidSelection}"
+                                                       FontSize="{StaticResource Pulsar.Type.Caption}"
+                                                       Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                                                       Margin="0,4,0,0"
+                                                       TextWrapping="Wrap"
+                                                       Visibility="{Binding HasInvalidSelection, Converter={StaticResource BoolToVis}}"/>
+
+                                            <!-- Parameter fields (Tag bridge → row) -->
+                                            <ItemsControl ItemsSource="{Binding RequiredParameters}"
+                                                          Loaded="SubActionParameters_Loaded"
+                                                          ItemTemplate="{StaticResource SlotParameterFieldTemplate}"
+                                                          Margin="{StaticResource Pulsar.Gap.Top.XS}"/>
+
+                                            <ItemsControl ItemsSource="{Binding OptionalParameters}"
+                                                          Loaded="SubActionParameters_Loaded"
+                                                          ItemTemplate="{StaticResource SlotParameterFieldTemplate}"/>
+
+                                            <ItemsControl ItemsSource="{Binding AdvancedParameters}"
+                                                          Loaded="SubActionParameters_Loaded"
+                                                          ItemTemplate="{StaticResource SlotParameterFieldTemplate}"/>
+
+                                            <!-- Label / icon / color -->
+                                            <Grid Margin="{StaticResource Pulsar.Gap.Top.XS}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <ui:TextBox Grid.Column="0"
+                                                            Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}"
+                                                            PlaceholderText="{lex:Locale Dialog.AddSlot.Label}"
+                                                            Margin="0,0,6,0"/>
+
+                                                <Button Grid.Column="1"
+                                                        Width="56" Height="30"
+                                                        Background="{Binding ColorHex, Converter={StaticResource HexToBrush}}"
+                                                        Margin="0,0,4,0"
+                                                        ToolTip="{lex:Locale Dialog.AddSlot.PickColor}"
+                                                        Command="{Binding DataContext.PickSubActionColorCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}"/>
+
+                                                <controls:IconSelector Grid.Column="2"
+                                                                        IconKey="{Binding IconKey, Mode=TwoWay}"
+                                                                        Width="120"
+                                                                        BrowseClicked="PickSubActionIcon_Click"/>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
                 <!-- === APPEARANCE SECTION === -->
                 <ui:CardExpander Header="{lex:Locale Dialog.AddSlot.Appearance}"
                                  IsExpanded="{Binding IsAppearanceExpanded, Mode=OneWay}"

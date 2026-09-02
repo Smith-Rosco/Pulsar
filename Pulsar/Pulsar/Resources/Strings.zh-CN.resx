@@ -3906,6 +3906,56 @@
     xml:space="preserve">
     <value>返回选择器</value>
   </data>
+  <data
+    name="Dialog.AddSlot.SubActions"
+    xml:space="preserve">
+    <value>子动作</value>
+  </data>
+  <data
+    name="Dialog.AddSlot.SubActions.Add"
+    xml:space="preserve">
+    <value>添加子动作</value>
+  </data>
+  <data
+    name="Dialog.AddSlot.SubActions.Empty"
+    xml:space="preserve">
+    <value>暂无子动作。添加一个即可从该槽位打开级联菜单。</value>
+  </data>
+  <data
+    name="Dialog.AddSlot.SubActions.Remove"
+    xml:space="preserve">
+    <value>删除子动作</value>
+  </data>
+  <data
+    name="Dialog.AddSlot.SubActions.MoveUp"
+    xml:space="preserve">
+    <value>上移</value>
+  </data>
+  <data
+    name="Dialog.AddSlot.SubActions.MoveDown"
+    xml:space="preserve">
+    <value>下移</value>
+  </data>
+  <data
+    name="Dialog.AddSlot.SubActions.InvalidSelection"
+    xml:space="preserve">
+    <value>请选择有效的插件与动作。</value>
+  </data>
+  <data
+    name="Dialog.AddSlot.LayoutStyle"
+    xml:space="preserve">
+    <value>级联布局</value>
+  </data>
+  <data
+    name="Dialog.AddSlot.LayoutStyle.Fan"
+    xml:space="preserve">
+    <value>扇形</value>
+  </data>
+  <data
+    name="Dialog.AddSlot.LayoutStyle.Ring"
+    xml:space="preserve">
+    <value>环形</value>
+  </data>
   <!-- ==================== Scenario ==================== -->
   <data
     name="Scenario.Notepad.Title"

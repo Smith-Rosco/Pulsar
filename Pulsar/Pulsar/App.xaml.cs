@@ -218,6 +218,9 @@ namespace Pulsar
             // [New] Configuration Backup / Restore
             serviceCollection.AddSingleton<IConfigBackupService, ConfigBackupService>();
 
+            // [New] Smart sub-action defaults for newly created slot types
+            serviceCollection.AddSingleton<ISmartSubActionDefaults, SmartSubActionDefaults>();
+
             // 3. Focus Management
             serviceCollection.AddSingleton<IFocusNativeAdapter, WindowsFocusNativeAdapter>();
             serviceCollection.AddSingleton<IModifierStateTracker>(sp => sp.GetRequiredService<GlobalKeyboardHook>());

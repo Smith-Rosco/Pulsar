@@ -934,6 +934,18 @@ namespace Pulsar.ViewModels
                 {
                     await EnterSubMenuAsync(new WindowSubMenuDescriptor(slot.Label, windows), clickSlotIndex);
                 }
+                else if (slot.SubSlots.Count > 0)
+                {
+                    var layoutStyle = (slot.DataContext as PluginSlot)?.CascadeLayoutStyle
+                        ?? SubMenuLayoutStyle.Fan;
+                    await EnterSubMenuAsync(
+                        new CascadeSubMenuDescriptor(slot.SubSlots.ToList(), layoutStyle, slot.Label),
+                        clickSlotIndex);
+                }
+                else
+                {
+                    await slot.ExecuteAsync(this);
+                }
             }
             else if (button == GlobalMouseButton.Right)
             {

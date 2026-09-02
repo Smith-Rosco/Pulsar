@@ -499,6 +499,132 @@ namespace Pulsar.Tests.ViewModels
             vm.Slot.Action.Should().Be("fill");
         }
 
+        [Fact]
+        public void SlotEditorViewModel_SubActions_ShouldSupportAddRemoveReorder()
+        {
+            var loc = CreateLoc();
+            var slot = CreateConfiguredSlot();
+            var vm = new SlotEditorViewModel(
+                SlotEditorMode.Edit,
+                BuildTestCards(loc),
+                CreateDraftSlot,
+                (s, action) => { s.Action = action ?? string.Empty; RefreshSlot(s); },
+                field => { field.Value = "updated-value"; return Task.CompletedTask; },
+                s => { s.IconKey = "E8A7"; return Task.CompletedTask; },
+                s => { s.Color = "#123456"; return Task.CompletedTask; },
+                loc,
+                existingSlot: slot,
+                metadataRegistry: CreateMetadataRegistry());
+
+            vm.SubActions.Should().BeEmpty();
+
+            vm.AddSubActionCommand.Execute(null);
+            vm.AddSubActionCommand.Execute(null);
+            vm.SubActions.Should().HaveCount(2);
+            vm.HasSubActions.Should().BeTrue();
+
+            var first = vm.SubActions[0];
+            var second = vm.SubActions[1];
+            vm.MoveSubActionUpCommand.Execute(second);
+            vm.SubActions[0].Should().Be(second);
+            vm.SubActions[1].Should().Be(first);
+
+            vm.RemoveSubActionCommand.Execute(second);
+            vm.SubActions.Should().ContainSingle();
+            vm.SubActions[0].Should().Be(first);
+        }
+
+        [Fact]
+        public void SlotEditorViewModel_EditMode_ShouldLoadPersistedSubActions()
+        {
+            var loc = CreateLoc();
+            var slot = CreateConfiguredSlot();
+            slot.SubActions =
+            [
+                new SubSlotDescriptor("com.pulsar.command", "sendkeys", new Dictionary<string, string> { ["keys"] = "^c" }, "Copy", "E8C8", "")
+            ];
+            slot.CascadeLayoutStyle = SubMenuLayoutStyle.Ring;
+
+            var vm = new SlotEditorViewModel(
+                SlotEditorMode.Edit,
+                BuildTestCards(loc),
+                CreateDraftSlot,
+                (s, action) => { s.Action = action ?? string.Empty; RefreshSlot(s); },
+                field => { field.Value = "updated-value"; return Task.CompletedTask; },
+                s => { s.IconKey = "E8A7"; return Task.CompletedTask; },
+                s => { s.Color = "#123456"; return Task.CompletedTask; },
+                loc,
+                existingSlot: slot,
+                metadataRegistry: CreateMetadataRegistry());
+
+            vm.SubActions.Should().ContainSingle();
+            vm.SubActions[0].PluginId.Should().Be("com.pulsar.command");
+            vm.SubActions[0].Action.Should().Be("sendkeys");
+            vm.SubActions[0].Label.Should().Be("Copy");
+            vm.SubActions[0].Args.Should().ContainKey("keys");
+            vm.IsRingLayout.Should().BeTrue();
+        }
+
+        [Fact]
+        public void SlotEditorViewModel_Save_ShouldMaterializeSubActionsAndLayoutStyle()
+        {
+            var loc = CreateLoc();
+            var slot = CreateConfiguredSlot();
+            var vm = new SlotEditorViewModel(
+                SlotEditorMode.Edit,
+                BuildTestCards(loc),
+                CreateDraftSlot,
+                (s, action) => { s.Action = action ?? string.Empty; RefreshSlot(s); },
+                field => { field.Value = "updated-value"; return Task.CompletedTask; },
+                s => { s.IconKey = "E8A7"; return Task.CompletedTask; },
+                s => { s.Color = "#123456"; return Task.CompletedTask; },
+                loc,
+                existingSlot: slot,
+                metadataRegistry: CreateMetadataRegistry());
+
+            vm.AddSubActionCommand.Execute(null);
+            var row = vm.SubActions[0];
+            row.PluginId = "com.pulsar.command";
+            row.Action = "sendkeys";
+            row.Label = "Copy";
+            row.Args["keys"] = "^c";
+            vm.IsRingLayout = true;
+
+            vm.SaveCommand.Execute(null);
+
+            slot.SubActions.Should().ContainSingle();
+            slot.SubActions![0].PluginId.Should().Be("com.pulsar.command");
+            slot.SubActions[0].Action.Should().Be("sendkeys");
+            slot.SubActions[0].Args.Should().ContainKey("keys");
+            slot.SubActions[0].Args!["keys"].Should().Be("^c");
+            slot.CascadeLayoutStyle.Should().Be(SubMenuLayoutStyle.Ring);
+        }
+
+        [Fact]
+        public void SlotEditorViewModel_Save_ShouldPersistFanAsNull_ForByteCompatibility()
+        {
+            var loc = CreateLoc();
+            var slot = CreateConfiguredSlot();
+            var vm = new SlotEditorViewModel(
+                SlotEditorMode.Edit,
+                BuildTestCards(loc),
+                CreateDraftSlot,
+                (s, action) => { s.Action = action ?? string.Empty; RefreshSlot(s); },
+                field => { field.Value = "updated-value"; return Task.CompletedTask; },
+                s => { s.IconKey = "E8A7"; return Task.CompletedTask; },
+                s => { s.Color = "#123456"; return Task.CompletedTask; },
+                loc,
+                existingSlot: slot,
+                metadataRegistry: CreateMetadataRegistry());
+
+            vm.IsRingLayout = true;
+            vm.IsFanLayout = true;
+
+            vm.SaveCommand.Execute(null);
+
+            slot.CascadeLayoutStyle.Should().BeNull("Fan is the default and must not write a layoutStyle key");
+        }
+
         // ---- Helper methods ----
 
         private static PluginSlot CreateDraftSlot(string pluginId)

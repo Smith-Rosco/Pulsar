@@ -11,6 +11,7 @@ using CommunityToolkit.Mvvm.Input;
 using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Models;
+using Pulsar.Plugins.Core.Pki.Models;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels.Base;
 using DialogResult = Pulsar.Models.Enums.DialogResult;
@@ -25,6 +26,7 @@ namespace Pulsar.ViewModels.Dialogs
         private readonly Func<SlotParameterEditorField, Task> _pickParameterValueAsync;
         private readonly Func<PluginSlot, Task> _pickIconAsync;
         private readonly Func<PluginSlot, Task> _pickColorAsync;
+        private readonly Func<string, SecretDisplayMetadata?>? _secretDisplayResolver;
         private readonly ILocalizationService _loc;
         private readonly IPluginMetadataRegistry? _metadataRegistry;
 
@@ -216,6 +218,45 @@ namespace Pulsar.ViewModels.Dialogs
 
         public string AppearanceDisclosureTitle => _loc["Dialog.AddSlot.Appearance"];
 
+        // ---- Sub-Actions section ----
+
+        public ObservableCollection<SubSlotEditorRow> SubActions { get; } = new();
+
+        public IReadOnlyList<SubSlotPluginOption> AvailablePlugins { get; }
+
+        public bool HasSubActions => SubActions.Count > 0;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsFanLayout))]
+        [NotifyPropertyChangedFor(nameof(IsRingLayout))]
+        private SubMenuLayoutStyle _cascadeLayoutStyle = SubMenuLayoutStyle.Fan;
+
+        public bool IsFanLayout
+        {
+            get => CascadeLayoutStyle == SubMenuLayoutStyle.Fan;
+            set
+            {
+                if (value)
+                {
+                    CascadeLayoutStyle = SubMenuLayoutStyle.Fan;
+                }
+            }
+        }
+
+        public bool IsRingLayout
+        {
+            get => CascadeLayoutStyle == SubMenuLayoutStyle.Ring;
+            set
+            {
+                if (value)
+                {
+                    CascadeLayoutStyle = SubMenuLayoutStyle.Ring;
+                }
+            }
+        }
+
+        public string SubActionsSectionTitle => _loc["Dialog.AddSlot.SubActions"];
+
         // ---- Constructor ----
 
         public SlotEditorViewModel(
@@ -228,7 +269,8 @@ namespace Pulsar.ViewModels.Dialogs
             Func<PluginSlot, Task> pickColorAsync,
             ILocalizationService loc,
             PluginSlot? existingSlot = null,
-            IPluginMetadataRegistry? metadataRegistry = null)
+            IPluginMetadataRegistry? metadataRegistry = null,
+            Func<string, SecretDisplayMetadata?>? secretDisplayResolver = null)
         {
             EditorMode = editorMode;
             _allTypeCards = allTypeCards;
@@ -239,6 +281,8 @@ namespace Pulsar.ViewModels.Dialogs
             _pickColorAsync = pickColorAsync;
             _loc = loc;
             _metadataRegistry = metadataRegistry;
+            _secretDisplayResolver = secretDisplayResolver;
+            AvailablePlugins = BuildAvailablePlugins();
 
             PrimaryButtonText = _loc["Dialog.AddSlot.SaveSlot"];
             SecondaryButtonText = _loc["Dialog.AddSlot.Cancel"];
@@ -246,8 +290,10 @@ namespace Pulsar.ViewModels.Dialogs
             if (editorMode == SlotEditorMode.Edit && existingSlot != null)
             {
                 Slot = existingSlot;
+                _cascadeLayoutStyle = existingSlot.CascadeLayoutStyle ?? SubMenuLayoutStyle.Fan;
                 _isConfigurationActive = true;
                 HookSlotPropertyChanged();
+                ReloadSubActionRows();
             }
             else
             {
@@ -290,6 +336,7 @@ namespace Pulsar.ViewModels.Dialogs
                 return;
             }
 
+            MaterializeSubActions();
             RequestClose?.Invoke(DialogResult.Confirmed);
         }
 
@@ -310,6 +357,7 @@ namespace Pulsar.ViewModels.Dialogs
             }
 
             ApplySuggestions();
+            ReloadSubActionRows();
             IsConfigurationActive = true;
             HookSlotPropertyChanged();
             NotifyAll();
@@ -326,8 +374,75 @@ namespace Pulsar.ViewModels.Dialogs
             _shouldShowFieldValidation = false;
             Slot = new PluginSlot { Slot = 0, PluginId = string.Empty };
             ResetSuggestionState();
+            ClearSubActionRows();
             IsConfigurationActive = false;
             NotifyAll();
+        }
+
+        // ---- Sub-Action commands ----
+
+        [RelayCommand]
+        private void AddSubAction()
+        {
+            if (Slot == null)
+            {
+                return;
+            }
+
+            var row = new SubSlotEditorRow(
+                null,
+                _metadataRegistry,
+                PickSubActionParameterValueAsync,
+                _secretDisplayResolver,
+                AvailablePlugins);
+            SubActions.Add(row);
+            OnPropertyChanged(nameof(HasSubActions));
+        }
+
+        [RelayCommand]
+        private void RemoveSubAction(SubSlotEditorRow row)
+        {
+            if (row == null || !SubActions.Remove(row))
+            {
+                return;
+            }
+
+            row.Dispose();
+            OnPropertyChanged(nameof(HasSubActions));
+        }
+
+        [RelayCommand]
+        private void MoveSubActionUp(SubSlotEditorRow row)
+        {
+            if (row == null)
+            {
+                return;
+            }
+
+            var index = SubActions.IndexOf(row);
+            if (index <= 0)
+            {
+                return;
+            }
+
+            SubActions.Move(index, index - 1);
+        }
+
+        [RelayCommand]
+        private void MoveSubActionDown(SubSlotEditorRow row)
+        {
+            if (row == null)
+            {
+                return;
+            }
+
+            var index = SubActions.IndexOf(row);
+            if (index < 0 || index >= SubActions.Count - 1)
+            {
+                return;
+            }
+
+            SubActions.Move(index, index + 1);
         }
 
         // ---- Public methods ----
@@ -376,6 +491,109 @@ namespace Pulsar.ViewModels.Dialogs
             await _pickColorAsync(Slot);
             _lastSuggestedColor = Slot.Color;
             NotifyAll();
+        }
+
+        // ---- Sub-Action helpers ----
+
+        private IReadOnlyList<SubSlotPluginOption> BuildAvailablePlugins()
+        {
+            if (_metadataRegistry == null)
+            {
+                return Array.Empty<SubSlotPluginOption>();
+            }
+
+            var allMetadata = _metadataRegistry.GetAllMetadata();
+            if (allMetadata == null)
+            {
+                return Array.Empty<SubSlotPluginOption>();
+            }
+
+            return allMetadata
+                .Where(metadata => metadata.Actions.Count > 0)
+                .OrderBy(metadata => metadata.Display.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(metadata => new SubSlotPluginOption(metadata.Id, metadata.Display.Name))
+                .ToList();
+        }
+
+        private void ReloadSubActionRows()
+        {
+            ClearSubActionRows();
+
+            if (Slot?.SubActions == null)
+            {
+                OnPropertyChanged(nameof(HasSubActions));
+                return;
+            }
+
+            foreach (var descriptor in Slot.SubActions)
+            {
+                SubActions.Add(new SubSlotEditorRow(
+                    descriptor,
+                    _metadataRegistry,
+                    PickSubActionParameterValueAsync,
+                    _secretDisplayResolver,
+                    AvailablePlugins));
+            }
+
+            OnPropertyChanged(nameof(HasSubActions));
+        }
+
+        private void ClearSubActionRows()
+        {
+            foreach (var row in SubActions)
+            {
+                row.Dispose();
+            }
+
+            SubActions.Clear();
+            OnPropertyChanged(nameof(HasSubActions));
+        }
+
+        private void MaterializeSubActions()
+        {
+            if (Slot == null)
+            {
+                return;
+            }
+
+            Slot.SubActions = SubActions.Count > 0
+                ? SubActions.Select(row => row.ToDescriptor()).ToList()
+                : null;
+
+            // Persist only a non-default (Ring) choice so the optional key is
+            // omitted for Fan, keeping legacy profiles byte-compatible.
+            Slot.CascadeLayoutStyle = CascadeLayoutStyle == SubMenuLayoutStyle.Fan
+                ? null
+                : CascadeLayoutStyle;
+        }
+
+        private Task PickSubActionParameterValueAsync(SlotParameterEditorField field)
+        {
+            return _pickParameterValueAsync(field);
+        }
+
+        [RelayCommand]
+        public async Task PickSubActionIconAsync(SubSlotEditorRow row)
+        {
+            if (row == null)
+            {
+                return;
+            }
+
+            await _pickIconAsync(row.BackingSlot);
+            row.IconKey = row.BackingSlot.IconKey;
+        }
+
+        [RelayCommand]
+        public async Task PickSubActionColorAsync(SubSlotEditorRow row)
+        {
+            if (row == null)
+            {
+                return;
+            }
+
+            await _pickColorAsync(row.BackingSlot);
+            row.ColorHex = row.BackingSlot.Color;
         }
 
         // ---- Slot PropertyChanged handling ----
@@ -429,6 +647,7 @@ namespace Pulsar.ViewModels.Dialogs
             OnPropertyChanged(nameof(HasOptionalSettings));
             OnPropertyChanged(nameof(HasSummaryTokens));
             OnPropertyChanged(nameof(HasAppearanceOptions));
+            OnPropertyChanged(nameof(HasSubActions));
             OnPropertyChanged(nameof(HeaderText));
             OnPropertyChanged(nameof(HeaderStatusText));
             OnPropertyChanged(nameof(HasActionValidationError));

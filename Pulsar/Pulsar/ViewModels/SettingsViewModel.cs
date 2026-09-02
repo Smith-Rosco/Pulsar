@@ -202,7 +202,8 @@ namespace Pulsar.ViewModels
             ITutorialService tutorialService,
             ILoggingConfigService loggingConfigService,
             IProcessRegistryService? processRegistryService = null,
-            ICustomIconStore? customIconStore = null)
+            ICustomIconStore? customIconStore = null,
+            ISmartSubActionDefaults? smartDefaults = null)
         {
             _configService = configService;
             _windowService = windowService;
@@ -227,7 +228,8 @@ namespace Pulsar.ViewModels
             _slotEditor = new SlotEditorWorkspace(
                 pluginMetadataRegistry,
                 secretMetadataResolver,
-                () => _configService.LastValidationResult);
+                () => _configService.LastValidationResult,
+                smartDefaults: smartDefaults ?? new SmartSubActionDefaults());
             _slotEditor.PropertyChanged += OnSlotEditorPropertyChanged;
 
             _cacheStatistics = _loc["Settings.General.CacheLoading"];
@@ -368,7 +370,8 @@ namespace Pulsar.ViewModels
                 PickIcon,
                 PickColor,
                 _loc,
-                metadataRegistry: _pluginMetadataRegistry);
+                metadataRegistry: _pluginMetadataRegistry,
+                secretDisplayResolver: rawSecretId => _slotEditor.ResolveSecretDisplay(rawSecretId));
 
             var result = await _dialogService.ShowCustomAsync(
                 _loc["Notification.CreateSlot"],
@@ -820,7 +823,8 @@ namespace Pulsar.ViewModels
                 PickColor,
                 _loc,
                 existingSlot: slot,
-                metadataRegistry: _pluginMetadataRegistry);
+                metadataRegistry: _pluginMetadataRegistry,
+                secretDisplayResolver: rawSecretId => _slotEditor.ResolveSecretDisplay(rawSecretId));
 
             await _dialogService.ShowCustomAsync(
                 string.Format(_loc["Notification.EditSlotFormat"], slot.Slot),

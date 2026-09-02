@@ -74,6 +74,7 @@ namespace Pulsar.ViewModels.Settings
         private readonly IPkiSecretMetadataResolver _secretMetadataResolver;
         private readonly Func<ValidationResult?> _validationResultProvider;
         private readonly IMessenger _messenger;
+        private readonly ISmartSubActionDefaults? _smartDefaults;
 
         private ProfilesConfig _config = new();
         private bool _suppressSlotSync;
@@ -97,12 +98,14 @@ namespace Pulsar.ViewModels.Settings
             IPluginMetadataRegistry metadataRegistry,
             IPkiSecretMetadataResolver secretMetadataResolver,
             Func<ValidationResult?> validationResultProvider,
-            IMessenger? messenger = null)
+            IMessenger? messenger = null,
+            ISmartSubActionDefaults? smartDefaults = null)
         {
             _metadataRegistry = metadataRegistry;
             _secretMetadataResolver = secretMetadataResolver;
             _validationResultProvider = validationResultProvider;
             _messenger = messenger ?? WeakReferenceMessenger.Default;
+            _smartDefaults = smartDefaults;
 
             _currentSlots.CollectionChanged += OnCurrentSlotsCollectionChanged;
         }
@@ -395,6 +398,7 @@ namespace Pulsar.ViewModels.Settings
             InitializeSlotMetadata(slot);
             RefreshSlotValidationSummary(slot);
             UpdateSlotPresentation(slot);
+            InjectSmartDefaults(slot);
             return slot;
         }
 
@@ -409,6 +413,23 @@ namespace Pulsar.ViewModels.Settings
             InitializeSlotMetadata(slot);
             RefreshSlotValidationSummary(slot);
             UpdateSlotPresentation(slot);
+        }
+
+        /// <summary>
+        /// Assigns default sub-actions for a newly created draft. Called from
+        /// <see cref="CreateSlotDraft"/> only, which is the single creation seam used
+        /// for new slots (Edit mode constructs via the existing slot and never re-injects,
+        /// and later action changes must not clobber the user's own sub-action edits).
+        /// </summary>
+        private void InjectSmartDefaults(PluginSlot slot)
+        {
+            if (slot == null || _smartDefaults == null)
+            {
+                return;
+            }
+
+            var defaults = _smartDefaults.ForPlugin(slot.PluginId, slot.Action);
+            slot.SubActions = defaults?.ToList();
         }
 
         public void CommitCreatedSlot(PluginSlot slot)
