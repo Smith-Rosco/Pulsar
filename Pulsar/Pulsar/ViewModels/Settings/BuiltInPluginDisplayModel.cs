@@ -1,4 +1,5 @@
 using System;
+using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin.Metadata;
 
 namespace Pulsar.ViewModels.Settings
@@ -13,12 +14,13 @@ namespace Pulsar.ViewModels.Settings
             string categoryKey,
             string categoryLabel,
             string accentColor,
-            bool isPrimary = false)
+            bool isPrimary = false,
+            ILocalizationService? loc = null)
         {
             PluginId = pluginId;
             IconKey = iconKey;
-            DisplayName = displayName;
-            Description = description;
+            DisplayName = loc != null ? PluginLocalization.LocalizePluginName(loc, displayName) : displayName;
+            Description = loc != null ? PluginLocalization.LocalizePluginDescription(loc, description) : description;
             CategoryKey = categoryKey;
             CategoryLabel = categoryLabel;
             AccentColor = accentColor;
@@ -41,7 +43,7 @@ namespace Pulsar.ViewModels.Settings
 
         public bool IsPrimary { get; }
 
-        public static BuiltInPluginDisplayModel FromMetadata(PluginMetadata metadata)
+        public static BuiltInPluginDisplayModel FromMetadata(PluginMetadata metadata, ILocalizationService? loc = null)
         {
             string categoryLabel = string.IsNullOrWhiteSpace(metadata.Display.Category)
                 ? "General"
@@ -59,7 +61,8 @@ namespace Pulsar.ViewModels.Settings
                 categoryKey,
                 categoryLabel,
                 metadata.UI.AccentColor,
-                metadata.Display.IsPrimary);
+                metadata.Display.IsPrimary,
+                loc);
         }
     }
 }

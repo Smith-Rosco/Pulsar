@@ -129,7 +129,7 @@ namespace Pulsar.ViewModels.Settings
             _logger = serviceProvider?.GetService<ILogger<PluginViewModel>>();
             _plugin = _registry.GetPlugin(descriptor.Id);
             _metadata = metadataRegistry?.GetMetadata(descriptor.Id) ?? descriptor.Metadata;
-            _displayModel = BuiltInPluginDisplayModel.FromMetadata(_metadata);
+            _displayModel = BuiltInPluginDisplayModel.FromMetadata(_metadata, localizationService);
 
             _isEnabled = _registry.IsPluginEnabled(descriptor.Id);
             HasSettings = descriptor.IsConfigurable;

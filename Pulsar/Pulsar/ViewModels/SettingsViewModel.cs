@@ -664,7 +664,7 @@ namespace Pulsar.ViewModels
                 .Where(metadata => metadata.Actions.Count > 0)
                 .OrderBy(metadata => metadata.UI.SortOrder)
                 .ThenBy(metadata => metadata.Display.Name, StringComparer.OrdinalIgnoreCase)
-                .Select(metadata => BuiltInPluginDisplayModel.FromMetadata(metadata))
+                .Select(metadata => BuiltInPluginDisplayModel.FromMetadata(metadata, _loc))
                 .ToList();
 
             return SlotTypeCard.BuildAllCards(_loc, pluginDisplayModels);

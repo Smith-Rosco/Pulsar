@@ -3756,6 +3756,68 @@
     xml:space="preserve">
     <value>打开设置</value>
   </data>
+  <!-- ==================== Plugin.Name (内置插件名称本地化) ==================== -->
+  <data
+    name="Plugin.Name.AutoFill"
+    xml:space="preserve">
+    <value>自动填充</value>
+  </data>
+  <data
+    name="Plugin.Name.AppSwitch"
+    xml:space="preserve">
+    <value>应用切换</value>
+  </data>
+  <data
+    name="Plugin.Name.OpenType"
+    xml:space="preserve">
+    <value>打开并输入</value>
+  </data>
+  <data
+    name="Plugin.Name.BrowserScripts"
+    xml:space="preserve">
+    <value>浏览器脚本</value>
+  </data>
+  <data
+    name="Plugin.Name.ExcelMacros"
+    xml:space="preserve">
+    <value>Excel 宏</value>
+  </data>
+  <data
+    name="Plugin.Name.PulsarSettings"
+    xml:space="preserve">
+    <value>Pulsar 设置</value>
+  </data>
+  <!-- ==================== Plugin.Description (内置插件描述本地化) ==================== -->
+  <data
+    name="Plugin.Description.AutoFill"
+    xml:space="preserve">
+    <value>将已保存的密码填入活动应用。</value>
+  </data>
+  <data
+    name="Plugin.Description.AppSwitch"
+    xml:space="preserve">
+    <value>切换到已有应用、直接启动应用，或先切换、仅在需要时启动。</value>
+  </data>
+  <data
+    name="Plugin.Description.OpenType"
+    xml:space="preserve">
+    <value>打开程序、文件、文件夹或 URL，或向活动窗口发送按键序列。</value>
+  </data>
+  <data
+    name="Plugin.Description.BrowserScripts"
+    xml:space="preserve">
+    <value>在活动浏览器中运行已保存的浏览器脚本。</value>
+  </data>
+  <data
+    name="Plugin.Description.ExcelMacros"
+    xml:space="preserve">
+    <value>在 Excel/WPS 中运行已保存的宏。</value>
+  </data>
+  <data
+    name="Plugin.Description.PulsarSettings"
+    xml:space="preserve">
+    <value>打开 Pulsar 设置，或通过内置操作进入快速配置设置流程。</value>
+  </data>
   <data
     name="Plugin.CircuitBreakerTitle"
     xml:space="preserve">

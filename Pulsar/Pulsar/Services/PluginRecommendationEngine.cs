@@ -95,6 +95,9 @@ namespace Pulsar.Services
             return recommendations;
         }
 
+        private string LocalizePluginName(IPulsarPlugin plugin)
+            => PluginLocalization.LocalizePluginName(_loc, plugin.DisplayName);
+
         private void CheckUnusedPlugin(IPulsarPlugin plugin, Models.PluginUsageStats stats, List<PluginRecommendation> recommendations)
         {
             if (stats.TotalExecutions == 0 || 
@@ -104,9 +107,10 @@ namespace Pulsar.Services
                     ? (int)(DateTime.UtcNow - stats.LastUsed.Value).TotalDays 
                     : -1;
 
+                var displayName = LocalizePluginName(plugin);
                 var message = stats.TotalExecutions == 0
-                    ? string.Format(_loc["Plugin.Recommendation.UnusedNeverUsed"], plugin.DisplayName)
-                    : string.Format(_loc["Plugin.Recommendation.UnusedDaysFormat"], plugin.DisplayName, daysSinceLastUse);
+                    ? string.Format(_loc["Plugin.Recommendation.UnusedNeverUsed"], displayName)
+                    : string.Format(_loc["Plugin.Recommendation.UnusedDaysFormat"], displayName, daysSinceLastUse);
 
                 recommendations.Add(new PluginRecommendation
                 {
@@ -114,7 +118,7 @@ namespace Pulsar.Services
                     Title = _loc["Plugin.Recommendation.UnusedTitle"],
                     Message = message,
                     PluginId = plugin.Id,
-                    PluginName = plugin.DisplayName,
+                    PluginName = displayName,
                     ActionLabel = _loc["Plugin.Recommendation.DisableAction"],
                     ActionCommand = "DisablePlugin",
                     ActionParameter = plugin.Id,
@@ -132,13 +136,14 @@ namespace Pulsar.Services
             if (health.ErrorRate > HighErrorRateThreshold)
             {
                 var errorPercentage = (health.ErrorRate * 100).ToString("F1");
+                var displayName = LocalizePluginName(plugin);
                 recommendations.Add(new PluginRecommendation
                 {
                     Type = RecommendationType.CheckPluginErrors,
                     Title = _loc["Plugin.Recommendation.HighErrorTitle"],
-                    Message = string.Format(_loc["Plugin.Recommendation.HighErrorFormat"], plugin.DisplayName, errorPercentage),
+                    Message = string.Format(_loc["Plugin.Recommendation.HighErrorFormat"], displayName, errorPercentage),
                     PluginId = plugin.Id,
-                    PluginName = plugin.DisplayName,
+                    PluginName = displayName,
                     ActionLabel = _loc["Plugin.Recommendation.ViewLogsAction"],
                     ActionCommand = "ViewLogs",
                     ActionParameter = plugin.Id,
@@ -149,13 +154,14 @@ namespace Pulsar.Services
 
             if (health.CircuitBreakerTrips > 0)
             {
+                var displayName = LocalizePluginName(plugin);
                 recommendations.Add(new PluginRecommendation
                 {
                     Type = RecommendationType.CheckPluginErrors,
                     Title = _loc["Plugin.Recommendation.CircuitBreakerTitle"],
-                    Message = string.Format(_loc["Plugin.Recommendation.CircuitBreakerFormat"], plugin.DisplayName, health.CircuitBreakerTrips),
+                    Message = string.Format(_loc["Plugin.Recommendation.CircuitBreakerFormat"], displayName, health.CircuitBreakerTrips),
                     PluginId = plugin.Id,
-                    PluginName = plugin.DisplayName,
+                    PluginName = displayName,
                     ActionLabel = _loc["Plugin.Recommendation.ViewLogsAction"],
                     ActionCommand = "ViewLogs",
                     ActionParameter = plugin.Id,
@@ -176,13 +182,14 @@ namespace Pulsar.Services
             var daysSinceLastUse = (DateTime.UtcNow - stats.LastUsed.Value).TotalDays;
             if (daysSinceLastUse > InactiveDaysThreshold)
             {
+                var displayName = LocalizePluginName(plugin);
                 recommendations.Add(new PluginRecommendation
                 {
                     Type = RecommendationType.InactivePlugin,
                     Title = _loc["Plugin.Recommendation.InactiveTitle"],
-                    Message = string.Format(_loc["Plugin.Recommendation.InactiveFormat"], plugin.DisplayName, (int)daysSinceLastUse),
+                    Message = string.Format(_loc["Plugin.Recommendation.InactiveFormat"], displayName, (int)daysSinceLastUse),
                     PluginId = plugin.Id,
-                    PluginName = plugin.DisplayName,
+                    PluginName = displayName,
                     ActionLabel = _loc["Plugin.Recommendation.DisableAction"],
                     ActionCommand = "DisablePlugin",
                     ActionParameter = plugin.Id,
@@ -199,13 +206,14 @@ namespace Pulsar.Services
 
             if (stats.FavoriteSlot >= 3)
             {
+                var displayName = LocalizePluginName(plugin);
                 recommendations.Add(new PluginRecommendation
                 {
                     Type = RecommendationType.OptimizeSlotPlacement,
-                    Title = $"Slot Optimization: {plugin.DisplayName}",
+                    Title = $"Slot Optimization: {displayName}",
                     Message = _loc["Settings.Analytics.Recommendation.MoveSlot"],
                     PluginId = plugin.Id,
-                    PluginName = plugin.DisplayName,
+                    PluginName = displayName,
                     ActionLabel = "",
                     Icon = "\U0001f4c8",
                     Severity = "Info"

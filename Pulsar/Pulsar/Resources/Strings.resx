@@ -2296,6 +2296,44 @@
   <data name="SlotAction.OpenSettings" xml:space="preserve">
     <value>Open Settings</value>
   </data>
+  <!-- ==================== Plugin.Name (Built-in Plugin Display Name Localization) ==================== -->
+  <data name="Plugin.Name.AutoFill" xml:space="preserve">
+    <value>AutoFill</value>
+  </data>
+  <data name="Plugin.Name.AppSwitch" xml:space="preserve">
+    <value>App Switch</value>
+  </data>
+  <data name="Plugin.Name.OpenType" xml:space="preserve">
+    <value>Open &amp; Type</value>
+  </data>
+  <data name="Plugin.Name.BrowserScripts" xml:space="preserve">
+    <value>Browser Scripts</value>
+  </data>
+  <data name="Plugin.Name.ExcelMacros" xml:space="preserve">
+    <value>Excel Macros</value>
+  </data>
+  <data name="Plugin.Name.PulsarSettings" xml:space="preserve">
+    <value>Pulsar Settings</value>
+  </data>
+  <!-- ==================== Plugin.Description (Built-in Plugin Description Localization) ==================== -->
+  <data name="Plugin.Description.AutoFill" xml:space="preserve">
+    <value>Fill a saved password into the active application.</value>
+  </data>
+  <data name="Plugin.Description.AppSwitch" xml:space="preserve">
+    <value>Switch to an existing app, launch one directly, or switch first and launch only when needed.</value>
+  </data>
+  <data name="Plugin.Description.OpenType" xml:space="preserve">
+    <value>Open apps, files, folders, or URLs, or send a key sequence to the active window.</value>
+  </data>
+  <data name="Plugin.Description.BrowserScripts" xml:space="preserve">
+    <value>Run saved browser scripts in the active browser.</value>
+  </data>
+  <data name="Plugin.Description.ExcelMacros" xml:space="preserve">
+    <value>Run saved macros in Excel/WPS.</value>
+  </data>
+  <data name="Plugin.Description.PulsarSettings" xml:space="preserve">
+    <value>Open Pulsar settings or jump into quick profile setup using explicit built-in actions.</value>
+  </data>
   <!-- ==================== Plugin.CircuitBreaker ==================== -->
   <data name="Plugin.CircuitBreakerTitle" xml:space="preserve">
     <value>Plugin Auto-Disabled</value>

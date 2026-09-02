@@ -14,6 +14,7 @@ using Pulsar.Models;
 using Pulsar.Plugins.Core.Pki.Models;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels.Base;
+using Pulsar.ViewModels.Settings;
 using DialogResult = Pulsar.Models.Enums.DialogResult;
 
 namespace Pulsar.ViewModels.Dialogs
@@ -511,7 +512,9 @@ namespace Pulsar.ViewModels.Dialogs
             return allMetadata
                 .Where(metadata => metadata.Actions.Count > 0)
                 .OrderBy(metadata => metadata.Display.Name, StringComparer.OrdinalIgnoreCase)
-                .Select(metadata => new SubSlotPluginOption(metadata.Id, metadata.Display.Name))
+                .Select(metadata => new SubSlotPluginOption(
+                    metadata.Id,
+                    BuiltInPluginDisplayModel.FromMetadata(metadata, _loc).DisplayName))
                 .ToList();
         }
 

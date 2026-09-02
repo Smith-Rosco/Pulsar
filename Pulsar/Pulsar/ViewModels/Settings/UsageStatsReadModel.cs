@@ -41,7 +41,10 @@ namespace Pulsar.ViewModels.Settings
         {
             var allStats = await Task.Run(() => _usageTracker.GetAllStats());
             var allPlugins = _pluginRegistry.GetAllPlugins();
-            _displayNames = allPlugins.ToDictionary(p => p.Id, p => p.DisplayName, StringComparer.OrdinalIgnoreCase);
+            _displayNames = allPlugins.ToDictionary(
+                p => p.Id,
+                p => PluginLocalization.LocalizePluginName(_loc, p.DisplayName),
+                StringComparer.OrdinalIgnoreCase);
             _allPluginStats = allStats.Values.ToList();
         }
 
