@@ -98,6 +98,20 @@ namespace Pulsar.Tests.Config
         }
 
         [Fact]
+        public void ProfileSettings_GestureIsolation_ShouldBeDisabledByDefault()
+        {
+            // Act
+            var settings = new ProfileSettings();
+
+            // Assert
+            settings.GestureIsolationEnabled.Should().BeFalse("isolation filter is opt-in and preserves existing behavior");
+            settings.GestureIsolationMode.Should().Be(GestureIsolationMode.Allowlist);
+            settings.GestureIsolationProcesses.Should().NotBeNull("process list should be initialized");
+            settings.GestureIsolationProcesses.Should().BeEmpty();
+            settings.GestureIsolationBlockFullscreen.Should().BeTrue("fullscreen protection defaults on when the filter is enabled");
+        }
+
+        [Fact]
         public void ProfileSettings_RightDragModifiersConflict_ShouldDetectDuplicateModifier()
         {
             // Arrange

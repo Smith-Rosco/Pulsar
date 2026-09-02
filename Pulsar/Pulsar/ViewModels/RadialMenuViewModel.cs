@@ -48,6 +48,7 @@ namespace Pulsar.ViewModels
         private readonly IRadialRenderer? _renderer;
         private readonly RadialThemePresetResolver? _presetResolver;
         private readonly IThemeService? _themeService;
+        private readonly IGestureIsolationService? _gestureIsolationService;
 
         // Right-drag summon gesture state. The detector is a pure state machine; the
         // ViewModel owns the modifier discrimination and the event swallowing.
@@ -66,6 +67,20 @@ namespace Pulsar.ViewModels
         private GestureModifier _pendingActionModifier;
         private GestureSummonMode _pendingSummonMode;
         private double _pendingDragThreshold;
+
+        // [Gesture Isolation] Cached isolation-filter settings, refreshed alongside
+        // the other gesture config (D4): the decision at right-down uses these
+        // cached values, never a per-event config read. Denied presses never enter
+        // the detector / pending state.
+        private bool _gestureIsolationEnabled;
+        private GestureIsolationMode _gestureIsolationMode = GestureIsolationMode.Allowlist;
+        private List<string> _gestureIsolationProcesses = new();
+        private bool _gestureIsolationBlockFullscreen = true;
+
+        private bool _pendingIsolationEnabled;
+        private GestureIsolationMode _pendingIsolationMode = GestureIsolationMode.Allowlist;
+        private List<string> _pendingIsolationProcesses = new();
+        private bool _pendingIsolationBlockFullscreen = true;
 
         // Button-down position used by OnThreshold displacement tracking; the menu
         // is summoned at this position once the drag crosses the threshold.
@@ -92,7 +107,8 @@ namespace Pulsar.ViewModels
             ILogger<RadialMenuViewModel>? logger = null,
             IRadialRenderer? renderer = null,
             RadialThemePresetResolver? presetResolver = null,
-            IThemeService? themeService = null)
+            IThemeService? themeService = null,
+            IGestureIsolationService? gestureIsolationService = null)
         {
             _session = session;
             _hotkeyService = hotkeyService;
@@ -104,6 +120,7 @@ namespace Pulsar.ViewModels
             _renderer = renderer;
             _presetResolver = presetResolver;
             _themeService = themeService;
+            _gestureIsolationService = gestureIsolationService;
 
             // [RadialRenderer] Initialize the seam so SlotOrb's OnIsActiveChanged can
             // resolve highlights immediately on the first summon.
@@ -334,6 +351,10 @@ namespace Pulsar.ViewModels
             var action = settings.RightDragActionModifierKey;
             var summonMode = settings.SummonMode;
             double dragThreshold = settings.GestureDragThreshold;
+            bool isolationEnabled = settings.GestureIsolationEnabled;
+            var isolationMode = settings.GestureIsolationMode;
+            var isolationProcesses = settings.GestureIsolationProcesses;
+            bool isolationBlockFullscreen = settings.GestureIsolationBlockFullscreen;
 
             if (_gestureDetector.IsPressed)
             {
@@ -349,13 +370,18 @@ namespace Pulsar.ViewModels
                 _pendingActionModifier = action;
                 _pendingSummonMode = summonMode;
                 _pendingDragThreshold = dragThreshold;
+                _pendingIsolationEnabled = isolationEnabled;
+                _pendingIsolationMode = isolationMode;
+                _pendingIsolationProcesses = isolationProcesses;
+                _pendingIsolationBlockFullscreen = isolationBlockFullscreen;
                 return;
             }
 
             _logger?.LogInformation(
                 "[DEBUG-RDX] [CONFIG] apply enabled={Enabled} mode={Mode} thr={Thr:0.##} switcher={Switcher} action={Action}",
                 enabled, summonMode, dragThreshold, switcher, action);
-            ApplyGestureConfig(enabled, switcher, action, summonMode, dragThreshold);
+            ApplyGestureConfig(enabled, switcher, action, summonMode, dragThreshold,
+                isolationEnabled, isolationMode, isolationProcesses, isolationBlockFullscreen);
         }
 
         private void ApplyGestureConfig(
@@ -363,7 +389,11 @@ namespace Pulsar.ViewModels
             GestureModifier switcher,
             GestureModifier action,
             GestureSummonMode summonMode,
-            double dragThreshold)
+            double dragThreshold,
+            bool isolationEnabled,
+            GestureIsolationMode isolationMode,
+            List<string> isolationProcesses,
+            bool isolationBlockFullscreen)
         {
             _gestureEnabled = enabled;
             _gestureSwitcherModifier = switcher;
@@ -371,6 +401,11 @@ namespace Pulsar.ViewModels
             _gestureSummonMode = summonMode;
             _gestureDragThreshold = dragThreshold;
             _gestureDetector.Configure(summonMode, dragThreshold);
+
+            _gestureIsolationEnabled = isolationEnabled;
+            _gestureIsolationMode = isolationMode;
+            _gestureIsolationProcesses = isolationProcesses ?? new List<string>();
+            _gestureIsolationBlockFullscreen = isolationBlockFullscreen;
 
             if (!_gestureEnabled)
             {
@@ -397,7 +432,27 @@ namespace Pulsar.ViewModels
                 _pendingSwitcherModifier,
                 _pendingActionModifier,
                 _pendingSummonMode,
-                _pendingDragThreshold);
+                _pendingDragThreshold,
+                _pendingIsolationEnabled,
+                _pendingIsolationMode,
+                _pendingIsolationProcesses,
+                _pendingIsolationBlockFullscreen);
+        }
+
+        /// <summary>
+        /// Builds the settings slice the isolation service evaluates, from the cached
+        /// isolation fields (D4). A fresh instance each call — the service only reads
+        /// these fields, never the live config.
+        /// </summary>
+        private ProfileSettings BuildIsolationSettingsSnapshot()
+        {
+            return new ProfileSettings
+            {
+                GestureIsolationEnabled = _gestureIsolationEnabled,
+                GestureIsolationMode = _gestureIsolationMode,
+                GestureIsolationProcesses = _gestureIsolationProcesses,
+                GestureIsolationBlockFullscreen = _gestureIsolationBlockFullscreen
+            };
         }
 
         /// <summary>
@@ -461,6 +516,21 @@ namespace Pulsar.ViewModels
 
             if (e.Action == GlobalMouseAction.Down && e.Button == GlobalMouseButton.Right)
             {
+                // [Gesture Isolation] A denied press never enters the state machine
+                // (no detector touch, no pending swallow) — it passes through to the
+                // foreground application untouched, so its release flows out as a
+                // normal right-click. Evaluation is synchronous on the hook thread.
+                if (_gestureIsolationEnabled && _gestureIsolationService != null)
+                {
+                    var isolationSettings = BuildIsolationSettingsSnapshot();
+                    if (!_gestureIsolationService.IsGestureAllowed(isolationSettings))
+                    {
+                        _logger?.LogInformation(
+                            "[GESTURE-ISOLATION] right-DOWN denied by isolation filter -> passes through to app");
+                        return false;
+                    }
+                }
+
                 var switcherHeld = IsModifierHeld(_gestureSwitcherModifier);
                 var actionHeld = IsModifierHeld(_gestureActionModifier);
                 _logger?.LogInformation(

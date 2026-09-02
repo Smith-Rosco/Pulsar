@@ -215,6 +215,10 @@ namespace Pulsar
             serviceCollection.AddSingleton<IFocusManager, Services.FocusManager>();
             serviceCollection.AddSingleton<IFocusHistory>(sp => (IFocusHistory)sp.GetRequiredService<IFocusManager>());
 
+            // 3b. Gesture Isolation Filter (pre-takeover right-drag gating)
+            serviceCollection.AddSingleton<IGestureIsolationNative, GestureIsolationNative>();
+            serviceCollection.AddSingleton<IGestureIsolationService, GestureIsolationService>();
+
             // 4. UI Services
             serviceCollection.AddSingleton<IUiDispatcher, WpfUiDispatcher>();
             serviceCollection.AddSingleton<MenuSession>();

@@ -348,6 +348,91 @@
                                 </ComboBoxItem>
                             </ComboBox>
                         </Grid>
+
+                        <Separator Margin="{StaticResource Pulsar.Gap.Vertical.MD}"/>
+
+                        <!-- Gesture isolation filter -->
+                        <StackPanel IsEnabled="{Binding EnableRightDragSummon}">
+                            <TextBlock Text="{lex:Locale Settings.Gesture.Title}" FontWeight="SemiBold" Margin="{StaticResource Pulsar.Gap.Bottom.XS}"/>
+                            <TextBlock Text="{lex:Locale Settings.Gesture.TitleDescription}"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                       FontSize="{StaticResource Pulsar.Type.Body}"
+                                       TextWrapping="Wrap"
+                                       MaxWidth="420"
+                                       Margin="{StaticResource Pulsar.Gap.Bottom.MD}"/>
+
+                            <!-- Enable toggle -->
+                            <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="{lex:Locale Settings.Gesture.EnableToggle}" FontWeight="Medium"/>
+                                    <TextBlock Text="{lex:Locale Settings.Gesture.EnableToggleDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="{StaticResource Pulsar.Type.Body}" TextWrapping="Wrap" MaxWidth="420"/>
+                                </StackPanel>
+                                <ui:ToggleSwitch Grid.Column="1" IsChecked="{Binding GestureIsolationEnabled, Mode=TwoWay}"/>
+                            </Grid>
+
+                            <!-- Isolation mode -->
+                            <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="{lex:Locale Settings.Gesture.Mode}" FontWeight="Medium"/>
+                                    <TextBlock Text="{lex:Locale Settings.Gesture.ModeDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="{StaticResource Pulsar.Type.Body}" TextWrapping="Wrap" MaxWidth="420"/>
+                                </StackPanel>
+                                <ComboBox Grid.Column="1" Width="220"
+                                          IsEnabled="{Binding GestureIsolationEnabled}"
+                                          SelectedValue="{Binding GestureIsolationMode, Mode=TwoWay}"
+                                          SelectedValuePath="Tag"
+                                          AutomationProperties.Name="{lex:Locale Settings.Gesture.Mode}">
+                                    <ComboBoxItem Tag="{x:Static models:GestureIsolationMode.Allowlist}">
+                                        <TextBlock Text="{lex:Locale Settings.Gesture.ModeAllowlist}" VerticalAlignment="Center"/>
+                                    </ComboBoxItem>
+                                    <ComboBoxItem Tag="{x:Static models:GestureIsolationMode.Blocklist}">
+                                        <TextBlock Text="{lex:Locale Settings.Gesture.ModeBlocklist}" VerticalAlignment="Center"/>
+                                    </ComboBoxItem>
+                                </ComboBox>
+                            </Grid>
+
+                            <!-- Process list editor -->
+                            <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="{lex:Locale Settings.Gesture.Processes}" FontWeight="Medium"/>
+                                    <TextBlock Text="{lex:Locale Settings.Gesture.ProcessesDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="{StaticResource Pulsar.Type.Body}" TextWrapping="Wrap" MaxWidth="420"/>
+                                </StackPanel>
+                                <TextBox Grid.Column="1"
+                                         Width="220"
+                                         MinHeight="90"
+                                         AcceptsReturn="True"
+                                         TextWrapping="Wrap"
+                                         VerticalScrollBarVisibility="Auto"
+                                         IsEnabled="{Binding GestureIsolationEnabled}"
+                                         Text="{Binding GestureIsolationProcessesText, Mode=TwoWay}"
+                                         AutomationProperties.Name="{lex:Locale Settings.Gesture.Processes}"/>
+                            </Grid>
+
+                            <!-- Fullscreen block toggle -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="{lex:Locale Settings.Gesture.BlockFullscreen}" FontWeight="Medium"/>
+                                    <TextBlock Text="{lex:Locale Settings.Gesture.BlockFullscreenDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="{StaticResource Pulsar.Type.Body}" TextWrapping="Wrap" MaxWidth="420"/>
+                                </StackPanel>
+                                <ui:ToggleSwitch Grid.Column="1" IsChecked="{Binding GestureIsolationBlockFullscreen, Mode=TwoWay}"
+                                                 IsEnabled="{Binding GestureIsolationEnabled}"/>
+                            </Grid>
+                        </StackPanel>
                     </StackPanel>
                 </ui:CardExpander>
 
