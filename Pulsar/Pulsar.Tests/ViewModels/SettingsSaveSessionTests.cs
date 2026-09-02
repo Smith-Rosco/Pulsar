@@ -148,10 +148,55 @@ namespace Pulsar.Tests.ViewModels
             await viewModel.Save();
 
             viewModel.HasUnsavedChanges.Should().BeFalse();
-
             var reloaded = await LoadFromDiskAsync();
             reloaded.Profiles["Global"].SwitchMode.Single().Action.Should().Be("activate",
                 "the App Launcher slot behavior chosen in the editor must be the behavior persisted to disk");
+        }
+
+        [Fact]
+        public async Task Save_RendererStyleAndThemePreset_ShouldPersistWithoutRevertingProfiles()
+        {
+            EnsureApplication();
+            var harness = CreateHarness();
+            var viewModel = harness.ViewModel;
+            await WaitForInitializationAsync(viewModel);
+
+            viewModel.RendererStyle = "ClassicRing";
+            viewModel.ThemePreset = "MatchaForest";
+            viewModel.HasUnsavedChanges.Should().BeTrue();
+
+            await viewModel.Save();
+
+            viewModel.HasUnsavedChanges.Should().BeFalse();
+            var reloaded = await LoadFromDiskAsync();
+            reloaded.Settings.RadialRenderer.Should().Be("ClassicRing",
+                "the renderer style selector must persist to Profiles.json");
+            reloaded.Settings.RadialThemePreset.Should().Be("MatchaForest",
+                "the theme preset selector must persist to Profiles.json");
+        }
+
+        [Fact]
+        public async Task Save_RendererSelectorsSecondSave_ShouldNotRevertFirstChanges()
+        {
+            // Regression guard: a second consecutive save must not revert the first
+            // selector change (stale-revision / stale-hotkey-cache overwrite).
+            EnsureApplication();
+            var harness = CreateHarness();
+            var viewModel = harness.ViewModel;
+            await WaitForInitializationAsync(viewModel);
+
+            viewModel.RendererStyle = "Glassmorphism";
+            viewModel.ThemePreset = "GlacialIce";
+            await viewModel.Save();
+            viewModel.HasUnsavedChanges.Should().BeFalse();
+
+            await viewModel.Save();
+            viewModel.HasUnsavedChanges.Should().BeFalse(
+                "the second save must succeed; a stale edit-session revision must not block or revert");
+
+            var reloaded = await LoadFromDiskAsync();
+            reloaded.Settings.RadialRenderer.Should().Be("Glassmorphism");
+            reloaded.Settings.RadialThemePreset.Should().Be("GlacialIce");
         }
 
         private async Task<ProfilesConfig> LoadFromDiskAsync()

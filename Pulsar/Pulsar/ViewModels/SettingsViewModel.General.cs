@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.Logging;
 using CommunityToolkit.Mvvm.Input;
+using Pulsar.Core.Rendering;
 using Pulsar.Helpers;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
@@ -42,6 +43,62 @@ namespace Pulsar.ViewModels
             Config.Settings.Theme = serviceTheme.ToString();
             OnPropertyChanged(nameof(CurrentTheme));
             MarkDirty();
+        }
+
+        // ===== Radial Renderer Style + Theme Preset =====
+
+        /// <summary>
+        /// Read-only renderer style option values (bound as ComboBoxItem Tags).
+        /// </summary>
+        public IReadOnlyList<string> RendererStyleOptions { get; } = new[]
+        {
+            DefaultRadialRenderer.RendererId,
+            ClassicRingRadialRenderer.RendererId,
+            GlassmorphismRadialRenderer.RendererId
+        };
+
+        /// <summary>
+        /// Read-only radial theme preset option values (System / Dark / Light + named presets).
+        /// </summary>
+        public IReadOnlyList<string> ThemePresetOptions { get; } = new[]
+        {
+            "System",
+            "Dark",
+            "Light"
+        }.Concat(RadialThemePresetCatalog.Ids).ToArray();
+
+        /// <summary>
+        /// Selected radial renderer style (persisted to <c>Settings.RadialRenderer</c>).
+        /// Writes through the edit-session draft, never a stale hotkey cache.
+        /// </summary>
+        public string RendererStyle
+        {
+            get => Config.Settings.RadialRenderer;
+            set
+            {
+                if (string.Equals(Config.Settings.RadialRenderer, value, StringComparison.OrdinalIgnoreCase)) return;
+
+                Config.Settings.RadialRenderer = value;
+                OnPropertyChanged();
+                MarkDirty();
+            }
+        }
+
+        /// <summary>
+        /// Selected radial theme preset (persisted to <c>Settings.RadialThemePreset</c>).
+        /// Resolution keeps its existing fallback behavior (unknown value → active theme).
+        /// </summary>
+        public string ThemePreset
+        {
+            get => Config.Settings.RadialThemePreset;
+            set
+            {
+                if (string.Equals(Config.Settings.RadialThemePreset, value, StringComparison.OrdinalIgnoreCase)) return;
+
+                Config.Settings.RadialThemePreset = value;
+                OnPropertyChanged();
+                MarkDirty();
+            }
         }
 
         public HotkeyConfig ShowGridHotkey

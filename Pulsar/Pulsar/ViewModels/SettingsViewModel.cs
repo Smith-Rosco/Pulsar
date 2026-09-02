@@ -338,6 +338,8 @@ namespace Pulsar.ViewModels
 
                 // Notify properties to trigger bindings/theme updates
                 OnPropertyChanged(nameof(CurrentTheme));
+                OnPropertyChanged(nameof(RendererStyle));
+                OnPropertyChanged(nameof(ThemePreset));
 
                 if (config.Settings.ThemeEnum != _themeService.CurrentTheme)
                     ApplySettingsTheme(config.Settings.ThemeEnum);

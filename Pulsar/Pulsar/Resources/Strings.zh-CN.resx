@@ -221,6 +221,72 @@
     xml:space="preserve">
     <value>语言</value>
   </data>
+  <!-- ==================== Settings.Appearance (径向样式) ==================== -->
+  <data
+    name="Settings.Appearance.RendererStyle"
+    xml:space="preserve">
+    <value>径向菜单样式</value>
+  </data>
+  <data
+    name="Settings.Appearance.RendererStyleDescription"
+    xml:space="preserve">
+    <value>径向菜单的视觉样式。经典环会添加强调色圆环；毛玻璃会添加半透明磨砂层。</value>
+  </data>
+  <data
+    name="Settings.Appearance.RendererStyle.Default"
+    xml:space="preserve">
+    <value>默认</value>
+  </data>
+  <data
+    name="Settings.Appearance.RendererStyle.ClassicRing"
+    xml:space="preserve">
+    <value>经典环</value>
+  </data>
+  <data
+    name="Settings.Appearance.RendererStyle.Glassmorphism"
+    xml:space="preserve">
+    <value>毛玻璃</value>
+  </data>
+  <data
+    name="Settings.Appearance.ThemePreset"
+    xml:space="preserve">
+    <value>径向主题预设</value>
+  </data>
+  <data
+    name="Settings.Appearance.ThemePresetDescription"
+    xml:space="preserve">
+    <value>径向菜单的配色预设。System 跟随 Windows 深色/浅色模式。</value>
+  </data>
+  <data
+    name="Settings.Appearance.ThemePreset.System"
+    xml:space="preserve">
+    <value>跟随系统</value>
+  </data>
+  <data
+    name="Settings.Appearance.ThemePreset.Dark"
+    xml:space="preserve">
+    <value>深色</value>
+  </data>
+  <data
+    name="Settings.Appearance.ThemePreset.Light"
+    xml:space="preserve">
+    <value>浅色</value>
+  </data>
+  <data
+    name="Settings.Appearance.ThemePreset.MatchaForest"
+    xml:space="preserve">
+    <value>抹茶森林</value>
+  </data>
+  <data
+    name="Settings.Appearance.ThemePreset.GlacialIce"
+    xml:space="preserve">
+    <value>冰川蓝</value>
+  </data>
+  <data
+    name="Settings.Appearance.ThemePreset.MorandiMuted"
+    xml:space="preserve">
+    <value>莫兰迪</value>
+  </data>
   <data
     name="Settings.Slots.Title"
     xml:space="preserve">

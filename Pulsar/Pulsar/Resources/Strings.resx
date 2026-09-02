@@ -137,6 +137,46 @@
   <data name="Settings.General.Language" xml:space="preserve">
     <value>Language</value>
   </data>
+  <!-- ==================== Settings.Appearance (Radial Style) ==================== -->
+  <data name="Settings.Appearance.RendererStyle" xml:space="preserve">
+    <value>Radial Menu Style</value>
+  </data>
+  <data name="Settings.Appearance.RendererStyleDescription" xml:space="preserve">
+    <value>Visual style of the radial menu. Classic Ring adds an accent ring; Glassmorphism adds a translucent frosted layer.</value>
+  </data>
+  <data name="Settings.Appearance.RendererStyle.Default" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="Settings.Appearance.RendererStyle.ClassicRing" xml:space="preserve">
+    <value>Classic Ring</value>
+  </data>
+  <data name="Settings.Appearance.RendererStyle.Glassmorphism" xml:space="preserve">
+    <value>Glassmorphism</value>
+  </data>
+  <data name="Settings.Appearance.ThemePreset" xml:space="preserve">
+    <value>Radial Theme Preset</value>
+  </data>
+  <data name="Settings.Appearance.ThemePresetDescription" xml:space="preserve">
+    <value>Color preset for the radial menu. System follows the Windows dark/light mode.</value>
+  </data>
+  <data name="Settings.Appearance.ThemePreset.System" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="Settings.Appearance.ThemePreset.Dark" xml:space="preserve">
+    <value>Dark</value>
+  </data>
+  <data name="Settings.Appearance.ThemePreset.Light" xml:space="preserve">
+    <value>Light</value>
+  </data>
+  <data name="Settings.Appearance.ThemePreset.MatchaForest" xml:space="preserve">
+    <value>Matcha Forest</value>
+  </data>
+  <data name="Settings.Appearance.ThemePreset.GlacialIce" xml:space="preserve">
+    <value>Glacial Ice</value>
+  </data>
+  <data name="Settings.Appearance.ThemePreset.MorandiMuted" xml:space="preserve">
+    <value>Morandi Muted</value>
+  </data>
   <!-- ==================== Settings.Slots ==================== -->
   <data name="Settings.Slots.Title" xml:space="preserve">
     <value>Slots Manager</value>

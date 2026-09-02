@@ -45,6 +45,7 @@ namespace Pulsar.ViewModels
         // [RadialRenderer] Injected rendering seam + preset resolution, applied on
         // menu open and on ConfigUpdated. Optional so existing tests that construct
         // the VM without a renderer keep working unchanged.
+        private readonly StyleRendererFactory? _rendererFactory;
         private readonly IRadialRenderer? _renderer;
         private readonly RadialThemePresetResolver? _presetResolver;
         private readonly IThemeService? _themeService;
@@ -106,6 +107,7 @@ namespace Pulsar.ViewModels
             ILocalizationService localizationService,
             ILogger<RadialMenuViewModel>? logger = null,
             IRadialRenderer? renderer = null,
+            StyleRendererFactory? rendererFactory = null,
             RadialThemePresetResolver? presetResolver = null,
             IThemeService? themeService = null,
             IGestureIsolationService? gestureIsolationService = null)
@@ -117,6 +119,7 @@ namespace Pulsar.ViewModels
             _menuViewportService = menuViewportService;
             _configService = configService;
             _logger = logger;
+            _rendererFactory = rendererFactory;
             _renderer = renderer;
             _presetResolver = presetResolver;
             _themeService = themeService;
@@ -191,7 +194,7 @@ namespace Pulsar.ViewModels
         /// </summary>
         private void ApplyRadialRendering(RadialMenuMode mode)
         {
-            if (_renderer == null || _presetResolver == null) return;
+            if (_presetResolver == null) return;
 
             try
             {
@@ -199,7 +202,14 @@ namespace Pulsar.ViewModels
                 var activeTheme = _themeService?.CurrentTheme ?? settings.ThemeEnum;
                 var baseTokens = _presetResolver.Resolve(settings.RadialThemePreset, activeTheme);
                 var modeTokens = new ModeToneTokenDecorator(baseTokens, mode);
-                _renderer.Initialize(modeTokens);
+
+                // [RadialRenderer] Resolve the active renderer through the factory from
+                // the configured id, falling back to the injected instance so existing
+                // tests / older DI setups keep working. Unknown ids resolve to Default.
+                var renderer = _rendererFactory?.Create(settings.RadialRenderer) ?? _renderer;
+                if (renderer == null) return;
+
+                renderer.Initialize(modeTokens);
             }
             catch (Exception ex)
             {

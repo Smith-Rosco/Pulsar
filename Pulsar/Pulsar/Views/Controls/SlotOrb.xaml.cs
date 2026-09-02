@@ -1,5 +1,6 @@
 using Pulsar.Core.Rendering;
 using Pulsar.Helpers;
+using Pulsar.Services.Interfaces;
 using System;
 using System.Drawing;
 using System.Windows;
@@ -55,10 +56,41 @@ namespace Pulsar.Views.Controls
         // SlotOrb is instantiated inside XAML DataTemplates (not via DI), so it
         // resolves the registered renderer through the app service provider, matching
         // the existing service-locator pattern used elsewhere in the codebase.
+        //
+        // The renderer is cached by config revision: a full GetSnapshot() is a JSON
+        // deep copy, and per-slot activation fires on every hover flip — resolving it
+        // each time would add avoidable GC pressure on the hot path. The cache refreshes
+        // only when Profiles.json changes (config save), which is exactly when the
+        // renderer selection can change.
+        private static StyleRendererFactory? _cachedRendererFactory;
+        private static long _cachedRendererRevision = -1;
+        private static IRadialRenderer? _cachedRenderer;
+
         private static IRadialRenderer? GetRenderer()
         {
             if (Application.Current is App app)
             {
+                // [RadialRenderer] Resolve through the factory + config so the active
+                // renderer (Default / ClassicRing / Glassmorphism) applies highlights
+                // consistently with the ViewModel's ApplyRadialRendering. Falls back to
+                // the legacy DI singleton when the factory is not wired (tests).
+                var factory = app.Services.GetService<StyleRendererFactory>();
+                if (factory != null)
+                {
+                    var config = app.Services.GetService<IConfigService>();
+                    if (config == null) return null;
+
+                    long revision = config.CurrentRevision;
+                    if (!ReferenceEquals(_cachedRendererFactory, factory) || _cachedRendererRevision != revision)
+                    {
+                        _cachedRendererFactory = factory;
+                        _cachedRendererRevision = revision;
+                        _cachedRenderer = factory.Create(config.GetSnapshot().Settings.RadialRenderer);
+                    }
+
+                    return _cachedRenderer;
+                }
+
                 return app.Services.GetService<IRadialRenderer>();
             }
             return null;
@@ -90,6 +122,17 @@ namespace Pulsar.Views.Controls
             else
             {
                 ActiveShape.Fill = null;
+            }
+
+            // Optional stroke ring (ClassicRing / Glassmorphism highlights). When the
+            // renderer supplies a stroke it wins over the template ring so the active
+            // slot carries the renderer's ring treatment.
+            if (highlight.StrokeBrush != null)
+            {
+                ActiveShape.Stroke = highlight.StrokeBrush;
+                ActiveShape.StrokeThickness = highlight.StrokeThickness > 0
+                    ? highlight.StrokeThickness
+                    : ActiveShape.StrokeThickness;
             }
 
             // Effect kind (Blur by default, never a per-slot DropShadow in the default).

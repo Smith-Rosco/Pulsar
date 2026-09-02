@@ -81,6 +81,79 @@
 
                         <Separator Margin="{StaticResource Pulsar.Gap.Vertical.MD}"/>
 
+                        <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="{lex:Locale Settings.Appearance.RendererStyle}" FontWeight="Medium"/>
+                                <TextBlock Text="{lex:Locale Settings.Appearance.RendererStyleDescription}"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                           FontSize="{StaticResource Pulsar.Type.Body}"
+                                           TextWrapping="Wrap"
+                                           MaxWidth="420"
+                                           Margin="{StaticResource Pulsar.Gap.Top.XS}"/>
+                            </StackPanel>
+                            <ComboBox Grid.Column="1" Width="160"
+                                      SelectedValue="{Binding DataContext.RendererStyle, RelativeSource={RelativeSource AncestorType=Page}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      SelectedValuePath="Tag"
+                                      AutomationProperties.Name="{lex:Locale Settings.Appearance.RendererStyle}">
+                                <ComboBoxItem Tag="Default">
+                                    <TextBlock Text="{lex:Locale Settings.Appearance.RendererStyle.Default}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="ClassicRing">
+                                    <TextBlock Text="{lex:Locale Settings.Appearance.RendererStyle.ClassicRing}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="Glassmorphism">
+                                    <TextBlock Text="{lex:Locale Settings.Appearance.RendererStyle.Glassmorphism}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                            </ComboBox>
+                        </Grid>
+
+                        <Separator Margin="{StaticResource Pulsar.Gap.Vertical.MD}"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="{lex:Locale Settings.Appearance.ThemePreset}" FontWeight="Medium"/>
+                                <TextBlock Text="{lex:Locale Settings.Appearance.ThemePresetDescription}"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                           FontSize="{StaticResource Pulsar.Type.Body}"
+                                           TextWrapping="Wrap"
+                                           MaxWidth="420"
+                                           Margin="{StaticResource Pulsar.Gap.Top.XS}"/>
+                            </StackPanel>
+                            <ComboBox Grid.Column="1" Width="160"
+                                      SelectedValue="{Binding DataContext.ThemePreset, RelativeSource={RelativeSource AncestorType=Page}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      SelectedValuePath="Tag"
+                                      AutomationProperties.Name="{lex:Locale Settings.Appearance.ThemePreset}">
+                                <ComboBoxItem Tag="System">
+                                    <TextBlock Text="{lex:Locale Settings.Appearance.ThemePreset.System}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="Dark">
+                                    <TextBlock Text="{lex:Locale Settings.Appearance.ThemePreset.Dark}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="Light">
+                                    <TextBlock Text="{lex:Locale Settings.Appearance.ThemePreset.Light}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="MatchaForest">
+                                    <TextBlock Text="{lex:Locale Settings.Appearance.ThemePreset.MatchaForest}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="GlacialIce">
+                                    <TextBlock Text="{lex:Locale Settings.Appearance.ThemePreset.GlacialIce}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="MorandiMuted">
+                                    <TextBlock Text="{lex:Locale Settings.Appearance.ThemePreset.MorandiMuted}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                            </ComboBox>
+                        </Grid>
+
+                        <Separator Margin="{StaticResource Pulsar.Gap.Vertical.MD}"/>
+
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>

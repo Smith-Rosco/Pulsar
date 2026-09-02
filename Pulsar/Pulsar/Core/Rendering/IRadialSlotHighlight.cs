@@ -15,12 +15,16 @@ namespace Pulsar.Core.Rendering
     }
 
     /// <summary>
-    /// Data contract for a slot highlight: glow brush, effect kind, blur radius and
-    /// opacity. See <see cref="RadialSlotHighlight"/> for the default record.
+    /// Data contract for a slot highlight: glow brush, stroke ring, effect kind,
+    /// blur radius and opacity. See <see cref="RadialSlotHighlight"/> for the default
+    /// record. <see cref="StrokeBrush"/> is optional — a null stroke leaves the slot's
+    /// template stroke (e.g. the default theme ring) untouched.
     /// </summary>
     public interface IRadialSlotHighlight
     {
         Brush? GlowBrush { get; }
+        Brush? StrokeBrush { get; }
+        double StrokeThickness { get; }
         RadialSlotEffectKind EffectKind { get; }
         double BlurRadius { get; }
         double Opacity { get; }
@@ -34,6 +38,8 @@ namespace Pulsar.Core.Rendering
     public sealed record RadialSlotHighlight : IRadialSlotHighlight
     {
         public Brush? GlowBrush { get; init; }
+        public Brush? StrokeBrush { get; init; }
+        public double StrokeThickness { get; init; }
         public RadialSlotEffectKind EffectKind { get; init; } = RadialSlotEffectKind.None;
         public double BlurRadius { get; init; }
         public double Opacity { get; init; }

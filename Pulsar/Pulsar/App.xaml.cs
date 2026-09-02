@@ -138,8 +138,14 @@ namespace Pulsar
             serviceCollection.AddSingleton<IActionFeedbackPresenter, ActionFeedbackPresenter>();
             serviceCollection.AddSingleton<IThemeService, ThemeService>();
             // [RadialRenderer] Pluggable rendering seam + theme preset resolution.
-            // The default renderer reproduces the current look; presets are opt-in.
+            // Every renderer registers as a singleton; Default is registered LAST so
+            // the legacy GetService<IRadialRenderer>() (SlotOrb fallback) resolves to
+            // the Default renderer. StyleRendererFactory receives all three and picks
+            // the active one from ProfileSettings.RadialRenderer at menu open.
+            serviceCollection.AddSingleton<Core.Rendering.IRadialRenderer, Core.Rendering.ClassicRingRadialRenderer>();
+            serviceCollection.AddSingleton<Core.Rendering.IRadialRenderer, Core.Rendering.GlassmorphismRadialRenderer>();
             serviceCollection.AddSingleton<Core.Rendering.IRadialRenderer, Core.Rendering.DefaultRadialRenderer>();
+            serviceCollection.AddSingleton<Core.Rendering.StyleRendererFactory>();
             serviceCollection.AddSingleton<Core.Rendering.RadialThemePresetResolver>();
             serviceCollection.AddSingleton<Func<Pulsar.Models.AppTheme, Core.Rendering.IRadialThemeTokens>>(
                 _ => Core.Rendering.RadialThemeTokenSet.FromTheme);
