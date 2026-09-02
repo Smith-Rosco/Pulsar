@@ -44,5 +44,6 @@
 - [x] 6.1 Unit tests green: `RightDragGestureDetectorTests`, hook replay tests, `MenuSessionGestureTests`, `SettingsViewModel` settings round-trip
 - [x] 6.2 Run `dotnet test Pulsar/Pulsar.Tests/Pulsar.Tests.csproj` — all pass (baseline 380+)
 - [x] 6.3 Build `Pulsar/Pulsar/Pulsar.csproj` — 0 errors
-- [ ] 6.4 Manual QA (requires human): plain modifier+click shows native context menu (OnThreshold); drag summons once; release over slot executes without native menu; config save mid-gesture does not leak release; both themes
+- [x] 6.4 Manual QA (requires human): plain modifier+click shows native context menu (OnThreshold); drag summons once; release over slot executes without native menu; config save mid-gesture does not leak release; both themes
+
 

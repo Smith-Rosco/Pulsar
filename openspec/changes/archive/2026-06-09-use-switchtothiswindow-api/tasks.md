@@ -14,4 +14,4 @@
 ## 3. Verification
 
 - [x] 3.1 Build the application and ensure no compilation errors.
-- [ ] 3.2 Test window switching via the simulator or a debug build to ensure `SwitchToThisWindow` is invoked when needed and functions correctly without triggering keyboard state bugs.
+- [x] 3.2 Test window switching via the simulator or a debug build to ensure `SwitchToThisWindow` is invoked when needed and functions correctly without triggering keyboard state bugs.

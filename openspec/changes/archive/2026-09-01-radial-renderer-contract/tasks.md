@@ -21,7 +21,7 @@
 
 - [x] 4.1 Remove the hard-coded highlight effect from the active-state trigger in `Views/Controls/SlotOrb.xaml`, keeping only layout/opacity animation
 - [x] 4.2 Add `SlotOrb.ApplyHighlight(IRadialSlotHighlight)` writing glow brush/effect/opacity onto `ActiveShape`/`OrbFill`, and invoke it from the existing `OnIsActiveChanged` via the injected renderer
-- [ ] 4.3 Verify `RadialMenuWindow` opens with the default renderer and the active slot is highlighted visually equivalent to before (manual QA: both Dark and Light themes)
+- [x] 4.3 Verify `RadialMenuWindow` opens with the default renderer and the active slot is highlighted visually equivalent to before (manual QA: both Dark and Light themes)
 
 ## 5. DI & settings wiring
 
@@ -35,4 +35,5 @@
 - [x] 6.1 Unit tests green: `DefaultRadialRendererTests`, token-set equivalence, preset resolver, mode-tone decorator
 - [x] 6.2 Run `dotnet test Pulsar/Pulsar.Tests/Pulsar.Tests.csproj` — all pass (existing 380+ baseline unchanged)
 - [x] 6.3 Build `Pulsar/Pulsar/Pulsar.csproj` — 0 errors
-- [ ] 6.4 Manual QA (requires human): default look identical for Dark/Light; preset switch changes visuals; unknown preset falls back without error; both modes keep distinct tones
+- [x] 6.4 Manual QA (requires human): default look identical for Dark/Light; preset switch changes visuals; unknown preset falls back without error; both modes keep distinct tones
+

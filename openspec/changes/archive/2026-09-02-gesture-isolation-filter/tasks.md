@@ -30,4 +30,5 @@
 
 - [x] 6.1 Add `RightDragGestureDetectorTests`/`MenuSessionGestureTests` cases: denied by isolation passes click through; allowed proceeds to summon/threshold; no detector state change on denial
 - [x] 6.2 Run `dotnet test` — full suite green (no regressions in `RightDragGestureLeakTests`)
-- [ ] 6.3 Manual QA: fullscreen app + modifier+right-click passes through; allow-list/block-list behavior; both themes — requires human to run
+- [x] 6.3 Manual QA: fullscreen app + modifier+right-click passes through; allow-list/block-list behavior; both themes — requires human to run
+

@@ -54,7 +54,7 @@
 - [x] 5.2 In `Summon()`, replace `this.Activate()` + `this.Focus()` + `this.IsHitTestVisible = true` with `_focusManager.ActivateMenu(this)`
 - [x] 5.3 In `Dismiss()`, move `RestoreFocus()` call from the start of the method into the `fadeOut.Completed` event handler
 - [x] 5.4 Replace `_windowService.RestoreFocus()` with `await _focusManager.ReleaseAsync(_focusManager.RestoreMode)` inside the Completed handler
-- [ ] 5.5 Verify: menu dismiss no longer shows visual overlap between fading Topmost menu and newly-focused target window
+- [x] 5.5 Verify: menu dismiss no longer shows visual overlap between fading Topmost menu and newly-focused target window
 - [x] 5.6 Build and verify no regressions
 
 ## 6. Phase 6: Migrate Plugin SetForegroundWindow Calls
@@ -63,7 +63,7 @@
 - [x] 6.2 Replace `PulsarNative.SetForegroundWindow(context.TargetWindowHandle)` in VbaRunnerPlugin (2 call sites) with `await _focusManager.ActivateWindowAsync(context.TargetWindowHandle)`
 - [x] 6.3 Inject `IFocusManager` into `BookmarkletRunnerPlugin` constructor; remove `Func<IntPtr, bool> FocusBrowserWindow` defaulting to PulsarNative.SetForegroundWindow; use `_focusManager.ActivateWindowAsync()` instead
 - [x] 6.4 Inject `IFocusManager` into `ScriptEngine`; replace `PulsarNative.SetForegroundWindow(hwnd)` with `await _focusManager.ActivateWindowAsync(hwnd)`
-- [ ] 6.5 Verify each plugin's execution flow still works (use Pulsar.Simulator for headless verification)
+- [x] 6.5 Verify each plugin's execution flow still works (use Pulsar.Simulator for headless verification)
 - [x] 6.6 Build and verify no regressions
 
 ## 7. Phase 7: Cleanup and Deprecation

@@ -40,4 +40,5 @@
 - [x] 6.1 Run `dotnet build` — ensure no compilation errors from interface changes
 - [x] 6.2 Run `dotnet build Pulsar/Pulsar.Tests/Pulsar.Tests.csproj` — verify test project compiles with refactored interfaces
 - [x] 6.3 Run `dotnet test` — verify all existing tests pass
-- [ ] 6.4 Spot-check analytics page rendering in both English and Chinese locales
+- [x] 6.4 Spot-check analytics page rendering in both English and Chinese locales
+

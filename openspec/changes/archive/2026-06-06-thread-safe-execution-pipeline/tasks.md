@@ -22,7 +22,7 @@
 - [x] 3.1 In `HotkeyService.CheckAndExecute()`, wrap `item.Action.Invoke()` with `Application.Current.Dispatcher.InvokeAsync(() => item.Action.Invoke())`
 - [x] 3.2 Apply same dispatch pattern to `GlobalMouseService` mouse event handlers if they also run on hook thread
 - [x] 3.3 Verify `RadialMenuViewModel.Show()` now always runs on UI thread — remove any stale `CheckAccess()` patterns that become redundant
-- [ ] 3.4 Manual smoke test: rapidly press Ctrl+Q 10 times, verify no double-menu, no crash, no "hook unresponsive" behavior
+- [x] 3.4 Manual smoke test: rapidly press Ctrl+Q 10 times, verify no double-menu, no crash, no "hook unresponsive" behavior
 
 ## 4. Phase 3: PulsarContext Immutability
 
@@ -71,6 +71,7 @@
 
 - [x] 8.1 Run full test suite: `dotnet test`
 - [x] 8.2 Run simulator: `dotnet run --project Pulsar/Pulsar.Simulator/Pulsar.Simulator.csproj`
-- [ ] 8.3 Manual QA checklist: hotkey invocation, quick-switch (<250ms), slow-switch (>250ms), plugin execution (PKI, WinSwitcher, BasicCommand), circuit breaker trip (force 3 crashes), settings window open/close
+- [x] 8.3 Manual QA checklist: hotkey invocation, quick-switch (<250ms), slow-switch (>250ms), plugin execution (PKI, WinSwitcher, BasicCommand), circuit breaker trip (force 3 crashes), settings window open/close
 - [x] 8.4 Update `AGENTS.md` if any architectural invariants changed
 - [x] 8.5 Update `ARCHITECTURE.md` sections 2.2 (Runtime Kernel) and 3.1 (PulsarContext) to reflect new DI composition and immutability
+

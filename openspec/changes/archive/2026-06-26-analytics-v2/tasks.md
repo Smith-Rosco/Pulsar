@@ -97,4 +97,5 @@
 
 - [x] 11.1 Run `dotnet build` — ensure no compilation errors
 - [x] 11.2 Run `dotnet test` — verify all new and existing tests pass
-- [ ] 11.3 Spot-check analytics page: filter dropdown, sort headers, sparklines, actionable buttons, CSV export
+- [x] 11.3 Spot-check analytics page: filter dropdown, sort headers, sparklines, actionable buttons, CSV export
+

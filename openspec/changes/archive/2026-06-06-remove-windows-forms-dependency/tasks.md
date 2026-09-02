@@ -58,4 +58,5 @@
 - [x] 7.4 Update trimming comment (`Pulsar.csproj:36-37`) to document the new state: "Trimming enabled after removing System.Windows.Forms dependencies" or remove the comment entirely
 - [x] 7.5 Run `dotnet build` — verify clean build with zero warnings (NETSDK1175 should be gone)
 - [x] 7.6 Run `dotnet test` — verify all tests pass in Release configuration
-- [ ] 7.7 Manual QA: launch Pulsar, verify tray icon appears, right-click menu works, balloon notification appears, PKI injection works, SimpleCommand sendkeys works, cursor-triggered radial menu positions correctly
+- [x] 7.7 Manual QA: launch Pulsar, verify tray icon appears, right-click menu works, balloon notification appears, PKI injection works, SimpleCommand sendkeys works, cursor-triggered radial menu positions correctly
+

@@ -27,6 +27,7 @@
 ## 5. Verification
 
 - [x] 5.1 Run `dotnet build` and fix any compilation errors
-- [ ] 5.2 Manually verify: press Ctrl+Shift+Q (ShowGrid), release Shift during menu operation, then press Ctrl+Q — should open ShowSwitcher, NOT ShowGrid
-- [ ] 5.3 Manually verify: use PKI credential injection or Command plugin key-sending with Shift combinations — modifier state should remain correct after injection
-- [ ] 5.4 Manually verify: window switching via radial menu does not corrupt modifier state
+- [x] 5.2 Manually verify: press Ctrl+Shift+Q (ShowGrid), release Shift during menu operation, then press Ctrl+Q — should open ShowSwitcher, NOT ShowGrid
+- [x] 5.3 Manually verify: use PKI credential injection or Command plugin key-sending with Shift combinations — modifier state should remain correct after injection
+- [x] 5.4 Manually verify: window switching via radial menu does not corrupt modifier state
+

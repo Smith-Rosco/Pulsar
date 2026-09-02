@@ -95,9 +95,10 @@
 ## 11. Validation & Cleanup
 
 - [x] 11.1 Run full build: `dotnet build Pulsar/Pulsar/Pulsar.csproj` — zero errors
-- [ ] 11.2 Manual QA: launch app in English, verify all pages display English
-- [ ] 11.3 Manual QA: switch to Chinese, verify all pages display Chinese
-- [ ] 11.4 Manual QA: switch back to English, verify hot-switch works
-- [ ] 11.5 Manual QA: switch language then save config, restart app, verify language persists
-- [ ] 11.6 Manual QA: test fallback chain — temporarily delete a key from zh-CN, verify English shows
+- [x] 11.2 Manual QA: launch app in English, verify all pages display English
+- [x] 11.3 Manual QA: switch to Chinese, verify all pages display Chinese
+- [x] 11.4 Manual QA: switch back to English, verify hot-switch works
+- [x] 11.5 Manual QA: switch language then save config, restart app, verify language persists
+- [x] 11.6 Manual QA: test fallback chain — temporarily delete a key from zh-CN, verify English shows
 - [x] 11.7 Run existing tests: `dotnet test` — verify no regressions
+

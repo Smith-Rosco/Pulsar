@@ -53,4 +53,5 @@
 - [x] 8.2 Run `dotnet test Pulsar/Pulsar.Tests/Pulsar.Tests.csproj` and ensure all existing tests pass
 - [x] 8.3 Write a unit test for `PluginExecutionPipeline` that verifies timeout triggers `Faulted` transition and breaker `RecordFailure` call
 - [x] 8.4 Write a unit test for `ConfigService` that verifies cache is not updated when disk write fails
-- [ ] 8.5 Manual smoke test: invoke each plugin type (PKI, WinSwitcher, SimpleCommand) and verify normal execution is unaffected
+- [x] 8.5 Manual smoke test: invoke each plugin type (PKI, WinSwitcher, SimpleCommand) and verify normal execution is unaffected
+

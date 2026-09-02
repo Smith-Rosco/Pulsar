@@ -46,5 +46,5 @@
 - [x] 6.1 Verify root menu restore clears all sub-menu state (thumbnails, colors, animation offsets) — `RestoreRootMenu` clears `ThumbnailImage`, `CustomStrokeBrush`, and resets animation offsets for all slots
 - [x] 6.2 Verify sub-menu from different parent process correctly clears previous sub-menu state — `ClearVisuals` + `RestoreRootMenu` reset all per-slot state on each sub-menu entry/exit
 - [x] 6.3 Build and fix any compilation errors — Builds clean, 380 tests passing
-- [ ] 6.4 Manual smoke test: open sub-menu, verify animation plays, verify thumbnails load, verify color borders visible, click Back
-- [ ] 6.5 Verify light theme and dark theme both render palette colors legibly
+- [x] 6.4 Manual smoke test: open sub-menu, verify animation plays, verify thumbnails load, verify color borders visible, click Back
+- [x] 6.5 Verify light theme and dark theme both render palette colors legibly

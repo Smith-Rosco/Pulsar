@@ -83,6 +83,7 @@
 - [x] 10.1 Run `dotnet build Pulsar/Pulsar/Pulsar.csproj` — verify no compilation errors
 - [x] 10.2 Run `dotnet test` — verify all existing and new tests pass
 - [x] 10.3 Run `dotnet test --filter "FullyQualifiedName~Hotkey"` — focused run on all hotkey tests
-- [ ] 10.4 Manual smoke test: launch app, open Settings, capture Ctrl+F1 for ShowGrid, verify Save works, verify Ctrl+F1 opens radial menu without restart
-- [ ] 10.5 Manual smoke test: clear a hotkey with Backspace, verify it shows "(None)", verify the old combination no longer triggers
-- [ ] 10.6 Manual smoke test: set both hotkeys to same combination, verify conflict badge appears
+- [x] 10.4 Manual smoke test: launch app, open Settings, capture Ctrl+F1 for ShowGrid, verify Save works, verify Ctrl+F1 opens radial menu without restart
+- [x] 10.5 Manual smoke test: clear a hotkey with Backspace, verify it shows "(None)", verify the old combination no longer triggers
+- [x] 10.6 Manual smoke test: set both hotkeys to same combination, verify conflict badge appears
+

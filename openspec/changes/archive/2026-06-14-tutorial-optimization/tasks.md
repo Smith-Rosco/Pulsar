@@ -59,10 +59,11 @@
 ## 8. Verify and Test
 
 - [x] 8.1 Run `dotnet build` and fix any compilation errors
-- [ ] 8.2 Walk through the full tutorial flow end-to-end (welcome → switch → command → complete)
-- [ ] 8.3 Walk through timeout path (wait 30s on a step, verify Next appears)
-- [ ] 8.4 Walk through skip path (verify confetti does NOT play)
-- [ ] 8.5 Walk through Settings → Reset Tutorial flow
-- [ ] 8.6 Verify Chinese locale renders all rewritten strings correctly
+- [x] 8.2 Walk through the full tutorial flow end-to-end (welcome → switch → command → complete)
+- [x] 8.3 Walk through timeout path (wait 30s on a step, verify Next appears)
+- [x] 8.4 Walk through skip path (verify confetti does NOT play)
+- [x] 8.5 Walk through Settings → Reset Tutorial flow
+- [x] 8.6 Verify Chinese locale renders all rewritten strings correctly
 - [x] 8.7 Run existing tutorial unit tests (`Pulsar.Tests/Tutorial/`)
 - [x] 8.8 Run `dotnet test` to ensure no regressions
+

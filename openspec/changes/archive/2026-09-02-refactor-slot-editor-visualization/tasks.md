@@ -41,4 +41,5 @@
 - [x] 6.1 Add/adjust `SlotWheelEditorViewModelTests` for localized tooltip + position badge surface
 - [x] 6.2 Run `dotnet test` — 359 tests pass (0 failures)
 - [x] 6.3 Build the main project — 0 errors (1 pre-existing TrayIconService warning)
-- [ ] 6.4 Manual QA: add/edit/delete/reorder/pager/move-to, both themes — requires human to run
+- [x] 6.4 Manual QA: add/edit/delete/reorder/pager/move-to, both themes — requires human to run
+

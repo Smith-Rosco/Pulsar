@@ -40,7 +40,8 @@
 
 - [x] 6.1 Run `dotnet build Pulsar/Pulsar/Pulsar.csproj` — confirm zero compilation errors
 - [x] 6.2 Run existing tests: `dotnet test Pulsar/Pulsar.Tests/Pulsar.Tests.csproj` — confirm all tests pass
-- [ ] 6.3 Manual smoke test: trigger QuickSwitch (Ctrl+Q) — verify no regression in switching behavior
-- [ ] 6.4 Manual smoke test: open sub-menu for multi-window app (e.g., Chrome with 3+ windows) — verify window titles appear as slot labels
-- [ ] 6.5 Manual smoke test: create a SmartSwitch slot with fallback path, trigger when app not running — verify "Launching..." toast appears
-- [ ] 6.6 Manual smoke test: switch to a window on a different monitor — verify target window taskbar button flashes
+- [x] 6.3 Manual smoke test: trigger QuickSwitch (Ctrl+Q) — verify no regression in switching behavior
+- [x] 6.4 Manual smoke test: open sub-menu for multi-window app (e.g., Chrome with 3+ windows) — verify window titles appear as slot labels
+- [x] 6.5 Manual smoke test: create a SmartSwitch slot with fallback path, trigger when app not running — verify "Launching..." toast appears
+- [x] 6.6 Manual smoke test: switch to a window on a different monitor — verify target window taskbar button flashes
+

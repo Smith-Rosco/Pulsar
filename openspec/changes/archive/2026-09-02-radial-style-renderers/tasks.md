@@ -33,4 +33,5 @@
 
 - [x] 6.1 Run `dotnet test Pulsar/Pulsar.Tests/Pulsar.Tests.csproj` — full suite green (no regressions in renderer/settings tests)
 - [x] 6.2 Build `Pulsar/Pulsar/Pulsar.csproj` — 0 errors
-- [ ] 6.3 Manual QA (requires human): switch renderer Classic/Glassmorphism and preset in settings, verify menu re-renders both themes; mode tone holds under every renderer
+- [x] 6.3 Manual QA (requires human): switch renderer Classic/Glassmorphism and preset in settings, verify menu re-renders both themes; mode tone holds under every renderer
+
