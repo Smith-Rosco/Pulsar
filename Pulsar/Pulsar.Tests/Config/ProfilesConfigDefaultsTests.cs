@@ -95,6 +95,8 @@ namespace Pulsar.Tests.Config
             // Assert
             settings.SummonMode.Should().Be(GestureSummonMode.Immediate);
             settings.GestureDragThreshold.Should().Be(25.0);
+            settings.GestureFlickOutCancelEnabled.Should().BeTrue("flick-out cancel is a safe default on once the gesture is enabled");
+            settings.GestureFlickOutRadiusMultiplier.Should().Be(1.5);
         }
 
         [Fact]

@@ -177,6 +177,16 @@ namespace Pulsar.ViewModels
         private double _lastMouseX;
         private double _lastMouseY;
 
+        /// <summary>
+        /// Flick-out escape state for gesture-summoned menus: the cursor has moved
+        /// beyond the flick-out cancel radius (wheel radius × configured multiplier)
+        /// while the menu is visible, so the menu dims as a cancel preview and a
+        /// release cancels the gesture instead of resolving spatially. Hotkey
+        /// sessions never update this flag.
+        /// </summary>
+        [ObservableProperty]
+        private bool _isFlickOutEscaped;
+
         // Sub-menu paging state.
         private List<ProcessWindowInfo> _subMenuWindows = new();
         private string _subMenuProcessName = string.Empty;
@@ -282,6 +292,7 @@ namespace Pulsar.ViewModels
                         _activeHotkeyInvocation = null;
                         _suppressedHotkeyReleases.Clear();
                         _invocationPointScreen = null;
+                        IsFlickOutEscaped = false;
                         _menuWatchdogCts?.Cancel();
                         _menuWatchdogCts = null;
                         _sessionCts?.Cancel();
@@ -981,10 +992,11 @@ namespace Pulsar.ViewModels
             bool wasVisible = IsVisible;
             bool inCenterZone = _menuState == MenuState.Root
                 && IsWithinQuickSwitchZone(QuickSwitchPolicy.FromSettings(_config?.Settings).CenterZoneRadius);
+            bool escaped = IsFlickOutEscaped;
 
             _logger?.LogDebug(
-                "[DEBUG-RDX] release handler enter wasVisible={WasVisible} isLoading={Loading} inCenterZone={InCenter} activeSlot={Slot} menuState={State}",
-                wasVisible, _isLoading, inCenterZone, _activeSlotIndex, _menuState);
+                "[DEBUG-RDX] release handler enter wasVisible={WasVisible} isLoading={Loading} inCenterZone={InCenter} escaped={Escaped} activeSlot={Slot} menuState={State}",
+                wasVisible, _isLoading, inCenterZone, escaped, _activeSlotIndex, _menuState);
 
             // D4: hide the menu synchronously on release, before any await. The menu
             // disappears immediately and the awaits below only drive the action —
@@ -1022,6 +1034,16 @@ namespace Pulsar.ViewModels
             // (~300ms); without this yield the fade animation is starved and the menu
             // lingers visibly after release instead of disappearing immediately.
             await Task.Delay(GestureReleaseFadeDelayMs);
+
+            if (escaped)
+            {
+                // D3: flick-out escape release cancels the gesture. The menu is
+                // already hidden (D4 above); nothing else runs — no quick-switch, no
+                // slot execution. The caller swallowed the release, so it never
+                // reaches the source application.
+                _logger?.LogDebug("[RightDragGesture] Flick-out escape release cancels the gesture.");
+                return;
+            }
 
             if (inCenterZone)
             {
@@ -1338,6 +1360,8 @@ namespace Pulsar.ViewModels
             _lastMouseX = relativePosition.X;
             _lastMouseY = relativePosition.Y;
 
+            UpdateFlickOutEscapeState();
+
             if (_isTransitioning) return;
 
             _animationController.UpdateMagnetism(relativePosition);
@@ -1347,6 +1371,35 @@ namespace Pulsar.ViewModels
             {
                 UpdateActiveSlot(newSlotIndex);
             }
+        }
+
+        /// <summary>
+        /// Move-driven flick-out escape tracking (StarPie <c>_lastEscapedState</c>
+        /// model). Only gesture-summoned menus with flick-out enabled participate:
+        /// when the cursor displacement from the menu center exceeds the flick-out
+        /// cancel radius (wheel radius × configured multiplier) the menu enters the
+        /// escape state (dimmed cancel preview); re-entering the radius clears it.
+        /// Hotkey-summoned menus and disabled flick-out never update the state.
+        /// </summary>
+        private void UpdateFlickOutEscapeState()
+        {
+            bool enabled = _config?.Settings.GestureFlickOutCancelEnabled ?? true;
+            if (InvocationSource != MenuInvocationSource.RightDragGesture || !enabled)
+            {
+                if (IsFlickOutEscaped)
+                {
+                    IsFlickOutEscaped = false;
+                }
+
+                return;
+            }
+
+            double dx = _lastMouseX - _menuCenterX;
+            double dy = _lastMouseY - _menuCenterY;
+            double dist = Math.Sqrt(dx * dx + dy * dy);
+            double multiplier = _config?.Settings.GestureFlickOutRadiusMultiplier ?? 1.5;
+            double flickOutRadius = _slotLayoutEngine.CalculateOptimalRadius(_slotsPerPage, _currentSlotSize) * multiplier;
+            IsFlickOutEscaped = dist > flickOutRadius;
         }
 
         /// <summary>

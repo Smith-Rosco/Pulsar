@@ -156,6 +156,26 @@ namespace Pulsar.Models
         [ObservableProperty]
         private double _gestureDragThreshold = 25.0;
 
+        /// <summary>
+        /// Enables the flick-out cancel behavior for gesture-summoned menus: when
+        /// the cursor displacement from the menu center exceeds the flick-out
+        /// cancel radius (wheel radius × <see cref="GestureFlickOutRadiusMultiplier"/>)
+        /// the menu dims as a cancel preview and releasing dims/cancels the gesture
+        /// instead of resolving spatially. Defaults on — the gesture itself is
+        /// opt-in via <see cref="EnableRightDragSummon"/>, so flick-out cancel is a
+        /// safe default. Hotkey-summoned menus are never affected.
+        /// </summary>
+        [ObservableProperty]
+        private bool _gestureFlickOutCancelEnabled = true;
+
+        /// <summary>
+        /// Escape radius as a multiple of the current wheel radius
+        /// (<c>ISlotLayoutEngine.CalculateOptimalRadius</c>).
+        /// Cursor displacement beyond this product enters the flick-out escape state.
+        /// </summary>
+        [ObservableProperty]
+        private double _gestureFlickOutRadiusMultiplier = 1.5;
+
         // [Gesture Isolation Filter] Pre-takeover foreground-window gating for the
         // right-drag summon gesture. All settings are opt-in (defaults preserve the
         // existing behavior where every modifier+right-click press is eligible).

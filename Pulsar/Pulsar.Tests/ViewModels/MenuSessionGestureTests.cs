@@ -372,6 +372,118 @@ namespace Pulsar.Tests.ViewModels
             session.IsVisible.Should().BeFalse();
         }
 
+        // ============ Flick-out escape tracking (move-driven) ============
+
+        [Fact]
+        public void HandlePointerMoved_FlickOut_ShouldEnterEscapeState()
+        {
+            var session = CreateSession();
+            session.IsVisible = true;
+            session.InvocationSource = MenuInvocationSource.RightDragGesture;
+            session.SetMenuCenter(new Point(250, 250));
+
+            // Radius mock = 120, default multiplier 1.5 → flick-out radius 180.
+            // Moving 200 DIP from the center must cross it.
+            session.HandlePointerMoved(new Vector(250, 450));
+
+            session.IsFlickOutEscaped.Should().BeTrue();
+        }
+
+        [Fact]
+        public void HandlePointerMoved_FlickOut_ShouldClearEscapeOnReentry()
+        {
+            var session = CreateSession();
+            session.IsVisible = true;
+            session.InvocationSource = MenuInvocationSource.RightDragGesture;
+            session.SetMenuCenter(new Point(250, 250));
+
+            session.HandlePointerMoved(new Vector(250, 450));
+            session.IsFlickOutEscaped.Should().BeTrue();
+
+            // Re-entering the radius (100 DIP < 180) must clear the escape state.
+            session.HandlePointerMoved(new Vector(250, 350));
+
+            session.IsFlickOutEscaped.Should().BeFalse();
+        }
+
+        [Fact]
+        public void HandlePointerMoved_HotkeyMenu_ShouldNeverEnterEscapeState()
+        {
+            var session = CreateSession();
+            session.IsVisible = true;
+            session.InvocationSource = MenuInvocationSource.Hotkey;
+            session.SetMenuCenter(new Point(250, 250));
+
+            session.HandlePointerMoved(new Vector(250, 450));
+
+            session.IsFlickOutEscaped.Should().BeFalse();
+        }
+
+        [Fact]
+        public void HandlePointerMoved_FlickOutDisabled_ShouldNeverEnterEscapeState()
+        {
+            var settings = new ProfileSettings { GestureFlickOutCancelEnabled = false };
+            var session = CreateSession(settings: settings);
+            session.IsVisible = true;
+            session.InvocationSource = MenuInvocationSource.RightDragGesture;
+            session.SetMenuCenter(new Point(250, 250));
+
+            session.HandlePointerMoved(new Vector(250, 450));
+
+            session.IsFlickOutEscaped.Should().BeFalse();
+        }
+
+        // ============ Flick-out release resolution ============
+
+        [Fact]
+        public async Task HandleGestureRightReleaseAsync_Escaped_ShouldCancelWithoutSelection()
+        {
+            var windowService = new Mock<IWindowService>();
+            var session = CreateSession(windowService);
+            session.IsVisible = true;
+            session.InvocationSource = MenuInvocationSource.RightDragGesture;
+            session.SetMenuCenter(new Point(250, 250));
+
+            // Enter the escape state, then aim the (already hidden) session at a slot.
+            session.HandlePointerMoved(new Vector(250, 450));
+            session.IsFlickOutEscaped.Should().BeTrue();
+            SetActiveSlotIndex(session, 1);
+
+            await session.HandleGestureRightReleaseAsync();
+
+            // The escape release cancels: hidden, no quick-switch, no slot execution.
+            session.IsVisible.Should().BeFalse();
+            windowService.Verify(service => service.SwitchToPreviousWindow(), Times.Never);
+        }
+
+        [Fact]
+        public async Task HandleGestureRightReleaseAsync_NotEscaped_ShouldResolveBySpatialPosition()
+        {
+            var windowService = new Mock<IWindowService>();
+            var session = CreateSession(windowService);
+            session.IsVisible = true;
+            session.InvocationSource = MenuInvocationSource.RightDragGesture;
+            session.SetMenuCenter(new Point(250, 250));
+
+            // Stay inside the flick-out radius (100 DIP < 180): not escaped.
+            session.HandlePointerMoved(new Vector(250, 350));
+            session.IsFlickOutEscaped.Should().BeFalse();
+
+            await session.HandleGestureRightReleaseAsync();
+
+            // Outside the center zone and not escaped → resolves by spatial position
+            // (dismiss over empty space), never a quick-switch.
+            session.IsVisible.Should().BeFalse();
+            windowService.Verify(service => service.SwitchToPreviousWindow(), Times.Never);
+        }
+
+        private static void SetActiveSlotIndex(MenuSession session, int index)
+        {
+            typeof(MenuSession)
+                .GetField("_activeSlotIndex", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .SetValue(session, index);
+        }
+
         private static void SetLoading(MenuSession session, bool loading)
         {
             typeof(MenuSession)
@@ -379,12 +491,15 @@ namespace Pulsar.Tests.ViewModels
                 .SetValue(session, loading ? 1 : 0);
         }
 
-        private static MenuSession CreateSession(Mock<IWindowService>? windowService = null)
+        private static MenuSession CreateSession(Mock<IWindowService>? windowService = null, ProfileSettings? settings = null)
         {
             var slotLayoutEngine = new Mock<ISlotLayoutEngine>();
             slotLayoutEngine
                 .Setup(engine => engine.CalculateOptimalLayout(It.IsAny<int>()))
                 .Returns(new LayoutParameters(250, 250, 120, 0, 8));
+            slotLayoutEngine
+                .Setup(engine => engine.CalculateOptimalRadius(It.IsAny<int>(), It.IsAny<double>(), It.IsAny<double>()))
+                .Returns(120);
             slotLayoutEngine
                 .Setup(engine => engine.HitTest(It.IsAny<Vector>(), It.IsAny<LayoutParameters>()))
                 .Returns(-1);
@@ -399,7 +514,8 @@ namespace Pulsar.Tests.ViewModels
 
             var configService = new Mock<IConfigService>();
             configService.Setup(service => service.GetValidatedSlotsPerPage()).Returns(8);
-            configService.Setup(service => service.GetSnapshot()).Returns(new ProfilesConfig());
+            var config = new ProfilesConfig { Settings = settings ?? new ProfileSettings() };
+            configService.Setup(service => service.GetSnapshot()).Returns(config);
 
             var loc = new Mock<ILocalizationService>();
             loc.Setup(l => l["RadialMenu.Pulsar"]).Returns("Pulsar");

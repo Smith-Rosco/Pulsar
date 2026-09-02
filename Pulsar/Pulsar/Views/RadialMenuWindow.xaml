@@ -49,6 +49,36 @@
                 Canvas.Left="{Binding MenuCanvasLeft}"
                 Canvas.Top="{Binding MenuCanvasTop}">
 
+            <!-- [Flick-out cancel] Dim the menu while in the escape state (cancel
+                 preview). Gesture-only: IsFlickOutEscaped is never set for hotkey
+                 menus, so hotkey summons are unaffected. 200ms fade matches the
+                 window's dismiss fade rhythm. -->
+            <Canvas.Style>
+                <Style TargetType="Canvas">
+                    <Setter Property="Opacity" Value="1"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsFlickOutEscaped}" Value="True">
+                            <DataTrigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0.6"
+                                                         Duration="0:0:0.2"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.EnterActions>
+                            <DataTrigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1"
+                                                         Duration="0:0:0.2"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.ExitActions>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Canvas.Style>
+
             <ItemsControl ItemsSource="{Binding Slots}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>

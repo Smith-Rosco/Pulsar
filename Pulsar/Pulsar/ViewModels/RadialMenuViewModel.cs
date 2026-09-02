@@ -774,6 +774,13 @@ namespace Pulsar.ViewModels
 
         public bool ActionExecuted => _session.ActionExecuted;
 
+        /// <summary>
+        /// Flick-out escape state for gesture-summoned menus (dimmed cancel preview).
+        /// Forwarded from the session; only ever true for gesture invocation, so the
+        /// dim never applies to hotkey-summoned menus.
+        /// </summary>
+        public bool IsFlickOutEscaped => _session.IsFlickOutEscaped;
+
         public void SetActionExecuted(bool value) => _session.SetActionExecuted(value);
 
         public void RestoreRootMenu() => _session.RestoreRootMenu();
