@@ -4597,6 +4597,42 @@ Pulsar 会在你的浏览器中打开一个网页——这就是命令模式：�
   <data name="Settings.General.GestureDragThresholdDescription" xml:space="preserve">
     <value>在"拖动越过阈值后"模式下，光标需移动的距离（像素）才会唤起菜单。在此之前松开将显示源程序的原生右键菜单。</value>
   </data>
+  <data name="Settings.Gesture.Title" xml:space="preserve">
+    <value>手势隔离过滤</value>
+  </data>
+  <data name="Settings.Gesture.TitleDescription" xml:space="preserve">
+    <value>仅在前台窗口允许时才让右键手势接管。默认关闭——关闭时所有修饰键+右键按下均保持原有行为。</value>
+  </data>
+  <data name="Settings.Gesture.EnableToggle" xml:space="preserve">
+    <value>启用隔离过滤</value>
+  </data>
+  <data name="Settings.Gesture.EnableToggleDescription" xml:space="preserve">
+    <value>启用后，每次右键按下都会在允许手势接管前检查前台窗口。</value>
+  </data>
+  <data name="Settings.Gesture.Mode" xml:space="preserve">
+    <value>隔离模式</value>
+  </data>
+  <data name="Settings.Gesture.ModeDescription" xml:space="preserve">
+    <value>白名单模式仅对列表内的进程允许手势；黑名单模式除列表内的进程外都允许手势。</value>
+  </data>
+  <data name="Settings.Gesture.ModeAllowlist" xml:space="preserve">
+    <value>白名单（仅列表内的进程）</value>
+  </data>
+  <data name="Settings.Gesture.ModeBlocklist" xml:space="preserve">
+    <value>黑名单（除列表内的进程）</value>
+  </data>
+  <data name="Settings.Gesture.Processes" xml:space="preserve">
+    <value>进程列表</value>
+  </data>
+  <data name="Settings.Gesture.ProcessesDescription" xml:space="preserve">
+    <value>进程名（如 chrome、notepad），每行一个或用逗号分隔。与前台进程名不区分大小写匹配。</value>
+  </data>
+  <data name="Settings.Gesture.BlockFullscreen" xml:space="preserve">
+    <value>全屏应用中阻止</value>
+  </data>
+  <data name="Settings.Gesture.BlockFullscreenDescription" xml:space="preserve">
+    <value>当前台窗口覆盖整个屏幕（如游戏）时拒绝手势。桌面与任务栏永远不会被判定为全屏。</value>
+  </data>
   <data name="RadialMenu.SubMenuPageFormat" xml:space="preserve">
     <value>{0}（{1}/{2}）</value>
   </data>

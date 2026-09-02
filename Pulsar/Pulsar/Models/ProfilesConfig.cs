@@ -156,6 +156,65 @@ namespace Pulsar.Models
         [ObservableProperty]
         private double _gestureDragThreshold = 25.0;
 
+        // [Gesture Isolation Filter] Pre-takeover foreground-window gating for the
+        // right-drag summon gesture. All settings are opt-in (defaults preserve the
+        // existing behavior where every modifier+right-click press is eligible).
+        /// <summary>
+        /// Master switch for the gesture isolation filter. When <c>false</c>
+        /// (default) every right-button press with a configured gesture modifier is
+        /// eligible — the fullscreen check and process allow/block lists are inert.
+        /// </summary>
+        [ObservableProperty]
+        private bool _gestureIsolationEnabled;
+
+        /// <summary>
+        /// Isolation mode: <see cref="GestureIsolationMode.Allowlist"/> (gesture
+        /// allowed only for listed foreground processes) or
+        /// <see cref="GestureIsolationMode.Blocklist"/> (gesture allowed for every
+        /// process except the listed ones). Defaults to allow-list.
+        /// </summary>
+        [ObservableProperty]
+        private GestureIsolationMode _gestureIsolationMode = GestureIsolationMode.Allowlist;
+
+        /// <summary>
+        /// Process names (case-insensitive) matched against the foreground process
+        /// name when the isolation filter is enabled. An empty allow-list denies all
+        /// gestures in <see cref="GestureIsolationMode.Allowlist"/> mode; an empty
+        /// block-list denies none in <see cref="GestureIsolationMode.Blocklist"/> mode.
+        /// </summary>
+        public List<string> GestureIsolationProcesses { get; set; } = new();
+
+        /// <summary>
+        /// When enabled (default <c>true</c>) a fullscreen foreground window denies
+        /// the gesture. Shell surfaces (<c>Progman</c>/<c>WorkerW</c>/<c>Shell_TrayWnd</c>)
+        /// are never classified as fullscreen.
+        /// </summary>
+        [ObservableProperty]
+        private bool _gestureIsolationBlockFullscreen = true;
+
+        /// <summary>
+        /// UI projection of <see cref="GestureIsolationProcesses"/> as a comma- or
+        /// newline-separated string for the settings editor. Not persisted — the
+        /// parsed list is the source of truth.
+        /// </summary>
+        [JsonIgnore]
+        public string GestureIsolationProcessesText
+        {
+            get => string.Join(", ", GestureIsolationProcesses);
+            set
+            {
+                var entries = (value ?? string.Empty)
+                    .Split(new[] { ',', ';', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Where(e => !string.IsNullOrWhiteSpace(e))
+                    .Select(e => e.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+                GestureIsolationProcesses = entries;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(GestureIsolationProcesses));
+            }
+        }
+
         // [RDP Fix] Input System Configuration
         public InputSettings Input { get; set; } = new();
 

@@ -2906,6 +2906,42 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
   <data name="Settings.General.GestureDragThresholdDescription" xml:space="preserve">
     <value>Distance (in pixels) the cursor must travel before an "after dragging" gesture summons the menu. Releasing before this shows the app's native context menu.</value>
   </data>
+  <data name="Settings.Gesture.Title" xml:space="preserve">
+    <value>Gesture isolation filter</value>
+  </data>
+  <data name="Settings.Gesture.TitleDescription" xml:space="preserve">
+    <value>Only let the right-click gesture take over when the foreground window allows it. Disabled by default — when off, every modifier+right-click press is eligible as before.</value>
+  </data>
+  <data name="Settings.Gesture.EnableToggle" xml:space="preserve">
+    <value>Enable isolation filter</value>
+  </data>
+  <data name="Settings.Gesture.EnableToggleDescription" xml:space="preserve">
+    <value>When enabled, the foreground window is checked at each right-button press before the gesture is allowed to take over.</value>
+  </data>
+  <data name="Settings.Gesture.Mode" xml:space="preserve">
+    <value>Isolation mode</value>
+  </data>
+  <data name="Settings.Gesture.ModeDescription" xml:space="preserve">
+    <value>Allow-list permits the gesture only for the listed processes; block-list permits it everywhere except the listed processes.</value>
+  </data>
+  <data name="Settings.Gesture.ModeAllowlist" xml:space="preserve">
+    <value>Allow-list (only listed processes)</value>
+  </data>
+  <data name="Settings.Gesture.ModeBlocklist" xml:space="preserve">
+    <value>Block-list (everywhere except listed)</value>
+  </data>
+  <data name="Settings.Gesture.Processes" xml:space="preserve">
+    <value>Processes</value>
+  </data>
+  <data name="Settings.Gesture.ProcessesDescription" xml:space="preserve">
+    <value>Process names (e.g. chrome, notepad), one per line or separated by commas. Matched case-insensitively against the foreground process.</value>
+  </data>
+  <data name="Settings.Gesture.BlockFullscreen" xml:space="preserve">
+    <value>Block in fullscreen apps</value>
+  </data>
+  <data name="Settings.Gesture.BlockFullscreenDescription" xml:space="preserve">
+    <value>Deny the gesture when the foreground window covers the whole screen (e.g. games). The desktop and taskbar are never treated as fullscreen.</value>
+  </data>
   <data name="RadialMenu.SubMenuPageFormat" xml:space="preserve">
     <value>{0} ({1}/{2})</value>
   </data>
