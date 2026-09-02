@@ -23,7 +23,7 @@ namespace Pulsar.Plugins.Core.SystemCommand
         private const string LegacyQuickAddProfileAction = "pulsar.system.quick_add_profile";
 
         public string Id => "com.pulsar.system";
-        public string DisplayName => "Pulsar Control";
+        public string DisplayName => "Pulsar Settings";
         public string Version => "1.0.0";
         public string Author => "Pulsar Team";
         public string Description => "Open Pulsar settings or jump into quick profile setup using explicit built-in actions.";
@@ -143,7 +143,7 @@ namespace Pulsar.Plugins.Core.SystemCommand
                 Schema = null,
                 UI = new UIHints
                 {
-                    Badge = "System",
+                    Badge = "Settings",
                     AccentColor = "#607D8B",
                     ShowInQuickAccess = true,
                     SortOrder = 30,

@@ -57,7 +57,7 @@
 1. 下载并运行 `Pulsar`，程序会在系统托盘中后台运行；
 2. 按下默认热键 **`Ctrl+Shift+Q`**（命令模式）或 **`Ctrl+Q`**（切换模式）唤出径向菜单；
 3. 通过空间方位滑向目标扇区，松开触发对应动作；
-4. 如需详细配置，可在 Pulsar 控制（`com.pulsar.system`）中打开设置。
+4. 如需详细配置，可在 Pulsar 设置（`com.pulsar.system`）中打开设置。
 
 ---
 
@@ -87,10 +87,10 @@
 |------|----|------|------|
 | **秘密填充 (PKI)** | `com.pulsar.pki` | DPAPI 加密凭据库，通过 UI 自动化注入用户名/密码，支持延迟与自动提交 | 核心 |
 | **应用切换器** | `com.pulsar.winswitcher` | 智能窗口切换（模糊搜索），未运行时自动启动，支持发现黑名单 | 核心 |
-| **Pulsar 控制** | `com.pulsar.system` | 打开设置、快速添加上下文应用、系统命令 | 核心 |
+| **Pulsar 设置** | `com.pulsar.system` | 打开设置、快速添加上下文应用、系统命令 | 核心 |
 | **命令启动器** | `com.pulsar.command` | 启动应用/文件/文件夹/URL，向前台窗口发送按键序列 | 扩展 |
-| **VBA 脚本执行器** | `com.pulsar.vbarunner` | 在 Excel/WPS 中执行 VBA 宏，支持智能指令 | 扩展 |
-| **书签执行器** | `com.pulsar.bookmarklet` | 通过 UI 自动化在当前浏览器执行 JavaScript 书签 | 扩展 |
+| **Excel 宏执行器** | `com.pulsar.vbarunner` | 在 Excel/WPS 中运行已保存的宏，支持智能指令 | 扩展 |
+| **浏览器脚本执行器** | `com.pulsar.bookmarklet` | 通过 UI 自动化在当前浏览器运行浏览器脚本 | 扩展 |
 
 ---
 

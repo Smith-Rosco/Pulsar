@@ -17,7 +17,7 @@
           "args": {
             "scriptPath": "G:\\0_Playground\\Pulsar_Project\\Reference\\BookmarkletRunner\\test.js"
           },
-          "label": "Test Bookmarklet",
+          "label": "Test Browser Script",
           "icon": "Browser"
         },
         "Slot_2": {

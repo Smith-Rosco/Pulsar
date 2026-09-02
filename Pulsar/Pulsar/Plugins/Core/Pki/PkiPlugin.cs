@@ -46,10 +46,10 @@ namespace Pulsar.Plugins.Core.Pki
         }
 
         public override string Id => "com.pulsar.pki";
-        public override string DisplayName => "Secret Fill";
+        public override string DisplayName => "AutoFill";
         public override string Version => "1.0.0";
         public override string Author => "Pulsar Team";
-        public override string Description => "Fill a saved credential into the active application with secure runtime injection.";
+        public override string Description => "Fill a saved password into the active application.";
         public override string Icon => "\uE72E";
         public override bool CanDisable => false;
         public override PluginTier Tier => PluginTier.Core;
@@ -124,7 +124,7 @@ namespace Pulsar.Plugins.Core.Pki
                     Name = DisplayName,
                     Description = Description,
                     IconKey = Icon,
-                    Category = "Security",
+                    Category = "Credentials",
                     Version = Version,
                     Author = Author,
                     DocumentationUrl = DocumentationUrl,
@@ -154,7 +154,7 @@ namespace Pulsar.Plugins.Core.Pki
                 },
                 UI = new UIHints
                 {
-                    Badge = "Secret",
+                    Badge = "Fill",
                     AccentColor = "#4CAF50",
                     ShowInQuickAccess = true,
                     SortOrder = 10,
@@ -174,9 +174,9 @@ namespace Pulsar.Plugins.Core.Pki
                     ["fill"] = new SlotActionMetadata
                     {
                         Name = "fill",
-                        Label = "Fill Secret",
-                        Description = "Fill a saved secret into the active application.",
-                        SuggestedLabelTemplate = "Fill Secret",
+                        Label = "Fill Password",
+                        Description = "Fill a saved password into the active application.",
+                        SuggestedLabelTemplate = "Fill Password",
                         SuggestedIconKey = "E72E",
                         SuggestedColorHex = "#4CAF50",
                         Aliases = new List<string> { "inject" },
@@ -190,19 +190,19 @@ namespace Pulsar.Plugins.Core.Pki
                             {
                                 Key = "secretId",
                                 Type = "guid",
-                                Label = "Secret",
-                                Description = "Saved credential to inject.",
+                                Label = "Password",
+                                Description = "Saved password to inject.",
                                 IsRequired = true,
                                 Group = SlotParameterGroup.Required,
-                                SummaryLabel = "Secret",
+                                SummaryLabel = "Password",
                                 SummaryMode = SlotParameterSummaryMode.SafeStateOnly,
                                 ConfiguredSummaryText = "selected",
                                 MissingSummaryText = "not selected",
                                 PresentationHint = SlotParameterPresentationHint.DialogOnly,
                                 QuickEditPriority = 100,
-                                Placeholder = "Select a saved secret",
-                                InputHint = "Choose a secret from the secure store.",
-                                ValidationHint = "Choose a saved secret from the secure store.",
+                                Placeholder = "Select a saved password",
+                                InputHint = "Choose a password from the saved credentials.",
+                                ValidationHint = "Choose a saved password from the saved credentials.",
                                 PickerIntent = SlotPickerIntent.Secret,
                                 IsSensitive = true,
                                 Validators = new List<ValidationRule>

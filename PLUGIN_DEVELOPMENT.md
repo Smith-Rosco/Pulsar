@@ -159,10 +159,10 @@ public class PulsarContext
 
 当前内建插件的规范示例：
 
-- `com.pulsar.command` -> `Command Runner` -> primary actions: `run`, `sendkeys`
+- `com.pulsar.command` -> `Open & Type` -> primary actions: `run`, `sendkeys`
 - `com.pulsar.winswitcher` -> `App Switcher` -> primary actions: `activate`, `switch`, `launch`
-- `com.pulsar.pki` -> `Secret Fill` -> primary action: `fill`, legacy alias: `inject`
-- `com.pulsar.system` -> `Pulsar Control` -> primary actions: `open-settings`, `quick-add-profile`, legacy namespaced aliases supported only for compatibility
+- `com.pulsar.pki` -> `AutoFill` -> primary action: `fill`, legacy alias: `inject`
+- `com.pulsar.system` -> `Pulsar Settings` -> primary actions: `open-settings`, `quick-add-profile`, legacy namespaced aliases supported only for compatibility
 
 对于每个会出现在 slot 编辑器中的参数，现在除了 `Key`、`Type`、`Label`、`IsRequired`、`Group`、`Validators` 这些基础字段外，还应补充分层编辑所需的展示提示：
 

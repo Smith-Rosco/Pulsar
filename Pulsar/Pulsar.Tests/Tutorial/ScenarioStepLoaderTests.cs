@@ -78,26 +78,26 @@ namespace Pulsar.Tests.Tutorial
         }
 
         [Fact]
-        public void ExcelSteps_ShouldReferenceVbaDemoInDescription()
+        public void ExcelSteps_ShouldReferenceMacroDemoInDescription()
         {
             var loader = CreateLoader();
             var steps = loader.LoadStepsForScenario("excel");
 
             var step4 = steps.FirstOrDefault(s => s.Id == "step4_command_mode_intro");
             step4.Should().NotBeNull();
-            step4!.Description.Should().Contain("VBA");
+            step4!.Description.Should().Contain("Macro");
             step4.DescriptionKey.Should().Be("Tutorial.Excel.CommandModeDesc");
         }
 
         [Fact]
-        public void BrowserSteps_ShouldReferenceBookmarkletInDescription()
+        public void BrowserSteps_ShouldReferenceBrowserScriptInDescription()
         {
             var loader = CreateLoader();
             var steps = loader.LoadStepsForScenario("browser");
 
             var step4 = steps.FirstOrDefault(s => s.Id == "step4_command_mode_intro");
             step4.Should().NotBeNull();
-            step4!.Description.Should().Contain("Bookmarklet");
+            step4!.Description.Should().Contain("Browser Script");
             step4.DescriptionKey.Should().Be("Tutorial.Browser.CommandModeDesc");
         }
     }

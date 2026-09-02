@@ -2,12 +2,12 @@
 
 ## 📖 Overview
 
-The **Bookmarklet Runner Plugin** allows you to execute JavaScript bookmarklet scripts in your browser directly from Pulsar's radial menu. This is a migration of the standalone BookmarkletRunner tool into Pulsar's plugin system.
+The **Browser Scripts plugin** allows you to run saved browser scripts in your browser directly from Pulsar's radial menu. This is a migration of the standalone BookmarkletRunner tool into Pulsar's plugin system.
 
 ## 🎯 Plugin Information
 
 - **Plugin ID**: `com.pulsar.bookmarklet`
-- **Plugin Name**: Bookmarklet Runner
+- **Plugin Name**: Browser Scripts
 - **Location**: `Pulsar/Plugins/BookmarkletRunner/`
 
 ## ✨ Features
@@ -36,7 +36,7 @@ Add the following to your `Profiles.json`:
           "args": {
             "scriptPath": "C:\\Scripts\\my-bookmarklet.js"
           },
-          "label": "Run Bookmarklet",
+          "label": "Run Browser Script",
           "icon": "Browser"
         }
       }

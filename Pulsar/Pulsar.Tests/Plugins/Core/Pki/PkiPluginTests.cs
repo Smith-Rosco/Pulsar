@@ -80,7 +80,7 @@ namespace Pulsar.Tests.Plugins.Core.Pki
 
             var metadata = plugin.GetMetadata();
 
-            metadata.Display.Name.Should().Be("Secret Fill");
+            metadata.Display.Name.Should().Be("AutoFill");
             metadata.Capabilities.SupportedActions.Should().Equal("fill");
             metadata.Actions.Keys.Should().Equal("fill");
             metadata.Actions["fill"].Aliases.Should().Contain("inject");

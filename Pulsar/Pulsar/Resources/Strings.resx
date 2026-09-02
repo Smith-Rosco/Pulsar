@@ -708,7 +708,7 @@
     <value>• External plugins are loaded from ZIP files and installed to your local AppData folder</value>
   </data>
   <data name="Settings.ExternalPlugins.AboutLine2" xml:space="preserve">
-    <value>• Built-in plugins (PKI, WinSwitcher, etc.) are managed in the</value>
+    <value>• Built-in plugins (AutoFill, App Switch, etc.) are managed in the</value>
   </data>
   <data name="Settings.ExternalPlugins.AboutLine3" xml:space="preserve">
     <value>Plugins</value>
@@ -920,7 +920,7 @@
     <value>Run Script</value>
   </data>
   <data name="Dialog.AddSlot.RunVba" xml:space="preserve">
-    <value>Run VBA</value>
+    <value>Run Macro</value>
   </data>
   <data name="Dialog.AddSlot.SwitchOrLaunch" xml:space="preserve">
     <value>Switch Or Launch App</value>
@@ -979,7 +979,7 @@
     <value>Select a secret to inject</value>
   </data>
   <data name="Dialog.SecretPicker.PickHint" xml:space="preserve">
-    <value>Pick an existing credential or create a new one for this PKI slot.</value>
+    <value>Pick an existing credential or create a new one for this AutoFill slot.</value>
   </data>
   <data name="Dialog.SecretPicker.DoubleClickHint" xml:space="preserve">
     <value>Double-click to use</value>
@@ -1195,7 +1195,7 @@
     <value>Loading process list...</value>
   </data>
   <data name="Dialog.ProcessBlacklist.EnableSwitchDiagnostics" xml:space="preserve">
-    <value>Record detailed WinSwitcher diagnostics in the application log</value>
+    <value>Record detailed app-switch diagnostics in the application log</value>
   </data>
   <!-- ==================== Dialog.IconPicker ==================== -->
   <data name="Dialog.IconPicker.SearchPlaceholder" xml:space="preserve">
@@ -1338,10 +1338,10 @@
     <value>Pick a Color</value>
   </data>
   <data name="Notification.SelectVbaScript" xml:space="preserve">
-    <value>Select VBA Script</value>
+    <value>Select Macro File</value>
   </data>
   <data name="Notification.SelectBookmarklet" xml:space="preserve">
-    <value>Select Bookmarklet Script</value>
+    <value>Select Browser Script</value>
   </data>
   <data name="Notification.SelectPluginPackage" xml:space="preserve">
     <value>Select Plugin Package</value>
@@ -1383,10 +1383,7 @@
     <value>Run Script</value>
   </data>
   <data name="Notification.RunVba" xml:space="preserve">
-    <value>Run VBA</value>
-  </data>
-  <data name="Notification.CleanIconCache" xml:space="preserve">
-    <value>Clean Icon Cache</value>
+    <value>Run Macro</value>
   </data>
   <data name="Notification.CleanCacheBody" xml:space="preserve">
     <value>This will remove cached icons for processes not seen in the last 30 days (blacklisted processes are never removed).\n\nAre you sure you want to proceed?</value>
@@ -1488,10 +1485,10 @@
     <value>New App</value>
   </data>
   <data name="Notification.NewCmdDefault" xml:space="preserve">
-    <value>New Cmd</value>
+    <value>New Command</value>
   </data>
   <data name="Notification.FileFilterVba" xml:space="preserve">
-    <value>VBA Scripts (*.txt;*.vbs;*.bas)|*.txt;*.vbs;*.bas|All Files (*.*)|*.*</value>
+    <value>Macro Files (*.txt;*.vbs;*.bas)|*.txt;*.vbs;*.bas|All Files (*.*)|*.*</value>
   </data>
   <data name="Notification.FileFilterJs" xml:space="preserve">
     <value>JavaScript Files (*.js;*.txt)|*.js;*.txt|All Files (*.*)|*.*</value>
@@ -1649,20 +1646,20 @@
   <data name="Slot.Warning" xml:space="preserve">
     <value>Warning</value>
   </data>
-  <data name="Slot.TypeSecret" xml:space="preserve">
-    <value>Secret</value>
+  <data name="Slot.TypeFill" xml:space="preserve">
+    <value>Fill</value>
   </data>
   <data name="Slot.TypeApp" xml:space="preserve">
     <value>App</value>
   </data>
-  <data name="Slot.TypeCmd" xml:space="preserve">
-    <value>Cmd</value>
+  <data name="Slot.TypeOpen" xml:space="preserve">
+    <value>Open</value>
   </data>
-  <data name="Slot.TypeJsScript" xml:space="preserve">
-    <value>JS Script</value>
+  <data name="Slot.TypeScript" xml:space="preserve">
+    <value>Script</value>
   </data>
-  <data name="Slot.TypeVbaScript" xml:space="preserve">
-    <value>VBA Script</value>
+  <data name="Slot.TypeMacros" xml:space="preserve">
+    <value>Macros</value>
   </data>
   <data name="Slot.TypePlugin" xml:space="preserve">
     <value>Plugin</value>
@@ -1807,28 +1804,28 @@
     <value>Try again after the target app is ready.</value>
   </data>
   <data name="Feedback.FixBookmarkletSlot" xml:space="preserve">
-    <value>Fix bookmarklet slot</value>
+    <value>Fix browser script slot</value>
   </data>
   <data name="Feedback.FixBookmarkletSlotBody" xml:space="preserve">
-    <value>This bookmarklet slot needs a valid script file to run. Pulsar can only inject scripts that are saved as files.</value>
+    <value>This browser script slot needs a valid script file to run. Pulsar can only run scripts that are saved as files.</value>
   </data>
   <data name="Feedback.FixBookmarkletSlotHelp" xml:space="preserve">
     <value>Open the slot and verify the configured script path.</value>
   </data>
   <data name="Feedback.BookmarkletFailed" xml:space="preserve">
-    <value>Bookmarklet failed</value>
+    <value>Browser script failed</value>
   </data>
   <data name="Feedback.BookmarkletFailedBody" xml:space="preserve">
-    <value>Pulsar could not inject the bookmarklet into the browser.</value>
+    <value>Pulsar could not run the browser script.</value>
   </data>
   <data name="Feedback.BookmarkletFailedHelp" xml:space="preserve">
     <value>Wait for the page or browser address bar to finish loading, then try again.</value>
   </data>
   <data name="Feedback.BookmarkletFailed2" xml:space="preserve">
-    <value>Bookmarklet failed</value>
+    <value>Browser script failed</value>
   </data>
   <data name="Feedback.BookmarkletFailed2Body" xml:space="preserve">
-    <value>Pulsar could not complete the bookmarklet action.</value>
+    <value>Pulsar could not complete the browser script action.</value>
   </data>
   <data name="Feedback.BookmarkletFailed2Help" xml:space="preserve">
     <value>Make sure the browser is ready, then try again.</value>
@@ -2110,7 +2107,7 @@
     <value>Access Credentials</value>
   </data>
   <data name="PluginPermission.AccessCredentialsDesc" xml:space="preserve">
-    <value>Allows plugin to read passwords from the PKI credential manager (sensitive operation)</value>
+    <value>Allows plugin to read passwords from the saved credential manager (sensitive operation)</value>
   </data>
   <data name="PluginPermission.ModifyCredentials" xml:space="preserve">
     <value>Modify Credentials</value>
@@ -2204,8 +2201,8 @@
   <data name="SlotParam.Folder" xml:space="preserve">
     <value>Folder</value>
   </data>
-  <data name="SlotParam.Secret" xml:space="preserve">
-    <value>Secret</value>
+  <data name="SlotParam.Password" xml:space="preserve">
+    <value>Password</value>
   </data>
   <data name="SlotParam.PressEnterAfterFill" xml:space="preserve">
     <value>Press Enter After Fill</value>
@@ -2213,8 +2210,8 @@
   <data name="SlotParam.ScriptFile" xml:space="preserve">
     <value>Script File</value>
   </data>
-  <data name="SlotParam.MacroOverride" xml:space="preserve">
-    <value>Macro Override</value>
+  <data name="SlotParam.MacroName" xml:space="preserve">
+    <value>Macro Name</value>
   </data>
   <!-- ==================== SlotAction (Action Label Localization) ==================== -->
   <data name="SlotAction.SwitchOrLaunch" xml:space="preserve">
@@ -2226,8 +2223,8 @@
   <data name="SlotAction.SwitchExistingApp" xml:space="preserve">
     <value>Switch Existing App</value>
   </data>
-  <data name="SlotAction.FillSecret" xml:space="preserve">
-    <value>Fill Secret</value>
+  <data name="SlotAction.FillPassword" xml:space="preserve">
+    <value>Fill Password</value>
   </data>
   <data name="SlotAction.SendKeys" xml:space="preserve">
     <value>Send Keys</value>
@@ -2238,11 +2235,11 @@
   <data name="SlotAction.RunScript" xml:space="preserve">
     <value>Run Script</value>
   </data>
-  <data name="SlotAction.RunBookmarklet" xml:space="preserve">
-    <value>Run Bookmarklet</value>
+  <data name="SlotAction.RunBrowserScript" xml:space="preserve">
+    <value>Run Browser Script</value>
   </data>
-  <data name="SlotAction.RunVBAScript" xml:space="preserve">
-    <value>Run VBA Script</value>
+  <data name="SlotAction.RunMacro" xml:space="preserve">
+    <value>Run Macro</value>
   </data>
   <data name="SlotAction.QuickAddCurrentApp" xml:space="preserve">
     <value>Quick Add Current App</value>
@@ -2290,10 +2287,10 @@
     <value>Execution error: {0}</value>
   </data>
   <data name="Bookmarklet.Error.AddressBarNotReady" xml:space="preserve">
-    <value>Browser address bar temporarily not ready to accept bookmarklet script. Please wait for the page or browser to finish loading and try again.</value>
+    <value>Browser address bar temporarily not ready to accept browser script. Please wait for the page or browser to finish loading and try again.</value>
   </data>
   <data name="Bookmarklet.Error.InjectionFailed" xml:space="preserve">
-    <value>Error executing bookmarklet script: {0}</value>
+    <value>Error running browser script: {0}</value>
   </data>
   <data name="Dialog.AddSlot.CardSwitchApp" xml:space="preserve">
     <value>Switch App</value>
@@ -2313,11 +2310,11 @@
   <data name="Dialog.AddSlot.CardSendKeysDesc" xml:space="preserve">
     <value>Send key sequences or paste text into the active window.</value>
   </data>
-  <data name="Dialog.AddSlot.CardFillSecret" xml:space="preserve">
-    <value>Fill Secret</value>
+  <data name="Dialog.AddSlot.CardFillPassword" xml:space="preserve">
+    <value>Fill Password</value>
   </data>
-  <data name="Dialog.AddSlot.CardFillSecretDesc" xml:space="preserve">
-    <value>Fill a saved credential into the active field.</value>
+  <data name="Dialog.AddSlot.CardFillPasswordDesc" xml:space="preserve">
+    <value>Fill a saved password into the active field.</value>
   </data>
   <data name="Dialog.AddSlot.CardRunScript" xml:space="preserve">
     <value>Run Script</value>
@@ -2345,45 +2342,45 @@
   </data>
   <!-- ==================== Scenario ==================== -->
   <data name="Scenario.Notepad.Title" xml:space="preserve">
-    <value>Notepad &amp; SendKeys</value>
+    <value>Notepad &amp; Keys</value>
   </data>
   <data name="Scenario.Notepad.Description" xml:space="preserve">
     <value>Classic Pulsar tutorial with Notepad switching and text insertion</value>
   </data>
   <data name="Scenario.Notepad.SlotDescription" xml:space="preserve">
-    <value>Generates a Notepad switch slot + sendkeys command slot</value>
+    <value>Generates a Notepad switch slot + key send command slot</value>
   </data>
   <data name="Scenario.Excel.Title" xml:space="preserve">
     <value>Excel Automation</value>
   </data>
   <data name="Scenario.Excel.Description" xml:space="preserve">
-    <value>VBA script execution in Excel via VbaRunner plugin</value>
+    <value>Run saved macros in Excel</value>
   </data>
   <data name="Scenario.Excel.SlotDescription" xml:space="preserve">
-    <value>Generates a VBA demo slot + sendkeys fallback for Excel</value>
+    <value>Generates a macro demo slot + text insert fallback for Excel</value>
   </data>
   <data name="Scenario.Browser.Title" xml:space="preserve">
-    <value>Browser &amp; Bookmarklet</value>
+    <value>Browser &amp; Scripts</value>
   </data>
   <data name="Scenario.Browser.Description" xml:space="preserve">
-    <value>Browser switching and bookmarklet runner demo</value>
+    <value>Browser switching and browser scripts demo</value>
   </data>
   <data name="Scenario.Browser.SlotDescription" xml:space="preserve">
-    <value>Generates a Browser switch slot + bookmarklet command slot</value>
+    <value>Generates a Browser switch slot + browser script command slot</value>
   </data>
   <!-- ==================== CommandSlot ==================== -->
   <data name="CommandSlot.RunVbaDemo" xml:space="preserve">
-    <value>Run VBA Demo</value>
+    <value>Run Macro Demo</value>
   </data>
   <data name="CommandSlot.OpenBookmarklet" xml:space="preserve">
-    <value>Run Bookmarklet Script</value>
+    <value>Run Browser Script</value>
   </data>
   <!-- ==================== Prerequisite ==================== -->
   <data name="Prerequisite.ExcelExists" xml:space="preserve">
     <value>Microsoft Excel</value>
   </data>
   <data name="Prerequisite.VbaSupport" xml:space="preserve">
-    <value>VBA Support (VBE7.DLL)</value>
+    <value>Macro Support (VBE7.DLL)</value>
   </data>
   <data name="Prerequisite.BrowserExists" xml:space="preserve">
     <value>Web Browser (Chrome/Edge)</value>
@@ -2394,7 +2391,7 @@
 
 You will:
 1. Press {SwitchHotkey} to open Switch Mode and switch to Excel
-2. Press {CommandHotkey} to open Command Mode and run a VBA demo in Excel
+2. Press {CommandHotkey} to open Command Mode and run a macro demo in Excel
 
 You'll see how to switch to an app, then do something inside it.</value>
   </data>
@@ -2412,23 +2409,23 @@ That's all it takes — Pulsar jumps straight to Excel. No alt-tabbing, no searc
   <data name="Tutorial.Excel.FirstSwitchDesc" xml:space="preserve">
     <value>Great — you switched to Excel!
 
-In the next step you'll use Command Mode to run a VBA demo in Excel.
+In the next step you'll use Command Mode to run a macro demo in Excel.
 
 Click "Next" to continue.</value>
   </data>
   <data name="Tutorial.Excel.CommandModeDesc" xml:space="preserve">
-    <value>Press {CommandHotkey} to open Command Mode, hover over "Run VBA Demo", then release the hotkey.
+    <value>Press {CommandHotkey} to open Command Mode, hover over "Run Macro Demo", then release the hotkey.
 
-Pulsar will execute a VBA script in Excel for you — that's Command Mode in action: running a plugin on the app you switched to.</value>
+Pulsar will run a saved macro in Excel for you — that's Command Mode in action: running a plugin on the app you switched to.</value>
   </data>
   <data name="Tutorial.Excel.CommandModeHint" xml:space="preserve">
-    <value>Press {CommandHotkey}, hover over "Run VBA Demo", and release the hotkey.</value>
+    <value>Press {CommandHotkey}, hover over "Run Macro Demo", and release the hotkey.</value>
   </data>
   <data name="Tutorial.Excel.FirstCommandDesc" xml:space="preserve">
-    <value>Pulsar ran the VBA script in Excel! You just combined both modes:
+    <value>Pulsar ran the macro in Excel! You just combined both modes:
 
 1. Switch Mode ({SwitchHotkey}) — got you to Excel
-2. Command Mode ({CommandHotkey}) — ran a VBA demo inside it
+2. Command Mode ({CommandHotkey}) — ran a macro demo inside it
 
 That's the core Pulsar workflow.</value>
   </data>
@@ -2436,7 +2433,7 @@ That's the core Pulsar workflow.</value>
     <value>You just combined both Pulsar modes:
 
 ✔ Switched to Excel with Switch Mode ({SwitchHotkey})
-✔ Ran a VBA demo with Command Mode ({CommandHotkey})
+✔ Ran a macro demo with Command Mode ({CommandHotkey})
 
 That's the core workflow: switch to any app, then act inside it.
 
@@ -2449,7 +2446,7 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
 
 You will:
 1. Press {SwitchHotkey} to open Switch Mode and switch to your browser
-2. Press {CommandHotkey} to open Command Mode and run a bookmarklet
+2. Press {CommandHotkey} to open Command Mode and run a browser script
 
 You'll see how to switch to an app, then do something inside it.</value>
   </data>
@@ -2467,20 +2464,20 @@ That's all it takes — Pulsar jumps straight to your browser. No alt-tabbing, n
   <data name="Tutorial.Browser.FirstSwitchDesc" xml:space="preserve">
     <value>Great — you switched to your browser!
 
-In the next step you'll use Command Mode to open a bookmarklet.
+In the next step you'll use Command Mode to run a browser script.
 
 Click "Next" to continue.</value>
   </data>
   <data name="Tutorial.Browser.CommandModeDesc" xml:space="preserve">
-    <value>Press {CommandHotkey} to open Command Mode, hover over "Open Bookmarklet", then release the hotkey.
+    <value>Press {CommandHotkey} to open Command Mode, hover over "Run Browser Script", then release the hotkey.
 
 Pulsar will open a webpage in your browser for you — that's Command Mode in action: running a plugin on the app you switched to.</value>
   </data>
   <data name="Tutorial.Browser.CommandModeHint" xml:space="preserve">
-    <value>Press {CommandHotkey}, hover over "Open Bookmarklet", and release the hotkey.</value>
+    <value>Press {CommandHotkey}, hover over "Run Browser Script", and release the hotkey.</value>
   </data>
   <data name="Tutorial.Browser.FirstCommandDesc" xml:space="preserve">
-    <value>Pulsar opened the bookmarklet in your browser! You just combined both modes:
+    <value>Pulsar ran the browser script in your browser! You just combined both modes:
 
 1. Switch Mode ({SwitchHotkey}) — got you to your browser
 2. Command Mode ({CommandHotkey}) — opened a webpage inside it
@@ -2491,7 +2488,7 @@ That's the core Pulsar workflow.</value>
     <value>You just combined both Pulsar modes:
 
 ✔ Switched to your browser with Switch Mode ({SwitchHotkey})
-✔ Opened a bookmarklet with Command Mode ({CommandHotkey})
+✔ Ran a browser script with Command Mode ({CommandHotkey})
 
 That's the core workflow: switch to any app, then act inside it.
 
@@ -2519,10 +2516,10 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
     <value>Keys sent</value>
   </data>
   <data name="Plugin.Command.Error.Cancelled" xml:space="preserve">
-    <value>SendKeys cancelled</value>
+    <value>Keys send cancelled</value>
   </data>
   <data name="Plugin.Command.Error.SendKeysFailed" xml:space="preserve">
-    <value>SendKeys failed: {0}</value>
+    <value>Failed to send keys: {0}</value>
   </data>
   <data name="Plugin.Command.UnknownAction" xml:space="preserve">
     <value>Unknown action: {0}</value>
@@ -2979,7 +2976,7 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
     <value>Switched to a hidden window</value>
   </data>
   <data name="QuickSwitch.HiddenWindowBody" xml:space="preserve">
-    <value>'{0}' is off-screen / zero-size and was removed from quick-switch history. Use WinSwitcher → Window Inspector to exclude it permanently.</value>
+    <value>'{0}' is off-screen / zero-size and was removed from quick-switch history. Use App Switch → Window Inspector to exclude it permanently.</value>
   </data>
   <data name="Settings.About.ConfigBackupTitle" xml:space="preserve">
     <value>Configuration Backup</value>

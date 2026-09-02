@@ -1164,7 +1164,7 @@
   <data
     name="Settings.ExternalPlugins.AboutLine2"
     xml:space="preserve">
-    <value>• 内置插件（PKI、WinSwitcher等）在以下选项卡中管理：</value>
+    <value>• 内置插件（凭据管理、应用切换等）在以下选项卡中管理：</value>
   </data>
   <data
     name="Settings.ExternalPlugins.AboutLine3"
@@ -1514,7 +1514,7 @@
   <data
     name="Dialog.AddSlot.RunVba"
     xml:space="preserve">
-    <value>运行VBA</value>
+    <value>运行宏</value>
   </data>
   <data
     name="Dialog.AddSlot.SwitchOrLaunch"
@@ -1609,7 +1609,7 @@
   <data
     name="Dialog.SecretPicker.PickHint"
     xml:space="preserve">
-    <value>选择现有凭证或为此PKI槽位创建新凭证。</value>
+    <value>选择现有凭证或为此自动填充槽位创建新凭证。</value>
   </data>
   <data
     name="Dialog.SecretPicker.DoubleClickHint"
@@ -1954,7 +1954,7 @@
   <data
     name="Dialog.ProcessBlacklist.EnableSwitchDiagnostics"
     xml:space="preserve">
-    <value>在应用日志中记录详细的 WinSwitcher 诊断信息</value>
+    <value>在应用日志中记录详细的应用切换诊断信息</value>
   </data>
   <data
     name="Dialog.IconPicker.SearchPlaceholder"
@@ -2189,12 +2189,12 @@
   <data
     name="Notification.SelectVbaScript"
     xml:space="preserve">
-    <value>选择VBA脚本</value>
+    <value>选择宏文件</value>
   </data>
   <data
     name="Notification.SelectBookmarklet"
     xml:space="preserve">
-    <value>选择Bookmarklet脚本</value>
+    <value>选择浏览器脚本</value>
   </data>
   <data
     name="Notification.SelectPluginPackage"
@@ -2264,12 +2264,7 @@
   <data
     name="Notification.RunVba"
     xml:space="preserve">
-    <value>运行VBA</value>
-  </data>
-  <data
-    name="Notification.CleanIconCache"
-    xml:space="preserve">
-    <value>清理图标缓存</value>
+    <value>运行宏</value>
   </data>
   <data
     name="Notification.CleanCacheBody"
@@ -2444,7 +2439,7 @@
   <data
     name="Notification.FileFilterVba"
     xml:space="preserve">
-    <value>VBA脚本 (*.txt;*.vbs;*.bas)|*.txt;*.vbs;*.bas|所有文件 (*.*)|*.*</value>
+    <value>宏文件 (*.txt;*.vbs;*.bas)|*.txt;*.vbs;*.bas|所有文件 (*.*)|*.*</value>
   </data>
   <data
     name="Notification.FileFilterJs"
@@ -2697,9 +2692,9 @@
     <value>警告</value>
   </data>
   <data
-    name="Slot.TypeSecret"
+    name="Slot.TypeFill"
     xml:space="preserve">
-    <value>密钥</value>
+    <value>填充</value>
   </data>
   <data
     name="Slot.TypeApp"
@@ -2707,19 +2702,19 @@
     <value>应用</value>
   </data>
   <data
-    name="Slot.TypeCmd"
+    name="Slot.TypeOpen"
     xml:space="preserve">
-    <value>命令</value>
+    <value>打开</value>
   </data>
   <data
-    name="Slot.TypeJsScript"
+    name="Slot.TypeScript"
     xml:space="preserve">
-    <value>JS脚本</value>
+    <value>脚本</value>
   </data>
   <data
-    name="Slot.TypeVbaScript"
+    name="Slot.TypeMacros"
     xml:space="preserve">
-    <value>VBA脚本</value>
+    <value>宏</value>
   </data>
   <data
     name="Slot.TypePlugin"
@@ -2959,12 +2954,12 @@
   <data
     name="Feedback.FixBookmarkletSlot"
     xml:space="preserve">
-    <value>修复书签槽位</value>
+    <value>修复浏览器脚本槽位</value>
   </data>
   <data
     name="Feedback.FixBookmarkletSlotBody"
     xml:space="preserve">
-    <value>此书签槽位需要有效的脚本文件才能运行。Pulsar只能注入已保存为文件的脚本。</value>
+    <value>此浏览器脚本槽位需要有效的脚本文件才能运行。Pulsar只能运行已保存为文件的脚本。</value>
   </data>
   <data
     name="Feedback.FixBookmarkletSlotHelp"
@@ -2974,12 +2969,12 @@
   <data
     name="Feedback.BookmarkletFailed"
     xml:space="preserve">
-    <value>书签执行失败</value>
+    <value>浏览器脚本执行失败</value>
   </data>
   <data
     name="Feedback.BookmarkletFailedBody"
     xml:space="preserve">
-    <value>Pulsar无法将书签注入浏览器。</value>
+    <value>Pulsar无法运行浏览器脚本。</value>
   </data>
   <data
     name="Feedback.BookmarkletFailedHelp"
@@ -2989,12 +2984,12 @@
   <data
     name="Feedback.BookmarkletFailed2"
     xml:space="preserve">
-    <value>书签执行失败</value>
+    <value>浏览器脚本执行失败</value>
   </data>
   <data
     name="Feedback.BookmarkletFailed2Body"
     xml:space="preserve">
-    <value>Pulsar无法完成书签操作。</value>
+    <value>Pulsar无法完成浏览器脚本操作。</value>
   </data>
   <data
     name="Feedback.BookmarkletFailed2Help"
@@ -3452,7 +3447,7 @@
   <data
     name="PluginPermission.AccessCredentialsDesc"
     xml:space="preserve">
-    <value>允许插件读取 PKI 凭据管理器中的密码（敏感操作）</value>
+    <value>允许插件读取已保存凭据中的密码（敏感操作）</value>
   </data>
   <data
     name="PluginPermission.ModifyCredentials"
@@ -3606,9 +3601,9 @@
     <value>文件夹</value>
   </data>
   <data
-    name="SlotParam.Secret"
+    name="SlotParam.Password"
     xml:space="preserve">
-    <value>密钥</value>
+    <value>密码</value>
   </data>
   <data
     name="SlotParam.PressEnterAfterFill"
@@ -3621,9 +3616,9 @@
     <value>脚本文件</value>
   </data>
   <data
-    name="SlotParam.MacroOverride"
+    name="SlotParam.MacroName"
     xml:space="preserve">
-    <value>宏覆盖</value>
+    <value>宏名称</value>
   </data>
   <data
     name="SlotAction.SwitchOrLaunch"
@@ -3641,9 +3636,9 @@
     <value>切换到已有应用</value>
   </data>
   <data
-    name="SlotAction.FillSecret"
+    name="SlotAction.FillPassword"
     xml:space="preserve">
-    <value>填写密钥</value>
+    <value>填写密码</value>
   </data>
   <data
     name="SlotAction.SendKeys"
@@ -3661,14 +3656,14 @@
     <value>运行脚本</value>
   </data>
   <data
-    name="SlotAction.RunBookmarklet"
+    name="SlotAction.RunBrowserScript"
     xml:space="preserve">
-    <value>运行书签</value>
+    <value>运行浏览器脚本</value>
   </data>
   <data
-    name="SlotAction.RunVBAScript"
+    name="SlotAction.RunMacro"
     xml:space="preserve">
-    <value>运行VBA脚本</value>
+    <value>运行宏</value>
   </data>
   <data
     name="SlotAction.QuickAddCurrentApp"
@@ -3743,12 +3738,12 @@
   <data
     name="Bookmarklet.Error.AddressBarNotReady"
     xml:space="preserve">
-    <value>浏览器地址栏暂时未准备好接受书签脚本。请等待页面或浏览器完成加载后重试。</value>
+    <value>浏览器地址栏暂时未准备好接受浏览器脚本。请等待页面或浏览器完成加载后重试。</value>
   </data>
   <data
     name="Bookmarklet.Error.InjectionFailed"
     xml:space="preserve">
-    <value>执行书签脚本时出错: {0}</value>
+    <value>运行浏览器脚本时出错: {0}</value>
   </data>
   <data
     name="Dialog.AddSlot.CardSwitchApp"
@@ -3781,14 +3776,14 @@
     <value>向活动窗口发送按键序列或粘贴文本。</value>
   </data>
   <data
-    name="Dialog.AddSlot.CardFillSecret"
+    name="Dialog.AddSlot.CardFillPassword"
     xml:space="preserve">
-    <value>填写凭证</value>
+    <value>填写密码</value>
   </data>
   <data
-    name="Dialog.AddSlot.CardFillSecretDesc"
+    name="Dialog.AddSlot.CardFillPasswordDesc"
     xml:space="preserve">
-    <value>将已保存的凭证填入活动字段。</value>
+    <value>将已保存的密码填入活动字段。</value>
   </data>
   <data
     name="Dialog.AddSlot.CardRunScript"
@@ -3854,38 +3849,38 @@
   <data
     name="Scenario.Excel.Description"
     xml:space="preserve">
-    <value>通过 VbaRunner 插件在 Excel 中执行 VBA 脚本</value>
+    <value>在 Excel 中运行已保存的宏</value>
   </data>
   <data
     name="Scenario.Excel.SlotDescription"
     xml:space="preserve">
-    <value>会生成一个 VBA 演示槽位和 Excel 文本插入槽位</value>
+    <value>会生成一个宏演示槽位和 Excel 文本插入槽位</value>
   </data>
   <data
     name="Scenario.Browser.Title"
     xml:space="preserve">
-    <value>浏览器与书签</value>
+    <value>浏览器与脚本</value>
   </data>
   <data
     name="Scenario.Browser.Description"
     xml:space="preserve">
-    <value>浏览器切换和书签运行器演示</value>
+    <value>浏览器切换和浏览器脚本演示</value>
   </data>
   <data
     name="Scenario.Browser.SlotDescription"
     xml:space="preserve">
-    <value>会生成浏览器切换槽位和书签命令槽位</value>
+    <value>会生成浏览器切换槽位和浏览器脚本命令槽位</value>
   </data>
   <!-- ==================== CommandSlot ==================== -->
   <data
     name="CommandSlot.RunVbaDemo"
     xml:space="preserve">
-    <value>运行 VBA 演示</value>
+    <value>运行宏演示</value>
   </data>
   <data
     name="CommandSlot.OpenBookmarklet"
     xml:space="preserve">
-    <value>执行书签脚本</value>
+    <value>运行浏览器脚本</value>
   </data>
   <!-- ==================== Prerequisite ==================== -->
   <data
@@ -3896,7 +3891,7 @@
   <data
     name="Prerequisite.VbaSupport"
     xml:space="preserve">
-    <value>VBA 支持（VBE7.DLL）</value>
+    <value>宏支持（VBE7.DLL）</value>
   </data>
   <data
     name="Prerequisite.BrowserExists"
@@ -3911,7 +3906,7 @@
 
 你将：
 1. 按 {SwitchHotkey} 打开切换模式，切换到 Excel
-2. 按 {CommandHotkey} 打开命令模式，在 Excel 中运行 VBA 演示
+2. 按 {CommandHotkey} 打开命令模式，在 Excel 中运行宏演示
 
 你将学会如何切换到应用，然后在其中执行操作。</value>
   </data>
@@ -3937,29 +3932,29 @@ Pulsar 会直接跳转到 Excel，无需反复切换窗口。</value>
     xml:space="preserve">
     <value>太好了——你已切换到 Excel！
 
-下一步将使用命令模式在 Excel 中运行 VBA 演示。
+下一步将使用命令模式在 Excel 中运行宏演示。
 
 点击"下一步"继续。</value>
   </data>
   <data
     name="Tutorial.Excel.CommandModeDesc"
     xml:space="preserve">
-    <value>按 {CommandHotkey} 打开命令模式，将鼠标悬停在"运行 VBA 演示"上，然后释放快捷键。
+    <value>按 {CommandHotkey} 打开命令模式，将鼠标悬停在"运行宏演示"上，然后释放快捷键。
 
-Pulsar 会在 Excel 中为你执行 VBA 脚本——这就是命令模式的魅力：在你切换到的应用上运行插件。</value>
+Pulsar 会在 Excel 中为你运行已保存的宏——这就是命令模式的魅力：在你切换到的应用上运行插件。</value>
   </data>
   <data
     name="Tutorial.Excel.CommandModeHint"
     xml:space="preserve">
-    <value>按 {CommandHotkey}，将鼠标悬停在"运行 VBA 演示"上，然后释放快捷键。</value>
+    <value>按 {CommandHotkey}，将鼠标悬停在"运行宏演示"上，然后释放快捷键。</value>
   </data>
   <data
     name="Tutorial.Excel.FirstCommandDesc"
     xml:space="preserve">
-    <value>Pulsar 已在 Excel 中运行了 VBA 脚本！你刚刚结合了两种模式：
+    <value>Pulsar 已在 Excel 中运行了宏！你刚刚结合了两种模式：
 
 1. 切换模式（{SwitchHotkey}）——帮你到达 Excel
-2. 命令模式（{CommandHotkey}）——在其内部运行了 VBA 演示
+2. 命令模式（{CommandHotkey}）——在其内部运行了宏演示
 
 这就是 Pulsar 的核心工作流。</value>
   </data>
@@ -3969,7 +3964,7 @@ Pulsar 会在 Excel 中为你执行 VBA 脚本——这就是命令模式的魅�
     <value>你已经结合了 Pulsar 的两种模式：
 
 ✔ 用切换模式（{SwitchHotkey}）跳到 Excel
-✔ 用命令模式（{CommandHotkey}）运行了 VBA 演示
+✔ 用命令模式（{CommandHotkey}）运行了宏演示
 
 这就是核心工作流——切换到任意应用，然后在其中执行操作。
 
@@ -3983,7 +3978,7 @@ Pulsar 会在 Excel 中为你执行 VBA 脚本——这就是命令模式的魅�
 
 你将：
 1. 按 {SwitchHotkey} 打开切换模式，切换到你的浏览器
-2. 按 {CommandHotkey} 打开命令模式，运行一个书签
+2. 按 {CommandHotkey} 打开命令模式，运行一个浏览器脚本
 
 你将学会如何切换到应用，然后在其中执行操作。</value>
   </data>
@@ -4009,26 +4004,26 @@ Pulsar 会直接跳转到你的浏览器，无需反复切换窗口。</value>
     xml:space="preserve">
     <value>太好了——你已切换到浏览器！
 
-下一步将使用命令模式打开一个书签。
+下一步将使用命令模式运行一个浏览器脚本。
 
 点击"下一步"继续。</value>
   </data>
   <data
     name="Tutorial.Browser.CommandModeDesc"
     xml:space="preserve">
-    <value>按 {CommandHotkey} 打开命令模式，将鼠标悬停在"打开书签"上，然后释放快捷键。
+    <value>按 {CommandHotkey} 打开命令模式，将鼠标悬停在"运行浏览器脚本"上，然后释放快捷键。
 
 Pulsar 会在你的浏览器中打开一个网页——这就是命令模式：在你切换到的应用上运行插件。</value>
   </data>
   <data
     name="Tutorial.Browser.CommandModeHint"
     xml:space="preserve">
-    <value>按 {CommandHotkey}，将鼠标悬停在"打开书签"上，然后释放快捷键。</value>
+    <value>按 {CommandHotkey}，将鼠标悬停在"运行浏览器脚本"上，然后释放快捷键。</value>
   </data>
   <data
     name="Tutorial.Browser.FirstCommandDesc"
     xml:space="preserve">
-    <value>Pulsar 已在你浏览器中打开了书签！你刚刚结合了两种模式：
+    <value>Pulsar 已在你浏览器中运行了浏览器脚本！你刚刚结合了两种模式：
 
 1. 切换模式（{SwitchHotkey}）——帮你到达浏览器
 2. 命令模式（{CommandHotkey}）——在其内部打开了网页
@@ -4041,7 +4036,7 @@ Pulsar 会在你的浏览器中打开一个网页——这就是命令模式：�
     <value>你已经结合了 Pulsar 的两种模式：
 
 ✔ 用切换模式（{SwitchHotkey}）跳到浏览器
-✔ 用命令模式（{CommandHotkey}）打开了书签
+✔ 用命令模式（{CommandHotkey}）运行了浏览器脚本
 
 这就是核心工作流——切换到任意应用，然后在其中执行操作。
 
@@ -4082,12 +4077,12 @@ Pulsar 会在你的浏览器中打开一个网页——这就是命令模式：�
   <data
     name="Plugin.Command.Error.Cancelled"
     xml:space="preserve">
-    <value>SendKeys 已取消</value>
+    <value>按键发送已取消</value>
   </data>
   <data
     name="Plugin.Command.Error.SendKeysFailed"
     xml:space="preserve">
-    <value>SendKeys 失败：{0}</value>
+    <value>按键发送失败：{0}</value>
   </data>
   <data
     name="Plugin.Command.UnknownAction"
@@ -4670,7 +4665,7 @@ Pulsar 会在你的浏览器中打开一个网页——这就是命令模式：�
     <value>切到了不可见窗口</value>
   </data>
   <data name="QuickSwitch.HiddenWindowBody" xml:space="preserve">
-    <value>'{0}' 屏幕外或零尺寸，已从快速切换历史中移除。可在 WinSwitcher 设置 → 窗口检查器中永久排除。</value>
+    <value>'{0}' 屏幕外或零尺寸，已从快速切换历史中移除。可在应用切换设置 → 窗口检查器中永久排除。</value>
   </data>
   <data
     name="Settings.About.ConfigBackupTitle"

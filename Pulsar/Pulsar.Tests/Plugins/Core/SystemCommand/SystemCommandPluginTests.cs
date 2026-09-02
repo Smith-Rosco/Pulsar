@@ -40,7 +40,7 @@ namespace Pulsar.Tests.Plugins.Core.SystemCommand
 
             var metadata = plugin.GetMetadata();
 
-            metadata.Display.Name.Should().Be("Pulsar Control");
+            metadata.Display.Name.Should().Be("Pulsar Settings");
             metadata.Capabilities.SupportedActions.Should().Equal("open-settings", "quick-add-profile");
             metadata.Actions.Keys.Should().Equal("open-settings", "quick-add-profile");
             metadata.Actions["open-settings"].Aliases.Should().Contain("pulsar.system.open_settings");

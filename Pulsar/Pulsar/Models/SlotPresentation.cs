@@ -70,11 +70,11 @@ namespace Pulsar.Models
         {
             return pluginId switch
             {
-                "com.pulsar.pki" => Loc?["Slot.TypeSecret"] ?? "Secret",
+                "com.pulsar.pki" => Loc?["Slot.TypeFill"] ?? "Fill",
                 "com.pulsar.winswitcher" => Loc?["Slot.TypeApp"] ?? "App",
-                "com.pulsar.command" => Loc?["Slot.TypeCmd"] ?? "Cmd",
-                "com.pulsar.bookmarklet" => Loc?["Slot.TypeJsScript"] ?? "JS Script",
-                "com.pulsar.vbarunner" => Loc?["Slot.TypeVbaScript"] ?? "VBA Script",
+                "com.pulsar.command" => Loc?["Slot.TypeOpen"] ?? "Open",
+                "com.pulsar.bookmarklet" => Loc?["Slot.TypeScript"] ?? "Script",
+                "com.pulsar.vbarunner" => Loc?["Slot.TypeMacros"] ?? "Macros",
                 _ => Loc?["Slot.TypePlugin"] ?? "Plugin"
             };
         }

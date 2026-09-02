@@ -33,7 +33,7 @@ namespace Pulsar.Tests.Plugins.Core
 
             var metadata = plugin.GetMetadata();
 
-            metadata.Display.Name.Should().Be("Command Runner");
+            metadata.Display.Name.Should().Be("Open & Type");
             metadata.Display.Description.Should().Contain("Open apps, files, folders, or URLs");
             metadata.Capabilities.SupportedActions.Should().Equal("run", "sendkeys");
             metadata.Actions["run"].Label.Should().Be("Open Target");
@@ -46,7 +46,7 @@ namespace Pulsar.Tests.Plugins.Core
 
             var metadata = plugin.GetMetadata();
 
-            metadata.Display.Name.Should().Be("WinSwitcher");
+            metadata.Display.Name.Should().Be("App Switch");
             metadata.Capabilities.SupportedActions.Should().Equal("switch", "launch", "activate");
             metadata.Actions["switch"].Label.Should().Be("Switch Or Launch");
             metadata.Actions["launch"].Label.Should().Be("Launch App");
@@ -62,11 +62,11 @@ namespace Pulsar.Tests.Plugins.Core
 
             var metadata = plugin.GetMetadata();
 
-            metadata.Display.Name.Should().Be("Secret Fill");
+            metadata.Display.Name.Should().Be("AutoFill");
             metadata.Capabilities.SupportedActions.Should().Equal("fill");
             metadata.Actions.Keys.Should().Equal("fill");
             metadata.Actions["fill"].Aliases.Should().Contain("inject");
-            metadata.Actions["fill"].Label.Should().Be("Fill Secret");
+            metadata.Actions["fill"].Label.Should().Be("Fill Password");
         }
 
         [Fact]
@@ -76,7 +76,7 @@ namespace Pulsar.Tests.Plugins.Core
 
             var metadata = plugin.GetMetadata();
 
-            metadata.Display.Name.Should().Be("Pulsar Control");
+            metadata.Display.Name.Should().Be("Pulsar Settings");
             metadata.Actions.Keys.Should().Equal("open-settings", "quick-add-profile");
         }
     }

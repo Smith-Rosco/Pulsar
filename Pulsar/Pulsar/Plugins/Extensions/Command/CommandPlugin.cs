@@ -40,7 +40,7 @@ namespace Pulsar.Plugins.Extensions.Command
         #region Plugin Metadata
 
         public override string Id => "com.pulsar.command";
-        public override string DisplayName => "Command Runner";
+        public override string DisplayName => "Open & Type";
         public override string Version => "1.0.0";
         public override string Author => "Pulsar Team";
         public override string Description => "Open apps, files, folders, or URLs, or send a key sequence to the active window.";

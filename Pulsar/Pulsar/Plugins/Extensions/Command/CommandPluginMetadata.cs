@@ -37,7 +37,7 @@ namespace Pulsar.Plugins.Extensions.Command
                 Schema = null,
                 UI = new UIHints
                 {
-                    Badge = "Cmd",
+                    Badge = "Open",
                     AccentColor = "#32CD32",
                     ShowInQuickAccess = true,
                     SortOrder = 20,

@@ -33,7 +33,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
         private List<WindowEligibilityRule> _excludeRules = new();
 
         public string Id => "com.pulsar.winswitcher";
-        public string DisplayName => "WinSwitcher";
+        public string DisplayName => "App Switch";
         public string Version => "1.0.0";
         public string Author => "Pulsar Team";
         public string Description => "Switch to an existing app, launch one directly, or switch first and launch only when needed.";
@@ -449,7 +449,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                 },
                 UI = new UIHints
                 {
-                    Badge = "WinSwitcher",
+                    Badge = "Apps",
                     AccentColor = "#2196F3",
                     ShowInQuickAccess = true,
                     SortOrder = 5,

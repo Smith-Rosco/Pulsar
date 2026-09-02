@@ -238,7 +238,7 @@ namespace Pulsar.Services.ActionFeedback
                 "browser address bar", "浏览器地址栏",
                 "No running browser detected", "未检测到运行中的浏览器",
                 "Failed to focus browser",
-                "Error executing bookmarklet script", "执行书签脚本时出错"))
+                "Error running browser script", "运行浏览器脚本时出错"))
             {
                 return new ActionFeedback(
                     ActionFeedbackKind.RecoverableFailure,

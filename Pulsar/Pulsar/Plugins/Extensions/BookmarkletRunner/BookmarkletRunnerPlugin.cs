@@ -35,10 +35,10 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
         internal Func<int, Task> DelayAsync { get; set; } = Task.Delay;
 
         public string Id => "com.pulsar.bookmarklet";
-        public string DisplayName => "Bookmarklet Runner";
+        public string DisplayName => "Browser Scripts";
         public string Version => "1.0.0";
         public string Author => "Pulsar Team";
-        public string Description => "Execute JavaScript bookmarklets in the active browser.";
+        public string Description => "Run saved browser scripts in the active browser.";
         public string Icon => "\uE896"; // Code/Script Icon
         public bool CanDisable => true; // Extension plugin, can be disabled
         public PluginTier Tier => PluginTier.Extension;
@@ -83,7 +83,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
                 Schema = null,
                 UI = new UIHints
                 {
-                    Badge = "JS Script",
+                    Badge = "Script",
                     AccentColor = "#FF6B6B",
                     ShowInQuickAccess = true,
                     SortOrder = 30,
@@ -103,8 +103,8 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
                     ["run"] = new SlotActionMetadata
                     {
                         Name = "run",
-                        Label = "Run Bookmarklet",
-                        Description = "Load and execute a bookmarklet script file in the active browser.",
+                        Label = "Run Browser Script",
+                        Description = "Run a saved browser script in the active browser.",
                         SuggestedLabelTemplate = "Run {path}",
                         SuggestedIconKey = "E896",
                         SuggestedColorHex = "#FF6B6B",
@@ -326,12 +326,12 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
                 }
 
                 _logger?.LogWarning("[BookmarkletRunner] UIA injection failed; aborting bookmarklet execution.");
-                return PluginResult.Error(_loc?["Bookmarklet.Error.AddressBarNotReady"] ?? "Browser address bar temporarily not ready to accept bookmarklet script. Please wait for the page or browser to finish loading and try again.");
+                return PluginResult.Error(_loc?["Bookmarklet.Error.AddressBarNotReady"] ?? "Browser address bar temporarily not ready to accept browser script. Please wait for the page or browser to finish loading and try again.");
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "[BookmarkletRunner] Smart sequence error");
-                return PluginResult.Error(string.Format(_loc?["Bookmarklet.Error.InjectionFailed"] ?? "Error executing bookmarklet script: {0}", ex.Message));
+                return PluginResult.Error(string.Format(_loc?["Bookmarklet.Error.InjectionFailed"] ?? "Error running browser script: {0}", ex.Message));
             }
         }
 

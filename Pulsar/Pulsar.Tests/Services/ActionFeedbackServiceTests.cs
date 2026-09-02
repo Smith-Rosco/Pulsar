@@ -96,10 +96,10 @@ namespace Pulsar.Tests.Services
             var feedback = _service.Create(
                 "com.pulsar.bookmarklet",
                 "run",
-                PluginResult.Error("浏览器地址栏暂时未准备好接受书签脚本。请等待页面或浏览器完成加载后重试。"));
+                PluginResult.Error("浏览器地址栏暂时未准备好接受浏览器脚本。请等待页面或浏览器完成加载后重试。"));
 
             feedback.Kind.Should().Be(ActionFeedbackKind.RecoverableFailure);
-            feedback.Title.Should().Be("书签执行失败");
+            feedback.Title.Should().Be("浏览器脚本执行失败");
             feedback.ToNotificationMessage().Should().Contain("加载完成");
         }
     }

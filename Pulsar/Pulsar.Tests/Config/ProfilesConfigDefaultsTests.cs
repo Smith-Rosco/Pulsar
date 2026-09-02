@@ -200,11 +200,11 @@ namespace Pulsar.Tests.Config
         public void PluginSlot_TypeBadge_ShouldReturnCorrectBadge()
         {
             // Arrange & Act & Assert
-            new PluginSlot { PluginId = "com.pulsar.pki" }.TypeBadge.Should().Be("Secret");
+            new PluginSlot { PluginId = "com.pulsar.pki" }.TypeBadge.Should().Be("Fill");
             new PluginSlot { PluginId = "com.pulsar.winswitcher" }.TypeBadge.Should().Be("App");
-            new PluginSlot { PluginId = "com.pulsar.command" }.TypeBadge.Should().Be("Cmd");
-            new PluginSlot { PluginId = "com.pulsar.bookmarklet" }.TypeBadge.Should().Be("JS Script");
-            new PluginSlot { PluginId = "com.pulsar.vbarunner" }.TypeBadge.Should().Be("VBA Script");
+            new PluginSlot { PluginId = "com.pulsar.command" }.TypeBadge.Should().Be("Open");
+            new PluginSlot { PluginId = "com.pulsar.bookmarklet" }.TypeBadge.Should().Be("Script");
+            new PluginSlot { PluginId = "com.pulsar.vbarunner" }.TypeBadge.Should().Be("Macros");
             new PluginSlot { PluginId = "unknown.plugin" }.TypeBadge.Should().Be("Plugin");
         }
 

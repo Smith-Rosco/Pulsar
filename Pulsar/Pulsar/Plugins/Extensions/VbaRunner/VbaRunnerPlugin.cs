@@ -26,10 +26,10 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
         private readonly VbaRunnerSettings _settings = new();
 
         public string Id => "com.pulsar.vbarunner";
-        public string DisplayName => "VBA Script Runner";
+        public string DisplayName => "Excel Macros";
         public string Version => "1.0.0";
         public string Author => "Pulsar Team";
-        public string Description => "Execute VBA scripts in Excel/WPS with context awareness.";
+        public string Description => "Run saved macros in Excel/WPS.";
         public string Icon => "\uE71D"; // Excel/Table Icon
         public bool CanDisable => true; // Extension plugin, can be disabled
         public PluginTier Tier => PluginTier.Extension;
@@ -74,7 +74,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
                 Schema = null,
                 UI = new UIHints
                 {
-                    Badge = "VBA Script",
+                    Badge = "Macros",
                     AccentColor = "#FF8C00",
                     ShowInQuickAccess = true,
                     SortOrder = 40,
@@ -94,8 +94,8 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
                     ["run"] = new SlotActionMetadata
                     {
                         Name = "run",
-                        Label = "Run VBA Script",
-                        Description = "Execute a VBA script file in the target spreadsheet application.",
+                        Label = "Run Macro",
+                        Description = "Run a saved macro file in the target spreadsheet application.",
                         SuggestedLabelTemplate = "Run {path}",
                         SuggestedIconKey = "E71D",
                         SuggestedColorHex = "#FF8C00",
@@ -126,7 +126,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
                             {
                                 Key = "macro",
                                 Type = "string",
-                                Label = "Macro Override",
+                                Label = "Macro Name",
                                 Description = "Optional macro name override when the script defines multiple entry points.",
                                 IsRequired = false,
                                 Group = SlotParameterGroup.Advanced,

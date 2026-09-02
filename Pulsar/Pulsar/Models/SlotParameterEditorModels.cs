@@ -85,8 +85,8 @@ namespace Pulsar.Models
                     PluginId = "com.pulsar.pki",
                     DefaultAction = "fill",
                     IconKey = "E72E",
-                    Title = loc["Dialog.AddSlot.CardFillSecret"],
-                    Description = loc["Dialog.AddSlot.CardFillSecretDesc"],
+                    Title = loc["Dialog.AddSlot.CardFillPassword"],
+                    Description = loc["Dialog.AddSlot.CardFillPasswordDesc"],
                     IsPrimary = true,
                     Category = "Security"
                 },
