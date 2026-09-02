@@ -31,7 +31,7 @@ Then follow the task router below.
 | **[proposals/](./proposals/)** | Design proposals and refactor plans not yet accepted | 2 | In review |
 | **[roadmap/](./roadmap/)** | Roadmap and exploratory analysis | 2 | In review |
 | **[agents/](./agents/)** | **Skill contracts — machine-consumed config, NOT reading material** | 2 | Config |
-| **[archive/](./archive/)** | Historical snapshots, date-prefixed | 56 | **No** |
+| **[archive/](./archive/)** | Historical snapshots, date-prefixed | 57 | **No** |
 
 Two rules keep this structure honest:
 
@@ -195,6 +195,7 @@ Historical snapshots — **not current truth**. Useful for understanding why a d
 - Naming: `YYYY-MM-DD-DESCRIPTIVE_NAME.md`, flat directory
 - Contains: phase completion reports, handovers, PKI implementation notes, TUTORIAL_SYSTEM design docs, and historical fix reports migrated from `lessons/` on 2026-09-02
 - See [archive/README.md](./archive/README.md)
+- Health snapshots: [2026-09-02-REPO_HEALTH_REVIEW.md](./archive/2026-09-02-REPO_HEALTH_REVIEW.md) — repository health review (9.0/10)
 
 ---
 
@@ -227,6 +228,7 @@ Historical snapshots — **not current truth**. Useful for understanding why a d
 ---
 
 **Change History**:
+- v5.1.0 (2026-09-02): Added repository health review snapshot to `archive/` (2026-09-02-REPO_HEALTH_REVIEW.md)
 - v5.0.0 (2026-09-02): Full index resync after reorganization — 12 historical fix reports moved `lessons/` → `archive/`; `handoff/` folded into `archive/`; `design/` merged into `proposals/`; `Plugins/test_error_explanation.md` removed; added `openspec/`, `roadmap/`, `proposals/`, `agents/` sections; documented the lessons-vs-archive criterion
 - v4.2.0 (2026-03-09): Added VbaRunner Smart Directive System documentation
 - v4.1.0 (2026-03-03): Refactored for AI-first architecture with task-oriented navigation

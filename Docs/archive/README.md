@@ -13,6 +13,7 @@ Historical snapshots of Pulsar development, covering:
 - Project Handover Documents
 - Historical bug-fix reports (migrated from `lessons/` on 2026-09-02)
 - UX refactoring records
+- Repository health review snapshots (from 2026-09-02)
 
 Files are named `YYYY-MM-DD-DESCRIPTIVE_NAME.md`. Nothing here is current truth — see [Docs/README.md](../../README.md) for living documentation.
 
@@ -87,6 +88,14 @@ Migrated from `Docs/lessons/` on 2026-09-02. These narrate a specific fix on a s
 | [2026-03-18-WINEVENT_HOOK_THREAD_CONTEXT.md](./2026-03-18-WINEVENT_HOOK_THREAD_CONTEXT.md) | 2026-03-18 | WinEvent hook never firing |
 | [2026-03-23-SLOT_DIALOG_REFACTOR_HANDOFF.md](./2026-03-23-SLOT_DIALOG_REFACTOR_HANDOFF.md) | 2026-03-23 | Slot dialog refactor handover |
 | [2026-08-29-PULSAR_HANDOFF.md](./2026-08-29-PULSAR_HANDOFF.md) | 2026-08-29 | Project handover |
+
+### 6. Repository Health Reports
+
+Periodic repository health snapshots. Each is dated and immutable once archived.
+
+| Document | Date | Result |
+|----------|------|--------|
+| [2026-09-02-REPO_HEALTH_REVIEW.md](./2026-09-02-REPO_HEALTH_REVIEW.md) | 2026-09-02 | 9.0/10 — build/test green, no blocking issues |
 
 ---
 
