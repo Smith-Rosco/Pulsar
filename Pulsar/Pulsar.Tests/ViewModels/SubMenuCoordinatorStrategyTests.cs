@@ -5,6 +5,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Pulsar.Models;
+using Pulsar.Services.ActionFeedback;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels;
 using Pulsar.ViewModels.Strategies;
@@ -97,6 +98,77 @@ namespace Pulsar.Tests.ViewModels
                 It.IsAny<It.IsAnyType>(),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
+        }
+
+        [Fact]
+        public void ConfigureSubMenu_ShouldRouteCascadeDescriptor_ToCascadeStrategy()
+        {
+            var metadataRegistry = new Mock<IPluginMetadataRegistry>();
+            metadataRegistry
+                .Setup(registry => registry.GetActionMetadata("com.pulsar.command", "sendkeys"))
+                .Returns(new Pulsar.Core.Plugin.Metadata.SlotActionMetadata { Name = "sendkeys" });
+            var pluginRegistry = new Mock<IPluginRegistry>();
+            pluginRegistry
+                .Setup(registry => registry.IsPluginEnabled(It.IsAny<string>()))
+                .Returns(true);
+
+            var cascadeStrategy = new CascadeSubMenuStrategy(
+                pluginRegistry.Object,
+                metadataRegistry.Object,
+                new Mock<ITrayService>().Object,
+                new Mock<IActionFeedbackService>().Object);
+
+            var coordinator = CreateCoordinator(cascadeStrategy);
+            var descriptor = new CascadeSubMenuDescriptor(
+                new List<SubSlotDescriptor>
+                {
+                    new("com.pulsar.command", "sendkeys", null, "Child 0", "E756", "#32CD32")
+                },
+                SubMenuLayoutStyle.Fan,
+                "Cascade Label");
+
+            var slots = CreateSlots();
+            var result = coordinator.ConfigureSubMenu(
+                descriptor, 8, 0, CreateCenter(), slots,
+                Pulsar.Tests.TestHelpers.PulsarContextFactory.CreateTestContext());
+
+            result.FallbackToRoot.Should().BeFalse();
+            slots[0].ActionStrategy.Should().BeOfType<PluginActionStrategy>();
+            slots[0].IsEnabled.Should().BeTrue();
+        }
+
+        [Fact]
+        public void ConfigureSubMenu_ShouldKeepWindowStrategy_ForWindowDescriptor_AfterCascadeRegistration()
+        {
+            var windows = new List<ProcessWindowInfo>
+            {
+                new ProcessWindowInfo { Handle = new IntPtr(200), ProcessName = "testapp", Title = "Window 0" }
+            };
+            var windowService = new Mock<IWindowService>();
+            windowService
+                .Setup(service => service.GetPreviousWindow())
+                .Returns(new IntPtr(200));
+            windowService
+                .Setup(service => service.SelectTargetWindow(It.IsAny<List<ProcessWindowInfo>>(), It.IsAny<WindowSelectionRequest?>()))
+                .Returns(new WindowSelectionResult { Request = new WindowSelectionRequest(), SelectedWindow = windows[0], DecisionReason = "test" });
+
+            var cascadeStrategy = new CascadeSubMenuStrategy(
+                new Mock<IPluginRegistry>().Object,
+                new Mock<IPluginMetadataRegistry>().Object,
+                new Mock<ITrayService>().Object,
+                new Mock<IActionFeedbackService>().Object);
+
+            var coordinator = CreateCoordinator(
+                new WindowSwitchSubMenuStrategy(windowService.Object),
+                cascadeStrategy);
+
+            var result = coordinator.ConfigureSubMenu(
+                new WindowSubMenuDescriptor("testapp", windows), 8, 0, CreateCenter(), CreateSlots());
+
+            result.FallbackToRoot.Should().BeFalse("window switching must be unaffected by the cascade strategy addition");
+            windowService.Verify(service => service.SelectTargetWindow(
+                It.IsAny<List<ProcessWindowInfo>>(),
+                It.Is<WindowSelectionRequest?>(r => r != null && r.Intent == WindowSelectionIntent.SubMenuDefault)), Times.Once);
         }
 
         private static RadialMenuSubMenuCoordinator CreateCoordinator(params ISubMenuStrategy[] strategies)

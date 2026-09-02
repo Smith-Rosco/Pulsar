@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Microsoft.Extensions.Logging;
+using Pulsar.Core.Plugin;
 using Pulsar.Helpers;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
@@ -56,7 +57,8 @@ namespace Pulsar.ViewModels
             int slotsPerPage,
             int pageIndex,
             SlotViewModel centerSlot,
-            ObservableCollection<SlotViewModel> slots)
+            ObservableCollection<SlotViewModel> slots,
+            PulsarContext? pulsarContext = null)
         {
             if (descriptor == null)
             {
@@ -72,7 +74,7 @@ namespace Pulsar.ViewModels
                 return new SubMenuConfigResult { FallbackToRoot = true };
             }
 
-            var context = new SubMenuContext(centerSlot, slots, slotsPerPage, pageIndex);
+            var context = new SubMenuContext(centerSlot, slots, slotsPerPage, pageIndex, pulsarContext);
             var selectedWindow = strategy.ConfigureSubMenu(context, descriptor);
             return new SubMenuConfigResult { SelectedWindow = selectedWindow };
         }

@@ -4,10 +4,10 @@ using System.Linq;
 namespace Pulsar.Models
 {
     /// <summary>
-    /// Placeholder descriptor for a StarPie-style cascade submenu configured from a
-    /// root slot's own <see cref="SubSlotDescriptor"/> list. Reserved for Change B —
-    /// no strategy ships in this change, so the descriptor is not wired into any
-    /// interactive path.
+    /// Descriptor for a StarPie-style cascade submenu configured from a root slot's
+    /// own <see cref="SubSlotDescriptor"/> list. Routed by the coordinator to the
+    /// <c>cascade</c> strategy, which lays the children out using the declared
+    /// <see cref="LayoutStyle"/>.
     /// </summary>
     public sealed class CascadeSubMenuDescriptor : SubMenuDescriptor
     {
@@ -15,13 +15,30 @@ namespace Pulsar.Models
 
         public IReadOnlyList<SubSlotDescriptor> SubSlots { get; }
 
+        /// <summary>
+        /// Display label for the cascade submenu center slot (the parent slot's
+        /// label). Analogous to <see cref="WindowSubMenuDescriptor.ProcessName"/>.
+        /// </summary>
+        public string Label { get; }
+
+        /// <summary>
+        /// Declares the sub-layout form used to position child slots. Defaults to
+        /// <see cref="SubMenuLayoutStyle.Fan"/> when unspecified.
+        /// </summary>
+        public SubMenuLayoutStyle LayoutStyle { get; }
+
         public override string StrategyId => StrategyIdValue;
 
         public override int? TotalSlotsHint => SubSlots.Count;
 
-        public CascadeSubMenuDescriptor(IReadOnlyList<SubSlotDescriptor> subSlots)
+        public CascadeSubMenuDescriptor(
+            IReadOnlyList<SubSlotDescriptor> subSlots,
+            SubMenuLayoutStyle layoutStyle = SubMenuLayoutStyle.Fan,
+            string? label = null)
         {
             SubSlots = subSlots ?? new List<SubSlotDescriptor>();
+            LayoutStyle = layoutStyle;
+            Label = label ?? string.Empty;
         }
     }
 }

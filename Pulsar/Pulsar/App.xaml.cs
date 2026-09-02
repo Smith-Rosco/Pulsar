@@ -154,6 +154,7 @@ namespace Pulsar
             serviceCollection.AddSingleton<IMenuViewportService, MenuViewportService>();
             serviceCollection.AddSingleton<IAnimationController, AnimationController>();
             serviceCollection.AddSingleton<ISlotLayoutEngine, SlotLayoutEngine>();
+            serviceCollection.AddSingleton<ISubMenuLayoutEngine, SubMenuLayoutEngine>();
             serviceCollection.AddSingleton<IMouseTrackingService, MouseTrackingService>();
             serviceCollection.AddSingleton<IPagingController, PagingController>();
             serviceCollection.AddSingleton<IPreviewService, PreviewService>();
@@ -233,9 +234,10 @@ namespace Pulsar
             serviceCollection.AddSingleton<RadialMenuViewModel>();
             serviceCollection.AddSingleton<RadialMenuWindow>();
 
-            // SubMenu strategies: window switching is the concrete strategy registered
-            // for this change; cascade forms (Change B) will register more.
+            // SubMenu strategies: window switching plus the cascade form (Change B);
+            // both are routed by the coordinator via their StrategyId.
             serviceCollection.AddSingleton<ISubMenuStrategy, WindowSwitchSubMenuStrategy>();
+            serviceCollection.AddSingleton<ISubMenuStrategy, CascadeSubMenuStrategy>();
             
             // [Fix] Register SettingsViewModel as Transient for fresh state on every open
             serviceCollection.AddTransient<AboutViewModel>();

@@ -57,6 +57,12 @@ namespace Pulsar.ViewModels
         private const double SubMenuCollapsedScale = 0.45;
         private const double SubMenuCollapsedOpacity = 0.0;
 
+        /// <summary>
+        /// Cascade sub-ring radius as a fraction of the root ring radius (visual
+        /// tuning; Change C may refine the exact ratio).
+        /// </summary>
+        private const double SubMenuRingRadiusRatio = 0.60;
+
         private static readonly TimeSpan MenuWatchdogTimeout = TimeSpan.FromSeconds(60);
 
         /// <summary>
@@ -102,6 +108,7 @@ namespace Pulsar.ViewModels
         private readonly ITrayService _trayService;
         private readonly IAnimationController _animationController;
         private readonly ISlotLayoutEngine _slotLayoutEngine;
+        private readonly ISubMenuLayoutEngine _subMenuLayoutEngine;
         private readonly IPagingController _pagingController;
         private readonly IPreviewService _previewService;
         private readonly System.IServiceProvider _serviceProvider;
@@ -195,6 +202,13 @@ namespace Pulsar.ViewModels
         private bool _hasShownSinglePageHint;
         private CancellationTokenSource? _centerHintCts;
 
+        /// <summary>
+        /// The active submenu descriptor. <c>null</c> while on the root menu. Used to
+        /// re-run the coordinator when paging and to dispatch cascade sub-layout hit
+        /// tests to <see cref="ISubMenuLayoutEngine"/>.
+        /// </summary>
+        private SubMenuDescriptor? _activeSubMenuDescriptor;
+
         // Submenu transition state. During a transition all pointer/keyboard input
         // is ignored so a partially-morphed menu can never be acted upon.
         private bool _isTransitioning;
@@ -263,6 +277,8 @@ namespace Pulsar.ViewModels
             _firstFrameBudget = firstFrameBudget ?? TimeSpan.FromMilliseconds(FirstFrameBudgetMsDefault);
 
             _visualStateCoordinator = new RadialMenuVisualStateCoordinator(previewService, logger, _loc);
+            _subMenuLayoutEngine = (ISubMenuLayoutEngine?)serviceProvider.GetService(typeof(ISubMenuLayoutEngine))
+                ?? new SubMenuLayoutEngine();
             _subMenuCoordinator = new RadialMenuSubMenuCoordinator(
                 (IEnumerable<ISubMenuStrategy>?)serviceProvider.GetService(typeof(IEnumerable<ISubMenuStrategy>))
                     ?? Array.Empty<ISubMenuStrategy>(),
@@ -1340,9 +1356,19 @@ namespace Pulsar.ViewModels
             }
 
             _subMenuPage += direction;
-            _subMenuCoordinator.ConfigureSubMenu(
-                new WindowSubMenuDescriptor(_subMenuProcessName, _subMenuWindows),
-                _slotsPerPage, _subMenuPage, CenterSlot, Slots);
+
+            // Re-run the coordinator with the active descriptor so cascades page by
+            // SubSlots.Count just like windows page by their window list. Fall back to
+            // a rebuilt window descriptor if the session has no tracked descriptor.
+            SubMenuDescriptor descriptor = _activeSubMenuDescriptor
+                ?? new WindowSubMenuDescriptor(_subMenuProcessName, _subMenuWindows);
+            _subMenuCoordinator.ConfigureSubMenu(descriptor, _slotsPerPage, _subMenuPage, CenterSlot, Slots, _lastContext);
+
+            if (descriptor is CascadeSubMenuDescriptor cascadeDescriptor)
+            {
+                ApplyCascadeChildLayout(cascadeDescriptor);
+            }
+
             UpdateSubMenuCenterLabel();
             _previewService.ClearCache();
             ApplyCenterPreview(ResolvedWindowPreview.Icon(null));
@@ -1402,11 +1428,77 @@ namespace Pulsar.ViewModels
         /// <summary>
         /// Pure hit-test of a window-relative DIP point against the current layout,
         /// including the center dead zone. Returns 0 for the center slot, -1 for no
-        /// slot, otherwise the ring slot index.
+        /// slot, otherwise the ring slot index. When the active submenu is a cascade,
+        /// the sub-layout engine (Ring/Fan geometry from the descriptor's style) is
+        /// used instead of the root ring hit test.
         /// </summary>
         public int HitTest(Vector relativePosition)
         {
+            if (_menuState == MenuState.SubMenu
+                && _activeSubMenuDescriptor is CascadeSubMenuDescriptor cascade)
+            {
+                return HitTestCascadeSubMenu(relativePosition, cascade);
+            }
+
             return HitTestAt(new Point(_menuCenterX, _menuCenterY), relativePosition);
+        }
+
+        private int HitTestCascadeSubMenu(Vector relativePosition, CascadeSubMenuDescriptor cascade)
+        {
+            int childCount = GetCascadePageChildCount(cascade);
+            if (childCount <= 0)
+            {
+                return -1;
+            }
+
+            var pose = BuildCascadeParentPose();
+            return _subMenuLayoutEngine.HitTestChild(relativePosition, pose, cascade.LayoutStyle, childCount);
+        }
+
+        private int GetCascadePageChildCount(CascadeSubMenuDescriptor cascade)
+        {
+            int start = _subMenuPage * _slotsPerPage;
+            return Math.Max(0, Math.Min(_slotsPerPage, cascade.SubSlots.Count - start));
+        }
+
+        private SubMenuParentPose BuildCascadeParentPose()
+        {
+            double direction = Math.Atan2(
+                _subMenuOriginY - _rootMenuCenterY,
+                _subMenuOriginX - _rootMenuCenterX);
+
+            double halfSlot = _currentSlotSize / 2;
+            double maxSafeRadius = Math.Max(0, Math.Min(
+                Math.Min(_menuCenterX, CanvasSize - _menuCenterX),
+                Math.Min(_menuCenterY, CanvasSize - _menuCenterY)) - halfSlot);
+            double subRingRadius = Math.Max(20, Math.Min(_currentRadius * SubMenuRingRadiusRatio, maxSafeRadius));
+
+            return new SubMenuParentPose(
+                _menuCenterX,
+                _menuCenterY,
+                direction,
+                subRingRadius,
+                _currentSlotSize,
+                Math.Max(10, _currentCenterSize / 2));
+        }
+
+        private void ApplyCascadeChildLayout(CascadeSubMenuDescriptor cascade)
+        {
+            int childCount = GetCascadePageChildCount(cascade);
+            if (childCount <= 0)
+            {
+                return;
+            }
+
+            var pose = BuildCascadeParentPose();
+            var positions = _subMenuLayoutEngine.ComputeChildPositions(pose, cascade.LayoutStyle, childCount);
+
+            var childSlots = Slots.Where(s => s.SlotIndex >= 1).OrderBy(s => s.SlotIndex).ToList();
+            for (int i = 0; i < childCount && i < childSlots.Count; i++)
+            {
+                childSlots[i].X = positions[i].X;
+                childSlots[i].Y = positions[i].Y;
+            }
         }
 
         private int HitTestAt(Point center, Vector relativePosition)
@@ -1852,8 +1944,12 @@ namespace Pulsar.ViewModels
                     _subMenuWindows = new List<ProcessWindowInfo>();
                     _subMenuProcessName = string.Empty;
                 }
+                _activeSubMenuDescriptor = descriptor;
                 _subMenuPage = 0;
-                _subMenuTotalPages = Math.Max(1, (int)Math.Ceiling(_subMenuWindows.Count / (double)_slotsPerPage));
+                // Window total pages come from the window list; cascades page by
+                // SubSlots.Count (both surfaced via TotalSlotsHint).
+                int totalSlotsHint = descriptor.TotalSlotsHint ?? _subMenuWindows.Count;
+                _subMenuTotalPages = Math.Max(1, (int)Math.Ceiling(totalSlotsHint / (double)_slotsPerPage));
 
                 var parentSlot = clickedSlotIndex > 0 && clickedSlotIndex <= Slots.Count
                     ? Slots[clickedSlotIndex - 1]
@@ -1884,7 +1980,7 @@ namespace Pulsar.ViewModels
                 // unregistered strategy id falls back to the root menu instead of
                 // entering a submenu (spec: submenu-coordinator-strategy).
                 var configResult = _subMenuCoordinator.ConfigureSubMenu(
-                    descriptor, _slotsPerPage, _subMenuPage, CenterSlot, Slots);
+                    descriptor, _slotsPerPage, _subMenuPage, CenterSlot, Slots, _lastContext);
 
                 if (configResult.FallbackToRoot)
                 {
@@ -1894,6 +1990,7 @@ namespace Pulsar.ViewModels
                     _menuState = MenuState.Root;
                     _subMenuWindows = new List<ProcessWindowInfo>();
                     _subMenuProcessName = string.Empty;
+                    _activeSubMenuDescriptor = null;
                     _subMenuPage = 0;
                     _subMenuTotalPages = 1;
                     _subMenuOriginSlotIndex = -1;
@@ -1904,6 +2001,14 @@ namespace Pulsar.ViewModels
 
                 var mostRecentWin = configResult.SelectedWindow;
                 _menuState = MenuState.SubMenu;
+
+                // Cascade children are laid out with Ring/Fan geometry (session owns
+                // the pose; the engine computes deterministic DIP positions).
+                if (descriptor is CascadeSubMenuDescriptor cascadeDescriptor)
+                {
+                    ApplyCascadeChildLayout(cascadeDescriptor);
+                }
+
                 UpdateSubMenuCenterLabel();
 
                 var glideViewportCenter = AnimateMenuCenterAsync(
@@ -2079,6 +2184,7 @@ namespace Pulsar.ViewModels
 
                 _subMenuWindows = new List<ProcessWindowInfo>();
                 _subMenuProcessName = string.Empty;
+                _activeSubMenuDescriptor = null;
                 _subMenuPage = 0;
                 _subMenuTotalPages = 1;
                 _subMenuOriginSlotIndex = -1;
