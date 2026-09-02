@@ -1207,6 +1207,15 @@
   <data name="Dialog.IconPicker.UploadCustomTooltip" xml:space="preserve">
     <value>Use a custom image file as icon</value>
   </data>
+  <data name="Dialog.IconPicker.ImportCustom" xml:space="preserve">
+    <value>Import Custom Icon</value>
+  </data>
+  <data name="Dialog.IconPicker.ImportCustomTooltip" xml:space="preserve">
+    <value>Import an SVG/PNG/ICO/JPG/BMP file into the custom icon library</value>
+  </data>
+  <data name="Dialog.IconPicker.CustomIconsSection" xml:space="preserve">
+    <value>Custom Icons</value>
+  </data>
   <data name="Dialog.IconPicker.Loading" xml:space="preserve">
     <value>Loading icons...</value>
   </data>

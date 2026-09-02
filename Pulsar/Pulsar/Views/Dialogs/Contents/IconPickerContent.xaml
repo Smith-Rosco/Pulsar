@@ -18,12 +18,52 @@
              </ResourceDictionary.MergedDictionaries>
              <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
              <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
+
+             <!-- 自定义图标瓦片按钮：PulsarIconButtonStyle 的 Content 走 TextBlock 文本渲染，
+                  无法显示 Image 元素；此处改用 ContentPresenter 模板以正常渲染图像内容。 -->
+             <Style x:Key="PulsarCustomIconTileStyle" TargetType="ui:Button">
+                 <Setter Property="Padding" Value="6"/>
+                 <Setter Property="BorderThickness" Value="0"/>
+                 <Setter Property="Background" Value="Transparent"/>
+                 <Setter Property="Cursor" Value="Hand"/>
+                 <Setter Property="Template">
+                     <Setter.Value>
+                         <ControlTemplate TargetType="ui:Button">
+                             <Border x:Name="RootBorder"
+                                     Background="{TemplateBinding Background}"
+                                     BorderBrush="{TemplateBinding BorderBrush}"
+                                     BorderThickness="{TemplateBinding BorderThickness}"
+                                     CornerRadius="{StaticResource Pulsar.Radius.SM}"
+                                     SnapsToDevicePixels="True">
+                                 <ContentPresenter x:Name="ContentHost"
+                                                   Content="{TemplateBinding Content}"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                             </Border>
+                             <ControlTemplate.Triggers>
+                                 <Trigger Property="IsMouseOver" Value="True">
+                                     <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}"/>
+                                     <Setter TargetName="RootBorder" Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+                                 </Trigger>
+                                 <Trigger Property="IsPressed" Value="True">
+                                     <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource ControlFillColorTertiaryBrush}"/>
+                                 </Trigger>
+                                 <Trigger Property="IsEnabled" Value="False">
+                                     <Setter TargetName="RootBorder" Property="Opacity" Value="0.4"/>
+                                 </Trigger>
+                             </ControlTemplate.Triggers>
+                         </ControlTemplate>
+                     </Setter.Value>
+                 </Setter>
+             </Style>
         </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid Margin="0">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/> 
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>    
             <RowDefinition Height="Auto"/> 
         </Grid.RowDefinitions>
@@ -33,6 +73,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
             <ui:TextBox x:Name="SearchBox" 
@@ -40,16 +81,83 @@
                         PlaceholderText="{lex:Locale Dialog.IconPicker.SearchPlaceholder}" 
                         Icon="{ui:SymbolIcon Search24}"/>
 
+            <!-- Import Custom Icon: only when a custom icon store is available -->
+            <ui:Button Grid.Column="1" Command="{Binding ImportIconCommand}" Margin="{StaticResource Pulsar.Gap.Left.MD}"
+                       Visibility="{Binding IsImportAvailable, Converter={StaticResource BoolToVisibilityConverter}}"
+                       Icon="{ui:SymbolIcon Add24}"
+                       Content="{lex:Locale Dialog.IconPicker.ImportCustom}" 
+                       Style="{StaticResource PulsarSecondaryButtonStyle}"
+                       ToolTip="{lex:Locale Dialog.IconPicker.ImportCustomTooltip}"/>
+
             <!-- Upload Custom: secondary action, lower visual weight -->
-            <ui:Button Grid.Column="1" Command="{Binding BrowseFileCommand}" Margin="{StaticResource Pulsar.Gap.Left.MD}"
+            <ui:Button Grid.Column="2" Command="{Binding BrowseFileCommand}" Margin="{StaticResource Pulsar.Gap.Left.MD}"
                        Icon="{ui:SymbolIcon ArrowUpload24}"
                        Content="{lex:Locale Dialog.IconPicker.UploadCustom}" 
                        Style="{StaticResource PulsarSecondaryButtonStyle}"
                        ToolTip="{lex:Locale Dialog.IconPicker.UploadCustomTooltip}"/>
         </Grid>
 
+        <!-- Custom Icons Section (visible when a store is injected) -->
+        <Border Grid.Row="1"
+                Margin="{StaticResource Pulsar.Gap.Bottom.LG}"
+                Padding="{StaticResource Pulsar.Pad.MD}"
+                Background="{DynamicResource ControlFillColorDefaultBrush}"
+                BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="{StaticResource Pulsar.Radius.LG}"
+                Visibility="{Binding IsImportAvailable, Converter={StaticResource BoolToVisibilityConverter}}">
+            <StackPanel>
+                <TextBlock Text="{lex:Locale Dialog.IconPicker.CustomIconsSection}"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                           Margin="{StaticResource Pulsar.Gap.Bottom.SM}"/>
+                <ListBox ItemsSource="{Binding CustomIcons}"
+                         BorderThickness="0"
+                         Background="Transparent"
+                         ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                         ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                         MaxHeight="92">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="Margin" Value="0"/>
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <ContentPresenter/>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <ui:Button Command="{Binding DataContext.SelectIconCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                       CommandParameter="{Binding Key}"
+                                       Style="{StaticResource PulsarCustomIconTileStyle}"
+                                       ToolTip="{Binding Key}"
+                                       Height="56" Width="56"
+                                       Margin="{StaticResource Pulsar.Pad.XXS}"
+                                       CornerRadius="{StaticResource Pulsar.Radius.SM}"
+                                       HorizontalContentAlignment="Center"
+                                       VerticalContentAlignment="Center">
+                                <Image Source="{Binding Preview}" Width="28" Height="28" Stretch="Uniform"/>
+                            </ui:Button>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </StackPanel>
+        </Border>
+
         <!-- Icons Grid with Virtualization -->
-        <Border Grid.Row="1" 
+        <Border Grid.Row="2" 
                 Background="{DynamicResource ControlFillColorDefaultBrush}" 
                 BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}" 
                 BorderThickness="1"
@@ -107,12 +215,16 @@
                                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                        FontSize="24"
                                        Padding="{StaticResource Pulsar.Pad.XS}" Margin="{StaticResource Pulsar.Pad.XXS}"
-                                       ToolTip="{Binding Name}"
                                        AutomationProperties.Name="{Binding Name}"
                                        Height="56" Width="56"
                                        CornerRadius="{StaticResource Pulsar.Radius.SM}"
                                        HorizontalContentAlignment="Center"
-                                       VerticalContentAlignment="Center"/>
+                                       VerticalContentAlignment="Center">
+                                <ui:Button.ToolTip>
+                                    <ToolTip Content="{Binding Name}"
+                                             FontFamily="Segoe UI, Microsoft YaHei UI"/>
+                                </ui:Button.ToolTip>
+                            </ui:Button>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
@@ -120,7 +232,7 @@
         </Border>
 
         <!-- Preview Section -->
-        <Grid Grid.Row="2" Margin="{StaticResource Pulsar.Gap.Top.XL}">
+        <Grid Grid.Row="3" Margin="{StaticResource Pulsar.Gap.Top.XL}">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <TextBlock Text="{lex:Locale Dialog.IconPicker.Preview}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="{StaticResource Pulsar.Gap.Right.MD}" VerticalAlignment="Center"/>
                 <controls:SlotOrb Size="42" IsActive="False" Margin="{StaticResource Pulsar.Gap.Right.MD}" IconKey="{Binding SelectedKey}"/>

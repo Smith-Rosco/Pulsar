@@ -152,6 +152,7 @@ namespace Pulsar
             serviceCollection.AddSingleton<IPreviewService, PreviewService>();
             serviceCollection.AddSingleton<ILocalUiPreferencesService, LocalUiPreferencesService>();
             serviceCollection.AddSingleton<ISettingsNavigationGuard, SettingsNavigationGuard>();
+            serviceCollection.AddSingleton<Services.Interfaces.ICustomIconStore, Services.CustomIconStore>();
             serviceCollection.AddSingleton<SettingsPageCatalog>();
             serviceCollection.AddSingleton<IAppStartupCoordinator, AppStartupCoordinator>();
             serviceCollection.AddSingleton<GlobalKeyboardHook>();

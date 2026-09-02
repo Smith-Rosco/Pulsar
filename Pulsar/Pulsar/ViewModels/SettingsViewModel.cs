@@ -42,6 +42,7 @@ namespace Pulsar.ViewModels
         private readonly IDialogService _dialogService;
         private readonly IFuzzySearchService<IconItem> _searchService;
         private readonly IProcessRegistryService? _processRegistryService;
+        private readonly Services.Interfaces.ICustomIconStore? _customIconStore;
         private readonly IPkiSecretStore _secretStore;
         private readonly ISecretProtector _secretProtector;
         private readonly IPkiSecretMetadataResolver _secretMetadataResolver;
@@ -200,7 +201,8 @@ namespace Pulsar.ViewModels
             ILocalizationService localizationService,
             ITutorialService tutorialService,
             ILoggingConfigService loggingConfigService,
-            IProcessRegistryService? processRegistryService = null)
+            IProcessRegistryService? processRegistryService = null,
+            ICustomIconStore? customIconStore = null)
         {
             _configService = configService;
             _windowService = windowService;
@@ -218,6 +220,7 @@ namespace Pulsar.ViewModels
             _tutorialService = tutorialService;
             _loggingConfigService = loggingConfigService;
             _processRegistryService = processRegistryService;
+            _customIconStore = customIconStore;
 
             _session = new SettingsEditorSession(configService, secretStore);
 
@@ -453,7 +456,7 @@ namespace Pulsar.ViewModels
         {
             var existingKeys = Config.Profiles.Keys.ToList();
             
-            var vm = new InputProfileViewModel(_windowService, _dialogService, _searchService, _loc, existingKeys);
+            var vm = new InputProfileViewModel(_windowService, _dialogService, _searchService, _loc, existingKeys, _customIconStore);
             var result = await _dialogService.ShowCustomAsync(_loc["Notification.NewProfile"], vm, DialogButtons.OkCancel);
 
             if (result == DialogResult.Confirmed)
@@ -522,7 +525,7 @@ namespace Pulsar.ViewModels
             var profileKey = CurrentContext.Key;
             if (!Config.Profiles.TryGetValue(profileKey, out var profileData)) return;
 
-            var vm = new EditProfileViewModel(_dialogService, _searchService, _loc, profileKey, profileData.Alias ?? string.Empty, profileData.Icon ?? string.Empty);
+            var vm = new EditProfileViewModel(_dialogService, _searchService, _loc, profileKey, profileData.Alias ?? string.Empty, profileData.Icon ?? string.Empty, _customIconStore);
             var result = await _dialogService.ShowCustomAsync(_loc["Notification.EditProfile"], vm, DialogButtons.OkCancel);
 
             if (result == DialogResult.Confirmed)
@@ -952,7 +955,7 @@ namespace Pulsar.ViewModels
         {
             if (item == null) return;
             var originalIconKey = item.IconKey;
-            var vm = new IconPickerViewModel(_searchService, originalIconKey, key => item.IconKey = key);
+            var vm = new IconPickerViewModel(_searchService, originalIconKey, key => item.IconKey = key, _customIconStore);
             var result = await _dialogService.ShowCustomAsync(_loc["Notification.SelectIcon"], vm, DialogButtons.OkCancel, DialogSizeConstraints.LargeResizable);
 
             if (result == DialogResult.Confirmed)

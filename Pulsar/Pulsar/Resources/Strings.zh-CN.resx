@@ -1972,6 +1972,21 @@
     <value>使用自定义图像文件作为图标</value>
   </data>
   <data
+    name="Dialog.IconPicker.ImportCustom"
+    xml:space="preserve">
+    <value>导入自定义图标</value>
+  </data>
+  <data
+    name="Dialog.IconPicker.ImportCustomTooltip"
+    xml:space="preserve">
+    <value>将 SVG/PNG/ICO/JPG/BMP 文件导入自定义图标库</value>
+  </data>
+  <data
+    name="Dialog.IconPicker.CustomIconsSection"
+    xml:space="preserve">
+    <value>自定义图标</value>
+  </data>
+  <data
     name="Dialog.IconPicker.Loading"
     xml:space="preserve">
     <value>正在加载图标...</value>

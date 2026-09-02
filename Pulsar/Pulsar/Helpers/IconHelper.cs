@@ -36,17 +36,35 @@ namespace Pulsar.Helpers
         /// <summary>
         /// 智能获取图标：如果是图片文件则直接加载，如果是程序则提取图标
         /// </summary>
+        // Cache for parsed SVG DrawingImages, keyed by file path
+        private static readonly ConcurrentDictionary<string, ImageSource?> _svgImageCache = new();
+
+        /// <summary>
+        /// 智能获取图标：如果是图片文件则直接加载，如果是程序则提取图标
+        /// </summary>
         public static ImageSource? GetIconFromPath(string path)
         {
-            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return null;
+            if (string.IsNullOrWhiteSpace(path)) return null;
+
+            if (!File.Exists(path))
+            {
+                string? resolved = ResolveCustomIconKeyToPath(path);
+                if (resolved == null) return null;
+                path = resolved;
+            }
 
             try
             {
-                // [Fix] 1. 先判断是否为图片格式 (PNG, ICO, JPG, BMP)
+                // [Fix] 1. 先判断是否为图片格式 (PNG, ICO, JPG, BMP, SVG)
                 string ext = Path.GetExtension(path).ToLower();
                 if (ext == ".png" || ext == ".ico" || ext == ".jpg" || ext == ".bmp")
                 {
                     return LoadImageDirectly(path);
+                }
+
+                if (ext == ".svg")
+                {
+                    return LoadSvgFromPath(path);
                 }
 
                 // [Fix] 2. 如果不是图片，再尝试作为程序提取图标 (EXE, LNK)
@@ -56,6 +74,67 @@ namespace Pulsar.Helpers
             {
                 return null;
             }
+        }
+
+        /// <summary>
+        /// 将「自定义图标库」的 store key（裸文件名，如
+        /// <c>pulsar-icon-20260101000000-0001.png</c>）解析为 store 目录下的完整路径。
+        /// 非 store key 返回 null，交由调用方处理。
+        /// </summary>
+        private static string? ResolveCustomIconKeyToPath(string key)
+        {
+            if (string.IsNullOrWhiteSpace(key)) return null;
+            if (key.Contains('\\') || key.Contains('/')) return null;
+            if (!key.StartsWith("pulsar-icon-", StringComparison.OrdinalIgnoreCase)) return null;
+
+            string dir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "Pulsar",
+                "CustomIcons");
+            string fullPath = Path.Combine(dir, key);
+            return File.Exists(fullPath) ? fullPath : null;
+        }
+
+        /// <summary>
+        /// 解析 SVG 文件的首个 <c>path</c> 元素（单色单 path 契约）：提取 <c>d="..."</c> 路径
+        /// 数据 → <see cref="Geometry.Parse"/> → 渲染为冻结的 <see cref="DrawingImage"/>。
+        /// 解析失败返回 null（调用方回退原图标），不抛异常。
+        /// </summary>
+        private static ImageSource? LoadSvgFromPath(string path)
+        {
+            return _svgImageCache.GetOrAdd(path, static p =>
+            {
+                try
+                {
+                    string svgText = File.ReadAllText(p);
+
+                    // 只认首个 path 元素的 d 属性（支持单/双引号）
+                    var match = System.Text.RegularExpressions.Regex.Match(
+                        svgText,
+                        @"<path\b[^>]*\bd\s*=\s*[""'](?<data>[^""']+)[""']",
+                        System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                    if (!match.Success) return null;
+
+                    var geometry = Geometry.Parse(match.Groups["data"].Value);
+                    geometry.Freeze();
+
+                    var drawing = new GeometryDrawing
+                    {
+                        Geometry = geometry,
+                        Brush = System.Windows.Media.Brushes.Black,
+                        Pen = null
+                    };
+                    drawing.Freeze();
+
+                    var image = new DrawingImage(drawing);
+                    image.Freeze();
+                    return image;
+                }
+                catch
+                {
+                    return null;
+                }
+            });
         }
 
         // 新增：直接加载图片文件的方法

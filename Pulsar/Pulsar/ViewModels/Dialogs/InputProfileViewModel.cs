@@ -21,6 +21,7 @@ namespace Pulsar.ViewModels.Dialogs
         private readonly IFuzzySearchService<IconItem> _searchService;
         private readonly HashSet<string> _existingProfiles;
         private readonly ILocalizationService _loc;
+        private readonly ICustomIconStore? _customIconStore;
 
         [ObservableProperty]
         [NotifyCanExecuteChangedFor(nameof(CreateCommand))]
@@ -47,13 +48,14 @@ namespace Pulsar.ViewModels.Dialogs
 
         public Action<DialogResult>? RequestClose { get; set; }
 
-        public InputProfileViewModel(IWindowDiscoveryService windowService, IDialogService dialogService, IFuzzySearchService<IconItem> searchService, ILocalizationService localizationService, IEnumerable<string> existingProfiles)
+        public InputProfileViewModel(IWindowDiscoveryService windowService, IDialogService dialogService, IFuzzySearchService<IconItem> searchService, ILocalizationService localizationService, IEnumerable<string> existingProfiles, ICustomIconStore? customIconStore = null)
         {
             _windowService = windowService;
             _dialogService = dialogService;
             _searchService = searchService;
             _loc = localizationService;
             _existingProfiles = new HashSet<string>(existingProfiles, StringComparer.OrdinalIgnoreCase);
+            _customIconStore = customIconStore;
         }
 
         partial void OnProcessNameChanged(string value)
@@ -111,7 +113,7 @@ namespace Pulsar.ViewModels.Dialogs
         [RelayCommand]
         private async Task PickIcon()
         {
-            var picker = new IconPickerViewModel(_searchService, IconKey);
+            var picker = new IconPickerViewModel(_searchService, IconKey, customIconStore: _customIconStore);
             var result = await _dialogService.ShowCustomAsync(_loc["Notification.SelectIcon"], picker, DialogButtons.OkCancel, DialogSizeConstraints.LargeResizable);
 
             if (result == DialogResult.Confirmed)

@@ -17,6 +17,7 @@ namespace Pulsar.ViewModels.Dialogs
         private readonly IDialogService _dialogService;
         private readonly IFuzzySearchService<IconItem> _searchService;
         private readonly ILocalizationService _loc;
+        private readonly ICustomIconStore? _customIconStore;
         
         [ObservableProperty]
         private string _processName;
@@ -41,11 +42,12 @@ namespace Pulsar.ViewModels.Dialogs
 
         public Action<DialogResult>? RequestClose { get; set; }
 
-        public EditProfileViewModel(IDialogService dialogService, IFuzzySearchService<IconItem> searchService, ILocalizationService localizationService, string processName, string alias, string iconKey)
+        public EditProfileViewModel(IDialogService dialogService, IFuzzySearchService<IconItem> searchService, ILocalizationService localizationService, string processName, string alias, string iconKey, ICustomIconStore? customIconStore = null)
         {
             _dialogService = dialogService;
             _searchService = searchService;
             _loc = localizationService;
+            _customIconStore = customIconStore;
             ProcessName = processName;
             Alias = alias ?? string.Empty;
             IconKey = iconKey ?? "\uE945";
@@ -54,7 +56,7 @@ namespace Pulsar.ViewModels.Dialogs
         [RelayCommand]
         private async Task PickIcon()
         {
-            var picker = new IconPickerViewModel(_searchService, IconKey);
+            var picker = new IconPickerViewModel(_searchService, IconKey, customIconStore: _customIconStore);
             var result = await _dialogService.ShowCustomAsync(_loc["Notification.SelectIcon"], picker, DialogButtons.OkCancel, DialogSizeConstraints.LargeResizable);
 
             if (result == DialogResult.Confirmed)
