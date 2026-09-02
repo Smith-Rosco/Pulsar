@@ -35,9 +35,16 @@ When a right-button gesture is active but the displacement never reached `Gestur
 
 #### Scenario: Gesture release executes the selection
 - **WHEN** the menu was summoned by the gesture (either mode)
+- **AND** the gesture passed the isolation filter at button-down (the isolation filter is enabled and evaluated the foreground window as eligible, or the filter is disabled)
 - **AND** the user releases the right button
 - **THEN** the release SHALL resolve to the menu selection
 - **AND** the release SHALL NOT be delivered to the source application
+
+#### Scenario: Gesture denied by isolation never enters the state machine
+- **WHEN** the isolation filter is enabled
+- **AND** it denies the gesture at right-button down
+- **THEN** the right-button press SHALL pass through to the foreground application
+- **AND** the release SHALL NOT be swallowed and SHALL NOT resolve to any menu selection
 
 ### Requirement: Replayed clicks SHALL NOT be re-intercepted
 
