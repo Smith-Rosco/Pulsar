@@ -4569,11 +4569,6 @@ Pulsar 会在你的浏览器中打开一个网页——这就是命令模式：�
     <value>插件未初始化</value>
   </data>
   <data
-    name="Plugin.Bookmarklet.MissingScriptPath"
-    xml:space="preserve">
-    <value>缺少必需参数: scriptPath。请检查插件配置。</value>
-  </data>
-  <data
     name="Settings.General.HotkeyNone"
     xml:space="preserve">
     <value>(无)</value>
