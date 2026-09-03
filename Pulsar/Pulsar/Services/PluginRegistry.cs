@@ -41,6 +41,11 @@ namespace Pulsar.Services
             return _runtimeKernel.DiscoverDeferredAsync();
         }
 
+        public Task RefreshDiscoveryAsync()
+        {
+            return _runtimeKernel.RefreshDiscoveryAsync();
+        }
+
         public Task LoadAllAsync()
         {
             return LoadCoreAsync();

@@ -171,6 +171,53 @@ namespace Pulsar.Tests.Plugin
         }
 
         [Fact]
+        public async Task Kernel_RefreshDiscoveryAsync_RegistersRuntimeInstalledPlugin_AndEnablesGrant()
+        {
+            // Simulates the ZIP-install flow: a package lands in the plugin
+            // directory while the app is running, so the startup discovery pass
+            // has already happened. RefreshDiscoveryAsync must surface the new
+            // descriptor, otherwise the install-time permission grant is
+            // rejected as "unknown plugin" (Profiles.json stays empty).
+            var descriptor = CreateExtensionDescriptor(
+                "test.runtimeinstall.plugin",
+                isExternal: true,
+                permissions: new[] { PluginPermissions.ClipboardRead });
+            var loader = new StubPluginLoader(new[] { descriptor });
+
+            var catalog = new PluginCatalog();
+            var state = new PluginRuntimeStateStore();
+            var pipeline = new PluginExecutionPipeline(state, new PluginCircuitBreakerPolicy());
+
+            var config = new Pulsar.Models.ProfilesConfig();
+            var configService = new Mock<Pulsar.Services.Interfaces.IConfigService>();
+            configService.Setup(x => x.GetSnapshot()).Returns(config);
+            configService.Setup(x => x.LoadSnapshotAsync(It.IsAny<bool>())).ReturnsAsync(config);
+            configService.Setup(x => x.SaveAsync(It.IsAny<Pulsar.Models.ProfilesConfig>(), It.IsAny<long?>()))
+                .Returns(Task.CompletedTask);
+
+            var kernel = new PluginRuntimeKernel(
+                Mock.Of<IServiceProvider>(),
+                loader,
+                catalog,
+                state,
+                pipeline,
+                NullLogger<PluginRuntimeKernel>.Instance,
+                configService.Object);
+
+            kernel.GetDescriptor(descriptor.Id).Should().BeNull(
+                "a runtime-installed plugin is invisible until discovery refresh");
+
+            await kernel.RefreshDiscoveryAsync();
+
+            kernel.GetDescriptor(descriptor.Id).Should().NotBeNull();
+            kernel.GetAllPluginDescriptors().Should().Contain(d => d.Id == descriptor.Id);
+
+            // Regression: the grant that used to fail right after install.
+            await kernel.GrantPermissionsAsync(descriptor.Id, new[] { PluginPermissions.ClipboardRead });
+            configService.Verify(x => x.SaveAsync(It.IsAny<Pulsar.Models.ProfilesConfig>(), It.IsAny<long?>()), Times.Once);
+        }
+
+        [Fact]
         public void PluginRuntimeStateStore_ShouldRejectInvalidTransitions()
         {
             var store = new PluginRuntimeStateStore();
@@ -202,6 +249,20 @@ namespace Pulsar.Tests.Plugin
                     timestamps[i] = timestamp;
                 }
             }
+        }
+
+        private sealed class StubPluginLoader : PluginLoader
+        {
+            private readonly List<PluginDescriptor> _descriptors;
+
+            public StubPluginLoader(IEnumerable<PluginDescriptor> descriptors)
+                : base(Mock.Of<IServiceProvider>(), "unused")
+            {
+                _descriptors = descriptors.ToList();
+            }
+
+            public override List<PluginDescriptor> DiscoverDescriptors(bool includeCore, bool includeExtensions, bool analyzeDependencies)
+                => _descriptors.ToList();
         }
 
         private static PluginDescriptor CreateExtensionDescriptor(

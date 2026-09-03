@@ -610,6 +610,20 @@ namespace Pulsar.Core.Plugin.Runtime
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Rescans the external plugin directory after an install/uninstall and
+        /// registers any newly discovered descriptors. Discovery otherwise runs
+        /// only once at startup, so plugins installed at runtime are invisible
+        /// to the catalog (and thus to permission grants) until the next launch.
+        /// </summary>
+        public Task RefreshDiscoveryAsync()
+        {
+            _loader.InvalidateDiscoveryCache();
+            _logger.LogInformation("[PluginRuntimeKernel] Refreshing plugin discovery after package change...");
+            _catalog.RegisterDescriptors(_loader.DiscoverDescriptors(includeCore: false, includeExtensions: true, analyzeDependencies: true));
+            return Task.CompletedTask;
+        }
+
         public PluginDescriptor? GetDescriptor(string pluginId)
         {
             _catalog.TryGetDescriptor(pluginId, out var descriptor);

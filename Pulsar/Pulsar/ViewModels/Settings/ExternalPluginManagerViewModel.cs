@@ -151,6 +151,11 @@ namespace Pulsar.ViewModels.Settings
                         {
                             try
                             {
+                                // The runtime catalog only discovers plugins at
+                                // startup. Refresh discovery first so the fresh
+                                // install resolves to a descriptor; otherwise the
+                                // grant is rejected as "unknown plugin".
+                                await _pluginRegistry.RefreshDiscoveryAsync();
                                 await _pluginRegistry.GrantPermissionsAsync(manifest.Id, manifest.Permissions);
                             }
                             catch (Exception ex)
@@ -164,6 +169,19 @@ namespace Pulsar.ViewModels.Settings
                         if (permissionsGranted)
                         {
                             StatusMessage = _loc["Notification.SuccessfullyInstalled"];
+
+                            // Activate immediately so lifecycle hooks run without
+                            // an app restart (e.g. a renderer plugin registers its
+                            // renderer in OnEnableAsync). The default profile is
+                            // Enabled=true, so activation also enables it.
+                            try
+                            {
+                                await _pluginRegistry.GetOrActivatePluginAsync(manifest.Id);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger?.LogWarning(ex, "[ExternalPluginManagerViewModel] Installed plugin {PluginId} could not be activated immediately; it will activate on next launch", manifest.Id);
+                            }
                         }
 
                         if (_dialogService != null)
