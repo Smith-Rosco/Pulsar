@@ -1208,6 +1208,21 @@
     <value>卸载</value>
   </data>
   <data
+    name="Settings.ExternalPlugins.ToggleToolTip"
+    xml:space="preserve">
+    <value>启用或禁用此插件（立即生效）</value>
+  </data>
+  <data
+    name="Settings.ExternalPlugins.PluginEnabledFormat"
+    xml:space="preserve">
+    <value>已启用 {0}</value>
+  </data>
+  <data
+    name="Settings.ExternalPlugins.PluginDisabledFormat"
+    xml:space="preserve">
+    <value>已禁用 {0}</value>
+  </data>
+  <data
     name="Settings.ExternalPlugins.NoPlugins"
     xml:space="preserve">
     <value>未安装外部插件</value>

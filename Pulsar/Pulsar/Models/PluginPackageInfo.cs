@@ -110,6 +110,11 @@ namespace Pulsar.Models
         public bool IsInstalled { get; set; }
 
         /// <summary>
+        /// 运行时启用状态（来自 PluginProfile.Enabled，由外部插件管理器填充）
+        /// </summary>
+        public bool IsEnabled { get; set; }
+
+        /// <summary>
         /// 已安装的版本
         /// </summary>
         public string? InstalledVersion { get; set; }

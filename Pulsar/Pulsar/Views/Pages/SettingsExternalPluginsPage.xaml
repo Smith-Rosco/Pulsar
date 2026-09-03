@@ -167,6 +167,13 @@
 
                                         <!-- Action Buttons -->
                                         <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                            <!-- Enable/Disable Toggle (takes effect immediately) -->
+                                            <ui:ToggleSwitch IsChecked="{Binding IsEnabled, Mode=OneWay}"
+                                                             Command="{Binding DataContext.TogglePluginCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                             CommandParameter="{Binding}"
+                                                             ToolTip="{lex:Locale Settings.ExternalPlugins.ToggleToolTip}"
+                                                             HorizontalAlignment="Center"
+                                                             Margin="{StaticResource Pulsar.Gap.Bottom.SM}"/>
                                             <!-- Grant Permissions (idempotent for installed plugins) -->
                                             <ui:Button Content="{lex:Locale Settings.ExternalPlugins.GrantPermissions}"
                                                        Command="{Binding DataContext.ApprovePluginPermissionsCommand, RelativeSource={RelativeSource AncestorType=Page}}"

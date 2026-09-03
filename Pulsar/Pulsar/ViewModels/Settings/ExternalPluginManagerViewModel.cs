@@ -68,6 +68,7 @@ namespace Pulsar.ViewModels.Settings
                 InstalledPlugins.Clear();
                 foreach (var plugin in plugins)
                 {
+                    plugin.IsEnabled = _pluginRegistry.IsPluginEnabled(plugin.Id);
                     InstalledPlugins.Add(plugin);
                 }
 
@@ -82,6 +83,46 @@ namespace Pulsar.ViewModels.Settings
             finally
             {
                 IsLoading = false;
+            }
+        }
+
+        /// <summary>
+        /// 启用/禁用外部插件（立即生效）
+        /// </summary>
+        [RelayCommand]
+        private async Task TogglePluginAsync(PluginPackageInfo plugin)
+        {
+            if (plugin == null) return;
+
+            var target = !plugin.IsEnabled;
+
+            try
+            {
+                // 写入 profile 并跑生命周期（禁用时 OnDisableAsync + 无条件注销渲染器贡献）
+                await _pluginRegistry.SetPluginStateAsync(plugin.Id, target);
+
+                if (target)
+                {
+                    // 启用立即生效：激活插件（OnEnableAsync 里的贡献即时可用）
+                    await _pluginRegistry.GetOrActivatePluginAsync(plugin.Id);
+                }
+
+                StatusMessage = string.Format(
+                    _loc[target ? "Settings.ExternalPlugins.PluginEnabledFormat" : "Settings.ExternalPlugins.PluginDisabledFormat"],
+                    plugin.Name);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[ExternalPluginManagerViewModel] Failed to toggle plugin {PluginId}", plugin.Id);
+                StatusMessage = string.Format(_loc["Settings.ExternalPlugins.StatusErrorInstallingFormat"], ex.Message);
+            }
+            finally
+            {
+                // 重建列表保证开关状态与运行时一致（POCO 无属性通知）；
+                // InitializeAsync 会覆盖状态消息，先记住本次结果再回写。
+                var resultMessage = StatusMessage;
+                await InitializeAsync();
+                StatusMessage = resultMessage;
             }
         }
 

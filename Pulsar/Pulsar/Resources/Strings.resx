@@ -735,6 +735,15 @@
   <data name="Settings.ExternalPlugins.Uninstall" xml:space="preserve">
     <value>Uninstall</value>
   </data>
+  <data name="Settings.ExternalPlugins.ToggleToolTip" xml:space="preserve">
+    <value>Enable or disable this plugin (takes effect immediately)</value>
+  </data>
+  <data name="Settings.ExternalPlugins.PluginEnabledFormat" xml:space="preserve">
+    <value>Enabled {0}</value>
+  </data>
+  <data name="Settings.ExternalPlugins.PluginDisabledFormat" xml:space="preserve">
+    <value>Disabled {0}</value>
+  </data>
   <data name="Settings.ExternalPlugins.NoPlugins" xml:space="preserve">
     <value>No external plugins installed</value>
   </data>

@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -95,6 +96,7 @@ namespace Pulsar.Services
                 {
                     var pluginRegistry = _services.GetRequiredService<IPluginRegistry>();
                     await pluginRegistry.DiscoverDeferredAsync();
+                    await ActivateEnabledExternalPluginsAsync(pluginRegistry);
 
                     var configService = _services.GetRequiredService<IConfigService>();
                     ConfigureValidationPipeline(configService);
@@ -149,6 +151,38 @@ namespace Pulsar.Services
             {
                 concreteConfigService.SetValidationPipeline(validationPipeline);
                 Log.Information("Validation pipeline configured for ConfigService");
+            }
+        }
+
+        /// <summary>
+        /// Activates every enabled external plugin after deferred discovery.
+        /// Action plugins could stay lazily activated, but plugins that
+        /// contribute ambient state (e.g. renderer registrations via
+        /// OnEnableAsync) must run their lifecycle at startup or their
+        /// contributions silently disappear after every restart.
+        /// </summary>
+        private async Task ActivateEnabledExternalPluginsAsync(IPluginRegistry pluginRegistry)
+        {
+            foreach (var descriptor in pluginRegistry.GetAllPluginDescriptors().ToList())
+            {
+                if (!descriptor.IsExternal)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    if (!pluginRegistry.IsPluginEnabled(descriptor.Id))
+                    {
+                        continue;
+                    }
+
+                    await pluginRegistry.GetOrActivatePluginAsync(descriptor.Id);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[Startup] Failed to activate external plugin {PluginId} at startup", descriptor.Id);
+                }
             }
         }
 
