@@ -36,7 +36,14 @@ namespace Pulsar.Core.Plugin
         /// </summary>
         public IReadOnlyList<string> Permissions { get; init; } = Array.Empty<string>();
 
-        public required Type ImplementationType { get; init; }
+        /// <summary>
+        /// The plugin implementation <see cref="Type"/>. For external plugins this
+        /// type lives inside the plugin's collectible <see cref="System.Runtime.Loader.AssemblyLoadContext"/>,
+        /// so holding this reference pins the context and keeps the plugin DLL file
+        /// locked. It is cleared (set to null) when the plugin is deactivated so the
+        /// context can actually be collected.
+        /// </summary>
+        public required Type? ImplementationType { get; set; }
 
         public required IReadOnlyList<string> Dependencies { get; init; }
 

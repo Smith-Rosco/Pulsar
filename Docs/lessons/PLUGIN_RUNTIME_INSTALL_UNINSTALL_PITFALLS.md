@@ -1,6 +1,6 @@
-# Lesson: 外部插件运行时安装/卸载的五个坑（discovery 快照、懒激活、ALC 文件锁、GC 延迟、残骸目录）
+# Lesson: 外部插件运行时安装/卸载的六个坑（discovery 快照、懒激活、ALC 文件锁、GC 延迟、Type 钉住、残骸目录）
 
-> 2026-09-03 · renderer-plugin-registry 联调中发现 · commit `fc08ac5` + `223a36a` + `f4c8ae9`
+> 2026-09-03 · renderer-plugin-registry 联调中发现 · commit `fc08ac5` + `223a36a` + `f4c8ae9` + `1f7df2f`
 
 ## 症状
 
@@ -9,6 +9,7 @@
 3. **残骸目录死锁**：残骸目录（只剩 DLL、无 manifest）既不出现在插件列表（无法卸载），又让覆盖安装报 "already installed"。
 4. **重启后插件贡献消失**：安装时渲染器注册成功、下拉能选到；重启后「Discovered 1 plugins」但渲染器下拉里没有该插件——`OnEnableAsync` 没跑。
 5. **卸载偶发 `Access to path … denied`**：日志里 `Unloaded assembly context` + `Deactivated plugin` 都执行了，但紧接着的目录删除仍 5 次失败。
+6. **打开过「插件管理」页后卸载仍失败**：`Unload()` + 强制 GC 都做了，DLL 仍被锁——descriptor 的 `ImplementationType` 被 UI 列表钉住。
 
 ## 根因
 
@@ -86,6 +87,28 @@ if (_loader.TryUnloadExternalContext(pluginId))
 **教训**：`Unload()` 返回 ≠ 文件锁已释放。删除插件目录前必须确定性 GC 回收，否则只能靠
 `DeleteDirectoryWithRetry` 的延迟重试碰运气。
 
+### 6. descriptor 的 `ImplementationType` 钉住 collectible ALC
+
+外部插件的 descriptor 在 discovery 时把 `pluginType`（从 collectible ALC 反射得到的 `Type`）
+存进 `ImplementationType`。任何存活引用链只要还碰得到这个 `Type`，`AssemblyLoadContext.Unload()`
++ `GC.Collect()` 就**无法**回收上下文：
+
+```
+PluginManagerViewModel.Plugins → PluginViewModel._descriptor → PluginDescriptor.ImplementationType (Type)
+```
+
+`PluginManagerViewModel` 是瞬态，但 `SettingsPageFactory`（设置窗口打开时解析）在构造函数里
+注入它，其构造函数立即 `LoadPlugins()` → `GetAllPluginDescriptors()` 捕获所有 descriptor（含外部
+插件的 `Type`）。只要打开过设置窗口，卸载时即便强制 GC，DLL 仍被钉住。
+
+**修复**：`PluginDescriptor.ImplementationType` 由 `Type { init; }` 改为 `Type? { set; }`；
+`DeactivatePluginAsync` 在 `RemoveDescriptor` 之前把它置 `null`。`ActivatePlugin` 加空值防护
+（catalog 内活 descriptor 恒非空）。同一直例 `PluginDescriptor` 实例被 catalog 与 UI 共享，置空
+即同时切断 UI 侧的引用。
+
+**教训**：collectible ALC 卸载前，除了插件实例、catalog、discovery 缓存，还要检查**任何把
+`Type` 暴露到外部长生命周期对象**的地方。`Type` 引用 = ALC 引用 = 文件锁。
+
 ## 排查入口
 
 | 信号 | 位置 |
@@ -94,5 +117,5 @@ if (_loader.TryUnloadExternalContext(pluginId))
 | `External plugin folder has no valid manifest and was skipped` | 同上（残骸目录特征） |
 | `Plugin {id} is already installed. Please uninstall it first.` | 覆盖安装被残骸目录挡住 |
 | 重启后 `Discovered N plugins` 但无 `Activated plugin` | 懒激活，`AppStartupCoordinator` 未跑激活链 |
-| `Unloaded assembly context` 后仍 `Access to path … denied` | ALC 卸载是 GC 驱动的，删除前未强制回收 |
+| `Unloaded assembly context` 后仍 `Access to path … denied` | ALC 卸载是 GC 驱动的，删除前未强制回收；或 descriptor 的 `ImplementationType` 被 UI 钉住 |
 | 插件日志无 `OnEnableAsync` 记录 | `%APPDATA%/Pulsar/Logs/Plugins/{pluginId}-*.log` |

@@ -72,7 +72,12 @@ namespace Pulsar.Core.Plugin
 
         public virtual IPulsarPlugin ActivatePlugin(PluginDescriptor descriptor)
         {
-            var plugin = _pluginFactory.CreatePlugin(descriptor.ImplementationType);
+            // ImplementationType is only null after DeactivatePluginAsync severed it;
+            // a descriptor still in the catalog always carries its type.
+            var pluginType = descriptor.ImplementationType
+                ?? throw new InvalidOperationException(
+                    $"Plugin '{descriptor.Id}' has no implementation type (was it already unloaded?)");
+            var plugin = _pluginFactory.CreatePlugin(pluginType);
             plugin.Initialize(_services);
 
             // External descriptors intentionally defer metadata discovery until

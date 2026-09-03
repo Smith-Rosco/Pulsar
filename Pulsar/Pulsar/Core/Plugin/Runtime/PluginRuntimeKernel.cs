@@ -664,6 +664,17 @@ namespace Pulsar.Core.Plugin.Runtime
                 _rendererRegistry?.UnregisterOwner(pluginId);
             }
 
+            // Sever the implementation type BEFORE dropping the catalog entry.
+            // External descriptors carry a Type loaded from the collectible ALC,
+            // so any live holder (e.g. the Plugin Manager page's descriptor list)
+            // keeps the context alive and the DLL locked. Nulling the Type breaks
+            // that pin; the catalog entry is then removed and the GC below can
+            // actually collect the context.
+            if (_catalog.TryGetDescriptor(pluginId, out var descriptor) && descriptor != null)
+            {
+                descriptor.ImplementationType = null;
+            }
+
             _catalog.RemoveDescriptor(pluginId);
             _loader.InvalidateDiscoveryCache();
 

@@ -256,6 +256,8 @@ namespace Pulsar.Tests.Plugin
             kernel.GetDescriptor(descriptor.Id).Should().BeNull("the catalog entry must be dropped");
             state.TryGetPlugin(descriptor.Id, out _).Should().BeFalse("the runtime state entry must be dropped");
             rendererRegistry.TryGet("Neon", out _).Should().BeFalse("renderer contributions must be revoked");
+            descriptor.ImplementationType.Should().BeNull(
+                "the implementation Type pins the collectible ALC and must be severed so the DLL lock is released");
         }
 
         [Fact]
