@@ -124,12 +124,12 @@ namespace Pulsar.Native
         {
             _ignoreNextButtonDown = true;
             _ignoreNextButtonUp = true;
-            _logger?.LogInformation(
+            _logger?.LogDebug(
                 "[DEBUG-RDX] hook ReplayRightClick armed ignoreDown/Up and injecting RIGHTDOWN+RIGHTUP");
 
             if (SuppressInjection)
             {
-                _logger?.LogInformation("[DEBUG-RDX] hook ReplayRightClick injection suppressed (test seam)");
+                _logger?.LogDebug("[DEBUG-RDX] hook ReplayRightClick injection suppressed (test seam)");
                 return;
             }
 
@@ -170,13 +170,13 @@ namespace Pulsar.Native
                     if (_ignoreNextButtonDown)
                     {
                         _ignoreNextButtonDown = false;
-                        _logger?.LogInformation(
+                        _logger?.LogDebug(
                             "[DEBUG-RDX] hook swallowed REPLAYED right-DOWN @({X},{Y}) ignoreNowDown={IgnDown} -> CallNextHookEx (passes to app)",
                             hookStruct.pt.x, hookStruct.pt.y, _ignoreNextButtonDown);
                         return CallNextHookEx(_hookId, nCode, wParam, lParam);
                     }
 
-                    _logger?.LogInformation(
+                    _logger?.LogDebug(
                         "[DEBUG-RDX] hook observed right-DOWN @({X},{Y}) ignoreNextDown={IgnDown} -> dispatching to subscribers",
                         hookStruct.pt.x, hookStruct.pt.y, _ignoreNextButtonDown);
                 }
@@ -185,13 +185,13 @@ namespace Pulsar.Native
                     if (_ignoreNextButtonUp)
                     {
                         _ignoreNextButtonUp = false;
-                        _logger?.LogInformation(
+                        _logger?.LogDebug(
                             "[DEBUG-RDX] hook swallowed REPLAYED right-UP @({X},{Y}) ignoreNowUp={IgnUp} -> CallNextHookEx (passes to app)",
                             hookStruct.pt.x, hookStruct.pt.y, _ignoreNextButtonUp);
                         return CallNextHookEx(_hookId, nCode, wParam, lParam);
                     }
 
-                    _logger?.LogInformation(
+                    _logger?.LogDebug(
                         "[DEBUG-RDX] hook observed right-UP @({X},{Y}) ignoreNextUp={IgnUp} -> dispatching to subscribers",
                         hookStruct.pt.x, hookStruct.pt.y, _ignoreNextButtonUp);
                 }
@@ -248,7 +248,7 @@ namespace Pulsar.Native
 
                     if (args.Handled)
                     {
-                        _logger?.LogInformation(
+                        _logger?.LogDebug(
                             "[DEBUG-RDX] hook right-{Action} @({X},{Y}) HANDLED by subscriber -> swallowed (return 1), app does NOT see it",
                             action, hookStruct.pt.x, hookStruct.pt.y);
                         return (IntPtr)1; // Swallow the event
@@ -256,7 +256,7 @@ namespace Pulsar.Native
 
                     if (action == GlobalMouseAction.Down || action == GlobalMouseAction.Up)
                     {
-                        _logger?.LogInformation(
+                        _logger?.LogDebug(
                             "[DEBUG-RDX] hook right-{Action} @({X},{Y}) NOT handled by subscriber -> CallNextHookEx, app SEES this event (POTENTIAL LEAK)",
                             action, hookStruct.pt.x, hookStruct.pt.y);
                     }

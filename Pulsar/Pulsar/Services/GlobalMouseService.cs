@@ -43,7 +43,7 @@ namespace Pulsar.Services
 
         public void ReplayRightClick()
         {
-            _logger.LogInformation("[DEBUG-RDX] service ReplayRightClick -> delegating to hook");
+            _logger.LogDebug("[DEBUG-RDX] service ReplayRightClick -> delegating to hook");
             _hook.ReplayRightClick();
         }
 

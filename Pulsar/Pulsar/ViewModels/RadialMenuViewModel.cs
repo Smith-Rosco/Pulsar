@@ -371,7 +371,7 @@ namespace Pulsar.ViewModels
                 // D3: a config refresh mid-gesture must never clear the detector's
                 // in-flight pressed/summoned state. Defer applying the new config
                 // until the gesture ends (the next release / pass-through up).
-                _logger?.LogInformation(
+                _logger?.LogDebug(
                     "[DEBUG-RDX] [CONFIG] refresh mid-gesture (pressed) -> DEFER enabled={Enabled} mode={Mode} thr={Thr:0.##} switcher={Switcher} action={Action}",
                     enabled, summonMode, dragThreshold, switcher, action);
                 _pendingGestureConfig = true;
@@ -387,7 +387,7 @@ namespace Pulsar.ViewModels
                 return;
             }
 
-            _logger?.LogInformation(
+            _logger?.LogDebug(
                 "[DEBUG-RDX] [CONFIG] apply enabled={Enabled} mode={Mode} thr={Thr:0.##} switcher={Switcher} action={Action}",
                 enabled, summonMode, dragThreshold, switcher, action);
             ApplyGestureConfig(enabled, switcher, action, summonMode, dragThreshold,
@@ -419,7 +419,7 @@ namespace Pulsar.ViewModels
 
             if (!_gestureEnabled)
             {
-                _logger?.LogInformation("[DEBUG-RDX] [CONFIG] gesture disabled -> detector.Reset()");
+                _logger?.LogDebug("[DEBUG-RDX] [CONFIG] gesture disabled -> detector.Reset()");
                 _pendingGestureDown = false;
                 _gestureDetector.Reset();
             }
@@ -433,7 +433,7 @@ namespace Pulsar.ViewModels
         {
             if (!_pendingGestureConfig) return;
 
-            _logger?.LogInformation(
+            _logger?.LogDebug(
                 "[DEBUG-RDX] [CONFIG] applying DEFERRED config enabled={Enabled} mode={Mode} thr={Thr:0.##} switcher={Switcher} action={Action}",
                 _pendingEnabled, _pendingSummonMode, _pendingDragThreshold, _pendingSwitcherModifier, _pendingActionModifier);
             _pendingGestureConfig = false;
@@ -502,7 +502,7 @@ namespace Pulsar.ViewModels
                 && _session.IsVisible && _session.IsGestureSummoned && !gestureInProgress)
             {
                 e.Handled = true;
-                _logger?.LogInformation("[DEBUG-RDX] [GUARD] visible gesture menu release guard swallowed right-up (state lost)");
+                _logger?.LogDebug("[DEBUG-RDX] [GUARD] visible gesture menu release guard swallowed right-up (state lost)");
                 InvokeOnUiInput(() => _ = _session.HandleGestureRightReleaseAsync());
                 ApplyPendingGestureConfig();
                 return true;
@@ -510,7 +510,7 @@ namespace Pulsar.ViewModels
 
             if (!_gestureEnabled && !_gestureDetector.IsPressed)
             {
-                _logger?.LogInformation(
+                _logger?.LogDebug(
                     "[DEBUG-RDX] [PASS] right-{Action} NOT claimed: gesture disabled={Disabled} and not pressed -> passes to app (NATIVE MENU RISK)",
                     e.Action, _gestureEnabled);
                 return false;
@@ -518,7 +518,7 @@ namespace Pulsar.ViewModels
 
             if (_session.IsVisible && !gestureInProgress)
             {
-                _logger?.LogInformation(
+                _logger?.LogDebug(
                     "[DEBUG-RDX] [PASS] right-{Action} NOT claimed: menu visible={Visible} but no gesture in progress -> passes to normal path",
                     e.Action, _session.IsVisible);
                 return false;
@@ -543,7 +543,7 @@ namespace Pulsar.ViewModels
 
                 var switcherHeld = IsModifierHeld(_gestureSwitcherModifier);
                 var actionHeld = IsModifierHeld(_gestureActionModifier);
-                _logger?.LogInformation(
+                _logger?.LogDebug(
                     "[DEBUG-RDX] right-DOWN modifiers switcher={Switcher}({SwKey}) held={SwHeld} action={ActionKey} held={ActHeld}",
                     _gestureSwitcherModifier, _gestureSwitcherModifier, switcherHeld, _gestureActionModifier, actionHeld);
 
@@ -552,7 +552,7 @@ namespace Pulsar.ViewModels
                 if (downDecision == RightDragGestureDecision.ActionSummon || downDecision == RightDragGestureDecision.SwitcherSummon)
                 {
                     e.Handled = true;
-                    _logger?.LogInformation(
+                    _logger?.LogDebug(
                         "[DEBUG-RDX] [SWALLOW] right-DOWN decision={Decision} @({X},{Y}) pressed={Pressed} summoned={Summoned} | mode={Mode}",
                         downDecision, e.X, e.Y, _gestureDetector.IsPressed, _gestureDetector.IsSummoned, _gestureSummonMode);
                     _session.SetInvocationPointScreen(new System.Windows.Point(e.X, e.Y));
@@ -592,13 +592,13 @@ namespace Pulsar.ViewModels
                     _gestureDownMode = actionHeld
                         ? RadialMenuMode.Action
                         : RadialMenuMode.Task;
-                    _logger?.LogInformation(
+                    _logger?.LogDebug(
                         "[DEBUG-RDX] [PENDING] right-DOWN no modifier detected, swallowed pending @({X},{Y}) mode={Mode}",
                         e.X, e.Y, _gestureDownMode);
                     return true;
                 }
 
-                _logger?.LogInformation(
+                _logger?.LogDebug(
                     "[DEBUG-RDX] [PASS] right-DOWN no configured modifier held -> NOT swallowed, passes to app (NATIVE MENU RISK)");
                 return false;
             }
@@ -606,14 +606,14 @@ namespace Pulsar.ViewModels
             if (e.Action == GlobalMouseAction.Up && e.Button == GlobalMouseButton.Right)
             {
                 var upDecision = _gestureDetector.OnRightUp();
-                _logger?.LogInformation(
+                _logger?.LogDebug(
                     "[DEBUG-RDX] right-UP decision={Decision} after: pressed={Pressed} summoned={Summoned}",
                     upDecision, _gestureDetector.IsPressed, _gestureDetector.IsSummoned);
 
                 if (upDecision == RightDragGestureDecision.GestureRelease)
                 {
                     e.Handled = true;
-                    _logger?.LogInformation("[DEBUG-RDX] [SWALLOW] right-UP GestureRelease: executing selection");
+                    _logger?.LogDebug("[DEBUG-RDX] [SWALLOW] right-UP GestureRelease: executing selection");
                     InvokeOnUiInput(() => _ = _session.HandleGestureRightReleaseAsync());
                     ApplyPendingGestureConfig();
                     return true;
@@ -625,13 +625,13 @@ namespace Pulsar.ViewModels
                     // synthetic right-click to the source app so its native context
                     // menu appears, and swallow the gesture release.
                     e.Handled = true;
-                    _logger?.LogInformation("[DEBUG-RDX] [REPLAY] right-UP SubThresholdRelease: replaying right-click to source app");
+                    _logger?.LogDebug("[DEBUG-RDX] [REPLAY] right-UP SubThresholdRelease: replaying right-click to source app");
                     _globalMouseService.ReplayRightClick();
                     ApplyPendingGestureConfig();
                     return true;
                 }
 
-                _logger?.LogInformation(
+                _logger?.LogDebug(
                     "[DEBUG-RDX] [PASS] right-UP None (no gesture press) -> NOT swallowed, passes to app (NATIVE MENU RISK)");
                 ApplyPendingGestureConfig();
                 return false;
@@ -659,7 +659,7 @@ namespace Pulsar.ViewModels
                 // The user was holding a modifier the whole time; the down was
                 // swallowed pending. Promote the press to a gesture and treat the
                 // release as a gesture release (execute selection).
-                _logger?.LogInformation(
+                _logger?.LogDebug(
                     "[DEBUG-RDX] [PENDING->GESTURE] modifier now held switcher={Sw} action={Act} -> GestureRelease",
                     switcherHeld, actionHeld);
                 _session.SetInvocationPointScreen(new System.Windows.Point(_gestureDownX, _gestureDownY));
@@ -675,7 +675,7 @@ namespace Pulsar.ViewModels
 
             // Genuine plain right-click: hand it back to the app via replay so the
             // native context menu still appears.
-            _logger?.LogInformation(
+            _logger?.LogDebug(
                 "[DEBUG-RDX] [PENDING->REPLAY] no modifier -> replaying right-click to source app");
             _globalMouseService.ReplayRightClick();
             ApplyPendingGestureConfig();
@@ -701,7 +701,7 @@ namespace Pulsar.ViewModels
                 if (switcherHeld || actionHeld)
                 {
                     _pendingGestureDown = false;
-                    _logger?.LogInformation(
+                    _logger?.LogDebug(
                         "[DEBUG-RDX] [PENDING->GESTURE] move promoted pending down switcher={Sw} action={Act} mode={Mode}",
                         switcherHeld, actionHeld, _gestureSummonMode);
 
@@ -744,7 +744,7 @@ namespace Pulsar.ViewModels
 
             if (_gestureDetector.FeedDisplacement(dx, dy))
             {
-                _logger?.LogInformation(
+                _logger?.LogDebug(
                     "[DEBUG-RDX] [SUMMON-ON-THRESHOLD] crossed thr={Thr:0.##}: summoning {Mode} at down({X},{Y})",
                     _gestureDragThreshold, _gestureDownMode, _gestureDownX, _gestureDownY);
                 InvokeOnUiInput(() => _ = ShowAsync(_gestureDownMode, MenuInvocationSource.RightDragGesture));
