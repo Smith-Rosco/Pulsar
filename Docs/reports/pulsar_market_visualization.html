@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pulsar 市场对标可视化</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; background: #f5f7fa; font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif; color: #1f2937; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; }
+  h1 { font-size: 22px; margin: 0 0 4px; color: #111827; }
+  .sub { font-size: 13px; color: #6b7280; margin-bottom: 20px; line-height: 1.6; }
+  .card { background: #fff; border-radius: 14px; box-shadow: 0 1px 4px rgba(16,24,40,.08); padding: 18px 18px 8px; margin-bottom: 22px; }
+  .card h2 { font-size: 16px; margin: 0 0 2px; color: #111827; }
+  .card .note { font-size: 12px; color: #6b7280; margin-bottom: 6px; line-height: 1.6; }
+  .chart { width: 100%; height: 520px; }
+  .chart.scatter { height: 500px; }
+  .legend-note { font-size: 12px; color: #6b7280; margin: 4px 0 14px; }
+  @media (max-width: 640px) { .chart { height: 420px; } .chart.scatter { height: 400px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Pulsar 市场对标可视化</h1>
+  <div class="sub">结合 2026-09 公开市场调研 · 数据口径见各图注 · 雷达与定位图为基于公开资料的定性评估（非官方评分）</div>
+
+  <div class="card">
+    <h2>图 1 · 竞品能力对标雷达图</h2>
+    <div class="note">维度评分（0–10）为基于公开资料、用户反馈与产品文档的定性评估，非官方打分。Pulsar 在「安全凭据」「工程可靠性」领先，在「搜索能力」「插件生态」「AI 能力」明显落后。</div>
+    <div id="radar" class="chart"></div>
+  </div>
+
+  <div class="card">
+    <h2>图 2 · 市场定位图（交互范式 × 用户层级）</h2>
+    <div class="note">横轴：交互范式（0=键盘搜索式 → 10=鼠标手势/轮盘盲操）；纵轴：目标用户（0=大众办公 → 10=开发者/重度专业）。坐标为主观定位评估，用于展示竞争分区而非精确测量。</div>
+    <div id="scatter" class="chart scatter"></div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  function init(id, option){
+    var el = document.getElementById(id);
+    if(!el || typeof echarts === 'undefined'){ return; }
+    try {
+      var chart = echarts.init(el);
+      chart.setOption(option);
+      window.addEventListener('resize', function(){ chart.resize(); });
+    } catch(e) {
+      el.innerHTML = '<div style="padding:20px;color:#b91c1c;font-size:13px;">图表渲染失败，请检查网络（ECharts CDN 未加载）。</div>';
+    }
+  }
+
+  /* ============ 雷达图 ============ */
+  var radarOption = {
+    backgroundColor: 'transparent',
+    color: ['#2563EB','#7C3AED','#0D9488','#D97706','#DC2626'],
+    tooltip: {
+      trigger: 'item',
+      triggerOn: 'click',
+      renderMode: 'richText',
+      confine: true,
+      textStyle: { fontSize: 11, lineHeight: 15 },
+      padding: [6, 8]
+    },
+    legend: {
+      type: 'scroll',
+      bottom: 0,
+      itemWidth: 14,
+      itemHeight: 8,
+      textStyle: { color: '#4b5563', fontSize: 11 }
+    },
+    radar: {
+      indicator: [
+        { name: '文件/应用搜索', max: 10 },
+        { name: '插件/动作生态', max: 10 },
+        { name: '轮盘/手势交互', max: 10 },
+        { name: '视觉定制', max: 10 },
+        { name: '办公自动化', max: 10 },
+        { name: '安全/凭据', max: 10 },
+        { name: 'AI 能力', max: 10 },
+        { name: '工程/可靠性', max: 10 }
+      ],
+      radius: '62%',
+      center: ['50%', '52%'],
+      splitNumber: 4,
+      axisName: { color: '#374151', fontSize: 11 },
+      splitArea: { areaStyle: { color: ['rgba(37,99,235,0.02)','rgba(37,99,235,0.05)'] } },
+      splitLine: { lineStyle: { color: 'rgba(107,114,128,0.25)' } },
+      axisLine: { lineStyle: { color: 'rgba(107,114,128,0.35)' } }
+    },
+    series: [{
+      type: 'radar',
+      symbolSize: 4,
+      data: [
+        { value: [2,3,8,5,8,9,1,9], name: 'Pulsar' },
+        { value: [3,10,9,7,9,3,2,7], name: 'Quicker' },
+        { value: [2,3,10,9,5,2,1,5], name: 'StarPie' },
+        { value: [9,8,2,6,3,2,2,8], name: 'Flow Launcher' },
+        { value: [8,9,4,7,5,3,6,7], name: 'uTools' }
+      ],
+      areaStyle: { opacity: 0.12 }
+    }]
+  };
+
+  /* ============ 定位散点图 ============ */
+  function p(name, x, y, symbolSize, color, extra){
+    return { name: name, value: [x, y], symbolSize: symbolSize, itemStyle: { color: color }, ...(extra||{}) };
+  }
+  var scatterOption = {
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'item',
+      triggerOn: 'click',
+      renderMode: 'richText',
+      confine: true,
+      formatter: function(params){
+        if(!params || !params.data || !params.data.value){ return ''; }
+        return params.data.name + String.fromCharCode(10) + '交互范式: ' + params.data.value[0] + ' / 用户层级: ' + params.data.value[1];
+      },
+      textStyle: { fontSize: 11, lineHeight: 15 },
+      padding: [6, 8]
+    },
+    grid: { left: 44, right: 30, top: 30, bottom: 44, containLabel: true },
+    xAxis: {
+      type: 'value',
+      name: '键盘搜索式 → 鼠标手势/轮盘',
+      nameLocation: 'middle',
+      nameGap: 28,
+      min: 0, max: 10,
+      nameTextStyle: { color: '#4b5563', fontSize: 11 },
+      axisLabel: { color: '#6b7280', fontSize: 11 },
+      splitLine: { lineStyle: { color: 'rgba(107,114,128,0.18)' } }
+    },
+    yAxis: {
+      type: 'value',
+      name: '大众办公 → 开发者/重度',
+      nameLocation: 'middle',
+      nameGap: 34,
+      min: 0, max: 10,
+      nameTextStyle: { color: '#4b5563', fontSize: 11 },
+      axisLabel: { color: '#6b7280', fontSize: 11 },
+      splitLine: { lineStyle: { color: 'rgba(107,114,128,0.18)' } }
+    },
+    series: [{
+      type: 'scatter',
+      data: [
+        p('Pulsar', 8, 6, 26, '#2563EB'),
+        p('Quicker', 8, 5, 34, '#DC2626'),
+        p('StarPie', 10, 5, 22, '#7C3AED'),
+        p('MousePlus', 9, 4, 14, '#A855F7'),
+        p('Kando', 8, 3, 14, '#0EA5E9'),
+        p('Flow Launcher', 2, 6, 26, '#D97706'),
+        p('Wox', 2, 5, 20, '#EA580C'),
+        p('uTools', 3, 6, 24, '#16A34A'),
+        p('Listary', 3, 4, 16, '#059669'),
+        p('PowerToys Run', 3, 4, 16, '#64748B'),
+        p('Raycast (Mac)', 3, 7, 22, '#0F172A'),
+        p('Alfred (Mac)', 3, 6, 16, '#475569')
+      ],
+      label: {
+        show: true,
+        position: 'top',
+        formatter: function(params){
+          return params && params.data ? params.data.name : '';
+        },
+        fontSize: 10,
+        color: '#374151'
+      },
+      markLine: {
+        silent: true,
+        symbol: 'none',
+        lineStyle: { color: 'rgba(107,114,128,0.35)', type: 'dashed' },
+        label: { show: false },
+        data: [{ xAxis: 5 }, { yAxis: 5 }]
+      }
+    }]
+  };
+
+  init('radar', radarOption);
+  init('scatter', scatterOption);
+})();
+</script>
+</body>
+</html>
