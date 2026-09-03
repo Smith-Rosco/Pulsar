@@ -139,10 +139,10 @@
   </data>
   <!-- ==================== Settings.Appearance (Radial Style) ==================== -->
   <data name="Settings.Appearance.RendererStyle" xml:space="preserve">
-    <value>Radial Menu Style</value>
+    <value>Renderer (Radial Menu Style)</value>
   </data>
   <data name="Settings.Appearance.RendererStyleDescription" xml:space="preserve">
-    <value>Visual style of the radial menu. Classic Ring adds an accent ring; Glassmorphism adds a translucent frosted layer.</value>
+    <value>Visual style of the radial menu. Classic Ring adds an accent ring; Glassmorphism adds a translucent frosted layer. Renderer plugins contribute additional entries here.</value>
   </data>
   <data name="Settings.Appearance.RendererStyle.Default" xml:space="preserve">
     <value>Default</value>

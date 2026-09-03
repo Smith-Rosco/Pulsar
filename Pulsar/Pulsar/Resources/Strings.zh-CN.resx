@@ -225,12 +225,12 @@
   <data
     name="Settings.Appearance.RendererStyle"
     xml:space="preserve">
-    <value>径向菜单样式</value>
+    <value>渲染器（径向菜单样式）</value>
   </data>
   <data
     name="Settings.Appearance.RendererStyleDescription"
     xml:space="preserve">
-    <value>径向菜单的视觉样式。经典环会添加强调色圆环；毛玻璃会添加半透明磨砂层。</value>
+    <value>径向菜单的视觉样式。经典环会添加强调色圆环；毛玻璃会添加半透明磨砂层。渲染器插件会在此追加更多选项。</value>
   </data>
   <data
     name="Settings.Appearance.RendererStyle.Default"
