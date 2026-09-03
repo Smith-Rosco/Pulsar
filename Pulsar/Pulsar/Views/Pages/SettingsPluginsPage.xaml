@@ -432,8 +432,8 @@
                                                     <!-- Health Badge -->
                                                     <TextBlock Text="{Binding HealthBadge}" 
                                                                FontSize="{StaticResource Pulsar.Type.Subtitle}"
-                                                               ToolTip="{Binding HealthReport.Status}"
-                                                               AutomationProperties.Name="{Binding HealthReport.Status}"
+                                                               ToolTip="{Binding HealthStatusText}"
+                                                               AutomationProperties.Name="{Binding HealthStatusText}"
                                                                Margin="{StaticResource Pulsar.Gap.Right.SM}"
                                                                VerticalAlignment="Center"/>
                                                     
@@ -646,8 +646,11 @@
                                                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                                        VerticalAlignment="Center" Margin="{StaticResource Pulsar.Gap.Left.SM}"/>
                                                         </StackPanel>
-                                                        <TextBlock Text="{Binding Author, StringFormat='by {0}'}" FontSize="{StaticResource Pulsar.Type.Body}"
-                                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="{StaticResource Pulsar.Gap.Bottom.SM}"/>
+                                                        <TextBlock FontSize="{StaticResource Pulsar.Type.Body}"
+                                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="{StaticResource Pulsar.Gap.Bottom.SM}">
+                                                            <Run Text="{lex:Locale Settings.ExternalPlugins.ByAuthor}"/>
+                                                            <Run Text="{Binding Author, Mode=OneWay}"/>
+                                                        </TextBlock>
                                                         <TextBlock Text="{Binding Description}" FontSize="{StaticResource Pulsar.Type.Body}"
                                                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                                    TextWrapping="Wrap" Margin="{StaticResource Pulsar.Gap.Bottom.SM}"/>

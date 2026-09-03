@@ -53,7 +53,7 @@ namespace Pulsar.ViewModels.Settings
         private readonly IDialogService? _dialogService;
         private readonly IServiceProvider? _serviceProvider;
         private readonly IPluginMetadataRegistry? _metadataRegistry;
-        private readonly ILocalizationService? _loc;
+        private readonly ILocalizationService _loc;
 
         public ObservableCollection<PluginViewModel> Plugins { get; } = new();
         public ObservableCollection<PluginGroup> GroupedPlugins { get; } = new();
@@ -72,9 +72,10 @@ namespace Pulsar.ViewModels.Settings
         public IReadOnlyList<PluginFilterOption> FilterOptions { get; }
 
         public PluginManagerViewModel(IPluginRegistry registry, IConfigService configService,
+            ILocalizationService localizationService,
             IPluginUsageTracker? usageTracker = null, IPluginHealthMonitor? healthMonitor = null,
-            IPluginLogService? logService = null, IDialogService? dialogService = null, IServiceProvider? serviceProvider = null,
-            IPluginMetadataRegistry? metadataRegistry = null, ILocalizationService? localizationService = null)
+            IPluginLogService? logService = null, IDialogService? dialogService = null,
+            IServiceProvider? serviceProvider = null, IPluginMetadataRegistry? metadataRegistry = null)
         {
             _registry = registry;
             _configService = configService;
@@ -143,8 +144,9 @@ namespace Pulsar.ViewModels.Settings
 
             foreach (var plugin in allPlugins)
             {
-                Plugins.Add(new PluginViewModel(plugin, _registry, _configService, 
-                    _usageTracker, _healthMonitor, _logService, _dialogService, _serviceProvider, _metadataRegistry));
+                Plugins.Add(new PluginViewModel(plugin, _registry, _configService,
+                    _loc, _usageTracker, _healthMonitor, _logService, _dialogService,
+                    _serviceProvider, _metadataRegistry));
             }
 
             if (Plugins.Any())

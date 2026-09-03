@@ -79,6 +79,17 @@ namespace Pulsar.ViewModels.Settings
             _ => ""
         };
 
+        /// <summary>健康状态的本地化文本（ToolTip / 无障碍名称），未命中时回退为英文枚举名。</summary>
+        public string HealthStatusText
+        {
+            get
+            {
+                var key = $"Plugin.Health.{HealthReport.Status}";
+                var localized = _loc?[key];
+                return !string.IsNullOrEmpty(localized) && localized != key ? localized : HealthReport.Status.ToString();
+            }
+        }
+
         /// <summary>设置对话框（含 Window Inspector）解析依赖用。</summary>
         public IServiceProvider? ServiceProvider => _serviceProvider;
 
@@ -108,13 +119,13 @@ namespace Pulsar.ViewModels.Settings
             PluginDescriptor descriptor,
             IPluginRegistry registry,
             IConfigService configService,
+            ILocalizationService localizationService,
             IPluginUsageTracker? usageTracker = null,
             IPluginHealthMonitor? healthMonitor = null,
             IPluginLogService? logService = null,
             IDialogService? dialogService = null,
             IServiceProvider? serviceProvider = null,
-            IPluginMetadataRegistry? metadataRegistry = null,
-            ILocalizationService? localizationService = null)
+            IPluginMetadataRegistry? metadataRegistry = null)
         {
             _descriptor = descriptor;
             _registry = registry;
@@ -125,7 +136,7 @@ namespace Pulsar.ViewModels.Settings
             _dialogService = dialogService;
             _serviceProvider = serviceProvider;
             _loc = localizationService;
-            _formatter = localizationService != null ? new PluginAnalyticsFormatter(localizationService) : null;
+            _formatter = new PluginAnalyticsFormatter(localizationService);
             _logger = serviceProvider?.GetService<ILogger<PluginViewModel>>();
             _plugin = _registry.GetPlugin(descriptor.Id);
             _metadata = metadataRegistry?.GetMetadata(descriptor.Id) ?? descriptor.Metadata;
@@ -164,6 +175,7 @@ namespace Pulsar.ViewModels.Settings
             OnPropertyChanged(nameof(ProfilesSummary));
             OnPropertyChanged(nameof(LastUsedSummary));
             OnPropertyChanged(nameof(HealthBadge));
+            OnPropertyChanged(nameof(HealthStatusText));
             OnPropertyChanged(nameof(HealthScoreText));
             OnPropertyChanged(nameof(HealthScoreColor));
             OnPropertyChanged(nameof(SuccessRateText));

@@ -3819,7 +3819,7 @@
     <value>打开程序、文件、文件夹或 URL，或向活动窗口发送按键序列。</value>
   </data>
   <data
-    name="Plugin.Description.Runcustomscriptsinlegacyintranetwebpagesthatdontsupportbrowserextensionsoruserscripts"
+    name="Plugin.Description.WebScripts"
     xml:space="preserve">
     <value>在老旧内网网页中运行自定义脚本，为不支持浏览器扩展或油猴的网页定制一键操作入口。</value>
   </data>
@@ -3832,6 +3832,68 @@
     name="Plugin.Description.PulsarSettings"
     xml:space="preserve">
     <value>打开 Pulsar 设置，或通过内置操作进入快速配置设置流程。</value>
+  </data>
+  <!-- ==================== Plugin.Category (内置插件分类本地化) ==================== -->
+  <data
+    name="Plugin.Category.General"
+    xml:space="preserve">
+    <value>通用</value>
+  </data>
+  <data
+    name="Plugin.Category.Productivity"
+    xml:space="preserve">
+    <value>生产力</value>
+  </data>
+  <data
+    name="Plugin.Category.Credentials"
+    xml:space="preserve">
+    <value>凭据</value>
+  </data>
+  <data
+    name="Plugin.Category.Apps"
+    xml:space="preserve">
+    <value>应用</value>
+  </data>
+  <data
+    name="Plugin.Category.Automation"
+    xml:space="preserve">
+    <value>自动化</value>
+  </data>
+  <data
+    name="Plugin.Category.System"
+    xml:space="preserve">
+    <value>系统</value>
+  </data>
+  <data
+    name="Plugin.Category.Web"
+    xml:space="preserve">
+    <value>网页</value>
+  </data>
+  <!-- ==================== Plugin.Health (插件健康状态本地化) ==================== -->
+  <data
+    name="Plugin.Health.Healthy"
+    xml:space="preserve">
+    <value>健康</value>
+  </data>
+  <data
+    name="Plugin.Health.Warning"
+    xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data
+    name="Plugin.Health.Critical"
+    xml:space="preserve">
+    <value>严重</value>
+  </data>
+  <data
+    name="Plugin.Health.Unused"
+    xml:space="preserve">
+    <value>未使用</value>
+  </data>
+  <data
+    name="Plugin.Health.Disabled"
+    xml:space="preserve">
+    <value>已禁用</value>
   </data>
   <data
     name="Plugin.CircuitBreakerTitle"

@@ -20,9 +20,9 @@ namespace Pulsar.ViewModels.Settings
             PluginId = pluginId;
             IconKey = iconKey;
             DisplayName = loc != null ? PluginLocalization.LocalizePluginName(loc, displayName) : displayName;
-            Description = loc != null ? PluginLocalization.LocalizePluginDescription(loc, description) : description;
+            Description = loc != null ? PluginLocalization.LocalizePluginDescription(loc, description, displayName) : description;
             CategoryKey = categoryKey;
-            CategoryLabel = categoryLabel;
+            CategoryLabel = loc != null ? PluginLocalization.LocalizePluginCategory(loc, categoryLabel) : categoryLabel;
             AccentColor = accentColor;
             IsPrimary = isPrimary;
         }

@@ -2334,7 +2334,7 @@
   <data name="Plugin.Description.OpenType" xml:space="preserve">
     <value>Open apps, files, folders, or URLs, or send a key sequence to the active window.</value>
   </data>
-  <data name="Plugin.Description.Runcustomscriptsinlegacyintranetwebpagesthatdontsupportbrowserextensionsoruserscripts" xml:space="preserve">
+  <data name="Plugin.Description.WebScripts" xml:space="preserve">
     <value>Run custom scripts in legacy intranet web pages that don't support browser extensions or userscripts.</value>
   </data>
   <data name="Plugin.Description.ExcelMacros" xml:space="preserve">
@@ -2342,6 +2342,44 @@
   </data>
   <data name="Plugin.Description.PulsarSettings" xml:space="preserve">
     <value>Open Pulsar settings or jump into quick profile setup using explicit built-in actions.</value>
+  </data>
+  <!-- ==================== Plugin.Category (Built-in Plugin Category Localization) ==================== -->
+  <data name="Plugin.Category.General" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="Plugin.Category.Productivity" xml:space="preserve">
+    <value>Productivity</value>
+  </data>
+  <data name="Plugin.Category.Credentials" xml:space="preserve">
+    <value>Credentials</value>
+  </data>
+  <data name="Plugin.Category.Apps" xml:space="preserve">
+    <value>Apps</value>
+  </data>
+  <data name="Plugin.Category.Automation" xml:space="preserve">
+    <value>Automation</value>
+  </data>
+  <data name="Plugin.Category.System" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="Plugin.Category.Web" xml:space="preserve">
+    <value>Web</value>
+  </data>
+  <!-- ==================== Plugin.Health (Plugin Health Status Localization) ==================== -->
+  <data name="Plugin.Health.Healthy" xml:space="preserve">
+    <value>Healthy</value>
+  </data>
+  <data name="Plugin.Health.Warning" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="Plugin.Health.Critical" xml:space="preserve">
+    <value>Critical</value>
+  </data>
+  <data name="Plugin.Health.Unused" xml:space="preserve">
+    <value>Unused</value>
+  </data>
+  <data name="Plugin.Health.Disabled" xml:space="preserve">
+    <value>Disabled</value>
   </data>
   <!-- ==================== Plugin.CircuitBreaker ==================== -->
   <data name="Plugin.CircuitBreakerTitle" xml:space="preserve">
