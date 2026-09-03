@@ -53,7 +53,7 @@ namespace Pulsar.ViewModels.Settings
         private readonly IDialogService? _dialogService;
         private readonly IServiceProvider? _serviceProvider;
         private readonly IPluginMetadataRegistry? _metadataRegistry;
-        private readonly ILocalizationService _loc;
+        private readonly ILocalizationService _loc = null!;
 
         public ObservableCollection<PluginViewModel> Plugins { get; } = new();
         public ObservableCollection<PluginGroup> GroupedPlugins { get; } = new();

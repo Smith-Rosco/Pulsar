@@ -191,11 +191,14 @@ namespace Pulsar
             serviceCollection.AddSingleton<IHotkeyService, HotkeyService>();
             serviceCollection.AddSingleton<IGlobalMouseService, GlobalMouseService>();
             serviceCollection.AddSingleton<IDialogService, DialogService>();
+            serviceCollection.AddSingleton<Services.Interfaces.IScriptFileService, Services.ScriptFileService>();
+            serviceCollection.AddSingleton<Services.Interfaces.IScriptValidationService, Services.ScriptValidationService>();
             serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.IOnboardingTemplateService, Pulsar.Features.Tutorial.Services.OnboardingTemplateService>();
             serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.IOnboardingStateService, Pulsar.Features.Tutorial.Services.OnboardingStateService>();
             serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.TutorialScenarioRegistry>();
             serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.Prerequisites.ExcelPrerequisiteProvider>();
             serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.Prerequisites.BrowserPrerequisiteProvider>();
+            serviceCollection.AddSingleton<Pulsar.Services.ExampleLibraryService>();
             serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.StartupCoordinator>();
             
             // Tutorial Service

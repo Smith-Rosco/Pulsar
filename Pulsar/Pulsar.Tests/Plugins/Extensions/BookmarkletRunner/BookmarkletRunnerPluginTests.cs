@@ -120,5 +120,89 @@ namespace Pulsar.Tests.Plugins.Extensions.BookmarkletRunner
             enterCount.Should().Be(0);
             windowService.Verify(x => x.HideMainWindow(), Times.Once);
         }
+
+        [Fact]
+        public async Task ExecuteAsync_ShouldInterpolateSlotArgsIntoExecutedPayload()
+        {
+            var windowService = new Mock<IWindowService>();
+            var focusManager = new Mock<IFocusManager>();
+            focusManager.Setup(x => x.ActivateWindowAsync(It.IsAny<IntPtr>(), null))
+                .ReturnsAsync(new Pulsar.Core.Focus.FocusActivationResult { Success = true });
+            var services = new Mock<IServiceProvider>();
+            services.Setup(x => x.GetService(typeof(IWindowService))).Returns(windowService.Object);
+            services.Setup(x => x.GetService(typeof(IFocusManager))).Returns(focusManager.Object);
+            services.Setup(x => x.GetService(typeof(ILogger<BookmarkletRunnerPlugin>)))
+                .Returns(NullLogger<BookmarkletRunnerPlugin>.Instance);
+
+            string? injectedPayload = null;
+            var plugin = new BookmarkletRunnerPlugin
+            {
+                ReadScriptFile = _ => "document.title = '{{user}}';",
+                ResolveTargetBrowserWindow = (_, _) => new IntPtr(123),
+                IsBrowserWindowMinimized = _ => false,
+                DelayAsync = _ => Task.CompletedTask,
+                Sleep = _ => { },
+                TrySetFocusedElementText = text =>
+                {
+                    injectedPayload = text;
+                    return true;
+                },
+                SendKeyCombination = _ => { }
+            };
+
+            plugin.Initialize(services.Object);
+
+            var result = await plugin.ExecuteAsync(
+                "run",
+                new Dictionary<string, string>
+                {
+                    ["scriptPath"] = @"C:\temp\bookmarklet.js",
+                    ["user"] = "alice"
+                },
+                PulsarContextFactory.CreateTestContext(targetWindowHandle: new IntPtr(10), targetProcessName: "chrome"));
+
+            result.Success.Should().BeTrue();
+            injectedPayload.Should().Contain("javascript:");
+            injectedPayload.Should().Contain("alice");
+            injectedPayload.Should().NotContain("{{user}}");
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_ShouldFail_WhenPlaceholderValueMissing()
+        {
+            var windowService = new Mock<IWindowService>();
+            var focusManager = new Mock<IFocusManager>();
+            focusManager.Setup(x => x.ActivateWindowAsync(It.IsAny<IntPtr>(), null))
+                .ReturnsAsync(new Pulsar.Core.Focus.FocusActivationResult { Success = true });
+            var services = new Mock<IServiceProvider>();
+            services.Setup(x => x.GetService(typeof(IWindowService))).Returns(windowService.Object);
+            services.Setup(x => x.GetService(typeof(IFocusManager))).Returns(focusManager.Object);
+            services.Setup(x => x.GetService(typeof(ILogger<BookmarkletRunnerPlugin>)))
+                .Returns(NullLogger<BookmarkletRunnerPlugin>.Instance);
+
+            var plugin = new BookmarkletRunnerPlugin
+            {
+                ReadScriptFile = _ => "document.title = '{{user}}';",
+                ResolveTargetBrowserWindow = (_, _) => new IntPtr(123),
+                IsBrowserWindowMinimized = _ => false,
+                DelayAsync = _ => Task.CompletedTask,
+                Sleep = _ => { },
+                TrySetFocusedElementText = _ => false,
+                SendKeyCombination = _ => { }
+            };
+
+            plugin.Initialize(services.Object);
+
+            var result = await plugin.ExecuteAsync(
+                "run",
+                new Dictionary<string, string> { ["scriptPath"] = @"C:\temp\bookmarklet.js" },
+                PulsarContextFactory.CreateTestContext(targetWindowHandle: new IntPtr(10), targetProcessName: "chrome"));
+
+            result.Success.Should().BeFalse();
+            result.Message.Should().Contain("user");
+            result.Severity.Should().Be(PluginErrorSeverity.Recoverable);
+            result.ErrorCode.Should().Be(PluginErrorCode.MissingRequiredParameter);
+            windowService.Verify(x => x.HideMainWindow(), Times.Never);
+        }
     }
 }

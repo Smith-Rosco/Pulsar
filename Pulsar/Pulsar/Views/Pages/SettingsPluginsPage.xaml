@@ -556,6 +556,15 @@
                                                             </StackPanel>
                                                         </Border>
                                                     </StackPanel>
+
+                                                    <!-- In-app script editor entry (Web Scripts / Bookmarklet plugin only) -->
+                                                    <ui:Button Content="{Binding ScriptEditorLabel}"
+                                                               Command="{Binding OpenScriptEditorCommand}"
+                                                               Icon="{ui:SymbolIcon DocumentAdd24}"
+                                                               Style="{StaticResource PulsarSecondaryButtonStyle}"
+                                                               Visibility="{Binding IsScriptEditorVisible, Converter={StaticResource BoolToVis}}"
+                                                               ToolTip="{lex:Locale Settings.Plugins.NewEditScriptTooltip}"
+                                                               Margin="{StaticResource Pulsar.Gap.Top.MD}"/>
                                                 </StackPanel>
                                             </controls:ExpandableCard.ExpandedContent>
                                         </controls:ExpandableCard>

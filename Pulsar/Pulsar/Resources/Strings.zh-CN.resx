@@ -3966,6 +3966,106 @@
     <value>运行浏览器脚本时出错: {0}</value>
   </data>
   <data
+    name="Bookmarklet.ScriptEditor.Title"
+    xml:space="preserve">
+    <value>脚本编辑器</value>
+  </data>
+  <data
+    name="Bookmarklet.ScriptEditor.NewScript"
+    xml:space="preserve">
+    <value>新建脚本</value>
+  </data>
+  <data
+    name="Bookmarklet.ScriptEditor.EditingFormat"
+    xml:space="preserve">
+    <value>正在编辑 {0}</value>
+  </data>
+  <data
+    name="Bookmarklet.ScriptEditor.Save"
+    xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data
+    name="Bookmarklet.ScriptEditor.Cancel"
+    xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data
+    name="Bookmarklet.ScriptEditor.New"
+    xml:space="preserve">
+    <value>新建</value>
+  </data>
+  <data
+    name="Bookmarklet.ScriptEditor.NewTooltip"
+    xml:space="preserve">
+    <value>创建一个新脚本</value>
+  </data>
+  <data
+    name="Bookmarklet.ScriptEditor.Open"
+    xml:space="preserve">
+    <value>打开…</value>
+  </data>
+  <data
+    name="Bookmarklet.ScriptEditor.OpenTooltip"
+    xml:space="preserve">
+    <value>打开现有脚本</value>
+  </data>
+  <data
+    name="Bookmarklet.ScriptEditor.OpenTitle"
+    xml:space="preserve">
+    <value>打开脚本</value>
+  </data>
+  <data
+    name="Bookmarklet.ScriptEditor.FileNameLabel"
+    xml:space="preserve">
+    <value>文件名</value>
+  </data>
+  <data
+    name="Bookmarklet.ScriptEditor.ContentPlaceholder"
+    xml:space="preserve">
+    <value>在此编写浏览器脚本。使用 {{name}} 在运行时插入插槽参数的值。</value>
+  </data>
+  <data
+    name="Bookmarklet.ScriptEditor.InvalidHint"
+    xml:space="preserve">
+    <value>脚本存在问题。如果你愿意，仍然可以保存。</value>
+  </data>
+  <data
+    name="Bookmarklet.ScriptEditor.WarningHint"
+    xml:space="preserve">
+    <value>脚本存在警告。</value>
+  </data>
+  <data
+    name="Bookmarklet.ScriptEditor.Help"
+    xml:space="preserve">
+    <value>像 {{name}} 这样的占位符会在脚本运行时替换为对应插槽参数的值。输入 {{{{ 可插入字面 {{。</value>
+  </data>
+  <data
+    name="Bookmarklet.ScriptEditor.SaveError"
+    xml:space="preserve">
+    <value>保存脚本失败。请检查权限后重试。</value>
+  </data>
+  <data
+    name="Bookmarklet.Error.MissingParameterValue"
+    xml:space="preserve">
+    <value>缺少脚本参数值: {0}</value>
+  </data>
+  <data
+    name="Bookmarklet.ScriptEditor.OpenErrorFormat"
+    xml:space="preserve">
+    <value>打开脚本失败: {0}</value>
+  </data>
+  <data
+    name="Settings.Plugins.NewEditScript"
+    xml:space="preserve">
+    <value>新建/编辑脚本</value>
+  </data>
+  <data
+    name="Settings.Plugins.NewEditScriptTooltip"
+    xml:space="preserve">
+    <value>在应用内创建或编辑浏览器脚本</value>
+  </data>
+  <data
     name="Dialog.AddSlot.CardSwitchApp"
     xml:space="preserve">
     <value>切换应用</value>
@@ -4141,6 +4241,21 @@
     xml:space="preserve">
     <value>会生成浏览器切换槽位和浏览器脚本命令槽位</value>
   </data>
+  <data
+    name="Scenario.WebScript.Title"
+    xml:space="preserve">
+    <value>网页脚本</value>
+  </data>
+  <data
+    name="Scenario.WebScript.Description"
+    xml:space="preserve">
+    <value>切换到浏览器并在旧版网页上运行网页脚本</value>
+  </data>
+  <data
+    name="Scenario.WebScript.SlotDescription"
+    xml:space="preserve">
+    <value>会生成浏览器切换槽位和网页脚本运行命令槽位</value>
+  </data>
   <!-- ==================== CommandSlot ==================== -->
   <data
     name="CommandSlot.RunVbaDemo"
@@ -4311,6 +4426,119 @@ Pulsar 会在你的浏览器中打开一个网页——这就是命令模式：�
 这就是核心工作流——切换到任意应用，然后在其中执行操作。
 
 随时打开设置自定义你的槽位，或继续使用默认配置——Pulsar 随时为你服务！</value>
+  </data>
+  <!-- ==================== Tutorial: Web Script Scenario ==================== -->
+  <data
+    name="Tutorial.WebScript.WelcomeDesc"
+    xml:space="preserve">
+    <value>欢迎！本教程将带你体验如何在浏览器中运行网页脚本，作用于旧版页面。
+
+你将：
+1. 按 {SwitchHotkey} 打开切换模式，切换到你的浏览器
+2. 按 {CommandHotkey} 打开命令模式，在当前页面运行网页脚本
+
+网页脚本可以帮助你自动化不支持现代扩展程序的旧版内网页面。</value>
+  </data>
+  <data
+    name="Tutorial.WebScript.SwitchModeDesc"
+    xml:space="preserve">
+    <value>按 {SwitchHotkey} 打开切换模式，将鼠标悬停在浏览器图标（Chrome 或 Edge）上，然后释放快捷键即可切换到它。
+
+Pulsar 会直接跳转到你的浏览器，无需反复切换窗口。</value>
+  </data>
+  <data
+    name="Tutorial.WebScript.SwitchModeHint"
+    xml:space="preserve">
+    <value>按 {SwitchHotkey}，将鼠标悬停在浏览器图标上，然后释放快捷键。</value>
+  </data>
+  <data
+    name="Tutorial.WebScript.FirstSwitch"
+    xml:space="preserve">
+    <value>已切换到浏览器</value>
+  </data>
+  <data
+    name="Tutorial.WebScript.FirstSwitchDesc"
+    xml:space="preserve">
+    <value>太好了——你已切换到浏览器！
+
+打开一个你想要自动化的旧版网页（例如内部看板或表单）。
+
+下一步将在该页面上运行一个网页脚本。</value>
+  </data>
+  <data
+    name="Tutorial.WebScript.CommandModeDesc"
+    xml:space="preserve">
+    <value>按 {CommandHotkey} 打开命令模式，将鼠标悬停在"运行浏览器脚本"上，然后释放快捷键。
+
+Pulsar 会在当前页面运行一个网页脚本——这就是命令模式：在你切换到的应用上运行插件。</value>
+  </data>
+  <data
+    name="Tutorial.WebScript.CommandModeHint"
+    xml:space="preserve">
+    <value>按 {CommandHotkey}，将鼠标悬停在"运行浏览器脚本"上，然后释放快捷键。</value>
+  </data>
+  <data
+    name="Tutorial.WebScript.FirstCommandDesc"
+    xml:space="preserve">
+    <value>Pulsar 已在你浏览器中运行了网页脚本！你刚刚结合了两种模式：
+
+1. 切换模式（{SwitchHotkey}）——帮你到达浏览器
+2. 命令模式（{CommandHotkey}）——在页面上运行了脚本
+
+查看页面：它应该已经发生了变化（弹窗、填写的表单或控制台日志）。</value>
+  </data>
+  <data
+    name="Tutorial.WebScript.OnboardingCompleteDesc"
+    xml:space="preserve">
+    <value>你已经结合了 Pulsar 的两种模式：
+
+✔ 用切换模式（{SwitchHotkey}）跳到浏览器
+✔ 用命令模式（{CommandHotkey}）运行了网页脚本
+
+这就是核心工作流——切换到任意应用，然后在其中执行操作。
+
+随时打开设置自定义你的槽位，或继续使用默认配置——Pulsar 随时为你服务！</value>
+  </data>
+  <!-- ==================== Example Library ==================== -->
+  <data
+    name="Example.Hello.Title"
+    xml:space="preserve">
+    <value>Pulsar 问候</value>
+  </data>
+  <data
+    name="Example.Hello.Description"
+    xml:space="preserve">
+    <value>弹出友好提示，确认网页脚本可以在页面上运行</value>
+  </data>
+  <data
+    name="Example.FormFill.Title"
+    xml:space="preserve">
+    <value>填写表单</value>
+  </data>
+  <data
+    name="Example.FormFill.Description"
+    xml:space="preserve">
+    <value>在旧版表单中填入示例值到前几个可见文本框</value>
+  </data>
+  <data
+    name="Example.DataExtract.Title"
+    xml:space="preserve">
+    <value>提取表格数据</value>
+  </data>
+  <data
+    name="Example.DataExtract.Description"
+    xml:space="preserve">
+    <value>将旧版页面中第一张表格的行提取到控制台</value>
+  </data>
+  <data
+    name="Example.LinkTraverse.Title"
+    xml:space="preserve">
+    <value>遍历链接</value>
+  </data>
+  <data
+    name="Example.LinkTraverse.Description"
+    xml:space="preserve">
+    <value>在旧版页面上查找链接并打开第一个外部链接</value>
   </data>
   <!-- ==================== Tutorial ==================== -->
   <data

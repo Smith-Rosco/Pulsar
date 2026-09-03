@@ -2426,6 +2426,66 @@
   <data name="Bookmarklet.Error.InjectionFailed" xml:space="preserve">
     <value>Error running browser script: {0}</value>
   </data>
+  <data name="Bookmarklet.ScriptEditor.Title" xml:space="preserve">
+    <value>Script Editor</value>
+  </data>
+  <data name="Bookmarklet.ScriptEditor.NewScript" xml:space="preserve">
+    <value>New Script</value>
+  </data>
+  <data name="Bookmarklet.ScriptEditor.EditingFormat" xml:space="preserve">
+    <value>Editing {0}</value>
+  </data>
+  <data name="Bookmarklet.ScriptEditor.Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Bookmarklet.ScriptEditor.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Bookmarklet.ScriptEditor.New" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="Bookmarklet.ScriptEditor.NewTooltip" xml:space="preserve">
+    <value>Create a new script</value>
+  </data>
+  <data name="Bookmarklet.ScriptEditor.Open" xml:space="preserve">
+    <value>Open…</value>
+  </data>
+  <data name="Bookmarklet.ScriptEditor.OpenTooltip" xml:space="preserve">
+    <value>Open an existing script</value>
+  </data>
+  <data name="Bookmarklet.ScriptEditor.OpenTitle" xml:space="preserve">
+    <value>Open Script</value>
+  </data>
+  <data name="Bookmarklet.ScriptEditor.FileNameLabel" xml:space="preserve">
+    <value>File name</value>
+  </data>
+  <data name="Bookmarklet.ScriptEditor.ContentPlaceholder" xml:space="preserve">
+    <value>Write your browser script here. Use {{name}} to insert a slot parameter value at run time.</value>
+  </data>
+  <data name="Bookmarklet.ScriptEditor.InvalidHint" xml:space="preserve">
+    <value>The script has issues. You can still save it if you want.</value>
+  </data>
+  <data name="Bookmarklet.ScriptEditor.WarningHint" xml:space="preserve">
+    <value>The script has warnings.</value>
+  </data>
+  <data name="Bookmarklet.ScriptEditor.Help" xml:space="preserve">
+    <value>Placeholders like {{name}} are filled with the value of a matching slot parameter when the script runs. Write {{{{ to insert a literal {{.</value>
+  </data>
+  <data name="Bookmarklet.ScriptEditor.SaveError" xml:space="preserve">
+    <value>Failed to save the script. Please check permissions and try again.</value>
+  </data>
+  <data name="Bookmarklet.Error.MissingParameterValue" xml:space="preserve">
+    <value>Missing value for script parameter(s): {0}</value>
+  </data>
+  <data name="Bookmarklet.ScriptEditor.OpenErrorFormat" xml:space="preserve">
+    <value>Failed to open script: {0}</value>
+  </data>
+  <data name="Settings.Plugins.NewEditScript" xml:space="preserve">
+    <value>New/Edit Script</value>
+  </data>
+  <data name="Settings.Plugins.NewEditScriptTooltip" xml:space="preserve">
+    <value>Create or edit a browser script in-app</value>
+  </data>
   <data name="Dialog.AddSlot.CardSwitchApp" xml:space="preserve">
     <value>Switch App</value>
   </data>
@@ -2531,6 +2591,15 @@
   </data>
   <data name="Scenario.Browser.SlotDescription" xml:space="preserve">
     <value>Generates a Browser switch slot + browser script command slot</value>
+  </data>
+  <data name="Scenario.WebScript.Title" xml:space="preserve">
+    <value>Web Script</value>
+  </data>
+  <data name="Scenario.WebScript.Description" xml:space="preserve">
+    <value>Switch to your browser and run a web script on a legacy page</value>
+  </data>
+  <data name="Scenario.WebScript.SlotDescription" xml:space="preserve">
+    <value>Generates a Browser switch slot + web script run command slot</value>
   </data>
   <!-- ==================== CommandSlot ==================== -->
   <data name="CommandSlot.RunVbaDemo" xml:space="preserve">
@@ -2657,6 +2726,87 @@ That's the core Pulsar workflow.</value>
 That's the core workflow: switch to any app, then act inside it.
 
 Open Settings anytime to customize your slots, or keep using the defaults — Pulsar is ready whenever you are!</value>
+  </data>
+
+  <!-- ==================== Tutorial: Web Script Scenario ==================== -->
+  <data name="Tutorial.WebScript.WelcomeDesc" xml:space="preserve">
+    <value>Welcome! This tutorial will show you how to run a web script in your browser on a legacy page.
+
+You will:
+1. Press {SwitchHotkey} to open Switch Mode and switch to your browser
+2. Press {CommandHotkey} to open Command Mode and run a web script on the current page
+
+Web scripts let you automate legacy intranet pages that don't support modern extensions.</value>
+  </data>
+  <data name="Tutorial.WebScript.SwitchModeDesc" xml:space="preserve">
+    <value>Press {SwitchHotkey} to open Switch Mode, hover over the browser icon (Chrome or Edge), then release the hotkey to switch to it.
+
+That's all it takes — Pulsar jumps straight to your browser. No alt-tabbing, no searching.</value>
+  </data>
+  <data name="Tutorial.WebScript.SwitchModeHint" xml:space="preserve">
+    <value>Press {SwitchHotkey}, hover over your browser icon, and release the hotkey.</value>
+  </data>
+  <data name="Tutorial.WebScript.FirstSwitch" xml:space="preserve">
+    <value>Switched to your browser</value>
+  </data>
+  <data name="Tutorial.WebScript.FirstSwitchDesc" xml:space="preserve">
+    <value>Great — you switched to your browser!
+
+Open a legacy web page you want to automate (e.g. an internal dashboard or form).
+
+In the next step you'll run a web script on that page.</value>
+  </data>
+  <data name="Tutorial.WebScript.CommandModeDesc" xml:space="preserve">
+    <value>Press {CommandHotkey} to open Command Mode, hover over "Run Browser Script", then release the hotkey.
+
+Pulsar will run a web script on the current page — that's Command Mode in action: running a plugin on the app you switched to.</value>
+  </data>
+  <data name="Tutorial.WebScript.CommandModeHint" xml:space="preserve">
+    <value>Press {CommandHotkey}, hover over "Run Browser Script", and release the hotkey.</value>
+  </data>
+  <data name="Tutorial.WebScript.FirstCommandDesc" xml:space="preserve">
+    <value>Pulsar ran the web script in your browser! You just combined both modes:
+
+1. Switch Mode ({SwitchHotkey}) — got you to your browser
+2. Command Mode ({CommandHotkey}) — ran a script on the page
+
+Check the page: it should have changed (an alert, filled fields, or a console log).</value>
+  </data>
+  <data name="Tutorial.WebScript.OnboardingCompleteDesc" xml:space="preserve">
+    <value>You just combined both Pulsar modes:
+
+✔ Switched to your browser with Switch Mode ({SwitchHotkey})
+✔ Ran a web script with Command Mode ({CommandHotkey})
+
+That's the core workflow: switch to any app, then act inside it.
+
+Open Settings anytime to customize your slots, or keep using the defaults — Pulsar is ready whenever you are!</value>
+  </data>
+
+  <!-- ==================== Example Library ==================== -->
+  <data name="Example.Hello.Title" xml:space="preserve">
+    <value>Hello Pulsar</value>
+  </data>
+  <data name="Example.Hello.Description" xml:space="preserve">
+    <value>Shows a friendly alert to confirm a web script can run on a page</value>
+  </data>
+  <data name="Example.FormFill.Title" xml:space="preserve">
+    <value>Fill a Form</value>
+  </data>
+  <data name="Example.FormFill.Description" xml:space="preserve">
+    <value>Fills the first visible text fields on a legacy form with sample values</value>
+  </data>
+  <data name="Example.DataExtract.Title" xml:space="preserve">
+    <value>Extract Table Data</value>
+  </data>
+  <data name="Example.DataExtract.Description" xml:space="preserve">
+    <value>Pulls rows from the first table on a legacy page into the console</value>
+  </data>
+  <data name="Example.LinkTraverse.Title" xml:space="preserve">
+    <value>Traverse Links</value>
+  </data>
+  <data name="Example.LinkTraverse.Description" xml:space="preserve">
+    <value>Finds links on a legacy page and opens the first external one</value>
   </data>
 
   <!-- ==================== Tutorial ==================== -->
