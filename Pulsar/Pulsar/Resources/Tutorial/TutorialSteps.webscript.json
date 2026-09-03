@@ -1,0 +1,132 @@
+{
+  "version": "1.0.0",
+  "steps": [
+    {
+      "id": "step1_onboarding_welcome",
+      "title": "Welcome to Pulsar",
+      "titleKey": "Tutorial.Welcome",
+      "description": "Welcome! This tutorial will show you how to run a web script in your browser on a legacy page.\n\nYou will:\n1. Press `{SwitchHotkey}` to open Switch Mode and switch to your browser\n2. Press `{CommandHotkey}` to open Command Mode and run a web script on the current page\n\nWeb scripts let you automate legacy intranet pages that don't support modern extensions.",
+      "descriptionKey": "Tutorial.WebScript.WelcomeDesc",
+      "type": "Instruction",
+      "target": null,
+      "completionTrigger": {
+        "type": "ButtonClick",
+        "targetValue": "NextButton"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Auto",
+        "fixedCardWidth": 450,
+        "fixedCardHeight": 320
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step2_switch_mode_intro",
+      "title": "Switch Mode: app switching and launching",
+      "titleKey": "Tutorial.SwitchMode",
+      "description": "Press `{SwitchHotkey}` to open Switch Mode, hover over the browser icon (Chrome or Edge), then release the hotkey to switch to it.\n\nThat's all it takes — Pulsar jumps straight to your browser. No alt-tabbing, no searching.",
+      "descriptionKey": "Tutorial.WebScript.SwitchModeDesc",
+      "type": "WaitForAction",
+      "waitHintText": "Press {SwitchHotkey}, hover over your browser icon, and release the hotkey.",
+      "waitHintKey": "Tutorial.WebScript.SwitchModeHint",
+      "target": null,
+      "completionTrigger": {
+        "type": "ActionExecuted",
+        "targetValue": "Switch"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Auto",
+        "fixedCardWidth": 450,
+        "fixedCardHeight": 320
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step3_switch_mode_success",
+      "title": "Switched to your browser",
+      "titleKey": "Tutorial.WebScript.FirstSwitch",
+      "description": "Great — you switched to your browser!\n\nOpen a legacy web page you want to automate (e.g. an internal dashboard or form).\n\nIn the next step you'll run a web script on that page.",
+      "descriptionKey": "Tutorial.WebScript.FirstSwitchDesc",
+      "type": "Instruction",
+      "target": null,
+      "completionTrigger": {
+        "type": "ButtonClick",
+        "targetValue": "NextButton"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Auto",
+        "fixedCardWidth": 450,
+        "fixedCardHeight": 320
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step4_command_mode_intro",
+      "title": "Command Mode: invoke the web script",
+      "titleKey": "Tutorial.CommandMode",
+      "description": "Press `{CommandHotkey}` to open Command Mode, hover over \"Run Browser Script\", then release the hotkey.\n\nPulsar will run a web script on the current page — that's Command Mode in action: running a plugin on the app you switched to.",
+      "descriptionKey": "Tutorial.WebScript.CommandModeDesc",
+      "type": "WaitForAction",
+      "waitHintText": "Press {CommandHotkey}, hover over \"Run Browser Script\", and release the hotkey.",
+      "waitHintKey": "Tutorial.WebScript.CommandModeHint",
+      "target": null,
+      "completionTrigger": {
+        "type": "ActionExecuted",
+        "targetValue": "Command"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Auto",
+        "fixedCardWidth": 460,
+        "fixedCardHeight": 300
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step5_command_mode_success",
+      "title": "Web script executed!",
+      "titleKey": "Tutorial.FirstCommand",
+      "description": "Pulsar ran the web script in your browser! You just combined both modes:\n\n1. Switch Mode (`{SwitchHotkey}`) — got you to your browser\n2. Command Mode (`{CommandHotkey}`) — ran a script on the page\n\nCheck the page: it should have changed (an alert, filled fields, or a console log).",
+      "descriptionKey": "Tutorial.WebScript.FirstCommandDesc",
+      "type": "Instruction",
+      "target": null,
+      "completionTrigger": {
+        "type": "ButtonClick",
+        "targetValue": "NextButton"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Auto",
+        "fixedCardWidth": 480,
+        "fixedCardHeight": 320
+      },
+      "focusMode": "AlwaysObserving"
+    },
+    {
+      "id": "step6_completion",
+      "title": "You're all set!",
+      "titleKey": "Tutorial.OnboardingComplete",
+      "description": "You just combined both Pulsar modes:\n\n\u2714 Switched to your browser with Switch Mode (`{SwitchHotkey}`)\n\u2714 Ran a web script with Command Mode (`{CommandHotkey}`)\n\nThat's the core workflow: switch to any app, then act inside it.\n\nOpen Settings anytime to customize your slots, or keep using the defaults — Pulsar is ready whenever you are!",
+      "descriptionKey": "Tutorial.WebScript.OnboardingCompleteDesc",
+      "type": "Instruction",
+      "primaryAction": "CompleteTutorial",
+      "primaryButtonText": "Finish",
+      "primaryButtonTextKey": "Tutorial.Finish",
+      "target": null,
+      "completionTrigger": {
+        "type": "ButtonClick",
+        "targetValue": "CompleteButton"
+      },
+      "layout": {
+        "cardPosition": "TopRight",
+        "cardSizeMode": "Auto",
+        "fixedCardWidth": 480,
+        "fixedCardHeight": 360
+      },
+      "focusMode": "AlwaysObserving"
+    }
+  ]
+}

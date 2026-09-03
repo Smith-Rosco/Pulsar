@@ -158,5 +158,25 @@ namespace Pulsar.Tests.Tutorial
 
             config.Profiles["Global"].CommandMode.Should().BeEmpty();
         }
+
+        [Fact]
+        public void BuildInitialConfig_WithWebScriptScenario_ShouldProducePrimaryBookmarkletSlot()
+        {
+            var service = new OnboardingTemplateService();
+            var browserApps = service.GetAvailableApps().Where(app => app.Id is "chrome" or "edge").ToList();
+            browserApps.Should().NotBeEmpty("a browser selection must be available to produce the primary bookmarklet slot");
+
+            var scenario = new TutorialScenarioRegistry().GetById("webscript");
+            scenario.Should().NotBeNull();
+            scenario!.PrerequisiteProvider.Should().Be(typeof(Pulsar.Features.Tutorial.Services.Prerequisites.BrowserPrerequisiteProvider));
+
+            var config = service.BuildInitialConfig(scenario, browserApps);
+
+            var primary = config.Profiles["Global"].CommandMode.Single(slot =>
+                slot.PluginId == "com.pulsar.bookmarklet" && slot.Action == "run");
+            primary.Args.Should().ContainKey("scriptPath");
+            primary.Slot.Should().Be(1);
+            primary.Should().NotBeNull();
+        }
     }
 }

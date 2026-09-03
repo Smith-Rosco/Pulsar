@@ -204,6 +204,14 @@ namespace Pulsar.Services
                 Draft.Settings = DeepClone(current.Settings);
             }
 
+            // [Presets] Installed preset packs are a root-level region like Settings. If the
+            // session never touched it, keep whatever a concurrent writer committed (e.g. an
+            // install that landed while this edit was in flight) instead of silently dropping it.
+            if (JsonEquals(_base.InstalledPresetPacks, Draft.InstalledPresetPacks))
+            {
+                Draft.InstalledPresetPacks = DeepClone(current.InstalledPresetPacks);
+            }
+
             foreach (var pair in current.Profiles)
             {
                 bool untouchedByUser = _base.Profiles.TryGetValue(pair.Key, out var baseProfile)

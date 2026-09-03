@@ -228,6 +228,21 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
 
             string scriptContent = validationResult.ProcessedScript;
 
+            // 3.5 参数插值：{{name}} -> 插槽参数 args[name]；缺失时报错
+            var interpolation = ScriptInterpolator.Interpolate(scriptContent, args);
+            if (interpolation.MissingPlaceholders.Count > 0)
+            {
+                _logger?.LogWarning("[BookmarkletRunner] Missing placeholder values: {Missing}",
+                    string.Join(", ", interpolation.MissingPlaceholders));
+                return PluginResult.Error(
+                    string.Format(_loc?["Bookmarklet.Error.MissingParameterValue"] ?? "Missing value for script parameter(s): {0}",
+                        string.Join(", ", interpolation.MissingPlaceholders)),
+                    PluginErrorSeverity.Recoverable,
+                    PluginErrorCode.MissingRequiredParameter);
+            }
+
+            scriptContent = interpolation.Content;
+
             // 4. 智能选择目标浏览器窗口
             IntPtr browserHandle = ResolveTargetBrowserWindow(
                 context.TargetWindowHandle,

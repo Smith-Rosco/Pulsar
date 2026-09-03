@@ -1,0 +1,121 @@
+<UserControl x:Class="Pulsar.Views.Dialogs.Contents.BookmarkletScriptEditorContent"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:vm="clr-namespace:Pulsar.ViewModels.Dialogs"
+             xmlns:lex="clr-namespace:Pulsar.Core.Localization"
+             xmlns:converters="clr-namespace:Pulsar.Core.Converters"
+             mc:Ignorable="d"
+             MinWidth="520"
+             d:DataContext="{d:DesignInstance Type=vm:BookmarkletScriptEditorViewModel}">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <!-- Self-merge ButtonStyles.xaml (which also pulls Tokens.xaml): a UserControl's
+                 StaticResource lookups resolve during InitializeComponent, before the control
+                 is attached to the dialog window tree, so PulsarSecondaryButtonStyle would
+                 otherwise be unreachable (App.xaml deliberately loads no ButtonStyles.xaml).
+                 Mirrors IconPickerContent/WindowInspectorContent/SecretPickerContent. -->
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+            <converters:CollectionEmptyToVisibilityConverter x:Key="CollectionEmptyToVis"/>
+            <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVis"/>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Header: title + file actions -->
+            <RowDefinition Height="*"/>    <!-- Editor -->
+            <RowDefinition Height="Auto"/> <!-- Validation feed -->
+            <RowDefinition Height="Auto"/> <!-- Help -->
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Grid.Row="0" Margin="{StaticResource Pulsar.Gap.Bottom.SM}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                <TextBlock Text="{Binding HeaderText}"
+                           FontSize="{StaticResource Pulsar.Type.Subtitle}"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                <TextBlock Text="{lex:Locale Bookmarklet.ScriptEditor.FileNameLabel}"
+                           FontSize="{StaticResource Pulsar.Type.Caption}"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+            </StackPanel>
+            <ui:Button Grid.Column="1"
+                       Content="{lex:Locale Bookmarklet.ScriptEditor.New}"
+                       Icon="{ui:SymbolIcon DocumentAdd24}"
+                       Command="{Binding NewScriptCommand}"
+                       Style="{StaticResource PulsarSecondaryButtonStyle}"
+                       Margin="{StaticResource Pulsar.Gap.Right.XS}"
+                       ToolTip="{lex:Locale Bookmarklet.ScriptEditor.NewTooltip}"/>
+            <ui:Button Grid.Column="2"
+                       Content="{lex:Locale Bookmarklet.ScriptEditor.Open}"
+                       Icon="{ui:SymbolIcon FolderOpen24}"
+                       Style="{StaticResource PulsarSecondaryButtonStyle}"
+                       Click="OpenButton_Click"
+                       ToolTip="{lex:Locale Bookmarklet.ScriptEditor.OpenTooltip}"/>
+        </Grid>
+
+        <!-- Editor -->
+        <ui:TextBox Grid.Row="1"
+                    Text="{Binding ScriptContent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    AcceptsReturn="True"
+                    AcceptsTab="True"
+                    VerticalScrollBarVisibility="Auto"
+                    HorizontalScrollBarVisibility="Auto"
+                    TextWrapping="NoWrap"
+                    FontFamily="Consolas"
+                    FontSize="13"
+                    VerticalContentAlignment="Top"
+                    PlaceholderText="{lex:Locale Bookmarklet.ScriptEditor.ContentPlaceholder}"/>
+
+        <!-- Validation feed (non-blocking) -->
+        <StackPanel Grid.Row="2" Margin="{StaticResource Pulsar.Gap.Top.SM}">
+            <TextBlock Text="{Binding ValidationSummary}"
+                       Foreground="{DynamicResource SystemFillColorCautionBrush}"
+                       FontSize="{StaticResource Pulsar.Type.Body}"
+                       TextWrapping="Wrap"
+                       Visibility="{Binding ValidationSummary, Converter={StaticResource StringEmptyToVis}}"/>
+            <ItemsControl ItemsSource="{Binding ValidationErrors}"
+                          Visibility="{Binding ValidationErrors.Count, Converter={StaticResource CollectionEmptyToVis}}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}"
+                                   Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                                   FontSize="{StaticResource Pulsar.Type.Body}"
+                                   TextWrapping="Wrap"/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <ItemsControl ItemsSource="{Binding ValidationWarnings}"
+                          Visibility="{Binding ValidationWarnings.Count, Converter={StaticResource CollectionEmptyToVis}}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}"
+                                   Foreground="{DynamicResource SystemFillColorCautionBrush}"
+                                   FontSize="{StaticResource Pulsar.Type.Body}"
+                                   TextWrapping="Wrap"/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+
+        <!-- Help -->
+        <TextBlock Grid.Row="3"
+                   Text="{lex:Locale Bookmarklet.ScriptEditor.Help}"
+                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                   FontSize="{StaticResource Pulsar.Type.Caption}"
+                   TextWrapping="Wrap"
+                   Margin="{StaticResource Pulsar.Gap.Top.SM}"/>
+    </Grid>
+</UserControl>

@@ -26,6 +26,13 @@ namespace Pulsar.Models
         public Dictionary<string, PluginProfile> Plugins { get; set; } = new(StringComparer.OrdinalIgnoreCase);
         
         public Dictionary<string, ProcessProfile> Profiles { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Office-action preset pack install state (id + version + granted permissions +
+        /// slot provenance). Absent / empty = no preset packs installed. Additive: old
+        /// configs without this field load unchanged with an empty list.
+        /// </summary>
+        public List<InstalledPresetPack> InstalledPresetPacks { get; set; } = new();
     }
 
     /// <summary>
