@@ -100,10 +100,13 @@ namespace Pulsar.Tests.Tutorial
         {
             var (vm, _, _, _) = CreateViewModel();
 
+            // 三支柱场景（Excel 宏 → 网页脚本）领先；背景场景按 Id 字母序排列。
+            // webscript（网页脚本示例库）由 main 侧新增，仍属背景场景组。
             vm.UsageOptions.Select(o => o.Scenario.Id).Should().Equal(
                 "excel",
                 "browser",
-                "notepad");
+                "notepad",
+                "webscript");
         }
 
         [Fact]
