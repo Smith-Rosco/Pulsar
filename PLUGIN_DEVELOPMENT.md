@@ -11,10 +11,11 @@
 3. [接口参考](#接口参考)
 4. [配置系统](#配置系统)
 5. [生命周期管理](#生命周期管理)
-6. [错误处理](#错误处理)
-7. [最佳实践](#最佳实践)
-8. [测试指南](#测试指南)
-9. [代码审查清单](#代码审查清单)
+6. [渲染器贡献](#渲染器贡献渲染器插件)
+7. [错误处理](#错误处理)
+8. [最佳实践](#最佳实践)
+9. [测试指南](#测试指南)
+10. [代码审查清单](#代码审查清单)
 
 ---
 
@@ -533,6 +534,64 @@ public class MyPlugin : IPulsarPlugin, IPluginLifecycle
     }
 }
 ```
+
+---
+
+## 🎨 渲染器贡献（渲染器插件）
+
+插件可以向环形菜单贡献自定义视觉形态（`IRadialRenderer`），用户在 设置 → 通用 → 外观 的「渲染器」下拉中选择。这是 Pulsar 相对静态渲染器体系的核心扩展点。
+
+### 契约与注册
+
+```csharp
+public sealed class NeonRenderer : IRadialRenderer
+{
+    public string Id => "Neon";   // 全局唯一，保留内置 id（Default/ClassicRing/Glassmorphism）不可用
+
+    public void Initialize(IRadialThemeTokens tokens) { /* 解析画笔，禁止缓存跨主题状态 */ }
+
+    public IRadialSlotHighlight ResolveHighlight(bool isActive) => ...;
+
+    public void RenderDecorations(Canvas canvas, double cx, double cy, double wheelRadius, double coreRadius)
+    {
+        // ⚠️ 只在 UI 线程调用（菜单唤出时）；所有装饰元素必须 IsHitTestVisible = false
+    }
+}
+```
+
+在插件的生命周期钩子中注册/注销（经构造注入或 `Initialize(IServiceProvider)` 解析宿主服务）：
+
+```csharp
+public class NeonPlugin : PluginBase<NeonPlugin>, IPluginLifecycle
+{
+    private readonly IRadialRendererRegistry _registry;
+    private readonly NeonRenderer _renderer = new();
+
+    public NeonPlugin(IRadialRendererRegistry registry) => _registry = registry;
+
+    public Task OnEnableAsync()
+    {
+        _registry.Register(_renderer, Id);   // ownerId = 本插件 Id
+        return Task.CompletedTask;
+    }
+
+    public Task OnDisableAsync()
+    {
+        _registry.Unregister("Neon", Id);    // 建议主动注销；宿主内核也会兜底清理
+        return Task.CompletedTask;
+    }
+}
+```
+
+### 规则与约束
+
+| 规则 | 说明 |
+|---|---|
+| **权限门控** | manifest 的 `permissions` 必须声明 `"ui.render"` 并获用户授权，否则 `Register` 返回 `false`（不抛异常） |
+| **保留 id** | `Default` / `ClassicRing` / `Glassmorphism`（不区分大小写）及重复 id 一律拒绝注册 |
+| **生命周期** | 插件被禁用/卸载时内核无条件按 owner 清理；被清理后配置若仍指向该渲染器，运行期安全回落 Default |
+| **线程** | `RenderDecorations` 在 UI 线程执行；插件内部不得做耗时同步操作（菜单唤出是交互热路径） |
+| **宿主程序集** | 插件不得自带 `Pulsar.dll` 副本，否则 `IRadialRenderer` 类型身份不一致导致转换失败 |
 
 ---
 
