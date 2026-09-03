@@ -21,24 +21,83 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- 暂无（TBD：补充当前开发分支的变更）
-
 ### Changed
-- 暂无
-
-### Fixed
-- 暂无
+- 将右键手势路径的 28 处 `[DEBUG-RDX]` 诊断日志由 `LogInformation` 降级为 `LogDebug`（`RadialMenuViewModel` 19 / `GlobalMouseHook` 8 / `GlobalMouseService` 1），消除生产环境「每条鼠标事件写一条 Information 级日志」的开销与日志膨胀。诊断信息完整保留，排查时开启 Debug 级别即可。
 
 ---
 
-## [1.8.0] - 2026-08-??
+## [1.9.1] - 2026-09-03
 
 ### Added
-- TODO：待补全 v1.8.0 变更记录
+- 发布流程支持本地构建号 `x.y.z.n`（`-Build` 参数），版本号不写入 csproj；产物内附 `build-info.txt`（版本 / 构建号 / channel / 时间 / commit）。
 
 ### Changed
-- TODO
+- 发布技能重构为可独立运行的 PowerShell 脚本；`Pack-Zips` 增加三级 zip 回退（pwsh → powershell → System32 bsdtar），每级做 PK 魔数校验。
+- `Set-ProjectVersion` 同步更新 `<FileVersion>` / `<AssemblyVersion>`，修正 exe 文件属性版本长期停留在 1.8.0.0 的问题。
+- 新增 `Update-Changelog.ps1`：把 `[Unreleased]` 固化为版本段，`New-ReleaseTag` 的版本提交现包含 CHANGELOG。
+- `Get-ReleaseInfo` 从 origin remote 解析仓库地址，不再硬编码 `Smith-Rosco/Pulsar`；tag 选择由创建时间最新改为 semver 最大。
+
+---
+
+## [1.9.0] - 2026-09-03
+
+### Added
+- **级联子菜单**（roadmap 方向三）：`PluginSlot.SubActions` / `SubSlotDescriptor` / `CascadeSubMenuDescriptor`；Ring 与 Fan（≤3 项、翼角 ±30°，>3 自动回落 Ring）二级布局与命中算法（`SubMenuLayoutEngine`）；二级动作编辑器 `SubSlotEditorRow`；钻入入口；按槽位类型智能注入默认子动作（`SmartSubActionDefaults`）。
+- **多形态径向渲染器**（roadmap 方向二）：`Core/Rendering/` 渲染器契约 + `StyleRendererFactory`（未知 id 安全回落 Default）；内置 Default / ClassicRing / Glassmorphism 三套；3 套主题预设（MatchaForest / GlacialIce / MorandiMuted）+ 模式色调 token。
+- **自定义图标库**（roadmap 方向二）：`IconHelper` 支持 SVG 路径数据（`Geometry.Parse`）；新增 `CustomIconStore`，持久化到 `%AppData%\Pulsar\CustomIcons\`，图标选择器支持导入。
+- **手势外甩取消**（roadmap 方向一）：光标超出轮盘半径 × `GestureFlickOutRadiusMultiplier`（默认 1.5）即虚化取消；仅对右键手势唤出的菜单生效，热键唤出不参与。
+- **手势进程隔离**（roadmap 方向一）：`GestureIsolationService` 支持白名单 / 黑名单双模态，并旁路 `Progman` / `WorkerW` / `Shell_TrayWnd`，避免桌面与任务栏误判为全屏。
+
+### Changed
+- 子菜单进入泛化为策略化描述符（`SubMenuDescriptor` / `StrategyId`），窗口切换子菜单降级为其中一种策略。
+- 槽位编辑器可视化层重构（`slot-wheel-editor-architecture` / `slot-wheel-editor-visualization`）。
+- 内置插件重命名为面向用户的显示名。
 
 ### Fixed
-- TODO
+- 内置插件的显示名与描述补齐本地化。
+
+### Docs
+- 文档树整合与索引重建；新增 `Docs/roadmap/` 与仓库健康、用户体验评审快照。
+- `opsx` 命令统一更名为 `openspec`。
+
+---
+
+## [1.8.1] - 2026-09-01
+
+### Fixed
+- 引导教程：解析窗口切换槽位路径、修复旧版配置、与实时热键对齐。
+- README 快速开始锚点失效；仓库链接指向 `Smith-Rosco/Pulsar`。
+
+### Changed
+- 发布技能改为 CI 驱动，tag message 携带完整 release notes。
+
+---
+
+## [1.8.0] - 2026-09-01
+
+### Added
+- **右键拖拽手势修复**（roadmap 方向一 / 专项分析）：引入位移阈值 + 未达阈值重放（`GestureSummonMode` / `GestureDragThreshold`，默认 25px），根治「释放后意外把右键发给原始程序」；修复配置刷新导致的 `Reset()` 释放竞态；手势唤出与关闭改走 `DispatcherPriority.Input`，跟手度对齐热键路径。
+- **可插拔径向渲染器契约**（roadmap 方向二）：`IRadialRenderer` / `IRadialThemeTokens` / `RadialThemeTokenSet` / `ModeToneTokenDecorator`，配套主题预设解析。
+- **配置备份与恢复**：支持含密码保护的秘密项导出 / 导入（见 `Docs/guides/CONFIG_BACKUP_AND_RESTORE.md`）。
+- 设置 → 常规新增日志级别选择器。
+- 无障碍：图标按钮补 `AutomationProperties.Name`；导航容器键盘焦点收敛。
+
+### Changed
+- Fluent 设计对齐的 UX 重构（P0–P3）：间距 / 圆角 token 管线、统一 `EmptyState` 组件、清理僵尸 token。
+- `WindowService` 深化重构（ADR-010）：注入式协作者、单一资格评估器接缝 `IWindowEligibilityEvaluator`、窗口捕获与图标抽取下沉为 `IWindowCaptureService`、库存一致性收敛到 `IWindowInventoryCoordinator`，并清理死代码。
+- 菜单首帧加载改为单阶段：结构优先的窗口枚举。
+- 默认语言改为 zh-CN（中文优先）。
+- CI：构建 full 与 portable 两类产物并统一命名。
+- 文档：README 改为中文主版本并新增英文镜像与 CHANGELOG；AGENTS.md 精简以降低每会话上下文占用。
+
+### Fixed
+- 切换模式缓存未命中时回退到实时窗口枚举。
+- 槽位自动配色无法恢复。
+- Fluent accent token 未解析导致按钮文字不可读。
+- 选项卡切换时 `EmptyState` 按钮样式触发 `XamlParseException`。
+- 自定义导航指示器在 DPI 变化 / 窗格折叠时错位。
+- `ApplySettingsTheme` 空引用且阻塞 UI。
+- `SlotsPerPageChangedMessage` 未走空安全的 `InvokeOnUiInput`。
+- 激活槽位模糊淡出改为平滑过渡，不再突变为清晰圆环。
+- 热键默认值与代码行为对齐（Command = `Ctrl+Shift+Q`，Switch = `Ctrl+Q`）。
+- VbaRunner 通过工作簿 Normal 样式应用 DengXian 字体，使新建单元格继承。

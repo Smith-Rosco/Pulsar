@@ -29,7 +29,7 @@ Then follow the task router below.
 | **[Plugins/](./Plugins/)** | Per-plugin user/developer docs | 8 | Yes |
 | **[ops/](./ops/)** | Commands and operational procedures | 1 | Yes |
 | **[proposals/](./proposals/)** | Design proposals and refactor plans not yet accepted | 2 | In review |
-| **[roadmap/](./roadmap/)** | Roadmap and exploratory analysis | 2 | In review |
+| **[roadmap/](./roadmap/)** | Roadmap and exploratory analysis | 3 | In review |
 | **[agents/](./agents/)** | **Skill contracts — machine-consumed config, NOT reading material** | 2 | Config |
 | **[archive/](./archive/)** | Historical snapshots, date-prefixed | 57 | **No** |
 
@@ -160,6 +160,7 @@ Not accepted yet — treat as in-review, not as truth.
 - **[proposals/WINSWITCHER_REFACTOR.md](./proposals/WINSWITCHER_REFACTOR.md)** — WinSwitcher refactor plan
 - **[roadmap/README.md](./roadmap/README.md)** — roadmap index
 - **[roadmap/RIGHT_DRAG_GESTURE_ANALYSIS.md](./roadmap/RIGHT_DRAG_GESTURE_ANALYSIS.md)** — right-drag gesture analysis
+- **[roadmap/IMPLEMENTATION_VERIFICATION.md](./roadmap/IMPLEMENTATION_VERIFICATION.md)** — roadmap 条目 × openspec 变更 × 代码实证的逐条对照
 
 ---
 

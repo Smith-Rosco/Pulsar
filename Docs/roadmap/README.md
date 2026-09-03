@@ -1,9 +1,14 @@
 # Pulsar 长远开发方向规划
 
-> **状态**: 提案中 (Proposed) | **日期**: 2026-08-31 | **来源**: 深度对比 `StarPie` (Ref/StarPie-main)
+> **状态**: 大部分已落地 (Mostly Implemented) | **日期**: 2026-08-31 | **最后校验**: 2026-09-03 | **来源**: 深度对比 `StarPie` (Ref/StarPie-main)
 
 本文档基于对参考项目 **StarPie** 的深度源码对比,为 Pulsar 提出后续长远开发方向。
 前三个方向已完成深入探索,并有独立专项分析 [RIGHT_DRAG_GESTURE_ANALYSIS.md](./RIGHT_DRAG_GESTURE_ANALYSIS.md)。
+
+> **实现状况(2026-09-03 校验)**: 方向一 / 二 / 三的**主干已由 10 个 openspec 变更落地**(2026-09-01 ~ 09-02),
+> `dotnet build` 0 警告 0 错误、`dotnet test` **880 全通过**。剩余缺口集中在「打磨型能力」而非主干。
+> **逐条对照见 [IMPLEMENTATION_VERIFICATION.md](./IMPLEMENTATION_VERIFICATION.md)**。
+> 下文各节标题后的标记(🟢 已落地 / 🟡 部分 / ❌ 未做)即当前状态。
 
 ---
 
@@ -13,20 +18,23 @@
 |---|---|---|
 | 核心输入 | 热键唤起 (`Ctrl+Q`/`Ctrl+Shift+Q`) + 修饰键+右键拖拽 | 鼠标右键/中键/侧键/键盘长按 拖拽唤起 |
 | 架构 | 插件系统(双层+断路器+权限门控)、DI、MVVM、330+ 测试 | 单体 53 文件,静态类+事件,无单元测试 |
-| 视觉定制 | 仅 Dark/Light 两套主题,4 个样式文件 | **4 形态 × 4 渲染器 + 8 主题预设 + 8 项配色微调 + 光晕 + 图标导入 + 吸色** |
-| 手势细节 | 仅 Action/Switcher 两模式,修饰键判定 | **级联子轮盘、外甩取消、全屏防误触、修饰键穿透、黑白名单双模态、多触发键** |
-| 差异化能力 | PKI 秘密注入、窗口切换 MRU+预览、无头模拟器、AI 开发流程 | 配置导入导出、智能前台 Toggle、常驻窗口切换器、4/8/12 扇区 |
+| 视觉定制 | Dark/Light + **3 主题预设** + **3 渲染器**(Default/ClassicRing/Glassmorphism)+ 自定义图标库(SVG/PNG)+ 光晕 token | **4 形态 × 4 渲染器 + 8 主题预设 + 8 项配色微调 + 光晕 + 图标导入 + 吸色** |
+| 手势细节 | Action/Switcher 双模式 + **位移阈值唤起 + 未达阈值重放** + **外甩取消** + **全屏防误触** + **黑白名单双模态** | **级联子轮盘、外甩取消、全屏防误触、修饰键穿透、黑白名单双模态、多触发键** |
+| 差异化能力 | PKI 秘密注入、窗口切换 MRU+预览、无头模拟器、AI 开发流程、**级联子菜单** | 配置导入导出、智能前台 Toggle、常驻窗口切换器、4/8/12 扇区 |
 | 多语言 | EN + zh-CN | 简中/繁中/英/日 四语热切换 |
-| 工程基建 | ADR + openspec + lessons 文档体系 | 21 项 GUI 自动化测试 |
+| 工程基建 | ADR + openspec + lessons + roadmap 文档体系 | 21 项 GUI 自动化测试 |
 
 **一句话**: Pulsar 是"插件化 + AI 原生"的工程强者;StarPie 是"手势盲操 + 视觉打磨"的产品强者。
 StarPie 在手势交互细节与视觉定制的成熟度上明显领先,这正是 Pulsar 可借鉴的最大缺口。
 
 ---
 
-## 2. 方向一: 手势盲操细节深化(最高优先)
+## 2. 方向一: 手势盲操细节深化(最高优先) 🟢 核心已落地
 
 > 对应 StarPie: `GestureController.cs`、`MouseHook.cs`、`FullScreenHelper.cs`
+>
+> **落地状态(2026-09-03)**: 2.2 表格 **6/10 项已落地**(重放、竞态、派发优先级、外甩取消、进程隔离、全屏防误触),
+> 专项文档 §5 的**三个修复点全部完成**。未做: 修饰键穿透、多触发键、扇区角度命中、hook 健康检查自愈。
 
 ### 2.1 现状(Pulsar)
 - `RightDragGestureDetector.cs` 是纯状态机:依赖修饰键(默认 Action=Shift / Switcher=Control)在右键按下瞬间判定。
@@ -55,9 +63,13 @@ StarPie 在手势交互细节与视觉定制的成熟度上明显领先,这正�
 
 ---
 
-## 3. 方向二: 视觉形态与渲染器体系(高)
+## 3. 方向二: 视觉形态与渲染器体系(高) 🟡 骨架已落地
 
 > 对应 StarPie: `IRadialStyleRenderer.cs`、`StyleRendererFactory.cs`、`BaseStyleRenderer.cs`、各渲染器
+>
+> **落地状态(2026-09-03)**: 契约(`Core/Rendering/`)+ `StyleRendererFactory` + **3 渲染器** + **3 主题预设** +
+> 自定义图标库(含 SVG)已落地。未做: CleanSectors/CatPaw 形态、8 项配色微调 + 吸色、
+> **渲染器插件化(§3.4.3, Pulsar 相对 StarPie 的唯一差异化点)**。
 
 ### 3.1 现状(Pulsar)
 - 两套主题 `Themes/Theme.Dark.xaml` + `Theme.Light.xaml`;样式仅 `ButtonStyles`/`SlotStyles`/`ScrollViewerStyles`/`TooltipStyles`。
@@ -98,9 +110,13 @@ ApplyExitHighlight(exitIcon, isHighlighted)
 
 ---
 
-## 4. 方向三: 级联子菜单泛化(高)
+## 4. 方向三: 级联子菜单泛化(高) 🟢 已落地(待人工 QA)
 
 > 对应 StarPie: `ActionItem.SubActions`、`SubActionEditorWindow`、`SlotViewModel`/`SubSlotViewModel`
+>
+> **落地状态(2026-09-03)**: 4.4 落地路径 **5/5 步全部完成** —— `SubSlots` 模型、策略化协调器、
+> Ring/Fan 二级布局(`SubMenuLayoutEngine`)、二级编辑器、智能默认注入均在位。
+> **唯一阻塞项 = `cascade-submenu-layout` 任务 5.2 人工 QA**(Fan 渲染/选中、4+ 回落 Ring、分页、双主题)。
 
 ### 4.1 现状(Pulsar)
 - `RadialMenuSubMenuCoordinator` 只服务"窗口切换子菜单":把某进程窗口填入中心+槽位,策略为 `WindowSwitchStrategy`/`BackActionStrategy`。
@@ -136,16 +152,26 @@ ApplyExitHighlight(exitIcon, isHighlighted)
 
 ## 5. 建议路线
 
-| 阶段 | 内容 | 备注 |
-|---|---|---|
-| 短期(1-2 迭代) | 方向一:手势细节 + 多语言扩展 | 改动集中、测试可覆盖 |
-| 中期(3-5 迭代) | 方向二:渲染器体系 + 方向三:级联子菜单 | 依赖 `IRadialStyleRenderer` 落地 |
-| 长期 | 方向四+:AI 差异化(AI 动作推荐 / 自然语言命令 / 配置生成) | 依托无头模拟器 + 插件系统 + Usage Analytics |
+| 阶段 | 内容 | 备注 | 状态(2026-09-03) |
+|---|---|---|---|
+| 短期(1-2 迭代) | 方向一:手势细节 + 多语言扩展 | 改动集中、测试可覆盖 | 🟡 **半完成** — 手势 ✅;**多语言扩展 ❌ 未启动**(仍 EN + zh-CN) |
+| 中期(3-5 迭代) | 方向二:渲染器体系 + 方向三:级联子菜单 | 依赖 `IRadialStyleRenderer` 落地 | 🟢 **超额完成** — 2 天内落地(远快于 3-5 迭代),仅剩形态扩充与人工 QA |
+| 长期 | 方向四+:AI 差异化(AI 动作推荐 / 自然语言命令 / 配置生成) | 依托无头模拟器 + 插件系统 + Usage Analytics | ⚪ 未启动(符合规划) |
+
+### 5.1 下一迭代建议(按价值排序)
+
+1. **级联子菜单 Fan 人工 QA** —— 唯一阻塞项,需人跑。
+2. **多语言扩展**(zh-TW / ja)—— 短期路线欠账。
+3. **渲染器插件化**(`IPluginRegistry`)—— Pulsar 相对 StarPie 的唯一差异化点。
+4. CleanSectors / CatPaw 形态 + 配色微调 / 吸色 / 光晕三参数。
+5. 多触发键(中键 / 侧键 / 键盘长按)+ hook 健康检查自愈。
+6. 4/8/12 扇区 —— 与 Pulsar 分页模型冲突,建议**显式决定不采纳**而非悬置。
 
 ---
 
 ## 6. 相关文档
 
+- **实现状况验证报告**: [IMPLEMENTATION_VERIFICATION.md](./IMPLEMENTATION_VERIFICATION.md) — roadmap 条目 × openspec 变更 × 代码实证的逐条对照
 - 专项分析: [RIGHT_DRAG_GESTURE_ANALYSIS.md](./RIGHT_DRAG_GESTURE_ANALYSIS.md)
 - 参考项目: `E:\8_Project\10_C#\Ref\StarPie-main`
 - 现有架构: [ARCHITECTURE.md](../../ARCHITECTURE.md)
