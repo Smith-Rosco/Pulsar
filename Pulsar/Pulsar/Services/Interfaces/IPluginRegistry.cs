@@ -11,6 +11,7 @@ namespace Pulsar.Services.Interfaces
         Task LoadCoreAsync();
         Task DiscoverDeferredAsync();
         Task RefreshDiscoveryAsync();
+        Task DeactivatePluginAsync(string pluginId);
         PluginDescriptor? GetDescriptor(string pluginId);
         IEnumerable<PluginDescriptor> GetAllPluginDescriptors();
         IPulsarPlugin? GetPlugin(string pluginId);

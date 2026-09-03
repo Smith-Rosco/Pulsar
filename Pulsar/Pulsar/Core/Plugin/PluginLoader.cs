@@ -24,6 +24,10 @@ namespace Pulsar.Core.Plugin
         private readonly object _discoveryLock = new();
         private DiscoveryCache? _fullDiscoveryCache;
         private DiscoveryCache? _coreDiscoveryCache;
+        // Load contexts for external plugin folders, keyed by folder name
+        // (= plugin id for installed packages). Tracked so a runtime uninstall
+        // can unload the context and release the OS file locks on the DLLs.
+        private readonly Dictionary<string, PluginLoadContext> _externalContexts = new(StringComparer.OrdinalIgnoreCase);
 
         public PluginLoader(IServiceProvider services, string pluginDir)
         {
@@ -89,6 +93,44 @@ namespace Pulsar.Core.Plugin
                 _coreDiscoveryCache = null;
                 _fullDiscoveryCache = null;
             }
+        }
+
+        private PluginLoadContext GetOrCreateExternalContext(string pluginId, string anchorDll)
+        {
+            lock (_discoveryLock)
+            {
+                if (_externalContexts.TryGetValue(pluginId, out var existing) && !existing.IsUnloadInitiated)
+                {
+                    return existing;
+                }
+
+                var context = new PluginLoadContext(anchorDll, shimMap: null);
+                _externalContexts[pluginId] = context;
+                return context;
+            }
+        }
+
+        /// <summary>
+        /// Unloads the assembly load context of an external plugin so the OS
+        /// releases its file locks, allowing the plugin directory to be
+        /// deleted while the app is running. Callers must first drop every
+        /// strong reference to the plugin instance and its descriptor types
+        /// (runtime state store, catalog, discovery cache).
+        /// </summary>
+        public bool TryUnloadExternalContext(string pluginId)
+        {
+            PluginLoadContext? context;
+            lock (_discoveryLock)
+            {
+                if (!_externalContexts.Remove(pluginId, out context))
+                {
+                    return false;
+                }
+            }
+
+            context.InitiateUnload();
+            _logger?.LogInformation("[PluginLoader] Unloaded assembly context for external plugin {PluginId}", pluginId);
+            return true;
         }
 
         protected virtual void DiscoverBuiltinDescriptors(List<PluginDescriptor> descriptors, bool includeCore, bool includeExtensions)
@@ -179,7 +221,7 @@ namespace Pulsar.Core.Plugin
                         var anchorDll = dllFiles.FirstOrDefault(f => Path.GetFileNameWithoutExtension(f).Equals(pluginName, StringComparison.OrdinalIgnoreCase))
                             ?? dllFiles.First();
 
-                        var context = new PluginLoadContext(anchorDll, shimMap: null);
+                        var context = GetOrCreateExternalContext(pluginName, anchorDll);
 
                         foreach (var dllPath in dllFiles)
                         {

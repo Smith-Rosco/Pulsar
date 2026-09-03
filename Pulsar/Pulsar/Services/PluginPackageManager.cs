@@ -87,7 +87,15 @@ namespace Pulsar.Services
                         backupPath = await BackupPluginDataAsync(pluginId, cancellationToken);
                     }
 
-                    Directory.Delete(pluginPath, recursive: true);
+                    try
+                    {
+                        DeleteDirectoryWithRetry(pluginPath);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.LogError(ex, "[PluginPackageManager] Failed to delete plugin directory {Path}. The plugin assembly may still be loaded; deactivate the plugin first.", pluginPath);
+                        throw;
+                    }
                     _logger?.LogInformation("[PluginPackageManager] Deleted plugin directory: {Path}", pluginPath);
 
                     // 恢复数据
@@ -209,12 +217,47 @@ namespace Pulsar.Services
         }
 
         /// <summary>
-        /// 检查插件是否已安装
+        /// 检查插件是否已安装。仅目录存在不算：必须是包含有效 manifest
+        /// 的完整安装。失败卸载留下的残骸目录（只剩 DLL）会被视为未安装，
+        /// 使覆盖安装可以自行清理。
         /// </summary>
         private bool IsPluginInstalled(string pluginId)
         {
             return TryGetSafeInstallPath(pluginId, out var pluginPath, out _)
-                && Directory.Exists(pluginPath);
+                && Directory.Exists(pluginPath)
+                && HasValidManifest(pluginPath);
+        }
+
+        private static bool HasValidManifest(string pluginPath)
+        {
+            return File.Exists(Path.Combine(pluginPath, "plugin.manifest.json"))
+                || File.Exists(Path.Combine(pluginPath, "manifest.json"));
+        }
+
+        /// <summary>
+        /// 删除目录，带重试。可收集 ALC 的卸载与 GC 异步完成，文件句柄
+        /// 释放可能有短暂延迟；立即重试几次通常就能成功。
+        /// </summary>
+        private void DeleteDirectoryWithRetry(string path)
+        {
+            const int maxAttempts = 5;
+            for (var attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                try
+                {
+                    if (Directory.Exists(path))
+                    {
+                        Directory.Delete(path, recursive: true);
+                    }
+                    return;
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException && attempt < maxAttempts)
+                {
+                    _logger?.LogWarning("[PluginPackageManager] Directory delete attempt {Attempt}/{Max} failed for {Path}: {Message}",
+                        attempt, maxAttempts, path, ex.Message);
+                    Thread.Sleep(250);
+                }
+            }
         }
 
         /// <summary>
@@ -448,7 +491,7 @@ namespace Pulsar.Services
                     var pluginId = manifest.Id;
                     ReportProgress(pluginId, PluginInstallStatus.Installing, 30, $"Installing {manifest.DisplayName ?? pluginId}...");
 
-                    // 6. 检查是否已安装
+                    // 6. 检查是否已安装（要求有效 manifest，残骸目录不算）
                     if (IsPluginInstalled(pluginId))
                     {
                         return PluginOperationResult.Failed(pluginId, PluginOperationType.Install, $"Plugin {pluginId} is already installed. Please uninstall it first.");
@@ -458,6 +501,23 @@ namespace Pulsar.Services
                     if (!TryGetSafeInstallPath(pluginId, out var installPath, out var pathError))
                     {
                         return PluginOperationResult.Failed(pluginId, PluginOperationType.Install, pathError);
+                    }
+
+                    // 残骸目录（无 manifest，通常是上次运行中卸载/安装失败留下的）：
+                    // 尝试清理后继续安装；清不掉（文件仍被锁定）则明确报错。
+                    if (Directory.Exists(installPath))
+                    {
+                        try
+                        {
+                            DeleteDirectoryWithRetry(installPath);
+                        }
+                        catch (Exception ex)
+                        {
+                            return PluginOperationResult.Failed(
+                                pluginId,
+                                PluginOperationType.Install,
+                                $"Leftover plugin directory could not be removed (files may be locked by a running instance): {ex.Message}");
+                        }
                     }
 
                     Directory.CreateDirectory(installPath);

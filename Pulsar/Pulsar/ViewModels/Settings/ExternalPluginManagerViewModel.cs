@@ -246,24 +246,40 @@ namespace Pulsar.ViewModels.Settings
 
                 StatusMessage = string.Format(_loc["Settings.ExternalPlugins.StatusUninstallingFormat"], plugin.Name);
 
+                // 1. Revoke permission grants FIRST while the descriptor is
+                //    still in the catalog (deactivation removes it). Uninstall
+                //    revokes prior grants so a future reinstall has to go
+                //    through the consent prompt again.
+                if (plugin.Permissions.Count > 0)
+                {
+                    try
+                    {
+                        await _pluginRegistry.GrantPermissionsAsync(plugin.Id, Array.Empty<string>());
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.LogError(ex, "[ExternalPluginManagerViewModel] Failed to revoke permissions for uninstalled plugin {PluginId}", plugin.Id);
+                    }
+                }
+
+                // 2. Deactivate: runs OnUnloadAsync, drops runtime/catalog
+                //    references and unloads the plugin assembly so its DLLs are
+                //    no longer locked by this process. Without this the recursive
+                //    directory delete below fails on any discovered external plugin.
+                try
+                {
+                    await _pluginRegistry.DeactivatePluginAsync(plugin.Id);
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogWarning(ex, "[ExternalPluginManagerViewModel] Deactivation failed for {PluginId}; attempting file removal anyway", plugin.Id);
+                }
+
+                // 3. Remove the files.
                 var result = await _packageManager.UninstallAsync(plugin.Id, keepData: false);
 
                 if (result.Success)
                 {
-                    // Uninstall revokes prior permission grants so a future
-                    // reinstall has to go through the consent prompt again.
-                    if (plugin.Permissions.Count > 0)
-                    {
-                        try
-                        {
-                            await _pluginRegistry.GrantPermissionsAsync(plugin.Id, Array.Empty<string>());
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger?.LogError(ex, "[ExternalPluginManagerViewModel] Failed to revoke permissions for uninstalled plugin {PluginId}", plugin.Id);
-                        }
-                    }
-
                     StatusMessage = string.Format(_loc["Notification.SuccessfullyUninstalledFormat"], plugin.Name);
 
                     if (_dialogService != null)

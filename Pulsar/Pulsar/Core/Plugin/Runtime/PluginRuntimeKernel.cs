@@ -85,6 +85,16 @@ namespace Pulsar.Core.Plugin.Runtime
         {
             return _descriptors.TryGetValue(pluginId, out descriptor);
         }
+
+        /// <summary>
+        /// Drops a descriptor from the catalog when a plugin is uninstalled at
+        /// runtime. Stale descriptors would otherwise keep referencing types
+        /// from an unloaded plugin assembly.
+        /// </summary>
+        public bool RemoveDescriptor(string pluginId)
+        {
+            return _descriptors.Remove(pluginId);
+        }
     }
 
     public class PluginRuntimeStateStore
@@ -622,6 +632,43 @@ namespace Pulsar.Core.Plugin.Runtime
             _logger.LogInformation("[PluginRuntimeKernel] Refreshing plugin discovery after package change...");
             _catalog.RegisterDescriptors(_loader.DiscoverDescriptors(includeCore: false, includeExtensions: true, analyzeDependencies: true));
             return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Fully deactivates a single plugin so its install directory can be
+        /// deleted while the app is running. Runs the unload lifecycle hook,
+        /// removes the runtime state and catalog entry (dropping all strong
+        /// references to the plugin instance and its types), unregisters any
+        /// renderer contributions, invalidates the discovery cache, and
+        /// unloads the plugin's assembly load context to release file locks.
+        /// </summary>
+        public async Task DeactivatePluginAsync(string pluginId)
+        {
+            if (_runtimeStateStore.TryGetPlugin(pluginId, out var plugin))
+            {
+                if (plugin is IPluginLifecycle lifecycle)
+                {
+                    try
+                    {
+                        await lifecycle.OnUnloadAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "[PluginRuntimeKernel] OnUnloadAsync failed for {PluginId}", pluginId);
+                    }
+                }
+
+                _runtimeStateStore.RemovePlugin(pluginId);
+
+                // Drop renderer contributions so the UI falls back to built-ins.
+                _rendererRegistry?.UnregisterOwner(pluginId);
+            }
+
+            _catalog.RemoveDescriptor(pluginId);
+            _loader.InvalidateDiscoveryCache();
+            _loader.TryUnloadExternalContext(pluginId);
+
+            _logger.LogInformation("[PluginRuntimeKernel] Deactivated plugin {PluginId}", pluginId);
         }
 
         public PluginDescriptor? GetDescriptor(string pluginId)

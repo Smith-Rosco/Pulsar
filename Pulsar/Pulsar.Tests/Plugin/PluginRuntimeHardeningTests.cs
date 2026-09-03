@@ -218,6 +218,47 @@ namespace Pulsar.Tests.Plugin
         }
 
         [Fact]
+        public async Task Kernel_DeactivatePluginAsync_ReleasesStateCatalogAndRendererRegistrations()
+        {
+            // Runtime uninstall requires a full teardown: lifecycle hook runs,
+            // state + catalog entries dropped, renderer contributions revoked.
+            // Only then can the plugin's assembly context be unloaded (freeing
+            // the OS file locks) and its directory deleted while running.
+            var descriptor = CreateExtensionDescriptor("test.deactivate.plugin", isExternal: true);
+            var plugin = new LifecycleTrackingPlugin(descriptor.Id);
+
+            var state = new PluginRuntimeStateStore();
+            state.SetPlugin(plugin, PluginLifecycleState.Enabled);
+
+            var catalog = new PluginCatalog();
+            catalog.RegisterDescriptors(new[] { descriptor });
+
+            var pipeline = new PluginExecutionPipeline(state, new PluginCircuitBreakerPolicy());
+            var loader = new PluginLoader(Mock.Of<IServiceProvider>(), "unused");
+
+            var rendererRegistry = new Pulsar.Core.Rendering.RadialRendererRegistry(
+                new[] { Pulsar.Core.Rendering.DefaultRadialRenderer.RendererId, "ClassicRing", "Glassmorphism" },
+                _ => true);
+            rendererRegistry.Register(new StubDeactivateRenderer("Neon"), descriptor.Id).Should().BeTrue();
+
+            var kernel = new PluginRuntimeKernel(
+                Mock.Of<IServiceProvider>(),
+                loader,
+                catalog,
+                state,
+                pipeline,
+                NullLogger<PluginRuntimeKernel>.Instance,
+                rendererRegistry: rendererRegistry);
+
+            await kernel.DeactivatePluginAsync(descriptor.Id);
+
+            plugin.UnloadCount.Should().Be(1, "OnUnloadAsync must run exactly once during deactivation");
+            kernel.GetDescriptor(descriptor.Id).Should().BeNull("the catalog entry must be dropped");
+            state.TryGetPlugin(descriptor.Id, out _).Should().BeFalse("the runtime state entry must be dropped");
+            rendererRegistry.TryGet("Neon", out _).Should().BeFalse("renderer contributions must be revoked");
+        }
+
+        [Fact]
         public void PluginRuntimeStateStore_ShouldRejectInvalidTransitions()
         {
             var store = new PluginRuntimeStateStore();
@@ -263,6 +304,58 @@ namespace Pulsar.Tests.Plugin
 
             public override List<PluginDescriptor> DiscoverDescriptors(bool includeCore, bool includeExtensions, bool analyzeDependencies)
                 => _descriptors.ToList();
+        }
+
+        private sealed class LifecycleTrackingPlugin : IPulsarPlugin, IPluginLifecycle
+        {
+            private readonly string _id;
+
+            public LifecycleTrackingPlugin(string id)
+            {
+                _id = id;
+            }
+
+            public int UnloadCount { get; private set; }
+
+            public string Id => _id;
+            public string DisplayName => "Lifecycle Test Plugin";
+            public string Version => "1.0.0";
+            public string Author => "Test";
+            public string Description => "Lifecycle test plugin";
+            public string Icon => "T";
+            public bool CanDisable => true;
+
+            public void Initialize(IServiceProvider services) { }
+
+            public Task<PluginResult> ExecuteAsync(string action, IReadOnlyDictionary<string, string> args, PulsarContext context, CancellationToken cancellationToken = default)
+                => Task.FromResult(PluginResult.Ok());
+
+            public Task OnEnableAsync() => Task.CompletedTask;
+
+            public Task OnDisableAsync() => Task.CompletedTask;
+
+            public Task OnUnloadAsync()
+            {
+                UnloadCount++;
+                return Task.CompletedTask;
+            }
+        }
+
+        private sealed class StubDeactivateRenderer : Pulsar.Core.Rendering.IRadialRenderer
+        {
+            public StubDeactivateRenderer(string id)
+            {
+                Id = id;
+            }
+
+            public string Id { get; }
+
+            public void Initialize(Pulsar.Core.Rendering.IRadialThemeTokens tokens) { }
+
+            public Pulsar.Core.Rendering.IRadialSlotHighlight ResolveHighlight(bool isActive)
+                => Pulsar.Core.Rendering.RadialSlotHighlight.None;
+
+            public void RenderDecorations(System.Windows.Controls.Canvas canvas, double cx, double cy, double wheelRadius, double coreRadius) { }
         }
 
         private static PluginDescriptor CreateExtensionDescriptor(

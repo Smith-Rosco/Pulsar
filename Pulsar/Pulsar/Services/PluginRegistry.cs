@@ -46,6 +46,11 @@ namespace Pulsar.Services
             return _runtimeKernel.RefreshDiscoveryAsync();
         }
 
+        public Task DeactivatePluginAsync(string pluginId)
+        {
+            return _runtimeKernel.DeactivatePluginAsync(pluginId);
+        }
+
         public Task LoadAllAsync()
         {
             return LoadCoreAsync();

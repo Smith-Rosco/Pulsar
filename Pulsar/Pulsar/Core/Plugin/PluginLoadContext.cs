@@ -12,11 +12,25 @@ namespace Pulsar.Core.Plugin
     {
         private readonly AssemblyDependencyResolver _resolver;
         private readonly Dictionary<string, string>? _shimMap;
+        private volatile bool _unloadInitiated;
 
         public PluginLoadContext(string pluginPath, Dictionary<string, string>? shimMap = null) : base(isCollectible: true)
         {
             _resolver = new AssemblyDependencyResolver(pluginPath);
             _shimMap = shimMap;
+        }
+
+        /// <summary>
+        /// True once unloading has been initiated. A context in this state must
+        /// never be reused: loading into it throws, and its assemblies are
+        /// pending teardown by the GC.
+        /// </summary>
+        public bool IsUnloadInitiated => _unloadInitiated;
+
+        public void InitiateUnload()
+        {
+            _unloadInitiated = true;
+            Unload();
         }
 
         protected override Assembly? Load(AssemblyName assemblyName)
