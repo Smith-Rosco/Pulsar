@@ -16,8 +16,8 @@ description: Pulsar 发布与打包流程。支持 local-artifact、local-versio
 | `Pulsar.Publish.Common.ps1` | 共享函数库（路径、版本读写、产物/ZIP 校验、无 BOM 写入）；被各脚本 dot-source，不直接运行 | - |
 | `Get-ReleaseInfo.ps1` | 输出仓库根、当前版本、最近 tag、自 tag 以来的提交（版本决策辅助） | - |
 | `Set-ProjectVersion.ps1` | 修改 `csproj` 的 `<Version>` 并同步 `<FileVersion>`/`<AssemblyVersion>`（`x.y.z.0`）；结构化校验；防降级与同版本重发（降级需 `-AllowDowngrade`） | `-Version 1.9.0` |
-| `Build-Publish.ps1` | 构建 full + portable 两个发布产物并校验（含清理本次版本目录/ZIP） | `-Version 1.9.0` |
-| `Pack-Zips.ps1` | 将产物压缩为 `Pulsar-$version-{full,portable}.zip` 并校验（内置 pwsh → powershell → System32 tar 三级回退） | `-Version 1.9.0` |
+| `Build-Publish.ps1` | 构建 full + portable 两个发布产物并校验（含清理本次版本目录/ZIP）；`-Build n` 支持 x.y.z.n 本地构建号 | `-Version 1.9.0 [-Build 2]` |
+| `Pack-Zips.ps1` | 将产物压缩为 `Pulsar-$version-{full,portable}.zip` 并校验（内置 pwsh → powershell → System32 tar 三级回退） | `-Version 1.9.0 [-Build 2]` |
 | `Update-Changelog.ps1` | 将 `CHANGELOG.md` 的 `[Unreleased]` 段固化为 `## [X.Y.Z] - 日期` 并插入新的空 Unreleased 段；段内无真实条目时拒绝执行 | `-Version 1.9.0` |
 | `New-ReleaseTag.ps1` | release 模式：commit 版本号 + 创建带完整 notes 的 tag + 校验 tag message | `-Version 1.9.0 -NotesFile <路径>` |
 | `Watch-Release.ps1` | 等待 release.yml CI 完成、验证 Release 资产、导出 body 供核对 | `-Version 1.9.0` |
@@ -33,9 +33,22 @@ description: Pulsar 发布与打包流程。支持 local-artifact、local-versio
 | `local-version` | 使用确认后的版本号更新项目版本，构建和打包；不 commit，不 tag，不推送 |
 | `release` | 更新版本、生成 release notes，用户确认后 commit/tag 并 push；构建、打包与 GitHub Release 由 CI 自动完成，本地**不重复**构建打包 |
 
-用户说“发布一个本地版本”时，默认使用 `local-version`。
+用户说"发布一个本地版本"时，默认使用 `local-version`。
+
+### 本地构建号（x.y.z.n，方案 B）
+
+`local-artifact` / `local-version` 模式可加第 4 位构建号区分同一版本的多次本地构建：
+
+- **csproj 永远只存 `x.y.z`**。构建号不写入 csproj、不进入 CHANGELOG、不创建 `v1.9.1.2` 形式的 tag（`New-ReleaseTag.ps1` 的三位校验会拦截）。
+- 通过 `Build-Publish.ps1 -Build 2` 在 publish 阶段以 `-p:Version/FileVersion/AssemblyVersion` 覆盖，exe 文件属性显示 `1.9.1.2`。
+- 产物命名使用四位版本：`Artifacts\publish\v1.9.1.2\{full,portable}\` 与 `Artifacts\Pulsar-1.9.1.2-{full,portable}.zip`，多次构建并存不覆盖。
+- 产物内附 `build-info.txt`（版本、构建号、channel、构建时间、commit hash）。
+- 下一个构建号用 `Get-ReleaseInfo.ps1` 输出的 `Next local build number` 推断（取已用最大值 + 1）。
+- `release` 模式**不使用**构建号：正式版本语义始终是三位。
 
 **release 模式自动化**：仓库已配置 CI（`.github/workflows/release.yml`）。push `v*` tag 时自动构建 full + portable、校验产物、压缩为 `Pulsar-$version-{full,portable}.zip` 并创建/填充 GitHub Release，release notes 取自 **tag message**（`--notes-from-tag`）。因此 release 模式的本地职责是：确认版本 → 生成并确认完整 notes → **把完整 notes 写入 tag message** → commit/tag → push → 等 CI 完成并验证 GitHub Release。不要重复本地构建打包（本地冒烟可选，见回退路径）。
+
+## 1. 版本决策
 
 ## 1. 版本决策
 
@@ -61,14 +74,16 @@ pwsh .agents/skills/publish/scripts/Set-ProjectVersion.ps1 -Version 1.9.0
 脚本内置：只清理本次版本的目录和同名 ZIP（不删其他版本）；`PublishDir` 为绝对路径。
 
 ```powershell
-pwsh .agents/skills/publish/scripts/Build-Publish.ps1 -Version 1.9.0
-pwsh .agents/skills/publish/scripts/Pack-Zips.ps1  -Version 1.9.0
+pwsh .agents/skills/publish/scripts/Build-Publish.ps1 -Version 1.9.0           # 常规：x.y.z
+pwsh .agents/skills/publish/scripts/Build-Publish.ps1 -Version 1.9.1 -Build 2 # 本地构建号：x.y.z.2
+pwsh .agents/skills/publish/scripts/Pack-Zips.ps1  -Version 1.9.0             # -Build 与上一步保持一致
 ```
 
 产物规则（脚本内断言，失败抛错）：
 - `full` 目录：`Pulsar.exe`、`Pulsar.pdb`、至少一个 `*_cor3.dll`、`Assets\`。
 - `portable` 目录：`Pulsar.exe`、`Pulsar.pdb`、`Assets\`，且**不得**含 `*_cor3.dll`。
 - 两个 ZIP 均以 `PK` 开头（`Compress-Archive` 魔数），并列出内容核对。
+- 两个目录均含 `build-info.txt`（版本 / 构建号 / channel / 时间 / commit）。
 
 portable 版构建后建议冒烟测试（`Start-Process` 启动 6 秒不崩溃即通过），确认本机 .NET 8 Desktop Runtime 兼容。
 
@@ -186,6 +201,8 @@ Get-ChildItem -LiteralPath (Join-Path (git rev-parse --show-toplevel) 'Artifacts
 ```text
 Mode: local-artifact | local-version | release
 Version: ...
+Build number: n | none (release 模式固定 none)
+Effective version: x.y.z(.n)  (产物目录/zip/exe 文件属性所用版本)
 Local build: performed | skipped (release 默认 CI 构建，本地构建仅回退/冒烟)
 Publish directories: <fullDir> | <portableDir>  (local) 或 N/A (release, CI)
 ZIP (full): <绝对路径或 GitHub Release 资产链接>

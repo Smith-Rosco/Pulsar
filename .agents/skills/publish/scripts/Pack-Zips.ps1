@@ -1,8 +1,10 @@
 # Pack-Zips.ps1 - 将发布产物打包为两个 ZIP 并校验（PK 魔数 + 列表）
-# 用法: pwsh ./scripts/Pack-Zips.ps1 -Version 1.9.0
+# 用法: pwsh ./scripts/Pack-Zips.ps1 -Version 1.9.1 [-Build 2]
+# -Build 与 Build-Publish.ps1 一致：使用 x.y.z.n 的产物目录与 zip 命名。
 param(
     [Parameter(Mandatory = $true)]
-    [string]$Version
+    [string]$Version,
+    [int]$Build = 0
 )
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
@@ -11,9 +13,17 @@ $PSNativeCommandUseErrorActionPreference = $false
 if ($Version -notmatch '^\d+\.\d+\.\d+$') {
     throw "Version must be major.minor.patch: $Version"
 }
+if ($Build -lt 0 -or $Build -gt 65535) {
+    throw "Build must be in 0..65535: $Build"
+}
 
 $repo = Get-RepoRoot
-$paths = Get-PublishPaths -Repo $repo -Version $Version
+$effective = Get-BuildVersion -Version $Version -Build $Build
+$paths = Get-PublishPaths -Repo $repo -Version $effective
+
+if (-not (Test-Path -LiteralPath $paths.FullDir -PathType Container)) {
+    throw "Publish output not found: $($paths.FullDir). Run Build-Publish.ps1 first."
+}
 
 $pairs = @(
     @{ Dir = $paths.FullDir; Zip = $paths.ZipFull },

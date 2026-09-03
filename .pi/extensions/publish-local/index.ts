@@ -11,7 +11,7 @@ import { parseArgs } from "./core";
 export default function (pi: ExtensionAPI): void {
   pi.registerCommand("publish", {
     description:
-      "发布 Pulsar 版本：AI 按 publish skill 执行（版本建议→构建→打包→notes→commit/tag→GitHub）。用法: /publish [patch|minor|major|1.x.y] [gh] [gh-only]",
+      "发布 Pulsar 版本：AI 按 publish skill 执行（版本建议→构建→打包→notes→commit/tag→GitHub）。本地构建可加构建号 x.y.z.n（如 /publish 1.9.1 build 2）。用法: /publish [patch|minor|major|1.x.y] [gh] [gh-only]",
     getArgumentCompletions: (prefix: string): AutocompleteItem[] | null => {
       const items: AutocompleteItem[] = ["patch", "minor", "major", "gh", "gh-only"].map((v) => ({
         value: v,
@@ -52,7 +52,7 @@ export default function (pi: ExtensionAPI): void {
     ],
     parameters: Type.Object({
       version: Type.Optional(
-        Type.String({ description: '目标版本 "1.6.0" 或 bump 类型 "patch" | "minor" | "major"；省略则自动推断' }),
+        Type.String({ description: '目标版本 "1.6.0" 或 bump 类型 "patch" | "minor" | "major"；省略则自动推断。本地构建号另经 skill 的 Build 参数传递，不写入版本号' }),
       ),
       github: Type.Optional(Type.Boolean({ description: "同时发布到 GitHub（默认 false；需要 gh CLI）" })),
       githubOnly: Type.Optional(

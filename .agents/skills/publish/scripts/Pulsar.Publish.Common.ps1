@@ -35,6 +35,36 @@ function Set-ProjectVersion {
     }
 }
 
+function Get-BuildVersion {
+    # 方案 B：构建号不入 csproj。csproj 永远存 x.y.z；本地构建的第 4 位只在
+    # publish 时以 -p:Version/FileVersion/AssemblyVersion 覆盖，并用于产物命名。
+    param(
+        [Parameter(Mandatory = $true)][string]$Version,
+        [int]$Build = 0
+    )
+    if ($Build -gt 0) { return "$Version.$Build" }
+    return $Version
+}
+
+function Write-BuildInfo {
+    # 本地构建的 zip 内附 build-info.txt，排障时无需看 exe 文件属性。
+    param(
+        [Parameter(Mandatory = $true)][string]$Dir,
+        [Parameter(Mandatory = $true)][string]$Version,
+        [int]$Build = 0,
+        [Parameter(Mandatory = $true)][ValidateSet('full', 'portable')][string]$Channel
+    )
+    $commit = (git rev-parse --short HEAD).Trim()
+    $lines = @(
+        "Version: $Version",
+        "Build: $Build",
+        "Channel: $Channel",
+        "Built: $((Get-Date).ToString('yyyy-MM-dd HH:mm:ss'))",
+        "Commit: $commit"
+    )
+    Write-Utf8NoBom -Path (Join-Path $Dir 'build-info.txt') -Content (($lines -join "`r`n") + "`r`n")
+}
+
 function Get-PublishPaths {
     param(
         [string]$Repo,
