@@ -243,10 +243,10 @@ namespace Pulsar.Views
             page.RenderTransform = new TranslateTransform(0, 20);
             page.RenderTransformOrigin = new System.Windows.Point(0.5, 0.5);
 
-            var duration = new Duration(TimeSpan.FromMilliseconds(250));
+            var duration = new Duration(TimeSpan.FromMilliseconds(260));
             var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
 
-            var fadeIn = new DoubleAnimation(0, 1, duration);
+            var fadeIn = new DoubleAnimation(0, 1, duration) { EasingFunction = ease };
             var slideUp = new DoubleAnimation(20, 0, duration) { EasingFunction = ease };
 
             page.BeginAnimation(UIElement.OpacityProperty, fadeIn);

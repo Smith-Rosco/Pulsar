@@ -15,9 +15,14 @@
         tutorial:TutorialMarker.Id="SettingsWindow">
 
     <Window.Resources>
-        <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVis"/>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-        <DropShadowEffect x:Key="DropShadowEffect" BlurRadius="20" ShadowDepth="4" Direction="270" Color="Black" Opacity="0.3"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVis"/>
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+            <DropShadowEffect x:Key="DropShadowEffect" BlurRadius="20" ShadowDepth="4" Direction="270" Color="Black" Opacity="0.3"/>
+        </ResourceDictionary>
     </Window.Resources>
 
     <Grid>
@@ -27,36 +32,26 @@
         </Grid.RowDefinitions>
 
         <ui:TitleBar Title="{lex:Locale SettingsWindow.Title}" Grid.Row="0">
-            <!-- 保存操作从导航页脚（FooterMenuItems，非常规位置）上移到 TitleBar 右侧，
-                 未保存状态改为文字徽章 —— 原先只有 8px 红点，用户看不懂含义。
-                 （P1 保存位置 / 未保存可见性） -->
+            <!-- 保存操作位于 TitleBar 右侧；未保存状态以紧贴保存按钮的右上角小红点 Badge 呈现，
+                 避免水平布局推挤与占位紊乱，悬浮时 ToolTip 提供状态解释 -->
             <ui:TitleBar.TrailingContent>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="{StaticResource Pulsar.Gap.Right.SM}">
-                    <Border Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
-                            CornerRadius="{StaticResource Pulsar.Radius.SM}"
-                            Padding="{StaticResource Pulsar.Pad.H8V4}"
-                            Margin="{StaticResource Pulsar.Gap.Right.MD}"
-                            VerticalAlignment="Center"
-                            Visibility="{Binding DataContext.HasUnsavedChanges, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}">
-                        <StackPanel Orientation="Horizontal">
-                            <ui:SymbolIcon Symbol="Edit24"
-                                           FontSize="{StaticResource Pulsar.Type.Body}"
-                                           Foreground="{DynamicResource SystemFillColorCautionBrush}"
-                                           Margin="{StaticResource Pulsar.Gap.Right.XS}"
-                                           VerticalAlignment="Center"/>
-                            <TextBlock Text="{lex:Locale Notification.UnsavedChanges}"
-                                       FontSize="{StaticResource Pulsar.Type.Body}"
-                                       FontWeight="Medium"
-                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                       VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Border>
+                <Grid Margin="{StaticResource Pulsar.Gap.Right.SM}" VerticalAlignment="Center">
                     <ui:Button Content="{lex:Locale SettingsWindow.SaveChanges}"
                                Icon="{ui:SymbolIcon Save24}"
-                               Appearance="Primary"
+                               Style="{StaticResource PulsarPrimaryButtonStyle}"
                                Command="{Binding DataContext.SaveCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                ToolTip="{lex:Locale SettingsWindow.SaveChangesTooltip}"/>
-                </StackPanel>
+
+                    <!-- 未保存小红点徽标 (Badge，无描边) -->
+                    <Border Width="8" Height="8"
+                            CornerRadius="4"
+                            Background="{DynamicResource SystemFillColorCautionBrush}"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            Margin="0,3,4,0"
+                            IsHitTestVisible="False"
+                            Visibility="{Binding DataContext.HasUnsavedChanges, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}"/>
+                </Grid>
             </ui:TitleBar.TrailingContent>
         </ui:TitleBar>
 

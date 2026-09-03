@@ -18,26 +18,28 @@
     </UserControl.Resources>
     
     <Grid Margin="{StaticResource Pulsar.Gap.Bottom.XL}">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
         
-        <!-- Top Row: Title and Description -->
-        <StackPanel Grid.Row="0" Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
+        <!-- Left: Title and Description with refined typography -->
+        <StackPanel Grid.Column="0" VerticalAlignment="Center">
             <TextBlock Text="{Binding Title, ElementName=Root}" 
                        FontSize="{StaticResource Pulsar.Type.Display}" 
                        FontWeight="SemiBold" 
-                       Margin="{StaticResource Pulsar.Gap.Bottom.SM}"/>
+                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                       Margin="{StaticResource Pulsar.Gap.Bottom.XS}"/>
             <TextBlock Text="{Binding Description, ElementName=Root}" 
+                       FontSize="{StaticResource Pulsar.Type.Body}"
                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                        Visibility="{Binding Description, ElementName=Root, Converter={StaticResource StringEmptyToVisibilityConverter}}"/>
         </StackPanel>
         
-        <!-- Bottom Row: Page Actions (Full Width) -->
-        <StackPanel Grid.Row="1" 
+        <!-- Right: Actions Content aligned inline on desktop -->
+        <StackPanel Grid.Column="1" 
                     Orientation="Horizontal" 
-                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
                     DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}">
             <ContentPresenter Content="{Binding ActionsContent, ElementName=Root}"
                               ContentTemplate="{Binding ActionsContentTemplate, ElementName=Root}"/>
