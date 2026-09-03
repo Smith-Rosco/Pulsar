@@ -1,0 +1,100 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Pulsar.Core.Localization;
+using Pulsar.Core.Plugin;
+using Pulsar.Services;
+using Pulsar.Services.Interfaces;
+
+namespace Pulsar.ViewModels.Settings
+{
+    /// <summary>
+    /// 外部插件条目 VM：复用 <see cref="PluginViewModel"/> 的内置管理能力
+    /// （配置对话框、查看日志、健康/用量展示），并针对外部插件补齐：
+    /// - 本地安装路径 <see cref="LocalPath"/> 与权限标记 <see cref="HasPermissions"/>；
+    /// - 「启用即激活」的开关命令：外部插件是懒激活的，启用时必须
+    ///   <see cref="IPluginRegistry.GetOrActivatePluginAsync"/> 让 OnEnableAsync 的贡献即时生效；
+    /// - 授权 / 卸载命令（委托给所属的 <see cref="ExternalPluginManagerViewModel"/>）。
+    /// </summary>
+    public partial class ExternalPluginViewModel : PluginViewModel
+    {
+        private readonly IPluginRegistry _registry;
+        private readonly ExternalPluginManagerViewModel _owner;
+        private readonly ILogger<ExternalPluginViewModel>? _logger;
+
+        /// <summary>本地安装目录（插件包解压后的路径）。</summary>
+        public string LocalPath { get; }
+
+        /// <summary>清单是否声明了权限（需要授权）。</summary>
+        public bool HasPermissions { get; }
+
+        /// <summary>清单声明的权限令牌列表。</summary>
+        public IReadOnlyList<string> Permissions { get; }
+
+        public ExternalPluginViewModel(
+            PluginDescriptor descriptor,
+            IPluginRegistry registry,
+            IConfigService configService,
+            ILocalizationService localizationService,
+            string localPath,
+            ExternalPluginManagerViewModel owner,
+            IPluginUsageTracker? usageTracker = null,
+            IPluginHealthMonitor? healthMonitor = null,
+            IPluginLogService? logService = null,
+            IDialogService? dialogService = null,
+            IServiceProvider? serviceProvider = null,
+            IPluginMetadataRegistry? metadataRegistry = null)
+            : base(descriptor, registry, configService, localizationService,
+                   usageTracker, healthMonitor, logService, dialogService, serviceProvider, metadataRegistry)
+        {
+            _registry = registry;
+            _owner = owner;
+            _logger = serviceProvider?.GetService<ILogger<ExternalPluginViewModel>>();
+            LocalPath = localPath;
+            Permissions = descriptor.Permissions;
+            HasPermissions = descriptor.Permissions.Count > 0;
+        }
+
+        /// <summary>
+        /// 启用/禁用（立即生效）：写入 profile 后调用激活。外部插件懒激活，
+        /// 仅 SetPluginStateAsync 不会让 OnEnableAsync 的贡献即时可用，因此启用时
+        /// 必须 GetOrActivatePluginAsync；禁用则让生命周期 OnDisableAsync 正常收尾。
+        /// </summary>
+        [RelayCommand]
+        private async Task TogglePluginAsync()
+        {
+            if (!CanDisable)
+            {
+                return;
+            }
+
+            var target = !IsEnabled;
+            try
+            {
+                await _registry.SetPluginStateAsync(Id, target);
+                if (target)
+                {
+                    await _registry.GetOrActivatePluginAsync(Id);
+                }
+
+                IsEnabled = target;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[ExternalPluginViewModel] Failed to toggle plugin {PluginId}", Id);
+                IsEnabled = !target;
+            }
+        }
+
+        /// <summary>授予/重发清单权限（对已安装插件幂等）。</summary>
+        [RelayCommand]
+        private Task GrantPermissionsAsync() => _owner.GrantPermissionsAsync(this);
+
+        /// <summary>卸载外部插件（撤销权限 → 停用并卸载 ALC → 删除文件）。</summary>
+        [RelayCommand]
+        private Task UninstallPluginAsync() => _owner.UninstallPluginAsync(this);
+    }
+}

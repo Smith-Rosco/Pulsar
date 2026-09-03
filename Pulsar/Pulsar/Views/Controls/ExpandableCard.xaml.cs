@@ -78,6 +78,11 @@ namespace Pulsar.Views.Controls
         public static readonly DependencyProperty CanToggleProperty =
             DependencyProperty.Register(nameof(CanToggle), typeof(bool), typeof(ExpandableCard), new PropertyMetadata(true));
 
+        // Toggle Command: invoked when the toggle switch is flipped, so callers can
+        // persist/activate through a command instead of a raw TwoWay property write.
+        public static readonly DependencyProperty ToggleCommandProperty =
+            DependencyProperty.Register(nameof(ToggleCommand), typeof(ICommand), typeof(ExpandableCard), new PropertyMetadata(null));
+
         // Context Menu
         public static readonly DependencyProperty CardContextMenuProperty =
             DependencyProperty.Register(nameof(CardContextMenu), typeof(ContextMenu), typeof(ExpandableCard), new PropertyMetadata(null));
@@ -219,6 +224,12 @@ namespace Pulsar.Views.Controls
         {
             get => (bool)GetValue(CanToggleProperty);
             set => SetValue(CanToggleProperty, value);
+        }
+
+        public ICommand ToggleCommand
+        {
+            get => (ICommand)GetValue(ToggleCommandProperty);
+            set => SetValue(ToggleCommandProperty, value);
         }
 
         public ContextMenu CardContextMenu

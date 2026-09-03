@@ -140,7 +140,9 @@ namespace Pulsar.ViewModels.Settings
         private void LoadPlugins()
         {
             Plugins.Clear();
-            var allPlugins = _registry.GetAllPluginDescriptors();
+            // 内置 Tab 只展示随应用分发的插件；外部插件由「外部」Tab 管理，
+            // 避免同一插件在 内置→扩展插件 与 外部 两个入口重复出现。
+            var allPlugins = _registry.GetAllPluginDescriptors().Where(d => !d.IsExternal);
 
             foreach (var plugin in allPlugins)
             {

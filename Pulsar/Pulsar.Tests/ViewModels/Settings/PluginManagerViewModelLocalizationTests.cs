@@ -25,11 +25,11 @@ namespace Pulsar.Tests.ViewModels.Settings
             return loc;
         }
 
-        private static PluginDescriptor CreateDescriptor()
+        private static PluginDescriptor CreateDescriptor(bool isExternal = false, string? id = null)
         {
             return new PluginDescriptor
             {
-                Id = TestPluginId,
+                Id = id ?? TestPluginId,
                 DisplayName = "App Switch",
                 Version = "1.0.0",
                 Author = "Pulsar Team",
@@ -37,6 +37,7 @@ namespace Pulsar.Tests.ViewModels.Settings
                 Icon = "E8F9",
                 CanDisable = false,
                 Tier = PluginTier.Core,
+                IsExternal = isExternal,
                 ImplementationType = null,
                 Dependencies = Array.Empty<string>(),
                 Metadata = new PluginMetadata
@@ -127,6 +128,29 @@ namespace Pulsar.Tests.ViewModels.Settings
 
             // 测试未注入健康监控，HealthReport.Status 为默认值 Healthy
             vm.Plugins.Single().HealthStatusText.Should().Be("健康");
+        }
+
+        [Fact]
+        public void BuiltInList_ExcludesExternalPlugins()
+        {
+            // 内置 Tab 必须只展示随应用分发的插件；外部插件由「外部」Tab 管理，
+            // 避免同一插件在 内置→扩展插件 与 外部 两个入口重复出现。
+            var loc = CreateLocalization("en");
+            var builtIn = CreateDescriptor(isExternal: false);
+            var external = CreateDescriptor(isExternal: true, id: "com.pulsar.external-sample");
+
+            var registry = new Mock<IPluginRegistry>();
+            registry.Setup(r => r.GetAllPluginDescriptors()).Returns(new[] { builtIn, external });
+            registry.Setup(r => r.GetPlugin(It.IsAny<string>())).Returns((IPulsarPlugin?)null);
+            registry.Setup(r => r.IsPluginEnabled(It.IsAny<string>())).Returns(true);
+
+            var vm = new PluginManagerViewModel(
+                registry.Object,
+                new Mock<IConfigService>().Object,
+                localizationService: loc);
+
+            vm.Plugins.Select(p => p.Id).Should().NotContain("com.pulsar.external-sample", "外部插件不应出现在内置列表");
+            vm.Plugins.Select(p => p.Id).Should().Contain(TestPluginId, "内置插件应正常展示");
         }
 
         [Fact]

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -14,7 +15,11 @@ namespace Pulsar.ViewModels.Settings
 {
     /// <summary>
     /// 外部插件管理器 ViewModel
-    /// 负责管理从本地 ZIP 文件安装的外部插件
+    /// 负责管理从本地 ZIP 文件安装的外部插件：
+    /// - 扫描/刷新已安装列表（条目为 <see cref="ExternalPluginViewModel"/>，复用内置管理能力）；
+    /// - 从文件安装；
+    /// - 提供授权、卸载的底层逻辑（条目 VM 的命令委托到这里）。
+    /// 启用/禁用开关在条目 VM 上处理（写入 profile + 即时激活）。
     /// </summary>
     public partial class ExternalPluginManagerViewModel : ObservableObject
     {
@@ -24,9 +29,15 @@ namespace Pulsar.ViewModels.Settings
         private readonly ILogger<ExternalPluginManagerViewModel>? _logger;
         private readonly IDialogService? _dialogService;
         private readonly ILocalizationService _loc;
+        private readonly IConfigService? _configService;
+        private readonly IPluginUsageTracker? _usageTracker;
+        private readonly IPluginHealthMonitor? _healthMonitor;
+        private readonly IPluginLogService? _logService;
+        private readonly IPluginMetadataRegistry? _metadataRegistry;
+        private readonly IServiceProvider? _serviceProvider;
 
         [ObservableProperty]
-        private ObservableCollection<PluginPackageInfo> _installedPlugins = new();
+        private ObservableCollection<ExternalPluginViewModel> _installedPlugins = new();
 
         [ObservableProperty]
         private bool _isLoading;
@@ -40,7 +51,13 @@ namespace Pulsar.ViewModels.Settings
             IPluginRegistry pluginRegistry,
             ILocalizationService localizationService,
             ILogger<ExternalPluginManagerViewModel>? logger = null,
-            IDialogService? dialogService = null)
+            IDialogService? dialogService = null,
+            IConfigService? configService = null,
+            IPluginUsageTracker? usageTracker = null,
+            IPluginHealthMonitor? healthMonitor = null,
+            IPluginLogService? logService = null,
+            IPluginMetadataRegistry? metadataRegistry = null,
+            IServiceProvider? serviceProvider = null)
         {
             _scanner = scanner;
             _packageManager = packageManager;
@@ -48,13 +65,20 @@ namespace Pulsar.ViewModels.Settings
             _loc = localizationService;
             _logger = logger;
             _dialogService = dialogService;
+            _configService = configService;
+            _usageTracker = usageTracker;
+            _healthMonitor = healthMonitor;
+            _logService = logService;
+            _metadataRegistry = metadataRegistry;
+            _serviceProvider = serviceProvider;
 
             // 订阅包管理器事件
             _packageManager.OperationProgress += OnOperationProgress;
         }
 
         /// <summary>
-        /// 初始化 - 扫描已安装的外部插件
+        /// 初始化 - 扫描已安装的外部插件，并用运行时描述符构建条目 VM。
+        /// 包文件存在但目录中没有对应外部描述符的（损坏/未发现）会被跳过。
         /// </summary>
         public async Task InitializeAsync()
         {
@@ -63,13 +87,35 @@ namespace Pulsar.ViewModels.Settings
 
             try
             {
-                var plugins = await Task.Run(() => _scanner.ScanInstalledPlugins());
+                var packages = await Task.Run(() => _scanner.ScanInstalledPlugins());
+                var descriptors = _pluginRegistry.GetAllPluginDescriptors()
+                    .Where(d => d.IsExternal)
+                    .ToDictionary(d => d.Id, StringComparer.OrdinalIgnoreCase);
 
                 InstalledPlugins.Clear();
-                foreach (var plugin in plugins)
+                foreach (var pkg in packages)
                 {
-                    plugin.IsEnabled = _pluginRegistry.IsPluginEnabled(plugin.Id);
-                    InstalledPlugins.Add(plugin);
+                    if (!descriptors.TryGetValue(pkg.Id, out var descriptor))
+                    {
+                        _logger?.LogWarning("[ExternalPluginManagerViewModel] Package {PluginId} has no runtime descriptor; skipped", pkg.Id);
+                        continue;
+                    }
+
+                    var item = new ExternalPluginViewModel(
+                        descriptor,
+                        _pluginRegistry,
+                        _configService!,
+                        _loc,
+                        pkg.LocalPath ?? string.Empty,
+                        this,
+                        _usageTracker,
+                        _healthMonitor,
+                        _logService,
+                        _dialogService,
+                        _serviceProvider,
+                        _metadataRegistry);
+
+                    InstalledPlugins.Add(item);
                 }
 
                 StatusMessage = string.Format(_loc["Notification.FoundPluginsFormat"], InstalledPlugins.Count);
@@ -83,46 +129,6 @@ namespace Pulsar.ViewModels.Settings
             finally
             {
                 IsLoading = false;
-            }
-        }
-
-        /// <summary>
-        /// 启用/禁用外部插件（立即生效）
-        /// </summary>
-        [RelayCommand]
-        private async Task TogglePluginAsync(PluginPackageInfo plugin)
-        {
-            if (plugin == null) return;
-
-            var target = !plugin.IsEnabled;
-
-            try
-            {
-                // 写入 profile 并跑生命周期（禁用时 OnDisableAsync + 无条件注销渲染器贡献）
-                await _pluginRegistry.SetPluginStateAsync(plugin.Id, target);
-
-                if (target)
-                {
-                    // 启用立即生效：激活插件（OnEnableAsync 里的贡献即时可用）
-                    await _pluginRegistry.GetOrActivatePluginAsync(plugin.Id);
-                }
-
-                StatusMessage = string.Format(
-                    _loc[target ? "Settings.ExternalPlugins.PluginEnabledFormat" : "Settings.ExternalPlugins.PluginDisabledFormat"],
-                    plugin.Name);
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "[ExternalPluginManagerViewModel] Failed to toggle plugin {PluginId}", plugin.Id);
-                StatusMessage = string.Format(_loc["Settings.ExternalPlugins.StatusErrorInstallingFormat"], ex.Message);
-            }
-            finally
-            {
-                // 重建列表保证开关状态与运行时一致（POCO 无属性通知）；
-                // InitializeAsync 会覆盖状态消息，先记住本次结果再回写。
-                var resultMessage = StatusMessage;
-                await InitializeAsync();
-                StatusMessage = resultMessage;
             }
         }
 
@@ -263,12 +269,50 @@ namespace Pulsar.ViewModels.Settings
         }
 
         /// <summary>
-        /// 卸载插件
+        /// 授予/重发清单权限（对已安装插件幂等）。由条目 VM 的命令调用。
         /// </summary>
-        [RelayCommand]
-        private async Task UninstallPluginAsync(PluginPackageInfo plugin)
+        internal async Task GrantPermissionsAsync(ExternalPluginViewModel plugin)
         {
-            if (plugin == null) return;
+            if (plugin == null || !plugin.HasPermissions)
+            {
+                return;
+            }
+
+            try
+            {
+                if (_dialogService != null)
+                {
+                    var approval = await _dialogService.ShowConfirmationAsync(
+                        _loc["Plugin.Permissions.ConfirmTitle"],
+                        BuildPermissionPrompt(plugin.Name, plugin.Version, plugin.Author, plugin.Permissions),
+                        _loc["Plugin.Permissions.Approve"],
+                        _loc["Dialog.Button.Cancel"]);
+
+                    if (approval != Models.Enums.DialogResult.Confirmed)
+                    {
+                        return;
+                    }
+                }
+
+                await _pluginRegistry.GrantPermissionsAsync(plugin.Id, plugin.Permissions);
+                StatusMessage = _loc["Plugin.Permissions.GrantSuccess"];
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[ExternalPluginManagerViewModel] Failed to grant permissions for {PluginId}", plugin.Id);
+                StatusMessage = string.Format(_loc["Plugin.Permissions.GrantFailedFormat"], plugin.Id, ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 卸载插件。由条目 VM 的命令调用。
+        /// </summary>
+        internal async Task UninstallPluginAsync(ExternalPluginViewModel plugin)
+        {
+            if (plugin == null)
+            {
+                return;
+            }
 
             try
             {
@@ -330,7 +374,7 @@ namespace Pulsar.ViewModels.Settings
                             string.Format(_loc["Notification.UninstallCompleteFormat"], plugin.Name));
                     }
 
-                    // 刷新列表
+                    // 刷新列表：重建外部插件条目，避免旧 descriptor 引用 pin 住已卸载的 ALC
                     await InitializeAsync();
                 }
                 else
@@ -352,40 +396,6 @@ namespace Pulsar.ViewModels.Settings
             }
         }
 
-        [RelayCommand]
-        private async Task ApprovePluginPermissionsAsync(PluginPackageInfo plugin)
-        {
-            if (plugin == null || plugin.Permissions.Count == 0)
-            {
-                return;
-            }
-
-            try
-            {
-                if (_dialogService != null)
-                {
-                    var approval = await _dialogService.ShowConfirmationAsync(
-                        _loc["Plugin.Permissions.ConfirmTitle"],
-                        BuildPermissionPrompt(plugin),
-                        _loc["Plugin.Permissions.Approve"],
-                        _loc["Dialog.Button.Cancel"]);
-
-                    if (approval != Models.Enums.DialogResult.Confirmed)
-                    {
-                        return;
-                    }
-                }
-
-                await _pluginRegistry.GrantPermissionsAsync(plugin.Id, plugin.Permissions);
-                StatusMessage = _loc["Plugin.Permissions.GrantSuccess"];
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "[ExternalPluginManagerViewModel] Failed to grant permissions for {PluginId}", plugin.Id);
-                StatusMessage = string.Format(_loc["Plugin.Permissions.GrantFailedFormat"], plugin.Id, ex.Message);
-            }
-        }
-
         private string BuildPermissionPrompt(Pulsar.Core.Plugin.Metadata.PluginManifest manifest)
         {
             return BuildPermissionPrompt(
@@ -393,11 +403,6 @@ namespace Pulsar.ViewModels.Settings
                 manifest.Version,
                 manifest.Author,
                 manifest.Permissions);
-        }
-
-        private string BuildPermissionPrompt(PluginPackageInfo plugin)
-        {
-            return BuildPermissionPrompt(plugin.Name, plugin.Version, plugin.Author, plugin.Permissions);
         }
 
         private string BuildPermissionPrompt(

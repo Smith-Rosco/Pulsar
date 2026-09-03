@@ -402,7 +402,8 @@
                                              IconKey="{Binding Icon}"
                                              Title="{Binding Name}"
                                              Subtitle="{Binding Category}"
-                                             IsToggleEnabled="{Binding IsEnabled, Mode=TwoWay}"
+                                             IsToggleEnabled="{Binding IsEnabled, Mode=OneWay}"
+                                             ToggleCommand="{Binding ToggleStateCommand}"
                                              CanToggle="{Binding CanDisable}"
                                             PrimaryActionCommand="{Binding ConfigureCommand}"
                                             PrimaryActionIcon="Settings24"
@@ -623,48 +624,81 @@
                             <!-- Plugin Cards -->
                             <StackPanel Visibility="{Binding ExternalPluginManager.IsLoading, Converter={StaticResource InverseBoolToVisConverter}}">
                                 <ItemsControl ItemsSource="{Binding ExternalPluginManager.InstalledPlugins}">
+                                    <ItemsControl.ItemContainerStyle>
+                                        <Style TargetType="ContentPresenter">
+                                            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                                            <Setter Property="Width" Value="{Binding RelativeSource={RelativeSource AncestorType=ItemsControl}, Path=ActualWidth}"/>
+                                        </Style>
+                                    </ItemsControl.ItemContainerStyle>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Background="{DynamicResource ControlFillColorDefaultBrush}"
-                                                    BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}"
-                                                    BorderThickness="1" CornerRadius="{StaticResource Pulsar.Radius.LG}"
-                                                    Padding="{StaticResource Pulsar.Pad.LG}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    <controls:SlotOrb Grid.Column="0" IconKey="{Binding Icon}" Size="48"
-                                                                       Width="48" Height="48" IsTransparent="True"
-                                                                       ShowActiveGlow="False" Margin="{StaticResource Pulsar.Gap.Right.LG}"
-                                                                       VerticalAlignment="Top"/>
-                                                    <StackPanel Grid.Column="1">
-                                                        <StackPanel Orientation="Horizontal" Margin="{StaticResource Pulsar.Gap.Bottom.XS}">
-                                                            <TextBlock Text="{Binding Name}" FontSize="{StaticResource Pulsar.Type.Subtitle}" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                                            <TextBlock Text="{Binding Version, StringFormat='v{0}'}" FontSize="{StaticResource Pulsar.Type.Body}"
-                                                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                                                       VerticalAlignment="Center" Margin="{StaticResource Pulsar.Gap.Left.SM}"/>
-                                                        </StackPanel>
+                                            <controls:ExpandableCard
+                                                IconKey="{Binding Icon}"
+                                                Title="{Binding Name}"
+                                                Subtitle="{Binding Version, StringFormat='v{0}'}"
+                                                IsToggleEnabled="{Binding IsEnabled, Mode=OneWay}"
+                                                ToggleCommand="{Binding TogglePluginCommand}"
+                                                CanToggle="{Binding CanDisable}"
+                                                PrimaryActionCommand="{Binding ConfigureCommand}"
+                                                PrimaryActionIcon="Settings24"
+                                                PrimaryActionTooltip="{lex:Locale Settings.Plugins.ConfigureTooltip}"
+                                                PrimaryActionVisibility="{Binding HasSettings, Converter={StaticResource BoolToVis}}"
+                                                SecondaryActionCommand="{Binding ViewLogsCommand}"
+                                                SecondaryActionIcon="DocumentText24"
+                                                SecondaryActionTooltip="{lex:Locale Settings.Plugins.ViewLogsTooltip}"
+                                                SecondaryActionVisibility="Visible">
+
+                                                <!-- Header Content: external source badge -->
+                                                <controls:ExpandableCard.HeaderContent>
+                                                    <Border Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
+                                                            CornerRadius="{StaticResource Pulsar.Radius.SM}"
+                                                            Padding="{StaticResource Pulsar.Pad.H4V2}"
+                                                            VerticalAlignment="Center">
+                                                        <TextBlock Text="{lex:Locale Settings.Plugins.External}"
+                                                                   FontSize="{StaticResource Pulsar.Type.Caption}"
+                                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                                    </Border>
+                                                </controls:ExpandableCard.HeaderContent>
+
+                                                <!-- Expanded Content: details + management actions -->
+                                                <controls:ExpandableCard.ExpandedContent>
+                                                    <StackPanel>
                                                         <TextBlock FontSize="{StaticResource Pulsar.Type.Body}"
-                                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="{StaticResource Pulsar.Gap.Bottom.SM}">
+                                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                                   Margin="{StaticResource Pulsar.Gap.Bottom.SM}">
                                                             <Run Text="{lex:Locale Settings.ExternalPlugins.ByAuthor}"/>
                                                             <Run Text="{Binding Author, Mode=OneWay}"/>
                                                         </TextBlock>
                                                         <TextBlock Text="{Binding Description}" FontSize="{StaticResource Pulsar.Type.Body}"
                                                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                                    TextWrapping="Wrap" Margin="{StaticResource Pulsar.Gap.Bottom.SM}"/>
+                                                        <StackPanel Orientation="Horizontal" Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
+                                                            <ui:SymbolIcon Symbol="Folder24" FontSize="{StaticResource Pulsar.Type.Body}"
+                                                                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                                           Margin="{StaticResource Pulsar.Gap.Right.SM}"
+                                                                           VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{Binding LocalPath}"
+                                                                       FontSize="{StaticResource Pulsar.Type.Caption}"
+                                                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                                       VerticalAlignment="Center"
+                                                                       TextTrimming="CharacterEllipsis"
+                                                                       MaxWidth="480"/>
+                                                        </StackPanel>
+                                                        <StackPanel Orientation="Horizontal" Margin="{StaticResource Pulsar.Gap.Top.SM}">
+                                                            <ui:Button Content="{lex:Locale Settings.ExternalPlugins.GrantPermissions}"
+                                                                       Command="{Binding GrantPermissionsCommand}"
+                                                                       Icon="{ui:SymbolIcon Key24}"
+                                                                       Style="{StaticResource PulsarSecondaryButtonStyle}"
+                                                                       Visibility="{Binding HasPermissions, Converter={StaticResource BoolToVis}}"
+                                                                       Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
+                                                            <ui:Button Content="{lex:Locale Settings.Plugins.Uninstall}"
+                                                                       Command="{Binding UninstallPluginCommand}"
+                                                                       Icon="{ui:SymbolIcon Delete24}"
+                                                                       Style="{StaticResource PulsarDangerButtonStyle}"/>
+                                                        </StackPanel>
                                                     </StackPanel>
-                                                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                                        <ui:Button Content="{lex:Locale Settings.Plugins.Uninstall}"
-                                                                   Command="{Binding DataContext.ExternalPluginManager.UninstallPluginCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                                   CommandParameter="{Binding}"
-                                                                   Icon="{ui:SymbolIcon Delete24}"
-                                                                   Style="{StaticResource PulsarDangerButtonStyle}"
-                                                                   MinWidth="100"/>
-                                                    </StackPanel>
-                                                </Grid>
-                                            </Border>
+                                                </controls:ExpandableCard.ExpandedContent>
+                                            </controls:ExpandableCard>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>

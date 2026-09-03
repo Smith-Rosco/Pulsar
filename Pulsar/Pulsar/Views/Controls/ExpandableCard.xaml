@@ -103,6 +103,8 @@
                 <!-- Toggle Switch -->
                 <ui:ToggleSwitch Grid.Column="4" 
                                  IsChecked="{Binding IsToggleEnabled, ElementName=Root, Mode=TwoWay}" 
+                                 Command="{Binding ToggleCommand, ElementName=Root}"
+                                 CommandParameter="{Binding DataContext, ElementName=Root}"
                                  IsEnabled="{Binding CanToggle, ElementName=Root}"
                                  Visibility="{Binding IsToggleVisible, ElementName=Root, Converter={StaticResource BoolToVis}}"
                                  Content=""
