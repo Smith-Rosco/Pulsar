@@ -72,4 +72,8 @@
     <DataTemplate DataType="{x:Type dialogs:BookmarkletScriptEditorViewModel}">
         <contents:BookmarkletScriptEditorContent/>
     </DataTemplate>
+
+    <DataTemplate DataType="{x:Type dialogs:ExampleLibraryViewModel}">
+        <contents:ExampleLibraryContent/>
+    </DataTemplate>
 </ResourceDictionary>

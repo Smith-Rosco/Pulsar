@@ -1,5 +1,6 @@
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using Pulsar.Core.Localization;
@@ -87,6 +88,91 @@ namespace Pulsar.Tests.Services
             finally
             {
                 Directory.Delete(root, recursive: true);
+            }
+        }
+
+        [Fact]
+        public async Task Import_ShouldCreateCopyInScriptsDirectory_AndLeaveBuiltInUnchanged()
+        {
+            var assetRoot = CreateFixtureAssetRoot();
+            var scriptsDir = Path.Combine(Path.GetTempPath(), "Pulsar.Tests", "ExampleLibrary", Path.GetRandomFileName());
+            try
+            {
+                var fileService = new ScriptFileService(scriptsDir);
+                var service = new ExampleLibraryService(CreateLoc(), assetRoot: assetRoot, fileService: fileService);
+                var builtInPath = Path.Combine(assetRoot, "form_fill_demo.js");
+                var builtInBefore = File.ReadAllText(builtInPath);
+
+                var path = await service.ImportAsync("form-fill");
+
+                path.Should().NotBeNullOrEmpty();
+                path.Should().NotBeNull();
+                File.Exists(path!).Should().BeTrue();
+                File.ReadAllText(path!).Should().Be(builtInBefore);
+                path.Should().StartWith(scriptsDir);
+                Path.GetFileName(path).Should().Be("formfill.js");
+                File.ReadAllText(builtInPath).Should().Be(builtInBefore, "built-in asset must stay untouched");
+            }
+            finally
+            {
+                Directory.Delete(assetRoot, recursive: true);
+                if (Directory.Exists(scriptsDir))
+                {
+                    Directory.Delete(scriptsDir, recursive: true);
+                }
+            }
+        }
+
+        [Fact]
+        public async Task Import_ShouldAvoidNameCollision_BySuffixingCopies()
+        {
+            var assetRoot = CreateFixtureAssetRoot();
+            var scriptsDir = Path.Combine(Path.GetTempPath(), "Pulsar.Tests", "ExampleLibrary", Path.GetRandomFileName());
+            try
+            {
+                var fileService = new ScriptFileService(scriptsDir);
+                var service = new ExampleLibraryService(CreateLoc(), assetRoot: assetRoot, fileService: fileService);
+
+                var first = await service.ImportAsync("hello");
+                var second = await service.ImportAsync("hello");
+
+                first.Should().NotBe(second);
+                File.Exists(first).Should().BeTrue();
+                File.Exists(second).Should().BeTrue();
+                (await fileService.ListScriptsAsync()).Count.Should().Be(2);
+            }
+            finally
+            {
+                Directory.Delete(assetRoot, recursive: true);
+                if (Directory.Exists(scriptsDir))
+                {
+                    Directory.Delete(scriptsDir, recursive: true);
+                }
+            }
+        }
+
+        [Fact]
+        public async Task Import_ShouldReturnNull_ForUnknownExample()
+        {
+            var assetRoot = CreateFixtureAssetRoot();
+            var scriptsDir = Path.Combine(Path.GetTempPath(), "Pulsar.Tests", "ExampleLibrary", Path.GetRandomFileName());
+            try
+            {
+                var fileService = new ScriptFileService(scriptsDir);
+                var service = new ExampleLibraryService(CreateLoc(), assetRoot: assetRoot, fileService: fileService);
+
+                var path = await service.ImportAsync("does-not-exist");
+
+                path.Should().BeNull();
+                (await fileService.ListScriptsAsync()).Should().BeEmpty();
+            }
+            finally
+            {
+                Directory.Delete(assetRoot, recursive: true);
+                if (Directory.Exists(scriptsDir))
+                {
+                    Directory.Delete(scriptsDir, recursive: true);
+                }
             }
         }
     }

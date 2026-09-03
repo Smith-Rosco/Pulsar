@@ -122,9 +122,20 @@ namespace Pulsar.ViewModels.Settings
         public bool IsScriptEditorVisible => string.Equals(Id, "com.pulsar.bookmarklet", StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
+        /// Whether this plugin card exposes the built-in example library entry
+        /// (Web Scripts / Bookmarklet plugin only).
+        /// </summary>
+        public bool IsExampleLibraryVisible => string.Equals(Id, "com.pulsar.bookmarklet", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
         /// Label for the in-app script editor entry on the plugin card.
         /// </summary>
         public string ScriptEditorLabel => _loc?["Settings.Plugins.NewEditScript"] ?? "New/Edit Script";
+
+        /// <summary>
+        /// Label for the built-in example library entry on the plugin card.
+        /// </summary>
+        public string ExampleLibraryLabel => _loc?["Settings.Plugins.ExampleLibrary"] ?? "Example Library";
 
         public PluginViewModel(
             PluginDescriptor descriptor,
@@ -408,7 +419,55 @@ namespace Pulsar.ViewModels.Settings
         /// Uses the same DialogService dialog pattern with explicit size constraints.
         /// </summary>
         [RelayCommand]
-        private async Task OpenScriptEditorAsync()
+        private Task OpenScriptEditorAsync()
+        {
+            return OpenScriptEditorCoreAsync(scriptPath: null);
+        }
+
+        /// <summary>
+        /// Opens the built-in example library browser; importing an example copies
+        /// it into the user's scripts directory and opens the copy in the in-app
+        /// script editor.
+        /// </summary>
+        [RelayCommand]
+        private async Task OpenExampleLibraryAsync()
+        {
+            if (_dialogService == null || _serviceProvider == null || _loc == null)
+            {
+                return;
+            }
+
+            var libraryService = _serviceProvider.GetService<ExampleLibraryService>();
+            if (libraryService == null)
+            {
+                return;
+            }
+
+            var viewModel = new Pulsar.ViewModels.Dialogs.ExampleLibraryViewModel(libraryService, _loc);
+
+            var result = await _dialogService.ShowCustomAsync(
+                _loc["ExampleLibrary.Title"],
+                viewModel,
+                Models.Enums.DialogButtons.None,
+                new Models.DialogSizeConstraints
+                {
+                    Width = 620,
+                    Height = 480,
+                    MinWidth = 520,
+                    MinHeight = 400,
+                    MaxWidth = 900,
+                    MaxHeight = 700,
+                    AllowResize = true,
+                    ShowMaximizeButton = true
+                });
+
+            if (result == Models.Enums.DialogResult.Confirmed && !string.IsNullOrEmpty(viewModel.ImportedScriptPath))
+            {
+                await OpenScriptEditorCoreAsync(viewModel.ImportedScriptPath);
+            }
+        }
+
+        private async Task OpenScriptEditorCoreAsync(string? scriptPath)
         {
             if (_dialogService == null || _serviceProvider == null || _loc == null)
             {
@@ -426,6 +485,15 @@ namespace Pulsar.ViewModels.Settings
                 fileService,
                 validationService,
                 _loc);
+
+            if (!string.IsNullOrEmpty(scriptPath))
+            {
+                var loaded = await editor.OpenScriptAsync(scriptPath);
+                if (!loaded)
+                {
+                    return;
+                }
+            }
 
             await _dialogService.ShowCustomAsync(
                 _loc["Bookmarklet.ScriptEditor.Title"],

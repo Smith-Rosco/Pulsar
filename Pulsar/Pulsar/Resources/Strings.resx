@@ -2808,6 +2808,24 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
   <data name="Example.LinkTraverse.Description" xml:space="preserve">
     <value>Finds links on a legacy page and opens the first external one</value>
   </data>
+  <data name="ExampleLibrary.Title" xml:space="preserve">
+    <value>Example Library</value>
+  </data>
+  <data name="ExampleLibrary.Import" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="ExampleLibrary.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="ExampleLibrary.Hint" xml:space="preserve">
+    <value>Pick an example to copy it into your own scripts folder. The built-in example is never overwritten, and the copy opens in the editor ready to edit and save.</value>
+  </data>
+  <data name="Settings.Plugins.ExampleLibrary" xml:space="preserve">
+    <value>Example Library</value>
+  </data>
+  <data name="Settings.Plugins.ExampleLibraryTooltip" xml:space="preserve">
+    <value>Browse built-in examples and import one to start editing</value>
+  </data>
 
   <!-- ==================== Tutorial ==================== -->
   <data name="Tutorial.SwitchedToApp" xml:space="preserve">

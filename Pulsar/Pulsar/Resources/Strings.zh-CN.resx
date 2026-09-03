@@ -4540,6 +4540,36 @@ Pulsar 会在当前页面运行一个网页脚本——这就是命令模式：�
     xml:space="preserve">
     <value>在旧版页面上查找链接并打开第一个外部链接</value>
   </data>
+  <data
+    name="ExampleLibrary.Title"
+    xml:space="preserve">
+    <value>示例库</value>
+  </data>
+  <data
+    name="ExampleLibrary.Import"
+    xml:space="preserve">
+    <value>导入</value>
+  </data>
+  <data
+    name="ExampleLibrary.Cancel"
+    xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data
+    name="ExampleLibrary.Hint"
+    xml:space="preserve">
+    <value>选择一个示例即可将其复制到您自己的脚本文件夹。内置示例永不会被覆盖，副本会在编辑器中打开，可直接编辑并保存。</value>
+  </data>
+  <data
+    name="Settings.Plugins.ExampleLibrary"
+    xml:space="preserve">
+    <value>示例库</value>
+  </data>
+  <data
+    name="Settings.Plugins.ExampleLibraryTooltip"
+    xml:space="preserve">
+    <value>浏览内置示例并导入一个进行编辑</value>
+  </data>
   <!-- ==================== Tutorial ==================== -->
   <data
     name="Tutorial.SwitchedToApp"

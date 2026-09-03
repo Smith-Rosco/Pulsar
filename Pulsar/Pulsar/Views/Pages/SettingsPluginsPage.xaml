@@ -565,6 +565,15 @@
                                                                Visibility="{Binding IsScriptEditorVisible, Converter={StaticResource BoolToVis}}"
                                                                ToolTip="{lex:Locale Settings.Plugins.NewEditScriptTooltip}"
                                                                Margin="{StaticResource Pulsar.Gap.Top.MD}"/>
+
+                                                    <!-- Built-in example library entry (Web Scripts / Bookmarklet plugin only) -->
+                                                    <ui:Button Content="{Binding ExampleLibraryLabel}"
+                                                               Command="{Binding OpenExampleLibraryCommand}"
+                                                               Icon="{ui:SymbolIcon Library24}"
+                                                               Style="{StaticResource PulsarSecondaryButtonStyle}"
+                                                               Visibility="{Binding IsExampleLibraryVisible, Converter={StaticResource BoolToVis}}"
+                                                               ToolTip="{lex:Locale Settings.Plugins.ExampleLibraryTooltip}"
+                                                               Margin="{StaticResource Pulsar.Gap.Top.SM}"/>
                                                 </StackPanel>
                                             </controls:ExpandableCard.ExpandedContent>
                                         </controls:ExpandableCard>

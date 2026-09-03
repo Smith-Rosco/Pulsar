@@ -1,0 +1,81 @@
+<UserControl x:Class="Pulsar.Views.Dialogs.Contents.ExampleLibraryContent"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:vm="clr-namespace:Pulsar.ViewModels.Dialogs"
+             xmlns:lex="clr-namespace:Pulsar.Core.Localization"
+             mc:Ignorable="d"
+             MinWidth="520"
+             d:DataContext="{d:DesignInstance Type=vm:ExampleLibraryViewModel}">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Hint -->
+            <RowDefinition Height="*"/>    <!-- List -->
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0"
+                   Text="{lex:Locale ExampleLibrary.Hint}"
+                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                   FontSize="{StaticResource Pulsar.Type.Body}"
+                   TextWrapping="Wrap"
+                   Margin="{StaticResource Pulsar.Gap.Bottom.MD}"/>
+
+        <ListBox Grid.Row="1"
+                 ItemsSource="{Binding Examples}"
+                 SelectedItem="{Binding SelectedExample}"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                 ScrollViewer.VerticalScrollBarVisibility="Auto">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                    <Setter Property="Padding" Value="10"/>
+                </Style>
+            </ListBox.ItemContainerStyle>
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Grid Grid.Column="0"
+                              Width="36" Height="36"
+                              Margin="{StaticResource Pulsar.Gap.Right.MD}">
+                            <Border Background="{DynamicResource ControlFillColorDefaultBrush}"
+                                    CornerRadius="{StaticResource Pulsar.Radius.SM}">
+                                <ui:SymbolIcon Symbol="DocumentText24"
+                                               FontSize="{StaticResource Pulsar.Type.Subtitle}"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                            </Border>
+                        </Grid>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Title}"
+                                       FontWeight="SemiBold"
+                                       FontSize="{StaticResource Pulsar.Type.Body}"
+                                       TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Text="{Binding Description}"
+                                       FontSize="{StaticResource Pulsar.Type.Caption}"
+                                       Opacity="0.7"
+                                       TextWrapping="Wrap"
+                                       Margin="{StaticResource Pulsar.Gap.Top.XS}"/>
+                        </StackPanel>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <Grid Grid.Row="1"
+              Visibility="{Binding IsImporting, Converter={StaticResource BoolToVis}}"
+              Background="{DynamicResource ApplicationBackgroundBrush}">
+            <ui:ProgressRing IsIndeterminate="True" Width="40" Height="40"/>
+        </Grid>
+    </Grid>
+</UserControl>
