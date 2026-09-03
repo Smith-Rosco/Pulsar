@@ -12,9 +12,19 @@
              d:DataContext="{d:DesignInstance Type=vm:BookmarkletScriptEditorViewModel}">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-        <converters:CollectionEmptyToVisibilityConverter x:Key="CollectionEmptyToVis"/>
-        <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVis"/>
+        <ResourceDictionary>
+            <!-- Self-merge ButtonStyles.xaml (which also pulls Tokens.xaml): a UserControl's
+                 StaticResource lookups resolve during InitializeComponent, before the control
+                 is attached to the dialog window tree, so PulsarSecondaryButtonStyle would
+                 otherwise be unreachable (App.xaml deliberately loads no ButtonStyles.xaml).
+                 Mirrors IconPickerContent/WindowInspectorContent/SecretPickerContent. -->
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+            <converters:CollectionEmptyToVisibilityConverter x:Key="CollectionEmptyToVis"/>
+            <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVis"/>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid>
