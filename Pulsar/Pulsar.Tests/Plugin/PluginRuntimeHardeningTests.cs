@@ -259,6 +259,91 @@ namespace Pulsar.Tests.Plugin
         }
 
         [Fact]
+        public async Task Kernel_SetPluginStateAsync_DisablingPlugin_UnregistersRenderersAndRunsDisableLifecycle()
+        {
+            // The external-plugin toggle's disable path must (a) run OnDisableAsync and
+            // (b) unconditionally revoke the plugin's renderer contributions so the
+            // dropdown falls back to Default even if the plugin forgot to unregister.
+            var descriptor = CreateExtensionDescriptor("test.toggle.disable.plugin", isExternal: true);
+            var plugin = new LifecycleTrackingPlugin(descriptor.Id);
+
+            var state = new PluginRuntimeStateStore();
+            state.SetPlugin(plugin, PluginLifecycleState.Enabled);
+
+            var catalog = new PluginCatalog();
+            catalog.RegisterDescriptors(new[] { descriptor });
+
+            var pipeline = new PluginExecutionPipeline(state, new PluginCircuitBreakerPolicy());
+            var loader = new PluginLoader(Mock.Of<IServiceProvider>(), "unused");
+
+            var rendererRegistry = new Pulsar.Core.Rendering.RadialRendererRegistry(
+                new[] { Pulsar.Core.Rendering.DefaultRadialRenderer.RendererId, "ClassicRing", "Glassmorphism" },
+                _ => true);
+            rendererRegistry.Register(new StubDeactivateRenderer("Neon"), descriptor.Id).Should().BeTrue();
+
+            var config = new Pulsar.Models.ProfilesConfig();
+            var configService = new Mock<Pulsar.Services.Interfaces.IConfigService>();
+            configService.Setup(x => x.GetSnapshot()).Returns(config);
+            configService.Setup(x => x.LoadSnapshotAsync(It.IsAny<bool>())).ReturnsAsync(config);
+            configService.Setup(x => x.SaveAsync(It.IsAny<Pulsar.Models.ProfilesConfig>(), It.IsAny<long?>()))
+                .Returns(Task.CompletedTask);
+
+            var kernel = new PluginRuntimeKernel(
+                Mock.Of<IServiceProvider>(),
+                loader,
+                catalog,
+                state,
+                pipeline,
+                NullLogger<PluginRuntimeKernel>.Instance,
+                configService.Object,
+                rendererRegistry: rendererRegistry);
+
+            await kernel.SetPluginStateAsync(descriptor.Id, enabled: false);
+
+            plugin.DisableCount.Should().Be(1, "OnDisableAsync must run when toggling an enabled plugin off");
+            rendererRegistry.TryGet("Neon", out _).Should().BeFalse(
+                "disabling must revoke renderer contributions so resolution falls back to Default");
+            configService.Verify(x => x.SaveAsync(It.IsAny<Pulsar.Models.ProfilesConfig>(), It.IsAny<long?>()), Times.Once);
+        }
+
+        [Fact]
+        public void Kernel_IsPluginEnabled_ReflectsProfileFlagAndCoreIsAlwaysEnabled()
+        {
+            // Backs both the startup-activation filter and the toggle switch state:
+            // core plugins are always enabled; extension plugins honour PluginProfile.Enabled
+            // (defaulting to true when no profile exists yet).
+            var core = CreateExtensionDescriptor("test.enabled.core", isExternal: false, tier: PluginTier.Core);
+            var ext = CreateExtensionDescriptor("test.enabled.ext", isExternal: true);
+
+            var catalog = new PluginCatalog();
+            catalog.RegisterDescriptors(new[] { core, ext });
+
+            var state = new PluginRuntimeStateStore();
+            var pipeline = new PluginExecutionPipeline(state, new PluginCircuitBreakerPolicy());
+            var loader = new PluginLoader(Mock.Of<IServiceProvider>(), "unused");
+
+            var config = new Pulsar.Models.ProfilesConfig();
+            config.Plugins[ext.Id] = new Pulsar.Models.PluginProfile { Enabled = false };
+
+            var configService = new Mock<Pulsar.Services.Interfaces.IConfigService>();
+            configService.Setup(x => x.GetSnapshot()).Returns(config);
+
+            var kernel = new PluginRuntimeKernel(
+                Mock.Of<IServiceProvider>(),
+                loader,
+                catalog,
+                state,
+                pipeline,
+                NullLogger<PluginRuntimeKernel>.Instance,
+                configService.Object);
+
+            kernel.IsPluginEnabled(core.Id).Should().BeTrue("core plugins cannot be disabled");
+            kernel.IsPluginEnabled(ext.Id).Should().BeFalse("extension plugins honour the profile Enabled flag");
+            kernel.IsPluginEnabled("test.enabled.unknown").Should().BeTrue(
+                "a plugin without a profile defaults to enabled");
+        }
+
+        [Fact]
         public void PluginRuntimeStateStore_ShouldRejectInvalidTransitions()
         {
             var store = new PluginRuntimeStateStore();
@@ -316,6 +401,8 @@ namespace Pulsar.Tests.Plugin
             }
 
             public int UnloadCount { get; private set; }
+            public int EnableCount { get; private set; }
+            public int DisableCount { get; private set; }
 
             public string Id => _id;
             public string DisplayName => "Lifecycle Test Plugin";
@@ -330,9 +417,17 @@ namespace Pulsar.Tests.Plugin
             public Task<PluginResult> ExecuteAsync(string action, IReadOnlyDictionary<string, string> args, PulsarContext context, CancellationToken cancellationToken = default)
                 => Task.FromResult(PluginResult.Ok());
 
-            public Task OnEnableAsync() => Task.CompletedTask;
+            public Task OnEnableAsync()
+            {
+                EnableCount++;
+                return Task.CompletedTask;
+            }
 
-            public Task OnDisableAsync() => Task.CompletedTask;
+            public Task OnDisableAsync()
+            {
+                DisableCount++;
+                return Task.CompletedTask;
+            }
 
             public Task OnUnloadAsync()
             {
@@ -361,7 +456,8 @@ namespace Pulsar.Tests.Plugin
         private static PluginDescriptor CreateExtensionDescriptor(
             string pluginId,
             bool isExternal = false,
-            IReadOnlyList<string>? permissions = null)
+            IReadOnlyList<string>? permissions = null,
+            PluginTier tier = PluginTier.Extension)
         {
             return new PluginDescriptor
             {
@@ -372,7 +468,7 @@ namespace Pulsar.Tests.Plugin
                 Description = "Test descriptor",
                 Icon = "T",
                 CanDisable = true,
-                Tier = PluginTier.Extension,
+                Tier = tier,
                 IsExternal = isExternal,
                 Permissions = permissions ?? Array.Empty<string>(),
                 ImplementationType = typeof(PluginRuntimeHardeningTests),
