@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pulsar 重新定位方案 · 可视化</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+  body { margin: 0; background: #f5f7fa; font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif; color: #1f2937; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; }
+  h1 { font-size: 22px; margin: 0 0 4px; color: #111827; }
+  .sub { font-size: 13px; color: #6b7280; margin-bottom: 20px; line-height: 1.6; }
+  .card { background: #fff; border-radius: 14px; box-shadow: 0 1px 4px rgba(16,24,40,.08); padding: 18px 18px 8px; margin-bottom: 22px; }
+  .card h2 { font-size: 16px; margin: 0 0 2px; color: #111827; }
+  .card .note { font-size: 12px; color: #6b7280; margin-bottom: 6px; line-height: 1.6; }
+  .chart { width: 100%; height: 480px; }
+  .chart.heat { height: 460px; }
+  @media (max-width: 640px) { .chart { height: 400px; } .chart.heat { height: 400px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Pulsar 重新定位方案 · 可视化</h1>
+  <div class="sub">2026-09-03 · 里程碑工期为计划估算（非承诺）；矩阵权重为基于叙事定位的定性评分（非官方测量）</div>
+
+  <div class="card">
+    <h2>图 1 · 里程碑执行计划（甘特）</h2>
+    <div class="note">横轴为相对周数（自开工起）。M1 产品外皮最先启动且为最高优先；M3 场景化传播为持续性工作；M4/M5 为后续迭代。</div>
+    <div id="gantt" class="chart"></div>
+  </div>
+
+  <div class="card">
+    <h2>图 2 · 功能角色矩阵</h2>
+    <div class="note">权重 0–10 表示各插件在新叙事下的重要程度。VbaRunner / BookmarkletRunner / PkiPlugin 占据「前台主打」高地，System 退居后台。</div>
+    <div id="matrix" class="chart heat"></div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  function init(id, option){
+    var el = document.getElementById(id);
+    if(!el || typeof echarts === 'undefined'){ return; }
+    try {
+      var chart = echarts.init(el);
+      chart.setOption(option);
+      window.addEventListener('resize', function(){ chart.resize(); });
+    } catch(e) {
+      el.innerHTML = '<div style="padding:20px;color:#b91c1c;font-size:13px;">图表渲染失败，请检查网络（ECharts CDN 未加载）。</div>';
+    }
+  }
+
+  /* ============ 甘特图 ============ */
+  var milestones = ['M5 中期商业化评估', 'M4 AI 差异化 PoC', 'M3 场景化传播（持续）', 'M2 功能重心落地', 'M1 产品外皮', 'M0 定位文案落地'];
+  var starts = [10, 7, 4, 2.5, 1, 0.5];
+  var spans  = [6, 3, 4, 3, 2, 0.5];
+
+  var ganttOption = {
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'axis',
+      triggerOn: 'click',
+      renderMode: 'richText',
+      confine: true,
+      formatter: function(params){
+        if(!params || !params.length){ return ''; }
+        var p = params[0];
+        if(!p || !p.data){ return ''; }
+        var idx = p.dataIndex;
+        if(idx === undefined || idx === null){ return ''; }
+        var name = milestones[idx] || '';
+        var s = starts[idx];
+        var d = spans[idx];
+        return name + String.fromCharCode(10) + '起止: 第 ' + s + ' – ' + (s + d) + ' 周';
+      },
+      textStyle: { fontSize: 11, lineHeight: 15 },
+      padding: [6, 8]
+    },
+    grid: { left: 150, right: 64, top: 16, bottom: 40, containLabel: true },
+    xAxis: {
+      type: 'value',
+      name: '周数',
+      min: 0, max: 16,
+      nameGap: 20,
+      nameTextStyle: { color: '#4b5563', fontSize: 11 },
+      axisLabel: { color: '#6b7280', fontSize: 11 },
+      splitLine: { lineStyle: { color: 'rgba(107,114,128,0.18)' } }
+    },
+    yAxis: {
+      type: 'category',
+      data: milestones,
+      axisLabel: { color: '#374151', fontSize: 12 },
+      axisLine: { lineStyle: { color: 'rgba(107,114,128,0.4)' } }
+    },
+    series: [
+      {
+        name: '起点',
+        type: 'bar',
+        stack: 'g',
+        barWidth: 18,
+        itemStyle: { color: 'transparent' },
+        tooltip: { show: false },
+        data: starts
+      },
+      {
+        name: '工期',
+        type: 'bar',
+        stack: 'g',
+        barWidth: 18,
+        itemStyle: { color: '#2563EB', borderRadius: [4, 4, 4, 4] },
+        data: spans
+      }
+    ]
+  };
+
+  /* ============ 功能角色矩阵 ============ */
+  var plugins = ['VbaRunner', 'BookmarkletRunner', 'PkiPlugin', 'WinSwitcher', 'Command', 'System'];
+  var roles = ['前台主打', '基础体验', '后台保留', '办公预置包'];
+  var weights = [
+    [9, 7, 3, 9],
+    [9, 6, 2, 7],
+    [8, 7, 3, 6],
+    [4, 9, 4, 4],
+    [5, 8, 5, 5],
+    [2, 5, 8, 2]
+  ];
+  var data = [];
+  for (var i = 0; i < plugins.length; i++) {
+    for (var j = 0; j < roles.length; j++) {
+      data.push([j, i, weights[i][j]]);
+    }
+  }
+
+  var matrixOption = {
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'item',
+      triggerOn: 'click',
+      renderMode: 'richText',
+      confine: true,
+      formatter: function(params){
+        if(!params || !params.value || !params.value.length){ return ''; }
+        var x = params.value[0];
+        var y = params.value[1];
+        var v = params.value[2];
+        var pname = plugins[y] || '';
+        var rname = roles[x] || '';
+        return pname + ' · ' + rname + String.fromCharCode(10) + '叙事权重: ' + v + ' / 10';
+      },
+      textStyle: { fontSize: 11, lineHeight: 15 },
+      padding: [6, 8]
+    },
+    grid: { left: 120, right: 70, top: 16, bottom: 30, containLabel: true },
+    xAxis: {
+      type: 'category',
+      data: roles,
+      splitArea: { show: true },
+      axisLabel: { color: '#374151', fontSize: 12 },
+      axisLine: { lineStyle: { color: 'rgba(107,114,128,0.4)' } }
+    },
+    yAxis: {
+      type: 'category',
+      data: plugins,
+      splitArea: { show: true },
+      axisLabel: { color: '#374151', fontSize: 12 },
+      axisLine: { lineStyle: { color: 'rgba(107,114,128,0.4)' } }
+    },
+    visualMap: {
+      min: 0, max: 10,
+      calculable: true,
+      orient: 'horizontal',
+      left: 'center',
+      bottom: 0,
+      textStyle: { color: '#6b7280', fontSize: 10 },
+      inRange: { color: ['#eff6ff', '#93c5fd', '#2563EB', '#1e3a8a'] }
+    },
+    series: [{
+      type: 'heatmap',
+      data: data,
+      label: {
+        show: true,
+        formatter: function(params){
+          return params && params.value && params.value.length ? params.value[2] : '';
+        },
+        fontSize: 11,
+        color: '#1f2937'
+      },
+      itemStyle: { borderColor: '#fff', borderWidth: 2 }
+    }]
+  };
+
+  init('gantt', ganttOption);
+  init('matrix', matrixOption);
+})();
+</script>
+</body>
+</html>

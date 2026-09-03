@@ -7,15 +7,15 @@
 
 # Pulsar
 
-### 高性能 Windows 生产力启动器 · 热键唤起的径向菜单
-**A high-performance productivity launcher for Windows featuring a hotkey-invoked radial menu**
+### 重度办公效率工作台 · 驯服老旧办公系统
+**An office automation workbench for Windows — one-click macros, secure fill & sign-in, and custom scripts for legacy intranet web pages**
 
-[![Release Version](https://img.shields.io/badge/Release-v1.8.0-2563EB.svg?style=flat-square&logo=github)](https://github.com/Smith-Rosco/Pulsar/releases)
+[![Release Version](https://img.shields.io/badge/Release-v1.9.1-2563EB.svg?style=flat-square&logo=github)](https://github.com/Smith-Rosco/Pulsar/releases)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(x64)-0078D4.svg?style=flat-square&logo=windows)](https://www.microsoft.com/windows)
 [![.NET](https://img.shields.io/badge/.NET-8.0%20WPF-512BD4.svg?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-10B981.svg?style=flat-square)](LICENSE)
 [![CI](https://github.com/Smith-Rosco/Pulsar/actions/workflows/ci.yml/badge.svg)](.github/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/Tests-330%2B%20xUnit-success.svg?style=flat-square&logo=xunit)](Pulsar/Pulsar.Tests)
+[![Tests](https://img.shields.io/badge/Tests-897%20xUnit-success.svg?style=flat-square&logo=xunit)](Pulsar/Pulsar.Tests)
 [![Language](https://img.shields.io/badge/Language-zh--CN%20%7C%20en-8B5CF6.svg?style=flat-square)](#-多语言支持-internationalization)
 
 <br/>
@@ -32,14 +32,15 @@
 
 ## 📖 简介
 
-**Pulsar** 是一款面向 Windows 的高性能生产力启动器，采用热键唤起的径向菜单（Radial Menu）界面。
+**Pulsar** 是一款面向 Windows 的**重度办公效率工作台**——用热键唤起的径向菜单，把现代工具管不了的老旧办公系统自动化起来。
 
-专为肌肉记忆打造——告别传统 Alt-Tab 的线性切换，改用空间定位导航。支持插件化扩展、PKI 凭据安全注入、全局热键与应用窗口智能切换。
+目标用户是财务、运营、行政等每天高频使用 Excel/WPS、登录多个内网系统、重复录入数据的重度办公白领。
 
 > 💡 **设计重点**：
+> - **办公自动化三支柱**：一键跑 Excel/WPS 宏；为不支持浏览器扩展/油猴的老旧内网网页定制操作入口；安全填表与登录注入（PKI）；
 > - **空间定位优先**：径向菜单配合空间记忆，高频操作一触即达，替代线性 Alt-Tab 遍历；
 > - **插件化分层架构**：核心插件（基础设施）与扩展插件（可选）分层，扩展插件由断路器（Circuit Breaker）保护；
-> - **AI 友好开发**：无头插件模拟器 + 结构化 JSON 输出，330+ xUnit 测试，专为 AI Agent 协作优化。
+> - **AI 友好开发**：无头插件模拟器 + 结构化 JSON 输出，897 个 xUnit 测试，专为 AI Agent 协作优化。
 
 ---
 
@@ -63,7 +64,17 @@
 
 ## ✨ 功能特性
 
-### 1. 🌟 径向菜单（Radial Menu）
+### 1. 🧩 办公自动化三支柱
+
+面向重度办公场景的三个自动化支柱：
+
+- **一键宏（VBA）**：在 Excel/WPS 中一键运行已保存的宏，把重复的制表/数据处理变成轮盘上的一个动作；
+- **老旧网页脚本**：在老旧内网网页中运行自定义脚本——为不支持现代浏览器扩展或油猴（Tampermonkey）的上古企业系统定制操作入口；
+- **安全填表登录（PKI）**：DPAPI 加密凭据库，通过 UI 自动化注入任意窗口，支持延迟与自动提交。
+
+---
+
+### 2. 🌟 径向菜单（Radial Menu）
 
 热键唤起的圆形启动器，两种模式：
 - **命令模式**（`Ctrl+Shift+Q`）：显示上下文相关操作；
@@ -75,7 +86,7 @@
 
 ---
 
-### 2. 🧩 可扩展插件系统
+### 3. 🧩 可扩展插件系统
 
 双层架构：
 - **核心插件（Core）**：基础设施，始终加载，崩溃即致命（fail-fast）；
@@ -90,35 +101,35 @@
 | **Pulsar 设置** | `com.pulsar.system` | 打开设置、快速添加上下文应用、系统命令 | 核心 |
 | **命令启动器** | `com.pulsar.command` | 启动应用/文件/文件夹/URL，向前台窗口发送按键序列 | 扩展 |
 | **Excel 宏执行器** | `com.pulsar.vbarunner` | 在 Excel/WPS 中运行已保存的宏，支持智能指令 | 扩展 |
-| **浏览器脚本执行器** | `com.pulsar.bookmarklet` | 通过 UI 自动化在当前浏览器运行浏览器脚本 | 扩展 |
+| **网页脚本执行器** | `com.pulsar.bookmarklet` | 在老旧内网网页中运行自定义脚本，为不支持浏览器扩展/油猴的系统定制一键操作入口 | 扩展 |
 
 ---
 
-### 3. 🔐 PKI / 秘密管理
+### 4. 🔐 PKI / 秘密管理
 
 DPAPI 加密安全存储凭据，通过 UI 自动化注入任意窗口，支持自动提交与可配置延迟。遵循 **焦点回旋镖（Focus Boomerang）** 循环：捕获 → 执行 → 隐藏 → 恢复焦点 → 延迟 → 注入，可靠地将焦点返回到原始窗口。
 
 ---
 
-### 4. 🔑 全局热键
+### 5. 🔑 全局热键
 
 系统级热键绑定，默认 `Ctrl+Shift+Q`（命令模式）/ `Ctrl+Q`（切换模式），即时唤起菜单。
 
 ---
 
-### 5. 🖥️ 应用与窗口切换
+### 6. 🖥️ 应用与窗口切换
 
 智能窗口切换（含发现黑名单），未运行时自动启动应用。
 
 ---
 
-### 6. 🤖 插件模拟器
+### 7. 🤖 插件模拟器
 
 无头模式执行插件，输出结构化 JSON，无需 WPF 界面即可进行 AI 驱动的测试与自纠错循环（模拟器 → 解析错误 → 修复代码 → 重新运行）。
 
 ---
 
-### 7. 🌐 本地化
+### 8. 🌐 本地化
 
 简体中文 + 英文，插件元数据基于约定的自动键查找。
 
@@ -164,7 +175,7 @@ dotnet build Pulsar/Pulsar/Pulsar.csproj
 # 运行（默认热键：Ctrl+Shift+Q 命令模式、Ctrl+Q 切换模式）
 dotnet run --project Pulsar/Pulsar/Pulsar.csproj
 
-# 运行测试（330+ xUnit 测试）
+# 运行测试（897 xUnit 测试）
 dotnet test Pulsar/Pulsar.Tests/Pulsar.Tests.csproj
 
 # 无头插件模拟（AI 驱动的插件测试）
@@ -243,7 +254,7 @@ Pulsar/
 整个项目为 AI 智能体协作进行了优化：
 - **无头模拟器**：无需 WPF 界面即可测试插件，解析结构化 JSON 输出；
 - **隔离副作用**：所有 OS 操作通过接口抽象（`IInputSimulator`、`IProcessLauncher` 等），可用 Moq 进行单元测试；
-- **全面测试套件**：330+ 个 xUnit 测试覆盖 ViewModel、服务和插件逻辑；
+- **全面测试套件**：897 个 xUnit 测试覆盖 ViewModel、服务和插件逻辑；
 - **自纠错循环**：模拟器 → 解析错误 → 修复代码 → 重新运行直到通过。
 
 ---

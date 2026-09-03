@@ -7,7 +7,7 @@
 
 ## 概述
 
-BookmarkletRunner 允许在浏览器中执行 JavaScript Bookmarklet 脚本，提供快速的网页自动化和增强功能。
+BookmarkletRunner（显示名：**网页脚本 / Web Scripts**）允许在老旧内网网页中执行自定义 JavaScript Bookmarklet 脚本——为不支持现代浏览器扩展或油猴（Tampermonkey）的上古企业系统定制一键操作入口，提供快速的网页自动化和增强功能。
 
 ## 功能特性
 

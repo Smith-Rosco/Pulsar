@@ -14,7 +14,8 @@ using Pulsar.Services.Interfaces;
 namespace Pulsar.Plugins.Extensions.BookmarkletRunner
 {
     /// <summary>
-    /// 书签脚本运行器插件 - 在浏览器中执行 Bookmarklet JavaScript 脚本
+    /// 网页脚本运行器插件 - 在老旧内网网页中执行自定义 Bookmarklet JavaScript 脚本，
+    /// 为不支持现代浏览器扩展或油猴（Tampermonkey）的上古企业系统定制一键操作入口。
     /// Refactored to use UI Automation for instant, clipboard-free injection.
     /// </summary>
     public class BookmarkletRunnerPlugin : IPulsarPlugin, IPluginTiered, IPluginMetadataProvider, IPluginConfigurable
@@ -35,16 +36,16 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
         internal Func<int, Task> DelayAsync { get; set; } = Task.Delay;
 
         public string Id => "com.pulsar.bookmarklet";
-        public string DisplayName => "Browser Scripts";
+        public string DisplayName => "Web Scripts";
         public string Version => "1.0.0";
         public string Author => "Pulsar Team";
-        public string Description => "Run saved browser scripts in the active browser.";
+        public string Description => "Run custom scripts in legacy intranet web pages that don't support browser extensions or userscripts.";
         public string Icon => "\uE896"; // Code/Script Icon
         public bool CanDisable => true; // Extension plugin, can be disabled
         public PluginTier Tier => PluginTier.Extension;
         
         // 新增元数据属性
-        public IEnumerable<string> Tags => new[] { "Browser", "JavaScript", "Automation" };
+        public IEnumerable<string> Tags => new[] { "Web", "JavaScript", "Intranet", "Automation" };
         public IEnumerable<string> Dependencies => new[] { "com.pulsar.winswitcher" };
         public string? DocumentationUrl => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Docs", "Plugins", "BookmarkletRunner.md");
 
@@ -73,7 +74,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
                     Name = DisplayName,
                     Description = Description,
                     IconKey = Icon,
-                    Category = "Browser",
+                    Category = "Web",
                     Version = Version,
                     Author = Author,
                     DocumentationUrl = DocumentationUrl,

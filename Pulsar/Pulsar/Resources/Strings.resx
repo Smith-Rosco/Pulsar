@@ -2315,8 +2315,8 @@
   <data name="Plugin.Name.OpenType" xml:space="preserve">
     <value>Open &amp; Type</value>
   </data>
-  <data name="Plugin.Name.BrowserScripts" xml:space="preserve">
-    <value>Browser Scripts</value>
+  <data name="Plugin.Name.WebScripts" xml:space="preserve">
+    <value>Web Scripts</value>
   </data>
   <data name="Plugin.Name.ExcelMacros" xml:space="preserve">
     <value>Excel Macros</value>
@@ -2334,8 +2334,8 @@
   <data name="Plugin.Description.OpenType" xml:space="preserve">
     <value>Open apps, files, folders, or URLs, or send a key sequence to the active window.</value>
   </data>
-  <data name="Plugin.Description.BrowserScripts" xml:space="preserve">
-    <value>Run saved browser scripts in the active browser.</value>
+  <data name="Plugin.Description.Runcustomscriptsinlegacyintranetwebpagesthatdontsupportbrowserextensionsoruserscripts" xml:space="preserve">
+    <value>Run custom scripts in legacy intranet web pages that don't support browser extensions or userscripts.</value>
   </data>
   <data name="Plugin.Description.ExcelMacros" xml:space="preserve">
     <value>Run saved macros in Excel/WPS.</value>

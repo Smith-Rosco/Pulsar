@@ -3788,9 +3788,9 @@
     <value>打开并输入</value>
   </data>
   <data
-    name="Plugin.Name.BrowserScripts"
+    name="Plugin.Name.WebScripts"
     xml:space="preserve">
-    <value>浏览器脚本</value>
+    <value>网页脚本</value>
   </data>
   <data
     name="Plugin.Name.ExcelMacros"
@@ -3819,9 +3819,9 @@
     <value>打开程序、文件、文件夹或 URL，或向活动窗口发送按键序列。</value>
   </data>
   <data
-    name="Plugin.Description.BrowserScripts"
+    name="Plugin.Description.Runcustomscriptsinlegacyintranetwebpagesthatdontsupportbrowserextensionsoruserscripts"
     xml:space="preserve">
-    <value>在活动浏览器中运行已保存的浏览器脚本。</value>
+    <value>在老旧内网网页中运行自定义脚本，为不支持浏览器扩展或油猴的网页定制一键操作入口。</value>
   </data>
   <data
     name="Plugin.Description.ExcelMacros"

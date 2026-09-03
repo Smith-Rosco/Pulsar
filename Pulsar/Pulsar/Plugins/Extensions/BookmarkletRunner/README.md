@@ -2,12 +2,12 @@
 
 ## 📖 Overview
 
-The **Browser Scripts plugin** allows you to run saved browser scripts in your browser directly from Pulsar's radial menu. This is a migration of the standalone BookmarkletRunner tool into Pulsar's plugin system.
+The **Web Scripts plugin** lets you run custom scripts in legacy intranet web pages that don't support browser extensions or userscripts (Tampermonkey) — turning any old enterprise web page into a one-click action. This is a migration of the standalone BookmarkletRunner tool into Pulsar's plugin system.
 
 ## 🎯 Plugin Information
 
 - **Plugin ID**: `com.pulsar.bookmarklet`
-- **Plugin Name**: Browser Scripts
+- **Plugin Name**: Web Scripts
 - **Location**: `Pulsar/Plugins/BookmarkletRunner/`
 
 ## ✨ Features
@@ -278,5 +278,5 @@ To monitor plugin execution, check the Debug output window for messages like:
 ---
 
 **Version**: 1.0.0  
-**Last Updated**: 2026-02-08  
+**Last Updated**: 2026-09-03  
 **Author**: Migrated from BookmarkletRunner standalone tool

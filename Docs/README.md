@@ -1,6 +1,6 @@
 # Pulsar Documentation Center
 
-**Last Updated**: 2026-09-02
+**Last Updated**: 2026-09-03
 **Documentation Version**: v5.0.0
 **Audience**: AI agents first, humans second
 
@@ -30,6 +30,7 @@ Then follow the task router below.
 | **[ops/](./ops/)** | Commands and operational procedures | 1 | Yes |
 | **[proposals/](./proposals/)** | Design proposals and refactor plans not yet accepted | 2 | In review |
 | **[roadmap/](./roadmap/)** | Roadmap and exploratory analysis | 3 | In review |
+| **[reports/](./reports/)** | Market research & product repositioning reports | 4 | Current |
 | **[agents/](./agents/)** | **Skill contracts — machine-consumed config, NOT reading material** | 2 | Config |
 | **[archive/](./archive/)** | Historical snapshots, date-prefixed | 57 | **No** |
 
@@ -44,6 +45,7 @@ Two rules keep this structure honest:
 
 | I need to... | Document |
 |---|---|
+| Understand the product positioning & market context | [reports/2026-09-03-MARKET_EVALUATION.md](./reports/2026-09-03-MARKET_EVALUATION.html) — 市场评估；[reports/2026-09-03-REPOSITIONING_PLAN.html](./reports/2026-09-03-REPOSITIONING_PLAN.html) — 重新定位方案 |
 | Build or run the application | [ops/BUILD_AND_RUN.md](./ops/BUILD_AND_RUN.md) |
 | Understand the architecture | [../ARCHITECTURE.md](../ARCHITECTURE.md) |
 | Add or modify a plugin | [../PLUGIN_DEVELOPMENT.md](../PLUGIN_DEVELOPMENT.md), [architecture/PLUGIN_SYSTEM.md](./architecture/PLUGIN_SYSTEM.md) |

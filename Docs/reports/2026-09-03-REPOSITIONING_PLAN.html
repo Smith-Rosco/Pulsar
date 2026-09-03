@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pulsar 重新定位方案（2026-09-03）</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #f6f7f9; font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif; color: #1f2937; line-height: 1.75; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 40px 28px 80px; }
+  h1 { font-size: 28px; color: #111827; margin: 0 0 6px; }
+  .meta { color: #6b7280; font-size: 13px; margin-bottom: 30px; }
+  .meta span { margin-right: 18px; }
+  .hero { background: linear-gradient(135deg, #1e3a8a, #2563eb); color: #fff; border-radius: 14px; padding: 26px 28px; margin: 18px 0 30px; }
+  .hero .zh { font-size: 20px; font-weight: 700; line-height: 1.6; }
+  .hero .en { font-size: 13px; opacity: .9; margin-top: 8px; line-height: 1.6; }
+  h2 { font-size: 20px; color: #111827; border-left: 4px solid #2563eb; padding-left: 10px; margin: 42px 0 16px; }
+  h3 { font-size: 16px; color: #1f2937; margin: 26px 0 10px; }
+  p { margin: 10px 0; }
+  ul, ol { margin: 8px 0; padding-left: 24px; }
+  li { margin: 5px 0; }
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 13px; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(16,24,40,.06); }
+  th, td { border: 1px solid #e5e7eb; padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #f3f4f6; color: #374151; font-weight: 600; }
+  .tag { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; margin-right: 4px; }
+  .tag.g { background: #d1fae5; color: #065f46; }
+  .tag.y { background: #fef3c7; color: #92400e; }
+  .tag.b { background: #dbeafe; color: #1e40af; }
+  .tag.p { background: #ede9fe; color: #5b21b6; }
+  .callout { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 14px 18px; margin: 16px 0; }
+  .callout.warn { background: #fff7ed; border-color: #fed7aa; }
+  .callout.good { background: #ecfdf5; border-color: #a7f3d0; }
+  .pillar { border-left: 4px solid #2563eb; background: #f8fafc; border-radius: 0 10px 10px 0; padding: 12px 16px; margin: 12px 0; }
+  .pillar.p2 { border-left-color: #7c3aed; }
+  .pillar.p3 { border-left-color: #0d9488; }
+  .pillar b { font-size: 14px; }
+  .pillar .role { font-size: 12px; color: #6b7280; }
+  .foot { font-size: 12px; color: #6b7280; margin-top: 40px; border-top: 1px solid #e5e7eb; padding-top: 16px; }
+  .kbd { background: #f3f4f6; border: 1px solid #d1d5db; border-bottom-width: 2px; border-radius: 5px; padding: 0 6px; font-size: 12px; font-family: Consolas, monospace; }
+  @media (max-width: 640px) { .wrap { padding: 24px 16px 60px; } h1 { font-size: 22px; } .hero .zh { font-size: 17px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Pulsar 重新定位方案</h1>
+  <div class="meta">
+    <span>日期：2026-09-03</span>
+    <span>状态：已确认（多轮决策收敛）</span>
+    <span>依据：市场评估报告 + 产品定位设计树（Q1–Q8）</span>
+  </div>
+
+  <div class="hero">
+    <div class="zh">Pulsar —— 重度办公效率工作台：<br>一键跑 Excel/WPS 宏、为老旧内网系统定制操作入口、安全填表登录、快速切换窗口。</div>
+    <div class="en">Pulsar — the office automation workbench for legacy enterprise systems. Run Excel/WPS macros, script old intranet web pages, fill &amp; sign in securely, switch windows fast.</div>
+  </div>
+
+  <div class="callout">
+    <b>一句话摘要：</b>Pulsar 不再定位为"生产力启动器"，而是定位为<b>"帮用户驯服老旧办公系统"的办公自动化工作台</b>。核心受众是财务/运营/行政等重度办公白领；主打「自动化领衔（VBA + 老旧网页脚本）＋ 凭据护城河（PKI）＋ 窗口打底」。本轮为<b>叙事级重定位</b>：不动交互范式，先改定位、功能排位与产品外皮，1–2 周可落地见效。
+  </div>
+
+  <h2>1. 定位声明</h2>
+  <h3>1.1 一句话定位</h3>
+  <ul>
+    <li><b>中文</b>：Pulsar —— 重度办公效率工作台：一键跑宏、安全填表登录、快速切换窗口。</li>
+    <li><b>完整叙事</b>：让"现代工具管不了"的老旧办公系统也能自动化——Excel/WPS 跑宏、不支持插件/油猴的老旧内网网页、多系统登录与表单录入，全部变成热键/轮盘上的一键动作。</li>
+    <li><b>English</b>：Pulsar — the office automation workbench for legacy enterprise systems. Run Excel/WPS macros, script old intranet web pages, fill &amp; sign in securely, switch windows fast.</li>
+  </ul>
+  <h3>1.2 差异化话术（vs 竞品）</h3>
+  <table>
+    <tr><th>对谁</th><th>话术</th></tr>
+    <tr><td>vs Quicker</td><td>"Pulsar 不是又一个轮盘菜单，而是把重复办公操作变成一键动作的<b>办公自动化引擎</b>——深度支持 Excel/WPS 宏、老旧内网网页脚本与安全凭据注入，这是 Quicker 泛化动作库覆盖不到的深度。"</td></tr>
+    <tr><td>vs Flow / uTools / Wox</td><td>"我们是<b>鼠标+热键的办公工作台</b>，不是搜索启动器；我们不和搜索框竞争，我们处理的是他们管不了的老系统自动化。"</td></tr>
+    <tr><td>vs 密码管理器</td><td>"我们不只存密码，而是把<b>登录+填表+后续动作</b>整条链路做成一个动作，且注入方式可编程、可审计。"</td></tr>
+  </table>
+
+  <h2>2. 目标用户画像</h2>
+  <table>
+    <tr><th>维度</th><th>画像</th></tr>
+    <tr><td>人群</td><td>财务、运营、行政、内勤等<b>重度办公白领</b>（中国职场）</td></tr>
+    <tr><td>典型场景</td><td>高频使用 Excel/WPS 做表与跑宏；登录多个老旧 OA/ERP/财务内网系统；重复录入、复制粘贴、报表汇总</td></tr>
+    <tr><td>技术特征</td><td>不懂脚本，愿意"别人配好、自己点一下"；对安全有顾虑但极需省事；靠同事推荐与工具站发现软件</td></tr>
+    <tr><td>环境约束</td><td>公司电脑、老旧内网系统（IE 时代）、不允许装浏览器扩展/油猴、可能无外网</td></tr>
+    <tr><td>核心诉求</td><td>把"每天重复 N 次的操作"变成"一个动作/一个热键"；减少登录与填表的枯燥与出错</td></tr>
+  </table>
+
+  <h2>3. 价值主张三层结构</h2>
+  <div class="pillar">
+    <b>① 自动化领衔（前台主打）</b> <span class="role">· VbaRunner + BookmarkletRunner</span><br>
+    让用户最快感知价值：一键跑 Excel/WPS 宏；为不支持现代浏览器扩展/油猴的老旧内网网页，用书签脚本自定义操作入口（中国企业在大量使用上古网站，这是真实且特有的痛点）。
+  </div>
+  <div class="pillar p2">
+    <b>② 凭据护城河（差异化壁垒）</b> <span class="role">· PkiPlugin</span><br>
+    竞品几乎没有的能力：把登录、填表、注入做成可编程、可审计、DPAPI 保护的安全动作。低频感知但高频信任，是别人短期抄不走的部分。
+  </div>
+  <div class="pillar p3">
+    <b>③ 窗口打底（基础体验）</b> <span class="role">· WinSwitcher + Command</span><br>
+    每天使用的基础盘：MRU 窗口切换、命令/动作执行。不主打，但保证"打开就有用"。
+  </div>
+  <p class="role" style="font-size:12px;color:#6b7280">System 插件保留但退居后台；办公动作预置包为新增，用于降低上手门槛。</p>
+
+  <h2>4. 功能矩阵（新叙事下的角色排位）</h2>
+  <table>
+    <tr><th>插件</th><th>新角色</th><th>叙事权重</th><th>说明</th></tr>
+    <tr><td><b>VbaRunner</b></td><td><span class="tag g">前台主打</span></td><td class="num">9/10</td><td>Excel/WPS 一键跑宏，自动化领衔的第一张牌</td></tr>
+    <tr><td><b>BookmarkletRunner</b></td><td><span class="tag g">前台主打</span>（升格）</td><td class="num">9/10</td><td>老旧内网网页脚本入口——解决不支持扩展/油猴的上古系统，从"弱化评估"升为第三支柱</td></tr>
+    <tr><td><b>PkiPlugin</b></td><td><span class="tag g">前台主打</span></td><td class="num">8/10</td><td>凭据注入护城河，安全叙事核心</td></tr>
+    <tr><td><b>WinSwitcher</b></td><td><span class="tag y">基础体验</span></td><td class="num">9/10（基础）</td><td>MRU 窗口切换，日常打底</td></tr>
+    <tr><td><b>Command</b></td><td><span class="tag y">基础体验</span></td><td class="num">8/10（基础）</td><td>命令/动作执行，动作系统底座</td></tr>
+    <tr><td><b>System</b></td><td><span class="tag b">后台保留</span></td><td class="num">8/10（后台）</td><td>保留但不主打</td></tr>
+    <tr><td><b>办公动作预置包（新增）</b></td><td><span class="tag p">新增</span></td><td class="num">—</td><td>开箱即用的 Excel 宏模板、常用表单、登录流程；降低上手门槛</td></tr>
+  </table>
+  <div class="callout">入口顺序与首屏需按上表重排，做到"用户看到的顺序 = 叙事顺序"。完整权重矩阵见配套可视化 <code>pulsar_repositioning_visualization.html</code>。</div>
+
+  <h2>5. 叙事红线</h2>
+  <p>"驯服老旧办公系统"这一主线应贯穿所有对外触点，保持一致的场景语言：</p>
+  <ul>
+    <li><b>README / 落地页</b>：首屏 = 定位语 + 三支柱场景 + 真实截图/demo 视频；不再以"启动器"自居。</li>
+    <li><b>演示视频</b>：三支场景片——Excel 跑宏、老旧网页脚本注入、登录/填表自动化；每支 30–60 秒。</li>
+    <li><b>传播内容</b>：主题锁定"老旧系统自动化"（企业 OA/ERP 痛点），而非抽象的"效率工具"。</li>
+    <li><b>插件命名/元数据</b>：BookmarkletRunner 的可视名称向"网页脚本 / 老旧系统助手"方向对齐，本地化标签同步更新。</li>
+    <li><b>AI 愿景</b>：叙事中作为愿景提一句，明确标注 roadmap、不承诺交付时间；路线图第一优先级立项"AI 生成 Slot 配置"PoC。</li>
+  </ul>
+
+  <h2>6. 里程碑计划（甘特见配套可视化）</h2>
+  <table>
+    <tr><th>里程碑</th><th>目标</th><th>关键交付物</th><th>验收标准</th><th>工作量</th></tr>
+    <tr><td><b>M0</b> 定位文案落地</td><td>对外叙事切换</td><td>README 首屏重写、插件命名/本地化标签、发布说明</td><td>首屏不再出现"启动器"旧框架；中英一致</td><td>1–2 天</td></tr>
+    <tr><td><b>M1</b> 产品外皮</td><td>用户装得上、看得见</td><td>安装器（MSI/Setup）、自动更新、用户手册（中英）、真实截图 + 3 支 demo 视频、GitHub Release 资产</td><td>全新机器可安装并自动更新；文档可无痛上手</td><td>1–2 周（最高优先）</td></tr>
+    <tr><td><b>M2</b> 功能重心落地</td><td>功能顺序 = 叙事顺序</td><td>办公动作预置包、首屏入口重排、BookmarkletRunner 强化（脚本编辑/示例库/场景引导）</td><td>预置包开箱可用；新用户 10 分钟内完成第一个自动化</td><td>2–4 周</td></tr>
+    <tr><td><b>M3</b> 场景化传播</td><td>触达目标用户</td><td>B 站/V2EX/少数派/知乎 demo；用户反馈渠道；路线图页（含 AI 愿景）</td><td>主题全部落在"老旧系统自动化"；反馈渠道有真实用户涌入</td><td>持续</td></tr>
+    <tr><td><b>M4</b> AI 差异化 PoC</td><td>验证 AI 生成配置</td><td>复用无头模拟器 + 插件系统，做"AI 生成 Slot 配置"最小验证</td><td>PoC 输出可被 Simulator 执行并返回 Success</td><td>下一迭代（3 周）</td></tr>
+    <tr><td><b>M5</b> 中期商业化评估</td><td>可持续性</td><td>企业渠道（IT 分发/授权）、专业版方案（预置包/高级手势/云同步/本地 AI）</td><td>有真实用户基数后启动；本轮不执行</td><td>用户量起来后</td></tr>
+  </table>
+
+  <h2>7. 决策记录（设计树 Q1–Q8）</h2>
+  <table>
+    <tr><th>#</th><th>决策</th><th>结论</th></tr>
+    <tr><td>Q1</td><td>目标用户</td><td>重度办公白领（财务/运营/行政），垂直深耕</td></tr>
+    <tr><td>Q2</td><td>重定位幅度</td><td>叙事级（径向菜单仍是核心；入口级演进为后续）</td></tr>
+    <tr><td>Q3</td><td>主打痛点</td><td>自动化领衔 / 凭据护城河 / 窗口打底</td></tr>
+    <tr><td>Q4</td><td>命名与定位</td><td>保留 Pulsar + "办公效率工作台"定位语（含老旧系统叙事）</td></tr>
+    <tr><td>Q5</td><td>功能重心</td><td>VBA/PKI/Bookmarklet 前台，WinSwitcher/Command 基础，System 后台，+ 办公预置包；Bookmarklet 升格前台</td></tr>
+    <tr><td>Q6</td><td>AI 位置</td><td>叙事提愿景 + 路线图立项（AI 生成 Slot 配置）</td></tr>
+    <tr><td>Q7</td><td>分发</td><td>A 产品外皮 → B 用户教育 → C 企业渠道</td></tr>
+    <tr><td>Q8</td><td>商业化</td><td>免费核心 + 专业版/企业授权（中期，本轮不执行）</td></tr>
+  </table>
+
+  <h2>8. 与市场评估的呼应</h2>
+  <ul>
+    <li>回应「引擎一流、市场缺位」：本轮 M0/M1 直接修复"无安装器/无文档/无截图"三大市场硬伤。</li>
+    <li>回应「搜索/生态/AI 三块空白」：不硬碰搜索红海（Flow/uTools），用老旧系统垂直场景建立差异化；AI 以 PoC 进入路线图。</li>
+    <li>回应「正面撞 Quicker」：用"办公自动化深度（VBA/老旧网页/凭据注入）"而非泛化轮盘与之区分。</li>
+  </ul>
+
+  <h2>9. 风险与开放问题</h2>
+  <div class="callout warn">
+    <ul>
+      <li><b>老旧系统 UI 易变</b>：Bookmarklet/PKI 依赖目标网页与窗口结构，系统更新可能失效 → 需要示例库、失败提示与快速反馈渠道。</li>
+      <li><b>「老旧系统」叙事的反噬</b>：宣传时避免显得"只解决老问题"，需同时强调"顺手的日常效率"以免窄化。</li>
+      <li><b>安全信任门槛</b>：凭据注入涉及高信任成本 → 需要明确的隐私/审计说明与"默认不记录"承诺。</li>
+      <li><b>个人项目可持续性</b>：商业化（Q8）作为中期，需在 M3 用户量起来后及时评估。</li>
+      <li><b>开放问题</b>：办公动作预置包的初始内容清单、BookmarkletRunner 的正式中文名、demo 视频的拍摄方式（录屏即可）——可在 M0/M2 落地时细化。</li>
+    </ul>
+  </div>
+
+  <div class="foot">
+    <b>配套文件</b>：
+    ① 本方案（Docs/reports/2026-09-03-REPOSITIONING_PLAN.html）· ② 可视化（Docs/reports/pulsar_repositioning_visualization.html，甘特 + 功能矩阵）·
+    ③ 市场评估（Docs/reports/2026-09-03-MARKET_EVALUATION.html）· ④ 对标可视化（Docs/reports/pulsar_market_visualization.html）
+    <br>口径：里程碑工期为计划估算（非承诺）；功能矩阵权重为基于叙事定位的定性评分。决策记录基于 2026-09-03 多轮访谈收敛。
+  </div>
+
+</div>
+</body>
+</html>
