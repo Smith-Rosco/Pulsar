@@ -144,9 +144,9 @@ ApplyExitHighlight(exitIcon, isHighlighted)
 4. 编辑器复用 `SlotConfigurationDialogContent` 扩展二级编辑。
 5. 参考 StarPie 的"智能默认注入",在首次引导/新建 profile 时自动注入常用二级动作。
 
-### 4.5 风险
-- Paging 与子环叠加时的分页语义需明确定义。
-- Fan 在高 DPI 下的像素命中已有 StarPie 踩坑记录,需在 `MouseTrackingService` 层保证 DPI 换算。
+### 4.5 风险(2026-09-03 复核)
+- ~~Paging 与子环叠加时的分页语义需明确定义。~~ ✅ 已由 **[ADR-011](../decisions/011-cascade-submenu-layout-and-paging.md)** 固化:独立页状态、共享 `SlotsPerPage`、Fan 为偏好 / Ring 为下限(按页回落)、命中按页作用域、外甩取消始终以根环为基准。
+- Fan 在高 DPI 下的像素命中已有 StarPie 踩坑记录,需在 `MouseTrackingService` 层保证 DPI 换算。 → 实际实现以纯几何(相对 `SubRingRadius`)做命中,与像素无关,**风险已规避**;待人工 QA 复核。
 
 ---
 

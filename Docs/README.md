@@ -25,7 +25,7 @@ Then follow the task router below.
 | **[architecture/](./architecture/)** | Stable conceptual truths about system design | 5 | Yes |
 | **[guides/](./guides/)** | How-to playbooks for recurring tasks | 8 | Yes |
 | **[lessons/](./lessons/)** | Reusable pitfalls: Symptom → Root cause → Correct pattern | 18 | Yes |
-| **[decisions/](./decisions/)** | ADRs — immutable once accepted, only superseded | 10 | Yes |
+| **[decisions/](./decisions/)** | ADRs — immutable once accepted, only superseded | 11 | Yes |
 | **[Plugins/](./Plugins/)** | Per-plugin user/developer docs | 8 | Yes |
 | **[ops/](./ops/)** | Commands and operational procedures | 1 | Yes |
 | **[proposals/](./proposals/)** | Design proposals and refactor plans not yet accepted | 2 | In review |
@@ -133,6 +133,7 @@ ADRs are immutable once accepted; supersede rather than edit.
 | [008](./decisions/008-menu-session-refactor.md) | Menu session refactor |
 | [009](./decisions/009-config-snapshot-seam.md) | Config snapshot seam |
 | [010](./decisions/010-window-service-deepening.md) | Window service deepening |
+| [011](./decisions/011-cascade-submenu-layout-and-paging.md) | Cascade submenu Ring/Fan layout and paging semantics |
 
 ---
 
