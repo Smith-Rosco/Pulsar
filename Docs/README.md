@@ -190,6 +190,8 @@ openspec/
 
 Lifecycle: a change is proposed in `changes/<name>/` (`proposal.md` → `design.md` → `specs/` → `tasks.md`), and on completion its specs are merged into `specs/<capability>/spec.md`. **When behavior changes, update `openspec/specs/`, not just the code.**
 
+Drive OpenSpec from opencode via slash commands (`/opsx-propose`, `/opsx-apply`, `/opsx-archive`, …) — see `.opencode/commands/`. The `.opencode/plugin/openspec-workflow-state.js` plugin auto-injects the active change + phase into every model turn. Cross-session working memory lives in `Docs/journal/` (one file per day, via the `session-journal` skill).
+
 ---
 
 ## Archive (`archive/`)
