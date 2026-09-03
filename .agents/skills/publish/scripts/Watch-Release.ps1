@@ -11,6 +11,8 @@ $PSNativeCommandUseErrorActionPreference = $false
 $uploadDir = Join-Path $env:TEMP 'pulsar-upload'
 New-Item -ItemType Directory -Path $uploadDir -Force | Out-Null
 
+$ghRepo = Get-GitHubRepo
+
 # JSON 一律用 cmd 重定向落盘（PS 管道会经 GBK 重解码损坏 UTF-8 中文）
 $runJsonFile = Join-Path $uploadDir "run_list_$Version.json"
 cmd /c "gh run list --workflow=release.yml --limit 1 --json databaseId,headBranch,status > `"$runJsonFile`""
@@ -31,6 +33,6 @@ Write-Output "--- Release JSON: $relJsonFile (Read to verify isDraft=false + ass
 # 导出 body 到文件（cmd 直接重定向原始字节，避免 PS 管道经 GBK 重解码乱码），
 # 供 Read 工具核对中文 notes。期望首字节 E6 96 B0（新）。
 $bodyFile = Join-Path $uploadDir "body_check_$Version.md"
-cmd /c "gh api repos/Smith-Rosco/Pulsar/releases/tags/v$Version --jq .body > `"$bodyFile`""
+cmd /c "gh api repos/$ghRepo/releases/tags/v$Version --jq .body > `"$bodyFile`""
 if (-not (Test-Path -LiteralPath $bodyFile)) { throw "Failed to export release body: $bodyFile" }
 Write-Output "Release body exported: $bodyFile (Read this file to verify Chinese notes)"

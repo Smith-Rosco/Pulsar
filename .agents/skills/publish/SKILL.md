@@ -15,9 +15,10 @@ description: Pulsar 发布与打包流程。支持 local-artifact、local-versio
 |---|---|---|
 | `Pulsar.Publish.Common.ps1` | 共享函数库（路径、版本读写、产物/ZIP 校验、无 BOM 写入）；被各脚本 dot-source，不直接运行 | - |
 | `Get-ReleaseInfo.ps1` | 输出仓库根、当前版本、最近 tag、自 tag 以来的提交（版本决策辅助） | - |
-| `Set-ProjectVersion.ps1` | 修改 `csproj` 的 `<Version>` 并校验；防降级（降级需 `-AllowDowngrade`） | `-Version 1.9.0` |
+| `Set-ProjectVersion.ps1` | 修改 `csproj` 的 `<Version>` 并同步 `<FileVersion>`/`<AssemblyVersion>`（`x.y.z.0`）；结构化校验；防降级与同版本重发（降级需 `-AllowDowngrade`） | `-Version 1.9.0` |
 | `Build-Publish.ps1` | 构建 full + portable 两个发布产物并校验（含清理本次版本目录/ZIP） | `-Version 1.9.0` |
-| `Pack-Zips.ps1` | 将产物压缩为 `Pulsar-$version-{full,portable}.zip` 并校验 | `-Version 1.9.0` |
+| `Pack-Zips.ps1` | 将产物压缩为 `Pulsar-$version-{full,portable}.zip` 并校验（内置 pwsh → powershell → System32 tar 三级回退） | `-Version 1.9.0` |
+| `Update-Changelog.ps1` | 将 `CHANGELOG.md` 的 `[Unreleased]` 段固化为 `## [X.Y.Z] - 日期` 并插入新的空 Unreleased 段；段内无真实条目时拒绝执行 | `-Version 1.9.0` |
 | `New-ReleaseTag.ps1` | release 模式：commit 版本号 + 创建带完整 notes 的 tag + 校验 tag message | `-Version 1.9.0 -NotesFile <路径>` |
 | `Watch-Release.ps1` | 等待 release.yml CI 完成、验证 Release 资产、导出 body 供核对 | `-Version 1.9.0` |
 | `Edit-ReleaseNotes.ps1` | 修正 GitHub Release body 为完整 release notes | `-Version 1.9.0 -NotesFile <路径>` |
@@ -53,7 +54,7 @@ description: Pulsar 发布与打包流程。支持 local-artifact、local-versio
 pwsh .agents/skills/publish/scripts/Set-ProjectVersion.ps1 -Version 1.9.0
 ```
 
-脚本只修改 `<Version>`，改后结构化正则校验，不匹配即抛错。
+脚本同步更新 `<Version>`（x.y.z）与 `<FileVersion>`/`<AssemblyVersion>`（x.y.z.0），改后结构化正则校验，不匹配即抛错。版本相同或低于当前版本均会拒绝（同版本重发请用 `local-artifact` 模式）。
 
 ## 2. 构建与打包（local-artifact / local-version）
 
@@ -91,6 +92,23 @@ portable 版构建后建议冒烟测试（`Start-Process` 启动 6 秒不崩溃�
 
 展示 notes 并等待用户确认。未经确认不得用于 tag message 或 GitHub Release。将确认后的 notes 保存为临时 `.md` 文件供后续脚本使用。
 
+### 更新 CHANGELOG（release 模式）
+
+发布前必须把 `CHANGELOG.md` 的 `[Unreleased]` 段固化为正式条目：
+
+1. 检查 `[Unreleased]` 段内容：若仍是"暂无/TODO"占位符，先根据本次版本的提交记录
+   （用户可感知的变更）补全；某分类确实无变更时保留"暂无"即可。
+2. 运行脚本固化：
+
+```powershell
+pwsh .agents/skills/publish/scripts/Update-Changelog.ps1 -Version 1.9.0
+```
+
+脚本把 `## [Unreleased]` 改写为 `## [X.Y.Z] - <今天日期>` 并插入新的空 Unreleased 段；
+段内没有任何真实条目时会拒绝执行。完成后展示结果并纳入版本 commit（见第 4 节）。
+
+`local-artifact` / `local-version` 模式不改 CHANGELOG。
+
 ## 4. Commit 与 tag（release 模式）
 
 `local-artifact` 和 `local-version` 模式跳过本节，并在最终报告中明确：`Commit: skipped`、`Tag: skipped`。
@@ -99,8 +117,8 @@ portable 版构建后建议冒烟测试（`Start-Process` 启动 6 秒不崩溃�
 pwsh .agents/skills/publish/scripts/New-ReleaseTag.ps1 -Version 1.9.0 -NotesFile <确认后的notes路径>
 ```
 
-脚本内部处理（勿再手写）：
-- 版本号文件若有改动则 commit（`chore(release): bump version to X`），无改动跳过。
+`New-ReleaseTag.ps1` 内部处理（勿再手写）：
+- 版本相关文件（`Pulsar/Pulsar/Pulsar.csproj` 与 `CHANGELOG.md`）若有改动则一并 commit（`chore(release): bump version to X`），无改动跳过。
 - 将 notes 重写为**无 BOM 的 UTF-8**（PS7 的 `[Text.Encoding]::UTF8` 带 BOM，会污染 tag message 首行）。
 - 用 `git -c core.commentChar=§ tag -a` 创建 annotated tag —— **必须覆盖 commentChar**：git 默认 `#` 会把 `### 新功能` 等章节标题当注释剥离，导致 Release body 只剩正文 bullet。
 - tag 已存在则停止抛错，不覆盖已有 tag。
@@ -149,7 +167,9 @@ Get-ChildItem -LiteralPath (Join-Path (git rev-parse --show-toplevel) 'Artifacts
 
 - `Pulsar.exe/PDB/Assets/cor3` 缺失：检查 `$fullDir`/`$portableDir` 是否为绝对路径（脚本已基于 repo 根生成），以及 `dotnet publish` 的最终输出路径。
 - 产物落在 `Pulsar/Pulsar/Artifacts`：清理该版本嵌套目录，修正 `PublishDir` 后从构建阶段重试。
-- `CommandNotFoundException` 或 `Compress-Archive` 失败：按 `pwsh` → `powershell -ExecutionPolicy Bypass` → System32 `tar.exe` 顺序降级。
+- `CommandNotFoundException` 或 `Compress-Archive` 失败：`Pack-Zips.ps1` 已内置
+  `pwsh` → `powershell -ExecutionPolicy Bypass` → System32 `tar.exe` 三级回退（每级用 PK 魔数校验）；
+  三级全部失败才需人工介入。
 - ZIP 不是 `PK`：删除 ZIP，从打包阶段重试；不要使用 PATH 中的 GNU tar 生成伪 ZIP。
 - `GetFileAttributesEx` 路径被截断：将 ZIP/notes 复制到不含 `#` 的临时目录再调用 `gh`。
 - GitHub Release body 只有一行 / 非完整 notes：tag message 用了单行摘要，或 `###` 标题被 git 注释剥离。修正：`Edit-ReleaseNotes.ps1`（不重建 tag）。
@@ -176,6 +196,7 @@ Pulsar.exe/PDB: present
 cor3 DLL count (full): ...
 Assets file count: ...
 Release notes: written to tag message | edited via gh release edit
+Changelog: updated | skipped (local-* 模式)
 Commit: created | skipped
 Tag: created | skipped
 GitHub Release: created by CI | uploaded manually | skipped

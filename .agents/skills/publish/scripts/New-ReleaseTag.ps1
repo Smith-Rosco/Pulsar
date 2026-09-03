@@ -20,18 +20,18 @@ if (-not (Test-Path -LiteralPath $NotesFile -PathType Leaf)) {
 
 $repo = Get-RepoRoot
 
-# 1) 版本号文件若有改动则 commit；无改动跳过
+# 1) 版本相关文件（csproj + CHANGELOG.md）若有改动则 commit；无改动跳过
 $csproj = Get-CsprojPath $repo
-git diff --quiet -- "Pulsar/Pulsar/Pulsar.csproj"
-$hasChange = ($LASTEXITCODE -ne 0)
-if ($hasChange) {
-    git add -- "Pulsar/Pulsar/Pulsar.csproj"
+$releaseFiles = @("Pulsar/Pulsar/Pulsar.csproj", "CHANGELOG.md")
+$changed = @($releaseFiles | Where-Object { git diff --quiet -- $_; $LASTEXITCODE -ne 0 })
+if ($changed.Count -gt 0) {
+    git add -- @releaseFiles
     if ($LASTEXITCODE -ne 0) { throw "git add failed" }
     git commit -m "chore(release): bump version to $Version"
     if ($LASTEXITCODE -ne 0) { throw "version commit failed" }
-    Write-Output "Committed version bump."
+    Write-Output "Committed version bump ($($changed -join ', '))."
 } else {
-    Write-Output "No version change; commit skipped."
+    Write-Output "No version/CHANGELOG change; commit skipped."
 }
 
 # 2) 重写 notes 为无 BOM 的 UTF-8（PS7 [Text.Encoding]::UTF8 带 BOM，会污染 tag message 首行）

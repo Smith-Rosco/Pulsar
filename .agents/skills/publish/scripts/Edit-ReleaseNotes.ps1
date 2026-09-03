@@ -28,6 +28,7 @@ if ($LASTEXITCODE -ne 0) { throw "gh release edit failed" }
 # 导出核对（cmd 直接重定向，避免 PS 管道 GBK 重解码）
 $uploadDir = Join-Path $env:TEMP 'pulsar-upload'
 New-Item -ItemType Directory -Path $uploadDir -Force | Out-Null
+$ghRepo = Get-GitHubRepo
 $bodyFile = Join-Path $uploadDir "body_check_$Version.md"
-cmd /c "gh api repos/Smith-Rosco/Pulsar/releases/tags/v$Version --jq .body > `"$bodyFile`""
+cmd /c "gh api repos/$ghRepo/releases/tags/v$Version --jq .body > `"$bodyFile`""
 Write-Output "Release body updated. Verify: $bodyFile"

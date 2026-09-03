@@ -25,6 +25,9 @@ if (-not $AllowDowngrade) {
     if ($new -lt $cur) {
         throw "Version $Version is lower than current $current; downgrade requires -AllowDowngrade"
     }
+    if ($new -eq $cur) {
+        throw "Version $Version equals current version; same-version republish is not allowed. Use local-artifact mode (no version change) or pick a higher version."
+    }
 }
 
 Set-ProjectVersion -CsprojPath $csproj -Version $Version

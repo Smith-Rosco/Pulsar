@@ -21,8 +21,7 @@ $pairs = @(
 )
 
 foreach ($pair in $pairs) {
-    & pwsh -NoProfile -Command "Compress-Archive -Path '$($pair.Dir)\*' -DestinationPath '$($pair.Zip)' -CompressionLevel Optimal -Force"
-    if ($LASTEXITCODE -ne 0) { throw "pwsh Compress-Archive failed with exit code $LASTEXITCODE" }
+    Compress-ZipWithFallback -Dir $pair.Dir -ZipPath $pair.Zip
 }
 
 Assert-Zip -ZipPath $paths.ZipFull
