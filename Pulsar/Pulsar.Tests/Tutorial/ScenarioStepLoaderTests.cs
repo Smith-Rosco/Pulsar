@@ -56,6 +56,21 @@ namespace Pulsar.Tests.Tutorial
         }
 
         [Fact]
+        public void LoadStepsForScenario_WithWebScriptScenarioId_ShouldLoadWebScriptSteps()
+        {
+            var loader = CreateLoader();
+            var steps = loader.LoadStepsForScenario("webscript");
+
+            steps.Should().NotBeNull();
+            steps.Should().NotBeEmpty();
+            steps.Should().Contain(s => s.Id == "step2_switch_mode_intro");
+            steps.Should().HaveCount(6);
+            steps.Should().Contain(s => s.Id == "step4_command_mode_intro"
+                && s.CompletionTrigger != null
+                && s.CompletionTrigger.TargetValue == "Command");
+        }
+
+        [Fact]
         public void LoadStepsForScenario_WithUnknownScenarioId_ShouldFallbackToDefault()
         {
             var loader = CreateLoader();

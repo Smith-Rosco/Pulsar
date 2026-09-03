@@ -66,5 +66,44 @@ namespace Pulsar.Tests.Tutorial
             browser.Should().NotBeNull();
             browser!.StepsJsonPath.Should().Be("TutorialSteps.browser.json");
         }
+
+        [Fact]
+        public void WebScriptScenario_ShouldBeRegisteredWithBrowserPrerequisiteAndBookmarkletSlot()
+        {
+            var registry = new TutorialScenarioRegistry();
+            var webscript = registry.GetById("webscript");
+
+            webscript.Should().NotBeNull();
+            webscript!.Id.Should().Be("webscript");
+            webscript.StepsJsonPath.Should().Be("TutorialSteps.webscript.json");
+            webscript.PrerequisiteProvider.Should().Be(typeof(Pulsar.Features.Tutorial.Services.Prerequisites.BrowserPrerequisiteProvider));
+
+            var primary = webscript.CommandSlotTemplates.Single(s => s.IsTutorialPrimary);
+            primary.PluginId.Should().Be("com.pulsar.bookmarklet");
+            primary.Action.Should().Be("run");
+            primary.Args.Should().ContainKey("scriptPath");
+        }
+
+        [Fact]
+        public async System.Threading.Tasks.Task WebScriptScenario_ShouldFallbackGracefullyWhenNoBrowserIsAvailable()
+        {
+            var scenario = new TutorialScenarioRegistry().GetById("webscript");
+            scenario.Should().NotBeNull();
+
+            var provider = scenario!.PrerequisiteProvider;
+            provider.Should().NotBeNull();
+            provider.Should().Be(typeof(Pulsar.Features.Tutorial.Services.Prerequisites.BrowserPrerequisiteProvider));
+
+            var instance = System.Activator.CreateInstance(provider!) as Pulsar.Features.Tutorial.Services.Prerequisites.IPrerequisiteProvider;
+            instance.Should().NotBeNull();
+
+            var results = await instance!.CheckAllAsync();
+            results.Should().NotBeNullOrEmpty();
+            results.Should().OnlyContain(r => r.Status == Pulsar.Features.Tutorial.Services.Prerequisites.PrerequisiteStatus.Met
+                || r.Status == Pulsar.Features.Tutorial.Services.Prerequisites.PrerequisiteStatus.NotMet);
+            results.Should().OnlyContain(r => !string.IsNullOrWhiteSpace(r.DisplayNameKey));
+            results.Should().OnlyContain(r => !string.IsNullOrWhiteSpace(r.Details),
+                "a missing browser must produce a readable message instead of failing silently");
+        }
     }
 }

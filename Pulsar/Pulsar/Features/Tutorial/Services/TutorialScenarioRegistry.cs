@@ -99,6 +99,31 @@ namespace Pulsar.Features.Tutorial.Services
                     },
                     PrerequisiteProvider = typeof(Prerequisites.BrowserPrerequisiteProvider),
                     StepsJsonPath = "TutorialSteps.browser.json"
+                },
+                ["webscript"] = new TutorialScenario
+                {
+                    Id = "webscript",
+                    TitleKey = "Scenario.WebScript.Title",
+                    DescriptionKey = "Scenario.WebScript.Description",
+                    SlotDescriptionKey = "Scenario.WebScript.SlotDescription",
+                    RequiredAppIds = new List<string> { "chrome", "edge" },
+                    CommandSlotTemplates = new List<CommandSlotTemplate>
+                    {
+                        new()
+                        {
+                            PluginId = "com.pulsar.bookmarklet",
+                            Action = "run",
+                            Args = new Dictionary<string, string>
+                            {
+                                ["scriptPath"] = "Assets/Scripts/Demo/browser_demo.js"
+                            },
+                            LabelKey = "CommandSlot.OpenBookmarklet",
+                            IconKey = "\uE774",
+                            IsTutorialPrimary = true
+                        }
+                    },
+                    PrerequisiteProvider = typeof(Prerequisites.BrowserPrerequisiteProvider),
+                    StepsJsonPath = "TutorialSteps.webscript.json"
                 }
             };
         }

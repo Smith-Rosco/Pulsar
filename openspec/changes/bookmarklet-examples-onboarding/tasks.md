@@ -9,11 +9,11 @@
 
 ## 3. Web-script onboarding scenario
 
-- [ ] 3.1 Add `TutorialSteps.webscript.json` under `Resources/Tutorial/` mirroring the standard step structure with web-script copy (invoke web-script slot, run script, observe page change); verify it loads through `TutorialStepLoader`
-- [ ] 3.2 Register the web-script scenario in `TutorialScenarioRegistry` with a browser `PrerequisiteProvider` and a primary `com.pulsar.bookmarklet` `run` slot; verify a unit test that the registry returns the scenario and `BuildInitialConfig` produces the primary bookmarklet slot when a browser is available
-- [ ] 3.3 Verify the scenario falls back gracefully when no browser is present (readable message, no silent failure)
+- [x] 3.1 Add `TutorialSteps.webscript.json` under `Resources/Tutorial/` mirroring the standard step structure with web-script copy (invoke web-script slot, run script, observe page change); verify it loads through `TutorialStepLoader`
+- [x] 3.2 Register the web-script scenario in `TutorialScenarioRegistry` with a browser `PrerequisiteProvider` and a primary `com.pulsar.bookmarklet` `run` slot; verify a unit test that the registry returns the scenario and `BuildInitialConfig` produces the primary bookmarklet slot when a browser is available
+- [x] 3.3 Verify the scenario falls back gracefully when no browser is present (readable message, no silent failure)
 
 ## 4. Localization & integration
 
-- [ ] 4.1 Add example titles/descriptions and scenario copy to `Strings.resx` + `Strings.zh-CN.resx`; verify no hardcoded user-facing strings in new code/XAML
+- [x] 4.1 Add example titles/descriptions and scenario copy to `Strings.resx` + `Strings.zh-CN.resx`; verify no hardcoded user-facing strings in new code/XAML
 - [ ] 4.2 Run full test suite (`dotnet test`) and verify all tests pass with 0 warnings/errors; manual smoke: browse the example library, import an example, follow the web-script scenario steps to first run
