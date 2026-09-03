@@ -67,6 +67,24 @@
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                            Margin="{StaticResource Pulsar.Gap.Bottom.SM}"/>
 
+                <!-- Usage scenario picker (office-automation scenarios lead, per pillar narrative) -->
+                <StackPanel Margin="{StaticResource Pulsar.Gap.Bottom.LG}">
+                    <TextBlock Text="{Binding UsageScenarioLabel}"
+                               FontSize="{StaticResource Pulsar.Type.Body}" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                               Margin="{StaticResource Pulsar.Gap.Bottom.XS}"/>
+                    <ComboBox ItemsSource="{Binding UsageOptions}"
+                              SelectedItem="{Binding SelectedUsageOption, Mode=TwoWay}"
+                              DisplayMemberPath="Title"
+                              MinWidth="260"
+                              HorizontalAlignment="Left"/>
+                    <TextBlock Text="{Binding SelectedUsageOption.Description}"
+                               TextWrapping="Wrap"
+                               FontSize="{StaticResource Pulsar.Type.Caption}"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               Margin="{StaticResource Pulsar.Gap.Top.XXS}"/>
+                </StackPanel>
+
                 <!-- Feature Intro -->
                 <TextBlock Text="{Binding FeatureIntro}"
                            FontSize="{StaticResource Pulsar.Type.Body}"

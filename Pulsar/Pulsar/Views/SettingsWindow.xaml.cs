@@ -105,8 +105,20 @@ namespace Pulsar.Views
             RootNavigation.MenuItems.Clear();
             _navItemMap.Clear();
 
+            // 目录顺序即导航顺序（工作台组在前、系统组在后）。
+            // 分组交界处插入分隔线，让系统/支持组在视觉上退居背景。
+            string? previousGroupId = null;
+
             foreach (var registration in _pageCatalog.Pages)
             {
+                if (previousGroupId != null &&
+                    !string.Equals(previousGroupId, registration.GroupId, StringComparison.Ordinal))
+                {
+                    RootNavigation.MenuItems.Add(new NavigationViewItemSeparator());
+                }
+
+                previousGroupId = registration.GroupId;
+
                 var item = new NavigationViewItem
                 {
                     Content = registration.Title,

@@ -94,5 +94,72 @@ namespace Pulsar.Tests.Tutorial
             configService.Verify(c => c.SaveAsync(It.IsAny<ProfilesConfig>(), It.IsAny<long?>()), Times.Once);
             onboardingStateService.Verify(s => s.MarkSetupCompletedAsync(), Times.Never);
         }
+
+        [Fact]
+        public void UsageOptions_ShouldLeadWithOfficeAutomationScenarios_BeforeGenericOnes()
+        {
+            var (vm, _, _, _) = CreateViewModel();
+
+            vm.UsageOptions.Select(o => o.Scenario.Id).Should().Equal(
+                "excel",
+                "browser",
+                "notepad");
+        }
+
+        [Fact]
+        public void SelectedUsageOption_ShouldDefaultToLeadingOfficeAutomationScenario()
+        {
+            var (vm, _, _, _) = CreateViewModel();
+
+            vm.SelectedUsageOption.Should().NotBeNull();
+            vm.SelectedUsageOption!.Scenario.Id.Should().Be("excel", "默认选中项必须是三支柱场景（Excel 宏）");
+        }
+
+        [Fact]
+        public async Task FinishCommand_ShouldUseSelectedScenario_ForBuildInitialConfig()
+        {
+            var (vm, templateService, _, _) = CreateViewModel();
+
+            var notepadOption = vm.UsageOptions.Single(o => o.Scenario.Id == "notepad");
+            vm.SelectedUsageOption = notepadOption;
+
+            await vm.FinishCommand.ExecuteAsync(null);
+
+            templateService.Verify(t => t.BuildInitialConfig(
+                    It.Is<TutorialScenario>(scenario => scenario.Id == "notepad"),
+                    It.IsAny<IReadOnlyList<OnboardingAppSelection>>()),
+                Times.Once,
+                "用户选择的场景应原样驱动 BuildInitialConfig（行为保持不变）");
+        }
+
+        private static (FirstLaunchSetupWizardViewModel Vm,
+            Mock<IOnboardingTemplateService> TemplateService,
+            Mock<IConfigService> ConfigService,
+            Mock<IOnboardingStateService> OnboardingStateService) CreateViewModel()
+        {
+            var loc = CreateDefaultLoc();
+            var configService = new Mock<IConfigService>();
+            configService.Setup(c => c.GetSnapshot()).Returns(new ProfilesConfig());
+            configService.Setup(c => c.LoadSnapshotAsync(It.IsAny<bool>())).ReturnsAsync(new ProfilesConfig());
+            configService.Setup(c => c.SaveAsync(It.IsAny<ProfilesConfig>(), It.IsAny<long?>())).Returns(Task.CompletedTask);
+
+            var templateService = new Mock<IOnboardingTemplateService>();
+            templateService.Setup(t => t.GetAvailableApps()).Returns(new List<OnboardingAppSelection>
+            {
+                new() { Id = "notepad", DisplayName = "Notepad", ProcessName = "notepad", LaunchPath = "notepad.exe", IconKey = "\uE70F" }
+            });
+            templateService.Setup(t => t.BuildInitialConfig(It.IsAny<TutorialScenario>(), It.IsAny<IReadOnlyList<OnboardingAppSelection>>()))
+                .Returns(new ProfilesConfig());
+
+            var onboardingStateService = new Mock<IOnboardingStateService>();
+
+            var vm = new FirstLaunchSetupWizardViewModel(
+                templateService.Object,
+                configService.Object,
+                onboardingStateService.Object,
+                loc.Object);
+
+            return (vm, templateService, configService, onboardingStateService);
+        }
     }
 }

@@ -341,17 +341,17 @@
                                 Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
                     
                     <!-- Quick Navigation Buttons -->
-                    <ui:Button Content="{lex:Locale Settings.Plugins.Core}"
+                    <ui:Button Content="{lex:Locale Settings.Plugins.GroupPillarsJump}"
                                Icon="{ui:SymbolIcon Shield24}"
                                Style="{StaticResource PulsarSecondaryButtonStyle}"
-                               Click="JumpToCoreButton_Click"
-                               ToolTip="{lex:Locale Settings.Plugins.CoreTabTooltip}"
+                               Click="JumpToPillarsButton_Click"
+                               ToolTip="{lex:Locale Settings.Plugins.GroupPillarsJumpTooltip}"
                                Margin="{StaticResource Pulsar.Gap.Right.XS}"/>
-                    <ui:Button Content="{lex:Locale Settings.Plugins.Extensions}"
+                    <ui:Button Content="{lex:Locale Settings.Plugins.GroupSystemJump}"
                                Icon="{ui:SymbolIcon PuzzlePiece24}"
                                Style="{StaticResource PulsarSecondaryButtonStyle}"
-                               Click="JumpToExtensionButton_Click"
-                               ToolTip="{lex:Locale Settings.Plugins.ExtensionsTabTooltip}"
+                               Click="JumpToSystemButton_Click"
+                               ToolTip="{lex:Locale Settings.Plugins.GroupSystemJumpTooltip}"
                                Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
                     
                     <!-- Refresh Button -->

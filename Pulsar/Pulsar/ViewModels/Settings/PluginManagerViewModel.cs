@@ -23,6 +23,18 @@ namespace Pulsar.ViewModels.Settings
         public ObservableCollection<PluginViewModel> Plugins { get; set; } = new();
     }
 
+    /// <summary>
+    /// 插件列表分组标识（M2 叙事约定：办公三支柱在前，系统工具在后）。
+    /// </summary>
+    public static class PluginGroupIds
+    {
+        /// <summary>办公自动化三支柱（宏 / 网页脚本 / 安全填写）。</summary>
+        public const string Pillars = "Pillars";
+
+        /// <summary>系统与工具插件（窗口切换、命令等）。</summary>
+        public const string System = "System";
+    }
+
     public enum PluginFilterMode
     {
         All,
@@ -53,7 +65,7 @@ namespace Pulsar.ViewModels.Settings
         private readonly IDialogService? _dialogService;
         private readonly IServiceProvider? _serviceProvider;
         private readonly IPluginMetadataRegistry? _metadataRegistry;
-        private readonly ILocalizationService _loc;
+        private readonly ILocalizationService? _loc;
 
         public ObservableCollection<PluginViewModel> Plugins { get; } = new();
         public ObservableCollection<PluginGroup> GroupedPlugins { get; } = new();
@@ -85,7 +97,7 @@ namespace Pulsar.ViewModels.Settings
             _dialogService = dialogService;
             _serviceProvider = serviceProvider;
             _metadataRegistry = metadataRegistry;
-            _loc = localizationService;
+            _loc = localizationService ?? throw new ArgumentNullException(nameof(localizationService));
 
             FilterOptions =
             [
@@ -142,12 +154,16 @@ namespace Pulsar.ViewModels.Settings
             Plugins.Clear();
             // 内置 Tab 只展示随应用分发的插件；外部插件由「外部」Tab 管理，
             // 避免同一插件在 内置→扩展插件 与 外部 两个入口重复出现。
-            var allPlugins = _registry.GetAllPluginDescriptors().Where(d => !d.IsExternal);
+            // 平铺列表同样按支柱优先级排序，保证默认选中项落在支柱插件上。
+            var allPlugins = _registry.GetAllPluginDescriptors()
+                .Where(d => !d.IsExternal)
+                .OrderBy(d => WorkbenchPillarCatalog.GetPluginPriority(d.Id))
+                .ThenBy(d => d.DisplayName, StringComparer.OrdinalIgnoreCase);
 
             foreach (var plugin in allPlugins)
             {
                 Plugins.Add(new PluginViewModel(plugin, _registry, _configService,
-                    _loc, _usageTracker, _healthMonitor, _logService, _dialogService,
+                    _loc!, _usageTracker, _healthMonitor, _logService, _dialogService,
                     _serviceProvider, _metadataRegistry));
             }
 
@@ -163,33 +179,42 @@ namespace Pulsar.ViewModels.Settings
 
             var filteredList = Plugins.Where(p => FilterPlugins(p)).ToList();
 
-            // Simple grouping: Core vs Extension
-            GroupByTier(filteredList);
+            // 分组：办公三支柱在前，系统/工具插件在后（WorkbenchPillarCatalog 单一事实来源）。
+            GroupByPillarPriority(filteredList);
         }
 
-        private void GroupByTier(List<PluginViewModel> plugins)
+        private void GroupByPillarPriority(List<PluginViewModel> plugins)
         {
-            // Core Plugins (CanDisable = false)
-            var core = plugins.Where(p => !p.CanDisable).OrderBy(p => p.Name).ToList();
-            if (core.Any())
+            // 办公自动化三支柱（宏 → 网页脚本 → 安全填写），成员顺序由目录优先级 + 名称决定。
+            var pillars = plugins
+                .Where(p => WorkbenchPillarCatalog.IsPillarPlugin(p.Id))
+                .OrderBy(p => WorkbenchPillarCatalog.GetPluginPriority(p.Id))
+                .ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (pillars.Any())
             {
                 GroupedPlugins.Add(new PluginGroup
                 {
-                    GroupId = "Core",
-                    GroupName = string.Format(_loc?["Settings.Plugins.GroupCoreFormat"] ?? "Core Plugins ({0})", core.Count),
-                    Plugins = new ObservableCollection<PluginViewModel>(core)
+                    GroupId = PluginGroupIds.Pillars,
+                    GroupName = string.Format(_loc?["Settings.Plugins.GroupPillarsFormat"] ?? "Office Automation ({0})", pillars.Count),
+                    Plugins = new ObservableCollection<PluginViewModel>(pillars)
                 });
             }
 
-            // Extension Plugins (CanDisable = true)
-            var extensions = plugins.Where(p => p.CanDisable).OrderBy(p => p.Name).ToList();
-            if (extensions.Any())
+            // 系统/工具插件作为背景组排在支柱之后（仍可通过搜索/过滤找到，不做隐藏）。
+            var system = plugins
+                .Where(p => !WorkbenchPillarCatalog.IsPillarPlugin(p.Id))
+                .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (system.Any())
             {
                 GroupedPlugins.Add(new PluginGroup
                 {
-                    GroupId = "Extensions",
-                    GroupName = string.Format(_loc?["Settings.Plugins.GroupExtensionFormat"] ?? "Extension Plugins ({0})", extensions.Count),
-                    Plugins = new ObservableCollection<PluginViewModel>(extensions)
+                    GroupId = PluginGroupIds.System,
+                    GroupName = string.Format(_loc?["Settings.Plugins.GroupSystemFormat"] ?? "System Plugins ({0})", system.Count),
+                    Plugins = new ObservableCollection<PluginViewModel>(system)
                 });
             }
         }

@@ -92,19 +92,19 @@ namespace Pulsar.Views.Pages
         }
 
         /// <summary>
-        /// Jump to Core Plugins section
+        /// Jump to the office-automation pillar group
         /// </summary>
-        private void JumpToCoreButton_Click(object sender, RoutedEventArgs e)
+        private void JumpToPillarsButton_Click(object sender, RoutedEventArgs e)
         {
-            ScrollToGroup("Core");
+            ScrollToGroup(Pulsar.ViewModels.Settings.PluginGroupIds.Pillars);
         }
 
         /// <summary>
-        /// Jump to Extension Plugins section
+        /// Jump to the system/utility plugins group
         /// </summary>
-        private void JumpToExtensionButton_Click(object sender, RoutedEventArgs e)
+        private void JumpToSystemButton_Click(object sender, RoutedEventArgs e)
         {
-            ScrollToGroup("Extensions");
+            ScrollToGroup(Pulsar.ViewModels.Settings.PluginGroupIds.System);
         }
 
         /// <summary>

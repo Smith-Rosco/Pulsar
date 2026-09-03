@@ -66,6 +66,8 @@ namespace Pulsar.ViewModels.Dialogs
             var defaultLanguage = ResolveDefaultLanguage();
             _selectedLanguage = SupportedLanguages.FirstOrDefault(l => string.Equals(l.Code, defaultLanguage, StringComparison.OrdinalIgnoreCase))
                 ?? SupportedLanguages.FirstOrDefault();
+
+            RebuildUsageOptions();
         }
 
         private string ResolveDefaultLanguage()
@@ -120,12 +122,50 @@ namespace Pulsar.ViewModels.Dialogs
             OnPropertyChanged(nameof(PrimaryButtonText));
             OnPropertyChanged(nameof(SecondaryButtonText));
             OnPropertyChanged(nameof(LanguageLabel));
+            OnPropertyChanged(nameof(UsageScenarioLabel));
+            RebuildUsageOptions();
         }
 
         private static readonly IReadOnlyList<OnboardingAppSelection> DefaultApps = new List<OnboardingAppSelection>
         {
             new() { Id = "explorer", DisplayName = "File Explorer", ProcessName = "explorer", LaunchPath = "explorer.exe", IconKey = "\uE8B7" }
         };
+
+        /// <summary>
+        /// 上手场景选项，按三支柱叙事排序：办公自动化场景（Excel 宏 → 网页脚本）在前，
+        /// 通用演示（记事本）在后。顺序来自 <see cref="WorkbenchPillarCatalog"/> 单一事实来源。
+        /// </summary>
+        public IReadOnlyList<OnboardingUsageOption> UsageOptions { get; private set; } = Array.Empty<OnboardingUsageOption>();
+
+        [ObservableProperty]
+        private OnboardingUsageOption? _selectedUsageOption;
+
+        public string UsageScenarioLabel => _loc["FirstLaunch.UsageScenario"];
+
+        /// <summary>
+        /// 以支柱优先级重建场景选项并保持原选中项（按场景 Id）。
+        /// </summary>
+        private void RebuildUsageOptions()
+        {
+            var previousScenarioId = SelectedUsageOption?.Scenario.Id;
+
+            UsageOptions = _scenarioRegistry.All
+                .OrderBy(s => WorkbenchPillarCatalog.GetScenarioPriority(s.Id))
+                .ThenBy(s => s.Id, StringComparer.OrdinalIgnoreCase)
+                .Select(s => new OnboardingUsageOption
+                {
+                    Scenario = s,
+                    Title = _loc[s.TitleKey],
+                    Description = _loc[s.DescriptionKey]
+                })
+                .ToList();
+
+            OnPropertyChanged(nameof(UsageOptions));
+
+            SelectedUsageOption = UsageOptions.FirstOrDefault(o =>
+                string.Equals(o.Scenario.Id, previousScenarioId, StringComparison.OrdinalIgnoreCase))
+                ?? UsageOptions.FirstOrDefault();
+        }
 
         public string LanguageLabel => _loc["Settings.General.Language"];
 
@@ -162,7 +202,8 @@ namespace Pulsar.ViewModels.Dialogs
         [RelayCommand]
         private async Task Finish()
         {
-            var scenario = _scenarioRegistry.Default;
+            // 选中场景驱动模板生成（行为不变）；未选择时回退到注册表默认场景。
+            var scenario = SelectedUsageOption?.Scenario ?? _scenarioRegistry.Default;
             var apps = BuildScenarioApps(scenario);
             var template = _templateService.BuildInitialConfig(scenario, apps);
 

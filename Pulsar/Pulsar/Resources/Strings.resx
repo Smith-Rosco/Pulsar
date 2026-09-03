@@ -179,10 +179,10 @@
   </data>
   <!-- ==================== Settings.Slots ==================== -->
   <data name="Settings.Slots.Title" xml:space="preserve">
-    <value>Slots Manager</value>
+    <value>Automation Slots</value>
   </data>
   <data name="Settings.Slots.Description" xml:space="preserve">
-    <value>Configure actions for each context</value>
+    <value>One-click Excel/WPS macros, legacy web-page scripts, and secure form fill</value>
   </data>
   <data name="Settings.Slots.PositionFormat" xml:space="preserve">
     <value>Position {0}</value>
@@ -293,14 +293,17 @@
   <data name="Settings.Plugins.Core" xml:space="preserve">
     <value>Core</value>
   </data>
-  <data name="Settings.Plugins.CoreTabTooltip" xml:space="preserve">
-    <value>Jump to Core Plugins</value>
+  <data name="Settings.Plugins.GroupPillarsJump" xml:space="preserve">
+    <value>Office Automation</value>
   </data>
-  <data name="Settings.Plugins.Extensions" xml:space="preserve">
-    <value>Extensions</value>
+  <data name="Settings.Plugins.GroupPillarsJumpTooltip" xml:space="preserve">
+    <value>Jump to office-automation plugins</value>
   </data>
-  <data name="Settings.Plugins.ExtensionsTabTooltip" xml:space="preserve">
-    <value>Jump to Extension Plugins</value>
+  <data name="Settings.Plugins.GroupSystemJump" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="Settings.Plugins.GroupSystemJumpTooltip" xml:space="preserve">
+    <value>Jump to system plugins</value>
   </data>
   <data name="Settings.Plugins.Refresh" xml:space="preserve">
     <value>Refresh</value>
@@ -1999,7 +2002,7 @@
     <value>Everything can be customized later. Ready to start?</value>
   </data>
   <data name="FirstLaunch.UsageScenario" xml:space="preserve">
-    <value>Pick a Scenario</value>
+    <value>Pick a starting scenario</value>
   </data>
   <data name="FirstLaunch.CreateConfig" xml:space="preserve">
     <value>Get Started</value>
@@ -2941,11 +2944,11 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
   <data name="Feedback.StartingFormat" xml:space="preserve">
     <value>Starting {0}...</value>
   </data>
-  <data name="Settings.Plugins.GroupCoreFormat" xml:space="preserve">
-    <value>Core Plugins ({0})</value>
+  <data name="Settings.Plugins.GroupPillarsFormat" xml:space="preserve">
+    <value>Office Automation ({0})</value>
   </data>
-  <data name="Settings.Plugins.GroupExtensionFormat" xml:space="preserve">
-    <value>Extension Plugins ({0})</value>
+  <data name="Settings.Plugins.GroupSystemFormat" xml:space="preserve">
+    <value>System Plugins ({0})</value>
   </data>
   <data name="Settings.ExternalPlugins.InstalledHeaderFormat" xml:space="preserve">
     <value>Installed External Plugins ({0})</value>
