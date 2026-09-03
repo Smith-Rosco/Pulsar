@@ -7,6 +7,7 @@ using System.Linq;
 using Pulsar.Core.Localization;
 using Pulsar.Models;
 using Pulsar.Features.Tutorial.Models;
+using Pulsar.Features.Presets.Models;
  
 namespace Pulsar.Features.Tutorial.Services
 {
@@ -54,6 +55,8 @@ namespace Pulsar.Features.Tutorial.Services
         ProfilesConfig BuildInitialConfig(OnboardingTemplateRequest request);
 
         ProfilesConfig BuildInitialConfig(TutorialScenario scenario, IReadOnlyList<OnboardingAppSelection> selectedApps);
+
+        ProfilesConfig BuildInitialConfig(PresetPack pack, IReadOnlyList<OnboardingAppSelection> selectedApps);
     }
 
     public sealed class OnboardingTemplateService : IOnboardingTemplateService
@@ -157,6 +160,21 @@ namespace Pulsar.Features.Tutorial.Services
             var orderedApps = GetOrderedApps(selectedApps);
             var switchSlots = BuildSwitchSlots(orderedApps);
             var commandSlots = BuildCommandExamples(scenario.CommandSlotTemplates);
+
+            return CreateProfilesConfig(switchSlots, commandSlots);
+        }
+
+        public ProfilesConfig BuildInitialConfig(PresetPack pack, IReadOnlyList<OnboardingAppSelection> selectedApps)
+        {
+            ArgumentNullException.ThrowIfNull(pack);
+            if (selectedApps == null || selectedApps.Count == 0)
+            {
+                throw new InvalidOperationException("At least one app must be selected for onboarding.");
+            }
+
+            var orderedApps = GetOrderedApps(selectedApps);
+            var switchSlots = BuildSwitchSlots(orderedApps);
+            var commandSlots = BuildCommandExamples(pack.CommandSlotTemplates);
 
             return CreateProfilesConfig(switchSlots, commandSlots);
         }

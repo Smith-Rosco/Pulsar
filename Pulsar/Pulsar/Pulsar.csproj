@@ -74,6 +74,18 @@
       <Link>Assets\Scripts\Demo\link_traverse_demo.js</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Assets\Presets\macro\excel_macro.txt">
+      <Link>Assets\Presets\macro\excel_macro.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\Presets\form-fill\form_fill.js">
+      <Link>Assets\Presets\form-fill\form_fill.js</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\Presets\sign-in\sign_in.js">
+      <Link>Assets\Presets\sign-in\sign_in.js</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

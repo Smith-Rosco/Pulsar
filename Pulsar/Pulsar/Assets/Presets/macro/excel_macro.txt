@@ -1,0 +1,9 @@
+Sub PulsarDemo()
+    ' Pulsar Office Macro Templates - Excel demo macro
+    ' Installed by the "macro" office-action preset pack.
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+    ws.Range("A1").Value = "Hello from Pulsar preset!"
+    ws.Range("A1").Font.Bold = True
+    ws.Columns("A").AutoFit
+End Sub

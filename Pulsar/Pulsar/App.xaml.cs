@@ -214,6 +214,11 @@ namespace Pulsar
             serviceCollection.AddSingleton<ITutorialService, TutorialService>();
             serviceCollection.AddSingleton<ILogger<Pulsar.Features.Tutorial.Services.TutorialOrchestrator>>(sp =>
                 sp.GetRequiredService<ILoggerFactory>().CreateLogger<Pulsar.Features.Tutorial.Services.TutorialOrchestrator>());
+
+            // Office Action Presets
+            serviceCollection.AddSingleton<Pulsar.Features.Presets.Services.IPresetCatalogService, Pulsar.Features.Presets.Services.PresetCatalogService>();
+            serviceCollection.AddSingleton<Pulsar.Features.Presets.Services.IPresetInstallService, Pulsar.Features.Presets.Services.PresetInstallService>();
+
             
             // Fuzzy Search Service
             serviceCollection.AddSingleton(typeof(Pulsar.Services.Interfaces.IFuzzySearchService<>), typeof(Pulsar.Services.FuzzySearch.FuzzySearchService<>));

@@ -3452,4 +3452,40 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
   </data>
   <data name="Settings.About.RestartFailedBodyFormat" xml:space="preserve">
     <value>Pulsar could not be restarted automatically. Please restart it manually. ({0})</value>
+  </data>
+  <data name="Preset.Pack.Macro.Title" xml:space="preserve">
+    <value>Excel Macro Templates</value>
+  </data>
+  <data name="Preset.Pack.Macro.Description" xml:space="preserve">
+    <value>Ready-to-run Excel / WPS VBA macro actions that automate common spreadsheet chores.</value>
+  </data>
+  <data name="Preset.Pack.Macro.SlotDescription" xml:space="preserve">
+    <value>Adds a VBA runner command slot that runs a sample Excel macro.</value>
+  </data>
+  <data name="Preset.Pack.FormFill.Title" xml:space="preserve">
+    <value>Common Form Fill</value>
+  </data>
+  <data name="Preset.Pack.FormFill.Description" xml:space="preserve">
+    <value>Browser scripts that fill common web forms in one action.</value>
+  </data>
+  <data name="Preset.Pack.FormFill.SlotDescription" xml:space="preserve">
+    <value>Adds a browser form-fill command slot.</value>
+  </data>
+  <data name="Preset.Pack.SignIn.Title" xml:space="preserve">
+    <value>Sign-In Flow</value>
+  </data>
+  <data name="Preset.Pack.SignIn.Description" xml:space="preserve">
+    <value>A browser helper that brings sign-in fields into focus so credentials can be filled safely.</value>
+  </data>
+  <data name="Preset.Pack.SignIn.SlotDescription" xml:space="preserve">
+    <value>Adds a browser sign-in command slot.</value>
+  </data>
+  <data name="CommandSlot.RunFormFillDemo" xml:space="preserve">
+    <value>Run Form Fill Demo</value>
+  </data>
+  <data name="CommandSlot.RunSignInDemo" xml:space="preserve">
+    <value>Run Sign-In Demo</value>
+  </data>
+  <data name="CommandSlot.AutoSignIn" xml:space="preserve">
+    <value>Auto Sign-In</value>
   </data></root>

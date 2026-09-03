@@ -5404,4 +5404,64 @@ Pulsar 会在当前页面运行一个网页脚本——这就是命令模式：�
     name="Settings.About.RestartFailedBodyFormat"
     xml:space="preserve">
     <value>Pulsar 无法自动重启，请手动重新启动。({0})</value>
+  </data>
+  <data
+    name="Preset.Pack.Macro.Title"
+    xml:space="preserve">
+    <value>Excel 宏模板</value>
+  </data>
+  <data
+    name="Preset.Pack.Macro.Description"
+    xml:space="preserve">
+    <value>开箱即用的 Excel / WPS VBA 宏动作，自动完成常见电子表格工作。</value>
+  </data>
+  <data
+    name="Preset.Pack.Macro.SlotDescription"
+    xml:space="preserve">
+    <value>添加一个运行示例 Excel 宏的 VBA 运行器命令槽位。</value>
+  </data>
+  <data
+    name="Preset.Pack.FormFill.Title"
+    xml:space="preserve">
+    <value>常见表单填充</value>
+  </data>
+  <data
+    name="Preset.Pack.FormFill.Description"
+    xml:space="preserve">
+    <value>一键填充常见网页表单的浏览器脚本。</value>
+  </data>
+  <data
+    name="Preset.Pack.FormFill.SlotDescription"
+    xml:space="preserve">
+    <value>添加一个浏览器表单填充命令槽位。</value>
+  </data>
+  <data
+    name="Preset.Pack.SignIn.Title"
+    xml:space="preserve">
+    <value>登录流程</value>
+  </data>
+  <data
+    name="Preset.Pack.SignIn.Description"
+    xml:space="preserve">
+    <value>将登录字段聚焦的浏览器助手，让凭据可被安全地填充。</value>
+  </data>
+  <data
+    name="Preset.Pack.SignIn.SlotDescription"
+    xml:space="preserve">
+    <value>添加一个浏览器登录命令槽位。</value>
+  </data>
+  <data
+    name="CommandSlot.RunFormFillDemo"
+    xml:space="preserve">
+    <value>运行表单填充演示</value>
+  </data>
+  <data
+    name="CommandSlot.RunSignInDemo"
+    xml:space="preserve">
+    <value>运行登录演示</value>
+  </data>
+  <data
+    name="CommandSlot.AutoSignIn"
+    xml:space="preserve">
+    <value>自动登录</value>
   </data></root>
