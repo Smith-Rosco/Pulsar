@@ -1,0 +1,13 @@
+{
+  "Id": "com.pulsar.sample.neonrenderer",
+  "DisplayName": "Neon Renderer (Sample)",
+  "Version": "1.0.0",
+  "Description": "Sample radial renderer contributed through the plugin registry: dashed neon outer ring + soft blur slot highlight. Demonstrates the ui.render permission and renderer contribution lifecycle.",
+  "Author": "Pulsar Project",
+  "Icon": "💜",
+  "Tags": ["sample", "renderer", "theme"],
+  "Permissions": ["ui.render"],
+  "Dependencies": {},
+  "MinPulsarVersion": "1.0.0",
+  "EntryPoint": "Pulsar.Samples.NeonRendererPlugin.NeonRendererPlugin"
+}

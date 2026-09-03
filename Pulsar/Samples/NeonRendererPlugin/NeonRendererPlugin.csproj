@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <OutputType>Library</OutputType>
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Reference to Pulsar main project (host contracts: IPulsarPlugin, IRadialRenderer, ...).
+         Private=false + ExcludeAssets=runtime: the host assembly is NOT copied into the
+         plugin package — the PluginLoadContext falls back to the default ALC for it. -->
+    <ProjectReference Include="..\..\Pulsar\Pulsar.csproj">
+      <Private>false</Private>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="manifest.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <!-- Post-build: package the plugin folder as a ZIP ready for
+       Settings → External Plugins → Install from file. -->
+  <Target Name="PackagePlugin" AfterTargets="Build">
+    <ItemGroup>
+      <PluginFiles Include="$(OutputPath)**\*.*" />
+    </ItemGroup>
+    <Message Text="Packaging NeonRendererPlugin..." Importance="high" />
+    <ZipDirectory SourceDirectory="$(OutputPath)"
+                  DestinationFile="$(OutputPath)..\NeonRendererPlugin-$(Version).zip"
+                  Overwrite="true" />
+    <Message Text="Plugin package created: $(OutputPath)..\NeonRendererPlugin-$(Version).zip" Importance="high" />
+  </Target>
+
+</Project>
