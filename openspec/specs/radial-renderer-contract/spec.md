@@ -42,7 +42,8 @@ The default renderer SHALL avoid expensive per-slot effects that degrade frame r
 - **THEN** the highlight SHALL NOT rely on a per-slot `DropShadowEffect` where a cheaper equivalent (blur/gradient/opacity) preserves the look
 
 ### Requirement: Active renderer SHALL be resolved from configuration through a registry
-The radial menu SHALL resolve its active renderer from the configured renderer id via a renderer registry/factory, rather than a DI-fixed single instance. An unknown renderer id SHALL resolve safely to the Default renderer without error.
+
+The radial menu SHALL resolve its active renderer from the configured renderer id via a renderer registry/factory, rather than a DI-fixed single instance. Resolution SHALL consider plugin-contributed renderers first, then the built-in renderer set, and SHALL fall back safely to the Default renderer when the id is unknown or its owning plugin has been disabled or unloaded.
 
 #### Scenario: Configured renderer id resolves
 - **WHEN** the configured `RadialRenderer` value matches a registered renderer
@@ -51,6 +52,15 @@ The radial menu SHALL resolve its active renderer from the configured renderer i
 
 #### Scenario: Unknown renderer id falls back to Default
 - **WHEN** the configured `RadialRenderer` value is not a registered renderer
+- **THEN** the registry SHALL return the Default renderer
+- **AND** the radial menu SHALL render without error
+
+#### Scenario: Plugin renderer id resolves ahead of built-ins
+- **WHEN** the configured `RadialRenderer` value matches a renderer contributed by an enabled plugin
+- **THEN** the factory SHALL return the plugin-contributed renderer
+
+#### Scenario: Disabled plugin renderer falls back to Default
+- **WHEN** the configured `RadialRenderer` value matches a renderer whose owning plugin has been disabled or unloaded
 - **THEN** the registry SHALL return the Default renderer
 - **AND** the radial menu SHALL render without error
 

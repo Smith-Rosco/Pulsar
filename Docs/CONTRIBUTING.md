@@ -193,6 +193,31 @@ This guide defines standards and best practices for creating and maintaining Pul
 
 ---
 
+## Document Routing: specs vs ADR vs lessons vs journal
+
+When a change produces knowledge, route it to exactly **one** home by what it
+answers. Do not copy the same fact into multiple locations.
+
+| Knowledge kind | Answers | Home | When to write |
+|---|---|---|---|
+| Behavioral spec | **What** the system must do (`SHALL`, WHEN-THEN scenarios) | `openspec/specs/<capability>/spec.md` | via `/opsx-sync` / archive |
+| Architecture decision | **Why** we chose this over alternatives (trade-offs, rejected options) | `Docs/decisions/NNN-*.md` (ADR) | when an architectural choice lands |
+| Lesson / pitfall | **What broke and how to avoid it** (symptom → root cause → fix) | `Docs/lessons/*.md` | after fixing a non-obvious bug |
+| Working memory | **Where things stand** (progress, next steps, open questions) | `Docs/journal/YYYY-MM-DD.md` | session start/end via `session-journal` skill |
+
+**Decision flow** — ask "what does this answer?":
+1. It defines system behavior → `openspec/specs/` (proposal/design lives in `openspec/changes/` until merged)
+2. It records a human trade-off the code can't show → ADR in `Docs/decisions/`
+3. It's a hard-won fix that should not recur → `Docs/lessons/`
+4. It's transient progress → `Docs/journal/` (never promote to specs/lessons)
+
+Specs, ADRs, and lessons are **not duplicates of each other**: one feature can
+touch all three, but each captures a different kind of knowledge. The
+`openspec/changes/<name>/` artifacts are temporary working assets; once synced
+and archived they are superseded by the merged `openspec/specs/` truth.
+
+---
+
 ## ADR Template
 
 ```markdown

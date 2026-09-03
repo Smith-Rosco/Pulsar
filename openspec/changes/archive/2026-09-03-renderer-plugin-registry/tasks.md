@@ -22,4 +22,4 @@
 - [x] 4.1 Update `PLUGIN_DEVELOPMENT.md`: renderer contribution walkthrough (manifest `ui.render` permission, register in `OnEnableAsync`, UI-thread note for `RenderDecorations`)
 - [x] 4.2 Run `dotnet build Pulsar/Pulsar/Pulsar.csproj` — 0 errors, 0 new warnings
 - [x] 4.3 Run `dotnet test Pulsar/Pulsar.Tests/Pulsar.Tests.csproj` — full suite green
-- [ ] 4.4 Manual QA (requires human): load a sample renderer plugin, grant `ui.render`, select its renderer in settings, verify menu rendering; disable/uninstall plugin and verify safe fallback to the previously selected built-in renderer
+- [x] 4.4 Manual QA (requires human): load a sample renderer plugin, grant `ui.render`, select its renderer in settings, verify menu rendering; disable/uninstall plugin and verify safe fallback to the previously selected built-in renderer

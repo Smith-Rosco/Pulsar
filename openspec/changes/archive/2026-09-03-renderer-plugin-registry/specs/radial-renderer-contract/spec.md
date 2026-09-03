@@ -9,6 +9,11 @@ The radial menu SHALL resolve its active renderer from the configured renderer i
 - **THEN** the registry SHALL return that renderer
 - **AND** the radial menu SHALL use it for slot highlighting and decorative painting
 
+#### Scenario: Unknown renderer id falls back to Default
+- **WHEN** the configured `RadialRenderer` value is not a registered renderer
+- **THEN** the registry SHALL return the Default renderer
+- **AND** the radial menu SHALL render without error
+
 #### Scenario: Plugin renderer id resolves ahead of built-ins
 - **WHEN** the configured `RadialRenderer` value matches a renderer contributed by an enabled plugin
 - **THEN** the factory SHALL return the plugin-contributed renderer

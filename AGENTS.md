@@ -84,7 +84,7 @@ Operational guide for agents working on the **Pulsar** codebase (.NET 8, WPF/Win
 | Config persistence/writes | `Services/ConfigService.cs`, `Services/ConfigEditSession.cs`. `GetSnapshot()` = deep copy, never mutate; all writes via `ConfigEditSession` (revision-guarded). [Docs/decisions/009-config-snapshot-seam.md](./Docs/decisions/009-config-snapshot-seam.md), [005-config-single-writer.md](./Docs/decisions/005-config-single-writer.md) |
 | Input injection (PKI) | [Docs/architecture/INPUT_INJECTION.md](./Docs/architecture/INPUT_INJECTION.md) |
 | WPF UI issues | [Docs/lessons/](./Docs/lessons/) |
-| Architectural decisions / docs standards | [Docs/decisions/](./Docs/decisions/), [Docs/CONTRIBUTING.md](./Docs/CONTRIBUTING.md) |
+| Architectural decisions / docs standards | [Docs/decisions/](./Docs/decisions/), [Docs/CONTRIBUTING.md](./Docs/CONTRIBUTING.md) — **Document routing** (spec vs ADR vs lessons vs journal) at `CONTRIBUTING.md` → "Document Routing" |
 | Architecture overview | [ARCHITECTURE.md](./ARCHITECTURE.md), [Docs/README.md](./Docs/README.md) |
 | Thread safety & concurrency | [Docs/architecture/PLUGIN_SYSTEM.md](./Docs/architecture/PLUGIN_SYSTEM.md) (`ConcurrentDictionary`, `Interlocked`, `Dispatcher.InvokeAsync`) |
 | Propose / track a spec change | [openspec/](./openspec/) — active work in `changes/`, completed in `changes/archive/`, merged truth in `specs/`. Slash commands: `/opsx-propose`, `/opsx-explore`, `/opsx-apply`, `/opsx-update`, `/opsx-sync`, `/opsx-archive` (delivery `both`, see `.opencode/commands/`). Every turn auto-injects the active change via `.opencode/plugin/openspec-workflow-state.js` |
