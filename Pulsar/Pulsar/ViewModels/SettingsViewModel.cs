@@ -203,7 +203,8 @@ namespace Pulsar.ViewModels
             ILoggingConfigService loggingConfigService,
             IProcessRegistryService? processRegistryService = null,
             ICustomIconStore? customIconStore = null,
-            ISmartSubActionDefaults? smartDefaults = null)
+            ISmartSubActionDefaults? smartDefaults = null,
+            Core.Rendering.StyleRendererFactory? rendererFactory = null)
         {
             _configService = configService;
             _windowService = windowService;
@@ -222,6 +223,7 @@ namespace Pulsar.ViewModels
             _loggingConfigService = loggingConfigService;
             _processRegistryService = processRegistryService;
             _customIconStore = customIconStore;
+            _rendererFactory = rendererFactory;
 
             _session = new SettingsEditorSession(configService, secretStore);
 
@@ -251,6 +253,11 @@ namespace Pulsar.ViewModels
 
             // Load cache statistics
             _ = LoadCacheStatisticsAsync();
+
+            // [RadialRenderer] Enumerate built-in + plugin-contributed renderers for the
+            // appearance selector. The view model is transient (fresh per settings open),
+            // so each open re-enumerates the current registry state.
+            PopulateRendererOptions();
 
             // Subscribe to OpenSettingsMessage
             WeakReferenceMessenger.Default.Register<OpenSettingsMessage>(this, (r, m) =>

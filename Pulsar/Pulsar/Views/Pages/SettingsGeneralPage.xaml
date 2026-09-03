@@ -96,19 +96,11 @@
                                            Margin="{StaticResource Pulsar.Gap.Top.XS}"/>
                             </StackPanel>
                             <ComboBox Grid.Column="1" Width="160"
+                                      ItemsSource="{Binding DataContext.RendererOptions, RelativeSource={RelativeSource AncestorType=Page}}"
                                       SelectedValue="{Binding DataContext.RendererStyle, RelativeSource={RelativeSource AncestorType=Page}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                      SelectedValuePath="Tag"
-                                      AutomationProperties.Name="{lex:Locale Settings.Appearance.RendererStyle}">
-                                <ComboBoxItem Tag="Default">
-                                    <TextBlock Text="{lex:Locale Settings.Appearance.RendererStyle.Default}" VerticalAlignment="Center"/>
-                                </ComboBoxItem>
-                                <ComboBoxItem Tag="ClassicRing">
-                                    <TextBlock Text="{lex:Locale Settings.Appearance.RendererStyle.ClassicRing}" VerticalAlignment="Center"/>
-                                </ComboBoxItem>
-                                <ComboBoxItem Tag="Glassmorphism">
-                                    <TextBlock Text="{lex:Locale Settings.Appearance.RendererStyle.Glassmorphism}" VerticalAlignment="Center"/>
-                                </ComboBoxItem>
-                            </ComboBox>
+                                      SelectedValuePath="Id"
+                                      DisplayMemberPath="DisplayName"
+                                      AutomationProperties.Name="{lex:Locale Settings.Appearance.RendererStyle}"/>
                         </Grid>
 
                         <Separator Margin="{StaticResource Pulsar.Gap.Vertical.MD}"/>

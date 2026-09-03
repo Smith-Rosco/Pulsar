@@ -18,6 +18,7 @@ namespace Pulsar.Core.Plugin
         public const string FileSystemRead = "filesystem.read";
         public const string FileSystemWrite = "filesystem.write";
         public const string NetworkClient = "network.client";
+        public const string UiRender = "ui.render";
 
         public static IReadOnlyList<string> All { get; } = new[]
         {
@@ -28,7 +29,8 @@ namespace Pulsar.Core.Plugin
             ProcessLaunch,
             FileSystemRead,
             FileSystemWrite,
-            NetworkClient
+            NetworkClient,
+            UiRender
         };
 
         public static bool IsKnown(string permission)

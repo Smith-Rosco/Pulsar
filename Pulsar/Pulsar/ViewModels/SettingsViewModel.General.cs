@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -48,14 +50,46 @@ namespace Pulsar.ViewModels
         // ===== Radial Renderer Style + Theme Preset =====
 
         /// <summary>
-        /// Read-only renderer style option values (bound as ComboBoxItem Tags).
+        /// One selectable entry of the appearance renderer selector: the persisted id
+        /// plus a display label (localized for built-ins, raw id for plugin renderers).
         /// </summary>
-        public IReadOnlyList<string> RendererStyleOptions { get; } = new[]
+        public sealed record RendererOption(string Id, string DisplayName);
+
+        private readonly Core.Rendering.StyleRendererFactory? _rendererFactory;
+
+        private ObservableCollection<RendererOption> _rendererOptions = new();
+
+        /// <summary>
+        /// Renderer options for the appearance selector: built-ins first (localized
+        /// via existing resx keys), then plugin contributions (raw id as label).
+        /// Enumerated at view-model construction; the view model is transient, so
+        /// each settings open reflects the current plugin registry state.
+        /// </summary>
+        public IReadOnlyList<RendererOption> RendererOptions => _rendererOptions;
+
+        private void PopulateRendererOptions()
         {
-            DefaultRadialRenderer.RendererId,
-            ClassicRingRadialRenderer.RendererId,
-            GlassmorphismRadialRenderer.RendererId
-        };
+            var options = new List<RendererOption>
+            {
+                new(DefaultRadialRenderer.RendererId, _loc["Settings.Appearance.RendererStyle.Default"]),
+                new(ClassicRingRadialRenderer.RendererId, _loc["Settings.Appearance.RendererStyle.ClassicRing"]),
+                new(GlassmorphismRadialRenderer.RendererId, _loc["Settings.Appearance.RendererStyle.Glassmorphism"])
+            };
+
+            if (_rendererFactory != null)
+            {
+                foreach (var availability in _rendererFactory.GetAvailableRenderers())
+                {
+                    if (availability.IsPluginContributed)
+                    {
+                        options.Add(new RendererOption(availability.Id, availability.Id));
+                    }
+                }
+            }
+
+            _rendererOptions = new ObservableCollection<RendererOption>(options);
+            OnPropertyChanged(nameof(RendererOptions));
+        }
 
         /// <summary>
         /// Read-only radial theme preset option values (System / Dark / Light + named presets).

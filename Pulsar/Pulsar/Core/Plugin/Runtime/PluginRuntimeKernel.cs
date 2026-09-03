@@ -570,6 +570,7 @@ namespace Pulsar.Core.Plugin.Runtime
         private readonly PluginExecutionPipeline _executionPipeline;
         private readonly ILogger<PluginRuntimeKernel> _logger;
         private readonly IConfigService? _configService;
+        private readonly Core.Rendering.IRadialRendererRegistry? _rendererRegistry;
         private readonly ConcurrentDictionary<string, SemaphoreSlim> _activationLocks = new(StringComparer.OrdinalIgnoreCase);
 
         public PluginRuntimeKernel(
@@ -579,7 +580,8 @@ namespace Pulsar.Core.Plugin.Runtime
             PluginRuntimeStateStore runtimeStateStore,
             PluginExecutionPipeline executionPipeline,
             ILogger<PluginRuntimeKernel>? logger = null,
-            IConfigService? configService = null)
+            IConfigService? configService = null,
+            Core.Rendering.IRadialRendererRegistry? rendererRegistry = null)
         {
             _serviceProvider = serviceProvider;
             _loader = loader;
@@ -588,6 +590,7 @@ namespace Pulsar.Core.Plugin.Runtime
             _executionPipeline = executionPipeline;
             _logger = logger ?? NullLogger<PluginRuntimeKernel>.Instance;
             _configService = configService;
+            _rendererRegistry = rendererRegistry;
         }
 
         public async Task LoadCoreAsync()
@@ -798,6 +801,21 @@ namespace Pulsar.Core.Plugin.Runtime
             {
                 _runtimeStateStore.Transition(pluginId, enabled ? PluginLifecycleState.Enabled : PluginLifecycleState.Disabled);
             }
+
+            // [RadialRenderer] Unconditional owner cleanup on disable: a plugin that
+            // registered renderers but did not unregister them in OnDisableAsync must
+            // never leave dangling contributions behind (resolution falls back to Default).
+            if (!enabled)
+            {
+                var removedRenderers = _rendererRegistry?.UnregisterOwner(pluginId) ?? 0;
+                if (removedRenderers > 0)
+                {
+                    _logger.LogInformation(
+                        "[PluginRuntimeKernel] Removed {Count} plugin renderer(s) on disable of {PluginId}",
+                        removedRenderers,
+                        pluginId);
+                }
+            }
         }
 
         public bool IsPluginEnabled(string pluginId)
@@ -833,6 +851,9 @@ namespace Pulsar.Core.Plugin.Runtime
                 }
 
                 _runtimeStateStore.RemovePlugin(plugin.Id);
+
+                // [RadialRenderer] Unconditional owner cleanup on unload.
+                _rendererRegistry?.UnregisterOwner(plugin.Id);
             }
         }
 

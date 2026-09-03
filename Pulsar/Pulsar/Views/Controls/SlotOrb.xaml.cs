@@ -61,15 +61,42 @@ namespace Pulsar.Views.Controls
         // deep copy, and per-slot activation fires on every hover flip — resolving it
         // each time would add avoidable GC pressure on the hot path. The cache refreshes
         // only when Profiles.json changes (config save), which is exactly when the
-        // renderer selection can change.
+        // renderer selection can change — plus when the plugin renderer registry
+        // changes (contribution added/removed), so a removed plugin renderer can
+        // never leave a dangling cached reference (falls back to Default instead).
         private static StyleRendererFactory? _cachedRendererFactory;
         private static long _cachedRendererRevision = -1;
         private static IRadialRenderer? _cachedRenderer;
+        private static bool _registryChangedHooked;
+
+        private static void HookRegistryInvalidation(App app)
+        {
+            if (_registryChangedHooked)
+            {
+                return;
+            }
+
+            var registry = app.Services.GetService<Core.Rendering.IRadialRendererRegistry>();
+            if (registry == null)
+            {
+                return;
+            }
+
+            registry.Changed += (_, _) =>
+            {
+                // Next GetRenderer() re-resolves through the factory; a removed plugin
+                // renderer then falls back to Default instead of staying cached.
+                _cachedRenderer = null;
+                _cachedRendererRevision = -1;
+            };
+            _registryChangedHooked = true;
+        }
 
         private static IRadialRenderer? GetRenderer()
         {
             if (Application.Current is App app)
             {
+                HookRegistryInvalidation(app);
                 // [RadialRenderer] Resolve through the factory + config so the active
                 // renderer (Default / ClassicRing / Glassmorphism) applies highlights
                 // consistently with the ViewModel's ApplyRadialRendering. Falls back to

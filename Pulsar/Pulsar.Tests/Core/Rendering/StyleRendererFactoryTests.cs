@@ -123,5 +123,56 @@ namespace Pulsar.Tests.Rendering
             // The legacy single-instance lookup must resolve to the Default fallback.
             provider.GetService<IRadialRenderer>().Should().BeOfType<DefaultRadialRenderer>();
         }
+
+        // ===== Plugin-contributed renderers (IRadialRendererRegistry) =====
+
+        [Fact]
+        public void Create_PluginRegisteredId_ShouldReturnPluginRenderer()
+        {
+            var registry = new RadialRendererRegistry();
+            var pluginRenderer = new StubRenderer("Neon");
+            registry.Register(pluginRenderer, "plugin.a").Should().BeTrue();
+
+            var factory = new StyleRendererFactory(
+                new IRadialRenderer[] { new DefaultRadialRenderer() }, registry);
+
+            factory.Create("neon").Should().BeSameAs(pluginRenderer);
+        }
+
+        [Fact]
+        public void Create_PluginRendererRemoved_ShouldFallBackToDefault()
+        {
+            var registry = new RadialRendererRegistry();
+            registry.Register(new StubRenderer("Neon"), "plugin.a").Should().BeTrue();
+            var factory = new StyleRendererFactory(
+                new IRadialRenderer[] { new DefaultRadialRenderer() }, registry);
+            factory.Create("Neon").Should().BeOfType<StubRenderer>();
+
+            registry.UnregisterOwner("plugin.a");
+
+            factory.Create("Neon").Should().BeOfType<DefaultRadialRenderer>();
+        }
+
+        [Fact]
+        public void GetAvailableRenderers_ShouldUnionBuiltInsAndPluginContributions()
+        {
+            var registry = new RadialRendererRegistry();
+            registry.Register(new StubRenderer("Neon"), "plugin.a").Should().BeTrue();
+            var factory = new StyleRendererFactory(
+                new IRadialRenderer[]
+                {
+                    new DefaultRadialRenderer(),
+                    new StubRenderer("ClassicRing")
+                }, registry);
+
+            var available = factory.GetAvailableRenderers();
+
+            available.Should().BeEquivalentTo(new[]
+            {
+                new RendererAvailability(DefaultRadialRenderer.RendererId, IsPluginContributed: false),
+                new RendererAvailability("ClassicRing", IsPluginContributed: false),
+                new RendererAvailability("Neon", IsPluginContributed: true)
+            });
+        }
     }
 }

@@ -146,6 +146,29 @@ namespace Pulsar
             serviceCollection.AddSingleton<Core.Rendering.IRadialRenderer, Core.Rendering.ClassicRingRadialRenderer>();
             serviceCollection.AddSingleton<Core.Rendering.IRadialRenderer, Core.Rendering.GlassmorphismRadialRenderer>();
             serviceCollection.AddSingleton<Core.Rendering.IRadialRenderer, Core.Rendering.DefaultRadialRenderer>();
+            // [RadialRenderer] Plugin contributions: mutable registry with built-in ids
+            // reserved (a plugin can never shadow Default/ClassicRing/Glassmorphism) and
+            // owner gating on the ui.render permission from PluginProfile.GrantedPermissions.
+            serviceCollection.AddSingleton<Core.Rendering.IRadialRendererRegistry>(sp =>
+                new Core.Rendering.RadialRendererRegistry(
+                    reservedIds: new[]
+                    {
+                        Core.Rendering.DefaultRadialRenderer.RendererId,
+                        Core.Rendering.ClassicRingRadialRenderer.RendererId,
+                        Core.Rendering.GlassmorphismRadialRenderer.RendererId
+                    },
+                    canRegisterOwner: ownerId =>
+                    {
+                        if (string.IsNullOrWhiteSpace(ownerId))
+                        {
+                            return false;
+                        }
+
+                        var config = sp.GetRequiredService<IConfigService>();
+                        var snapshot = config.GetSnapshot();
+                        return snapshot.Plugins.TryGetValue(ownerId, out var profile)
+                            && profile.GrantedPermissions.Contains(Pulsar.Core.Plugin.PluginPermissions.UiRender);
+                    }));
             serviceCollection.AddSingleton<Core.Rendering.StyleRendererFactory>();
             serviceCollection.AddSingleton<Core.Rendering.RadialThemePresetResolver>();
             serviceCollection.AddSingleton<Func<Pulsar.Models.AppTheme, Core.Rendering.IRadialThemeTokens>>(

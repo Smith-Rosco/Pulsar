@@ -8,6 +8,7 @@ using Moq;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Core.Plugin.Runtime;
+using Pulsar.Core.Rendering;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 using Pulsar.Tests.TestHelpers;
@@ -218,6 +219,105 @@ namespace Pulsar.Tests.Plugin
             plugin.EnableCount.Should().Be(1);
             runtimeState.GetState(plugin.Id).Should().Be(PluginLifecycleState.Enabled);
             configService.Verify(x => x.SaveAsync(It.IsAny<ProfilesConfig>(), It.IsAny<long?>()), Times.Exactly(2));
+        }
+
+        [Fact]
+        public async Task SetPluginStateAsync_Disable_ShouldRemovePluginRenderersFromRegistry()
+        {
+            var services = new Mock<IServiceProvider>();
+            var config = new ProfilesConfig();
+            config.Plugins["runtime.plugin"] = new PluginProfile { Enabled = true };
+
+            var persistedConfig = config;
+            var configService = new Mock<IConfigService>();
+            configService.Setup(x => x.GetSnapshot()).Returns(() => persistedConfig);
+            configService.Setup(x => x.LoadSnapshotAsync(It.IsAny<bool>())).ReturnsAsync(() => persistedConfig);
+            configService.Setup(x => x.SaveAsync(It.IsAny<ProfilesConfig>(), It.IsAny<long?>()))
+                .Callback<ProfilesConfig, long?>((saved, _) => persistedConfig = saved)
+                .Returns(Task.CompletedTask);
+
+            var catalog = new PluginCatalog();
+            var runtimeState = new PluginRuntimeStateStore();
+            var descriptor = CreateDescriptor("runtime.plugin", PluginTier.Extension, canDisable: true, typeof(RuntimeLifecyclePlugin));
+            catalog.RegisterDescriptors(new[] { descriptor });
+
+            var plugin = new RuntimeLifecyclePlugin();
+            runtimeState.SetPlugin(plugin, PluginLifecycleState.Enabled);
+
+            var registry = new RadialRendererRegistry();
+            registry.Register(new RendererStub("Neon"), "runtime.plugin").Should().BeTrue();
+            registry.Register(new RendererStub("Solar"), "other.plugin").Should().BeTrue();
+
+            var kernel = new PluginRuntimeKernel(
+                services.Object,
+                new FakeLoader(plugin, descriptor),
+                catalog,
+                runtimeState,
+                new PluginExecutionPipeline(runtimeState, new PluginCircuitBreakerPolicy()),
+                NullLogger<PluginRuntimeKernel>.Instance,
+                configService.Object,
+                registry);
+
+            await kernel.SetPluginStateAsync(plugin.Id, enabled: false);
+
+            registry.TryGet("Neon", out _).Should().BeFalse();
+            registry.TryGet("Solar", out _).Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task UnloadAllAsync_ShouldRemoveAllPluginRenderersFromRegistry()
+        {
+            var catalog = new PluginCatalog();
+            var runtimeState = new PluginRuntimeStateStore();
+            var descriptor = CreateDescriptor("runtime.plugin", PluginTier.Extension, canDisable: true, typeof(RuntimeLifecyclePlugin));
+            catalog.RegisterDescriptors(new[] { descriptor });
+
+            var plugin = new RuntimeLifecyclePlugin();
+            runtimeState.SetPlugin(plugin, PluginLifecycleState.Enabled);
+
+            var registry = new RadialRendererRegistry();
+            registry.Register(new RendererStub("Neon"), "runtime.plugin").Should().BeTrue();
+            registry.Register(new RendererStub("Solar"), "other.plugin").Should().BeTrue();
+
+            var kernel = new PluginRuntimeKernel(
+                new Mock<IServiceProvider>().Object,
+                new FakeLoader(plugin, descriptor),
+                catalog,
+                runtimeState,
+                new PluginExecutionPipeline(runtimeState, new PluginCircuitBreakerPolicy()),
+                NullLogger<PluginRuntimeKernel>.Instance,
+                new Mock<IConfigService>().Object,
+                registry);
+
+            await kernel.UnloadAllAsync();
+
+            registry.TryGet("Neon", out _).Should().BeFalse();
+            // "other.plugin" was never loaded into the runtime state store, so its
+            // contribution is untouched: cleanup is strictly owner-scoped.
+            registry.TryGet("Solar", out _).Should().BeTrue();
+        }
+
+        private sealed class RendererStub : IRadialRenderer
+        {
+            public RendererStub(string id)
+            {
+                Id = id;
+            }
+
+            public string Id { get; }
+
+            public void Initialize(IRadialThemeTokens tokens)
+            {
+            }
+
+            public IRadialSlotHighlight ResolveHighlight(bool isActive)
+            {
+                return RadialSlotHighlight.None;
+            }
+
+            public void RenderDecorations(System.Windows.Controls.Canvas canvas, double cx, double cy, double wheelRadius, double coreRadius)
+            {
+            }
         }
 
         private static PluginDescriptor CreateDescriptor(string id, PluginTier tier, bool canDisable, Type implementationType)
