@@ -161,7 +161,7 @@ ApplyExitHighlight(exitIcon, isHighlighted)
 ### 5.1 下一迭代建议(按价值排序)
 
 1. **级联子菜单 Fan 人工 QA** —— 唯一阻塞项,需人跑。
-2. **多语言扩展**(zh-TW / ja)—— 短期路线欠账。
+2. ~~多语言扩展(zh-TW / ja)~~ **已闭环(2026-09-03)** —— 按决策收敛为中英双语:zh-CN 覆盖经校验已完整(此前「仅 101/1037 键」为 grep 单行计数的测量假象,多行 `<data>` 条目未被计入),清理 1 条孤儿键;zh-TW / ja 明确不做。
 3. **渲染器插件化**(`IPluginRegistry`)—— Pulsar 相对 StarPie 的唯一差异化点。
 4. CleanSectors / CatPaw 形态 + 配色微调 / 吸色 / 光晕三参数。
 5. 多触发键(中键 / 侧键 / 键盘长按)+ hook 健康检查自愈。
