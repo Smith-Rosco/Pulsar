@@ -1,4 +1,10 @@
-## MODIFIED Requirements
+# slot-editor-information-hierarchy
+
+## Purpose
+
+Define the slot editor's information hierarchy: collapsed slot cards remain prose-free scannable surfaces, expanded quick edit communicates editing intent immediately, and the unified editor establishes a single editing hierarchy shared by the Create and Edit flows.
+
+## Requirements
 
 ### Requirement: Collapsed slot cards SHALL remain prose-free scan surfaces
 The system SHALL present collapsed slot cards as compact scan surfaces that communicate slot identity and health state without explanatory or instructional prose.

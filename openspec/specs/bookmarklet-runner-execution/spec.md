@@ -1,4 +1,10 @@
-## ADDED Requirements
+# bookmarklet-runner-execution
+
+## Purpose
+
+Define how the bookmarklet runner delivers and executes bookmarklet payloads through UI Automation address-bar injection: fail fast with a recoverable failure when UIA injection cannot complete, keep failed attempts retry-safe with no residual payload text, and route execution failures through the standard user-facing action feedback path.
+
+## Requirements
 
 ### Requirement: Bookmarklet runner SHALL fail fast when UIA injection is unavailable
 The bookmarklet runner SHALL treat UI Automation address-bar injection as its only payload entry mechanism. If UIA injection cannot set the full bookmarklet payload into the focused browser address bar, the runner SHALL return a recoverable execution failure instead of degrading to typed or character-by-character payload entry.

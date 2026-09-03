@@ -1,4 +1,10 @@
-## ADDED Requirements
+# command-key-parsing
+
+## Purpose
+
+Define the key-sequence pipeline for command plugins: a KeysLexer that tokenizes key notation — plain text, named keys in curly braces, and modifier combinations, including mixed sequences — into executable instructions, and a KeySender that executes those instructions by delegating to the shared input helper.
+
+## Requirements
 
 ### Requirement: KeysLexer tokenizes plain text into TextInstruction
 

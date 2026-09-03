@@ -1,4 +1,10 @@
-## ADDED Requirements
+# unified-slot-type-picker
+
+## Purpose
+
+Define the unified slot type picker shown on slot creation: an intent grid of primary cards covers common intents, a browse-all path reaches non-primary slot types, intent cards map to canonical plugin-action pairs, configuration offers back-navigation to the picker, and plugin metadata designates primary cards.
+
+## Requirements
 
 ### Requirement: System presents a unified intent grid on slot creation
 The system SHALL present a single view containing curated intent cards when the user opens the Create Slot dialog, eliminating the separate Scenario/Advanced flow toggle.

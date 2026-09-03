@@ -1,4 +1,10 @@
-## ADDED Requirements
+# language-switching
+
+## Purpose
+
+Define end-user language switching for the settings UI: a language selector ComboBox in General Settings binds through SettingsViewModel, persists the chosen language code to Profiles.json, and hot-switches every open window immediately, backed by a language code-to-display-name mapping.
+
+## Requirements
 
 ### Requirement: Language selector ComboBox in General Settings
 

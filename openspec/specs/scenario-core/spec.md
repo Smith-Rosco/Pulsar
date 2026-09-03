@@ -1,4 +1,10 @@
-## ADDED Requirements
+# scenario-core
+
+## Purpose
+
+Define the onboarding scenario model: TutorialScenario carries per-scenario metadata, a registry holds all registered scenarios, a step loader routes to per-scenario step files, and initial configuration generation creates the command slots each scenario demonstrates.
+
+## Requirements
 
 ### Requirement: TutorialScenario model defines per-scenario metadata
 The system SHALL define a `TutorialScenario` class that bundles all configuration for a tutorial scenario: identifier, localized display strings, command slot templates, prerequisite provider reference, and step file path.

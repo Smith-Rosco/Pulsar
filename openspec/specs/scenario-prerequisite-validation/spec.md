@@ -1,4 +1,10 @@
-## ADDED Requirements
+# scenario-prerequisite-validation
+
+## Purpose
+
+Define prerequisite validation for onboarding scenarios: pluggable checkers report software availability — with built-in checkers for Excel, VBA, and browser detection — an aggregated provider drives status-aware UI rendering, and partially-met scenarios fall back gracefully.
+
+## Requirements
 
 ### Requirement: Prerequisite checkers report software availability
 The system SHALL define an `IPrerequisiteChecker` interface with per-checker detection logic and a result status.

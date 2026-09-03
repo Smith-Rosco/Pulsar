@@ -1,4 +1,10 @@
-## ADDED Requirements
+# plugin-display-identity
+
+## Purpose
+
+Define the display identity of built-in plugins: a canonical display name and a description that communicate user intent rather than internal implementation labels, with visual differentiation that does not use accent color as the icon differentiator.
+
+## Requirements
 
 ### Requirement: Built-in plugins SHALL expose a canonical display identity
 Built-in plugins SHALL define a canonical user-facing display identity that is used consistently in plugin metadata, plugin pickers, and plugin documentation.

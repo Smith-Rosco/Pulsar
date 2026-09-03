@@ -1,4 +1,10 @@
-## ADDED Requirements
+# command-process-launch
+
+## Purpose
+
+Isolate process launching behind an injectable IProcessLauncher abstraction so command plugins execute external processes through a testable seam instead of calling Process.Start directly.
+
+## Requirements
 
 ### Requirement: IProcessLauncher wraps Process.Start for testability
 

@@ -1,4 +1,10 @@
-## ADDED Requirements
+# completion-celebration
+
+## Purpose
+
+Define the tutorial completion celebration: when the tutorial reaches its final step, the overlay window plays a confetti particle animation lasting roughly 2–3 seconds, implemented as a lightweight DrawingVisual-based particle system with random colors, velocities, rotation, gravity, and fade-out.
+
+## Requirements
 
 ### Requirement: Confetti animation plays on tutorial completion
 When the tutorial reaches the final completion step (step 6), the overlay window SHALL display a confetti particle animation that lasts approximately 2–3 seconds to provide a sense of achievement.

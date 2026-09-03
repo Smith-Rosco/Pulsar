@@ -1,4 +1,10 @@
-## ADDED Requirements
+# winswitcher-blacklist-dialog-performance
+
+## Purpose
+
+Define responsiveness requirements for the WinSwitcher blacklist dialog: the dialog remains responsive during initial load by using a lightweight running-state lookup and tolerates slow icon sources.
+
+## Requirements
 
 ### Requirement: WinSwitcher blacklist dialog SHALL remain responsive during initial load
 The system SHALL render the WinSwitcher process blacklist dialog without waiting for full window inventory, per-process icon extraction, or registry mutation work to complete.

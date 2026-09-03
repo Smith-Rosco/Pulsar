@@ -1,8 +1,13 @@
+# cascade-submenu-layout
+
 ## Purpose
 
 Defines the geometry and hit-testing rules for StarPie-style cascade submenu layouts — Ring (concentric sub-ring) and Fan (sector fan) — computed in window-relative DIP coordinates so child slots stay predictable and clickable across DPI scales.
 
-## ADDED Requirements
+## Requirements
+
+Defines the geometry and hit-testing rules for StarPie-style cascade submenu layouts — Ring (concentric sub-ring) and Fan (sector fan) — computed in window-relative DIP coordinates so child slots stay predictable and clickable across DPI scales.
+
 
 ### Requirement: Cascade submenu SHALL support Ring layout
 The system SHALL lay child slots of a cascade submenu on a concentric sub-ring centered on the parent slot, distributing them radially when there are two or more children.

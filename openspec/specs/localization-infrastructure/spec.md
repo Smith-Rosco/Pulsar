@@ -1,4 +1,10 @@
-## ADDED Requirements
+# localization-infrastructure
+
+## Purpose
+
+Define the localization foundation for Pulsar's UI: a singleton ILocalizationService resolves translated strings by key and supports runtime language switching with a LanguageChanged event, the language preference persists in Profiles.json, LocExtension resolves localized strings in XAML attributes, and the RESX resources plus plugin string conventions keep core and plugin UI localizable.
+
+## Requirements
 
 ### Requirement: Localization service provides translated strings by key
 

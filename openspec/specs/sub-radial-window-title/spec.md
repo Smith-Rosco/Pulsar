@@ -1,4 +1,10 @@
-## ADDED Requirements
+# sub-radial-window-title
+
+## Purpose
+
+Define sub-menu window slot labeling: window slots display the window title as the slot label, coexisting with the existing icon and badge presentation.
+
+## Requirements
 
 ### Requirement: Sub-menu window slots SHALL display the window title as the slot label
 When the radial menu presents a sub-menu of individual windows for a grouped process, each slot SHALL display the actual window title as its primary label instead of a numbered suffix derived from the process name.

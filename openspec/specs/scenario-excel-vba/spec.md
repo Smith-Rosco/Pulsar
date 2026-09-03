@@ -1,4 +1,10 @@
-## ADDED Requirements
+# scenario-excel-vba
+
+## Purpose
+
+Define the Excel VBA onboarding scenario: the VBA script execution demo and its tutorial steps, with the steps JSON mirroring the standard 6-step structure.
+
+## Requirements
 
 ### Requirement: Excel scenario defines VBA script execution demo
 The system SHALL define an "Excel Automation" tutorial scenario that demonstrates VbaRunnerPlugin in addition to WinSwitcher.

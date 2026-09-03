@@ -1,4 +1,10 @@
-## ADDED Requirements
+# window-switch-selection-core
+
+## Purpose
+
+Define the shared target-window selection contract behind every app-switching entry point: selection prefers real activation recency over synthetic ordering, applies explicit skip rules based on switching context, supports grouped root-slot direct-trigger intent (return to the app MRU window from outside the app, rotate away from the current in-process window), and honors an optional preferred monitor with same-monitor rectangle-intersection preference; grouped root slots pass the cursor monitor in selection requests.
+
+## Requirements
 
 ### Requirement: App-switching entry points SHALL use a shared target-window selection contract
 Pulsar SHALL choose the target window for app-switching flows through a shared selection contract so equivalent switching entry points do not diverge in how they rank and skip candidate windows, and that contract SHALL accept an explicit switching intent rather than relying only on a skip flag.

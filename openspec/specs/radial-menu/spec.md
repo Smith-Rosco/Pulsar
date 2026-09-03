@@ -1,4 +1,10 @@
-## MODIFIED Requirements
+# radial-menu
+
+## Purpose
+
+Define the radial menu's core interaction contract: a global mouse interaction model that works without relying on window focus or window bounds, contextual sound triggers for slot changes and execution, right-click navigation with root-level bounce feedback, grouped root-slot modifier-release semantics with direct-switch execution, and descriptor-driven cascade entry into submenus.
+
+## Requirements
 
 ### Requirement: Mouse Interaction Model
 The radial menu SHALL handle mouse clicks globally when visible, regardless of whether the cursor is within the physical bounds of the `RadialMenuWindow`. It SHALL NOT rely on WPF `CaptureMouse`.
@@ -17,7 +23,6 @@ The radial menu SHALL handle mouse clicks globally when visible, regardless of w
 - **THEN** the slot action SHALL be executed
 - **AND** the menu SHALL dismiss
 
-## ADDED Requirements
 
 ### Requirement: Contextual Sound Triggers
 The radial menu SHALL trigger sound feedback during user interaction to reinforce muscle memory.

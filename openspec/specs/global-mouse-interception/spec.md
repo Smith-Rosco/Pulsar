@@ -1,4 +1,10 @@
-## ADDED Requirements
+# global-mouse-interception
+
+## Purpose
+
+Define system-wide mouse interception for the radial menu: left and right button down/up events are intercepted globally, and a selective swallowing mechanism based on application state prevents intercepted events from reaching other applications.
+
+## Requirements
 
 ### Requirement: Global Mouse Click Interception
 The system SHALL be capable of intercepting `WM_LBUTTONDOWN`, `WM_LBUTTONUP`, `WM_RBUTTONDOWN`, and `WM_RBUTTONUP` events system-wide.

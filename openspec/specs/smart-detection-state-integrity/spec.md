@@ -1,4 +1,10 @@
-## ADDED Requirements
+# smart-detection-state-integrity
+
+## Purpose
+
+Keep smart detection state integrity: detection uses semantic eligibility checks, patches the latest persisted configuration rather than a stale copy, and updates only the fields that detection owns.
+
+## Requirements
 
 ### Requirement: Smart detection uses semantic eligibility checks
 The system SHALL determine whether smart detection may run by inspecting the latest persisted configuration's `HasCompletedInitialDetection` field and the current lifecycle path, rather than comparing serialized fallback JSON strings.

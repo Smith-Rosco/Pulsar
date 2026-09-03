@@ -1,8 +1,13 @@
+# submenu-coordinator-strategy
+
 ## Purpose
 
 Defines the strategy-based coordinator that hosts concrete submenu strategies, so window switching is just one implementation and future cascade forms plug in without touching the session.
 
-## ADDED Requirements
+## Requirements
+
+Defines the strategy-based coordinator that hosts concrete submenu strategies, so window switching is just one implementation and future cascade forms plug in without touching the session.
+
 
 ### Requirement: Submenu rendering SHALL be strategy-driven
 The submenu coordinator SHALL select a concrete strategy from a `SubMenuDescriptor` and delegate slot configuration (center slot, child slots, pagination) to that strategy.

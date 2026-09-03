@@ -1,4 +1,10 @@
-## ADDED Requirements
+# window-switching-behavior-contract
+
+## Purpose
+
+Define the behavior contract shared by equivalent app-switching entry points: entry points stay behaviorally aligned, submenu display order remains stable independently of default target selection, blacklist behavior distinguishes discovery filtering from activation denial, and selection results explain why a window was chosen.
+
+## Requirements
 
 ### Requirement: Equivalent app-switching entry points SHALL remain behaviorally aligned
 Pulsar SHALL keep WinSwitcher plugin switching, grouped radial switching, submenu default selection, and quick-switch resolution aligned through one explicit behavior contract so equivalent user intents do not drift between entry points.

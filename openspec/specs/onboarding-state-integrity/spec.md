@@ -1,4 +1,10 @@
-## ADDED Requirements
+# onboarding-state-integrity
+
+## Purpose
+
+Keep onboarding state consistent with the persisted configuration: state is read from persisted configuration, background smart detection does not conflict with an active wizard, and closing the wizard window is treated as an explicit skip.
+
+## Requirements
 
 ### Requirement: Onboarding state reads from persisted configuration
 The system SHALL read onboarding state from the persisted configuration file rather than relying solely on an in-memory cache that may never refresh after initial load.

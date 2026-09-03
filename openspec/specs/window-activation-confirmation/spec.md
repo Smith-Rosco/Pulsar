@@ -1,4 +1,10 @@
-## ADDED Requirements
+# window-activation-confirmation
+
+## Purpose
+
+Define window activation confirmation: after a successful foreground switch the shared activation path flashes the target window using FlashWindowEx with system-default flash parameters.
+
+## Requirements
 
 ### Requirement: Shared activation SHALL flash the target window after successful foreground switch
 After the shared activation path successfully brings a target window to the foreground, Pulsar SHALL flash the target window's title bar and taskbar button to provide unambiguous visual confirmation of the switch.

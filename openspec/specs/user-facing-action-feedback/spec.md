@@ -1,4 +1,10 @@
-## ADDED Requirements
+# user-facing-action-feedback
+
+## Purpose
+
+Define user-facing action feedback: action execution returns feedback users can act on, sensitive data is protected from exposure in feedback, presentation stays consistent across common execution surfaces, and a launching-in-progress state is supported.
+
+## Requirements
 
 ### Requirement: Action execution returns user-facing feedback
 The system SHALL present a normalized user-facing feedback message for common action execution outcomes instead of relying only on technical logs.

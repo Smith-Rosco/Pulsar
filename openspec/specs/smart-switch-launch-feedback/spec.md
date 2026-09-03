@@ -1,4 +1,10 @@
-## ADDED Requirements
+# smart-switch-launch-feedback
+
+## Purpose
+
+Define launch feedback for smart switch fall-through: when a smart switch cannot activate a matching window and falls through to starting the process, a launching notification is shown and auto-dismisses.
+
+## Requirements
 
 ### Requirement: SmartSwitch SHALL show a launching notification when falling through to process start
 When a WinSwitcher SmartSwitch action cannot find a running window and falls through to `Process.Start()`, Pulsar SHALL display a tray notification indicating that the application is being launched.

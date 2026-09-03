@@ -1,4 +1,10 @@
-## ADDED Requirements
+# window-switching-architecture
+
+## Purpose
+
+Define the window-switching architecture: inventory, tracking, selection, and activation are explicit responsibilities; selection requests express switching intent and explicit ordering semantics; quick switch is modeled as a dedicated stateful engine; and the window-switch submenu is configured through the generic coordinator.
+
+## Requirements
 
 ### Requirement: Window switching SHALL be decomposed into explicit inventory, tracking, selection, and activation responsibilities
 Pulsar SHALL implement window switching through distinct responsibilities for window inventory, tracking, selection, and activation so architectural boundaries remain explicit and independently testable.

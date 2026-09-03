@@ -1,4 +1,10 @@
-## ADDED Requirements
+# window-preview-fallback
+
+## Purpose
+
+Define hover preview resolution for window slots: previews resolve through a layered fallback chain, switchability remains independent from previewability, a cache preserves last-known-good snapshots across menu sessions and invalidates on target window loss, and preview state distinguishes live, snapshot, and icon outcomes.
+
+## Requirements
 
 ### Requirement: Hover preview SHALL resolve through layered fallback
 The system SHALL resolve radial-menu window hover preview through a layered fallback strategy instead of relying on a single fresh screenshot attempt.

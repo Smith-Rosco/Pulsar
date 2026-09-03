@@ -1,4 +1,10 @@
-## MODIFIED Requirements
+# slot-editor-progressive-disclosure
+
+## Purpose
+
+Define progressive disclosure in the slot editor: low-priority field guidance is tucked behind disclosure controls while critical status information remains permanently visible.
+
+## Requirements
 
 ### Requirement: Low-priority field guidance SHALL use progressive disclosure
 The system SHALL move descriptions, examples, and other low-priority instructional guidance into tooltip-style or comparable secondary disclosure patterns when that content is not required for immediate comprehension. In the unified picker phase, per-card descriptive prose SHALL be available through tooltip support rather than inline display. In the configuration phase, the Appearance section SHALL default to collapsed in Create mode but expanded in Edit mode. The three-section hierarchy (Behavior always visible, Appearance context-dependent, Advanced always collapsed) SHALL serve as the primary disclosure mechanism.

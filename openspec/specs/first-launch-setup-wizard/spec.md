@@ -1,4 +1,10 @@
-## MODIFIED Requirements
+# first-launch-setup-wizard
+
+## Purpose
+
+Define the first-launch setup wizard offering: new users without persisted onboarding state are presented a guided wizard with scenario selection and prerequisite validation, while users with existing onboarding or skip state bypass it automatically.
+
+## Requirements
 
 ### Requirement: First launch offers a guided setup wizard
 The system SHALL present a first-launch setup wizard for new users that includes scenario selection with prerequisite validation.

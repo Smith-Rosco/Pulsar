@@ -1,4 +1,10 @@
-## MODIFIED Requirements
+# slot-editor-density-and-layout
+
+## Purpose
+
+Define density and layout rules for the unified slot editor: quick edit uses compact row-oriented layouts for simple fields, complex fields may escape compact rows when justified, and visible headings are minimized to keep the editor scannable.
+
+## Requirements
 
 ### Requirement: Quick edit SHALL use compact row-oriented layouts for simple fields
 The system SHALL use a denser row-oriented presentation for simple, high-frequency quick-edit fields so expanded slot cards remain materially shorter than full configuration dialogs. The unified slot editor SHALL render the Behavior and Appearance sections as compact row-oriented groups rather than boxed card containers.

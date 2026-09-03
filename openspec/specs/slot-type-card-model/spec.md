@@ -1,4 +1,10 @@
-## ADDED Requirements
+# slot-type-card-model
+
+## Purpose
+
+Define the unified slot type card model: SlotTypeCard unifies curated and registered slot types in one picker model, carries an optional DefaultAction, plugin display metadata supports a primary designation, and the slot editor view model replaces the legacy add-slot and configuration-dialog view models.
+
+## Requirements
 
 ### Requirement: SlotTypeCard SHALL unify curated and registered slot types
 The system SHALL provide a `SlotTypeCard` model class that represents both curated primary intent cards and secondary plugin entries from the plugin registry in a single collection.

@@ -1,4 +1,10 @@
-## ADDED Requirements
+# sound-feedback
+
+## Purpose
+
+Define the sound feedback service: ISoundFeedbackService plays low-latency auditory cues for hover and execution events during radial menu interaction.
+
+## Requirements
 
 ### Requirement: Sound Feedback Service Integration
 The system SHALL provide an `ISoundFeedbackService` capable of playing low-latency auditory cues for hover and execution events.

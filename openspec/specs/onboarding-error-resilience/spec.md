@@ -1,4 +1,10 @@
-## ADDED Requirements
+# onboarding-error-resilience
+
+## Purpose
+
+Guarantee the onboarding experience degrades gracefully: wizard display failures produce a user-visible notification instead of failing silently, and a tutorial crash never permanently disables the tutorial.
+
+## Requirements
 
 ### Requirement: Wizard display failure produces user-visible notification
 The system SHALL produce a user-visible notification when the first-launch setup wizard cannot be displayed, and SHALL continue to normal application startup rather than silently skipping onboarding.

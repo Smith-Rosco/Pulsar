@@ -1,4 +1,10 @@
-## ADDED Requirements
+# usage-analytics-ui
+
+## Purpose
+
+Define the Settings display for plugin usage analytics: usage statistics gathered by PluginUsageTracker are surfaced to help users optimize their configurations.
+
+## Requirements
 
 ### Requirement: Plugin Usage Analytics Display
 The Settings application SHALL display usage statistics gathered by the `PluginUsageTracker` to help users optimize their configurations.

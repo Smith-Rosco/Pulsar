@@ -1,4 +1,10 @@
-## MODIFIED Requirements
+# staged-startup-coordination
+
+## Purpose
+
+Keep deferred startup failures isolated: a failure in one deferred initialization work item must not prevent already-ready core capabilities from running, the runtime records which work item failed, and onboarding-specific failures additionally surface user-visible feedback.
+
+## Requirements
 
 ### Requirement: Deferred Startup Failures Are Isolated
 The system SHALL isolate deferred initialization failures so they do not prevent already-ready core capabilities from continuing to run, and the runtime SHALL record which deferred startup work item failed. Failures in onboarding-specific deferred work SHALL produce user-visible feedback in addition to log entries.

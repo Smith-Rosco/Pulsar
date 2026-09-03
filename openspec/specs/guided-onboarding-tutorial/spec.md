@@ -1,4 +1,10 @@
-## MODIFIED Requirements
+# guided-onboarding-tutorial
+
+## Purpose
+
+Define the interactive onboarding tutorial walkthrough: it demonstrates a concrete app-switch-then-command workflow, optimizes the step 2→3 transition to reduce context switching, and shows slot-missing fallback guidance when the demonstrated configuration is absent.
+
+## Requirements
 
 ### Requirement: Tutorial demonstrates concrete app-switch-then-command workflow
 The tutorial SHALL walk the user through a concrete scenario: switch to the target app via Switch Mode, then run a command via Command Mode that demonstrates the chosen plugin.
@@ -23,7 +29,6 @@ The tutorial SHALL walk the user through a concrete scenario: switch to the targ
 - **THEN** the tutorial SHALL fall back to the first generated app slot for that scenario
 - **AND** the step copy SHALL reference that app by name instead of the original target
 
-## ADDED Requirements
 
 ### Requirement: Step 2→3 transition is optimized to reduce context switching
 When a WaitForAction step completes via ActionExecuted trigger, the system SHALL skip the subsequent Instruction-only confirmation step and show a brief toast notification instead.

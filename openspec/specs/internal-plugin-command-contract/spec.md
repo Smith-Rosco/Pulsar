@@ -1,4 +1,10 @@
-## ADDED Requirements
+# internal-plugin-command-contract
+
+## Purpose
+
+Define the metadata contract for internal system-control plugins: each plugin exposes explicit user-facing actions through its metadata, and existing saved slots remain compatible where feasible through runtime aliases that do not expand the authoring surface.
+
+## Requirements
 
 ### Requirement: Internal system-control plugins SHALL expose explicit actions through metadata
 Built-in plugins that control Pulsar itself SHALL expose explicit user-visible actions through plugin metadata instead of requiring wrapper verbs plus nested command arguments.

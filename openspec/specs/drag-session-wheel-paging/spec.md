@@ -1,4 +1,10 @@
-## ADDED Requirements
+# drag-session-wheel-paging
+
+## Purpose
+
+Extend radial menu wheel paging to drag-session invocations: global wheel input is consumed only during eligible menu sessions, existing paging feedback stays consistent under drag-session input, and normal non-drag wheel paging remains fully functional.
+
+## Requirements
 
 ### Requirement: Radial menu SHALL support wheel paging during drag-session invocation
 When Pulsar is invoked while the user is actively performing a Windows drag-and-drop operation, the radial menu SHALL continue to accept mouse-wheel paging input for eligible root-level menus.

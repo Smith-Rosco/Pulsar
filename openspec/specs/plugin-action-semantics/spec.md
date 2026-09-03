@@ -1,4 +1,10 @@
-## ADDED Requirements
+# plugin-action-semantics
+
+## Purpose
+
+Define action-level semantics for built-in plugins: primary user-facing actions are declared in plugin metadata, runtime compatibility aliases never expand the authoring surface, and common user intents map to recommended plugin/action pairs.
+
+## Requirements
 
 ### Requirement: Built-in plugins SHALL define primary user-facing actions in metadata
 Each built-in plugin that exposes configurable slot behavior SHALL define its primary user-facing actions explicitly in metadata so authoring flows can present a consistent action list.

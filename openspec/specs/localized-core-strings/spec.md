@@ -1,4 +1,10 @@
-## ADDED Requirements
+# localized-core-strings
+
+## Purpose
+
+Apply the localization infrastructure to Pulsar's own surfaces: XAML files use LocExtension instead of hardcoded strings and C# view models and services use ILocalizationService for user-visible strings, while plugin metadata strings remain English defaults.
+
+## Requirements
 
 ### Requirement: XAML files use LocExtension instead of hardcoded strings
 
