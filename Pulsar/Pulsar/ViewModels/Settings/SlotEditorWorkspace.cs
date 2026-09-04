@@ -673,7 +673,10 @@ namespace Pulsar.ViewModels.Settings
                     .Select(error => error.Message)
                     .FirstOrDefault() ?? string.Empty;
 
-                slot.SetValidationSummary(summary);
+                // Summaries read off ValidationResult.Errors are errors by
+                // construction (candidate N: severity travels with the record,
+                // it is not re-guessed from message text).
+                slot.SetValidationSummary(summary, ValidationSeverity.Error);
                 UpdateSlotPresentation(slot);
             }
         }
@@ -683,7 +686,7 @@ namespace Pulsar.ViewModels.Settings
             var validationResult = _validationResultProvider();
             if (validationResult == null)
             {
-                slot.SetValidationSummary(string.Empty);
+                slot.SetValidationSummary(string.Empty, ValidationSeverity.None);
                 return;
             }
 
@@ -692,7 +695,7 @@ namespace Pulsar.ViewModels.Settings
                 .Select(error => error.Message)
                 .FirstOrDefault() ?? string.Empty;
 
-            slot.SetValidationSummary(summary);
+            slot.SetValidationSummary(summary, ValidationSeverity.Error);
             UpdateSlotPresentation(slot);
         }
 

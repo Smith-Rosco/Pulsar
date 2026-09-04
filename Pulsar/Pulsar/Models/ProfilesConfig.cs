@@ -773,25 +773,11 @@ namespace Pulsar.Models
         [JsonIgnore]
         public string HealthToneKey => Presentation.HealthToneKey;
 
-        [JsonIgnore]
-        public string QuickEditBadgeText => HasQuickEditParameters ? $"{QuickEditParameters.Count} quick edits" : "Quick edits in dialog";
-
-        [JsonIgnore]
-        public string SummaryFallbackText => HasValidationSummary ? (GetLoc()?["Profile.ConfigurationIssues"] ?? "Configuration issues detected") : (GetLoc()?["Profile.OpenConfiguration"] ?? "Open full configuration for details");
-
-        private static Pulsar.Core.Localization.ILocalizationService? GetLoc()
-        {
-            try
-            {
-                if (System.Windows.Application.Current is App app)
-                    return app.Services.GetService<Pulsar.Core.Localization.ILocalizationService>();
-                return null;
-            }
-            catch
-            {
-                return null;
-            }
-        }
+        // [Candidate N] QuickEditBadgeText / SummaryFallbackText / GetLoc() removed:
+        // both computed properties had zero consumers across the codebase and XAML,
+        // and GetLoc() reached into the WPF Application container (with a bare
+        // catch { return null; }) from inside a persisted model. The localization
+        // resource keys they referenced are retained in the .resx files.
 
         public void SetParameterMetadata(
             IEnumerable<SlotActionOption> availableActions,
@@ -843,8 +829,6 @@ namespace Pulsar.Models
             OnPropertyChanged(nameof(HasSummaryTokens));
             OnPropertyChanged(nameof(HealthBadgeText));
             OnPropertyChanged(nameof(HealthToneKey));
-            OnPropertyChanged(nameof(QuickEditBadgeText));
-            OnPropertyChanged(nameof(SummaryFallbackText));
         }
 
         private static void DisposeFields(ObservableCollection<SlotParameterEditorField>? fields)
@@ -888,27 +872,25 @@ namespace Pulsar.Models
             }
         }
 
-        public void SetValidationSummary(string summary)
+        /// <summary>
+        /// Sets the validation summary together with its severity.
+        /// [Candidate N] The severity is passed in explicitly by the caller (which
+        /// reads it off the <see cref="Services.Validation.ValidationError"/> record)
+        /// instead of being guessed back from English keywords inside the message.
+        /// The old substring heuristic silently downgraded the "expects {type}"
+        /// and "Validation failed: {ex}" AddError sites to Warning, and would have
+        /// broken entirely the day those messages get localized.
+        /// </summary>
+        public void SetValidationSummary(string summary, ValidationSeverity severity)
         {
             ValidationSummary = summary;
-
-            // Auto-infer severity from summary content
-            if (string.IsNullOrWhiteSpace(summary))
-                ValidationSeverity = ValidationSeverity.None;
-            else if (summary.Contains("error", StringComparison.OrdinalIgnoreCase)
-                  || summary.Contains("required", StringComparison.OrdinalIgnoreCase)
-                  || summary.Contains("invalid", StringComparison.OrdinalIgnoreCase)
-                  || summary.Contains("missing", StringComparison.OrdinalIgnoreCase))
-                ValidationSeverity = ValidationSeverity.Error;
-            else
-                ValidationSeverity = ValidationSeverity.Warning;
+            ValidationSeverity = severity;
 
             OnPropertyChanged(nameof(ValidationSummary));
             OnPropertyChanged(nameof(HasValidationSummary));
             OnPropertyChanged(nameof(ValidationSeverity));
             OnPropertyChanged(nameof(HealthBadgeText));
             OnPropertyChanged(nameof(HealthToneKey));
-            OnPropertyChanged(nameof(SummaryFallbackText));
         }
 
         public void SetPresentation(SlotPresentation presentation)

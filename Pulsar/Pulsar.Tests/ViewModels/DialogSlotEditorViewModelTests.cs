@@ -834,7 +834,9 @@ namespace Pulsar.Tests.ViewModels
                 $"{summaryField.SummaryLabel}: {state}"
             });
             slot.ValidationSummary = state == "missing" ? "Complete the required field." : string.Empty;
-            slot.SetValidationSummary(slot.ValidationSummary);
+            slot.SetValidationSummary(
+                slot.ValidationSummary,
+                state == "missing" ? ValidationSeverity.Error : ValidationSeverity.None);
             slot.SetPresentation(SlotPresentationBuilder.Build(slot));
         }
 

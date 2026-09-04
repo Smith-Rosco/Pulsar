@@ -219,6 +219,31 @@ namespace Pulsar.Tests.ViewModels
             workspace.HasUnsavedChanges.Should().BeFalse();
         }
 
+        [Fact]
+        public void RefreshSlotValidationSummaries_SeverityTravelsWithType_NotFromMessageKeywords()
+        {
+            var workspace = CreateWorkspace();
+            workspace.Load(CreateConfig(), new Dictionary<Guid, SecretPayload>());
+            workspace.CurrentContext = workspace.AvailableContexts.Single(c => c.Key == "Global");
+            var slot = workspace.CurrentSlots.Single();
+
+            var validationResult = new ValidationResult();
+            // The "expects {type}" AddError site in ConfigValidationPipeline contains
+            // none of the old severity-guess keywords ("error"/"required"/"invalid"/
+            // "missing") and used to display as Warning despite being an Error
+            // (candidate N: severity now travels with the ValidationError record).
+            validationResult.AddError(
+                "Slot 1 (Global Command) parameter 'Path' expects number",
+                slot.PluginId,
+                "slot[Global:Command:1].path");
+
+            workspace.RefreshSlotValidationSummaries(validationResult);
+
+            slot.ValidationSummary.Should().Be("Slot 1 (Global Command) parameter 'Path' expects number");
+            slot.ValidationSeverity.Should().Be(ValidationSeverity.Error,
+                "a message without the old keywords must no longer downgrade to Warning");
+        }
+
         private static SlotEditorWorkspace CreateWorkspace()
         {
             var registry = new PluginMetadataRegistry(NullLogger<PluginMetadataRegistry>.Instance);
