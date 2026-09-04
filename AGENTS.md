@@ -88,7 +88,7 @@ Operational guide for agents working on the **Pulsar** codebase (.NET 8, WPF/Win
 | Architecture overview | [ARCHITECTURE.md](./ARCHITECTURE.md), [Docs/README.md](./Docs/README.md) |
 | Thread safety & concurrency | [Docs/architecture/PLUGIN_SYSTEM.md](./Docs/architecture/PLUGIN_SYSTEM.md) (`ConcurrentDictionary`, `Interlocked`, `Dispatcher.InvokeAsync`) |
 | Propose / track a spec change | [openspec/](./openspec/) — active work in `changes/`, completed in `changes/archive/`, merged truth in `specs/`. Slash commands: `/opsx-propose`, `/opsx-explore`, `/opsx-apply`, `/opsx-update`, `/opsx-sync`, `/opsx-archive` (delivery `both`, see `.opencode/commands/`). Every turn auto-injects the active change via `.opencode/plugin/openspec-workflow-state.js` |
-| Cross-session working memory | `Docs/journal/` — **single canonical store across all AI harnesses**; one file per day via the `session-journal` skill (read at session start, append at session end). Never duplicate journal content into harness-native memory (`.workbuddy/memory/`, etc.) — at most a one-line pointer (ADR-019) |
+| Cross-session working memory | `Docs/journal/` — **single canonical store across all AI harnesses**; one file per day via the `session-journal` skill (read at session start, append at session end — **mandatory Session Start Ritual, see §8**). Never duplicate journal content into harness-native memory (`.workbuddy/memory/`, etc.) — at most a one-line pointer (ADR-019) |
 | Roadmap & design proposals | [Docs/roadmap/](./Docs/roadmap/), [Docs/proposals/](./Docs/proposals/) |
 | Historical fix reports (not current truth) | [Docs/archive/](./Docs/archive/) — date-prefixed `YYYY-MM-DD-NAME.md` |
 
@@ -159,6 +159,12 @@ Extension plugins crashing 3x in 1 min are auto-disabled for 60s; user notified 
 
 ## 8. Agent Behavior Rules & AI-First Development
 
+### Session Start Ritual (MANDATORY, before any real work)
+- **Read the journal first**: at the start of every session, run the `session-journal` skill flow (`.agents/skills/session-journal/SKILL.md`, mirrored at `.opencode/skills/session-journal/SKILL.md`): list `Docs/journal/`, read the newest `*.md`, and summarize any unfinished "下一步" (Next steps) to the user — "上次进行到 X，下一步是 Y（见 Docs/journal/<file>）". Do not start work that contradicts an unfinished entry without confirming.
+- **The skill may be missing from the host's injected skill list** (project skills under `.agents/skills/` are not always surfaced) — locate it at the path above and read it before acting; the ritual is governed by `Docs/journal/` + ADR-019, not by the host's list.
+- **Session end**: when the user asks to record / wrap up, or before finishing a substantial task, append a `## Session (HH:MM)` block per the skill's Step 2 (做了什么 / 关键决策·坑 / 下一步 / 相关引用). Only append; never rewrite or delete past entries.
+- **Also peek at `openspec/changes/`** for an active change and mention it alongside the journal context when relevant.
+
 ### The "AI Programming Triangle" (MUST follow when building features / fixing bugs)
 1. **Isolate Side-Effects (Everything is Mockable)**: never couple code to OS APIs (`SendKeys`, `Process.Start`, `File.Write`, Registry, UI Automation). Define interfaces (`IInputSimulator`, `IClipboardMonitor`, `IProcessLauncher`) + Windows impl; verify with `Moq` in `Pulsar.Tests`.
 2. **ViewModel Unit Testing (State over UI)**: state transitions verifiable without touching XAML. xUnit tests in `Pulsar.Tests/ViewModels/`; invoke commands programmatically and assert state.
@@ -197,5 +203,5 @@ dotnet restore Pulsar/Pulsar/Pulsar.csproj
 
 ---
 
-*Last Updated: 2026-09-02*
-*Version: 3.1.0 (Docs reorganized: 12 historical fix reports moved from `lessons/` to `archive/`, `handoff/` folded into `archive/`, `design/` merged into `proposals/`; added openspec + roadmap task-router rows; `Docs/agents/` confirmed as skill contracts)*
+*Last Updated: 2026-09-04*
+*Version: 3.2.0 (Added mandatory Session Start Ritual in §8: read Docs/journal via `.agents/skills/session-journal/SKILL.md` before any real work, with explicit skill path since project skills aren't always in the host's injected list; Task Router journal row now cross-references §8)*
