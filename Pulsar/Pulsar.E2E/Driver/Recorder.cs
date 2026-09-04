@@ -82,12 +82,12 @@ namespace Pulsar.E2E.Driver
             _recorder.Record(outputMp4Path);
         }
 
-        private void OnComplete(object sender, RecordingCompleteEventArgs e)
+        private void OnComplete(object? sender, RecordingCompleteEventArgs e)
         {
             _completion?.TrySetResult(true);
         }
 
-        private void OnFailed(object sender, RecordingFailedEventArgs e)
+        private void OnFailed(object? sender, RecordingFailedEventArgs e)
         {
             _completion?.TrySetException(new InvalidOperationException($"Recording failed: {e.Error}"));
         }

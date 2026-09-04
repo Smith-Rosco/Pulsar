@@ -79,9 +79,9 @@ namespace Pulsar.Tests.Services
             public Mock<ITrayService> TrayService { get; } = new(MockBehavior.Strict);
             public Mock<IThemeService> ThemeService { get; } = new(MockBehavior.Strict);
             public Mock<ILocalizationService> LocalizationService { get; } = new(MockBehavior.Strict);
-            public Features.Tutorial.Services.StartupCoordinator TutorialStartupCoordinator { get; private set; }
+            public Features.Tutorial.Services.StartupCoordinator TutorialStartupCoordinator { get; private set; } = null!;
             public Mock<IDialogService> DialogService { get; } = new(MockBehavior.Strict);
-            public ConfigValidationPipeline ValidationPipeline { get; private set; }
+            public ConfigValidationPipeline ValidationPipeline { get; private set; } = null!;
             public Mock<IOnboardingStateService> OnboardingStateService { get; } = new(MockBehavior.Strict);
             public Mock<IProcessRegistryService> ProcessRegistryService { get; } = new(MockBehavior.Strict);
             public CapturingScheduler BackgroundScheduler { get; } = new();
@@ -89,7 +89,7 @@ namespace Pulsar.Tests.Services
             public Mock<IHotkeyService> HotkeyService { get; } = new(MockBehavior.Strict);
             public Mock<IGlobalMouseService> GlobalMouseService { get; } = new(MockBehavior.Strict);
             public Mock<ITutorialService> TutorialService { get; } = new(MockBehavior.Strict);
-            public PluginCircuitBreakerPolicy BreakerPolicy { get; private set; }
+            public PluginCircuitBreakerPolicy BreakerPolicy { get; private set; } = null!;
             public Mock<IPluginHealthMonitor> PluginHealthMonitor { get; } = new(MockBehavior.Strict);
             public Mock<IDebugStatePublisher> DebugStatePublisher { get; } = new(MockBehavior.Strict);
             public Mock<IDebugCommandServer> DebugCommandServer { get; } = new(MockBehavior.Strict);
@@ -203,10 +203,10 @@ namespace Pulsar.Tests.Services
                     CallOrder.Add("WizardFactoryInvoked");
                     throw new WizardFactoryHaltedException();
                 };
-                Func<IDebugStatePublisher> debugStatePublisherFactory = DebugOptions.IsUiDebug
+                Func<IDebugStatePublisher>? debugStatePublisherFactory = DebugOptions.IsUiDebug
                     ? () => { CallOrder.Add("DebugStatePublisherFactoryInvoked"); return DebugStatePublisher.Object; }
                     : null;
-                Func<IDebugCommandServer> debugCommandServerFactory = DebugOptions.IsUiDebug
+                Func<IDebugCommandServer>? debugCommandServerFactory = DebugOptions.IsUiDebug
                     ? () => { CallOrder.Add("DebugCommandServerFactoryInvoked"); return DebugCommandServer.Object; }
                     : null;
 
@@ -244,7 +244,7 @@ namespace Pulsar.Tests.Services
                     // `new Application()`) leaked a non-null Application.Current into this
                     // process — which previously deadlocked the full-suite run: InvokeAsync
                     // queued onto that dead Dispatcher and never completed.
-                    dispatcherProvider: () => null);
+                    dispatcherProvider: () => null!);
             }
 
             private static ProfilesConfig CreateDefaultConfig() => new()

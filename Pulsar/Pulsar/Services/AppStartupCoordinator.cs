@@ -48,8 +48,8 @@ namespace Pulsar.Services
         private readonly Lazy<ITutorialService> _tutorialService;
         private readonly Func<RadialMenuWindow> _mainWindowFactory;
         private readonly Func<FirstLaunchSetupWizardViewModel> _wizardFactory;
-        private readonly Func<IDebugStatePublisher> _debugStatePublisherFactory;          // registered only in ui-debug
-        private readonly Func<IDebugCommandServer> _debugCommandServerFactory;           // registered only in ui-debug
+        private readonly Func<IDebugStatePublisher>? _debugStatePublisherFactory;          // registered only in ui-debug
+        private readonly Func<IDebugCommandServer>? _debugCommandServerFactory;           // registered only in ui-debug
         // Unit-test seam over the WPF Application.Current global static: the deferred
         // warm-up's tutorial branch must not depend on process-global WPF state, or a
         // sibling test that constructs `new Application()` (ThemeServiceTests etc.)
@@ -75,15 +75,15 @@ namespace Pulsar.Services
             IBackgroundWorkScheduler backgroundWorkScheduler,
             LoggingLevelSwitch levelSwitch,
             ILogger<AppStartupCoordinator> logger,
-            Lazy<PluginBreakerNotificationService> breakerRelay = null,
-            Lazy<IHotkeyService> hotkeyService = null,
-            Lazy<IGlobalMouseService> globalMouseService = null,
-            Lazy<ITutorialService> tutorialService = null,
-            Func<RadialMenuWindow> mainWindowFactory = null,
-            Func<FirstLaunchSetupWizardViewModel> wizardFactory = null,
-            Func<IDebugStatePublisher> debugStatePublisherFactory = null,
-            Func<IDebugCommandServer> debugCommandServerFactory = null,
-            Func<System.Windows.Threading.Dispatcher> dispatcherProvider = null)
+            Lazy<PluginBreakerNotificationService>? breakerRelay = null,
+            Lazy<IHotkeyService>? hotkeyService = null,
+            Lazy<IGlobalMouseService>? globalMouseService = null,
+            Lazy<ITutorialService>? tutorialService = null,
+            Func<RadialMenuWindow>? mainWindowFactory = null,
+            Func<FirstLaunchSetupWizardViewModel>? wizardFactory = null,
+            Func<IDebugStatePublisher>? debugStatePublisherFactory = null,
+            Func<IDebugCommandServer>? debugCommandServerFactory = null,
+            Func<System.Windows.Threading.Dispatcher>? dispatcherProvider = null)
         {
             _configService = configService;
             _debugOptions = debugOptions;
@@ -131,7 +131,7 @@ namespace Pulsar.Services
             // object the previous inline access used). Tests inject a fixed provider
             // so the tutorial path is deterministic regardless of process-global state.
             _dispatcherProvider = dispatcherProvider
-                ?? (() => System.Windows.Application.Current?.Dispatcher);
+                ?? (() => System.Windows.Application.Current?.Dispatcher!);
         }
 
         public async Task RunBlockingInitializationAsync()
