@@ -1,6 +1,6 @@
 # Archive Index
 
-**Archive Period**: 2026-03-01 to 2026-08-29
+**Archive Period**: 2026-03-01 to 2026-09-04
 **Status**: Historical reference only, no longer maintained
 
 ---
@@ -63,6 +63,9 @@ Files are named `YYYY-MM-DD-DESCRIPTIVE_NAME.md`. Nothing here is current truth 
 | [2026-03-02-PHASE2_TASK4_COMPLETION_REPORT.md](./2026-03-02-PHASE2_TASK4_COMPLETION_REPORT.md) | Task 4 | Task 4 completion |
 | [2026-03-02-PHASE2_TASK5_COMPLETION_SUMMARY.md](./2026-03-02-PHASE2_TASK5_COMPLETION_SUMMARY.md) | Task 5 | Task 5 summary |
 | [2026-03-02-PHASE2_TASK5_TEST_REPORT.md](./2026-03-02-PHASE2_TASK5_TEST_REPORT.md) | Task 5 | Task 5 test report |
+| [2026-03-02-DELIVERY_SUMMARY_PHASE2_TASK1.md](./2026-03-02-DELIVERY_SUMMARY_PHASE2_TASK1.md) | Task 1 | Task 1 delivery summary |
+| [2026-03-02-README_PHASE2_TASK1.md](./2026-03-02-README_PHASE2_TASK1.md) | Task 1 | Task 1 README |
+| [2026-03-17-PHASE2_PROGRESS_REPORT.md](./2026-03-17-PHASE2_PROGRESS_REPORT.md) | Progress | Phase 2 progress report |
 
 ### 5. Historical Bug-Fix Reports
 
@@ -96,6 +99,51 @@ Periodic repository health snapshots. Each is dated and immutable once archived.
 | Document | Date | Result |
 |----------|------|--------|
 | [2026-09-02-REPO_HEALTH_REVIEW.md](./2026-09-02-REPO_HEALTH_REVIEW.md) | 2026-09-02 | 9.0/10 — build/test green, no blocking issues |
+| [2026-09-02-USER_PERSPECTIVE_REVIEW.md](./2026-09-02-USER_PERSPECTIVE_REVIEW.md) | 2026-09-02 | User-perspective review of the launcher |
+
+### 7. PKI & Secrets
+
+| Document | Date | Description |
+|----------|------|-------------|
+| [2026-03-01-PKI_IMPLEMENTATION.md](./2026-03-01-PKI_IMPLEMENTATION.md) | 2026-03-01 | PKI implementation notes |
+| [2026-03-26-PKI_REFACTORING_AND_BUGS.md](./2026-03-26-PKI_REFACTORING_AND_BUGS.md) | 2026-03-26 | PKI refactoring and bug fixes |
+
+### 8. Tutorial System Design Docs (2026-03-17)
+
+| Document | Purpose |
+|----------|---------|
+| [2026-03-17-TUTORIAL_SYSTEM.md](./2026-03-17-TUTORIAL_SYSTEM.md) | Complete tutorial system design |
+| [2026-03-17-TUTORIAL_SYSTEM_HANDOVER.md](./2026-03-17-TUTORIAL_SYSTEM_HANDOVER.md) | Tutorial system handover |
+| [2026-03-17-TUTORIAL_SYSTEM_INDEX.md](./2026-03-17-TUTORIAL_SYSTEM_INDEX.md) | Tutorial system index |
+| [2026-03-17-TUTORIAL_SYSTEM_PART2.md](./2026-03-17-TUTORIAL_SYSTEM_PART2.md) | Tutorial system Part 2 |
+| [2026-03-17-TUTORIAL_SYSTEM_PART3.md](./2026-03-17-TUTORIAL_SYSTEM_PART3.md) | Tutorial system Part 3 |
+| [2026-03-17-TUTORIAL_SYSTEM_PART4.md](./2026-03-17-TUTORIAL_SYSTEM_PART4.md) | Tutorial system Part 4 |
+| [2026-03-17-TUTORIAL_SYSTEM_REFACTORING_GUIDE.md](./2026-03-17-TUTORIAL_SYSTEM_REFACTORING_GUIDE.md) | Tutorial system refactoring guide |
+
+### 9. Feature Development Records
+
+| Document | Date | Description |
+|----------|------|-------------|
+| [2026-03-09-VBARUNNER_SMART_DIRECTIVES_COMPLETE.md](./2026-03-09-VBARUNNER_SMART_DIRECTIVES_COMPLETE.md) | 2026-03-09 | VbaRunner Smart Directives complete |
+
+### 10. UX Refactoring Records
+
+| Document | Date | Description |
+|----------|------|-------------|
+| [2026-06-27-UX_REFACTORING_S1_S3.md](./2026-06-27-UX_REFACTORING_S1_S3.md) | 2026-06-27 | UX refactoring S1–S3 |
+| [2026-08-16-FULLSCREEN_VIEWPORT.md](./2026-08-16-FULLSCREEN_VIEWPORT.md) | 2026-08-16 | Fullscreen viewport handling |
+| [2026-08-16-SUBMENU_ANIMATION_KANDO.md](./2026-08-16-SUBMENU_ANIMATION_KANDO.md) | 2026-08-16 | Submenu animation (Kando-style) |
+| [2026-08-16-UX_REFACTORING_S4.md](./2026-08-16-UX_REFACTORING_S4.md) | 2026-08-16 | UX refactoring S4 |
+
+### 11. Refactor & Optimization Reports (archived 2026-09-04)
+
+Moved from `guides/` and `architecture/` on 2026-09-04 — historical narratives, not current truth.
+
+| Document | Date | Description |
+|----------|------|-------------|
+| [2026-03-21-WINDOW_SWITCHING_REFACTORING.md](./2026-03-21-WINDOW_SWITCHING_REFACTORING.md) | 2026-03-21 | Window switching refactor guide (was `guides/`) |
+| [2026-03-17-PLUGIN_OPTIMIZATION_RECOMMENDATIONS.md](./2026-03-17-PLUGIN_OPTIMIZATION_RECOMMENDATIONS.md) | 2026-03-17 | Plugin optimization recommendations (was `architecture/`) |
+| [2026-03-17-PLUGIN_SYSTEM_REFACTORING_REPORT.md](./2026-03-17-PLUGIN_SYSTEM_REFACTORING_REPORT.md) | 2026-03-17 | Plugin system refactor report (was `architecture/`) |
 
 ---
 
@@ -143,5 +191,5 @@ According to [Docs/CONTRIBUTING.md](../CONTRIBUTING.md):
 
 ---
 
-**Last Updated**: 2026-09-02
+**Last Updated**: 2026-09-04
 **Archived By**: Documentation maintenance process

@@ -54,6 +54,6 @@
 
 ## Deep Dive
 
-- `Docs/guides/WINDOW_SWITCHING_REFACTORING.md` —— Window Eligibility 架构与关键文件
+- `Docs/archive/2026-03-21-WINDOW_SWITCHING_REFACTORING.md` —— Window Eligibility 架构与关键文件（历史重构记录，已归档）
 - `CONTEXT.md` —— Window Eligibility / Exclusion Rule 领域术语
 - 相关测试：`Pulsar.Tests/Services/WindowEligibilityPolicyTests.cs`

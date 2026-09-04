@@ -1,7 +1,7 @@
 # Pulsar Documentation Center
 
-**Last Updated**: 2026-09-03
-**Documentation Version**: v5.0.0
+**Last Updated**: 2026-09-04
+**Documentation Version**: v5.2.0
 **Audience**: AI agents first, humans second
 
 ---
@@ -22,17 +22,17 @@ Then follow the task router below.
 
 | Directory | What goes here | Count | Current truth? |
 |---|---|---|---|
-| **[architecture/](./architecture/)** | Stable conceptual truths about system design | 5 | Yes |
-| **[guides/](./guides/)** | How-to playbooks for recurring tasks | 8 | Yes |
-| **[lessons/](./lessons/)** | Reusable pitfalls: Symptom → Root cause → Correct pattern | 18 | Yes |
-| **[decisions/](./decisions/)** | ADRs — immutable once accepted, only superseded | 11 | Yes |
+| **[architecture/](./architecture/)** | Stable conceptual truths about system design | 3 | Yes |
+| **[guides/](./guides/)** | How-to playbooks for recurring tasks | 7 | Yes |
+| **[lessons/](./lessons/)** | Reusable pitfalls: Symptom → Root cause → Correct pattern | 21 | Yes |
+| **[decisions/](./decisions/)** | ADRs — immutable once accepted, only superseded | 19 | Yes |
 | **[Plugins/](./Plugins/)** | Per-plugin user/developer docs | 8 | Yes |
 | **[ops/](./ops/)** | Commands and operational procedures | 1 | Yes |
 | **[proposals/](./proposals/)** | Design proposals and refactor plans not yet accepted | 2 | In review |
 | **[roadmap/](./roadmap/)** | Roadmap and exploratory analysis | 3 | In review |
-| **[reports/](./reports/)** | Market research & product repositioning reports | 4 | Current |
+| **[reports/](./reports/)** | Market research & product repositioning reports | 6 | Current |
 | **[agents/](./agents/)** | **Skill contracts — machine-consumed config, NOT reading material** | 2 | Config |
-| **[archive/](./archive/)** | Historical snapshots, date-prefixed | 57 | **No** |
+| **[archive/](./archive/)** | Historical snapshots, date-prefixed | 62 | **No** |
 
 Two rules keep this structure honest:
 
@@ -45,7 +45,7 @@ Two rules keep this structure honest:
 
 | I need to... | Document |
 |---|---|
-| Understand the product positioning & market context | [reports/2026-09-03-MARKET_EVALUATION.md](./reports/2026-09-03-MARKET_EVALUATION.html) — 市场评估；[reports/2026-09-03-REPOSITIONING_PLAN.html](./reports/2026-09-03-REPOSITIONING_PLAN.html) — 重新定位方案 |
+| Understand the product positioning & market context | [reports/2026-09-03-MARKET_EVALUATION.html](./reports/2026-09-03-MARKET_EVALUATION.html) — 市场评估；[reports/2026-09-03-REPOSITIONING_PLAN.html](./reports/2026-09-03-REPOSITIONING_PLAN.html) — 重新定位方案 |
 | Build or run the application | [ops/BUILD_AND_RUN.md](./ops/BUILD_AND_RUN.md) |
 | Understand the architecture | [../ARCHITECTURE.md](../ARCHITECTURE.md) |
 | Add or modify a plugin | [../PLUGIN_DEVELOPMENT.md](../PLUGIN_DEVELOPMENT.md), [architecture/PLUGIN_SYSTEM.md](./architecture/PLUGIN_SYSTEM.md) |
@@ -57,7 +57,7 @@ Two rules keep this structure honest:
 | Back up / restore configuration | [guides/CONFIG_BACKUP_AND_RESTORE.md](./guides/CONFIG_BACKUP_AND_RESTORE.md) |
 | Add logging | [guides/LOGGING_GUIDELINES.md](./guides/LOGGING_GUIDELINES.md) |
 | Migrate a legacy plugin | [guides/PLUGIN_MIGRATION_GUIDE.md](./guides/PLUGIN_MIGRATION_GUIDE.md) |
-| Understand window switching | [guides/WINDOW_SWITCHING_REFACTORING.md](./guides/WINDOW_SWITCHING_REFACTORING.md) |
+| Understand window switching | [decisions/010-window-service-deepening.md](./decisions/010-window-service-deepening.md) — ADR；历史重构细节见 [archive/2026-03-21-WINDOW_SWITCHING_REFACTORING.md](./archive/2026-03-21-WINDOW_SWITCHING_REFACTORING.md)（已归档） |
 | Fix a WPF issue | [lessons/](./lessons/) — start with the table in [AGENTS.md](../AGENTS.md) §3 |
 | Propose or track a spec change | [../openspec/](../openspec/) |
 | Find historical context | [archive/](./archive/) |
@@ -69,8 +69,6 @@ Two rules keep this structure honest:
 - **[PLUGIN_SYSTEM.md](./architecture/PLUGIN_SYSTEM.md)** — plugin architecture, tiers, Circuit Breaker
 - **[DIALOG_SYSTEM.md](./architecture/DIALOG_SYSTEM.md)** — unified dialog architecture
 - **[INPUT_INJECTION.md](./architecture/INPUT_INJECTION.md)** — text injection hierarchy (UIA → Clipboard → SendInput)
-- **[PLUGIN_OPTIMIZATION_RECOMMENDATIONS.md](./architecture/PLUGIN_OPTIMIZATION_RECOMMENDATIONS.md)** — performance recommendations (standing advice, still open)
-- **[PLUGIN_SYSTEM_REFACTORING_REPORT.md](./architecture/PLUGIN_SYSTEM_REFACTORING_REPORT.md)** — retrospective report on the plugin system refactor
 
 ---
 
@@ -83,7 +81,6 @@ Two rules keep this structure honest:
 - **[CONFIG_BACKUP_AND_RESTORE.md](./guides/CONFIG_BACKUP_AND_RESTORE.md)** — configuration backup and restore
 - **[LOGGING_GUIDELINES.md](./guides/LOGGING_GUIDELINES.md)** — structured logging conventions
 - **[PLUGIN_MIGRATION_GUIDE.md](./guides/PLUGIN_MIGRATION_GUIDE.md)** — migrating legacy plugins to the modern model
-- **[WINDOW_SWITCHING_REFACTORING.md](./guides/WINDOW_SWITCHING_REFACTORING.md)** — window switching architecture and behavior
 
 ---
 
@@ -116,6 +113,11 @@ Reusable pitfalls. Each follows `Rule (TL;DR)` → `Symptom` → `Root cause` �
 - [ASYNC_SHUTDOWN_DEADLOCK.md](./lessons/ASYNC_SHUTDOWN_DEADLOCK.md) — shutdown deadlocks from blocking async waits
 - [POWERSHELL_5_1_COMPRESS_ARCHIVE_BROKEN.md](./lessons/POWERSHELL_5_1_COMPRESS_ARCHIVE_BROKEN.md) — `Compress-Archive` limitations on PS 5.1
 - [GH_CLI_HASH_PATH_BUG.md](./lessons/GH_CLI_HASH_PATH_BUG.md) — `gh` CLI misinterprets paths containing `#`
+- [XUNIT_APPLICATION_CURRENT_DEADLOCK.md](./lessons/XUNIT_APPLICATION_CURRENT_DEADLOCK.md) — xUnit deadlock from touching `Application.Current` on a non-UI thread
+
+**Plugin runtime**
+- [PLUGIN_RUNTIME_INSTALL_UNINSTALL_PITFALLS.md](./lessons/PLUGIN_RUNTIME_INSTALL_UNINSTALL_PITFALLS.md) — runtime install/uninstall: activation, ALC unload, GC-driven teardown
+- [PLUGIN_LOCALIZATION_SILENT_ENGLISH_FALLBACK.md](./lessons/PLUGIN_LOCALIZATION_SILENT_ENGLISH_FALLBACK.md) — silent English fallback when a plugin localization key is missing
 
 ---
 
@@ -136,6 +138,14 @@ ADRs are immutable once accepted; supersede rather than edit.
 | [009](./decisions/009-config-snapshot-seam.md) | Config snapshot seam |
 | [010](./decisions/010-window-service-deepening.md) | Window service deepening |
 | [011](./decisions/011-cascade-submenu-layout-and-paging.md) | Cascade submenu Ring/Fan layout and paging semantics |
+| [012](./decisions/012-plugin-runtime-three-seams.md) | Plugin runtime three seams (`IPluginRegistry` / `IPluginExecutor` / `IPluginRuntimeOps`) |
+| [013](./decisions/013-circuit-breaker-observation-seam.md) | Circuit breaker observation seam |
+| [014](./decisions/014-manifest-file-resolution-single-source.md) | Manifest file resolution single source |
+| [015](./decisions/015-card-capabilities-in-metadata.md) | Card capabilities in metadata |
+| [016](./decisions/016-state-store-pure-reads.md) | State store pure reads |
+| [017](./decisions/017-app-startup-coordinator-hybrid-injection.md) | App startup coordinator hybrid injection |
+| [018](./decisions/018-first-launch-decision-uses-onboarding-state-service.md) | First-launch decision uses onboarding state service |
+| [019](./decisions/019-cross-harness-working-memory-single-source.md) | Cross-harness working memory single source |
 
 ---
 
@@ -184,7 +194,7 @@ Pulsar tracks behavioral specs with [OpenSpec](../openspec/):
 openspec/
 ├── specs/              # merged truth — one directory per capability
 ├── changes/            # active work in progress
-│   └── archive/        # completed changes (23)
+│   └── archive/        # completed changes (38)
 └── config.yaml
 ```
 
@@ -200,6 +210,7 @@ Historical snapshots — **not current truth**. Useful for understanding why a d
 
 - Naming: `YYYY-MM-DD-DESCRIPTIVE_NAME.md`, flat directory
 - Contains: phase completion reports, handovers, PKI implementation notes, TUTORIAL_SYSTEM design docs, and historical fix reports migrated from `lessons/` on 2026-09-02
+- On 2026-09-04 three historical refactor/report docs were archived here from `guides/` and `architecture/` (WINDOW_SWITCHING_REFACTORING, PLUGIN_OPTIMIZATION_RECOMMENDATIONS, PLUGIN_SYSTEM_REFACTORING_REPORT)
 - See [archive/README.md](./archive/README.md)
 - Health snapshots: [2026-09-02-REPO_HEALTH_REVIEW.md](./archive/2026-09-02-REPO_HEALTH_REVIEW.md) — repository health review (9.0/10)
 
@@ -234,6 +245,7 @@ Historical snapshots — **not current truth**. Useful for understanding why a d
 ---
 
 **Change History**:
+- v5.2.0 (2026-09-04): Index resync — ADR table extended to 019, lessons to 21, reports to 6, openspec changes/archive to 38; archived 3 historical docs to `archive/` (WINDOW_SWITCHING_REFACTORING, PLUGIN_OPTIMIZATION_RECOMMENDATIONS, PLUGIN_SYSTEM_REFACTORING_REPORT); fixed MARKET_EVALUATION link text (.md → .html)
 - v5.1.0 (2026-09-02): Added repository health review snapshot to `archive/` (2026-09-02-REPO_HEALTH_REVIEW.md)
 - v5.0.0 (2026-09-02): Full index resync after reorganization — 12 historical fix reports moved `lessons/` → `archive/`; `handoff/` folded into `archive/`; `design/` merged into `proposals/`; `Plugins/test_error_explanation.md` removed; added `openspec/`, `roadmap/`, `proposals/`, `agents/` sections; documented the lessons-vs-archive criterion
 - v4.2.0 (2026-03-09): Added VbaRunner Smart Directive System documentation
