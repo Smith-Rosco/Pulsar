@@ -138,8 +138,9 @@ ipch/
 # `*.e2e` rule above would otherwise swallow the whole project directory.
 !Pulsar/Pulsar.E2E/
 
-# Local E2E tooling (downloaded ffmpeg binary toolchain) - not part of the repo
-.tools/ffmpeg/
+# Local E2E tooling - not part of the repo (ffmpeg binary toolchain, one-off
+# verification scripts with machine-specific absolute paths)
+.tools/
 
 # TFS 2012 Local Workspace
 $tf/
@@ -513,3 +514,14 @@ reference/
 
 # Local temp scratch dir (logs, throwaway scripts)
 Temp/
+
+# Local UI-verification media captures (settings-tab screenshots from manual
+# verification runs; may contain real profile data - never commit)
+Docs/media/
+
+# E2E recorder bisect-debug workflow iterations (throwaway debug variants,
+# not source workflows)
+Pulsar/Pulsar.E2E/Workflows/_bisect-*.json
+
+# Local build warning snapshots
+build_warnings_*.txt
