@@ -1,0 +1,71 @@
+{
+  "name": "radial-menu-open-via-command",
+  "app": {
+    "exePath": "",
+    "fixture": "Fixtures/default-profiles.json",
+    "arguments": ""
+  },
+  "steps": [
+    {
+      "type": "launch",
+      "id": "launch-debug-instance"
+    },
+    {
+      "type": "wait",
+      "id": "settle-after-launch",
+      "durationMs": 1500
+    },
+    {
+      "type": "record",
+      "id": "start-recording",
+      "action": "start"
+    },
+    {
+      "type": "menu-open",
+      "id": "open-action-menu",
+      "mode": "action"
+    },
+    {
+      "type": "waitForState",
+      "id": "wait-menu-opened",
+      "event": "menu-opened",
+      "timeoutMs": 10000
+    },
+    {
+      "type": "assert",
+      "id": "assert-center-slot",
+      "automationId": "Pulsar.Slot.0",
+      "expected": "visible",
+      "timeoutMs": 5000
+    },
+    {
+      "type": "screenshot",
+      "id": "screenshot-open-menu",
+      "file": "radial-menu-open.png"
+    },
+    {
+      "type": "menu-close",
+      "id": "close-menu"
+    },
+    {
+      "type": "waitForState",
+      "id": "wait-menu-closed",
+      "event": "menu-closed",
+      "timeoutMs": 5000
+    },
+    {
+      "type": "wait",
+      "id": "settle-before-stop",
+      "durationMs": 1500
+    },
+    {
+      "type": "record",
+      "id": "stop-recording",
+      "action": "stop"
+    },
+    {
+      "type": "exit",
+      "id": "exit-debug-instance"
+    }
+  ]
+}

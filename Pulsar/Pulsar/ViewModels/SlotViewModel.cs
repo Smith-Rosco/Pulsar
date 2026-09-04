@@ -84,6 +84,13 @@ namespace Pulsar.ViewModels
             set => SetProperty(ref _slotIndex, value);
         }
 
+        /// <summary>
+        /// Stable, language-independent AutomationId for UIA-based E2E lookup.
+        /// Never localize; assertions use this id, not the Label (bilingual UI).
+        /// Index 0 is the center slot.
+        /// </summary>
+        public string SlotAutomationId => $"Pulsar.Slot.{SlotIndex}";
+
         public string IconKey
         {
             get => _iconKey;

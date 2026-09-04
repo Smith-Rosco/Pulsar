@@ -1,0 +1,16 @@
+{
+  "Settings": {
+    "Language": "en-US",
+    "Theme": "Light",
+    "SlotsPerPage": 8,
+    "HasCompletedTutorial": true,
+    "LastTutorialStep": null,
+    "OnboardingState": "Complete",
+    "Hotkeys": {
+      "ShowGrid": { "Key": "Q", "Modifiers": "Control,Shift" },
+      "ShowSwitcher": { "Key": "Q", "Modifiers": "Control" }
+    }
+  },
+  "Plugins": {},
+  "Profiles": {}
+}

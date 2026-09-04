@@ -16,6 +16,7 @@ using Pulsar.Features.Tutorial.Services;
 using Pulsar.ViewModels.Dialogs;
 using Pulsar.Views;
 using Pulsar.Core.Localization;
+using Pulsar.Core.Debug;
 using Wpf.Ui.Appearance;
 
 namespace Pulsar.Services
@@ -47,6 +48,16 @@ namespace Pulsar.Services
             var configService = _services.GetRequiredService<IConfigService>();
             await ApplyLoggingConfigurationAsync(configService);
 
+            // [UI Debug Mode] Start the named-pipe state publisher before any UI can
+            // summon so the E2E driver cannot miss early state events.
+            var debugOptions = _services.GetService<DebugModeOptions>() ?? DebugModeOptions.Disabled;
+            if (debugOptions.IsUiDebug)
+            {
+                var statePublisher = _services.GetRequiredService<IDebugStatePublisher>();
+                statePublisher.Start(debugOptions.PipeName);
+                _logger.LogInformation("[Startup] Debug state publisher started on pipe {PipeName}", debugOptions.PipeName);
+            }
+
             await ConfigureLocalizationAsync(configService);
 
             // Theme must be established before the tray icon builds its ContextMenu.
@@ -77,15 +88,50 @@ namespace Pulsar.Services
             mainWindow.Show();
             _logger.LogInformation("[Startup] Radial menu window shown");
 
-            var hotkeyService = _services.GetRequiredService<IHotkeyService>();
-            await hotkeyService.InitializeAsync();
-            _logger.LogInformation("[Startup] Hotkey service initialized");
+            // [UI Debug Mode] Start the command server only after the menu window and
+            // its view-model exist, so early 'menu-open' commands cannot race window
+            // construction.
+            if (debugOptions.IsUiDebug)
+            {
+                var commandServer = _services.GetRequiredService<IDebugCommandServer>();
+                commandServer.Start(debugOptions.CommandPipeName);
+                _logger.LogInformation("[Startup] Debug command server started on pipe {PipeName}", debugOptions.CommandPipeName);
+            }
 
-            var globalMouseWheelService = _services.GetRequiredService<IGlobalMouseService>();
-            globalMouseWheelService.Initialize();
-            _logger.LogInformation("[Startup] Global mouse wheel service initialized");
+            // [UI Debug Mode] Real global hotkeys and mouse-gesture hooks must NOT be
+            // registered in a debug instance by default: the E2E driver drives input
+            // via the explicit command channel (menu-open/menu-close) and, when opted
+            // in via --ui-debug-hooks, real SendInput from a separate process. A debug
+            // run must never capture the user's actual desktop input by surprise.
+            //
+            // --ui-debug-hooks opts a debug run INTO the real global-hotkey + keyboard
+            // hook path (for workflows exercising the SendInput trigger); the
+            // mouse-gesture hook stays off in every debug run.
+            bool registerHotkeys = !debugOptions.IsUiDebug || debugOptions.EnableHotkeyHooks;
+            if (registerHotkeys)
+            {
+                var hotkeyService = _services.GetRequiredService<IHotkeyService>();
+                await hotkeyService.InitializeAsync();
+                _logger.LogInformation("[Startup] Hotkey service initialized{Suffix}",
+                    debugOptions.IsUiDebug ? " (ui-debug-hooks opt-in)" : string.Empty);
+            }
 
-            await ConfigureKeyboardHookAsync(configService);
+            if (!debugOptions.IsUiDebug)
+            {
+                var globalMouseWheelService = _services.GetRequiredService<IGlobalMouseService>();
+                globalMouseWheelService.Initialize();
+                _logger.LogInformation("[Startup] Global mouse wheel service initialized");
+            }
+
+            if (registerHotkeys)
+            {
+                await ConfigureKeyboardHookAsync(configService);
+            }
+            else
+            {
+                _logger.LogInformation("[Startup] UI debug mode: skipping hotkey, mouse-gesture and keyboard-hook registration");
+            }
+
             startupStopwatch.Stop();
             _logger.LogInformation("[Startup] Blocking startup responsibilities complete in {ElapsedMs}ms", startupStopwatch.ElapsedMilliseconds);
         }
@@ -195,6 +241,14 @@ namespace Pulsar.Services
 
         private async Task ApplyLoggingConfigurationAsync(IConfigService configService)
         {
+            // [UI Debug Mode] Keep the forced Verbose level from App.OnStartup so E2E
+            // log excerpts are always full-trace.
+            var debugOptions = _services.GetService<DebugModeOptions>() ?? DebugModeOptions.Disabled;
+            if (debugOptions.IsUiDebug)
+            {
+                return;
+            }
+
             try
             {
                 var config = await configService.LoadSnapshotAsync();

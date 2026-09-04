@@ -37,6 +37,7 @@
             <ui:TitleBar.TrailingContent>
                 <Grid Margin="{StaticResource Pulsar.Gap.Right.SM}" VerticalAlignment="Center">
                     <ui:Button Content="{lex:Locale SettingsWindow.SaveChanges}"
+                               AutomationProperties.AutomationId="Pulsar.Settings.SaveChangesButton"
                                Icon="{ui:SymbolIcon Save24}"
                                Style="{StaticResource PulsarPrimaryButtonStyle}"
                                Command="{Binding DataContext.SaveCommand, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -63,6 +64,7 @@
 
             <Grid x:Name="NavPaneGrid" Grid.Column="0">
                 <ui:NavigationView x:Name="RootNavigation"
+                                   AutomationProperties.AutomationId="Pulsar.Settings.NavView"
                                    PaneDisplayMode="Left"
                                    IsPaneOpen="True"
                                    OpenPaneLength="250"

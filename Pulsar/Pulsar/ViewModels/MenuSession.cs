@@ -112,6 +112,7 @@ namespace Pulsar.ViewModels
         private readonly IPagingController _pagingController;
         private readonly IPreviewService _previewService;
         private readonly System.IServiceProvider _serviceProvider;
+        private readonly IDebugStatePublisher? _debugStatePublisher;
         private readonly ILogger<MenuSession>? _logger;
         private readonly ILocalizationService _loc;
         private readonly IUiDispatcher _ui;
@@ -271,6 +272,8 @@ namespace Pulsar.ViewModels
             _pagingController = pagingController;
             _previewService = previewService;
             _serviceProvider = serviceProvider;
+            // [UI Debug Mode] Only resolves in a --ui-debug run; null in production.
+            _debugStatePublisher = serviceProvider.GetService(typeof(IDebugStatePublisher)) as IDebugStatePublisher;
             _loc = localizationService;
             _ui = uiDispatcher;
             _logger = logger;
@@ -298,6 +301,18 @@ namespace Pulsar.ViewModels
             {
                 if (SetProperty(ref _isVisible, value))
                 {
+                    // [UI Debug Mode] Publish menu-opened / menu-closed so the E2E
+                    // driver synchronizes on state instead of polling the UIA tree.
+                    if (_debugStatePublisher != null)
+                    {
+                        _debugStatePublisher.Publish(
+                            _isVisible ? IDebugStatePublisher.MenuOpened : IDebugStatePublisher.MenuClosed,
+                            new Dictionary<string, object?>
+                            {
+                                ["invocationSource"] = _isVisible ? InvocationSource.ToString() : null
+                            });
+                    }
+
                     if (!_isVisible)
                     {
                         InvocationSource = MenuInvocationSource.Hotkey;
@@ -440,6 +455,17 @@ namespace Pulsar.ViewModels
         public void SetActionExecuted(bool value)
         {
             ActionExecuted = value;
+
+            // [UI Debug Mode] Notify the E2E driver that a slot action actually ran.
+            if (value && _debugStatePublisher != null)
+            {
+                _debugStatePublisher.Publish(
+                    IDebugStatePublisher.ActionExecuted,
+                    new Dictionary<string, object?>
+                    {
+                        ["slotIndex"] = _activeSlotIndex
+                    });
+            }
         }
 
         public void RestoreRootMenu()
@@ -1656,6 +1682,14 @@ namespace Pulsar.ViewModels
 
         private void UpdateActiveSlotCore(int index)
         {
+            // [UI Debug Mode] Publish slot-activated for the E2E driver.
+            _debugStatePublisher?.Publish(
+                IDebugStatePublisher.SlotActivated,
+                new Dictionary<string, object?>
+                {
+                    ["slotIndex"] = index
+                });
+
             if (_activeSlotIndex == 0) CenterSlot.IsActive = false;
             else if (_activeSlotIndex > 0) Slots.FirstOrDefault(s => s.SlotIndex == _activeSlotIndex)!.IsActive = false;
 

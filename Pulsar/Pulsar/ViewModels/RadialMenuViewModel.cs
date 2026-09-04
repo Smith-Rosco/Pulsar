@@ -187,6 +187,16 @@ namespace Pulsar.ViewModels
         }
 
         /// <summary>
+        /// Explicit menu trigger for the UI-debug-mode command channel (E2E driver).
+        /// Production code must never call this — it bypasses the hotkey/gesture
+        /// input paths and opens the menu directly on the dispatcher thread.
+        /// </summary>
+        public Task ShowMenuForExternalDriverAsync(RadialMenuMode mode)
+        {
+            return ShowAsync(mode, MenuInvocationSource.Hotkey);
+        }
+
+        /// <summary>
         /// Resolves the configured theme preset to a token set, wraps it in the
         /// mode-tone decorator (Task→cool, Action→warm) and hands it to the renderer.
         /// Runs on menu open and on ConfigUpdated so preset/theme changes re-render.

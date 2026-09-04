@@ -9,6 +9,7 @@ using Pulsar.Models;
 using Pulsar.Native;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
+using Pulsar.Core.Debug;
 using Pulsar.Services.WindowSwitching;
 using Pulsar.ViewModels;
 using Pulsar.ViewModels.Settings; // Added
@@ -38,9 +39,17 @@ namespace Pulsar
 
         protected override void OnStartup(StartupEventArgs e)
         {
+            // [UI Debug Mode] Parse the --ui-debug flag FIRST so logging, config
+            // isolation and hook suppression are decided before any state is created.
+            var debugOptions = DebugModeOptions.FromArgs(e.Args);
+
             // 0. Initialize Logging (Pulsar Sentinel - Unified Architecture)
             // Note: We use default settings here, will update from config later
-            var logsBaseDir = Path.Combine(
+            // Debug runs write to the isolated Pulsar.Debug directory at Verbose level
+            // so E2E diagnostics can excerpt a full-trace log.
+            var logsBaseDir = debugOptions.IsUiDebug
+                ? debugOptions.LogDirectory
+                : Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), 
                 "Pulsar", 
                 "Logs");
@@ -49,7 +58,9 @@ namespace Pulsar
             Directory.CreateDirectory(pluginLogsDir);
 
             // Create a level switch for runtime log level control
-            var levelSwitch = new LoggingLevelSwitch(LogEventLevel.Information);
+            // Debug mode forces Verbose regardless of the config-driven level applied later.
+            var levelSwitch = new LoggingLevelSwitch(
+                debugOptions.IsUiDebug ? LogEventLevel.Verbose : LogEventLevel.Information);
 
             // Build logger configuration with default values
             var loggerConfig = new LoggerConfiguration()
@@ -85,7 +96,15 @@ namespace Pulsar
 
             Log.Logger = loggerConfig.CreateLogger();
 
+            // [UI Debug Mode] Arm PKI/secret display redaction for capture output.
+            DebugPkiRedaction.IsActive = debugOptions.IsUiDebug;
+
             Log.Information("=== Pulsar Application Starting (Log Level: {Level}) ===", levelSwitch.MinimumLevel);
+            if (debugOptions.IsUiDebug)
+            {
+                Log.Information("[UIDebug] UI debug mode active: config={ConfigPath}, pipe={PipeName}",
+                    debugOptions.ConfigFilePath, debugOptions.PipeName);
+            }
             
             // [New] Check System Integrity (焦点锁定设置)
             PulsarNative.CheckSystemIntegrity();
@@ -108,7 +127,27 @@ namespace Pulsar
 
             // 1. Core Services
             serviceCollection.AddSingleton<IPluginMetadataRegistry, PluginMetadataRegistry>();
-            serviceCollection.AddSingleton<IConfigService, ConfigService>();
+
+            // [UI Debug Mode] Expose the parsed debug options to every service that
+            // needs to branch on them (startup coordinator, PKI redaction, ...).
+            serviceCollection.AddSingleton(debugOptions);
+
+            // [UI Debug Mode] Redirect Profiles.json to the isolated Pulsar.Debug
+            // directory by reusing the existing configPath constructor override, so a
+            // debug run never reads or writes the production configuration.
+            serviceCollection.AddSingleton<IConfigService>(sp => new ConfigService(
+                sp.GetRequiredService<ILogger<ConfigService>>(),
+                sp.GetRequiredService<IPluginMetadataRegistry>(),
+                sp.GetRequiredService<IBackgroundWorkScheduler>(),
+                configPath: debugOptions.IsUiDebug ? debugOptions.ConfigFilePath : null));
+
+            // [UI Debug Mode] Named-pipe state publisher + explicit command channel
+            // (debug builds only; resolve to null in production so wiring is inert).
+            if (debugOptions.IsUiDebug)
+            {
+                serviceCollection.AddSingleton<IDebugStatePublisher, DebugStatePublisher>();
+                serviceCollection.AddSingleton<IDebugCommandServer, DebugCommandServer>();
+            }
             serviceCollection.AddSingleton<IProcessRegistryService, ProcessRegistryService>();
             serviceCollection.AddSingleton<IWindowService, WindowService>();
             serviceCollection.AddSingleton<IWindowDiscoveryService>(sp => sp.GetRequiredService<IWindowService>());

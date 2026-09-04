@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Pulsar.Core.Debug;
 using Pulsar.Plugins.Core.Pki.Contracts;
 using Pulsar.Plugins.Core.Pki.Models;
 
@@ -71,7 +72,12 @@ namespace Pulsar.Plugins.Core.Pki.Services
                 label = secretId.ToString();
             }
 
-            return new SecretDisplayMetadata(secretId, label, payload.Account ?? string.Empty);
+            // [UI Debug Mode] Mask PKI/secret-bearing display metadata so E2E
+            // captures can never leak real credential labels or accounts.
+            return new SecretDisplayMetadata(
+                secretId,
+                DebugPkiRedaction.RedactSecretDisplay(label),
+                DebugPkiRedaction.RedactAccount(payload.Account));
         }
     }
 }

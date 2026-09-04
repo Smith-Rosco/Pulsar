@@ -1,0 +1,63 @@
+{
+  "name": "radial-menu-open-via-hotkey",
+  "app": {
+    "exePath": "",
+    "fixture": "Fixtures/default-profiles.json",
+    "arguments": "--ui-debug-hooks"
+  },
+  "steps": [
+    {
+      "type": "launch",
+      "id": "launch-debug-instance"
+    },
+    {
+      "type": "wait",
+      "id": "settle-after-launch",
+      "durationMs": 1500
+    },
+    {
+      "type": "record",
+      "id": "start-recording",
+      "action": "start"
+    },
+    {
+      "type": "hotkey",
+      "id": "send-show-grid-hotkey",
+      "keys": "Ctrl+Shift+Q"
+    },
+    {
+      "type": "waitForState",
+      "id": "wait-menu-opened",
+      "event": "menu-opened",
+      "timeoutMs": 10000
+    },
+    {
+      "type": "assert",
+      "id": "assert-center-slot",
+      "automationId": "Pulsar.Slot.0",
+      "expected": "visible",
+      "timeoutMs": 5000
+    },
+    {
+      "type": "assert",
+      "id": "assert-ring-slot-1",
+      "automationId": "Pulsar.Slot.1",
+      "expected": "exists",
+      "timeoutMs": 5000
+    },
+    {
+      "type": "screenshot",
+      "id": "screenshot-open-menu",
+      "file": "radial-menu-open.png"
+    },
+    {
+      "type": "record",
+      "id": "stop-recording",
+      "action": "stop"
+    },
+    {
+      "type": "exit",
+      "id": "exit-debug-instance"
+    }
+  ]
+}

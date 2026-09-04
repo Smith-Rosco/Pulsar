@@ -18,6 +18,7 @@
     ShowInTaskbar="False"
     ResizeMode="NoResize"
     x:Name="RootWindow"
+    AutomationProperties.AutomationId="Pulsar.RadialMenuWindow"
     Style="{x:Null}"
     RenderOptions.CacheInvalidationThresholdMinimum="0.5"
     RenderOptions.CacheInvalidationThresholdMaximum="2.0">
@@ -94,7 +95,8 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Grid RenderTransformOrigin="0.5,0.5"
-                              Opacity="{Binding CurrentOpacity}">
+                              Opacity="{Binding CurrentOpacity}"
+                              AutomationProperties.AutomationId="{Binding SlotAutomationId}">
                             <Grid.RenderTransform>
                                 <TransformGroup>
                                     <ScaleTransform ScaleX="{Binding CurrentScale, FallbackValue=1}" ScaleY="{Binding CurrentScale, FallbackValue=1}"/>
@@ -164,6 +166,7 @@
                         <!-- Normal slot orb (overlay/fallback) -->
                         <controls:SlotOrb 
                             DataContext="{Binding CenterSlot}"
+                            AutomationProperties.AutomationId="{Binding SlotAutomationId}"
                             Size="{Binding Size}"
                             IsActive="{Binding IsActive}"
                             IsRecommended="{Binding IsRecommended}"

@@ -528,6 +528,14 @@ namespace Pulsar.Views.Controls
         // ============================
         // Circular HitTest Override
         // ============================
+        protected override System.Windows.Automation.Peers.AutomationPeer OnCreateAutomationPeer()
+        {
+            // [E2E] Expose the custom-drawn orb to UIA with a stable AutomationId,
+            // Name (label) and BoundingRectangle so the external driver can locate
+            // and click slots without localized-text lookups.
+            return new SlotOrbAutomationPeer(this);
+        }
+
         protected override HitTestResult HitTestCore(PointHitTestParameters hitTestParameters)
         {
             double radius = ActualWidth / 2.0;

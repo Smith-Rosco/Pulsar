@@ -113,6 +113,8 @@ namespace Pulsar.Services
                 Header = _loc["Tray.Settings"],
                 Icon = new SymbolIcon(SymbolRegular.Settings24)
             };
+            // [E2E] Stable UIA id (language-independent; never look up by text).
+            System.Windows.Automation.AutomationProperties.SetAutomationId(settingsItem, "Pulsar.Tray.Settings");
             settingsItem.Click += OnSettingsClicked;
             contextMenu.Items.Add(settingsItem);
 
@@ -125,6 +127,7 @@ namespace Pulsar.Services
                 IsCheckable = true,
                 IsChecked = _themeService.CurrentTheme == AppTheme.Light
             };
+            System.Windows.Automation.AutomationProperties.SetAutomationId(toggleThemeItem, "Pulsar.Tray.ToggleTheme");
             toggleThemeItem.Click += OnToggleThemeClicked;
             contextMenu.Items.Add(toggleThemeItem);
             _toggleThemeItem = toggleThemeItem;
@@ -136,6 +139,7 @@ namespace Pulsar.Services
                 IsCheckable = true,
                 IsChecked = IsAutoStartEnabled()
             };
+            System.Windows.Automation.AutomationProperties.SetAutomationId(autoStartItem, "Pulsar.Tray.AutoStart");
             autoStartItem.Click += OnAutoStartClicked;
             contextMenu.Items.Add(autoStartItem);
 
@@ -144,6 +148,7 @@ namespace Pulsar.Services
                 Header = _loc["Tray.Restart"],
                 Icon = new SymbolIcon(SymbolRegular.ArrowRepeatAll24)
             };
+            System.Windows.Automation.AutomationProperties.SetAutomationId(restartItem, "Pulsar.Tray.Restart");
             restartItem.Click += OnRestartClicked;
             contextMenu.Items.Add(restartItem);
 
@@ -154,6 +159,7 @@ namespace Pulsar.Services
                 Header = _loc["Tray.Exit"],
                 Icon = new SymbolIcon(SymbolRegular.DoorArrowLeft24)
             };
+            System.Windows.Automation.AutomationProperties.SetAutomationId(exitItem, "Pulsar.Tray.Exit");
             exitItem.Click += (s, e) =>
             {
                 Dispose();

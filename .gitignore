@@ -134,6 +134,12 @@ ipch/
 
 # Visual Studio Trace Files
 *.e2e
+# Re-include the Pulsar.E2E project dir: on case-insensitive filesystems the
+# `*.e2e` rule above would otherwise swallow the whole project directory.
+!Pulsar/Pulsar.E2E/
+
+# Local E2E tooling (downloaded ffmpeg binary toolchain) - not part of the repo
+.tools/ffmpeg/
 
 # TFS 2012 Local Workspace
 $tf/
