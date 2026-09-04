@@ -216,6 +216,17 @@ touch all three, but each captures a different kind of knowledge. The
 `openspec/changes/<name>/` artifacts are temporary working assets; once synced
 and archived they are superseded by the merged `openspec/specs/` truth.
 
+**Working memory is single-source (ADR-019)**: `Docs/journal/` is the only
+cross-harness working-memory store. AI harnesses that maintain their own local
+memory (`~/.workbuddy/memory/`, `.opencode/**`, etc.) must **not** copy journal
+content into those files — at most a one-line pointer back to
+`Docs/journal/YYYY-MM-DD.md`. Harness-local stores are machine-local and
+gitignored, so they can never serve as the shared record.
+
+**Language exception for working memory**: the primary-language rule above does
+not apply to `Docs/journal/` — entries are written in Chinese (project owner's
+working language). All other document types remain English-primary.
+
 ---
 
 ## ADR Template
