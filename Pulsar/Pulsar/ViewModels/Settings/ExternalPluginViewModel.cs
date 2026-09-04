@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin;
@@ -47,14 +46,18 @@ namespace Pulsar.ViewModels.Settings
             IPluginHealthMonitor? healthMonitor = null,
             IPluginLogService? logService = null,
             IDialogService? dialogService = null,
-            IServiceProvider? serviceProvider = null,
+            ILogger<PluginViewModel>? pluginLogger = null,
+            ILogger<ExternalPluginViewModel>? logger = null,
             IPluginMetadataRegistry? metadataRegistry = null)
             : base(descriptor, registry, runtimeOps, configService, localizationService,
-                   usageTracker, healthMonitor, logService, dialogService, serviceProvider, metadataRegistry)
+                   usageTracker, healthMonitor, logService, dialogService, pluginLogger,
+                   windowService: null, processRegistryService: null,
+                   scriptFileService: null, scriptValidationService: null,
+                   exampleLibraryService: null, metadataRegistry: metadataRegistry)
         {
             _lifecycleOps = lifecycleOps;
             _owner = owner;
-            _logger = serviceProvider?.GetService<ILogger<ExternalPluginViewModel>>();
+            _logger = logger;
             LocalPath = localPath;
             Permissions = descriptor.Permissions;
             HasPermissions = descriptor.Permissions.Count > 0;

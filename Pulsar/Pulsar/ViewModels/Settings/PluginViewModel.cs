@@ -1,6 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin;
@@ -33,7 +32,11 @@ namespace Pulsar.ViewModels.Settings
         private readonly ILogger? _logger;
         private readonly IPluginLogService? _logService;
         private readonly IDialogService? _dialogService;
-        private readonly IServiceProvider? _serviceProvider;
+        private readonly IWindowService? _windowService;
+        private readonly IProcessRegistryService? _processRegistryService;
+        private readonly IScriptFileService? _scriptFileService;
+        private readonly IScriptValidationService? _scriptValidationService;
+        private readonly ExampleLibraryService? _exampleLibraryService;
         private readonly PluginMetadata? _metadata;
         private readonly BuiltInPluginDisplayModel _displayModel;
         private readonly ILocalizationService? _loc;
@@ -91,8 +94,11 @@ namespace Pulsar.ViewModels.Settings
             }
         }
 
-        /// <summary>设置对话框（含 Window Inspector）解析依赖用。</summary>
-        public IServiceProvider? ServiceProvider => _serviceProvider;
+        /// <summary>插件能力声明的便捷入口（UI 分支用）。</summary>
+        public bool SupportsWindowInspector => _metadata?.Capabilities.SupportsWindowInspector ?? false;
+
+        /// <summary>「配置」是否应走插件自定义配置对话框。</summary>
+        public bool HasCustomConfigDialog => _metadata?.Capabilities.HasCustomConfigDialog ?? false;
 
         /// <summary>设置对话框（含 Window Inspector）解析依赖用。</summary>
         public IDialogService? DialogService => _dialogService;
@@ -117,16 +123,17 @@ namespace Pulsar.ViewModels.Settings
         public string ViewLogsLabel => RecentErrorCount > 0 ? string.Format(_loc?["Settings.Plugins.ViewLogsErrorsFormat"] ?? "View Logs ({0} errors)", RecentErrorCount) : (_loc?["Settings.Plugins.ViewLogsDefault"] ?? "View Logs");
 
         /// <summary>
-        /// Whether this plugin card exposes the in-app script editor entry
-        /// (Web Scripts / Bookmarklet plugin only).
+        /// Whether this plugin card exposes the in-app script editor entry.
+        /// Declared by the plugin's own metadata capability (Web Scripts advertises it);
+        /// the generic card VM no longer special-cases plugin IDs.
         /// </summary>
-        public bool IsScriptEditorVisible => string.Equals(Id, "com.pulsar.bookmarklet", StringComparison.OrdinalIgnoreCase);
+        public bool IsScriptEditorVisible => _metadata?.Capabilities.SupportsScriptEditor ?? false;
 
         /// <summary>
-        /// Whether this plugin card exposes the built-in example library entry
-        /// (Web Scripts / Bookmarklet plugin only).
+        /// Whether this plugin card exposes the built-in example library entry.
+        /// Declared by the plugin's own metadata capability (Web Scripts advertises it).
         /// </summary>
-        public bool IsExampleLibraryVisible => string.Equals(Id, "com.pulsar.bookmarklet", StringComparison.OrdinalIgnoreCase);
+        public bool IsExampleLibraryVisible => _metadata?.Capabilities.HasBuiltinExamples ?? false;
 
         /// <summary>
         /// Label for the in-app script editor entry on the plugin card.
@@ -148,7 +155,12 @@ namespace Pulsar.ViewModels.Settings
             IPluginHealthMonitor? healthMonitor = null,
             IPluginLogService? logService = null,
             IDialogService? dialogService = null,
-            IServiceProvider? serviceProvider = null,
+            ILogger<PluginViewModel>? logger = null,
+            IWindowService? windowService = null,
+            IProcessRegistryService? processRegistryService = null,
+            IScriptFileService? scriptFileService = null,
+            IScriptValidationService? scriptValidationService = null,
+            ExampleLibraryService? exampleLibraryService = null,
             IPluginMetadataRegistry? metadataRegistry = null)
         {
             _descriptor = descriptor;
@@ -159,10 +171,14 @@ namespace Pulsar.ViewModels.Settings
             _healthMonitor = healthMonitor;
             _logService = logService;
             _dialogService = dialogService;
-            _serviceProvider = serviceProvider;
+            _logger = logger;
+            _windowService = windowService;
+            _processRegistryService = processRegistryService;
+            _scriptFileService = scriptFileService;
+            _scriptValidationService = scriptValidationService;
+            _exampleLibraryService = exampleLibraryService;
             _loc = localizationService;
             _formatter = new PluginAnalyticsFormatter(localizationService);
-            _logger = serviceProvider?.GetService<ILogger<PluginViewModel>>();
             _plugin = _registry.GetPlugin(descriptor.Id);
             _metadata = metadataRegistry?.GetMetadata(descriptor.Id) ?? descriptor.Metadata;
             _displayModel = BuiltInPluginDisplayModel.FromMetadata(_metadata, localizationService);
@@ -265,29 +281,27 @@ namespace Pulsar.ViewModels.Settings
 
         private OptionsProviderDelegate? GetOptionsProvider()
         {
-            if (Id == "com.pulsar.winswitcher")
+            // ExcludeProcesses 进程多选的候选列表来自进程注册表。这是拥有自定义配置
+            // 对话框的插件（WinSwitcher）schema 渲染期能力，按 metadata 声明分支而非 ID。
+            if (HasCustomConfigDialog && _processRegistryService != null)
             {
-                var processRegistryService = _serviceProvider?.GetService<IProcessRegistryService>();
-                if (processRegistryService != null)
+                return propertyKey =>
                 {
-                    return propertyKey =>
+                    if (propertyKey == "ExcludeProcesses")
                     {
-                        if (propertyKey == "ExcludeProcesses")
+                        try
                         {
-                            try
-                            {
-                                var processes = processRegistryService.GetAllProcessesAsync().GetAwaiter().GetResult();
-                                return processes.Select(p => p.ProcessName).OrderBy(n => n).ToList();
-                            }
-                            catch
-                            {
-                                return Enumerable.Empty<string>();
-                            }
+                            var processes = _processRegistryService.GetAllProcessesAsync().GetAwaiter().GetResult();
+                            return processes.Select(p => p.ProcessName).OrderBy(n => n).ToList();
                         }
+                        catch
+                        {
+                            return Enumerable.Empty<string>();
+                        }
+                    }
 
-                        return Enumerable.Empty<string>();
-                    };
-                }
+                    return Enumerable.Empty<string>();
+                };
             }
 
             return null;
@@ -435,12 +449,12 @@ namespace Pulsar.ViewModels.Settings
         [RelayCommand]
         private async Task OpenExampleLibraryAsync()
         {
-            if (_dialogService == null || _serviceProvider == null || _loc == null)
+            if (_dialogService == null || _loc == null)
             {
                 return;
             }
 
-            var libraryService = _serviceProvider.GetService<ExampleLibraryService>();
+            var libraryService = _exampleLibraryService;
             if (libraryService == null)
             {
                 return;
@@ -472,13 +486,13 @@ namespace Pulsar.ViewModels.Settings
 
         private async Task OpenScriptEditorCoreAsync(string? scriptPath)
         {
-            if (_dialogService == null || _serviceProvider == null || _loc == null)
+            if (_dialogService == null || _loc == null)
             {
                 return;
             }
 
-            var fileService = _serviceProvider.GetService<IScriptFileService>();
-            var validationService = _serviceProvider.GetService<IScriptValidationService>();
+            var fileService = _scriptFileService;
+            var validationService = _scriptValidationService;
             if (fileService == null || validationService == null)
             {
                 return;
@@ -529,41 +543,38 @@ namespace Pulsar.ViewModels.Settings
                 return;
             }
 
-            if (Id == "com.pulsar.winswitcher")
+            // 自定义配置对话框：仅当插件在 metadata 里声明 HasCustomConfigDialog，
+            // 且宿主提供了对话框所需的功能服务时才走自定义路径；否则回落到通用
+            // schema 对话框（行为与改前按 ID 特判等价，但分支依据来自插件自述）。
+            if (HasCustomConfigDialog && _windowService != null && _processRegistryService != null)
             {
-                var windowService = _serviceProvider?.GetService<IWindowService>();
-                var processRegistryService = _serviceProvider?.GetService<IProcessRegistryService>();
+                var currentConfig = GetCurrentConfig();
+                var currentBlacklist = currentConfig.TryGetValue("ExcludeProcesses", out var val)
+                    ? val?.ToString() ?? string.Empty
+                    : string.Empty;
+                var enableSwitchDiagnostics = currentConfig.TryGetValue("EnableSwitchDiagnostics", out var diagnostics)
+                    && bool.TryParse(diagnostics?.ToString(), out var diagnosticsEnabled)
+                    && diagnosticsEnabled;
 
-                if (windowService != null && processRegistryService != null)
+                var vm = new ProcessBlacklistViewModel(_windowService, _processRegistryService, currentBlacklist, enableSwitchDiagnostics);
+                var result = await _dialogService.ShowCustomAsync(
+                    _loc?["Notification.ProcessBlacklistTitle"] ?? "Process Blacklist",
+                    vm,
+                    Models.Enums.DialogButtons.OkCancel);
+
+                if (result == Models.Enums.DialogResult.Confirmed)
                 {
-                    var currentConfig = GetCurrentConfig();
-                    var currentBlacklist = currentConfig.TryGetValue("ExcludeProcesses", out var val)
-                        ? val?.ToString() ?? string.Empty
-                        : string.Empty;
-                    var enableSwitchDiagnostics = currentConfig.TryGetValue("EnableSwitchDiagnostics", out var diagnostics)
-                        && bool.TryParse(diagnostics?.ToString(), out var diagnosticsEnabled)
-                        && diagnosticsEnabled;
-
-                    var vm = new ProcessBlacklistViewModel(windowService, processRegistryService, currentBlacklist, enableSwitchDiagnostics);
-                    var result = await _dialogService.ShowCustomAsync(
-                        _loc?["Notification.ProcessBlacklistTitle"] ?? "Process Blacklist",
-                        vm,
-                        Models.Enums.DialogButtons.OkCancel);
-
-                    if (result == Models.Enums.DialogResult.Confirmed)
+                    OnSettingChanged("ExcludeProcesses", vm.Result);
+                    OnSettingChanged("EnableSwitchDiagnostics", vm.EnableSwitchDiagnostics);
+                    var configurable = await EnsureConfigurablePluginAsync();
+                    if (configurable != null)
                     {
-                        OnSettingChanged("ExcludeProcesses", vm.Result);
-                        OnSettingChanged("EnableSwitchDiagnostics", vm.EnableSwitchDiagnostics);
-                        var configurable = await EnsureConfigurablePluginAsync();
-                        if (configurable != null)
-                        {
-                            LoadSettings(configurable);
-                            HasSettings = Settings.Count > 0;
-                        }
+                        LoadSettings(configurable);
+                        HasSettings = Settings.Count > 0;
                     }
-
-                    return;
                 }
+
+                return;
             }
 
             if (!HasSettings)
@@ -583,7 +594,7 @@ namespace Pulsar.ViewModels.Settings
                 HasSettings = Settings.Count > 0;
             }
 
-            var dialogVm = new Pulsar.ViewModels.Dialogs.PluginSettingsDialogViewModel(this);
+            var dialogVm = new Pulsar.ViewModels.Dialogs.PluginSettingsDialogViewModel(this, _windowService, _configService, _loc);
             var dialogResult = await _dialogService.ShowCustomAsync(
                 string.Format(_loc?["Notification.ConfigureTitleFormat"] ?? "Configure {0}", Name),
                 dialogVm,

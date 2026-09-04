@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Logging;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using System.Collections.ObjectModel;
@@ -64,7 +65,12 @@ namespace Pulsar.ViewModels.Settings
         private readonly IPluginHealthMonitor? _healthMonitor;
         private readonly IPluginLogService? _logService;
         private readonly IDialogService? _dialogService;
-        private readonly IServiceProvider? _serviceProvider;
+        private readonly ILogger<PluginViewModel>? _itemLogger;
+        private readonly IWindowService? _windowService;
+        private readonly IProcessRegistryService? _processRegistryService;
+        private readonly IScriptFileService? _scriptFileService;
+        private readonly IScriptValidationService? _scriptValidationService;
+        private readonly ExampleLibraryService? _exampleLibraryService;
         private readonly IPluginMetadataRegistry? _metadataRegistry;
         private readonly ILocalizationService? _loc;
 
@@ -88,7 +94,11 @@ namespace Pulsar.ViewModels.Settings
             ILocalizationService localizationService,
             IPluginUsageTracker? usageTracker = null, IPluginHealthMonitor? healthMonitor = null,
             IPluginLogService? logService = null, IDialogService? dialogService = null,
-            IServiceProvider? serviceProvider = null, IPluginMetadataRegistry? metadataRegistry = null)
+            ILogger<PluginViewModel>? itemLogger = null,
+            IWindowService? windowService = null, IProcessRegistryService? processRegistryService = null,
+            IScriptFileService? scriptFileService = null, IScriptValidationService? scriptValidationService = null,
+            ExampleLibraryService? exampleLibraryService = null,
+            IPluginMetadataRegistry? metadataRegistry = null)
         {
             _registry = registry;
             _runtimeOps = runtimeOps ?? throw new ArgumentNullException(nameof(runtimeOps));
@@ -97,7 +107,12 @@ namespace Pulsar.ViewModels.Settings
             _healthMonitor = healthMonitor;
             _logService = logService;
             _dialogService = dialogService;
-            _serviceProvider = serviceProvider;
+            _itemLogger = itemLogger;
+            _windowService = windowService;
+            _processRegistryService = processRegistryService;
+            _scriptFileService = scriptFileService;
+            _scriptValidationService = scriptValidationService;
+            _exampleLibraryService = exampleLibraryService;
             _metadataRegistry = metadataRegistry;
             _loc = localizationService ?? throw new ArgumentNullException(nameof(localizationService));
 
@@ -166,7 +181,9 @@ namespace Pulsar.ViewModels.Settings
             {
                 Plugins.Add(new PluginViewModel(plugin, _registry, _runtimeOps, _configService,
                     _loc!, _usageTracker, _healthMonitor, _logService, _dialogService,
-                    _serviceProvider, _metadataRegistry));
+                    _itemLogger, _windowService, _processRegistryService,
+                    _scriptFileService, _scriptValidationService, _exampleLibraryService,
+                    _metadataRegistry));
             }
 
             if (Plugins.Any())

@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 熔断策略去 UI/遥测依赖（ADR-013，架构审查候选 D）：`PluginCircuitBreakerPolicy` 收敛为纯状态机（构造仅 `ILogger`），打开/恢复经 `Tripped` / `Recovered` 事件广播；新增 `PluginBreakerNotificationService` 观察者 adapter 订阅事件并把迁移转成健康遥测记录与本地化托盘通知，启动协调器在托盘初始化后解析激活。文案与行为保持与迁移前一致。
 - 可回收 ALC 卸载不变量收口（架构审查候选 E）：`PluginLoader.TryUnloadExternalContext` 现在一次性完成 `Unload()` 发起 + 强制 GC 泵（`GC.Collect`×2 + `WaitForPendingFinalizers`），调用方（`PluginRuntimeKernel.DeactivatePluginAsync`）不再内联 GC 序列，只负责调用前的引用切断。
 - 插件清单解析收敛为单一事实来源（架构审查候选 C）：新增 `PluginManifestReader`（static），把「`plugin.manifest.json` → 回退 `manifest.json`」文件名解析与大小写不敏感反序列化收口为一处，四处内联复制（`PluginLoader.TryReadExternalManifest`、`LocalPluginScanner.ScanInstalledPlugins`、`PluginPackageManager.HasValidManifest`/`ReadAndValidateManifest`）改为调用共享 reader。Id 空判定、权限 token、版本兼容与各自的失败消息仍留在调用方错误层，语义逐字不变。
+- 插件卡片能力声明进 metadata，通用 VM 移除插件 ID 特判与 service-locator（ADR-015，架构审查候选 F）：`PluginCapabilities` 新增四个默认 false 的 UI 能力标志（`SupportsScriptEditor` / `HasBuiltinExamples` / `HasCustomConfigDialog` / `SupportsWindowInspector`），由 WinSwitcher（自定义配置对话框 + Window Inspector）与 Web Scripts（脚本编辑器 + 示例库）在各自 `GetMetadata()` 自述。`PluginViewModel` / `PluginSettingsDialogViewModel` 改按能力分支，并把 `IServiceProvider.GetService<T>()` 隐藏依赖改为构造显式注入（窗口/进程注册表/脚本文件/脚本校验/示例库/日志）；两个 Manager VM 与 `ExternalPluginViewModel` 同步删除 provider 透传。行为与改前一致，未声明能力的插件（含全部外部插件）渲染不变。
 
 ### Fixed
 - `PluginManagerViewModel` 声明 `IPluginRuntimeOps` 字段但构造器从未注入（ADR-012 迁移遗留，运行到插件管理页即 NRE/破坏 0 警告基线）；构造器现补上 `runtimeOps` 参数并赋值。

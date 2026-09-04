@@ -36,7 +36,8 @@ namespace Pulsar.ViewModels.Settings
         private readonly IPluginHealthMonitor? _healthMonitor;
         private readonly IPluginLogService? _logService;
         private readonly IPluginMetadataRegistry? _metadataRegistry;
-        private readonly IServiceProvider? _serviceProvider;
+        private readonly ILogger<PluginViewModel>? _itemLogger;
+        private readonly ILogger<ExternalPluginViewModel>? _externalItemLogger;
 
         [ObservableProperty]
         private ObservableCollection<ExternalPluginViewModel> _installedPlugins = new();
@@ -60,7 +61,8 @@ namespace Pulsar.ViewModels.Settings
             IPluginHealthMonitor? healthMonitor = null,
             IPluginLogService? logService = null,
             IPluginMetadataRegistry? metadataRegistry = null,
-            IServiceProvider? serviceProvider = null)
+            ILogger<PluginViewModel>? itemLogger = null,
+            ILogger<ExternalPluginViewModel>? externalItemLogger = null)
         {
             _scanner = scanner;
             _lifecycleOps = lifecycleOps;
@@ -74,7 +76,8 @@ namespace Pulsar.ViewModels.Settings
             _healthMonitor = healthMonitor;
             _logService = logService;
             _metadataRegistry = metadataRegistry;
-            _serviceProvider = serviceProvider;
+            _itemLogger = itemLogger;
+            _externalItemLogger = externalItemLogger;
 
             // 订阅生命周期运维模块透传的包操作进度
             _lifecycleOps.OperationProgress += OnOperationProgress;
@@ -118,7 +121,8 @@ namespace Pulsar.ViewModels.Settings
                         _healthMonitor,
                         _logService,
                         _dialogService,
-                        _serviceProvider,
+                        _itemLogger,
+                        _externalItemLogger,
                         _metadataRegistry);
 
                     InstalledPlugins.Add(item);

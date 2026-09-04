@@ -97,7 +97,9 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
                     Dependencies = new List<string> { "com.pulsar.winswitcher" },
                     CanDisable = CanDisable,
                     Tier = Tier,
-                    MinPulsarVersion = "1.0.0"
+                    MinPulsarVersion = "1.0.0",
+                    SupportsScriptEditor = true,
+                    HasBuiltinExamples = true
                 },
                 Actions = new Dictionary<string, SlotActionMetadata>(StringComparer.OrdinalIgnoreCase)
                 {
