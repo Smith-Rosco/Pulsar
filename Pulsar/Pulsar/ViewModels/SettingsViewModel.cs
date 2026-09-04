@@ -40,6 +40,7 @@ namespace Pulsar.ViewModels
         private readonly IThemeService _themeService;
         private readonly IHotkeyService _hotkeyService;
         private readonly IDialogService _dialogService;
+        private readonly SettingsDialogFlows _dialogFlows;
         private readonly IFuzzySearchService<IconItem> _searchService;
         private readonly IProcessRegistryService? _processRegistryService;
         private readonly Services.Interfaces.ICustomIconStore? _customIconStore;
@@ -211,6 +212,8 @@ namespace Pulsar.ViewModels
             _themeService = themeService;
             _hotkeyService = hotkeyService;
             _dialogService = dialogService;
+            // [Architecture review 2026-09-04, candidate M] Stateless recipe owner; no DI change.
+            _dialogFlows = new SettingsDialogFlows(dialogService);
             _searchService = searchService;
             _secretStore = secretStore;
             _secretProtector = secretProtector;
@@ -380,9 +383,26 @@ namespace Pulsar.ViewModels
                 metadataRegistry: _pluginMetadataRegistry,
                 secretDisplayResolver: rawSecretId => _slotEditor.ResolveSecretDisplay(rawSecretId));
 
-            var result = await _dialogService.ShowCustomAsync(
+            // [Architecture review 2026-09-04, candidate M] Recipe owns the show/confirm
+            // shell; the confirmed side awaits PickSecret, so it uses the async overload.
+            await _dialogFlows.RunAsync(
                 _loc["Notification.CreateSlot"],
                 vm,
+                async vm2 =>
+                {
+                    if (vm2.CreatedSlot == null) return;
+
+                    _slotEditor.CommitCreatedSlot(vm2.CreatedSlot);
+                    SendNotification(_loc["Notification.Success"], string.Format(_loc["Notification.SlotAddedFormat"], vm2.CreatedSlot.Label), ControlAppearance.Success);
+
+                    // P2 Fix: If the newly created slot is a PKI slot and secretId is still empty,
+                    // immediately open the secret picker so the user can link a secret.
+                    if (vm2.CreatedSlot.PluginId == "com.pulsar.pki"
+                        && (!vm2.CreatedSlot.Args.TryGetValue("secretId", out var sid) || string.IsNullOrEmpty(sid)))
+                    {
+                        await PickSecret(vm2.CreatedSlot);
+                    }
+                },
                 DialogButtons.None,
                 new DialogSizeConstraints
                 {
@@ -395,20 +415,6 @@ namespace Pulsar.ViewModels
                     AllowResize = true,
                     ShowMaximizeButton = true
                 });
-
-            if (result == DialogResult.Confirmed && vm.CreatedSlot != null)
-            {
-                _slotEditor.CommitCreatedSlot(vm.CreatedSlot);
-                SendNotification(_loc["Notification.Success"], string.Format(_loc["Notification.SlotAddedFormat"], vm.CreatedSlot.Label), ControlAppearance.Success);
-
-                // P2 Fix: If the newly created slot is a PKI slot and secretId is still empty,
-                // immediately open the secret picker so the user can link a secret.
-                if (vm.CreatedSlot.PluginId == "com.pulsar.pki"
-                    && (!vm.CreatedSlot.Args.TryGetValue("secretId", out var sid) || string.IsNullOrEmpty(sid)))
-                {
-                    await PickSecret(vm.CreatedSlot);
-                }
-            }
         }
 
         [RelayCommand]
@@ -426,9 +432,8 @@ namespace Pulsar.ViewModels
             // [Refactor] Removed 8-slot limit
 
             var vm = new QuickSecretsViewModel(_secretProtector);
-            var result = await _dialogService.ShowCustomAsync(_loc["Notification.SecretConfiguration"], vm, DialogButtons.OkCancel);
-
-            if (result == DialogResult.Confirmed)
+            // [Architecture review 2026-09-04, candidate M] Recipe owns the show/confirm shell.
+            await _dialogFlows.RunAsync(_loc["Notification.SecretConfiguration"], vm, vm2 =>
             {
                 int nextSlot = 1;
                 if (CurrentSlots.Count > 0) nextSlot = CurrentSlots.Max(s => s.Slot) + 1;
@@ -436,9 +441,9 @@ namespace Pulsar.ViewModels
                 var secretId = Guid.NewGuid();
                 var payload = new Plugins.Core.Pki.Models.SecretPayload
                 {
-                    Label = vm.Label,
-                    Account = vm.Account,
-                    EncryptedData = vm.ResultEncryptedData
+                    Label = vm2.Label,
+                    Account = vm2.Account,
+                    EncryptedData = vm2.ResultEncryptedData
                 };
                 _slotEditor.PendingSecrets[secretId] = payload;
 
@@ -447,12 +452,12 @@ namespace Pulsar.ViewModels
                     Slot = nextSlot,
                     PluginId = "com.pulsar.pki",
                     Action = "fill",
-                    Label = vm.Label,
+                    Label = vm2.Label,
                     IconKey = "E72E", // Lock Icon
                     Args = new Dictionary<string, string>
                     {
                         ["secretId"] = secretId.ToString(),
-                        ["autoEnter"] = vm.AutoEnter.ToString()
+                        ["autoEnter"] = vm2.AutoEnter.ToString()
                     }
                 };
 
@@ -460,7 +465,7 @@ namespace Pulsar.ViewModels
                 _slotEditor.InitializeSlotMetadata(newItem);
                 MarkDirty(); // [Phase 2]
                 SendNotification(_loc["Notification.Success"], _loc["Notification.SecretAdded"], ControlAppearance.Success);
-            }
+            });
         }
 
         [RelayCommand]
@@ -469,13 +474,12 @@ namespace Pulsar.ViewModels
             var existingKeys = Config.Profiles.Keys.ToList();
             
             var vm = new InputProfileViewModel(_windowService, _dialogService, _searchService, _loc, existingKeys, _customIconStore);
-            var result = await _dialogService.ShowCustomAsync(_loc["Notification.NewProfile"], vm, DialogButtons.OkCancel);
-
-            if (result == DialogResult.Confirmed)
+            // [Architecture review 2026-09-04, candidate M] Recipe owns the show/confirm shell.
+            await _dialogFlows.RunAsync(_loc["Notification.NewProfile"], vm, vm2 =>
             {
-                var processName = vm.ProcessName;
-                var iconKey = vm.IconKey;
-                var alias = vm.Alias;
+                var processName = vm2.ProcessName;
+                var iconKey = vm2.IconKey;
+                var alias = vm2.Alias;
 
                 if (string.IsNullOrWhiteSpace(processName)) return;
 
@@ -496,7 +500,7 @@ namespace Pulsar.ViewModels
                 
                 MarkDirty(); // [Phase 2]
                 SendNotification(_loc["Notification.Success"], string.Format(_loc["Notification.ProfileCreatedFormat"], ProcessNameFormatter.ToDisplayName(processName)), ControlAppearance.Success);
-            }
+            });
         }
 
         private string? TryDiscoverIconForProcess(string processName)
@@ -538,20 +542,19 @@ namespace Pulsar.ViewModels
             if (!Config.Profiles.TryGetValue(profileKey, out var profileData)) return;
 
             var vm = new EditProfileViewModel(_dialogService, _searchService, _loc, profileKey, profileData.Alias ?? string.Empty, profileData.Icon ?? string.Empty, _customIconStore);
-            var result = await _dialogService.ShowCustomAsync(_loc["Notification.EditProfile"], vm, DialogButtons.OkCancel);
-
-            if (result == DialogResult.Confirmed)
+            // [Architecture review 2026-09-04, candidate M] Recipe owns the show/confirm shell.
+            await _dialogFlows.RunAsync(_loc["Notification.EditProfile"], vm, vm2 =>
             {
-                profileData.Alias = vm.Alias;
-                profileData.Icon = vm.IconKey;
+                profileData.Alias = vm2.Alias;
+                profileData.Icon = vm2.IconKey;
 
                 // Refresh UI
                 RefreshContexts();
                 CurrentContext = AvailableContexts.FirstOrDefault(c => c.Key == profileKey);
-                
+
                 MarkDirty(); // [Phase 2]
                 SendNotification(_loc["Notification.Success"], _loc["Notification.ProfileUpdated"], ControlAppearance.Success);
-            }
+            });
         }
 
         [RelayCommand(CanExecute = nameof(CanSave))]
@@ -620,7 +623,9 @@ namespace Pulsar.ViewModels
         [RelayCommand]
         public async Task ResetConfig()
         {
-            var result = await _dialogService.ShowConfirmationAsync(_loc["Notification.ResetConfiguration"], 
+            // [Architecture review 2026-09-04, candidate M] Kept direct: custom confirm/cancel
+            // labels (4-arg ShowConfirmationAsync) — the recipe covers only the standard shape.
+            var result = await _dialogService.ShowConfirmationAsync(_loc["Notification.ResetConfiguration"],
                 _loc["Notification.ResetConfirmBody"],
                 _loc["Notification.RestoreFirstLaunch"],
                 _loc["Notification.Cancel"]);
@@ -719,21 +724,20 @@ namespace Pulsar.ViewModels
             var secretDisplay = _slotEditor.ResolveSecretDisplay(secretId.ToString(), _slotEditor.BuildLegacySecretLabelMap());
             vm.LoadForEdit(secretDisplay?.Label ?? slot.Label, payload.Account, payload.EncryptedData, autoEnter);
 
-            var result = await _dialogService.ShowCustomAsync(_loc["Notification.EditSecret"], vm, DialogButtons.OkCancel);
-
-            if (result == DialogResult.Confirmed)
+            // [Architecture review 2026-09-04, candidate M] Recipe owns the show/confirm shell.
+            await _dialogFlows.RunAsync(_loc["Notification.EditSecret"], vm, vm2 =>
             {
-                payload.Label = vm.Label;
-                slot.SetArgument("autoEnter", vm.AutoEnter.ToString());
-                
-                payload.Account = vm.Account;
-                payload.EncryptedData = vm.ResultEncryptedData;
+                payload.Label = vm2.Label;
+                slot.SetArgument("autoEnter", vm2.AutoEnter.ToString());
+
+                payload.Account = vm2.Account;
+                payload.EncryptedData = vm2.ResultEncryptedData;
                 _slotEditor.PendingSecrets[secretId] = payload;
 
                 _slotEditor.RefreshSlotParameterMetadata();
                 MarkDirty(); // [Phase 2]
                 SendNotification(_loc["Notification.Success"], _loc["Notification.SecretUpdated"], ControlAppearance.Success);
-            }
+            });
         }
 
         /// <summary>
@@ -749,6 +753,8 @@ namespace Pulsar.ViewModels
             var pickerVm = new SecretPickerViewModel(_secretStore, _secretProtector, _secretMetadataResolver, _loc, _slotEditor.PendingSecrets, labelMap, _dialogService);
             await pickerVm.LoadAsync();
 
+            // [Architecture review 2026-09-04, candidate M] Kept direct: post-dialog logic keys
+            // on pickerVm.SelectedSecretId, not DialogResult — a different protocol than the recipe.
             await _dialogService.ShowCustomAsync(_loc["Notification.SelectSecret"], pickerVm, Models.Enums.DialogButtons.None, DialogSizeConstraints.Medium);
 
             if (pickerVm.SelectedSecretId.HasValue)
@@ -833,6 +839,8 @@ namespace Pulsar.ViewModels
                 metadataRegistry: _pluginMetadataRegistry,
                 secretDisplayResolver: rawSecretId => _slotEditor.ResolveSecretDisplay(rawSecretId));
 
+            // [Architecture review 2026-09-04, candidate M] Kept direct: show-only flow — the
+            // dialog result is deliberately ignored, so the recipe's confirmed side doesn't apply.
             await _dialogService.ShowCustomAsync(
                 string.Format(_loc["Notification.EditSlotFormat"], slot.Slot),
                 vm,
@@ -845,16 +853,15 @@ namespace Pulsar.ViewModels
         {
             if (CurrentSlots == null || !CurrentSlots.Contains(item)) return;
             
-            // Show confirmation dialog
-            var result = await _dialogService.ShowConfirmationAsync(_loc["Notification.ConfirmDeletion"], 
-                string.Format(_loc["Notification.ConfirmDeleteSlotFormat"], item.Label, item.Slot));
-            
-            if (result == Pulsar.Models.Enums.DialogResult.Confirmed)
-            {
-                _slotEditor.RemoveSlot(item);
-                
-                SendNotification(_loc["Notification.Deleted"], _loc["Notification.SlotRemoved"], ControlAppearance.Info);
-            }
+            // [Architecture review 2026-09-04, candidate M] Recipe owns the confirm/act shell.
+            await _dialogFlows.RunConfirmationAsync(_loc["Notification.ConfirmDeletion"],
+                string.Format(_loc["Notification.ConfirmDeleteSlotFormat"], item.Label, item.Slot),
+                () =>
+                {
+                    _slotEditor.RemoveSlot(item);
+
+                    SendNotification(_loc["Notification.Deleted"], _loc["Notification.SlotRemoved"], ControlAppearance.Info);
+                });
         }
 
         [RelayCommand(CanExecute = nameof(CanMoveSlotUp))]
@@ -890,41 +897,42 @@ namespace Pulsar.ViewModels
         [RelayCommand]
         public async Task PickProcess(object parameter)
         {
-             var vm = new ProcessPickerViewModel(_windowService);
-             var result = await _dialogService.ShowCustomAsync(_loc["Notification.SelectApplication"], vm, DialogButtons.OkCancel, DialogSizeConstraints.LargeResizable);
-             
-             if (result == DialogResult.Confirmed && vm.SelectedProcess != null)
-             {
-                 var selected = vm.SelectedProcess;
-                 string? cachedIconPath = null;
-                 if (selected.AppIcon != null)
-                 {
-                     cachedIconPath = IconHelper.SaveIconToCache(selected.AppIcon, selected.ProcessName);
-                 }
-                 
-                 if (parameter is PluginSlot slot)
-                 {
-                     if (slot.PluginId == "com.pulsar.winswitcher")
-                     {
-                            // [Fix] Use indexer to ensure PropertyChanged notification updates the UI
-                            slot["app"] = selected.ProcessName.ToUpperInvariant();
-                            slot["path"] = selected.ExePath;
-                         if (string.IsNullOrWhiteSpace(slot.Label) || slot.Label == _loc["Notification.NewAppDefault"])
-                             slot.Label = selected.Title;
-                        }
-                      else if (slot.PluginId == "com.pulsar.command")
-                      {
-                         // [Fix] Use indexer here too
-                         slot["path"] = selected.ExePath;
-                      if (string.IsNullOrWhiteSpace(slot.Label) || slot.Label == _loc["Notification.NewCmdDefault"])
-                          slot.Label = selected.Title;
-                      }
+            var vm = new ProcessPickerViewModel(_windowService);
+            // [Architecture review 2026-09-04, candidate M] Recipe owns the show/confirm shell.
+            await _dialogFlows.RunAsync(_loc["Notification.SelectApplication"], vm, vm2 =>
+            {
+                if (vm2.SelectedProcess == null) return;
 
-                      _slotEditor.RefreshSlotValidationSummary(slot);
-                      
-                      if (!string.IsNullOrEmpty(cachedIconPath)) slot.IconKey = cachedIconPath;
-                  }
-             }
+                var selected = vm2.SelectedProcess;
+                string? cachedIconPath = null;
+                if (selected.AppIcon != null)
+                {
+                    cachedIconPath = IconHelper.SaveIconToCache(selected.AppIcon, selected.ProcessName);
+                }
+
+                if (parameter is PluginSlot slot)
+                {
+                    if (slot.PluginId == "com.pulsar.winswitcher")
+                    {
+                        // [Fix] Use indexer to ensure PropertyChanged notification updates the UI
+                        slot["app"] = selected.ProcessName.ToUpperInvariant();
+                        slot["path"] = selected.ExePath;
+                        if (string.IsNullOrWhiteSpace(slot.Label) || slot.Label == _loc["Notification.NewAppDefault"])
+                            slot.Label = selected.Title;
+                    }
+                    else if (slot.PluginId == "com.pulsar.command")
+                    {
+                        // [Fix] Use indexer here too
+                        slot["path"] = selected.ExePath;
+                        if (string.IsNullOrWhiteSpace(slot.Label) || slot.Label == _loc["Notification.NewCmdDefault"])
+                            slot.Label = selected.Title;
+                    }
+
+                    _slotEditor.RefreshSlotValidationSummary(slot);
+
+                    if (!string.IsNullOrEmpty(cachedIconPath)) slot.IconKey = cachedIconPath;
+                }
+            }, DialogButtons.OkCancel, DialogSizeConstraints.LargeResizable);
         }
 
         [RelayCommand]
@@ -933,34 +941,34 @@ namespace Pulsar.ViewModels
             if (CurrentContext?.IsProfile != true) return;
             var profileName = CurrentContext.Key;
 
-            // [Fix] Confirm before deleting
-            var confirm = await _dialogService.ShowConfirmationAsync(_loc["Notification.DeleteProfile"], 
-                string.Format(_loc["Notification.ConfirmDeleteProfileFormat"], profileName));
-            
-            if (confirm != DialogResult.Confirmed) return;
-
-            // [Fix] Suppress sync to prevent zombie resurrection of the deleted profile
-            await _slotEditor.WithSuppressedSlotSyncAsync(async () =>
-            {
-                if (Config.Profiles.Remove(profileName))
+            // [Architecture review 2026-09-04, candidate M] Recipe owns the confirm/act shell.
+            await _dialogFlows.RunConfirmationAsync(_loc["Notification.DeleteProfile"],
+                string.Format(_loc["Notification.ConfirmDeleteProfileFormat"], profileName),
+                async () =>
                 {
-                    // [Fix] Save changes to disk through the active edit session
-                    await _session.CommitConfigAsync();
-                    ResyncSettingsReferences();
-                    
-                    SendNotification(_loc["Notification.Deleted"], string.Format(_loc["Notification.ProfileDeletedFormat"], profileName), ControlAppearance.Info);
-                    
-                    // [Fix] Refresh contexts and fallback to Global or first available
-                    RefreshContexts();
-                    
-                    // Try to switch to Global, or Launcher, or first one
-                    var fallback = AvailableContexts.FirstOrDefault(c => c.Key == "Global") 
-                                   ?? AvailableContexts.FirstOrDefault(c => c.Key == "Launcher")
-                                   ?? AvailableContexts.FirstOrDefault();
-                                   
-                    CurrentContext = fallback;
-                }
-            });
+                    // [Fix] Suppress sync to prevent zombie resurrection of the deleted profile
+                    await _slotEditor.WithSuppressedSlotSyncAsync(async () =>
+                    {
+                        if (Config.Profiles.Remove(profileName))
+                        {
+                            // [Fix] Save changes to disk through the active edit session
+                            await _session.CommitConfigAsync();
+                            ResyncSettingsReferences();
+
+                            SendNotification(_loc["Notification.Deleted"], string.Format(_loc["Notification.ProfileDeletedFormat"], profileName), ControlAppearance.Info);
+
+                            // [Fix] Refresh contexts and fallback to Global or first available
+                            RefreshContexts();
+
+                            // Try to switch to Global, or Launcher, or first one
+                            var fallback = AvailableContexts.FirstOrDefault(c => c.Key == "Global")
+                                           ?? AvailableContexts.FirstOrDefault(c => c.Key == "Launcher")
+                                           ?? AvailableContexts.FirstOrDefault();
+
+                            CurrentContext = fallback;
+                        }
+                    });
+                });
         }
 
         [RelayCommand]
@@ -971,6 +979,9 @@ namespace Pulsar.ViewModels
             var vm = new IconPickerViewModel(_searchService, originalIconKey, key => item.IconKey = key, _customIconStore);
             var result = await _dialogService.ShowCustomAsync(_loc["Notification.SelectIcon"], vm, DialogButtons.OkCancel, DialogSizeConstraints.LargeResizable);
 
+            // [Architecture review 2026-09-04, candidate M] Kept direct: this flow has an
+            // else-restore branch (cancel restores the original icon), which the recipe
+            // deliberately does not model.
             if (result == DialogResult.Confirmed)
             {
                 item.IconKey = vm.SelectedKey;
@@ -1163,41 +1174,39 @@ namespace Pulsar.ViewModels
         [RelayCommand]
         private async Task ResetTutorialAsync()
         {
-            var result = await _dialogService.ShowConfirmationAsync(
+            // [Architecture review 2026-09-04, candidate M] Recipe owns the confirm/act shell.
+            await _dialogFlows.RunConfirmationAsync(
                 _loc["Settings.General.ResetTutorial"],
-                _loc["Settings.General.ResetTutorialConfirm"]);
-
-            if (result != DialogResult.Confirmed)
-            {
-                return;
-            }
-
-            await SettingsEditorSession.RunAsync(_configService, session =>
-            {
-                var config = session.Draft;
-                config.Settings.OnboardingState = "SetupWizardComplete";
-                config.Settings.HasCompletedTutorial = false;
-                config.Settings.TutorialCrashedAt = null;
-                config.Settings.LastTutorialStep = null;
-
-                if (config.Profiles.TryGetValue("Global", out var globalProfile)
-                    && (globalProfile.SwitchMode == null || globalProfile.SwitchMode.Count == 0)
-                    && (globalProfile.CommandMode == null || globalProfile.CommandMode.Count == 0))
+                _loc["Settings.General.ResetTutorialConfirm"],
+                async () =>
                 {
-                    globalProfile.SwitchMode =
-                    [
-                        new PluginSlot { Slot = 1, PluginId = "com.pulsar.winswitcher", Action = "switch", Args = new Dictionary<string, string> { ["app"] = "notepad", ["path"] = "notepad.exe" }, Label = "Notepad", IconKey = "\uE70F" },
-                        new PluginSlot { Slot = 2, PluginId = "com.pulsar.winswitcher", Action = "switch", Args = new Dictionary<string, string> { ["app"] = "explorer", ["path"] = "explorer.exe" }, Label = "File Explorer", IconKey = "\uE8B7" },
-                        new PluginSlot { Slot = 3, PluginId = "com.pulsar.winswitcher", Action = "switch", Args = new Dictionary<string, string> { ["app"] = "calc", ["path"] = "calc.exe" }, Label = "Calculator", IconKey = "\uE8EF" }
-                    ];
-                    globalProfile.CommandMode =
-                    [
-                        new PluginSlot { Slot = 1, PluginId = "com.pulsar.command", Action = "run", Args = new Dictionary<string, string> { ["path"] = "cmd.exe" }, Label = "Command Prompt", IconKey = "\uE756" }
-                    ];
-                }
-            });
+                    await SettingsEditorSession.RunAsync(_configService, session =>
+                    {
+                        var config = session.Draft;
+                        config.Settings.OnboardingState = "SetupWizardComplete";
+                        config.Settings.HasCompletedTutorial = false;
+                        config.Settings.TutorialCrashedAt = null;
+                        config.Settings.LastTutorialStep = null;
 
-            await _tutorialService.StartTutorialAsync();
+                        if (config.Profiles.TryGetValue("Global", out var globalProfile)
+                            && (globalProfile.SwitchMode == null || globalProfile.SwitchMode.Count == 0)
+                            && (globalProfile.CommandMode == null || globalProfile.CommandMode.Count == 0))
+                        {
+                            globalProfile.SwitchMode =
+                            [
+                                new PluginSlot { Slot = 1, PluginId = "com.pulsar.winswitcher", Action = "switch", Args = new Dictionary<string, string> { ["app"] = "notepad", ["path"] = "notepad.exe" }, Label = "Notepad", IconKey = "\uE70F" },
+                                new PluginSlot { Slot = 2, PluginId = "com.pulsar.winswitcher", Action = "switch", Args = new Dictionary<string, string> { ["app"] = "explorer", ["path"] = "explorer.exe" }, Label = "File Explorer", IconKey = "\uE8B7" },
+                                new PluginSlot { Slot = 3, PluginId = "com.pulsar.winswitcher", Action = "switch", Args = new Dictionary<string, string> { ["app"] = "calc", ["path"] = "calc.exe" }, Label = "Calculator", IconKey = "\uE8EF" }
+                            ];
+                            globalProfile.CommandMode =
+                            [
+                                new PluginSlot { Slot = 1, PluginId = "com.pulsar.command", Action = "run", Args = new Dictionary<string, string> { ["path"] = "cmd.exe" }, Label = "Command Prompt", IconKey = "\uE756" }
+                            ];
+                        }
+                    });
+
+                    await _tutorialService.StartTutorialAsync();
+                });
         }
     }
 }
