@@ -717,17 +717,11 @@ namespace Pulsar.Core.Plugin.Runtime
             _catalog.RemoveDescriptor(pluginId);
             _loader.InvalidateDiscoveryCache();
 
-            if (_loader.TryUnloadExternalContext(pluginId))
-            {
-                // Collectible ALC teardown is GC-driven: Unload() only initiates
-                // it, and the OS file locks on the plugin DLLs stay held until
-                // the context is actually collected. Force collection so an
-                // immediately following directory delete succeeds instead of
-                // waiting for an unrelated GC to happen.
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-                GC.Collect();
-            }
+            // TryUnloadExternalContext owns the whole collectible-ALC teardown:
+            // Unload() initiation plus the forced GC pump that actually releases
+            // the plugin DLL file locks, so the directory is deletable right
+            // after this call (candidate E, architecture review 2026-09-04).
+            _loader.TryUnloadExternalContext(pluginId);
 
             _logger.LogInformation("[PluginRuntimeKernel] Deactivated plugin {PluginId}", pluginId);
         }

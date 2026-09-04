@@ -51,7 +51,7 @@ The governing principle (deep modules, narrow seams, ports & adapters): a state 
 - **Behavior parity**: same localization keys, same notification title/body/template and error icon, same trip→telemetry and recovery→telemetry ordering. Full suite: 996/996 (baseline 993 + 3 new adapter tests); `dotnet build` at 0 warnings / 0 errors.
 - **Activation is now load-bearing**: if `AppStartupCoordinator` ever stops resolving the adapter, trip telemetry and tray toasts silently stop while the breaker itself keeps working. Mitigation: the startup log line "Circuit breaker notification relay activated" makes the activation observable, and the DI registration is colocated with the policy it observes.
 - **Lifecycle note**: the policy and the adapter are both container singletons (application lifetime); a singleton subscribing to a singleton's events cannot leak. If the adapter were ever made transient/scoped, constructor subscription would need rework.
-- Follow-up (out of scope, candidate E from the same review): the unload path's `GC.Collect()`×3 sequence in `PluginRuntimeKernel.DeactivatePluginAsync` is a separate encapsulation candidate.
+- Follow-up (candidate E from the same review, addressed the same day): the unload path's `GC.Collect()`×3 sequence was folded into `PluginLoader.TryUnloadExternalContext`, which now owns the entire collectible-ALC teardown (Unload initiation + forced GC pump) and documents the "caller severs pins, loader completes teardown" split; the kernel only orchestrates reference severing before the call.
 
 ---
 

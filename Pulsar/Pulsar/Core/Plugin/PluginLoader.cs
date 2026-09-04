@@ -116,11 +116,12 @@ namespace Pulsar.Core.Plugin
         }
 
         /// <summary>
-        /// Unloads the assembly load context of an external plugin so the OS
-        /// releases its file locks, allowing the plugin directory to be
-        /// deleted while the app is running. Callers must first drop every
-        /// strong reference to the plugin instance and its descriptor types
-        /// (runtime state store, catalog, discovery cache).
+        /// Unloads the assembly load context of an external plugin and drives the
+        /// GC-driven teardown to completion so the OS releases its file locks,
+        /// allowing the plugin directory to be deleted while the app is running.
+        /// Callers must first drop every strong reference to the plugin instance
+        /// and its descriptor types (runtime state store, catalog, discovery
+        /// cache) — the loader owns context teardown, the caller owns pin severing.
         /// </summary>
         public bool TryUnloadExternalContext(string pluginId)
         {
@@ -134,6 +135,17 @@ namespace Pulsar.Core.Plugin
             }
 
             context.InitiateUnload();
+
+            // Collectible-ALC teardown is GC-driven: Unload() only initiates it,
+            // and the OS file locks on the plugin DLLs stay held until the context
+            // is actually collected. Pump finalizers here so an immediately
+            // following directory delete succeeds instead of waiting for an
+            // unrelated GC. Keeping the pump colocated with Unload() preserves the
+            // invariant "context unloaded = DLLs unlockable" inside the ALC owner.
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
             _logger?.LogInformation("[PluginLoader] Unloaded assembly context for external plugin {PluginId}", pluginId);
             return true;
         }
