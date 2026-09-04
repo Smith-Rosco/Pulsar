@@ -204,10 +204,14 @@ namespace Pulsar.Views
 
             _viewModel.ClearPreviewPresentation();
 
-            // Fade is eased and slightly slower than the slot release (320ms) so the
-            // window and the active slot's exit animation close out in one rhythm
-            // instead of the fade racing ahead and cutting the animation mid-flight.
-            var fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(160))
+            // Fade duration is owned by MenuTiming.DismissFade. The matching
+            // GestureReleaseFadeDelay in MenuSession must be ≥ this value; the
+            // grace margin (MenuTiming.DismissGraceMs) absorbs dispatcher jitter.
+            // (Previous comment "slightly slower than the slot release (320ms)"
+            // was self-contradictory — 160 < 320 — and referred to an unrelated
+            // hover animation that runs on a separate visual tree after the
+            // window has already collapsed.)
+            var fadeOut = new DoubleAnimation(0, MenuTiming.DismissFade)
             {
                 EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
                 FillBehavior = FillBehavior.HoldEnd

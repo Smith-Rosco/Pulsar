@@ -66,13 +66,15 @@ namespace Pulsar.ViewModels
         private static readonly TimeSpan MenuWatchdogTimeout = TimeSpan.FromSeconds(60);
 
         /// <summary>
-        /// Dismiss fade duration (matches <c>RadialMenuWindow.Dismiss</c>) plus a
-        /// small margin. The gesture release must let this fade play out before
-        /// running the selection: slot strategies block the UI thread during window
-        /// activation (~300ms), which would otherwise starve the fade animation and
-        /// make the menu linger visibly after release.
+        /// Gesture-release await equals <see cref="MenuTiming.DismissAwait"/>:
+        /// the Dismiss fade (160ms) plus a small grace. The gesture release must
+        /// let the fade play out before running the selection: slot strategies
+        /// block the UI thread during window activation (~300ms), which would
+        /// otherwise starve the fade animation and make the menu linger visibly
+        /// after release. See <c>Pulsar.ViewModels.MenuTiming</c> for the
+        /// cross-module contract.
         /// </summary>
-        private const int GestureReleaseFadeDelayMs = 180;
+        private static readonly TimeSpan GestureReleaseFadeDelay = MenuTiming.DismissAwait;
 
         /// <summary>
         /// Single-phase first-frame budget for the Switch-mode content load. The
@@ -1083,7 +1085,7 @@ namespace Pulsar.ViewModels
             // selection. Slot strategies block the UI thread during window activation
             // (~300ms); without this yield the fade animation is starved and the menu
             // lingers visibly after release instead of disappearing immediately.
-            await Task.Delay(GestureReleaseFadeDelayMs);
+            await Task.Delay(GestureReleaseFadeDelay);
 
             if (escaped)
             {
