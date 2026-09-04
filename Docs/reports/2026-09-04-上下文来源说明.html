@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>上下文来源说明 · 非内部提示词部分</title>
+<style>
+  :root{
+    --accent:#2f6fed; --accent-soft:#eaf1fe; --ink:#1f2937; --ink-2:#4b5563;
+    --line:#e5e7eb; --bg:#f7f8fa; --ok:#15803d; --warn:#b45309; --no:#b91c1c;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif; background:var(--bg); color:var(--ink); line-height:1.7; padding:32px 16px;}
+  .wrap{max-width:880px; margin:0 auto;}
+  header{background:linear-gradient(135deg,#2f6fed,#1d4ed8); color:#fff; border-radius:14px; padding:28px 32px; margin-bottom:24px;}
+  header h1{font-size:24px; margin-bottom:6px;}
+  header p{font-size:14px; opacity:.92;}
+  .badge{display:inline-block; background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.35); border-radius:999px; padding:2px 12px; font-size:12px; margin-right:8px;}
+  section{background:#fff; border:1px solid var(--line); border-radius:12px; padding:24px 28px; margin-bottom:20px;}
+  section h2{font-size:18px; margin-bottom:4px; display:flex; align-items:center; gap:10px;}
+  .num{display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; background:var(--accent); color:#fff; font-size:13px; flex:none;}
+  .sub{color:var(--ink-2); font-size:13px; margin-bottom:16px;}
+  h3{font-size:15px; margin:16px 0 6px; color:var(--ink);}
+  ul{padding-left:20px;}
+  li{margin-bottom:6px;}
+  table{width:100%; border-collapse:collapse; font-size:14px; margin-top:8px;}
+  th,td{border:1px solid var(--line); padding:9px 12px; text-align:left; vertical-align:top;}
+  th{background:var(--accent-soft); font-weight:600; white-space:nowrap;}
+  .ok{color:var(--ok); font-weight:600;}
+  .warn{color:var(--warn); font-weight:600;}
+  .no{color:var(--no); font-weight:600;}
+  code{background:#f3f4f6; border:1px solid var(--line); border-radius:4px; padding:1px 6px; font-family:Consolas,monospace; font-size:13px; word-break:break-all;}
+  .path{background:#f3f4f6; border:1px solid var(--line); border-radius:6px; padding:8px 12px; font-family:Consolas,monospace; font-size:12.5px; margin:6px 0; overflow-x:auto; white-space:nowrap;}
+  .note{background:#fff8e6; border:1px solid #f5d78e; border-radius:8px; padding:12px 16px; font-size:13.5px; color:#7a5a10;}
+  .stat{display:flex; flex-wrap:wrap; gap:12px; margin-top:10px;}
+  .stat div{flex:1; min-width:140px; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:10px 14px;}
+  .stat b{display:block; font-size:20px; color:var(--accent);}
+  .stat span{font-size:12.5px; color:var(--ink-2);}
+  footer{font-size:12.5px; color:var(--ink-2); text-align:center; padding:8px 0 24px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>上下文来源说明</h1>
+    <p>当前环境中「非工具内部」提示词的来源、作用与可自定义性</p>
+    <div style="margin-top:12px;">
+      <span class="badge">范围：项目文件 · 技能库 · 环境与会话信息</span>
+      <span class="badge">生成时间：2026-09-04</span>
+    </div>
+  </header>
+
+  <section>
+    <h2><span class="num">0</span>报告范围说明</h2>
+    <p class="sub">先划清边界，避免误解</p>
+    <p>本次会话中注入的提示词可分为两类：<b>工具内部内容</b>（系统内置的运行规则、工具接口定义、安全约束与内部配置等）与<b>非内部上下文</b>（由项目文件、用户环境与会话状态提供的、你本人可见可管的内容）。</p>
+    <p style="margin-top:8px;">本报告<b>只覆盖后者</b>。所有涉及内部配置、工具接口与安全规则的内容均不在讨论范围内，也不在本报告中体现。报告中的位置信息均已在本机逐一核实。</p>
+  </section>
+
+  <section>
+    <h2><span class="num">1</span>项目级操作指南：AGENTS.md</h2>
+    <p class="sub">决定「在这个项目里怎么干活」的约定文件</p>
+    <h3>来源与位置</h3>
+    <div class="path">E:\8_Project\10_C#\Pulsar_Project\AGENTS.md</div>
+    <p>位于项目根目录，由项目所有者维护。当前版本为 <b>3.2.0</b>，最后更新于 2026-09-04。文件已在磁盘核实存在。</p>
+    <h3>作用</h3>
+    <ul>
+      <li><b>项目快照</b>：框架、核心特性、关键原语（上下文快照、插件分层、配置单一事实源等）一览。</li>
+      <li><b>不可违反的不变量</b>：插件访问约束、UI 主题注入、本地化约定等硬性规则。</li>
+      <li><b>常见坑位速查表</b>：症状 → 根因/修复 的对照表，并链接到对应深度文档。</li>
+      <li><b>任务路由与文档索引</b>：不同任务（加插件、改 UI、改配置持久化等）该去读哪些文档。</li>
+      <li><b>代码风格、构建命令、错误处理与日志约定</b>：让 AI 产出与项目一致的代码。</li>
+    </ul>
+    <h3>可自定义性</h3>
+    <p><span class="ok">完全可自定义</span> —— 这是你自己的文件，直接编辑即可；修改后的内容会在后续会话的上下文注入中生效。你还可以在 <code>Docs/</code>、<code>Docs/lessons/</code>、<code>Docs/decisions/</code> 等目录维护被它引用的深度文档。</p>
+  </section>
+
+  <section>
+    <h2><span class="num">2</span>技能库（Skills 注册表）</h2>
+    <p class="sub">按需发现并读取的领域能力目录</p>
+    <h3>来源与位置</h3>
+    <p>技能分散在若干「技能根目录」中，每个技能是一个含 <code>SKILL.md</code> 描述文件的目录。本次会话注入的技能清单对应以下根目录（均已核实）：</p>
+    <div class="stat">
+      <div><b>104</b><span>豆包工作区预装技能<br><code>.skills</code>（工作区根目录）</span></div>
+      <div><b>14</b><span>项目级技能<br><code>项目根\.agents\skills</code></span></div>
+      <div><b>1</b><span>用户级技能<br><code>用户目录\.agents\skills</code></span></div>
+      <div><b>0</b><span>预留目录（当前为空）<br><code>.user_skills</code> · <code>Doubao\skills</code></span></div>
+    </div>
+    <h3>作用</h3>
+    <ul>
+      <li>技能清单随会话注入，作为<b>能力目录</b>：描述每项技能的适用场景。</li>
+      <li>当任务命中某技能领域时，按需<b>读取该技能的 SKILL.md</b> 并按其中流程执行，例如文档 / 表格 / 幻灯片、图像 / 视频 / 音频生成与处理、金融、医疗、法律、学术、定时任务等。</li>
+      <li>技能是「可复用领域能力」，比通用命令更专业、更高效。</li>
+    </ul>
+    <h3>可自定义性</h3>
+    <p><span class="ok">可以</span> —— 技能根目录是用户可管理的目录：可以安装新技能、移除技能，也可以基于技能创作指南新建或更新自有技能。修改技能文件会直接影响后续任务中该技能的执行方式。</p>
+  </section>
+
+  <section>
+    <h2><span class="num">3</span>环境与会话上下文</h2>
+    <p class="sub">为路径、语言、时效与地域判断提供真实世界锚点</p>
+    <table>
+      <tr><th>来源</th><th>本次会话内容</th><th>作用</th><th>可自定义</th></tr>
+      <tr>
+        <td>项目目录</td>
+        <td>主目录：<code>E:\8_Project\10_C#\Pulsar_Project</code>（另有子目录）</td>
+        <td>主目录为默认输出位置与相对路径基准；产物落在你指定的文件夹中</td>
+        <td class="ok">✅ 由你选择</td>
+      </tr>
+      <tr>
+        <td>用户偏好</td>
+        <td>随会话注入的偏好设置</td>
+        <td>个性化输出风格与默认行为</td>
+        <td class="ok">✅ 可直接设置</td>
+      </tr>
+      <tr>
+        <td>位置信息</td>
+        <td>中国 / 无锡</td>
+        <td>为地域相关的问题提供语境（如本地政策、时区）</td>
+        <td class="warn">⚠️ 系统检测，反映真实位置</td>
+      </tr>
+      <tr>
+        <td>设备信息</td>
+        <td>Windows · 桌面端</td>
+        <td>适配操作系统与设备形态（命令、路径、交互方式）</td>
+        <td class="warn">⚠️ 系统检测，反映真实环境</td>
+      </tr>
+      <tr>
+        <td>当前日期</td>
+        <td>2026-09-04（UTC+8）</td>
+        <td>作为时效判断的时间基准</td>
+        <td class="warn">⚠️ 系统检测，随时间推进</td>
+      </tr>
+    </table>
+  </section>
+
+  <section>
+    <h2><span class="num">4</span>通用行为指南</h2>
+    <p class="sub">会话注入的固定工作流程约定</p>
+    <p>除上述项目与用户相关内容外，会话中还会注入一段<b>通用的工作流程引导</b>，规定默认的工作方式——大致遵循「先探查、守边界、重证据、受阻换通道、交付前验证、让用户拿得到」的推进次序。它属于随会话提供的固定引导：</p>
+    <ul style="margin-top:8px;">
+      <li>不随项目变化，所有任务一视同仁地适用；</li>
+      <li>不直接暴露为可编辑文件，但你的明确指令始终优先于默认约定。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><span class="num">5</span>可自定义性总览</h2>
+    <p class="sub">一表看清「哪些你能改、怎么改」</p>
+    <table>
+      <tr><th>来源</th><th>位置</th><th>作用</th><th>能否自定义</th></tr>
+      <tr><td>AGENTS.md</td><td>项目根目录</td><td>项目操作约定</td><td class="ok">✅ 直接编辑文件</td></tr>
+      <tr><td>技能库</td><td>多个技能根目录</td><td>领域能力目录</td><td class="ok">✅ 可安装 / 创建 / 更新 / 移除</td></tr>
+      <tr><td>项目目录</td><td>主目录 + 子目录</td><td>输出位置与路径基准</td><td class="ok">✅ 由你选定</td></tr>
+      <tr><td>用户偏好</td><td>会话注入</td><td>个性化设置</td><td class="ok">✅ 可设置</td></tr>
+      <tr><td>位置 / 设备 / 日期</td><td>系统检测</td><td>真实世界锚点</td><td class="warn">⚠️ 随真实环境变化</td></tr>
+      <tr><td>通用行为指南</td><td>会话固定注入</td><td>默认工作流程</td><td class="no">❌ 不可直接编辑（你的指令优先）</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <div class="note">
+      <b>边界说明：</b>本报告仅描述「非内部」上下文来源。工具内置的系统提示词、工具接口定义、安全规则及内部配置等，属内部信息，不在可披露范围内，故本报告不涉及、不推断、不转述其具体内容。
+    </div>
+  </section>
+
+  <footer>上下文来源说明 · 生成于 2026-09-04 · 存放于 Docs/reports/</footer>
+</div>
+</body>
+</html>
