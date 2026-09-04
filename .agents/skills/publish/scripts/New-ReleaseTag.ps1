@@ -52,7 +52,7 @@ if ($LASTEXITCODE -ne 0) { throw "tag creation failed" }
 # 5) 校验 tag message：cmd 直接重定向原始字节（PS 管道会经 GBK 重解码乱码），
 #    并核对首三字节为 23 23 23（###）而非 EF BB BF（BOM）。
 $msgFile = Join-Path $env:TEMP "pulsar-tagmsg-$Version.txt"
-cmd /c "git for-each-ref refs/tags/v$Version --format=%%(contents) > `"$msgFile`""
+cmd /c "git for-each-ref refs/tags/v$Version --format=%(contents) > `"$msgFile`""
 $bytes = [System.IO.File]::ReadAllBytes($msgFile)
 if ($bytes.Length -lt 3) { throw "Tag message is empty: $msgFile" }
 if ($bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {

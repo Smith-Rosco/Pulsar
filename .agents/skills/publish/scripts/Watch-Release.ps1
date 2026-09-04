@@ -14,13 +14,25 @@ New-Item -ItemType Directory -Path $uploadDir -Force | Out-Null
 $ghRepo = Get-GitHubRepo
 
 # JSON 一律用 cmd 重定向落盘（PS 管道会经 GBK 重解码损坏 UTF-8 中文）
+# 推送 tag 后 GitHub Actions 可能延迟注册工作流，先轮询等待 run 出现（最多 ~60s），
+# 避免刚 push 完就查询导致误报 "No release.yml run found"。
 $runJsonFile = Join-Path $uploadDir "run_list_$Version.json"
-cmd /c "gh run list --workflow=release.yml --limit 1 --json databaseId,headBranch,status > `"$runJsonFile`""
-$runData = Get-Content -LiteralPath $runJsonFile -Raw | ConvertFrom-Json
-if (-not $runData -or -not $runData[0].databaseId) {
-    throw "No release.yml run found; did you push the v$Version tag?"
+$runId = $null
+for ($attempt = 1; $attempt -le 12; $attempt++) {
+    cmd /c "gh run list --workflow=release.yml --limit 1 --json databaseId,headBranch,status > `"$runJsonFile`""
+    $runData = Get-Content -LiteralPath $runJsonFile -Raw | ConvertFrom-Json
+    if ($runData -and $runData[0].databaseId) {
+        $runId = $runData[0].databaseId
+        break
+    }
+    if ($attempt -lt 12) {
+        Write-Output "Release run not registered yet (attempt $attempt/12); retrying in 5s..."
+        Start-Sleep -Seconds 5
+    }
 }
-$runId = $runData[0].databaseId
+if (-not $runId) {
+    throw "No release.yml run found after 60s; did you push the v$Version tag? Inspect: $runJsonFile"
+}
 Write-Output "Watching CI run $runId ..."
 gh run watch $runId --exit-status
 if ($LASTEXITCODE -ne 0) { throw "CI run $runId failed" }

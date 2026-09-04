@@ -20,7 +20,7 @@ description: Pulsar 发布与打包流程。支持 local-artifact、local-versio
 | `Pack-Zips.ps1` | 将产物压缩为 `Pulsar-$version-{full,portable}.zip` 并校验（内置 pwsh → powershell → System32 tar 三级回退） | `-Version 1.9.0 [-Build 2]` |
 | `Update-Changelog.ps1` | 将 `CHANGELOG.md` 的 `[Unreleased]` 段固化为 `## [X.Y.Z] - 日期` 并插入新的空 Unreleased 段；段内无真实条目时拒绝执行 | `-Version 1.9.0` |
 | `New-ReleaseTag.ps1` | release 模式：commit 版本号 + 创建带完整 notes 的 tag + 校验 tag message | `-Version 1.9.0 -NotesFile <路径>` |
-| `Watch-Release.ps1` | 等待 release.yml CI 完成、验证 Release 资产、导出 body 供核对 | `-Version 1.9.0` |
+| `Watch-Release.ps1` | 等待 release.yml CI 完成（含 run 注册轮询 ~60s）、验证 Release 资产、导出 body 供核对 | `-Version 1.9.0` |
 | `Edit-ReleaseNotes.ps1` | 修正 GitHub Release body 为完整 release notes | `-Version 1.9.0 -NotesFile <路径>` |
 
 ## 0. 发布模式
@@ -46,7 +46,7 @@ description: Pulsar 发布与打包流程。支持 local-artifact、local-versio
 - 下一个构建号用 `Get-ReleaseInfo.ps1` 输出的 `Next local build number` 推断（取已用最大值 + 1）。
 - `release` 模式**不使用**构建号：正式版本语义始终是三位。
 
-**release 模式自动化**：仓库已配置 CI（`.github/workflows/release.yml`）。push `v*` tag 时自动构建 full + portable、校验产物、压缩为 `Pulsar-$version-{full,portable}.zip` 并创建/填充 GitHub Release，release notes 取自 **tag message**（`--notes-from-tag`）。因此 release 模式的本地职责是：确认版本 → 生成并确认完整 notes → **把完整 notes 写入 tag message** → commit/tag → push → 等 CI 完成并验证 GitHub Release。不要重复本地构建打包（本地冒烟可选，见回退路径）。
+**release 模式自动化**：仓库已配置 CI（`.github/workflows/release.yml`）。push `v*` tag 时自动构建 full + portable、校验产物、压缩为 `Pulsar-$version-{full,portable}.zip` 并创建/填充 GitHub Release，release notes 取自 **tag message**（workflow 用 GitHub API 显式读取 annotated tag message，**不使用** `--notes-from-tag`——部分 gh 版本上它会退化为 commit subject，见第 7 节排障）。因此 release 模式的本地职责是：确认版本 → 生成并确认完整 notes → **把完整 notes 写入 tag message** → commit/tag → push → 等 CI 完成并验证 GitHub Release。不要重复本地构建打包（本地冒烟可选，见回退路径）。
 
 ## 1. 版本决策
 
@@ -139,7 +139,7 @@ pwsh .agents/skills/publish/scripts/New-ReleaseTag.ps1 -Version 1.9.0 -NotesFile
 - tag 已存在则停止抛错，不覆盖已有 tag。
 - 校验 tag message：cmd 直接重定向原始字节到文件（PS 管道会经 GBK 重解码乱码），核对首三字节为 `23 23 23`（`###`）而非 `EF BB BF`（BOM）。
 
-**tag message 必须是用户确认过的完整 release notes**，不要只写一行摘要——CI 用 `--notes-from-tag` 生成 GitHub Release body，tag message 就是发布页展示的 notes。
+**tag message 必须是用户确认过的完整 release notes**，不要只写一行摘要——CI 用 GitHub API 读取 tag message 生成 GitHub Release body（见第 5 节），tag message 就是发布页展示的 notes。
 
 ### push
 
@@ -192,6 +192,9 @@ Get-ChildItem -LiteralPath (Join-Path (git rev-parse --show-toplevel) 'Artifacts
 - tag message 中 `###` 章节标题丢失（`git tag -n1` 首行是 bullet 而非 `###`）：git 默认 `commentChar=#` 把 `#` 开头行当注释剥离。修正：删旧 tag，用 `New-ReleaseTag.ps1`（内置 `-c core.commentChar=§`）重建（未 push 时）。
 - tag message 首行带 BOM（Format-Hex 首三字节 `EF BB BF`）：notes 文件用了会带 BOM 的编码。修正：用 Write 工具或 `New-Object System.Text.UTF8Encoding($false)` 重写文件后重建 tag。
 - `git cat-file tag` / `gh` 输出经 PS 管道后中文乱码：cmd 直接重定向（`cmd /c "... > file"`）的字节才是真实数据；PS 管道经 `[Console]::OutputEncoding`(gb2312) 重解码会损坏中文。
+- `New-ReleaseTag.ps1` 误报 "Tag message does not start with '###'"：**`cmd /c` 命令行上下文不会像批处理文件那样把 `%%` 折叠成 `%`**——传给 git for-each-ref 的格式串必须写单个 `%(contents)`；若误写 `%%(contents)`，git 会原样输出字面量 `%(contents)`，导致校验误报（tag 本身仍正确，需用 `git cat-file tag` 核实）。此坑已修复；改动该行时不要重新引入双 `%`。
+- 推送 tag 后 `Watch-Release.ps1` 报 "No release.yml run found"：GitHub Actions 对刚 push 的 tag 注册工作流有延迟，脚本已内置最多 ~60s（每 5s 一次，共 12 次）的 run 注册轮询；若仍失败再检查 tag 是否真的推送成功。
+- Release body 是 commit subject（如 `chore(release): bump version to 1.10.0`）而非完整 tag notes，且 tag message 已核对正确：**`gh release create --notes-from-tag` 在部分 gh 版本上会退化为读取 commit subject**（2026-09 实测：v1.9.1 正常、v1.10.0 退化，同一 workflow 不同 runner gh 版本行为不同）。release.yml 已改为用 GitHub API 显式读取 annotated tag message（`git/ref/tags/<tag>` → `git/tags/<sha>` → `--jq .message`）经 cmd 重定向写入 notes 文件再 `--notes-file`。若历史 release 已受影响，用 `Edit-ReleaseNotes.ps1` 修正 body；修改 workflow 时不要退回 `--notes-from-tag`。
 - release 已存在或 tag 已存在：停止并询问用户，不删除、不覆盖。
 
 ## 8. 完成报告

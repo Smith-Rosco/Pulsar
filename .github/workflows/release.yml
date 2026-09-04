@@ -109,7 +109,17 @@ jobs:
           $PSNativeCommandUseErrorActionPreference = $false
           $tag = "${{ github.ref_name }}"
           $name = "Pulsar $tag"
-          gh release create $tag --title "$name" --notes-from-tag
+          $repo = "${{ github.repository }}"
+          # 显式从 GitHub API 读取 annotated tag message 作为 release notes。
+          # 不用 --notes-from-tag：部分 gh 版本上它会退化为 commit subject，
+          # 使 body 变成 "chore(release): bump version to X"（2026-09 实测 v1.10.0）。
+          # cmd 重定向保持原始字节（PS 管道会经 GBK 重解码损坏中文）。
+          cmd /c "gh api repos/$repo/git/ref/tags/$tag --jq .object.sha > %TEMP%\pulsar-tagsha.txt"
+          if ($LASTEXITCODE -ne 0) { throw "failed to resolve tag sha for $tag" }
+          $sha = (Get-Content -LiteralPath (Join-Path $env:TEMP 'pulsar-tagsha.txt') -Raw).Trim()
+          cmd /c "gh api repos/$repo/git/tags/$sha --jq .message > %TEMP%\pulsar-tagmsg.md"
+          if ($LASTEXITCODE -ne 0) { throw "failed to read tag message for $tag" }
+          gh release create $tag --title "$name" --notes-file (Join-Path $env:TEMP 'pulsar-tagmsg.md')
 
       - name: Upload Release Assets
         if: steps.release_check.outputs.exists == 'false'
