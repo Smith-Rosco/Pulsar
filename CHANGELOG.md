@@ -39,10 +39,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **架构（H）**：`RadialMenuViewModel` 不再实现 `IMenuSession`；4 个零引用成员（`IsInSubMenu`/`SetActionExecuted`/`RestoreRootMenu`/`EnterSubMenuAsync`）删除；保留 `IsVisible`（去掉 setter）/ `ActionExecuted` / `IsFlickOutEscaped`（XAML DataTrigger 依赖）。`IsVisible` setter 无人调用，去除。
 - **架构（J）**：`MenuSession` 的 `GestureReleaseFadeDelayMs = 180` 与 `RadialMenuWindow.Dismiss` 的 `160ms` 淡出合并为新 `ViewModels/MenuTiming` 静态类（`DismissFade=160`、`DismissGraceMs=20`、`DismissAwait=>180`），把「180 ≥ 160」这条跨模块不等式显式命名为 `DismissGraceMs`。SlotOrb 的 300/320 hover 时长不属于此契约，保持原样。修正 `RadialMenuWindow.xaml.cs:207` 自相矛盾的注释（"slightly slower than 320" 与 "160" 矛盾）。
 - **架构（K · ADR-017）**：`AppStartupCoordinator` 的 `IServiceProvider` 字段删除，24 处 `GetRequiredService/GetService<>` 全部替换为构造注入或 `Lazy<T>` / `Func<T>` 工厂。`App.xaml.cs` 新增 11 个工厂注册。保留 ADR-013 时序（中继在托盘初始化后解析）、`--ui-debug` 输入门禁（`GlobalKeyboardHook` 不在 ui-debug 下预解析）、transient VM 防捕获（`FirstLaunchSetupWizardViewModel` 走 `Func<>` 工厂）。
+- **架构（I · ADR-018）**：`AppStartupCoordinator.StartDeferredInitialization` 的 3 行内联首次启动判定替换为 `IOnboardingStateService.GetStateAsync()` 投影读取；读端不再绑定 `OnboardingState` 的 4 个字符串字面量。语义变更（有意）：`OnboardingState="Complete"` + `HasCompletedTutorial=false`（`ProfilesConfig.cs:354-357` 文档化的非法不变量）从「再次进入教程」改为「return」（自愈）；6 种合法组合 → return 条件映射不变。`OnboardingVerificationTests` 新增 4 个测试锁 `HasCompletedSetup` 在 `SetupWizardComplete`/`Complete` 上的投影、非法组合自愈、`LastTutorialStep="Skipped"` → `HasSkippedTutorial` 映射、`OnboardingState="Complete"` 无条件短路。
 
 ### Verified
-- 构建 0 错误（NU1900 网络警告与基线一致）
-- `dotnet test Pulsar.Tests` → 1031 / 1031 通过
+- 构建 0 错误（NU1900 网络警告与基线一致；CS8625 在 ADR-017 引入的 `Lazy<T>=null` 默认参数上基线即存在，未新增）
+- `dotnet test Pulsar.Tests` → 1037 / 1037 通过（基线 1031 + 新增 6 条：4 个 `[Fact]` + 2 个 `[Theory]` 各 2 个 InlineData）
 
 ## [1.10.0] - 2026-09-04
 
