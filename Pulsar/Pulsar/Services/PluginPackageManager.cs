@@ -231,8 +231,8 @@ namespace Pulsar.Services
 
         private static bool HasValidManifest(string pluginPath)
         {
-            return File.Exists(Path.Combine(pluginPath, "plugin.manifest.json"))
-                || File.Exists(Path.Combine(pluginPath, "manifest.json"));
+            // File-name resolution is single-sourced in PluginManifestReader.
+            return PluginManifestReader.TryResolveManifestPath(pluginPath) != null;
         }
 
         /// <summary>
@@ -361,23 +361,18 @@ namespace Pulsar.Services
 
         private PluginPackageInspectionResult ReadAndValidateManifest(string extractPath)
         {
-            var manifestPath = Path.Combine(extractPath, "plugin.manifest.json");
-            if (!File.Exists(manifestPath))
-            {
-                manifestPath = Path.Combine(extractPath, "manifest.json");
-            }
-
-            if (!File.Exists(manifestPath))
+            // File resolution (new format first, legacy fallback) and the
+            // case-insensitive parse are single-sourced in PluginManifestReader;
+            // content validation stays here with its own error messages.
+            var manifestPath = PluginManifestReader.TryResolveManifestPath(extractPath);
+            if (manifestPath == null)
             {
                 return PluginPackageInspectionResult.Failed("Invalid plugin package: manifest.json not found");
             }
 
             try
             {
-                var manifestJson = File.ReadAllText(manifestPath);
-                var manifest = JsonSerializer.Deserialize<PluginManifest>(
-                    manifestJson,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var manifest = PluginManifestReader.Parse(File.ReadAllText(manifestPath));
 
                 if (manifest == null || string.IsNullOrWhiteSpace(manifest.Id))
                 {

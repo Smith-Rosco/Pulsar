@@ -45,24 +45,16 @@ namespace Pulsar.Services
                 {
                     try
                     {
-                        // Try plugin.manifest.json first (new format), then manifest.json (legacy)
-                        var manifestPath = Path.Combine(folder, "plugin.manifest.json");
-                        if (!File.Exists(manifestPath))
-                        {
-                            manifestPath = Path.Combine(folder, "manifest.json");
-                        }
-
-                        if (!File.Exists(manifestPath))
+                        // File resolution (new format first, legacy fallback) and the
+                        // case-insensitive parse are single-sourced in PluginManifestReader.
+                        var manifestPath = PluginManifestReader.TryResolveManifestPath(folder);
+                        if (manifestPath == null)
                         {
                             _logger?.LogWarning("[LocalPluginScanner] No manifest file found in {Folder}", folder);
                             continue;
                         }
 
-                        var manifestJson = File.ReadAllText(manifestPath);
-                        var manifest = JsonSerializer.Deserialize<PluginManifest>(manifestJson, new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
+                        var manifest = PluginManifestReader.Parse(File.ReadAllText(manifestPath));
 
                         if (manifest == null)
                         {

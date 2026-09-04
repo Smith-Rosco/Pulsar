@@ -305,13 +305,10 @@ namespace Pulsar.Core.Plugin
 
         internal static PluginManifest? TryReadExternalManifest(string folder)
         {
-            var manifestPath = Path.Combine(folder, "plugin.manifest.json");
-            if (!File.Exists(manifestPath))
-            {
-                manifestPath = Path.Combine(folder, "manifest.json");
-            }
-
-            if (!File.Exists(manifestPath))
+            // Resolution (plugin.manifest.json -> manifest.json fallback) and the
+            // case-insensitive deserialization are single-sourced in PluginManifestReader.
+            var manifestPath = PluginManifestReader.TryResolveManifestPath(folder);
+            if (manifestPath == null)
             {
                 return null;
             }
@@ -319,9 +316,7 @@ namespace Pulsar.Core.Plugin
             try
             {
                 var json = File.ReadAllText(manifestPath);
-                var manifest = JsonSerializer.Deserialize<PluginManifest>(
-                    json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var manifest = PluginManifestReader.Parse(json);
 
                 return string.IsNullOrWhiteSpace(manifest?.Id) ? null : manifest;
             }
