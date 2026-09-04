@@ -15,12 +15,20 @@ namespace Pulsar.Tests.Services
             out Mock<IConfigService> configServiceMock,
             ProfilesConfig? config = null)
         {
+            return CreateService(out configServiceMock, out _, config);
+        }
+
+        private static HotkeyService CreateService(
+            out Mock<IConfigService> configServiceMock,
+            out Native.GlobalKeyboardHook hook,
+            ProfilesConfig? config = null)
+        {
             config ??= new ProfilesConfig();
             configServiceMock = new Mock<IConfigService>();
             configServiceMock.Setup(x => x.LoadSnapshotAsync(It.IsAny<bool>())).ReturnsAsync(config);
             configServiceMock.Setup(x => x.GetSnapshot()).Returns(config);
 
-            var hook = new Native.GlobalKeyboardHook(installHook: false);
+            hook = new Native.GlobalKeyboardHook(installHook: false);
             var logger = NullLogger<HotkeyService>.Instance;
 
             var service = new HotkeyService(hook, configServiceMock.Object, logger);
@@ -175,6 +183,47 @@ namespace Pulsar.Tests.Services
 
             all.Should().ContainKey("ShowGrid");
             all["ShowGrid"].Key.Should().Be("Q");
+        }
+
+        // ----------------------
+        // [Candidate O] Hook-mode configuration belongs to HotkeyService.
+        // InitializeAsync must configure the hook mode BEFORE subscribing,
+        // so the hook never consumes an event in an unconfigured mode.
+        // ----------------------
+
+        [Fact]
+        public void InitializeAsync_LegacyModifierStateMode_ConfiguresHookLegacy()
+        {
+            var config = new ProfilesConfig();
+            config.Settings.Input.ModifierStateMode = "Legacy";
+
+            CreateService(out _, out var hook, config);
+
+            hook.UseHybridMode.Should().BeFalse(
+                "Input.ModifierStateMode='Legacy' must reach the hook before any event can be consumed");
+        }
+
+        [Fact]
+        public void InitializeAsync_HybridModifierStateMode_ConfiguresHookHybrid()
+        {
+            var config = new ProfilesConfig();
+            config.Settings.Input.ModifierStateMode = "Hybrid";
+
+            CreateService(out _, out var hook, config);
+
+            hook.UseHybridMode.Should().BeTrue();
+        }
+
+        [Fact]
+        public void InitializeAsync_NullInputSection_DefaultsToHybrid()
+        {
+            var config = new ProfilesConfig();
+            config.Settings.Input = null!;
+
+            CreateService(out _, out var hook, config);
+
+            hook.UseHybridMode.Should().BeTrue(
+                "a missing Input section keeps the same fallback the previous startup-module write used");
         }
     }
 }

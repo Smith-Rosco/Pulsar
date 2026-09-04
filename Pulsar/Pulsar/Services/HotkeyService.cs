@@ -96,6 +96,14 @@ namespace Pulsar.Services
         public async Task InitializeAsync()
         {
             _config = await _configService.LoadSnapshotAsync();
+
+            // [Architecture review 2026-09-04, candidate O] The keyboard-hook mode
+            // belongs to the keyboard-hook module. Read it here, BEFORE subscribing,
+            // so the hook never consumes an event in an unconfigured mode — the
+            // previous startup-module write ran after this subscription, leaving a
+            // short startup window on the default mode for Legacy users.
+            ConfigureHookMode();
+
             if (_config == null) return;
 
             // Build optimization cache
@@ -104,6 +112,24 @@ namespace Pulsar.Services
             _hook.OnKeyDown += OnKeyDown;
             // Handle KeyUp to maintain state
             _hook.OnKeyUp += OnKeyUp;
+        }
+
+        /// <summary>
+        /// Applies the configured modifier-state mode to the keyboard hook.
+        /// Same fallback as the previous startup-module write: no <c>Input</c>
+        /// section (or no config at all) keeps Hybrid — the hook's own default.
+        /// </summary>
+        private void ConfigureHookMode()
+        {
+            if (_config?.Settings?.Input != null)
+            {
+                _hook.UseHybridMode = _config.Settings.Input.IsHybridMode;
+                _logger.LogInformation("GlobalKeyboardHook configured: ModifierStateMode={Mode}", _config.Settings.Input.ModifierStateMode);
+                return;
+            }
+
+            _hook.UseHybridMode = true;
+            _logger.LogInformation("GlobalKeyboardHook using default Hybrid mode");
         }
 
         public HotkeyValidationResult ValidateHotkey(string actionId, HotkeyConfig config)

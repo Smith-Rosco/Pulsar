@@ -8,7 +8,6 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
-using Pulsar.Native;
 using Pulsar.Models;
 using Pulsar.Models.Enums;
 using Pulsar.Services.Interfaces;
@@ -45,7 +44,6 @@ namespace Pulsar.Services
         private readonly Lazy<IProcessRegistryService> _processRegistryService;
         private readonly Lazy<PluginBreakerNotificationService> _breakerRelay;          // ADR-013 timing: must be resolved after tray init.
         private readonly Lazy<IHotkeyService> _hotkeyService;
-        private readonly Lazy<GlobalKeyboardHook> _keyboardHook;
         private readonly Lazy<IGlobalMouseService> _globalMouseService;
         private readonly Lazy<ITutorialService> _tutorialService;
         private readonly Func<RadialMenuWindow> _mainWindowFactory;
@@ -79,7 +77,6 @@ namespace Pulsar.Services
             ILogger<AppStartupCoordinator> logger,
             Lazy<PluginBreakerNotificationService> breakerRelay = null,
             Lazy<IHotkeyService> hotkeyService = null,
-            Lazy<GlobalKeyboardHook> keyboardHook = null,
             Lazy<IGlobalMouseService> globalMouseService = null,
             Lazy<ITutorialService> tutorialService = null,
             Func<RadialMenuWindow> mainWindowFactory = null,
@@ -112,9 +109,9 @@ namespace Pulsar.Services
             _hotkeyService = hotkeyService ?? throw new InvalidOperationException(
                 "AppStartupCoordinator requires a Lazy<IHotkeyService> from DI to preserve the " +
                 "--ui-debug input-capture invariant.");
-            _keyboardHook = keyboardHook ?? throw new InvalidOperationException(
-                "AppStartupCoordinator requires a Lazy<GlobalKeyboardHook> from DI because the " +
-                "default constructor installs a real low-level keyboard hook.");
+            // [Candidate O] No Lazy<GlobalKeyboardHook> here anymore: the hook mode is
+            // configured by HotkeyService.InitializeAsync (its own module), and the hook
+            // instance is only ever constructed through the HotkeyService dependency chain.
             _globalMouseService = globalMouseService ?? throw new InvalidOperationException(
                 "AppStartupCoordinator requires a Lazy<IGlobalMouseService> from DI to preserve " +
                 "the --ui-debug input-capture invariant.");
@@ -220,12 +217,11 @@ namespace Pulsar.Services
                 _logger.LogInformation("[Startup] Global mouse wheel service initialized");
             }
 
-            if (registerHotkeys)
+            if (!registerHotkeys)
             {
-                await ConfigureKeyboardHookAsync();
-            }
-            else
-            {
+                // [Candidate O] The hook-mode configuration now lives inside
+                // HotkeyService.InitializeAsync — nothing to do here when hotkeys
+                // are registered; ui-debug (no hooks) only logs.
                 _logger.LogInformation("[Startup] UI debug mode: skipping hotkey, mouse-gesture and keyboard-hook registration");
             }
 
@@ -405,21 +401,6 @@ namespace Pulsar.Services
             {
                 Log.Warning(ex, "Failed to initialize localization from config, using default English");
             }
-        }
-
-        private async Task ConfigureKeyboardHookAsync()
-        {
-            var keyboardHook = _keyboardHook.Value;
-            var config = await _configService.LoadSnapshotAsync();
-            if (config?.Settings?.Input != null)
-            {
-                keyboardHook.UseHybridMode = config.Settings.Input.IsHybridMode;
-                Log.Information("GlobalKeyboardHook configured: ModifierStateMode={Mode}", config.Settings.Input.ModifierStateMode);
-                return;
-            }
-
-            keyboardHook.UseHybridMode = true;
-            Log.Information("GlobalKeyboardHook using default Hybrid mode");
         }
 
         private async Task RunOnboardingStartupAsync(CancellationToken cancellationToken)

@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -88,7 +87,6 @@ namespace Pulsar.Tests.Services
             public CapturingScheduler BackgroundScheduler { get; } = new();
             public LoggingLevelSwitch LevelSwitch { get; } = new(LogEventLevel.Information);
             public Mock<IHotkeyService> HotkeyService { get; } = new(MockBehavior.Strict);
-            public GlobalKeyboardHook KeyboardHook { get; private set; }
             public Mock<IGlobalMouseService> GlobalMouseService { get; } = new(MockBehavior.Strict);
             public Mock<ITutorialService> TutorialService { get; } = new(MockBehavior.Strict);
             public PluginCircuitBreakerPolicy BreakerPolicy { get; private set; }
@@ -181,18 +179,11 @@ namespace Pulsar.Tests.Services
                 });
                 var hotkeyLazy = new Lazy<IHotkeyService>(() => { CallOrder.Add("HotkeyResolved"); return HotkeyService.Object; });
 
-                // GlobalKeyboardHook's default ctor installs a real low-level keyboard hook on Windows.
-                // Use the internal test seam (installHook=false) via reflection so we get a real but inert instance.
-                var keyboardHookCtor = typeof(GlobalKeyboardHook).GetConstructor(
-                    BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public,
-                    binder: null,
-                    types: new[] { typeof(bool) },
-                    modifiers: null);
-                keyboardHookCtor.Should().NotBeNull(
-                    "GlobalKeyboardHook exposes an internal GlobalKeyboardHook(bool installHook) ctor for unit tests");
-                KeyboardHook = (GlobalKeyboardHook)keyboardHookCtor!.Invoke(new object[] { false });
-
-                var keyboardHookLazy = new Lazy<GlobalKeyboardHook>(() => { CallOrder.Add("KeyboardHookResolved"); return KeyboardHook; });
+                // [Candidate O] GlobalKeyboardHook no longer reaches the coordinator at
+                // all: it is only constructed through the HotkeyService dependency chain
+                // (which these tests mock), so there is no KeyboardHookResolved signal
+                // to assert on. The ui-debug invariant "never construct the real hook"
+                // is preserved in production by _hotkeyService not being resolved.
                 var mouseLazy = new Lazy<IGlobalMouseService>(() => { CallOrder.Add("GlobalMouseResolved"); return GlobalMouseService.Object; });
                 var tutorialLazy = new Lazy<ITutorialService>(() => { CallOrder.Add("TutorialServiceResolved"); return TutorialService.Object; });
 
@@ -241,7 +232,6 @@ namespace Pulsar.Tests.Services
                     CoordinatorLogger,
                     breakerRelay,
                     hotkeyLazy,
-                    keyboardHookLazy,
                     mouseLazy,
                     tutorialLazy,
                     mainWindowFactory,
@@ -315,7 +305,6 @@ namespace Pulsar.Tests.Services
                 NullLogger<AppStartupCoordinator>.Instance,
                 breakerRelay: new Lazy<PluginBreakerNotificationService>(() => null!),
                 hotkeyService: null,   // <-- triggers guard
-                keyboardHook: new Lazy<GlobalKeyboardHook>(() => h.KeyboardHook),
                 globalMouseService: new Lazy<IGlobalMouseService>(() => h.GlobalMouseService.Object),
                 tutorialService: new Lazy<ITutorialService>(() => h.TutorialService.Object),
                 mainWindowFactory: () => throw new InvalidOperationException("not used"),
@@ -338,7 +327,6 @@ namespace Pulsar.Tests.Services
                 NullLogger<AppStartupCoordinator>.Instance,
                 breakerRelay: null,   // <-- triggers ADR-013 guard
                 hotkeyService: new Lazy<IHotkeyService>(() => h.HotkeyService.Object),
-                keyboardHook: new Lazy<GlobalKeyboardHook>(() => h.KeyboardHook),
                 globalMouseService: new Lazy<IGlobalMouseService>(() => h.GlobalMouseService.Object),
                 tutorialService: new Lazy<ITutorialService>(() => h.TutorialService.Object),
                 mainWindowFactory: () => throw new InvalidOperationException("not used"),
@@ -371,8 +359,8 @@ namespace Pulsar.Tests.Services
             }
 
             // Captured order, up to the MainWindowFactory halt (RadialMenuWindow needs a live WPF
-            // Application; Hotkey/Mouse/KeyboardHook resolve AFTER Show() — see AppStartupCoordinator
-            // lines 197-215, so those entries are unreachable in this unit-test boundary).
+            // Application; Hotkey/Mouse resolve AFTER Show() — see AppStartupCoordinator,
+            // so those entries are unreachable in this unit-test boundary).
             h.CallOrder.Should().ContainInOrder(
                 "ThemeInitialize",
                 "ProcessRegistryInitialize",
@@ -407,8 +395,10 @@ namespace Pulsar.Tests.Services
                 "ui-debug mode must never resolve IHotkeyService (would install global hotkeys) — " +
                 "this assertion is trivially true in unit-test host (halt at MainWindow.Show) " +
                 "but documents the contract for readers comparing to --ui-debug-hooks");
-            h.CallOrder.Should().NotContain("KeyboardHookResolved",
-                "ui-debug mode must never resolve GlobalKeyboardHook (default ctor installs a real low-level keyboard hook)");
+            // [Candidate O] GlobalKeyboardHook itself is no longer resolvable through the
+            // coordinator — it is only constructed via the HotkeyService dependency chain,
+            // so "never resolve IHotkeyService" transitively implies "never construct the
+            // real keyboard hook".
             h.CallOrder.Should().NotContain("GlobalMouseResolved",
                 "ui-debug mode must never resolve IGlobalMouseService (would install a mouse-gesture hook)");
 

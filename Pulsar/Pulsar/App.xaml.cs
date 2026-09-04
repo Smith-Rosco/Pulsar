@@ -266,7 +266,9 @@ namespace Pulsar
             serviceCollection.AddSingleton<Lazy<IProcessRegistryService>>(sp => new Lazy<IProcessRegistryService>(() => sp.GetRequiredService<IProcessRegistryService>()));
             serviceCollection.AddSingleton<Lazy<PluginBreakerNotificationService>>(sp => new Lazy<PluginBreakerNotificationService>(() => sp.GetRequiredService<PluginBreakerNotificationService>()));  // ADR-013
             serviceCollection.AddSingleton<Lazy<IHotkeyService>>(sp => new Lazy<IHotkeyService>(() => sp.GetRequiredService<IHotkeyService>()));
-            serviceCollection.AddSingleton<Lazy<GlobalKeyboardHook>>(sp => new Lazy<GlobalKeyboardHook>(() => sp.GetRequiredService<GlobalKeyboardHook>()));  // installs native hook in ctor
+            // [Candidate O] No Lazy<GlobalKeyboardHook> factory: the hook is only ever
+            // constructed through the HotkeyService dependency chain (its mode is
+            // configured there too), so the startup module no longer holds it.
             serviceCollection.AddSingleton<Lazy<IGlobalMouseService>>(sp => new Lazy<IGlobalMouseService>(() => sp.GetRequiredService<IGlobalMouseService>()));
             serviceCollection.AddSingleton<Lazy<ITutorialService>>(sp => new Lazy<ITutorialService>(() => sp.GetRequiredService<ITutorialService>()));
             serviceCollection.AddSingleton<Func<RadialMenuWindow>>(sp => () => sp.GetRequiredService<RadialMenuWindow>());  // WPF InitializeComponent
