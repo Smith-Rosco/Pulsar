@@ -29,10 +29,14 @@
                        FontSize="{StaticResource Pulsar.Type.Display}" 
                        FontWeight="SemiBold" 
                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                       TextTrimming="CharacterEllipsis"
                        Margin="{StaticResource Pulsar.Gap.Bottom.XS}"/>
             <TextBlock Text="{Binding Description, ElementName=Root}" 
                        FontSize="{StaticResource Pulsar.Type.Body}"
                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                       TextWrapping="Wrap"
+                       MaxWidth="640"
+                       HorizontalAlignment="Left"
                        Visibility="{Binding Description, ElementName=Root, Converter={StaticResource StringEmptyToVisibilityConverter}}"/>
         </StackPanel>
         

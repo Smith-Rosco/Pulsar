@@ -105,63 +105,32 @@
                 <!-- Links -->
                 <ui:CardExpander Icon="Link24" Header="{lex:Locale Settings.About.Links}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="True">
                     <StackPanel>
-                        <Grid Margin="{StaticResource Pulsar.Gap.Bottom.SM}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="{lex:Locale Settings.About.GitHub}" FontWeight="Medium"/>
-                                <TextBlock Text="{lex:Locale Settings.About.GitHubDescription}" 
-                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
-                                           FontSize="{StaticResource Pulsar.Type.Body}"/>
-                            </StackPanel>
-                            <ui:Button Grid.Column="1" 
-                                       Content="{lex:Locale Settings.About.Open}"
+                        <controls:SettingsRow Title="{lex:Locale Settings.About.GitHub}"
+                                              Description="{lex:Locale Settings.About.GitHubDescription}">
+                            <ui:Button Content="{lex:Locale Settings.About.Open}"
                                        Icon="{ui:SymbolIcon Open24}"
                                        Command="{Binding OpenGitHubCommand}"
-                                       Style="{StaticResource PulsarSecondaryButtonStyle}"/>
-                        </Grid>
+                                       Style="{StaticResource PulsarSecondaryButtonStyle}"
+                                       AutomationProperties.Name="{lex:Locale Settings.About.GitHub}"/>
+                        </controls:SettingsRow>
 
-                        <Separator Margin="{StaticResource Pulsar.Gap.Vertical.SM}"/>
-
-                        <Grid Margin="{StaticResource Pulsar.Gap.Vertical.SM}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="{lex:Locale Settings.About.Documentation}" FontWeight="Medium"/>
-                                <TextBlock Text="{lex:Locale Settings.About.DocumentationDescription}" 
-                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
-                                           FontSize="{StaticResource Pulsar.Type.Body}"/>
-                            </StackPanel>
-                            <ui:Button Grid.Column="1" 
-                                       Content="{lex:Locale Settings.About.Open}"
+                        <controls:SettingsRow Title="{lex:Locale Settings.About.Documentation}"
+                                              Description="{lex:Locale Settings.About.DocumentationDescription}">
+                            <ui:Button Content="{lex:Locale Settings.About.Open}"
                                        Icon="{ui:SymbolIcon Book24}"
                                        Command="{Binding OpenDocumentationCommand}"
-                                       Style="{StaticResource PulsarSecondaryButtonStyle}"/>
-                        </Grid>
+                                       Style="{StaticResource PulsarSecondaryButtonStyle}"
+                                       AutomationProperties.Name="{lex:Locale Settings.About.Documentation}"/>
+                        </controls:SettingsRow>
 
-                        <Separator Margin="{StaticResource Pulsar.Gap.Vertical.SM}"/>
-
-                        <Grid Margin="{StaticResource Pulsar.Gap.Top.SM}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="{lex:Locale Settings.About.License}" FontWeight="Medium"/>
-                                <TextBlock Text="{lex:Locale Settings.About.LicenseDescription}" 
-                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
-                                           FontSize="{StaticResource Pulsar.Type.Body}"/>
-                            </StackPanel>
-                            <ui:Button Grid.Column="1" 
-                                       Content="{lex:Locale Settings.About.Open}"
+                        <controls:SettingsRow Title="{lex:Locale Settings.About.License}"
+                                              Description="{lex:Locale Settings.About.LicenseDescription}">
+                            <ui:Button Content="{lex:Locale Settings.About.Open}"
                                        Icon="{ui:SymbolIcon Document24}"
                                        Command="{Binding OpenLicenseCommand}"
-                                       Style="{StaticResource PulsarSecondaryButtonStyle}"/>
-                        </Grid>
+                                       Style="{StaticResource PulsarSecondaryButtonStyle}"
+                                       AutomationProperties.Name="{lex:Locale Settings.About.License}"/>
+                        </controls:SettingsRow>
                     </StackPanel>
                 </ui:CardExpander>
 

@@ -26,6 +26,26 @@ A parameterized, reusable card component that encapsulates common UI patterns fo
 
 ---
 
+### SettingsRow
+
+**Location**: `Views/Controls/SettingsRow.xaml` + `SettingsRow.xaml.cs`
+
+A standardized settings-item row layout: left column holds the title + optional description, right column hosts the injected edit control (ComboBox / ToggleSwitch / NumberBox / HotkeyBox / Button). Eliminates the hand-written `Grid` row template that was repeated ~15× across Settings pages with drifting widths (120/140/150/160/180/220).
+
+**Status**: ✅ Production Ready
+- ✅ Used in Settings General page
+- ✅ Used in Settings About page (Links section)
+- ✅ Build tested (0 errors)
+
+**Key behaviours**
+- Description: uniform `Body` size + secondary colour + `MaxWidth=420` wrap protection.
+- Control column: right-aligned with a fixed `LG` gutter; width is left to the page via the `Pulsar.Settings.ControlWidth` token (200) for consistency.
+- Vertical rhythm: uniform 12px bottom margin (`Pulsar.Gap.Bottom.MD`).
+- Empty description auto-collapses (`StringEmptyToVisibilityConverter`).
+- The injected `Content` keeps its page-level binding context; the control holds no commands (avoids the UserControl `RelativeSource` visual-tree binding pitfall).
+
+---
+
 ## ExpandableCard Usage
 
 ### Before Refactoring (~220 lines):
@@ -217,6 +237,35 @@ dotnet build Pulsar/Pulsar/Pulsar.csproj
 - 右键菜单需要在 Page.Resources 中定义为 StaticResource
 - HeaderContent 和 ExpandedContent 使用 ContentPresenter，支持任意自定义内容
 - 如需更多操作按钮，可扩展 ExpandableCard 添加 TertiaryActionCommand
+
+---
+
+## SettingsRow Usage
+
+```xml
+<controls:SettingsRow Title="{lex:Locale Settings.General.Theme}"
+                      Description="{lex:Locale Settings.General.ThemeDescription}">
+    <ComboBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
+              SelectedValue="..."
+              AutomationProperties.Name="{lex:Locale Settings.General.Theme}">
+        <!-- items -->
+    </ComboBox>
+</controls:SettingsRow>
+```
+
+### 最佳实践
+
+- 标题/描述一律走 `ILocalizationService`（`{lex:Locale Key}`），不要硬编码字符串。
+- 右列控件统一使用 `Pulsar.Settings.ControlWidth` 宽度令牌，避免宽度漂移。
+- 控件直接写在标签中间即成为行内容；其绑定上下文保持在该页面内。
+- 需要更多纵向分组时，用 `Separator` 分隔逻辑子区段（如右拖手势卡的修饰键区），行内间距交给控件自身的 12px 底边距。
+- 复用 `SettingsPageHeader` + 多个 `CardExpander` + `SettingsRow` 即构成一个设置页的完整骨架。
+
+### ⚠️ WPF 陷阱：`MaxWidth` TextBlock 在纵向 StackPanel 中会水平居中
+
+`TextBlock` 设置了 `MaxWidth`（用于换行保护）且 `HorizontalAlignment` 保持默认（Stretch）时，在**纵向 StackPanel** 内会被 WPF **水平居中**于父容器——`X = (父宽 − MaxWidth) / 2`，导致描述/副标题相对标题缩进。这正是原始设置页"有的副标题有缩进、有的没有"的根因（部分手写行加了 `MaxWidth=420` 而其余没有）。
+
+**规则**：任何在纵向 StackPanel 中带 `MaxWidth` 的 TextBlock，必须同时显式写 `HorizontalAlignment="Left"`。本控件模板、`SettingsPageHeader` 描述、以及 General 页独立说明文字均已按此修复。居中布局（如空状态、错误提示）是唯一豁免，但那里本来就会写 `HorizontalAlignment="Center"`。
 
 ---
 

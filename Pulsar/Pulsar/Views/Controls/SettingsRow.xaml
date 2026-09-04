@@ -1,0 +1,56 @@
+<UserControl x:Class="Pulsar.Views.Controls.SettingsRow"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:converters="clr-namespace:Pulsar.Core.Converters"
+             xmlns:local="clr-namespace:Pulsar.Views.Controls"
+             mc:Ignorable="d">
+
+    <!-- ============================================================
+         SettingsRow — 设置项标准行布局（左：标题+描述；右：控件）。
+         用于消除各设置页反复手写 Grid 行模板造成的不一致：
+           · 描述统一 Body 字号 + 次要色 + MaxWidth=420（换行保护）
+           · 控件列统一右对齐 + 固定左侧间距，宽度由页面控制
+           · 行内垂直间距统一 12px（Pulsar.Gap.Bottom.MD）
+         Content（页面注入的 ComboBox / ToggleSwitch / NumberBox 等）
+         经 ControlTemplate 的 TemplateBinding 呈现，绑定上下文保持
+         在页面内，本控件只负责排版，不持有任何命令或业务逻辑。
+         ============================================================ -->
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVisibilityConverter"/>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <UserControl.Template>
+        <ControlTemplate TargetType="{x:Type local:SettingsRow}">
+            <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- 左列：标题 + 可选描述 -->
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock Text="{TemplateBinding Title}" FontWeight="Medium"/>
+                    <TextBlock Text="{TemplateBinding Description}"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               FontSize="{StaticResource Pulsar.Type.Body}"
+                               TextWrapping="Wrap"
+                               MaxWidth="420"
+                               HorizontalAlignment="Left"
+                               Margin="{StaticResource Pulsar.Gap.Top.XS}"
+                               Visibility="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Description, Converter={StaticResource StringEmptyToVisibilityConverter}}"/>
+                </StackPanel>
+
+                <!-- 右列：页面注入的编辑控件 -->
+                <ContentPresenter Grid.Column="1"
+                                  Content="{TemplateBinding Content}"
+                                  VerticalAlignment="Center"
+                                  Margin="{StaticResource Pulsar.Gap.Left.LG}"/>
+            </Grid>
+        </ControlTemplate>
+    </UserControl.Template>
+</UserControl>

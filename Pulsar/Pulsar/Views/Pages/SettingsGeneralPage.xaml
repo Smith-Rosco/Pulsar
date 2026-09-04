@@ -47,20 +47,13 @@
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel DataContext="{Binding GeneralSettings}" Margin="{StaticResource Pulsar.Gap.Right.XL}">
-                
+
                 <!-- Appearance Section -->
                 <ui:CardExpander Icon="Color24" Header="{lex:Locale Settings.General.Appearance}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="True">
                     <StackPanel>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="{lex:Locale Settings.General.Theme}" FontWeight="Medium"/>
-                                <TextBlock Text="{lex:Locale Settings.General.ThemeDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="{StaticResource Pulsar.Type.Body}"/>
-                            </StackPanel>
-                            <ComboBox Grid.Column="1" Width="150"
+                        <controls:SettingsRow Title="{lex:Locale Settings.General.Theme}"
+                                              Description="{lex:Locale Settings.General.ThemeDescription}">
+                            <ComboBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
                                       SelectedValue="{Binding DataContext.CurrentTheme, RelativeSource={RelativeSource AncestorType=Page}}"
                                       SelectedValuePath="Tag"
                                       AutomationProperties.Name="{lex:Locale Settings.General.Theme}">
@@ -77,49 +70,21 @@
                                     </StackPanel>
                                 </ComboBoxItem>
                             </ComboBox>
-                        </Grid>
+                        </controls:SettingsRow>
 
-                        <Separator Margin="{StaticResource Pulsar.Gap.Vertical.MD}"/>
-
-                        <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="{lex:Locale Settings.Appearance.RendererStyle}" FontWeight="Medium"/>
-                                <TextBlock Text="{lex:Locale Settings.Appearance.RendererStyleDescription}"
-                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                           FontSize="{StaticResource Pulsar.Type.Body}"
-                                           TextWrapping="Wrap"
-                                           MaxWidth="420"
-                                           Margin="{StaticResource Pulsar.Gap.Top.XS}"/>
-                            </StackPanel>
-                            <ComboBox Grid.Column="1" Width="160"
+                        <controls:SettingsRow Title="{lex:Locale Settings.Appearance.RendererStyle}"
+                                              Description="{lex:Locale Settings.Appearance.RendererStyleDescription}">
+                            <ComboBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
                                       ItemsSource="{Binding DataContext.RendererOptions, RelativeSource={RelativeSource AncestorType=Page}}"
                                       SelectedValue="{Binding DataContext.RendererStyle, RelativeSource={RelativeSource AncestorType=Page}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                       SelectedValuePath="Id"
                                       DisplayMemberPath="DisplayName"
                                       AutomationProperties.Name="{lex:Locale Settings.Appearance.RendererStyle}"/>
-                        </Grid>
+                        </controls:SettingsRow>
 
-                        <Separator Margin="{StaticResource Pulsar.Gap.Vertical.MD}"/>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="{lex:Locale Settings.Appearance.ThemePreset}" FontWeight="Medium"/>
-                                <TextBlock Text="{lex:Locale Settings.Appearance.ThemePresetDescription}"
-                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                           FontSize="{StaticResource Pulsar.Type.Body}"
-                                           TextWrapping="Wrap"
-                                           MaxWidth="420"
-                                           Margin="{StaticResource Pulsar.Gap.Top.XS}"/>
-                            </StackPanel>
-                            <ComboBox Grid.Column="1" Width="160"
+                        <controls:SettingsRow Title="{lex:Locale Settings.Appearance.ThemePreset}"
+                                              Description="{lex:Locale Settings.Appearance.ThemePresetDescription}">
+                            <ComboBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
                                       SelectedValue="{Binding DataContext.ThemePreset, RelativeSource={RelativeSource AncestorType=Page}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                       SelectedValuePath="Tag"
                                       AutomationProperties.Name="{lex:Locale Settings.Appearance.ThemePreset}">
@@ -142,140 +107,82 @@
                                     <TextBlock Text="{lex:Locale Settings.Appearance.ThemePreset.MorandiMuted}" VerticalAlignment="Center"/>
                                 </ComboBoxItem>
                             </ComboBox>
-                        </Grid>
+                        </controls:SettingsRow>
 
-                        <Separator Margin="{StaticResource Pulsar.Gap.Vertical.MD}"/>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="{lex:Locale Settings.General.Language}" FontWeight="Medium"/>
-                            </StackPanel>
-                            <ComboBox Grid.Column="1" Width="140"
+                        <controls:SettingsRow Title="{lex:Locale Settings.General.Language}">
+                            <ComboBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
                                       ItemsSource="{Binding DataContext.SupportedLanguages, RelativeSource={RelativeSource AncestorType=Page}}"
                                       SelectedItem="{Binding DataContext.SelectedLanguage, RelativeSource={RelativeSource AncestorType=Page}}"
-                                      DisplayMemberPath="DisplayName"/>
-                        </Grid>
+                                      DisplayMemberPath="DisplayName"
+                                      AutomationProperties.Name="{lex:Locale Settings.General.Language}"/>
+                        </controls:SettingsRow>
                     </StackPanel>
                 </ui:CardExpander>
 
                 <!-- Radial Menu Layout Section -->
                 <ui:CardExpander Icon="Apps24" Header="{lex:Locale Settings.General.RadialMenuLayout}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="False">
                     <StackPanel>
-                        <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="{lex:Locale Settings.General.SlotsPerPage}" FontWeight="Medium"/>
-                                <TextBlock Text="{Binding DataContext.SlotsPerPagePreview, RelativeSource={RelativeSource AncestorType=Page}}" 
-                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
-                                           FontSize="{StaticResource Pulsar.Type.Body}"
-                                           Margin="{StaticResource Pulsar.Gap.Top.XS}"/>
-                            </StackPanel>
-                            <ui:NumberBox Grid.Column="1"
-                                          Value="{Binding SlotsPerPage, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        <controls:SettingsRow Title="{lex:Locale Settings.General.SlotsPerPage}"
+                                              Description="{Binding DataContext.SlotsPerPagePreview, RelativeSource={RelativeSource AncestorType=Page}}">
+                            <ui:NumberBox Value="{Binding SlotsPerPage, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           Minimum="4"
                                           Maximum="12"
                                           SpinButtonPlacementMode="Inline"
-                                          Width="120"/>
-                        </Grid>
-                        
+                                          Width="{StaticResource Pulsar.Settings.ControlWidth}"/>
+                        </controls:SettingsRow>
+
                         <TextBlock Text="{lex:Locale Settings.General.SlotsPerPageDescription}" 
                                    TextWrapping="Wrap"
                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}" 
                                    FontSize="{StaticResource Pulsar.Type.Caption}"
-                                   Margin="0"/>
+                                   Margin="0,0,0,12"/>
 
-                        <Separator Margin="{StaticResource Pulsar.Gap.Vertical.MD}"/>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="{lex:Locale Settings.General.QuickSwitchTimeout}" FontWeight="Medium"/>
-                                <TextBlock Text="{lex:Locale Settings.General.QuickSwitchTimeoutDescription}"
-                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                           FontSize="{StaticResource Pulsar.Type.Body}"
-                                           TextWrapping="Wrap"
-                                           MaxWidth="420"
-                                           Margin="{StaticResource Pulsar.Gap.Top.XS}"/>
-                            </StackPanel>
-                            <ui:NumberBox Grid.Column="1"
-                                          Value="{Binding QuickSwitchTimeoutMs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        <controls:SettingsRow Title="{lex:Locale Settings.General.QuickSwitchTimeout}"
+                                              Description="{lex:Locale Settings.General.QuickSwitchTimeoutDescription}">
+                            <ui:NumberBox Value="{Binding QuickSwitchTimeoutMs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           Minimum="80"
                                           Maximum="1500"
                                           SpinButtonPlacementMode="Inline"
-                                          Width="120"/>
-                        </Grid>
+                                          Width="{StaticResource Pulsar.Settings.ControlWidth}"/>
+                        </controls:SettingsRow>
                     </StackPanel>
                 </ui:CardExpander>
 
                 <!-- Hotkeys Section -->
                 <ui:CardExpander Icon="Keyboard24" Header="{lex:Locale Settings.General.GlobalHotkeys}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="True">
                     <StackPanel>
-                        <!-- Grid Hotkey -->
-                        <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="{lex:Locale Settings.General.ShowMenu}" FontWeight="Medium"/>
-                                <TextBlock Text="{lex:Locale Settings.General.ShowMenuDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="{StaticResource Pulsar.Type.Body}"/>
-                            </StackPanel>
-                            <controls:HotkeyBox Grid.Column="1" Width="200"
+                        <controls:SettingsRow Title="{lex:Locale Settings.General.ShowMenu}"
+                                              Description="{lex:Locale Settings.General.ShowMenuDescription}">
+                            <controls:HotkeyBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
                                                  Hotkey="{Binding DataContext.ShowGridHotkey, RelativeSource={RelativeSource AncestorType=Page}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                  ValidationResult="{Binding DataContext.ShowGridHotkeyValidation, RelativeSource={RelativeSource AncestorType=Page}, Mode=OneWay}"
                                                  ActionId="ShowGrid"/>
-                        </Grid>
-                        
-                        <Separator Margin="{StaticResource Pulsar.Gap.Vertical.MD}"/>
+                        </controls:SettingsRow>
 
-                        <!-- Switcher Hotkey -->
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="{lex:Locale Settings.General.ShowSwitcher}" FontWeight="Medium"/>
-                                <TextBlock Text="{lex:Locale Settings.General.ShowSwitcherDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="{StaticResource Pulsar.Type.Body}"/>
-                            </StackPanel>
-                            <controls:HotkeyBox Grid.Column="1" Width="200"
+                        <controls:SettingsRow Title="{lex:Locale Settings.General.ShowSwitcher}"
+                                              Description="{lex:Locale Settings.General.ShowSwitcherDescription}">
+                            <controls:HotkeyBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
                                                  Hotkey="{Binding DataContext.ShowSwitcherHotkey, RelativeSource={RelativeSource AncestorType=Page}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                  ValidationResult="{Binding DataContext.ShowSwitcherHotkeyValidation, RelativeSource={RelativeSource AncestorType=Page}, Mode=OneWay}"
                                                  ActionId="ShowSwitcher"/>
-                        </Grid>
+                        </controls:SettingsRow>
                     </StackPanel>
                 </ui:CardExpander>
 
                 <!-- Right-Drag Gesture Section -->
                 <ui:CardExpander Icon="DialPad24" Header="{lex:Locale Settings.General.RightDragSummon}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="False">
                     <StackPanel>
-                        <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="{lex:Locale Settings.General.RightDragSummonToggle}" FontWeight="Medium"/>
-                                <TextBlock Text="{lex:Locale Settings.General.RightDragSummonDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="{StaticResource Pulsar.Type.Body}" TextWrapping="Wrap" MaxWidth="420"/>
-                            </StackPanel>
-                            <ui:ToggleSwitch Grid.Column="1" IsChecked="{Binding EnableRightDragSummon, Mode=TwoWay}"/>
-                        </Grid>
+                        <controls:SettingsRow Title="{lex:Locale Settings.General.RightDragSummonToggle}"
+                                              Description="{lex:Locale Settings.General.RightDragSummonDescription}">
+                            <ui:ToggleSwitch IsChecked="{Binding EnableRightDragSummon, Mode=TwoWay}"/>
+                        </controls:SettingsRow>
 
                         <TextBlock Text="{lex:Locale Settings.General.RightDragModifiersConflict}"
                                    Foreground="{DynamicResource DangerForegroundBrush}"
                                    FontSize="{StaticResource Pulsar.Type.Body}"
                                    TextWrapping="Wrap"
                                    MaxWidth="420"
+                                   HorizontalAlignment="Left"
                                    Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
@@ -289,17 +196,9 @@
                             </TextBlock.Style>
                         </TextBlock>
 
-                        <!-- Summon mode (only when the gesture is enabled) -->
-                        <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="{lex:Locale Settings.General.GestureSummonMode}" FontWeight="Medium"/>
-                                <TextBlock Text="{lex:Locale Settings.General.GestureSummonModeDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="{StaticResource Pulsar.Type.Body}" TextWrapping="Wrap" MaxWidth="420"/>
-                            </StackPanel>
-                            <ComboBox Grid.Column="1" Width="180"
+                        <controls:SettingsRow Title="{lex:Locale Settings.General.GestureSummonMode}"
+                                              Description="{lex:Locale Settings.General.GestureSummonModeDescription}">
+                            <ComboBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
                                       IsEnabled="{Binding EnableRightDragSummon}"
                                       SelectedValue="{Binding SummonMode, Mode=TwoWay}"
                                       SelectedValuePath="Tag"
@@ -311,19 +210,11 @@
                                     <TextBlock Text="{lex:Locale Settings.General.SummonModeOnThreshold}" VerticalAlignment="Center"/>
                                 </ComboBoxItem>
                             </ComboBox>
-                        </Grid>
+                        </controls:SettingsRow>
 
-                        <!-- Drag threshold (only for OnThreshold mode) -->
-                        <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="{lex:Locale Settings.General.GestureDragThreshold}" FontWeight="Medium"/>
-                                <TextBlock Text="{lex:Locale Settings.General.GestureDragThresholdDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="{StaticResource Pulsar.Type.Body}" TextWrapping="Wrap" MaxWidth="420"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <controls:SettingsRow Title="{lex:Locale Settings.General.GestureDragThreshold}"
+                                              Description="{lex:Locale Settings.General.GestureDragThresholdDescription}">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <StackPanel.Style>
                                     <Style TargetType="StackPanel">
                                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -348,21 +239,13 @@
                                            MinWidth="40"
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                             </StackPanel>
-                        </Grid>
+                        </controls:SettingsRow>
 
                         <Separator Margin="{StaticResource Pulsar.Gap.Vertical.MD}"/>
 
-                        <!-- Switcher modifier -->
-                        <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="{lex:Locale Settings.General.RightDragSwitcherModifier}" FontWeight="Medium"/>
-                                <TextBlock Text="{lex:Locale Settings.General.RightDragSwitcherModifierDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="{StaticResource Pulsar.Type.Body}" TextWrapping="Wrap" MaxWidth="420"/>
-                            </StackPanel>
-                            <ComboBox Grid.Column="1" Width="140"
+                        <controls:SettingsRow Title="{lex:Locale Settings.General.RightDragSwitcherModifier}"
+                                              Description="{lex:Locale Settings.General.RightDragSwitcherModifierDescription}">
+                            <ComboBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
                                       IsEnabled="{Binding EnableRightDragSummon}"
                                       SelectedValue="{Binding RightDragSwitcherModifier, Mode=TwoWay}"
                                       SelectedValuePath="Tag"
@@ -380,21 +263,13 @@
                                     <TextBlock Text="{lex:Locale Settings.General.ModifierWin}" VerticalAlignment="Center"/>
                                 </ComboBoxItem>
                             </ComboBox>
-                        </Grid>
+                        </controls:SettingsRow>
 
                         <Separator Margin="{StaticResource Pulsar.Gap.Vertical.MD}"/>
 
-                        <!-- Action modifier -->
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="{lex:Locale Settings.General.RightDragActionModifier}" FontWeight="Medium"/>
-                                <TextBlock Text="{lex:Locale Settings.General.RightDragActionModifierDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="{StaticResource Pulsar.Type.Body}" TextWrapping="Wrap" MaxWidth="420"/>
-                            </StackPanel>
-                            <ComboBox Grid.Column="1" Width="140"
+                        <controls:SettingsRow Title="{lex:Locale Settings.General.RightDragActionModifier}"
+                                              Description="{lex:Locale Settings.General.RightDragActionModifierDescription}">
+                            <ComboBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
                                       IsEnabled="{Binding EnableRightDragSummon}"
                                       SelectedValue="{Binding RightDragActionModifier, Mode=TwoWay}"
                                       SelectedValuePath="Tag"
@@ -412,7 +287,7 @@
                                     <TextBlock Text="{lex:Locale Settings.General.ModifierWin}" VerticalAlignment="Center"/>
                                 </ComboBoxItem>
                             </ComboBox>
-                        </Grid>
+                        </controls:SettingsRow>
 
                         <Separator Margin="{StaticResource Pulsar.Gap.Vertical.MD}"/>
 
@@ -424,32 +299,17 @@
                                        FontSize="{StaticResource Pulsar.Type.Body}"
                                        TextWrapping="Wrap"
                                        MaxWidth="420"
+                                       HorizontalAlignment="Left"
                                        Margin="{StaticResource Pulsar.Gap.Bottom.MD}"/>
 
-                            <!-- Enable toggle -->
-                            <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel>
-                                    <TextBlock Text="{lex:Locale Settings.Gesture.EnableToggle}" FontWeight="Medium"/>
-                                    <TextBlock Text="{lex:Locale Settings.Gesture.EnableToggleDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="{StaticResource Pulsar.Type.Body}" TextWrapping="Wrap" MaxWidth="420"/>
-                                </StackPanel>
-                                <ui:ToggleSwitch Grid.Column="1" IsChecked="{Binding GestureIsolationEnabled, Mode=TwoWay}"/>
-                            </Grid>
+                            <controls:SettingsRow Title="{lex:Locale Settings.Gesture.EnableToggle}"
+                                                  Description="{lex:Locale Settings.Gesture.EnableToggleDescription}">
+                                <ui:ToggleSwitch IsChecked="{Binding GestureIsolationEnabled, Mode=TwoWay}"/>
+                            </controls:SettingsRow>
 
-                            <!-- Isolation mode -->
-                            <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel>
-                                    <TextBlock Text="{lex:Locale Settings.Gesture.Mode}" FontWeight="Medium"/>
-                                    <TextBlock Text="{lex:Locale Settings.Gesture.ModeDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="{StaticResource Pulsar.Type.Body}" TextWrapping="Wrap" MaxWidth="420"/>
-                                </StackPanel>
-                                <ComboBox Grid.Column="1" Width="220"
+                            <controls:SettingsRow Title="{lex:Locale Settings.Gesture.Mode}"
+                                                  Description="{lex:Locale Settings.Gesture.ModeDescription}">
+                                <ComboBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
                                           IsEnabled="{Binding GestureIsolationEnabled}"
                                           SelectedValue="{Binding GestureIsolationMode, Mode=TwoWay}"
                                           SelectedValuePath="Tag"
@@ -461,20 +321,11 @@
                                         <TextBlock Text="{lex:Locale Settings.Gesture.ModeBlocklist}" VerticalAlignment="Center"/>
                                     </ComboBoxItem>
                                 </ComboBox>
-                            </Grid>
+                            </controls:SettingsRow>
 
-                            <!-- Process list editor -->
-                            <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel>
-                                    <TextBlock Text="{lex:Locale Settings.Gesture.Processes}" FontWeight="Medium"/>
-                                    <TextBlock Text="{lex:Locale Settings.Gesture.ProcessesDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="{StaticResource Pulsar.Type.Body}" TextWrapping="Wrap" MaxWidth="420"/>
-                                </StackPanel>
-                                <TextBox Grid.Column="1"
-                                         Width="220"
+                            <controls:SettingsRow Title="{lex:Locale Settings.Gesture.Processes}"
+                                                  Description="{lex:Locale Settings.Gesture.ProcessesDescription}">
+                                <TextBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
                                          MinHeight="90"
                                          AcceptsReturn="True"
                                          TextWrapping="Wrap"
@@ -482,21 +333,13 @@
                                          IsEnabled="{Binding GestureIsolationEnabled}"
                                          Text="{Binding GestureIsolationProcessesText, Mode=TwoWay}"
                                          AutomationProperties.Name="{lex:Locale Settings.Gesture.Processes}"/>
-                            </Grid>
+                            </controls:SettingsRow>
 
-                            <!-- Fullscreen block toggle -->
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel>
-                                    <TextBlock Text="{lex:Locale Settings.Gesture.BlockFullscreen}" FontWeight="Medium"/>
-                                    <TextBlock Text="{lex:Locale Settings.Gesture.BlockFullscreenDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="{StaticResource Pulsar.Type.Body}" TextWrapping="Wrap" MaxWidth="420"/>
-                                </StackPanel>
-                                <ui:ToggleSwitch Grid.Column="1" IsChecked="{Binding GestureIsolationBlockFullscreen, Mode=TwoWay}"
+                            <controls:SettingsRow Title="{lex:Locale Settings.Gesture.BlockFullscreen}"
+                                                  Description="{lex:Locale Settings.Gesture.BlockFullscreenDescription}">
+                                <ui:ToggleSwitch IsChecked="{Binding GestureIsolationBlockFullscreen, Mode=TwoWay}"
                                                  IsEnabled="{Binding GestureIsolationEnabled}"/>
-                            </Grid>
+                            </controls:SettingsRow>
                         </StackPanel>
                     </StackPanel>
                 </ui:CardExpander>
@@ -504,67 +347,36 @@
                 <!-- Cache Management Section -->
                 <ui:CardExpander Icon="Database24" Header="{lex:Locale Settings.General.CacheManagement}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="False">
                     <StackPanel>
-                        <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="{lex:Locale Settings.General.IconCacheStatistics}" FontWeight="Medium"/>
-                                <TextBlock Text="{Binding DataContext.CacheStatistics, RelativeSource={RelativeSource AncestorType=Page}}" 
-                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
-                                           FontSize="{StaticResource Pulsar.Type.Body}"/>
-                            </StackPanel>
-                            <ui:Button Grid.Column="1" 
-                                       Content="{lex:Locale Settings.General.CleanCache}"
+                        <controls:SettingsRow Title="{lex:Locale Settings.General.IconCacheStatistics}"
+                                              Description="{Binding DataContext.CacheStatistics, RelativeSource={RelativeSource AncestorType=Page}}">
+                            <ui:Button Content="{lex:Locale Settings.General.CleanCache}"
                                        Icon="{ui:SymbolIcon Delete24}"
                                        Command="{Binding DataContext.CleanCacheCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                        Style="{StaticResource PulsarSecondaryButtonStyle}"/>
-                        </Grid>
-                        
+                        </controls:SettingsRow>
+
                         <TextBlock Text="{lex:Locale Settings.General.CleanCacheDescription}" 
                                    TextWrapping="Wrap"
                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}" 
                                    FontSize="{StaticResource Pulsar.Type.Caption}"
-                                   Margin="0"/>
+                                   Margin="0,0,0,12"/>
 
-                        <Separator Margin="{StaticResource Pulsar.Gap.Vertical.MD}"/>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="{lex:Locale Settings.General.ResetTutorial}" FontWeight="Medium"/>
-                                <TextBlock Text="{lex:Locale Settings.General.ResetTutorialDescription}" 
-                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
-                                           FontSize="{StaticResource Pulsar.Type.Body}"/>
-                            </StackPanel>
-                            <ui:Button Grid.Column="1" 
-                                       Content="{lex:Locale Settings.General.ResetTutorial}"
+                        <controls:SettingsRow Title="{lex:Locale Settings.General.ResetTutorial}"
+                                              Description="{lex:Locale Settings.General.ResetTutorialDescription}">
+                            <ui:Button Content="{lex:Locale Settings.General.ResetTutorial}"
                                        Icon="{ui:SymbolIcon ArrowReset24}"
                                        Command="{Binding DataContext.ResetTutorialCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                        Style="{StaticResource PulsarSecondaryButtonStyle}"/>
-                        </Grid>
+                        </controls:SettingsRow>
                     </StackPanel>
                 </ui:CardExpander>
 
                 <!-- Logging Section -->
                 <ui:CardExpander Icon="Code24" Header="{lex:Locale Settings.General.Logging}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="False">
                     <StackPanel>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="{lex:Locale Settings.General.LogLevel}" FontWeight="Medium"/>
-                                <TextBlock Text="{lex:Locale Settings.General.LogLevelDescription}" 
-                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
-                                           FontSize="{StaticResource Pulsar.Type.Body}" TextWrapping="Wrap" MaxWidth="420"/>
-                            </StackPanel>
-                            <ComboBox Grid.Column="1" Width="160"
+                        <controls:SettingsRow Title="{lex:Locale Settings.General.LogLevel}"
+                                              Description="{lex:Locale Settings.General.LogLevelDescription}">
+                            <ComboBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
                                       SelectedValue="{Binding DataContext.SelectedLogLevel, RelativeSource={RelativeSource AncestorType=Page}, Mode=TwoWay}"
                                       SelectedValuePath="Tag"
                                       AutomationProperties.Name="{lex:Locale Settings.General.LogLevel}">
@@ -587,7 +399,7 @@
                                     <TextBlock Text="{lex:Locale Settings.General.LogLevel.Fatal}" VerticalAlignment="Center"/>
                                 </ComboBoxItem>
                             </ComboBox>
-                        </Grid>
+                        </controls:SettingsRow>
                     </StackPanel>
                 </ui:CardExpander>
 

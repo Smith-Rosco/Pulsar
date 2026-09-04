@@ -29,6 +29,14 @@
     <sys:Double x:Key="Pulsar.Type.Title">20</sys:Double>
     <sys:Double x:Key="Pulsar.Type.Display">28</sys:Double>
 
+    <!-- ==================== 设置页控件列宽 ====================
+         统一设置页（Settings 各页）右列编辑控件的宽度，
+         消除 ComboBox / NumberBox / HotkeyBox 各自为政的宽度漂移
+         （此前散落 120/140/150/160/200）。
+         ==================================================== -->
+
+    <sys:Double x:Key="Pulsar.Settings.ControlWidth">200</sys:Double>
+
     <!-- ==================== 动效时长 ====================
          替代 33 处硬编码 Duration（0.15×9 / 0.2×8 / 0.25×6 /
          0.3×5 / 0.18×3 / 0.4 / 0.5）。
