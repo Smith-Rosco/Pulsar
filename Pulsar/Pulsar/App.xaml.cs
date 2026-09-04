@@ -14,6 +14,7 @@ using Pulsar.Services.WindowSwitching;
 using Pulsar.ViewModels;
 using Pulsar.ViewModels.Settings; // Added
 using Pulsar.ViewModels.Strategies;
+using Pulsar.ViewModels.Dialogs;
 using Pulsar.Views;
 using Pulsar.Views.Pages; // Added
 using Pulsar.Helpers;
@@ -250,9 +251,37 @@ namespace Pulsar
             serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.ITutorialTriggerEngine, Pulsar.Features.Tutorial.Services.TutorialTriggerEngine>();
             serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.ITutorialSpotlightController, Pulsar.Features.Tutorial.Services.TutorialSpotlightController>();
             serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.IWaitStepHintTimeout, Pulsar.Features.Tutorial.Services.WaitStepHintTimeout>();
+            serviceCollection.AddSingleton<ILocalizationService, LocalizationService>();
+            serviceCollection.AddSingleton<Features.Tutorial.Services.StartupCoordinator>();
             serviceCollection.AddSingleton<ITutorialService, TutorialService>();
+            serviceCollection.AddSingleton<IDialogService, DialogService>();
             serviceCollection.AddSingleton<ILogger<Pulsar.Features.Tutorial.Services.TutorialOrchestrator>>(sp =>
                 sp.GetRequiredService<ILoggerFactory>().CreateLogger<Pulsar.Features.Tutorial.Services.TutorialOrchestrator>());
+
+            // Lazy<T> / Func<T> factories for AppStartupCoordinator (architecture review
+            // 2026-09-04 candidate K): preserve the late-bound timing constraints that
+            // were previously encoded as `GetRequiredService<T>()` calls inside
+            // AppStartupCoordinator.Run*. The coordinator's ctor now takes these
+            // directly so the IServiceProvider dependency can be deleted.
+            serviceCollection.AddSingleton<Lazy<IProcessRegistryService>>(sp => new Lazy<IProcessRegistryService>(() => sp.GetRequiredService<IProcessRegistryService>()));
+            serviceCollection.AddSingleton<Lazy<PluginBreakerNotificationService>>(sp => new Lazy<PluginBreakerNotificationService>(() => sp.GetRequiredService<PluginBreakerNotificationService>()));  // ADR-013
+            serviceCollection.AddSingleton<Lazy<IHotkeyService>>(sp => new Lazy<IHotkeyService>(() => sp.GetRequiredService<IHotkeyService>()));
+            serviceCollection.AddSingleton<Lazy<GlobalKeyboardHook>>(sp => new Lazy<GlobalKeyboardHook>(() => sp.GetRequiredService<GlobalKeyboardHook>()));  // installs native hook in ctor
+            serviceCollection.AddSingleton<Lazy<IGlobalMouseService>>(sp => new Lazy<IGlobalMouseService>(() => sp.GetRequiredService<IGlobalMouseService>()));
+            serviceCollection.AddSingleton<Lazy<ITutorialService>>(sp => new Lazy<ITutorialService>(() => sp.GetRequiredService<ITutorialService>()));
+            serviceCollection.AddSingleton<Func<RadialMenuWindow>>(sp => () => sp.GetRequiredService<RadialMenuWindow>());  // WPF InitializeComponent
+            serviceCollection.AddSingleton<Func<FirstLaunchSetupWizardViewModel>>(sp => () => sp.GetRequiredService<FirstLaunchSetupWizardViewModel>());  // AddTransient → avoid captive
+            // Debug-only factories: register a no-op lambda when ui-debug is off so the
+            // AppStartupCoordinator constructor can stay free of conditional logic. The
+            // coordinator only invokes the factory inside an `if (IsUiDebug)` guard.
+            serviceCollection.AddSingleton<Func<IDebugStatePublisher>>(sp =>
+                debugOptions.IsUiDebug
+                    ? (Func<IDebugStatePublisher>)(() => sp.GetRequiredService<IDebugStatePublisher>())
+                    : () => throw new InvalidOperationException("DebugStatePublisher only available in ui-debug mode."));
+            serviceCollection.AddSingleton<Func<IDebugCommandServer>>(sp =>
+                debugOptions.IsUiDebug
+                    ? (Func<IDebugCommandServer>)(() => sp.GetRequiredService<IDebugCommandServer>())
+                    : () => throw new InvalidOperationException("DebugCommandServer only available in ui-debug mode."));
 
             // Office Action Presets
             serviceCollection.AddSingleton<Pulsar.Features.Presets.Services.IPresetCatalogService, Pulsar.Features.Presets.Services.PresetCatalogService>();

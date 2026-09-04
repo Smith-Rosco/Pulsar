@@ -23,21 +23,104 @@ namespace Pulsar.Services
 {
     public class AppStartupCoordinator : IAppStartupCoordinator
     {
-        private readonly IServiceProvider _services;
+        // Construction-time dependencies — all safe to resolve eagerly at the moment
+        // the coordinator is built (the container is already populated).
+        private readonly IConfigService _configService;
+        private readonly DebugModeOptions _debugOptions;
+        private readonly IPluginRegistry _pluginRegistry;
+        private readonly ITrayService _trayService;
+        private readonly IThemeService _themeService;
+        private readonly ILocalizationService _localizationService;
+        private readonly Features.Tutorial.Services.StartupCoordinator _tutorialStartupCoordinator;
+        private readonly IDialogService _dialogService;
+        private readonly Validation.ConfigValidationPipeline _validationPipeline;
+
+        // Lazy / Func dependencies — defer until their owning step. See
+        // architecture review 2026-09-04 candidate K: the previous implementation
+        // resolved these inside the methods via `IServiceProvider`; that made the
+        // module impossible to construct in tests, and it leaked construction
+        // ordering (WPF window init, native hook installation, transient VM
+        // capture) across the seam.
+        private readonly Lazy<IProcessRegistryService> _processRegistryService;
+        private readonly Lazy<PluginBreakerNotificationService> _breakerRelay;          // ADR-013 timing: must be resolved after tray init.
+        private readonly Lazy<IHotkeyService> _hotkeyService;
+        private readonly Lazy<GlobalKeyboardHook> _keyboardHook;
+        private readonly Lazy<IGlobalMouseService> _globalMouseService;
+        private readonly Lazy<ITutorialService> _tutorialService;
+        private readonly Func<RadialMenuWindow> _mainWindowFactory;
+        private readonly Func<FirstLaunchSetupWizardViewModel> _wizardFactory;
+        private readonly Func<IDebugStatePublisher> _debugStatePublisherFactory;          // registered only in ui-debug
+        private readonly Func<IDebugCommandServer> _debugCommandServerFactory;           // registered only in ui-debug
+
         private readonly IBackgroundWorkScheduler _backgroundWorkScheduler;
         private readonly LoggingLevelSwitch _levelSwitch;
         private readonly ILogger<AppStartupCoordinator> _logger;
 
         public AppStartupCoordinator(
-            IServiceProvider services,
+            IConfigService configService,
+            DebugModeOptions debugOptions,
+            IPluginRegistry pluginRegistry,
+            ITrayService trayService,
+            IThemeService themeService,
+            ILocalizationService localizationService,
+            Features.Tutorial.Services.StartupCoordinator tutorialStartupCoordinator,
+            IDialogService dialogService,
+            Validation.ConfigValidationPipeline validationPipeline,
+            IProcessRegistryService processRegistryService,                  // wrapped in Lazy below — keep ctor empty
             IBackgroundWorkScheduler backgroundWorkScheduler,
             LoggingLevelSwitch levelSwitch,
-            ILogger<AppStartupCoordinator> logger)
+            ILogger<AppStartupCoordinator> logger,
+            Lazy<PluginBreakerNotificationService> breakerRelay = null,
+            Lazy<IHotkeyService> hotkeyService = null,
+            Lazy<GlobalKeyboardHook> keyboardHook = null,
+            Lazy<IGlobalMouseService> globalMouseService = null,
+            Lazy<ITutorialService> tutorialService = null,
+            Func<RadialMenuWindow> mainWindowFactory = null,
+            Func<FirstLaunchSetupWizardViewModel> wizardFactory = null,
+            Func<IDebugStatePublisher> debugStatePublisherFactory = null,
+            Func<IDebugCommandServer> debugCommandServerFactory = null)
         {
-            _services = services;
+            _configService = configService;
+            _debugOptions = debugOptions;
+            _pluginRegistry = pluginRegistry;
+            _trayService = trayService;
+            _themeService = themeService;
+            _localizationService = localizationService;
+            _tutorialStartupCoordinator = tutorialStartupCoordinator;
+            _dialogService = dialogService;
+            _validationPipeline = validationPipeline;
             _backgroundWorkScheduler = backgroundWorkScheduler;
             _levelSwitch = levelSwitch;
             _logger = logger;
+
+            // Lazy<T> cannot be injected directly — DI containers refuse to hand out
+            // a Lazy<T> unless someone asked for one. Wrap the eager deps we received
+            // so the existing call sites can keep their late-bound semantics.
+            _processRegistryService = new Lazy<IProcessRegistryService>(() => processRegistryService);
+            _breakerRelay = breakerRelay ?? throw new InvalidOperationException(
+                "AppStartupCoordinator requires a Lazy<PluginBreakerNotificationService> from DI " +
+                "because PluginBreakerNotificationService subscribes in its constructor (ADR-013).");
+            _hotkeyService = hotkeyService ?? throw new InvalidOperationException(
+                "AppStartupCoordinator requires a Lazy<IHotkeyService> from DI to preserve the " +
+                "--ui-debug input-capture invariant.");
+            _keyboardHook = keyboardHook ?? throw new InvalidOperationException(
+                "AppStartupCoordinator requires a Lazy<GlobalKeyboardHook> from DI because the " +
+                "default constructor installs a real low-level keyboard hook.");
+            _globalMouseService = globalMouseService ?? throw new InvalidOperationException(
+                "AppStartupCoordinator requires a Lazy<IGlobalMouseService> from DI to preserve " +
+                "the --ui-debug input-capture invariant.");
+            _tutorialService = tutorialService ?? throw new InvalidOperationException(
+                "AppStartupCoordinator requires a Lazy<ITutorialService> from DI to avoid eager " +
+                "construction of TutorialOrchestrator and its 9 dependencies.");
+            _mainWindowFactory = mainWindowFactory ?? throw new InvalidOperationException(
+                "AppStartupCoordinator requires a Func<RadialMenuWindow> from DI to defer WPF " +
+                "InitializeComponent until after theme and tray are initialized.");
+            _wizardFactory = wizardFactory ?? throw new InvalidOperationException(
+                "AppStartupCoordinator requires a Func<FirstLaunchSetupWizardViewModel> from DI " +
+                "because FirstLaunchSetupWizardViewModel is AddTransient and would otherwise be " +
+                "captured by this singleton.");
+            _debugStatePublisherFactory = debugStatePublisherFactory;
+            _debugCommandServerFactory = debugCommandServerFactory;
         }
 
         public async Task RunBlockingInitializationAsync()
@@ -45,57 +128,57 @@ namespace Pulsar.Services
             var startupStopwatch = Stopwatch.StartNew();
             _logger.LogInformation("[Startup] Running blocking startup responsibilities");
 
-            var configService = _services.GetRequiredService<IConfigService>();
-            await ApplyLoggingConfigurationAsync(configService);
+            await ApplyLoggingConfigurationAsync();
 
             // [UI Debug Mode] Start the named-pipe state publisher before any UI can
             // summon so the E2E driver cannot miss early state events.
-            var debugOptions = _services.GetService<DebugModeOptions>() ?? DebugModeOptions.Disabled;
-            if (debugOptions.IsUiDebug)
+            if (_debugOptions.IsUiDebug)
             {
-                var statePublisher = _services.GetRequiredService<IDebugStatePublisher>();
-                statePublisher.Start(debugOptions.PipeName);
-                _logger.LogInformation("[Startup] Debug state publisher started on pipe {PipeName}", debugOptions.PipeName);
+                var statePublisher = _debugStatePublisherFactory?.Invoke()
+                    ?? throw new InvalidOperationException(
+                        "DebugStatePublisher factory not registered; ui-debug mode requires it.");
+                statePublisher.Start(_debugOptions.PipeName);
+                _logger.LogInformation("[Startup] Debug state publisher started on pipe {PipeName}", _debugOptions.PipeName);
             }
 
-            await ConfigureLocalizationAsync(configService);
+            await ConfigureLocalizationAsync();
 
             // Theme must be established before the tray icon builds its ContextMenu.
             // Otherwise ThemeService falls back to its in-memory default and the first
             // tray menu is rendered with the wrong theme until Settings opens.
-            await ConfigureThemeAsync(configService);
+            await ConfigureThemeAsync();
 
-            var processRegistryService = _services.GetRequiredService<IProcessRegistryService>();
+            var processRegistryService = _processRegistryService.Value;
             await processRegistryService.InitializeAsync();
             _logger.LogInformation("[Startup] ProcessRegistryService initialized");
 
-            var trayService = _services.GetRequiredService<ITrayService>();
-            trayService.Initialize();
+            _trayService.Initialize();
             _logger.LogInformation("[Startup] Tray service initialized");
 
             // Circuit breaker transitions must reach telemetry + tray notifications.
             // The relay subscribes to PluginCircuitBreakerPolicy events in its
             // constructor, so resolving it after tray init activates the wiring
             // before any plugin execution can trip a breaker (ADR-013).
-            _services.GetRequiredService<PluginBreakerNotificationService>();
+            _ = _breakerRelay.Value;
             _logger.LogInformation("[Startup] Circuit breaker notification relay activated");
 
-            var pluginRegistry = _services.GetRequiredService<IPluginRegistry>();
-            await pluginRegistry.LoadCoreAsync();
+            await _pluginRegistry.LoadCoreAsync();
             _logger.LogInformation("[Startup] Core plugins activated");
 
-            var mainWindow = _services.GetRequiredService<RadialMenuWindow>();
+            var mainWindow = _mainWindowFactory();
             mainWindow.Show();
             _logger.LogInformation("[Startup] Radial menu window shown");
 
             // [UI Debug Mode] Start the command server only after the menu window and
             // its view-model exist, so early 'menu-open' commands cannot race window
             // construction.
-            if (debugOptions.IsUiDebug)
+            if (_debugOptions.IsUiDebug)
             {
-                var commandServer = _services.GetRequiredService<IDebugCommandServer>();
-                commandServer.Start(debugOptions.CommandPipeName);
-                _logger.LogInformation("[Startup] Debug command server started on pipe {PipeName}", debugOptions.CommandPipeName);
+                var commandServer = _debugCommandServerFactory?.Invoke()
+                    ?? throw new InvalidOperationException(
+                        "DebugCommandServer factory not registered; ui-debug mode requires it.");
+                commandServer.Start(_debugOptions.CommandPipeName);
+                _logger.LogInformation("[Startup] Debug command server started on pipe {PipeName}", _debugOptions.CommandPipeName);
             }
 
             // [UI Debug Mode] Real global hotkeys and mouse-gesture hooks must NOT be
@@ -107,25 +190,25 @@ namespace Pulsar.Services
             // --ui-debug-hooks opts a debug run INTO the real global-hotkey + keyboard
             // hook path (for workflows exercising the SendInput trigger); the
             // mouse-gesture hook stays off in every debug run.
-            bool registerHotkeys = !debugOptions.IsUiDebug || debugOptions.EnableHotkeyHooks;
+            bool registerHotkeys = !_debugOptions.IsUiDebug || _debugOptions.EnableHotkeyHooks;
             if (registerHotkeys)
             {
-                var hotkeyService = _services.GetRequiredService<IHotkeyService>();
+                var hotkeyService = _hotkeyService.Value;
                 await hotkeyService.InitializeAsync();
                 _logger.LogInformation("[Startup] Hotkey service initialized{Suffix}",
-                    debugOptions.IsUiDebug ? " (ui-debug-hooks opt-in)" : string.Empty);
+                    _debugOptions.IsUiDebug ? " (ui-debug-hooks opt-in)" : string.Empty);
             }
 
-            if (!debugOptions.IsUiDebug)
+            if (!_debugOptions.IsUiDebug)
             {
-                var globalMouseWheelService = _services.GetRequiredService<IGlobalMouseService>();
+                var globalMouseWheelService = _globalMouseService.Value;
                 globalMouseWheelService.Initialize();
                 _logger.LogInformation("[Startup] Global mouse wheel service initialized");
             }
 
             if (registerHotkeys)
             {
-                await ConfigureKeyboardHookAsync(configService);
+                await ConfigureKeyboardHookAsync();
             }
             else
             {
@@ -147,16 +230,14 @@ namespace Pulsar.Services
                 var deferredStopwatch = Stopwatch.StartNew();
                 try
                 {
-                    var pluginRegistry = _services.GetRequiredService<IPluginRegistry>();
-                    await pluginRegistry.DiscoverDeferredAsync();
-                    await ActivateEnabledExternalPluginsAsync(pluginRegistry);
+                    await _pluginRegistry.DiscoverDeferredAsync();
+                    await ActivateEnabledExternalPluginsAsync();
 
-                    var configService = _services.GetRequiredService<IConfigService>();
-                    ConfigureValidationPipeline(configService);
+                    ConfigureValidationPipeline();
 
                     await RunOnboardingStartupAsync(cancellationToken);
 
-                    var config = await configService.LoadSnapshotAsync();
+                    var config = await _configService.LoadSnapshotAsync();
                     if (config.Settings.HasCompletedTutorial
                         || string.Equals(config.Settings.LastTutorialStep, "Skipped", StringComparison.OrdinalIgnoreCase)
                         || !string.Equals(config.Settings.OnboardingState, "SetupWizardComplete", StringComparison.OrdinalIgnoreCase))
@@ -170,7 +251,7 @@ namespace Pulsar.Services
                     await await System.Windows.Application.Current.Dispatcher.InvokeAsync(
                         async () =>
                         {
-                            var tutorialService = _services.GetRequiredService<ITutorialService>();
+                            var tutorialService = _tutorialService.Value;
                             await tutorialService.CheckResumeAsync();
 
                             if (!tutorialService.IsTutorialActive)
@@ -197,12 +278,11 @@ namespace Pulsar.Services
                 });
         }
 
-        private void ConfigureValidationPipeline(IConfigService configService)
+        private void ConfigureValidationPipeline()
         {
-            var validationPipeline = _services.GetRequiredService<Validation.ConfigValidationPipeline>();
-            if (configService is ConfigService concreteConfigService)
+            if (_configService is ConfigService concreteConfigService)
             {
-                concreteConfigService.SetValidationPipeline(validationPipeline);
+                concreteConfigService.SetValidationPipeline(_validationPipeline);
                 Log.Information("Validation pipeline configured for ConfigService");
             }
         }
@@ -214,9 +294,9 @@ namespace Pulsar.Services
         /// OnEnableAsync) must run their lifecycle at startup or their
         /// contributions silently disappear after every restart.
         /// </summary>
-        private async Task ActivateEnabledExternalPluginsAsync(IPluginRegistry pluginRegistry)
+        private async Task ActivateEnabledExternalPluginsAsync()
         {
-            foreach (var descriptor in pluginRegistry.GetAllPluginDescriptors().ToList())
+            foreach (var descriptor in _pluginRegistry.GetAllPluginDescriptors().ToList())
             {
                 if (!descriptor.IsExternal)
                 {
@@ -225,12 +305,12 @@ namespace Pulsar.Services
 
                 try
                 {
-                    if (!pluginRegistry.IsPluginEnabled(descriptor.Id))
+                    if (!_pluginRegistry.IsPluginEnabled(descriptor.Id))
                     {
                         continue;
                     }
 
-                    await pluginRegistry.GetOrActivatePluginAsync(descriptor.Id);
+                    await _pluginRegistry.GetOrActivatePluginAsync(descriptor.Id);
                 }
                 catch (Exception ex)
                 {
@@ -239,19 +319,18 @@ namespace Pulsar.Services
             }
         }
 
-        private async Task ApplyLoggingConfigurationAsync(IConfigService configService)
+        private async Task ApplyLoggingConfigurationAsync()
         {
             // [UI Debug Mode] Keep the forced Verbose level from App.OnStartup so E2E
             // log excerpts are always full-trace.
-            var debugOptions = _services.GetService<DebugModeOptions>() ?? DebugModeOptions.Disabled;
-            if (debugOptions.IsUiDebug)
+            if (_debugOptions.IsUiDebug)
             {
                 return;
             }
 
             try
             {
-                var config = await configService.LoadSnapshotAsync();
+                var config = await _configService.LoadSnapshotAsync();
                 if (config?.Settings?.Logging == null)
                 {
                     return;
@@ -269,14 +348,13 @@ namespace Pulsar.Services
             }
         }
 
-        private async Task ConfigureThemeAsync(IConfigService configService)
+        private async Task ConfigureThemeAsync()
         {
             try
             {
-                var config = await configService.LoadSnapshotAsync();
+                var config = await _configService.LoadSnapshotAsync();
                 var theme = config?.Settings?.ThemeEnum ?? AppTheme.Light;
-                var themeService = _services.GetRequiredService<IThemeService>();
-                themeService.Initialize(theme);
+                _themeService.Initialize(theme);
                 _logger.LogInformation("[Startup] Theme initialized to {Theme} from configuration", theme);
             }
             catch (Exception ex)
@@ -285,16 +363,15 @@ namespace Pulsar.Services
             }
         }
 
-        private async Task ConfigureLocalizationAsync(IConfigService configService)
+        private async Task ConfigureLocalizationAsync()
         {
             try
             {
-                var localizationService = _services.GetRequiredService<ILocalizationService>();
-                var config = await configService.LoadSnapshotAsync();
+                var config = await _configService.LoadSnapshotAsync();
                 var language = config?.Settings?.Language;
                 if (!string.IsNullOrEmpty(language))
                 {
-                    localizationService.SetLanguage(language);
+                    _localizationService.SetLanguage(language);
                     Log.Information("Localization initialized with language: {Language}", language);
                 }
             }
@@ -304,10 +381,10 @@ namespace Pulsar.Services
             }
         }
 
-        private async Task ConfigureKeyboardHookAsync(IConfigService configService)
+        private async Task ConfigureKeyboardHookAsync()
         {
-            var keyboardHook = _services.GetRequiredService<GlobalKeyboardHook>();
-            var config = await configService.LoadSnapshotAsync();
+            var keyboardHook = _keyboardHook.Value;
+            var config = await _configService.LoadSnapshotAsync();
             if (config?.Settings?.Input != null)
             {
                 keyboardHook.UseHybridMode = config.Settings.Input.IsHybridMode;
@@ -321,8 +398,7 @@ namespace Pulsar.Services
 
         private async Task RunOnboardingStartupAsync(CancellationToken cancellationToken)
         {
-            var startupCoordinator = _services.GetRequiredService<StartupCoordinator>();
-            var action = await startupCoordinator.HandleStartupAsync();
+            var action = await _tutorialStartupCoordinator.HandleStartupAsync();
 
             if (action != StartupAction.ShowWizard)
             {
@@ -330,24 +406,21 @@ namespace Pulsar.Services
             }
 
             _logger.LogInformation("[Startup] Launching first-run setup wizard");
-            var dialogService = _services.GetRequiredService<IDialogService>();
-            var wizard = _services.GetRequiredService<FirstLaunchSetupWizardViewModel>();
-            var loc = _services.GetRequiredService<ILocalizationService>();
+            var wizard = _wizardFactory();
 
             try
             {
                 await await System.Windows.Application.Current.Dispatcher.InvokeAsync(
-                    () => dialogService.ShowCustomAsync(loc["FirstLaunch.SetupTitle"], wizard, DialogButtons.None, DialogSizeConstraints.LargeResizable, AppTheme.Light),
+                    () => _dialogService.ShowCustomAsync(_localizationService["FirstLaunch.SetupTitle"], wizard, DialogButtons.None, DialogSizeConstraints.LargeResizable, AppTheme.Light),
                     System.Windows.Threading.DispatcherPriority.Normal,
                     cancellationToken);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[Startup] Failed to display first-run setup wizard");
-                var trayService = _services.GetRequiredService<ITrayService>();
-                trayService.ShowNotification(
-                    loc["Notification.OnboardingWizardFailedTitle"],
-                    loc["Notification.OnboardingWizardFailed"],
+                _trayService.ShowNotification(
+                    _localizationService["Notification.OnboardingWizardFailedTitle"],
+                    _localizationService["Notification.OnboardingWizardFailed"],
                     PulsarNotificationIcon.Warning);
             }
         }
