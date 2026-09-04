@@ -55,7 +55,22 @@ Tired of redoing spreadsheets in Excel/WPS? Logging into one intranet system aft
 
 ## 🚀 Quick Start
 
-1. Grab the latest build from [Releases](https://github.com/Smith-Rosco/Pulsar/releases) and run it — Pulsar waits in your system tray;
+### ⬇️ Download
+
+Each release ships two packages — pick the one that fits:
+
+| Package | What it is | Size | Best for |
+| :--- | :--- | :--- | :--- |
+| **Standalone (full)** | Self-contained — **extract & run**, no dependencies to install | ~80 MB | Most users; the hassle-free choice |
+| **Portable (lightweight)** | Tiny download, but requires the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) first | ~8.5 MB | Slow connections / tight disk space |
+
+- **Standalone**: [⬇️ Pulsar-1.10.0-full.zip](https://github.com/Smith-Rosco/Pulsar/releases/download/v1.10.0/Pulsar-1.10.0-full.zip)
+- **Portable**: [⬇️ Pulsar-1.10.0-portable.zip](https://github.com/Smith-Rosco/Pulsar/releases/download/v1.10.0/Pulsar-1.10.0-portable.zip)
+- Older versions & release notes: [Releases page](https://github.com/Smith-Rosco/Pulsar/releases)
+
+### 🚀 Usage
+
+1. Download your package, **extract** it into a stable folder (e.g. `C:\Pulsar`), and double-click `Pulsar.exe` — Pulsar waits in your system tray;
 2. Press **`Ctrl+Shift+Q`** to summon the command menu (or **`Ctrl+Q`** for switch mode);
 3. Slide toward the action you want and release — it executes instantly;
 4. Want to tweak things? Open Settings from Pulsar.

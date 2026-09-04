@@ -55,7 +55,22 @@
 
 ## 🚀 快速开始
 
-1. 前往 [Releases](https://github.com/Smith-Rosco/Pulsar/releases) 下载最新版本并运行，Pulsar 会在系统托盘后台待命；
+### ⬇️ 下载
+
+每个版本提供两种安装包，按需选择：
+
+| 版本 | 说明 | 体积 | 适合谁 |
+| :--- | :--- | :--- | :--- |
+| **独立版（full）** | 自带运行环境，**解压即用**，任何电脑都能直接跑 | ~80 MB | 大多数用户，省心首选 |
+| **轻量版（portable）** | 体积小巧，但需要先安装 [.NET 8 桌面运行时](https://dotnet.microsoft.com/download/dotnet/8.0) | ~8.5 MB | 下载慢 / 硬盘紧张的用户 |
+
+- **独立版**：[⬇️ Pulsar-1.10.0-full.zip](https://github.com/Smith-Rosco/Pulsar/releases/download/v1.10.0/Pulsar-1.10.0-full.zip)
+- **轻量版**：[⬇️ Pulsar-1.10.0-portable.zip](https://github.com/Smith-Rosco/Pulsar/releases/download/v1.10.0/Pulsar-1.10.0-portable.zip)
+- 更多历史版本与更新记录：[Releases 页面](https://github.com/Smith-Rosco/Pulsar/releases)
+
+### 🚀 使用
+
+1. 下载对应版本并**解压**到一个固定文件夹（如 `C:\Pulsar`），双击 `Pulsar.exe` 运行，Pulsar 会在系统托盘后台待命；
 2. 按 **`Ctrl+Shift+Q`** 唤出命令菜单（或 **`Ctrl+Q`** 进入切换模式）；
 3. 朝着目标动作的方向滑过去、松开，动作立即执行；
 4. 想调整配置？在 Pulsar 设置里打开即可。
