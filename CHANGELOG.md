@@ -59,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Docs & conventions
 - **工作记忆统一为单源（ADR-019）**：`Docs/journal/` 成为所有 AI harness（WorkBuddy / opencode / 未来 harness）唯一跨会话工作记忆；禁止向 harness 原生记忆（`.workbuddy/memory/` 等，gitignored）重复写入正文，最多一行指针。历史回填：2026-09-01~03 自 `.workbuddy/memory/` 无损迁入 `Docs/journal/`，2026-09-04 独有内容（UI 自动化调研 + visual-ai-ui-automation 落地）并入当日 journal，gitignored 原件清理。journal 永不删除（过期归档走 `Docs/archive/`）；正文语言以中文为准（CONTRIBUTING 语言规则对工作记忆豁免）。`session-journal` skill 双份（`.agents/skills/` 与 `.opencode/skills/`）同步为同一规范，AGENTS.md / CONTRIBUTING 同步更新。
+- **journal 体积上限 + worktree 并行纪律（ADR-021）**：会话仪式改为只读 `Docs/journal/NEXT.md` + 最新日文件**尾部**（最后一个 `## Session` block），不再整文件读取——单日文件按 ~15 KB 上限，超限经 `git mv` 原样归档至 `Docs/journal/archive/` 并开新指针文件（09-03 / 09-04 已归档）；NEXT.md 成为跨会话「下一步」单一权威，条目块 ≤25 行。并行开发纪律：每 agent 独立 worktree + 独立分支，`Docs/journal/` 与 `CHANGELOG.md` 仅在 `main` 提交（feature worktree 经 `git show main:…` 读取），构建/测试隔离免费（各 worktree 独立 `bin/obj`）。AGENTS.md §8/§10 与 `session-journal` skill 同步更新。
 
 ## [1.10.0] - 2026-09-04
 

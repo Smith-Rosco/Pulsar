@@ -88,7 +88,7 @@ Operational guide for agents working on the **Pulsar** codebase (.NET 8, WPF/Win
 | Architecture overview | [ARCHITECTURE.md](./ARCHITECTURE.md), [Docs/README.md](./Docs/README.md) |
 | Thread safety & concurrency | [Docs/architecture/PLUGIN_SYSTEM.md](./Docs/architecture/PLUGIN_SYSTEM.md) (`ConcurrentDictionary`, `Interlocked`, `Dispatcher.InvokeAsync`) |
 | Propose / track a spec change | [openspec/](./openspec/) — active work in `changes/`, completed in `changes/archive/`, merged truth in `specs/`. Slash commands: `/opsx-propose`, `/opsx-explore`, `/opsx-apply`, `/opsx-update`, `/opsx-sync`, `/opsx-archive` (delivery `both`, see `.opencode/commands/`). Every turn auto-injects the active change via `.opencode/plugin/openspec-workflow-state.js` |
-| Cross-session working memory | `Docs/journal/` — **single canonical store across all AI harnesses**; one file per day via the `session-journal` skill (read at session start, append at session end — **mandatory Session Start Ritual, see §8**). Never duplicate journal content into harness-native memory (`.workbuddy/memory/`, etc.) — at most a one-line pointer (ADR-019) |
+| Cross-session working memory | `Docs/journal/` — **single canonical store across all AI harnesses**; `NEXT.md` (persistent 下一步) + per-day files via the `session-journal` skill (read at session start, append at session end — **mandatory Session Start Ritual, see §8**); day files size-capped, oversized days rotate to `Docs/journal/archive/` (ADR-021). Never duplicate journal content into harness-native memory (`.workbuddy/memory/`, etc.) — at most a one-line pointer (ADR-019) |
 | Roadmap & design proposals | [Docs/roadmap/](./Docs/roadmap/), [Docs/proposals/](./Docs/proposals/) |
 | Historical fix reports (not current truth) | [Docs/archive/](./Docs/archive/) — date-prefixed `YYYY-MM-DD-NAME.md` |
 
@@ -160,9 +160,9 @@ Extension plugins crashing 3x in 1 min are auto-disabled for 60s; user notified 
 ## 8. Agent Behavior Rules & AI-First Development
 
 ### Session Start Ritual (MANDATORY, before any real work)
-- **Read the journal first**: at the start of every session, run the `session-journal` skill flow (`.agents/skills/session-journal/SKILL.md`, mirrored at `.opencode/skills/session-journal/SKILL.md`): list `Docs/journal/`, read the newest `*.md`, and summarize any unfinished "下一步" (Next steps) to the user — "上次进行到 X，下一步是 Y（见 Docs/journal/<file>）". Do not start work that contradicts an unfinished entry without confirming.
+- **Read the journal first (smallest slice)**: at the start of every session, run the `session-journal` skill flow (`.agents/skills/session-journal/SKILL.md`, mirrored at `.opencode/skills/session-journal/SKILL.md`): read `Docs/journal/NEXT.md` + the **tail** of the newest `YYYY-MM-DD.md` (last `## Session` block only — day files are size-capped, ADR-021), and summarize unfinished "下一步" to the user — "上次进行到 X，下一步是 Y（见 Docs/journal/NEXT.md）". Do not start work that contradicts an unfinished entry without confirming. Only read older / archived entries when the task is related to them.
 - **The skill may be missing from the host's injected skill list** (project skills under `.agents/skills/` are not always surfaced) — locate it at the path above and read it before acting; the ritual is governed by `Docs/journal/` + ADR-019, not by the host's list.
-- **Session end**: when the user asks to record / wrap up, or before finishing a substantial task, append a `## Session (HH:MM)` block per the skill's Step 2 (做了什么 / 关键决策·坑 / 下一步 / 相关引用). Only append; never rewrite or delete past entries.
+- **Session end**: when the user asks to record / wrap up, or before finishing a substantial task, append a `## Session (HH:MM)` block per the skill's Step 2 (做了什么 / 关键决策·坑 / 相关引用, **≤ ~25 lines**), and update `Docs/journal/NEXT.md` (strike completed / append new 下一步). Only append; never rewrite or delete past entries.
 - **Also peek at `openspec/changes/`** for an active change and mention it alongside the journal context when relevant.
 
 ### The "AI Programming Triangle" (MUST follow when building features / fixing bugs)
@@ -194,6 +194,35 @@ dotnet restore Pulsar/Pulsar/Pulsar.csproj
 
 ---
 
+## 10. Parallel Agent & Git Worktree Discipline (concurrency)
+
+Multiple AI harnesses / agents work this repo in parallel. Rules to avoid
+cross-agent clobbering, stale working trees, and journal divergence
+(ADR-021).
+
+- **One worktree per concurrent agent, each on its own branch.** Never run two
+  agents in the same working directory. Main worktree = integration + journal
+  keeper. Example: `git worktree add -b feat/<name> E:\...\Pulsar_Project_wt`.
+- **Branch discipline**: one worktree per branch; never check out the same
+  branch in two worktrees (stale HEAD). Rebase onto `main` and fast-forward
+  merge (or PR) when done. Keep `main` green.
+- **Build/test isolation is free**: each worktree has its own `bin/obj`;
+  shared `.git` objects and NuGet cache are read-safe → parallel
+  `dotnet build` / `dotnet test` do not clobber each other.
+- **`Docs/journal/` + `CHANGELOG.md` are committed on `main` only.** Feature
+  worktrees read them via `git fetch` + `git show main:Docs/journal/…` for the
+  session ritual; they never commit a divergent copy on their own branch.
+  Journal is append-only, so even a rare divergence merges cleanly — but avoid
+  it on purpose.
+- **Before writing journal / before merging**: `git status` + `git fetch`;
+  confirm no uncommitted change from another harness. Do not assume you are the
+  only writer today.
+- **Access**: agents can operate inside any worktree via absolute paths
+  (`git -C <worktree> …`, Read/Write/Grep/Bash). If the environment surfaces
+  "project directories", add the worktree path to get first-class access.
+
+---
+
 ## Agent skills
 
 > **These two files are machine-consumed skill contracts, NOT reading material.** They are written and read by the vendored skills under `.agents/skills/` (notably `setup-matt-pocock-skills`, and the installed `domain-modeling` / `grill-with-docs` / `improve-codebase-architecture`). Do not relocate or delete them — the paths below are hardcoded in those skills, and re-running `setup-matt-pocock-skills` will recreate them.
@@ -204,4 +233,4 @@ dotnet restore Pulsar/Pulsar/Pulsar.csproj
 ---
 
 *Last Updated: 2026-09-04*
-*Version: 3.2.0 (Added mandatory Session Start Ritual in §8: read Docs/journal via `.agents/skills/session-journal/SKILL.md` before any real work, with explicit skill path since project skills aren't always in the host's injected list; Task Router journal row now cross-references §8)*
+*Version: 3.3.0 (Session ritual now reads `Docs/journal/NEXT.md` + tail of newest day file instead of whole files; day files size-capped at ~15 KB with rotation to `Docs/journal/archive/` (ADR-021); new §10 Parallel Agent & Worktree Discipline for multi-agent concurrency)*
