@@ -116,14 +116,17 @@ namespace Pulsar.Core.Plugin.Runtime
                 return snapshot;
             }
 
-            snapshot = new PluginRuntimeSnapshot
+            // Pure read: a plugin with no recorded lifecycle is reported as
+            // Loaded when an instance is registered, otherwise Unloaded. The
+            // fallback is derived on demand and never materialized into the
+            // snapshot dictionary — reads must not mutate state, and rejected
+            // transitions must not leave a trace behind (only a validated
+            // Transition() may write _snapshots).
+            return new PluginRuntimeSnapshot
             {
                 PluginId = pluginId,
                 State = _plugins.ContainsKey(pluginId) ? PluginLifecycleState.Loaded : PluginLifecycleState.Unloaded
             };
-
-            _snapshots.TryAdd(pluginId, snapshot);
-            return snapshot;
         }
 
         public void SetPlugin(IPulsarPlugin plugin, PluginLifecycleState state)

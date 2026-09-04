@@ -356,6 +356,41 @@ namespace Pulsar.Tests.Plugin
                 "Unloaded -> Running is not a legal transition");
         }
 
+        [Fact]
+        public void PluginRuntimeStateStore_ReadsShouldNotMaterializeSnapshots()
+        {
+            var store = new PluginRuntimeStateStore();
+
+            store.GetState("queried.plugin").Should().Be(PluginLifecycleState.Unloaded);
+            store.GetSnapshot("queried.plugin").State.Should().Be(PluginLifecycleState.Unloaded);
+
+            Snapshots(store).ContainsKey("queried.plugin").Should().BeFalse(
+                "pure reads must not write lifecycle state");
+        }
+
+        [Fact]
+        public void PluginRuntimeStateStore_RejectedTransitionShouldLeaveNoTrace()
+        {
+            var store = new PluginRuntimeStateStore();
+
+            var invalidTransition = () => store.Transition("missing.plugin", PluginLifecycleState.Running);
+
+            invalidTransition.Should().Throw<InvalidOperationException>();
+
+            Snapshots(store).ContainsKey("missing.plugin").Should().BeFalse(
+                "a rejected transition must not materialize a default snapshot");
+        }
+
+        private static ConcurrentDictionary<string, PluginRuntimeSnapshot> Snapshots(PluginRuntimeStateStore store)
+        {
+            var field = typeof(PluginRuntimeStateStore).GetField(
+                "_snapshots",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            field.Should().NotBeNull("the test must stay aligned with the store implementation");
+
+            return (ConcurrentDictionary<string, PluginRuntimeSnapshot>)field!.GetValue(store)!;
+        }
+
         private static void SetFailureTimestamps(
             PluginCircuitBreakerPolicy policy,
             string pluginId,
