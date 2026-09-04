@@ -32,7 +32,7 @@ namespace Pulsar.ViewModels
     /// config updated). All session decisions — visibility, hover, paging, submenu
     /// morph, input policy — live in MenuSession.
     /// </summary>
-    public partial class RadialMenuViewModel : ObservableObject, IMenuSession
+    public partial class RadialMenuViewModel : ObservableObject
     {
         private readonly MenuSession _session;
         private readonly IHotkeyService _hotkeyService;
@@ -782,33 +782,22 @@ namespace Pulsar.ViewModels
             };
         }
 
-        // ============ IMenuSession (forward to MenuSession) ============
+        // ============ Binding projection (forward to MenuSession) ============
 
-        public bool IsVisible
-        {
-            get => _session.IsVisible;
-            set => _session.IsVisible = value;
-        }
+        // IsVisible is referenced by name from RadialMenuWindow.xaml.cs (see :121/123/241)
+        // and TriggerHandlers, and used by the DataContext chain in XAML; keep as read-only
+        // pass-through. Nobody assigns VM.IsVisible directly — see CommitNotes/h-candidate.
 
-        public bool IsInSubMenu => _session.IsInSubMenu;
+        public bool IsVisible => _session.IsVisible;
 
         public bool ActionExecuted => _session.ActionExecuted;
 
         /// <summary>
         /// Flick-out escape state for gesture-summoned menus (dimmed cancel preview).
         /// Forwarded from the session; only ever true for gesture invocation, so the
-        /// dim never applies to hotkey-summoned menus.
+        /// dim never applies to hotkey-summoned menus. Bound by RadialMenuWindow.xaml:61.
         /// </summary>
         public bool IsFlickOutEscaped => _session.IsFlickOutEscaped;
-
-        public void SetActionExecuted(bool value) => _session.SetActionExecuted(value);
-
-        public void RestoreRootMenu() => _session.RestoreRootMenu();
-
-        public Task EnterSubMenuAsync(SubMenuDescriptor descriptor, int clickedSlotIndex)
-        {
-            return _session.EnterSubMenuAsync(descriptor, clickedSlotIndex);
-        }
 
         // ============ Binding projection ============
 
