@@ -211,13 +211,20 @@ namespace Pulsar.Tests.Tutorial
         }
 
         [Fact]
-        public async Task OnboardingStateService_GetStateAsync_WithIllegalCompleteState_ShouldExposeCompletedSetup()
+        public async Task OnboardingStateService_GetStateAsync_WithIllegalCompleteState_ShouldHealCompletedTutorial()
         {
             // ADR-018 self-healing: ProfilesConfig.cs:354-357 documents
             // OnboardingState='Complete' + HasCompletedTutorial=false as an
-            // illegal invariant. AppStartupCoordinator depends on
-            // HasCompletedSetup=true for the 'Complete' value to short-circuit
-            // the tutorial path even when HasCompletedTutorial is false.
+            // illegal invariant (a corrupt or half-written write —
+            // MarkTutorialCompletedAsync always writes both together).
+            // The projection heals it to HasCompletedTutorial=true so that
+            // AppStartupCoordinator's gate (return on HasCompletedTutorial)
+            // short-circuits instead of re-entering the tutorial. The gate
+            // CANNOT use HasCompletedSetup for this: HasCompletedSetup=true is
+            // also the precondition for running the tutorial after
+            // SetupWizardComplete — an earlier draft of this test locked the
+            // literal passthrough of HasCompletedTutorial, which silently
+            // reintroduced the re-onboarding bug the ADR was written to fix.
             var mockConfigService = new Mock<IConfigService>();
             mockConfigService.Setup(s => s.LoadSnapshotAsync(It.IsAny<bool>()))
                 .ReturnsAsync(new ProfilesConfig
@@ -234,9 +241,10 @@ namespace Pulsar.Tests.Tutorial
             var state = await service.GetStateAsync();
 
             state.HasCompletedSetup.Should().BeTrue(
-                "the illegal combination must still surface HasCompletedSetup=true so AppStartupCoordinator returns");
-            state.HasCompletedTutorial.Should().BeFalse(
-                "the underlying field value must be read literally — never silently coerced");
+                "the 'Complete' state always implies a finished setup");
+            state.HasCompletedTutorial.Should().BeTrue(
+                "the terminal 'Complete' state heals the illegal HasCompletedTutorial=false " +
+                "so AppStartupCoordinator's gate returns instead of re-entering the tutorial");
         }
 
         [Fact]

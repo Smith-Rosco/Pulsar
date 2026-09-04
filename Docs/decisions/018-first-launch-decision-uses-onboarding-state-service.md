@@ -87,3 +87,24 @@ Negative:
 - `dotnet build Pulsar.sln` → 0 errors, warning count unchanged from baseline.
 - `dotnet test Pulsar.Tests/Pulsar.Tests.csproj` → 1031 + 6 (4 new tests; one of them is a `[Theory]` with 2 InlineData rows) = **1037 / 1037** passing.
 - The `--ui-debug` startup path is exercised by `Pulsar.E2E/Workflows/radial-menu-open-via-command.json` (no hotkeys, command-driven). The FirstLaunch wizard decision is *not* on the menu-open hot path, but `Fixture/default-profiles.json` (which has `OnboardingState="Complete"`) confirms the new self-heal — the wizard does not re-appear when an E2E run uses that fixture.
+
+## Amendment (2026-09-04, same day): conformance fix — the self-heal now actually heals
+
+Writing the first coordinator-level unit tests for this gate (candidate K coverage, `AppStartupCoordinatorTests.cs`) exposed that the original implementation did **not** deliver the table above. Trace, with three independent sources:
+
+1. **The gate** returns on `HasCompletedTutorial || HasSkippedTutorial || !HasCompletedSetup`. `HasCompletedSetup=true` is a *precondition for running the tutorial* (the `SetupWizardComplete` row), not a return trigger.
+2. **The original projection** passed `HasCompletedTutorial` through literally. For the illegal `Complete + HasCompletedTutorial=false` combination the projected flags were therefore `(true, false, false)` — identical to the legal `SetupWizardComplete` row — so the gate **entered the tutorial**, the exact bug this ADR claims to fix. (The old inline check actually *returned* on that combination via its third branch `OnboardingState != "SetupWizardComplete"`; the ADR's problem statement inverted that branch. The net effect of the original refactor was a regression on the illegal combination, not a heal.)
+3. **The first-generation lock test** (`OnboardingVerificationTests`) asserted `HasCompletedSetup=true "so AppStartupCoordinator returns"` while simultaneously locking `HasCompletedTutorial` as a literal passthrough ("never silently coerced") — internally inconsistent with the gate's actual semantics, and it passed only because the coordinator gate was never exercised at that level.
+
+### Fix (projection-level tolerance, per the approved variant A)
+
+`OnboardingStateService.GetStateAsync` now heals the terminal state:
+
+```csharp
+HasCompletedTutorial = config.Settings.HasCompletedTutorial
+    || string.Equals(onboardingState, "Complete", StringComparison.OrdinalIgnoreCase),
+```
+
+Rationale: `MarkTutorialCompletedAsync` always writes `OnboardingState="Complete"` **and** `HasCompletedTutorial=true` together; a profile carrying `Complete` + `HasCompletedTutorial=false` is a corrupt or half-written write, and "Complete" is terminal by definition. The illegal combination now projects to `(HasCompletedSetup=true, HasCompletedTutorial=true, HasSkippedTutorial=false)` → the gate returns. All six legal combinations are unchanged (`SetupWizardComplete` is the only state where the raw flag passes through, and the only state where the tutorial may run). The 4-value vocabulary still never leaks to read sites. The replacement lock test (`OnboardingStateService_GetStateAsync_WithIllegalCompleteState_ShouldHealCompletedTutorial`) asserts the healed flag, and the new `StartDeferred_IllegalCombination_SkipsTutorialPath` exercises the coordinator's consumption of the post-heal projection end-to-end (up to the tutorial Lazy staying unresolved).
+
+Consumers audited: the projected `OnboardingState.HasCompletedTutorial` has exactly one consumer (`AppStartupCoordinator`'s gate); `Features.Tutorial.Services.StartupCoordinator` reads only `IsFirstRun` / `HasSkippedOnboarding` / `HasCompletedSetup`. All other `HasCompletedTutorial` references in the codebase read `config.Settings.HasCompletedTutorial` (the raw field), which is untouched.

@@ -43,7 +43,18 @@ namespace Pulsar.Features.Tutorial.Services
                 HasSkippedOnboarding = string.Equals(onboardingState, "Skipped", System.StringComparison.OrdinalIgnoreCase),
                 HasCompletedSetup = string.Equals(onboardingState, "SetupWizardComplete", System.StringComparison.OrdinalIgnoreCase)
                     || string.Equals(onboardingState, "Complete", System.StringComparison.OrdinalIgnoreCase),
-                HasCompletedTutorial = config.Settings.HasCompletedTutorial,
+                // Self-healing (ADR-018): "Complete" is the terminal onboarding state —
+                // MarkTutorialCompletedAsync always writes OnboardingState="Complete" and
+                // HasCompletedTutorial=true together. A profile carrying
+                // OnboardingState="Complete" + HasCompletedTutorial=false (the illegal
+                // invariant documented at ProfilesConfig.cs:354-357) is a corrupt or
+                // half-written write; surfacing HasCompletedTutorial=true here makes
+                // AppStartupCoordinator's first-launch gate return instead of
+                // re-entering the tutorial. Legal combinations are unaffected: for
+                // OnboardingState="SetupWizardComplete" the raw flag passes through
+                // unchanged, which is the only state where the tutorial may still run.
+                HasCompletedTutorial = config.Settings.HasCompletedTutorial
+                    || string.Equals(onboardingState, "Complete", System.StringComparison.OrdinalIgnoreCase),
                 HasSkippedTutorial = string.Equals(config.Settings.LastTutorialStep, "Skipped", System.StringComparison.OrdinalIgnoreCase)
             };
         }
