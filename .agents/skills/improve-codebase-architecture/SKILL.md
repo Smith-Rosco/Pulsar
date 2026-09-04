@@ -11,7 +11,7 @@ Surface architectural friction and propose **deepening opportunities** — refac
 This command is _informed_ by the project's domain model and built on a shared design vocabulary:
 
 - Call the Skill tool with "codebase-design" for the architecture vocabulary (**module**, **interface**, **depth**, **seam**, **adapter**, **leverage**, **locality**) and its principles (the deletion test, "the interface is the test surface", "one adapter = hypothetical seam, two = real"). Use these terms exactly in every suggestion — don't drift into "component," "service," "API," or "boundary."
-- The domain language in `CONTEXT.md` gives names to good seams; ADRs in `docs/adr/` record decisions this command should not re-litigate.
+- The domain language in `CONTEXT.md` gives names to good seams; ADRs record decisions this command should not re-litigate. **Resolve the ADR directory from the project's own domain doc** (`Docs/agents/domain.md`, or `CONTEXT.md`) instead of assuming a path — this repo uses `Docs/decisions/`, not `docs/adr/`. Listing the directory and finding nothing is different from not listing it at all; never conclude "no ADRs" without checking.
 
 ## Process
 
@@ -24,7 +24,9 @@ This command is _informed_ by the project's domain model and built on a shared d
 
 Read the project's domain glossary (`CONTEXT.md`) and any ADRs in the area you're touching first.
 
-Then spawn a sub-agent to walk the codebase. Don't follow rigid heuristics — explore organically and note where you experience friction:
+Then spawn a sub-agent to walk the codebase. Dispatch **several in parallel, one per hotspot area**, and give each one the same glossary rules and the same exclusion list (the ADRs you just read). Sub-agents have no memory of this conversation — each prompt must be self-contained.
+
+**Verify before you believe.** Sub-agent findings are leads, not conclusions. Before a claim earns a card, confirm it yourself: read the lines, count the occurrences, check the consumer sites. A duplicated derivation is only interesting if you can show the two copies actually diverged. Pay special attention to claims that a refactor is safe — grep for every call site.
 
 - Where does understanding one concept require bouncing between many small modules?
 - Where are modules **shallow** — interface nearly as complex as the implementation?

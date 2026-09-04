@@ -6,21 +6,24 @@ How the engineering skills should consume this repo's domain documentation when 
 
 - **`CONTEXT.md`** at the repo root, or
 - **`CONTEXT-MAP.md`** at the repo root if it exists — it points at one `CONTEXT.md` per context. Read each one relevant to the topic.
-- **`docs/adr/`** — read ADRs that touch the area you're about to work in. In multi-context repos, also check `src/<context>/docs/adr/` for context-scoped decisions.
+- **`Docs/decisions/`** — ADRs live here, named `NNN-kebab-case-title.md` (e.g. `012-plugin-runtime-three-seams.md`). Read the ones touching the area you're about to work in.
+
+> **Path convention differs from the default skill text.** The mattpocock skills assume lowercase `docs/adr/`; this repo uses **`Docs/decisions/`**. Always verify the ADR directory by listing it before concluding "no ADRs exist" — silently missing 16 accepted decisions will make an architecture review re-propose things that are already settled.
 
 If any of these files don't exist, **proceed silently**. Don't flag their absence; don't suggest creating them upfront. The `/domain-modeling` skill (reached via `/grill-with-docs` and `/improve-codebase-architecture`) creates them lazily when terms or decisions actually get resolved.
 
 ## File structure
 
-Single-context repo (most repos):
+Single-context repo (this repo):
 
 ```
 /
 ├── CONTEXT.md
-├── docs/adr/
-│   ├── 0001-event-sourced-orders.md
-│   └── 0002-postgres-for-write-model.md
-└── src/
+├── Docs/
+│   └── decisions/
+│       ├── 001-plugin-metadata-system.md
+│       └── 002-circuit-breaker-for-extension-plugins.md
+└── Pulsar/
 ```
 
 Multi-context repo (presence of `CONTEXT-MAP.md` at the root):
@@ -46,6 +49,6 @@ If the concept you need isn't in the glossary yet, that's a signal — either yo
 
 ## Flag ADR conflicts
 
-If your output contradicts an existing ADR, surface it explicitly rather than silently overriding:
+If your output contradicts an existing ADR, surface it explicitly rather than silently overriding. Name the ADR by its file in `Docs/decisions/`:
 
-> _Contradicts ADR-0007 (event-sourced orders) — but worth reopening because…_
+> _Contradicts ADR-0007 (`Docs/decisions/007-external-plugin-permission-consent.md`) — but worth reopening because…_

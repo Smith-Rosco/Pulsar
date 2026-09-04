@@ -35,6 +35,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - `PluginManagerViewModel` 声明 `IPluginRuntimeOps` 字段但构造器从未注入（ADR-012 迁移遗留，运行到插件管理页即 NRE/破坏 0 警告基线）；构造器现补上 `runtimeOps` 参数并赋值。
 
+### Architecture review (round 2)
+- **架构（H）**：`RadialMenuViewModel` 不再实现 `IMenuSession`；4 个零引用成员（`IsInSubMenu`/`SetActionExecuted`/`RestoreRootMenu`/`EnterSubMenuAsync`）删除；保留 `IsVisible`（去掉 setter）/ `ActionExecuted` / `IsFlickOutEscaped`（XAML DataTrigger 依赖）。`IsVisible` setter 无人调用，去除。
+- **架构（J）**：`MenuSession` 的 `GestureReleaseFadeDelayMs = 180` 与 `RadialMenuWindow.Dismiss` 的 `160ms` 淡出合并为新 `ViewModels/MenuTiming` 静态类（`DismissFade=160`、`DismissGraceMs=20`、`DismissAwait=>180`），把「180 ≥ 160」这条跨模块不等式显式命名为 `DismissGraceMs`。SlotOrb 的 300/320 hover 时长不属于此契约，保持原样。修正 `RadialMenuWindow.xaml.cs:207` 自相矛盾的注释（"slightly slower than 320" 与 "160" 矛盾）。
+- **架构（K · ADR-017）**：`AppStartupCoordinator` 的 `IServiceProvider` 字段删除，24 处 `GetRequiredService/GetService<>` 全部替换为构造注入或 `Lazy<T>` / `Func<T>` 工厂。`App.xaml.cs` 新增 11 个工厂注册。保留 ADR-013 时序（中继在托盘初始化后解析）、`--ui-debug` 输入门禁（`GlobalKeyboardHook` 不在 ui-debug 下预解析）、transient VM 防捕获（`FirstLaunchSetupWizardViewModel` 走 `Func<>` 工厂）。
+
+### Verified
+- 构建 0 错误（NU1900 网络警告与基线一致）
+- `dotnet test Pulsar.Tests` → 1031 / 1031 通过
+
 ## [1.10.0] - 2026-09-04
 
 ### Added
