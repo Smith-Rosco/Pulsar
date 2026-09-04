@@ -14,6 +14,7 @@ using Pulsar.Native;
 using Pulsar.Services;
 using Pulsar.Services.ActionFeedback;
 using Pulsar.Services.Interfaces;
+using Pulsar.Tests.TestHelpers;
 using Pulsar.ViewModels;
 using Pulsar.ViewModels.Strategies;
 using Xunit;
@@ -220,21 +221,5 @@ namespace Pulsar.Tests.ViewModels
         }
 
         /// <summary>Direct-call fake so MenuSession tests need no WPF Application.</summary>
-        private sealed class DirectUiDispatcher : IUiDispatcher
-        {
-            public bool CheckAccess() => true;
-            public void Invoke(Action action) => action();
-            public Task InvokeAsync(Action action)
-            {
-                action();
-                return Task.CompletedTask;
-            }
-
-            public Task BeginInvoke(Action action)
-            {
-                action();
-                return Task.CompletedTask;
-            }
-        }
     }
 }

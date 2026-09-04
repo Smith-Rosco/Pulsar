@@ -334,6 +334,12 @@ namespace Pulsar
 
             // 4. UI Services
             serviceCollection.AddSingleton<IUiDispatcher, WpfUiDispatcher>();
+            // [Architecture review 2026-09-04, candidate L] MenuSession's gesture
+            // summon path warms the radial renderer through this callback. The VM is
+            // resolved lazily at first invocation, so registration order does not
+            // create a construction cycle.
+            serviceCollection.AddSingleton<Action<Pulsar.Models.Enums.RadialMenuMode>>(sp =>
+                mode => sp.GetRequiredService<RadialMenuViewModel>().ApplyRadialRendering(mode));
             serviceCollection.AddSingleton<MenuSession>();
             serviceCollection.AddSingleton<RadialMenuViewModel>();
             serviceCollection.AddSingleton<RadialMenuWindow>();

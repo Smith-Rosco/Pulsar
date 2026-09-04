@@ -9,6 +9,7 @@ using Pulsar.Models;
 using Pulsar.Native;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
+using Pulsar.Tests.TestHelpers;
 using Pulsar.ViewModels;
 using Xunit;
 
@@ -541,21 +542,5 @@ namespace Pulsar.Tests.ViewModels
             return session;
         }
 
-        private sealed class DirectUiDispatcher : IUiDispatcher
-        {
-            public bool CheckAccess() => true;
-            public void Invoke(Action action) => action();
-            public Task InvokeAsync(Action action)
-            {
-                action();
-                return Task.CompletedTask;
-            }
-
-            public Task BeginInvoke(Action action)
-            {
-                action();
-                return Task.CompletedTask;
-            }
-        }
     }
 }

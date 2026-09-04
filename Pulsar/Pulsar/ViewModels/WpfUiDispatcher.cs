@@ -58,5 +58,23 @@ namespace Pulsar.ViewModels
 
             return dispatcher.BeginInvoke(action, DispatcherPriority.Input).Task;
         }
+
+        /// <summary>
+        /// D4: dispatches at <see cref="DispatcherPriority.Input"/> so latency-critical
+        /// gesture work (summon/release) never queues behind lower-priority queue
+        /// items. Null-safe + non-blocking: fires and forgets, running inline when
+        /// already on the UI thread or when no Application dispatcher exists (tests).
+        /// </summary>
+        public void InvokeWithInputPriority(Action action)
+        {
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher == null || dispatcher.CheckAccess())
+            {
+                action();
+                return;
+            }
+
+            _ = dispatcher.InvokeAsync(action, DispatcherPriority.Input);
+        }
     }
 }

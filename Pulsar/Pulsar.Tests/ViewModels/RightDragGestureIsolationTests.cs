@@ -1,3 +1,5 @@
+// [Path]: Pulsar/Pulsar.Tests/ViewModels/RightDragGestureIsolationTests.cs
+
 using System;
 using System.Threading.Tasks;
 using System.Windows;
@@ -8,15 +10,19 @@ using Pulsar.Models;
 using Pulsar.Native;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
+using Pulsar.Tests.TestHelpers;
 using Pulsar.ViewModels;
 using Xunit;
 
 namespace Pulsar.Tests.ViewModels
 {
     /// <summary>
-    /// Gesture-isolation gating in <see cref="RadialMenuViewModel.FeedRightDragGesture"/>:
+    /// Gesture-isolation gating in <see cref="MenuSession.FeedRightDragGesture"/>:
     /// a right-button down denied by the isolation filter passes through to the
     /// foreground application untouched — the detector/pending state is never entered.
+    ///
+    /// [Candidate L] These tests drive the session directly (the orchestration moved
+    /// from RadialMenuViewModel to MenuSession), so the harness is a session harness.
     /// </summary>
     public class RightDragGestureIsolationTests
     {
@@ -26,7 +32,7 @@ namespace Pulsar.Tests.ViewModels
             var harness = CreateHarness(allowGesture: false, modifierHeld: true);
             var args = new GlobalMouseEventArgs(GlobalMouseButton.Right, GlobalMouseAction.Down, 500, 400);
 
-            harness.RaiseMouse(args);
+            harness.Feed(args);
 
             // Denied → not swallowed → the click flows to the foreground app.
             args.Handled.Should().BeFalse();
@@ -39,10 +45,10 @@ namespace Pulsar.Tests.ViewModels
             // A denied down never enters the state machine, so its release must not
             // resolve to a menu selection and must not replay a click.
             var harness = CreateHarness(allowGesture: false, modifierHeld: true);
-            harness.RaiseMouse(new GlobalMouseEventArgs(GlobalMouseButton.Right, GlobalMouseAction.Down, 500, 400));
+            harness.Feed(new GlobalMouseEventArgs(GlobalMouseButton.Right, GlobalMouseAction.Down, 500, 400));
 
             var up = new GlobalMouseEventArgs(GlobalMouseButton.Right, GlobalMouseAction.Up, 500, 400);
-            harness.RaiseMouse(up);
+            harness.Feed(up);
 
             up.Handled.Should().BeFalse();
             harness.VerifyNoReplay();
@@ -54,7 +60,7 @@ namespace Pulsar.Tests.ViewModels
             var harness = CreateHarness(allowGesture: true, modifierHeld: true);
             var args = new GlobalMouseEventArgs(GlobalMouseButton.Right, GlobalMouseAction.Down, 500, 400);
 
-            harness.RaiseMouse(args);
+            harness.Feed(args);
 
             args.Handled.Should().BeTrue("an allowed gesture is swallowed and proceeds through the state machine");
             harness.VerifyNoReplay();
@@ -67,26 +73,27 @@ namespace Pulsar.Tests.ViewModels
             var harness = CreateHarness(allowGesture: false, modifierHeld: true, isolationEnabled: false);
             var args = new GlobalMouseEventArgs(GlobalMouseButton.Right, GlobalMouseAction.Down, 500, 400);
 
-            harness.RaiseMouse(args);
+            harness.Feed(args);
 
             args.Handled.Should().BeTrue("with the filter disabled the gesture keeps existing behavior");
         }
 
         private sealed class Harness
         {
+            private readonly MenuSession _session;
             private readonly Mock<IGlobalMouseService> _mouse;
-            private readonly Mock<IGestureIsolationService> _isolation;
 
-            public Harness(RadialMenuViewModel vm, Mock<IGlobalMouseService> mouse, Mock<IGestureIsolationService> isolation)
+            public Harness(MenuSession session, Mock<IGlobalMouseService> mouse)
             {
+                _session = session;
                 _mouse = mouse;
-                _isolation = isolation;
-                _ = vm;
             }
 
-            public void RaiseMouse(GlobalMouseEventArgs args)
+            public void Feed(GlobalMouseEventArgs args)
             {
-                _mouse.Raise(m => m.OnMouseEvent += null, _mouse.Object, args);
+                // Parity with the pre-move harness: only the event under test flows
+                // through the gesture entry point.
+                _session.FeedRightDragGesture(args);
             }
 
             public void VerifyNoReplay()
@@ -103,8 +110,7 @@ namespace Pulsar.Tests.ViewModels
             var mouse = new Mock<IGlobalMouseService>();
             var hotkey = new Mock<IHotkeyService>();
             hotkey.Setup(h => h.IsModifierHeld(It.IsAny<GestureModifier>())).Returns(modifierHeld);
-            var mouseTracking = new Mock<IMouseTrackingService>();
-            var viewport = new Mock<IMenuViewportService>();
+
             var config = new Mock<IConfigService>();
             config.Setup(c => c.GetSnapshot()).Returns(new ProfilesConfig
             {
@@ -127,21 +133,15 @@ namespace Pulsar.Tests.ViewModels
                 .Setup(s => s.IsGestureAllowed(It.IsAny<ProfileSettings>()))
                 .Returns(allowGesture);
 
-            var vm = new RadialMenuViewModel(
-                CreateSession(),
-                hotkey.Object,
-                mouse.Object,
-                mouseTracking.Object,
-                viewport.Object,
-                config.Object,
-                new Mock<ILocalizationService>().Object,
-                logger: null,
-                gestureIsolationService: isolation.Object);
-
-            return new Harness(vm, mouse, isolation);
+            var session = CreateSession(config, hotkey, mouse, isolation.Object);
+            return new Harness(session, mouse);
         }
 
-        private static MenuSession CreateSession()
+        private static MenuSession CreateSession(
+            Mock<IConfigService> configService,
+            Mock<IHotkeyService> hotkey,
+            Mock<IGlobalMouseService> mouse,
+            IGestureIsolationService isolation)
         {
             var slotLayoutEngine = new Mock<ISlotLayoutEngine>();
             slotLayoutEngine
@@ -159,9 +159,7 @@ namespace Pulsar.Tests.ViewModels
                 .Setup(controller => controller.AnimateLayoutAsync(It.IsAny<LayoutTarget>(), It.IsAny<AnimationOptions?>(), It.IsAny<System.Threading.CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            var configService = new Mock<IConfigService>();
             configService.Setup(service => service.GetValidatedSlotsPerPage()).Returns(8);
-            configService.Setup(service => service.GetSnapshot()).Returns(new ProfilesConfig());
 
             var loc = new Mock<ILocalizationService>();
             loc.Setup(l => l["RadialMenu.Pulsar"]).Returns("Pulsar");
@@ -173,7 +171,7 @@ namespace Pulsar.Tests.ViewModels
                 Mock.Of<IWindowService>(),
                 Mock.Of<IWindowInventoryCoordinator>(),
                 Mock.Of<IPluginRegistry>(),
-                new Mock<IHotkeyService>().Object,
+                hotkey.Object,
                 Mock.Of<ITrayService>(),
                 animationController.Object,
                 slotLayoutEngine.Object,
@@ -181,27 +179,12 @@ namespace Pulsar.Tests.ViewModels
                 Mock.Of<IPreviewService>(),
                 Mock.Of<IServiceProvider>(),
                 loc.Object,
-                new DirectUiDispatcher());
+                new DirectUiDispatcher(),
+                gestureIsolationService: isolation,
+                globalMouseService: mouse.Object);
 
             session.Initialize();
             return session;
-        }
-
-        private sealed class DirectUiDispatcher : IUiDispatcher
-        {
-            public bool CheckAccess() => true;
-            public void Invoke(Action action) => action();
-            public Task InvokeAsync(Action action)
-            {
-                action();
-                return Task.CompletedTask;
-            }
-
-            public Task BeginInvoke(Action action)
-            {
-                action();
-                return Task.CompletedTask;
-            }
         }
     }
 }

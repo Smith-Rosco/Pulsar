@@ -232,6 +232,67 @@ namespace Pulsar.ViewModels
         private readonly List<HotkeyInvocationSnapshot> _suppressedHotkeyReleases = new();
         private Point? _invocationPointScreen;
 
+        // ============ Right-drag summon gesture state ============
+        // [Architecture review 2026-09-04, candidate L] Moved verbatim from
+        // RadialMenuViewModel: the detector is a pure state machine; the session owns
+        // the modifier discrimination, the event swallowing, and the config lifecycle.
+        private readonly RightDragGestureDetector _gestureDetector = new();
+        private bool _gestureEnabled;
+        private GestureModifier _gestureSwitcherModifier = GestureModifier.Control;
+        private GestureModifier _gestureActionModifier = GestureModifier.Shift;
+        private GestureSummonMode _gestureSummonMode = GestureSummonMode.Immediate;
+        private double _gestureDragThreshold = 25.0;
+
+        // D3: config refresh deferred while a gesture is in flight (never Reset() a
+        // pressed detector). Stored here and applied on the next release / up.
+        private bool _pendingGestureConfig;
+        private bool _pendingEnabled;
+        private GestureModifier _pendingSwitcherModifier;
+        private GestureModifier _pendingActionModifier;
+        private GestureSummonMode _pendingSummonMode;
+        private double _pendingDragThreshold;
+
+        // [Gesture Isolation] Cached isolation-filter settings, refreshed alongside
+        // the other gesture config (D4): the decision at right-down uses these
+        // cached values, never a per-event config read. Denied presses never enter
+        // the detector / pending state.
+        private bool _gestureIsolationEnabled;
+        private GestureIsolationMode _gestureIsolationMode = GestureIsolationMode.Allowlist;
+        private List<string> _gestureIsolationProcesses = new();
+        private bool _gestureIsolationBlockFullscreen = true;
+
+        private bool _pendingIsolationEnabled;
+        private GestureIsolationMode _pendingIsolationMode = GestureIsolationMode.Allowlist;
+        private List<string> _pendingIsolationProcesses = new();
+        private bool _pendingIsolationBlockFullscreen = true;
+
+        // Button-down position used by OnThreshold displacement tracking; the menu
+        // is summoned at this position once the drag crosses the threshold.
+        private double _gestureDownX;
+        private double _gestureDownY;
+        private RadialMenuMode _gestureDownMode;
+
+        // D3/leak-fix: when a right-button down arrives with no modifier detected,
+        // the down is swallowed into a probationary "pending" state instead of
+        // being passed through to the app. The modifier is re-checked on the first
+        // mouse move (drag) and at release; holding the modifier must never leak a
+        // real right-click to the source application. Cleared when promoted or on
+        // the corresponding up.
+        private bool _pendingGestureDown;
+
+        // [Candidate L] Seams the gesture orchestration needs that the session did
+        // not have before. Optional so existing tests / older DI keep working.
+        private readonly IGestureIsolationService? _gestureIsolationService;
+        private readonly IGlobalMouseService? _globalMouseService;
+
+        /// <summary>
+        /// Renderer warm-up hook, invoked on the UI thread right before a
+        /// gesture summon so the radial renderer is initialized for the mode
+        /// before slots are laid out (parity with the hotkey path). Wired in
+        /// production to the VM's rendering step; null in tests.
+        /// </summary>
+        private readonly Action<RadialMenuMode>? _rendererWarmup;
+
         /// <summary>
         /// How this session was summoned. Drives the input policy: gesture sessions
         /// execute on the right-button release, hotkey sessions keep keyboard-release
@@ -261,7 +322,10 @@ namespace Pulsar.ViewModels
             ILogger<MenuSession>? logger = null,
             IPluginUsageTracker? usageTracker = null,
             IPluginHealthMonitor? healthMonitor = null,
-            TimeSpan? firstFrameBudget = null)
+            TimeSpan? firstFrameBudget = null,
+            IGestureIsolationService? gestureIsolationService = null,
+            IGlobalMouseService? globalMouseService = null,
+            Action<RadialMenuMode>? rendererWarmup = null)
         {
             _configService = configService;
             _windowService = windowService;
@@ -280,6 +344,10 @@ namespace Pulsar.ViewModels
             _ui = uiDispatcher;
             _logger = logger;
             _firstFrameBudget = firstFrameBudget ?? TimeSpan.FromMilliseconds(FirstFrameBudgetMsDefault);
+            // [Architecture review 2026-09-04, candidate L] Gesture orchestration seams.
+            _gestureIsolationService = gestureIsolationService;
+            _globalMouseService = globalMouseService;
+            _rendererWarmup = rendererWarmup;
 
             _visualStateCoordinator = new RadialMenuVisualStateCoordinator(previewService, logger, _loc);
             _subMenuLayoutEngine = (ISubMenuLayoutEngine?)serviceProvider.GetService(typeof(ISubMenuLayoutEngine))
@@ -494,6 +562,9 @@ namespace Pulsar.ViewModels
             InitializeSlots();
             ConfigureAnimationController();
             _pagingController.OnBoundaryReached += OnPagingBoundaryReached;
+            // [Candidate L] Load the initial right-drag gesture configuration
+            // (previously the VM's ctor called its own RefreshGestureConfig).
+            RefreshGestureConfig();
         }
 
         public async Task BeginSessionAsync(RadialMenuMode mode, MenuInvocationSource invocationSource = MenuInvocationSource.Hotkey)
@@ -797,6 +868,9 @@ namespace Pulsar.ViewModels
         public void RefreshConfig(ProfilesConfig? config)
         {
             _config = config ?? _configService.GetSnapshot();
+            // [Candidate L] Gesture config refresh merged into RefreshConfig: one
+            // config-update entry point for the whole session (D3 deferral applies).
+            RefreshGestureConfig();
             int newSlotsPerPage = _configService.GetValidatedSlotsPerPage();
             if (_layoutCoordinator.ApplyConfigSlotCountChange(
                 _slotsPerPage,
@@ -822,6 +896,452 @@ namespace Pulsar.ViewModels
             {
                 _ = RebuildPageProviderAsync();
             }
+        }
+
+        // ============ Right-drag summon gesture ============
+        // [Architecture review 2026-09-04, candidate L] Orchestration moved verbatim
+        // from RadialMenuViewModel (ADR-008 decision 2 completion): the VM stays an
+        // input-source adapter that forwards hook events; the session owns every
+        // gesture decision. [DEBUG-RDX] diagnostics are preserved as-is.
+
+        private void RefreshGestureConfig()
+        {
+            var settings = _config!.Settings;
+            bool enabled = settings.EnableRightDragSummon && !settings.RightDragModifiersConflict;
+            var switcher = settings.RightDragSwitcherModifierKey;
+            var action = settings.RightDragActionModifierKey;
+            var summonMode = settings.SummonMode;
+            double dragThreshold = settings.GestureDragThreshold;
+            bool isolationEnabled = settings.GestureIsolationEnabled;
+            var isolationMode = settings.GestureIsolationMode;
+            var isolationProcesses = settings.GestureIsolationProcesses;
+            bool isolationBlockFullscreen = settings.GestureIsolationBlockFullscreen;
+
+            if (_gestureDetector.IsPressed)
+            {
+                // D3: a config refresh mid-gesture must never clear the detector's
+                // in-flight pressed/summoned state. Defer applying the new config
+                // until the gesture ends (the next release / pass-through up).
+                _logger?.LogDebug(
+                    "[DEBUG-RDX] [CONFIG] refresh mid-gesture (pressed) -> DEFER enabled={Enabled} mode={Mode} thr={Thr:0.##} switcher={Switcher} action={Action}",
+                    enabled, summonMode, dragThreshold, switcher, action);
+                _pendingGestureConfig = true;
+                _pendingEnabled = enabled;
+                _pendingSwitcherModifier = switcher;
+                _pendingActionModifier = action;
+                _pendingSummonMode = summonMode;
+                _pendingDragThreshold = dragThreshold;
+                _pendingIsolationEnabled = isolationEnabled;
+                _pendingIsolationMode = isolationMode;
+                _pendingIsolationProcesses = isolationProcesses;
+                _pendingIsolationBlockFullscreen = isolationBlockFullscreen;
+                return;
+            }
+
+            _logger?.LogDebug(
+                "[DEBUG-RDX] [CONFIG] apply enabled={Enabled} mode={Mode} thr={Thr:0.##} switcher={Switcher} action={Action}",
+                enabled, summonMode, dragThreshold, switcher, action);
+            ApplyGestureConfig(enabled, switcher, action, summonMode, dragThreshold,
+                isolationEnabled, isolationMode, isolationProcesses, isolationBlockFullscreen);
+        }
+
+        private void ApplyGestureConfig(
+            bool enabled,
+            GestureModifier switcher,
+            GestureModifier action,
+            GestureSummonMode summonMode,
+            double dragThreshold,
+            bool isolationEnabled,
+            GestureIsolationMode isolationMode,
+            List<string> isolationProcesses,
+            bool isolationBlockFullscreen)
+        {
+            _gestureEnabled = enabled;
+            _gestureSwitcherModifier = switcher;
+            _gestureActionModifier = action;
+            _gestureSummonMode = summonMode;
+            _gestureDragThreshold = dragThreshold;
+            _gestureDetector.Configure(summonMode, dragThreshold);
+
+            _gestureIsolationEnabled = isolationEnabled;
+            _gestureIsolationMode = isolationMode;
+            _gestureIsolationProcesses = isolationProcesses ?? new List<string>();
+            _gestureIsolationBlockFullscreen = isolationBlockFullscreen;
+
+            if (!_gestureEnabled)
+            {
+                _logger?.LogDebug("[DEBUG-RDX] [CONFIG] gesture disabled -> detector.Reset()");
+                _pendingGestureDown = false;
+                _gestureDetector.Reset();
+            }
+        }
+
+        /// <summary>
+        /// Applies a config refresh that was deferred because it arrived while a
+        /// gesture was in flight. Called on the next release / pass-through up.
+        /// </summary>
+        private void ApplyPendingGestureConfig()
+        {
+            if (!_pendingGestureConfig) return;
+
+            _logger?.LogDebug(
+                "[DEBUG-RDX] [CONFIG] applying DEFERRED config enabled={Enabled} mode={Mode} thr={Thr:0.##} switcher={Switcher} action={Action}",
+                _pendingEnabled, _pendingSummonMode, _pendingDragThreshold, _pendingSwitcherModifier, _pendingActionModifier);
+            _pendingGestureConfig = false;
+            ApplyGestureConfig(
+                _pendingEnabled,
+                _pendingSwitcherModifier,
+                _pendingActionModifier,
+                _pendingSummonMode,
+                _pendingDragThreshold,
+                _pendingIsolationEnabled,
+                _pendingIsolationMode,
+                _pendingIsolationProcesses,
+                _pendingIsolationBlockFullscreen);
+        }
+
+        /// <summary>
+        /// Builds the settings slice the isolation service evaluates, from the cached
+        /// isolation fields (D4). A fresh instance each call — the service only reads
+        /// these fields, never the live config.
+        /// </summary>
+        private ProfileSettings BuildIsolationSettingsSnapshot()
+        {
+            return new ProfileSettings
+            {
+                GestureIsolationEnabled = _gestureIsolationEnabled,
+                GestureIsolationMode = _gestureIsolationMode,
+                GestureIsolationProcesses = _gestureIsolationProcesses,
+                GestureIsolationBlockFullscreen = _gestureIsolationBlockFullscreen
+            };
+        }
+
+        /// <summary>
+        /// Feeds the right-click gesture detector. Returns true when the event was
+        /// consumed by the gesture (swallowed and/or routed to a summon or release).
+        /// Only active while the menu is closed, or while a gesture press is in
+        /// progress so its own right-button release can be claimed — even if the
+        /// feature is toggled off mid-gesture, an in-flight press must not leak its
+        /// button-up to the source application.
+        ///
+        /// [Candidate L] Public entry point: the VM's global-mouse adapter forwards
+        /// every hook event here before its own menu-visible handling.
+        /// </summary>
+        public bool FeedRightDragGesture(GlobalMouseEventArgs e)
+        {
+            bool gestureInProgress = _gestureDetector.IsPressed || _gestureDetector.IsSummoned;
+
+            // Resolve a pending (probationary) down on its release even if the
+            // gesture config changed mid-flight — a swallowed down must always be
+            // paired with a resolved up so it never leaks to the source app.
+            if (_pendingGestureDown && e.Action == GlobalMouseAction.Up && e.Button == GlobalMouseButton.Right)
+            {
+                return ResolvePendingGestureUp(e);
+            }
+
+            _logger?.LogDebug(
+                "[DEBUG-RDX] Feed entry action={Action} button={Button} @({X},{Y}) | enabled={Enabled} mode={Mode} thr={Thr:0.##} | pressed={Pressed} summoned={Summoned} inProgress={InProgress} | menuVisible={MenuVisible} gestureSummoned={GestureSummoned} pendingConfig={Pending}",
+                e.Action, e.Button, e.X, e.Y, _gestureEnabled, _gestureSummonMode, _gestureDragThreshold,
+                _gestureDetector.IsPressed, _gestureDetector.IsSummoned, gestureInProgress,
+                IsVisible, IsGestureSummoned, _pendingGestureConfig);
+
+            // D3 belt-and-suspenders: a gesture-held visible menu must never leak its
+            // release, even if the detector's state was lost (e.g. Reset by an
+            // external path). This check runs before the gestureInProgress guard so
+            // a lost-state release is still claimed. Hotkey-held menus are
+            // unaffected (IsGestureSummoned is false; their right-click dismissal
+            // keeps flowing through the normal path below). When the gesture state
+            // is still intact the Up is handled normally below (OnRightUp clears it).
+            if (e.Action == GlobalMouseAction.Up && e.Button == GlobalMouseButton.Right
+                && IsVisible && IsGestureSummoned && !gestureInProgress)
+            {
+                e.Handled = true;
+                _logger?.LogDebug("[DEBUG-RDX] [GUARD] visible gesture menu release guard swallowed right-up (state lost)");
+                _ui.InvokeWithInputPriority(() => _ = HandleGestureRightReleaseAsync());
+                ApplyPendingGestureConfig();
+                return true;
+            }
+
+            if (!_gestureEnabled && !_gestureDetector.IsPressed)
+            {
+                _logger?.LogDebug(
+                    "[DEBUG-RDX] [PASS] right-{Action} NOT claimed: gesture disabled={Disabled} and not pressed -> passes to app (NATIVE MENU RISK)",
+                    e.Action, _gestureEnabled);
+                return false;
+            }
+
+            if (IsVisible && !gestureInProgress)
+            {
+                _logger?.LogDebug(
+                    "[DEBUG-RDX] [PASS] right-{Action} NOT claimed: menu visible={Visible} but no gesture in progress -> passes to normal path",
+                    e.Action, IsVisible);
+                return false;
+            }
+
+            if (e.Action == GlobalMouseAction.Down && e.Button == GlobalMouseButton.Right)
+            {
+                // [Gesture Isolation] A denied press never enters the state machine
+                // (no detector touch, no pending swallow) — it passes through to the
+                // foreground application untouched, so its release flows out as a
+                // normal right-click. Evaluation is synchronous on the hook thread.
+                if (_gestureIsolationEnabled && _gestureIsolationService != null)
+                {
+                    var isolationSettings = BuildIsolationSettingsSnapshot();
+                    if (!_gestureIsolationService.IsGestureAllowed(isolationSettings))
+                    {
+                        _logger?.LogInformation(
+                            "[GESTURE-ISOLATION] right-DOWN denied by isolation filter -> passes through to app");
+                        return false;
+                    }
+                }
+
+                var switcherHeld = IsModifierHeld(_gestureSwitcherModifier);
+                var actionHeld = IsModifierHeld(_gestureActionModifier);
+                _logger?.LogDebug(
+                    "[DEBUG-RDX] right-DOWN modifiers switcher={Switcher}({SwKey}) held={SwHeld} action={ActionKey} held={ActHeld}",
+                    _gestureSwitcherModifier, _gestureSwitcherModifier, switcherHeld, _gestureActionModifier, actionHeld);
+
+                var downDecision = _gestureDetector.OnRightDown(switcherHeld, actionHeld);
+
+                if (downDecision == RightDragGestureDecision.ActionSummon || downDecision == RightDragGestureDecision.SwitcherSummon)
+                {
+                    e.Handled = true;
+                    _logger?.LogDebug(
+                        "[DEBUG-RDX] [SWALLOW] right-DOWN decision={Decision} @({X},{Y}) pressed={Pressed} summoned={Summoned} | mode={Mode}",
+                        downDecision, e.X, e.Y, _gestureDetector.IsPressed, _gestureDetector.IsSummoned, _gestureSummonMode);
+                    SetInvocationPointScreen(new System.Windows.Point(e.X, e.Y));
+                    _gestureDownX = e.X;
+                    _gestureDownY = e.Y;
+                    _gestureDownMode = downDecision == RightDragGestureDecision.ActionSummon
+                        ? RadialMenuMode.Action
+                        : RadialMenuMode.Task;
+
+                    // Immediate: summon on down (current behavior). OnThreshold: the
+                    // detector stays WaitingForThreshold; the menu is summoned by
+                    // OnMouseMove → FeedDisplacement when the drag crosses the
+                    // threshold (at the down position).
+                    if (_gestureSummonMode == GestureSummonMode.Immediate)
+                    {
+                        SummonGestureMenu();
+                    }
+
+                    return true;
+                }
+
+                if (_gestureEnabled)
+                {
+                    // LEAK-FIX: no modifier was detected at this instant, but the
+                    // gesture feature is enabled. The modifier read on the hook
+                    // thread is unreliable at the down instant (GetAsyncKeyState can
+                    // lag; ResetModifierState clears the keyboard hook's tracked
+                    // state when a menu shows/hides). Do NOT pass the down through —
+                    // swallow it into a pending state and re-check the modifier on
+                    // the next move or at release. If a modifier appears, the press
+                    // is promoted to a gesture; otherwise the release replays a
+                    // plain right-click so the app still gets its native menu.
+                    e.Handled = true;
+                    _pendingGestureDown = true;
+                    _gestureDownX = e.X;
+                    _gestureDownY = e.Y;
+                    _gestureDownMode = actionHeld
+                        ? RadialMenuMode.Action
+                        : RadialMenuMode.Task;
+                    _logger?.LogDebug(
+                        "[DEBUG-RDX] [PENDING] right-DOWN no modifier detected, swallowed pending @({X},{Y}) mode={Mode}",
+                        e.X, e.Y, _gestureDownMode);
+                    return true;
+                }
+
+                _logger?.LogDebug(
+                    "[DEBUG-RDX] [PASS] right-DOWN no configured modifier held -> NOT swallowed, passes to app (NATIVE MENU RISK)");
+                return false;
+            }
+
+            if (e.Action == GlobalMouseAction.Up && e.Button == GlobalMouseButton.Right)
+            {
+                var upDecision = _gestureDetector.OnRightUp();
+                _logger?.LogDebug(
+                    "[DEBUG-RDX] right-UP decision={Decision} after: pressed={Pressed} summoned={Summoned}",
+                    upDecision, _gestureDetector.IsPressed, _gestureDetector.IsSummoned);
+
+                if (upDecision == RightDragGestureDecision.GestureRelease)
+                {
+                    e.Handled = true;
+                    _logger?.LogDebug("[DEBUG-RDX] [SWALLOW] right-UP GestureRelease: executing selection");
+                    _ui.InvokeWithInputPriority(() => _ = HandleGestureRightReleaseAsync());
+                    ApplyPendingGestureConfig();
+                    return true;
+                }
+
+                if (upDecision == RightDragGestureDecision.SubThresholdRelease)
+                {
+                    // D2: the press never crossed the drag threshold — hand a
+                    // synthetic right-click to the source app so its native context
+                    // menu appears, and swallow the gesture release.
+                    e.Handled = true;
+                    _logger?.LogDebug("[DEBUG-RDX] [REPLAY] right-UP SubThresholdRelease: replaying right-click to source app");
+                    _globalMouseService?.ReplayRightClick();
+                    ApplyPendingGestureConfig();
+                    return true;
+                }
+
+                _logger?.LogDebug(
+                    "[DEBUG-RDX] [PASS] right-UP None (no gesture press) -> NOT swallowed, passes to app (NATIVE MENU RISK)");
+                ApplyPendingGestureConfig();
+                return false;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Resolves a right-button up for a press that was swallowed pending
+        /// (no modifier detected at down). The modifier read is reliable at release,
+        /// so we can finally decide: if a modifier is now held the press was a
+        /// gesture all along (promote + release); otherwise it was a plain
+        /// right-click that we replay to the source app so its native menu appears.
+        /// </summary>
+        private bool ResolvePendingGestureUp(GlobalMouseEventArgs e)
+        {
+            _pendingGestureDown = false;
+            bool switcherHeld = IsModifierHeld(_gestureSwitcherModifier);
+            bool actionHeld = IsModifierHeld(_gestureActionModifier);
+            e.Handled = true;
+
+            if (switcherHeld || actionHeld)
+            {
+                // The user was holding a modifier the whole time; the down was
+                // swallowed pending. Promote the press to a gesture and treat the
+                // release as a gesture release (execute selection).
+                _logger?.LogDebug(
+                    "[DEBUG-RDX] [PENDING->GESTURE] modifier now held switcher={Sw} action={Act} -> GestureRelease",
+                    switcherHeld, actionHeld);
+                SetInvocationPointScreen(new System.Windows.Point(_gestureDownX, _gestureDownY));
+                _gestureDownMode = actionHeld
+                    ? RadialMenuMode.Action
+                    : RadialMenuMode.Task;
+                _gestureDetector.OnRightDown(switcherHeld, actionHeld);
+                _gestureDetector.OnRightUp();
+                _ui.InvokeWithInputPriority(() => _ = HandleGestureRightReleaseAsync());
+                ApplyPendingGestureConfig();
+                return true;
+            }
+
+            // Genuine plain right-click: hand it back to the app via replay so the
+            // native context menu still appears.
+            _logger?.LogDebug(
+                "[DEBUG-RDX] [PENDING->REPLAY] no modifier -> replaying right-click to source app");
+            _globalMouseService?.ReplayRightClick();
+            ApplyPendingGestureConfig();
+            return true;
+        }
+
+        /// <summary>
+        /// Feeds <c>WM_MOUSEMOVE</c> into the OnThreshold displacement tracker. When
+        /// the drag first crosses <see cref="_gestureDragThreshold"/> from the
+        /// button-down position, the menu is summoned exactly once at that position.
+        ///
+        /// [Candidate L] Public entry point: the VM's global-mouse-move adapter
+        /// forwards every move here.
+        /// </summary>
+        public void FeedGlobalMouseMove(GlobalMouseEventArgs e)
+        {
+            // LEAK-FIX: a right-down that arrived with no modifier detected was
+            // swallowed pending. The first real drag move is the moment to promote
+            // it: by now the modifier read is reliable (GetAsyncKeyState has caught
+            // up, keyboard-hook tracked state is consistent). If a modifier is held,
+            // promote the press into a gesture so the drag summons the menu.
+            if (_pendingGestureDown)
+            {
+                bool switcherHeld = IsModifierHeld(_gestureSwitcherModifier);
+                bool actionHeld = IsModifierHeld(_gestureActionModifier);
+                if (switcherHeld || actionHeld)
+                {
+                    _pendingGestureDown = false;
+                    _logger?.LogDebug(
+                        "[DEBUG-RDX] [PENDING->GESTURE] move promoted pending down switcher={Sw} action={Act} mode={Mode}",
+                        switcherHeld, actionHeld, _gestureSummonMode);
+
+                    var decision = _gestureDetector.OnRightDown(switcherHeld, actionHeld);
+                    if (decision != RightDragGestureDecision.None)
+                    {
+                        _gestureDownMode = decision == RightDragGestureDecision.ActionSummon
+                            ? RadialMenuMode.Action
+                            : RadialMenuMode.Task;
+                    }
+
+                    // Immediate mode: the menu should have been summoned at down but
+                    // the modifier was unknown; summon it now at the down position.
+                    if (_gestureSummonMode == GestureSummonMode.Immediate)
+                    {
+                        SummonGestureMenu();
+                        return;
+                    }
+                }
+                // OnThreshold: fall through to displacement feeding; the menu is
+                // summoned once the drag crosses the threshold.
+            }
+
+            if (_gestureSummonMode != GestureSummonMode.OnThreshold)
+            {
+                return;
+            }
+
+            if (!_gestureDetector.IsPressed || _gestureDetector.IsSummoned)
+            {
+                return;
+            }
+
+            double dx = e.X - _gestureDownX;
+            double dy = e.Y - _gestureDownY;
+            _logger?.LogDebug(
+                "[DEBUG-RDX] move feed @({X},{Y}) fromDown=({Dx:0.##},{Dy:0.##}) dist={Dist:0.##} thr={Thr:0.##} pressed={Pressed} summoned={Summoned}",
+                e.X, e.Y, dx, dy, Math.Sqrt(dx * dx + dy * dy), _gestureDragThreshold,
+                _gestureDetector.IsPressed, _gestureDetector.IsSummoned);
+
+            if (_gestureDetector.FeedDisplacement(dx, dy))
+            {
+                _logger?.LogDebug(
+                    "[DEBUG-RDX] [SUMMON-ON-THRESHOLD] crossed thr={Thr:0.##}: summoning {Mode} at down({X},{Y})",
+                    _gestureDragThreshold, _gestureDownMode, _gestureDownX, _gestureDownY);
+                SummonGestureMenu();
+            }
+        }
+
+        /// <summary>
+        /// Gesture summon path (UI-thread only): warm the renderer for the mode,
+        /// then begin the session sourced from the right-drag gesture. Replaces the
+        /// VM's <c>ShowAsync(mode, MenuInvocationSource.RightDragGesture)</c> that
+        /// the gesture code used before the move.
+        /// </summary>
+        private void SummonGestureMenu()
+        {
+            _ui.InvokeWithInputPriority(() =>
+            {
+                _rendererWarmup?.Invoke(_gestureDownMode);
+                _ = BeginSessionAsync(_gestureDownMode, MenuInvocationSource.RightDragGesture);
+            });
+        }
+
+        private bool IsModifierHeld(GestureModifier modifier)
+        {
+            // The keyboard hook's tracked state is the reliable, RDP-safe ground
+            // truth and has no race when the modifier and the right button are
+            // pressed nearly simultaneously. GetKeyState is kept as a fallback for
+            // the rare case where ResetModifierState (called when a menu shows)
+            // cleared the tracked state while the key is still physically held.
+            if (_hotkeyService.IsModifierHeld(modifier))
+            {
+                return true;
+            }
+
+            return modifier switch
+            {
+                GestureModifier.Control => PulsarNative.IsCtrlHeld(),
+                GestureModifier.Shift => PulsarNative.IsShiftHeld(),
+                GestureModifier.Win => PulsarNative.IsWinHeld(),
+                _ => PulsarNative.IsAltHeld()
+            };
         }
 
         private async Task RebuildPageProviderAsync()
@@ -2484,5 +3004,12 @@ namespace Pulsar.ViewModels
         void Invoke(Action action);
         Task InvokeAsync(Action action);
         Task BeginInvoke(Action action);
+
+        /// <summary>
+        /// D4: dispatches at input priority so latency-critical gesture work
+        /// (summon/release) does not queue behind lower-priority queue items.
+        /// Implementations without a priority concept run the action inline.
+        /// </summary>
+        void InvokeWithInputPriority(Action action);
     }
 }
