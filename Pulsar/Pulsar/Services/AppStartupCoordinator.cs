@@ -62,6 +62,13 @@ namespace Pulsar.Services
             trayService.Initialize();
             _logger.LogInformation("[Startup] Tray service initialized");
 
+            // Circuit breaker transitions must reach telemetry + tray notifications.
+            // The relay subscribes to PluginCircuitBreakerPolicy events in its
+            // constructor, so resolving it after tray init activates the wiring
+            // before any plugin execution can trip a breaker (ADR-013).
+            _services.GetRequiredService<PluginBreakerNotificationService>();
+            _logger.LogInformation("[Startup] Circuit breaker notification relay activated");
+
             var pluginRegistry = _services.GetRequiredService<IPluginRegistry>();
             await pluginRegistry.LoadCoreAsync();
             _logger.LogInformation("[Startup] Core plugins activated");

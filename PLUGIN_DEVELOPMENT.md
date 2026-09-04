@@ -118,6 +118,8 @@ Closed (正常) → Open (熔断) → Half-Open (试探) → Closed (恢复)
      └──────────────── 成功执行 ────────────────────┘
 ```
 
+熔断判定是纯状态机（ADR-013）：`PluginCircuitBreakerPolicy` 通过 `Tripped` / `Recovered` 事件广播迁移；健康遥测记录与托盘通知由观察者 `PluginBreakerNotificationService` 完成，策略本身不持有 UI/遥测依赖。
+
 ### PulsarContext 上下文
 
 `PulsarContext` 在径向菜单调用时捕获，提供运行时环境信息：

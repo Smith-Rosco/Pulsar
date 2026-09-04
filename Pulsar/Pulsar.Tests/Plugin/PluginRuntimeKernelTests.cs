@@ -23,7 +23,7 @@ namespace Pulsar.Tests.Plugin
             var runtimeState = new PluginRuntimeStateStore();
             var healthMonitor = new Mock<IPluginHealthMonitor>();
             var usageTracker = new Mock<IPluginUsageTracker>();
-            var breakerPolicy = new PluginCircuitBreakerPolicy(healthMonitor: healthMonitor.Object);
+            var breakerPolicy = CreateBreakerPolicy(healthMonitor);
             var pipeline = new PluginExecutionPipeline(runtimeState, breakerPolicy, usageTracker: usageTracker.Object, healthMonitor: healthMonitor.Object);
             var plugin = new RuntimeTestPlugin();
             runtimeState.SetPlugin(plugin, PluginLifecycleState.Enabled);
@@ -54,7 +54,7 @@ namespace Pulsar.Tests.Plugin
             var runtimeState = new PluginRuntimeStateStore();
             var healthMonitor = new Mock<IPluginHealthMonitor>();
             var usageTracker = new Mock<IPluginUsageTracker>();
-            var breakerPolicy = new PluginCircuitBreakerPolicy(healthMonitor: healthMonitor.Object);
+            var breakerPolicy = CreateBreakerPolicy(healthMonitor);
             var pipeline = new PluginExecutionPipeline(runtimeState, breakerPolicy, usageTracker: usageTracker.Object, healthMonitor: healthMonitor.Object);
             var plugin = new RuntimeTestPlugin
             {
@@ -87,7 +87,7 @@ namespace Pulsar.Tests.Plugin
         {
             var runtimeState = new PluginRuntimeStateStore();
             var healthMonitor = new Mock<IPluginHealthMonitor>();
-            var breakerPolicy = new PluginCircuitBreakerPolicy(healthMonitor: healthMonitor.Object);
+            var breakerPolicy = CreateBreakerPolicy(healthMonitor);
             var pipeline = new PluginExecutionPipeline(runtimeState, breakerPolicy, healthMonitor: healthMonitor.Object);
             var plugin = new RuntimeTestPlugin { ThrowOnExecute = true };
             runtimeState.SetPlugin(plugin, PluginLifecycleState.Enabled);
@@ -133,7 +133,7 @@ namespace Pulsar.Tests.Plugin
             var runtimeState = new PluginRuntimeStateStore();
             var healthMonitor = new Mock<IPluginHealthMonitor>();
             var usageTracker = new Mock<IPluginUsageTracker>();
-            var breakerPolicy = new PluginCircuitBreakerPolicy(healthMonitor: healthMonitor.Object);
+            var breakerPolicy = CreateBreakerPolicy(healthMonitor);
             var failingPlugin = new RuntimeTestPlugin { ThrowOnExecute = true };
             runtimeState.SetPlugin(failingPlugin, PluginLifecycleState.Enabled);
 
@@ -318,6 +318,21 @@ namespace Pulsar.Tests.Plugin
             public void RenderDecorations(System.Windows.Controls.Canvas canvas, double cx, double cy, double wheelRadius, double coreRadius)
             {
             }
+        }
+
+        /// <summary>
+        /// Builds a breaker whose state-transition events are forwarded to the
+        /// health-monitor mock — mirroring what PluginBreakerNotificationService
+        /// does in production (ADR-013). This keeps pipeline-level assertions
+        /// ("trip / recovery is reported to telemetry") meaningful now that the
+        /// breaker is a pure state machine that only announces transitions.
+        /// </summary>
+        private static PluginCircuitBreakerPolicy CreateBreakerPolicy(Mock<IPluginHealthMonitor> healthMonitor)
+        {
+            var breakerPolicy = new PluginCircuitBreakerPolicy();
+            breakerPolicy.Tripped += (_, e) => healthMonitor.Object.RecordCircuitBreakerTrip(e.PluginId);
+            breakerPolicy.Recovered += (_, e) => healthMonitor.Object.RecordCircuitBreakerRecovery(e.PluginId);
+            return breakerPolicy;
         }
 
         private static PluginDescriptor CreateDescriptor(string id, PluginTier tier, bool canDisable, Type implementationType)

@@ -74,6 +74,7 @@ namespace Pulsar.Tests.ViewModels.Settings
 
             return new PluginManagerViewModel(
                 registry.Object,
+                new Mock<IPluginRuntimeOps>().Object,
                 new Mock<IConfigService>().Object,
                 localizationService: loc);
         }

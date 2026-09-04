@@ -76,6 +76,7 @@ namespace Pulsar.Tests.ViewModels.Settings
             var configService = new Mock<IConfigService>();
             var vm = new PluginManagerViewModel(
                 registry.Object,
+                new Mock<IPluginRuntimeOps>().Object,
                 configService.Object,
                 localizationService: loc);
 
@@ -146,6 +147,7 @@ namespace Pulsar.Tests.ViewModels.Settings
 
             var vm = new PluginManagerViewModel(
                 registry.Object,
+                new Mock<IPluginRuntimeOps>().Object,
                 new Mock<IConfigService>().Object,
                 localizationService: loc);
 

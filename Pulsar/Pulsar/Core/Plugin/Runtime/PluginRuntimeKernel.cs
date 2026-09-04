@@ -202,6 +202,38 @@ namespace Pulsar.Core.Plugin.Runtime
         public bool Recovered { get; }
     }
 
+    /// <summary>
+    /// Payload for <see cref="PluginCircuitBreakerPolicy.Tripped"/> — identifies the
+    /// plugin whose circuit opened and the cooldown the breaker applied.
+    /// </summary>
+    public sealed class PluginBreakerTrippedEventArgs : EventArgs
+    {
+        public PluginBreakerTrippedEventArgs(string pluginId, TimeSpan cooldown)
+        {
+            PluginId = pluginId;
+            Cooldown = cooldown;
+        }
+
+        public string PluginId { get; }
+
+        /// <summary>Duration the circuit stays open before it may retry.</summary>
+        public TimeSpan Cooldown { get; }
+    }
+
+    /// <summary>
+    /// Payload for <see cref="PluginCircuitBreakerPolicy.Recovered"/> — identifies the
+    /// plugin whose cooldown expired and moved back to half-open.
+    /// </summary>
+    public sealed class PluginBreakerRecoveredEventArgs : EventArgs
+    {
+        public PluginBreakerRecoveredEventArgs(string pluginId)
+        {
+            PluginId = pluginId;
+        }
+
+        public string PluginId { get; }
+    }
+
     public class PluginCircuitBreakerPolicy
     {
         private const int MaxFailures = 3;
@@ -213,20 +245,25 @@ namespace Pulsar.Core.Plugin.Runtime
         private readonly ConcurrentDictionary<string, List<DateTime>> _recentFailures = new(StringComparer.OrdinalIgnoreCase);
         private readonly ConcurrentDictionary<string, DateTime> _brokenCircuits = new(StringComparer.OrdinalIgnoreCase);
         private readonly ILogger<PluginCircuitBreakerPolicy> _logger;
-        private readonly IPluginHealthMonitor? _healthMonitor;
-        private readonly ITrayService? _trayService;
-        private readonly ILocalizationService? _loc;
 
-        public PluginCircuitBreakerPolicy(
-            ILogger<PluginCircuitBreakerPolicy>? logger = null,
-            IPluginHealthMonitor? healthMonitor = null,
-            ITrayService? trayService = null,
-            ILocalizationService? loc = null)
+        /// <summary>
+        /// Raised when the breaker opens a circuit (3 failures within 1 minute).
+        /// The policy is a pure state machine: it only announces the transition.
+        /// Side effects (health telemetry, tray notifications) are owned by
+        /// <see cref="Pulsar.Services.PluginBreakerNotificationService"/>, which subscribes
+        /// to this event (ADR-013).
+        /// </summary>
+        public event EventHandler<PluginBreakerTrippedEventArgs>? Tripped;
+
+        /// <summary>
+        /// Raised when a cooldown expires and the circuit moves to half-open.
+        /// See <see cref="Tripped"/> for the observation-seam rationale (ADR-013).
+        /// </summary>
+        public event EventHandler<PluginBreakerRecoveredEventArgs>? Recovered;
+
+        public PluginCircuitBreakerPolicy(ILogger<PluginCircuitBreakerPolicy>? logger = null)
         {
             _logger = logger ?? NullLogger<PluginCircuitBreakerPolicy>.Instance;
-            _healthMonitor = healthMonitor;
-            _trayService = trayService;
-            _loc = loc;
         }
 
         public PluginBreakerAvailability CheckAvailability(PluginDescriptor descriptor, string pluginId)
@@ -250,8 +287,8 @@ namespace Pulsar.Core.Plugin.Runtime
             }
 
             _brokenCircuits.TryRemove(pluginId, out _);
-            _healthMonitor?.RecordCircuitBreakerRecovery(pluginId);
             _logger.LogInformation("Circuit Half-Open: Retrying {PluginId}...", pluginId);
+            Recovered?.Invoke(this, new PluginBreakerRecoveredEventArgs(pluginId));
             return new PluginBreakerAvailability(true, recovered: true);
         }
 
@@ -293,11 +330,7 @@ namespace Pulsar.Core.Plugin.Runtime
             _brokenCircuits[pluginId] = DateTime.UtcNow;
             _recentFailures.TryRemove(pluginId, out _);
             _logger.LogCritical("Circuit Breaker Tripped! Plugin temporarily disabled for {Timeout}s", ResetTimeout.TotalSeconds);
-            _healthMonitor?.RecordCircuitBreakerTrip(pluginId);
-            _trayService?.ShowNotification(
-                _loc?["Plugin.CircuitBreakerTitle"] ?? "Plugin Auto-Disabled",
-                string.Format(_loc?["Plugin.CircuitBreakerBody"] ?? "Plugin '{0}' has been temporarily disabled for {1} seconds due to repeated crashes to protect the main program.", pluginId, ResetTimeout.TotalSeconds),
-                PulsarNotificationIcon.Error);
+            Tripped?.Invoke(this, new PluginBreakerTrippedEventArgs(pluginId, ResetTimeout));
         }
     }
 

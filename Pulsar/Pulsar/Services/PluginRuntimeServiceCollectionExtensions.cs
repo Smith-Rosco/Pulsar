@@ -16,6 +16,12 @@ namespace Pulsar.Services
             services.AddSingleton<PluginRuntimeStateStore>();
             services.AddSingleton<PluginCircuitBreakerPolicy>();
             services.AddSingleton<PluginExecutionPipeline>();
+
+            // Observes breaker transitions (Tripped/Recovered) and relays them to
+            // health telemetry + tray notifications (ADR-013). Subscribes in its
+            // constructor; AppStartupCoordinator resolves it once after tray init
+            // to activate the subscription.
+            services.AddSingleton<PluginBreakerNotificationService>();
             services.AddSingleton<PluginLoader>(sp => new PluginLoader(sp, pluginDirectory));
             services.AddSingleton<PluginRuntimeKernel>();
 

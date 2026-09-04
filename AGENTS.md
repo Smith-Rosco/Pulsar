@@ -109,6 +109,7 @@ Operational guide for agents working on the **Pulsar** codebase (.NET 8, WPF/Win
   - `IPluginRegistry` (registration: load/discover/activate/query) — discovery, startup, validation, read models.
   - `IPluginExecutor` (execution: `ExecuteAsync`) — slot/strategy execution paths only.
   - `IPluginRuntimeOps` (runtime ops: rescan/deactivate/state/grant/unload) — lifecycle orchestration, Settings, exit path.
+- Circuit breaker is a **pure state machine** (ADR-013): never inject `ITrayService`/`IPluginHealthMonitor`/`ILocalizationService` into `PluginCircuitBreakerPolicy`. It announces transitions via `Tripped`/`Recovered`; side effects belong to `PluginBreakerNotificationService` (subscribes in ctor, singleton, activated in `AppStartupCoordinator` after tray init — if its startup log line vanishes, trip telemetry/toasts silently stop).
 - Execution correlation: `PluginExecutionContext.Current` (stack-scoped AsyncLocal, restores previous scope on Dispose).
 - Thread safety: `ConcurrentDictionary`; hotkey actions dispatch via `Dispatcher.InvokeAsync()`.
 - MVVM: `[ObservableProperty]` / `[RelayCommand]` from CommunityToolkit.

@@ -20,10 +20,7 @@ namespace Pulsar.Tests.Plugin
         [Fact]
         public async Task PipelineTimeout_ShouldTransitionToFaulted_AndRecordBreakerFailure()
         {
-            var breakerPolicy = new PluginCircuitBreakerPolicy(
-                NullLogger<PluginCircuitBreakerPolicy>.Instance,
-                Mock.Of<IPluginHealthMonitor>(),
-                Mock.Of<ITrayService>());
+            var breakerPolicy = new PluginCircuitBreakerPolicy();
 
             var runtimeState = new PluginRuntimeStateStore();
             var pipeline = new PluginExecutionPipeline(
@@ -61,10 +58,7 @@ namespace Pulsar.Tests.Plugin
         [Fact]
         public async Task PipelineTimeout_ShouldNotOpenBreaker_ForCorePlugins()
         {
-            var breakerPolicy = new PluginCircuitBreakerPolicy(
-                NullLogger<PluginCircuitBreakerPolicy>.Instance,
-                Mock.Of<IPluginHealthMonitor>(),
-                Mock.Of<ITrayService>());
+            var breakerPolicy = new PluginCircuitBreakerPolicy();
 
             var coreFailureHandler = new RecordingCoreFailureHandler();
             var runtimeState = new PluginRuntimeStateStore();
@@ -104,10 +98,7 @@ namespace Pulsar.Tests.Plugin
         [Fact]
         public async Task PipelineNormalExecution_ShouldSucceed_WithCancellationToken()
         {
-            var breakerPolicy = new PluginCircuitBreakerPolicy(
-                NullLogger<PluginCircuitBreakerPolicy>.Instance,
-                Mock.Of<IPluginHealthMonitor>(),
-                Mock.Of<ITrayService>());
+            var breakerPolicy = new PluginCircuitBreakerPolicy();
 
             var runtimeState = new PluginRuntimeStateStore();
             var pipeline = new PluginExecutionPipeline(runtimeState, breakerPolicy);

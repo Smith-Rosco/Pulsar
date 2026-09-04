@@ -92,6 +92,8 @@ Closed (Normal) → Open (Breaker) → Half-Open (Test) → Closed (Recovered)
 
 The breaker is implemented as a dedicated runtime policy service and is no longer stored as field-level dictionaries in `PluginRuntimeKernel`.
 
+Its side effects live behind an observation seam (ADR-013): the policy raises `Tripped` / `Recovered` with `PluginId` (+ cooldown) payloads, and `PluginBreakerNotificationService` — a singleton adapter subscribed at startup — relays trips to health telemetry and a localized tray toast, and recoveries to health telemetry only.
+
 #### Supported Plugin Forms
 
 1. **Native Plugins (C# DLL)**: Run within Pulsar process, access full WPF objects

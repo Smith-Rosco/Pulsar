@@ -84,13 +84,14 @@ namespace Pulsar.ViewModels.Settings
 
         public IReadOnlyList<PluginFilterOption> FilterOptions { get; }
 
-        public PluginManagerViewModel(IPluginRegistry registry, IConfigService configService,
+        public PluginManagerViewModel(IPluginRegistry registry, IPluginRuntimeOps runtimeOps, IConfigService configService,
             ILocalizationService localizationService,
             IPluginUsageTracker? usageTracker = null, IPluginHealthMonitor? healthMonitor = null,
             IPluginLogService? logService = null, IDialogService? dialogService = null,
             IServiceProvider? serviceProvider = null, IPluginMetadataRegistry? metadataRegistry = null)
         {
             _registry = registry;
+            _runtimeOps = runtimeOps ?? throw new ArgumentNullException(nameof(runtimeOps));
             _configService = configService;
             _usageTracker = usageTracker;
             _healthMonitor = healthMonitor;
