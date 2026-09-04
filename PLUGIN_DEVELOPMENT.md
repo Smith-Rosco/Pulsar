@@ -639,7 +639,7 @@ public enum PluginErrorSeverity
 | 外部服务不可用 | 返回 `Error(Recoverable)` | 网络超时、API 限流 |
 | 配置错误 | 返回 `Error(Critical)` | 必需配置缺失 |
 | 依赖服务缺失 | 抛出异常 (在 `Initialize` 中) | `IWindowService` 未注册 |
-| 未预期的异常 | 让异常传播 (由 PluginRegistry 捕获) | NullReferenceException |
+| 未预期的异常 | 让异常传播 (由插件运行时 PluginRuntimeKernel 捕获) | NullReferenceException |
 
 ### 实现示例
 
@@ -673,7 +673,7 @@ public async Task<PluginResult> ExecuteAsync(
         _logger?.LogWarning(ex, "API request failed");
         return PluginResult.Error($"API request failed: {ex.Message}", PluginErrorSeverity.Recoverable);
     }
-    // 5. 未预期的异常让其传播，由 PluginRegistry 处理
+    // 5. 未预期的异常让其传播，由插件运行时 PluginRuntimeKernel 处理
 }
 ```
 

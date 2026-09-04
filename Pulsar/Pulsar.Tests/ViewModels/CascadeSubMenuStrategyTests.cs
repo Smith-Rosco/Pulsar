@@ -120,13 +120,9 @@ namespace Pulsar.Tests.ViewModels
             int slotsPerPage = 8)
         {
             var metadataRegistry = new Mock<IPluginMetadataRegistry>();
-            var pluginRegistry = new Mock<IPluginRegistry>();
-            pluginRegistry
-                .Setup(registry => registry.IsPluginEnabled(It.IsAny<string>()))
-                .Returns(true);
 
             var strategy = new CascadeSubMenuStrategy(
-                pluginRegistry.Object,
+                new Mock<IPluginExecutor>().Object,
                 metadataRegistry.Object,
                 Mock.Of<ITrayService>(),
                 Mock.Of<IActionFeedbackService>(),

@@ -571,7 +571,13 @@ namespace Pulsar.Core.Plugin.Runtime
         }
     }
 
-    public class PluginRuntimeKernel
+    /// <summary>
+    /// 插件运行时内核 —— 三个窄 seam（注册面 <see cref="IPluginRegistry"/> /
+    /// 执行面 <see cref="IPluginExecutor"/> / 运维面 <see cref="IPluginRuntimeOps"/>）
+    /// 的唯一实现。持有目录、状态存储、执行管线与 Loader 的编排；
+    /// 消费方只依赖与自身角色匹配的 seam，不经过安装/卸载/执行之外的宽接口。
+    /// </summary>
+    public class PluginRuntimeKernel : IPluginRegistry, IPluginExecutor, IPluginRuntimeOps
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly PluginLoader _loader;

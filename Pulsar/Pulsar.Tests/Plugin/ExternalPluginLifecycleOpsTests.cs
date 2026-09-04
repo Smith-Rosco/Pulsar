@@ -20,6 +20,9 @@ namespace Pulsar.Tests.Plugin
     /// - 安装：InstallFromFile → RefreshDiscovery → GrantPermissions → GetOrActivate
     /// - 卸载：GrantPermissions([]) → DeactivatePlugin → UninstallAsync（停用失败中止删文件）
     /// - 启用：SetPluginState → GetOrActivate
+    ///
+    /// 运行时原语（Refresh/Grant/Deactivate/SetState）现在归属「运维面」<see cref="IPluginRuntimeOps"/>，
+    /// 描述符查询与激活归属「注册面」<see cref="IPluginRegistry"/> —— 两个 mock 分开锁定，正好校验 seam 边界。
     /// </summary>
     public class ExternalPluginLifecycleOpsTests
     {
@@ -68,18 +71,19 @@ namespace Pulsar.Tests.Plugin
             };
         }
 
-        private static (ExternalPluginLifecycleOps ops, Mock<IPluginRegistry> registry, Mock<IPluginPackageManager> pkg) CreateOps()
+        private static (ExternalPluginLifecycleOps ops, Mock<IPluginRegistry> registry, Mock<IPluginRuntimeOps> runtimeOps, Mock<IPluginPackageManager> pkg) CreateOps()
         {
             var registry = new Mock<IPluginRegistry>(MockBehavior.Strict);
+            var runtimeOps = new Mock<IPluginRuntimeOps>(MockBehavior.Strict);
             var pkg = new Mock<IPluginPackageManager>(MockBehavior.Loose);
-            var ops = new ExternalPluginLifecycleOps(registry.Object, pkg.Object, NullLogger<ExternalPluginLifecycleOps>.Instance);
-            return (ops, registry, pkg);
+            var ops = new ExternalPluginLifecycleOps(registry.Object, runtimeOps.Object, pkg.Object, NullLogger<ExternalPluginLifecycleOps>.Instance);
+            return (ops, registry, runtimeOps, pkg);
         }
 
         [Fact]
         public async Task Install_WithPermissions_RefreshesThenGrantsThenActivates_InOrder()
         {
-            var (ops, registry, pkg) = CreateOps();
+            var (ops, registry, runtimeOps, pkg) = CreateOps();
             var approved = new[] { PluginPermissions.InputInject };
             var calls = new List<string>();
 
@@ -88,9 +92,9 @@ namespace Pulsar.Tests.Plugin
                 .ReturnsAsync(PluginOperationResult.Successful(PluginId, PluginOperationType.Install, TimeSpan.FromSeconds(1)));
 
             // 时序：refresh → grant → activate（最近 bug 的根源：顺序错了 grant 被拒为 unknown plugin）
-            registry.Setup(x => x.RefreshDiscoveryAsync())
+            runtimeOps.Setup(x => x.RefreshDiscoveryAsync())
                 .Callback(() => calls.Add("refresh")).Returns(Task.CompletedTask);
-            registry.Setup(x => x.GrantPermissionsAsync(PluginId, It.IsAny<IEnumerable<string>>()))
+            runtimeOps.Setup(x => x.GrantPermissionsAsync(PluginId, It.IsAny<IEnumerable<string>>()))
                 .Callback(() => calls.Add("grant")).Returns(Task.CompletedTask);
             registry.Setup(x => x.GetOrActivatePluginAsync(PluginId))
                 .Callback(() => calls.Add("activate")).ReturnsAsync((IPulsarPlugin?)null);
@@ -106,13 +110,13 @@ namespace Pulsar.Tests.Plugin
         [Fact]
         public async Task Install_WithoutPermissions_SkipsGrantButStillActivates()
         {
-            var (ops, registry, pkg) = CreateOps();
+            var (ops, registry, runtimeOps, pkg) = CreateOps();
             var calls = new List<string>();
 
             pkg.Setup(x => x.InstallFromFileAsync("pkg.zip", It.IsAny<IReadOnlyCollection<string>?>(), It.IsAny<CancellationToken>()))
                 .Callback(() => calls.Add("files"))
                 .ReturnsAsync(PluginOperationResult.Successful(PluginId, PluginOperationType.Install, TimeSpan.FromSeconds(1)));
-            registry.Setup(x => x.RefreshDiscoveryAsync())
+            runtimeOps.Setup(x => x.RefreshDiscoveryAsync())
                 .Callback(() => calls.Add("refresh")).Returns(Task.CompletedTask);
             registry.Setup(x => x.GetOrActivatePluginAsync(PluginId))
                 .Callback(() => calls.Add("activate")).ReturnsAsync((IPulsarPlugin?)null);
@@ -122,19 +126,19 @@ namespace Pulsar.Tests.Plugin
             result.Success.Should().BeTrue();
             result.Phase.Should().Be(ExternalPluginOpPhase.Activated);
             calls.Should().Equal("files", "refresh", "activate");
-            registry.Verify(x => x.GrantPermissionsAsync(It.IsAny<string>(), It.IsAny<IEnumerable<string>>()), Times.Never);
+            runtimeOps.Verify(x => x.GrantPermissionsAsync(It.IsAny<string>(), It.IsAny<IEnumerable<string>>()), Times.Never);
         }
 
         [Fact]
         public async Task Install_WhenGrantFails_ReturnsSuccessWithWarning_AndDoesNotActivate()
         {
-            var (ops, registry, pkg) = CreateOps();
+            var (ops, registry, runtimeOps, pkg) = CreateOps();
             var approved = new[] { PluginPermissions.ClipboardRead };
 
             pkg.Setup(x => x.InstallFromFileAsync("pkg.zip", It.IsAny<IReadOnlyCollection<string>?>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(PluginOperationResult.Successful(PluginId, PluginOperationType.Install, TimeSpan.FromSeconds(1)));
-            registry.Setup(x => x.RefreshDiscoveryAsync()).Returns(Task.CompletedTask);
-            registry.Setup(x => x.GrantPermissionsAsync(PluginId, It.IsAny<IEnumerable<string>>()))
+            runtimeOps.Setup(x => x.RefreshDiscoveryAsync()).Returns(Task.CompletedTask);
+            runtimeOps.Setup(x => x.GrantPermissionsAsync(PluginId, It.IsAny<IEnumerable<string>>()))
                 .ThrowsAsync(new InvalidOperationException("unknown plugin"));
 
             var result = await ops.InstallAsync("pkg.zip", approved);
@@ -149,14 +153,14 @@ namespace Pulsar.Tests.Plugin
         [Fact]
         public async Task Uninstall_RevokesThenDeactivatesThenDeletesFiles_InOrder()
         {
-            var (ops, registry, pkg) = CreateOps();
+            var (ops, registry, runtimeOps, pkg) = CreateOps();
             var descriptor = CreateExternalDescriptor(new[] { PluginPermissions.InputInject });
             var calls = new List<string>();
             registry.Setup(x => x.GetDescriptor(PluginId)).Returns(descriptor);
 
-            registry.Setup(x => x.GrantPermissionsAsync(PluginId, It.IsAny<IEnumerable<string>>()))
+            runtimeOps.Setup(x => x.GrantPermissionsAsync(PluginId, It.IsAny<IEnumerable<string>>()))
                 .Callback(() => calls.Add("revoke")).Returns(Task.CompletedTask);
-            registry.Setup(x => x.DeactivatePluginAsync(PluginId))
+            runtimeOps.Setup(x => x.DeactivatePluginAsync(PluginId))
                 .Callback(() => calls.Add("deactivate")).Returns(Task.CompletedTask);
             pkg.Setup(x => x.UninstallAsync(PluginId, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .Callback(() => calls.Add("delete"))
@@ -173,11 +177,11 @@ namespace Pulsar.Tests.Plugin
         [Fact]
         public async Task Uninstall_WhenDeactivateFails_AbortsFileDelete()
         {
-            var (ops, registry, pkg) = CreateOps();
+            var (ops, registry, runtimeOps, pkg) = CreateOps();
             var descriptor = CreateExternalDescriptor(new[] { PluginPermissions.InputInject });
             registry.Setup(x => x.GetDescriptor(PluginId)).Returns(descriptor);
-            registry.Setup(x => x.GrantPermissionsAsync(PluginId, It.IsAny<IEnumerable<string>>())).Returns(Task.CompletedTask);
-            registry.Setup(x => x.DeactivatePluginAsync(PluginId)).ThrowsAsync(new InvalidOperationException("ALC still locked"));
+            runtimeOps.Setup(x => x.GrantPermissionsAsync(PluginId, It.IsAny<IEnumerable<string>>())).Returns(Task.CompletedTask);
+            runtimeOps.Setup(x => x.DeactivatePluginAsync(PluginId)).ThrowsAsync(new InvalidOperationException("ALC still locked"));
 
             var result = await ops.UninstallAsync(PluginId);
 
@@ -190,12 +194,12 @@ namespace Pulsar.Tests.Plugin
         [Fact]
         public async Task Uninstall_WhenRevokeFails_ContinuesAndReportsWarning()
         {
-            var (ops, registry, pkg) = CreateOps();
+            var (ops, registry, runtimeOps, pkg) = CreateOps();
             var descriptor = CreateExternalDescriptor(new[] { PluginPermissions.InputInject });
             registry.Setup(x => x.GetDescriptor(PluginId)).Returns(descriptor);
-            registry.Setup(x => x.GrantPermissionsAsync(PluginId, It.IsAny<IEnumerable<string>>()))
+            runtimeOps.Setup(x => x.GrantPermissionsAsync(PluginId, It.IsAny<IEnumerable<string>>()))
                 .ThrowsAsync(new InvalidOperationException("save failed"));
-            registry.Setup(x => x.DeactivatePluginAsync(PluginId)).Returns(Task.CompletedTask);
+            runtimeOps.Setup(x => x.DeactivatePluginAsync(PluginId)).Returns(Task.CompletedTask);
             pkg.Setup(x => x.UninstallAsync(PluginId, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(PluginOperationResult.Successful(PluginId, PluginOperationType.Uninstall, TimeSpan.FromSeconds(1)));
 
@@ -208,9 +212,9 @@ namespace Pulsar.Tests.Plugin
         [Fact]
         public async Task SetEnabled_Enabled_ActivatesAfterStateChange()
         {
-            var (ops, registry, _) = CreateOps();
+            var (ops, registry, runtimeOps, _) = CreateOps();
             var calls = new List<string>();
-            registry.Setup(x => x.SetPluginStateAsync(PluginId, true))
+            runtimeOps.Setup(x => x.SetPluginStateAsync(PluginId, true))
                 .Callback(() => calls.Add("setstate")).Returns(Task.CompletedTask);
             registry.Setup(x => x.GetOrActivatePluginAsync(PluginId))
                 .Callback(() => calls.Add("activate")).ReturnsAsync((IPulsarPlugin?)null);
@@ -225,8 +229,8 @@ namespace Pulsar.Tests.Plugin
         [Fact]
         public async Task SetEnabled_Disabled_DoesNotActivate()
         {
-            var (ops, registry, _) = CreateOps();
-            registry.Setup(x => x.SetPluginStateAsync(PluginId, false)).Returns(Task.CompletedTask);
+            var (ops, registry, runtimeOps, _) = CreateOps();
+            runtimeOps.Setup(x => x.SetPluginStateAsync(PluginId, false)).Returns(Task.CompletedTask);
 
             var result = await ops.SetEnabledAsync(PluginId, false);
 
@@ -238,20 +242,20 @@ namespace Pulsar.Tests.Plugin
         [Fact]
         public async Task GrantAsync_WithoutManifestPermissions_IsIdempotentNoOp()
         {
-            var (ops, registry, _) = CreateOps();
+            var (ops, registry, runtimeOps, _) = CreateOps();
             var descriptor = CreateExternalDescriptor(); // 无权限
             registry.Setup(x => x.GetDescriptor(PluginId)).Returns(descriptor);
 
             var result = await ops.GrantAsync(PluginId);
 
             result.Success.Should().BeTrue();
-            registry.Verify(x => x.GrantPermissionsAsync(It.IsAny<string>(), It.IsAny<IEnumerable<string>>()), Times.Never);
+            runtimeOps.Verify(x => x.GrantPermissionsAsync(It.IsAny<string>(), It.IsAny<IEnumerable<string>>()), Times.Never);
         }
 
         [Fact]
         public async Task GrantAsync_UnknownPlugin_Fails()
         {
-            var (ops, registry, _) = CreateOps();
+            var (ops, registry, _, _) = CreateOps();
             registry.Setup(x => x.GetDescriptor(PluginId)).Returns((PluginDescriptor?)null);
 
             var result = await ops.GrantAsync(PluginId);
@@ -263,7 +267,7 @@ namespace Pulsar.Tests.Plugin
         [Fact]
         public async Task PrepareInstallAsync_ReturnsManifestAndPendingPermissions()
         {
-            var (ops, _, pkg) = CreateOps();
+            var (ops, _, _, pkg) = CreateOps();
             var manifest = new PluginManifest
             {
                 Id = PluginId,

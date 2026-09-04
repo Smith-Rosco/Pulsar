@@ -58,6 +58,7 @@ namespace Pulsar.ViewModels.Settings
     public partial class PluginManagerViewModel : ObservableObject
     {
         private readonly IPluginRegistry _registry;
+        private readonly IPluginRuntimeOps _runtimeOps;
         private readonly IConfigService _configService;
         private readonly IPluginUsageTracker? _usageTracker;
         private readonly IPluginHealthMonitor? _healthMonitor;
@@ -162,7 +163,7 @@ namespace Pulsar.ViewModels.Settings
 
             foreach (var plugin in allPlugins)
             {
-                Plugins.Add(new PluginViewModel(plugin, _registry, _configService,
+                Plugins.Add(new PluginViewModel(plugin, _registry, _runtimeOps, _configService,
                     _loc!, _usageTracker, _healthMonitor, _logService, _dialogService,
                     _serviceProvider, _metadataRegistry));
             }

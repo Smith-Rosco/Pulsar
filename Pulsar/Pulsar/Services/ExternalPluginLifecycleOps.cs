@@ -13,29 +13,32 @@ namespace Pulsar.Services
     /// External Plugin 生命周期操作：拥有安装/卸载/启用/授权的固定时序。
     ///
     /// 时序规则（来源：CONTEXT.md "External Plugin Lifecycle Operator"）：
-    /// - 安装：文件安装 → <see cref="IPluginRegistry.RefreshDiscoveryAsync"/> →
-    ///   <see cref="IPluginRegistry.GrantPermissionsAsync"/> → <see cref="IPluginRegistry.GetOrActivatePluginAsync"/>。
+    /// - 安装：文件安装 → 运维面重扫发现 → 授权 → 注册面激活。
     ///   部分成功不回滚：文件落盘 / 发现 / 授权各自是自洽状态，结果携带到达的阶段。
-    /// - 卸载：<see cref="IPluginRegistry.GrantPermissionsAsync"/>（撤销授权，尽力而为）→
-    ///   <see cref="IPluginRegistry.DeactivatePluginAsync"/>（停用 + ALC 卸载，失败则中止删文件）→
-    ///   <see cref="IPluginPackageManager.UninstallAsync"/>（删文件）。
+    /// - 卸载：授权撤销（尽力而为）→ 运维面停用 + ALC 卸载（失败则中止删文件）→
+    ///   包管理器删除文件。
     /// - 启用：写 profile + 激活（外部插件懒激活，必须显式激活让 OnEnableAsync 贡献即时生效）。
     ///
-    /// 整个运维面由一个 <see cref="SemaphoreSlim"/> 串行化，防止安装/卸载/启用交错。
+    /// 运行时原语走「运维面」<see cref="IPluginRuntimeOps"/>；描述符查询与激活走
+    /// 「注册面」<see cref="IPluginRegistry"/>。整个运维面由一个
+    /// <see cref="SemaphoreSlim"/> 串行化，防止安装/卸载/启用交错。
     /// </summary>
     public sealed class ExternalPluginLifecycleOps : IExternalPluginLifecycleOps
     {
         private readonly IPluginRegistry _registry;
+        private readonly IPluginRuntimeOps _runtimeOps;
         private readonly IPluginPackageManager _packageManager;
         private readonly ILogger<ExternalPluginLifecycleOps> _logger;
         private readonly SemaphoreSlim _gate = new(1, 1);
 
         public ExternalPluginLifecycleOps(
             IPluginRegistry registry,
+            IPluginRuntimeOps runtimeOps,
             IPluginPackageManager packageManager,
             ILogger<ExternalPluginLifecycleOps>? logger = null)
         {
             _registry = registry;
+            _runtimeOps = runtimeOps;
             _packageManager = packageManager;
             _logger = logger ?? NullLogger<ExternalPluginLifecycleOps>.Instance;
             _packageManager.OperationProgress += OnPackageOperationProgress;
@@ -84,7 +87,7 @@ namespace Pulsar.Services
                 // 2. 刷新发现：让新 descriptor 进入目录（安装时发现只跑过一次）。
                 try
                 {
-                    await _registry.RefreshDiscoveryAsync();
+                    await _runtimeOps.RefreshDiscoveryAsync();
                     phase = ExternalPluginOpPhase.Discovered;
                 }
                 catch (Exception ex)
@@ -101,7 +104,7 @@ namespace Pulsar.Services
                 {
                     try
                     {
-                        await _registry.GrantPermissionsAsync(pluginId, approvedPermissions);
+                        await _runtimeOps.GrantPermissionsAsync(pluginId, approvedPermissions);
                         phase = ExternalPluginOpPhase.PermissionsGranted;
                     }
                     catch (Exception ex)
@@ -149,7 +152,7 @@ namespace Pulsar.Services
                 {
                     try
                     {
-                        await _registry.GrantPermissionsAsync(pluginId, Array.Empty<string>());
+                        await _runtimeOps.GrantPermissionsAsync(pluginId, Array.Empty<string>());
                     }
                     catch (Exception ex)
                     {
@@ -161,7 +164,7 @@ namespace Pulsar.Services
                 // 2. 停用并卸载 ALC：失败则中止文件删除（DLL 仍被锁，删了必留残骸）。
                 try
                 {
-                    await _registry.DeactivatePluginAsync(pluginId);
+                    await _runtimeOps.DeactivatePluginAsync(pluginId);
                 }
                 catch (Exception ex)
                 {
@@ -202,7 +205,7 @@ namespace Pulsar.Services
             await _gate.WaitAsync(cancellationToken);
             try
             {
-                await _registry.SetPluginStateAsync(pluginId, enabled);
+                await _runtimeOps.SetPluginStateAsync(pluginId, enabled);
 
                 // 外部插件懒激活：启用必须显式激活，否则 OnEnableAsync 的贡献不生效。
                 if (enabled)
@@ -247,7 +250,7 @@ namespace Pulsar.Services
                     return ExternalPluginOpResult.Ok(pluginId, ExternalPluginOpPhase.PermissionsGranted);
                 }
 
-                await _registry.GrantPermissionsAsync(pluginId, descriptor.Permissions);
+                await _runtimeOps.GrantPermissionsAsync(pluginId, descriptor.Permissions);
                 return ExternalPluginOpResult.Ok(pluginId, ExternalPluginOpPhase.PermissionsGranted);
             }
             finally

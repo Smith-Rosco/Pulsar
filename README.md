@@ -204,7 +204,10 @@ Pulsar/
 │   └── Extensions/            #   扩展插件（断路器保护）
 │
 ├── Services/                  # 业务逻辑层
-│   ├── PluginRegistry.cs      #   插件生命周期 + 断路器（外观模式）
+│   ├── Interfaces/             #   插件运行时三窄 seam（注册面/执行面/运维面）
+│   │   ├── IPluginRegistry.cs  #     注册面：发现·激活·查询
+│   │   ├── IPluginExecutor.cs  #     执行面：ExecuteAsync
+│   │   └── IPluginRuntimeOps.cs#     运维面：重扫·停用·状态·授权·卸载
 │   ├── ConfigService.cs       #   配置管理（Profiles.json）
 │   ├── HotkeyService.cs       #   全局热键绑定
 │   ├── ThemeService.cs        #   亮/暗主题注入

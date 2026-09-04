@@ -51,14 +51,17 @@ Pulsar triggers two independent modes via different hotkeys, with strictly isola
 
 #### Runtime Kernel
 
-The plugin runtime is now organized around an internal runtime kernel instead of concentrating all policy in `PluginRegistry`. All runtime components are composed via DI through `AddPluginRuntime()` extension method.
+The plugin runtime is organized around a single deep implementation — `PluginRuntimeKernel` — instead of a wide facade. All runtime components are composed via DI through `AddPluginRuntime()` extension method.
 
 - `PluginCatalog`: owns descriptor discovery, metadata registration, and dependency ordering
 - `PluginRuntimeStateStore`: owns authoritative lifecycle state for loaded plugin instances; uses `ConcurrentDictionary` for thread-safe access
 - `PluginExecutionPipeline`: enforces deterministic execution ordering for availability checks, activation readiness, execution scope, outcome classification, and telemetry
 - `PluginCircuitBreakerPolicy`: owns extension-plugin breaker counters and cooldown windows; uses `ConcurrentDictionary` with atomic `AddOrUpdate`/`TryRemove` operations
 - `PluginHost`: remains an instance-hosting primitive for isolated load/unload concerns and host-local state bridging
-- `PluginRegistry` / `IPluginRegistry`: the external compatibility facade consumed by the rest of the application via DI
+- Three narrow seams, all implemented by the same `PluginRuntimeKernel` singleton and registered as such in DI (see ADR-012):
+  - `IPluginRegistry` — **registration seam** (8 methods): load/discover/activate/query descriptors and instances; served to discovery, startup, validation, and read-model consumers.
+  - `IPluginExecutor` — **execution seam** (1 method `ExecuteAsync`): the only seam a Slot execution path may hold; served to the strategy layer (`PluginActionStrategy`).
+  - `IPluginRuntimeOps` — **runtime-ops seam** (5 methods): refresh discovery, deactivate, set state, grant permissions, unload all; served to lifecycle orchestration (`ExternalPluginLifecycleOps`), Settings/analytics, and the exit path.
 
 #### Lifecycle Model
 
@@ -87,7 +90,7 @@ Closed (Normal) → Open (Breaker) → Half-Open (Test) → Closed (Recovered)
      └──────────────── Successful Execution ─────────────┘
 ```
 
-The breaker is implemented as a dedicated runtime policy service and is no longer stored as field-level dictionaries in `PluginRegistry`.
+The breaker is implemented as a dedicated runtime policy service and is no longer stored as field-level dictionaries in `PluginRuntimeKernel`.
 
 #### Supported Plugin Forms
 
@@ -364,7 +367,10 @@ Pulsar/
 │   │   └── WinSwitcher/               # Window switching
 │   └── [Extension plugins]            # Optional plugins
 ├── Services/
-│   ├── PluginRegistry.cs              # Plugin lifecycle & Circuit Breaker
+│   ├── Interfaces/
+│   │   ├── IPluginRegistry.cs          # 注册面 seam（发现·激活·查询）
+│   │   ├── IPluginExecutor.cs          # 执行面 seam（ExecuteAsync）
+│   │   └── IPluginRuntimeOps.cs        # 运维面 seam（重扫·停用·状态·授权·卸载）
 │   ├── PluginMetadataRegistry.cs      # Metadata storage
 │   ├── ConfigService.cs               # Configuration management
 │   └── Validation/

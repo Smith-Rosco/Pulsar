@@ -57,7 +57,7 @@ namespace Pulsar.Tests.ViewModels
         [Fact]
         public async Task LeftClick_EmptySlot_ShouldExecuteActionNotOpenCascade()
         {
-            var (session, pluginRegistry, pluginSlot) = CreateSession();
+            var (session, executor, pluginSlot) = CreateSession();
             pluginSlot.SubActions = null;
 
             var slot = session.Slots.First(s => s.SlotIndex == 1);
@@ -65,13 +65,13 @@ namespace Pulsar.Tests.ViewModels
             slot.Label = "Open Target";
             slot.IsEnabled = true;
             slot.ActionStrategy = new PluginActionStrategy(
-                pluginSlot, pluginRegistry.Object, null!,
+                pluginSlot, executor.Object, null!,
                 Mock.Of<ITrayService>(), Mock.Of<IActionFeedbackService>());
 
             session.IsVisible = true;
             await session.HandleGlobalMouseClickAsync(GlobalMouseButton.Left, clickSlotIndex: 1, new Vector(150, 150));
 
-            pluginRegistry.Verify(registry => registry.ExecuteAsync(
+            executor.Verify(exec => exec.ExecuteAsync(
                 pluginSlot.PluginId,
                 pluginSlot.Action,
                 pluginSlot.Args,
@@ -83,7 +83,7 @@ namespace Pulsar.Tests.ViewModels
         [Fact]
         public async Task ModifierRelease_CascadeSlot_ShouldExecuteSlotAction()
         {
-            var (session, pluginRegistry, pluginSlot) = CreateSession();
+            var (session, executor, pluginSlot) = CreateSession();
             pluginSlot.CascadeLayoutStyle = SubMenuLayoutStyle.Fan;
             pluginSlot.SubActions =
             [
@@ -100,7 +100,7 @@ namespace Pulsar.Tests.ViewModels
             slot.Label = "Clipboard";
             slot.IsEnabled = true;
             slot.ActionStrategy = new PluginActionStrategy(
-                pluginSlot, pluginRegistry.Object, null!,
+                pluginSlot, executor.Object, null!,
                 Mock.Of<ITrayService>(), Mock.Of<IActionFeedbackService>());
 
             session.IsVisible = true;
@@ -109,7 +109,7 @@ namespace Pulsar.Tests.ViewModels
                 new QuickSwitchPolicy { MaxDuration = TimeSpan.Zero, CenterZoneRadius = 0 },
                 isLoading: false);
 
-            pluginRegistry.Verify(registry => registry.ExecuteAsync(
+            executor.Verify(exec => exec.ExecuteAsync(
                 pluginSlot.PluginId,
                 pluginSlot.Action,
                 pluginSlot.Args,
@@ -118,14 +118,17 @@ namespace Pulsar.Tests.ViewModels
             session.IsInSubMenu.Should().BeFalse();
         }
 
-        private static (MenuSession, Mock<IPluginRegistry>, PluginSlot) CreateSession()
+        private static (MenuSession, Mock<IPluginExecutor>, PluginSlot) CreateSession()
         {
             var pluginRegistry = new Mock<IPluginRegistry>();
             pluginRegistry
                 .Setup(registry => registry.IsPluginEnabled(It.IsAny<string>()))
                 .Returns(true);
-            pluginRegistry
-                .Setup(registry => registry.ExecuteAsync(
+
+            // 执行面 seam：PluginActionStrategy 现在只依赖 IPluginExecutor。
+            var executor = new Mock<IPluginExecutor>();
+            executor
+                .Setup(exec => exec.ExecuteAsync(
                     It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, string>>(),
                     It.IsAny<Pulsar.Core.Plugin.PulsarContext>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Pulsar.Core.Plugin.PluginResult.Ok());
@@ -175,7 +178,7 @@ namespace Pulsar.Tests.ViewModels
                 {
                     new WindowSwitchSubMenuStrategy(windowService.Object),
                     new CascadeSubMenuStrategy(
-                        pluginRegistry.Object,
+                        executor.Object,
                         metadataRegistry.Object,
                         Mock.Of<ITrayService>(),
                         Mock.Of<IActionFeedbackService>(),
@@ -213,7 +216,7 @@ namespace Pulsar.Tests.ViewModels
                 Args = new Dictionary<string, string>()
             };
 
-            return (session, pluginRegistry, pluginSlot);
+            return (session, executor, pluginSlot);
         }
 
         /// <summary>Direct-call fake so MenuSession tests need no WPF Application.</summary>

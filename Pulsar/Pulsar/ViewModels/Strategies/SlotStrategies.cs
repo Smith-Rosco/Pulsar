@@ -39,7 +39,7 @@ namespace Pulsar.ViewModels.Strategies
     public class PluginActionStrategy : IActionStrategy
     {
         private readonly PluginSlot _pluginSlot;
-        private readonly IPluginRegistry _registry;
+        private readonly IPluginExecutor _executor;
         private readonly PulsarContext _pulsarContext;
         private readonly ITrayService _trayService; // [New]
         private readonly IActionFeedbackService _feedbackService;
@@ -48,7 +48,7 @@ namespace Pulsar.ViewModels.Strategies
 
         public PluginActionStrategy(
             PluginSlot pluginSlot, 
-            IPluginRegistry registry, 
+            IPluginExecutor executor, 
             PulsarContext pulsarContext,
             ITrayService trayService,
             IActionFeedbackService feedbackService,
@@ -56,7 +56,7 @@ namespace Pulsar.ViewModels.Strategies
             IActionFeedbackPresenter? feedbackPresenter = null)
         {
             _pluginSlot = pluginSlot;
-            _registry = registry;
+            _executor = executor;
             _pulsarContext = pulsarContext;
             _trayService = trayService;
             _feedbackService = feedbackService;
@@ -73,7 +73,7 @@ namespace Pulsar.ViewModels.Strategies
             // which would otherwise re-trigger the hotkey hook while the menu is still visible.
             context.IsVisible = false;
 
-            var result = await _registry.ExecuteAsync(_pluginSlot.PluginId, _pluginSlot.Action, _pluginSlot.Args, _pulsarContext);
+            var result = await _executor.ExecuteAsync(_pluginSlot.PluginId, _pluginSlot.Action, _pluginSlot.Args, _pulsarContext);
 
             if (result.Success)
             {

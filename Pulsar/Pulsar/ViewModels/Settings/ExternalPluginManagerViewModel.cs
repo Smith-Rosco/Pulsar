@@ -27,6 +27,7 @@ namespace Pulsar.ViewModels.Settings
         private readonly LocalPluginScanner _scanner;
         private readonly IExternalPluginLifecycleOps _lifecycleOps;
         private readonly IPluginRegistry _pluginRegistry;
+        private readonly IPluginRuntimeOps _runtimeOps;
         private readonly ILogger<ExternalPluginManagerViewModel>? _logger;
         private readonly IDialogService? _dialogService;
         private readonly ILocalizationService _loc;
@@ -50,6 +51,7 @@ namespace Pulsar.ViewModels.Settings
             LocalPluginScanner scanner,
             IExternalPluginLifecycleOps lifecycleOps,
             IPluginRegistry pluginRegistry,
+            IPluginRuntimeOps runtimeOps,
             ILocalizationService localizationService,
             ILogger<ExternalPluginManagerViewModel>? logger = null,
             IDialogService? dialogService = null,
@@ -63,6 +65,7 @@ namespace Pulsar.ViewModels.Settings
             _scanner = scanner;
             _lifecycleOps = lifecycleOps;
             _pluginRegistry = pluginRegistry;
+            _runtimeOps = runtimeOps;
             _loc = localizationService;
             _logger = logger;
             _dialogService = dialogService;
@@ -105,6 +108,7 @@ namespace Pulsar.ViewModels.Settings
                     var item = new ExternalPluginViewModel(
                         descriptor,
                         _pluginRegistry,
+                        _runtimeOps,
                         _configService!,
                         _loc,
                         pkg.LocalPath ?? string.Empty,

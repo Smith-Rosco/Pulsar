@@ -107,13 +107,9 @@ namespace Pulsar.Tests.ViewModels
             metadataRegistry
                 .Setup(registry => registry.GetActionMetadata("com.pulsar.command", "sendkeys"))
                 .Returns(new Pulsar.Core.Plugin.Metadata.SlotActionMetadata { Name = "sendkeys" });
-            var pluginRegistry = new Mock<IPluginRegistry>();
-            pluginRegistry
-                .Setup(registry => registry.IsPluginEnabled(It.IsAny<string>()))
-                .Returns(true);
 
             var cascadeStrategy = new CascadeSubMenuStrategy(
-                pluginRegistry.Object,
+                new Mock<IPluginExecutor>().Object,
                 metadataRegistry.Object,
                 new Mock<ITrayService>().Object,
                 new Mock<IActionFeedbackService>().Object);
@@ -153,7 +149,7 @@ namespace Pulsar.Tests.ViewModels
                 .Returns(new WindowSelectionResult { Request = new WindowSelectionRequest(), SelectedWindow = windows[0], DecisionReason = "test" });
 
             var cascadeStrategy = new CascadeSubMenuStrategy(
-                new Mock<IPluginRegistry>().Object,
+                new Mock<IPluginExecutor>().Object,
                 new Mock<IPluginMetadataRegistry>().Object,
                 new Mock<ITrayService>().Object,
                 new Mock<IActionFeedbackService>().Object);

@@ -26,6 +26,7 @@ namespace Pulsar.ViewModels.Settings
         private IPulsarPlugin? _plugin;
         private readonly PluginDescriptor _descriptor;
         private readonly IPluginRegistry _registry;
+        private readonly IPluginRuntimeOps _runtimeOps;
         private readonly IConfigService _configService;
         private readonly IPluginUsageTracker? _usageTracker;
         private readonly IPluginHealthMonitor? _healthMonitor;
@@ -140,6 +141,7 @@ namespace Pulsar.ViewModels.Settings
         public PluginViewModel(
             PluginDescriptor descriptor,
             IPluginRegistry registry,
+            IPluginRuntimeOps runtimeOps,
             IConfigService configService,
             ILocalizationService localizationService,
             IPluginUsageTracker? usageTracker = null,
@@ -151,6 +153,7 @@ namespace Pulsar.ViewModels.Settings
         {
             _descriptor = descriptor;
             _registry = registry;
+            _runtimeOps = runtimeOps;
             _configService = configService;
             _usageTracker = usageTracker;
             _healthMonitor = healthMonitor;
@@ -392,7 +395,7 @@ namespace Pulsar.ViewModels.Settings
             var targetState = !IsEnabled;
             try
             {
-                await _registry.SetPluginStateAsync(Id, targetState);
+                await _runtimeOps.SetPluginStateAsync(Id, targetState);
                 IsEnabled = targetState;
             }
             catch (Exception ex)

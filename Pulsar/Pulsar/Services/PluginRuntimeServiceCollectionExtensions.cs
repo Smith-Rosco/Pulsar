@@ -19,8 +19,12 @@ namespace Pulsar.Services
             services.AddSingleton<PluginLoader>(sp => new PluginLoader(sp, pluginDirectory));
             services.AddSingleton<PluginRuntimeKernel>();
 
-            // Plugin Registry
-            services.AddSingleton<Services.Interfaces.IPluginRegistry, PluginRegistry>();
+            // Three narrow runtime seams, all backed by the same kernel singleton.
+            // Consumers depend only on the seam matching their role (registration /
+            // execution / ops); the wide 14-method facade no longer exists.
+            services.AddSingleton<Services.Interfaces.IPluginRegistry>(sp => sp.GetRequiredService<PluginRuntimeKernel>());
+            services.AddSingleton<Services.Interfaces.IPluginExecutor>(sp => sp.GetRequiredService<PluginRuntimeKernel>());
+            services.AddSingleton<Services.Interfaces.IPluginRuntimeOps>(sp => sp.GetRequiredService<PluginRuntimeKernel>());
 
             return services;
         }

@@ -97,10 +97,12 @@ namespace Pulsar.Simulator
 
             var serviceProvider = services.BuildServiceProvider();
 
-            // Initialize PluginRegistry
+            // Initialize the plugin runtime: registration seam (load/discover) then
+            // resolve the executor seam for the actual invocation.
             var registry = serviceProvider.GetRequiredService<IPluginRegistry>();
             await registry.LoadCoreAsync();
             await registry.DiscoverDeferredAsync();
+            var executor = serviceProvider.GetRequiredService<IPluginExecutor>();
 
             // Prepare Parameters
             var pluginArgs = new Dictionary<string, string>();
@@ -122,7 +124,7 @@ namespace Pulsar.Simulator
             var context = PulsarContext.Capture(windowService);
 
             Log.Information("Executing plugin {PluginId} with action {Action}", opts.PluginId, opts.Action);
-            var result = await registry.ExecuteAsync(opts.PluginId, opts.Action, pluginArgs, context);
+            var result = await executor.ExecuteAsync(opts.PluginId, opts.Action, pluginArgs, context);
 
             // Output Result as JSON
             var resultJson = JsonSerializer.Serialize(new

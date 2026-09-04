@@ -16,6 +16,7 @@ namespace Pulsar.Tests.ViewModels
     {
         private readonly Mock<IPluginUsageTracker> _usageTrackerMock = new();
         private readonly Mock<IPluginRegistry> _registryMock = new();
+        private readonly Mock<IPluginRuntimeOps> _runtimeOpsMock = new();
         private readonly Mock<ILogger<SettingsAnalyticsPageViewModel>> _loggerMock = new();
         private readonly ILocalizationService _loc;
         private readonly Mock<IPluginRecommendationEngine> _recEngineMock = new();
@@ -72,7 +73,7 @@ namespace Pulsar.Tests.ViewModels
             var readModel = new UsageStatsReadModel(_usageTrackerMock.Object, _registryMock.Object, _loc);
             return new SettingsAnalyticsPageViewModel(
                 readModel,
-                _registryMock.Object,
+                _runtimeOpsMock.Object,
                 _loggerMock.Object,
                 _loc,
                 recommendationEngine);

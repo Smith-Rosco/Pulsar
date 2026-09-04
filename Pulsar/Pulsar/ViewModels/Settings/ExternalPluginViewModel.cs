@@ -37,6 +37,7 @@ namespace Pulsar.ViewModels.Settings
         public ExternalPluginViewModel(
             PluginDescriptor descriptor,
             IPluginRegistry registry,
+            IPluginRuntimeOps runtimeOps,
             IConfigService configService,
             ILocalizationService localizationService,
             string localPath,
@@ -48,7 +49,7 @@ namespace Pulsar.ViewModels.Settings
             IDialogService? dialogService = null,
             IServiceProvider? serviceProvider = null,
             IPluginMetadataRegistry? metadataRegistry = null)
-            : base(descriptor, registry, configService, localizationService,
+            : base(descriptor, registry, runtimeOps, configService, localizationService,
                    usageTracker, healthMonitor, logService, dialogService, serviceProvider, metadataRegistry)
         {
             _lifecycleOps = lifecycleOps;

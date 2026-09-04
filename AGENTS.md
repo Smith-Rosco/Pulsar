@@ -105,7 +105,10 @@ Operational guide for agents working on the **Pulsar** codebase (.NET 8, WPF/Win
 
 ### Coding Patterns
 - **DI**: constructor injection, register in `App.xaml.cs`. Plugin runtime via `serviceCollection.AddPluginRuntime(pluginDir)` in `App.xaml.cs`.
-- Inject `IPluginRegistry` interface, not the concrete class.
+- Plugin runtime is three narrow seams over one `PluginRuntimeKernel` singleton (ADR-012). Inject the **narrowest seam that serves your consumer**, never the concrete class:
+  - `IPluginRegistry` (registration: load/discover/activate/query) — discovery, startup, validation, read models.
+  - `IPluginExecutor` (execution: `ExecuteAsync`) — slot/strategy execution paths only.
+  - `IPluginRuntimeOps` (runtime ops: rescan/deactivate/state/grant/unload) — lifecycle orchestration, Settings, exit path.
 - Execution correlation: `PluginExecutionContext.Current` (stack-scoped AsyncLocal, restores previous scope on Dispose).
 - Thread safety: `ConcurrentDictionary`; hotkey actions dispatch via `Dispatcher.InvokeAsync()`.
 - MVVM: `[ObservableProperty]` / `[RelayCommand]` from CommunityToolkit.

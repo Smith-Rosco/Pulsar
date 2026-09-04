@@ -394,8 +394,8 @@ namespace Pulsar
                     "Plugin unload",
                     () =>
                     {
-                        var pluginRegistry = Services.GetService<IPluginRegistry>();
-                        return pluginRegistry?.UnloadAllAsync() ?? Task.CompletedTask;
+                        var runtimeOps = Services.GetService<IPluginRuntimeOps>();
+                        return runtimeOps?.UnloadAllAsync() ?? Task.CompletedTask;
                     });
 
                 var backgroundWorkScheduler = Services.GetService<IBackgroundWorkScheduler>();

@@ -18,7 +18,7 @@ namespace Pulsar.ViewModels.Settings
     public partial class SettingsAnalyticsPageViewModel : ObservableObject
     {
         private readonly UsageStatsReadModel _readModel;
-        private readonly IPluginRegistry _pluginRegistry;
+        private readonly IPluginRuntimeOps _runtimeOps;
         private readonly IPluginRecommendationEngine? _recommendationEngine;
         private readonly ILogger<SettingsAnalyticsPageViewModel> _logger;
         private readonly ILocalizationService _loc;
@@ -72,13 +72,13 @@ namespace Pulsar.ViewModels.Settings
 
         public SettingsAnalyticsPageViewModel(
             UsageStatsReadModel readModel,
-            IPluginRegistry pluginRegistry,
+            IPluginRuntimeOps runtimeOps,
             ILogger<SettingsAnalyticsPageViewModel> logger,
             ILocalizationService localizationService,
             IPluginRecommendationEngine? recommendationEngine = null)
         {
             _readModel = readModel;
-            _pluginRegistry = pluginRegistry;
+            _runtimeOps = runtimeOps;
             _logger = logger;
             _loc = localizationService;
             _recommendationEngine = recommendationEngine;
@@ -186,7 +186,7 @@ namespace Pulsar.ViewModels.Settings
         {
             try
             {
-                await _pluginRegistry.SetPluginStateAsync(pluginId, false);
+                await _runtimeOps.SetPluginStateAsync(pluginId, false);
                 var toRemove = Recommendations.FirstOrDefault(r => r.PluginId == pluginId);
                 if (toRemove != null)
                 {

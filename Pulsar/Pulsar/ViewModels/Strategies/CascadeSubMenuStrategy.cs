@@ -24,7 +24,7 @@ namespace Pulsar.ViewModels.Strategies
 
         public string StrategyId => StrategyIdValue;
 
-        private readonly IPluginRegistry _pluginRegistry;
+        private readonly IPluginExecutor _executor;
         private readonly IPluginMetadataRegistry _metadataRegistry;
         private readonly ITrayService _trayService;
         private readonly IActionFeedbackService _feedbackService;
@@ -33,7 +33,7 @@ namespace Pulsar.ViewModels.Strategies
         private readonly ILogger<CascadeSubMenuStrategy>? _logger;
 
         public CascadeSubMenuStrategy(
-            IPluginRegistry pluginRegistry,
+            IPluginExecutor executor,
             IPluginMetadataRegistry metadataRegistry,
             ITrayService trayService,
             IActionFeedbackService feedbackService,
@@ -41,7 +41,7 @@ namespace Pulsar.ViewModels.Strategies
             IActionFeedbackPresenter? feedbackPresenter = null,
             ILogger<CascadeSubMenuStrategy>? logger = null)
         {
-            _pluginRegistry = pluginRegistry;
+            _executor = executor;
             _metadataRegistry = metadataRegistry;
             _trayService = trayService;
             _feedbackService = feedbackService;
@@ -101,7 +101,7 @@ namespace Pulsar.ViewModels.Strategies
                         };
                         slot.ActionStrategy = new PluginActionStrategy(
                             pluginSlot,
-                            _pluginRegistry,
+                            _executor,
                             context.PulsarContext,
                             _trayService,
                             _feedbackService,

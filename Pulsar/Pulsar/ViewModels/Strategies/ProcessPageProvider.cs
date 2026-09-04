@@ -26,7 +26,7 @@ namespace Pulsar.ViewModels.Strategies
         private readonly ITrayService _trayService;
         private readonly ProcessWindowMatcher _matcher;
         private readonly PulsarContext _context;
-        private readonly IPluginRegistry _pluginRegistry;
+        private readonly IPluginExecutor _executor;
         private readonly IActionFeedbackService _feedbackService;
         private readonly IActionFeedbackPresenter? _feedbackPresenter;
 
@@ -58,7 +58,7 @@ namespace Pulsar.ViewModels.Strategies
             _healthMonitor = serviceProvider.GetService(typeof(IPluginHealthMonitor)) as IPluginHealthMonitor;
             _logService = serviceProvider.GetService(typeof(IPluginLogService)) as IPluginLogService;
             _trayService = (ITrayService)serviceProvider.GetService(typeof(ITrayService))!;
-            _pluginRegistry = (IPluginRegistry)serviceProvider.GetService(typeof(IPluginRegistry))!;
+            _executor = (IPluginExecutor)serviceProvider.GetService(typeof(IPluginExecutor))!;
             _feedbackService = (IActionFeedbackService)serviceProvider.GetService(typeof(IActionFeedbackService))!;
             _feedbackPresenter = serviceProvider.GetService(typeof(IActionFeedbackPresenter)) as IActionFeedbackPresenter;
         }
@@ -173,7 +173,7 @@ namespace Pulsar.ViewModels.Strategies
                     slotViewModel.Type = SlotType.Process;
                     slotViewModel.DataContext = slotItem.Config;
                     slotViewModel.ActionStrategy = new PluginActionStrategy(
-                        slotItem.Config, _pluginRegistry, _context, _trayService, _feedbackService,
+                        slotItem.Config, _executor, _context, _trayService, _feedbackService,
                         _usageTracker, _feedbackPresenter);
                     slotViewModel.CurrentOpacity = 0.5;
                 }

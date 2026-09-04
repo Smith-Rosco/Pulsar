@@ -204,7 +204,10 @@ Pulsar/
 │   └── Extensions/            #   Extension plugins (circuit breaker protected)
 │
 ├── Services/                  # Business logic layer
-│   ├── PluginRegistry.cs      #   Plugin lifecycle + circuit breaker (Facade pattern)
+│   ├── Interfaces/             #   Plugin runtime — three narrow seams (reg/exec/ops)
+│   │   ├── IPluginRegistry.cs  #     Registration: discover/activate/query
+│   │   ├── IPluginExecutor.cs  #     Execution: ExecuteAsync
+│   │   └── IPluginRuntimeOps.cs#     Runtime ops: rescan/deactivate/state/grant/unload
 │   ├── ConfigService.cs       #   Configuration management (Profiles.json)
 │   ├── HotkeyService.cs       #   Global hotkey bindings
 │   ├── ThemeService.cs        #   Light/Dark theme injection

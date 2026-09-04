@@ -23,8 +23,8 @@ namespace Pulsar.Tests.ViewModels
             // through PluginActionStrategy (launch fallback). It must publish
             // TutorialActionKind.Switch so the tutorial's step2 advances immediately,
             // not only on the second (running) trigger.
-            var registry = new Mock<IPluginRegistry>();
-            registry
+            var executor = new Mock<IPluginExecutor>();
+            executor
                 .Setup(r => r.ExecuteAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, string>>(), It.IsAny<PulsarContext>(), It.IsAny<System.Threading.CancellationToken>()))
                 .ReturnsAsync(PluginResult.Ok());
 
@@ -38,7 +38,7 @@ namespace Pulsar.Tests.ViewModels
 
             var strategy = new PluginActionStrategy(
                 slot,
-                registry.Object,
+                executor.Object,
                 Pulsar.Tests.TestHelpers.PulsarContextFactory.CreateTestContext(),
                 Mock.Of<ITrayService>(),
                 Mock.Of<IActionFeedbackService>(),
@@ -66,8 +66,8 @@ namespace Pulsar.Tests.ViewModels
         [Fact]
         public async Task ExecuteAsync_CommandPlugin_ShouldPublishCommandKind()
         {
-            var registry = new Mock<IPluginRegistry>();
-            registry
+            var executor = new Mock<IPluginExecutor>();
+            executor
                 .Setup(r => r.ExecuteAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IReadOnlyDictionary<string, string>>(), It.IsAny<PulsarContext>(), It.IsAny<System.Threading.CancellationToken>()))
                 .ReturnsAsync(PluginResult.Ok());
 
@@ -81,7 +81,7 @@ namespace Pulsar.Tests.ViewModels
 
             var strategy = new PluginActionStrategy(
                 slot,
-                registry.Object,
+                executor.Object,
                 Pulsar.Tests.TestHelpers.PulsarContextFactory.CreateTestContext(),
                 Mock.Of<ITrayService>(),
                 Mock.Of<IActionFeedbackService>(),

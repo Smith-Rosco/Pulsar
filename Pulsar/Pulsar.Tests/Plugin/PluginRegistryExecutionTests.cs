@@ -192,12 +192,12 @@ namespace Pulsar.Tests.Plugin
             allPlugins.Should().HaveCount(2);
         }
 
-        private PluginRegistry CreateRegistry(IPulsarPlugin plugin, IConfigService? configService = null)
+        private PluginRuntimeKernel CreateRegistry(IPulsarPlugin plugin, IConfigService? configService = null)
         {
             return CreateRegistryWithPlugins(configService, plugin);
         }
 
-        private PluginRegistry CreateEmptyRegistry()
+        private PluginRuntimeKernel CreateEmptyRegistry()
         {
             var catalog = new PluginCatalog();
             var runtimeState = new PluginRuntimeStateStore();
@@ -207,12 +207,11 @@ namespace Pulsar.Tests.Plugin
             var loader = new FakeLoader(
                 new TestPlugin(shouldSucceed: true),
                 CreateDescriptor(new TestPlugin(shouldSucceed: true) { TestId = "stub" }));
-            var kernel = new PluginRuntimeKernel(
+            return new PluginRuntimeKernel(
                 Mock.Of<IServiceProvider>(), loader, catalog, runtimeState, pipeline);
-            return new PluginRegistry(kernel, catalog, runtimeState);
         }
 
-        private PluginRegistry CreateRegistryWithPlugins(IConfigService? configService, params IPulsarPlugin[] plugins)
+        private PluginRuntimeKernel CreateRegistryWithPlugins(IConfigService? configService, params IPulsarPlugin[] plugins)
         {
             var catalog = new PluginCatalog();
             var runtimeState = new PluginRuntimeStateStore();
@@ -229,10 +228,9 @@ namespace Pulsar.Tests.Plugin
             catalog.RegisterDescriptors(descriptors);
 
             var loader = new FakeLoader(plugins[0], descriptors[0]);
-            var kernel = new PluginRuntimeKernel(
+            return new PluginRuntimeKernel(
                 Mock.Of<IServiceProvider>(), loader, catalog, runtimeState, pipeline,
                 NullLogger<PluginRuntimeKernel>.Instance, configService);
-            return new PluginRegistry(kernel, catalog, runtimeState);
         }
 
         private static PluginDescriptor CreateDescriptor(IPulsarPlugin plugin)

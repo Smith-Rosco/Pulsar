@@ -28,18 +28,16 @@ namespace Pulsar.Tests.Plugin
             var runtimeState = new PluginRuntimeStateStore();
             var pipeline = new PluginExecutionPipeline(runtimeState, new PluginCircuitBreakerPolicy());
             var services = new ServiceCollection().BuildServiceProvider();
-            var logger = Mock.Of<ILogger<PluginRegistry>>();
             var loader = new FakePluginLoader(services, BuildDescriptors())
             {
                 ActivationFactory = _ => new DeferredActivationPlugin()
             };
             var kernel = new PluginRuntimeKernel(services, loader, catalog, runtimeState, pipeline);
-            var registry = new PluginRegistry(kernel, catalog, runtimeState);
 
-            await registry.DiscoverDeferredAsync();
+            await kernel.DiscoverDeferredAsync();
 
-            registry.GetDescriptor("test.deferred").Should().NotBeNull();
-            registry.GetPlugin("test.deferred").Should().BeNull();
+            kernel.GetDescriptor("test.deferred").Should().NotBeNull();
+            kernel.GetPlugin("test.deferred").Should().BeNull();
             loader.ActivationCount.Should().Be(0);
         }
 
@@ -58,25 +56,23 @@ namespace Pulsar.Tests.Plugin
             services.AddSingleton(configService.Object);
 
             var provider = services.BuildServiceProvider();
-            var logger = Mock.Of<ILogger<PluginRegistry>>();
             var loader = new FakePluginLoader(provider, BuildDescriptors())
             {
                 ActivationFactory = _ => new DeferredActivationPlugin()
             };
             var kernel = new PluginRuntimeKernel(provider, loader, catalog, runtimeState, pipeline, NullLogger<PluginRuntimeKernel>.Instance, configService.Object);
-            var registry = new PluginRegistry(kernel, catalog, runtimeState);
-            await registry.DiscoverDeferredAsync();
+            await kernel.DiscoverDeferredAsync();
 
             var context = PulsarContextFactory.CreateTestContext();
             var args = new Dictionary<string, string>().AsReadOnly();
 
-            var result1 = await registry.ExecuteAsync("test.deferred", "run", args, context);
-            var result2 = await registry.ExecuteAsync("test.deferred", "run", args, context);
+            var result1 = await kernel.ExecuteAsync("test.deferred", "run", args, context);
+            var result2 = await kernel.ExecuteAsync("test.deferred", "run", args, context);
 
             result1.Success.Should().BeTrue();
             result2.Success.Should().BeTrue();
             loader.ActivationCount.Should().Be(1);
-            registry.GetPlugin("test.deferred").Should().NotBeNull();
+            kernel.GetPlugin("test.deferred").Should().NotBeNull();
         }
 
         [Fact]

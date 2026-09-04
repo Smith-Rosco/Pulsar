@@ -18,6 +18,7 @@ namespace Pulsar.ViewModels.Strategies
     {
         private readonly List<PluginSlot> _allSlots;
         private readonly IPluginRegistry _pluginRegistry;
+        private readonly IPluginExecutor _executor;
         private readonly PulsarContext _context;
         private readonly ITrayService _trayService;
         private readonly IActionFeedbackService _feedbackService;
@@ -40,6 +41,7 @@ namespace Pulsar.ViewModels.Strategies
             // [Refactor] 按 Slot 字段排序，确保用户自定义顺序生效
             _allSlots = slots?.OrderBy(s => s.Slot).ToList() ?? new List<PluginSlot>();
             _pluginRegistry = pluginRegistry;
+            _executor = (IPluginExecutor)serviceProvider.GetService(typeof(IPluginExecutor))!;
             _context = context;
             _trayService = trayService;
             _feedbackService = (IActionFeedbackService)serviceProvider.GetService(typeof(IActionFeedbackService))!;
@@ -105,7 +107,7 @@ namespace Pulsar.ViewModels.Strategies
                     
                     if (isEnabled)
                     {
-                        slot.ActionStrategy = new PluginActionStrategy(item, _pluginRegistry, _context, _trayService, _feedbackService,
+                        slot.ActionStrategy = new PluginActionStrategy(item, _executor, _context, _trayService, _feedbackService,
                             _serviceProvider.GetService(typeof(IPluginUsageTracker)) as IPluginUsageTracker,
                             _serviceProvider.GetService(typeof(IActionFeedbackPresenter)) as IActionFeedbackPresenter);
                     }

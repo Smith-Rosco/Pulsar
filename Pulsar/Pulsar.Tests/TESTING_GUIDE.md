@@ -117,10 +117,14 @@ var context = PulsarContextFactory.CreateTestContextWithWindows(
 public async Task ExecuteAsync_ShouldReturnSuccess_WhenPluginSucceeds()
 {
     // Arrange
-    var registry = new PluginRegistry(_serviceProvider, _mockLogger.Object);
     var plugin = new TestPlugin(shouldSucceed: true);
-    
-    RegisterPlugin(registry, plugin);
+    // 运行时由 PluginRuntimeKernel 直接承载三个窄 seam（IPluginRegistry /
+    // IPluginExecutor / IPluginRuntimeOps）。测试直接构造 kernel：
+    var catalog = new PluginCatalog();
+    var runtimeState = new PluginRuntimeStateStore();
+    var pipeline = new PluginExecutionPipeline(runtimeState, new PluginCircuitBreakerPolicy());
+    var loader = new FakeLoader(plugin, CreateDescriptor(plugin)); // 见 PluginRegistryExecutionTests
+    var registry = new PluginRuntimeKernel(Mock.Of<IServiceProvider>(), loader, catalog, runtimeState, pipeline);
     
     var context = PulsarContextFactory.CreateTestContext(); // ✅ 使用工厂方法
     var args = new Dictionary<string, string>().AsReadOnly();
@@ -241,14 +245,15 @@ public MyTests()
 public async Task ExecuteAsync_ShouldReturnSuccess_WhenPluginSucceeds()
 {
     // Arrange
-    var registry = new PluginRegistry(_serviceProvider, _mockLogger.Object);
     var plugin = new TestPlugin(shouldSucceed: true);
-    
-    // 使用反射注册插件（绕过 LoadAllAsync）
-    typeof(PluginRegistry)
-        .GetField("_plugins", BindingFlags.NonPublic | BindingFlags.Instance)
-        ?.SetValue(registry, new Dictionary<string, IPulsarPlugin> { [plugin.Id] = plugin });
-    
+    // 直接构造 PluginRuntimeKernel（它实现 IPluginRegistry / IPluginExecutor /
+    // IPluginRuntimeOps 三个窄 seam），等价于生产 DI 里三个接口映射到同一单例：
+    var catalog = new PluginCatalog();
+    var runtimeState = new PluginRuntimeStateStore();
+    var pipeline = new PluginExecutionPipeline(runtimeState, new PluginCircuitBreakerPolicy());
+    var loader = new FakeLoader(plugin, CreateDescriptor(plugin));
+    var registry = new PluginRuntimeKernel(Mock.Of<IServiceProvider>(), loader, catalog, runtimeState, pipeline);
+
     var context = PulsarContextFactory.CreateTestContext();
     var args = new Dictionary<string, string>().AsReadOnly();
 
@@ -268,10 +273,12 @@ public async Task ExecuteAsync_ShouldReturnSuccess_WhenPluginSucceeds()
 public async Task CircuitBreaker_ShouldTrip_AfterThreeConsecutiveFailures()
 {
     // Arrange
-    var registry = new PluginRegistry(_serviceProvider, _mockLogger.Object);
     var plugin = new FaultyTestPlugin(shouldThrow: true);
-    
-    RegisterPlugin(registry, plugin);
+    var catalog = new PluginCatalog();
+    var runtimeState = new PluginRuntimeStateStore();
+    var pipeline = new PluginExecutionPipeline(runtimeState, new PluginCircuitBreakerPolicy());
+    var loader = new FakeLoader(plugin, CreateDescriptor(plugin));
+    var registry = new PluginRuntimeKernel(Mock.Of<IServiceProvider>(), loader, catalog, runtimeState, pipeline);
     
     var context = PulsarContextFactory.CreateTestContext();
     var args = new Dictionary<string, string>().AsReadOnly();
@@ -508,9 +515,14 @@ public async Task NewFeature_ShouldWork_WhenConditionMet()
 - **2026-03-03**: 初始版本，91 个测试全部通过
 - **2026-06-14**: 更新为 331+ 测试，新增 Services / ViewModels / Tutorial / Plugins 测试目录
   - 添加 `PulsarContextFactory` 测试辅助类
-  - 修复 `PluginRegistry` 构造函数中 `_configService` 初始化问题
+  - 修复 `PluginRuntimeKernel` 构造函数中 `_configService` 初始化问题
   - 修复断路器重置逻辑
   - 修复 JSON 数字类型规范化问题
+- **2026-09-04**: 插件运行时门面拆分为三个窄 seam（ADR-012）
+  - `IPluginRegistry` 收缩为注册面（发现/激活/查询）；`ExecuteAsync` 移入新 `IPluginExecutor`；
+    运维原语移入新 `IPluginRuntimeOps`。
+  - 透传类 `PluginRegistry` 删除 —— 测试直接构造 `PluginRuntimeKernel`
+    （参考 `Plugin/PluginRegistryExecutionTests` / `PluginRegistryCircuitBreakerTests`）。
 
 ---
 

@@ -57,8 +57,7 @@ Pulsar now separates plugin runtime responsibilities into explicit internal serv
 - `PluginExecutionPipeline`: deterministic execution ordering for enablement, breaker availability, activation, execution scope, outcome classification, and telemetry
 - `PluginCircuitBreakerPolicy`: crash counters, cooldown windows, and recovery signaling for extension plugins
 - `PluginHost`: isolated instance hosting, unload behavior, and host-local state bridging
-
-`PluginRegistry` remains the compatibility-facing entry point used by the application, but it now delegates orchestration to the runtime kernel instead of owning all runtime policy itself.
+- `PluginRuntimeKernel`: the single deep implementation behind three narrow DI seams — registration (`IPluginRegistry`), execution (`IPluginExecutor`), and runtime ops (`IPluginRuntimeOps`). The former wide facade (`IPluginRegistry` with 14 methods + a pass-through `PluginRegistry` class) was split along consumer lines in ADR-012; no facade remains.
 
 ---
 

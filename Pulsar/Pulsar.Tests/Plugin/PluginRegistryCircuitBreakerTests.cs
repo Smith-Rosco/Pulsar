@@ -164,7 +164,7 @@ namespace Pulsar.Tests.Plugin
             }
         }
 
-        private static PluginRegistry CreateRegistry(IPulsarPlugin plugin)
+        private static PluginRuntimeKernel CreateRegistry(IPulsarPlugin plugin)
         {
             var catalog = new PluginCatalog();
             var runtimeState = new PluginRuntimeStateStore();
@@ -176,9 +176,8 @@ namespace Pulsar.Tests.Plugin
             runtimeState.SetPlugin(plugin, PluginLifecycleState.Enabled);
 
             var loader = new FakeLoader(plugin, descriptor);
-            var kernel = new PluginRuntimeKernel(
+            return new PluginRuntimeKernel(
                 Mock.Of<IServiceProvider>(), loader, catalog, runtimeState, pipeline);
-            return new PluginRegistry(kernel, catalog, runtimeState);
         }
 
         private static PluginDescriptor CreateDescriptor(IPulsarPlugin plugin)
