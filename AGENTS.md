@@ -184,6 +184,18 @@ Extension plugins crashing 3x in 1 min are auto-disabled for 60s; user notified 
 
 ## 9. Quick Commands
 
+**Recommended**: use `scripts/dev.ps1` — it wraps build/test/commit and auto-repairs the Windows env vars stripped by sandboxed shells (fixes the NuGet `Value cannot be null (path1)` crash). From bash:
+
+```bash
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev.ps1 build
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev.ps1 test                          # full suite (~23 s)
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev.ps1 test --filter "FullyQualifiedName~HotkeyService"
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev.ps1 commit -Message "..." [-All]  # -All = include untracked (git add -A); default = tracked only (git add -u)
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev.ps1 all                           # build + full test
+```
+
+Direct commands (sandboxed shells may need the env-prefix workaround — see the `scripts/dev.ps1` header comment):
+
 ```bash
 dotnet build Pulsar/Pulsar/Pulsar.csproj
 dotnet run --project Pulsar/Pulsar/Pulsar.csproj

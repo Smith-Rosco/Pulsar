@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- 暂无
+- 新增 `scripts/dev.ps1` 开发命令封装（journal 11:52 起多次提及的遗愿落地）：`build` / `test` / `commit` / `all` 四个子命令，执行前自动修补沙箱 shell 剥离的 Windows 环境变量。env 修补**只补缺失、进程级、永不覆盖**（APPDATA / LOCALAPPDATA / USERPROFILE 经 USERPROFILE→HOMEDRIVE+HOMEPATH→USERNAME 链派生；ProgramFiles 优先 ProgramW6432；ProgramFiles(x86) 与 CommonProgramFiles(x86) 由补好的 ProgramFiles 派生；SystemRoot / windir / ProgramData 由 SystemDrive 派生），根治 dotnet NuGet `Value cannot be null (path1)` 崩溃；dotnet 不在 PATH 时回退 `%ProgramFiles%\dotnet\dotnet.exe`。build/test 目标固定 `Pulsar/Pulsar.sln` 与 `Pulsar.Tests.csproj`（规避 sln 不在仓库根的 MSB1009 坑）并透传额外参数；commit 默认 `git add -u` 仅暂存 tracked 改动（呼应「勿误提交」约定），`-All` 切 `git add -A`。PS 5.1 兼容、纯 ASCII（规避 PS 5.1 读无 BOM UTF-8 的中文乱码坑）、native 启动失败诚实退出 127（不谎报成功）。
 
 ### Changed
 - 插件运行时宽门面拆分为三个窄 seam（ADR-012，架构审查候选 A）：`IPluginRegistry` 收缩为注册面（发现·激活·查询，8 方法），`ExecuteAsync` 移入新执行面 `IPluginExecutor`，重扫/停用/状态/授权/卸载移入新运维面 `IPluginRuntimeOps`；三个接口由同一 `PluginRuntimeKernel` 单例实现并经 DI 注册。透传包装类 `PluginRegistry` 删除，执行热路径/生命周期编排/设置页各自改注入最窄 seam。
@@ -52,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **测试（K 修复 · 全量套件死锁）**：K 测试落地后全量 `dotnet test` 必挂死（testhost 零输出，15+ 分钟无进展；并行/串行皆挂，定向跑 19/19 秒过）。根因：`AppStartupCoordinator` tutorial 分支内联访问 `System.Windows.Application.Current.Dispatcher`，测试 #7 依赖「宿主中 `Application.Current` 为 null → NRE」这一进程全局假设；先跑的 `ThemeServiceTests` 等四个测试类 `new Application()` 留下非 null 的 Current（xunit collection 隔离不隔离 AppDomain 静态），其 Dispatcher 永不泵消息 → `InvokeAsync` 排队后永不完成。修复：ctor 新增可选 seam `Func<Dispatcher> dispatcherProvider`（默认 `() => Application.Current?.Dispatcher`，生产语义等价；MS.DI 类型注册经可选参数默认值自动生效，App.xaml.cs 无改动），测试注入固定 `() => null` 使断言确定化。详见 `Docs/lessons/XUNIT_APPLICATION_CURRENT_DEADLOCK.md`。
 
 ### Verified
+- `scripts/dev.ps1` 验证：最恶劣场景（显式剥离 7 个 NuGet 关键环境变量）下自修复生效——6 个缺失变量逐条修补、dotnet PATH 缺失时 fallback 命中；native 启动被环境阻断时脚本诚实退出 127（加固前缺陷：`exit $null` 谎报成功，已修）。回归门禁走可靠路径确认仓库绿：build **0 警告 0 错误**（10.2s）、全量 **1059 / 1059**（23s）。注：本会话 PowerShell 工具沙箱禁 native 子进程生成（whoami / cmd / dotnet 全部空输出空退出码），`dev.ps1 build` 的真实终端端到端留一次调用验证：`powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev.ps1 build`。
 - 构建 0 错误（NU1900 网络警告与基线一致；CS8625 在 ADR-017 引入的 `Lazy<T>=null` 默认参数上基线即存在，未新增）
 - `dotnet test Pulsar.Tests` → **1045 / 1045 通过**（基线 1037 + 8 个 `AppStartupCoordinatorTests`；默认并行 22s——含上述全量死锁修复）
 - L/M/N/O 落地后全量回归：**1059 / 1059 通过**（基线 1045 + HotkeyService hook 模式 3 + SlotEditor severity 1 + SettingsDialogFlows 10；构建 0 错误、改动文件零新增警告）
