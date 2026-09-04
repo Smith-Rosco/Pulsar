@@ -34,6 +34,7 @@ namespace Pulsar.Services
         private readonly Features.Tutorial.Services.StartupCoordinator _tutorialStartupCoordinator;
         private readonly IDialogService _dialogService;
         private readonly Validation.ConfigValidationPipeline _validationPipeline;
+        private readonly IOnboardingStateService _onboardingStateService;
 
         // Lazy / Func dependencies — defer until their owning step. See
         // architecture review 2026-09-04 candidate K: the previous implementation
@@ -66,6 +67,7 @@ namespace Pulsar.Services
             Features.Tutorial.Services.StartupCoordinator tutorialStartupCoordinator,
             IDialogService dialogService,
             Validation.ConfigValidationPipeline validationPipeline,
+            IOnboardingStateService onboardingStateService,
             IProcessRegistryService processRegistryService,                  // wrapped in Lazy below — keep ctor empty
             IBackgroundWorkScheduler backgroundWorkScheduler,
             LoggingLevelSwitch levelSwitch,
@@ -89,6 +91,7 @@ namespace Pulsar.Services
             _tutorialStartupCoordinator = tutorialStartupCoordinator;
             _dialogService = dialogService;
             _validationPipeline = validationPipeline;
+            _onboardingStateService = onboardingStateService;
             _backgroundWorkScheduler = backgroundWorkScheduler;
             _levelSwitch = levelSwitch;
             _logger = logger;
@@ -237,10 +240,17 @@ namespace Pulsar.Services
 
                     await RunOnboardingStartupAsync(cancellationToken);
 
-                    var config = await _configService.LoadSnapshotAsync();
-                    if (config.Settings.HasCompletedTutorial
-                        || string.Equals(config.Settings.LastTutorialStep, "Skipped", StringComparison.OrdinalIgnoreCase)
-                        || !string.Equals(config.Settings.OnboardingState, "SetupWizardComplete", StringComparison.OrdinalIgnoreCase))
+                    // First-launch decision: defer to IOnboardingStateService — the
+                    // single source of truth for OnboardingState → semantic flags. This
+                    // replaces the prior inline 3-way string/flag check (candidate I,
+                    // ADR-018). Behaviour change is intentional: an illegal config
+                    // combination (OnboardingState=Complete with HasCompletedTutorial
+                    // =false, documented at ProfilesConfig.cs:354-357) now returns
+                    // instead of silently entering the tutorial.
+                    var onboardingState = await _onboardingStateService.GetStateAsync();
+                    if (onboardingState.HasCompletedTutorial
+                        || onboardingState.HasSkippedTutorial
+                        || !onboardingState.HasCompletedSetup)
                     {
                         return;
                     }

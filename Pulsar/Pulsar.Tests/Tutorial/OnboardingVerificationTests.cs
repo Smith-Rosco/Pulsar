@@ -171,5 +171,129 @@ namespace Pulsar.Tests.Tutorial
 
             canClose.Should().BeTrue("wizard no longer validates, confirmed is always allowed");
         }
+
+        // ===================================================================
+        // Candidate I (ADR-018): AppStartupCoordinator's first-launch decision
+        // now defers to IOnboardingStateService.GetStateAsync(). These tests
+        // lock the OnboardingStateService projection that the coordinator
+        // depends on — especially the self-healing mapping for the illegal
+        // (Complete + HasCompletedTutorial=false) combination documented at
+        // ProfilesConfig.cs:354-357.
+        // ===================================================================
+
+        [Theory]
+        [InlineData("SetupWizardComplete", true, false, false)]
+        [InlineData("Complete", true, true, false)]
+        public async Task OnboardingStateService_GetStateAsync_WhenSetupFinished_ShouldExposeCompletedSetup(
+            string onboardingState, bool expectedHasCompletedSetup, bool expectedHasCompletedTutorial, bool expectedHasSkippedTutorial)
+        {
+            var mockConfigService = new Mock<IConfigService>();
+            mockConfigService.Setup(s => s.LoadSnapshotAsync(It.IsAny<bool>()))
+                .ReturnsAsync(new ProfilesConfig
+                {
+                    Settings = new ProfileSettings
+                    {
+                        OnboardingState = onboardingState,
+                        HasCompletedTutorial = expectedHasCompletedTutorial,
+                        LastTutorialStep = null
+                    },
+                    Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
+                });
+
+            var service = new OnboardingStateService(mockConfigService.Object);
+            var state = await service.GetStateAsync();
+
+            state.HasCompletedSetup.Should().Be(expectedHasCompletedSetup,
+                $"OnboardingState='{onboardingState}' must map to HasCompletedSetup={expectedHasCompletedSetup}");
+            state.HasCompletedTutorial.Should().Be(expectedHasCompletedTutorial,
+                $"OnboardingState='{onboardingState}' must map to HasCompletedTutorial={expectedHasCompletedTutorial}");
+            state.HasSkippedTutorial.Should().Be(expectedHasSkippedTutorial);
+        }
+
+        [Fact]
+        public async Task OnboardingStateService_GetStateAsync_WithIllegalCompleteState_ShouldExposeCompletedSetup()
+        {
+            // ADR-018 self-healing: ProfilesConfig.cs:354-357 documents
+            // OnboardingState='Complete' + HasCompletedTutorial=false as an
+            // illegal invariant. AppStartupCoordinator depends on
+            // HasCompletedSetup=true for the 'Complete' value to short-circuit
+            // the tutorial path even when HasCompletedTutorial is false.
+            var mockConfigService = new Mock<IConfigService>();
+            mockConfigService.Setup(s => s.LoadSnapshotAsync(It.IsAny<bool>()))
+                .ReturnsAsync(new ProfilesConfig
+                {
+                    Settings = new ProfileSettings
+                    {
+                        OnboardingState = "Complete",
+                        HasCompletedTutorial = false
+                    },
+                    Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
+                });
+
+            var service = new OnboardingStateService(mockConfigService.Object);
+            var state = await service.GetStateAsync();
+
+            state.HasCompletedSetup.Should().BeTrue(
+                "the illegal combination must still surface HasCompletedSetup=true so AppStartupCoordinator returns");
+            state.HasCompletedTutorial.Should().BeFalse(
+                "the underlying field value must be read literally — never silently coerced");
+        }
+
+        [Fact]
+        public async Task OnboardingStateService_GetStateAsync_WithSkippedTutorialStep_ShouldExposeHasSkippedTutorial()
+        {
+            // ADR-018: the prior inline check used
+            // `LastTutorialStep == "Skipped"` as a return trigger. The
+            // replacement relies on IOnboardingStateService.HasSkippedTutorial
+            // to encode the same condition.
+            var mockConfigService = new Mock<IConfigService>();
+            mockConfigService.Setup(s => s.LoadSnapshotAsync(It.IsAny<bool>()))
+                .ReturnsAsync(new ProfilesConfig
+                {
+                    Settings = new ProfileSettings
+                    {
+                        OnboardingState = "SetupWizardComplete",
+                        HasCompletedTutorial = false,
+                        LastTutorialStep = "Skipped"
+                    },
+                    Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
+                });
+
+            var service = new OnboardingStateService(mockConfigService.Object);
+            var state = await service.GetStateAsync();
+
+            state.HasSkippedTutorial.Should().BeTrue(
+                "LastTutorialStep='Skipped' is the canonical skip marker — the coordinator's return path depends on it");
+            state.HasCompletedSetup.Should().BeTrue("SetupWizardComplete implies HasCompletedSetup");
+            state.HasCompletedTutorial.Should().BeFalse("tutorial was skipped, not completed");
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task OnboardingStateService_GetStateAsync_OnboardingComplete_ShouldAlwaysShortCircuitFirstLaunch(
+            bool hasCompletedTutorial)
+        {
+            // Whichever way the flag pair is set, the OnboardingState='Complete'
+            // case must always map HasCompletedSetup=true (both branches lead
+            // the coordinator to return without entering the tutorial).
+            var mockConfigService = new Mock<IConfigService>();
+            mockConfigService.Setup(s => s.LoadSnapshotAsync(It.IsAny<bool>()))
+                .ReturnsAsync(new ProfilesConfig
+                {
+                    Settings = new ProfileSettings
+                    {
+                        OnboardingState = "Complete",
+                        HasCompletedTutorial = hasCompletedTutorial
+                    },
+                    Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
+                });
+
+            var service = new OnboardingStateService(mockConfigService.Object);
+            var state = await service.GetStateAsync();
+
+            state.HasCompletedSetup.Should().BeTrue(
+                "regardless of HasCompletedTutorial, OnboardingState='Complete' must short-circuit");
+        }
     }
 }
