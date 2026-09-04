@@ -10,12 +10,9 @@
 ### An office automation workbench for Windows — one-click macros, secure fill & sign-in, and custom scripts for legacy intranet web pages
 **重度办公效率工作台 · 驯服老旧办公系统**
 
-[![Release Version](https://img.shields.io/badge/Release-v1.9.1-2563EB.svg?style=flat-square&logo=github)](https://github.com/Smith-Rosco/Pulsar/releases)
+[![Release Version](https://img.shields.io/badge/Release-v1.10.0-2563EB.svg?style=flat-square&logo=github)](https://github.com/Smith-Rosco/Pulsar/releases)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(x64)-0078D4.svg?style=flat-square&logo=windows)](https://www.microsoft.com/windows)
-[![.NET](https://img.shields.io/badge/.NET-8.0%20WPF-512BD4.svg?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-10B981.svg?style=flat-square)](LICENSE)
-[![CI](https://github.com/Smith-Rosco/Pulsar/actions/workflows/ci.yml/badge.svg)](.github/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/Tests-897%20xUnit-success.svg?style=flat-square&logo=xunit)](Pulsar/Pulsar.Tests)
 [![Language](https://img.shields.io/badge/Language-zh--CN%20%7C%20en-8B5CF6.svg?style=flat-square)](#-internationalization)
 
 <br/>
@@ -24,118 +21,98 @@
 
 <br/>
 
-[🚀 Quick Start](#-quick-start) · [✨ Features](#-features) · [🎬 Video Demo](#-video-demo) · [📸 Screenshots](#-screenshots) · [🛠️ Local Build](#-local-build--development) · [📋 Changelog](CHANGELOG.md)
+[🚀 Quick Start](#-quick-start) · [✨ Features](#-features) · [🎬 Demo](#-demo) · [📸 Screenshots](#-screenshots) · [🧑‍💻 For Developers](#-for-developers) · [🤝 Community](#-community--contributing)
 
 </div>
 
 ---
 
-## 📖 Introduction
+## 💡 What is it?
 
-**Pulsar** is an **office automation workbench** for Windows — a hotkey-invoked radial menu that automates the legacy office systems modern tools can't handle.
+**Pulsar** is an office automation workbench for Windows, built for people who spend their days stuck repeating the same operations.
 
-It's built for finance, operations, and administrative professionals who spend their days in Excel/WPS, log into multiple intranet systems, and re-enter the same data over and over.
+Tired of redoing spreadsheets in Excel/WPS? Logging into one intranet system after another? Filling in the same forms over and over? — Press a hotkey and a circular menu appears right next to your cursor. Every high-frequency action becomes a one-shot gesture you can trigger by sliding toward it.
 
-> 💡 **Design Highlights**:
-> - **Three office-automation pillars**: one-click Excel/WPS macros; custom scripts for legacy intranet web pages that don't support browser extensions or userscripts; secure fill & sign-in injection (PKI);
-> - **Spatial-first navigation**: radial menu + spatial memory for one-shot access to frequent actions, replacing linear Alt-Tab traversal;
-> - **Layered plugin architecture**: Core plugins (infrastructure) vs Extension plugins (optional) — extensions protected by a Circuit Breaker;
-> - **AI-friendly development**: headless plugin simulator + structured JSON output, 897 xUnit tests, optimized for AI-agent collaboration.
+**In one sentence**: it brings automation to the legacy office systems that "modern tools can't handle" — turning them into actions on a hotkey.
+
+### The three things it does best
+
+| | Scenario | Result |
+| :--- | :--- | :--- |
+| 📊 **One-click macros** | Repetitive spreadsheets & data work in Excel/WPS | Saved macros become one action on the wheel — fire and forget |
+| 🌐 **Legacy web automation** | Intranet systems without browser-extension/userscript support | Custom one-click entries for old web pages — repetitive entry becomes automated |
+| 🔐 **Secure fill & sign-in** | Logging into many systems, filling forms | Credentials encrypted & stored locally; inject once, auto-submit |
+
+### Nice-to-haves
+
+- **Radial menu**: actions live at fixed positions — build muscle memory and operate "blind", no more digging through menus;
+- **Smart window switching**: jump to the window you want; not running? Pulsar launches it for you;
+- **Global hotkeys**: summon Pulsar from any app, no need to switch back first;
+- **Beginner friendly**: a first-run tutorial gets you started in minutes, plus ready-made office action presets and a script example library;
+- **Bilingual**: switch the UI between Simplified Chinese and English anytime.
 
 ---
 
 ## 🚀 Quick Start
 
-### Download & Install
+1. Grab the latest build from [Releases](https://github.com/Smith-Rosco/Pulsar/releases) and run it — Pulsar waits in your system tray;
+2. Press **`Ctrl+Shift+Q`** to summon the command menu (or **`Ctrl+Q`** for switch mode);
+3. Slide toward the action you want and release — it executes instantly;
+4. Want to tweak things? Open Settings from Pulsar.
 
-| Package | Use case | Description | Download |
-| :--- | :--- | :--- | :--- |
-| **Latest Release** | All users | Latest stable build | [⬇️ Go to Releases](https://github.com/Smith-Rosco/Pulsar/releases) |
-| **Build from source** | Developers | Compile and run from source | [🛠️ Build guide below](#-local-build--development) |
-
-### Basic Usage
-
-1. Download and run `Pulsar` — it runs in the system tray in the background;
-2. Press the default hotkey **`Ctrl+Shift+Q`** (Command mode) or **`Ctrl+Q`** (Switch mode) to invoke the radial menu;
-3. Slide toward the target sector using spatial positioning, release to trigger the action;
-4. For detailed configuration, open Settings from Pulsar Control (`com.pulsar.system`).
+> 💡 First time? Follow the built-in **onboarding tutorial** — you'll be up to speed in minutes.
 
 ---
 
 ## ✨ Features
 
-### 1. 🧩 Three Office-Automation Pillars
+### 1. 📊 One-click macros (Excel/WPS)
 
-Built for heavy office scenarios:
+Save your frequently used macros as "one action on the wheel". No more opening the VBA editor every time you need a report or a cleanup — slide once, the macro runs.
 
-- **One-click macros (VBA)**: run saved Excel/WPS macros in one action — turn repetitive spreadsheet/data work into a radial-menu action;
-- **Legacy web scripts**: run custom scripts in old intranet web pages — create one-click action entries for legacy enterprise systems that don't support modern browser extensions or userscripts (Tampermonkey);
-- **Secure fill & sign-in (PKI)**: DPAPI-encrypted credential vault injected into any window via UI Automation, with configurable delay and auto-submit.
+### 2. 🌐 Legacy web automation
 
----
+Many corporate intranet systems are too old for modern browser extensions or userscripts. Pulsar lets you build one-click entries for those pages, turning daily repetitive web work into automation.
 
-### 2. 🌟 Radial Menu
+### 3. 🔐 Secure fill & sign-in
 
-A hotkey-invoked circular launcher with two modes:
-- **Command mode** (`Ctrl+Shift+Q`): contextual actions;
-- **Switch mode** (`Ctrl+Q`): app switching with an MRU center window, smart discovery, blacklist filtering, and auto-launch of missing apps.
+Store frequently used usernames and passwords locally with system-level encryption. At login, inject them with one action — auto-fill and auto-submit, with no plaintext credentials ever touching disk.
+
+### 4. 🎯 Radial menu: operate by muscle memory
+
+- **Command mode** (`Ctrl+Shift+Q`): shows the actions available right now;
+- **Switch mode** (`Ctrl+Q`): fast window switching; auto-launches apps that aren't running;
+- Frequent actions sit at fixed positions — practice a few times and you can go "blind", no more hunting through menus.
 
 <div align="center">
   <img src="Pulsar/Pulsar/Assets/Brand/demo.gif" width="640" alt="Pulsar Radial Menu Demo" />
 </div>
 
----
+### 5. 🪟 Smart window switching
 
-### 3. 🧩 Extensible Plugin System
+Jump straight to the window you want; if the app isn't running, Pulsar starts it for you.
 
-Two-tier architecture:
-- **Core plugins**: essential infrastructure, always loaded, crashes are fatal (fail-fast);
-- **Extension plugins**: optional, protected by a Circuit Breaker — 3 crashes within 1 minute triggers a 60-second disable, then half-open with a single retry, with Windows Toast notifications.
+### 6. 🧩 Built-in tools
 
-**Built-in plugins**:
+| Tool | What it does |
+| :--- | :--- |
+| **Secret Fill** | Encrypted credential storage; inject into any window with one action |
+| **App Switcher** | Smart window switching; auto-launches apps that aren't running |
+| **Pulsar Control** | Open settings, quick-add context apps |
+| **Command Runner** | Launch apps/files/folders/URLs; send keystrokes to the foreground window |
+| **VBA Script Runner** | Run saved Excel/WPS macros with one click |
+| **Web Scripts** | Run custom scripts on legacy intranet web pages |
 
-| Plugin | ID | Description | Tier |
-|--------|----|-------------|------|
-| **Secret Fill (PKI)** | `com.pulsar.pki` | DPAPI-encrypted credential vault; inject username/password via UI Automation with delay and auto-submit | Core |
-| **App Switcher** | `com.pulsar.winswitcher` | Smart window switching (fuzzy search), auto-launch if not running, discovery blacklist | Core |
-| **Pulsar Control** | `com.pulsar.system` | Open settings, quick-add context apps, system commands | Core |
-| **Command Runner** | `com.pulsar.command` | Launch apps/files/folders/URLs; send keystroke sequences to the foreground window | Extension |
-| **VBA Script Runner** | `com.pulsar.vbarunner` | Execute VBA macros in Excel/WPS with smart directives | Extension |
-| **Web Scripts** | `com.pulsar.bookmarklet` | Run custom scripts in legacy intranet web pages that don't support browser extensions or userscripts | Extension |
+### 7. 🎓 Beginner friendly
 
----
-
-### 4. 🔐 PKI / Secret Management
-
-DPAPI-encrypted credential vault with UI Automation injection, auto-submit, and configurable delay. Follows the **Focus Boomerang** cycle: capture → execute → hide → restore focus → delay → inject, reliably returning focus to the original window.
+- First-run onboarding tutorial — learn the core operations step by step;
+- Built-in **script editor** and **example library** — start from examples even if you've never written a script;
+- **Office action preset packs** — install once, use immediately;
+- UI in Simplified Chinese / English.
 
 ---
 
-### 5. 🔑 Global Hotkeys
-
-System-wide bindings for instant access — default `Ctrl+Shift+Q` (Command mode) and `Ctrl+Q` (Switch mode).
-
----
-
-### 6. 🖥️ App & Window Switching
-
-Smart window switching with discovery blacklist; launches apps if not running.
-
----
-
-### 7. 🤖 Plugin Simulator
-
-Headless plugin execution with structured JSON output for AI-driven testing and a self-correction loop (simulator → parse errors → fix code → re-run until green).
-
----
-
-### 8. 🌐 Localization
-
-Simplified Chinese + English, with convention-based automatic key lookup for plugin metadata.
-
----
-
-## 🎬 Video Demo
+## 🎬 Demo
 
 <!-- TODO: Replace with a real video cover and link -->
 <div align="center">
@@ -158,132 +135,24 @@ Simplified Chinese + English, with convention-based automatic key lookup for plu
 
 ---
 
-## 🛠️ Local Build & Development
-
-### Prerequisites
-
-- Windows 10 or later (x64)
-- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) (Runtime needed to run; SDK to build)
-
-### Build, Run & Test
-
-```bash
-# Restore & Build
-dotnet restore Pulsar/Pulsar/Pulsar.csproj
-dotnet build Pulsar/Pulsar/Pulsar.csproj
-
-# Run (default hotkeys: Ctrl+Shift+Q = Command mode, Ctrl+Q = Switch mode)
-dotnet run --project Pulsar/Pulsar/Pulsar.csproj
-
-# Run tests (897 xUnit tests)
-dotnet test Pulsar/Pulsar.Tests/Pulsar.Tests.csproj
-
-# Headless plugin simulation (AI-driven plugin testing)
-dotnet run --project Pulsar/Pulsar.Simulator -- --plugin "com.pulsar.winswitcher" --action "activate" --args "{\"app\":\"chrome\"}"
-
-# Publish self-contained release (see Docs/ops/BUILD_AND_RUN.md for the full Artifacts workflow)
-dotnet publish Pulsar/Pulsar/Pulsar.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:PublishDir="Artifacts\publish\v<Version>"
-```
-
----
-
-## 📂 Project Structure
-
-```
-Pulsar/
-├── Core/                      # Interfaces, base types, plugin system core
-│   ├── Plugin/                #   IPulsarPlugin, PluginBase<T>, PulsarContext, PluginResult
-│   │   └── Metadata/          #   IPluginMetadataProvider, PluginMetadata, ConfigSchema
-│   ├── Localization/          #   ILocalizationService (resx: EN + zh-CN)
-│   ├── Focus/                 #   Focus management abstractions
-│   ├── Converters/            #   WPF value converters
-│   └── Messages/              #   CommunityToolkit.Mvvm weak-reference messages
-│
-├── Plugins/
-│   ├── Core/                  #   Core plugins (always loaded, no circuit breaker)
-│   └── Extensions/            #   Extension plugins (circuit breaker protected)
-│
-├── Services/                  # Business logic layer
-│   ├── Interfaces/             #   Plugin runtime — three narrow seams (reg/exec/ops)
-│   │   ├── IPluginRegistry.cs  #     Registration: discover/activate/query
-│   │   ├── IPluginExecutor.cs  #     Execution: ExecuteAsync
-│   │   └── IPluginRuntimeOps.cs#     Runtime ops: rescan/deactivate/state/grant/unload
-│   ├── ConfigService.cs       #   Configuration management (Profiles.json)
-│   ├── HotkeyService.cs       #   Global hotkey bindings
-│   ├── ThemeService.cs        #   Light/Dark theme injection
-│   ├── DialogService.cs       #   Unified dialog system
-│   ├── SlotLayoutEngine.cs    #   Radial menu layout computation
-│   └── ... (40+ services)
-│
-├── ViewModels/                # MVVM ViewModels
-│   ├── RadialMenuViewModel.cs #   Main radial menu state
-│   ├── SettingsViewModel.cs   #   Settings editor (transient)
-│   └── Dialogs/               #   Dialog ViewModels
-│
-├── Views/                     # XAML views
-│   ├── RadialMenuWindow.xaml  #   Main radial menu window
-│   ├── SettingsWindow.xaml    #   Settings window
-│   └── Dialogs/ Controls/    #   Dialog contents, reusable controls
-│
-├── Models/                    # DTOs and configuration models
-├── Helpers/                   # Static utilities (IconHelper, RadialLayoutHelper, etc.)
-├── Features/                  # Feature modules
-│   └── Tutorial/              #   Interactive onboarding system
-├── Styles/                    # Custom WPF styles (Pulsar buttons, slots, scrollbars)
-├── Themes/                    # Theme.XAML (Dark + Light)
-└── Resources/                 # Localization (.resx files)
-    ├── Strings.resx           # English (base)
-    └── Strings.zh-CN.resx     # Simplified Chinese
-```
-
----
-
-## 🧠 Key Design Concepts
-
-### PulsarContext — Immutable Context Snapshot
-
-When the radial menu is invoked, Pulsar freezes the system state into an immutable `PulsarContext`, eliminating race conditions. Heavy properties (clipboard, window list) are lazy-loaded. Per-execution mutable data lives in `PluginExecutionContext` (AsyncLocal scope), not on the context itself.
-
-### Focus Boomerang
-
-Plugins that inject input (e.g., PKI) operate on a capture → execute → hide → restore → delay → inject cycle, reliably returning focus to the original window.
-
-### Circuit Breaker for Extensions
-
-Extension plugins are wrapped in a Circuit Breaker: 3 crashes within 1 minute triggers a 60-second disable period, after which the plugin enters half-open state for a single retry. Users are notified via Windows toast notifications.
-
-### AI-First Development
-
-The entire project is optimized for AI-agent collaboration:
-- **Headless Simulator**: test plugins without the WPF shell, parse structured JSON output;
-- **Isolated Side-Effects**: all OS coupling behind interfaces (`IInputSimulator`, `IProcessLauncher`, etc.) — mockable with Moq;
-- **Comprehensive test suite**: 897 xUnit tests covering ViewModels, services, and plugin logic;
-- **Self-Correction loop**: simulator → parse errors → fix code → re-run until green.
-
----
-
 ## 🌐 Internationalization
 
 Switch the UI language anytime from the settings page:
 
-| Language Code | Display Name | Status |
-| :--- | :--- | :---: |
-| `zh-CN` | 🇨🇳 简体中文 | 🟢 Full support |
-| `en` | 🇺🇸 English | 🟢 Full support |
+| Language | Status |
+| :--- | :---: |
+| 🇨🇳 简体中文 | 🟢 Full support |
+| 🇺🇸 English | 🟢 Full support |
 
 ---
 
-## 📚 Documentation
+## 🧑‍💻 For Developers
 
-| Resource | Description |
-|----------|-------------|
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | System architecture deep-dive |
-| [PLUGIN_DEVELOPMENT.md](./PLUGIN_DEVELOPMENT.md) | Plugin development guide |
-| [AGENTS.md](./AGENTS.md) | AI-assisted development conventions |
-| [Docs/](./Docs/) | Full documentation index |
-| [Docs/lessons/](./Docs/lessons/) | WPF pitfalls & known issues archive |
-| [Docs/architecture/](./Docs/architecture/) | Architecture details (Plugin System, Dialog System, etc.) |
-| [Docs/ops/BUILD_AND_RUN.md](./Docs/ops/BUILD_AND_RUN.md) | Build & run reference |
+Pulsar is MIT-licensed and open to contributions — code, plugins, and ideas are all welcome.
+
+- **[Developer Guide (DEVELOPER.md)](./DEVELOPER.md)**: tech stack, project structure, build/test commands, plugin development & architecture;
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** · **[PLUGIN_DEVELOPMENT.md](./PLUGIN_DEVELOPMENT.md)** · **[Docs index](./Docs/README.md)**;
+- Please read [CONTRIBUTING.md](./Docs/CONTRIBUTING.md) before contributing.
 
 ---
 
@@ -297,7 +166,7 @@ Switch the UI language anytime from the settings page:
 
 ## 📌 Project Status
 
-Pulsar is in active development. The architecture, plugin API, and core features are stable. The extension plugin ecosystem is growing.
+Pulsar is in active development. The architecture, plugin API, and core features are stable, and the built-in tool & plugin ecosystem keeps growing.
 
 ---
 

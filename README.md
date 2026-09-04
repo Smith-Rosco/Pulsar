@@ -10,13 +10,10 @@
 ### 重度办公效率工作台 · 驯服老旧办公系统
 **An office automation workbench for Windows — one-click macros, secure fill & sign-in, and custom scripts for legacy intranet web pages**
 
-[![Release Version](https://img.shields.io/badge/Release-v1.9.1-2563EB.svg?style=flat-square&logo=github)](https://github.com/Smith-Rosco/Pulsar/releases)
+[![Release Version](https://img.shields.io/badge/Release-v1.10.0-2563EB.svg?style=flat-square&logo=github)](https://github.com/Smith-Rosco/Pulsar/releases)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(x64)-0078D4.svg?style=flat-square&logo=windows)](https://www.microsoft.com/windows)
-[![.NET](https://img.shields.io/badge/.NET-8.0%20WPF-512BD4.svg?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-10B981.svg?style=flat-square)](LICENSE)
-[![CI](https://github.com/Smith-Rosco/Pulsar/actions/workflows/ci.yml/badge.svg)](.github/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/Tests-897%20xUnit-success.svg?style=flat-square&logo=xunit)](Pulsar/Pulsar.Tests)
-[![Language](https://img.shields.io/badge/Language-zh--CN%20%7C%20en-8B5CF6.svg?style=flat-square)](#-多语言支持-internationalization)
+[![Language](https://img.shields.io/badge/Language-zh--CN%20%7C%20en-8B5CF6.svg?style=flat-square)](#-多语言支持)
 
 <br/>
 
@@ -24,118 +21,98 @@
 
 <br/>
 
-[🚀 快速开始](#-快速开始) · [✨ 功能特性](#-功能特性) · [🎬 演示视频](#-演示视频) · [📸 截图](#-截图) · [🛠️ 本地构建](#-本地构建与开发) · [📋 更新日志](CHANGELOG.md)
+[🚀 快速开始](#-快速开始) · [✨ 功能特性](#-功能特性) · [🎬 演示](#-演示) · [📸 截图](#-截图) · [🧑‍💻 开发者](#-开发者) · [🤝 社区与贡献](#-社区与贡献)
 
 </div>
 
 ---
 
-## 📖 简介
+## 💡 这是什么？
 
-**Pulsar** 是一款面向 Windows 的**重度办公效率工作台**——用热键唤起的径向菜单，把现代工具管不了的老旧办公系统自动化起来。
+**Pulsar** 是一款 Windows 办公自动化工作台，专为每天被重复操作困住的办公族打造。
 
-目标用户是财务、运营、行政等每天高频使用 Excel/WPS、登录多个内网系统、重复录入数据的重度办公白领。
+每天在 Excel/WPS 里重复制表？在好几个内网系统之间来回登录？一遍遍填同一份表单？——按下热键，一个圆形菜单立刻在你鼠标旁展开，这些高频动作全部变成"滑一下就能触发"的一键操作。
 
-> 💡 **设计重点**：
-> - **办公自动化三支柱**：一键跑 Excel/WPS 宏；为不支持浏览器扩展/油猴的老旧内网网页定制操作入口；安全填表与登录注入（PKI）；
-> - **空间定位优先**：径向菜单配合空间记忆，高频操作一触即达，替代线性 Alt-Tab 遍历；
-> - **插件化分层架构**：核心插件（基础设施）与扩展插件（可选）分层，扩展插件由断路器（Circuit Breaker）保护；
-> - **AI 友好开发**：无头插件模拟器 + 结构化 JSON 输出，897 个 xUnit 测试，专为 AI Agent 协作优化。
+**一句话**：把"现代工具管不了"的老旧办公系统，也变成热键上的一个动作。
+
+### 它最擅长这三件事
+
+| | 场景 | 效果 |
+| :--- | :--- | :--- |
+| 📊 **一键跑宏** | Excel/WPS 里重复的制表、数据处理 | 已保存的宏变成轮盘上的一个动作，一点即跑 |
+| 🌐 **老旧网页自动化** | 不支持浏览器插件/油猴的内网系统 | 为网页定制一键操作入口，重复录入变自动化 |
+| 🔐 **安全填表登录** | 多个系统反复登录、填表 | 账号密码加密保存在本地，一键注入、自动提交 |
+
+### 还有这些贴心功能
+
+- **径向菜单**：动作固定在固定方位，练几次就能凭肌肉记忆"闭眼操作"，不再翻菜单；
+- **智能窗口切换**：快速切到目标窗口，应用没打开还会自动帮你启动；
+- **全局热键**：在任何程序里都能随时唤出，不用先切回 Pulsar；
+- **新手友好**：首次启动的引导教程带你几分钟上手，还有现成的办公动作预设包和脚本示例库可以直接用；
+- **中英双语**：界面语言随时切换。
 
 ---
 
 ## 🚀 快速开始
 
-### 下载与安装
+1. 前往 [Releases](https://github.com/Smith-Rosco/Pulsar/releases) 下载最新版本并运行，Pulsar 会在系统托盘后台待命；
+2. 按 **`Ctrl+Shift+Q`** 唤出命令菜单（或 **`Ctrl+Q`** 进入切换模式）；
+3. 朝着目标动作的方向滑过去、松开，动作立即执行；
+4. 想调整配置？在 Pulsar 设置里打开即可。
 
-| 版本包 | 适用场景 | 说明 | 下载入口 |
-| :--- | :--- | :--- | :--- |
-| **最新正式版** | 所有用户 | 最新稳定发布包 | [⬇️ 前往 Releases 下载](https://github.com/Smith-Rosco/Pulsar/releases) |
-| **源码构建** | 开发者 | 从源码编译运行 | [🛠️ 见下方构建指南](#-本地构建与开发) |
-
-### 基础使用流程
-
-1. 下载并运行 `Pulsar`，程序会在系统托盘中后台运行；
-2. 按下默认热键 **`Ctrl+Shift+Q`**（命令模式）或 **`Ctrl+Q`**（切换模式）唤出径向菜单；
-3. 通过空间方位滑向目标扇区，松开触发对应动作；
-4. 如需详细配置，可在 Pulsar 设置（`com.pulsar.system`）中打开设置。
+> 💡 首次使用建议跟着内置的**新手引导**走一遍，几分钟就能上手。
 
 ---
 
 ## ✨ 功能特性
 
-### 1. 🧩 办公自动化三支柱
+### 1. 📊 一键跑宏（Excel/WPS）
 
-面向重度办公场景的三个自动化支柱：
+把你常用的宏保存成"轮盘上的一个动作"。以后做报表、整理数据，不用再打开 VBA 编辑器——滑一下，宏自动跑完。
 
-- **一键宏（VBA）**：在 Excel/WPS 中一键运行已保存的宏，把重复的制表/数据处理变成轮盘上的一个动作；
-- **老旧网页脚本**：在老旧内网网页中运行自定义脚本——为不支持现代浏览器扩展或油猴（Tampermonkey）的上古企业系统定制操作入口；
-- **安全填表登录（PKI）**：DPAPI 加密凭据库，通过 UI 自动化注入任意窗口，支持延迟与自动提交。
+### 2. 🌐 老旧网页自动化
 
----
+很多公司内网系统年代久远，不支持现代浏览器扩展或油猴脚本。Pulsar 可以为这类网页定制一键操作入口，把每天重复的网页操作变成自动执行。
 
-### 2. 🌟 径向菜单（Radial Menu）
+### 3. 🔐 安全填表与登录
 
-热键唤起的圆形启动器，两种模式：
-- **命令模式**（`Ctrl+Shift+Q`）：显示上下文相关操作；
-- **切换模式**（`Ctrl+Q`）：带 MRU 中心窗口的应用切换，支持智能窗口发现、黑名单过滤，未运行时自动启动应用。
+常用账号密码用系统级加密保存在你自己电脑上。需要登录时一键注入，自动填表、自动提交——密码不落地明文，也不用担心输错。
+
+### 4. 🎯 径向菜单：凭肌肉记忆操作
+
+- **命令模式**（`Ctrl+Shift+Q`）：展示当前可用的快捷动作；
+- **切换模式**（`Ctrl+Q`）：快速切换窗口，应用未运行时自动补位启动；
+- 高频动作固定在固定方位，练几次就能盲操作，告别在菜单里来回翻找。
 
 <div align="center">
   <img src="Pulsar/Pulsar/Assets/Brand/demo.gif" width="640" alt="Pulsar 径向菜单演示" />
 </div>
 
----
+### 5. 🪟 智能窗口切换
 
-### 3. 🧩 可扩展插件系统
+快速定位并切换到目标窗口；应用没在运行？自动帮你启动。
 
-双层架构：
-- **核心插件（Core）**：基础设施，始终加载，崩溃即致命（fail-fast）；
-- **扩展插件（Extension）**：可选，由断路器保护——1 分钟内崩溃 3 次自动禁用 60 秒，冷却后半开状态单次重试，并通过 Windows Toast 通知用户。
+### 6. 🧩 内置工具一览
 
-**内置插件**：
+| 工具 | 一句话说明 |
+| :--- | :--- |
+| **秘密填充** | 加密保存账号密码，一键注入任意窗口 |
+| **应用切换器** | 智能窗口切换，未运行的应用自动启动 |
+| **Pulsar 设置** | 打开设置、快捷添加上下文应用 |
+| **命令启动器** | 启动应用/文件/文件夹/网址，还可给前台窗口发送按键 |
+| **Excel 宏执行器** | 在 Excel/WPS 中一键运行已保存的宏 |
+| **网页脚本执行器** | 在老旧内网网页中运行自定义脚本 |
 
-| 插件 | ID | 描述 | 类型 |
-|------|----|------|------|
-| **秘密填充 (PKI)** | `com.pulsar.pki` | DPAPI 加密凭据库，通过 UI 自动化注入用户名/密码，支持延迟与自动提交 | 核心 |
-| **应用切换器** | `com.pulsar.winswitcher` | 智能窗口切换（模糊搜索），未运行时自动启动，支持发现黑名单 | 核心 |
-| **Pulsar 设置** | `com.pulsar.system` | 打开设置、快速添加上下文应用、系统命令 | 核心 |
-| **命令启动器** | `com.pulsar.command` | 启动应用/文件/文件夹/URL，向前台窗口发送按键序列 | 扩展 |
-| **Excel 宏执行器** | `com.pulsar.vbarunner` | 在 Excel/WPS 中运行已保存的宏，支持智能指令 | 扩展 |
-| **网页脚本执行器** | `com.pulsar.bookmarklet` | 在老旧内网网页中运行自定义脚本，为不支持浏览器扩展/油猴的系统定制一键操作入口 | 扩展 |
+### 7. 🎓 新手友好
 
----
-
-### 4. 🔐 PKI / 秘密管理
-
-DPAPI 加密安全存储凭据，通过 UI 自动化注入任意窗口，支持自动提交与可配置延迟。遵循 **焦点回旋镖（Focus Boomerang）** 循环：捕获 → 执行 → 隐藏 → 恢复焦点 → 延迟 → 注入，可靠地将焦点返回到原始窗口。
+- 首次启动的引导教程，边看边点学会核心操作；
+- 内置**脚本编辑器**与**示例库**，不会写也能从示例开始；
+- **办公动作预设包**一键安装，开箱即用；
+- 界面支持简体中文 / English。
 
 ---
 
-### 5. 🔑 全局热键
-
-系统级热键绑定，默认 `Ctrl+Shift+Q`（命令模式）/ `Ctrl+Q`（切换模式），即时唤起菜单。
-
----
-
-### 6. 🖥️ 应用与窗口切换
-
-智能窗口切换（含发现黑名单），未运行时自动启动应用。
-
----
-
-### 7. 🤖 插件模拟器
-
-无头模式执行插件，输出结构化 JSON，无需 WPF 界面即可进行 AI 驱动的测试与自纠错循环（模拟器 → 解析错误 → 修复代码 → 重新运行）。
-
----
-
-### 8. 🌐 本地化
-
-简体中文 + 英文，插件元数据基于约定的自动键查找。
-
----
-
-## 🎬 演示视频
+## 🎬 演示
 
 <!-- TODO: 替换为真实的演示视频封面与链接 -->
 <div align="center">
@@ -158,132 +135,24 @@ DPAPI 加密安全存储凭据，通过 UI 自动化注入任意窗口，支持�
 
 ---
 
-## 🛠️ 本地构建与开发
-
-### 环境要求
-
-- Windows 10 或更高版本（x64）
-- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)（运行仅需 Runtime，编译需 SDK）
-
-### 编译、运行与测试
-
-```bash
-# 还原依赖 & 编译
-dotnet restore Pulsar/Pulsar/Pulsar.csproj
-dotnet build Pulsar/Pulsar/Pulsar.csproj
-
-# 运行（默认热键：Ctrl+Shift+Q 命令模式、Ctrl+Q 切换模式）
-dotnet run --project Pulsar/Pulsar/Pulsar.csproj
-
-# 运行测试（897 xUnit 测试）
-dotnet test Pulsar/Pulsar.Tests/Pulsar.Tests.csproj
-
-# 无头插件模拟（AI 驱动的插件测试）
-dotnet run --project Pulsar/Pulsar.Simulator -- --plugin "com.pulsar.winswitcher" --action "activate" --args "{\"app\":\"chrome\"}"
-
-# 发布自包含版本（完整发布工作流见 Docs/ops/BUILD_AND_RUN.md）
-dotnet publish Pulsar/Pulsar/Pulsar.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:PublishDir="Artifacts\publish\v<Version>"
-```
-
----
-
-## 📂 项目结构
-
-```
-Pulsar/
-├── Core/                      # 接口、基础类型、插件系统核心
-│   ├── Plugin/                #   IPulsarPlugin, PluginBase<T>, PulsarContext, PluginResult
-│   │   └── Metadata/          #   IPluginMetadataProvider, PluginMetadata, ConfigSchema
-│   ├── Localization/          #   ILocalizationService (resx: EN + zh-CN)
-│   ├── Focus/                 #   焦点管理抽象
-│   ├── Converters/            #   WPF 值转换器
-│   └── Messages/              #   CommunityToolkit.Mvvm 弱引用消息
-│
-├── Plugins/
-│   ├── Core/                  #   核心插件（始终加载，无断路器）
-│   └── Extensions/            #   扩展插件（断路器保护）
-│
-├── Services/                  # 业务逻辑层
-│   ├── Interfaces/             #   插件运行时三窄 seam（注册面/执行面/运维面）
-│   │   ├── IPluginRegistry.cs  #     注册面：发现·激活·查询
-│   │   ├── IPluginExecutor.cs  #     执行面：ExecuteAsync
-│   │   └── IPluginRuntimeOps.cs#     运维面：重扫·停用·状态·授权·卸载
-│   ├── ConfigService.cs       #   配置管理（Profiles.json）
-│   ├── HotkeyService.cs       #   全局热键绑定
-│   ├── ThemeService.cs        #   亮/暗主题注入
-│   ├── DialogService.cs       #   统一对话框系统
-│   ├── SlotLayoutEngine.cs    #   径向菜单布局计算
-│   └── ... (40+ 服务)
-│
-├── ViewModels/                # MVVM ViewModel 层
-│   ├── RadialMenuViewModel.cs #   主径向菜单状态
-│   ├── SettingsViewModel.cs   #   设置编辑器（瞬态）
-│   └── Dialogs/               #   对话框 ViewModel
-│
-├── Views/                     # XAML 视图
-│   ├── RadialMenuWindow.xaml  #   主径向菜单窗口
-│   ├── SettingsWindow.xaml    #   设置窗口
-│   └── Dialogs/ Controls/    #   对话框内容、可复用控件
-│
-├── Models/                    # DTO 和配置模型
-├── Helpers/                   # 静态工具类（IconHelper, RadialLayoutHelper 等）
-├── Features/                  # 功能模块
-│   └── Tutorial/              #   交互式入门引导系统
-├── Styles/                    # 自定义 WPF 样式（Pulsar 按钮、插槽、滚动条）
-├── Themes/                    # 主题 XAML（深色 + 浅色）
-└── Resources/                 # 本地化资源 (.resx)
-    ├── Strings.resx           # 英文（基础语言）
-    └── Strings.zh-CN.resx     # 简体中文
-```
-
----
-
-## 🧠 核心设计理念
-
-### PulsarContext — 不可变上下文快照
-
-径向菜单唤起时，Pulsar 将系统状态冻结为不可变的 `PulsarContext`，消除竞态条件。重型属性（剪贴板、窗口列表）采用懒加载。每次执行的可变数据存储在 `PluginExecutionContext`（AsyncLocal 范围）中，而非上下文本体。
-
-### 焦点回旋镖（Focus Boomerang）
-
-执行输入注入的插件（如 PKI）遵循捕获 → 执行 → 隐藏 → 恢复焦点 → 延迟 → 注入的循环，可靠地将焦点返回到原始窗口。
-
-### 扩展插件断路器
-
-扩展插件由断路器保护：1 分钟内崩溃 3 次触发 60 秒禁用期，之后进入半开状态允许单次重试。用户通过 Windows 通知接收提醒。
-
-### AI 优先开发
-
-整个项目为 AI 智能体协作进行了优化：
-- **无头模拟器**：无需 WPF 界面即可测试插件，解析结构化 JSON 输出；
-- **隔离副作用**：所有 OS 操作通过接口抽象（`IInputSimulator`、`IProcessLauncher` 等），可用 Moq 进行单元测试；
-- **全面测试套件**：897 个 xUnit 测试覆盖 ViewModel、服务和插件逻辑；
-- **自纠错循环**：模拟器 → 解析错误 → 修复代码 → 重新运行直到通过。
-
----
-
-## 🌐 多语言支持 (Internationalization)
+## 🌐 多语言支持
 
 可在设置页面中随时切换界面语言：
 
-| 语言代码 | 显示名称 | 支持状态 |
-| :--- | :--- | :---: |
-| `zh-CN` | 🇨🇳 简体中文 | 🟢 完整支持 |
-| `en` | 🇺🇸 English | 🟢 完整支持 |
+| 语言 | 支持状态 |
+| :--- | :---: |
+| 🇨🇳 简体中文 | 🟢 完整支持 |
+| 🇺🇸 English | 🟢 完整支持 |
 
 ---
 
-## 📚 文档
+## 🧑‍💻 开发者
 
-| 资源 | 描述 |
-|------|------|
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | 系统架构深入解析 |
-| [PLUGIN_DEVELOPMENT.md](./PLUGIN_DEVELOPMENT.md) | 插件开发指南 |
-| [AGENTS.md](./AGENTS.md) | AI 辅助开发规范 |
-| [Docs/](./Docs/) | 完整文档索引 |
-| [Docs/lessons/](./Docs/lessons/) | WPF 坑点与已知问题归档 |
-| [Docs/architecture/](./Docs/architecture/) | 架构细节（插件系统、对话框系统等） |
-| [Docs/ops/BUILD_AND_RUN.md](./Docs/ops/BUILD_AND_RUN.md) | 构建与运行参考 |
+Pulsar 采用 MIT 开源，欢迎贡献代码、插件与建议。
+
+- **[开发文档（DEVELOPER.md）](./DEVELOPER.md)**：技术栈、项目结构、构建/测试命令、插件开发与架构设计；
+- **[架构详解](./ARCHITECTURE.md)** · **[插件开发指南](./PLUGIN_DEVELOPMENT.md)** · **[完整文档索引](./Docs/README.md)**；
+- 贡献前请阅读 [CONTRIBUTING.md](./Docs/CONTRIBUTING.md)。
 
 ---
 
@@ -297,7 +166,7 @@ Pulsar/
 
 ## 📌 项目状态
 
-Pulsar 正在活跃开发中。架构、插件 API 和核心功能已趋于稳定。扩展插件生态正在持续增长。
+Pulsar 正在活跃开发中，核心功能与插件体系已趋于稳定，内置工具与插件生态持续增长。
 
 ---
 
