@@ -247,7 +247,14 @@ namespace Pulsar.Tests.Services
                     mainWindowFactory,
                     wizardFactory,
                     debugStatePublisherFactory,
-                    debugCommandServerFactory);
+                    debugCommandServerFactory,
+                    // Deterministic dispatcher: always null. The tutorial path then NREs
+                    // at uiDispatcher.InvokeAsync regardless of whether a sibling test
+                    // (ThemeServiceTests, SettingsSaveSessionTests, ... all do
+                    // `new Application()`) leaked a non-null Application.Current into this
+                    // process — which previously deadlocked the full-suite run: InvokeAsync
+                    // queued onto that dead Dispatcher and never completed.
+                    dispatcherProvider: () => null);
             }
 
             private static ProfilesConfig CreateDefaultConfig() => new()
@@ -528,7 +535,7 @@ namespace Pulsar.Tests.Services
 
         // ----------------------
         // (7) ADR-018: legal first-launch state reaches the tutorial dispatch (validated up to the
-        // Application.Current.Dispatcher boundary, which we do not invoke in unit tests)
+        // dispatcher seam — injected as a fixed null, never touching process-global WPF state)
         // ----------------------
 
         [Fact]
@@ -554,8 +561,11 @@ namespace Pulsar.Tests.Services
 
             // Drive the scheduled work. The legal-first-launch path passes the ADR-018 gate
             // (HasCompletedSetup && !HasCompletedTutorial && !HasSkippedTutorial), runs
-            // Task.Delay, then touches System.Windows.Application.Current.Dispatcher —
-            // which is null in the unit-test host → NullReferenceException.
+            // Task.Delay, then touches the dispatcher seam — which the harness injects as
+            // a fixed `() => null`, so `uiDispatcher.InvokeAsync(...)` throws NRE.
+            // (The seam replaces the old implicit reliance on `Application.Current == null`
+            // — a process-global assumption that sibling WPF tests constructing
+            // `new Application()` silently broke, deadlocking the full suite.)
             // CRITICAL: the deferred warm-up lambda wraps everything in its own
             // try/catch(Exception) and logs via LogError, so NO exception escapes to
             // the caller. The observable signals are therefore:
@@ -571,8 +581,9 @@ namespace Pulsar.Tests.Services
 
             h.CoordinatorLogger.Entries.Should().ContainSingle(
                 e => e.Level == LogLevel.Error && e.Exception is NullReferenceException,
-                "Application.Current is null in the unit-test host; the tutorial branch's " +
-                "dispatcher access must fail and be logged, proving the branch was reached. " +
+                "the harness-injected dispatcher provider returns null, so the tutorial " +
+                "branch's dispatcher access must fail with NRE and be logged, proving the " +
+                "branch was reached. " +
                 "Actual log entries: {0}",
                 string.Join(" | ", h.CoordinatorLogger.Entries.Select(x => $"{x.Level}:{x.Exception?.GetType().Name}:{x.Exception?.Message}")));
 
@@ -583,7 +594,7 @@ namespace Pulsar.Tests.Services
                 "the legal-first-launch path must query IOnboardingStateService (ADR-018)");
             h.CallOrder.Should().NotContain("TutorialServiceResolved",
                 "the tutorial Lazy sits INSIDE the dispatcher callback — its Value is never reached " +
-                "in this unit-test host because Application.Current is null");
+                "because the harness-injected dispatcher provider is null");
         }
     }
 }

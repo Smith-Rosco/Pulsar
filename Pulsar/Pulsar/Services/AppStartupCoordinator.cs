@@ -52,6 +52,11 @@ namespace Pulsar.Services
         private readonly Func<FirstLaunchSetupWizardViewModel> _wizardFactory;
         private readonly Func<IDebugStatePublisher> _debugStatePublisherFactory;          // registered only in ui-debug
         private readonly Func<IDebugCommandServer> _debugCommandServerFactory;           // registered only in ui-debug
+        // Unit-test seam over the WPF Application.Current global static: the deferred
+        // warm-up's tutorial branch must not depend on process-global WPF state, or a
+        // sibling test that constructs `new Application()` (ThemeServiceTests etc.)
+        // leaves a non-null Current whose dead Dispatcher makes InvokeAsync hang forever.
+        private readonly Func<System.Windows.Threading.Dispatcher> _dispatcherProvider;
 
         private readonly IBackgroundWorkScheduler _backgroundWorkScheduler;
         private readonly LoggingLevelSwitch _levelSwitch;
@@ -80,7 +85,8 @@ namespace Pulsar.Services
             Func<RadialMenuWindow> mainWindowFactory = null,
             Func<FirstLaunchSetupWizardViewModel> wizardFactory = null,
             Func<IDebugStatePublisher> debugStatePublisherFactory = null,
-            Func<IDebugCommandServer> debugCommandServerFactory = null)
+            Func<IDebugCommandServer> debugCommandServerFactory = null,
+            Func<System.Windows.Threading.Dispatcher> dispatcherProvider = null)
         {
             _configService = configService;
             _debugOptions = debugOptions;
@@ -124,6 +130,11 @@ namespace Pulsar.Services
                 "captured by this singleton.");
             _debugStatePublisherFactory = debugStatePublisherFactory;
             _debugCommandServerFactory = debugCommandServerFactory;
+            // Production default: the live WPF Application.Current dispatcher (same
+            // object the previous inline access used). Tests inject a fixed provider
+            // so the tutorial path is deterministic regardless of process-global state.
+            _dispatcherProvider = dispatcherProvider
+                ?? (() => System.Windows.Application.Current?.Dispatcher);
         }
 
         public async Task RunBlockingInitializationAsync()
@@ -258,7 +269,12 @@ namespace Pulsar.Services
                     Log.Information("First launch detected, starting tutorial");
                     await Task.Delay(1500, cancellationToken);
 
-                    await await System.Windows.Application.Current.Dispatcher.InvokeAsync(
+                    // Via the dispatcher seam (ctor-injected; defaults to
+                    // Application.Current?.Dispatcher). In hosts without a WPF
+                    // Application the seam yields null → NRE → caught and logged
+                    // below, exactly like the previous inline access.
+                    var uiDispatcher = _dispatcherProvider();
+                    await await uiDispatcher.InvokeAsync(
                         async () =>
                         {
                             var tutorialService = _tutorialService.Value;
