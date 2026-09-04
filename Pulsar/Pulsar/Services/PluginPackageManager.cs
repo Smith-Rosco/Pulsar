@@ -15,13 +15,14 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Pulsar.Core.Plugin;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Models;
+using Pulsar.Services.Interfaces;
 
 namespace Pulsar.Services
 {
     /// <summary>
     /// 插件包管理器 - 实现插件的安装、卸载（从本地文件）
     /// </summary>
-    public class PluginPackageManager
+    public class PluginPackageManager : IPluginPackageManager
     {
         private readonly string _pluginInstallDirectory;
         private readonly ILogger<PluginPackageManager>? _logger;

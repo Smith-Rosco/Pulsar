@@ -17,14 +17,15 @@ namespace Pulsar.ViewModels.Settings
     /// 外部插件管理器 ViewModel
     /// 负责管理从本地 ZIP 文件安装的外部插件：
     /// - 扫描/刷新已安装列表（条目为 <see cref="ExternalPluginViewModel"/>，复用内置管理能力）；
-    /// - 从文件安装；
-    /// - 提供授权、卸载的底层逻辑（条目 VM 的命令委托到这里）。
-    /// 启用/禁用开关在条目 VM 上处理（写入 profile + 即时激活）。
+    /// - 从文件安装、卸载、授权的 UI 决策（文件选择、权限确认、结果展示）；
+    /// - 生命周期时序（安装后 refresh→grant→activate、卸载前 revoke→deactivate→delete）下沉到
+    ///   <see cref="IExternalPluginLifecycleOps"/>，本 VM 不再编排。
+    /// 启用/禁用开关在条目 VM 上处理（转发给生命周期运维模块）。
     /// </summary>
     public partial class ExternalPluginManagerViewModel : ObservableObject
     {
         private readonly LocalPluginScanner _scanner;
-        private readonly PluginPackageManager _packageManager;
+        private readonly IExternalPluginLifecycleOps _lifecycleOps;
         private readonly IPluginRegistry _pluginRegistry;
         private readonly ILogger<ExternalPluginManagerViewModel>? _logger;
         private readonly IDialogService? _dialogService;
@@ -47,7 +48,7 @@ namespace Pulsar.ViewModels.Settings
 
         public ExternalPluginManagerViewModel(
             LocalPluginScanner scanner,
-            PluginPackageManager packageManager,
+            IExternalPluginLifecycleOps lifecycleOps,
             IPluginRegistry pluginRegistry,
             ILocalizationService localizationService,
             ILogger<ExternalPluginManagerViewModel>? logger = null,
@@ -60,7 +61,7 @@ namespace Pulsar.ViewModels.Settings
             IServiceProvider? serviceProvider = null)
         {
             _scanner = scanner;
-            _packageManager = packageManager;
+            _lifecycleOps = lifecycleOps;
             _pluginRegistry = pluginRegistry;
             _loc = localizationService;
             _logger = logger;
@@ -72,8 +73,8 @@ namespace Pulsar.ViewModels.Settings
             _metadataRegistry = metadataRegistry;
             _serviceProvider = serviceProvider;
 
-            // 订阅包管理器事件
-            _packageManager.OperationProgress += OnOperationProgress;
+            // 订阅生命周期运维模块透传的包操作进度
+            _lifecycleOps.OperationProgress += OnOperationProgress;
         }
 
         /// <summary>
@@ -108,6 +109,7 @@ namespace Pulsar.ViewModels.Settings
                         _loc,
                         pkg.LocalPath ?? string.Empty,
                         this,
+                        _lifecycleOps,
                         _usageTracker,
                         _healthMonitor,
                         _logService,
@@ -133,7 +135,8 @@ namespace Pulsar.ViewModels.Settings
         }
 
         /// <summary>
-        /// 从本地文件安装插件
+        /// 从本地文件安装插件（UI 决策 + 调用生命周期运维模块）。
+        /// 时序（refresh→grant→activate）由 <see cref="IExternalPluginLifecycleOps"/> 持有。
         /// </summary>
         [RelayCommand]
         private async Task InstallFromFileAsync()
@@ -153,21 +156,25 @@ namespace Pulsar.ViewModels.Settings
                     var filePath = openFileDialog.FileName;
                     StatusMessage = string.Format(_loc["Settings.ExternalPlugins.StatusInstallingFormat"], Path.GetFileName(filePath));
 
-                    var inspection = await _packageManager.InspectPackageAsync(filePath);
-                    if (!inspection.Success || inspection.Manifest == null)
+                    // 1. 前置检查：读取清单 + 待审批权限，无副作用。
+                    var preparation = await _lifecycleOps.PrepareInstallAsync(filePath);
+                    if (!preparation.Success || preparation.Manifest == null)
                     {
-                        StatusMessage = string.Format(_loc["Notification.InstallFailedFormat"], inspection.ErrorMessage);
+                        StatusMessage = string.Format(_loc["Notification.InstallFailedFormat"], preparation.ErrorMessage);
                         if (_dialogService != null)
                         {
                             await _dialogService.ShowMessageAsync(
                                 _loc["Notification.InstallFailed"],
-                                inspection.ErrorMessage ?? _loc["Notification.InstallFailed"]);
+                                preparation.ErrorMessage ?? _loc["Notification.InstallFailed"]);
                         }
                         return;
                     }
 
-                    var manifest = inspection.Manifest;
-                    if (manifest.Permissions.Count > 0)
+                    var manifest = preparation.Manifest;
+                    var approvedPermissions = preparation.PendingPermissions ?? Array.Empty<string>();
+
+                    // 2. 需要审批时先让用户确认（UI 决策留在本 VM）。
+                    if (approvedPermissions.Count > 0)
                     {
                         if (_dialogService == null)
                         {
@@ -188,47 +195,15 @@ namespace Pulsar.ViewModels.Settings
                         }
                     }
 
-                    var result = await _packageManager.InstallFromFileAsync(filePath, manifest.Permissions);
+                    // 3. 安装（含 refresh→grant→activate 时序；部分成功不回滚，结果带阶段）。
+                    var result = await _lifecycleOps.InstallAsync(filePath, approvedPermissions);
 
                     if (result.Success)
                     {
-                        var permissionsGranted = true;
-
-                        if (manifest.Permissions.Count > 0)
+                        StatusMessage = string.Format(_loc["Notification.SuccessfullyInstalled"]);
+                        if (!string.IsNullOrEmpty(result.Warning))
                         {
-                            try
-                            {
-                                // The runtime catalog only discovers plugins at
-                                // startup. Refresh discovery first so the fresh
-                                // install resolves to a descriptor; otherwise the
-                                // grant is rejected as "unknown plugin".
-                                await _pluginRegistry.RefreshDiscoveryAsync();
-                                await _pluginRegistry.GrantPermissionsAsync(manifest.Id, manifest.Permissions);
-                            }
-                            catch (Exception ex)
-                            {
-                                permissionsGranted = false;
-                                _logger?.LogError(ex, "[ExternalPluginManagerViewModel] Plugin installed but permission grant failed for {PluginId}", manifest.Id);
-                                StatusMessage = string.Format(_loc["Plugin.Permissions.GrantFailedFormat"], manifest.Id, ex.Message);
-                            }
-                        }
-
-                        if (permissionsGranted)
-                        {
-                            StatusMessage = _loc["Notification.SuccessfullyInstalled"];
-
-                            // Activate immediately so lifecycle hooks run without
-                            // an app restart (e.g. a renderer plugin registers its
-                            // renderer in OnEnableAsync). The default profile is
-                            // Enabled=true, so activation also enables it.
-                            try
-                            {
-                                await _pluginRegistry.GetOrActivatePluginAsync(manifest.Id);
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger?.LogWarning(ex, "[ExternalPluginManagerViewModel] Installed plugin {PluginId} could not be activated immediately; it will activate on next launch", manifest.Id);
-                            }
+                            _logger?.LogWarning("[ExternalPluginManagerViewModel] Installed {PluginId} with warning: {Warning}", manifest.Id, result.Warning);
                         }
 
                         if (_dialogService != null)
@@ -243,13 +218,13 @@ namespace Pulsar.ViewModels.Settings
                     }
                     else
                     {
-                        StatusMessage = string.Format(_loc["Notification.InstallFailedFormat"], result.ErrorMessage);
+                        StatusMessage = string.Format(_loc["Notification.InstallFailedFormat"], result.Message);
 
                         if (_dialogService != null)
                         {
                             await _dialogService.ShowMessageAsync(
                                 _loc["Notification.InstallFailed"],
-                                string.Format(_loc["Notification.InstallFailedFormat"], result.ErrorMessage));
+                                string.Format(_loc["Notification.InstallFailedFormat"], result.Message));
                         }
                     }
                 }
@@ -269,7 +244,8 @@ namespace Pulsar.ViewModels.Settings
         }
 
         /// <summary>
-        /// 授予/重发清单权限（对已安装插件幂等）。由条目 VM 的命令调用。
+        /// 授予/重发清单权限（对已安装插件幂等）。由条目 VM 的命令调用，
+        /// 实际授予下沉到 <see cref="IExternalPluginLifecycleOps.GrantAsync"/>。
         /// </summary>
         internal async Task GrantPermissionsAsync(ExternalPluginViewModel plugin)
         {
@@ -294,8 +270,10 @@ namespace Pulsar.ViewModels.Settings
                     }
                 }
 
-                await _pluginRegistry.GrantPermissionsAsync(plugin.Id, plugin.Permissions);
-                StatusMessage = _loc["Plugin.Permissions.GrantSuccess"];
+                var result = await _lifecycleOps.GrantAsync(plugin.Id);
+                StatusMessage = result.Success
+                    ? _loc["Plugin.Permissions.GrantSuccess"]
+                    : string.Format(_loc["Plugin.Permissions.GrantFailedFormat"], plugin.Id, result.Message);
             }
             catch (Exception ex)
             {
@@ -305,7 +283,8 @@ namespace Pulsar.ViewModels.Settings
         }
 
         /// <summary>
-        /// 卸载插件。由条目 VM 的命令调用。
+        /// 卸载插件。由条目 VM 的命令调用；时序（revoke → deactivate → delete）
+        /// 下沉到 <see cref="IExternalPluginLifecycleOps.UninstallAsync"/>。
         /// </summary>
         internal async Task UninstallPluginAsync(ExternalPluginViewModel plugin)
         {
@@ -331,41 +310,16 @@ namespace Pulsar.ViewModels.Settings
 
                 StatusMessage = string.Format(_loc["Settings.ExternalPlugins.StatusUninstallingFormat"], plugin.Name);
 
-                // 1. Revoke permission grants FIRST while the descriptor is
-                //    still in the catalog (deactivation removes it). Uninstall
-                //    revokes prior grants so a future reinstall has to go
-                //    through the consent prompt again.
-                if (plugin.Permissions.Count > 0)
-                {
-                    try
-                    {
-                        await _pluginRegistry.GrantPermissionsAsync(plugin.Id, Array.Empty<string>());
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger?.LogError(ex, "[ExternalPluginManagerViewModel] Failed to revoke permissions for uninstalled plugin {PluginId}", plugin.Id);
-                    }
-                }
-
-                // 2. Deactivate: runs OnUnloadAsync, drops runtime/catalog
-                //    references and unloads the plugin assembly so its DLLs are
-                //    no longer locked by this process. Without this the recursive
-                //    directory delete below fails on any discovered external plugin.
-                try
-                {
-                    await _pluginRegistry.DeactivatePluginAsync(plugin.Id);
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogWarning(ex, "[ExternalPluginManagerViewModel] Deactivation failed for {PluginId}; attempting file removal anyway", plugin.Id);
-                }
-
-                // 3. Remove the files.
-                var result = await _packageManager.UninstallAsync(plugin.Id, keepData: false);
+                // 1. 撤销授权 → 2. 停用并卸载 ALC → 3. 删除文件（由运维模块编排）。
+                var result = await _lifecycleOps.UninstallAsync(plugin.Id);
 
                 if (result.Success)
                 {
                     StatusMessage = string.Format(_loc["Notification.SuccessfullyUninstalledFormat"], plugin.Name);
+                    if (!string.IsNullOrEmpty(result.Warning))
+                    {
+                        _logger?.LogWarning("[ExternalPluginManagerViewModel] Uninstalled {PluginId} with warning: {Warning}", plugin.Id, result.Warning);
+                    }
 
                     if (_dialogService != null)
                     {
@@ -379,13 +333,13 @@ namespace Pulsar.ViewModels.Settings
                 }
                 else
                 {
-                    StatusMessage = string.Format(_loc["Notification.UninstallFailedFormat"], plugin.Name, result.ErrorMessage);
+                    StatusMessage = string.Format(_loc["Notification.UninstallFailedFormat"], plugin.Name, result.Message);
 
                     if (_dialogService != null)
                     {
                         await _dialogService.ShowMessageAsync(
                             _loc["Notification.UninstallFailed"],
-                            string.Format(_loc["Notification.UninstallFailedFormat"], plugin.Name, result.ErrorMessage));
+                            string.Format(_loc["Notification.UninstallFailedFormat"], plugin.Name, result.Message));
                     }
                 }
             }

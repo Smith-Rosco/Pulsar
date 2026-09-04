@@ -296,13 +296,18 @@ namespace Pulsar
                 return new LocalPluginScanner(externalPluginDirectory, logger);
             });
 
-            serviceCollection.AddSingleton<PluginPackageManager>(sp =>
+            serviceCollection.AddSingleton<IPluginPackageManager>(sp =>
             {
                 var logger = sp.GetService<ILogger<PluginPackageManager>>();
                 var integrityVerifier = sp.GetRequiredService<Core.Plugin.IPluginPackageIntegrityVerifier>();
 
                 return new PluginPackageManager(externalPluginDirectory, logger, integrityVerifier);
             });
+
+            // External Plugin lifecycle ops: owns install/uninstall/enable sequences
+            // (refresh→grant→activate, revoke→deactivate→delete). Settings UI calls
+            // its commands and renders results; the sequences live only here.
+            serviceCollection.AddSingleton<IExternalPluginLifecycleOps, ExternalPluginLifecycleOps>();
             
             serviceCollection.AddTransient<ExternalPluginManagerViewModel>();
             

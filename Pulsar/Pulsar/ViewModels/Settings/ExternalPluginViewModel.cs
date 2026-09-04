@@ -15,13 +15,13 @@ namespace Pulsar.ViewModels.Settings
     /// 外部插件条目 VM：复用 <see cref="PluginViewModel"/> 的内置管理能力
     /// （配置对话框、查看日志、健康/用量展示），并针对外部插件补齐：
     /// - 本地安装路径 <see cref="LocalPath"/> 与权限标记 <see cref="HasPermissions"/>；
-    /// - 「启用即激活」的开关命令：外部插件是懒激活的，启用时必须
-    ///   <see cref="IPluginRegistry.GetOrActivatePluginAsync"/> 让 OnEnableAsync 的贡献即时生效；
+    /// - 「启用即激活」的开关命令：转发到 <see cref="IExternalPluginLifecycleOps.SetEnabledAsync"/>
+    ///   （运维模块保证写 profile 后立即激活，让 OnEnableAsync 的贡献即时生效）；
     /// - 授权 / 卸载命令（委托给所属的 <see cref="ExternalPluginManagerViewModel"/>）。
     /// </summary>
     public partial class ExternalPluginViewModel : PluginViewModel
     {
-        private readonly IPluginRegistry _registry;
+        private readonly IExternalPluginLifecycleOps _lifecycleOps;
         private readonly ExternalPluginManagerViewModel _owner;
         private readonly ILogger<ExternalPluginViewModel>? _logger;
 
@@ -41,6 +41,7 @@ namespace Pulsar.ViewModels.Settings
             ILocalizationService localizationService,
             string localPath,
             ExternalPluginManagerViewModel owner,
+            IExternalPluginLifecycleOps lifecycleOps,
             IPluginUsageTracker? usageTracker = null,
             IPluginHealthMonitor? healthMonitor = null,
             IPluginLogService? logService = null,
@@ -50,7 +51,7 @@ namespace Pulsar.ViewModels.Settings
             : base(descriptor, registry, configService, localizationService,
                    usageTracker, healthMonitor, logService, dialogService, serviceProvider, metadataRegistry)
         {
-            _registry = registry;
+            _lifecycleOps = lifecycleOps;
             _owner = owner;
             _logger = serviceProvider?.GetService<ILogger<ExternalPluginViewModel>>();
             LocalPath = localPath;
@@ -59,9 +60,8 @@ namespace Pulsar.ViewModels.Settings
         }
 
         /// <summary>
-        /// 启用/禁用（立即生效）：写入 profile 后调用激活。外部插件懒激活，
-        /// 仅 SetPluginStateAsync 不会让 OnEnableAsync 的贡献即时可用，因此启用时
-        /// 必须 GetOrActivatePluginAsync；禁用则让生命周期 OnDisableAsync 正常收尾。
+        /// 启用/禁用（立即生效）：转发给生命周期运维模块，它保证写 profile 后
+        /// 立即激活（外部插件懒激活，仅写 profile 不会让 OnEnableAsync 的贡献即时可用）。
         /// </summary>
         [RelayCommand]
         private async Task TogglePluginAsync()
@@ -74,10 +74,10 @@ namespace Pulsar.ViewModels.Settings
             var target = !IsEnabled;
             try
             {
-                await _registry.SetPluginStateAsync(Id, target);
-                if (target)
+                var result = await _lifecycleOps.SetEnabledAsync(Id, target);
+                if (!result.Success)
                 {
-                    await _registry.GetOrActivatePluginAsync(Id);
+                    throw new InvalidOperationException(result.Message ?? "Failed to change plugin state.");
                 }
 
                 IsEnabled = target;

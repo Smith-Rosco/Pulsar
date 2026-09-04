@@ -82,6 +82,10 @@ _Avoid_: Optional plugin
 **External Plugin**:
 A Plugin loaded from outside the application whose manifest permissions must each be explicitly granted by the user before it may run. Provenance, not a Tier — an External Plugin is still either Core or Extension.
 
+**External Plugin Lifecycle Operator**:
+The single owner of the ordered sequences that install, uninstall, and enable an External Plugin: discovery-refresh → permission-grant → activation after install, permission-revoke → deactivation → ALC-unload → file-delete before uninstall, and write-profile + activation on enable. Settings UI invokes its commands and renders their results; the sequences themselves live only here.
+_Avoid_: plugin installer, package manager UI, external plugin manager
+
 **PulsarContext**:
 The immutable snapshot of the environment (foreground window, process) captured once at menu invocation and handed to plugins; plugins never query live window state.
 _Avoid_: Context, window state, environment
