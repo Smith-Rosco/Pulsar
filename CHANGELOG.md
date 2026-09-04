@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 运行时状态存储的读操作改为纯读（ADR-016，架构审查候选 G）：`PluginRuntimeStateStore.GetSnapshot` 对未知插件的回退快照不再 `TryAdd` 落缓存，快照字典只由通过校验的 `Transition()` 写入——读查询不再带写副作用，被拒绝的非法转移（如对未注册插件 `Transition(..., Running)`）不再留下默认快照痕迹。验证后否决了报告建议的「拆 `PluginRegistry` + `LifecycleStateMachine` 两模块」方案：该 store 是深模块（双私有字典的配对不变量被封装在 6 方法小接口内），拆分只会把协调成本外移并连带重写全部调用方，收益为零。
 
 ### Fixed
+- 清除全部 32 条基线编译器警告（**0 警告基线达成**，此前「32 警告全部来自基线文件」清零）：`Pulsar.E2E/Driver/Recorder.cs` 事件处理器签名补 `object?`（CS8622）；`AppStartupCoordinator` 9 个可选 ctor 参数与 2 个 debug factory 字段补可空注解（CS8625/CS8619 系）；`AppStartupCoordinatorTests` 3 个 late-init 属性补 `= null!`（CS8618）、debug factory 局部变量补 `?`、`dispatcherProvider` 缺省分支补 `!`（CS8603/CS8604 系）。纯注解修改，无行为变更。来源为并行会话/IDE 的外部改动，经构建 + 定向（AppStartupCoordinatorTests 8/8）+ 全量（1059/1059）三重验证后落地。
 - `PluginManagerViewModel` 声明 `IPluginRuntimeOps` 字段但构造器从未注入（ADR-012 迁移遗留，运行到插件管理页即 NRE/破坏 0 警告基线）；构造器现补上 `runtimeOps` 参数并赋值。
 - **ADR-018 一致性修复（候选 I 回归）**：候选 I 初版实现与 ADR 声明相反——非法组合 `OnboardingState="Complete"` + `HasCompletedTutorial=false` 声明为「return（自愈）」，实际 gate 却落入 tutorial 分支再次进教程（根因：ADR problem statement 把旧内联代码 branch 3 的恒 return 读成了「再次进教程」，实现照抄了错误声明）。修复于投影层：`OnboardingState` 投影对终态 `"Complete"` 自愈 `HasCompletedTutorial = HasCompletedTutorial || onboardingState=="Complete"`，使非法组合投影为 `(true, true, false)` → gate 返回。经三源证据核实（gate 代码 / 原始投影 / 旧内联检查 git diff）并完成消费者审计：投影 `HasCompletedTutorial` 的唯一调用点即 gate，6 种合法组合映射全部不变。`OnboardingVerificationTests` 中锁定旧错误机制的断言反转为 `ShouldHealCompletedTutorial`。详见 `Docs/decisions/018-*.md` Amendment（2026-09-04）。
 
@@ -54,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 构建 0 错误（NU1900 网络警告与基线一致；CS8625 在 ADR-017 引入的 `Lazy<T>=null` 默认参数上基线即存在，未新增）
 - `dotnet test Pulsar.Tests` → **1045 / 1045 通过**（基线 1037 + 8 个 `AppStartupCoordinatorTests`；默认并行 22s——含上述全量死锁修复）
 - L/M/N/O 落地后全量回归：**1059 / 1059 通过**（基线 1045 + HotkeyService hook 模式 3 + SlotEditor severity 1 + SettingsDialogFlows 10；构建 0 错误、改动文件零新增警告）
+- 警告清理落地后：构建 **0 错误 0 警告**（32 条基线警告清零）；全量 **1059 / 1059 通过**（默认并行 ~22s，与 O/N/M/L 后基线一致）
 
 ### Docs & conventions
 - **工作记忆统一为单源（ADR-019）**：`Docs/journal/` 成为所有 AI harness（WorkBuddy / opencode / 未来 harness）唯一跨会话工作记忆；禁止向 harness 原生记忆（`.workbuddy/memory/` 等，gitignored）重复写入正文，最多一行指针。历史回填：2026-09-01~03 自 `.workbuddy/memory/` 无损迁入 `Docs/journal/`，2026-09-04 独有内容（UI 自动化调研 + visual-ai-ui-automation 落地）并入当日 journal，gitignored 原件清理。journal 永不删除（过期归档走 `Docs/archive/`）；正文语言以中文为准（CONTRIBUTING 语言规则对工作记忆豁免）。`session-journal` skill 双份（`.agents/skills/` 与 `.opencode/skills/`）同步为同一规范，AGENTS.md / CONTRIBUTING 同步更新。
