@@ -1,0 +1,554 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Pulsar 插件系统架构",
+    "locale": "zh-CN",
+    "output": "pulsar-plugin-system.architecture.html",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1350,
+      730
+    ],
+    "repository": {
+      "url": "https://github.com/Smith-Rosco/Pulsar.git",
+      "revision": "8df4281a57c23bc1df740196f511d07e6feaaf9b"
+    },
+    "views": [
+      {
+        "id": "main-execution-path",
+        "label": "主执行路径",
+        "focus": [
+          "radial",
+          "context",
+          "executor",
+          "pipeline",
+          "loader",
+          "alc",
+          "ext"
+        ],
+        "note": "从径向菜单调用到插件实例执行的一条确定性主链路。"
+      },
+      {
+        "id": "runtime-kernel",
+        "label": "运行时内核分工",
+        "focus": [
+          "registry",
+          "ops",
+          "catalog",
+          "state",
+          "pipeline",
+          "breaker"
+        ],
+        "note": "ADR-012 把宽门面拆成三个窄缝，内核内部按职责分成四个服务。"
+      },
+      {
+        "id": "isolation-recovery",
+        "label": "隔离与恢复",
+        "focus": [
+          "pipeline",
+          "perm",
+          "loader",
+          "alc",
+          "core",
+          "ext",
+          "breaker"
+        ],
+        "note": "权限闸门、可回收 ALC 隔离，以及 Extension 插件的熔断恢复回路。"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "radial",
+      "type": "frontend",
+      "label": "径向菜单",
+      "sublabel": "RadialMenu",
+      "tag": "WPF",
+      "pos": [
+        24,
+        380
+      ],
+      "size": [
+        100,
+        72
+      ]
+    },
+    {
+      "id": "context",
+      "type": "backend",
+      "label": "不可变上下文快照",
+      "sublabel": "PulsarContext",
+      "tag": "调用瞬间冻结",
+      "pos": [
+        202,
+        380
+      ],
+      "size": [
+        115,
+        72
+      ],
+      "sources": [
+        {
+          "path": "Pulsar/Pulsar/Core/Plugin/PulsarContext.cs",
+          "line": 16,
+          "label": "PulsarContext"
+        }
+      ]
+    },
+    {
+      "id": "registry",
+      "type": "backend",
+      "label": "注册缝",
+      "sublabel": "IPluginRegistry",
+      "pos": [
+        395,
+        120
+      ],
+      "size": [
+        135,
+        68
+      ],
+      "sources": [
+        {
+          "path": "Pulsar/Pulsar/Services/Interfaces/IPluginRegistry.cs",
+          "line": 17,
+          "label": "IPluginRegistry"
+        }
+      ]
+    },
+    {
+      "id": "ops",
+      "type": "backend",
+      "label": "运维缝",
+      "sublabel": "IPluginRuntimeOps",
+      "pos": [
+        395,
+        250
+      ],
+      "size": [
+        135,
+        68
+      ],
+      "sources": [
+        {
+          "path": "Pulsar/Pulsar/Services/Interfaces/IPluginRuntimeOps.cs",
+          "line": 15,
+          "label": "IPluginRuntimeOps"
+        }
+      ]
+    },
+    {
+      "id": "executor",
+      "type": "backend",
+      "label": "执行缝",
+      "sublabel": "IPluginExecutor",
+      "pos": [
+        395,
+        380
+      ],
+      "size": [
+        135,
+        72
+      ],
+      "sources": [
+        {
+          "path": "Pulsar/Pulsar/Services/Interfaces/IPluginExecutor.cs",
+          "line": 17,
+          "label": "IPluginExecutor"
+        }
+      ]
+    },
+    {
+      "id": "catalog",
+      "type": "backend",
+      "label": "插件目录",
+      "sublabel": "PluginCatalog",
+      "tag": "描述符 · 依赖序",
+      "pos": [
+        636,
+        120
+      ],
+      "size": [
+        185,
+        68
+      ],
+      "sources": [
+        {
+          "path": "Pulsar/Pulsar/Core/Plugin/Runtime/PluginRuntimeKernel.cs",
+          "line": 65,
+          "label": "PluginCatalog"
+        }
+      ]
+    },
+    {
+      "id": "state",
+      "type": "backend",
+      "label": "运行时状态库",
+      "sublabel": "PluginRuntimeStateStore",
+      "pos": [
+        636,
+        240
+      ],
+      "size": [
+        185,
+        68
+      ],
+      "sources": [
+        {
+          "path": "Pulsar/Pulsar/Core/Plugin/Runtime/PluginRuntimeKernel.cs",
+          "line": 100,
+          "label": "PluginRuntimeStateStore"
+        }
+      ]
+    },
+    {
+      "id": "pipeline",
+      "type": "backend",
+      "label": "执行管线",
+      "sublabel": "PluginExecutionPipeline",
+      "tag": "七阶段定序",
+      "pos": [
+        636,
+        374
+      ],
+      "size": [
+        185,
+        84
+      ],
+      "sources": [
+        {
+          "path": "Pulsar/Pulsar/Core/Plugin/Runtime/PluginRuntimeKernel.cs",
+          "line": 385,
+          "label": "PluginExecutionPipeline"
+        }
+      ]
+    },
+    {
+      "id": "breaker",
+      "type": "backend",
+      "label": "熔断策略",
+      "sublabel": "PluginCircuitBreakerPolicy",
+      "tag": "3 次 / 1 分钟 → 60s",
+      "pos": [
+        636,
+        506
+      ],
+      "size": [
+        185,
+        68
+      ],
+      "sources": [
+        {
+          "path": "Pulsar/Pulsar/Core/Plugin/Runtime/PluginRuntimeKernel.cs",
+          "line": 240,
+          "label": "PluginCircuitBreakerPolicy"
+        }
+      ]
+    },
+    {
+      "id": "perm",
+      "type": "security",
+      "label": "权限闸门",
+      "sublabel": "PluginPermissionService",
+      "tag": "GrantedPermissions",
+      "pos": [
+        909,
+        274
+      ],
+      "size": [
+        165,
+        68
+      ],
+      "sources": [
+        {
+          "path": "Pulsar/Pulsar/Core/Plugin/PluginPermissions.cs",
+          "line": 76,
+          "label": "PluginPermissionService"
+        }
+      ]
+    },
+    {
+      "id": "loader",
+      "type": "backend",
+      "label": "插件加载器",
+      "sublabel": "PluginLoader",
+      "tag": "发现 · 实例化",
+      "pos": [
+        909,
+        380
+      ],
+      "size": [
+        165,
+        72
+      ],
+      "sources": [
+        {
+          "path": "Pulsar/Pulsar/Core/Plugin/PluginLoader.cs",
+          "line": 16,
+          "label": "PluginLoader"
+        }
+      ]
+    },
+    {
+      "id": "alc",
+      "type": "backend",
+      "label": "可回收程序集上下文",
+      "sublabel": "PluginLoadContext",
+      "tag": "collectible ALC",
+      "pos": [
+        909,
+        506
+      ],
+      "size": [
+        165,
+        68
+      ],
+      "sources": [
+        {
+          "path": "Pulsar/Pulsar/Core/Plugin/PluginLoadContext.cs",
+          "line": 11,
+          "label": "PluginLoadContext"
+        }
+      ]
+    },
+    {
+      "id": "core",
+      "type": "backend",
+      "label": "Core 插件",
+      "sublabel": "Plugins/Core",
+      "tag": "不可禁用 · 崩溃致命",
+      "pos": [
+        1167,
+        250
+      ],
+      "size": [
+        160,
+        76
+      ]
+    },
+    {
+      "id": "ext",
+      "type": "backend",
+      "label": "Extension 插件",
+      "sublabel": "Plugins/Extensions",
+      "tag": "熔断保护 · 可禁用",
+      "pos": [
+        1167,
+        430
+      ],
+      "size": [
+        160,
+        76
+      ]
+    },
+    {
+      "id": "profiles",
+      "type": "database",
+      "label": "配置单一事实源",
+      "sublabel": "Profiles.json",
+      "tag": "PluginProfile",
+      "pos": [
+        202,
+        560
+      ],
+      "size": [
+        115,
+        68
+      ],
+      "sources": [
+        {
+          "path": "Pulsar/Pulsar/Models/ProfilesConfig.cs",
+          "line": 41,
+          "label": "PluginProfile"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "运行时内核 PluginRuntimeKernel（ADR-012）",
+      "wraps": [
+        "catalog",
+        "state",
+        "pipeline",
+        "breaker"
+      ],
+      "pad": 22
+    },
+    {
+      "kind": "region",
+      "label": "加载与隔离边界",
+      "wraps": [
+        "perm",
+        "loader",
+        "alc"
+      ],
+      "pad": 20
+    },
+    {
+      "kind": "security-group",
+      "label": "插件实例（进程内托管）",
+      "wraps": [
+        "core",
+        "ext"
+      ],
+      "pad": 18
+    }
+  ],
+  "connections": [
+    {
+      "id": "radial-context",
+      "from": "radial",
+      "to": "context",
+      "label": "调用瞬间捕获",
+      "variant": "emphasis"
+    },
+    {
+      "id": "context-executor",
+      "from": "context",
+      "to": "executor",
+      "label": "ExecuteAsync",
+      "variant": "emphasis"
+    },
+    {
+      "id": "executor-pipeline",
+      "from": "executor",
+      "to": "pipeline",
+      "label": "统一执行入口",
+      "variant": "emphasis"
+    },
+    {
+      "id": "registry-catalog",
+      "from": "registry",
+      "to": "catalog",
+      "label": "注册描述符与依赖序",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "catalog-state",
+      "from": "catalog",
+      "to": "state",
+      "label": "登记生命周期状态",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 30
+    },
+    {
+      "id": "state-pipeline",
+      "from": "state",
+      "to": "pipeline",
+      "label": "读取当前状态",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 40
+    },
+    {
+      "id": "pipeline-breaker",
+      "from": "pipeline",
+      "to": "breaker",
+      "label": "结果分类 → 更新计数",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 32
+    },
+    {
+      "id": "ops-state",
+      "from": "ops",
+      "to": "state",
+      "label": "激活 / 停用 / 卸载",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelDx": 32
+    },
+    {
+      "id": "pipeline-perm",
+      "from": "pipeline",
+      "to": "perm",
+      "label": "权限闸门校验",
+      "variant": "security",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "pipeline-loader",
+      "from": "pipeline",
+      "to": "loader",
+      "label": "确保实例已激活",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelDy": 26
+    },
+    {
+      "id": "loader-core",
+      "from": "loader",
+      "to": "core",
+      "label": "内置程序集直载",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "loader-alc",
+      "from": "loader",
+      "to": "alc",
+      "label": "外部包隔离加载",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 34
+    },
+    {
+      "id": "alc-ext",
+      "from": "alc",
+      "to": "ext",
+      "label": "可回收 ALC 实例",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "breaker-ext",
+      "from": "breaker",
+      "to": "ext",
+      "label": "崩溃超限 → 熔断 60s → 半开重试",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "bottom"
+    },
+    {
+      "id": "profiles-radial",
+      "from": "profiles",
+      "to": "radial",
+      "label": "Profile 槽位绑定",
+      "fromSide": "left",
+      "toSide": "bottom"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "触发与上下文",
+      "items": [
+        "径向菜单调用瞬间冻结 PulsarContext，重属性惰性加载",
+        "插件禁止查询实时窗口状态，一律只读 PulsarContext"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "运行时内核（ADR-012 三缝）",
+      "items": [
+        "PluginRuntimeKernel 单一实现暴露 IPluginRegistry / IPluginExecutor / IPluginRuntimeOps",
+        "执行管线定序：解析 → 校验 → 激活 → 执行作用域 → 执行 → 结果分类 → 更新"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "隔离与恢复",
+      "items": [
+        "外部包经 PluginLoadContext 可回收 ALC 加载，支撑运行时卸载与覆盖安装",
+        "Extension 插件 1 分钟内 3 次崩溃熔断 60s；Core 插件崩溃即进程致命"
+      ]
+    }
+  ]
+}
