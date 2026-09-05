@@ -95,8 +95,7 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Grid RenderTransformOrigin="0.5,0.5"
-                              Opacity="{Binding CurrentOpacity}"
-                              AutomationProperties.AutomationId="{Binding SlotAutomationId}">
+                              Opacity="{Binding CurrentOpacity}">
                             <Grid.RenderTransform>
                                 <TransformGroup>
                                     <ScaleTransform ScaleX="{Binding CurrentScale, FallbackValue=1}" ScaleY="{Binding CurrentScale, FallbackValue=1}"/>
@@ -104,7 +103,13 @@
                                 </TransformGroup>
                             </Grid.RenderTransform>
 
+                            <!-- [E2E] AutomationId must live on the SlotOrb (the element
+                                 with the custom UIA peer), mirroring the center slot below.
+                                 On the wrapper Grid it is invisible to UIA: the peer's
+                                 GetAutomationIdCore then falls back to the template root's
+                                 x:Name ('OrbRoot'), so ring slots were unlocatable. -->
                             <controls:SlotOrb RenderTransformOrigin="0.5,0.5"
+                                               AutomationProperties.AutomationId="{Binding SlotAutomationId}"
                                                IconKey="{Binding IconKey}"
                                                OrbImage="{Binding IconImage}"
                                                Label="{Binding Label}"
