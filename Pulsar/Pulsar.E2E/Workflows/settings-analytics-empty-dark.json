@@ -2,7 +2,7 @@
   "name": "settings-analytics-empty-dark",
   "app": {
     "exePath": "",
-    "fixture": "Fixtures/default-profiles-dark.json",
+    "fixture": "Fixtures/empty/default-profiles-dark.json",
     "arguments": ""
   },
   "steps": [
@@ -49,6 +49,11 @@
       "automationId": "Pulsar.Settings.Analytics.EmptyState",
       "expected": "visible",
       "timeoutMs": 8000
+    },
+    {
+      "type": "dump",
+      "id": "dump-empty-tree",
+      "file": "analytics-empty-uia-tree.txt"
     },
     {
       "type": "screenshot",
