@@ -14,10 +14,11 @@
   overwriting existing values, then runs the requested command.
 
   Commands:
-    build   dotnet build Pulsar\Pulsar.sln        (extra args passed through)
-    test    dotnet test Pulsar.Tests.csproj       (extra args passed through)
-    commit  git add (-u by default, -A with -All) + git commit -Message
-    all     build, then full test
+    build         dotnet build Pulsar\Pulsar.sln        (extra args passed through)
+    test          dotnet test Pulsar.Tests.csproj       (extra args passed through)
+    commit        git add (-u by default, -A with -All) + git commit -Message
+    verify-rules  check AGENTS.md-referenced paths & key files exist (fail-fast)
+    all           build, then full test
 
 .EXAMPLE
   .\scripts\dev.ps1 build
@@ -26,6 +27,7 @@
   .\scripts\dev.ps1 test --filter "FullyQualifiedName~HotkeyService"
   .\scripts\dev.ps1 commit -Message "fix: some bug"
   .\scripts\dev.ps1 commit -Message "feat: thing" -All
+  .\scripts\dev.ps1 verify-rules
   .\scripts\dev.ps1 all
 
 .NOTES
@@ -39,7 +41,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true, Position = 0)]
-    [ValidateSet('build', 'test', 'commit', 'all')]
+    [ValidateSet('build', 'test', 'commit', 'verify-rules', 'all')]
     [string]$Task,
 
     # commit only: commit message (required for 'commit')
@@ -157,6 +159,61 @@ function Invoke-Step {
     }
 }
 
+function Invoke-VerifyRules {
+    Write-Host '[dev] verifying rules references...'
+    $errors = [System.Collections.Generic.List[string]]::new()
+    $agents = Join-Path $repoRoot 'AGENTS.md'
+
+    if (-not (Test-Path -LiteralPath $agents)) {
+        $errors.Add('AGENTS.md not found at repo root')
+    }
+    else {
+        $text = Get-Content -LiteralPath $agents -Raw -Encoding UTF8
+        $rx = New-Object System.Text.RegularExpressions.Regex('\]\(([^)]+)\)')
+        foreach ($m in $rx.Matches($text)) {
+            $target = $m.Groups[1].Value.Trim()
+            $clean  = ($target -split '#')[0].Trim()
+            if ([string]::IsNullOrEmpty($clean)) { continue }
+            if ($clean -match '^(https?|ftp)://') { continue }
+            $rel  = $clean -replace '^\./', '' -replace '/', '\'
+            $path = Join-Path $repoRoot $rel
+            if (-not (Test-Path -LiteralPath $path)) {
+                $errors.Add('missing referenced path in AGENTS.md: ' + $target)
+            }
+        }
+    }
+
+    $keyFiles = @(
+        'Docs\journal\NEXT.md',
+        '.agents\skills\session-journal\SKILL.md',
+        '.opencode\skills\session-journal\SKILL.md',
+        'Docs\agents\domain.md',
+        'Docs\agents\issue-tracker.md',
+        'CONTEXT.md',
+        'Pulsar\Pulsar\Pulsar.csproj',
+        'Pulsar\Pulsar.Tests\Pulsar.Tests.csproj',
+        'Pulsar\Pulsar.Simulator\Pulsar.Simulator.csproj',
+        'scripts\dev.ps1'
+    )
+    foreach ($f in $keyFiles) {
+        if (-not (Test-Path -LiteralPath (Join-Path $repoRoot $f))) {
+            $errors.Add('missing key file: ' + $f)
+        }
+    }
+
+    $journalDir = Join-Path $repoRoot 'Docs\journal'
+    $day = Get-ChildItem -LiteralPath $journalDir -Filter '*.md' -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -ne 'NEXT.md' } | Sort-Object Name | Select-Object -Last 1
+    if ($null -eq $day) { $errors.Add('no journal day file under Docs\journal') }
+
+    if ($errors.Count -gt 0) {
+        Write-Host ('[dev] verify-rules FAILED ({0} issue(s)):' -f $errors.Count) -ForegroundColor Red
+        foreach ($e in $errors) { Write-Host ('  - ' + $e) -ForegroundColor Yellow }
+        exit 1
+    }
+    Write-Host '[dev] verify-rules OK: all AGENTS.md links + key files resolve.'
+}
+
 function Invoke-Commit {
     if ([string]::IsNullOrWhiteSpace($Message)) {
         throw "[dev] 'commit' requires -Message. Example: .\scripts\dev.ps1 commit -Message 'fix: something'"
@@ -197,6 +254,9 @@ switch ($Task) {
     }
     'commit' {
         Invoke-Commit
+    }
+    'verify-rules' {
+        Invoke-VerifyRules
     }
     'all' {
         Invoke-Step -Title ('dotnet build ' + $sln) -Action { & $dotnet build $sln @Rest }
