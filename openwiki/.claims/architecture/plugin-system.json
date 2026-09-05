@@ -1,0 +1,376 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:7535f51e69b92cf31f91f7e1387e592a2f7b8d52c335d4bfc9f2e15d96398295",
+  "claims": [
+    {
+      "id": "claim_594b65a26bfd47fa8056731cd91e3aed",
+      "statement": "Plugins carry a PluginTier (Core or Extension) declared via IPluginTiered or derived from CanDisable. Core plugin failures are fatal by architecture: the execution pipeline routes exceptions and timeouts to ICorePluginFailureHandler, whose default RethrowCorePluginFailureHandler rethrows the original exception; core plugins are never protected by the circuit breaker, cannot be disabled (SetPluginStateAsync refuses, IsPluginEnabled always returns true), and external packages can never declare the Core tier.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/PluginLoader.cs#L388-L395",
+          "version": "repo-lines-v1:sha256:23c13f00ebd40517dfb71ff6e398e54f5ca3a16332e3b55eff6ae3d5fddf00c5:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzM1YmRmYWE1YTc3NGM0MGFhYTc2MDU1YjhlNGFjOGRjN2Y1YTkzYmY1Zjc2NTg2Yzk4MjNkZmY1Y2M5ZDIzYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTUyMmM0MmNkMTljNmQwM2Q4MDhjNDUyNzIwNTUyODI1YjdlYTFjNWI0OTFiMjE4NTExY2FjNzQxNWNmOWQ5YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGIwZTIyY2Q0YTFmNTY0NDhjNDVlM2E2Y2I1MDk4N2Y1ZDE4MzEyZGMwYmVjMmMwMWI0ZjE4Y2EzZWM0NmEwOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTA0ZDg2MmE2OGNmZTMzMDdhMGRiN2UyMDk4ZDM0ZDZjZjkyNTI4NWI3OGE0YTdiNTRmNDU5ZmUzNGZlYWFiMiJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/Runtime/PluginRuntimeKernel.cs#L363-L383",
+          "version": "repo-lines-v1:sha256:507390cc0144fcbe79a02c56d940b6ce3949d271be2e1c0adfe2848c7414a11c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYjZkYzkwYjJmNzkyOTYzZGNkYWRmZWZiNDA4NDg1NDkzYzAzYzNlMWE4MGYxNDliYzYzODAzY2RkMDQ2ODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5YzdlODEzNzAxNzMxZTY2NzBhMzRjNTY3MjM1MjZlZmM2NDZkNGY1OWQ2MzgwMGY4NWQwZjQ2ZDI1ZGNlNTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmZWUzMGIzNmY0MjlhYTU2MTIzNjlmZTlmMWQwOTFhYmNlZjYwYmVlYmU3MWU3MGM2NDI5NWFhNGE0MzAyMGUifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/Runtime/PluginRuntimeKernel.cs#L547-L577",
+          "version": "repo-lines-v1:sha256:a95224704b70cc9d59af2acf06a522e920b698a29208f04f86a8fede49e4b40f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzMDYyNjIxZWY3MGUxYjY2ZGYwYWY0N2MxYjgwYWU1NjY5ZTRhN2Q3NmY4NTEwYzZmZGQ0ZDI3MTAzNWQzMWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MjJjNDJjZDE5YzZkMDNkODA4YzQ1MjcyMDU1MjgyNWI3ZWExYzViNDkxYjIxODUxMWNhYzc0MTVjZjlkOWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhMjM4OGViYWFiNDZmZDI5MjdkZWFjZGE3Yjc3Nzg3ZThmNGI2MjJhZDYzYmM2ZTQ1NWFlY2VlMzQ4YTEzMDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjYzg3ZDMwZTk3ZWY0MDY0NjQ2MGUwODVkY2EwZjk0OGE2YzY4ZTk5NDMxZTE0NjVlZDE4NzUwOWRiYTZjZDUifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/Runtime/PluginRuntimeKernel.cs#L876-L894",
+          "version": "repo-lines-v1:sha256:ad20308e2c57bb62f462c7ba84f69fa88586abf3a4ed7a59b0e107e2e7392dd6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4NTdmYjM3ZDE2OTcyNDlkMzlkZGM3ZTkwOGI0MGViOWMyMmYwMmU5M2I3YjQ4Y2Y2MTNhNDRmNmYzMDEzY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmYjQ5YzQzZjBlOTQ3NTgwZDYzZWZkZmQxZDQ5MDZjMDA2ZmMwYjg2YmIwZDhlZDRlYTljMTNjN2JhMGNjNzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1OTVjOWVhMDJlNTg0NDEzOWIzZTcwOTc0NDgyM2UyMTgyMjg2YmI4MTViZjYwYzNiMjNlNjZhOGVlZTY3NGIifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/Runtime/PluginRuntimeKernel.cs#L940-L954",
+          "version": "repo-lines-v1:sha256:f52551376c04d92ace2e8c8ca0b741451148f392298de6a0ae3b4ebb0db093f8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlMDBkMzRiYzk1YTAxZTNkMTNjODYzMDM4MDA0ZGY4OGJmMDA0ODQxYTVlMDhiNmI0NTIzNWJlN2EyOTYzMWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhOWY4NmQyOGU3ODRmOWZkMzFmYjcyZDE1ZjYwY2JjZWFhZmRkNjY5Y2JkNWI2ZGE3ODg4YTAyMzMyMWViYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwNmI0NzA0MjNkZjQyODkxZjk0MDljYTExMDViNmFjYjFkY2VlZjNiYWFjOTJkMGNjYTE5MjUyYTRlODZjZWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a3a7b1e2ccd241eeaa1fd71f69328993",
+      "statement": "Extension plugins are protected by a circuit breaker with three failures within a sliding one-minute window (RecordFailure stores and evicts timestamps so the window is real, not an indefinite counter), a 60-second open duration, and half-open recovery: after cooldown the next CheckAvailability removes the open entry, raises Recovered, and allows a single retry; a successful retry (RecordSuccess) resets the failure count.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/Runtime/PluginRuntimeKernel.cs#L240-L338",
+          "version": "repo-lines-v1:sha256:2eb217c2eb1f1dcecbed89273c3103c0b9f4e1001e03e03863eab034c13afb86:eyJzZWxlY3RlZExpbmVDb3VudCI6OTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzZDg4OWIwNWUzMjA5ZjEyZmY1ZDA1YmVmMzNiN2U3MDJlNzY3MjRlMzhhY2Q4OTg3MDFkZGUzYjg0ZjU5ODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0ZWYyODRiNzgyZjM5MGI0MWUxZDU1YWE0ODBlZmU4NjZjMjU0MjIyN2JjYmEwNDMzMzZjZTYxNmY2YmYyYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmOWJhN2EzOTI4ZjdlYTY3NzEzZWRiY2MzYmM0ZDBkODM0NTQ0YWVjNThjNGRiZWQ0NjQ2NTA1NGRhN2Q5YjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4c3be8e1ba434170bf72588a72f4d959",
+      "statement": "Per ADR-012 the plugin runtime exposes three narrow DI seams — IPluginRegistry (registration/discovery/activation queries, 8 members), IPluginExecutor (execution, 1 member), IPluginRuntimeOps (refresh discovery, deactivate, set state, grant permissions, unload all, 5 members) — all implemented by the single PluginRuntimeKernel singleton; AddPluginRuntime maps all three interfaces to the same kernel instance, and consumers must inject the narrowest seam, never the concrete PluginRuntimeKernel. The former 14-method facade and pass-through PluginRegistry class were deleted.",
+      "evidence": [
+        {
+          "resource": "repo://Docs/decisions/012-plugin-runtime-three-seams.md",
+          "version": "repo-file-v1:sha256:7d6c37ace106b8d3c40b354f33aa9e2bef218d6256cac5635ffe87c45db53273"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/Interfaces/IPluginExecutor.cs",
+          "version": "repo-file-v1:sha256:dd3523870195028ee0cae74a3e5e560776b7e9e6a80ce7419a79b1c646995c49"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/Interfaces/IPluginRegistry.cs",
+          "version": "repo-file-v1:sha256:652a51c369c4fe39fe86584e71fa1fdf7440e5cd304f61fce14e0f716ed91e6b"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/Interfaces/IPluginRuntimeOps.cs",
+          "version": "repo-file-v1:sha256:3c155bd95e1a0b1de0ea5c003c9383a6f14057099a9401683964de0b7ac23470"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/PluginRuntimeServiceCollectionExtensions.cs#L12-L36",
+          "version": "repo-lines-v1:sha256:cbbe551beb7eb1db5272e0709c491403e851e2411b8a5ad0d54c953327c1fa0a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0ZGNmYmRjOWZlNDU2ZGIzMzM4YjMyM2JhZmIwZDYzNzhjOGI0YzlmMzk3NjY1NTE2MDE3MmM4NzFmOTZhZGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5NTUyMGRmZGRiMTNlOTQ5YmU1OTdjYTA1MWI2NDIwNGFhYTkyZmMyNGQzODYxOWNkOWZjYTE2NjZiNmZhN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTRkMDJhODEyMTk0NGQxNzZkMjY1ZTliYjljYzU5ZjZhYjg5MGJjYWRmOGFlZmRlYmRiYmI0ZjJlYTg0NDQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_38d0248d27874934a7333922dd087261",
+      "statement": "Seam consumer mapping: the slot execution hot path (PluginActionStrategy and its creators CommandPageProvider/ProcessPageProvider/CascadeSubMenuStrategy) injects IPluginExecutor; ExternalPluginLifecycleOps injects IPluginRuntimeOps for ops primitives plus IPluginRegistry for descriptor/activation queries; Settings and analytics view models inject IPluginRuntimeOps for disable/state; App.OnExit calls IPluginRuntimeOps.UnloadAllAsync; registration-only consumers (AppStartupCoordinator, ConfigValidationPipeline, PluginRecommendationEngine, UsageStatsReadModel, MenuSession, Pulsar.Simulator) keep IPluginRegistry.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/App.xaml.cs#L477-L483",
+          "version": "repo-lines-v1:sha256:0a40c24b575a0c4fffbdc06b11dc36fc726f7ebac36c07af711858ad4f6f764e:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2I2MzY2NDZmOTI3MzYyOTIxMmIwMTkxMDAwMDdjNWE5N2QzNzc5YjllNzI0YWIzYzI3YmM5M2E1MzA0ZWEyMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWRlZWI0Nzc5M2QwMTg0MjJjM2QyZTM1MDk0MDU5MTZmZmZiZTZiMWVmMDFkN2FjZTIwNzc5NDkxMmJkNjUyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTM0OWM1MmI4YjcwMjU0NTI0ZWY3OGIyNzc5MmM2MDM4YWM5Njg5MWQ1MDQ5NGNlNWVmYWY4YTRiOTg1ZTY0MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTNjNTFhZWNiYjU0MzgyNGViYzI3MzI4YmM1MDJlNTE5OTMxMjkyZDBiYTNmNjBiODdlZjlmYTMxM2I0M2U2ZiJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ExternalPluginLifecycleOps.cs#L26-L44",
+          "version": "repo-lines-v1:sha256:5eeb9ea14e8a0dce74c2c383083c95b822809aaf680af894952db621c7ccbcdb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1MjI0YjRkMzZiODAyY2E4ZmIxNjk0YThmYjlkZTRjMTFjMTE4MmQzZDUzNmMzYzFiN2M3ZjFlYzI5MGRlNDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5YjFmZWM2NTQ2OGI3OTJmMTVmY2VmYTdjYTFlOGNlMGIyNDlkY2IzNDA3MzU2NjdkZDZjZmU3M2RhZjUzNGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliMTBjOGU4YTg0ZTUxZDE1NWQ3NjllM2NjZWE4OTdjNmM0MzNiNjBjZmZkMWExMzU3YWNlNWQ4NDM1ZTYwZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5ZjNiMzZiOWQ5NjY3NDFhOGU0YmE1YTRiNmNiNjU1ZWE4MzQ4YWU3ZGQ2YWExNzdjYjNhZDEyNDNkNjM4MTAifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/PluginRecommendationEngine.cs#L11-L37",
+          "version": "repo-lines-v1:sha256:a7c7d384ad7f0d4b3e1b6a3feaf17144f84cee946a282698bf3a0b005ca3de8a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1MzAxNTViY2I2YmY5YWU3NzY3YzQyNGU0NzdiZmZjYzg2MzAxODFlNjIxNjJmZDM5NDZhODhhZTExNzllODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlNzVjODBkMzUxZjI4YjYzMjYzZWQ2ZDQ0OTM4YjAyODRkY2NkMTVjMDQ3NDZkNDNjNzFiYzZmYzY2M2I1MDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkYTJiNDNmZDhiMzI2N2RhMzdlNGU4YTg4OTZkZDg0YjNiMzlhMzY3ZGQ0MTY3YjQzNmQ2OGMyYTI0MjgwZWUifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/Validation/ConfigValidationPipeline.cs#L18-L32",
+          "version": "repo-lines-v1:sha256:59cfacf961f2287cc6c2b57da1bd32baa1a94b432e4c5282709a870b31d23164:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4YWIxZDkxMzM0MzUwOGQxYmJiOGI5Yjc1ZDc5NWUzODgzOTQyNmQ1YzI5ZWE3Yzc4MGNkZGMwMDE4YmUzMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0MDIxNTQ1N2I4ZWVkNDBlZWI0NDBjMjk1NjcwZWY0NWQzYTMwODdmMjRmZTIyYTVmZDYxNjVlMzM3MDI4OTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyZDcwNjZkOGZlMjMzYWQ5NTNlNDI5YmRkODUyOGQzNDk0MjEyOGM3OWMwZjRiNzNiMzM1ZWVmOWU0OGI2YjYifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Strategies/SlotStrategies.cs#L39-L76",
+          "version": "repo-lines-v1:sha256:703397a45c8efc28c4596c599f5edfba7666918bc5eef6f88ec7c9fa8a5572cc:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4ODE4ODE5ZTljMzQ1MTk5ODlkMDBhMGIzNzg0NWYxYmEwNDNkYWRmYWE2NGJkNjMxYjhiZDQ0YmE0MjU3MmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3YmZmZTA0NTFhN2Y5MzIyMjIxOGM1MWJjMmEwMWJiZDU5YmQ0ODJhZDk5NzMwYWYwMDFjYTA5ZDkzMTQ0YzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU4MDNlZGQyMGFhMzBlNTdmYTk0ZDM0YjFmNTYyZGFhODIyOWNiNmY0ZTY4ZTVmZGNlYjMyZThlMDQ2NmI5NDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4MTVhZjg0YzVhY2NlMDAxYzliZDAyMTM1MGJmMWY0YzUzN2NmNjJmZWI0MDRkYjAwMjQ0N2IxNzdhODUwYzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_84442a451987418e9fc0e5a5397fa41b",
+      "statement": "The authoritative lifecycle state machine has states Unloaded, Loaded, Enabled, Disabled, Running, Faulted, Recovering. PluginRuntimeStateStore.Transition validates every edge (Loaded only from Unloaded/Faulted; Disabled only from Loaded/Enabled/Running; Running only from Enabled/Faulted/Recovering; Recovering only from Faulted; Faulted and Unloaded reachable from any prior state; same-state re-entry allowed) and throws InvalidOperationException on invalid transitions; rejected transitions leave no trace in the snapshot dictionary, and reads of plugins without a recorded lifecycle derive Loaded or Unloaded on demand without writing.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/Runtime/PluginRuntimeKernel.cs#L100-L190",
+          "version": "repo-lines-v1:sha256:4f12e9bad6813349e571373b65446d3785b7def18358905aadf1520b8a778cdd:eyJzZWxlY3RlZExpbmVDb3VudCI6OTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllNjU2YzVkYzBhNjQ1ODAzNTMwOWFlZDRlZWEzOGY1MTEwOThiNWU2MTJlYzc4ZjY5M2YyNjk2NGUyYzMzMWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5OWJkZWZlZWFjYTYzNDBlMDI5MGRjODZlODg5Yzg5ZDVlMTg5YWE1YmE0NGI1ODViM2I3MDczNGY0YTYyZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyZTg3YzFlOWUzMzEzZTA4NGRhNDE5ZjE1YTg3OThhZTlmMDQxZGE4OWY1OGY4NzUyZjY3MzJhY2Y5MDdlMjIifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/Runtime/PluginRuntimeKernel.cs#L18-L27",
+          "version": "repo-lines-v1:sha256:3548b096c6f9d285a4a0f5cad6fffcc09c71aa0718e0f172a2185e697f0cf94a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2NTM1ZDM5MzcxZmZiZWZjZjNmOTZlM2UyNzhlNzA5ZTFhMTYwNjdkYWYxNDBlZTdiODRkMWIxMmMzNDUzOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkOTdmODk3YTI0MDljZmM0NTgwMDUxZTA3ZmRjY2U5OGIxNDRmOWE0NGYzZDg1OGE5NThkNDY4ZDY3OGJiYzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ5YTJkNzc2OTAzOWY2ZWRmMDBmODFmMDFiM2ViNDAzYjI3OWU3M2IwYzgzNmZhMzhhMTA5YmFiOGRjOTRiMDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fe0f599ca41847dfb51238e8eb1e1053",
+      "statement": "GetOrActivatePluginAsync is idempotent and gated per plugin by a SemaphoreSlim: concurrent activation requests for the same plugin share the gate so exactly one instance is created — without it, each request would create its own instance and the second would overwrite runtime state, losing lifecycle hooks. Activation runs PluginLoader.ActivatePlugin (PluginFactory creates the instance via constructor injection, then Initialize(services)), transitions to Loaded, then applies the persisted profile; activation failure transitions to Faulted and returns null.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/PluginLoader.cs#L73-L92",
+          "version": "repo-lines-v1:sha256:1753eb51499dc017e615b2b21b0f73c13a075b1ee011b87191ef78f0b6672b53:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyM2MzM2VkMzViZjIyOTMwYzA2YWY2ZTc0ODYyNzg3Njk3MDBlNjBjMTc3YjBiYjM5NTA2NTdhNmYyMmY3OTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjYTJjYmY0ZmNlZjcyMzg4N2Y0ZDExMGM2MDdmYzQ4OWY3Y2IxNDRmN2ViODkxMmFlMTFlODU3YjEzMGQwZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyMGZiZjg1ODZhNDJiNzUxNTNkNWExZTNjM2RiZDRlYTk3MmIxZGQxYmM5MGZkZWQ1MWJkMDdlNDQ1NmNlZDYifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/Runtime/PluginRuntimeKernel.cs#L754-L800",
+          "version": "repo-lines-v1:sha256:979f799f3f743724d6765cfe2f957335fe82df36ae27d458a265f456626f6c8b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmZWJhMDExY2JjNTA5ZWZkYTUxYmU3ZTE3ZWM1YjY4YWMzMzBlMjI5ZDkzYmEzYjYwYjI4ZDI0MWZjNDAzNTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlZjVlNjY0MDFkMDFjOTAzYTEwNTBmMGIzNWVmZTVmNmUxYmJkNmVmMmU0ODkzYWU4ZDQxYzQ3ODMwMWUwMzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVlMmYxZDhkZjE5MjVjYmNjMjJkNWQ4ZTY2MDJmNGU3NWYyZmY3ZjYzMTk1OGY5NmNlNzJmYTc0NjI5NDRlODYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_521826b59e844f56a057a68d0c5ce8a4",
+      "statement": "ApplyProfileAsync is read-only: it applies the user's persisted profile (default enabled when absent) and never writes back to Profiles.json — activating a plugin is not a configuration change. Core plugins always end Enabled (running OnEnableAsync); extensions end Enabled or Disabled per profile; IPluginConfigurable settings are validated first and invalid config falls back to defaults.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/Runtime/PluginRuntimeKernel.cs#L979-L1052",
+          "version": "repo-lines-v1:sha256:4b5c47e579cdaac134c99725ae19ecc4a2445301672157aaf5cc58c29cf44563:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwZmRmZmU0MmM4YjhiYjk5NjViZDUyNDc5MWIxYmIxODA1ZjExZjA5YjQyZmEyN2FkN2Q3YTZiM2FkMmNiMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhOWY4NmQyOGU3ODRmOWZkMzFmYjcyZDE1ZjYwY2JjZWFhZmRkNjY5Y2JkNWI2ZGE3ODg4YTAyMzMyMWViYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c5c834f180ea46cea5010fae93d74021",
+      "statement": "PluginExecutionPipeline.ExecuteAsync runs every action through a fixed order: per-plugin mutex (one action per plugin at a time, default policy; a concurrent request is immediately blocked with PluginErrorCode.TemporaryUnavailable), user enablement gate for extensions, permission evaluation, breaker availability check, activation, PluginExecutionContext scope, invocation under ExecutionTimeout (default 30 s, init-only so tests can shorten it), then unified outcome classification that drives usage/health telemetry and breaker updates.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/Runtime/PluginRuntimeKernel.cs#L385-L447",
+          "version": "repo-lines-v1:sha256:17324398ca5ecad2502ee9caeb806f6a6b13855b52289509f4517e5fee2821a1:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3MmE2NDUzMGVjZDIxMWM5Y2Q2NjE0YmU5NjhmMGIzYzllZjBlNDgxZTYyYzhhYWI0YTNlNzZkZDU4ZTg3YTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5OWJkZWZlZWFjYTYzNDBlMDI5MGRjODZlODg5Yzg5ZDVlMTg5YWE1YmE0NGI1ODViM2I3MDczNGY0YTYyZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2OWU3NWJiYWM0ODRlZDRjOTZjNjhjYTU2NmJkZmIxMmIxYWRhYTQ0NTcyYmZjMzE2NjIxODczZTMwZTE1NzIifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/Runtime/PluginRuntimeKernel.cs#L449-L516",
+          "version": "repo-lines-v1:sha256:5f44c5d56cd5e37e4d8b7a1f09e98aa21030319e37fd222dac47d06a5c6be65c:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1NTlmYTNjMWJmNWI5OGZhNjczNDFmMDY1NTI2MzJkNzkxMzJhYTU2M2QwMmE3NjRhNzc0ZTU0YWViNGI1NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhOWY4NmQyOGU3ODRmOWZkMzFmYjcyZDE1ZjYwY2JjZWFhZmRkNjY5Y2JkNWI2ZGE3ODg4YTAyMzMyMWViYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiYmIwNWFhYzdiMTZlODU4OTMwYTRiMDllZDc1Njg5YzQyNjk4YzU5MTg2ODI1NjdmNmQyMjc0OTJkNjQ5ZmIifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/Runtime/PluginRuntimeKernel.cs#L580-L608",
+          "version": "repo-lines-v1:sha256:6f348a9e6a381ef06f319ccaf79fb52449c6f4201f0234d29cee63437321ebac:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxMTZkMTBlMjg1YmRiNGYzNWY1N2UzZDdkMzEyZDMzYmQzODhmMWJiMmRlYWRhMGRkNDdlMjE3Y2YwOTdkNGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhOWY4NmQyOGU3ODRmOWZkMzFmYjcyZDE1ZjYwY2JjZWFhZmRkNjY5Y2JkNWI2ZGE3ODg4YTAyMzMyMWViYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwM2M3N2FjNzI0MGVjMmY2OTYxYjIwMjRjOGJjZDBhYjhjYWU0M2RjMzNlMTFkNmRkZWEzN2Q2N2QzODAzZTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d84da311a9d94e30985a824a5f57d027",
+      "statement": "Outcome classification in the pipeline: success calls breaker RecordSuccess and returns state to Enabled; a returned failure returns state to Enabled, but an extension returning PluginErrorSeverity.Critical is a handled-failure breaker signal (state Faulted plus RecordFailure) while Recoverable results never count; a timeout (OperationCanceledException not caused by the caller) transitions to Faulted with TimeoutException and records a breaker failure for extensions; caller cancellation never trips the breaker and returns UserCancelled; an unhandled exception transitions to Faulted and records a breaker failure for extensions or routes to the core-failure handler for core plugins.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/Runtime/PluginRuntimeKernel.cs#L517-L578",
+          "version": "repo-lines-v1:sha256:c49d28e23a30b33f8c4878d431021223a3ad66ac0cbd22c3d510c0c765fe35bf:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxMTJiMmNlMDI4MjkyOGUyOGJhZjc0NjQ3YmI5MzJjOGYwMDcyYjI4MDQxYTlmZjk2OTMxMjMyMmQ4MjVjN2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEwYTVlN2IyM2YxZDBkNjQxNWRjYjllZDM4YjVkODRjNGZiYTg5NDk4ODhjZjBhZWZmMjlmZDlhNTlhNjRkOWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzMDQxNDllYmVkMjc4MjdiYTQxNjg3MjVmODdkOWRlNTRjYzE1MTQxZWIzZTc0OGQ1MzA4NjNhMGY5ODkwMWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5404c726a3f24c579560c81157004db1",
+      "statement": "ICorePluginFailureHandler decides what happens when a Core plugin fails; the default RethrowCorePluginFailureHandler captures and rethrows the original exception, and the application shell may register an alternative policy that shuts the process down after emergency cleanup.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/Runtime/PluginRuntimeKernel.cs#L363-L383",
+          "version": "repo-lines-v1:sha256:507390cc0144fcbe79a02c56d940b6ce3949d271be2e1c0adfe2848c7414a11c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYjZkYzkwYjJmNzkyOTYzZGNkYWRmZWZiNDA4NDg1NDkzYzAzYzNlMWE4MGYxNDliYzYzODAzY2RkMDQ2ODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5YzdlODEzNzAxNzMxZTY2NzBhMzRjNTY3MjM1MjZlZmM2NDZkNGY1OWQ2MzgwMGY4NWQwZjQ2ZDI1ZGNlNTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmZWUzMGIzNmY0MjlhYTU2MTIzNjlmZTlmMWQwOTFhYmNlZjYwYmVlYmU3MWU3MGM2NDI5NWFhNGE0MzAyMGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bc95029dd015492297f66ad1da5b93ec",
+      "statement": "Per ADR-013, PluginCircuitBreakerPolicy is a pure state machine (constructor takes only an optional logger) that announces transitions via synchronous Tripped (PluginId plus applied Cooldown) and Recovered (PluginId) events; all side effects live in one observer adapter, PluginBreakerNotificationService, which subscribes in its constructor and relays trip to IPluginHealthMonitor.RecordCircuitBreakerTrip plus ITrayService.ShowNotification with the localized keys Plugin.CircuitBreakerTitle and Plugin.CircuitBreakerBody (error icon), and recovery to RecordCircuitBreakerRecovery only — never a notification.",
+      "evidence": [
+        {
+          "resource": "repo://Docs/decisions/013-circuit-breaker-observation-seam.md",
+          "version": "repo-file-v1:sha256:9d487a1bb74632c8b3be6f9d4baeb8dab7efeb245e5efcaf4773af8ba6aa34ba"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/Runtime/PluginRuntimeKernel.cs#L208-L267",
+          "version": "repo-lines-v1:sha256:9694cbfc58b2435036b526634a2743f6b3687e03cbc50541d54ad7eb7d45b064:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYjZkYzkwYjJmNzkyOTYzZGNkYWRmZWZiNDA4NDg1NDkzYzAzYzNlMWE4MGYxNDliYzYzODAzY2RkMDQ2ODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhNjk1MzAzOTZhODgyYjdlZDUwODY3NTc2OGU0ODEyOTYyMWU3YzM5ODc4NTlhZjI4ZTRkYzY5MWU3ODczYzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMjI3NmNiNmVmNTI4YWRmYjBkOWViZGM4MjhlZDIwNGY0Yjc0MDc4ZDQxN2VkMzRlMWY1NGZlYmY1OWIwNDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzNjRkZDM3YjJiY2E1YjQ4Y2ZjNDM5NzE4NThmYTEzMDdjMDM4MDM5ODk0YmYwNWEyMmJiMjdjMzQxNzNiMjMifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/PluginBreakerNotificationService.cs#L27-L77",
+          "version": "repo-lines-v1:sha256:0da819713db465824dfdfab303c38fad134c8fc330e1b5802d81687b64cd566f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllZWNhNDgwYjQ0ZWUwOWY3N2VmMWUzZGNlNWJlZmUyNGY3MWFmYmNmOTRjNDBkNmU0ZGY3YWEyOWJiNGQ2YTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhNjI3YTdiZjA4NTUyZTBiMTVmYzYwNjExNzE0YzczOGRmOWQxOTlmYTc2OTNmMDIxYzdkZGQ0NTQ0ZGI2ZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTRkMDJhODEyMTk0NGQxNzZkMjY1ZTliYjljYzU5ZjZhYjg5MGJjYWRmOGFlZmRlYmRiYmI0ZjJlYTg0NDQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3c92d72b3bb14347a1de1bbdece7a6b4",
+      "statement": "PluginBreakerNotificationService relay handlers are exception-isolated (try/catch plus log) so an observer fault such as an unavailable tray can never propagate back into the breaker decision or the execution pipeline. Activation is load-bearing: AppStartupCoordinator resolves the service immediately after trayService.Initialize() and before LoadCoreAsync — resolving is the subscription and it happens before any plugin can trip a breaker; both the policy and the adapter are container singletons, so the singleton-to-singleton subscription cannot leak.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/AppStartupCoordinator.cs#L166-L177",
+          "version": "repo-lines-v1:sha256:901790cde4af361935fcea24857fb67f43434bb79328d6662b731b9c9eccf17f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkZGE2YzU5ZDFhNmNmN2NlZjFiZWI2OGVhOTVjODY4YmQxNTdkM2UwMDU2NGQ1MjY4YmQyYTRkODU5ZDY1NGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkYzQ0ZWVkNmJiZTI4ZDIyNzMwZDUzMTg2NzEzNmQ1MTEwZWUwMjBmZTQ1YTUwNzkyMmQ1NTNlYjg0N2U2NTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5NTVlZmQ4YTBiZjRmMWZhNDE1MGI5NDNmMTc1MTcxMTk2MjdlMjI1NDYxOTg2NWE1YTBkMTdlMWRmMGY3YzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyNDJhOTk5NDA0ZGNkNzZhYzZiNGExYmNiZTQ4NWM2YWYzMTg5ZjY2MzliNGUwYjBkZDRkNDAyODVlMWJmZTMifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/PluginBreakerNotificationService.cs#L51-L77",
+          "version": "repo-lines-v1:sha256:ddc50e44a7eb40fceb0e2b21f5f175d34e3e7441bcd69de6c08db96e1f062736:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkMzNiNGMyMDAzNzYzZmQzYTc2ZjY5MDEwMWU2NTk3MGE3NjlmZDhiNDk5MWE0YTZkMmU4NWNkMmU4N2Q4ZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4MDBjZTEzM2VhMDU1ZGRmOTZhZTYwZjQzNTY3NjBiMmYzZGY3NDAwNmE1ZmI1ODNkM2I0NGNmNGE3MTA3OTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTRkMDJhODEyMTk0NGQxNzZkMjY1ZTliYjljYzU5ZjZhYjg5MGJjYWRmOGFlZmRlYmRiYmI0ZjJlYTg0NDQifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/PluginRuntimeServiceCollectionExtensions.cs#L20-L26",
+          "version": "repo-lines-v1:sha256:1cc207bcfa2e63e41ce7ac357f2ac07a2408bc0c9042930d7d4d0908e1601c26:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGYwZjA3MTIzZDQwMDhkMzM0ODBhZDI5OWU3YmZlMjVkZWRhMDgzZTQwMDg0MjVhZGIyMGI3ZjYwMjc4NmQ0MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWM4ZTUyZDMxNDRmMzVhYjFhY2Y3NjA2NWI0NDA1ZmM2OGU4MTk1OGUwZjYyYzhlMGM3MGNiODEwYTFhZTQyYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmMxZGEyMDE3ZjU2NzZhZDFmZTkwM2QxNzQzOGE5OGIzYTkyNDFhMDJmYzAwMDNjODQ4MThlOWI5ZDEzOTZmNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmFhNjdlNmVmYzdiZTRmMzQ1MWZkY2Q0ZWRjYjlhMGYwZjEyZDczODY1MGQ3NzI5YzU2NzY0NGE4ZWIxOTVkNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_ae237458f875474cb837a159103539cf",
+      "statement": "External plugins are governed by manifest permissions: IPluginPermissionService.Evaluate requires every declared permission to be known and present in the granted set (unknown tokens always fail closed, so a typo or future permission never silently grants), and the pipeline blocks execution with AccessDenied before the plugin is activated or invoked. Within execution, PluginExecutionContext carries a per-execution permission interceptor (GrantedPluginPermissionInterceptor for external plugins, AllowAll for built-ins) enabling in-execution DemandPermission.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/PluginExecutionContext.cs#L96-L108",
+          "version": "repo-lines-v1:sha256:beed3db7fac9a0e1afb8cd6fc9f3bd361cd4e8eb2084aa144b524956bb4724aa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3ZWRiZTc5YTU3NDk1N2E3MzU0MGRlNTM3MDlmZjI1ZTc2NzYwNDJhZjA1NjdhZmI3NmZkYTFkNzhhOWM1OWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkNDlkNjIxZjY0OGQ3MjJhOTdhYjYzZDY3NjY5ZGM5MWI2OGZjYzc1YmIzZjg4M2ViZmIyOTE0NTQ2ZWZjYjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkZjk2YzEyNDg1NGY0MDFhMWJiNDlmZmUwMGU2OTE0YzVmOWEzZTZiYWE3MmZlYWQyZTM5YWIwZTI4OTdjZTAifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/PluginPermissions.cs#L135-L205",
+          "version": "repo-lines-v1:sha256:01643ff80528305cbb9b95422038d376a6ffcff180803a97bd0457e4b7d3bd33:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4MmY2YjFhOTg2N2IwZWI2OWQ4ZWYzYjM3MmEyYjg0YzBhMTA5ZWJiNTVmZjExYjYyMDkyNGJiYjMwZDEwMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhOWZhNjI3YTQ2MDY4NjEzZWVhNTNmZjc4MWFmZjgzMWYzZDFkNTRlMDhkZGM1MTJkOTUwMGNhOTdiZGY2M2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/PluginPermissions.cs#L76-L128",
+          "version": "repo-lines-v1:sha256:4421d3650975aa6f969834b55e2b1a38b805251ed3dcf54d101467af49cc05d8:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1MDQyYjdhZTQ0MmVhMTc4Y2NhZWQyNDIzYzc0MmFiZjA4ODQzMzIzNDRiOGE4YTYzMzIwYjQ1NDBiNTY4OTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhNjAyZDFhNjMzZjVlYzA5ZGQzOGI5ZjgwNWUxZDIzMmRjYzc0NjkyYzZiYjk2YmYwYmQyYThkOGRjM2Y1MjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg0ZGEwYmZiYmE2MDViOGFhM2EwNGY3YzQ3ZmZlZWI0ZTgxOTZmOWM2ZDZmMTc5MzJmYjhmYjkwOTljYWRiOTEifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/Runtime/PluginRuntimeKernel.cs#L459-L508",
+          "version": "repo-lines-v1:sha256:43c4d0865ee9b94b49c732909567327465c50cd77145c5ed1116446c29a5b5e9:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjMDhkNWIzYjU4OWJjNDk2ZjU0MzlmNTViNWU4YmZhYTNmNWIyNmE1NmRmNjc0MGVkZjdhODk0MmRlNzIxNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2YzE2MzM3ZDBhZmRhN2ZiNjc1YmIzZTYxNmExYWFlY2ZmYjk0OGE4YWIzZmVkMWVkMjMyZTRmYzNmZTliYjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3Y2M4YmZkMjZlOThkNzg2YWYwMWFiOTBiZmRhYTIyYmFmYzE3NzFmZjEzZGZjYWI5OWE4MDE1N2VmYzQ1ZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwMjY2Nzg3NmE5ZmI0N2U5YTYwODEzODg1YWUxNmU4NGI4NTg5ZjRlYmYzMTYyNGFiYWFmMGIwZDQyZWZlYWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_70064cc069424961a14d315dd01a08e8",
+      "statement": "PluginLoader discovers built-in plugin types by reflecting over the host assembly and external packages from per-folder directories under the plugin store. External folders must contain a manifest (plugin.manifest.json preferred, legacy manifest.json fallback; resolution and case-insensitive parsing single-sourced in PluginManifestReader); the loader enforces minPulsarVersion and maxPulsarVersion compatibility (semver prerelease/build suffixes stripped), optional package integrity verification, and topological sorting by Dependencies (a circular dependency throws), then caches discovery results.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/Metadata/PluginManifestReader.cs",
+          "version": "repo-file-v1:sha256:086da75236ad1eb7d2bd2426baa777272bf6ce9a9662eee74373b78d182932d5"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/PluginLoader.cs#L188-L304",
+          "version": "repo-lines-v1:sha256:c260ad517a05177f454c61f3096172df84d6892102c88fb505bdfb1a8e6d0e26:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjYzE4ZTgzZjhmMzg5OGM5ZDcwOWZhMjFmMDkyOTIxMTAzMDQzZGUyMzdhNjkyODUzMzhkMmIyNDVkOWJkODc0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlNmIwNDQ5MTQ2OTcyMmU4MzYzYTk0ZTQwNDQ1MzhlMDEzYTJhMjE3ZTM2YjFlNTY4YmE2MGFjYjdiNGM4ZjJlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJkYTlmODZkMjhlNzg0ZjlmZDMxZmI3MmQxNWY2MGNiY2VhYWZkZDY2OWNiZDViNmRhNzg4OGEwMjMzMjFlYmI5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkZGE2MWIxNzJhOTY1ZWJiNjY0NTNkMmE5Zjg1ZTBmODNlMjRjYjI0OWUxZTRmMDRhNmY2ODI2YjZhNjAyODQxIn0"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/PluginLoader.cs#L306-L371",
+          "version": "repo-lines-v1:sha256:73c684f4294f02d03694670a1fed5d09c66c3d7ec3e9f29b16056422fcad88a9:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxZmRjMzE4YmZjYzcxOWQ2NGJhOGZmZDllMDFhNzYxODMxMzNjNDViYzk5NjJiNmM0NDk3NGYxYTYyMDI3NGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhOWY4NmQyOGU3ODRmOWZkMzFmYjcyZDE1ZjYwY2JjZWFhZmRkNjY5Y2JkNWI2ZGE3ODg4YTAyMzMyMWViYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2YTMxMjYyY2UxZTRjNmNkNjE4ZDVkZGI4N2QwYjJkZmViM2U0ZDczOTA2NTBkMzEwNDc2ZGNlMzkxODJhM2IifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/PluginLoader.cs#L42-L71",
+          "version": "repo-lines-v1:sha256:056e15090884eb490a966338262cad23d022ab8b70efacf740de20831a8a40d3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1M2UyMTc3YzBmZTkyMDhkNTk2NTc2ZjU1Yjg1Mjg0ZTlkNmEyYjkzNjZhYjhhNmMzNWE1MWZjMTM1NTRmMDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkOThjZGJjMjE3OGNiNDFiMWFlYTgwYzA1Mzk0MmYxNGE0ZjE0ZmFjYzk0NmViNzVlODA5YjE4MDkwNDRiMzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0ZjUzOTc1MDVjOTllMzYzMzY4MWI4YjZlMjU4NjMyYTU2ZWE5MzMwYzU0YjkyODg2NGUwZDgyN2IwYWI1NWMifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/PluginLoader.cs#L503-L548",
+          "version": "repo-lines-v1:sha256:7e8a92ba55a66255b26bb75f7fc5925c68d2c9ef44ecda66137f63bab7298a0d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmNjcwYWMzMWFkYTY5ZjZmYWQ4ZTkyYzA0ZGY1MTVhMGY3ZWY4MjNlN2M1YjA1Mzg2YjYwZGU3YWVmMDM1N2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5ZDFhNzc1ODUyNDk0NThlYTVkM2UzNzIzYzE0MTNkMzk1OTJjN2VhMWZmNmI4MDI3ODhjNTMzNzEwYjE3YmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI4YzVkMWYyNmYxZWNiM2VhYWE4Yzg5MTljZTM3YTQ1ZDA4NjMwZmI0YmEzZWYyZTdjNTM0ZjZjNmFhOTdlOTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_56ed48dc94114ed3ab62f6c48039633a",
+      "statement": "Discovery is non-instantiating for external packages: CreateExternalDescriptor builds descriptors from manifest data only (metadata, permissions, tier) without invoking constructors, because untrusted constructors must not run before the user approves the package's permissions; external descriptors defer metadata discovery until activation, and external packages declaring the Core tier are rejected with PluginInstantiationException.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar.Tests/Plugin/PluginRuntimeLoadingTests.cs#L158-L189",
+          "version": "repo-lines-v1:sha256:d9c99308869e50b4a0189c347b69360d8c19bd2e741cd6cc73ddabd1750e62f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNjFlMTVkYTg0NWUyODc0NmUwZjhmYjQ1ZGNlZDIzNzZlYmFhNDk0MWFhZmQ5MjlhYzU1ZDI4MWI3ZDk3OTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhOWY4NmQyOGU3ODRmOWZkMzFmYjcyZDE1ZjYwY2JjZWFhZmRkNjY5Y2JkNWI2ZGE3ODg4YTAyMzMyMWViYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZGYxNjczZWE5NzBhNDk4YTRjOGQ5OGVjNWUzMjUxMzljMWY5ODA4ZDJmODNjYmVlMjIxMmVjZjhjOWYzMGUifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/PluginLoader.cs#L382-L448",
+          "version": "repo-lines-v1:sha256:13a046129ff6007a3cb09b0dad22fdf35b6e2eb88fa78a084d826314311da8fa:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3ZWRiZTc5YTU3NDk1N2E3MzU0MGRlNTM3MDlmZjI1ZTc2NzYwNDJhZjA1NjdhZmI3NmZkYTFkNzhhOWM1OWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMxZGIyNDdiMDI5ZDI3N2Q1YjM1ZjllN2ZhOGE3YzVkYmI5ZmY1N2M2YjllNzI4ZTkzMTk2NWQ3NGFmMWY3MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2ZGVkZDY2ZTdjNmI4MGI3MmIwZTU1MDlkNGJjMmVkNDk3NDgyODJmMDg4Yjg0MDZkNDI3MzdhNjliZGU0ODIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ccdd057ea082437c9f329eb238185d02",
+      "statement": "Each external plugin folder loads into its own collectible PluginLoadContext (one per folder, keyed by plugin id) that isolates dependencies; its Load override returns null for the Pulsar assembly so the CLR falls back to the Default context, keeping IPulsarPlugin and every shared contract the same type for host and plugin; it also consults an optional shim map and AssemblyDependencyResolver for plugin-local dependencies, and a context with unload initiated is never reused.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/PluginLoadContext.cs#L11-L84",
+          "version": "repo-lines-v1:sha256:e3629f9ab5d1c44032a3e07b5c2a6b3047c8e8227af277fa942591eb1a79cd56:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkYWZkZjAyY2JiZWJlOTE3ZDQwYTM2MzlkMTM2NTU4OTk2MWFkMWZhNjVmODUxNzAyNWVjMjk5ZmUyZjI4MGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZlMGZiMGVlNWQ3MmVlMTg1Mzc4MmFkOTljMDRjMjY4Mzg0N2VhNDI2MzJjODJjZWE5MWFlN2YyZDk2NDBiNDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/PluginLoader.cs#L103-L116",
+          "version": "repo-lines-v1:sha256:8c5b9c0069cf44a7d246258b7fcf73e37e86b6f65f63f01737a3e909d01824ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1NmJhMzk3OGNlYTQ3YzBmMTVmZTI1ZGFlMjJhYTQxOTY2MTkwODVhOWIzNzJmZWU4YWE4ZDA0ODg3ODZkNjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhOWY4NmQyOGU3ODRmOWZkMzFmYjcyZDE1ZjYwY2JjZWFhZmRkNjY5Y2JkNWI2ZGE3ODg4YTAyMzMyMWViYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwNWQxMzcxMjFlNzY2NjYyYjU3MmQ5YmMwODEyMDk2MTlmNjUxZGUzYjFkNmIxZjY3MzAxNGVmNDYwYTY3MjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_97163ae2452a420abf64b922c5523026",
+      "statement": "DeactivatePluginAsync is the full single-plugin teardown for runtime uninstall: run OnUnloadAsync, remove runtime state, unregister renderer contributions, null the descriptor ImplementationType before dropping the catalog entry (the Type lives in the collectible ALC, so any live holder pins the context and keeps the DLL locked), invalidate discovery, then PluginLoader.TryUnloadExternalContext owns the ALC teardown — Unload() initiation plus a forced GC pump (GC.Collect, WaitForPendingFinalizers, GC.Collect) that releases the OS file locks so the directory is deletable while the app runs. The split is 'caller severs pins, loader completes teardown'.",
+      "evidence": [
+        {
+          "resource": "repo://Docs/decisions/013-circuit-breaker-observation-seam.md#L54-L54",
+          "version": "repo-lines-v1:sha256:2ea93e2ba3bf3b3b8d962c2d7da134c8e9777306bb6b3df6930f8f31e500d851:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmVhOTNlMmJhM2JmM2IzYjhkOTYyYzJkN2RhMTM0YzhlOTc3NzMwNmJiNmIzZGY2OTMwZjhmMzFlNTAwZDg1MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmVhOTNlMmJhM2JmM2IzYjhkOTYyYzJkN2RhMTM0YzhlOTc3NzMwNmJiNmIzZGY2OTMwZjhmMzFlNTAwZDg1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDgzZjkwMTgxNWY4OTY4NDM4ZTc0M2Y0OWZiYjA2NjAzNmJhZjg0OWQ5NmM1Y2U3NTkyMzY1ZmVmMGY5YzkwYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/PluginLoader.cs#L118-L151",
+          "version": "repo-lines-v1:sha256:1f04a3cfbcb9867bf72366b16d538ba56694f5db26431aa4f1eef8abd460146e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3ZWRiZTc5YTU3NDk1N2E3MzU0MGRlNTM3MDlmZjI1ZTc2NzYwNDJhZjA1NjdhZmI3NmZkYTFkNzhhOWM1OWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhOWY4NmQyOGU3ODRmOWZkMzFmYjcyZDE1ZjYwY2JjZWFhZmRkNjY5Y2JkNWI2ZGE3ODg4YTAyMzMyMWViYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzZWY1ZDQwODMwZjI1NzcyZDY0YzQ0YzJkNjg0ZmU0YjhmM2IwODgzZmEwMzAwODk0NDNmMmI4MGI4N2Q1NTgifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/Runtime/PluginRuntimeKernel.cs#L679-L730",
+          "version": "repo-lines-v1:sha256:3a94b73816886e6e935d089bc9e8fce2839350a10bee7e2a2f06c1f27083dadb:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3ZWRiZTc5YTU3NDk1N2E3MzU0MGRlNTM3MDlmZjI1ZTc2NzYwNDJhZjA1NjdhZmI3NmZkYTFkNzhhOWM1OWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3M2MzZWZiZjBlZTY1MTEyNTY1NGY0YTRjZTU2NmM3YTQ2NGNiYTM4MGQ0OTk0ZDVhYzhhNzUzYzc3ZWYyMTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA1YmJkOGM3Yzg4MmYwNjI5NTM1MDM3M2I3ODkzMWUzZDM2MzI5OWU5ZTlkOWIzMTU0MWVlNTRhNjFhNjA0ZjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5c073be6f0f64d46a80e4cd0682c7130",
+      "statement": "ExternalPluginLifecycleOps owns the fixed external-plugin timing and is serialized by a SemaphoreSlim so install/uninstall/enable never interleave: install = package files (integrity-verified) then RefreshDiscoveryAsync then GrantPermissionsAsync then immediate activation (partial success does not roll back; each phase is a self-consistent state carried in the result); uninstall = permission revoke (best-effort) then DeactivatePluginAsync plus ALC unload (failure aborts file deletion because the DLLs are still locked) then package-manager file removal; enable = write profile plus explicit activation because external plugins are lazily activated and OnEnableAsync contributions would otherwise wait until restart.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ExternalPluginLifecycleOps.cs#L139-L198",
+          "version": "repo-lines-v1:sha256:0c0820f341521d59e1953075bc77d639e3c337444cf9a4568fd18f978b40611e:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3ZWMyNWVlMGZjMGE1Yjk1ZjkzMTM4MzM5NzIwODM1ODRjMjIxMzg4MTEzYzUyY2M2YmE5ZmIyZmM1NGExNjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhOWY4NmQyOGU3ODRmOWZkMzFmYjcyZDE1ZjYwY2JjZWFhZmRkNjY5Y2JkNWI2ZGE3ODg4YTAyMzMyMWViYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhMGQ4YWEyMjg2NTEyZGFkOWYxY2ViZWZmYTUyMmI5MWRmY2Q3NjBjNmI5Y2FkZmFiYTU1YmQ5M2Q0MTYzZjUifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ExternalPluginLifecycleOps.cs#L200-L229",
+          "version": "repo-lines-v1:sha256:cab3c527d861f26f68ca156e8b634d4872f5f594c6da3d63dc746b941cbb6bb0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1YTE1ZTc3YmU3ZjgzZjk3ZjczYmJmYzIwN2MyMmQxMWVhZjlmNzU4ODM3NmExMTcxNGUwYTk0MTZiMWQ2YzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhOWY4NmQyOGU3ODRmOWZkMzFmYjcyZDE1ZjYwY2JjZWFhZmRkNjY5Y2JkNWI2ZGE3ODg4YTAyMzMyMWViYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3YzYzZTYwOGY2NTcxY2YyNWFhNDgwOGJlYTgxMWM5OGI3ZWMxYjYzNjhlMzVlNWEzNGFkZTcyZGU1N2VmNDUifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ExternalPluginLifecycleOps.cs#L26-L44",
+          "version": "repo-lines-v1:sha256:5eeb9ea14e8a0dce74c2c383083c95b822809aaf680af894952db621c7ccbcdb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1MjI0YjRkMzZiODAyY2E4ZmIxNjk0YThmYjlkZTRjMTFjMTE4MmQzZDUzNmMzYzFiN2M3ZjFlYzI5MGRlNDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5YjFmZWM2NTQ2OGI3OTJmMTVmY2VmYTdjYTFlOGNlMGIyNDlkY2IzNDA3MzU2NjdkZDZjZmU3M2RhZjUzNGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliMTBjOGU4YTg0ZTUxZDE1NWQ3NjllM2NjZWE4OTdjNmM0MzNiNjBjZmZkMWExMzU3YWNlNWQ4NDM1ZTYwZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5ZjNiMzZiOWQ5NjY3NDFhOGU0YmE1YTRiNmNiNjU1ZWE4MzQ4YWU3ZGQ2YWExNzdjYjNhZDEyNDNkNjM4MTAifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ExternalPluginLifecycleOps.cs#L65-L137",
+          "version": "repo-lines-v1:sha256:9802abab452bf46730216056d8c4850b85a1edf6a297952f5c01598191a520a9:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0ZDE4ZDM3OTQ1ZjQxOWFmNWViYzllNzkzOTEwMDEyYzQ4NjcwN2I2NjdiNmNlMjk5NzA4N2Y1ZmNjN2UyOWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2ODRjN2NiYmE4MjgyOWQ0OTE5YWU2M2Y4MjFiZGZiNWZiNGRjYWM0OTljZDQ1Y2I4OWRhMjExYjI0ZWU5ZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1ZWFlZDc5OTA0YWRhODg0NjA5M2MzMzBkY2U4NTZmMDFkNmRiNGQzYmUwNDgwOTJiNDEyNmM1MmNlYWU1NWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_269e8d77f73e439eb2f008fc5e9ecd10",
+      "statement": "Startup ordering is fixed: the blocking phase runs tray init, then resolves PluginBreakerNotificationService (activating the breaker relay) before LoadCoreAsync discovers and activates core plugins; the deferred phase runs DiscoverDeferredAsync then activates every enabled external plugin so ambient contributions (e.g. renderer registrations in OnEnableAsync) exist at startup or they silently disappear after every restart.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/AppStartupCoordinator.cs#L166-L177",
+          "version": "repo-lines-v1:sha256:901790cde4af361935fcea24857fb67f43434bb79328d6662b731b9c9eccf17f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkZGE2YzU5ZDFhNmNmN2NlZjFiZWI2OGVhOTVjODY4YmQxNTdkM2UwMDU2NGQ1MjY4YmQyYTRkODU5ZDY1NGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkYzQ0ZWVkNmJiZTI4ZDIyNzMwZDUzMTg2NzEzNmQ1MTEwZWUwMjBmZTQ1YTUwNzkyMmQ1NTNlYjg0N2U2NTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5NTVlZmQ4YTBiZjRmMWZhNDE1MGI5NDNmMTc1MTcxMTk2MjdlMjI1NDYxOTg2NWE1YTBkMTdlMWRmMGY3YzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyNDJhOTk5NDA0ZGNkNzZhYzZiNGExYmNiZTQ4NWM2YWYzMTg5ZjY2MzliNGUwYjBkZDRkNDAyODVlMWJmZTMifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/AppStartupCoordinator.cs#L232-L301",
+          "version": "repo-lines-v1:sha256:4956dc01c853820a4a40c52c60749633d0d6cfb333773b6062909a4b64f6c134:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxNzczNWY5NDk0ZTUwZTBiZjQyMDkwNGVjMThiMDIwMWMwZjVhMDIyZmI4YmU0YzBhYmNkNWQ3MWI1OGRmMGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1NzVkMjJmMTY1MWJkZTgwMWI4MmFkMjQwY2UzN2Q0YWJkODg3YWI5NGE3MGMwYTcwOTYyNTI4NjAzNTc0ZjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhYWJjYTZmNjdjOTA5MzU5YTk2ZDA1MzUyZDgxNGY2Mzc4MDBmYWY2ODQyYjUwMWNhZGExNzBiMzYyNjZmZDYifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/AppStartupCoordinator.cs#L312-L342",
+          "version": "repo-lines-v1:sha256:48f1967e83619c3c5fd686a678ae5a44cd0f24c7ba6c7e04b793f90b8dc652c8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3ZWRiZTc5YTU3NDk1N2E3MzU0MGRlNTM3MDlmZjI1ZTc2NzYwNDJhZjA1NjdhZmI3NmZkYTFkNzhhOWM1OWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhOWY4NmQyOGU3ODRmOWZkMzFmYjcyZDE1ZjYwY2JjZWFhZmRkNjY5Y2JkNWI2ZGE3ODg4YTAyMzMyMWViYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyNWYyYzUyMDcwYjgxZjg4YTMwYWM4YzRhY2I4OWExN2FmMjc5OWQ0Y2YzOTk5OWY2NzRlMDczYWE3Zjk2M2IifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5854ce793f7249ea889359d2c6c622db",
+      "statement": "Plugin runtime state is persisted in Profiles.json under Plugins (per-plugin PluginProfile: Enabled, free-form Config, GrantedPermissions). The runtime reads via IConfigService.GetSnapshot() and writes only through ConfigEditSession (SetPluginStateAsync persists then runs lifecycle hooks; GrantPermissionsAsync rejects unknown tokens before touching Profiles.json); IsPluginEnabled defaults to enabled when no profile exists; plugin profiles are validated by ConfigValidationPipeline (schema, plugin custom validation, slot args, dependencies, hotkeys) on every save.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/Runtime/PluginRuntimeKernel.cs#L830-L864",
+          "version": "repo-lines-v1:sha256:cc6e8f31316fcd6a48a0a0f62ee92c31ef44d477abc27904cd7c201f01993211:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkYWY1NTRkYzJmNWEzYjFmMDYyZDYwMDg0ZTMwZDNhOGJkOTU1OWFmNjlkYjc2ZmM3ZDMxMjJlNjJmYTVhMmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5NmUxMTlkZmUwZGMwNWIzNGIzYTUwZmViMjQyMDg3YTBjZjExYTU1MzhmMWUyYjlmMzc1N2JlMzJkNjdmYTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhNzZkMWE1ZTZhMTM5ZTQxNjk4YzcyYzJhZTg2NWFlNGUzNDNlNzkzNzcwYjZhZjc0NmYyMjBkZWEyZDYxODgifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/Runtime/PluginRuntimeKernel.cs#L876-L954",
+          "version": "repo-lines-v1:sha256:6788635f6b47227268ef4a1c23bc5d69bb611464bad85918ac14b7ede544d663:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4NTdmYjM3ZDE2OTcyNDlkMzlkZGM3ZTkwOGI0MGViOWMyMmYwMmU5M2I3YjQ4Y2Y2MTNhNDRmNmYzMDEzY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmYjQ5YzQzZjBlOTQ3NTgwZDYzZWZkZmQxZDQ5MDZjMDA2ZmMwYjg2YmIwZDhlZDRlYTljMTNjN2JhMGNjNzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwNmI0NzA0MjNkZjQyODkxZjk0MDljYTExMDViNmFjYjFkY2VlZjNiYWFjOTJkMGNjYTE5MjUyYTRlODZjZWUifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/Validation/ConfigValidationPipeline.cs#L18-L64",
+          "version": "repo-lines-v1:sha256:e3344de65d91bb3a4120bb7188db5636a7ff69ff517b3832494c8d565e9bae95:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4YWIxZDkxMzM0MzUwOGQxYmJiOGI5Yjc1ZDc5NWUzODgzOTQyNmQ1YzI5ZWE3Yzc4MGNkZGMwMDE4YmUzMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0MDIxNTQ1N2I4ZWVkNDBlZWI0NDBjMjk1NjcwZWY0NWQzYTMwODdmMjRmZTIyYTVmZDYxNjVlMzM3MDI4OTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkZTc1Njc1OGZhNTA4ZWVhNjNkNGM1NmUzZmNhMzdhYzIxMzc2OTVjNTkzNjk2Y2M0M2Y0MTliYWE2ZDA3MzUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_36fe8acc431f40f391c33d97a08416d6",
+      "statement": "IPluginLifecycle hooks (OnEnableAsync / OnDisableAsync / OnUnloadAsync) are triggered by runtime state transitions rather than by host load alone: SetPluginStateAsync persists the profile then runs the hook and transitions the state, and disabling also unconditionally unregisters renderer contributions so no dangling contributions survive; UnloadAllAsync runs OnUnloadAsync per plugin and removes runtime state.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/Runtime/PluginRuntimeKernel.cs#L876-L938",
+          "version": "repo-lines-v1:sha256:61dca982222c0e88697c9342aeef8449b07058b98b3468df1b4f63069288ab13:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4NTdmYjM3ZDE2OTcyNDlkMzlkZGM3ZTkwOGI0MGViOWMyMmYwMmU5M2I3YjQ4Y2Y2MTNhNDRmNmYzMDEzY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmYjQ5YzQzZjBlOTQ3NTgwZDYzZWZkZmQxZDQ5MDZjMDA2ZmMwYjg2YmIwZDhlZDRlYTljMTNjN2JhMGNjNzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2MzEyNzVhZWFjMzhjZjM2NWI1ZDRhZjY4NTA3NDQ1NGMyNzQwNTAwODJhNDE1MGMwNzIxZDk3MGMzM2UyNzgifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/Runtime/PluginRuntimeKernel.cs#L956-L977",
+          "version": "repo-lines-v1:sha256:358358bc5247fb8910a1da0e2b4e61aab5d51f6a29b03cc9da1e1dbd4d18e1d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmZDVkZTAyNjA0YzBlYTk1MmZhNzE5NDMzNzU2YzBiNmEwMTY5NzY4YjE2Y2QyOWNiMjI4ZDI5MzM3YjI4ZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc5NzAyZDkzNjlkMTIzNTdhNjU1NGVhZDI1YjJmY2I1MTBjZjUxZGQ1NThjN2IyNGI3OTkyMzczMjY0Y2FmY2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImViZDJkMmNlODg4N2NmZTIzZTNiZTdhMzQ4YWE3OTFhMTc2MjU0YjRkMWU0ZjlhNzBmZTFhMmU1MmYwZDI3MjIifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-05T05:46:24.085Z"
+  }
+}

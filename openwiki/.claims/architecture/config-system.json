@@ -1,0 +1,424 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:3d117beda45f4b811942257cbf61dcf42bcbf8209d9c05f91e091f158bb19894",
+  "claims": [
+    {
+      "id": "claim_73bc843a30b14cbcaf65cad4ac84bac4",
+      "statement": "Profiles.json is the single source of truth for Pulsar configuration; ConfigService resolves its path once in the constructor, defaulting to %AppData%\\Pulsar\\Profiles.json with an injectable configPath override (used by tests and ui-debug mode to redirect away from the production profile), and exposes it as ConfigFilePath so consumers never recompute the path.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigService.cs#L102-L127",
+          "version": "repo-lines-v1:sha256:1387ff773625710b37cca2a539125fb0ec730e84ae80280764d29da85707507f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkOTIyZjg4Njc5ZjFiMTg1OWExOTMxMDMzNzkxYTlkZGU5OWExY2IzNmZjZWI1NGQzYTM1ZTQ1ODk3NGE4NDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5Y2JlZjFhMTljNzc2MjhiZTdmM2UzZjNhY2U3MWQ1ODc0YmM5MzkwOGY0MDkxNjUzYjc3ZmQwYjc4ZmUzZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM3ZTQ5YTRlODE2MDA2OTQ3MDFlNzVhN2MyZDFlY2QzMzJkYWI5Y2RiNGFlZTA2ZjNkM2MwMDE0ODA0MWNlMTcifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/Interfaces/IConfigService.cs#L30-L36",
+          "version": "repo-lines-v1:sha256:00d87475a2f254df7b5eaa1ed4bcce6f8b946c93cf412a446c75ae74d2d15f62:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODdlZGJlNzlhNTc0OTU3YTczNTQwZGU1MzcwOWZmMjVlNzY3NjA0MmFmMDU2N2FmYjc2ZmRhMWQ3OGE5YzU5ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTEwYmQ3NGQ2MDBlZmZkMDhlYTE4N2M0NmY2Y2ViNmQzOTk2ODNiYjQyMTNmN2IwZTE0ZTMzZmUzMzliMDMxYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDQwNzYxNDlmMGI5MTZmODU1YTBkNGVhZTA1YzA2ZGFlNDJhZTc1NzZmMzFiNzdiYWU1YTM3NWUyZmY4MmNhMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjI0OTA5NmFhMjg3MDA2NGZiZWNiNDY3MGQwY2RlMGY5ODA3NTU3ODM1NjMzNWQ5ZmQ2MmEwMDIzZDQ0OWQyZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8ca15c809db5492d961a5ba4f3554195",
+      "statement": "The ProfilesConfig root model has four top-level regions: Settings (ProfileSettings with global app, gesture, hotkey, logging, and onboarding/tutorial state), Plugins (Dictionary<string, PluginProfile> keyed by PluginId, holding Enabled, a free-form Config store, and GrantedPermissions), Profiles (Dictionary<string, ProcessProfile> with CommandMode/SwitchMode PluginSlot lists), and InstalledPresetPacks (preset-pack install state with slot provenance for precise uninstall); absent InstalledPresetPacks loads as an empty list so old configs remain compatible.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Models/InstalledPresetPack.cs#L5-L30",
+          "version": "repo-lines-v1:sha256:2af19522e86129da640aaf290cdcb1d1e1894ed87ca359420a6c13befcd4af64:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYjZkYzkwYjJmNzkyOTYzZGNkYWRmZWZiNDA4NDg1NDkzYzAzYzNlMWE4MGYxNDliYzYzODAzY2RkMDQ2ODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ1YTdmZDU5MmM1ZGM5MTc1YjYxMTI0MjQ1MTg4MDZjOGRhZTQ4NGZjODUxOWU0NGVjYzljOTE1NGE1YTIzYmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Models/ProfilesConfig.cs#L19-L36",
+          "version": "repo-lines-v1:sha256:0511e861b2a0c55b04843e4f63bd127496c84ecea9dd88a3eb698e28d885e6f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmMTU5M2EyMzlmY2M4ZWI0ZWEzNDU0NGNhYjg5YjdhNjY0Y2Q0YTk1ZmJmZjA3ZmMyMjhiODA0MDEyMWI3ZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk2YzJkMzhhNWQzMGI4OWUxNDFjYzM2ZmM2OTRlOGRkZTMyMGM3ZTQ3NGI0ZmQyNGIwOTMzOGZmZThhZTBjNTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyYjVmZWE2MTQxMjQxMGRkMTVjMjk4OGI3NzBjMjIwNGY3MWQ0MTkyODkyOGQwOWExMGMxODI5YmI0MDhiZjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_909ef43339bc4f5e9ffe78a34284e5ec",
+      "statement": "Profiles and Plugins dictionaries are case-insensitive (StringComparer.OrdinalIgnoreCase); because System.Text.Json deserializes dictionaries as case-sensitive by default, ConfigService and ConfigBackupService rebuild them with the comparer after every load so lookups like Profiles[\"Global\"] and Profiles[\"global\"] resolve identically.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Models/ProfilesConfig.cs#L26-L28",
+          "version": "repo-lines-v1:sha256:1934ba00293cbe894d9c9f0a79fc212d56701d1d36c64549096728087b4e0a17:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmE2YWEyYWM2Yzg5ZDRhZjBiZDExODNjZDc5OTEyZjlkMjFlYmVkYjQ5YjliZmVkZDU0ZmU0YTAzZDRlNWY5ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzgyMjM1OThlMjk5OWM0MzgxYjBhNjE2YjhjODFlZmMzMDA4YmExOWUyNjE2M2E4M2JlNjJlZjk3MDM5MmNlMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjMzYjM4NGQyOTg4MzAzNTllNmM2Zjk4ZTMzZWJkZjIzMGE5NzI0OTM2NTg4NjgyZGIzMDA2MDY0YmQ2NjM4NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjZmNzQyM2Q4NGE0ZjVkYjJkZWVhMTQ1YzM3ZmRiM2Q2NTAzNDQ0N2E0NzFiMmJmNjZlNjQ3NjZlZTMyZGZkZCJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigBackupService.cs#L452-L465",
+          "version": "repo-lines-v1:sha256:8dcc1a9f1b90be7bcea0eb658c9ebf6d80ff4e847b65a16aba6517b1a4c16c62:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2OTI2Yjg4YTcyZGQzZDMyMWViYzhlZDUyZWZjNTcxZTYyY2MxMGY4OTQ3MTE3Zjg4OWY3OGRiMzhiMDcwMWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNjA4MzEwODFkYWZhZTkxMzg0MzkwNmE0YzM4ZjJmYmE2YWY5MDc5MDBmOWE0Y2M0ZWFmMWFjZThlMzU1NTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmZjAyM2JkMjYwNzI3MDg1OTRjMmE4NjZmM2MzZWJlNTM1NzU5N2EzY2IwZWM1MWQ1NDA4MGMyMjk5MzJlNGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwMWEwNGFiMDc3ZjJiNjZmMjc1Y2FlODMzYzVhZWFiNzBkNThmNGNkODM3ZTZhNDE3MmE3NThjNDJlNzFhOTAifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigService.cs#L258-L264",
+          "version": "repo-lines-v1:sha256:8dddcc08a8cfab4656341adf3056dfe18df67bbe7495681cdd4533467d1df066:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmNhNmI4NDVkZWI4N2RkN2YyZDRkMzRmMzY1YTc0YmU1ZGNmZGQ1NjQ4MWU5MDk2N2EzMTY5MTdjOTgzMDQzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTJlNzNhYWU3MmNjZjQyYzI3YzQzNzM4NmU3ODRmNDk5MzJmZTA3NzlhYzBjZGYwY2YzNjBkY2ZjNWEyNzM5NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjlmMTk0MmQ3ZDRkNmY3NTgyYTUwY2JmZWMyZTRjMzUxZjAzNzE2NWVhOTIwYzVlNDcxODlmMTdkMzQyN2FmOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTIyZmZmMjg0YmQ1YzUwOWI1ODZhMDc5ZmIxNTZkNzA5NzU4ZTIwY2EwYmQ5YWZhMmJlNWExN2NiNjg0MDU3ZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_47ade1d47a7d4a0e8989f4e05cb63388",
+      "statement": "PluginProfile.Config is Dictionary<string, object>, and JSON round-trips materialize values as JsonElement; both the load path and the SaveAsync path run NormalizeConfigDictionary to convert JsonElement values to concrete types (string, int/long/double, bool; arrays and objects become JSON strings), so type-consistent values reach validation and disk.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigService.cs#L1007-L1036",
+          "version": "repo-lines-v1:sha256:e0852f1cbfa2229224a20e3f05061257a79eabfb94f1b40882dc4fbdbcf11181:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlOTJhYjQ0OWI5Mzc1OWVlZWU1NjAwYTQxZDEyOGRlMWYwZDJlY2U2MWU5NjczY2JmOTFlNmZlNjA2MzAwYTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViMGQ0MGVjYjliNjFmN2I2OTE4ZjgxODNhYTU2YjBjNmRjODE4NTVlMGRhZmM1ZDQzZjNlMjFjMDA2MjRmZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0NzE2OGMxYTBkYzNlYjY3NjNlNDkzYjQ0MDJkZjgyZWMxZTcwOGExOGUzYWZiYzg0Mzk1Mzg5MDUzZmNhNGIifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigService.cs#L283-L296",
+          "version": "repo-lines-v1:sha256:69c45f78ff2bf63b5ca042358a529da3efc610079b898288f04b35e073308fcf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhZGNiYjc1Yjc2ZGNlODM2OGY0NTIyOGUyMDQ1YjBjYmQ3OTUzZWU5YTUyY2MwN2IzNzBiMjEzNjJmYzNhYTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjNjQ3OWNjMjMwNDQwZmQ0MWU4MjI0MjE4Njc5Njk4NTU5ZDI4OTNiZDY3YjQzODBhZmFiODExYjM4YTU1YWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4ZjQ4MDJlY2Y3NmMxMDNhYjYyZmVjMjEzOTkzM2Q1OTZmYzE0ODlhOWRlN2NlZmViMzY0ZTlhZjFmYWUxNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4MTNlNjNmNGE0MjdhZTdlOGIxNWMwNGUwODJkZTRhNjlmNTliZWVkYjQxMzRhM2YzZTUwYWMyOWI0ODYxZmEifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigService.cs#L447-L459",
+          "version": "repo-lines-v1:sha256:a0891f659f1f195996c070d1da1910576bb17207b0cf318558400c269ec21d9d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5MGY4MmRlNWY2ZDQ5NzRiMWZjMDBjNzliNGVmNjljMDk4YWI5MWY3YzAwYWIwNDI0NmI4Zjc5MWEzNDExZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjNjQ3OWNjMjMwNDQwZmQ0MWU4MjI0MjE4Njc5Njk4NTU5ZDI4OTNiZDY3YjQzODBhZmFiODExYjM4YTU1YWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmNzIzN2FmZjEwMGUwZGRmNjY0MDllNDIzNWQ4MTQ1NzRkYjRkODNkM2U3M2UxMGUzY2QyZmMxNDk0OGFiYjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0MGQxZDMyMjk3ODA1MzljNmViMGVjY2UyM2RhMDkxYjU5Yzg5NGU2MWM1ZTM5Y2JhNDExMWZmZWVjNzhiZDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_451d7a30a0c54f8696aa3fe5bcd6d762",
+      "statement": "GetSnapshot() returns a JSON round-trip deep copy taken under the cache lock, so mutating the result can never affect the shared cache; the read-only snapshot contract is enforced by behavior rather than caller discipline (ADR-009), and CloneConfig rebuilds the case-insensitive Profiles dictionary so snapshot readers see live-cache lookup semantics.",
+      "evidence": [
+        {
+          "resource": "repo://Docs/decisions/009-config-snapshot-seam.md#L14-L20",
+          "version": "repo-lines-v1:sha256:429e91fad4cf656c82f75339664bf8026b389e52256879f6ad17a4db6c17b7e6:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTRmODg0ODNkYTgwMjgwNWZkNWExZTIzOGViM2YzM2U4MWEyZmE0MDg4ODU5ZTJkZTlmNTE0OWUwYjRjMTU2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjE0MjhjMjg1Y2VjZGI5NzkyOWMxMzdjOWQ2ZWJmMmU4MjBlOTc0OGM5YTc5Yjg5Y2VhOGJlZjU0OGVlODc1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzQ1OTY0YTg4Y2IwYTIyNzkwZjkyYzQ0MmY5ZDFlMGZlZjdkNjIzNGM2Yzc3NmZmMTMwYmZmMTRlMzVhNmY2MyJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigService.cs#L60-L89",
+          "version": "repo-lines-v1:sha256:ac645d39b7b71b9c284f05eebe476940f1c2c77731033269368750b6b6ae2044:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmM2JmZjZiZWUxOTg5ODA3ZDYyOGViZmFkZjRlNWQxZjIwOGM1ZjdmZDRmNTc5MzE0YWEwZTUxNDdkNWNhY2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyMWY1OGVkNjU1MzVkZWUxMjgxMmNlNGExMmU3Nzc1OWQwNWFiNTQwNzU3NTMwNDhmNWFjZmQwY2QzNWVmMjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNkZTM0NmU3NmYzNGE2YmU5MDQ5ZGZhNzFiMDEyNmI3NzNhYzQyNzAxZTdmMjM1NDJlZDk1OGZjOWVjZjc0NjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fa69e21731964a4e942c9e3d5f155bed",
+      "statement": "LoadSnapshotAsync(forceReload: false) returns the live cached object by reference; only GetSnapshot() deep-copies, so callers that receive the LoadSnapshotAsync result must not mutate it — the documented division is read via snapshots, write via ConfigEditSession.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigService.cs#L181-L189",
+          "version": "repo-lines-v1:sha256:339892d5d7891640985a4a9cad7541b81ad1be7fd20d06de5149f55090ac3883:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjQ3MDVmNWI4MjVlMDM5NjlkOGUxY2ExN2Q5YjdlYmFkY2QyMDg1NjUwMDQ0NmEyNDQzZDkwZDg3YWJlYmE5MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTUyMmM0MmNkMTljNmQwM2Q4MDhjNDUyNzIwNTUyODI1YjdlYTFjNWI0OTFiMjE4NTExY2FjNzQxNWNmOWQ5YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTgzNjk0OTQxMDU3MGQ2NmJmOWFhYWYxOWU3ZTUwNmY0MzAyOWRmYmE1MDNmZWRiZTNmMDhhMTQxMjNkZWZkZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGExNzk1MzM0OTE4NjBmYjkxZGM4ZjZmMzdhNzZjNDI2ZDQyOGNkNDI2ZWZkMTRlZTNlOGE2OGY2ZmUxMWQxZSJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/Interfaces/IConfigService.cs#L8-L19",
+          "version": "repo-lines-v1:sha256:2cf9be8f918fe16f782efd137284f48031dc26297154d96e2b1263091639f37e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYjZkYzkwYjJmNzkyOTYzZGNkYWRmZWZiNDA4NDg1NDkzYzAzYzNlMWE4MGYxNDliYzYzODAzY2RkMDQ2ODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5ZjI0OTA2NmI2ZDE1YmQzOTgwYTJkZTg0ZTljNWIyMGY4ZGI4MjM5OGJjYjVjMjBmY2Q4NzViYmViM2NmOTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxZWE1NzA5MTkzNDFhOTRhYmM0ZjIwYjBmM2RkNjRjNjNhNzRhZjUyMDI0ZjBkMWYwMmY2NmU2ZGNhZTA5MTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxZjBmZWQ1ODUxMzdmMTNlODFhM2U2YzFlNjNiNjI3NzVmM2U2OWU2YTZiMmMwOTc5ZGJiMjQ4MGNhNDY2YmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a0cf1d5857e44801aa563aadfaddfe43",
+      "statement": "Every persisted change flows through ConfigEditSession; the plugin runtime is explicitly read-only — PluginRuntimeKernel.ApplyProfileAsync applies the user's persisted plugin profile (or defaults) but never writes back to Profiles.json, so activating a plugin cannot pollute the single source of truth (ADR-009).",
+      "evidence": [
+        {
+          "resource": "repo://Docs/decisions/009-config-snapshot-seam.md#L18-L18",
+          "version": "repo-lines-v1:sha256:2065cfd27a6fa81ea8218cc6b8b43398ef6399b62b3a97d16ba9d3b4bda8e2ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjA2NWNmZDI3YTZmYTgxZWE4MjE4Y2M2YjhiNDMzOThlZjYzOTliNjJiM2E5N2QxNmJhOWQzYjRiZGE4ZTJlZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjA2NWNmZDI3YTZmYTgxZWE4MjE4Y2M2YjhiNDMzOThlZjYzOTliNjJiM2E5N2QxNmJhOWQzYjRiZGE4ZTJlZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjYwMDYzMGQ1OWUwNGY3MmQ2YTBhZTRiNmU0YmU2NmQwMTU5NGQzMWMyMjI1YzY2NmY3NGRkYjliMzQ3MTIxNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDc1MTE1OTMwNGU5ZDM0OWEwMTUyZTc5YTg5NTVlOWZlNTVjMzI2ZDA0NDM4MzIwZDIzYjdkZWFjYTMyZTBkMyJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Plugin/Runtime/PluginRuntimeKernel.cs#L979-L993",
+          "version": "repo-lines-v1:sha256:fcde0f5449556d0a8c0256762b7d2b38c44aded90d6e716bb7dbd3103fe9fc6d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwZmRmZmU0MmM4YjhiYjk5NjViZDUyNDc5MWIxYmIxODA1ZjExZjA5YjQyZmEyN2FkN2Q3YTZiM2FkMmNiMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1ODdkZDA2ZGM5OTU5NGM3YWVlODI3NDUzZGE1YjcyNjhmNGUwM2M1ZjRiNjZlMTNmMzc1NDcwZmRkMmM3ZDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhOWY4NmQyOGU3ODRmOWZkMzFmYjcyZDE1ZjYwY2JjZWFhZmRkNjY5Y2JkNWI2ZGE3ODg4YTAyMzMyMWViYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkZDllZTNmZDVhNjMxMjM4Y2RmZThiMDZmMDA5ZDU2MGRiM2I5YTc1NzYyNTE4NGU0N2JkZWM3MjliMmU0YTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b0fb7804936942668d430fd7eeba1995",
+      "statement": "ConfigEditSession.BeginAsync loads a snapshot and deep-clones it twice — an editable Draft and a _base baseline for detecting untouched regions — and captures store.CurrentRevision as the commit guard; CommitAsync saves Draft with that expected revision and re-arms to the store's new revision after success so a long-lived editor (e.g. the Settings window) can save repeatedly.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigEditSession.cs#L171-L189",
+          "version": "repo-lines-v1:sha256:232875a3b32f9b72f9fe16c343670d02d98eed77b5d96ad3d0845333a3ceb6f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjOWJiNThkNTcwN2JjOWMyNTMwMzZlNTI4YzBjOTE1OWY1ZGE5MzU3NzU1MjE3NjQxN2ZlOTI3MmVjMjMyNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmYzgxZjM4ZDM0YTZhMTZhYjhiODg3YjViMTU5NTY1YTc4MDE1ODE4MDZjZmQzMzQ3NTNhYzU1NmQ3YWVhYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkZTk3ODFhYzg5NzAyMTZmNmY3Nzg3Y2QwZmZkOThmZGE2MGU5Njc2YmVjYTUwNDM4ZjlhMDQzYmE3NWRlMjIifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigEditSession.cs#L46-L55",
+          "version": "repo-lines-v1:sha256:a419ba9f046a774ce9f72214d5310e384c66a179e528ab88ed05cb17408c464c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzYzY4MTI3MDE5YTNlNjM2MTBmMTJlMjczMzBjYTFkMjRiNDdjMTNjNDkzMTFmMzRiM2JlNzE5ZWZlMDI4Y2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzYWM0NzQyYWZiMGQ1OGI3NTg5ZDZkODBkNmY1YWNiOTU1YWM0NGFiMDliNmM1ZGExZThmMjA2NTY0MjRiZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlMDgyNzk4YWUwZGQ2ODU3YzlmYjJmMGZhOTQ1Yjk4YzgyNWM1NjgwOTc1MDczYTgxOTVlNTA1NGQ4ZDFjYjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f8b967881e6b47e6a82cc7abca976134",
+      "statement": "On a ConfigConcurrencyException, ConfigEditSession rebases exactly once: it reloads the current snapshot and folds concurrent writers' changes into untouched regions (Settings, InstalledPresetPacks, and each Profiles/Plugins entry that still equals the session baseline or is absent from the draft), keeping the user's edited regions, then re-arms the revision and retries the commit.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigEditSession.cs#L171-L181",
+          "version": "repo-lines-v1:sha256:a8c4178680cc845e6e4d33ad724b637e2672af4aeb0e2b1a2418482cd8428a51:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjOWJiNThkNTcwN2JjOWMyNTMwMzZlNTI4YzBjOTE1OWY1ZGE5MzU3NzU1MjE3NjQxN2ZlOTI3MmVjMjMyNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MjJjNDJjZDE5YzZkMDNkODA4YzQ1MjcyMDU1MjgyNWI3ZWExYzViNDkxYjIxODUxMWNhYzc0MTVjZjlkOWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmYzgxZjM4ZDM0YTZhMTZhYjhiODg3YjViMTU5NTY1YTc4MDE1ODE4MDZjZmQzMzQ3NTNhYzU1NmQ3YWVhYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIzNzc4MDRlNTVjY2Y2NjJkYTU0NzBhMGI0ZDcyZWFmNjMwODNjYTQ3ZGY1MzhhZmY0MDkzZDM1ZjJjOThkMWQifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigEditSession.cs#L198-L240",
+          "version": "repo-lines-v1:sha256:b6246e3a80c6949784715a43cd839d7b593f4e192d4a14f8763f858c2db5ac18:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlZDdlY2IzYWM4MDdjOTVmZTIwYWY1YTA0OTM4MjBkZTE3YjUzZDRiY2NjMWVjOWY4MzM1M2QzNWY0MDVmYWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmZjM3ZGUyYzMzNzUzNDFhZWM4NGQyYWYxNmNjZTY1OWM1NjExZTAwNDdmNTcyN2Q0ZWMyNmFlZTczNzBmMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ3NGQwNTUwM2M2ZDBkYTJlMjBjMTA1YjY2MGNiZjJjYzZlZjkzNmY4MWUxMzhjZDRmMzVmNDYzY2M0NDYzNGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6c823eba03b2401ab043e696502502ba",
+      "statement": "ConfigEditSession.RunAsync begins a session, applies a mutation, and skips the commit when the draft is JSON-equal to the baseline, so ensure-style operations never produce redundant writes or revision bumps; it commits once otherwise.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigEditSession.cs#L166-L169",
+          "version": "repo-lines-v1:sha256:ccc0b34db3357b0b11db4ea15792c3515112d08acb7cf7c01344a378def9135a:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzNkODc5YjY4NTRkZjY2M2FmOTE0ZTJjMDA3NDc5ZGUzZjY5MjlkMzY2YjUzM2I2MDNlMGVlYWUxZDQwMDk4MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzI4OGU1MDUwYzljOTM5MzAzOTgyM2YxNzZhMDM5ZTFjNTlhMTk1ZDAzNDAwNjMzODgxNjE0OWJjODVlZjk1ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDRlMDI3NDVmMjYwZGUxZDI2YmMzMGZmNzJkM2VhYjBlYzMzMzM0ZjIyNWQxMDZhMTliN2ZhZjExN2I2OTA4ZCJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigEditSession.cs#L77-L91",
+          "version": "repo-lines-v1:sha256:61a47c483c35cfbbadede42fa25c0de74c07af4e9392ad9861a89d0c031fefc3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzNDY0YmI5NjI1NjExNDI0ZDAxODQ5MmQ3YmVhNzVhZTE0ODY5YWRhNzkzMWI0MmZhOTcwZjhmMTQzNzBiODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQxYWZiMGU3ZTRmMzE0OTU2NWM3NGE0M2ZlNjg4ZDhmMjBmODYwMjBmOGI5ZDMwMTQxMjFkNGQyNTU5MmY0ODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5Y2Q1OGIwNTA2OGJlYjY2OGEzNGI0NDc5ZDQxMGZiMGRhYmI5ZThjMDAyOGY0NmQ4YmUyMmM1NTg2OWNiZDkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_dbfd569bcede4203bcefcbfe7f009018",
+      "statement": "ConfigService.SaveAsync is a single-writer operation guarded by a SemaphoreSlim(1,1); the optimistic-concurrency check (expectedRevision vs CurrentRevision) runs inside the write lock so check and revision bump are atomic — two sessions started from the same revision can never both commit — and a mismatch throws ConfigConcurrencyException instead of silently overwriting a newer writer.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigConcurrencyException.cs#L5-L22",
+          "version": "repo-lines-v1:sha256:d58bd12b11a9989aeb9a01b18ac70d4b23cd38cd49e3c7a52affb94827670c4a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYjZkYzkwYjJmNzkyOTYzZGNkYWRmZWZiNDA4NDg1NDkzYzAzYzNlMWE4MGYxNDliYzYzODAzY2RkMDQ2ODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlNzVjODBkMzUxZjI4YjYzMjYzZWQ2ZDQ0OTM4YjAyODRkY2NkMTVjMDQ3NDZkNDNjNzFiYzZmYzY2M2I1MDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigService.cs#L427-L445",
+          "version": "repo-lines-v1:sha256:2bdcdb18d506cae6f3b43dabdb0d1e2c7b50780f16da2e967ceb4bc466bdb2b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0OTdmZmI0NjdjMTdjYTk4ZTk1NGFlYTA1M2ZlN2FiNjQ4MjRlNzU4MTRmYWUyMDY0ZWU3YTg3Y2M0MjgwYWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjNjQ3OWNjMjMwNDQwZmQ0MWU4MjI0MjE4Njc5Njk4NTU5ZDI4OTNiZDY3YjQzODBhZmFiODExYjM4YTU1YWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhYjkzZmQxMmJjNzlmNjQ0OTFiNzAxYmMyNzE0MmY1YjQ2ODdhN2Y2ZDdiNzdmNzdmZDIyODEwMDA1YTIzZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxMTI0ZDY0ZDgxOTNiMGY1MTRiZTAxNTA4ZmNhOTU3YmU1MTJlMjUwOWY2NGUxNzEzM2Y0ZTg1ZjE1MGI0NmMifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigService.cs#L433-L435",
+          "version": "repo-lines-v1:sha256:c15381f877a102824dc99c0435fc05e7c66439223f48b7c66bce8444ecf4c7da:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWU3NTU4YTllOTc2MjllYTkzY2RkNjBhMjNmNjM0N2QzNzZiYmE4NTg0MjhiNzJlOGU3MzlhMTQ5YmRjMjkwNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjBlZjRkMTU4NTc5NzQwNzhjZjNhMGE0NjgzYzg3ZjVkMzNmNzliYzJhOGNhZWJmOTg1ODg1MzU0MmIyYmQ1NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGI3NDczOWVhYTM3MjRlOGYxYzAyMzYyZjlmMjc1MTc3ZDBjMDQ0NTU5ZjhlYzBhNDY1ZmY2NTJmMTUzNDU4NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTVhOGJiYWIyYzJiMjcyM2U1MDlmNmNiYThkYWE5ZGU4ZTI5YmRjMTc5YWQ1NDE5N2E3YTUwNzIzMWYzNGVkYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_97c000620da94dbb8f2c27dd98ea7ee2",
+      "statement": "Saves are crash-safe: ConfigService writes a unique temp file (Profiles.json.<guid>.tmp), replaces the target with File.Move(..., overwrite: true), retries up to 3 times with 100 ms delay on IOException, cleans up leftover temp files best-effort, and copies the new file to Profiles.json.bak after each successful save (a failed backup never fails the save).",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigService.cs#L382-L395",
+          "version": "repo-lines-v1:sha256:c1ee1380ce430581ce452d8d2712bcceebe63a4e5b5985cea20ca99cdc7e9b93:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3YmIyNTA5YzY4YzQ3N2Y1NGIxMjZmNjg1YTIzNGFhYTA5NTYxMmIxZWM5MWVlZmEwZWMwM2MwNThkN2M4NjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3MGZmM2VhMWM3YzdmMTA0MGQ4NjdhYmEzNmRhMzhkYTRmZmY1YTA5MmU4OTUwM2FmZDllNDUyNTgwZTJhNzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI1ZjE0ZTRlNDM1NzIyMzQ0ZDlhYTI3ODRjMDdmMThjY2EwODk1NDQ4NTJmN2Y5ZjE0YmZiYWI0YjY2MjNkMGQifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigService.cs#L516-L588",
+          "version": "repo-lines-v1:sha256:0a069431d9c39bd1d444c0887e18fd32f7527961010fe2b148d2dc991833c8d9:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiYmEzNWU1NTgzNzNmYWMzMGU5YzI2OTBlMmJjMDI5Yjc3YTUwYmVhZGNiZTkyMjAwODViMTY2MTM1NGQzNDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjNjQ3OWNjMjMwNDQwZmQ0MWU4MjI0MjE4Njc5Njk4NTU5ZDI4OTNiZDY3YjQzODBhZmFiODExYjM4YTU1YWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFiNmI5MDQ3YzllODRjZDY0NjcwNmExNGJlMmM2ZDQ2OWZmMzhhYmJkYTI2ZTgwZWNiM2NjM2EwMjcwNGI4N2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ5NTQxMmNhM2ZhM2UxOTY5MzYzMjFkZjA2ZjBlZDA5ODI1MzM5OGYyZmFiMTc5NzA2ZmJkZmI4M2ZiYWQ1NDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8831669752414fea8c1205ef2c806ad9",
+      "statement": "ConfigUpdated is raised outside the write lock after the cache update and revision bump, so subscribers (e.g. HotkeyService) may synchronously trigger another SaveAsync without deadlocking (ADR-005); the in-memory cache is replaced and CurrentRevision incremented under _cacheLock.",
+      "evidence": [
+        {
+          "resource": "repo://Docs/decisions/005-config-single-writer.md#L17-L18",
+          "version": "repo-lines-v1:sha256:86bb15599a4abe5e71bcdf03fca57390843fa2581794a1486f8e7bcf8e495cf7:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUxYzM1ZDcxMjBmYjNjMDVjZDcxMGE5NzJjNmNlOWUwNGNhODdkMTY5ZjFmNTk2MzZlNDQ1MDkzM2MxMjVmYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGY1ODA1ZDc2ZjRhNjZkOTdmOWE5NzY4NWZhNjY1YTYxYmUyNzAwMDMwZDI3M2RhN2E1YjczY2NmMjZiNmI0YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2RlMzc2ZWUwMjY4Y2U0MWYwYTdjYjZhOGY1YTVkNTk2MjhkYmZhMGVlYTVhOWY1OTFhOWJkOTE3NGI5MThhOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWZkZGY3YWM0OWUyOTMzMDA1MDFlNjI4ZGVmOTVkODhiZGI5MzlmMzUyY2UxMTJmOGY1YTQ1YmFmNGFmYzU3OCJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigService.cs#L590-L609",
+          "version": "repo-lines-v1:sha256:8820c0e9584091165d4508181a6328bfd920d9778c1fe65efa0d8b34c4bee5ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiMmYwMzQ0OTdmMzk5MzY1ZTM2MzFhMjY5NjU1MGZmZDhjOTE2ZDQwNDU3ZmM2ZDY3OTdjNzZjNDQ3YzZlMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MjJjNDJjZDE5YzZkMDNkODA4YzQ1MjcyMDU1MjgyNWI3ZWExYzViNDkxYjIxODUxMWNhYzc0MTVjZjlkOWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4ZjQ4MDJlY2Y3NmMxMDNhYjYyZmVjMjEzOTkzM2Q1OTZmYzE0ODlhOWRlN2NlZmViMzY0ZTlhZjFmYWUxNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3NzMxNGIwMmQ0Y2EzZDkxMDcxMWM4OTRiZjVjNmExYTE2M2QzMGQ2NzAxZDlkYjRiYjMxNDM3ZTljNDM0MWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a1ff7feed73d404a9a1ae0045f02428a",
+      "statement": "CurrentRevision is a monotonic long bumped on every successful save; ResetToFirstLaunchAsync also increments it (invalidating any in-flight ConfigEditSession whose revision no longer matches a surviving config) after clearing the cache and deleting Profiles.json plus its rolling .bak so the pre-reset config cannot be resurrected on the next launch.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigService.cs#L137-L178",
+          "version": "repo-lines-v1:sha256:8d99a8afec7c4b1d0c45553c6df9e034181bdcc7b6961c1d9ee974de8aad966a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkNTZiOTdkNWM4YTJjYTU3Y2EwNWY3NTc5MTljMzdhZGI1MDRiYTdhODFhNDM5MzYxMTI1MWRiYWQwNjAxNTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxNjQ1Y2M1MjcxNTRlMDk0YmIyNGUzODg4OTZiODQ3Yjk0YWEzN2EzZjIwZmI5NTYxMmYwOWJkMDFjZTkzNWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyMTM2OTk0NGI4Njg1NjE1NjAzNjdhZDQzYTBhNmVlYTRlY2IzZDZiOWU3MmRkNmI3NTgxMmMzMzc3MjEwYjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwOTAyNGQ5ODQ5MGM0YzEwMDgzODVmNzRiOWFiMzE0NmZmY2M1ZWRmYzQ2Zjk4ODdkMjRlY2EyYjZiNWM5NzAifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigService.cs#L590-L597",
+          "version": "repo-lines-v1:sha256:60569f7d43f8b22de18bf72bd8e0d3a9225757519526632a9128e3374400c4bd:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGIyZjAzNDQ5N2YzOTkzNjVlMzYzMWEyNjk2NTUwZmZkOGM5MTZkNDA0NTdmYzZkNjc5N2M3NmM0NDdjNmUxNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjVkMTIyMTk5ZThkMTljNzZiYjI4MDg2MGU2NDcyZjRlNDcyYmM0ZjBhYTA0OGE0ZWZlMjIzODg4ZmQ5ODNjMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNThmNDgwMmVjZjc2YzEwM2FiNjJmZWMyMTM5OTMzZDU5NmZjMTQ4OWE5ZGU3Y2VmZWIzNjRlOWFmMWZhZTE2MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmU0NDRkNWExYzk4YWExNWM2ZDg0YmI1MWMyYTMxYTJhYmI2MDM2MzhhY2U4MGNmZTc0MjYwYjgyYjNiMzQxNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_369b00a5e5194bd48d81435711fd4905",
+      "statement": "A missing Profiles.json is never treated as a factory reset: unless the load is an explicit reset reload, ConfigService first restores the rolling Profiles.json.bak and only a genuine first launch (no file, no backup) generates and persists the default fallback config (light theme, Global profile with Notepad/Explorer/Calculator switch slots and a Command Prompt command slot, onboarding NotStarted).",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigService.cs#L191-L232",
+          "version": "repo-lines-v1:sha256:64ad69abde78bcd2633dca7113e12672cc28825ed70a0f999e17ea60e6e37d8b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhNTI3YTc4Zjc1ZGI2NDYxYTYxYmNiODRhMDQ5NmNiOGJkMzRmZDI1ODU1OWYxNDdkYjEyMjQ5MTc1Njc4YWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MjJjNDJjZDE5YzZkMDNkODA4YzQ1MjcyMDU1MjgyNWI3ZWExYzViNDkxYjIxODUxMWNhYzc0MTVjZjlkOWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3NjFiZjRiZTFiMWZjOTM5NDEyZDdiNjhhY2VkZmUyNjNjMWNiYzIyMjMxMjEyZGYzOTA5YzcyMjljZDE2ZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU2MDI5YTBlZjk0YTA1ZmJiNmRhMzVjNTIzMmZhZGFjNjc2MDg3ZWJkZWYxNzA4YzkxYTAxMWYxMjg2MWIwYTIifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigService.cs#L910-L990",
+          "version": "repo-lines-v1:sha256:d81ae71dc8d8357f6fb09c5a6898b1fb69ae8388ccbf320e31cf3b4cd864a191:eyJzZWxlY3RlZExpbmVDb3VudCI6ODEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhZWVjMzJlZDQ0MDAyZmI2ZjdiNDQ2MDAxYWQ2MzZkMWU5MzlmZjYxYzEzYWJiNjdiZDRlZjExYTUwOTQ2MTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQxZGEzN2ZhZDJjYjliNDIxNzRlMjllM2Q2MDYyNWE4MDczNWYxMGY5MGIzNDZlZTk0NzA5YjJjN2U3NGZkM2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZhN2YzNTY1OGU5OGZkMjdjNTQwYTk0ZDI3MGE2YTQ1MTM1Y2I4NTQ4M2VlYmVlZjUwMjA4N2U5NTM2ODExODgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b35f83563b7e490b8441d709f509b036",
+      "statement": "Load-time reads capture the revision before opening the file and only replace the cached config if the revision is unchanged, so a concurrent successful save invalidates a stale disk read instead of letting old data overwrite the newer cache; load also normalizes dictionaries, JsonElement values, missing slot actions (from plugin metadata), and relative winSwitcher switch launch paths (resolved to absolute and persisted once so the file heals on disk).",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigService.cs#L1038-L1087",
+          "version": "repo-lines-v1:sha256:8852f553744ec5bc783158888c2fc39412d7ec9d2feaaa5e6d03e7597282b2ac:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjNWY3NzRkMzM3NGMxZmE3NjcwNDVkZDI5YmU3MzFhZjNiNjk1ZTRlYmE3NjY3Mjg0NjY5Zjk5N2QzYWE3OWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4NWRiMDgzZDgxMGE0M2Y3MTQwMTE1OWYxMjhjOWEzNGZhMDNkYTM4MDRmYTQwY2EyYTRlNzAxYTIzYjBkNGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkNzdiYzY0OTkxYjlkYTFmYmJhNTE1MDkwNmU3ZjEwODQ2YjQ2Y2RkZGE2NTIwNzA0MWVmZTk1Zjc4OWRkNTcifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigService.cs#L234-L300",
+          "version": "repo-lines-v1:sha256:0e6a8293c274763261a8bdd2651f9747dc4ad1803609cea4780e9813a8114fbd:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyODUzZDdhMDAzM2Y4NDI5ZTAzNjA4OTU3MDc4NjcyYmQ0NzJiZTA2OTc1ZWEzMjY4YTRkMTMyY2I2NzNhNWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjMWIwMjdkNjhkMDM5NjJiMTE1NDkxMDc3ZTIyM2U4OGJhNDcyMTQyNWViYWRkZTE0Yzk1M2M5ZWE3MzI1NzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhMDA3Y2NhMDI5OGFjMWZiZTAyNjdhMzAzNThlZmFhYTI5YjdiNzczYWQyYTM4YWI0MGI4OWE4ZTI4MjEyNDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjOGU2ZGZmYzM3MGE2NDRmM2I4YjE4ZWFhYjUwOGU0ODE4ZTFiYTY3NTYxOTYyYTE3NzUyM2Q5MTRlODEzNDUifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigService.cs#L364-L375",
+          "version": "repo-lines-v1:sha256:f49c6d77531f1cb5db782503f9066d661cfd343847ef1dc265ff1af94ce1d903:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhYTQzYTkzZGE0NjU4ZDQxNzljYTJkZjM3MWJiZDcxNjU3YWM5ZWE3YWFkNTM5NzEzODNjYzMxMjQ3YzI2MDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MjJjNDJjZDE5YzZkMDNkODA4YzQ1MjcyMDU1MjgyNWI3ZWExYzViNDkxYjIxODUxMWNhYzc0MTVjZjlkOWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3NjFiZjRiZTFiMWZjOTM5NDEyZDdiNjhhY2VkZmUyNjNjMWNiYzIyMjMxMjEyZGYzOTA5YzcyMjljZDE2ZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3NzMxNGIwMmQ0Y2EzZDkxMDcxMWM4OTRiZjVjNmExYTE2M2QzMGQ2NzAxZDlkYjRiYjMxNDM3ZTljNDM0MWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_eaece2470a0e4deeabe43ea919f2ca39",
+      "statement": "If the config file parse fails, ConfigService preserves the last successfully loaded cache in memory and never overwrites the on-disk file with a fallback; only when no cache exists does it create an in-memory fallback without saving, and the _loadFailed flag makes smart detection skip persisting to avoid clobbering the valid file.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigService.cs#L341-L361",
+          "version": "repo-lines-v1:sha256:acd037580d479e8dcc8f6cd142b8d1bdb84ef2b4d10363a50aee7d7ac2741867:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkMWVhN2U2ZTA4MzJjMmFiYzc1YTBkMzgyYjFkMWFlNzgxZmVjMTllMjIyMGFjMmU3MzEzZjgzNjg2ZWRjZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjNjQ3OWNjMjMwNDQwZmQ0MWU4MjI0MjE4Njc5Njk4NTU5ZDI4OTNiZDY3YjQzODBhZmFiODExYjM4YTU1YWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkZWQ1N2NkZjYyOGU3YmNmYjdkNzY2MzJhOGQ3MTQ4NzM0YzA0MWJjNjUwMjBkZDg5NmJlZjE4OGE3YTIyMTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjZTRlYjcwNGFlZmE2ZTA3OGYwZWZhM2Q2NjM4OTY0NWQ1OWQ0MTFjZWI2NmJmMzkyOTdiODhlYjUxYmJmNDgifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigService.cs#L663-L678",
+          "version": "repo-lines-v1:sha256:22f91549d840d3540d0e8e78a2f86455931904b8d1a772ad2ab69e530121439f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2MWYxZDlhMWUyY2Y0OGI4MTBkZjNiZjRmZjkyNzJmZTU4YmE1NTljYmU4OGJiOTcxNGIzZDM4MjY1NDk4MTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2ODM2ZDRlNDIwNDc3YTk2NDcxMWFhOWQ5Y2ZkODI0ZThhZWNhMGU5MDdlZjRkZGMzNWRjMjUyOWJkZmJiNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyM2U1YmZkZDdjZTZmOWMyOTU0Y2FiMWNjNmJhZWI3ZTUyOGIxOGE2MWIwN2ZiMmE0MDEwYThkNjVhZGI0MTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwODk5MTEzOTM3N2Q5MWIxYWM1ZTVmYWI4MDE2ZTFlN2NmMzI4NTNkODg2ZDA4OTNiMjZkZDcxYjVhMzgxZWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0bbf3ad488c0499f8e74f8caaaa4cae1",
+      "statement": "ConfigValidationPipeline runs five validation stages in order — plugin schema validation, plugin custom IPluginConfigurable.ValidateSettings, slot argument validation against action parameter metadata (required/type/validators with alias fallbacks), plugin dependency checks, and duplicate-hotkey warnings — producing a ValidationResult of errors, warnings, and infos.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/Validation/ConfigValidationPipeline.cs#L356-L377",
+          "version": "repo-lines-v1:sha256:cd1cc817a20155435b925d6f9c40e6d528a3eca4eee661b65473879b489b5029:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NjJlZTAzOTZkNWEwMWNiNDEwOTVmNDYzZDBiOWE5NzA5MWMyMGY1NTA1NjM4OTMwM2ExNzk5OWJmMzc3ODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0ZDJiZDQwYTg0ZjRhYTQ2Y2U4MmZmOGU0ZDIxNmQ2MmJhNmFiODkzMjkxNTRiNjg4MTdhMTc1ZDQ2NjhiOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTRkMDJhODEyMTk0NGQxNzZkMjY1ZTliYjljYzU5ZjZhYjg5MGJjYWRmOGFlZmRlYmRiYmI0ZjJlYTg0NDQifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/Validation/ConfigValidationPipeline.cs#L37-L64",
+          "version": "repo-lines-v1:sha256:51581497d1be5351dc93bf00465b5735ead37a09f41b7c1c3e63b1391b43210f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjMzlhZWI0MTUwZTg2YTBiMmI1ZTA3ZDcxMzA3Yjk4MjM2MTYyZDg2OWZmMjIyMTE4NmE2ZDc3MjYxNWZjMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFlMTdmOTdlZmQ3M2ZjNjE1OTBjNGIzMjg4NWQ5NjEwMTRiM2Q5OGQ4NWZmNjAyNDEyMDdiYzgwNmFkODM0ZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkZTc1Njc1OGZhNTA4ZWVhNjNkNGM1NmUzZmNhMzdhYzIxMzc2OTVjNTkzNjk2Y2M0M2Y0MTliYWE2ZDA3MzUifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/Validation/ConfigValidationPipeline.cs#L69-L152",
+          "version": "repo-lines-v1:sha256:b2e774e3d565c1290f87ff20172082e36ef21c40816e1fb7e704705931d427a5:eyJzZWxlY3RlZExpbmVDb3VudCI6ODQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwZWVmOTc3YTVkZDUxN2ZkZjUwOTdhZmJkN2E3YzllNGVjNTFhNmY2NjViMzI2MGI5MGNiY2ZhZjZiNGRiZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1MjFlOTAxM2M5OGViMmZiOWM1YmQxMjI1ZDU0ZWE1ZDhlYjM2ZDU3Y2Y2NDhkNzdjYTA0YjQ0Y2RhNmY5ZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIyYTIwZjJhNjNkMjdjMTc1ZGRiNGU2Njg3MzcyODlmYjQ2ZDc5MzJjN2E5ZmVjZTQwNDQ5ZDIzOTI0MjVkNTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_695d2ecc967f47fa81b44b429eaec129",
+      "statement": "Validation blocks persistence: SaveAsync throws InvalidOperationException when the pipeline reports errors, while warnings are logged and the save proceeds; an exception thrown by the pipeline itself is logged and does not block the save. On load, validation failures are logged but never block loading.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigService.cs#L303-L339",
+          "version": "repo-lines-v1:sha256:a27edd0d208b324cf53374855f7192be71da9ce6db2c4fa6c531338ab6105cad:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxN2Y3MTgyMzI3MjMwMTYwYjQxYjI2NTE1ZDFhNTk5ZjIxZTYxZDc4NTVhN2FkZjk5YTk1NGFjYmFkZmY4YWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjNjQ3OWNjMjMwNDQwZmQ0MWU4MjI0MjE4Njc5Njk4NTU5ZDI4OTNiZDY3YjQzODBhZmFiODExYjM4YTU1YWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZkMjA0YTI1ZjhjYzM2MjgxZmMyNTUzZGE2MzU0MDkwZWRmZDVkMWIwOTdmNTAwZmFmMTE0YTRhMTliODdhMjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ1ZWRiM2U0NTRkN2RiZDQ5Yjg0ZDI2YmM3ZjExZWU0YjRlMTdkN2Y5NzJiN2NiZGIyNDhmZWNlNzRkMjFmYWQifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigService.cs#L478-L512",
+          "version": "repo-lines-v1:sha256:6a2873020de5bf814dafbb7d46c7841fb303b097e2269484a0131125915a3cd3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0ODRhNGIzMzYyYWFlMzhhYmFkM2JlMzM5YTczYmIzNjdkZTg5NjNhZDMwNzYyMWYxZDJiZjdhZjM3MjAxYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjNjQ3OWNjMjMwNDQwZmQ0MWU4MjI0MjE4Njc5Njk4NTU5ZDI4OTNiZDY3YjQzODBhZmFiODExYjM4YTU1YWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4ZjQ4MDJlY2Y3NmMxMDNhYjYyZmVjMjEzOTkzM2Q1OTZmYzE0ODlhOWRlN2NlZmViMzY0ZTlhZjFmYWUxNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiNmI5MDQ3YzllODRjZDY0NjcwNmExNGJlMmM2ZDQ2OWZmMzhhYmJkYTI2ZTgwZWNiM2NjM2EwMjcwNGI4N2IifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_415cf6136423489e8d3d4822b704285a",
+      "statement": "The validation pipeline is injected into the concrete ConfigService only after startup by AppStartupCoordinator.ConfigureValidationPipeline (after plugin discovery), because ConfigService is constructed before the plugin registry exists.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/AppStartupCoordinator.cs#L303-L310",
+          "version": "repo-lines-v1:sha256:2be7ed92357f96c10f11fb89e86985dcca9f49b06e37ed39d72e89dc4a2a529a:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGU3MmVlODM4NjNhNTVlNWY1YmRjMWYyMjY1YjNjOTM2NGVjNmQyZWQ4NDM1MmYwZGRhODMxNzlkZjU4MTM5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWQ3NDNlMzQ0NjM0ODZhMmMzYTE2MDU3MzNmNDBhNWUwYWI2MjY3OTM0ZTUwNmJiNjFkMzg3YzlhYTI5NGRmNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmQ1Y2Q0ZTEzNzZlMDgxNDlkNjY2ZTFkZTE2NGM2NjI2YjBiYmZjNzViMzhhODVmZWMzNDE4NWY2ZDUzMTlmYSJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigService.cs#L132-L135",
+          "version": "repo-lines-v1:sha256:2842baca4fa6a71c866b90b5e551ea90c58d95d53cde1c5a0f9021ba4beb7c57:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGRjMGFkM2FhY2ViNDJmNDcyOWQ3N2E0ODg0ZjExMTExMzcwMDAwMDIwZDkyMjhjNzdiYjQ3ZGUyMWU1MmMyNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzZlZDIwYWYxMThhNzY1NDQwN2E5ZDc2ZjVlYzJmZTg4OTdlMDU0YmFlOTUyM2MwMmVkOTgyYWI0MDBkMjA0NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWEwMDgxNDJiMTcwMjVkY2QyNDY1ZTY4ZDUxMGRmYjE5MjEyMjE0YWExOWE4YmI3MDcxY2U4Yzk1NmNlYmVjOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c1f0bbb51fbe4a93973acc13d3b9975d",
+      "statement": "ConfigBackupService exports and imports the full configuration as a versioned ZIP (format version 1) containing manifest.json (format version, app version, creation time, ContainsSecrets/SecretsProtected flags, KDF metadata), Profiles.json (the full config snapshot), and either secrets.json (raw secret-store shape, unp\n\nrotected) or secrets.protected.json (per-secret AES-256-GCM sealed blobs, password-protected).",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Models/ConfigBackupModels.cs#L61-L76",
+          "version": "repo-lines-v1:sha256:8aa81f0b1e331b169356ea966d24c5310329543ea45b49eaaba76984de81d9ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4MWE1NjE4YjA4ZDZiNGQ5YmIxZTYxY2Y4ZmJlZGM4MDM4NDlhZDI0NzkxN2I2NmFiM2Q3MWQ3M2U3Yzc5ZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjOTZmNDZkZDRkYWM5MWEyYThmMjNjZmYwYjQ1YTg2MDliMTNiNTFkMjc5NzY1MzcyMzhiMzY1ZmZmYmEzNGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxMGIzNmFhNzRhNTliY2Y0YTg4MTg1ODM3ZjY1OGFmYWYzNjQ2ZWZmMmJiMTZjMzkyOGQwZTkzMzVlOTQ1ZDIifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigBackupService.cs#L19-L45",
+          "version": "repo-lines-v1:sha256:a97f5d0ce3d229b4819151692f89ec5469faceb7a722b516f98403783a15edb1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYjZkYzkwYjJmNzkyOTYzZGNkYWRmZWZiNDA4NDg1NDkzYzAzYzNlMWE4MGYxNDliYzYzODAzY2RkMDQ2ODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3OWUxMzhkZTU4YzgxYTEyMjUyMjhhM2E1YzQ1ZTA5NmY1NmQzNjAyM2ZjOGQxYzBkNWIxZTZmZmY3MDBjNGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlNzVjODBkMzUxZjI4YjYzMjYzZWQ2ZDQ0OTM4YjAyODRkY2NkMTVjMDQ3NDZkNDNjNzFiYzZmYzY2M2I1MDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczY2I2ZWU2NmFhYjdjYzdhYThmM2YyOWY2NDllNWNiZmRkNjQ1NTcyYzQwYjk3ZTExZjFkMDVlZjMyMTM5MWMifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigBackupService.cs#L373-L405",
+          "version": "repo-lines-v1:sha256:3e5cdfbc03da75f3136c6a28ad797af00ca55097dc3ea046d889dac50c8edca9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2NmY3MzhiNmJhMGRiYTM0NDFhN2Y3OTgyNzliZjcyY2ZjMGVhYzNjZThhZTViNjBlOGNiMmRhMTRjZjE4NjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjNjQ3OWNjMjMwNDQwZmQ0MWU4MjI0MjE4Njc5Njk4NTU5ZDI4OTNiZDY3YjQzODBhZmFiODExYjM4YTU1YWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwMDA3MTZjY2QyZTNjYmVlYjIwY2U1NzI3MTA5MjhkOTQxMWIxNjRlMmI3NzIyOThmNTNkNTYwMGQxYTYxNzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg2MmFhN2RjZjA3MTUzMDBkYzJjOGYwMTViMDZiMTIxZWIxYjZjMGFkNmJmNzg4MTJlZjI1YzI5MjJiNGEzZDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_35a178bd496342aab68575bb866d89e1",
+      "statement": "Backup password protection exists because live secret blobs are DPAPI-sealed with DataProtectionScope.CurrentUser, binding them to one Windows user on one machine; with a password, Export decrypts each blob via the local protector and re-seals it with a PBKDF2-SHA256 (210,000 iterations, random 16-byte salt) derived AES-256-GCM key, and Import unseals and re-seals with the target machine's protector, making the backup portable. Only ciphertext is protected — Label/Account stay plaintext like the live store.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Plugins/Core/Pki/Services/CredentialsManager.cs#L12-L31",
+          "version": "repo-lines-v1:sha256:56e44ec6a4aea3cc4a2170022bc95e500e349b79c95ea652e3fdc87cef857070:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1OThhNWRiZjI1Nzc5YzViY2I1ZTcwOWVmYmQ5MjkyM2I2NmU0YWViZjNkMjZmMjAxMGU2NDY3NjVjNDI3YzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxMzVhNmJjNDc4YzdiNmQ4NDMzZDI2YWFiYjQ1Y2ZmZWVmZDJjYmNjNGU4N2ExM2JiZDkzNGI4ZmRmMmRkZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjllNTgzYWQ0OWUxZGU0OWVmN2NjNjQ1ODhkNWQwNDljMzQxNmMxMDEyYjU0Mzk0YmQ0NjhlMmFjYTQ5OWYwMzMifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigBackupService.cs#L284-L315",
+          "version": "repo-lines-v1:sha256:f1ed9a04a577e77b011992843615f3807114f77af03d27c9feddd5148e6d5b46:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4NWQ1NjhlMjNiMWYxZDFjNDk5OTgwNjhlZDA2YWMyNGIwMDI0NWQwOTJjYWMwY2E0NjAxMWFhMTNmMTY0MWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3YjRlMWYxY2FjOWJmZDZmZDBiMzUwODY0ZjY1Yjc5ZTcxZmQ5M2YwZWEyMWUwOTFkNDdkNjNhMTg5MGU1NjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2MzE3YWM1NmU0NzlhN2JhMWE2OGNiMDc2MThlNGY5ZDlmYzk4YzNhY2Y5ZDAyZjc2M2ZiY2Q4ZTY1NzcwMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlODM2MDdiYzdhY2Q3YjdkMmZkZWY1Y2Y3NGI5YWQ1Y2ViYWY3MjNhYjZhMmQ4OTA1MjFlODgxMDY1ODQzMjMifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigBackupService.cs#L99-L143",
+          "version": "repo-lines-v1:sha256:ee8584a2633c76025a3350473ca96674d21912cf254860af48a956f39466c320:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0ODUxZjA3OTAxY2QxZGZiYTBjYmE2NTBkOTFiNGI0ZWU5Y2NkYjlmMDRlNDBhNWNiMDM3NGRmNzg2YTg0NDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkYjMzOWMxN2Q0Y2M1NGU3MGM0ZmNmZWNiNjExYmI5ZTdkMzYzZjI1YjE4ZTA5MjNhMWQzMDZjYzk1OTI0ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI3NjVmYzA5ZmFlMjE1YzA0NGZiN2UxMDRkMDc0MWQ5YjZkMGMyNzRiNmEzODBlNjhjYWY3ZWViYWVhMjAwZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4MzViMGUzZTJhMDcwNzFkOGVjODdjMGU5YWZiOGIzOGI1NjczMTNiYWY1MzUxMTY5MjM4YWQ3ZWRkMDAzNDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_625cd7809a8e42b0806adaa6d3ec9ce7",
+      "statement": "Backup import is replace-all for Profiles.json (via ConfigService.SaveAsync with no revision guard) and touches the secret store only when the package contains secrets; the pre-import secret map is staged so a failed config commit (e.g. validation rejection) rolls the secrets back, and a wrong password or tampered ciphertext surfaces as WrongPassword/InvalidSecrets without changing any target state.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigBackupService.cs#L259-L358",
+          "version": "repo-lines-v1:sha256:75e0e4fbb4b893901825e6a8b54f65a5735df7978539e92218a505800f3ffeef:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjMTE3NjlhZDZmZDE5Y2M3NDA1OGE4N2MwNmUzZTA0ZGVkMzQ3NzQyOTQyZWVhOGJiZGQ0YzU5NGY5MWJhOTdiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzYTQ3MDJjYjhjYmIxNTU1MmI0ZGNiZGM1MmJjZmVmYjc3NjYwMGUyMGM2MzdlNWZhMWQ0ZThlOGNhNmRmZGUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhMWJlYTg2YWZjZTMyOWU5MjFiYWMzNTkxMDYwNjhlMjM4YmE0MTUxN2Q2YTM1YmJkMDBjNTIxOWJkYzgyYjRkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlMzJlZWI5M2M1MGUxMTAzMjE5NjY0YzMzNTI1MDk4Y2QxZTZlNTgyY2UzNGQ5M2VmODdhN2ViMWVhOWE3OGU5In0"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigBackupService.cs#L541-L552",
+          "version": "repo-lines-v1:sha256:5073a512db0e3b794f1ecb87a7e2b52ebba2505dc47454b652ea321591546486:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4YWExNDg3YWFmZGQ3NzAwN2ViMjM2MTE3NjA2MzI3MzVjNTE1NjI4OWQ4NTcyM2U5ZTYxMmI2NTRkMmQ2YTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjMzk0ZDE3YzY1NTc5YWQ4Y2NiMTZjMTMwNDJiOWUxYjExODVkM2ZiYmVjMjE3NTIxZGYzODYxODY3NGFhYzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyOTcxMjg4Y2FhNjRmMmI1MzBkNmRhNTQ4M2JiMzE4YmQzMDJkYmQ0ZGM5NTY2YmRhODM3NzAyMzBmYjhmMGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a50ad14640ca48369d9dbc2439617692",
+      "statement": "Backup import validates defensively before writing anything: missing manifest.json fails as InvalidPackage, a FormatVersion newer than the supported one fails as UnsupportedVersion, unparseable Profiles.json fails as InvalidConfig, and a malformed secrets entry fails as InvalidSecrets; packages without secrets leave the current secret store untouched.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigBackupService.cs#L227-L257",
+          "version": "repo-lines-v1:sha256:f434210aba4e775ac499610b2fb18d7cc14a48b3d3ebaadb39c2e292d22a31bf:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhYzYwZDBjODQ2ZTg5NTQzMTJlNDVkYzBhMzUwYzE4ODFmYWM2MjA2YTY2YjI0YjYzM2JmMjdmNjJjMDIwYzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjNjQ3OWNjMjMwNDQwZmQ0MWU4MjI0MjE4Njc5Njk4NTU5ZDI4OTNiZDY3YjQzODBhZmFiODExYjM4YTU1YWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBhNzU4ZjUyODFmY2RlM2MzNTM4ZWZmYjRmN2U5MzA2Y2ZmZDJhMjQ2YTBhYmFjY2FiMTI5ZjIzMTdiMjc2ZGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjNDZlNWMyZGE1YmQxZWVmYTBiYmQ3NWJhMzNlOTQ1ZWRmOTJlZDBjNGVjNzZjNTBjMzdiYWUzNGNmMTkwZTIifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigBackupService.cs#L320-L331",
+          "version": "repo-lines-v1:sha256:62a4642cfce0bb0949cee2e68df521955f0eb60725fe81b3f985fcf38be45624:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViODQ4ZmE3MTU3NjYxODhkMThhMDI1ZTI5Y2ExNGNjOGRmOTlmNWYwOWJlZDk5OTFjZWRiOWQzNjg0ZTkwZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjNjQ3OWNjMjMwNDQwZmQ0MWU4MjI0MjE4Njc5Njk4NTU5ZDI4OTNiZDY3YjQzODBhZmFiODExYjM4YTU1YWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwNjc3YjM2NjM1YWNiOWUyM2E0OTI5ZWIxY2IwYjEyYTMwZjgyNjYzZWVkMzJjZjExNWVjOTRjYzIzZDI4MzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhZmEyZGMwMmYyMmJkM2MzZDdjYjA3N2U3MTEwMWMyMjBhYmYxZjM0ODE2NjZiOTFjYWY5NTc1YjYxNzVhZTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5738716d7803465a89dbc3715f652510",
+      "statement": "HotkeyService subscribes to IConfigService.ConfigUpdated and rebuilds its effective hotkey cache from the fresh state, keeping it in sync with every commit path (Settings save, ConfigEditSession, tutorial); ApplyHotkey intentionally mutates only the in-memory cache, never the shared snapshot, leaving persistence to the editor commit path (ADR-005).",
+      "evidence": [
+        {
+          "resource": "repo://Docs/decisions/005-config-single-writer.md#L20-L20",
+          "version": "repo-lines-v1:sha256:42a72b12fd0e027cf349feaf3c6c012d5b93901ca6dc0acbad2f748a89947030:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDJhNzJiMTJmZDBlMDI3Y2YzNDlmZWFmM2M2YzAxMmQ1YjkzOTAxY2E2ZGMwYWNiYWQyZjc0OGE4OTk0NzAzMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDJhNzJiMTJmZDBlMDI3Y2YzNDlmZWFmM2M2YzAxMmQ1YjkzOTAxY2E2ZGMwYWNiYWQyZjc0OGE4OTk0NzAzMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGFlOWVkZTk0MGVhM2UwMTZkOWZhODI4OTJlZTM4MTRiYmRmM2QyYjJlNTMyNTU1MGI0NDk1ZmU5ZjA1YTk2NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWY3MzI4OWRlMWJiNWUzYTg0MzRjZmYzNjE2NzM4Zjg1ZTdkNDMyYzkxMzZjYTgwOTQwYjQ1OTgwYThhZWI4ZSJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/HotkeyService.cs#L184-L196",
+          "version": "repo-lines-v1:sha256:8cf764c40e2696ab8596dbe7a958396370af8a02923ea56e3ec1952652ea73ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3ZWRiZTc5YTU3NDk1N2E3MzU0MGRlNTM3MDlmZjI1ZTc2NzYwNDJhZjA1NjdhZmI3NmZkYTFkNzhhOWM1OWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4NjhkNDdmMWJmNGY0ZmUxZWQ0N2Y5ZmE1OTZhZDI1NDhjNjkyMzdlYTA2MWQ4OWZlNzUyNWRjMmIyYThlZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxYjY0ZjJiNzk5YjZhYmZlMmY2NTk0ZDEyZTY5NmRiYmU4ZDRiNGExN2NjOGZmZTcxZDcwODNlNWYyM2MwNDIifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/HotkeyService.cs#L26-L48",
+          "version": "repo-lines-v1:sha256:957d4e8683e37a160aaa5754ec64bac7539944f57c3d31a1495fecfbb9a63ce8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0MzFiZjAxOTMzMGYwMDk3MTczMzllNzBmY2NiMTE3ODY2ZWM4OTlkNGU2ZWQ2MTFmY2FlNTViYjgwYmQzZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEwODUwYTUzMDUwMTA1OWIxOWU2MmFkMTk0OWZjMWYyMWU2NjI5MjYyOTA0OThiMTIxMjFjNjJkN2IxZDg3NWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIyNzNiZDUzMzIzNmJmMjdmZGU1MzdiYTJlN2I0NGVkY2ZjZDI0N2Y5NWFjMzIyNDE4ODcxMjE5YmI2ZDRkZTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_10b6fb17359b4e62821c5ba9e1106615",
+      "statement": "SettingsEditorSession is the Settings window's persistence seam: it owns the ConfigEditSession lifecycle (begin/lazy-begin/commit), the working draft, and the secret-store pipeline, and its CommitAsync saves the merged secret store (secrets.json) before committing the config draft, so the editor commits config and secrets as one logical save.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Settings/SettingsEditorSession.cs#L12-L109",
+          "version": "repo-lines-v1:sha256:c0307730b5866b1e1177847943cdf3f47a4a54c472b9cadae7ca2d3ebec8f215:eyJzZWxlY3RlZExpbmVDb3VudCI6OTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYjZkYzkwYjJmNzkyOTYzZGNkYWRmZWZiNDA4NDg1NDkzYzAzYzNlMWE4MGYxNDliYzYzODAzY2RkMDQ2ODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI0YWM2NGEwOTQ3ZjU2NjVlZDIwOTdhMzUxNDQ1YTQ2MDI2NzI0OWY2M2Q2MDhmNWZlNjBhZjdmN2I1ODExYWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxYjEyYmFmMzNhNzYzMWYyNzBmNTA3MmEwMjU4Zjc3Yzk2NjgxNmJmY2EwYmU2YzJjNjdmM2QxYWQ0NmJhMzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bc91847c4d6647288d68b0e35962391d",
+      "statement": "The concurrency and persistence contracts are covered by focused test suites: ConfigEditSessionTests (draft isolation, stale-commit rebase-and-retry preserving both regions, ensure operations never clobber, unchanged-draft skip), ConfigServiceConcurrencyTests (injected path, 12 concurrent writers leave no temp files, reentrant ConfigUpdated save without deadlock), ConfigServiceLoadTests (backup restoration, reset semantics, migration), and ConfigBackupServiceTests (package layout, cross-protector restore, wrong-password no-op, side-effect-free failures).",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar.Tests/Config/ConfigEditSessionTests.cs#L29-L47",
+          "version": "repo-lines-v1:sha256:82b04c1e33d4e8549b10c547084757b2bfc8c1b0ca7e2a739124b6bf48e2938b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNjFlMTVkYTg0NWUyODc0NmUwZjhmYjQ1ZGNlZDIzNzZlYmFhNDk0MWFhZmQ5MjlhYzU1ZDI4MWI3ZDk3OTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiOTU5MTY5OGVkNDVjM2E4ZTcxNTAxZWFmOWJmYzMyOWU2M2I4NDA5ZmQ3OWNjNGE0MTNkZjcxNjMwNTdmOGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlYjJlZjM4NWM0ZTQwOTIzODI3ODJjOGZkYjZjNDE2ZWRiOTVjMTNiNmQyMTZiMTU5MTU0YjcyMDBjNDExZWYifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar.Tests/Config/ConfigServiceConcurrencyTests.cs#L41-L91",
+          "version": "repo-lines-v1:sha256:c51d24cb7056c906ae2a447e7257b7d0d0f4dea9a55e6bec0d76697eef972e1f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4NjgyZGY2M2Y0YWFkZjM4MzQ4MjQyNjAzMjg5ZTg0NTJhOTMwMDUzZWI3MDY4ZTZiNTJhYjYxMjJlZDk3OTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5ZjhlYzUxOWI2MDMyMTg4MjYwZGVjMjZmNzYyZmFhNjg2MjFiYTU1ZmJmZTBhZDlhZDY1NzExNjA3MWUyOTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlNzViYzczYTk0NmQwMTcxYmZjZWEzYzI1NDNhMWI3ZDRjMjJiZjUxNzNmZDIxYzMxOGUzODA4OGIzOWI5NWYifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar.Tests/Config/ConfigServiceLoadTests.cs#L252-L288",
+          "version": "repo-lines-v1:sha256:c0e7ee83b16e4ee935d2fcc1a3a01d93dbecd612978db47e8223326ab090270f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzYzAzMGQyYzI0ZTdkYTQ3NjI3NzQxYzZjNzRmMDhjMDUxNzNiMTkxZTc0ZmI1MjZiYTcyNmJiNWY3MzYzMDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5ZjhlYzUxOWI2MDMyMTg4MjYwZGVjMjZmNzYyZmFhNjg2MjFiYTU1ZmJmZTBhZDlhZDY1NzExNjA3MWUyOTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlNjIwNzg0MDgwYzEzZWIzZjIwNWJjZWE5ZTJkZGU0YTk3YzRkZWE4NDNlYjhiZWExOGIwNTQ5NWIwMmU1YWEifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar.Tests/Services/ConfigBackupServiceTests.cs#L161-L184",
+          "version": "repo-lines-v1:sha256:482cf254470a3d5d23ab317cc6f96b3111e90a3bf1a86e0f6dc0a8b06398c59e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhYzQyZjY4MTA4Zjg1Mjc0YTQ1ODg2YzlhYjMzNWZiY2Q1MzhiY2QyZjYyYWFhOGZkZDgzODUwNDViZDZhYzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5ZjhlYzUxOWI2MDMyMTg4MjYwZGVjMjZmNzYyZmFhNjg2MjFiYTU1ZmJmZTBhZDlhZDY1NzExNjA3MWUyOTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxMTM1NzhiODA5YjZjN2M4YmFhMDY1MjIxNGViZWYyMTY5MjI3ODAzZjFmMDhlZGVlYWM2YzRiN2Y2OWFjZTQifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-05T05:46:24.085Z"
+  }
+}

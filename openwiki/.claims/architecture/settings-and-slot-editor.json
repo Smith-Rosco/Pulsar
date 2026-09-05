@@ -1,0 +1,420 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:a2a4165199facaf8c1c6b71a5968ba5748af35b156fc478089f16888f7c30c20",
+  "claims": [
+    {
+      "id": "claim_d2a1f0b01a4c4cc089e8530226ca41a1",
+      "statement": "SettingsWindow is a transient WPF FluentWindow resolved behind a Func<SettingsWindow> factory; the shell builds NavigationViewItems from the SettingsPageCatalog in display order, caches one Page per page id from SettingsPageFactory, animates page transitions and a custom nav indicator, hosts the title-bar Save button and unsaved-changes badge, and registers the SnackbarMessage messenger channel into its SnackbarPresenter.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/App.xaml.cs#L277-L278",
+          "version": "repo-lines-v1:sha256:082fcbd99b90e5540f4742678c69b4adaf7ef98f376afa998465103f018ff083:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjU1NGM4OGNhZmZhNDIxMTFjMGZmZDJhZmYyM2U2MzQ4YTdhMWY4ZWQxYjQ5Zjc2ODE4OTg3YTEzZDIxNzhlMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmY3ODU1Njg0ZjVjMjhkOGJhNzFjODVkMTNlMjdjODA5MmI3ZDA1MTc2MDI0NjY2MzliNTJiNWRkOWM0MTViMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODFmMWViZDU4Zjc5NzY2MzMyYzE3NWVjZDQ2MDUyYTJjZTgyYjUyYzZhNTlmNjIzOWQ1MjBkZjYxOTg3ZTdiOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmNkODc1N2NmYjA0ZDBlZDI1ZTBiODJjNjUyZDk4MTU2ZDdiZTAyZWYzN2QxZTQ1MTRjZWE3ZmNhNDk1ZDg1NiJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/App.xaml.cs#L400-L400",
+          "version": "repo-lines-v1:sha256:966d9005b1f2e8037ced421ab1462234a1727c82ea8a7145f73036e352aaff96:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTY2ZDkwMDViMWYyZTgwMzdjZWQ0MjFhYjE0NjIyMzRhMTcyN2M4MmVhOGE3MTQ1ZjczMDM2ZTM1MmFhZmY5NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTY2ZDkwMDViMWYyZTgwMzdjZWQ0MjFhYjE0NjIyMzRhMTcyN2M4MmVhOGE3MTQ1ZjczMDM2ZTM1MmFhZmY5NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzgyNzc1Njk4Zjc4Zjk0ZjYwMjM2NTZiNDFkNWYwNzU2N2FhYzUzMjZiYzljNzZkNTAyNGJiODI2YWYxZDgxMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTlhMWFmODcxODgxYzA5NWZjNjdjOTU5YjU3NjViMTM1MWNlYzliNTU4NDI2ODczNTFkMGQwOGE3NzVhZTgzMyJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Views/SettingsWindow.xaml#L34-L101",
+          "version": "repo-lines-v1:sha256:c3e9edc9e62b225701b7ec29c39dc88f7178fccf8e0265e1f5cb2301c9a843a3:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmODZkZTM5MmI0ZTUxYTBjMTNjZTUwNzBjZDg3NzNhMjJkNTc1ZTI0OGE2OTNhZDE0NDVjMmJkOTY1OWFlMjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjNjY1ZDhiZDJiZGFkYTllMDYwMDcxNDZmMzU1ZDY3M2Y2MTM3MmU0MjI1MjY1Njk0NjcxODQxMWNlMjJhMWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU0ZjNmYTc3MzBjYTgxOWQwOTlmODJiYTYxMmFhODRiYWU2Y2ViZGY5ODAxY2U4Y2MzZTRmMGMyZWNkOTM4NjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkMzMzNDFhNjBiNGZjNzhkYjQ4MDRhMjY1M2NmZTJlMTIzZDU0ZjNmMmQ3NWNhNmZmNTJkOTBhZWU2ZWNkZWMifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Views/SettingsWindow.xaml.cs#L28-L101",
+          "version": "repo-lines-v1:sha256:6f16903cfec5c0570d3a38cbce8e5ed491e5483fdbcd5df202a37aeaeab0906e:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxODRkZjk2Zjc5MTVhYmIyMTQ3ZjUzYzFhNWY1MzI5ZWYwZWZhYzRjNzQyOTM4MmIwMDI1NzhlNmJlYzdiODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmZjdhMDI4MGNiYzJhOGVhMDFlZjQyNjE0YTlkMzE4NGU0MTUwYmQ0MjhlOWVkZmY4YmIzMmZjNTA2ZjA4ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3YzFhNWM0NWVjYzM1N2YzM2MxNjI0ZGU4MGZjYTUwNjc2NjQwYjQ5NjUzYzg1M2MxMWU2YTEyOTJiODk4ZjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c3b80d0a6fef4621bca55763e3906780",
+      "statement": "SettingsPageCatalog is the static navigation source of truth: five registrations (Slots, Plugins, General, Analytics, About) whose registration order equals navigation order, grouped into Workbench (Slots+Plugins) and System (General+Analytics+About); grouping is presentational only, used to insert NavigationViewItemSeparators at group boundaries, and the catalog's default page id is the first registration (Slots).",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar.Tests/Services/SettingsPageCatalogTests.cs#L22-L93",
+          "version": "repo-lines-v1:sha256:c4c34b4a6c7bf096cf6a7731e51a5152f9152cdeb1626cb8b6748acb1f8bda3c:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNjFlMTVkYTg0NWUyODc0NmUwZjhmYjQ1ZGNlZDIzNzZlYmFhNDk0MWFhZmQ5MjlhYzU1ZDI4MWI3ZDk3OTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ2ODlmNjNiNmQzYjk2ODA5ZGVkODVjNTgyYjRjODBhYWVlZWFhOTEzNDEzYjQ1YjJmMjI2NjljMzM1M2E3YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/SettingsPageCatalog.cs#L32-L82",
+          "version": "repo-lines-v1:sha256:0b398361d5ce1fdaa0af06b9ed0d852c5513bf5eaabe43579a48fb4fa7bb9457:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlNGE2ZWI1NTQzNzRlYWJjN2M5N2EyN2U5ODFmZDU4YTA1Yjc0MTNlNTFjYzBmZTNiYjRiNjMzMWNhMzQ5ZGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkYmU0ZjgzZTEwNDViNDZmMzZiNmIxMjRmZmQ0NjU5N2I4ZjNiOWM0ZTQyNDliZmJiNTQyOTYxNzNkODQ0NGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Views/SettingsWindow.xaml.cs#L103-L140",
+          "version": "repo-lines-v1:sha256:4119b17d6f253253a255b198c51ceafc15c91878d1d1fb07d8a21b8dd6492f5f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhNzU4MGMzMjJhZTM4ZjIwMTc2OGNmNWI5MTA5Nzk4MzhiNjkwN2YzYmY0MDczMzcyZDA3MGUzMDY5NGRiNjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhZWY0Mzk2OTBkNDA0Zjc1ODAyM2Y3NTliN2I0MDc1MWUwM2Y3NzNhNDhkMDU4NjEwZGZjMWViNzNjZDkwZjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExNDZhMGIzN2YwNjljNmUzZGRlMTkwMDA5YmNlMjNiZGEzYjI4MTdjZjk3MDRlNjJjZTdjOGUyMGVjODU2Y2QifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ef9236ad21f141799fac6f0992c02f2f",
+      "statement": "SettingsPageFactory constructs the five settings pages with their own view-model dependencies (General and Slots share the SettingsViewModel plus IThemeService); unknown page ids throw InvalidOperationException.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/SettingsPageFactory.cs#L32-L43",
+          "version": "repo-lines-v1:sha256:c18043719fbee9f1912455c7a4a4e86a63ad762a96dcaa2ad19f61554cef4d7f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjNDQ2NzVhMzhiYmVlOWMwY2E1YjM4NDhlNmVkNmMwYTMyZDNiMTczMGMzM2VkYmQ1ZjBiOGM5YjQyOWIwZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyOTI3NzUyNjNmZGIzOTcyYzFmMWU2ZjRmYWY4NDNiZjYxNzg2M2UyNDU2NDBjOGU1MmMzZGIzZDdlMzk2MzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTRkMDJhODEyMTk0NGQxNzZkMjY1ZTliYjljYzU5ZjZhYjg5MGJjYWRmOGFlZmRlYmRiYmI0ZjJlYTg0NDQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c5f2a97c6dcd4f0a9d79a370967efb23",
+      "statement": "SettingsShellViewModel resolves the initial page from ILocalUiPreferencesService.GetLastOpenedSettingsPageId (falling back to the catalog default), rejects unknown page ids in NavigateAsync, consults ISettingsNavigationGuard for user-initiated navigation and window close, and persists the last-opened page id to LocalUiPreferences.json after each successful navigation.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/LocalUiPreferencesService.cs#L39-L52",
+          "version": "repo-lines-v1:sha256:62469a041f6137446cf70ef13e78a6f96fea5663932360b2b821064d00f008c6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlOTQwNzE1MGE4MmRjMGQ0ODM1ZmNlODE5NDFjMGE0NTc4MmZjOTRiZTQ2ZjE2ZDdiMDNkZmI5NmZjYWFmN2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhOWY4NmQyOGU3ODRmOWZkMzFmYjcyZDE1ZjYwY2JjZWFhZmRkNjY5Y2JkNWI2ZGE3ODg4YTAyMzMyMWViYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2MzllZjk3NjlmYmI4Nzg0NzYzYTVlY2ZhNzBlNjE3OGNiODUyYzU2MTBlYTJmZTk5NGY5ZGRiMGNlZTliMzAifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Settings/SettingsShellViewModel.cs#L44-L81",
+          "version": "repo-lines-v1:sha256:2a1d895230c3434ceaebabd491a8d1ab1c9bfb7c90dc89c423255f54ba94f530:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxYThkZmFhM2EwMjU2ZDA3OGE2ODc0MGY3MzJmNmRmZTI0ZGUzY2I4ZjMxNWMyZTQ3MDdlOTc4NzQ1MzQxMzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmNTU4NDdiMTFiZmU3ZTMzODAzNzUwMWE3MzAxMzE1NjBhMmU2ZTAyODMyZjM5MTg3ODM3MjQ2ZGUxZGYzYmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTRkMDJhODEyMTk0NGQxNzZkMjY1ZTliYjljYzU5ZjZhYjg5MGJjYWRmOGFlZmRlYmRiYmI0ZjJlYTg0NDQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9605d91201e9414fa16ed2d43812d937",
+      "statement": "SettingsNavigationGuard is attached to the editor by the SettingsWindow constructor; when the editor has unsaved changes it shows the Save/Don't-Save/Cancel dialog and maps Confirmed to Save (returning false if the save fails), No to DiscardUnsavedChangesAsync (a reload), and Cancel to aborting navigation or close.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/SettingsNavigationGuard.cs#L11-L39",
+          "version": "repo-lines-v1:sha256:f86d4ada9846174abdaede3f12e36796e47099ba576452ed9bdd17a93a90f839:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyZGYzMDc4NzdjYjc3MTg5MGEyNGY2ZDBiMmI0NjFmOGY1YTFmYzhlMDgzOTliMTI3Zjk2ZmViZWJlOWRhNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBkOTc3Njc4ZmI0YWI5NDU5NjY1ZmQ5MDI4MTU0MjM3NDliNWVmNWFhOTFjM2YzMDI5YWFkZDE2OWFiYjZkMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTRkMDJhODEyMTk0NGQxNzZkMjY1ZTliYjljYzU5ZjZhYjg5MGJjYWRmOGFlZmRlYmRiYmI0ZjJlYTg0NDQifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Views/SettingsWindow.xaml.cs#L486-L503",
+          "version": "repo-lines-v1:sha256:3254334931909509d8dd9119b0451088a5c22dd3f7b2bdf7dfb372f19e7d04aa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwYmY0MjU4NWZjOWRiY2RlNDM5MTBiN2U0MjA4ZmRlNzVkZDEwOWZiNmI5NDIwNTZiNWY1MjBhNWU5OWNkMGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3ODg4NjY2YjM2NGZlYzlmMjk3MTUyZGNlNWEyNTVjN2EzYTcwYjA0Y2ExZmJlZjZmOGQ3NzU5NDMwNmQyZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3NDEwMmQwMGRkMzU0OTljYWMyYzVkMGQxY2VjYjAzZmQ2MGMyZDBiYzc1MTA4ZWE2NmExMjQ3NWYxZjIyMzcifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Views/SettingsWindow.xaml.cs#L65-L68",
+          "version": "repo-lines-v1:sha256:45f18d0c85a4d040297589f961e1c7c2ec4cfe8f939d49185fd0d5afc4efaf41:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmI4NmRiYWE2YzgwMmQ5NjllMjhkYTY1NjIxODcwZDFmZjMzZGI0MWRhM2I1NjJmODkzNmY3MTEzYWZjM2JlYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTUyMmM0MmNkMTljNmQwM2Q4MDhjNDUyNzIwNTUyODI1YjdlYTFjNWI0OTFiMjE4NTExY2FjNzQxNWNmOWQ5YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmMwZGY0NWMyMGUyZTM4Yzk1NjU4OWUwMjg2NWI1NmNkNmMzMDAzZTZmMDliYTJjMzllNzY1YzQ1MzM1NTEzOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2ZiMThmYzUyMmU2MzRlNDQ0Mjg4ZGQyN2ExNWMyMGM1YTc2MDYyODlkNGU1M2RhYjAzMjllNjBkYjhiODRhMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_53dfecdda5bc4690a8c5df4cbb477518",
+      "statement": "SettingsViewModel subscribes to OpenSettingsMessage and on receipt reloads settings (discarding previous unsaved changes), refreshes contexts, selects the requested profile context, and switches to the requested legacy view name; CreateProfileStrategy and the SystemCommandPlugin send this message after ensuring a SettingsWindow is open, making it the decoupled open-and-jump-to-profile path.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Messages/OpenSettingsMessage.cs",
+          "version": "repo-file-v1:sha256:18e38c9cd8e3b3c3fd2e8b8874b1605f7bc0b98d74d25bb3086f47b07b35d52d"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Plugins/Core/SystemCommand/SystemCommandPlugin.cs#L57-L96",
+          "version": "repo-lines-v1:sha256:de7053dfb2b4cb6e7706d13bfef53f490d4ccea37cc23691c7f38dc1e8f22678:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2NWY0N2M2ZjFhYTY0ZjA3MDEyZjllNjUyNjYzMTBhZDE2ZTAzZTQxMjNkYjdkNjFlZWJlNzA1NDI4NTEyNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkYjMzOWMxN2Q0Y2M1NGU3MGM0ZmNmZWNiNjExYmI5ZTdkMzYzZjI1YjE4ZTA5MjNhMWQzMDZjYzk1OTI0ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzYTAxZGZhMzg1YjQyMGViNzNkNmM5OWQwODc0NzhhMDJhODBhMjBkOGU2ZWQ3NzAxMjU3ZTJhYmM5MTFlNjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0MWY2ZGJmZDBjYzYyMTY0ZjVhNWJkNzRiMzllZDc2ZDg3ODNjZDFhMzA3MzZjOTkxODFiYTIxZWUxZGExNjQifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/SettingsViewModel.cs#L265-L293",
+          "version": "repo-lines-v1:sha256:53637be03c3458a751d9c5badf1ab3e1fdbe6c0bed573050e9c46170a2d12dd8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3NmE4MmFlMmZhZDU4MTQxZjZlNTM3OTZlNjQ1Y2FmZjljMzdlZGVmODkzNTQ0MDhlYmRjM2Q4NzU1OWEwMWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlNDYyYmQ4NWVhMzUyMjgyMmE5YWQzZWIyNDA5OWIwMzJhMWI2MjdiZWNmZDdjNTgzMWU5OTI3ZDRiYWM0MGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmYTk0MDE1ZjE0NzQ5ZGVlZTc5ODFkZmRhZmEyZjFmOTI5ZjdhNDVhYThhYmJlNWFiMGY4MzFlYzcxYjJmMDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1ZGMwZDVlNjE1ZGJkMzBlMGUwOTI4NTZjMDlkMjg3OGUyZGEyYjc0NTM5Nzk0ZjYwMWQ2MDA1ZGQ4YzVmODgifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Strategies/CreateProfileStrategy.cs#L66-L89",
+          "version": "repo-lines-v1:sha256:9f2007d6ad6b772a86cfe36a9e598a5d6583697722675cd9a5c12b002d81dc5c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4NDUxM2NjYWNhMzc0NDViZDE0YzJhMmJjMjk2YTFkNWRjZWQxNTQ0ZmEyYmUxNGM1ZmI2ZWQzYTQxMDJlMjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM5NjhhN2Q0NGFjOGZjMjE5YTQ3OWI3ZGU5Yjc2NGY1NzNmYjE5ZjI1MmZkODMwN2RlZmJlMmE4OTViNGRhZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTRkMDJhODEyMTk0NGQxNzZkMjY1ZTliYjljYzU5ZjZhYjg5MGJjYWRmOGFlZmRlYmRiYmI0ZjJlYTg0NDQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d025727def6e43608fb9b16d9b1c9880",
+      "statement": "LoadSettings runs inside SlotEditorWorkspace.WithSuppressedDirtyAsync: it loads a fresh edit-session draft and persisted secrets, hands both to SlotEditorWorkspace.Load (which rebuilds contexts, selects the first, and resets dirty), then rebinds GeneralSettings, language, theme, and hotkey surfaces; the working draft is exposed through SettingsEditorSession.Draft with an empty fallback config before the first load so bindings have values.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Settings/SettingsEditorSession.cs#L38-L65",
+          "version": "repo-lines-v1:sha256:d30fc54392d43e9ec60702eea7e36d8627a5540c16787b915498d4f77805204a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiMzc0NzY5ZGJhNmY1OWE3MzdmMWU3OGQxMzMzZTMyYWYyYTc4ZWJhMGE2NjA0Yzg0ODc1ZWRkYjQwMTE4YzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI0ZGJkNzNhODI4ZGIyNGUwNjhhMmIxZmJhZDljMTZiMDk4MTcyNGQwMWQ5NWNhZjBjMzk5MzQxOTE2NDdkYTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1OWFkM2Y2MjlmNmI4YjljMjNlOTljOTU1M2E0ZmJmYTExM2ViNTZlNWVjOWQxZDJkY2M3ZWY5OWE1YWY5MWEifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Settings/SlotEditorWorkspace.cs#L138-L146",
+          "version": "repo-lines-v1:sha256:ff868415a36038f71b82e5e8afbf34f87a744e3770bdf016ffaf367cf77c4e6b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGZhYjE2YWRhM2M3OTAxMjMxNmU0NzI2YTM5NDc4N2IzN2EzMTFiNzI2M2NhYmEyYzM3YTgyNzE5Y2Q5NzZhYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTE0YzFmYzMwNDRiM2EyOTEzOTZjZjYxMTE2MjcxYzU1NjRiYWEyZDA3YTUzZWNlY2U3NDM3ZjkzNTFjYzc3NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2RhNWY4ZjBjNDU5NWNlYjRiMzIzYzI3YmJhZDEwZGVjNTQ4ODEwN2M4N2I1ZTAxMmNkOGVkNmI3ZjM0NDc0NyJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/SettingsViewModel.cs#L341-L366",
+          "version": "repo-lines-v1:sha256:f5b16e7c0f6607c8d4a5b6cb05b72c73f40324abbd166b63b9fbdc86c1e1d3bf:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0N2NmODdmOGI0MjAzNzI5NjM5ZjhiNjJiZmIwNGUzNDA2MTRmYzlhYjk1NjZjOTcyZDg4MDJiOWMwM2RlMjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZlOTc2NGVhZWMwYmJkMmM0ZmM0MGIzZDE0YjUxMDY5ZTA2NzlkZWJmNTZmZGM0MGNhODg1OWVmNTgzODlmOTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmMGZkZTBlOGMxN2Y5M2VjNDFhNGZiMDZmMjBiYTM1MDU4ZDY0YmViMjVmZGY2MTk0ZjM0ODUyMTUzYzM5Y2YifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/SettingsViewModel.cs#L60-L67",
+          "version": "repo-lines-v1:sha256:23745999139fbab60d2e86c4bf6157f2c683a6cd88008d8f4adbee01a3a3da29:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjhlZWJhN2EyYjNjOTJjYjdiMDU0YWQ4YzQ2NWE1YWRjNWU2YmQ4NTUzNmEyYjUyZjRjZjljYWEwZGVmNmE0NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzNlYWI3YmUyZWE0MzhkMjZlZTgwYTRmNDNiODg1ODViNmExNGM0MjNkMDY2ZDA1MmJkMTAyNTg2NWU2NTAyYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWE4OTAwNmYyN2Q2OWUzNjVkNTY0NGE1ZTUzNmUwNDZmMjdmNzY2OWE5MGVlNjBlYmJiN2U3NjgxMzczYWFiYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzYyOGIzNTMzMGQ2Zjk3N2YwMjY2NTZmNTU5ODQ0MmFhZTM3NWY1MGEyMWE5N2FlZjY3NTJiMDRjZWVmZDZiMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b43b35f094f943bbb40e19e8b8d51787",
+      "statement": "Save() synchronizes the current slot list into the draft (SyncSlotsToConfig), re-refreshes slot parameter metadata, commits pending secrets plus the config draft through SettingsEditorSession.CommitAsync, re-points bound GeneralSettings at the committed draft after any rebase, sends SlotsPerPageChangedMessage so the radial menu re-lays out, rebuilds the hotkey cache from the current config, then resets the dirty flag; on failure it surfaces the first validation error from IConfigService.LastValidationResult or a generic error.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Settings/SettingsEditorSession.cs#L78-L109",
+          "version": "repo-lines-v1:sha256:0c4caead2e8f094a49b4bc1f28dcc99c898f7b4491c99865ec5dd9c8bd260f9d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyOTgyZDMwZDAyYzBjYjQ3N2RlZGJmODI4YWU0MDJhMjZhMGQ4ZGY0ZTg0MDgzY2JjMzUyNzYyMGJkNTE4MDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmMmEyMTM3OGNjNTZmOTZhYTY5ZTkxNWE0MTMxZDBmYmNmZDBkM2JmODU5OTVhYjczYzQ0MmQ4MzhhMGZmMGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxYjEyYmFmMzNhNzYzMWYyNzBmNTA3MmEwMjU4Zjc3Yzk2NjgxNmJmY2EwYmU2YzJjNjdmM2QxYWQ0NmJhMzYifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/SettingsViewModel.cs#L560-L608",
+          "version": "repo-lines-v1:sha256:90dceeb199d979e9520f2609baf1e946cb54fb1df7d241e4c32b88b2647c6b17:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4ZDU1ZDlkZDNkNzBhZDU0ZThjYjQzZTBkM2ZlNDg0ZDExZGRmODgxNGI0YTBiNDQ2NjQyNjVkZjUzZDA5YzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwZmNkY2IzMjZmZmZjODM5OTNkZTllNmQwM2U1NTk2NTNhODI1YWY5ZTc0YWEyMTQxZjRiZTU2OGMxYWFlMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliYjVjNGIzYzA2NTRjNjY4MjQzZDVhNDE3NTFmN2I1OGZhZjYwMmUwZDQwNzM1ZDFkYWZiYmE4MGYzMThjY2MifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/SettingsViewModel.cs#L615-L621",
+          "version": "repo-lines-v1:sha256:c271cdd4e41e5e1a1ee3202ea6a0b6352faa7becf2fad139d7774d0c5434aad1:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmIyNDRlOWIzNGRkZmFhYWNkNzRhNmM2MzM3ZjlkZTJlYTNkNTRiODQwMTZiNWM1ZGUzM2ZhNmY3YTA1NDY3MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzk2ZWZkMmZmY2FlOWUwM2IzODE4YjhmMWVkYmI4ODkxMWQ1NWY5M2JhNmFhMDhhMzA0YTc0NTBjZDRhOGIwYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzhjZWIwYWMyYmRlNzRlN2YyNjk1ZDI4NTJjZmU2MGI4MWFhYjQ4MjA4ZWIyMDU3MjAxNjNiZDEwNjBlOWIzNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_04de752335734454bb74f8740013ceea",
+      "statement": "ConfigEditSession is the transactional write path: BeginAsync snapshots the store into a deep-cloned Draft and Base plus the current revision; CommitAsync saves guarded by that revision and on ConfigConcurrencyException rebases untouched regions (Settings, InstalledPresetPacks, and each profile/plugin still equal to the base snapshot) from the store's current values while keeping user-edited regions, then retries once and re-arms the revision so a long-lived editor can save repeatedly.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigEditSession.cs#L171-L240",
+          "version": "repo-lines-v1:sha256:7b6ddcb86891e7a60443a821846463baa519f0567ac782ccc2293a94f93a00a1:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjOWJiNThkNTcwN2JjOWMyNTMwMzZlNTI4YzBjOTE1OWY1ZGE5MzU3NzU1MjE3NjQxN2ZlOTI3MmVjMjMyNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmYzgxZjM4ZDM0YTZhMTZhYjhiODg3YjViMTU5NTY1YTc4MDE1ODE4MDZjZmQzMzQ3NTNhYzU1NmQ3YWVhYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ3NGQwNTUwM2M2ZDBkYTJlMjBjMTA1YjY2MGNiZjJjYzZlZjkzNmY4MWUxMzhjZDRmMzVmNDYzY2M0NDYzNGMifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigEditSession.cs#L46-L55",
+          "version": "repo-lines-v1:sha256:a419ba9f046a774ce9f72214d5310e384c66a179e528ab88ed05cb17408c464c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzYzY4MTI3MDE5YTNlNjM2MTBmMTJlMjczMzBjYTFkMjRiNDdjMTNjNDkzMTFmMzRiM2JlNzE5ZWZlMDI4Y2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzYWM0NzQyYWZiMGQ1OGI3NTg5ZDZkODBkNmY1YWNiOTU1YWM0NGFiMDliNmM1ZGExZThmMjA2NTY0MjRiZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlMDgyNzk4YWUwZGQ2ODU3YzlmYjJmMGZhOTQ1Yjk4YzgyNWM1NjgwOTc1MDczYTgxOTVlNTA1NGQ4ZDFjYjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_58ec9fc202f547f7842c57b3378c7b68",
+      "statement": "ConfigService.SaveAsync performs the optimistic-concurrency check inside its write lock, runs the ConfigValidationPipeline (rejecting invalid configs with InvalidOperationException), normalizes plugin configs and switch launch paths, writes a unique temp file, atomically replaces Profiles.json, keeps a rolling .bak of every successful save, and raises ConfigUpdated outside the write lock.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ConfigService.cs#L427-L610",
+          "version": "repo-lines-v1:sha256:d9eb895fc27e0db14438790f958c468aaf66d7a31532abc85ff077ba16016bcc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTg0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4NDk3ZmZiNDY3YzE3Y2E5OGU5NTRhZWEwNTNmZTdhYjY0ODI0ZTc1ODE0ZmFlMjA2NGVlN2E4N2NjNDI4MGFkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlNmIwNDQ5MTQ2OTcyMmU4MzYzYTk0ZTQwNDQ1MzhlMDEzYTJhMjE3ZTM2YjFlNTY4YmE2MGFjYjdiNGM4ZjJlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0YWI5M2ZkMTJiYzc5ZjY0NDkxYjcwMWJjMjcxNDJmNWI0Njg3YTdmNmQ3Yjc3Zjc3ZmQyMjgxMDAwNWEyM2UwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjMDlhYjI1NTEzZmZkOWJiZTA4MWJjMGVjNjFmODQ0OThkMzVhNGQ0ZDY3YTVhNGZmZGUwNjU5YmEzYzU5NjYwIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_48b809c9d124415b8425dc58fc9fe985",
+      "statement": "SlotEditorWorkspace.RefreshContexts builds AvailableContexts as Launcher (edits Global.SwitchMode), Global (edits Global.CommandMode), and one context per profile key other than Global (edits that profile's CommandMode); switching context syncs the outgoing list into the config (unless slot sync is suppressed), loads the incoming context's slots ordered by Slot number, rewires per-slot PropertyChanged handlers, and runs inside WithSuppressedDirty so context switching never marks the editor dirty.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Settings/SlotEditorWorkspace.cs#L230-L325",
+          "version": "repo-lines-v1:sha256:f52632535f40de81630447c85f12264a396e083d394b5c8e058c5e1901f40bc7:eyJzZWxlY3RlZExpbmVDb3VudCI6OTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxODM0Y2ViNzJiZDc3OWM5ODMxYTM2OWQ2NjlkMmRhZWM4M2MyYTUxMDI3ZGZlYTgyNGM3MWNjZjI0ZGU1OWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzYTVlMjMyMzFlZGRlMjEyMzA4M2QyMjkxY2Y4MWFmMzRjMmRiYTgzMTIxMWZhZmJhZjdlMTlkYmQ1NGViNjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI1MThkM2Y3MjU1M2ExODU3M2U2NGI1Y2YxNDU1YWZmYjZlNDcxZWNiMzEzMTQ3ODI2NzdiYzlkZDc5ZTM4ODEifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Settings/SlotEditorWorkspace.cs#L355-L380",
+          "version": "repo-lines-v1:sha256:e7d5896c1c3d8219ecafe8c040b94b78e7b1aa1cab71f6d4ab67eb43f60f87ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlZDYwYmVmNTM5MTdmYmU4Yjc0YTZhZDgyYTExNzc0YzBmMGE4NGFiY2M3MmVkZWRkYjU3NGRkNWY4ZGQzM2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmNWFkZDdhZjM3ZThhZmY4ZjFkZTgxMzVjMDA0MzU1MTI4MmFkNmIyZjZhOGU2MGJmY2JiNTY0ZjNiZTQ3OWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJiYThmNzU3ODJjNTZmMGMyMDdmODc0OWRhNzYzZjVmMjVhOTVjZjM3MmZlNzc4ZDNkYTFmMDQ0OGFhNDA5NTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_efb1616028214e9fae5bab0f56c79af0",
+      "statement": "Dirty tracking is a single flag: SlotEditorWorkspace.MarkDirty is suppressed by WithSuppressedDirty counts and HasUnsavedChanges is the only source read by the navigation guard, SaveCommand.CanExecute, the title-bar badge, and the close flow; slot collection changes, per-slot property changes, secret staging, and general-settings edits set it, while load, context switching, and draft creation do not.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar.Tests/ViewModels/SettingsViewModelDirtyStateTests.cs#L36-L107",
+          "version": "repo-lines-v1:sha256:1e62f131e58fcb3aa980f9437547d443693ebcab99a25ed0e9842f91c887911f:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNjFlMTVkYTg0NWUyODc0NmUwZjhmYjQ1ZGNlZDIzNzZlYmFhNDk0MWFhZmQ5MjlhYzU1ZDI4MWI3ZDk3OTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk1ZTRlNWNjYTNkMDQ2ODJhOGQ2ZjQzMTE4YTVlYzkyMTNkNjZiZWM3N2Y4Njc1YWJlYzY0Zjc4ZmE0NzBhZmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkOGRmZDI4MGM3NzdjZDVmZDU3OGU3ZTNhMjY1YmVlN2IzZmVjNDc0YWVmZjdkOTc2MTEwNTA1NzVjYjk1NzQifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Settings/SlotEditorWorkspace.cs#L153-L196",
+          "version": "repo-lines-v1:sha256:49c333ebed482d7c734eaddb50778941974e6d56f8e6c70c3dfa77b0b9ff3997:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzNzIzOTU4YTEzOWViM2Y0MWVkYzZiODNkYjk0MThlYTkwZDIwNjM5Y2FjMjUwNGFiODExZDZjNDE5MTg3NmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJlOGNjMjBkYTQwMWQyMDkyZjZjNjg3ZjQxYWI3NGNkODlkZDI0ODQ5YzMwM2I1NmFkZTdmZjBkZWU1Yjk3NDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmMjEwZmY3YWRhZTkzOTI0OTc5MzliN2Q1OTA5ZmY3ODJkNWFhYzM3ZmU2MGUzOWE0ZDBmZTY5MzljZDBmMWQifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Settings/SlotEditorWorkspace.cs#L543-L590",
+          "version": "repo-lines-v1:sha256:dc6a223f6f4d429fba7d35dd809f7c512ea8039886501d457561d192008a57fd:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1OGMyZDg0NGZhYWU5ZTEyYjYzYzZmY2EwMzA5YmFmOWMyOTVjOTMxOTcxMjE1NmZjOTJlOWIzYmE2YzJiZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2NDkyZGM3NDlmMDY1MGY1YzdiNjE0MDZmMjU3MTg1MTRkMjk5M2FlODlhYTU4OTEwNTk4YzE3MzkxZWRiNjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjYjExY2NlNmU4NDNjOWFhOTc4NTA1NjRhNmE2MGI1N2JjMzE2ZTdmZTc2MGUwMWZiYTQzYjU0NWQzYjkwYTQifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/SettingsViewModel.cs#L296-L320",
+          "version": "repo-lines-v1:sha256:cce2c6a12aa95c505a30df6c5e45a1bd5d3cf35cfc282beaa24e811e06a6f905:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2MDY4ZDJlZDA5OTVlOGM1MWQ0MTcwNDc0OWM2OGM5OWUyOTI1OTRlMjM4YmNiNTBhNWViN2IyMjhhNjQyMjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwZmNkY2IzMjZmZmZjODM5OTNkZTllNmQwM2U1NTk2NTNhODI1YWY5ZTc0YWEyMTQxZjRiZTU2OGMxYWFlMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzZmUzYjg5M2VjZWI3MTQ3NTg1NTdkZmYyYWVlYzRmNjkyZDQ0M2YzYTQ5NTNiMzkyOGU0NDhiOTUyNGYxYzcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_127bfe9d679149379686f74bc64c8950",
+      "statement": "CreateSlotDraft builds a detached draft (next slot number, plugin icon, metadata/validation/presentation refresh, smart sub-action defaults) that never touches CurrentSlots and never marks dirty; CommitCreatedSlot renumbers, adds to CurrentSlots, marks dirty, and sends SlotAddedMessage. Smart sub-action defaults are injected only in CreateSlotDraft for com.pulsar.command (clipboard catalog) and com.pulsar.system (system tools), so editing or later action changes never re-inject user-owned sub-actions.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar.Tests/ViewModels/SlotEditorWorkspaceTests.cs#L89-L102",
+          "version": "repo-lines-v1:sha256:1f1aa8e8f5eb254926ca474a508af17f73d4457f946dca27d14751f88a5f1301:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNjFlMTVkYTg0NWUyODc0NmUwZjhmYjQ1ZGNlZDIzNzZlYmFhNDk0MWFhZmQ5MjlhYzU1ZDI4MWI3ZDk3OTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkY2ZmMDBmZTBmNzM2ZDQxNDJkMDc3ZTQ0N2EyMTFiNWM2OWIzYjQ4ZTNjMTM5MDUyZWU4ZjIyNWY4YTJkZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkYzc5N2ViMmUxYmRmMjIyMmFhNTI2ODljMzMzZGFlMWFhYTRiNTVmNWNlMzU2YWJkMTQ2ZmM3OWQ3Yzc1MTAifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/SmartSubActionDefaults.cs#L19-L60",
+          "version": "repo-lines-v1:sha256:5aca84f4a878699861e8918ea4d317ce5e4a04e2522d3d6e20a1a825feeedd9f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxNDE1NzEzM2NkZTJmMGU5NGMxOGFmN2UzODg2MzEwNjY3MzhkYWQ1OTE2ZWQwZGVmZmEwZDhhNDY0MTg5YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3MGE0NmJlZDk5YjI2NzgyZDVjMTM1MGNkYTcwY2RlZDJkNzRjMzY1ZmVhNTliY2M1ZGUzODdmZDI3ZmI4MzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhNWU4MmNkZmI5MzU5MGY1Y2EyZGUxYWI1MDYyZGVhZDgyYzQ5MGE0NzVkNDI3NDllYTc0MWQ4NDQzOTBhZTcifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Settings/SlotEditorWorkspace.cs#L384-L463",
+          "version": "repo-lines-v1:sha256:e567f6623782ffba31a0ab0101f78c90f958904aa36db1663a30f8e9eb18392d:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzNTA5NTNiMTMxNTIxNzIxYWYzNjk4MzUyMmRjMzJiMDE4MWFmMDZjNzJlNDc0NTQ5NGI1MTNmYWQ3MTYxMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiYThmNzU3ODJjNTZmMGMyMDdmODc0OWRhNzYzZjVmMjVhOTVjZjM3MmZlNzc4ZDNkYTFmMDQ0OGFhNDA5NTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjYzM2YzMzMWRlYzM5MTIxYzY2YzI1M2JhMzgxN2IzMmVjYWZjYTNiM2RmYWFlZWExN2FjZWFlNWQ5NTZiN2MifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Settings/SlotEditorWorkspace.cs#L418-L433",
+          "version": "repo-lines-v1:sha256:ba52bcf8db2e0b5f45d3211e96d2607756ec2428686818c7557610a6a5aab06f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3ZWRiZTc5YTU3NDk1N2E3MzU0MGRlNTM3MDlmZjI1ZTc2NzYwNDJhZjA1NjdhZmI3NmZkYTFkNzhhOWM1OWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1ZDBlNTI0NjU1ZmZiYjU1Mzk2YzllOWQxMTdmZjk3ZDBjYmY1ZTMxOWQ5YzgzNzZhYzc0ZmU3NzgzY2YxMmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJiYzg1MDQ0ZjRkMTMyNmY1ZWNmMjE0YWExY2NlMDZmODQ4YmM0ODgxMjU3YjRlY2I1NzNhNWY2NTllYjQxZGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2ae0ab42bf984a6d836693924417ba8b",
+      "statement": "SlotListMutator is the single owner of move-and-renumber semantics shared by the settings slot list and the wheel preview: MoveToIndex clamps and renumbers 1..N, and MoveToInsertPosition converts a GongSolutions insert index (measured before removal) into a target index measured after removal; the workspace's Reorder owns the raw insert-index convention for drag-drop.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Helpers/SlotListMutator.cs#L21-L84",
+          "version": "repo-lines-v1:sha256:239cd48e5dc68753fe88fb9e5f34ca4caf5eced4171cba0951637f1d8d30fa3d:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmYjAyZWZhOTk3YzNkNWVhYzZlODJhYTg5MGUzZDJmNDlmYzI5YTdkZDY3MmM3M2U5MzFjYmZjMWY3ZjAxNzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI4YjM3NWIwMTU1MTQyNDEyY2I2NTg2ZDRjNDg3MWQ0ZDgzNGRjYTVkYjA0MzcwOTZkNTAxZWNiODI1ODA1NDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTRkMDJhODEyMTk0NGQxNzZkMjY1ZTliYjljYzU5ZjZhYjg5MGJjYWRmOGFlZmRlYmRiYmI0ZjJlYTg0NDQifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Settings/SlotEditorWorkspace.cs#L515-L529",
+          "version": "repo-lines-v1:sha256:b7d3abad55fe9614202afc0b248653cd2973de3226abbf16a147a6841b8dfaf6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3ZWRiZTc5YTU3NDk1N2E3MzU0MGRlNTM3MDlmZjI1ZTc2NzYwNDJhZjA1NjdhZmI3NmZkYTFkNzhhOWM1OWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRiNWUwMGRiMzBkZWJhZmE3Yjk2ZmFmMWQ5M2M3YmI3ZDRjY2M0MmY0YjhiM2MyZTdmODU4NmNlYmUyOWFiYTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmN2FmMGFlZGMzMDhkYzU2MmUyZTQwMjgxZWM0MDY2NTRlMjUxOGRkMWJhMmM0YjA2NDM4M2IzZWI3MWE3MGQifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/SettingsViewModel.cs#L1131-L1167",
+          "version": "repo-lines-v1:sha256:b1214a69a418a9eb711fe08a6c57f8a9c2cb92dfcc554373b6d70baa4094537e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0MmI3NjUwZmRiMTFmMzRkMTdmNWUwODI5NzhiZDZkNDlhNjgwZWZjZGRjNjM3NmQyNjAwNTYxNjcxMTBkZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1MjIwNmJjYzdjYzZhNTdhZjU1MDRkYzgxNjg0NmJkYzIwNDc4OGE3MWMwOGY0N2Q2Y2VhMWI3ZDZiMTc3ZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI0YTRhYjYyZGZhYjQ3ODM5MmQ2MGVjODU5ODM5ZmM3YzAwNDhiMzM4ZTVmNzIzY2ZmYmY1OGE3YTVhYzU1ZTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_35011b4f13744aa58888e8cbd6c80ded",
+      "statement": "InitializeSlotMetadata canonicalizes com.pulsar.system actions, falls back to the first declared action when the current one is unknown or empty, and rebuilds the slot's observable projections (AvailableActions, Required/Optional/Advanced parameters, quick-edit parameters, summary tokens) from IPluginMetadataRegistry; validation summaries are derived from LastValidationResult errors whose PropertyName contains ':{slot.Slot}]' for the slot's plugin id, and severity always comes from the validation record rather than message text.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Models/ProfilesConfig.cs#L782-L832",
+          "version": "repo-lines-v1:sha256:43fd645ae6963efaa190d02dc62f42b7247861b85d864851f958494ce1be9920:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzOWVhMDRiZmFlZWI0ZGQ3NjIzYTQxY2VkZDNlYTk1ODQ5NzEzOTE1MDE0YTYyNjBmZTM2NjExYzU5ZTgwYzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZmZjVkZTE1ZTIxZWJkYTY3YzE1YzlmZmMwYTY4MGViOTU4ZTExM2I5NzJjMjVhY2U0YmJjZTA2MzQwOTcxMDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkZmJhNzg5NjAyNzBmZDJhMjUyNmQ0YTQ5NTJhMDk3YTdiODE2MTNlOWFjMmQzMDJmMDBkMWUyZGIxZjljZWUifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/Validation/ConfigValidationPipeline.cs#L210-L271",
+          "version": "repo-lines-v1:sha256:bf539b533e1445310f2cacd325d6aa0efb1c3fe972186f09d0f384b3707c34b4:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0YjE0NWFjOTc4Nzg0OTQ2OTI5NmEzOWVmNzMzZjRiOGJkMzJkNDFmNmRhNzlhZWIxMThkZDNhMjNjMDQ5YmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwNWUyMDgxYzNhYWRhNGUwYjM2NTMzNmY2NTc4MDg2YTM3Yzk4MThhZjQxNTg1NjNkYmMwMmQ3ZGMxMWY3YjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4MDE4YzQ2OWVhMTEwZDc5ZTBlOWQ0MGY2MTkxNzcwY2YzMzc4ODkxNTI0MjI5YWRmMjAzYzA5ZDM1MDFjNjUifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Settings/SlotEditorWorkspace.cs#L599-L700",
+          "version": "repo-lines-v1:sha256:587afe1127ee752fe06984a58a19c79bb3b7db67198c79508e618cae41a950a8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI3MTc5ZDUxMjc3MzRmZjlmMGZhODhkNTk4YjcxYTc1ZTU1OTg4MzA5MTllZGJhNzY2NTgxNzM0NzM5MGU2ZWI0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlNmIwNDQ5MTQ2OTcyMmU4MzYzYTk0ZTQwNDQ1MzhlMDEzYTJhMjE3ZTM2YjFlNTY4YmE2MGFjYjdiNGM4ZjJlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2MjM2ZjFiNGZkYjkzY2ZmNTk0OTI3ZDA5ODFlZWNkZTdmODU1N2I0OGViM2IxMTljMjkxNzM2ZTJmYWMxYmVmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3NWRjMzcxZmY5MzdlNzYwODNmNWQwODhhMTcxMTJiZDY5NWU3NTg3YTEzN2EyM2ZmMmZlNmM4YjViYmJjZjVmIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_5aa94aa436e44551b2431e238e9ed888",
+      "statement": "SlotEditorViewModel is the wizard dialog view-model for slot authoring (create and edit modes): a picker phase over SlotTypeCard primary/browse catalogs and a configuration phase with action selector, grouped parameter fields, appearance, and a Sub-Actions section; Save runs blocking validation (type, action, required parameters), queues a focus request on the first invalid field, materializes sub-actions, and requests close, while CanCloseAsync(Confirmed) blocks closing while a blocking issue exists.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Dialogs/SlotEditorViewModel.cs#L263-L342",
+          "version": "repo-lines-v1:sha256:8e4036ca2e7e44ebe5bd6268cef77f4fe9152bdb550e17d0b8c85b66d2700b41:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjNjI1Njg5Yzc4NmI3MzE2OGYxYjM1YWUyMTdiOGQzY2IyNzBhNjQ3ZjIyZmFiMTE1M2IxNjNkNDYzMjViYzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzNjEwOWE1NDg2OGNlZDNmYjkwMTc3YjUwODVkNGEyN2IxMWRkMjQ0MTg1YzNhNmEwYzcwMGU4ZjhjZDcyYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4ZDRjOTgyZWJkYmUwOGM3YzI0OGUxZGUzMDFkNzFlZWJkZDFiYjM3ZDZlYzY5YTgzOGM4NGFiZGI5MGVjZjEifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Dialogs/SlotEditorViewModel.cs#L310-L317",
+          "version": "repo-lines-v1:sha256:0c62b94404f1ce5891a1767d00db07084738176e5aa44ea3c7c82aca653b18c7:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDNmZjQ1NDFlOWU2YWNjMzY5NzI4NGM5OTVmOWJmZmRhMWUzMjA0NDljYWMwYzNlNTMyYzc4NzAyZmQ1ODg0ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDczNTBmODA1YmE0MjBlODQ3NjAxNjgyMDk5ZjRiNjhjYjFmNDhkYjkxZDkzZjhmZjc1MmFjMDdjM2FkNGJiYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTEyYWNlMmQxMTJlY2UzOTFmYzZmYzRhNzhmMzI5NTBmZTEwNTQwNjU3NTJhNDQzOTdjZmI4MmQ0MmE2NzY5YyJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Dialogs/SlotEditorViewModel.cs#L688-L745",
+          "version": "repo-lines-v1:sha256:0a4210019f9e8220daaa7c877ee5a17c2ade5d6c2e761f58ec722cb22fc6f2ab:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5MWI1ZTJlZTQxMDM1MmRkOGFlMWNjZjM0ODZlNDA5Yzk0MWM0NDRjYjExOWJlODQ2ZTk2MGIzYmQ4NzZiZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhOWY4NmQyOGU3ODRmOWZkMzFmYjcyZDE1ZjYwY2JjZWFhZmRkNjY5Y2JkNWI2ZGE3ODg4YTAyMzMyMWViYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI0NDEwZmFiOWJlMTkwM2UxOGZkMWNmNTMxN2JiMzBlMjU1N2JhZDk3OTZlNzgyY2ZkZjk5YzEyYzE4NDQ1YjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0511927a8ebf4de4bb7972225d45ed37",
+      "statement": "Sub-actions are edited as SubSlotEditorRow observable wrappers over the immutable SubSlotDescriptor record: each row shares its working Args dictionary with a backing PluginSlot so parameter-field indexer reads/writes operate on the same dictionary the descriptor is materialized from on save; MaterializeSubActions writes Slot.SubActions (null when empty) and persists CascadeLayoutStyle only for a non-default Ring choice.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Models/SubSlotDescriptor.cs",
+          "version": "repo-file-v1:sha256:7af76fb436aa8dc250b2f331a93ec4450d1961d7c2533f6a79f49fc1b05af8d0"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Dialogs/SlotEditorViewModel.cs#L555-L571",
+          "version": "repo-lines-v1:sha256:400893d1425319cb3ab9f970933c34dc4d94632760bf72a6e08c03ec97c2b47d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjMjIzYjlhNDM5MTdhNGEyM2EyNGU4YmM5MzQwYzU0NmY1Mzc5ODhjZjljNWQyNmYyOGNlNDEyNzg1YTJiODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyNzFmNjFjYTY4YzE2YjZiYjhjZWQzNTVmNzA3NjkzYjMwY2JiYzBlYWYwN2IxZTBkNWRhZWZiZTY1OTVmOTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU0ZDQ2ZTRmZDg0ZDdjYjc0YzU3Nzc0YzVlZWVlZDY3YWNjNTA5YWNjMDViZWJkYTE5M2VjYmFmNWNkZWQ0YjUifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Dialogs/SubSlotEditorRow.cs#L160-L169",
+          "version": "repo-lines-v1:sha256:533f185ad8294e05afeab8b01125ecaac80d49c0e0850842c6b7aa518bb8e3dc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0ZDc4NGYwOTQyMmQ4OTE1YmJmN2ZjNDE5MmZhODk4YzQyYmNhNjM3NDg5ZWIzN2Y0M2EyZDZiMjJjODk2YmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4NzkzOTY3NzMzZjk1YWM1NDVmYmYyNmU5NWE4N2UyMzIyNTM2OGU2NzRiZTI1MjRmMTZlMGMyYmIxZThhY2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjllMGEwNDQ1NzEwODI3Y2U1MGI3YjVhM2I0NjM0MmE0MjcwNmI4OWE1NjQzZjczYWQwMGYwYWM3OWZkZTExMTEifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Dialogs/SubSlotEditorRow.cs#L33-L66",
+          "version": "repo-lines-v1:sha256:d0024da44213d2647b9d89bc89a4a70e75f1ef98d35eb3e3571cd023c6756807:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhNGQ3N2M3MjhjMWU5NGYzNDE5ZjQ4YTRiMDEzZjNhZTlhODkwZTIzZGQwN2FhMzJmNDVmOWU4MTdkNjkzZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhMDZlMjQ3NGUyNWU5YzMzMmQ0OGNlNzAyODgxY2U3ZjcwNWQyNjcyYWIyYjNmODA3MDcwYTlmZTQ3NGQ4MTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5NDk2NGE0MmNmMDY5ZDZiNmU0MDAzYmUzNWYwZmQxNDQ2OGU0NjhjNzY3ZWZkOGRlOTIzYTBmOTE0NGU0ZGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_272e128df28e47eeb32786ee8fcabdc7",
+      "statement": "PluginSlot serializes subActions and layoutStyle with JsonIgnoreCondition.WhenWritingNull so absent keys stay byte-compatible with legacy profiles, and deserialization tolerates absent/null keys by reading them as empty sub-action lists.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar.Tests/Config/PluginSlotSubActionsTests.cs#L83-L140",
+          "version": "repo-lines-v1:sha256:83b7a0598f354e094a3a6ee1756c34c9a00eff28730bd9d435babaa15a928999:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNjFlMTVkYTg0NWUyODc0NmUwZjhmYjQ1ZGNlZDIzNzZlYmFhNDk0MWFhZmQ5MjlhYzU1ZDI4MWI3ZDk3OTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI3ZGJlOWIyZjQ4MzhlYTliZjFhNmVmMmMwZjNjZWEzZGFlY2ZiYmUyYjAwZTljOGE3M2I4NmM4MGNiMTZlZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiYmEzNjJkNWJmZTlhYTM0YjcwNDk2MTNjMTVmZjU1MjQyMmJkNDlkNDczMzU5ZDgwNDU0NjI3OGM4YzlmZTIifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Models/ProfilesConfig.cs#L633-L653",
+          "version": "repo-lines-v1:sha256:ca629c6c3429c6227f9626f60a92ff3d07da8a7d99b167bb40087f9718f1e116:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3ZWRiZTc5YTU3NDk1N2E3MzU0MGRlNTM3MDlmZjI1ZTc2NzYwNDJhZjA1NjdhZmI3NmZkYTFkNzhhOWM1OWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4ZWI0OTBmZTlkYjYyODI5MzdkNDM4OGUzNDk0MjJkOWYwM2QzZTJjNjU3YjZiNzFlZmYyYjIxYjVjNDk3MzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4MmQzY2I1NzkwMzllZDMzOTdmNWI5MzJiNmNmNzUzNTQ0YjgzOGFlMjFhNmMyZDVhMmE5MmM0OWZhMzQ0MzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiNDZiM2FkZTkwYzQyYTkzODM0ZTFlNzVmMzNiYmM4MjU0NzE5ZjAyZjdmNWVlODMyYWQzZDNhYmYxMmQ1N2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f3fd739a491d44ba8f8428e08523dd91",
+      "statement": "SlotEditorWorkspace stages secrets in PendingSecrets (mutated in place by the secret picker and QuickSecretsViewModel), tracks persisted secrets separately, and supports ResolveSecretDisplay via IPkiSecretMetadataResolver against both maps; Save merges PendingSecrets into the secret store before committing the config, and ReplacePersistedSecrets adopts the merged map as the new baseline.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Settings/SettingsEditorSession.cs#L78-L95",
+          "version": "repo-lines-v1:sha256:c4e6c38edd09d2de608f253c2b8136d0900da2aac921a287d7ca2159b5b1755d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyOTgyZDMwZDAyYzBjYjQ3N2RlZGJmODI4YWU0MDJhMjZhMGQ4ZGY0ZTg0MDgzY2JjMzUyNzYyMGJkNTE4MDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmMmEyMTM3OGNjNTZmOTZhYTY5ZTkxNWE0MTMxZDBmYmNmZDBkM2JmODU5OTVhYjczYzQ0MmQ4MzhhMGZmMGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhN2RhMThkMDI1ODc1N2Q0M2NiODIwYjAyZWJiN2I4NjJhN2E4NzVhYmRhZGIxYjU0MTA4N2U4ZGRmNjBkM2MifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Settings/SlotEditorWorkspace.cs#L733-L770",
+          "version": "repo-lines-v1:sha256:f0618bd5f57020dedf6dd12cb3ec35a906195b9f9802558a4b1c9a3990a20b55:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxY2ExMmRmMjUyYzE1MzQwYTJiYWY1YzdjYmRjMjcyOTNiZmM1Yjg5YTgyMjAzMThlNjJiZjAyMWY2OTY2NGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjMGMwZjc5NTU1ZGM0YTNjMTFiZTY2ZWRlYjU5MWVjNDRmZWFhNDMxZDlmN2E0ZTQ3NTVkYmRhMGE3N2Y0NmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTRkMDJhODEyMTk0NGQxNzZkMjY1ZTliYjljYzU5ZjZhYjg5MGJjYWRmOGFlZmRlYmRiYmI0ZjJlYTg0NDQifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/SettingsViewModel.cs#L428-L469",
+          "version": "repo-lines-v1:sha256:2b87b9964ea40e3d7ae98f0f6864f2c0d56608603c20c571c09352e416be36e8:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0YjUwODc0OWU0MzdlMjZiMmM5NTk0Y2QxZWM1MTYwMDI0Zjk1MjhkZjA3MTgzYTFjM2FiN2Q1NzEyMTgwZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ1MmQ5MGZjNzA1ZTkxMzAyZDFkODNkYjBjMWZkMmZkMDgwY2JkNzMzMTYxYWQzZWI1Y2NkMmJkYzFiNjYxZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiOWU1NTg4ZDlhMGMwNmFjYTFmYTU3NWYyNzRmODEyODUxZjhjYTQxYjBjMTdmYjEzODhjOThkYzBiY2FiMTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_aa69de13bb564b09b91b14001d445fb8",
+      "statement": "SettingsSlotsPage hosts the context switcher and profile actions, an empty state, and the SlotWheelEditor control; it resolves the container-registered SlotWheelEditorViewModel, syncs it to the current context and SlotsPerPage on load and on CurrentSlots/CurrentContext/GeneralSettings changes, re-hooks GeneralSettings for immediate RefreshLayout on SlotsPerPage edits, and routes wheel EditRequested/DeleteRequested/AddSlotRequested to OpenSlotConfiguration, RemoveSlot, and AddSlotDialogCommand.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Views/Pages/SettingsSlotsPage.xaml#L38-L178",
+          "version": "repo-lines-v1:sha256:0756dfda171ce8ac345b4c8bbc9ce97d4cc36802937b0f695768462fcca3cc22:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlZWRlMTZlOWUzMmQyY2Q2MGVhNzUwZTU5N2ZlZWM4MTY5MzUzNjJhMjc5Y2U1YzNhZmUyZDU1OTE1NmI4NDE0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJkZDM1ODU3NjU4MGVjMjFiMmM1ZTAzODg0NDU4OWM3YjNmNDk5ZTdiNmViOTQwMjI1NWUwNWYyYjUyNWRkYTAwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI1NGYzZmE3NzMwY2E4MTlkMDk5ZjgyYmE2MTJhYTg0YmFlNmNlYmRmOTgwMWNlOGNjM2U0ZjBjMmVjZDkzODYxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxMGE2NzgyYzkzMDhhZDBhNWZlZjgzYzM5OGUyMWQwNDcwY2RmYzk4ZTUwYzFkMDBkYzU3NmI1NTY4ODgzOWI1In0"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Views/Pages/SettingsSlotsPage.xaml.cs#L42-L127",
+          "version": "repo-lines-v1:sha256:901184136606c772214f7d4cfeaa9f4ca369fe28f436842795af68019765014b:eyJzZWxlY3RlZExpbmVDb3VudCI6ODYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4ZGU3MzhiMzMyMjI5NGU5OWYxMWJmZmJkMThhZDkxODY5NTQxMDAwYjU5NjcyYTYxZjNiOTdmYmUzY2M0ZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdlOGQwYWEwMmMzMDM2ZjBjYWYyMmFmMTljNjU2NTYxNGI0NGQ0ZDNhMmU3OGIxMjI0ODVjMWUyOTQ5MzkzYzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c81a756267484acb8dbe7cb800e32b6f",
+      "statement": "SlotWheelEditorViewModel paginates the shared slot list (clamping SlotsPerPage to 1-60), computes ring layout through ISlotLayoutEngine (center (250,250), base radius 90), builds one WheelSlotItem per ring position with placeholders padding the last page, hit-tests drops via TryResolveDropPosition (rejecting the dead zone and out-of-range positions), reorders with renumbering, moves across pages via MoveToPageAndSlot, and flashes the newly added slot for 2 seconds on SlotAddedMessage.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar.Tests/ViewModels/SlotWheelEditorViewModelTests.cs#L40-L115",
+          "version": "repo-lines-v1:sha256:c452932e5d934ad2aea4dc8853b0eca85dab7bfdf0e824679da0a347a9bf13ad:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNjFlMTVkYTg0NWUyODc0NmUwZjhmYjQ1ZGNlZDIzNzZlYmFhNDk0MWFhZmQ5MjlhYzU1ZDI4MWI3ZDk3OTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlZWNhZmJlMTQ4NzI5Yzk0YmQ1MTA4N2UxYjMwODBjYWQyNWQzMzU4ZjVlYzllZjEyZDc4ZjZjYzFlZmNkYzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4NTgwMGYzNTk5NTc3Mzk1NDYyNDhiNzczMTc3NWMzMzc1NzRlMTJhMDRmOGVjZGQ0MTJhNzQ3ZDk2OGE4MTMifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/SlotLayoutEngine.cs#L16-L62",
+          "version": "repo-lines-v1:sha256:863bd31d6bbf2afb31c244ce67d3778351a4d9afb5a6fdce8c31ed87a7389aa6:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllYzZjZmZiOTM3ZGI2NDM5Yzg2MjZiNGY4MTU2ZGZiZWRjMjcyMTM2YWM1ZTI0OTJmMWI5NGNiNzg4MWM1ZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmMjIxZGU0ODQyNTkxYWUxN2Y1Nzk1Y2NjNTExNDRkZmY1NjE1MGJiMWFmN2U5M2UyYjgxMzUzZjUwNDQ4NmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVlYmM2ZmZmNWQ5NGYzMjJlNDY1Mzg4NzBhYmU2MzJkMzI1NmRiMzA5N2VmODkzMWRlODYyNmQ1NjVkY2RhMDIifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Settings/SlotWheelEditorViewModel.cs#L281-L375",
+          "version": "repo-lines-v1:sha256:9f902b22250091b0f38b0fa995b52515d9e1a9bec168a7caa2d50148ccba3a0d:eyJzZWxlY3RlZExpbmVDb3VudCI6OTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwMDFkYjY5ZWY3MTg1ZjMwOGM3YWM0ZGRjYTQ4ZGI5OTNiOGExMjBiNGI2NDc3OGFiZWM2MjhiNTBjZWVjNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjNjYyMzM2MWQ1ODNmY2Y3ZjEzMzY2N2YwZjQ5YWQ5YjE3MTQwODVmNjQxNTdlNjFkZTFjMDRkNmU5YTgyNzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTRkMDJhODEyMTk0NGQxNzZkMjY1ZTliYjljYzU5ZjZhYjg5MGJjYWRmOGFlZmRlYmRiYmI0ZjJlYTg0NDQifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Settings/SlotWheelEditorViewModel.cs#L85-L214",
+          "version": "repo-lines-v1:sha256:9806f2a8ae48548de694f10006c7d8dd727816e0faa3e7cc8e36c0e530297be4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwY2VjYjMzNTBiZGUxNjdlZTQwZTViNmEwNTVkNjE4ZWRiMzI3M2EwYzdjZDcyMTk3N2I4YzUyMTMzZjAwNzc3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlNmIwNDQ5MTQ2OTcyMmU4MzYzYTk0ZTQwNDQ1MzhlMDEzYTJhMjE3ZTM2YjFlNTY4YmE2MGFjYjdiNGM4ZjJlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI4YzY2MjMzNjFkNTgzZmNmN2YxMzM2NjdmMGY0OWFkOWIxNzE0MDg1ZjY0MTU3ZTYxZGUxYzA0ZDZlOWE4Mjc0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiMGMwNWIxNTg3NjQ2M2NhMzI2ODM3OTkyZTFjYjRmY2M4MzNjZDUyZGUwZDE0YmNlYzNiZTg2YWU0Y2ZmYTRhIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_4557a3b01e43432a88ee8ad2f05c7c72",
+      "statement": "SlotWheelEditor implements the wheel's drag interactions (threshold-based drag ghost, drop-target highlight, mouse-up reorder through the view-model hit test, click-to-edit, hover edit/delete buttons, Ctrl+Left/Right keyboard reorder, Enter to edit, Delete to remove) and raises AddSlotRequested when a placeholder slot is clicked.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Views/Controls/SlotWheelEditor.xaml.cs#L233-L280",
+          "version": "repo-lines-v1:sha256:e897a6f2e516738c1dc4cad090c655a38656f4cfc3300afc68d97f3ffa90ef3d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3NDBlN2I2NWEzNzg4NTZjNWJhYzIwY2M2OTI1ZDAzZTQxZjBkMTIxZTMzZTdjMmRiNTRiOTI5OWZjZjEyOGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzMjU3MTgxMWZlNTI5ZDRkMDEzYjBmM2JmNGQ3NTgxMjZmOThiYzAxZDg3YzFlYzhhODMzZGUxYzFmNGRjNWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhOWY4NmQyOGU3ODRmOWZkMzFmYjcyZDE1ZjYwY2JjZWFhZmRkNjY5Y2JkNWI2ZGE3ODg4YTAyMzMyMWViYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhNTY2ZTc5ZmQxZmQ0ZDI0OTcwNjgyNTE3MjM3NjE2ZWZmNGE3YmVlN2E0YjcxYjI3YTkwNDQxMDM3N2NjNmUifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Views/Controls/SlotWheelEditor.xaml.cs#L56-L145",
+          "version": "repo-lines-v1:sha256:9fb0c367e0f50b2245f56b7fd1494b353b9c62534ec38cf646806668f9eafc24:eyJzZWxlY3RlZExpbmVDb3VudCI6OTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjMzQ2ODMwODIzNWFmNmFiOTg0ODlkYTc2ZmMxNzYxZmZmOTBjNWUyNjM1NGU1NDM2NzU4ZWQyM2I4OTYwMzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkZTFlNTZhZTBkZTRlODEwNjhhY2NiYjI5MjgxODhkNTQ4N2Y3ZjIxN2ZhODBiZmRkYzZjMzJhNjdmMWUyYWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3ZGU2ODExZjc1OGJkZmFhMmI1MDUzYTQyYjdkZDlmMTI0MmYwOTI0YzlkMjhiMDYzM2I3YTE4OTdiZTNmOTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_057991966f4a4699810eadcfe5f2c2db",
+      "statement": "SettingsViewModel.General binds the General page: CurrentTheme writes Settings.Theme and applies it immediately through IThemeService (dispatcher-safe), RendererStyle/ThemePreset persist RadialRenderer/RadialThemePreset, ShowGridHotkey/ShowSwitcherHotkey apply and validate hotkeys live, SelectedLogLevel applies the minimum log level via ILoggingConfigService, and RendererOptions enumerates built-in plus plugin-contributed radial renderers through StyleRendererFactory on every settings open; theme reconciliation is bidirectional via SyncThemeFromService from the tray",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Core/Rendering/StyleRendererFactory.cs#L67-L87",
+          "version": "repo-lines-v1:sha256:e58282e91d6eb93ca39a7b3265d24670c850b5a94f1caeaa1267d48fc1dbaa31:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3YzFhMGQwODkxOTI5MmFkNDFjYmQ3NjUzNWFhNmY0NTY1ZmQyOWU1MDcyNDdkMDA3OGQzNjMzMzc4ZDQ2YWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU0MzdlYTJlNTA2NTkyNzVkMzkxOTAzMGYyMTMwNmVmNTcyNDg4ZmQxMDE0MTZiMDg0MTBkZjhjY2VkODE2ZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTRkMDJhODEyMTk0NGQxNzZkMjY1ZTliYjljYzU5ZjZhYjg5MGJjYWRmOGFlZmRlYmRiYmI0ZjJlYTg0NDQifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/TrayIconService.cs#L224-L228",
+          "version": "repo-lines-v1:sha256:e334385e668fcb5ce0078fde9334259a6ec00f6ad135354ee2d5f0893383738f:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjljZmU2YjdhMmExYzhkZjFjY2Y1MzhkMzNiNGNjODBiYWQwM2U5ZjliMDI1MTZkM2RiMjBkYzcyOGZkNTc3NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjZhYTU0ZGRhNTg2NGI5YzFhYzg0NTY1Mzg1ZmY0ZmQyYWM1ZDcwOGE3ZjhjYjA2YzA4Y2UyYzc2ZTFiZDM0NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWI4ZTMwMTY0MTcyZjU3MDdmMjgzNDY5NjY4NTEzYzY1YWQ4NzdmNTEwMWJjYTVkYjk1MTI1MGQwYTUzNmUzNSJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/SettingsViewModel.General.cs#L244-L290",
+          "version": "repo-lines-v1:sha256:a76e8323427e3834708dda1fbcdcce903a3b5c07a610e892fbcbe94c6d43e860:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0ODk1MWFhYmFmMTcyZDZlOWMwNTExNzMyOGRmMDQ2MGU4MzkyMzkzYWFmMDdkMzY5NGMxZTA1N2Q1ZmM5M2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3YmViYTQyNDdmZjBkZjBjMjAwYzg1ZjJjNGM0ZWY2M2IyMWMzMDZiYjc3YjdmNmQyMDFmMDViZGMwMTFmYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU2M2EzMzVjZGRlNTljZmZhMDAzZDRjMDBlOTU2NTgwNDU4Y2ExYjg3MzhkOTgxMzQ5MTFiMWZhMTVjN2M5OGMifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/SettingsViewModel.General.cs#L26-L48",
+          "version": "repo-lines-v1:sha256:23ebac80fe63fff9c1b5f245a5f26b276f1b2ff1f762005b959200670f3e5252:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjMmFhNmQ2YjNkYWE0ZDFlNWE0ODAzYTk4YmI5YzhiMDE1N2E1NmFmMDczMGE0YmU1MDE5M2UxMDRmYTlhZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxZTk1YzgwMmQwNTVlZDExZWVhMzE3YWE1ZjM0MjE1OTYzYTRhZDg0NGRiN2M3ZWFmMzFhM2IwMDdkMmViNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU2NGMzYmY0NjAwZWQxNGQyOTQxODViMDllMjkyYTFjMWIyYTdiNjczMTE0ZTMyNjI0Y2I0Y2QwMTQ1YTY4MGUifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/SettingsViewModel.General.cs#L70-L164",
+          "version": "repo-lines-v1:sha256:0456d18fb4154ac67e8f4afffacca350ff19ff2bdc208debd42c300caadc2c7e:eyJzZWxlY3RlZExpbmVDb3VudCI6OTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3NzUxYTcxNzkxNmUyMDRjYzg4MjA0YzQ3NDI1Y2I4ZTg5OWYzMTljZTI2YzEzNjhmNmJlMmM2ZWEyNDQyZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwMzkyOGQ2YTFjMzg3NTA5OGQ5NDk4MWE0Njk5NTdhYmYzMmMwNDE2ZmIyMWVlZjMyYTliZTM3YWJjN2I4MjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjYWM3MGM0ZTZiZDY4ZWYzZDdhOGM0M2M1MGE3YTgwNmFiNzgxYjk5ZGQ5MWQ4OWJhNmY3ZDYxOTQxYTRiMjcifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-05T05:46:24.085Z"
+  }
+}

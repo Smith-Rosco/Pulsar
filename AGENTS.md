@@ -189,3 +189,16 @@ Multiple AI harnesses / agents work this repo in parallel. Rules to avoid cross-
 
 *Last Updated: 2026-09-05*
 *Version: 4.0.0 (Rules-stack slimming (ADR-022): §3 pitfalls table → Top-5 + pointer to Docs/lessons; §5/§6/§7 tightened; conditional-loading principle added. Invariants (§2), router (§4), ritual (§8), dev.ps1 (§9), worktree discipline (§10) preserved.)*
+
+<!-- OPENWIKI:START -->
+
+## OpenWiki
+
+This repository has a generated `openwiki/` evidence index. It is optional just-in-time context, not required startup reading.
+
+- Treat source code and tests as authoritative. A brief's unknowns and review items are verification gaps, not automatic requirements.
+- Prefer the narrowest quiet validation that proves the changed behavior. Preserve complete failure output.
+
+The scheduled OpenWiki GitHub Actions workflow refreshes the repository wiki. Do not hand-edit generated OpenWiki pages unless explicitly asked; prefer updating source code/docs and letting OpenWiki regenerate.
+
+<!-- OPENWIKI:END -->

@@ -1,0 +1,368 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:769b8e566302ef1ca53c2a1344926e3a7530605fcc534139952287b1acb191bb",
+  "claims": [
+    {
+      "id": "claim_db647de6df4747b0ab3132cccb279a63",
+      "statement": "MenuSession is the pure-logic state machine of one radial-menu invocation — visibility, hovered slot, root and submenu paging, submenu morph, input policy, hit-testing and the gesture-summon/release orchestration — registered as a DI singleton and injected into RadialMenuViewModel, which is reduced to an input-source adapter plus a binding projection (ADR-008 decision 2 completed by ADR-020).",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/App.xaml.cs#L351-L353",
+          "version": "repo-lines-v1:sha256:9fe216f8f35fd7f9ae6418ceb2873122ddfe6388332235b5476a3521a22b6500:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTA5MGFmZWY5MTUxN2VjZGMzOGE1ZjNiYmMxZjBlY2JjNTcwZGRiYTNmZjEyNGRmOWUwNGY4OTQ0OTg4NGRlMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzYzYWFmNTAyNDUwN2U4NDk4MGQyMGRjMTBmYzI1OGU2NTAzNjU1NmNhYTk1NWRhZGQyYTZhNjU0YjIxNDQxZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTQwNmY4MDM2NTc2NDU0MmQxZDVhOGRiOWYzMzRhNWVjNDE5MGNhNGNkODYwZmMxZmU1YTdmZTE4ZjJiYzFiNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWZmNDRmZDcyNjliN2VmYmVhYTk2Yjk3MGYwZTJhZWU4ZjIwNDI1ODlmOTZiNWQxNWIyM2MzM2VlMWVkZmE2MSJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L34-L43",
+          "version": "repo-lines-v1:sha256:1a6b8b0bebb6d10885973a8e0e5a5b9f1aa7c6bd74e8ca060fff8a24fb3d08f8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYjZkYzkwYjJmNzkyOTYzZGNkYWRmZWZiNDA4NDg1NDkzYzAzYzNlMWE4MGYxNDliYzYzODAzY2RkMDQ2ODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkYWJjYmY3YjcwNjk2NDlkZTA0YjJkYzY2Yjk5NGM1NjNlNzM4YzZjMjExNGJlZTBiNDVjZWMwZjc1ZjJlZTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5ZGMwZDBkZDRhMDczNjM4YzNiNzk5MjEzNGQ1ZjQ3MjdjMGVjZWFlYmQyYTA3NGMzOGNjNWMyNDdlMDE0YmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2MTJlZjc5YmIwYzdiZDYwNDI5MzY5NjU1Y2UwN2E0NzY1YWZlYmYyNjNjYTdhYWU1MGQyNzFmYTQ4YmI4ZjkifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/RadialMenuViewModel.cs#L27-L42",
+          "version": "repo-lines-v1:sha256:80adda7fc76805e781644c6bd28fdb4fcd227355f254e99dd819e7827d111dd3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYjZkYzkwYjJmNzkyOTYzZGNkYWRmZWZiNDA4NDg1NDkzYzAzYzNlMWE4MGYxNDliYzYzODAzY2RkMDQ2ODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjNTU4MTY5YjgxOGVjMjZlZDYxNjFiMmQ3ODA2NDgyZjU2ZmE0MzEwMDUyNDdlZGZlMjAxYTA5Yzk3MjVkYTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRlNWRjMDg3Zjk5ZGE1YmEyMGM1N2ExM2JlMzExYmI0N2JhNmZlODZkYWExN2Y0ZDRjZWZmYmM1YWY0YTcyMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhZDZhOGM2MDdkNWI4ZDAyNTI0MGYyMTU1NzM5MGFkNzJmNDk0MzhiMmViZWM5ZTNjY2U2Y2I0YzA4YWU1NjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6d98f6aedcc04504a4492549090c649d",
+      "statement": "Slot action strategies depend on the narrow IMenuSession seam (IsVisible, IsInSubMenu, SetActionExecuted, RestoreRootMenu, EnterSubMenuAsync) instead of the full ViewModel, so the session's input/state decisions can be exercised with four-member mocks and no view (ADR-008 decision 3).",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/IMenuSession.cs#L11-L18",
+          "version": "repo-lines-v1:sha256:084d9a123c1bb839cd96503d173057e65fde5745b41043d428e5e75e8535a286:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTdmOWIzOTA1NzZhODA3ZmZkNTU5ODU1NmFiZmZlMTM4MTJlMjQ0NTBhM2JmYTgwZDhkMThlNjVmMzMxMTVkMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTNmMDM3OWI0MzI3YmY4NWM2N2MwYTY4NDJjOGY2NmVmYWJiMDM2ZjI1Y2M3YjVhOGQ2MWZlZWY2ZjhlZjZmYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Strategies/SlotStrategies.cs#L22-L25",
+          "version": "repo-lines-v1:sha256:09e91ce14511737140308579949b8d60b8902d71a2d3a75589f5fc2f622e4d97:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNThhZjljNjI3M2YyMGRiOGRjNWNkZDI5YTQyNDkzMmU3ZmEzMDdjYzZmZTcwZGFmNTAyNmFkNTEzYzgwOTczZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTNjMDRhNzdiYjg2MzU4YzdlM2ZlMmIxNWQ5NzNiNzA4YTZmOGU1ZWQ3YzhmYWNlZjlkMzU3M2JiZjg1OTVkNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTUwZTQxMmE3NDEwZmY3NzU5NGM2ZGViYzdhZTgyZmIyMWZiMGJiNTNkZTBmOTA2MGI2YjJjM2NhNWQwODkxZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_98fb5d12a58544f4b13c4a6d3b510985",
+      "statement": "The menu hides before execution: PluginActionStrategy and WindowSwitchStrategy set context.IsVisible = false before invoking the plugin executor or activating the target window, so a plugin that simulates input cannot re-trigger the hotkey hook while the menu is visible; WindowSwitchStrategy additionally sets FocusRestoreMode.NoRestore so the dismiss cannot undo the switch.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Strategies/SlotStrategies.cs#L150-L157",
+          "version": "repo-lines-v1:sha256:e29460bb98e26898cebecfdc2bb363de3274f8e127c409557a8feb5f7182ae64:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTY0NGQxNGM2ZjkyY2JhYTNlNDBlOTNiZjA0NjkyMzMxM2RlZDVlZWZlY2U1ZDZlOTYyYTdkNzFiMjhhZGY2NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTZhNzgxNWZiNmY2YmNiYjFkOWVkZDNiODFmYmM0ZTFkYjcxZTFiMWM3ZTc4ZTRkZmQ4YmI4ZGZkODRhM2M3MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTZlNTY1MWMwMGNlZWNlN2UwZTQ3NmY1N2VjMWU2N2VlNThiMTk3ZGIxMmJlNzQ2MmJiODY1ZmQxYjgwOGY1MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzI1NmIxMTk3ODE3YmJjYzI2MzY5M2I1MjgwNjFiYTQyODZhMDk2YzkwYzVhNGMzZjY1MDdkYmY1MTYzZWYyNiJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Strategies/SlotStrategies.cs#L67-L76",
+          "version": "repo-lines-v1:sha256:e8bfa4f0b64f90a1efb10bfcf626d478129ffd4e032a5b9571c8867dbff9b345:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmNTgyYzNiMzFmNWUyMTdlNTE3MmM1MGExMmUwZjg0NWQzNGUwNWUxMzhhZGU0YTcxOWYyZTZlNDUxZmQwZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3YmZmZTA0NTFhN2Y5MzIyMjIxOGM1MWJjMmEwMWJiZDU5YmQ0ODJhZDk5NzMwYWYwMDFjYTA5ZDkzMTQ0YzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZlODhjNWQzY2UxYmY5NTEyOTFiYTZiY2YyZjNkNDUzOTM5NTAwMmJhYzAzMGNjMDcxNThjYzZjYjU3M2NlZWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4MTVhZjg0YzVhY2NlMDAxYzliZDAyMTM1MGJmMWY0YzUzN2NmNjJmZWI0MDRkYjAwMjQ0N2IxNzdhODUwYzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2e4f2450df6a44f69a1117baf99c537d",
+      "statement": "MenuTiming is the cross-module dismiss-timing contract: RadialMenuWindow.Dismiss plays a 160 ms fade (MenuTiming.DismissFade) and HandleGestureRightReleaseAsync awaits MenuTiming.DismissAwait (160 ms fade + 20 ms grace = 180 ms) before running the selection, so the selection (which blocks the UI thread ~300 ms during window activation) can never starve the fade and leave a visible ghost of the menu.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L1605-L1609",
+          "version": "repo-lines-v1:sha256:67988f2a96f3b980cb77b0223e219a1201e5c151e0f4880c6e73d926c3dac6b2:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2ZmOTM1ZjAzYjg4Y2M3MjIxNTVlMzFjMGUzOWUwNjA2YzE3NzE1ZGQ5ZjRhMzZlMWFhNDVlMGQ0Mzg4ODZkNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzMyNDAyMjA3NGY4ZjI4ZmFlZjRhNTUxNzUwNDViZDBhZDZmOGEzNTZmZTBkNDk5M2Y3M2I4YzM5ZTNhNTg4ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDJmNGI5YTA2YmZjMmFlMGI3YjJiZTUzM2M4YzcxNzQxZGZmYzhmN2M5ODQ5NzliMDRmOWM0YmRlMTMyZjg0YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTYxN2U1MjdiYmU4ODY0MmMxNzgyZTYxZmZjZTZiODhlMjY2ZWNhMGMyYjAyMDlmZDFkZTA5ZmU5YTA3Y2EwMyJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuTiming.cs#L4-L38",
+          "version": "repo-lines-v1:sha256:49645fd075591a5990445634c888bee6258c3e3d4f7921c5f3bf9ba5a4b77110:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwMWVhZDkzNmEyMjgxZDUzZGNjMDY0YjdlMmEyYWIwZDUzYjkyZWYzZWY3YjM0YjY2ODY3MzAwNzg5NWM4NjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjZDgyYWZjOTI1NDk5MzlkYmFhZWQ5Y2NjZGFlMDA5ZDY2YWVkZmI2NGUzOTQ4ZWE4ZTdmYWNjMWMzNjBkNmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzZGI2M2I1MDYyZGNhY2UyYjc4MmI2NTRlN2I4M2VlMjc5MmI4N2Y2YWY3YWNmZjQ3ZTk1YzJmMzkzMDI1MjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExYzVmNjM2ZjRmMzczMWEzNDE2MWU1YzkwMzA4YjNmOTdlOGY4Y2EwOTAyNGM2ODg0NzlmY2MzOGE0NDEzNjUifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Views/RadialMenuWindow.xaml.cs#L198-L231",
+          "version": "repo-lines-v1:sha256:8083bc14be33977456a2ac5468c68b61f83e622ba616a7c0c65aeed3b84bb804:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViNGE2YTc5MWM5YzNkYjZjMjQ4ZjVmMTYzNDI2N2Y2NzdiNDMyMjI4ZmEyNTA1MWM0ZDQ1NWE5ODFjNjA3OTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU1YmExYWNjNzU4MDZmOTI4YzQxODgwMzQ0ZGEzNWY3ZTQ1Yjg1ZDc1YjhhNzhmZTg0MGFiZjg3NWJkOGVkMDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkOTE1ZGJmZjhmNWNlODYxYmFkYmE2YTg3Y2E2NjE4ZmI2NGFhZjBkZDhiM2U5Nzk5ODk5ODI1YTY3YzRlYTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6a6a9545116d402eb3fbb89ac7cf75b3",
+      "statement": "BeginSessionAsync is deadline-bounded: the shell surfaces within a first-frame budget (default 50 ms, injectable in tests) while the page content load races the budget; a load landing inside the budget is applied before the surface (single-phase, fully populated first frame), and a load that misses patches content into the already-visible shell (bounded two-phase fallback) with exactly one background retry on genuine failure.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar.Tests/ViewModels/MenuSessionTwoPhaseOpenTests.cs#L27-L35",
+          "version": "repo-lines-v1:sha256:f9e2ccd7ff9a3e9f0419c195c30d911359c46072472dfa4aecfb40d645194a07:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjc3MTk5NzU5YmUzYjZlN2YwZjYyYzliNTdmNjdkMzZhZWE5YjI0ZTE3NzAyZmRlYzAxMmQ3MTVmNzAxNWZiMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzc3NTNmNDEyNjE4YTliMWUzOWIwNzA5NDcyNTliYzZkZGU0NTMzMGM5MzY5ZTI0NTZlOTQzOWIzNzBlNjUxMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTgzMzE4M2FkZThkODYyZjFiYzYxNjc4ZTk0MGE5NDlmZmJjYzJiMWVmNzZjOTRjZDE0YmUyZjY1ODA0ZjUyOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjkxNWU1MmU4NmNiMmRlNTI0ZDNkNDgzZjI3YzYxZWFhM2YxNjJmM2E1OTlkNWE2MzIyMjQzZjdiMDRmNzI2MiJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L623-L723",
+          "version": "repo-lines-v1:sha256:15c12c30470d996e94d3aba549e684ab9c5bafacdbc2b2c67a6b5145e01ffd47:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkNzBmZWMyNzA2YjBhYjI2MDNjNjUzOTRkMDRhMGI5M2VhNzA2NTZjZDA5ZmE1ZTQ5MDM4NDEwNDk0N2E1ZDQ2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlNmIwNDQ5MTQ2OTcyMmU4MzYzYTk0ZTQwNDQ1MzhlMDEzYTJhMjE3ZTM2YjFlNTY4YmE2MGFjYjdiNGM4ZjJlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhMWUxNmVkODA5YmE0Yzk4NDJiMWVlNjdjY2VmZTczNjY0Mzk5YjE1YzExYjZjMjA0Yjc4MGM2YzRkODhlYTQ2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJhM2EwOTcxYjYwZGI3YmUwNzVlMTE1NjRhZmEzYjFiZWI0N2ViOGQ5NjAwZTBlYWIzZTlhNWQyOTM5ZmE0MTFiIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_2aebd3fbea5743cb8fb36d30ad35374a",
+      "statement": "Stale content loads can never apply: each LoadPageContentAsync bumps a session generation counter and captures a per-session CancellationTokenSource that the IsVisible setter cancels on dismiss, so a slow provider's result is discarded when the session was dismissed or superseded by a newer summon.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L171-L177",
+          "version": "repo-lines-v1:sha256:40fc62fd9772753a05128c1e0f229396106afb5eebdf93a7a0515ff7d33d2578:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjRkN2E0NDBlYzNiYjFiNGRkMmNlZWY1MDFiN2YxMjdlMjFjY2E3OGVkMmIyNTM2YmYzNjNlZDk5YmYwOGNjNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzBiM2Q2ZGRmNzlmYzQ0ZTY2ODc3ZDI3YWY0YzZiMGM1MTY5YjY4NWVmY2UwZTRlMjUxMTE1N2Q1MzJhZWQ3YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTVjMzYzNWI5ZDE1NTc3MjI3ZTE0YzBjMjFkNDk4NWMyMzQzNDdjYWZiZTE4MzQwOTk5MTRlNDdjOWJjZTc5NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmZlYzc3M2VlODQxZWRkYzA5MzFlZjZlZjI4MTQyYjI0ZDBjNjBlN2UxMTYxODNlYjJlNGI2ZDVhNTY0M2M5ZSJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L384-L395",
+          "version": "repo-lines-v1:sha256:b4b3055ba69149229a1df4928bb80e2bff56059eb7145060634a6cf9b542faba:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYjRmNzMyYmY4YmNhYTljZjJlMDMzOTIzMGU2YjkzZjM4ZTBiOTVkZDhjYzM0NmYwZTc3Y2Y2YTljMGIyYzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyZGQ2ZTc3NjY2ZTQ4YjA4YWEzYzEyNGI4M2Y5ODAyMDVkYWNmYmQwMTc3YTUzNjdkM2QzNTA2YTQ0ZmJiNTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI0ZDE5YjhkMDliNzcwYzBmMzJmZGYxYjRiYjgxODI5NTM4ZjVmOWNhMGQyOGE1MjZmM2FiZTM5MWE5NDk3OTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE0OGM4ZjZlMGY5OWRiOTBjMmMwZDZkOGRkYzEzMmU4NWVhMzllYjMzZDA5Mzk1NDUwZDM5Y2E3Yjc4MTFiNGIifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L758-L841",
+          "version": "repo-lines-v1:sha256:1c0e7091d90c48d250f657c7663ed0650fdfa73b27aa102e3c5601523e6f4c61:eyJzZWxlY3RlZExpbmVDb3VudCI6ODQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxNDkwMDQ5NGFjYjJlMDI1NTU1M2M3NmRiM2Y1MjFlMDRiYWM5ZTIzNmQ0NjRjYzI4MzMxOTkxMjE5OWMyYjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzNWQxZGNkMDMyMzljYTZmMTQwMTZlMWQ3OTEwYmExYWZmMDk5NWMwYjkyMWJjODkyMTY1YWE0OTQwN2U2M2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyMzY2NTY4MmQ3ZmQ0OTc4MjVkMWY1YTU2ZGE5MzNlNDI2YmZmMDc4MTRmMDc3MGI3OTEzZjM4MTQ5N2U2ZTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_dba82cc019274a1294a9fb97f1986326",
+      "statement": "Task/Switch mode seeds the page provider from IWindowInventoryCoordinator.TryGetCached when a snapshot exists — a cache hit completes inside the first-frame budget without re-enumerating the desktop — and a cache miss must leave the seed null (never a non-null empty list) so the provider falls through to live enumeration instead of graying out every running app; Task-mode dismiss additionally pre-warms the inventory because the menu's own dismiss is not a desktop change.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar.Tests/ViewModels/MenuSessionTwoPhaseOpenTests.cs#L197-L253",
+          "version": "repo-lines-v1:sha256:0533c0dd1a07d9df1140e33f5955b1ef63d8cc8c14c4ab0380d5d7f4074ef3b1:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNjFlMTVkYTg0NWUyODc0NmUwZjhmYjQ1ZGNlZDIzNzZlYmFhNDk0MWFhZmQ5MjlhYzU1ZDI4MWI3ZDk3OTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxODNiNzk5NWZjMzAwODIzNTdlMDc5YzY2Nzc0ZTM4NmUyYTk5OTA5YTU3NTYzY2FhOWZkMTNlZmRhZjZlY2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiMmVkYzQzMzU2YWQ1YmMxNThiZWEyNDMxZWIxZTNhNGQxYzQzMzQ1OTYyOGIxZTExMGI5MTgwOGUxMmU0NzIifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L403-L410",
+          "version": "repo-lines-v1:sha256:43907230feae9321ef222a973b35f03c98df138d3bbe5a190d9909e04f06d12b:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmNkOTAwZWRkNDY5MjY4YWZhMTE1YjdiMzZlNjJmMmQzMTQwODIwOWFhYzI3ODk4NGY2OTM4N2JhMGYyZTlmNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTdhNWZmYTNlMDk1ZGYwNWI2YjMzMzM4NzFhYmExYzFiM2UyNWFiM2RiZjFkNDkyZjE1NGMyY2MyYjEyMmY1NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGI1NmE2MTJiNzVmMmRjNTBmZGNjNjRiMzkzODk2MzBlMDY4ODA0NGIwZThmOTQ2ZGZiYzMyYzNlZDExNTllNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDNiYTRkMGY5NGI4ODVjYmNmNDkyOWViNzljZTBmNDQxMDAxMTM3MGMzYzcxYzBkNGY3MWE5MGMxZTYyM2NiYiJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L636-L645",
+          "version": "repo-lines-v1:sha256:3ad365df0d42c9d25f19aea0165f93b9ced4d07fe45f48ea452a7f531fea0493:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1YTBlODBhNzM5OTlhODE2NTkwN2U0NDEzNjM2OTgzNWJmMTExNmNjMTEyZjU2MzY1MzY4NDNiYWFlYzZmYjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkYzA0MTg1MGIwNjM2ZGMxMTk2ZGU0YjI4YmE5ZDkzNWU1ODkxYzNhZDg1ODg0MWQzZGMzZGU3M2EyMjYxMWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY5MzI5Yjc5YmQ1NDQ5YzNiNWRjZDg2YWU2Mzg1ZGZiNjRlNjZhMGM1YmNmOTI5NmIxMzM1ODY2NzEyMjFiYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY5ZTY5MDMwMWQ0MzY0YjBjMGZkZmNhMDI3YjRlYTdiMTIzNWEwNDQ0ZWY4OTU0NjI2YTE4NWJhMjVlMjFjZjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e369245bc5b148b789916aae6142aa52",
+      "statement": "Right-drag gesture orchestration lives entirely in MenuSession (ADR-020): the VM's global-mouse adapters only forward hook events to FeedRightDragGesture and FeedGlobalMouseMove; the session owns modifier discrimination, the GestureIsolationService filter (denied right-downs pass through untouched and never enter the detector), the LEAK-FIX probationary pending swallow with promotion/replay on move or release, threshold-based summoning, and the release-to-execute resolution.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/GestureIsolationService.cs#L15-L54",
+          "version": "repo-lines-v1:sha256:243d7a2cef3c77d5917691550385a9078027cf5351131afef8bc1b6792838e0b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlNDdiY2IzM2U1ZmM1MWE1NzJiOTYyMTc5NmZlNDFjYTU5MjQ1MTNkOWU5NTY1ZTliZmFjOGU2MmEzNDMxNTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJlZjVjMjljNGE4Mzg2OTViZGJiNjQ1N2Y1NTU2MDc2ZmQyZGJkNGIxNmFhY2RhZjczMmUxZDEzNDc5OGE3MGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVjYTA2OTJlMWFiOGUwNDhhODUzNGQ4ZmJiMzJhZGFjNjRmZDI1MTYyZGRkMWM3NzM1MDU5M2JkOGIwZTI5YmMifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L1021-L1186",
+          "version": "repo-lines-v1:sha256:7b4f0c96e3a9640a5b82ee57a0a5778a38bc147f17797ea28c0b481557f04345:eyJzZWxlY3RlZExpbmVDb3VudCI6MTY2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyNDhhNTNiNjRjNjU4ZWYyYTk1YTJlYzU4ZWZmYzA4YTU2ZGFjMDM3MjY4OTMyNzcyMmYyNWZkNTUyODExNzQ2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlNmIwNDQ5MTQ2OTcyMmU4MzYzYTk0ZTQwNDQ1MzhlMDEzYTJhMjE3ZTM2YjFlNTY4YmE2MGFjYjdiNGM4ZjJlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3Y2UxMWM0YjMwZTExNjgwNjA3ZTk0MjQ1MjZjMjljNzQzYTllMGQwNDFiNmE0MDJjZjQwMmI4MjQzNWIyZDcxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkZmNmZGM4OGM0OThlYWIyYmNiNmM0NzA4MGJlNDg4MWM0ZDZhZjYzMWVhYjhkMDMyNWJmZWZmMTMzM2Q0NjFjIn0"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/RadialMenuViewModel.cs#L226-L233",
+          "version": "repo-lines-v1:sha256:5cd9ad8d59ef6dd1e52b921b4a3794c984d8f86b19e556fe574a3c1c4b2a0aea:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmMwZTA0NzNmNzUxNWNmMzk0ZGJkYWEzYjQ0YjdhNDlhNjRiYThhZDk5MWVjMjNlOTgyYmEzN2FhYWZkZjBjMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTUyMmM0MmNkMTljNmQwM2Q4MDhjNDUyNzIwNTUyODI1YjdlYTFjNWI0OTFiMjE4NTExY2FjNzQxNWNmOWQ5YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzBmY2RjYjMyNmZmZmM4Mzk5M2RlOWU2ZDAzZTU1OTY1M2E4MjVhZjllNzRhYTIxNDFmNGJlNTY4YzFhYWUwMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDQ3NWM0MmJjNGYzOGZiZTliMTk0YTA3YTY2M2Y3NDk1NTEzZTBhNWE0NWNlNzUzMTBjN2ZiMTNiZjVmZDI2NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_30f16a105dba42d3a73e53f1b9ed737a",
+      "statement": "RightDragGestureDetector is a pure state machine deciding at right-button down from the held modifier (action menu wins when both held): Immediate mode summons at down, OnThreshold mode summons exactly once when FeedDisplacement crosses the configured drag threshold (default 25 px), a claimed-but-sub-threshold release resolves to SubThresholdRelease which replays a synthetic right-click so the source app's native context menu still appears, and a gesture release resolves to GestureRelease which executes the selection at DispatcherPriority.Input.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L1151-L1177",
+          "version": "repo-lines-v1:sha256:9efc4813b16312802dd54c32a95dd74b75f4afe3dbe002fb19178fe2b47f43e6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzYzk1NDhjNmYyYmM4NWJkOWY5OWJiZmZiMWUyNDg2OWI3Yzk3YWY1ODg1ODI2ZTdlZGVlNjgzOTY4ZmFiZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjNjQ3OWNjMjMwNDQwZmQ0MWU4MjI0MjE4Njc5Njk4NTU5ZDI4OTNiZDY3YjQzODBhZmFiODExYjM4YTU1YWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzMzIwYjk3YWMzODExNThhZTlkZmIzODkwZmVkNTRjOGZjODJiMDM5YjUzMWJlOWRiYTBmMGM2NDg1MDE0NzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiNWNlNTAxZjVkNzhiNmMwYmE5M2E2MTI3N2YzM2Y2YzQ1ZjUyMDI4NThhMDI0NDNlNjdiM2JiM2JjYmE0NjUifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/RightDragGestureDetector.cs#L31-L51",
+          "version": "repo-lines-v1:sha256:897e6b8deaa8f39c804054098fbd35a2dd232bbe61a15d4f12bd6c25a51b1d7b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjNjMwYjRiMmE4ZWE4MzI3MTRhYzAwNWMxYzhjNjAwNTgyZDI3MTUyZjNmYWVmODdiZDg5NTNmY2UwZjZjMWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjZGViNDgwZTFmMTk4YzQ4MWU5NmZkZGI1Nzc3ODc3YTU0MzhlNDQ5YTllNDM0NGNiYWUwYzU3NGFkZTU3OTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkZmJjODQ5MzRlZTRmZDRmZDA2ZTZhMmIzZjNkNGQzYTM5ODZlN2U0ODg5MWQ3NGQyMjc4ZTgxYWVjNjUwMDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjYzA0NjE4ZjlmZDMxMGJmMzdlZmNiZjk3NzdjODgwZmJlYWY3Y2QzZWRlMzBlNzZhMDY1OTIyMmQ4MGY3ZTcifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/RightDragGestureDetector.cs#L89-L153",
+          "version": "repo-lines-v1:sha256:c08308391d05ef5193548cf2a1036593df0b27f301e7bbd6ecb5f1177438c189:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkODk5M2ZhYzRjNDUyZTg3N2NmNGI5NTE2NGYyMjRjOWQ1OWY4YTc1ZTZmYTE5YzhhMTk0Y2I2OTgxMjI5OTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4ZmEyMTZhZjUyZjkxM2RhNWFhNDUzMmU2YWJiNmY5MDBmM2U3N2MyOTEwMWYwMTJiNzNlNmM3NzlkMmMwZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1MzEwNWE0NmI1OWM4YmJiYWYyNjQyODBiNTJiOTVjMzJjZTczMWM3ZDllZjBlMmY3YTU5MTYzZmI5MzM5ZWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_777d2c982a614acd94d740d790976ced",
+      "statement": "Gesture config refresh is deferred mid-gesture (D3): RefreshGestureConfig never resets an in-flight detector — a config update while the detector is pressed stores pending values applied on the next release/pass-through up — and a visible gesture-summoned menu always claims its own right-button release even when detector state was lost, so a gesture-held menu never leaks a release to the source application.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L1046-L1054",
+          "version": "repo-lines-v1:sha256:3772526d694af478d08b15ef4811277d73d0e067c1fe114ab917a610b7bad74c:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDE1MjhlMzk0ODMyYWVmYWY0NDFjYTUxMjU4MjJjZGQ3NzIwNzMxMjc3NjM5OGZmNzVjOTdmOGM1OGFlZmJmZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTUyMmM0MmNkMTljNmQwM2Q4MDhjNDUyNzIwNTUyODI1YjdlYTFjNWI0OTFiMjE4NTExY2FjNzQxNWNmOWQ5YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2M1ODRhOTk0N2ZhNzg4MzU5YTg4YmIyMzgyYzY1MjM5ZjNjODE2OWVhYjU3MTE5ZGNkODEyZjRlYTkwOTNmNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjk0ZDA2OWNmNjA5OTkzZTdhMmZjODBiMjA0NzI0NDY0ZTg4NDU0NWYyNjI2NGMyYWVkOGIyYWUyNGUxYmRmYiJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L898-L992",
+          "version": "repo-lines-v1:sha256:dd341bede8a9675771ccba713c4b2d3ab1cddbbab855e78d5cb0f8811a251008:eyJzZWxlY3RlZExpbmVDb3VudCI6OTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiN2Y0NjRiOGJkZDNlNGY2MTJmMGI1Y2I0MjJkOTgzNTY1MzEyZTBhNGUzN2E1NTM4MzVkMGFiZjczNDkzMjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczN2I5YjFmZmQxZDY0NjE0NDExMjdlODgxMzdhMWIzMWNmMTZlYjQwYmI1NWFjYjI2ODYxNTQ5MzVhYWRiZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkMmU3NDAxNzAyNjE0NmViMDRjYWJjNTg5NzA0OTJiZTgwZTg4ZjM0M2VhOGQ1MmQzYTk5ZDg5ZWUzZWM1NzcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d1cb0b002f9d4c9b95daf8bbcf332a68",
+      "statement": "InvocationSource drives the input policy: gesture-summoned sessions execute only on the right-button release — HandleKeyUp returns early for them, so a keyboard/hotkey release can never execute or dismiss a gesture-held menu (Escape still cancels) — and the source resets to Hotkey when the menu hides.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L1704-L1709",
+          "version": "repo-lines-v1:sha256:19ea3ab9e3f53447e7a74bcf83a91720585373c20e3267a4dc31709275753f1d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzBiMGMyNGE0MGRhMTc0YWQwYmNiMTVmNjAzMjc4NDE4NjNiNTQwYjI4NzYxNzY4NGNjZDMwNTlmNmUwZmE2MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTUyMmM0MmNkMTljNmQwM2Q4MDhjNDUyNzIwNTUyODI1YjdlYTFjNWI0OTFiMjE4NTExY2FjNzQxNWNmOWQ5YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDJmNGI5YTA2YmZjMmFlMGI3YjJiZTUzM2M4YzcxNzQxZGZmYzhmN2M5ODQ5NzliMDRmOWM0YmRlMTMyZjg0YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjg5NTE5NzRjZDE3ZGVmMDgyZmU3Y2U1ZTcxZDVmMjg4MWZiYzE1MjkxMjI4MmI1Y2Q4OTc2YzkzZDU5MDVmZiJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L296-L302",
+          "version": "repo-lines-v1:sha256:20530e652941d2aa44ed0e67e64a1674f77ea0a63b8382851f76992ca745492c:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTU0MmU0M2E3YzYwODhhODY3ZWY5YTA1ODFkYjVhMWIwYTZmMDEzNTc1YTAzZDBlN2U2Nzk0M2I5NmRiMTY1NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDM2OGU0N2QxMzgwMmIzZjJkNTdmZmU1YmE0MGUwY2EyZmE4NWJlMGIxZDViMTQ0MDdiYjExYzA4YWNkMTYxYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2U0NTU0OTk4NGY3MTdiYTM4MWQzOTU2ZDI0ZWVkOWY0YWRlM2Q0ZWI0MWUzNzViNGRlYmU1ZDEyYzJhYjNhNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTE3Y2RmOTRjYWM4ZTA5YjE4ZjU2YTI2ZmMzNGU1NGFhNDMzMzdmYTQzYWQ4NjkyNDZjNDRkOGQ1ZWFjOTlhMSJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L384-L390",
+          "version": "repo-lines-v1:sha256:3f2a8c199b2adabcda78cc74d9eb1cf4028500b605b0fb0f57ceb0c2dc5e6ad3:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzBiNGY3MzJiZjhiY2FhOWNmMmUwMzM5MjMwZTZiOTNmMzhlMGI5NWRkOGNjMzQ2ZjBlNzdjZjZhOWMwYjJjNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjkzMjQyOWEwZWNkN2FlZmY0OGExNjk1MzhkNDAxMTZmMzUyOGVmZGUwNGIwMzBkNjZkMWYwNmZkYWVjMjFiOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjRkMTliOGQwOWI3NzBjMGYzMmZkZjFiNGJiODE4Mjk1MzhmNWY5Y2EwZDI4YTUyNmYzYWJlMzkxYTk0OTc5NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDNiNGNkMmY5ODk1ODMxYzMyNjY5ZDA2MTA0ZDczOWY2ZWVmNDU3Y2JmY2NlNjA0MGFmZTg3NWNlNzgwMzY5ZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c18e550bffcd4387b0d71625ed80f0c2",
+      "statement": "Hotkey ownership is single-session: OnHotkeyInvoked captures the release trigger in a HotkeyInvocationSnapshot, and a second hotkey observed while a session is pending or visible is suppressed (its release consumed without effect) so it can never resolve the currently hovered slot; a fast release inside the center zone with the snapshot's modifiers triggers quick switch to the previous window per QuickSwitchPolicy (default 250 ms timeout, 30 px center radius, clamped from settings).",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/QuickSwitchPolicy.cs#L10-L24",
+          "version": "repo-lines-v1:sha256:e09ec3095a41e2c526c7680b58afd0e58516c9ad584434ce333a608b6c92261c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4ZGMzMjk1NDNiMjRiZDEzZjlmM2YwODcwNDFjM2UxODNkMDM0ZGI1OTg4NWEwOTA2NzJiNzM4Y2E0NzZlOTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhZjFlYzM5YTkxMjA5OGYzNmVlMDg3MGJlZDRiZGRiYzIxNmU0ZjM1YTQ2Nzg4ZjJlNDBhZGMwOGQwNWZkMDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTRkMDJhODEyMTk0NGQxNzZkMjY1ZTliYjljYzU5ZjZhYjg5MGJjYWRmOGFlZmRlYmRiYmI0ZjJlYTg0NDQifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L1512-L1549",
+          "version": "repo-lines-v1:sha256:68193b6d040e85ba941c88546ed9b1ff50902a3b3f23ceca87dacb64692037a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4YzRlYTE1MzJlOWQ1ZTEyNGRkYWRjZjc1NmRkYmE1NmUzZjRkZjZkMjg5MmQ5YjViYzg4YzE4NzQ5NjI0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhOWY4NmQyOGU3ODRmOWZkMzFmYjcyZDE1ZjYwY2JjZWFhZmRkNjY5Y2JkNWI2ZGE3ODg4YTAyMzMyMWViYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkYzkyYWQ5NjI2ZjE0YTk1ZDUzNGIyYjc1ZmZhYjdlNmY5ZDUxYjEyNDE3MjY0ZmY2NmRjMDM2NDY3OTQ1N2YifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L1796-L1828",
+          "version": "repo-lines-v1:sha256:b4153f12595be76b2dd0712020bb5bf03eef4069c85e82203cc4808598801ec4:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmYjZlNjc4OTBjYzE3M2EyMzhiNTA2ZWNjZmQ1NjhjOWY0MDcwNWVhMGViNjYwYmUzMzQ4OTEzNzY1ZDM1NTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhOWY4NmQyOGU3ODRmOWZkMzFmYjcyZDE1ZjYwY2JjZWFhZmRkNjY5Y2JkNWI2ZGE3ODg4YTAyMzMyMWViYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhNzljODliMDA0NDEwYWU3NDc5MjU2ZTU3ZTZiZmQzOWZjMDIyODQ1MjcyNzg3NDkzZmM0NzY4NzhhMDFhMDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_117c87201f5846c7919e137ebc0be8b6",
+      "statement": "Paging uses two independent counters (ADR-011): the root wheel pages through IPagingController whose boundary events map to the OnPagingBoundaryFeedbackRequested nudge plus a transient center hint, while the submenu has its own _subMenuPage/_subMenuTotalPages reset to 0 on every submenu entry; HandleMouseWheel dispatches by menu state so the root page is suspended while a submenu is open, submenu boundary wheels emit boundary feedback instead of wrapping, and the sub-ring reuses the root's SlotsPerPage (4-12, clamped) as its page size.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/PagingController.cs#L18-L65",
+          "version": "repo-lines-v1:sha256:fab8d443e250839dca11a54a0c4eea4e3994a5183f9d2f41f150aa5b9b1faf41:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkYjExZmM0MmU5OGE4ZWMxNGZiOGI3NmU3NWU2MDllZDkzMWJhMTU5ZWMyOTI2OGY0NTYwZDM2MGNhYzI5NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1NDI0MzM2ZDdiODdiNWU1Y2I0MGVmZWFkMzc2YmEyYjBhYjFmMjBhMGNlM2NmMzllMTYzOGYyMTJiMjFiMWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTRkMDJhODEyMTk0NGQxNzZkMjY1ZTliYjljYzU5ZjZhYjg5MGJjYWRmOGFlZmRlYmRiYmI0ZjJlYTg0NDQifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L1845-L1937",
+          "version": "repo-lines-v1:sha256:036b916b0c82c927a7fcb5943aeb4577fa7a7a058ce31b83f92b7399322ba6e2:eyJzZWxlY3RlZExpbmVDb3VudCI6OTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxZmQ2YTQ0YzhmOGMzNGI2YjEwODU0MmJjODAxMjc1MTg1MzUxYmI3YmUyMzczZGZhZGU1MTQzMTFlMGRkOGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViM2UxMWU0Mzk0YzRiOTI0NDY5NmRiOTMzYjhkZjBiODJkNTM1YjhkYmY0YmRjOTk4Zjc2NDk4N2Q3MTMzYWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3YWM3NmRlNmIzMGYxMjQ3YjM0YTMyZTc4MmJkNmQ0OWQzZjdjZmFmOTU2MmFiNmQxMDgzNjkwM2ZhYzdiYTkifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L2144-L2145",
+          "version": "repo-lines-v1:sha256:38a43d6f7f0e86e1697e8029f02141d9bcc221774ceb9ad2627007774ca660f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjE2NjM2NjBlMzUyYzA5MjA4NzgyMWY0MDNjMjNmOTI4NzQ2ZDc3NGIyOGIzNjlmZjBiYWJmNGFjMjg0ODhlOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDMyMGU0Njc5ZmFhMDRiN2NlZTlhOWE3ZWNjMTQ0MTY2YWFhMjcxYjlkNzQ5ZWJkNTFhNjhlYjQ2YjE0OWI1YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDZmZGM0YjZkNWIzZGVjY2RhZDMxZWU5YTY1MmRiMWEwYzQwMWZjMjFkN2JiZTIzMTY4N2ZkZjM0OGQwNjEyYiJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L2516-L2521",
+          "version": "repo-lines-v1:sha256:2a30768b76ed82e936edb580fee2c312c1e03e7c7f061da7555f32f1737767ce:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjFmNDNhODkyMTliYjZmMGFiMmFkMjU2OWI4NmM3Yzg4YmMzM2I1ZGUwYjYxMGE4OTI1Zjg4ZWMxNGZiYjZiYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2VjYzBjMmYwZjBlMGM1MTk1OWZhOTRlZWM3OTg5YzhmYmJkM2I4YWE2ZGZmOTFiOWE4MjIzOThhZjFiMmEzOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWU4MWIxMTI5NmRmOGNhYjIxMjQxNmNlMmMwM2Y1ZWFmMzg2ODY3MmZkYmMzM2RmODAyYWVhMDVjZTllN2U0YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmUxMWVhYmM3MjJiYzk0OTY4NDA1YmE1M2I5ODNlMjc4Y2NkODNlOWVlYzkyODA4ZWUyNDcwZTIxYTk4MDRiMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8274806d98a54991b31fc5397c513f30",
+      "statement": "Submenu entry is strategy-routed: a SubMenuDescriptor identifies an ISubMenuStrategy by StrategyId and RadialMenuSubMenuCoordinator routes it, configuring center + child slots; an unregistered strategy id logs a warning and falls back to the root menu instead of entering a submenu, never throwing (registered strategies: window-switch and cascade).",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/App.xaml.cs#L355-L358",
+          "version": "repo-lines-v1:sha256:821a01180b4fab0e8d0fef3c64124f795dbb18cf2490fad1542f4f4e971071ac:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDk2MzE2ODMxODViYzk4YjcxNGQ0MWRkYmY1MTU1ZTliNmYwNTQ4YTZkYWY2Yzg4NjNhZTQ1MWE3NWE4M2RkZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjNiYTJjOWI0YWQxM2JhMmQ5OWMwNzZmM2VhOGUwZDA4NGQ1YjJjNDQxMTViNDhjNDk3NDZlMGJjYmM2ODdlMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjQ0NzEyYWU5MGNkNmFjOGRkZDc3NzFiOTU0ZDY3ZjdhNTQ1NDA0OWZmZGYyMGEwNTQ5ZDNjYmE0OTY4NGMxOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTQzOTBmYmFjMmYyMjY3MTA0YTg2NTA3Y2MyZWZhNjY4MGJiYjZkZTlhZTk4NjUzNDIzMzFmNTk0NWQ0MzA0MSJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L2551-L2568",
+          "version": "repo-lines-v1:sha256:678d7ec600ea749f0ba9b3c7b7ad37771d650b2c6fcbc0daeb9131c821703624:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyMzdkZmE0YmM0ZGVmYzYyNmMxYzJhNzIwNmRlMDA5NmI2NzBhNTk5YmVlOGZmNzk5MDg4ZjU2YmNjZDY1NjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2ODQ1NjA0Y2QxMTU3MWQyMDFlMmNlMjczYzMwYjhmNmUzNWZiMzEzODNjMmZmMzM5MjNmOGNkOTA2OTg5NDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1Y2M0ZGYyMDgyY2FhMWJkMTU4YWM2ODkxZDk3Yjk0N2VlOGE0YzkxN2UzODgyMWVkOTQyOWM3MWE0MjZhZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExYzhjYzg5NTgzOTg5MTQ1OGNjNzRmZWEyZjYyMGEzZWNjMGRlNDA2NWY2YmQ2MjRiZTYyZmI4NjU3NzAzMDkifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/RadialMenuSubMenuCoordinator.cs#L34-L80",
+          "version": "repo-lines-v1:sha256:ea302ac7545420984feab4d2b6706b29fd6b98c9c57c32127ceafadc9d60e392:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3MjRmMDExN2E5NzQ0NGU5MTBhNjY3OGFmNWJhNjM1ZmQwNjFhZDJmNzk4NjgyYWYwYmEyZjk2NGIzNmZmNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0Mzg4OTA4NTZjMGJkYmM3MDRiNGU3YjhkZjEyYzk0MmQ4NTZlOGY5NWY5YmE3MGE4MzgyMjAxZjJkYjMwZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5MjQzMzVlMGFiYjMzMjViZGJjNDBmNzBjM2EwNDI5MmRjOTJhMjYxNWE5Yjg1OGUwNTcyNWMyZDAwMjJhNzUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_af2ecd4b20ad4d68a0e0af6ef4709d3f",
+      "statement": "The submenu morph (EnterSubMenuAsyncCore) is a coordinated transition guarded by _isTransitioning, which blocks all pointer/keyboard input so a partially-morphed menu can never be acted upon: the clicked slot glides to center, other slots collapse, the menu translates to the click point with distance-adaptive timing (110-240 ms enter, 150-230 ms bloom), the center slot becomes the Back action, and the hotkey release of the key owning the menu lifetime cancels the transition and closes synchronously.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L1723-L1765",
+          "version": "repo-lines-v1:sha256:c71fb0d2363d09578746f1bab49afc9d3db525c97f402d503375eac12c1730ee:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3ZjBmODNmMTdkMWMxYWRkZjEwNGJmZjYzZjQzYWNkZTllZWMzNTg1Y2I2MTU3ZTlhOTkwMDRiMzk4YWQ0ZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MjJjNDJjZDE5YzZkMDNkODA4YzQ1MjcyMDU1MjgyNWI3ZWExYzViNDkxYjIxODUxMWNhYzc0MTVjZjlkOWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmMGFiZjQzNjAyOTA5NTkyZTViZGE4M2VkNWZhMTBjMzIyMTg3NTdmODNkMTUyZDEwMWRhODFjNDk1OWNhMzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwZjJmOTU1MGFjZGFjMzZlZjdhZGFhMTU4OWVmM2U2MzcwMTE5M2UwNDU4YzUwZTI2ZDIxZDE1MGNmZjA5NGEifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L214-L218",
+          "version": "repo-lines-v1:sha256:8294e6dd2c5a3e816939450c2f447a220aac76121f9c54ddfb5ed770b7cc46fd:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTFkYjk4ODA2YzlhNjcwNmY0ZDJkMTBlMjExM2YzOTNkZTdhNDY1ZWZlMTE0NTAzMWM3NWZlNTllYjUyZjk0MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzgxNWEzZjZjMDZhYjZmYmM3NTk1MmFjZjRlNGJkNDkwNGIxZTY3NDY1MTVhYzUxNTNlZWI0NmMxMGVlYzNmYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjE0NzBlN2U4NGNhNjg1MTRjYzMwMjZjYWEwMDkwYTM2MWFiMjcwNzhiOGNiOTEwY2EwOWI4ZmVjNmYwOGIwZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2E2ZTVhNjI4MzNlZGE1MDY1OGVmMzJiZGY2OTBhNWQ3MDcyODQ5ZmViZjE3YTlkNjg5NDQyYTUzYzViMTM2NiJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L2491-L2693",
+          "version": "repo-lines-v1:sha256:3cc28b6294a7f1507246fde19bca492503f4d91ef59ab105ce4e4c36cb4d990c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0ZGU1OTM0NjYyMTBiZjcxNWMzOWViOWNlMTgwMzhhMGZhYzRhNDhiNWMxNjljMzRmZTEwNGZlODIwY2YzMGUxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlNmIwNDQ5MTQ2OTcyMmU4MzYzYTk0ZTQwNDQ1MzhlMDEzYTJhMjE3ZTM2YjFlNTY4YmE2MGFjYjdiNGM4ZjJlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmZWM5ZDIwMTNmYjFhZTJkNDM4ZGJlNzFjMTgzNmU2MjJiMjVhZjBmNTExZGE4MDMxMTk0ZWI1YjgxNWQ5ZTI4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxNjEzODc3MTdjMzIxMmYyN2Q3M2YwNTI0ZDM0M2MyOGI1MjUyM2FmYWFlMzU1ZTY4Nzc1NDI0MjA3MGI4ZWQwIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_4b62eacf987d4edba1f28cbca4e2ea9e",
+      "statement": "Cascade submenu children are laid out by the deterministic ISubMenuLayoutEngine geometry: Fan applies only when the current page's child count is ≤ 3 (wings at ±30° about the parent direction), otherwise the page falls back to Ring (even angular intervals), so the layout form is per-page, not per-descriptor; the sub-ring radius derives from the root ring as clamp(rootRadius × 0.60, 20, canvasSafeArea − halfSlot) and hit-testing is page-scoped via the same child-count window the strategy filled.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/SubMenuLayoutEngine.cs#L16-L60",
+          "version": "repo-lines-v1:sha256:0b3e42e0c419e8c4451f68d84312536bd4b8a88d7a5d7824befaf9c74a232ea9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5NThhMTczM2Q3OGRkNDJmYmQwZGJlMGE5ZjliMjM3ZWVlZjZhNWE5MTBhYTU1YmE5NDZlYWFlZjlkMmMyMjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2NGI2ZmNkZmEyZTNiYzEwYzdjNWQ5NWQ4YzUxODUwZGFlNDAwMmE4OWU4MTJjZTBmNDBkMDJjMDc0MGRmMzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU2MjRmMWQwYjg3MTk1MDk0NWFlNjVlNTc2NjkzZDcyZDdhYjQ1M2M5OTNmMzNlMGMwNmVkOWI2MzM5NDZiNzIifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/SubMenuLayoutEngine.cs#L85-L154",
+          "version": "repo-lines-v1:sha256:464694ea917b1ab16a0b8efbda24bf8b34d45e437360f09691a1f65c2da09ad3:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0Njc3YmVlZTQ2MmJiMDY0YTUwOTU5MWQ1YjRhYjYwOTBjYmMxYzJlYzBhNGIxMWY1NmUyNDE2MTgwMzE4OTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MWEyZmI4NWRmYmQ4NzgzOWI4NjhkODU3YTg3YjI4MGJlZjRhNzRlNTE0YzdjNDYxZWNiMTRlNWIxM2ZlNGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1N2IyNjY3MGQzYmQ3ZjNiOTIzYzE5MDVjMmMxM2QzODlmMTVmNzZjNTAxOWFmM2Y2YjY3NmEwZTU1ODRhZDcifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L2007-L2017",
+          "version": "repo-lines-v1:sha256:90736ade39b4985a3911627049b34a6f74500b841127da415582e18a746a094f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3MmU1MzYxYzlhYmEwODQ4ZWI2NDJlNzAyZjgzOTY0ZmJiYmYwODNjYTRhNGRmYWY0MDE5MzQ5NTI4YzI0NzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1NGRhNTBjZmVkY2IxNjNmYzA0NDU2ZjdlMjQyYWRkNzVjZjg5NzI3NTdhYTI5OWRjNGJhN2Q3MWI5MmNjODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlZmU0YTUzNzI2NzA3MDA2YmQxZTBhYTI2OTVmY2NlYzc2ZjUyZGM1Mjg2MWZkMTk3NzVhZTc0NjM4ODc0NjcifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L2019-L2044",
+          "version": "repo-lines-v1:sha256:3ecf6383b7e8961f998b0ce8893ae004e918f3199103913fc382eaba2f97873b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllM2E2ZjNlM2I3ODY3YzQ2ZjM1MDE5MDZhMGY4YzVlODMwZmQ2YjdlZjhhMGY2Mjk1NjQzY2MzYjFkODE2ZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlOTQyNWYyYWE0ZDFhY2NjMjczNjcxYWM4OWJkODUwYjE3NjRiODQxMmExZDI2Nzg0ZmU4NTdjNTRiMjE1Y2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4Njk3YzI0MmYyYjUyNzc5NTI1YzUwOTJhMzQyODdmYmE5MmJhNmJkM2U4N2JkZTNiOTM4NmYwZWVhMTU2YTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_946da8b21a494fc2977a97005a0835d7",
+      "statement": "Root-ring geometry comes from the pure ISlotLayoutEngine (SlotLayoutEngine): slot i sits at angle −90° + (i−1) × 360/total on the optimal radius, radius/slot/center/dead-zone all scale with the 4-12 slot count (radius clamped 180 px, slot 38-60 px, center 55-85 px, dead-zone ratio 0.60-0.65), and HitTest returns 0 inside the dead zone else the sector index; CalculateOptimalRadius is also the flick-out escape radius basis, so the escape radius tracks the root wheel even while a submenu is open.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/SlotLayoutEngine.cs#L16-L124",
+          "version": "repo-lines-v1:sha256:a0e8df7ffaddc8baf5013683d8f3aaeefa64cce20f5c1dd09726571a5f6db0fb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5ZWM2Y2ZmYjkzN2RiNjQzOWM4NjI2YjRmODE1NmRmYmVkYzI3MjEzNmFjNWUyNDkyZjFiOTRjYjc4ODFjNWQ0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlNmIwNDQ5MTQ2OTcyMmU4MzYzYTk0ZTQwNDQ1MzhlMDEzYTJhMjE3ZTM2YjFlNTY4YmE2MGFjYjdiNGM4ZjJlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjZjIyMWRlNDg0MjU5MWFlMTdmNTc5NWNjYzUxMTQ0ZGZmNTYxNTBiYjFhZjdlOTNlMmI4MTM1M2Y1MDQ0ODZiIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MiwiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzNzk0ZDAyYTgxMjE5NDRkMTc2ZDI2NWU5YmI5Y2M1OWY2YWI4OTBiY2FkZjhhZWZkZWJkYmJiNGYyZWE4NDQ0In0"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L1968-L1987",
+          "version": "repo-lines-v1:sha256:8fdf37d8579581dde0a3c9fe2b5bb7a69b835b4bb27367203fc0c4ef01ca969d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5YzM3M2YyN2U5MGU3YTQ3MDQ0ZTdmZjJhYjlkYzQzNzU5YmNiMDliOGVjNGExZDlkNzllYWJjNjljMGZkMTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5NGVmOWJmYjE5MmUzZDFlNTc5OTI4NGRmMTY0Njg4MmY2YmMzMjk5M2IzM2Q3MDBjMzQ3M2Q4ZjEwZjBmMDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhMTFkNjQwMGUwZGI4NWVhNzIzYTRiYzFjZTI2YjI0ZjQ1Y2E2ZjQ4MWZjMTEyNjM2Y2FkYzI5MWM4MGU1NDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_787ff535597b488083291aaf40ae6b7e",
+      "statement": "MenuViewportService expands the resident 1x1 radial window to the monitor work area under the cursor per summon: it resolves the target monitor's DPI after relocating the window (required on mixed-DPI systems), clamps the menu center so the 500x500 canvas plus its 260 DIP visual extent stays inside the work area (pure ClampMenuCenter math), signals pointer warp when clamping moved the center off the cursor (RadialMenuWindow then warps the physical pointer to restore the menu-follows-pointer invariant), and collapses back to 1x1 on dismiss while keeping the tiny window on the current monitor for the next DPI context.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/MenuViewportService.cs#L19-L129",
+          "version": "repo-lines-v1:sha256:23520b6c335da8cba2db901254ea7f571c929cf32bbffb66ce5ae511f946c026:eyJzZWxlY3RlZExpbmVDb3VudCI6MTExLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5MGRiYzlhNWM1OGUzMTZjNWRhMmJmNTAwNzEwZTc5MmRjMTlmN2JiZGRlM2MyODZhYmEyZjM5NTc3ZGZmNTRlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiYTY4MDEwN2Q5NWUzY2EzNjQwMjM3NzdhZDU5ZjEzYzk3YjBjMDE1OTcwZmUzZWE5ZTE2Y2ZjYWU1NDk4MWUxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwZTFlNmJlN2Q2NDlmMzhlYTdhMTgxN2EwMThlNGVkNjNhMWY0N2QyZDJmNTE4ODBjZjc0MmI4MzkyNzM0ZjMwIn0"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Views/RadialMenuWindow.xaml.cs#L139-L160",
+          "version": "repo-lines-v1:sha256:fcc1cf0380bb8acaf2ce4aecfc4e39c6704ba4cb85de1fa931627ca0f40411eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3M2RmZDM5ZGE0MmViMzU1YTRjZjg2NDZlYzA4NTkzNzZiMGQ2NTAzYzYwODJkYmY3ZDc1YjkzNGJmNGJmYjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MjJjNDJjZDE5YzZkMDNkODA4YzQ1MjcyMDU1MjgyNWI3ZWExYzViNDkxYjIxODUxMWNhYzc0MTVjZjlkOWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdjY2ZmMmIwMzc1MTJlZjA1MjBhMjYwMzQ5N2VkYTNiZWFiYWUxZTE5ODRhOTA2ODUyYjkwNGY1ZTJlN2RmMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxZjFmMDZjNDZkYjMxOWRlZDBiZTAxODRhYWZkOTEzZTdiNTcyYjg2MjY5MjVlMDdmODEyMTljYTFmMGZjYTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_76d993e41c0c42febae34846558e6fb1",
+      "statement": "A 60-second inactivity watchdog protects against stuck sessions: StartMenuWatchdog runs on visibility and dismisses the menu when no Touch() interaction occurred within MenuWatchdogTimeout, so a lost gesture release or frozen state can never leave the full-screen menu up.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L2819-L2864",
+          "version": "repo-lines-v1:sha256:e11d9b8d1bfdb98b44c52dc8fe9596143a836c3ca34ea7a4c55bea1668ba3076:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4NjZiMGU5NzBmNTM1OWE5YjdkMjFmYWY1ZGMwNjMzOTNjMjMxNTZjZWMyZWI3YmJlZTc1NjY0MzQ2Y2YyNzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzNDgzZTBiMjYyNTNlYTAyNTQyMGRlMjNlNjU3ZGZlZGRiODMwNjU1NTM4M2ViNjNjOTFkNDhiM2NlMzhhOTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmMGZmMzBjNzk2YzkyMDZiMjNhYjIyNGE0MThlOGFlMTczMGVhYzg3NzYzMGJkMDU0ZDJhYThjZTUzZjkzZjkifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L487-L492",
+          "version": "repo-lines-v1:sha256:baf99bbe23cb35c8619adc0456893e5945222f5cb10011220205198f8fe7c8d8:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjgxOWZhNzBlNTMyNzI2ODBmYWFjNGQ4NDc3Mjg0MTFhNjE5OGI2ZGJmNTEwM2YxZjRkOWU2MGMxYWM3MmJlMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2JhZTUzM2M0MWRhZWMzMjAyNWIzZDJlM2I1MDU4ZThjNDU2OGViYzIxNjFlOGU0ZTEyMjlkZjRiMjBiZGI5MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjYyMjc0NDFlNTE5MGJlMjM4ZDc4MWI5Yzc4NjBmZmMyOWEwNjg3NTBhNzlhMzRiYzU3NmE0MDgxZmEzNDU2NyJ9"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L66-L67",
+          "version": "repo-lines-v1:sha256:407f54edcd893582786fad760b2af10b0526b6ffc45be42f50b07d3d05a3fcef:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjU5NGM2ZjgxNzdlYmUwODVlYmQyOWYyMmQ0NDQ1Njg0N2YyYjBhZWQ0Mjk3NjdmNWI1NzA0ZTAyNjcyNmY0MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzQ2NDc5ZDk2NTYzYmU0ZThjZDc2ZDQwZDgyMjYxYTVhNWMyYWRmZTE3N2QzMmJmODQ1YmUzZmYzNzBhYTkzOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTk4N2I0MGQ1Y2M5MjQzNjJiNGYzOGI5NjAxOThiMzUwYjFmN2M4NTQxMzJlZDFiMzRlYzNkNDUwODIwOTEzOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_49201f18fcab413eb8dcd51601bd4f60",
+      "statement": "Page providers are constructed through the IPageProviderFactory seam (ADR-023): the production PageProviderFactory holds all 13 fixed singleton dependencies so MenuSession passes only per-session data (slots, context, config, seeded windows), replacing the prior IServiceProvider service-locator pattern of 20 GetService calls across the execution path; the factory creates the Process page (Task mode, seeded from the cached window inventory) and the Command page (Action mode profile slots, with the internal:create_profile creator slot inserted at index 0 when no profile matches the active process).",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L1364-L1379",
+          "version": "repo-lines-v1:sha256:c5de73201d873c6165610d3787d4a2f3bf1547b7044220dc872c088c799d811e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3ZWRiZTc5YTU3NDk1N2E3MzU0MGRlNTM3MDlmZjI1ZTc2NzYwNDJhZjA1NjdhZmI3NmZkYTFkNzhhOWM1OWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhOWY4NmQyOGU3ODRmOWZkMzFmYjcyZDE1ZjYwY2JjZWFhZmRkNjY5Y2JkNWI2ZGE3ODg4YTAyMzMyMWViYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIyMmI5OWQ5Nzc3MDM3Nzk4YzhmNDE2NGIzMDE4NzdlNjc4MGYwODFkNGM2ZjYyMTg5ZDAwOGViYTg5MjAyNzAifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/MenuSession.cs#L771-L790",
+          "version": "repo-lines-v1:sha256:f337c7c209e40e776c537c7f9e9b0326ce925058ed5204c1e4e7edef2692ab9e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkMmE4MjM4MGRiMDU5MzBhY2EyNzAwNGE0ODMzYzUzYmIyNjIwNDE3Mzc1MWIzZmFmMzUwNWQyYzcwYTNlMTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjNjQ3OWNjMjMwNDQwZmQ0MWU4MjI0MjE4Njc5Njk4NTU5ZDI4OTNiZDY3YjQzODBhZmFiODExYjM4YTU1YWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3ZmRlOTVlZDkwMGU2YjJhYmU4MmE5MjIyYzI3OGUwNTVjNmZlZTkxMTg3MDBjODFkYjJhODhiNjFjOTM1NGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjMDc4NmNhYzMxZDgyNDA5OTdiODNjMGU4NDY3OGQyZjFiZGE0NDk2ZmY2MzNkYWIzZjJhYWUzMjBjNTEwNDYifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Strategies/PageProviderFactory.cs#L13-L101",
+          "version": "repo-lines-v1:sha256:a89a02e108b168503bc08755bc464741f5c5981e578dc78514ffdd38a81b8b07:eyJzZWxlY3RlZExpbmVDb3VudCI6ODksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYjZkYzkwYjJmNzkyOTYzZGNkYWRmZWZiNDA4NDg1NDkzYzAzYzNlMWE4MGYxNDliYzYzODAzY2RkMDQ2ODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlMmM0ZThhMzUwZmRiOTlkZjFiMGMzMjg1ZWE3ZWFhYmVjMTQwYmUwYTcxMzE4YjJlMDZiZGE0ODEzYzc4YTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_200e2a33d40f471ea015113e1293552f",
+      "statement": "MenuSession is testable without a WPF shell: MenuSessionTests construct it directly with interface mocks and the shared DirectUiDispatcher fake (consolidated from nine per-file copies by ADR-020), covering dead-zone hit-testing, hover activation and click-dismiss policy, while MenuSessionTwoPhaseOpenTests and the RightDragGesture test suites drive the session entry points directly.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar.Tests/TestHelpers/DirectUiDispatcher.cs",
+          "version": "repo-file-v1:sha256:008ee08c868f92e8c6ebf26db6343406756fddf303a89599fd3c2e86059e6d56"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar.Tests/ViewModels/MenuSessionTests.cs#L18-L121",
+          "version": "repo-lines-v1:sha256:00e9b4713a5dac43653ff050f365b829a0201bac91bae7b9ebe48a414d97f51c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzMmI2ZGM5MGIyZjc5Mjk2M2RjZGFkZmVmYjQwODQ4NTQ5M2MwM2MzZTFhODBmMTQ5YmM2MzgwM2NkZDA0NjgwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlNmIwNDQ5MTQ2OTcyMmU4MzYzYTk0ZTQwNDQ1MzhlMDEzYTJhMjE3ZTM2YjFlNTY4YmE2MGFjYjdiNGM4ZjJlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhODA4ZDliNjJkYmQzMGNlMmU0Mjk5YmI4NmY2MjMwZGMyNTcyZGIyNDc1ZmEyODVjNmU1NGYwMmVlZjMxZTkxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlZjI5MWM3Y2U5MTlmNDY1NGY2NmU5NGY2NTQ3ZDM0MmM1NDFkNjBmZTI1MDUzY2UxMjg3NzQ3MTdkMDBhZjE4In0"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-05T05:46:24.085Z"
+  }
+}

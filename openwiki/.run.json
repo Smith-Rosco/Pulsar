@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "runId": "bffde482-8407-4c20-98f1-a7a130563bc8",
+  "mode": "update",
+  "phase": "planning",
+  "startedAt": "2026-09-05T08:12:04.279Z",
+  "language": "en",
+  "languageChanged": false,
+  "requiredRewritePages": [],
+  "initialPages": [
+    "/openwiki/architecture/config-system.md",
+    "/openwiki/architecture/dialog-system.md",
+    "/openwiki/architecture/plugin-system.md",
+    "/openwiki/architecture/radial-menu-session.md",
+    "/openwiki/architecture/settings-and-slot-editor.md"
+  ],
+  "sourceFingerprint": "sha256:5233adae258505124c5b2c22ed581ea1a5f96d3e1c41b0d575ff2dc2e62b0fc7",
+  "targetGitHead": "113aa7626225aebd0765edec50703062da03f092",
+  "actor": {
+    "producerActor": "openwiki/0.5.0",
+    "metadataModel": "deepseek-v4-flash"
+  },
+  "previousLastUpdate": {
+    "updatedAt": "2026-09-05T07:08:10.851Z",
+    "command": "init",
+    "model": "deepseek-v4-flash",
+    "status": "interrupted",
+    "language": "en"
+  },
+  "wikiGoal": "A code wiki for this repository.",
+  "beforeContentSnapshot": "cef49dbaf603cef96a835bd2affb1542514177a1f50a3d4fbb35ed1e333158a4",
+  "preparedWiki": {
+    "generatedProvenance": [
+      {
+        "page": "/openwiki/architecture/config-system.md",
+        "bodyHash": "2261b6c345c8556cec4576d3f57e32505c4a16f20d66290864c54fa783a06595",
+        "generated": {
+          "by": "openwiki/0.5.0",
+          "at": "2026-09-05T05:46:24.085Z"
+        }
+      },
+      {
+        "page": "/openwiki/architecture/dialog-system.md",
+        "bodyHash": "cfb24aaf20c6c94b1576c3027d5900c6811a3412148533d6a2e333742f5c6c8f",
+        "generated": {
+          "by": "openwiki/0.5.0",
+          "at": "2026-09-05T05:46:24.085Z"
+        }
+      },
+      {
+        "page": "/openwiki/architecture/plugin-system.md",
+        "bodyHash": "92dfd81954fa36ad6fd464c132f47a411ebb053d37005344b72d204e2587a86f",
+        "generated": {
+          "by": "openwiki/0.5.0",
+          "at": "2026-09-05T05:46:24.085Z"
+        }
+      },
+      {
+        "page": "/openwiki/architecture/radial-menu-session.md",
+        "bodyHash": "bbbeab5f460e56c20045f9ee4229291397f46568892b4908a626ec296ad40e83",
+        "generated": {
+          "by": "openwiki/0.5.0",
+          "at": "2026-09-05T05:46:24.085Z"
+        }
+      },
+      {
+        "page": "/openwiki/architecture/settings-and-slot-editor.md",
+        "bodyHash": "526aa770ff8cb0a6e869a8bcb2800ac6c795a8e1a69f10cd1e4c3a4fbdf3d278",
+        "generated": {
+          "by": "openwiki/0.5.0",
+          "at": "2026-09-05T05:46:24.085Z"
+        }
+      }
+    ]
+  }
+}

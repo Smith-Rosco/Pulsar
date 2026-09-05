@@ -1,0 +1,240 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:3df47e067057054ee051b218e35f3524c007f5bd9071c17c0b2b15be6b10bd4c",
+  "claims": [
+    {
+      "id": "claim_cb05d5fa04da452980b6672d2f64dc07",
+      "statement": "DialogService is the single host for every dialog in Pulsar: each public method marshals to the UI thread via RunOnUi, builds a DialogHostViewModel, opens one DialogHostWindow (a Wpf.Ui FluentWindow), and returns the DialogResult produced by the content view model's RequestClose callback.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/DialogService.cs#L347-L373",
+          "version": "repo-lines-v1:sha256:1eb7843f8196b0b48ed73984c33c1548af20789d3b59272636c3b534d835228b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMWE4MmVhM2M3YzAzMTZiZWUyOTMxYzNkZTBiYzY2OWViY2FiN2NhODU1YmZiZmFmYzBmNTNlMDJjMWQxM2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE3ODUyZTk1NjgzNjhiMzQ3ZTkxYjY0ZmQwYjZmMjBlMDUwMzFhM2E2NTQyZjdmNzFiOTI0OGJmMzk1NDljMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzMjczNTRlYzk5Mjc4ZDZmMzlhY2Y5MmU5ZDRkZGVmMTA3ZjY5ZjYxNzk4ZTFhMGUxYzQwMWQxYzRjZWU4YTYifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/DialogService.cs#L39-L105",
+          "version": "repo-lines-v1:sha256:c0c62888ccf09d17841304cf10ed5b3a9363d82dd037d535dad668177b0dda55:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlZWYxMjVjYjM5OGFmYmI1ZTMzZjQ5YjY2MzM2MjJmMGNjNzZjZjhjZjRiMjE2YWI3MTdlNGQ4YjBhOWNmOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzZjdmNjgyNTYwMDQxZTVlYzMxZDQyNjRkOGJjYjA5Y2UwOTE3MjI1MDgxYTc1MGU2OTg4MzQ1MmEyZDAyZjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkMzJlYzkzOTUyMzllMjEyODIwOTJkYzIyNDI2NDk5ZTEyYTEwZmM0YjIxZGMxMDllN2Y1OGNmMjBlYWI0N2MifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/DialogService.cs#L403-L413",
+          "version": "repo-lines-v1:sha256:3ee051c02bc70b8759d4ffa44b37e95b63333fa666376c09da40b19723825a71:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3ZDdmMDg5M2NkNWJmZDU3M2FkZWVjY2JkOTY0MTdlZWU2YmQwNTA5MTg0ZDQ3NDJiMWNlMzJiNDZhOWJkOGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwZmNkY2IzMjZmZmZjODM5OTNkZTllNmQwM2U1NTk2NTNhODI1YWY5ZTc0YWEyMTQxZjRiZTU2OGMxYWFlMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTRkMDJhODEyMTk0NGQxNzZkMjY1ZTliYjljYzU5ZjZhYjg5MGJjYWRmOGFlZmRlYmRiYmI0ZjJlYTg0NDQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3c98d3fe913a42a0b941b30f1e4906c9",
+      "statement": "DialogService.ShowCustomAsync wires content.RequestClose to the host's CloseCommand when the content implements IDialogViewModel; the unparameterized ShowCustomAsync overload defaults to DialogSizeConstraints.Medium, and the architecture docs require callers to pass explicit constraints for custom dialogs.",
+      "evidence": [
+        {
+          "resource": "repo://Docs/architecture/DIALOG_SYSTEM.md#L126-L142",
+          "version": "repo-lines-v1:sha256:acba1ef4bff14bf595468073d5df7d004da8ecf0b3f74465a0a593bdb1b5509e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGUxMThkOWViNzg0MDNjNzg0YzA4YjBhOTBhMzU0MmQ0OTc4YmNlNjZkODAzMTg1MmUwYmJiMDFhMzkyMGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmZTA0ZWNjZDI0MDE4YzA1OTE4NDFiZGJiMTBhNDEzODc1NjJkN2Q2NzE0NWI3OTMxMWRkMTYxYWE2MDVkNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZGViNDY1NDE1MmQ3MTAyMTM2OWE1ZjlmMTE1ZWViOWFlZWIxYTBmODYxMmQ0ZTYwZTI5NDE0MWZmMTMxM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/DialogService.cs#L64-L104",
+          "version": "repo-lines-v1:sha256:f6408dab81c7b03c58c76c48eb40ed2e7a12ff370e9f7d579844600d8a3d92b2:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhMDdmNzRjNzA3YWRiM2FkMmQ2NDE5NTI2YWYzYmRkZGZhOTg5YjZhNjlkNTQ5NzBjODQxM2FhMjlmZWQ3YTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlNDYyYmQ4NWVhMzUyMjgyMmE5YWQzZWIyNDA5OWIwMzJhMWI2MjdiZWNmZDdjNTgzMWU5OTI3ZDRiYWM0MGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwZmNkY2IzMjZmZmZjODM5OTNkZTllNmQwM2U1NTk2NTNhODI1YWY5ZTc0YWEyMTQxZjRiZTU2OGMxYWFlMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM3ODFkZjg3NzM2ZjRkNzAzYmM4YTVkNzRmYTk3YzZhZDJhZGRjMDRhNmMwZWIyZDZiMTBkYWExNTMzYjFkMDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_897ee3198ea8462d8d61a2464ff7d89e",
+      "statement": "DialogHostWindow is a borderless FluentWindow (WindowStyle None, ExtendsContentIntoTitleBar, Mica backdrop, ShowInTaskbar False) with a three-row grid: TitleBar bound to Title and ShowMaximizeButton, a ContentPresenter bound to Content, and a footer with tertiary (danger-styled), secondary, and primary buttons; the primary button is IsDefault and binds WizardPrimaryCommand.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Views/Dialogs/DialogHostWindow.xaml#L1-L109",
+          "version": "repo-lines-v1:sha256:31819b24d2d35f9d43c42034dcfddc94618f677c7b19ceffb21e930e0507faf7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjZjdjYmI4ZWU1OTFjM2VlYzZhZmExOTY4NGU5ZGFiYzFiNTEyMzM2NGEwM2EzZDdiMDJlMzdkOGY1YTkzMjM5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MDRmMjQ0OWNlNWFkNWVkMTVmMDQwNGEyOTE1NzFhNzA4NzA3NGMwYzUzNDllMzE1ZGJiZGZjM2YwM2M3NWNhIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MSwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmMmJlNGVlMDk0MTRlNzkwMGE5MWEwODlhN2YxZTA4NjllZTlhNWIyMDE0YzM0ZjI4OWM2NTRjYjFmZjAyNWFlIn0"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Views/Dialogs/DialogHostWindow.xaml#L24-L43",
+          "version": "repo-lines-v1:sha256:90d55e5b160ed9d23c11bb3b6b5246f75ae3530b42740e97f3179832011d1b1f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyYTUwZTU2NWVhNjM2NmRkMTRmYmQ5MWE4NTA1MjJiMjAxNmU2YWJlY2Y2YzQxYTlkYzhlNjg5YWY1N2YxN2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0ZWNlMGI4YzYyOGY5ZDE2YjBmOWQyOTUzYjVkOTA4NWRiYTFkYWEyMjIwZDExNDE2MDE3NTk5OThkMjA4MmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjZWRhODg1ZjY1YWJhYjk3NjJiYjRkN2I1MDJhNjI5ZTczNGQ2YjgxYWQzMmU0ODE2ODdkOWQ5MGI3NmFjNzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhZDY1NGRhN2Y3ZWM2MzQ2M2ZkMjA4ZTRjMmRhYTMxYmEwZWNmNTVlN2FlOGEyYWFiNDg1NjljMzk5YjFlYzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0944785dc23e4655ac90d279034e8e06",
+      "statement": "DialogHostWindow handles Escape in KeyDown (not PreviewKeyDown) so controls such as HotkeyBox can consume Escape first, routing it to DialogHostViewModel.CancelFromKeyboard; its StateChanged handler restores WindowState.Normal whenever the window maximizes with ResizeMode NoResize, which is why only LargeResizable dialogs can maximize.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Views/Dialogs/DialogHostWindow.xaml.cs#L29-L40",
+          "version": "repo-lines-v1:sha256:ad6d3ff91da19c1111fd41cfeb6875a8b87a0a3204f04e0d24a04d0e5d4a9a51:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlOGE5ZGYyODZlODNhNjY3NDk5Y2RiNWZlYjU4Yjc2ODQzZTI5OTcyNjlmYzc3MjUwNzBlMmFjOTQ1NTQ2NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwOTY1M2QwOGYzODZlMDMzZGQ5NTgyMmJkNTEwNWM4NmZiYmZjMWNiYzU3OTczMjY2NmEwMDVjNWQxZmU1NWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIwMzQwNTc4NmM2MzY5ZDhiODdhNzRjMmQxNmRhZGU0NDk2YzkyYjM0ODg4Nzg1OGUxNjc4M2M3ZDUzZjMyNzMifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Views/Dialogs/DialogHostWindow.xaml.cs#L42-L54",
+          "version": "repo-lines-v1:sha256:9195931d96c788a7663473ae881edddc5e3201564187f37615419e941a49f4e0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3M2EwYWQwZmY1YmFkYjM5MjI5NjZjM2QxNDQxMDRkYzZiN2FiM2RjNGZlZDAzOGIxYWQ4OTc5MDA0Y2Y2MDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZkNGJiM2UyMTE0YzE2ZGY4MWEyZGIwYjNiYjE4YmFlNGU0ZjMyYWFlOGFkMjViNzc4YzhiMDBiMmI2MGJiYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkMjQ3OWE4MmQ0NDk5NjE4ZGMzY2I3NGY2ZjlhZWFmY2IwODE5ZGY0YTg4YWU2ODgxN2NmZWVjODdjZjAxNjkifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Views/Dialogs/DialogHostWindow.xaml.cs#L60-L79",
+          "version": "repo-lines-v1:sha256:eca01e6ade663a088f63a75734f39f60893bee8e1d9b1ec81b22572306d422bd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwNGM4YTRmNjVjNmMwMDY3YjJmYTg4Njk1ZTY0ZTk4MTQ4NzRlYWJiYTcxNmQ2N2EzNzA0YzQ0MWI5Y2E5ZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc0YWM2N2JkY2ZjNGY0YTI3ZGNmOWJmZmM3NWJiM2E1OTYyMDM3OGJiMTBhNzdiOTlkNTc2MGE2NjRhZGUwOTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkZmJjODQ5MzRlZTRmZDRmZDA2ZTZhMmIzZjNkNGQzYTM5ODZlN2U0ODg5MWQ3NGQyMjc4ZTgxYWVjNjUwMDkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_91660fb2bd2f43c98b6de78bc545a39d",
+      "statement": "DialogHostViewModel owns the dialog chrome state: ConfigureButtons maps DialogButtons to localized visibility/labels (with English fallback, and SaveDontSaveCancel enabling the danger style for the tertiary button); CloseCommand gates the close on the content's IDialogViewModel.CanCloseAsync, returning without closing when validation fails.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/DialogHostViewModel.cs#L160-L209",
+          "version": "repo-lines-v1:sha256:642e5eb9380459376c15d738c9aed11d20e147bd98147c54ef88e93bc83e4abc:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViNjY3NTcyZWU2MmViNWI0Y2U3YjJiZjU2ODBlZTViNDMwOGMzNmIzMjY2YmJlY2IwMWY4ZmQyN2YwMmU4ZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhOWY4NmQyOGU3ODRmOWZkMzFmYjcyZDE1ZjYwY2JjZWFhZmRkNjY5Y2JkNWI2ZGE3ODg4YTAyMzMyMWViYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJiZGE5YWVlODA1MDQwOWEzMzMwNWQyM2E1NGRlZTY5MGJlOGQ4NzBmNzNjODMxYTUwMzZhOWQyYjlmNjg3MGYifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/DialogHostViewModel.cs#L95-L108",
+          "version": "repo-lines-v1:sha256:4f54383de9a6b05deb1b88cb484eac1115465c6b232fa6713bad12e63a5ed8b6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlNjQ3OTRhZjk0MTI2NzUwNTU0NmU0OWIxYzdmMmIxZTc1ODRiYmNkZGZiNThmMjliY2IxZGY0ZWM2NzUyZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhNTdiY2JiMzVkMTU5ZDZkOWUzZTg1NjY4NzcxZDM4MGU3YzM0MzUyNGY0Yzc0NWRjODUyMTJjZGNhYzQwNzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExM2I1MDFlZTczMTNmOWUzYjI5NWVmNWUyMWJiNmM5NzcxNDc1NGE0MGY5NWVjMjA4MzIzMmZjMTI0OGY0ZWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d7d55ee220a54e52a30bc8d93b39ef23",
+      "statement": "Wizard mode is driven by IWizardDialogViewModel: when Content is set to a wizard, DialogHostViewModel subscribes to its PropertyChanged and mirrors IsPrimaryButtonVisible, PrimaryButtonText, IsSecondaryButtonVisible and SecondaryButtonText into the footer; WizardPrimaryCommand and WizardSecondaryCommand delegate to the wizard's commands in wizard mode but close with Confirmed/Cancelled otherwise, and CancelFromKeyboard delegates to the wizard's secondary command.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Base/IWizardDialogViewModel.cs#L1-L37",
+          "version": "repo-lines-v1:sha256:1286fa73353aa4bf3168d0914df2d310d9532e1fa4f1fd8438609e6cbac1dd61:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyY2JhYjU3MjIwY2JlYjlkYzA3ZThiNmM0NTZkOWFiN2U0OTc3ZTMwMWUyYjZkNTAwMDA5ZWY4Y2I1MzAxZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/DialogHostViewModel.cs#L110-L158",
+          "version": "repo-lines-v1:sha256:f308deec9c91198a653c07214e965cb10a075af2ed9b44860974c220b429c081:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3ZWRiZTc5YTU3NDk1N2E3MzU0MGRlNTM3MDlmZjI1ZTc2NzYwNDJhZjA1NjdhZmI3NmZkYTFkNzhhOWM1OWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5M2JkNTJlODViNzZjMjViMjBjNThhNzgxNDBmYzdlZDYxZTgxZjk0YTU5NzhhNjU4ZmIzZDM5OTY4MmNlZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjODBmMWJjYzk3ZTI0MmUwMTVkZDllZjAyZGMyNTFkZTlkN2E2YmNkZDRjNzUwZTdjNDQzMjRjODkwNDA5MzEifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/DialogHostViewModel.cs#L30-L68",
+          "version": "repo-lines-v1:sha256:370b9c74b21bd0e261d70cc8a820f455c4cfa37db64285e6e81c17e7ae1222e5:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyZmJiZmRmYWQwMjFlNmFlOWQwMzBlYTliNmUzZTQ1OGMyODExYmEyYmM2ZjRkZmEwYTA1NzE5NjUzMjM2OGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjYzFkMjEwODVlMGY4ZGE3N2VjZjQyMDI2YWNlN2M4ODg3NzI4ZDRmNDZlNjU4MzBhZjk4ODk3ZGQwOTZiNzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEwM2JlYjc2N2Q4MWFiYWNiZGY2YmZmMTJiZTk4ZTRkMGU1M2EwNzVhY2JlZTYwMTJlOTM2YmIxOWNiMjdhOGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1ZTg3NDcxYWVmNGUyNTUzMTRlMzJmYzBjMzk0MDI0NTk4ZDJjNTIwMGVhNGU4ZDIyZmYyNTJlODI3NGEwZTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bd18f488009a4a5cacc58369586a45af",
+      "statement": "DialogSizeConstraints presets gate every dialog's size, resize and maximize behavior: XSmall 350x200, Small 380x240, Medium 600x450, Large 800x600 resizable without maximize, LargeResizable 800x600 resizable with maximize, Auto size-to-content, and Default 600x450 used when a dialog is shown with null constraints.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Models/DialogSizeConstraints.cs#L6-L154",
+          "version": "repo-lines-v1:sha256:e31e2d54c1932978668ec54d3e21f37e6fcc6b72b1968788ae021b763794af17:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5NDI0ZGMxNWZlYTQ0ZTdhY2ZlYTdjNTFiNzI1YTgwOTg5ODhlMGVmZTliNTM2ZjlmMzFmODA5NDg5NTFhN2EzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0ODkzZjQwZTM3ODFlYjg5NmM4MmQwNDZhMDgwNjdhMTFlMzVjZGYyZjFkZmFmMjZmZWE5MGI4ZGI2Njc2NDEzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwNjcwMTM1ZGQ0ZWNjMDcwOTliODE4M2M4ZjJhY2E4M2U5NDBhOWZmODNiMzZlNWQwYTg3MWI4Y2VlMWY5NTQyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MSwiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_fef9e4d2663b45b496c14ff3b92c6a72",
+      "statement": "DialogService.ApplySizeConstraints maps DialogSizeConstraints onto window Width/Height/Min/Max (SizeToContent.WidthAndHeight for Auto) and ConfigureResizeBehavior maps AllowResize to ResizeMode.CanResize/NoResize plus the ShowMaximizeButton dependency property, which the TitleBar binds to.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/DialogService.cs#L288-L317",
+          "version": "repo-lines-v1:sha256:e500e3472134bb65c51261912be2d4ca85cf2443c4a98c9202712b6cea576b45:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhNTVmYzkzNGRjM2Q5YmZiNzIxZWI0YmJmOWI0YjY4ZDYwZDk4MmEwMmI0NWY1Yzk5ZjliMmQxNDA5OWQwMjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhZGY3NTVjMzBhZTQ2ZGU3MzlkNDk1MGU5MTIwYzc1ODExMmM1Y2NhODAzNjNjMmVkYmFlNWM2MWQ0NmI3OTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5ZTMyYjc3YTdiMDMxMmNmOTk2NDE0YTFmNzMwYWUyNWE4NDNiYWRiN2M5YmRjZGJiMGYwMjhmMWJiNTE3ZDkifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Views/Dialogs/DialogHostWindow.xaml.cs#L60-L67",
+          "version": "repo-lines-v1:sha256:34cf0e5d1791effde1502ec1b2a538018451da0fc0e6fc38d2ccbbe4da49dcef:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjA0YzhhNGY2NWM2YzAwNjdiMmZhODg2OTVlNjRlOTgxNDg3NGVhYmJhNzE2ZDY3YTM3MDRjNDQxYjljYTllYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzRhYzY3YmRjZmM0ZjRhMjdkY2Y5YmZmYzc1YmIzYTU5NjIwMzc4YmIxMGE3N2I5OWQ1NzYwYTY2NGFkZTA5NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDM2ZTRlZjQwMjllODA5MzRiMmMyZDEzYTMwODc2ZjNmZGYyMTVlY2M0NWRjZTMwNWJiYTNlMDgyZGZlMGI0YSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0dd295d1afee4025b8a839fd93515b05",
+      "statement": "Content view models are rendered through implicit DataTemplates in Themes/DialogTemplates.xaml (merged into DialogHostWindow resources): one DataTemplate per dialog view model instantiating its Views/Dialogs/Contents UserControl, plus a sys:String template for plain-string messages; missing registration makes the ContentPresenter fall back to ToString and display the view model's type name.",
+      "evidence": [
+        {
+          "resource": "repo://Docs/architecture/DIALOG_SYSTEM.md#L186-L201",
+          "version": "repo-lines-v1:sha256:5e050b7d15343e690aad74aff23baf29956fd427c1b4aa4e86f1a29da87475f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMDAyN2I2NGVkMzI5NDE0NWQ4YTQzMDFmY2Q1NmYwNmM1MzgwMzE1NTU0ZTM5OTdlZWFkMDU1ODMyYzc5NDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwMDE5YjczZDgyNjU5OTc3NDM1ZjUzM2U4NjgxOGQ1YjA5NjFhZTMxZDYyNWYxZWZhMGJhZDFjNTg5OGRjMzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmMDcxMmRlMGU5NTJjNzMwYzQyNGI2MTZhMzgwNGFkNDU1NDg3Mjg4YjYyYzEwZThmNjNjNGE2OGFmM2I3NDUifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Themes/DialogTemplates.xaml#L1-L79",
+          "version": "repo-lines-v1:sha256:23bc091ffcc1f1ced3129a85b68094bfde40f154658b269c2507cff8c92f80f2:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkN2I5YzJjNjVhZjFiODA0YWEzZTJiOThlMTkzMmE0MTIwNjE1OWE3NTEzMWUwMjkwYjAxY2JjMjRkZjJlYmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmMGNjNTUzMThjOWEzMWM5YWYxOGY4ZTA3MWRmZDRkMTEwY2YzZmJmNzdlZTA4ZmNhMDE5Y2U4ZTliOGQwOWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Views/Dialogs/DialogHostWindow.xaml#L24-L30",
+          "version": "repo-lines-v1:sha256:37d27eb34a10ec32af536c8447d29ebb266306c49e733ea36b5f0c9556c4bf73:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzJhNTBlNTY1ZWE2MzY2ZGQxNGZiZDkxYTg1MDUyMmIyMDE2ZTZhYmVjZjZjNDFhOWRjOGU2ODlhZjU3ZjE3YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzNjZjdkODE4ZmIwNjc3ZjY4YTg5MTEwMjc1ZmE1MWZkMzY3N2U0ZGNjNTkyZTdmZDRiZmFhNjljMmM0MWY1MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2NlZGE4ODVmNjVhYmFiOTc2MmJiNGQ3YjUwMmE2MjllNzM0ZDZiODFhZDMyZTQ4MTY4N2Q5ZDkwYjc2YWM3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDc3NzY2MWY0YWUyNDBmNWUzNTA0YjI3ZjA1NTQ3MTk1NWM0NGNiNTJkZjEwMDQ1ZTdmNmY5NzAxMGQwZjUxMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a4a6bc8ffd364229952ce0a503bc8465",
+      "statement": "Dialogs inherit theme through DialogService.PrepareWindow: theme comes from the optional themeOverride (the first-run wizard forces AppTheme.Light at startup) or from IThemeService.CurrentTheme, and IThemeService.ApplyTheme runs after the window's InitializeComponent, updating the ThemesDictionary in place, ensuring a ControlsDictionary, and swapping the Pulsar Theme.Light/Dark dictionary last so Pulsar keys win over Fluent defaults.",
+      "evidence": [
+        {
+          "resource": "repo://Docs/lessons/WPF_THEME_INJECTION_PITFALLS.md#L28-L38",
+          "version": "repo-lines-v1:sha256:13875eaa2ebe3e01c8468659c8741357520b0a44287bcdf1e3d86b408e1c04d6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmODU3NmZjZmJhY2E1NTc4YzkyMjNlOWM4ZmVkMTVhODE4NTQ5NGUzMDI2OTUwOWYxYTU3MWM2NzcxZjNiMDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiNzhiMjhlZWVmZGJhZjQwMzE0ODBjYWYwODIxNzBjMGU5YzNhMDFiYzlmZDhiMTM4YTc1MzY3M2Q0ZTJhYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzZWMwZjZiYWFiMDZlM2FhYmY2MzU4ODZlYmRmMDQ3MGNhM2U2ODUxZDY4Y2Q5YWIzZmIwNWU4MmQ4YjcwYzkifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/AppStartupCoordinator.cs#L406-L433",
+          "version": "repo-lines-v1:sha256:9392b2f7dafdf2c4981540d9a5532e93155c0d8f8294d2070ceaac5dbb548c67:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5ODI4ZTg1OTIyZTI0ODc2NTFhMWRjZTAwMTMxMTI3OTNkN2FmM2RmN2MxYzA0YzQ2NzVhODRjYzM4MjgzODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhOWY4NmQyOGU3ODRmOWZkMzFmYjcyZDE1ZjYwY2JjZWFhZmRkNjY5Y2JkNWI2ZGE3ODg4YTAyMzMyMWViYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExYzVmNjM2ZjRmMzczMWEzNDE2MWU1YzkwMzA4YjNmOTdlOGY4Y2EwOTAyNGM2ODg0NzlmY2MzOGE0NDEzNjUifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/DialogService.cs#L322-L345",
+          "version": "repo-lines-v1:sha256:a609f37bce2a378e5db45e7b59d04f133cd29a117ce4e28ce306ef097620595b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0N2FmNzFlOTQ1NzhkMmE1ZDFkMDNjMDg1Mjg5OGNmNzZkZDI2Mzg1N2FiYzhkMDBkNDM4M2VkODU4YzMwMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5YzRkZTEwNzY1MGFkMjdmMzdlYmZhMTg2ODgzYjIxMzc3NGRhZWMyZWE5MmNhYjEyNGYyZDQyY2JlZjQyYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3MTY0NDZjMTc3OTc0OGE0ZWFlODc1ZWNhNjRkZWE0MDg2NmI5MDkwZDA5MjMyOTAwNzEzMjBkMGIxNTJjZWIifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/ThemeService.cs#L241-L284",
+          "version": "repo-lines-v1:sha256:0dc55dd8c05b1e3dae0ddf0586f232315aee71a84e126c9be16e2ef3f4922ca7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3Y2Q2MjliM2NkOWM3NGRiYTY2NzE1YWRmODViZmRlN2Y1OTMyMGExZjE0NjE1ZWYzYWY1YjMwY2UyZmVjMmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhOWY4NmQyOGU3ODRmOWZkMzFmYjcyZDE1ZjYwY2JjZWFhZmRkNjY5Y2JkNWI2ZGE3ODg4YTAyMzMyMWViYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNkZDc5MmI1MDhhMDE2NTFhNWVlNjE5OWJhYTBiYmUxODZlNzZiZWMyZDIzZGM5YzlhNmM1ODQwNjA1Njc1YzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e6794beb38994024985ce04d8ff40933",
+      "statement": "DialogService owns owner detection and placement: FindBestOwner prioritizes the active visible non-minimized window, then an open SettingsWindow, then the visible MainWindow, then any visible window; CenterOwner sets the found owner, CenterScreen and NearMouse use no owner, and NearMouse positions the window 20 DIP from the cursor clamped to the nearest monitor work area.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/DialogService.cs#L161-L234",
+          "version": "repo-lines-v1:sha256:38dc145a459c82a99cb1523f8efc5cd18aedf28774eb4440fbcbb099edb35103:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0NmFhNDcwZWNjMGQ5ODRhMmRkMjkyOTc5N2VmMDY2OGFkZThmOGQwZTViMTQ3ODFlNDVmZGY3YmExNGMyODUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlYzRiZmMxMTc1Y2E4NzNjMjgwZTdkMDk4NDZiYTFjYTQ3MTg1OWRkODE3NGJlY2QwOTJlZTdmMTljYTZkYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMmUzMjM3MGQ1YzBkNDQ5YTdmOWEwMjU4ZjQ3ODIxODIwNzE1OGU4NjAyZWNlYTIwMGZhMzFkMGVkMTkyNjYifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Services/DialogService.cs#L239-L283",
+          "version": "repo-lines-v1:sha256:aa0049d24d431df68b2941daa3c7b9aa78f4f57ed3d3fc09d5fcd87e8018f7d4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3MDVhMzI4MjI0M2E1NmQyYjI0MGNjNWZhYTQwNmI0ZDQ3ZDNlZWNkODliOTE4NWE4ZjAzNDc3MDliM2RiNTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFjYWViMGM4NDQzOThmMWE5ZWQ5NDI1NTEwNDlhYzY1ZWVjMWIyODMwMjllMWYwMjA3ZDkyZTg3YjY3M2E3MDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyYjY5OGZmMzc0OTg2NGFmMGExZjY4OTIxNzNjOTE0Mjc5M2UwY2MzZTFhYzA0MGU3Y2QzYjMzYTAwYjU1OTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_93d974c2f5d0473e8d9ee4cfd67007a7",
+      "statement": "SettingsDialogFlows is the single recipe owner for Settings dialog flows: RunAsync shows a dialog and runs the onConfirmed delegate with the same view-model instance only when the result is Confirmed, while the caller's delegate stays responsible for SettingsViewModel-owned state such as MarkDirty and notifications.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar.Tests/ViewModels/SettingsDialogFlowsTests.cs#L20-L65",
+          "version": "repo-lines-v1:sha256:c334870148d64cf59aa17aca532acf14fabd2b41a5c91dfe9b73a3047f946d3e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZDg0OGUxNDg1NjQ4MWRhYzk0YWU1ZmU1OTI0NTE1OTZiZWNmMDM3ZDhlZmJjMzhlNmQxZmRjYjRkNmYxNDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiYTE2NTYwMDFiMzBlZDc5MGJiOTBiYWM1YzU1NmNkNzI3MTg2NDVkZThkMDViZDM4OTE5NTdhZTEyOWRlZWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYyZjYyYWRkNzFmNmZlYmEwZTM4ZDBhYzI3NTM0Yzk1ODRiM2I3ZDk4NzhmODhmMmRlZDhlZWUzMzZkNWNlYTAifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Settings/SettingsDialogFlows.cs#L24-L62",
+          "version": "repo-lines-v1:sha256:420657e030e996a87c9a6d32cd647b387bbf44407d82900ca5eb7db12545f72e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0M2UzOWI2Nzk0NDRkNjJjOWE3YTgyNWM0ODJiNWY5YzgzZjQ4MmMxOGU3ZDdhNTg3M2ZiNTQ0NTU1YTQwMjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNkMTMzMjg1MDc4MmQ5MDk3YWJmZGM5Zjg1MWUyMWRjMzJkMTQ1MTg3ODYxMzRkYjkzOGY5YjhmZDFhOTk1NjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1NzlkNTJiYmNiMDU3MTYwMDYxODQwZTE3ODM0ODFiNmQ5Y2E0NTJmYzdjOTJhZTAzMmE3MTcwZGU1ZDY1ZWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_85fd740cddc74085b85b48bce6ead36e",
+      "statement": "SlotEditorViewModel is an IWizardDialogViewModel whose CanCloseAsync blocks Confirmed closes while a blocking validation issue exists; its content view AddSlotContent reacts to ValidationRequestId changes and scrolls/focuses the first invalid target, implementing the field-level validation contract documented in CREATE_SLOT_DIALOG_GUIDELINES.md.",
+      "evidence": [
+        {
+          "resource": "repo://Docs/guides/CREATE_SLOT_DIALOG_GUIDELINES.md#L117-L138",
+          "version": "repo-lines-v1:sha256:8fb9de6909edee0dda33ca2ac926afefd889469b3fa7e245b8c06c99dcab837b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjZjdlNGQxOGMxMzkyODhkZmM1ZGY4MzhkNmJjMmYyOWIwM2I4MzUxY2I3MGU4MzI3YTdiMjk4OWNjODBjMWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1MmQ3MTExMDNkNTBhNDM3ODMwYzZmYmNkMDRmYjRiYWI0OWEwZjgyZjZkMjZkMWM3OTFjNmU4NDg4ZGQwOTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZiMTQ0Yzg0NmYyNzQ3ZDU0OThkNzgxZDliNmQ4NzhhNTQyOGJjMDg4Y2YwN2MzYThlMDY5N2Q2MjQ1MzZjMWYifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Dialogs/SlotEditorViewModel.cs#L306-L317",
+          "version": "repo-lines-v1:sha256:2fb3ec373437337daafc96880d84bec37cc8974fdd2902cceed9e408c2603425:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlZDQzZjg3ODVjYjk1MWRjNjg5NzkyYjNjMDk3ZmM1ZmJkZmY4OGM3OWJhZjdiMzNkMTgxYmJmN2UxZDE2NjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhOWY4NmQyOGU3ODRmOWZkMzFmYjcyZDE1ZjYwY2JjZWFhZmRkNjY5Y2JkNWI2ZGE3ODg4YTAyMzMyMWViYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxMmFjZTJkMTEyZWNlMzkxZmM2ZmM0YTc4ZjMyOTUwZmUxMDU0MDY1NzUyYTQ0Mzk3Y2ZiODJkNDJhNjc2OWMifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/Views/Dialogs/Contents/AddSlotContent.xaml.cs#L20-L82",
+          "version": "repo-lines-v1:sha256:ce14057367e33f5ff1af4f109adc02552cd9443c6cd79e8122d74c8b9bd3e8ef:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2NDcxMmIzZDYyMzVhYjU3MTFhNzlhY2RiZTA4ODMxMzZhOTkzMTM4MTVmMTUxOTExOTFhNTE5Mzg3M2UwYzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwZmM4YzZlYjA4ZjRlZDI2MGE1NmE5Y2RmNjMzZmYxMmQwMTYyNTBiZjgyNWNmNTM1ZmRkYTI2ZmI5NTAwNGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY3OTA1MzA5NmNhOGJiZjBhOWZlY2NiNGRiYjQwNDA2N2M4MDRhZmE1MGQxMTIxZmJlNTQxZWNjZWYwYzJlZWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fd120d55ad9a460ebb3a674785e4806a",
+      "statement": "The slot create dialog is shown with DialogButtons.None and an inline custom constraint (860x700, resizable, maximizable) rather than a named preset, because the wizard owns the footer buttons; slot edit uses DialogSizeConstraints.LargeResizable.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/SettingsViewModel.cs#L370-L417",
+          "version": "repo-lines-v1:sha256:9c81a24f661b46a5364e31f0b355b76512b8fc8597aa9bb0b753e331ba781ab3:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxYjQ0YWI3OTI1ODVlOTZjZTViYWNiYzg3NmFlYzYzNGQ5NmI4MjVmODMzZjE3MjI4ZGEzZDAzNzgxMjMyMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkOTllN2M0OTcxM2MzMzc2Njc3MTI5MWRiY2NjMzc2NGM0OTk1N2U5N2U0NjgyN2U3ODIxMzliM2FiZjk5NDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmMGZkZTBlOGMxN2Y5M2VjNDFhNGZiMDZmMjBiYTM1MDU4ZDY0YmViMjVmZGY2MTk0ZjM0ODUyMTUzYzM5Y2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNkNWViMDAxNWI2YmU5ZTUwYWViOGZlYjFiODU1YTE4ZWY5YzdhZTlmYjFlZWJkNmZhNTQ5YTIwNDExNzM0OWIifQ"
+        },
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/SettingsViewModel.cs#L821-L849",
+          "version": "repo-lines-v1:sha256:ff8901ad84f1bb6ea7639787dc09324529dd8ff3e57a224349afa475a658145a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzZmY3YjNmZWFlYTRhYTQ3M2Y0OTUwYjM5Y2U2NTRiOWIwZGE5OGIzZTMzNGM1MjFjNjZhNjZmN2U0M2QxYmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNkNWViMDAxNWI2YmU5ZTUwYWViOGZlYjFiODU1YTE4ZWY5YzdhZTlmYjFlZWJkNmZhNTQ5YTIwNDExNzM0OWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg0NDBhYjk5MTcxZmI2YjVjNDViMDRmNjhmNDc5YTM2NTMyMjY4Zjc3ZGE0NmIxZjEwZjdlMjRlM2NhOGQ3NDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3a8b27a1b8b6443ea14935d1822901e8",
+      "statement": "Dialog view models can open nested dialogs through the injected IDialogService: SecretPickerViewModel opens QuickSecretsViewModel for create/edit and ShowConfirmationAsync for delete while it is itself hosted in a dialog, committing pending secret payloads before refreshing the list.",
+      "evidence": [
+        {
+          "resource": "repo://Pulsar/Pulsar/ViewModels/Dialogs/SecretPickerViewModel.cs#L121-L200",
+          "version": "repo-lines-v1:sha256:ad4b14efa5baee8f8d265bead39dfb1ff2b5fffe0662ce718649926d718a79f4:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxYjQ0YWI3OTI1ODVlOTZjZTViYWNiYzg3NmFlYzYzNGQ5NmI4MjVmODMzZjE3MjI4ZGEzZDAzNzgxMjMyMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5ZmFjMWFkZDRlNDhkNmRhZTI0YjFjYTAyZTVjOGI1NjA4NTVlMzQ1N2RlYzNiYjE2MDNjYWYyNDJjN2U5NTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiOTRhZjM3MDRhMGZiZWYyMGE0ODMzY2VhMjY5MmE1NjhhM2IzY2JhMjRiMzczZTVkZTFmYzViODNiYTM2MDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwZTA0ODgzZDEwMmI3NDBhNTI2YTk2ODkxYmNmODc0MWIxYWM1OGQ2YmEzOGU1YjAyMmYzOTg3ZTIwYjk2ODAifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-05T05:46:24.085Z"
+  }
+}
