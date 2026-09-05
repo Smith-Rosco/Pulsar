@@ -40,9 +40,16 @@ namespace Pulsar.Services
 
             if (style == SubMenuLayoutStyle.Fan && childCount <= FanMaxSlots)
             {
+                // [Fan QA fix 2026-09-05] Wing angles are RELATIVE to the parent slot's
+                // direction — they must be added to DirectionRadians before use, exactly
+                // like the Ring branch below. Omitting the rotation made Fan children
+                // land at absolute -30°/0°/+30° (canvas east) regardless of where the
+                // parent slot sits, while HitTestFan correctly compared in the parent's
+                // local basis — layout and hit-testing disagreed on every non-east
+                // parent. Found by manual QA (change 2026-09-05-cascade-submenu-fan-qa).
                 for (int i = 0; i < childCount; i++)
                 {
-                    double wingAngle = GetFanWingAngle(i, childCount);
+                    double wingAngle = parentPose.DirectionRadians + GetFanWingAngle(i, childCount);
                     positions[i] = ComputePosition(parentPose, wingAngle);
                 }
 

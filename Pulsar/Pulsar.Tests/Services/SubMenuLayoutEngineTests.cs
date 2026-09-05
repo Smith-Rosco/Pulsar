@@ -122,6 +122,47 @@ namespace Pulsar.Tests.Services
         // ============ Determinism & canvas ============
 
         [Fact]
+        public void ComputeChildPositions_Fan_ShouldRespectParentDirection()
+        {
+            // [Fan QA fix 2026-09-05] Regression for the manual-QA defect: the Fan
+            // branch ignored DirectionRadians and placed wings at absolute -30/0/+30°
+            // (canvas east) for every parent. With the parent pointing north the three
+            // wings must land at -120° / -90° / -60° on the 100-radius sub-ring.
+            var pose = Pose with { DirectionRadians = -Math.PI / 2 }; // north
+            var positions = _engine.ComputeChildPositions(pose, SubMenuLayoutStyle.Fan, 3);
+
+            positions.Should().HaveCount(3);
+            // upper wing (-120°): center (200.00, 163.40); tip (-90°): (250, 150);
+            // lower wing (-60°): (300.00, 163.40). Slot top-left = center − 25.
+            AssertNear(positions[0], 250 + 100 * Math.Cos(-2 * Math.PI / 3) - 25, 250 + 100 * Math.Sin(-2 * Math.PI / 3) - 25);
+            AssertNear(positions[1], 225, 125);
+            AssertNear(positions[2], 250 + 100 * Math.Cos(-Math.PI / 3) - 25, 250 + 100 * Math.Sin(-Math.PI / 3) - 25);
+        }
+
+        [Fact]
+        public void Fan_LayoutAndHitTest_ShouldAgreeAtEveryChildCenter()
+        {
+            // Layout and hit-testing must use the same basis: the point at each laid-out
+            // child's center must hit-test back to that child, for every parent
+            // direction (the QA defect was exactly layout/hit-test disagreement).
+            foreach (var direction in new[] { 0.0, Math.PI / 2, -Math.PI / 2, Math.PI / 4 })
+            {
+                var pose = Pose with { DirectionRadians = direction };
+                for (int count = 1; count <= 3; count++)
+                {
+                    var positions = _engine.ComputeChildPositions(pose, SubMenuLayoutStyle.Fan, count);
+                    for (int i = 0; i < count; i++)
+                    {
+                        var center = new Vector(positions[i].X + 25, positions[i].Y + 25);
+                        int hit = _engine.HitTestChild(center, pose, SubMenuLayoutStyle.Fan, count);
+                        hit.Should().Be(i + 1,
+                            $"direction={direction}, count={count}: child {i}'s own center must hit-test to itself");
+                    }
+                }
+            }
+        }
+
+        [Fact]
         public void ComputeChildPositions_ShouldBeDeterministic()
         {
             var first = _engine.ComputeChildPositions(Pose, SubMenuLayoutStyle.Ring, 6);

@@ -1,0 +1,206 @@
+{
+  "settings": {
+    "language": "zh-CN",
+    "centerSlotBehavior": "MRU_Window",
+    "triggerDistance": 100,
+    "theme": "Light",
+    "hoverScale": 1.2,
+    "springiness": 6,
+    "maxDisplacement": 20,
+    "radialRenderer": "Default",
+    "radialThemePreset": "System",
+    "hotkeys": {
+      "ShowGrid": {
+        "key": "Q",
+        "modifiers": "Control,Shift"
+      },
+      "ShowSwitcher": {
+        "key": "Q",
+        "modifiers": "Control"
+      }
+    },
+    "input": {
+      "modifierStateMode": "Hybrid",
+      "enableModifierStateLogging": false
+    },
+    "quickSwitchCenterZoneRadius": 30,
+    "hasCompletedTutorial": true,
+    "lastTutorialStep": null,
+    "tutorialCrashedAt": null,
+    "selectedTutorialScenarioId": null,
+    "onboardingState": "Complete",
+    "logging": {
+      "minimumLevel": "Information",
+      "mainLogRetentionDays": 7,
+      "pluginLogRetentionDays": 30,
+      "pluginLogMaxSizeBytes": 100000000,
+      "enableDebugOutput": true,
+      "customLogDirectory": null
+    },
+    "hasCompletedInitialDetection": true,
+    "slotsPerPage": 8,
+    "enableRightDragSummon": false,
+    "rightDragSwitcherModifier": "Control",
+    "rightDragActionModifier": "Shift",
+    "summonMode": "Immediate",
+    "gestureDragThreshold": 25,
+    "gestureFlickOutCancelEnabled": true,
+    "gestureFlickOutRadiusMultiplier": 1.5,
+    "gestureIsolationEnabled": false,
+    "gestureIsolationMode": "Allowlist",
+    "gestureIsolationBlockFullscreen": true,
+    "quickSwitchTimeoutMs": 250
+  },
+  "plugins": {},
+  "profiles": {
+    "Global": {
+      "icon": null,
+      "alias": null,
+      "commandMode": [
+        {
+          "plugin": "com.pulsar.command",
+          "action": "sendkeys",
+          "args": {
+            "keys": "QA-ROOT1"
+          },
+          "label": "QA Fan-2",
+          "icon": "",
+          "color": "",
+          "order": 0,
+          "slot": 1,
+          "subActions": [
+            {
+              "pluginId": "com.pulsar.command",
+              "action": "sendkeys",
+              "args": {
+                "keys": "QA-2A"
+              },
+              "label": "QA2-A",
+              "iconKey": "",
+              "colorHex": ""
+            },
+            {
+              "pluginId": "com.pulsar.command",
+              "action": "sendkeys",
+              "args": {
+                "keys": "QA-2B"
+              },
+              "label": "QA2-B",
+              "iconKey": "",
+              "colorHex": ""
+            }
+          ]
+        },
+        {
+          "plugin": "com.pulsar.command",
+          "action": "sendkeys",
+          "args": {
+            "keys": "QA-ROOT2"
+          },
+          "label": "QA Fan-3",
+          "icon": "",
+          "color": "",
+          "order": 0,
+          "slot": 2,
+          "subActions": [
+            {
+              "pluginId": "com.pulsar.command",
+              "action": "sendkeys",
+              "args": {
+                "keys": "QA-3A"
+              },
+              "label": "QA3-A",
+              "iconKey": "",
+              "colorHex": ""
+            },
+            {
+              "pluginId": "com.pulsar.command",
+              "action": "sendkeys",
+              "args": {
+                "keys": "QA-3B"
+              },
+              "label": "QA3-B",
+              "iconKey": "",
+              "colorHex": ""
+            },
+            {
+              "pluginId": "com.pulsar.command",
+              "action": "sendkeys",
+              "args": {
+                "keys": "QA-3C"
+              },
+              "label": "QA3-C",
+              "iconKey": "",
+              "colorHex": ""
+            }
+          ]
+        },
+        {
+          "plugin": "com.pulsar.command",
+          "action": "sendkeys",
+          "args": {
+            "keys": "QA-ROOT3"
+          },
+          "label": "QA Ring-5",
+          "icon": "",
+          "color": "",
+          "order": 0,
+          "slot": 3,
+          "subActions": [
+            {
+              "pluginId": "com.pulsar.command",
+              "action": "sendkeys",
+              "args": {
+                "keys": "QA-5A"
+              },
+              "label": "QA5-A",
+              "iconKey": "",
+              "colorHex": ""
+            },
+            {
+              "pluginId": "com.pulsar.command",
+              "action": "sendkeys",
+              "args": {
+                "keys": "QA-5B"
+              },
+              "label": "QA5-B",
+              "iconKey": "",
+              "colorHex": ""
+            },
+            {
+              "pluginId": "com.pulsar.command",
+              "action": "sendkeys",
+              "args": {
+                "keys": "QA-5C"
+              },
+              "label": "QA5-C",
+              "iconKey": "",
+              "colorHex": ""
+            },
+            {
+              "pluginId": "com.pulsar.command",
+              "action": "sendkeys",
+              "args": {
+                "keys": "QA-5D"
+              },
+              "label": "QA5-D",
+              "iconKey": "",
+              "colorHex": ""
+            },
+            {
+              "pluginId": "com.pulsar.command",
+              "action": "sendkeys",
+              "args": {
+                "keys": "QA-5E"
+              },
+              "label": "QA5-E",
+              "iconKey": "",
+              "colorHex": ""
+            }
+          ]
+        }
+      ],
+      "switchMode": []
+    }
+  }
+}
