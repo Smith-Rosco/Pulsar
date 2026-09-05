@@ -525,3 +525,10 @@ Pulsar/Pulsar.E2E/Workflows/_bisect-*.json
 
 # Local build warning snapshots
 build_warnings_*.txt
+
+# graphify tool output (local graph-analysis cache, regenerable)
+Pulsar/graphify-out/
+
+# archify local browser-verification receipts (screenshots + JSON from
+# `archify visual-check`). Regenerable evidence, same rationale as Docs/media/
+Docs/diagrams/*.visual-check.*
