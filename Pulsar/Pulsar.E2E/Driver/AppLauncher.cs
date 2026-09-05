@@ -13,12 +13,18 @@ namespace Pulsar.E2E.Driver
     /// Fixture support: before launch, an optional fixture Profiles.json is copied
     /// into <c>%AppData%\Pulsar.Debug\</c>, so the debug instance deterministically
     /// starts from a known slot/page configuration and never reads the user's real
-    /// configuration.
+    /// configuration. A sibling <c>PluginUsageStats.json</c> in the fixture
+    /// directory (if present) is installed the same way, giving analytics-page
+    /// workflows deterministic usage data; when absent, any leftover debug stats
+    /// file is removed so empty-state workflows start clean.
     /// </summary>
     public sealed class AppLauncher
     {
         /// <summary>Default debug instance startup grace period.</summary>
         private static readonly TimeSpan ProcessStartTimeout = TimeSpan.FromSeconds(15);
+
+        /// <summary>Fixture file name for deterministic usage statistics.</summary>
+        private const string StatsFixtureName = "PluginUsageStats.json";
 
         public sealed class LaunchedApp
         {
@@ -57,6 +63,21 @@ namespace Pulsar.E2E.Driver
                 var target = Path.Combine(debugConfigDir, "Profiles.json");
                 File.Copy(fixturePath, target, overwrite: true);
                 log($"Installed fixture config: {fixturePath} -> {target}");
+
+                // Usage-stats fixture: deterministic analytics-page data.
+                var fixtureDir = Path.GetDirectoryName(fixturePath) ?? ".";
+                var statsFixture = Path.Combine(fixtureDir, StatsFixtureName);
+                var statsTarget = Path.Combine(debugConfigDir, StatsFixtureName);
+                if (File.Exists(statsFixture))
+                {
+                    File.Copy(statsFixture, statsTarget, overwrite: true);
+                    log($"Installed stats fixture: {statsFixture} -> {statsTarget}");
+                }
+                else if (File.Exists(statsTarget))
+                {
+                    File.Delete(statsTarget);
+                    log($"Removed leftover debug stats file (no stats fixture supplied): {statsTarget}");
+                }
             }
 
             var arguments = "--ui-debug";

@@ -65,6 +65,7 @@
             <TextBlock Text="{Binding Title, ElementName=Root}"
                        FontSize="{StaticResource Pulsar.Type.Title}"
                        FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                        HorizontalAlignment="Center"
                        TextAlignment="Center"
                        TextWrapping="Wrap"

@@ -62,6 +62,8 @@ namespace Pulsar.E2E.Runner
             var runId = options.RunId;
             var artifactsRoot = options.ArtifactsRoot;
             Directory.CreateDirectory(artifactsRoot);
+            // Run-scoped directory for screenshots/recordings/step artifacts.
+            Directory.CreateDirectory(Path.Combine(artifactsRoot, runId));
 
             using var stateClient = new StateClient();
             using var uia = new UiaDriver();
@@ -163,6 +165,7 @@ namespace Pulsar.E2E.Runner
 
                 case StepType.MenuOpen:
                 case StepType.MenuClose:
+                case StepType.Command:
                 {
                     if (_launched == null)
                     {
@@ -177,9 +180,13 @@ namespace Pulsar.E2E.Runner
                             var mode = step.Mode.Equals("task", StringComparison.OrdinalIgnoreCase) ? "task" : "action";
                             CommandClient.Send(_launched.Process.Id, "menu-open", mode);
                         }
-                        else
+                        else if (step.Type == StepType.MenuClose)
                         {
                             CommandClient.Send(_launched.Process.Id, "menu-close");
+                        }
+                        else
+                        {
+                            CommandClient.Send(_launched.Process.Id, step.Command);
                         }
                     }
                     catch (Exception ex)

@@ -1,0 +1,68 @@
+{
+  "name": "settings-analytics-empty-dark",
+  "app": {
+    "exePath": "",
+    "fixture": "Fixtures/default-profiles-dark.json",
+    "arguments": ""
+  },
+  "steps": [
+    {
+      "type": "launch",
+      "id": "launch-debug-instance"
+    },
+    {
+      "type": "wait",
+      "id": "settle-after-launch",
+      "durationMs": 1500
+    },
+    {
+      "type": "command",
+      "id": "open-settings-window",
+      "command": "open-settings"
+    },
+    {
+      "type": "wait",
+      "id": "settle-settings-window",
+      "durationMs": 1500
+    },
+    {
+      "type": "assert",
+      "id": "assert-settings-window",
+      "automationId": "Pulsar.Settings.SaveChangesButton",
+      "expected": "visible",
+      "timeoutMs": 8000
+    },
+    {
+      "type": "click",
+      "id": "click-analytics-nav",
+      "automationId": "Pulsar.Settings.Nav.Analytics",
+      "timeoutMs": 5000
+    },
+    {
+      "type": "wait",
+      "id": "settle-analytics-page",
+      "durationMs": 1200
+    },
+    {
+      "type": "assert",
+      "id": "assert-empty-state",
+      "automationId": "Pulsar.Settings.Analytics.EmptyState",
+      "expected": "visible",
+      "timeoutMs": 8000
+    },
+    {
+      "type": "screenshot",
+      "id": "screenshot-empty-state",
+      "file": "analytics-empty-dark.png"
+    },
+    {
+      "type": "wait",
+      "id": "settle-before-stop",
+      "durationMs": 500
+    },
+    {
+      "type": "exit",
+      "id": "exit-debug-instance"
+    }
+  ]
+}

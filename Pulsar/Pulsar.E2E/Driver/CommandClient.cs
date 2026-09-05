@@ -11,7 +11,8 @@ namespace Pulsar.E2E.Driver
     /// <summary>
     /// One-shot client for the debug instance's command pipe
     /// (<c>Pulsar.Debug.&lt;pid&gt;.cmd</c>). Commands are single JSON lines:
-    /// <c>{"command":"menu-open","mode":"action"}</c> / <c>{"command":"menu-close"}</c>.
+    /// <c>{"command":"menu-open","mode":"action"}</c> / <c>{"command":"menu-close"}</c>
+    /// / <c>{"command":"open-settings"}</c>.
     ///
     /// This is the spec-mandated explicit trigger channel used when the debug
     /// instance runs without global input hooks; it replaces SendInput for

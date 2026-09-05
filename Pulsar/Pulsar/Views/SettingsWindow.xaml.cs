@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Automation;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Localization;
@@ -125,6 +126,10 @@ namespace Pulsar.Views
                     Tag = registration.Id,
                     Icon = new SymbolIcon(registration.Icon)
                 };
+
+                // Stable UIA identity for E2E settings-page workflows; localized
+                // display text is never used for lookup (Pulsar is bilingual).
+                AutomationProperties.SetAutomationId(item, "Pulsar.Settings.Nav." + registration.Id);
 
                 item.PreviewMouseLeftButtonUp += NavigationItem_PreviewMouseLeftButtonUp;
                 item.KeyUp += NavigationItem_KeyUp;

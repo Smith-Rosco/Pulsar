@@ -20,6 +20,7 @@ namespace Pulsar.ViewModels.Settings
         private readonly IPluginUsageTracker _usageTracker;
         private readonly IPluginRegistry _pluginRegistry;
         private readonly ILocalizationService _loc;
+        private readonly Func<DateTime> _clock;
 
         private List<PluginUsageStats> _allPluginStats = new();
         private Dictionary<string, string> _displayNames = new();
@@ -27,11 +28,13 @@ namespace Pulsar.ViewModels.Settings
         public UsageStatsReadModel(
             IPluginUsageTracker usageTracker,
             IPluginRegistry pluginRegistry,
-            ILocalizationService localizationService)
+            ILocalizationService localizationService,
+            Func<DateTime>? clock = null)
         {
             _usageTracker = usageTracker;
             _pluginRegistry = pluginRegistry;
             _loc = localizationService;
+            _clock = clock ?? (() => DateTime.Now);
         }
 
         /// <summary>
@@ -50,14 +53,16 @@ namespace Pulsar.ViewModels.Settings
 
         /// <summary>
         /// 在内存快照上按时间范围过滤、排序、重排 rank，并聚合热力图与汇总指标。
+        /// 时间口径：Today=今天零点起；ThisWeek=本周一零点起；ThisMonth=本月 1 号零点起（自然周/月，非滚动窗口）。
         /// </summary>
         public AnalyticsProjection Project(AnalyticsTimeRange range, SortColumn sort, bool ascending)
         {
+            var now = _clock();
             var cutoff = range switch
             {
-                AnalyticsTimeRange.Today => DateTime.Now.Date,
-                AnalyticsTimeRange.ThisWeek => DateTime.Now.AddDays(-6).Date,
-                AnalyticsTimeRange.ThisMonth => DateTime.Now.AddDays(-29).Date,
+                AnalyticsTimeRange.Today => now.Date,
+                AnalyticsTimeRange.ThisWeek => StartOfWeek(now),
+                AnalyticsTimeRange.ThisMonth => new DateTime(now.Year, now.Month, 1),
                 _ => DateTime.MinValue
             };
 
@@ -68,19 +73,20 @@ namespace Pulsar.ViewModels.Settings
                     Stats = s,
                     FilteredExecutions = range == AnalyticsTimeRange.AllTime
                         ? s.TotalExecutions
-                        : s.DailyStats
-                            .Where(d => DateTime.TryParse(d.Key, out var date) && date >= cutoff)
-                            .Sum(d => d.Value)
+                        : SumDailySince(s.DailyStats, cutoff)
                 })
                 .Where(x => x.FilteredExecutions > 0)
                 .OrderByDescending(x => x.FilteredExecutions)
                 .ToList();
 
+            var activeStats = filteredStats.Select(x => x.Stats).ToList();
             var rows = filteredStats.Select(x => BuildRow(x.Stats, x.FilteredExecutions)).ToList();
             rows = ApplySort(rows, sort, ascending);
 
-            var slotHeatmap = BuildSlotHeatmap();
-            var hourlyHeatmap = BuildHourlyHeatmap();
+            var slotHeatmap = BuildSlotHeatmap(activeStats, cutoff);
+            var hourlyHeatmap = BuildHourlyHeatmap(activeStats, cutoff);
+
+            var todayKey = now.ToString("yyyy-MM-dd");
 
             return new AnalyticsProjection
             {
@@ -92,8 +98,8 @@ namespace Pulsar.ViewModels.Settings
                 HasHourlyHeatmap = hourlyHeatmap.Any(h => h.TotalExecutions > 0),
                 TotalOverallExecutions = filteredStats.Sum(x => x.FilteredExecutions),
                 ActivePluginCount = filteredStats.Count,
-                TotalTodayExecutions = filteredStats.Sum(x => x.Stats.TodayExecutions),
-                TotalWeekExecutions = filteredStats.Sum(x => x.Stats.RecentExecutions)
+                TotalTodayExecutions = filteredStats.Sum(x => x.Stats.DailyStats.GetValueOrDefault(todayKey)),
+                TotalWeekExecutions = filteredStats.Sum(x => SumDailySince(x.Stats.DailyStats, StartOfWeek(now)))
             };
         }
 
@@ -181,12 +187,12 @@ namespace Pulsar.ViewModels.Settings
             return sorted;
         }
 
-        private List<SlotHeatmapItem> BuildSlotHeatmap()
+        private List<SlotHeatmapItem> BuildSlotHeatmap(IEnumerable<PluginUsageStats> activeStats, DateTime cutoff)
         {
             var aggregatedSlots = new Dictionary<int, (int Total, int Plugins)>();
-            foreach (var stat in _allPluginStats.Where(s => s.SlotUsage.Count > 0))
+            foreach (var stat in activeStats)
             {
-                foreach (var kv in stat.SlotUsage)
+                foreach (var kv in GetSlotUsage(stat, cutoff))
                 {
                     if (!aggregatedSlots.ContainsKey(kv.Key))
                         aggregatedSlots[kv.Key] = (0, 0);
@@ -206,12 +212,12 @@ namespace Pulsar.ViewModels.Settings
             }).ToList();
         }
 
-        private List<HourlyHeatmapItem> BuildHourlyHeatmap()
+        private List<HourlyHeatmapItem> BuildHourlyHeatmap(IEnumerable<PluginUsageStats> activeStats, DateTime cutoff)
         {
             var hourlyData = new Dictionary<int, int>();
-            foreach (var stat in _allPluginStats.Where(s => s.HourlyUsage.Count > 0))
+            foreach (var stat in activeStats)
             {
-                foreach (var kv in stat.HourlyUsage)
+                foreach (var kv in GetHourlyUsage(stat, cutoff))
                 {
                     if (hourlyData.ContainsKey(kv.Key))
                         hourlyData[kv.Key] += kv.Value;
@@ -235,9 +241,94 @@ namespace Pulsar.ViewModels.Settings
             return result;
         }
 
-        private static List<DailyTrendItem> BuildTrendData(PluginUsageStats stat)
+        /// <summary>
+        /// 取某插件在时间范围内的插槽使用分布：AllTime 用全量 <see cref="PluginUsageStats.SlotUsage"/>，
+        /// 否则从 <see cref="PluginUsageStats.DailySlotUsage"/> 按日期键过滤聚合。
+        /// </summary>
+        private static Dictionary<int, int> GetSlotUsage(PluginUsageStats stat, DateTime cutoff)
         {
-            var now = DateTime.UtcNow;
+            if (cutoff == DateTime.MinValue)
+            {
+                return stat.SlotUsage;
+            }
+
+            var cutoffKey = cutoff.ToString("yyyy-MM-dd");
+            var result = new Dictionary<int, int>();
+            if (stat.DailySlotUsage == null)
+            {
+                return result;
+            }
+
+            foreach (var day in stat.DailySlotUsage)
+            {
+                if (string.Compare(day.Key, cutoffKey) < 0)
+                    continue;
+                foreach (var slot in day.Value)
+                {
+                    result[slot.Key] = result.GetValueOrDefault(slot.Key) + slot.Value;
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 取某插件在时间范围内的小时使用分布：AllTime 用全量 <see cref="PluginUsageStats.HourlyUsage"/>，
+        /// 否则从 <see cref="PluginUsageStats.DailyHourlyUsage"/> 按日期键过滤聚合。
+        /// </summary>
+        private static Dictionary<int, int> GetHourlyUsage(PluginUsageStats stat, DateTime cutoff)
+        {
+            if (cutoff == DateTime.MinValue)
+            {
+                return stat.HourlyUsage;
+            }
+
+            var cutoffKey = cutoff.ToString("yyyy-MM-dd");
+            var result = new Dictionary<int, int>();
+            if (stat.DailyHourlyUsage == null)
+            {
+                return result;
+            }
+
+            foreach (var day in stat.DailyHourlyUsage)
+            {
+                if (string.Compare(day.Key, cutoffKey) < 0)
+                    continue;
+                foreach (var hour in day.Value)
+                {
+                    result[hour.Key] = result.GetValueOrDefault(hour.Key) + hour.Value;
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 统计 DailyStats 中日期键 >= cutoff 的执行次数总和。
+        /// </summary>
+        private static int SumDailySince(Dictionary<string, int> dailyStats, DateTime cutoff)
+        {
+            if (dailyStats == null || dailyStats.Count == 0)
+            {
+                return 0;
+            }
+
+            var cutoffKey = cutoff.ToString("yyyy-MM-dd");
+            return dailyStats
+                .Where(kvp => string.Compare(kvp.Key, cutoffKey) >= 0)
+                .Sum(kvp => kvp.Value);
+        }
+
+        /// <summary>
+        /// 本周一零点（自然周起点，周一为一周第一天）。
+        /// </summary>
+        private static DateTime StartOfWeek(DateTime now)
+        {
+            var daysSinceMonday = ((int)now.DayOfWeek + 6) % 7;
+            return now.Date.AddDays(-daysSinceMonday);
+        }
+
+        private List<DailyTrendItem> BuildTrendData(PluginUsageStats stat)
+        {
+            var now = _clock();
             var entries = new List<(DateTime Date, int Count)>();
             for (int i = 6; i >= 0; i--)
             {

@@ -47,6 +47,7 @@ namespace Pulsar.Tests.E2E
                 { "type": "wait", "id": "w", "durationMs": 250 },
                 { "type": "waitForState", "id": "wfs", "event": "menu-opened", "timeoutMs": 3000 },
                 { "type": "hotkey", "id": "hk", "keys": "Ctrl+Space" },
+                { "type": "command", "id": "cmd", "command": "open-settings" },
                 { "type": "click", "id": "c", "automationId": "Pulsar.Slot.1" },
                 { "type": "assert", "id": "a", "automationId": "Pulsar.Slot.1", "expected": "visible" },
                 { "type": "screenshot", "id": "s", "file": "shot.png" },
@@ -60,14 +61,15 @@ namespace Pulsar.Tests.E2E
 
             workflow.Steps.Select(s => s.Type).Should().Equal(
                 StepType.Launch, StepType.Wait, StepType.WaitForState, StepType.Hotkey,
-                StepType.Click, StepType.Assert, StepType.Screenshot, StepType.Record, StepType.Exit);
+                StepType.Command, StepType.Click, StepType.Assert, StepType.Screenshot, StepType.Record, StepType.Exit);
             workflow.Steps[1].DurationMs.Should().Be(250);
             workflow.Steps[2].Event.Should().Be("menu-opened");
             workflow.Steps[2].TimeoutMs.Should().Be(3000);
             workflow.Steps[3].Keys.Should().Be("Ctrl+Space");
-            workflow.Steps[4].AutomationId.Should().Be("Pulsar.Slot.1");
-            workflow.Steps[5].Expected.Should().Be("visible");
-            workflow.Steps[6].File.Should().Be("shot.png");
+            workflow.Steps[4].Command.Should().Be("open-settings");
+            workflow.Steps[5].AutomationId.Should().Be("Pulsar.Slot.1");
+            workflow.Steps[6].Expected.Should().Be("visible");
+            workflow.Steps[7].File.Should().Be("shot.png");
             workflow.App.ExePath.Should().Be("C:/x/Pulsar.exe");
             workflow.App.Fixture.Should().Be("fix.json");
         }
@@ -127,6 +129,19 @@ namespace Pulsar.Tests.E2E
 
             act.Should().Throw<WorkflowParseException>()
                 .WithMessage("*'waiter'*requires an 'event' field*");
+        }
+
+        [Fact]
+        public void Parse_CommandWithoutCommandName_Throws()
+        {
+            var json = """
+            { "steps": [ { "type": "command", "id": "cmd" } ] }
+            """;
+
+            var act = () => WorkflowParser.Parse(json);
+
+            act.Should().Throw<WorkflowParseException>()
+                .WithMessage("*'cmd'*requires a 'command' field*");
         }
 
         [Fact]

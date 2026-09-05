@@ -14,6 +14,7 @@ namespace Pulsar.E2E.Workflow
         Hotkey,
         MenuOpen,
         MenuClose,
+        Command,
         Click,
         Assert,
         Screenshot,
@@ -63,6 +64,9 @@ namespace Pulsar.E2E.Workflow
 
         /// <summary>menu-open: "action" (default) or "task".</summary>
         public string Mode { get; set; } = string.Empty;
+
+        /// <summary>command: debug pipe command name (e.g. "open-settings").</summary>
+        public string Command { get; set; } = string.Empty;
 
         /// <summary>assert: expected state (exists / visible).</summary>
         public string Expected { get; set; } = "exists";

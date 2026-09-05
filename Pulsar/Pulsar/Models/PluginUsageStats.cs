@@ -83,6 +83,20 @@ namespace Pulsar.Models
         public Dictionary<int, int> HourlyUsage { get; set; } = new();
 
         /// <summary>
+        /// Per-day slot usage (最近 30 天)
+        /// Key: "yyyy-MM-dd", Value: slotIndex -> count
+        /// 用于让插槽热力图响应时间范围筛选（AllTime 仍读 <see cref="SlotUsage"/>）。
+        /// </summary>
+        public Dictionary<string, Dictionary<int, int>> DailySlotUsage { get; set; } = new();
+
+        /// <summary>
+        /// Per-day hourly usage (最近 30 天)
+        /// Key: "yyyy-MM-dd", Value: hour (0-23) -> count
+        /// 用于让小时热力图响应时间范围筛选（AllTime 仍读 <see cref="HourlyUsage"/>）。
+        /// </summary>
+        public Dictionary<string, Dictionary<int, int>> DailyHourlyUsage { get; set; } = new();
+
+        /// <summary>
         /// Success rate as percentage
         /// </summary>
         [JsonIgnore]

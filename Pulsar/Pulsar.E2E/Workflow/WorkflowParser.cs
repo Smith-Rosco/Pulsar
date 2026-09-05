@@ -24,6 +24,7 @@ namespace Pulsar.E2E.Workflow
             ["hotkey"] = StepType.Hotkey,
             ["menu-open"] = StepType.MenuOpen,
             ["menu-close"] = StepType.MenuClose,
+            ["command"] = StepType.Command,
             ["click"] = StepType.Click,
             ["assert"] = StepType.Assert,
             ["screenshot"] = StepType.Screenshot,
@@ -169,6 +170,10 @@ namespace Pulsar.E2E.Workflow
             {
                 step.Mode = mode.GetString() ?? string.Empty;
             }
+            if (element.TryGetProperty("command", out var command) && command.ValueKind == JsonValueKind.String)
+            {
+                step.Command = command.GetString() ?? string.Empty;
+            }
             if (element.TryGetProperty("expected", out var expected) && expected.ValueKind == JsonValueKind.String)
             {
                 step.Expected = expected.GetString() ?? "exists";
@@ -207,6 +212,9 @@ namespace Pulsar.E2E.Workflow
                         break;
                     case StepType.Hotkey:
                         Require(step, s => !string.IsNullOrWhiteSpace(s.Keys), "requires a 'keys' field (e.g. 'Ctrl+Space').");
+                        break;
+                    case StepType.Command:
+                        Require(step, s => !string.IsNullOrWhiteSpace(s.Command), "requires a 'command' field (e.g. 'open-settings').");
                         break;
                     case StepType.MenuOpen:
                         Require(step, s =>

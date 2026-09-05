@@ -22,6 +22,8 @@ namespace Pulsar.ViewModels.Settings
         private readonly IPluginRecommendationEngine? _recommendationEngine;
         private readonly ILogger<SettingsAnalyticsPageViewModel> _logger;
         private readonly ILocalizationService _loc;
+        private readonly IPluginLogService? _logService;
+        private readonly IDialogService? _dialogService;
 
         public ObservableCollection<AnalyticsItem> MostUsedPlugins { get; } = new();
         public ObservableCollection<SlotHeatmapItem> SlotHeatmap { get; } = new();
@@ -75,13 +77,17 @@ namespace Pulsar.ViewModels.Settings
             IPluginRuntimeOps runtimeOps,
             ILogger<SettingsAnalyticsPageViewModel> logger,
             ILocalizationService localizationService,
-            IPluginRecommendationEngine? recommendationEngine = null)
+            IPluginRecommendationEngine? recommendationEngine = null,
+            IPluginLogService? logService = null,
+            IDialogService? dialogService = null)
         {
             _readModel = readModel;
             _runtimeOps = runtimeOps;
             _logger = logger;
             _loc = localizationService;
             _recommendationEngine = recommendationEngine;
+            _logService = logService;
+            _dialogService = dialogService;
         }
 
         partial void OnTimeRangeChanged(AnalyticsTimeRange value)
@@ -173,12 +179,21 @@ namespace Pulsar.ViewModels.Settings
         }
 
         [RelayCommand]
-        private void SetFilter(string range)
+        private async Task ViewLogs(string pluginId)
         {
-            if (Enum.TryParse<AnalyticsTimeRange>(range, ignoreCase: true, out var parsed))
+            if (_logService == null || _dialogService == null)
             {
-                TimeRange = parsed;
+                return;
             }
+
+            var plugin = MostUsedPlugins.FirstOrDefault(p => p.PluginId == pluginId);
+            var pluginName = plugin?.DisplayName ?? pluginId;
+            var vm = new Pulsar.ViewModels.Dialogs.PluginLogViewerViewModel(_logService, pluginId, pluginName);
+            await _dialogService.ShowCustomAsync(
+                string.Format(_loc?["Notification.PluginLogsTitleFormat"] ?? "Plugin Logs: {0}", pluginName),
+                vm,
+                Models.Enums.DialogButtons.Ok,
+                Models.DialogSizeConstraints.Large);
         }
 
         [RelayCommand]
@@ -201,12 +216,6 @@ namespace Pulsar.ViewModels.Settings
                 HasError = true;
                 ErrorMessage = $"Failed to disable plugin: {ex.Message}";
             }
-        }
-
-        [RelayCommand]
-        private void ViewLogs(string pluginId)
-        {
-            _logger.LogInformation("View logs requested for plugin {PluginId}", pluginId);
         }
 
         [RelayCommand]

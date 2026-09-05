@@ -8,9 +8,11 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels;
+using Pulsar.Views;
 
 namespace Pulsar.Services
 {
@@ -19,6 +21,7 @@ namespace Pulsar.Services
     ///   {"command":"menu-open","mode":"action"}   — open the radial menu (Action mode)
     ///   {"command":"menu-open","mode":"task"}     — open the task-switcher menu
     ///   {"command":"menu-close"}                  — dismiss the current menu session
+    ///   {"command":"open-settings"}               — open the Settings window (E2E settings-page workflows)
     ///
     /// This is the spec-mandated explicit trigger channel for debug mode, where no
     /// global input hooks are registered by default. All command handlers are
@@ -136,6 +139,23 @@ namespace Pulsar.Services
                     case "menu-close":
                         _logger?.LogInformation("[DebugCommandServer] menu-close");
                         Application.Current?.Dispatcher?.Invoke(() => _menuViewModel.CancelActiveMenu());
+                        break;
+
+                    case "open-settings":
+                        _logger?.LogInformation("[DebugCommandServer] open-settings");
+                        Application.Current?.Dispatcher?.Invoke(() =>
+                        {
+                            var app = Application.Current as App;
+                            var window = app?.Services?.GetService<SettingsWindow>();
+                            if (window == null)
+                            {
+                                _logger?.LogWarning("[DebugCommandServer] open-settings: SettingsWindow not resolvable from DI");
+                                return;
+                            }
+
+                            window.Show();
+                            window.Activate();
+                        });
                         break;
 
                     default:

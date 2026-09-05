@@ -85,6 +85,14 @@ namespace Pulsar.Tests.Services
             var currentHour = DateTime.Now.Hour;
             stats.HourlyUsage.Should().ContainKey(currentHour);
             stats.HourlyUsage[currentHour].Should().Be(1);
+
+            stats.DailySlotUsage.Should().ContainKey(todayKey);
+            stats.DailySlotUsage[todayKey].Should().ContainKey(2);
+            stats.DailySlotUsage[todayKey][2].Should().Be(1);
+
+            stats.DailyHourlyUsage.Should().ContainKey(todayKey);
+            stats.DailyHourlyUsage[todayKey].Should().ContainKey(currentHour);
+            stats.DailyHourlyUsage[todayKey][currentHour].Should().Be(1);
         }
 
         [Fact]
@@ -272,6 +280,13 @@ namespace Pulsar.Tests.Services
                 stats.ActionModeExecutions.Should().Be(1);
                 stats.SlotUsage.Should().ContainKey(2);
                 stats.SlotUsage.Should().ContainKey(1);
+
+                var todayKey = DateTime.Now.ToString("yyyy-MM-dd");
+                stats.DailySlotUsage.Should().ContainKey(todayKey);
+                stats.DailySlotUsage[todayKey].Should().ContainKey(2);
+                stats.DailySlotUsage[todayKey].Should().ContainKey(1);
+                stats.DailyHourlyUsage.Should().ContainKey(todayKey);
+                stats.DailyHourlyUsage[todayKey].Values.Sum().Should().Be(2);
             }
         }
 
@@ -321,6 +336,16 @@ namespace Pulsar.Tests.Services
                 {
                     { oldDate, 5 },
                     { recentDate, 3 }
+                },
+                DailySlotUsage = new Dictionary<string, Dictionary<int, int>>
+                {
+                    { oldDate, new Dictionary<int, int> { { 1, 5 } } },
+                    { recentDate, new Dictionary<int, int> { { 2, 3 } } }
+                },
+                DailyHourlyUsage = new Dictionary<string, Dictionary<int, int>>
+                {
+                    { oldDate, new Dictionary<int, int> { { 9, 5 } } },
+                    { recentDate, new Dictionary<int, int> { { 10, 3 } } }
                 }
             };
 
@@ -342,6 +367,10 @@ namespace Pulsar.Tests.Services
                 result.DailyStats.Should().NotContainKey(oldDate);
                 result.DailyStats.Should().ContainKey(recentDate);
                 result.DailyStats.Should().ContainKey(today);
+                result.DailySlotUsage.Should().NotContainKey(oldDate);
+                result.DailySlotUsage.Should().ContainKey(recentDate);
+                result.DailyHourlyUsage.Should().NotContainKey(oldDate);
+                result.DailyHourlyUsage.Should().ContainKey(recentDate);
             }
             finally
             {

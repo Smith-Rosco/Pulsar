@@ -5,6 +5,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:controls="clr-namespace:Pulsar.Views.Controls"
+      xmlns:models="clr-namespace:Pulsar.Models"
       xmlns:lex="clr-namespace:Pulsar.Core.Localization"
       mc:Ignorable="d" 
       d:DesignHeight="600" d:DesignWidth="800"
@@ -61,6 +62,7 @@
                     </ui:CardControl.Style>
                     <controls:EmptyState Icon="DataPie24"
                                          Title="{lex:Locale Settings.Analytics.NoData}"
+                                         AutomationProperties.AutomationId="Pulsar.Settings.Analytics.EmptyState"
                                          Margin="{StaticResource Pulsar.Gap.Vertical.XXL}"/>
                 </ui:CardControl>
 
@@ -294,11 +296,13 @@
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
                     <ComboBox Grid.Column="1" MinWidth="140"
-                              SelectedIndex="{Binding TimeRange}">
-                        <ComboBoxItem Content="{lex:Locale Settings.Analytics.FilterAllTime}"/>
-                        <ComboBoxItem Content="{lex:Locale Settings.Analytics.FilterToday}"/>
-                        <ComboBoxItem Content="{lex:Locale Settings.Analytics.FilterThisWeek}"/>
-                        <ComboBoxItem Content="{lex:Locale Settings.Analytics.FilterThisMonth}"/>
+                              AutomationProperties.AutomationId="Pulsar.Settings.Analytics.FilterCombo"
+                              SelectedValuePath="Tag"
+                              SelectedValue="{Binding TimeRange}">
+                        <ComboBoxItem Content="{lex:Locale Settings.Analytics.FilterAllTime}" Tag="{x:Static models:AnalyticsTimeRange.AllTime}"/>
+                        <ComboBoxItem Content="{lex:Locale Settings.Analytics.FilterToday}" Tag="{x:Static models:AnalyticsTimeRange.Today}"/>
+                        <ComboBoxItem Content="{lex:Locale Settings.Analytics.FilterThisWeek}" Tag="{x:Static models:AnalyticsTimeRange.ThisWeek}"/>
+                        <ComboBoxItem Content="{lex:Locale Settings.Analytics.FilterThisMonth}" Tag="{x:Static models:AnalyticsTimeRange.ThisMonth}"/>
                     </ComboBox>
                 </Grid>
 
@@ -611,6 +615,7 @@
                 <!-- Action Buttons Row -->
                 <StackPanel Orientation="Horizontal" Margin="{StaticResource Pulsar.Thk.T8B24}">
                     <ui:Button Content="{lex:Locale Settings.Analytics.Refresh}"
+                               AutomationProperties.AutomationId="Pulsar.Settings.Analytics.RefreshButton"
                                Icon="{ui:SymbolIcon ArrowSync24}"
                                Command="{Binding RefreshCommand}"
                                Style="{StaticResource PulsarSecondaryButtonStyle}"

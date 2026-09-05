@@ -111,6 +111,14 @@ namespace Pulsar.Services
                             stats.SlotUsage[slotIndex]++;
                         else
                             stats.SlotUsage[slotIndex] = 1;
+
+                        if (!stats.DailySlotUsage.TryGetValue(dateKey, out var dailySlots))
+                        {
+                            dailySlots = new Dictionary<int, int>();
+                            stats.DailySlotUsage[dateKey] = dailySlots;
+                        }
+                        dailySlots.TryGetValue(slotIndex, out var slotCount);
+                        dailySlots[slotIndex] = slotCount + 1;
                     }
 
                     if (!string.IsNullOrEmpty(mode))
@@ -126,6 +134,14 @@ namespace Pulsar.Services
                         stats.HourlyUsage[hour]++;
                     else
                         stats.HourlyUsage[hour] = 1;
+
+                    if (!stats.DailyHourlyUsage.TryGetValue(dateKey, out var dailyHours))
+                    {
+                        dailyHours = new Dictionary<int, int>();
+                        stats.DailyHourlyUsage[dateKey] = dailyHours;
+                    }
+                    dailyHours.TryGetValue(hour, out var hourCount);
+                    dailyHours[hour] = hourCount + 1;
                 }
 
                 Volatile.Write(ref _isDirty, true);
@@ -338,6 +354,16 @@ namespace Pulsar.Services
             {
                 stats.DailyStats.Remove(key);
             }
+
+            foreach (var key in stats.DailySlotUsage.Keys.Where(k => string.Compare(k, cutoffDate) < 0).ToList())
+            {
+                stats.DailySlotUsage.Remove(key);
+            }
+
+            foreach (var key in stats.DailyHourlyUsage.Keys.Where(k => string.Compare(k, cutoffDate) < 0).ToList())
+            {
+                stats.DailyHourlyUsage.Remove(key);
+            }
         }
 
         /// <summary>
@@ -360,7 +386,13 @@ namespace Pulsar.Services
                 SlotUsage = new Dictionary<int, int>(source.SlotUsage),
                 TaskModeExecutions = source.TaskModeExecutions,
                 ActionModeExecutions = source.ActionModeExecutions,
-                HourlyUsage = new Dictionary<int, int>(source.HourlyUsage)
+                HourlyUsage = new Dictionary<int, int>(source.HourlyUsage),
+                DailySlotUsage = source.DailySlotUsage.ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => new Dictionary<int, int>(kvp.Value)),
+                DailyHourlyUsage = source.DailyHourlyUsage.ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => new Dictionary<int, int>(kvp.Value))
             };
         }
 

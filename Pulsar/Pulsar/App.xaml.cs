@@ -311,7 +311,14 @@ namespace Pulsar
             serviceCollection.AddPluginFoundation(externalPluginDirectory);
             
             // [New] Plugin Monitoring & Analytics Services
-            serviceCollection.AddSingleton<IPluginUsageTracker, PluginUsageTracker>();
+            serviceCollection.AddSingleton<IPluginUsageTracker>(sp => new PluginUsageTracker(
+                sp.GetRequiredService<ILogger<PluginUsageTracker>>(),
+                // [UI Debug Mode] Isolate PluginUsageStats.json next to the debug
+                // Profiles.json so an E2E run never reads/writes the user's real
+                // statistics (same isolation guarantee as ConfigService above).
+                debugOptions.IsUiDebug
+                    ? System.IO.Path.Combine(debugOptions.ConfigDirectory, "PluginUsageStats.json")
+                    : null));
             serviceCollection.AddSingleton<IPluginHealthMonitor, PluginHealthMonitor>();
             serviceCollection.AddSingleton<IPluginLogService, PluginLogService>();
             serviceCollection.AddSingleton<IPluginRecommendationEngine, PluginRecommendationEngine>();

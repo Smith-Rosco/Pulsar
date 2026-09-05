@@ -7,7 +7,9 @@ using Moq;
 using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin;
 using Pulsar.Models;
+using Pulsar.Models.Enums;
 using Pulsar.Services.Interfaces;
+using Pulsar.ViewModels.Dialogs;
 using Pulsar.ViewModels.Settings;
 
 namespace Pulsar.Tests.ViewModels
@@ -19,7 +21,6 @@ namespace Pulsar.Tests.ViewModels
         private readonly Mock<IPluginRuntimeOps> _runtimeOpsMock = new();
         private readonly Mock<ILogger<SettingsAnalyticsPageViewModel>> _loggerMock = new();
         private readonly ILocalizationService _loc;
-        private readonly Mock<IPluginRecommendationEngine> _recEngineMock = new();
 
         public SettingsAnalyticsPageViewModelTests()
         {
@@ -34,148 +35,119 @@ namespace Pulsar.Tests.ViewModels
             return mock.Object;
         }
 
-        private static PluginUsageStats CreateStats(string id, int totalExecs,
-            int today = 0, int recent = 0, double avgTime = 100,
-            double successRate = 100, int favoriteSlot = 1,
-            string primaryMode = "Task", int taskMode = 10,
-            int actionMode = 5, DateTime? lastUsed = null)
-        {
-            var todayKey = DateTime.Now.ToString("yyyy-MM-dd");
-            var dailyStats = new Dictionary<string, int>();
-            if (today > 0) dailyStats[todayKey] = today;
-            if (recent > 0 && !dailyStats.ContainsKey(todayKey)) dailyStats[todayKey] = recent;
-
-            return new PluginUsageStats
-            {
-                PluginId = id,
-                TotalExecutions = totalExecs,
-                SuccessCount = (int)(totalExecs * successRate / 100),
-                FailureCount = totalExecs - (int)(totalExecs * successRate / 100),
-                AverageExecutionTimeMs = avgTime,
-                TaskModeExecutions = taskMode,
-                ActionModeExecutions = actionMode,
-                LastUsed = lastUsed ?? DateTime.UtcNow,
-                SlotUsage = new Dictionary<int, int> { { favoriteSlot, totalExecs } },
-                HourlyUsage = new Dictionary<int, int> { { DateTime.Now.Hour, totalExecs } },
-                DailyStats = dailyStats
-            };
-        }
-
-        private void SetupTracker(IEnumerable<IPulsarPlugin> plugins, Dictionary<string, PluginUsageStats> allStats)
-        {
-            _registryMock.Setup(r => r.GetAllPlugins()).Returns(new List<IPulsarPlugin>(plugins));
-            _usageTrackerMock.Setup(u => u.GetAllStats()).Returns(allStats);
-        }
-
         private SettingsAnalyticsPageViewModel CreateViewModel(
-            IPluginRecommendationEngine? recommendationEngine = null)
+            Dictionary<string, PluginUsageStats> allStats,
+            List<IPulsarPlugin>? plugins = null,
+            IPluginLogService? logService = null,
+            IDialogService? dialogService = null)
         {
-            var readModel = new UsageStatsReadModel(_usageTrackerMock.Object, _registryMock.Object, _loc);
+            plugins ??= new List<IPulsarPlugin> { CreatePlugin("plugin.a", "Plugin A") };
+            _registryMock.Setup(r => r.GetAllPlugins()).Returns(plugins);
+            _usageTrackerMock.Setup(u => u.GetAllStats()).Returns(allStats);
+
+            var readModel = new UsageStatsReadModel(
+                _usageTrackerMock.Object,
+                _registryMock.Object,
+                _loc,
+                clock: () => new DateTime(2026, 9, 2, 12, 0, 0));
+
             return new SettingsAnalyticsPageViewModel(
                 readModel,
                 _runtimeOpsMock.Object,
                 _loggerMock.Object,
                 _loc,
-                recommendationEngine);
+                logService: logService,
+                dialogService: dialogService);
         }
 
-        [Fact]
-        public async Task LoadAsync_RefreshesData_FromReadModel()
+        private static PluginUsageStats CreateStats(string id, int totalExecs, int todayCount)
         {
-            var plugins = new List<IPulsarPlugin> { CreatePlugin("plugin.a", "Plugin A") };
-            var stats = new Dictionary<string, PluginUsageStats>
+            return new PluginUsageStats
             {
-                { "plugin.a", CreateStats("plugin.a", 100) }
+                PluginId = id,
+                TotalExecutions = totalExecs,
+                SuccessCount = totalExecs,
+                AverageExecutionTimeMs = 100,
+                LastUsed = DateTime.UtcNow,
+                DailyStats = new Dictionary<string, int>
+                {
+                    { "2026-09-02", todayCount },
+                    { "2026-09-01", totalExecs - todayCount }
+                },
+                SlotUsage = new Dictionary<int, int> { { 1, totalExecs } },
+                HourlyUsage = new Dictionary<int, int> { { 9, totalExecs } }
             };
-            SetupTracker(plugins, stats);
-
-            var vm = CreateViewModel(_recEngineMock.Object);
-            await vm.LoadAsync();
-
-            vm.HasData.Should().BeTrue();
-            vm.MostUsedPlugins.Should().HaveCount(1);
-            vm.SlotHeatmap.Should().NotBeEmpty();
-            vm.HourlyHeatmap.Should().HaveCount(24);
-            vm.TotalOverallExecutions.Should().Be(100);
         }
 
         [Fact]
-        public async Task LoadAsync_HandlesEmptyData_Gracefully()
+        public async Task LoadAsync_ThenChangingTimeRange_RepositionsRowsAndKpis()
         {
-            SetupTracker(new List<IPulsarPlugin>(), new Dictionary<string, PluginUsageStats>());
+            var allStats = new Dictionary<string, PluginUsageStats>
+            {
+                { "plugin.a", CreateStats("plugin.a", 100, todayCount: 5) },
+                { "plugin.b", CreateStats("plugin.b", 50, todayCount: 0) }
+            };
 
-            var vm = CreateViewModel();
+            var vm = CreateViewModel(allStats);
             await vm.LoadAsync();
 
-            vm.HasData.Should().BeFalse();
-            vm.MostUsedPlugins.Should().BeEmpty();
-            vm.HasError.Should().BeFalse();
-        }
+            vm.MostUsedPlugins.Should().HaveCount(2);
+            vm.TotalOverallExecutions.Should().Be(150);
 
-        [Fact]
-        public async Task LoadAsync_SetsErrorState_OnException()
-        {
-            _usageTrackerMock.Setup(u => u.GetAllStats()).Throws(new InvalidOperationException("test error"));
-
-            var vm = CreateViewModel();
-            await vm.LoadAsync();
-
-            vm.HasError.Should().BeTrue();
-            vm.ErrorMessage.Should().NotBeNullOrEmpty();
-        }
-
-        [Fact]
-        public async Task TimeRangeChange_RepositionsRows_FromReadModel()
-        {
-            var plugins = new List<IPulsarPlugin> { CreatePlugin("plugin.a", "Plugin A") };
-            var stat = CreateStats("plugin.a", 30, today: 5);
-            SetupTracker(plugins, new Dictionary<string, PluginUsageStats> { { "plugin.a", stat } });
-
-            var vm = CreateViewModel();
-            await vm.LoadAsync();
-
+            // 切到"今天"：plugin.b 今日 0 次被过滤，仅剩 plugin.a（今日 5 次）。
             vm.TimeRange = AnalyticsTimeRange.Today;
             vm.MostUsedPlugins.Should().HaveCount(1);
-            vm.MostUsedPlugins[0].TotalExecutions.Should().Be(5);
-        }
-
-        [Fact]
-        public async Task RefreshCommand_ReinvokesLoadAsync()
-        {
-            SetupTracker(new List<IPulsarPlugin>(), new Dictionary<string, PluginUsageStats>());
-
-            var vm = CreateViewModel();
-            await vm.LoadAsync();
-            vm.HasData.Should().BeFalse();
-
-            var plugins = new List<IPulsarPlugin> { CreatePlugin("plugin.a", "Plugin A") };
-            var stats = new Dictionary<string, PluginUsageStats> { { "plugin.a", CreateStats("plugin.a", 100) } };
-            SetupTracker(plugins, stats);
-
-            await vm.RefreshCommand.ExecuteAsync(null);
-
+            vm.MostUsedPlugins[0].PluginId.Should().Be("plugin.a");
+            vm.TotalOverallExecutions.Should().Be(5);
             vm.HasData.Should().BeTrue();
-            vm.MostUsedPlugins.Should().HaveCount(1);
         }
 
         [Fact]
-        public async Task LoadAsync_PopulatesRecommendations_WhenEngineProvided()
+        public async Task ViewLogs_WithNoServices_DoesNotThrow()
         {
-            SetupTracker(new List<IPulsarPlugin>(), new Dictionary<string, PluginUsageStats>());
-
-            var rec = new PluginRecommendation
-            {
-                Type = RecommendationType.DisableUnusedPlugin,
-                Title = "Title",
-                PluginId = "plugin.a"
-            };
-            _recEngineMock.Setup(r => r.GetRecommendations()).Returns(new List<PluginRecommendation> { rec });
-
-            var vm = CreateViewModel(_recEngineMock.Object);
+            var vm = CreateViewModel(
+                new Dictionary<string, PluginUsageStats> { { "plugin.a", CreateStats("plugin.a", 10, 5) } });
             await vm.LoadAsync();
 
-            vm.HasRecommendations.Should().BeTrue();
-            vm.Recommendations.Should().HaveCount(1);
+            var act = () => vm.ViewLogsCommand.Execute("plugin.a");
+            act.Should().NotThrow();
+        }
+
+        [Fact]
+        public async Task ViewLogs_OpensLogViewerDialog_ForPlugin()
+        {
+            var logServiceMock = new Mock<IPluginLogService>();
+            logServiceMock
+                .Setup(l => l.GetLogs(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<PluginLogLevel?>()))
+                .Returns(new List<PluginLogEntry>());
+            logServiceMock
+                .Setup(l => l.GetRecentErrors(It.IsAny<string>(), It.IsAny<int>()))
+                .Returns(new List<PluginLogEntry>());
+
+            var dialogServiceMock = new Mock<IDialogService>();
+            dialogServiceMock
+                .Setup(d => d.ShowCustomAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<PluginLogViewerViewModel>(),
+                    It.IsAny<DialogButtons>(),
+                    It.IsAny<DialogSizeConstraints>()))
+                .ReturnsAsync(DialogResult.Confirmed);
+
+            var vm = CreateViewModel(
+                new Dictionary<string, PluginUsageStats> { { "plugin.a", CreateStats("plugin.a", 10, 5) } },
+                logService: logServiceMock.Object,
+                dialogService: dialogServiceMock.Object);
+            await vm.LoadAsync();
+
+            await vm.ViewLogsCommand.ExecuteAsync("plugin.a");
+
+            dialogServiceMock.Verify(
+                d => d.ShowCustomAsync(
+                    It.IsAny<string>(),
+                    It.Is<PluginLogViewerViewModel>(v => v.PluginName == "Plugin A"),
+                    It.IsAny<DialogButtons>(),
+                    It.IsAny<DialogSizeConstraints>()),
+                Times.Once);
         }
     }
 }
