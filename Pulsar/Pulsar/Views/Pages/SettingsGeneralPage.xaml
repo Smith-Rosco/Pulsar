@@ -73,7 +73,8 @@
                         </controls:SettingsRow>
 
                         <controls:SettingsRow Title="{lex:Locale Settings.Appearance.RendererStyle}"
-                                              Description="{lex:Locale Settings.Appearance.RendererStyleDescription}">
+                                              Description="{lex:Locale Settings.Appearance.RendererStyleDescription}"
+                                              DescriptionToolTip="{lex:Locale Settings.Appearance.RendererStyleDescriptionDetail}">
                             <ComboBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
                                       ItemsSource="{Binding DataContext.RendererOptions, RelativeSource={RelativeSource AncestorType=Page}}"
                                       SelectedValue="{Binding DataContext.RendererStyle, RelativeSource={RelativeSource AncestorType=Page}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -83,7 +84,8 @@
                         </controls:SettingsRow>
 
                         <controls:SettingsRow Title="{lex:Locale Settings.Appearance.ThemePreset}"
-                                              Description="{lex:Locale Settings.Appearance.ThemePresetDescription}">
+                                              Description="{lex:Locale Settings.Appearance.ThemePresetDescription}"
+                                              DescriptionToolTip="{lex:Locale Settings.Appearance.ThemePresetDescriptionDetail}">
                             <ComboBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
                                       SelectedValue="{Binding DataContext.ThemePreset, RelativeSource={RelativeSource AncestorType=Page}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                       SelectedValuePath="Tag"
@@ -131,7 +133,8 @@
                                           Width="{StaticResource Pulsar.Settings.ControlWidth}"/>
                         </controls:SettingsRow>
 
-                        <TextBlock Text="{lex:Locale Settings.General.SlotsPerPageDescription}" 
+                        <TextBlock Text="{lex:Locale Settings.General.SlotsPerPageDescription}"
+                                   ToolTip="{lex:Locale Settings.General.SlotsPerPageDescriptionDetail}"
                                    TextWrapping="Wrap"
                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}" 
                                    FontSize="{StaticResource Pulsar.Type.Caption}"
@@ -173,7 +176,8 @@
                 <ui:CardExpander Icon="DialPad24" Header="{lex:Locale Settings.General.RightDragSummon}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="False">
                     <StackPanel>
                         <controls:SettingsRow Title="{lex:Locale Settings.General.RightDragSummonToggle}"
-                                              Description="{lex:Locale Settings.General.RightDragSummonDescription}">
+                                              Description="{lex:Locale Settings.General.RightDragSummonDescription}"
+                                              DescriptionToolTip="{lex:Locale Settings.General.RightDragSummonDescriptionDetail}">
                             <ui:ToggleSwitch IsChecked="{Binding EnableRightDragSummon, Mode=TwoWay}"/>
                         </controls:SettingsRow>
 
@@ -197,7 +201,8 @@
                         </TextBlock>
 
                         <controls:SettingsRow Title="{lex:Locale Settings.General.GestureSummonMode}"
-                                              Description="{lex:Locale Settings.General.GestureSummonModeDescription}">
+                                              Description="{lex:Locale Settings.General.GestureSummonModeDescription}"
+                                              DescriptionToolTip="{lex:Locale Settings.General.GestureSummonModeDescriptionDetail}">
                             <ComboBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
                                       IsEnabled="{Binding EnableRightDragSummon}"
                                       SelectedValue="{Binding SummonMode, Mode=TwoWay}"
@@ -213,7 +218,8 @@
                         </controls:SettingsRow>
 
                         <controls:SettingsRow Title="{lex:Locale Settings.General.GestureDragThreshold}"
-                                              Description="{lex:Locale Settings.General.GestureDragThresholdDescription}">
+                                              Description="{lex:Locale Settings.General.GestureDragThresholdDescription}"
+                                              DescriptionToolTip="{lex:Locale Settings.General.GestureDragThresholdDescriptionDetail}">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <StackPanel.Style>
                                     <Style TargetType="StackPanel">
@@ -295,6 +301,7 @@
                         <StackPanel IsEnabled="{Binding EnableRightDragSummon}">
                             <TextBlock Text="{lex:Locale Settings.Gesture.Title}" FontWeight="SemiBold" Margin="{StaticResource Pulsar.Gap.Bottom.XS}"/>
                             <TextBlock Text="{lex:Locale Settings.Gesture.TitleDescription}"
+                                       ToolTip="{lex:Locale Settings.Gesture.TitleDescriptionDetail}"
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                        FontSize="{StaticResource Pulsar.Type.Body}"
                                        TextWrapping="Wrap"
@@ -308,7 +315,8 @@
                             </controls:SettingsRow>
 
                             <controls:SettingsRow Title="{lex:Locale Settings.Gesture.Mode}"
-                                                  Description="{lex:Locale Settings.Gesture.ModeDescription}">
+                                                  Description="{lex:Locale Settings.Gesture.ModeDescription}"
+                                                  DescriptionToolTip="{lex:Locale Settings.Gesture.ModeDescriptionDetail}">
                                 <ComboBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
                                           IsEnabled="{Binding GestureIsolationEnabled}"
                                           SelectedValue="{Binding GestureIsolationMode, Mode=TwoWay}"
@@ -324,7 +332,8 @@
                             </controls:SettingsRow>
 
                             <controls:SettingsRow Title="{lex:Locale Settings.Gesture.Processes}"
-                                                  Description="{lex:Locale Settings.Gesture.ProcessesDescription}">
+                                                  Description="{lex:Locale Settings.Gesture.ProcessesDescription}"
+                                                  DescriptionToolTip="{lex:Locale Settings.Gesture.ProcessesDescriptionDetail}">
                                 <TextBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
                                          MinHeight="90"
                                          AcceptsReturn="True"
@@ -336,7 +345,8 @@
                             </controls:SettingsRow>
 
                             <controls:SettingsRow Title="{lex:Locale Settings.Gesture.BlockFullscreen}"
-                                                  Description="{lex:Locale Settings.Gesture.BlockFullscreenDescription}">
+                                                  Description="{lex:Locale Settings.Gesture.BlockFullscreenDescription}"
+                                                  DescriptionToolTip="{lex:Locale Settings.Gesture.BlockFullscreenDescriptionDetail}">
                                 <ui:ToggleSwitch IsChecked="{Binding GestureIsolationBlockFullscreen, Mode=TwoWay}"
                                                  IsEnabled="{Binding GestureIsolationEnabled}"/>
                             </controls:SettingsRow>
@@ -355,7 +365,8 @@
                                        Style="{StaticResource PulsarSecondaryButtonStyle}"/>
                         </controls:SettingsRow>
 
-                        <TextBlock Text="{lex:Locale Settings.General.CleanCacheDescription}" 
+                        <TextBlock Text="{lex:Locale Settings.General.CleanCacheDescription}"
+                                   ToolTip="{lex:Locale Settings.General.CleanCacheDescriptionDetail}"
                                    TextWrapping="Wrap"
                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}" 
                                    FontSize="{StaticResource Pulsar.Type.Caption}"
@@ -375,7 +386,8 @@
                 <ui:CardExpander Icon="Code24" Header="{lex:Locale Settings.General.Logging}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="False">
                     <StackPanel>
                         <controls:SettingsRow Title="{lex:Locale Settings.General.LogLevel}"
-                                              Description="{lex:Locale Settings.General.LogLevelDescription}">
+                                              Description="{lex:Locale Settings.General.LogLevelDescription}"
+                                              DescriptionToolTip="{lex:Locale Settings.General.LogLevelDescriptionDetail}">
                             <ComboBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
                                       SelectedValue="{Binding DataContext.SelectedLogLevel, RelativeSource={RelativeSource AncestorType=Page}, Mode=TwoWay}"
                                       SelectedValuePath="Tag"

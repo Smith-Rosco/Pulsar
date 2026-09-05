@@ -36,8 +36,8 @@
                  避免水平布局推挤与占位紊乱，悬浮时 ToolTip 提供状态解释 -->
             <ui:TitleBar.TrailingContent>
                 <Grid Margin="{StaticResource Pulsar.Gap.Right.SM}" VerticalAlignment="Center">
-                    <ui:Button Content="{lex:Locale SettingsWindow.SaveChanges}"
-                               AutomationProperties.AutomationId="Pulsar.Settings.SaveChangesButton"
+                    <ui:Button AutomationProperties.AutomationId="Pulsar.Settings.SaveChangesButton"
+                               AutomationProperties.Name="{lex:Locale SettingsWindow.SaveChanges}"
                                Icon="{ui:SymbolIcon Save24}"
                                Style="{StaticResource PulsarPrimaryButtonStyle}"
                                Command="{Binding DataContext.SaveCommand, RelativeSource={RelativeSource AncestorType=Window}}"

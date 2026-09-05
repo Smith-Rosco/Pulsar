@@ -20,7 +20,7 @@
     <value>Save Changes</value>
   </data>
   <data name="SettingsWindow.SaveChangesTooltip" xml:space="preserve">
-    <value>Save all changes (Ctrl+S)</value>
+    <value>Save (Ctrl+S)</value>
   </data>
   <!-- ==================== Settings.General ==================== -->
   <data name="Settings.General.Title" xml:space="preserve">
@@ -75,6 +75,9 @@
     <value>Log level</value>
   </data>
   <data name="Settings.General.LogLevelDescription" xml:space="preserve">
+    <value>Detail level of the application log</value>
+  </data>
+  <data name="Settings.General.LogLevelDescriptionDetail" xml:space="preserve">
     <value>Minimum level of detail written to the application log. Changes apply immediately and are saved to Profiles.json.</value>
   </data>
   <data name="Settings.General.LogLevel.Verbose" xml:space="preserve">
@@ -102,6 +105,9 @@
     <value>Slots Per Page</value>
   </data>
   <data name="Settings.General.SlotsPerPageDescription" xml:space="preserve">
+    <value>Action slots shown per page</value>
+  </data>
+  <data name="Settings.General.SlotsPerPageDescriptionDetail" xml:space="preserve">
     <value>Adjust the number of action slots displayed per page. Higher values allow more actions but create smaller trigger regions. Changes take effect after saving.</value>
   </data>
   <data name="Settings.General.GlobalHotkeys" xml:space="preserve">
@@ -132,6 +138,9 @@
     <value>Clean Cache</value>
   </data>
   <data name="Settings.General.CleanCacheDescription" xml:space="preserve">
+    <value>Removes icon cache for processes inactive for 30 days</value>
+  </data>
+  <data name="Settings.General.CleanCacheDescriptionDetail" xml:space="preserve">
     <value>Removes icon cache for processes not seen in the last 30 days (blacklisted processes are never removed).</value>
   </data>
   <data name="Settings.General.Language" xml:space="preserve">
@@ -142,6 +151,9 @@
     <value>Renderer (Radial Menu Style)</value>
   </data>
   <data name="Settings.Appearance.RendererStyleDescription" xml:space="preserve">
+    <value>Visual style of the radial menu</value>
+  </data>
+  <data name="Settings.Appearance.RendererStyleDescriptionDetail" xml:space="preserve">
     <value>Visual style of the radial menu. Classic Ring adds an accent ring; Glassmorphism adds a translucent frosted layer. Renderer plugins contribute additional entries here.</value>
   </data>
   <data name="Settings.Appearance.RendererStyle.Default" xml:space="preserve">
@@ -157,6 +169,9 @@
     <value>Radial Theme Preset</value>
   </data>
   <data name="Settings.Appearance.ThemePresetDescription" xml:space="preserve">
+    <value>Color preset for the radial menu</value>
+  </data>
+  <data name="Settings.Appearance.ThemePresetDescriptionDetail" xml:space="preserve">
     <value>Color preset for the radial menu. System follows the Windows dark/light mode.</value>
   </data>
   <data name="Settings.Appearance.ThemePreset.System" xml:space="preserve">
@@ -406,7 +421,7 @@
       <value>success rate</value>
     </data>
     <data name="Settings.Analytics.LastUsed" xml:space="preserve">
-      <value>Last</value>
+      <value>Last used</value>
     </data>
     <data name="Settings.Analytics.Recommendations" xml:space="preserve">
       <value>Recommendations</value>
@@ -3191,6 +3206,9 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
     <value>Enable right-click gesture</value>
   </data>
   <data name="Settings.General.RightDragSummonDescription" xml:space="preserve">
+    <value>Hold a modifier and right-drag to open a menu</value>
+  </data>
+  <data name="Settings.General.RightDragSummonDescriptionDetail" xml:space="preserve">
     <value>Hold the switcher modifier with a right-click to open the task switcher, or the action modifier to open the action menu. The gesture is swallowed before reaching the source app, so plain right-click stays completely normal. The menu stays visible while the right button is held and executes on release.</value>
   </data>
   <data name="Settings.General.RightDragSwitcherModifier" xml:space="preserve">
@@ -3224,6 +3242,9 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
     <value>Summon mode</value>
   </data>
   <data name="Settings.General.GestureSummonModeDescription" xml:space="preserve">
+    <value>When the menu opens during the gesture</value>
+  </data>
+  <data name="Settings.General.GestureSummonModeDescriptionDetail" xml:space="preserve">
     <value>When the menu opens during the gesture. Immediately summons on right-click; after dragging opens once the cursor passes the drag threshold, letting a plain modifier+click show the app's native context menu.</value>
   </data>
   <data name="Settings.General.SummonModeImmediate" xml:space="preserve">
@@ -3236,12 +3257,18 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
     <value>Drag threshold</value>
   </data>
   <data name="Settings.General.GestureDragThresholdDescription" xml:space="preserve">
+    <value>Cursor distance (px) that summons the menu</value>
+  </data>
+  <data name="Settings.General.GestureDragThresholdDescriptionDetail" xml:space="preserve">
     <value>Distance (in pixels) the cursor must travel before an "after dragging" gesture summons the menu. Releasing before this shows the app's native context menu.</value>
   </data>
   <data name="Settings.Gesture.Title" xml:space="preserve">
     <value>Gesture isolation filter</value>
   </data>
   <data name="Settings.Gesture.TitleDescription" xml:space="preserve">
+    <value>Restrict right-drag gestures to allowed windows</value>
+  </data>
+  <data name="Settings.Gesture.TitleDescriptionDetail" xml:space="preserve">
     <value>Only let the right-click gesture take over when the foreground window allows it. Disabled by default — when off, every modifier+right-click press is eligible as before.</value>
   </data>
   <data name="Settings.Gesture.EnableToggle" xml:space="preserve">
@@ -3254,6 +3281,9 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
     <value>Isolation mode</value>
   </data>
   <data name="Settings.Gesture.ModeDescription" xml:space="preserve">
+    <value>Allow-list permits only listed processes; block-list reverses it</value>
+  </data>
+  <data name="Settings.Gesture.ModeDescriptionDetail" xml:space="preserve">
     <value>Allow-list permits the gesture only for the listed processes; block-list permits it everywhere except the listed processes.</value>
   </data>
   <data name="Settings.Gesture.ModeAllowlist" xml:space="preserve">
@@ -3266,12 +3296,18 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
     <value>Processes</value>
   </data>
   <data name="Settings.Gesture.ProcessesDescription" xml:space="preserve">
+    <value>Process names, one per line or comma-separated</value>
+  </data>
+  <data name="Settings.Gesture.ProcessesDescriptionDetail" xml:space="preserve">
     <value>Process names (e.g. chrome, notepad), one per line or separated by commas. Matched case-insensitively against the foreground process.</value>
   </data>
   <data name="Settings.Gesture.BlockFullscreen" xml:space="preserve">
     <value>Block in fullscreen apps</value>
   </data>
   <data name="Settings.Gesture.BlockFullscreenDescription" xml:space="preserve">
+    <value>Block gestures in full-screen windows</value>
+  </data>
+  <data name="Settings.Gesture.BlockFullscreenDescriptionDetail" xml:space="preserve">
     <value>Deny the gesture when the foreground window covers the whole screen (e.g. games). The desktop and taskbar are never treated as fullscreen.</value>
   </data>
   <data name="RadialMenu.SubMenuPageFormat" xml:space="preserve">

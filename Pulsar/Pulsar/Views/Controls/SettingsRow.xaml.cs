@@ -16,6 +16,13 @@ namespace Pulsar.Views.Controls
         public static readonly DependencyProperty DescriptionProperty =
             DependencyProperty.Register(nameof(Description), typeof(string), typeof(SettingsRow), new PropertyMetadata(string.Empty));
 
+        /// <summary>
+        /// 可选：描述详情的 ToolTip 文本。设置后，鼠标悬停在描述文字上显示完整详情；
+        /// 配合精简后的 <see cref="Description"/> 使用（详情入 tooltip，观感简洁）。
+        /// </summary>
+        public static readonly DependencyProperty DescriptionToolTipProperty =
+            DependencyProperty.Register(nameof(DescriptionToolTip), typeof(string), typeof(SettingsRow), new PropertyMetadata(string.Empty));
+
         public string Title
         {
             get => (string)GetValue(TitleProperty);
@@ -26,6 +33,12 @@ namespace Pulsar.Views.Controls
         {
             get => (string)GetValue(DescriptionProperty);
             set => SetValue(DescriptionProperty, value);
+        }
+
+        public string DescriptionToolTip
+        {
+            get => (string)GetValue(DescriptionToolTipProperty);
+            set => SetValue(DescriptionToolTipProperty, value);
         }
 
         public SettingsRow()

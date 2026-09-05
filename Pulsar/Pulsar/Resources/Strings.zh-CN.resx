@@ -29,7 +29,7 @@
   <data
     name="SettingsWindow.SaveChangesTooltip"
     xml:space="preserve">
-    <value>保存所有更改 (Ctrl+S)</value>
+    <value>保存 (Ctrl+S)</value>
   </data>
   <data
     name="Settings.General.Title"
@@ -119,6 +119,11 @@
   <data
     name="Settings.General.LogLevelDescription"
     xml:space="preserve">
+    <value>应用日志的详细程度</value>
+  </data>
+  <data
+    name="Settings.General.LogLevelDescriptionDetail"
+    xml:space="preserve">
     <value>写入应用程序日志的最低详细级别。更改立即生效，并保存到 Profiles.json。</value>
   </data>
   <data
@@ -163,6 +168,11 @@
   </data>
   <data
     name="Settings.General.SlotsPerPageDescription"
+    xml:space="preserve">
+    <value>每页显示的操作槽位数量</value>
+  </data>
+  <data
+    name="Settings.General.SlotsPerPageDescriptionDetail"
     xml:space="preserve">
     <value>调整每页显示的操作槽位数量。数值越高，可容纳更多操作，但触发区域会变小。更改在保存后生效。</value>
   </data>
@@ -214,7 +224,12 @@
   <data
     name="Settings.General.CleanCacheDescription"
     xml:space="preserve">
-    <value>移除过去30天内未出现的进程的图标缓存（黑名单中的进程永远不会被移除）。</value>
+    <value>清理 30 天未使用进程的图标缓存</value>
+  </data>
+  <data
+    name="Settings.General.CleanCacheDescriptionDetail"
+    xml:space="preserve">
+    <value>移除过去 30 天内未出现的进程的图标缓存（黑名单中的进程永远不会被移除）。</value>
   </data>
   <data
     name="Settings.General.Language"
@@ -229,6 +244,11 @@
   </data>
   <data
     name="Settings.Appearance.RendererStyleDescription"
+    xml:space="preserve">
+    <value>径向菜单的视觉样式</value>
+  </data>
+  <data
+    name="Settings.Appearance.RendererStyleDescriptionDetail"
     xml:space="preserve">
     <value>径向菜单的视觉样式。经典环会添加强调色圆环；毛玻璃会添加半透明磨砂层。渲染器插件会在此追加更多选项。</value>
   </data>
@@ -254,6 +274,11 @@
   </data>
   <data
     name="Settings.Appearance.ThemePresetDescription"
+    xml:space="preserve">
+    <value>径向菜单的配色预设</value>
+  </data>
+  <data
+    name="Settings.Appearance.ThemePresetDescriptionDetail"
     xml:space="preserve">
     <value>径向菜单的配色预设。System 跟随 Windows 深色/浅色模式。</value>
   </data>
@@ -665,7 +690,7 @@
   <data
     name="Settings.Analytics.LastUsed"
     xml:space="preserve">
-    <value>最近</value>
+    <value>最后使用</value>
   </data>
   <data
     name="Settings.Analytics.Recommendations"
@@ -5073,6 +5098,9 @@ Pulsar 会在当前页面运行一个网页脚本——这就是命令模式：�
     <value>启用右键手势唤起</value>
   </data>
   <data name="Settings.General.RightDragSummonDescription" xml:space="preserve">
+    <value>按住修饰键并右键拖拽即可唤起菜单</value>
+  </data>
+  <data name="Settings.General.RightDragSummonDescriptionDetail" xml:space="preserve">
     <value>按住"任务切换修饰键"并右键可打开任务切换菜单，按住"动作菜单修饰键"并右键可打开动作菜单。手势会在到达源程序前被吞掉，因此纯右键完全不受影响。面板在按住右键期间保持显示，松开时执行。</value>
   </data>
   <data name="Settings.General.RightDragSwitcherModifier" xml:space="preserve">
@@ -5106,6 +5134,9 @@ Pulsar 会在当前页面运行一个网页脚本——这就是命令模式：�
     <value>唤起方式</value>
   </data>
   <data name="Settings.General.GestureSummonModeDescription" xml:space="preserve">
+    <value>控制手势过程中菜单何时打开</value>
+  </data>
+  <data name="Settings.General.GestureSummonModeDescriptionDetail" xml:space="preserve">
     <value>控制手势过程中菜单何时打开。"立即"在右键按下时唤起；"拖动越过阈值后"在光标位移超过拖拽阈值时唤起，此时按住修饰键的普通右键会重新注入给源程序，原生右键菜单照常弹出。</value>
   </data>
   <data name="Settings.General.SummonModeImmediate" xml:space="preserve">
@@ -5118,12 +5149,18 @@ Pulsar 会在当前页面运行一个网页脚本——这就是命令模式：�
     <value>拖拽阈值</value>
   </data>
   <data name="Settings.General.GestureDragThresholdDescription" xml:space="preserve">
+    <value>唤起菜单所需的光标移动距离（像素）</value>
+  </data>
+  <data name="Settings.General.GestureDragThresholdDescriptionDetail" xml:space="preserve">
     <value>在"拖动越过阈值后"模式下，光标需移动的距离（像素）才会唤起菜单。在此之前松开将显示源程序的原生右键菜单。</value>
   </data>
   <data name="Settings.Gesture.Title" xml:space="preserve">
     <value>手势隔离过滤</value>
   </data>
   <data name="Settings.Gesture.TitleDescription" xml:space="preserve">
+    <value>仅在前台窗口允许时启用右键手势接管</value>
+  </data>
+  <data name="Settings.Gesture.TitleDescriptionDetail" xml:space="preserve">
     <value>仅在前台窗口允许时才让右键手势接管。默认关闭——关闭时所有修饰键+右键按下均保持原有行为。</value>
   </data>
   <data name="Settings.Gesture.EnableToggle" xml:space="preserve">
@@ -5136,6 +5173,9 @@ Pulsar 会在当前页面运行一个网页脚本——这就是命令模式：�
     <value>隔离模式</value>
   </data>
   <data name="Settings.Gesture.ModeDescription" xml:space="preserve">
+    <value>白名单仅放行列表内进程，黑名单相反</value>
+  </data>
+  <data name="Settings.Gesture.ModeDescriptionDetail" xml:space="preserve">
     <value>白名单模式仅对列表内的进程允许手势；黑名单模式除列表内的进程外都允许手势。</value>
   </data>
   <data name="Settings.Gesture.ModeAllowlist" xml:space="preserve">
@@ -5148,12 +5188,18 @@ Pulsar 会在当前页面运行一个网页脚本——这就是命令模式：�
     <value>进程列表</value>
   </data>
   <data name="Settings.Gesture.ProcessesDescription" xml:space="preserve">
+    <value>进程名，每行一个或用逗号分隔</value>
+  </data>
+  <data name="Settings.Gesture.ProcessesDescriptionDetail" xml:space="preserve">
     <value>进程名（如 chrome、notepad），每行一个或用逗号分隔。与前台进程名不区分大小写匹配。</value>
   </data>
   <data name="Settings.Gesture.BlockFullscreen" xml:space="preserve">
     <value>全屏应用中阻止</value>
   </data>
   <data name="Settings.Gesture.BlockFullscreenDescription" xml:space="preserve">
+    <value>前台窗口全屏时阻止手势</value>
+  </data>
+  <data name="Settings.Gesture.BlockFullscreenDescriptionDetail" xml:space="preserve">
     <value>当前台窗口覆盖整个屏幕（如游戏）时拒绝手势。桌面与任务栏永远不会被判定为全屏。</value>
   </data>
   <data name="RadialMenu.SubMenuPageFormat" xml:space="preserve">

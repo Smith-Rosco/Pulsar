@@ -18,6 +18,21 @@
             </ResourceDictionary.MergedDictionaries>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+            <!-- 排序表头：轻量可点击文本（替代按钮化表头），列宽与下方卡片度量列对齐 -->
+            <Style x:Key="AnalyticsSortHeaderText" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="{StaticResource Pulsar.Type.Caption}"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="VerticalAlignment" Value="Center"/>
+                <Setter Property="Margin" Value="{StaticResource Pulsar.Gap.Right.SM}"/>
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorAccentBrush}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
         </ResourceDictionary>
     </Page.Resources>
 
@@ -306,7 +321,7 @@
                     </ComboBox>
                 </Grid>
 
-                <!-- Sort Column Headers -->
+                <!-- Sort Column Headers：列宽与卡片度量列（执行次数/成功率/平均时长/最后使用）一一对齐 -->
                 <Grid Margin="{StaticResource Pulsar.Thk.L16R16B4}"
                       Visibility="{Binding HasData, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <Grid.ColumnDefinitions>
@@ -316,24 +331,34 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
+                    <!-- # 列宽 = 32px 徽章 + Right.LG 边距，与卡片排名徽章列严格对齐 -->
                     <TextBlock Grid.Column="0" Text="#" FontSize="{StaticResource Pulsar.Type.Caption}" FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextFillColorTertiaryBrush}" Width="32"/>
-                    <ui:Button Grid.Column="1" Style="{StaticResource PulsarSecondaryButtonStyle}"
-                             Command="{Binding SetSortCommand}" CommandParameter="Executions"
-                             HorizontalAlignment="Left" FontSize="{StaticResource Pulsar.Type.Caption}" FontWeight="SemiBold"
-                             Content="{lex:Locale Settings.Analytics.SortByExecutions}"/>
-                    <ui:Button Grid.Column="2" Style="{StaticResource PulsarSecondaryButtonStyle}"
-                             Command="{Binding SetSortCommand}" CommandParameter="SuccessRate"
-                             HorizontalAlignment="Left" FontSize="{StaticResource Pulsar.Type.Caption}" FontWeight="SemiBold"
-                             Content="{lex:Locale Settings.Analytics.SortBySuccessRate}"/>
-                    <ui:Button Grid.Column="3" Style="{StaticResource PulsarSecondaryButtonStyle}"
-                             Command="{Binding SetSortCommand}" CommandParameter="Duration"
-                             HorizontalAlignment="Left" FontSize="{StaticResource Pulsar.Type.Caption}" FontWeight="SemiBold"
-                             Content="{lex:Locale Settings.Analytics.SortByDuration}"/>
-                    <ui:Button Grid.Column="4" Style="{StaticResource PulsarSecondaryButtonStyle}"
-                             Command="{Binding SetSortCommand}" CommandParameter="LastUsed"
-                             HorizontalAlignment="Left" FontSize="{StaticResource Pulsar.Type.Caption}" FontWeight="SemiBold"
-                             Content="{lex:Locale Settings.Analytics.SortByLastUsed}"/>
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}" Width="32"
+                               Margin="{StaticResource Pulsar.Gap.Right.LG}" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="1" Text="{lex:Locale Settings.Analytics.SortByExecutions}"
+                               Style="{StaticResource AnalyticsSortHeaderText}">
+                        <TextBlock.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding SetSortCommand}" CommandParameter="Executions"/>
+                        </TextBlock.InputBindings>
+                    </TextBlock>
+                    <TextBlock Grid.Column="2" Text="{lex:Locale Settings.Analytics.SortBySuccessRate}"
+                               Style="{StaticResource AnalyticsSortHeaderText}">
+                        <TextBlock.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding SetSortCommand}" CommandParameter="SuccessRate"/>
+                        </TextBlock.InputBindings>
+                    </TextBlock>
+                    <TextBlock Grid.Column="3" Text="{lex:Locale Settings.Analytics.SortByDuration}"
+                               Style="{StaticResource AnalyticsSortHeaderText}">
+                        <TextBlock.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding SetSortCommand}" CommandParameter="Duration"/>
+                        </TextBlock.InputBindings>
+                    </TextBlock>
+                    <TextBlock Grid.Column="4" Text="{lex:Locale Settings.Analytics.SortByLastUsed}"
+                               Style="{StaticResource AnalyticsSortHeaderText}">
+                        <TextBlock.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding SetSortCommand}" CommandParameter="LastUsed"/>
+                        </TextBlock.InputBindings>
+                    </TextBlock>
                 </Grid>
 
                 <!-- Usage Stats List -->
@@ -384,7 +409,7 @@
                                         </TextBlock>
                                     </Border>
 
-                                    <!-- Plugin Name + Last Used -->
+                                    <!-- Plugin Name + Plugin Id（最后使用移至下方度量列，与表头对齐） -->
                                     <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Margin="{StaticResource Pulsar.Gap.Bottom.SM}">
                                         <TextBlock Text="{Binding DisplayName}"
                                                    FontWeight="SemiBold" FontSize="{StaticResource Pulsar.Type.Subtitle}"
@@ -394,15 +419,10 @@
                                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                    VerticalAlignment="Center"
                                                    Text="{Binding PluginId, StringFormat='({0})'}"/>
-                                        <TextBlock Margin="{StaticResource Pulsar.Gap.Left.MD}"
-                                                   Text="{Binding LastUsedFormatted, StringFormat='{}{0}'}"
-                                                   FontSize="{StaticResource Pulsar.Type.Caption}"
-                                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                                   VerticalAlignment="Center"/>
                                     </StackPanel>
 
-                                    <!-- Metrics Row -->
-                                    <UniformGrid Grid.Row="1" Grid.Column="1" Columns="3" Margin="{StaticResource Pulsar.Thk.T8B2}">
+                                    <!-- Metrics Row：4 列，与排序表头 4 列（执行次数/成功率/平均时长/最后使用）严格对齐 -->
+                                    <UniformGrid Grid.Row="1" Grid.Column="1" Columns="4" Margin="{StaticResource Pulsar.Thk.T8B2}">
 
                                         <!-- Executions -->
                                         <StackPanel>
@@ -443,6 +463,16 @@
                                                        FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="Bold"
                                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                                             <TextBlock Text="{lex:Locale Settings.Analytics.AvgDuration}"
+                                                       FontSize="{StaticResource Pulsar.Type.Caption}"
+                                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
+                                        </StackPanel>
+
+                                        <!-- Last Used -->
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding LastUsedFormatted}"
+                                                       FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="Bold"
+                                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                            <TextBlock Text="{lex:Locale Settings.Analytics.LastUsed}"
                                                        FontSize="{StaticResource Pulsar.Type.Caption}"
                                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
                                         </StackPanel>

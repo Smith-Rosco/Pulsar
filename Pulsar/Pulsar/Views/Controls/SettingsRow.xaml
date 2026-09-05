@@ -36,6 +36,7 @@
                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                     <TextBlock Text="{TemplateBinding Title}" FontWeight="Medium"/>
                     <TextBlock Text="{TemplateBinding Description}"
+                               ToolTip="{TemplateBinding DescriptionToolTip}"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                FontSize="{StaticResource Pulsar.Type.Body}"
                                TextWrapping="Wrap"
