@@ -7,9 +7,11 @@
 
 - [ ] 观察 1-2 个会话：AGENTS.md 瘦身后 agent 是否经 §3 指针去 `Docs/lessons/` 取坑位全文（防"全表靠内联"回潮，ADR-022 后续）。
 - [ ] 观察若干会话：确认无 harness 再向 `.workbuddy/memory/` 写正文（若复发 → 考虑 Junction 收口，ADR-019 后续）。**2026-09-05 检查：合规**——仅一行指向 journal 的指针（183B），无正文复发。
+- [ ] **OpenWiki 四项待用户复核后决定是否入库**（2026-09-05 按 guardrail 暂停，均 10:57 OpenWiki 工具产生）：`AGENTS.md` OPENWIKI 区块（M）+ `.github/workflows/openwiki-update.yml`（**新增 CI workflow = 外部契约**）+ `CLAUDE.md` + `openwiki/`（生成索引，含 `.run.json` 运行状态）。注意：拆开提交会让 AGENTS.md 指向不存在的 workflow；`openwiki/` 若为生成物应与 workflow 二选一处理。
 
 ## 已完成（历史保留）
 
+- [x] ~~archify 插件系统架构图（2026-09-05，commit `7ecb5bd` + `dadc7b2`）：15 组件/15 关系/3 boundary，showcase 9/9 检查通过，12 处源码引用对照 `8df4281` 经 `--repo-root` 核验；`deliver` 冻结 spec `9a7582b4` → HTML `cd3021c8`。可视证据（visual-check PNG/JSON）与 `Pulsar/graphify-out/` 已入 gitignore，不入库。~~
 - [x] ~~架构审查候选 1 (Strong) 落地（2026-09-05）：菜单执行路径服务定位器消除——新增 IPageProviderFactory seam，20 处 GetService → 显式构造依赖，PageProvider 首次可测，CommandPageProvider 重复构造收口为 InsertCreatorSlot helper。构建 0 警告 0 错误，1059 测试全过。ADR-023 + CONTEXT.md 术语已更新。~~
 - [x] ~~复核 rules-stack 落地 audit log 并 push（2026-09-05）：用户复核无否决，4 commits（`76389cb`..`53a964c`）push 到 origin/main；journal 整理一并提交。~~
 - [x] dev.ps1 真实终端端到端确认（2026-09-05）：`dev.ps1 build` → 0 警告 0 错误 6.8s；`dev.ps1 commit` 路径本次落地 NEXT 更新时 dogfood 通过。此前「沙箱禁 native spawn」限制仅在旧会话环境，按需确认模式可直接跑。
