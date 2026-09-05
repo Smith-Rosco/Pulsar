@@ -46,7 +46,8 @@
                                      Title="{lex:Locale Settings.Analytics.Title}"
                                      Description="{lex:Locale Settings.Analytics.Description}"/>
 
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                      AutomationProperties.AutomationId="Pulsar.Settings.Analytics.ScrollViewer">
             <StackPanel Margin="{StaticResource Pulsar.Gap.Right.XL}" MaxWidth="720" HorizontalAlignment="Left">
 
                 <!-- Loading Indicator -->
@@ -367,7 +368,8 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <ui:CardControl Margin="{StaticResource Pulsar.Gap.Bottom.MD}" Padding="{StaticResource Pulsar.Pad.H16V16}">
-                                <Grid>
+                                <ui:CardControl.Header>
+                                <Grid HorizontalAlignment="Stretch">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
@@ -520,6 +522,7 @@
                                         </ItemsControl>
                                     </StackPanel>
                                 </Grid>
+                                </ui:CardControl.Header>
                             </ui:CardControl>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
