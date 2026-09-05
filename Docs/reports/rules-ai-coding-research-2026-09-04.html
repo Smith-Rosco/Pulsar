@@ -70,6 +70,21 @@
   </div>
 </header>
 
+<div class="card" style="border-left:4px solid #B0780C;background:#FBF6EC;">
+  <div style="font-size:16px;font-weight:700;color:#7A4E0A;">2026-09-05 复核更新（以本次为准，下方正文为初版调研，冲突处以本复核为准）</div>
+  <p style="margin:8px 0 6px;">你已在 09-04 深夜～09-05 落地：ADR-021（journal 轮转 + NEXT.md + §10 worktree 纪律）、<code>scripts/dev.ps1</code>（已端到端验证：build 0 警告 0 错误 6.8s、commit dogfood 通过）、构建警告清零、候选 O/N/M/L、Pulsar.E2E 运行时验证 PASS、push 15 commits。据此对上一版差距逐条复核：</p>
+  <table>
+    <tr><th>#</th><th>差距</th><th>初版状态</th><th>复核状态（2026-09-05）</th><th>说明</th></tr>
+    <tr><td>G1</td><td>AGENTS.md 体量超标 + pitfalls 重复</td><td class="bad">开</td><td class="bad">仍开 · 加剧</td><td>248 行/24.4KB（原 201）；19 行 pitfalls 表仍在且与 Docs/lessons 重复</td></tr>
+    <tr><td>G2</td><td>命令/路径可执行性未核验</td><td class="bad">开</td><td class="ok">基本解决</td><td>dev.ps1 落地并验证；AGENTS.md §9 改 dev.ps1 优先，无写死测试数</td></tr>
+    <tr><td>G2b</td><td>DEVELOPER.md 过期测试数</td><td>—</td><td class="warn">仍开（小）</td><td>三处"897 个测试"（实际 1037+）</td></tr>
+    <tr><td>G3</td><td>多 harness 可达性靠人工</td><td class="bad">开</td><td class="warn">已缓解</td><td>§8 仪式写死 skill 路径 + "缺失时按路径直读"兜底；仍无正式 harness×矩阵</td></tr>
+    <tr><td>G4</td><td>规则承诺未接线（journal 空头支票）</td><td class="bad">开</td><td class="ok">已闭环</td><td>NEXT.md + 日文件 + 轮转 + dev.ps1 dogfood 全部生效</td></tr>
+    <tr><td>G5</td><td>条件加载缺失</td><td class="bad">开</td><td class="warn">仍开 · 部分缓解</td><td>OpenCode 无条件语法；但场景内容已部分迁移（.opencode/commands 斜杠命令、skills、dev.ps1）</td></tr>
+  </table>
+  <p style="margin:8px 0 6px;"><b>修订后计划</b>（详见下方 §4 更新）：<b>P0</b>＝AGENTS.md 瘦身 248→~160 行（主刀 §3 pitfalls 表：Top-5+链接 vs 保留全表二选一）；<b>P1</b>＝给 dev.ps1 加 <code>verify-rules</code> 子命令（核验 AGENTS.md 引用路径/命令真实存在，把 G4 教训制度化）；<b>P2</b>＝条件加载原则成文 + 可选 harness×矩阵（放 Docs/agents 不进 AGENTS.md）；<b>P3</b>＝DEVELOPER.md 过期数字清理 + 维护节奏。</p>
+</div>
+
 <h2>0. 核心结论（TL;DR）</h2>
 <div class="card">
   <ol>
@@ -175,7 +190,7 @@
 <h2>3. Pulsar 现状盘点</h2>
 
 <div class="stat">
-  <div class="box"><div class="num">201 行</div><div class="lbl">AGENTS.md（约 20.4 KB）</div></div>
+  <div class="box"><div class="num">248 行</div><div class="lbl">AGENTS.md（约 24.4 KB，2026-09-05 实测）</div></div>
   <div class="box"><div class="num">1</div><div class="lbl">常驻 rules 文件（AGENTS.md）</div></div>
   <div class="box"><div class="num">20</div><div class="lbl">Docs/lessons 坑位文档</div></div>
   <div class="box"><div class="num">18+</div><div class="lbl">Docs/decisions ADR</div></div>
@@ -221,43 +236,44 @@
 <div class="card">
   <p>保持"常驻规则做减法、归档与技能做加法"的分层，把 AGENTS.md 收敛为<b>纯 always-on 内核</b>：</p>
   <ol>
-    <li><b>常驻规则（唯一 always-on）</b>：<code>AGENTS.md</code> → 瘦身至 ~120 行。只保留：项目快照（1 段）、不变量（MUST/SHOULD）、Top-5 地雷 + 一行指向 <code>Docs/lessons/</code>、Task Router、Quick Commands（核验过）、Agent Behavior Rules（AI 三角形）。</li>
+    <li><b>常驻规则（唯一 always-on）</b>：<code>AGENTS.md</code> → 瘦身至 ~160 行（当前 248 行）。只保留：项目快照（1 段）、不变量（MUST/SHOULD）、Top-5 地雷 + 一行指向 <code>Docs/lessons/</code>、Task Router、Quick Commands（经 dev.ps1）、Agent Behavior Rules（AI 三角形 + 会话仪式 + worktree 纪律）。</li>
     <li><b>归档知识（按需全文）</b>：<code>Docs/decisions/</code>（ADR）、<code>Docs/lessons/</code>（坑位全文）、<code>Docs/architecture/</code>——AGENTS.md 只留指针，不复制正文。</li>
     <li><b>按需技能</b>：<code>.opencode/skills/ + .agents/skills/</code> 保持双镜像；把 AGENTS.md 里的"工作流/任务型"段落（如发布、openspec 命令）改为指向现有 skill。</li>
     <li><b>工作记忆</b>：<code>Docs/journal/</code> 维持 ADR-019 单源。</li>
-    <li><b>工具契约</b>：<code>Docs/agents/*.md</code>、<code>CONTEXT.md</code> 维持；新增一张"harness × 加载机制"矩阵。</li>
+    <li><b>工具契约</b>：<code>Docs/agents/*.md</code>、<code>CONTEXT.md</code> 维持；harness×加载机制矩阵（可选）放 <code>Docs/agents/</code>，不进 AGENTS.md。</li>
   </ol>
 </div>
 
 <h3>4.2 具体动作（按优先级）</h3>
 
-<p><span class="tag p0">P0 立即 · 低风险高收益</span></p>
+<p><span class="tag p0">P0 立即 · 低风险高收益（G1 是当前唯一显著差距）</span></p>
 <table>
   <tr><th>动作</th><th>说明</th></tr>
-  <tr><td><b>R1 给 AGENTS.md 瘦身</b></td><td>把 19 行 pitfalls 表压缩为 Top-5 地雷 + 一行链接 <code>Docs/lessons/</code>（消除 G1 重复）；压缩 Code Style / Error Handling / Workflows 段，保留 invariant 与路由。目标 ~120 行。</td></tr>
-  <tr><td><b>R2 命令与数字核验</b></td><td>把 AGENTS.md / DEVELOPER.md 中所有命令在干净环境实际跑一遍；修正 <code>dotnet build Pulsar.sln</code> 这类路径坑；把写死的测试数（897/1037…）改为"以 <code>dotnet test</code> 实际输出为准"。</td></tr>
+  <tr><td><b>R1 给 AGENTS.md 瘦身 248 → ~160 行</b></td><td>主刀 §3：19 行 pitfalls 表二选一——<b>A（推荐）</b>压为 Top-5 地雷 + 一行链接 <code>Docs/lessons/</code>（省 ~40 行，消除 G1 重复；全表是"仅相关时才需要"的场景知识，属条件加载范畴，不该占 always-on 配额）；<b>B</b> 保留全表则接受 248 行超限代价。其余：§8 仪式文字精简、§5 交给 .editorconfig、§7 压缩、§6 指向 skill。</td></tr>
+  <tr><td><b>R2 命令核验（部分已完成）</b></td><td><code>dev.ps1</code> 已落地并验证（build 0 警告 0 错误 6.8s、commit dogfood 通过）——此步基本闭环。剩余仅在 DEVELOPER.md：三处"897 个测试"（实际 1037+）→ 移入 P3。</td></tr>
 </table>
 
-<p><span class="tag p1">P1 机制 · 一致性</span></p>
+<p><span class="tag p1">P1 机制 · 可验证性制度化（G4 已闭环，把教训固化）</span></p>
 <table>
   <tr><th>动作</th><th>说明</th></tr>
-  <tr><td><b>R3 规则可验证性约定</b></td><td>在 AGENTS.md 加一条：引用的文件/命令/skill 必须真实存在并接线（吸取 session-journal 空头支票教训）。可配一个季度自检清单或 <code>scripts/verify-rules.ps1</code>（顺带完成 journal 遗愿 <code>scripts/dev.ps1</code>）。</td></tr>
-  <tr><td><b>R4 多 harness 可达性矩阵</b></td><td>在 Docs/agents 建表：harness → 读哪个 rules 文件 → 扫哪个 skills 目录 → 需要镜像吗。把"同一 skill 内容双份镜像"写成规则而非人工习惯。</td></tr>
-  <tr><td><b>R5 差异化内容归位</b></td><td>DEVELOPER.md 与 AGENTS.md 去重（AGENTS.md 只留 agent 动作指令，人读长文档留 DEVELOPER）；确认 <code>.impeccable.md</code> 有 harness 读取，否则并入 AGENTS.md 的 UI 段或用 skill 承载。</td></tr>
+  <tr><td><b>R3 dev.ps1 加 verify-rules 子命令</b></td><td>核验 AGENTS.md 引用的路径 / skill / 命令真实存在（NEXT.md、session-journal、Docs/lessons 链接等），失败即报错。journal 仪式已工作，此步把"承诺"变成可自动检查的对象。低成本，且与现有 dev.ps1 形态一致。</td></tr>
+  <tr><td><b>R5 差异化内容归位（低优先）</b></td><td>确认 <code>.impeccable.md</code> 有 harness 读取，否则并入 AGENTS.md 的 UI 段或 skill 承载；DEVELOPER.md 与 AGENTS.md 的去重可随瘦身一起做。</td></tr>
 </table>
 
-<p><span class="tag p2">P2 前瞻 · 按需启用</span></p>
+<p><span class="tag p2">P2 前瞻 · 按需启用（G5 部分缓解，制度化防回潮）</span></p>
 <table>
   <tr><th>动作</th><th>说明</th></tr>
-  <tr><td><b>R6 条件加载</b></td><td>测试/发布/openspec 类场景指令移入 skill 或嵌套 <code>AGENTS.md</code>（如 <code>Pulsar.Tests/AGENTS.md</code> 放测试规则），避免每会话全量加载。</td></tr>
-  <tr><td><b>R7 未来工具桥接</b></td><td>引入 Claude Code → <code>CLAUDE.md</code> 里 <code>@AGENTS.md</code> import；Cursor → 其原生读 AGENTS.md，仅把 glob 型规则放 <code>.cursor/rules/</code>。绝不复制内容。</td></tr>
+  <tr><td><b>R6 条件加载原则成文</b></td><td>在 AGENTS.md 加一行："场景专用内容（测试/发布/openspec）→ skill 或 <code>.opencode/commands</code> 斜杠命令，不占 always-on 配额"。项目实际已在做（opsx-*、skills、dev.ps1），成文防止回潮；R1 的 pitfalls 压缩也符合此原则。</td></tr>
+  <tr><td><b>R4 harness×加载矩阵（可选）</b></td><td>若做，放 <code>Docs/agents/</code> 补充表（harness → 读哪个 rules → 扫哪个 skills 目录），<b>不进 AGENTS.md</b>（避免再涨）。G3 已由 §8 仪式"按路径直读"兜底，此矩阵为锦上添花。</td></tr>
+  <tr><td><b>R7 未来工具桥接</b></td><td>引入 Claude Code → <code>CLAUDE.md</code> 里 <code>@AGENTS.md</code> import；Cursor → 原生读 AGENTS.md，仅 glob 型规则放 <code>.cursor/rules/</code>。绝不复制内容。</td></tr>
   <tr><td><b>R8 元数据</b></td><td>可选：AGENTS.md 加 YAML frontmatter（title / description / last-verified），便于审阅与部分工具。</td></tr>
 </table>
 
 <p><span class="tag p3">P3 维护节奏</span></p>
 <ul>
   <li><b>R9 把规则当代码</b>：纠正 agent 后立即回写；规则变更走 PR；季度修剪；查矛盾；CODEOWNERS 指定 owner。</li>
-  <li><b>R10 与开发并行</b>：以上建议全部非破坏性，不动在途文件（E2E bisect、AppStartupCoordinatorTests、REPO_HEALTH_REPORT 等未提交内容）；待你确认后单独 commit。</li>
+  <li><b>R2b DEVELOPER.md 过期数字清理</b>：三处"897 个测试"→ 更新为实际数字或改为"以 <code>dotnet test</code> 输出为准"。</li>
+  <li><b>R10 与开发并行</b>：工作区已干净（在途内容已 gitignore / 提交）；建议落地仍单独 commit，并走 §10 worktree 纪律。</li>
 </ul>
 
 <h3>4.3 建议后的 AGENTS.md 结构（示意）</h3>
@@ -271,7 +287,7 @@
   <tr><td>6. Workflows</td><td class="warn">改指向 skill</td><td>流程型内容 → skill（rules vs skills 分工）</td></tr>
   <tr><td>7. Error Handling</td><td>压缩</td><td>保留 Serilog/断路器要点即可</td></tr>
   <tr><td>8. Agent Behavior Rules</td><td>保留</td><td>AI 三角形是真实工作协议</td></tr>
-  <tr><td>9. Quick Commands</td><td>保留但核验</td><td>可执行指令优先 + R2</td></tr>
+  <tr><td>9. Quick Commands</td><td>保留（dev.ps1 优先）</td><td>可执行指令优先；命令核验已由 dev.ps1 承接</td></tr>
   <tr><td>Agent skills 说明</td><td>保留（已含双份契约警示）</td><td>与 R4 合并</td></tr>
 </table>
 
@@ -289,8 +305,8 @@
 </ul>
 
 <div class="foot">
-  本报告为调研与建议，未改动任何仓库文件；建议落地需你确认后另行提交。<br>
-  项目内部依据：<code>Docs/journal/2026-09-01..04.md</code> · <code>AGENTS.md</code> · <code>CONTEXT.md</code> · <code>Docs/agents/*.md</code> · <code>opencode.jsonc</code>
+  初版 2026-09-04 · 2026-09-05 复核更新（gap 状态与计划已按最新仓库状态修订）。本报告为调研与建议，未改动任何仓库源代码文件；建议落地需你确认后另行提交。<br>
+  项目内部依据：<code>Docs/journal/NEXT.md</code> · <code>Docs/journal/2026-09-04..05.md</code> · <code>AGENTS.md</code> · <code>CONTEXT.md</code> · <code>Docs/agents/*.md</code> · <code>opencode.jsonc</code> · <code>scripts/dev.ps1</code>
 </div>
 
 </div>

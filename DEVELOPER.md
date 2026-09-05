@@ -28,7 +28,7 @@
 | **UI 模式** | MVVM + Dependency Injection（CommunityToolkit.Mvvm） |
 | **UI 库 / 原生** | WPF-UI、Hardcodet.NotifyIcon.Wpf、gong-wpf-dragdrop、System.Drawing.Common、Microsoft.Windows.CsWin32 |
 | **DI / 日志** | Microsoft.Extensions.DependencyInjection、Serilog（结构化日志） |
-| **测试** | xUnit + Moq（897 个测试） |
+| **测试** | xUnit + Moq（1000+，以 `dotnet test` 实际输出为准） |
 | **环境** | Windows 10+（x64）、.NET 8.0 SDK（运行仅需 Runtime，编译需 SDK） |
 
 ---
@@ -97,7 +97,7 @@ dotnet build Pulsar/Pulsar/Pulsar.csproj
 # 运行（默认热键：Ctrl+Shift+Q 命令模式、Ctrl+Q 切换模式）
 dotnet run --project Pulsar/Pulsar/Pulsar.csproj
 
-# 运行测试（897 xUnit 测试）
+# 运行测试（1000+，以 dotnet test 实际输出为准）
 dotnet test Pulsar/Pulsar.Tests/Pulsar.Tests.csproj
 
 # 无头插件模拟（AI 驱动的插件测试）
@@ -183,7 +183,7 @@ dotnet publish Pulsar/Pulsar/Pulsar.csproj -c Release -r win-x64 --self-containe
 
 - **无头模拟器**：无需 WPF 界面即可运行插件，解析结构化 JSON 输出（`Pulsar.Simulator`）；
 - **隔离副作用**：所有 OS 操作通过接口抽象（`IInputSimulator`、`IClipboardMonitor`、`IProcessLauncher` 等），可用 Moq 单元测试；
-- **全面测试套件**：897 个 xUnit 测试覆盖 ViewModel、服务与插件逻辑；
+- **全面测试套件**：1000+ 个 xUnit 测试覆盖 ViewModel、服务与插件逻辑（以 `dotnet test` 实际输出为准）；
 - **自纠错循环**：模拟器 → 解析错误 → 修复代码 → 重新运行直到通过。
 
 ---
