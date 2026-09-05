@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="5J5bfh3YoOhs8nGmGmOhFA">
+<head data-page-node-id="7JiLB7aUjoigOb37YUbXOJ">
+<meta charset="UTF-8" data-page-node-id="L2ugrny1HxRPDQhBfoFcnG">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="fFe7pDH7y8EMvsEbLiTqCn">
+<title>Pulsar × StarPie 再次对比与发展方向规划（2026-09-05）</title>
+<style>
+  :root{
+    --ink:#1e2430; --muted:#5b6472; --line:#e3e7ee; --bg:#f7f8fb; --card:#ffffff;
+    --pulsar:#2563eb; --starpie:#d97706; --ok:#059669; --warn:#dc2626; --soft:#eef2f9;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;color:var(--ink);background:var(--bg);line-height:1.75;font-size:15px}
+  .wrap{max-width:1080px;margin:0 auto;padding:40px 28px 80px}
+  header.hero{background:linear-gradient(135deg,#0f1b3d 0%,#1e3a8a 60%,#2563eb 100%);color:#fff;border-radius:16px;padding:36px 40px;margin-bottom:28px}
+  header.hero h1{margin:0 0 6px;font-size:26px;letter-spacing:.5px}
+  header.hero .sub{opacity:.85;font-size:14px}
+  .badges{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px}
+  .badge{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:3px 12px;font-size:12.5px}
+  .verdict{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--pulsar);border-radius:12px;padding:20px 26px;margin:22px 0}
+  .verdict strong{color:var(--pulsar)}
+  h2{font-size:20px;margin:42px 0 14px;padding-bottom:8px;border-bottom:2px solid var(--line)}
+  h2 .no{color:var(--pulsar);margin-right:8px;font-variant-numeric:tabular-nums}
+  h3{font-size:16px;margin:24px 0 10px}
+  p{margin:8px 0}
+  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:14px;margin:12px 0}
+  th{background:var(--soft);text-align:left;padding:10px 12px;font-size:13px;color:var(--muted);border-bottom:1px solid var(--line)}
+  td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  .pill{display:inline-block;border-radius:999px;padding:1px 10px;font-size:12px;font-weight:600;white-space:nowrap}
+  .pill.up{background:#ecfdf5;color:var(--ok)} .pill.down{background:#fef2f2;color:var(--warn)} .pill.flat{background:#f1f5f9;color:var(--muted)}
+  .tag-p{color:var(--pulsar);font-weight:700}.tag-s{color:var(--starpie);font-weight:700}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:860px){.grid2{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 22px}
+  .card h4{margin:0 0 10px;font-size:15px}
+  .card ul{margin:6px 0 0;padding-left:20px}
+  .card li{margin:5px 0;font-size:13.8px}
+  .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:16px 0}
+  @media(max-width:860px){.kpi{grid-template-columns:repeat(2,1fr)}}
+  .kpi .k{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;text-align:center}
+  .kpi .k b{display:block;font-size:24px;color:var(--pulsar)}
+  .kpi .k span{font-size:12.5px;color:var(--muted)}
+  .callout{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px 18px;margin:14px 0;font-size:14px}
+  .callout.blue{background:#eff6ff;border-color:#bfdbfe}
+  .callout.green{background:#ecfdf5;border-color:#a7f3d0}
+  code{background:var(--soft);border-radius:5px;padding:1px 6px;font-size:13px;font-family:Consolas,monospace}
+  .radar-wrap{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;text-align:center}
+  .legend{display:flex;gap:24px;justify-content:center;margin-top:6px;font-size:13.5px}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+  footer{margin-top:48px;color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px}
+  .p0{background:var(--warn);color:#fff}.p1{background:var(--pulsar);color:#fff}.p2{background:#7c3aed;color:#fff}.p3{background:#64748b;color:#fff}
+</style>
+</head>
+<body data-page-node-id="YuXuydlY4DEUo5WbEOvcLQ">
+<div class="wrap" data-page-node-id="eAr2v3CZfQrUq1Sm1xFChe">
+
+<header class="hero" data-page-node-id="2oQfVfP8wJySHP0sudxMwa">
+  <h1 data-page-node-id="EtUvd4uw4DFKHnvBT1HZks">Pulsar × StarPie 再次对比与发展方向规划</h1>
+  <div class="sub" data-page-node-id="6mcC3aWpCsceAgKEzLJYx9">报告日期：2026-09-05 · 对比快照：Pulsar <code style="background:rgba(255,255,255,.15);color:#fff" data-page-node-id="fNqxxH7cFCDG1EuFemKufm">v1.10.0 @ d7b9753</code> vs StarPie <code style="background:rgba(255,255,255,.15);color:#fff" data-page-node-id="6boTUQ6CxmGSHV3gF8E9tu">v1.6.8/v1.6.9</code>（Ref/StarPie）</div>
+  <div class="badges" data-page-node-id="cC1VwRvfCi8wts1r8mcSaD">
+    <span class="badge" data-page-node-id="wdSvHCFE9AAK4Au7o9vReQ">性质：第二次对比（更新版）</span>
+    <span class="badge" data-page-node-id="BDMpFAndiPLYjW4phS0HqT">前序：Docs/roadmap/README.md（08-31 首次对比）· Docs/reports/2026-09-03-MARKET_EVALUATION.html · 2026-09-03-REPOSITIONING_PLAN.html</span>
+    <span class="badge" data-page-node-id="8dzltta2IR7ZRqufnNUAuW">方法：源码/文档研读 + 前序基线差分</span>
+  </div>
+</header>
+
+<div class="verdict" data-page-node-id="9eq84cZQz0CcHJ0AbzE7Oc">
+  <strong data-page-node-id="o9i0jyNVX9obk1QIBGfw12">一句话结论：</strong>两天里两个项目朝着<b data-page-node-id="XclthVEcq7WCkmY5SAT9gz">完全相反的方向</b>各进了一大步——StarPie 把全部火力砸在「用户可感知层」（检查更新容灾、30ms 冷启动、托盘/图标/OCR），Pulsar 把全部火力砸在「工程不可感知层」（E2E 验证、测试基线 880→1059、rules-stack、ADR-022/023）。前者把 09-03 评估中「分发/触达 7.5 分」的优势又拉大了；后者则把 M1（产品外皮）之前的所有技术债基本清空，<b data-page-node-id="6aMdeAFoX2N0tKemY9PSIn">「转向用户层」的时机已完全成熟</b>。
+</div>
+
+<h2 data-page-node-id="1pZiHONqERcZEBOYGyv956"><span class="no" data-page-node-id="Y5uzg2UwXk65TGdIDvKobE">1</span>两日演进差分（2026-09-03 → 09-05）</h2>
+
+<div class="kpi" data-page-node-id="5odUXn1KK1a1q8dIoPobtf">
+  <div class="k" data-page-node-id="0MF1Wqmzo0ki0WfBo72089"><b data-page-node-id="7kZIzEHibUKhOeNjsUlBkg">1059</b><span data-page-node-id="NEGT66s6AjmA8jascvI752">Pulsar 测试基线（880 → 1059，+179）</span></div>
+  <div class="k" data-page-node-id="yO20U3mOwhPrWTNAHMkSNm"><b data-page-node-id="L3b1NAZbWcGy8tSBuf9vtC">PASS</b><span data-page-node-id="49EKW7jYW6YOXJMjHz6aFP">Pulsar.E2E 运行时端到端验证（18.6s，12 步）</span></div>
+  <div class="k" data-page-node-id="zX9tJjXJmBAXhnYjjaVUAR"><b data-page-node-id="PNltbqW7eDuclUfsJ5WNE4">30-60ms</b><span data-page-node-id="2jMuzNI61RRar9w7Xzzey7">StarPie 自启耗时（原 3000ms+，降 50-100 倍）</span></div>
+  <div class="k" data-page-node-id="7PabDSiV8UCAcyeJINJ38o"><b data-page-node-id="LfNzq3Dd3tDQ5Ds7yizDvy">1 天 3 版</b><span data-page-node-id="YeulXQrxe7dpTdhxew04uI">StarPie 09-03 单日连发 v1.6.5/6/7，次日 v1.6.8</span></div>
+</div>
+
+<div class="grid2" data-page-node-id="GqPLqdDQfwowDPiEO2YlDF">
+  <div class="card" data-page-node-id="LTxTtpKdJqLsK5A97Rrhbk">
+    <h4 class="tag-p" data-page-node-id="axq8xGSvbBqGDxw7Rdz87A">Pulsar 这两天做了什么（工程护栏收口）</h4>
+    <ul data-page-node-id="9WrEuD4gknbx1Ga26MZkK4">
+      <li data-page-node-id="xISTBsDAPERy6wWmS4aZQA"><b data-page-node-id="ZInGn7eV0DoJ5gtDI618UH">Neon 渲染器插件生命周期修复</b>：启动激活 / Unload+GC / 开关切换三修复 + ALC descriptor-pin 隐藏根因（<code data-page-node-id="AJrYGLtNz1Y7pe9q4pENok">ImplementationType</code> 可空化）——外部插件全生命周期首次跑通。</li>
+      <li data-page-node-id="CghbHqf3KTlVl0NTZwuJLg"><b data-page-node-id="gZZP8mZ3Bfv3a6DXKy276v">Pulsar.E2E 运行时验证 PASS</b>：debug 实例 + fixture 注入 + 录屏 + UIA 断言，端到端闭环（run 20260905-013738）。</li>
+      <li data-page-node-id="VJAHsEhEoqZsjOQ52k2WOb"><b data-page-node-id="nDb7txlRj6ZwZ7OwztwIEA">rules-stack 落地</b>：AGENTS.md v4.0.0 瘦身（248→192 行）+ <code data-page-node-id="0XhA6I3a0WkHXcRAgBNugv">dev.ps1 verify-rules</code> + ADR-022（always-on kernel + 条件加载）。</li>
+      <li data-page-node-id="05QvyuQ1PfAyQDfkUoHppJ"><b data-page-node-id="IyTnwmaEG2CBKrtkUhEBb4">架构审查持续</b>：候选 1（Page Provider Factory seam，20 处服务定位器消除，ADR-023）；此前 L/M/N/O 全落地；32 条基线警告清零。</li>
+      <li data-page-node-id="WSvjdHFq1VNn9sEGpT0jbB"><b data-page-node-id="6pPRfLbdCx9TagZSDKk5Ya">知识基建</b>：archify 插件系统架构图（15 组件 repo-evidence 核验）+ OpenWiki（81 分钟生成 6/9 页）。</li>
+    </ul>
+  </div>
+  <div class="card" data-page-node-id="9jaeHj4kVnzLaLrJEnWHob">
+    <h4 class="tag-s" data-page-node-id="7qRMktOCZpiVkKJCNkW8Pd">StarPie 这两天做了什么（用户触点火力全开）</h4>
+    <ul data-page-node-id="gGpejiifZs3vhgekW8ZVBU">
+      <li data-page-node-id="zUd7D74HVIqnbs9zVX4mcq"><b data-page-node-id="BQhJ5BYcNHF7dCnkYdDSU9">检查更新多级容灾重构（v1.6.8）</b>：GitHub API → Atom Feed → 302 探测三级降级 + 多镜像下载故障转移——根治国内用户更新超时。</li>
+      <li data-page-node-id="ZgKokJY59SOQaFeR3iLHb2"><b data-page-node-id="EW844yYjRw3mmnbg243bBV">自启极速化</b>：懒加载 UI 架构 + 自启路径解耦，冷启动 3000ms+ → 30-60ms，静默常驻内存压到 0.8-3MB。</li>
+      <li data-page-node-id="3JM4RTGbaYfqggmpsHWa9N"><b data-page-node-id="BIIXb95yfElpJ1cAnDZbn8">稳定性根治</b>：截屏后右键吞键（Down/Up 严格成对放行）、修饰键成对释放、全屏误判白名单豁免。</li>
+      <li data-page-node-id="O6k4ys3aeiENhBTozDC9gT"><b data-page-node-id="IkelFdCi1ghAAha8NcXfaj">原生 OCR 截屏识字（v1.6.6-7）</b>：新增动作类型，办公场景再扩一圈。</li>
+      <li data-page-node-id="PACBF3ODX6E6aBbzhEe9Pe"><b data-page-node-id="oEKHuzM3cYHvWjBiDLGmD0">视觉持续打磨</b>：Auto Font-Fit 弹性字号、蜂窝扇修复、黑白双版 Logo/托盘主题、纯净圆形任务栏图标。</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout" data-page-node-id="j6MI7UhmxGi24h3LsOHItd">
+  <b data-page-node-id="YK2mGccQziy9MXSudMB5yJ">差分解读：</b>两个项目对「两天」的使用方式截然不同。StarPie 平均一天 1.5 个版本、每个版本都对着真实用户反馈；Pulsar 两天完成 E2E、rules-stack、OpenWiki、两个 ADR——每一项都是资产，但没有一项是<b data-page-node-id="yFlPqL1g50y3BezYYuF6UK">用户第一眼能看到的东西</b>。09-03 重定位方案里的 M1（安装器/自动更新/文档/截图）至今未启动，而 StarPie 恰恰在这一层完成了质的飞跃（内置更新 + 镜像加速 + 单文件分发）。差距在扩大。
+</div>
+
+<h2 data-page-node-id="0cJomHBOLEXO3blqH3nxBc"><span class="no" data-page-node-id="2JMfdpxjNZPmDrOBlT2Xv3">2</span>能力对比（较 09-03 基线的更新）</h2>
+
+<div class="radar-wrap" data-page-node-id="DQBdGW8xryl1FNyWrifM7r">
+  <svg viewBox="0 0 680 480" width="100%" style="max-width:640px" data-page-node-id="H50I4WEA7RizjHHdKSbIsy">
+    <g stroke="#e3e7ee" fill="none" stroke-width="1" data-page-node-id="CHnszr9PGnhQX0wYGwbIDr">
+      <polygon points="340,207.5 370.1,219.9 382.5,250 370.1,280.1 340,292.5 309.9,280.1 297.5,250 309.9,219.9" data-page-node-id="6GiNQzF4DDH3FhywH37OVq"/>
+      <polygon points="340,165 400.1,189.9 425,250 400.1,310.1 340,335 279.9,310.1 255,250 279.9,189.9" data-page-node-id="o741Tzg7LDiutrvIUiUIst"/>
+      <polygon points="340,122.5 430.2,159.9 467.5,250 430.2,340.1 340,377.5 249.8,340.1 212.5,250 249.8,159.9" data-page-node-id="Ml5r6RtAwhGQVvr4tOZKqR"/>
+      <polygon points="340,80 460.2,129.8 510,250 460.2,370.2 340,420 219.8,370.2 170,250 219.8,129.8" stroke="#cbd5e1" data-page-node-id="867bj6NYZ63NxIkTJmOF2P"/>
+    </g>
+    <g stroke="#eef1f6" stroke-width="1" data-page-node-id="tU6cCzX3HsolV1ATo7g17e">
+      <line x1="340" y1="250" x2="340" y2="80" data-page-node-id="rZADaumnVYiexCvCaqvMaX"/><line x1="340" y1="250" x2="460.2" y2="129.8" data-page-node-id="19pk63D2Ort1HC0k9AaSzU"/>
+      <line x1="340" y1="250" x2="510" y2="250" data-page-node-id="bfdkgRBTbsXXhduwjUlPOS"/><line x1="340" y1="250" x2="460.2" y2="370.2" data-page-node-id="S4JPLC6jOnMzsVydrGacqb"/>
+      <line x1="340" y1="250" x2="340" y2="420" data-page-node-id="unLsQhyTtfVLjhRSF8nqhX"/><line x1="340" y1="250" x2="219.8" y2="370.2" data-page-node-id="7hZQQgekgFMBECwAISvN6Q"/>
+      <line x1="340" y1="250" x2="170" y2="250" data-page-node-id="hpD0wTsvITHfPHvKlFhfHo"/><line x1="340" y1="250" x2="219.8" y2="129.8" data-page-node-id="H3WgsdChdMJdVeYLY7J27n"/>
+    </g>
+    <polygon points="340,105.5 412,178 476,250 358,268 340,284 298,292 187,250 226,136" fill="rgba(37,99,235,.18)" stroke="#2563eb" stroke-width="2" data-page-node-id="AXZv8lPuF8SbI5KbouSdZz"/>
+    <polygon points="340,80 460,130 442,250 430,340 340,267 304,286 306,250 280,190" fill="rgba(217,119,6,.14)" stroke="#d97706" stroke-width="2" stroke-dasharray="5 3" data-page-node-id="80gwe10HMYAJMTiHnnEWFP"/>
+    <g font-size="12.5" fill="#5b6472" text-anchor="middle" data-page-node-id="6xz656s0WMihsUtqIfr8BI">
+      <text x="340" y="62" data-page-node-id="N14hHHvzBiYk3RVT9MakMr">手势交互</text>
+      <text x="478" y="108" data-page-node-id="IqrJCDewBuGtBSZcapQAwd">视觉定制</text>
+      <text x="537" y="254" data-page-node-id="yixBZrSNLprvTAhgJ1EFNC">办公自动化</text>
+      <text x="478" y="398" data-page-node-id="hV1TghafHFhelptUi6MqK1">分发/触达</text>
+      <text x="340" y="442" data-page-node-id="DRIrfOVDIjlwHoBz9DGtVm">AI 能力</text>
+      <text x="202" y="398" data-page-node-id="nrmEFyflh8n2EjQ2aAxCyj">插件生态</text>
+      <text x="148" y="254" data-page-node-id="DnJqhJUxEzI0aNxLyDqEqt">安全/凭据</text>
+      <text x="202" y="108" data-page-node-id="BbVmFp46ATO5WdU8ZOPJCt">工程可靠性</text>
+    </g>
+  </svg>
+  <div class="legend" data-page-node-id="LWhsgtF5KqHOvxI0aSnH2L">
+    <span data-page-node-id="AFPHC2lxxtmGUedNnIQrLF"><i style="background:#2563eb" data-page-node-id="mgTY5Bt3N1xV6DaWzE8Hy2"></i>Pulsar v1.10.0</span>
+    <span data-page-node-id="QstWeXpV3N5kAl5pnuRnUE"><i style="background:#d97706" data-page-node-id="KWQiy1D1IbFVFm4ssHYUNT"></i>StarPie v1.6.8</span>
+  </div>
+</div>
+
+<table data-page-node-id="p88b3lSKRh3oGxh9AblaPZ">
+  <tr data-page-node-id="KPsv9F2Nmfr2DrpRGoJOcl"><th style="width:16%" data-page-node-id="keSZ2l8e9r6kLhfHUDsMaS">能力维度</th><th style="width:10%" data-page-node-id="PZCq3yCpaXC9mLWGRtDFUh">Pulsar</th><th style="width:10%" data-page-node-id="MRJF2XzENNRfoPf9oVE69u">StarPie</th><th style="width:12%" data-page-node-id="cVFc8mEMHIWxPXz2daxDb5">vs 09-03</th><th data-page-node-id="NP7wIwKpsbXNnV7C0PFjSC">关键变化与解读</th></tr>
+  <tr data-page-node-id="JZ2N6FGdTfrjlni6cdJxm4"><td data-page-node-id="jOlB8zNDoAfX737LZu6LC5"><b data-page-node-id="8OxDibeHRTpS7ANITuCKZF">手势交互</b></td><td class="tag-p" data-page-node-id="IXfu0BlimOg7qhWKBMYRw2">8.5</td><td class="tag-s" data-page-node-id="MHmqWhxzKFUJX4x4WrCvdQ">10</td><td data-page-node-id="FZStmgbUzrw1dTPC0OGjUn"><span class="pill up" data-page-node-id="qWC93Cq6tFQbhdlRgBCCuN">Pulsar +0.5</span></td><td data-page-node-id="2HDEbF6g89bL7EdyDtdzub">外甩取消 / 阈值重放 / 进程隔离 / 全屏防误触已全部落地（roadmap 方向一主干闭环）。StarPie 仍领先：多触发键（右/中/侧/键盘长按）、12 扇区、外甩灵敏度滑块、OCR 联动。</td></tr>
+  <tr data-page-node-id="7oattdEzcbmJMDHcbKD0fD"><td data-page-node-id="eNh66yEy1VsJAGkQXxjuB3"><b data-page-node-id="QnPtZttTvqHtN7C2q7lbDP">视觉定制</b></td><td class="tag-p" data-page-node-id="5batoKpiYXcoLBnygwYT8E">6</td><td class="tag-s" data-page-node-id="UtocJ05yqyI0nM9FKFJ328">10</td><td data-page-node-id="ss6GeDAVdQ6xcdwxd5n5mc"><span class="pill up" data-page-node-id="9WSnVyVr5fTb6UT7mDBseO">Pulsar +1</span></td><td data-page-node-id="md87havpBC7ki2salz2XyF">Pulsar 已有 3 渲染器 + 3 主题预设 + SVG/PNG 自定义图标库。StarPie 保持碾压：4 形态×4 渲染器、8 主题、吸色器、Auto Font-Fit、猫爪/蜂窝形态、独立二级主题。</td></tr>
+  <tr data-page-node-id="PmSGZ8Q02PLg8CtfIocNjE"><td data-page-node-id="jGcz03cmRGEmBssnz7yx6E"><b data-page-node-id="HdazfYMHEhcMsDF6dF16XY">办公自动化</b></td><td class="tag-p" data-page-node-id="hcCOCxPy3zn72M9eRs3D9B">8</td><td class="tag-s" data-page-node-id="LdckcLwWFAy40rdra2azx1">6</td><td data-page-node-id="WkArDO9vfw64yNqkNMPnv5"><span class="pill up" data-page-node-id="XaUtGxdCC6Jbz737BB5FxG">StarPie +1</span></td><td data-page-node-id="XhB5Wph3Cy8tqF3Aud6cne">Pulsar 的 VbaRunner/PKI/Bookmarklet 深度组合仍独占。StarPie v1.6.6 原生 OCR 截屏识字补进一块通用办公能力。</td></tr>
+  <tr data-page-node-id="SZbDzi4hsySH22GBGPpE0u"><td data-page-node-id="lf9uPf1xmaOmTWzgPy2Mhl"><b data-page-node-id="0gNlvWiL2VzOWaGeoeRVV7">安全/凭据</b></td><td class="tag-p" data-page-node-id="vCY8x3qF7uK7ANj3Ud2YAA">9</td><td class="tag-s" data-page-node-id="kKj44CHY5kg6OLcOfOBLJZ">2.5</td><td data-page-node-id="OIRQZqLzJDEO9ypjezmQqP"><span class="pill flat" data-page-node-id="dqW0pyginLz0LD3oASCmYB">持平</span></td><td data-page-node-id="NutXOTeOokGejbgD6YG7RF">DPAPI + 权限门控 + 可审计注入，StarPie 无对应概念。低频感知、高频信任型护城河。</td></tr>
+  <tr data-page-node-id="AAOBr2nxITneGmRYKYJwjO"><td data-page-node-id="Svp1ONAbXsACTwHyTKBmhy"><b data-page-node-id="KkHbTZb6CqLnBUJkBYp789">插件生态</b></td><td class="tag-p" data-page-node-id="7tAFE9lAyQqyhpwzHbfEBH">3.5</td><td class="tag-s" data-page-node-id="AqClOFewoG9ZlGMkvsGFVt">3</td><td data-page-node-id="0poY2PmqvcNMH1Hdw0aShG"><span class="pill up" data-page-node-id="H4fh1q6JKlr35vH1RMuR51">Pulsar +0.5</span></td><td data-page-node-id="K0cBqiyRc2JyDfb1ibVrq8">Neon 外部插件全生命周期修复后，「第三方插件跑得通」首次自证；但仍无第三方生态与市场。StarPie 是单体架构，无插件概念。</td></tr>
+  <tr data-page-node-id="gdgJqcA3gju2T4pPOIYZL2"><td data-page-node-id="AzIMRZzn4230Go8CSZdgz4"><b data-page-node-id="IJUCBwxIoCsspyNd1FrQoc">工程可靠性</b></td><td class="tag-p" data-page-node-id="7sSCCzBF3rXCFtJL3eP4Oo">9.5</td><td class="tag-s" data-page-node-id="QytHIDBAeGX6PN51MrWxfv">5</td><td data-page-node-id="ZU7eEfCnJwti320Gdi3Xa1"><span class="pill up" data-page-node-id="qVK6XIRQVF7C2VqmJuOqYJ">Pulsar +0.5</span></td><td data-page-node-id="bXUQ5saNWi7zCIeC5eV7gS">1059 测试 + 0 警告 + E2E 运行时验证 + 断路器/权限门控 + ADR 体系。StarPie 仅 19 项 pywinauto GUI 冒烟，无单元测试——但其「用户侧稳定性」靠高频实测快速修补。</td></tr>
+  <tr data-page-node-id="0Iqszk8WRh1Uzu0BL9E4EA"><td data-page-node-id="hNccWS5vsTiBCE1sRVM59c"><b data-page-node-id="SaRAkauAGi06spWcnxC6w2">分发/触达</b></td><td class="tag-p" data-page-node-id="a2WwLHYYLf9w6AMrm16NHm">1.5</td><td class="tag-s" data-page-node-id="12USkc3gNNByGX7QFRzsJ3">8</td><td data-page-node-id="GZxC7gbZyrDnNbzuvyDzdf"><span class="pill down" data-page-node-id="NgbxX9LIDpj6KMAxeHWUub">差距扩大</span></td><td data-page-node-id="PtNdSLASO2JQDbTHzm4oWv"><b data-page-node-id="DHqI2elc3wDGEGoclCMDEx">最大落后项且仍在恶化</b>。StarPie：GitHub Releases + 内置检查更新三级容灾 + 多镜像下载加速 + 单文件版 + B 站演示视频。Pulsar：无安装器、无自动更新、README 截图占位、公开存在感≈0。</td></tr>
+  <tr data-page-node-id="IxT8KGT4FGlpK69vYHT3YR"><td data-page-node-id="b9EhHyiR1IHfJ0ObudctLt"><b data-page-node-id="PT8ksCCTkCOH9lvqy4321a">AI 能力</b></td><td class="tag-p" data-page-node-id="t4EDajvWVZSLCniH8PTLtz">2</td><td class="tag-s" data-page-node-id="kKecuJG6xUGTVmbRPHrICT">1</td><td data-page-node-id="2IUTPc3KsLHT9e1Qsx35LW"><span class="pill up" data-page-node-id="zXcH7jO12LHeTK8ZOfDMT3">Pulsar +1</span></td><td data-page-node-id="Pb4bPuDdJKP3GYr9ee4MmL">面向用户均为 0，但 Pulsar 的「AI 原生开发流程 + 无头模拟器 + OpenWiki + 可编程插件」构成 M4（AI 生成配置 PoC）的全部前置，基建已就位。</td></tr>
+</table>
+
+<h3 data-page-node-id="O0gGku9IsU8dx2IoTjxkv8">规模与节奏对照</h3>
+<table data-page-node-id="AHA3V9ic7a8bUN07vwHfPS">
+  <tr data-page-node-id="dacPVUlbklGURpGFXokoXv"><th data-page-node-id="fnPgC8blcsfCrl3N7a83Km"></th><th class="tag-p" data-page-node-id="ykE7inkikrTJHfDo5Gvgpp">Pulsar v1.10.0</th><th class="tag-s" data-page-node-id="jKGVESvW3pZ5hQCGrscabr">StarPie v1.6.8</th></tr>
+  <tr data-page-node-id="A7Uwhgdzcjutm2mEN0alYf"><td data-page-node-id="h1KacmmzzrD4hDF5ky8keY">代码形态</td><td data-page-node-id="E4J5fmpPEiC4oog2CYHYfD">插件化分层（Core/Rendering/Services/ViewModels/Strategies + Pulsar.Tests + Pulsar.E2E）</td><td data-page-node-id="6kT0xwOksUXwKChyFjuAHq">单体 69 个 .cs 文件 / 约 3.7 万行，静态类 + 事件</td></tr>
+  <tr data-page-node-id="aHHt0ICElt7Hvc0fvaPX63"><td data-page-node-id="XXbtJJxqfwRkMIC3KwDwjR">测试</td><td data-page-node-id="MHxFuX2RpyDnFHRtrNkn0Z">1059 项单元/集成测试（~22s）+ E2E 运行时验证</td><td data-page-node-id="VFMd3JmvVF7oR8vnDEUzED">19 项 pywinauto GUI 冒烟</td></tr>
+  <tr data-page-node-id="BS4rEBsOFYN9DEbil45V2K"><td data-page-node-id="WqPkx7QDGl9rf7xpCLZyEe">发布节奏</td><td data-page-node-id="Eg6ELhhwIU7JWYe1X0ZdJB">未发布（HEAD 推进，无用户 Release）</td><td data-page-node-id="20H9G6IYbp0TGbRLhcKs6g">08-21 → 09-04 约 30 个版本，峰值单日 3 版</td></tr>
+  <tr data-page-node-id="wfgbWIoPnyGuhWTjZjcxJi"><td data-page-node-id="bqVKVP1tLLDmx4x4lM1Eb5">变更治理</td><td data-page-node-id="zrndRxckP5e8eKL3mRjrFQ">openspec + ADR（23 篇）+ lessons + journal</td><td data-page-node-id="SlLzaWrvFtsgrDvbiNXhES">CHANGELOG（超长标题式）+ AGENTS.md 交接规范</td></tr>
+  <tr data-page-node-id="qczoEHC3ECPvGgmd7DJluN"><td data-page-node-id="BVpAIy3Mauis6rqONXqcTb">驱动模式</td><td data-page-node-id="rh09rT8YdCYW8yrE4ZhCjT">架构/质量驱动（AI 多 harness 协作 + 人工 grill）</td><td data-page-node-id="2jPwec6VeTqmuGSd8XluFm">用户反馈驱动（作者即用户 + 社区 Issue/PR）</td></tr>
+</table>
+
+<h2 data-page-node-id="pLGoHBATd3rJiHwcxArJ7s"><span class="no" data-page-node-id="aH6YvwUptltpcj9CHxvDhv">3</span>关键洞察（本次再次对比的新结论）</h2>
+
+<div class="callout blue" data-page-node-id="yRaceyvOTQWQxlWfS9miF8"><b data-page-node-id="JDReeOPcUFZsVrvwkC35z6">① 「两条路线」已完全分化，且不可互相照抄。</b>StarPie 证明了：单体 + 极致轻量 + 高频小版本 + 用户反馈闭环，能把「手势轮盘」这个产品形态打磨到 10 分。Pulsar 不该在它的主场上比拼迭代速度——但在「用户触点迭代速度」这一个维度上值得局部学习：M1 的每一项（安装器/更新/截图/视频）都是 StarPie 已验证过的标准动作，有现成答案可抄。</div>
+
+<div class="callout blue" data-page-node-id="nE1t4ebjDmFgiD5ZkbEN2N"><b data-page-node-id="CU0s5X4mBNYCP7VjcNriDp">② Pulsar 的「借鉴红利」已基本吃完，剩余缺口都是战略选择而非技术未知。</b>roadmap 三大方向（手势细节/渲染器/级联子菜单）主干全部落地，IMPLEMENTATION_VERIFICATION.md 的 10 项未落地清单里，除「渲染器插件化」外全部是打磨型或已显式决定不采纳的项。<b data-page-node-id="GgsohwZ413WhfCbYQA4qj6">继续对标 StarPie 的边际收益快速递减</b>——下一步的对手名单应该换成 Quicker（动作生态）和 Raycast（AI）。</div>
+
+<div class="callout blue" data-page-node-id="5uPpquXEIbi4aGsfYugcN6"><b data-page-node-id="L3l8pgdXF0zQ7107tOBHdc">③ Neon 渲染器插件修复 = 「渲染器插件化」差异化的临门一脚。</b>09-03 评估里 Pulsar 相对 StarPie 的唯一差异化点是「渲染器走插件机制、第三方可发布主题插件」。当时它是 ❌；现在外部插件（Neon）的生命周期坑已修完、E2E 已验证——把 <code data-page-node-id="1l2acQSaQ22AecMYkki3WE">StyleRendererFactory</code> 的 <code data-page-node-id="bJIsu1LHj8dIUgDXGImaU8">IEnumerable&lt;IRadialRenderer&gt;</code> 接上 <code data-page-node-id="kF1AXH4L9N0ASYPWyBsH40">IPluginRegistry</code>，Neon 就是第一个活的证明。</div>
+
+<div class="callout blue" data-page-node-id="fRiSoyI0soXSlLssDiBaO9"><b data-page-node-id="ECgCmoZCQIj04otsvACbQC">④ 分发差距是唯一在扩大的差距，且 StarPie 的解决方案源码可抄。</b>其检查更新三级容灾（REST API → Atom Feed 免鉴权免限流 → 302 探测）+ 多镜像故障转移 + 单文件自包含发布，全部有源码参考（<code data-page-node-id="rRyx3uXX2uuIXvNZKX2bOa">WinPieGestures</code> 更新模块），移植到 Pulsar 属于「工程翻译」而非「产品设计」。</div>
+
+<div class="callout blue" data-page-node-id="G4N6tFKjQonlOEbEOKM1Jl"><b data-page-node-id="SE54eODnidOl0LJVOtFCaH">⑤ 工程护栏已到「够用」水位，继续加码属于边际收益递减。</b>1059 测试 / 0 警告 / E2E PASS / AGENTS.md v4 之后，工程侧剩余待办（NEXT.md 3 项）全是观察类。资源应整体转向 M0/M1/M2。</div>
+
+<h2 data-page-node-id="kJNDgsBfP8EO2VplxKJ5hf"><span class="no" data-page-node-id="gLLSWO5HB8LwttyNPKzm9p">4</span>后续发展方向规划</h2>
+
+<p data-page-node-id="bfNPaGy1CfVdFaEMNd1Osh">延续 09-03 重定位方案的 M0–M5 里程碑框架，结合本次差分更新优先级。<b data-page-node-id="zFbbVvpKjmREIibMUebZ22">核心判断：M1（产品外皮）升格为绝对最高优先，且其技术方案直接取材 StarPie。</b></p>
+
+<table data-page-node-id="UOStC2BYhvOZFvN4qHJduD">
+  <tr data-page-node-id="084sYqlQGEwNVTNugLWwsv"><th style="width:8%" data-page-node-id="ITe5rodr2ShO5pH34B4f6a">优先级</th><th style="width:22%" data-page-node-id="AR2vtVXOYcCRvYnaC1yrZ2">方向</th><th data-page-node-id="CGIh9i5SucYlydOdHDdp4E">关键动作</th><th style="width:14%" data-page-node-id="fmflGfVMBw4x1SD1XbxTI8">依据</th></tr>
+  <tr data-page-node-id="Pl7ONdsMt2BFdmecO8IETK">
+    <td data-page-node-id="f2Vtm3tTIWDWvSiHt3hP8R"><span class="pill p0" data-page-node-id="TTIjrT2xDAtaH8TRyShfue">P0</span></td>
+    <td data-page-node-id="TSmhJEPoOZDcWY77ABqNFF"><b data-page-node-id="xxWx4yCk2VzbzdO9ZXH0uJ">M1 产品外皮</b>（重定位方案既有项，升格）</td>
+    <td data-page-node-id="yEAdcOQLWK0MVd9Cxkj7MG">
+      ① 安装器（MSI/Setup）+ <b data-page-node-id="g6itpQ0XGHGy4uDk4nvIGY">内置自动更新</b>——更新检测直接移植 StarPie 三级容灾（API→Atom→302）与多镜像故障转移设计；<br data-page-node-id="ZonYpDO6oN52870QEpOmgM">
+      ② standalone 单文件发布（对齐 StarPie 双包策略）；<br data-page-node-id="GmoPBZjhezrqfHGVYLCxrA">
+      ③ README 首屏按「办公自动化工作台」重写 + 真实截图（可复用 E2E 录屏管线产出 demo 视频）；<br data-page-node-id="q1iawBKv7KBrXvQTzBKFkU">
+      ④ GitHub Release 资产 + 用户手册（中英）。
+    </td>
+    <td data-page-node-id="TY1GaajGT5Lws0shkfpFlI">分发/触达 1.5 vs 8，唯一扩大中的差距；M1 验收标准 09-03 已定义</td>
+  </tr>
+  <tr data-page-node-id="LhS7DCfX5wfiqpxJisjhiH">
+    <td data-page-node-id="BQ3hX34H3emDHWNqxSObX3"><span class="pill p0" data-page-node-id="4mTiZmYUFLGtYPAFy5qZAX">P0</span></td>
+    <td data-page-node-id="9GSQVorJRB2CVywEIn5SVD"><b data-page-node-id="tOqQxN2sBr3JbzWcF0IDbb">收尾两笔技术欠账</b></td>
+    <td data-page-node-id="lEjpegxGVENgrsEv8Mp7pr">① 级联子菜单 Fan 人工 QA（唯一阻塞项，2-3 子项渲染/选中、4+ 回落 Ring、双主题）；② NEXT.md 三项观察类待办随会话自然消化。</td>
+    <td data-page-node-id="bmR02Q7DR21Qfpah1GiKZp">IMPLEMENTATION_VERIFICATION 未落地清单 #1</td>
+  </tr>
+  <tr data-page-node-id="Z0OCF02WzbIhfEDj6j3eZC">
+    <td data-page-node-id="BoLAdMeMhXOICpqWW4T7CT"><span class="pill p1" data-page-node-id="YIeZ3SJYb5x7EkzunKuYGB">P1</span></td>
+    <td data-page-node-id="T3IPTFpgeGX3P4Bb5eHSUY"><b data-page-node-id="QQVgsYBD07XfDm8DMtaaTH">渲染器插件化</b>（相对 StarPie 的唯一差异化点）</td>
+    <td data-page-node-id="7K4NB7yOkRXIlFpiDSmrYo"><code data-page-node-id="bAkrXFVCSD6S1Qey1eLja0">StyleRendererFactory</code> 接 <code data-page-node-id="l5LtAUFjWQUCLW496g8fHx">IPluginRegistry</code>，渲染器作为 Extension 插件发布（权限门控/断路器白得）；以 Neon 渲染器为首个真实载体走通「插件形式发布主题」全链路；配套把 <code data-page-node-id="a4BMRlvFbI5hmZfEjBvQB7">SlotStyles.xaml</code> 拆为每渲染器资源包。</td>
+    <td data-page-node-id="TMXV3IcqwSVM2fqH5ogY5L">洞察 ③；Neon 生命周期修复已完成</td>
+  </tr>
+  <tr data-page-node-id="aN1iPK0ysowMv5jjvcRmYt">
+    <td data-page-node-id="KVEJIATJuYDVHH8CD1v03p"><span class="pill p1" data-page-node-id="rhDVkFXhq6gHpQX5PHSIsp">P1</span></td>
+    <td data-page-node-id="2Zuv60WZMWPre9L5GMuTxQ"><b data-page-node-id="JdOTgoxF2i3LeQqkGIzxIY">启动与常驻性能对标</b></td>
+    <td data-page-node-id="HKze8EErGIWpJTHUECLwXS">借鉴 StarPie 懒加载架构：静默启动只挂钩子 + 托盘，设置 UI 按需初始化；目标冷启动进入 StarPie 的量级（百 ms 内）。Pulsar 的 DI 构成根已有 11 个工厂注册，改造成本低。</td>
+    <td data-page-node-id="Sa2m029xfZQHgmTfRwuRgp">StarPie 3000ms→30ms 验证了用户对此敏感</td>
+  </tr>
+  <tr data-page-node-id="ZLOngSFExIs55IXomO3pBc">
+    <td data-page-node-id="eGtCJijFfXv4CtiYkDGpVs"><span class="pill p2" data-page-node-id="Q1QKL64hW6cdfL0ZDgSVe9">P2</span></td>
+    <td data-page-node-id="3c4QJYb5zewdBm4p4u4QUw"><b data-page-node-id="HPfbG4bj3GyfHC4BYT255C">M4：AI 生成 Slot 配置 PoC</b></td>
+    <td data-page-node-id="irJ39Kf3MggRBJCmaZei9E">复用无头模拟器 + 插件系统 + Usage Analytics，做「AI 根据当前窗口推荐动作 / 生成 Slot 配置」最小验证；对标对象是 Raycast 而非 StarPie。</td>
+    <td data-page-node-id="yhywKrPGLqeDiNkCttFVc3">基建全部就位（E2E/模拟器/OpenWiki）；09-03 Q6 决策</td>
+  </tr>
+  <tr data-page-node-id="GGD2XuU52nwLhYHMn6JM6c">
+    <td data-page-node-id="RGdhEX2Xaf5mGZirXgGkBT"><span class="pill p2" data-page-node-id="UMznZfyRk5H93Xr7vuEfnc">P2</span></td>
+    <td data-page-node-id="dlHskMAJiAMWpPBAlSF3xM"><b data-page-node-id="KV363NifQUI3hqNEvGwsXQ">多触发键 + hook 健康自愈</b></td>
+    <td data-page-node-id="60G8hZY25dxdAE3TF3MPM5"><code data-page-node-id="ybfHN3NJw0UH0IPQ0szL99">GlobalMouseHook</code> 扩 <code data-page-node-id="C7DM0yXCOcDflXt3v2u82z">TriggerButton</code> 抽象（中键/侧键/键盘长按）；hook 卡死自动检测重装（StarPie 机制 #3）。</td>
+    <td data-page-node-id="I9XPIqOvw5WH25bAx8UORB">未落地清单 #6/#8，稳定性价值</td>
+  </tr>
+  <tr data-page-node-id="82duazI24XNRXvcW6QuZuD">
+    <td data-page-node-id="Lx1G9Pm1EJlSkRaa66HJNN"><span class="pill p3" data-page-node-id="Foh0xPjxDNKjCF47nJzrNT">P3</span></td>
+    <td data-page-node-id="6xGthbKbDZaAIcBf45kLXB"><b data-page-node-id="VCLi0ZVXi2F5G7cWpNUGNs">显式不采纳 / 延后</b></td>
+    <td data-page-node-id="9dsIWrkPx2RI0rpR6J4atf">4/8/12 扇区 + Atan2 命中——与分页模型冲突，<b data-page-node-id="28zAATsujmwqDLOB9Vd0tD">建议显式写入决策文档「不采纳」</b>而非悬置；8 项配色微调/吸色器、CleanSectors/CatPaw 形态延后到渲染器插件化之后（作为插件生态的官方示例插件实现）。</td>
+    <td data-page-node-id="TxI7DTIrS2Rcn7uncm09Fq">未落地清单 #4/#5/#10</td>
+  </tr>
+</table>
+
+<div class="callout green" data-page-node-id="G70aUMkvyLxPaDHBE0usQr">
+  <b data-page-node-id="fWDscfMkLU6Ji5Z9CANAFv">执行顺序建议（未来 2-3 周）：</b>Fan 人工 QA（半天，人工）→ M1 ②③④（README/截图/视频，1-2 天，可复用 E2E 管线）→ M1 ①安装器+自动更新（1-2 周，StarPie 方案移植）→ 渲染器插件化（1 周内，Neon 载体）→ 启动性能 → M4 PoC。
+  每一步完成后按惯例沉淀 CHANGELOG + ADR/lessons + journal。
+</div>
+
+<h2 data-page-node-id="W5Xw72VPPqrpL6c4FCggMx"><span class="no" data-page-node-id="4QZg3t9jKtRziNUd2ZJMgW">5</span>给「下次对比」的观察指标</h2>
+<table data-page-node-id="BBSniNkt0f3mxwzvVmFDHS">
+  <tr data-page-node-id="7YHaQEVCHBiwF2BjFbJ8tq"><th data-page-node-id="X0Jph5kCNE85BFBQcQVCHZ">指标</th><th data-page-node-id="a9dHDatlaIzjBRQfceHcck">Pulsar 当前</th><th data-page-node-id="Qr2GAQzYN03ePlEVoffJdp">StarPie 当前</th><th data-page-node-id="ZkLF3fyI8C9e5OmuoeRpks">下次关注</th></tr>
+  <tr data-page-node-id="NcGwYfoYZ22AzGPG74CdAZ"><td data-page-node-id="fHdci0ZyzHV5y9hSJKgOwX">用户可安装性</td><td data-page-node-id="IwOCMjyGRfP7k38foYTipD">❌ 无安装器/更新</td><td data-page-node-id="3GZauP5szgFDGWvjoWStE6">✅ 双包 + 三级容灾更新</td><td data-page-node-id="9tRdhk3u7L6yeMRitcxafh">M1 是否落地（唯一反转机会）</td></tr>
+  <tr data-page-node-id="2iKYOSJ8zwsdu8RbRqf1CD"><td data-page-node-id="Ga7HrZLNgbcfgkfUM7eCRc">第三方插件</td><td data-page-node-id="vaSpaB5EFCFoHF6FMnI105">Neon（自研验证）</td><td data-page-node-id="6fRfyQDnbHEaMSUxZ8WFbD">—</td><td data-page-node-id="80zfSQ90ToP83G5eB9d7Tp">渲染器插件化后是否有外部作者</td></tr>
+  <tr data-page-node-id="wSW6AIYIr1epnh3ms3Fia2"><td data-page-node-id="IqBFrcOUMCbJdoN2B1ykk9">AI 配置生成</td><td data-page-node-id="wSw0B1DoX9Lb03omWJ6uK8">未启动（基建就位）</td><td data-page-node-id="uOLQ7dcY21oxK3FtMzVoKu">无</td><td data-page-node-id="3E111hqhJPPrfGhHpXDc9h">M4 PoC 是否产出可执行配置</td></tr>
+  <tr data-page-node-id="YcllwGuEbv64I3zLrhYhAT"><td data-page-node-id="ycSpjIUmqshI6QzCp7lDwf">发布版本数</td><td data-page-node-id="XdSqGnOsZhfBg2zXpXAv2o">0（用户视角）</td><td data-page-node-id="WS7sE5cpQCX3kBbYlp9qaB">~30 / 2 周</td><td data-page-node-id="6cjSuPG62sdYEfrMSLFGVj">首个 GitHub Release + 触达数据</td></tr>
+</table>
+
+<footer data-page-node-id="fcMuWRo9Ra2CplID4zjkDx">
+  报告：Docs/reports/2026-09-05-STARPIE_COMPARISON.html · 生成本次对比时核对的材料：StarPie README.md / PRD.md / AGENTS.md / CHANGELOG.md（v1.6.8 全文）· Pulsar CHANGELOG（Unreleased）/ Docs/roadmap/{README,IMPLEMENTATION_VERIFICATION}.md / Docs/journal/2026-09-0{3,4,5}.md / Docs/reports/2026-09-03-{MARKET_EVALUATION,REPOSITIONING_PLAN}.html<br data-page-node-id="iQaQSOAUznJxMNotzwmkYF">
+  评分为主观 10 分制（延续 09-03 口径以便差分），Pulsar 数据快照 @ d7b9753（2026-09-05），StarPie 数据快照为本地 Ref 仓库 v1.6.8。
+</footer>
+
+</div>
+</body>
+</html>
