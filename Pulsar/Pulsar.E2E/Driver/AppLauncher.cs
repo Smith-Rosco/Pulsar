@@ -70,6 +70,10 @@ namespace Pulsar.E2E.Driver
                 var statsTarget = Path.Combine(debugConfigDir, StatsFixtureName);
                 if (File.Exists(statsFixture))
                 {
+                    // Fail fast on a malformed stats fixture: a wrong shape (object
+                    // keyed by plugin id, PascalCase, single object, bad JSON)
+                    // silently renders an empty stats page at runtime.
+                    StatsFixtureValidator.Validate(statsFixture);
                     File.Copy(statsFixture, statsTarget, overwrite: true);
                     log($"Installed stats fixture: {statsFixture} -> {statsTarget}");
                 }
