@@ -4,7 +4,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using Microsoft.Extensions.DependencyInjection;
 using Pulsar.Core.Messages; // [New]
 using CommunityToolkit.Mvvm.Messaging; // [New]
 using Pulsar.Models;
@@ -20,14 +19,14 @@ namespace Pulsar.ViewModels.Strategies
             private readonly string _processName;
         private readonly Func<Task<string>> _exePathFactory;
         private readonly IConfigService _configService;
-        private readonly System.IServiceProvider _serviceProvider;
+        private readonly Func<SettingsWindow>? _settingsWindowFactory;
 
-        public CreateProfileStrategy(string processName, Func<Task<string>> exePathFactory, IConfigService configService, System.IServiceProvider serviceProvider)
+        public CreateProfileStrategy(string processName, Func<Task<string>> exePathFactory, IConfigService configService, Func<SettingsWindow>? settingsWindowFactory = null)
         {
             _processName = processName;
             _exePathFactory = exePathFactory;
             _configService = configService;
-            _serviceProvider = serviceProvider;
+            _settingsWindowFactory = settingsWindowFactory;
         }
 
         public async Task ExecuteAsync(SlotViewModel slot, IMenuSession context, CancellationToken cancellationToken = default)
@@ -70,7 +69,8 @@ namespace Pulsar.ViewModels.Strategies
             var existing = System.Windows.Application.Current.Windows.OfType<SettingsWindow>().FirstOrDefault();
             if (existing == null)
             {
-                var settingsWindow = _serviceProvider.GetRequiredService<SettingsWindow>();
+                var settingsWindow = _settingsWindowFactory?.Invoke()
+                    ?? throw new InvalidOperationException("SettingsWindow factory is not available; cannot open settings.");
                 settingsWindow.Show();
             }
             else

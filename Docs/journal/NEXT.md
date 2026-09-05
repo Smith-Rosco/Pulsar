@@ -10,6 +10,7 @@
 
 ## 已完成（历史保留）
 
+- [x] ~~架构审查候选 1 (Strong) 落地（2026-09-05）：菜单执行路径服务定位器消除——新增 IPageProviderFactory seam，20 处 GetService → 显式构造依赖，PageProvider 首次可测，CommandPageProvider 重复构造收口为 InsertCreatorSlot helper。构建 0 警告 0 错误，1059 测试全过。ADR-023 + CONTEXT.md 术语已更新。~~
 - [x] ~~复核 rules-stack 落地 audit log 并 push（2026-09-05）：用户复核无否决，4 commits（`76389cb`..`53a964c`）push 到 origin/main；journal 整理一并提交。~~
 - [x] dev.ps1 真实终端端到端确认（2026-09-05）：`dev.ps1 build` → 0 警告 0 错误 6.8s；`dev.ps1 commit` 路径本次落地 NEXT 更新时 dogfood 通过。此前「沙箱禁 native spawn」限制仅在旧会话环境，按需确认模式可直接跑。
 - [x] Pulsar.E2E 运行时端到端验证（2026-09-05，run `20260905-013738`，**PASS 18.6s**）：`radial-menu-open-via-command.json` 12 步全过——debug 实例启动、fixture 注入、录屏、命令通道开菜单、`Pulsar.Slot.0` UIA 断言、截图、关闭。产物在 `Pulsar/Pulsar.E2E/artifacts/`（已 gitignore）。截图右下角可见径向菜单轮盘（用户视觉确认），与 UIA 断言一致。

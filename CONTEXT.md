@@ -59,6 +59,10 @@ The guiding principle that spatial layout is static and learned by feel; reorder
 The stateful lifetime of one Radial Menu invocation: visibility, hovered Slot, paging, submenu morph, and input decisions. A pure logic module; the ViewModel projects its state for binding.
 _Avoid_: RadialMenuViewModel, menu state holder
 
+**Page Provider Factory**:
+The seam that constructs CommandPageProvider and ProcessPageProvider for a Menu Session. Holds all fixed singleton dependencies (config, plugin registry/executor, feedback, localization, analytics, window services) so the Menu Session only passes per-session data (slots, context, config, seeded windows). Replaces the previous IServiceProvider service-locator pattern (20 GetService calls across the menu execution path). Production implementation + test fake = two adapters, making the seam real.
+_Avoid_: page builder, slot loader
+
 **Focus Boomerang**:
 The guarantee that focus returns to the window that invoked the Radial Menu before a plugin injects input into it.
 

@@ -19,7 +19,6 @@ namespace Pulsar.ViewModels.Strategies
         private readonly IWindowInventoryCoordinator _inventoryCoordinator;
         private readonly ILocalizationService? _loc;
         private readonly ProfilesConfig _config;
-        private readonly System.IServiceProvider _serviceProvider;
         private readonly IPluginUsageTracker? _usageTracker;
         private readonly IPluginHealthMonitor? _healthMonitor;
         private readonly IPluginLogService? _logService;
@@ -39,28 +38,35 @@ namespace Pulsar.ViewModels.Strategies
             IWindowService windowService,
             IWindowInventoryCoordinator inventoryCoordinator,
             ProfilesConfig config,
-            System.IServiceProvider serviceProvider,
             PulsarContext context,
+            IConfigService? configService,
+            ILocalizationService? loc,
+            IPluginUsageTracker? usageTracker,
+            IPluginHealthMonitor? healthMonitor,
+            IPluginLogService? logService,
+            ITrayService trayService,
+            IPluginExecutor executor,
+            IActionFeedbackService feedbackService,
+            IActionFeedbackPresenter? feedbackPresenter,
             List<ProcessWindowInfo>? seededWindows = null)
-            : base(serviceProvider.GetService(typeof(IConfigService)) as IConfigService)
+            : base(configService)
         {
             _windowService = windowService;
             _inventoryCoordinator = inventoryCoordinator;
             _config = config;
-            _serviceProvider = serviceProvider;
             _context = context;
             _seededWindows = seededWindows;
-            _loc = serviceProvider.GetService(typeof(ILocalizationService)) as ILocalizationService;
+            _loc = loc;
             _matcher = new ProcessWindowMatcher(config);
-            
+
             // Resolve analytics + plugin-pipe services
-            _usageTracker = serviceProvider.GetService(typeof(IPluginUsageTracker)) as IPluginUsageTracker;
-            _healthMonitor = serviceProvider.GetService(typeof(IPluginHealthMonitor)) as IPluginHealthMonitor;
-            _logService = serviceProvider.GetService(typeof(IPluginLogService)) as IPluginLogService;
-            _trayService = (ITrayService)serviceProvider.GetService(typeof(ITrayService))!;
-            _executor = (IPluginExecutor)serviceProvider.GetService(typeof(IPluginExecutor))!;
-            _feedbackService = (IActionFeedbackService)serviceProvider.GetService(typeof(IActionFeedbackService))!;
-            _feedbackPresenter = serviceProvider.GetService(typeof(IActionFeedbackPresenter)) as IActionFeedbackPresenter;
+            _usageTracker = usageTracker;
+            _healthMonitor = healthMonitor;
+            _logService = logService;
+            _trayService = trayService;
+            _executor = executor;
+            _feedbackService = feedbackService;
+            _feedbackPresenter = feedbackPresenter;
         }
 
         public override async Task LoadAsync()
@@ -132,10 +138,10 @@ namespace Pulsar.ViewModels.Strategies
                         slotViewModel.ApplyPresentation(presentation);
                     }
 
-                    string baseLabel = !string.IsNullOrEmpty(slotItem.Config?.Label) 
-                        ? slotItem.Config.Label 
+                    string baseLabel = !string.IsNullOrEmpty(slotItem.Config?.Label)
+                        ? slotItem.Config.Label
                         : ProcessNameFormatter.ToDisplayName(first.ProcessName);
-                    
+
                     if (slotItem.Windows.Count > 1)
                     {
                         slotViewModel.Label = $"{baseLabel} ({slotItem.Windows.Count})";
@@ -165,8 +171,8 @@ namespace Pulsar.ViewModels.Strategies
                     slotItem.Config.SetPresentation(presentation);
                     slotViewModel.ApplyPresentation(presentation);
 
-                    string baseLabel = !string.IsNullOrEmpty(slotItem.Config.Label) 
-                        ? slotItem.Config.Label 
+                    string baseLabel = !string.IsNullOrEmpty(slotItem.Config.Label)
+                        ? slotItem.Config.Label
                         : (_loc?["RadialMenu.App"] ?? "App");
                     slotViewModel.Label = string.Format(_loc?["RadialMenu.NotRunningFormat"] ?? "{0} (Not Running)", baseLabel);
 

@@ -8,6 +8,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Pulsar.Core.Localization;
+using Pulsar.Core.Plugin;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Models;
 using Pulsar.Native;
@@ -172,19 +173,25 @@ namespace Pulsar.Tests.ViewModels
                 .Setup(service => service.GetSnapshot())
                 .Returns(new ProfilesConfig());
 
-            var serviceProvider = new Mock<System.IServiceProvider>();
-            serviceProvider
-                .Setup(sp => sp.GetService(typeof(IEnumerable<ISubMenuStrategy>)))
-                .Returns(new ISubMenuStrategy[]
-                {
-                    new WindowSwitchSubMenuStrategy(windowService.Object),
-                    new CascadeSubMenuStrategy(
-                        executor.Object,
-                        metadataRegistry.Object,
-                        Mock.Of<ITrayService>(),
-                        Mock.Of<IActionFeedbackService>(),
-                        logger: Mock.Of<ILogger<CascadeSubMenuStrategy>>())
-                });
+            // [Architecture review 2026-09-05, candidate 1] Submenu strategies are now
+            // an explicit ctor param (was resolved from IServiceProvider).
+            var subMenuStrategies = new ISubMenuStrategy[]
+            {
+                new WindowSwitchSubMenuStrategy(windowService.Object),
+                new CascadeSubMenuStrategy(
+                    executor.Object,
+                    metadataRegistry.Object,
+                    Mock.Of<ITrayService>(),
+                    Mock.Of<IActionFeedbackService>(),
+                    logger: Mock.Of<ILogger<CascadeSubMenuStrategy>>())
+            };
+
+            // Factory returns real CommandPageProvider with null optional deps.
+            var pageProviderFactory = new Mock<IPageProviderFactory>();
+            pageProviderFactory.Setup(f => f.CreateCommandPage(It.IsAny<List<PluginSlot>>(), It.IsAny<PulsarContext>()))
+                .Returns((List<PluginSlot> slots, PulsarContext ctx) =>
+                    new CommandPageProvider(slots, Mock.Of<IPluginRegistry>(), ctx, Mock.Of<ITrayService>(), configService.Object,
+                        Mock.Of<IPluginExecutor>(), Mock.Of<IActionFeedbackService>(), null, null, null, null));
 
             var loc = new Mock<ILocalizationService>();
             loc.Setup(l => l["RadialMenu.Pulsar"]).Returns("Pulsar");
@@ -195,16 +202,16 @@ namespace Pulsar.Tests.ViewModels
                 configService.Object,
                 windowService.Object,
                 Mock.Of<IWindowInventoryCoordinator>(),
-                pluginRegistry.Object,
                 new Mock<IHotkeyService>().Object,
                 new Mock<ITrayService>().Object,
                 animationController.Object,
                 slotLayoutEngine.Object,
                 new Mock<IPagingController>().Object,
                 previewService.Object,
-                serviceProvider.Object,
+                pageProviderFactory.Object,
                 loc.Object,
-                new DirectUiDispatcher());
+                new DirectUiDispatcher(),
+                subMenuStrategies: subMenuStrategies);
 
             session.Initialize();
 

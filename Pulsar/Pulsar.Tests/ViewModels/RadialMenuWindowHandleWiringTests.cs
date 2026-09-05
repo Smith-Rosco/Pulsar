@@ -9,6 +9,7 @@ using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.Tests.TestHelpers;
 using Pulsar.ViewModels;
+using Pulsar.ViewModels.Strategies;
 using Xunit;
 
 namespace Pulsar.Tests.ViewModels
@@ -103,14 +104,13 @@ namespace Pulsar.Tests.ViewModels
                 configService.Object,
                 Mock.Of<IWindowService>(),
                 Mock.Of<IWindowInventoryCoordinator>(),
-                Mock.Of<IPluginRegistry>(),
                 new Mock<IHotkeyService>().Object,
                 Mock.Of<ITrayService>(),
                 animationController.Object,
                 slotLayoutEngine.Object,
                 Mock.Of<IPagingController>(),
                 Mock.Of<IPreviewService>(),
-                Mock.Of<IServiceProvider>(),
+                Mock.Of<IPageProviderFactory>(),
                 loc.Object,
                 new DirectUiDispatcher());
 
@@ -140,14 +140,13 @@ namespace Pulsar.Tests.ViewModels
                 configService.Object,
                 Mock.Of<IWindowService>(),
                 Mock.Of<IWindowInventoryCoordinator>(),
-                Mock.Of<IPluginRegistry>(),
                 new Mock<IHotkeyService>().Object,
                 Mock.Of<ITrayService>(),
                 animationController.Object,
                 slotLayoutEngine,
                 Mock.Of<IPagingController>(),
                 Mock.Of<IPreviewService>(),
-                Mock.Of<IServiceProvider>(),
+                Mock.Of<IPageProviderFactory>(),
                 loc.Object,
                 new DirectUiDispatcher());
 

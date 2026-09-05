@@ -11,6 +11,7 @@ using Pulsar.Services; // Added
 using Pulsar.Services.ActionFeedback;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels;
+using Pulsar.Views;
 
 namespace Pulsar.ViewModels.Strategies
 {
@@ -23,30 +24,40 @@ namespace Pulsar.ViewModels.Strategies
         private readonly ITrayService _trayService;
         private readonly IActionFeedbackService _feedbackService;
 
-        private readonly IServiceProvider _serviceProvider;
         private readonly ILocalizationService? _loc;
+        private readonly IPluginUsageTracker? _usageTracker;
+        private readonly IActionFeedbackPresenter? _feedbackPresenter;
+        private readonly Func<SettingsWindow>? _settingsWindowFactory;
 
         public override int TotalPages => (int)Math.Ceiling((double)_allSlots.Count / (double)ItemsPerPage);
 
         public bool HasCreatorSlot() => _allSlots.Any(s => s.PluginId == "internal:create_profile");
 
         public CommandPageProvider(
-            List<PluginSlot> slots, 
-            IPluginRegistry pluginRegistry, 
-            PulsarContext context, 
+            List<PluginSlot> slots,
+            IPluginRegistry pluginRegistry,
+            PulsarContext context,
             ITrayService trayService,
-            IServiceProvider serviceProvider)
-            : base(serviceProvider.GetService(typeof(IConfigService)) as IConfigService)
+            IConfigService? configService,
+            IPluginExecutor executor,
+            IActionFeedbackService feedbackService,
+            ILocalizationService? loc,
+            IPluginUsageTracker? usageTracker,
+            IActionFeedbackPresenter? feedbackPresenter,
+            Func<SettingsWindow>? settingsWindowFactory = null)
+            : base(configService)
         {
             // [Refactor] 按 Slot 字段排序，确保用户自定义顺序生效
             _allSlots = slots?.OrderBy(s => s.Slot).ToList() ?? new List<PluginSlot>();
             _pluginRegistry = pluginRegistry;
-            _executor = (IPluginExecutor)serviceProvider.GetService(typeof(IPluginExecutor))!;
+            _executor = executor;
             _context = context;
             _trayService = trayService;
-            _feedbackService = (IActionFeedbackService)serviceProvider.GetService(typeof(IActionFeedbackService))!;
-            _serviceProvider = serviceProvider;
-            _loc = serviceProvider.GetService(typeof(ILocalizationService)) as ILocalizationService;
+            _feedbackService = feedbackService;
+            _loc = loc;
+            _usageTracker = usageTracker;
+            _feedbackPresenter = feedbackPresenter;
+            _settingsWindowFactory = settingsWindowFactory;
         }
 
         public override Task LoadAsync()
@@ -58,7 +69,7 @@ namespace Pulsar.ViewModels.Strategies
         public override void RefreshVisuals(ObservableCollection<SlotViewModel> slots, SlotViewModel centerSlot)
         {
             ClearSlots(slots);
-            
+
             // [Refactor] 按 Slot 排序后分页，使用动态 ItemsPerPage
             var pageItems = _allSlots.Skip(_currentPage * ItemsPerPage).Take(ItemsPerPage).ToList();
 
@@ -69,7 +80,7 @@ namespace Pulsar.ViewModels.Strategies
                 slot.ResetAnimation();
 
                 // [Refactor] Slot 值已经在配置中持久化，无需运行时分配
-                
+
                 slot.Label = item.Label;
                 slot.LoadIconData(item.IconKey);
                 var presentation = SlotPresentationBuilder.Build(item);
@@ -88,15 +99,12 @@ namespace Pulsar.ViewModels.Strategies
 
                 if (item.PluginId == "internal:create_profile")
                 {
-                    // Resolve dependencies
-                    var configService = (IConfigService)_serviceProvider.GetService(typeof(IConfigService))!;
-                    
                     slot.ActionStrategy = new CreateProfileStrategy(
-                        _context.TargetProcessName, 
+                        _context.TargetProcessName,
                         _context.GetTargetExePathAsync,
-                        configService, 
-                        _serviceProvider);
-                    
+                        _configService!,
+                        _settingsWindowFactory);
+
                     slot.IsEnabled = true; // Always enabled
                 }
                 else
@@ -104,19 +112,19 @@ namespace Pulsar.ViewModels.Strategies
                     // Check if plugin is enabled
                     bool isEnabled = _pluginRegistry.IsPluginEnabled(item.PluginId);
                     slot.IsEnabled = isEnabled;
-                    
+
                     if (isEnabled)
                     {
                         slot.ActionStrategy = new PluginActionStrategy(item, _executor, _context, _trayService, _feedbackService,
-                            _serviceProvider.GetService(typeof(IPluginUsageTracker)) as IPluginUsageTracker,
-                            _serviceProvider.GetService(typeof(IActionFeedbackPresenter)) as IActionFeedbackPresenter);
+                            _usageTracker,
+                            _feedbackPresenter);
                     }
                     else
                     {
                         // Disabled Strategy (Toast or NoOp)
-                        slot.ActionStrategy = new NoOpStrategy(); 
-                        // Optional: Append (Disabled) to label? 
-                        // slot.Label += " (Disabled)"; 
+                        slot.ActionStrategy = new NoOpStrategy();
+                        // Optional: Append (Disabled) to label?
+                        // slot.Label += " (Disabled)";
                         // Better to rely on visual cue (greyed out)
                     }
                 }

@@ -5,9 +5,11 @@ using System.Windows;
 using FluentAssertions;
 using Moq;
 using Pulsar.Core.Localization;
+using Pulsar.Core.Plugin;
 using Pulsar.Models;
 using Pulsar.Native;
 using Pulsar.Services;
+using Pulsar.Services.ActionFeedback;
 using Pulsar.Services.Interfaces;
 using Pulsar.Tests.TestHelpers;
 using Pulsar.ViewModels;
@@ -144,11 +146,18 @@ namespace Pulsar.Tests.ViewModels
             var hotkeyService = new Mock<IHotkeyService>();
             var trayService = new Mock<ITrayService>();
             var pagingController = new Mock<IPagingController>();
-            var serviceProvider = new Mock<System.IServiceProvider>();
 
-            serviceProvider
-                .Setup(sp => sp.GetService(typeof(IEnumerable<ISubMenuStrategy>)))
-                .Returns(new ISubMenuStrategy[] { new WindowSwitchSubMenuStrategy(windowService.Object) });
+            // [Architecture review 2026-09-05, candidate 1] Submenu strategies are now
+            // an explicit ctor param (was resolved from IServiceProvider).
+            var subMenuStrategies = new ISubMenuStrategy[] { new WindowSwitchSubMenuStrategy(windowService.Object) };
+
+            // Factory returns real CommandPageProvider with null optional deps (same as
+            // the old service-locator path where those services were not registered).
+            var pageProviderFactory = new Mock<IPageProviderFactory>();
+            pageProviderFactory.Setup(f => f.CreateCommandPage(It.IsAny<List<PluginSlot>>(), It.IsAny<PulsarContext>()))
+                .Returns((List<PluginSlot> slots, PulsarContext ctx) =>
+                    new CommandPageProvider(slots, Mock.Of<IPluginRegistry>(), ctx, trayService.Object, configService.Object,
+                        Mock.Of<IPluginExecutor>(), Mock.Of<IActionFeedbackService>(), null, null, null, null));
 
             var loc = new Mock<ILocalizationService>();
             loc.Setup(l => l["RadialMenu.Pulsar"]).Returns("Pulsar");
@@ -159,16 +168,16 @@ namespace Pulsar.Tests.ViewModels
                 configService.Object,
                 windowService.Object,
                 Mock.Of<IWindowInventoryCoordinator>(),
-                Mock.Of<IPluginRegistry>(),
                 hotkeyService.Object,
                 trayService.Object,
                 animationController.Object,
                 slotLayoutEngine.Object,
                 pagingController.Object,
                 previewService.Object,
-                serviceProvider.Object,
+                pageProviderFactory.Object,
                 loc.Object,
-                new DirectUiDispatcher());
+                new DirectUiDispatcher(),
+                subMenuStrategies: subMenuStrategies);
 
             session.Initialize();
             return session;

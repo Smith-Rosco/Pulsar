@@ -105,7 +105,6 @@ namespace Pulsar.ViewModels
         private readonly IConfigService _configService;
         private readonly IWindowService _windowService;
         private readonly IWindowInventoryCoordinator _inventoryCoordinator;
-        private readonly IPluginRegistry _pluginRegistry;
         private readonly IHotkeyService _hotkeyService;
         private readonly ITrayService _trayService;
         private readonly IAnimationController _animationController;
@@ -113,7 +112,7 @@ namespace Pulsar.ViewModels
         private readonly ISubMenuLayoutEngine _subMenuLayoutEngine;
         private readonly IPagingController _pagingController;
         private readonly IPreviewService _previewService;
-        private readonly System.IServiceProvider _serviceProvider;
+        private readonly IPageProviderFactory _pageProviderFactory;
         private readonly IDebugStatePublisher? _debugStatePublisher;
         private readonly ILogger<MenuSession>? _logger;
         private readonly ILocalizationService _loc;
@@ -309,14 +308,13 @@ namespace Pulsar.ViewModels
             IConfigService configService,
             IWindowService windowService,
             IWindowInventoryCoordinator inventoryCoordinator,
-            IPluginRegistry pluginRegistry,
             IHotkeyService hotkeyService,
             ITrayService trayService,
             IAnimationController animationController,
             ISlotLayoutEngine slotLayoutEngine,
             IPagingController pagingController,
             IPreviewService previewService,
-            System.IServiceProvider serviceProvider,
+            IPageProviderFactory pageProviderFactory,
             ILocalizationService localizationService,
             IUiDispatcher uiDispatcher,
             ILogger<MenuSession>? logger = null,
@@ -325,21 +323,23 @@ namespace Pulsar.ViewModels
             TimeSpan? firstFrameBudget = null,
             IGestureIsolationService? gestureIsolationService = null,
             IGlobalMouseService? globalMouseService = null,
-            Action<RadialMenuMode>? rendererWarmup = null)
+            Action<RadialMenuMode>? rendererWarmup = null,
+            IDebugStatePublisher? debugStatePublisher = null,
+            ISubMenuLayoutEngine? subMenuLayoutEngine = null,
+            IEnumerable<ISubMenuStrategy>? subMenuStrategies = null)
         {
             _configService = configService;
             _windowService = windowService;
             _inventoryCoordinator = inventoryCoordinator;
-            _pluginRegistry = pluginRegistry;
             _hotkeyService = hotkeyService;
             _trayService = trayService;
             _animationController = animationController;
             _slotLayoutEngine = slotLayoutEngine;
             _pagingController = pagingController;
             _previewService = previewService;
-            _serviceProvider = serviceProvider;
+            _pageProviderFactory = pageProviderFactory;
             // [UI Debug Mode] Only resolves in a --ui-debug run; null in production.
-            _debugStatePublisher = serviceProvider.GetService(typeof(IDebugStatePublisher)) as IDebugStatePublisher;
+            _debugStatePublisher = debugStatePublisher;
             _loc = localizationService;
             _ui = uiDispatcher;
             _logger = logger;
@@ -350,11 +350,9 @@ namespace Pulsar.ViewModels
             _rendererWarmup = rendererWarmup;
 
             _visualStateCoordinator = new RadialMenuVisualStateCoordinator(previewService, logger, _loc);
-            _subMenuLayoutEngine = (ISubMenuLayoutEngine?)serviceProvider.GetService(typeof(ISubMenuLayoutEngine))
-                ?? new SubMenuLayoutEngine();
+            _subMenuLayoutEngine = subMenuLayoutEngine ?? new SubMenuLayoutEngine();
             _subMenuCoordinator = new RadialMenuSubMenuCoordinator(
-                (IEnumerable<ISubMenuStrategy>?)serviceProvider.GetService(typeof(IEnumerable<ISubMenuStrategy>))
-                    ?? Array.Empty<ISubMenuStrategy>(),
+                subMenuStrategies ?? Array.Empty<ISubMenuStrategy>(),
                 logger);
             _layoutCoordinator = new RadialMenuLayoutCoordinator(slotLayoutEngine, animationController, logger);
 
@@ -772,7 +770,7 @@ namespace Pulsar.ViewModels
 
                 if (mode == RadialMenuMode.Task)
                 {
-                    _pageProvider = new ProcessPageProvider(_windowService, _inventoryCoordinator, _config!, _serviceProvider, _lastContext!, seededWindows);
+                    _pageProvider = _pageProviderFactory.CreateProcessPage(_config!, _lastContext!, seededWindows);
                 }
                 else
                 {
@@ -785,17 +783,10 @@ namespace Pulsar.ViewModels
 
                     if (!foundProfile)
                     {
-                        var creator = new PluginSlot
-                        {
-                            Slot = 0,
-                            Label = string.Format(_loc?["RadialMenu.AddProfileFormat"] ?? "Add Profile ({0})", _lastContext.DisplayProcessName),
-                            IconKey = "\uE710",
-                            PluginId = "internal:create_profile"
-                        };
-                        slots.Insert(0, creator);
+                        InsertCreatorSlot(slots, _lastContext);
                     }
 
-                    _pageProvider = new CommandPageProvider(slots, _pluginRegistry, _lastContext, _trayService, _serviceProvider);
+                    _pageProvider = _pageProviderFactory.CreateCommandPage(slots, _lastContext);
                 }
 
                 await _pageProvider.LoadAsync();
@@ -1353,17 +1344,10 @@ namespace Pulsar.ViewModels
                 && slots.Count > 0
                 && existingCp.HasCreatorSlot())
             {
-                var creator = new PluginSlot
-                {
-                    Slot = 0,
-                    Label = string.Format(_loc?["RadialMenu.AddProfileFormat"] ?? "Add Profile ({0})", _lastContext.DisplayProcessName),
-                    IconKey = "\uE710",
-                    PluginId = "internal:create_profile"
-                };
-                slots.Insert(0, creator);
+                InsertCreatorSlot(slots, _lastContext);
             }
 
-            _pageProvider = new CommandPageProvider(slots, _pluginRegistry, _lastContext, _trayService, _serviceProvider);
+            _pageProvider = _pageProviderFactory.CreateCommandPage(slots, _lastContext);
             await _pageProvider.LoadAsync();
             _pagingController.SetTotalPages(_pageProvider.TotalPages);
             await _pagingController.GoToPageAsync(_pageProvider.CurrentPage);
@@ -1375,6 +1359,23 @@ namespace Pulsar.ViewModels
                     _pageProvider.RefreshVisuals(Slots, CenterSlot);
                 });
             }
+        }
+
+        /// <summary>
+        /// Inserts the "Add Profile" creator slot at position 0. Extracted from the
+        /// two call sites (LoadPageContentAsync, RebuildPageProviderAsync) that
+        /// previously duplicated this construction with diverging conditions.
+        /// </summary>
+        private void InsertCreatorSlot(List<PluginSlot> slots, PulsarContext context)
+        {
+            var creator = new PluginSlot
+            {
+                Slot = 0,
+                Label = string.Format(_loc?["RadialMenu.AddProfileFormat"] ?? "Add Profile ({0})", context.DisplayProcessName),
+                IconKey = "\uE710",
+                PluginId = "internal:create_profile"
+            };
+            slots.Insert(0, creator);
         }
 
         private List<PluginSlot> LoadSlotsFromConfig(string activeProcess)

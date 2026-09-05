@@ -273,6 +273,9 @@ namespace Pulsar
             serviceCollection.AddSingleton<Lazy<ITutorialService>>(sp => new Lazy<ITutorialService>(() => sp.GetRequiredService<ITutorialService>()));
             serviceCollection.AddSingleton<Func<RadialMenuWindow>>(sp => () => sp.GetRequiredService<RadialMenuWindow>());  // WPF InitializeComponent
             serviceCollection.AddSingleton<Func<FirstLaunchSetupWizardViewModel>>(sp => () => sp.GetRequiredService<FirstLaunchSetupWizardViewModel>());  // AddTransient → avoid captive
+            // [Architecture review 2026-09-05, candidate 1] CreateProfileStrategy opens
+            // SettingsWindow on demand; Func avoids resolving the transient window eagerly.
+            serviceCollection.AddSingleton<Func<SettingsWindow>>(sp => () => sp.GetRequiredService<SettingsWindow>());
             // Debug-only factories: register a no-op lambda when ui-debug is off so the
             // AppStartupCoordinator constructor can stay free of conditional logic. The
             // coordinator only invokes the factory inside an `if (IsUiDebug)` guard.
@@ -340,6 +343,11 @@ namespace Pulsar
             // create a construction cycle.
             serviceCollection.AddSingleton<Action<Pulsar.Models.Enums.RadialMenuMode>>(sp =>
                 mode => sp.GetRequiredService<RadialMenuViewModel>().ApplyRadialRendering(mode));
+            // [Architecture review 2026-09-05, candidate 1] Page provider factory seam:
+            // holds all fixed singleton deps so MenuSession only passes per-session data.
+            // Replaces the previous IServiceProvider service-locator pattern (20 GetService
+            // calls across the menu execution path).
+            serviceCollection.AddSingleton<IPageProviderFactory, PageProviderFactory>();
             serviceCollection.AddSingleton<MenuSession>();
             serviceCollection.AddSingleton<RadialMenuViewModel>();
             serviceCollection.AddSingleton<RadialMenuWindow>();
