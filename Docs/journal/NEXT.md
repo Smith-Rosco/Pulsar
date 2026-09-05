@@ -7,7 +7,7 @@
 
 - [ ] 观察 1-2 个会话：AGENTS.md 瘦身后 agent 是否经 §3 指针去 `Docs/lessons/` 取坑位全文（防"全表靠内联"回潮，ADR-022 后续）。
 - [ ] 观察若干会话：确认无 harness 再向 `.workbuddy/memory/` 写正文（若复发 → 考虑 Junction 收口，ADR-019 后续）。**2026-09-05 检查：合规**——仅一行指向 journal 的指针（183B），无正文复发。
-- [ ] **OpenWiki 四项待用户复核后决定是否入库**（2026-09-05 按 guardrail 暂停，均 10:57 OpenWiki 工具产生）：`AGENTS.md` OPENWIKI 区块（M）+ `.github/workflows/openwiki-update.yml`（**新增 CI workflow = 外部契约**）+ `CLAUDE.md` + `openwiki/`（生成索引，含 `.run.json` 运行状态）。注意：拆开提交会让 AGENTS.md 指向不存在的 workflow；`openwiki/` 若为生成物应与 workflow 二选一处理。
+- [ ] OpenWiki 补缺页：余额恢复后 `openwiki --update` 补 3 页（architecture/system-overview · architecture/window-switching · quickstart）；反复跳过的页可临时切 deepseek-v4-pro。注意 `.github/workflows/openwiki-update.yml` 每天 08:00 UTC 定时跑，推 GitHub + 配 key 会每日消耗额度；本地补丁 `repository-runner.js`（2 处 "LOCAL PATCH (2026-09-05)"）在 `npm update -g openwiki` 后需重打。
 
 ## 已完成（历史保留）
 
