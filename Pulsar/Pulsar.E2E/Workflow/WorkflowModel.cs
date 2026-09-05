@@ -18,6 +18,8 @@ namespace Pulsar.E2E.Workflow
         Click,
         Assert,
         Screenshot,
+        Scroll,
+        Dump,
         Record,
         Exit
     }
@@ -73,6 +75,10 @@ namespace Pulsar.E2E.Workflow
 
         /// <summary>screenshot: output file name (relative to the artifacts dir).</summary>
         public string File { get; set; } = string.Empty;
+
+        /// <summary>scroll: "down" (default) or "up"; scrolls the target's first
+        /// scrollable region to its end/start via UIA ScrollPattern.</summary>
+        public string Direction { get; set; } = string.Empty;
 
         /// <summary>record: whether the step starts or stops recording.</summary>
         public string Action { get; set; } = string.Empty;

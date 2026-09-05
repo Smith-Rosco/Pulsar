@@ -58,6 +58,18 @@
       "timeoutMs": 5000
     },
     {
+      "type": "scroll",
+      "id": "scroll-to-stats-list",
+      "automationId": "Pulsar.Settings.Analytics.ScrollViewer",
+      "direction": "down",
+      "timeoutMs": 5000
+    },
+    {
+      "type": "dump",
+      "id": "dump-analytics-tree",
+      "file": "analytics-uia-tree.txt"
+    },
+    {
       "type": "screenshot",
       "id": "screenshot-data-view",
       "file": "analytics-data-dark.png"

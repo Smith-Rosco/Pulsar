@@ -227,6 +227,18 @@ namespace Pulsar.E2E.Runner
                     break;
                 }
 
+                case StepType.Scroll:
+                    try
+                    {
+                        var toBottom = !step.Direction.Equals("up", StringComparison.OrdinalIgnoreCase);
+                        uia.Scroll(step.AutomationId, toBottom, TimeSpan.FromMilliseconds(step.TimeoutMs));
+                    }
+                    catch (UiDriverException ex)
+                    {
+                        throw new StepFailureException(step.Id, step.TypeRaw, ex.Message, null);
+                    }
+                    break;
+
                 case StepType.Screenshot:
                 {
                     var fileName = string.IsNullOrWhiteSpace(step.File)
@@ -235,6 +247,15 @@ namespace Pulsar.E2E.Runner
                     var path = Path.Combine(artifactsRoot, runId, fileName);
                     Capture.CaptureScreen(path);
                     _log($"[step:{step.Id}] screenshot -> {path}");
+                    break;
+                }
+
+                case StepType.Dump:
+                {
+                    var fileName = string.IsNullOrWhiteSpace(step.File) ? "uia-tree.txt" : step.File;
+                    var treePath = Path.Combine(artifactsRoot, runId, fileName);
+                    File.WriteAllText(treePath, uia.DumpTree());
+                    _log($"[step:{step.Id}] dumped UIA tree -> {treePath}");
                     break;
                 }
 

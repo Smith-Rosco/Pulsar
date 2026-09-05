@@ -72,6 +72,12 @@ namespace Pulsar.E2E.Driver
         /// </summary>
         public UiElementInfo? WaitForElement(string automationId, TimeSpan timeout)
         {
+            var element = WaitForElementRaw(automationId, timeout);
+            return element == null ? null : ToInfo(element, automationId);
+        }
+
+        private AutomationElement? WaitForElementRaw(string automationId, TimeSpan timeout)
+        {
             var desktop = GetDesktop();
             var deadline = DateTime.UtcNow + timeout;
 
@@ -80,7 +86,7 @@ namespace Pulsar.E2E.Driver
                 var element = desktop.FindFirstDescendant(cf => cf.ByAutomationId(automationId));
                 if (element != null)
                 {
-                    return ToInfo(element, automationId);
+                    return element;
                 }
 
                 if (DateTime.UtcNow >= deadline)
@@ -113,6 +119,47 @@ namespace Pulsar.E2E.Driver
                 (int)Math.Round(info.Bounds.X + info.Bounds.Width / 2),
                 (int)Math.Round(info.Bounds.Y + info.Bounds.Height / 2));
             FlaUI.Core.Input.Mouse.Click();
+        }
+
+        /// <summary>
+        /// Scrolls the element with <paramref name="automationId"/> (or its first
+        /// scrollable descendant) to the end/start via UIA ScrollPattern. WPF
+        /// ScrollViewers expose the pattern on their own peer, but the lookup walks
+        /// descendants too so a composite host works as the anchor.
+        /// </summary>
+        public void Scroll(string automationId, bool toBottom, TimeSpan timeout)
+        {
+            var element = WaitForElementRaw(automationId, timeout)
+                ?? throw new UiDriverException($"Scroll failed: element '{automationId}' not found within {timeout.TotalSeconds:F1}s.");
+
+            var scrollable = element.Patterns.Scroll.IsSupported
+                ? element
+                : element.FindAllDescendants().FirstOrDefault(d => d.Patterns.Scroll.IsSupported);
+
+            if (scrollable == null)
+            {
+                throw new UiDriverException(
+                    $"Scroll failed: element '{automationId}' (type {element.ControlType}) exposes no UIA ScrollPattern.");
+            }
+
+            var pattern = scrollable.Patterns.Scroll.Pattern;
+            var vertical = toBottom ? 100.0 : 0.0;
+            try
+            {
+                // -1 = "leave this axis unchanged"; some providers reject it, so
+                // fall back to the axis' actual current percent.
+                pattern.SetScrollPercent(-1, vertical);
+            }
+            catch (Exception)
+            {
+                var horizontal = pattern.HorizontallyScrollable.ValueOrDefault
+                    ? pattern.HorizontalScrollPercent.ValueOrDefault
+                    : -1;
+                pattern.SetScrollPercent(horizontal, vertical);
+            }
+
+            // Give WPF a moment to re-layout before the next step captures.
+            Thread.Sleep(250);
         }
 
         /// <summary>Dumps the UIA control-view tree (id / name / type / bounds / enabled).</summary>

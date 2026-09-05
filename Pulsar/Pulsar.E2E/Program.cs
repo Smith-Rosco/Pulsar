@@ -204,7 +204,7 @@ namespace Pulsar.E2E
         private static int ListSteps()
         {
             Console.WriteLine("Supported workflow step types:");
-            foreach (var name in new[] { "launch", "wait", "waitForState", "hotkey", "menu-open", "menu-close", "command", "click", "assert", "screenshot", "record", "exit" })
+            foreach (var name in new[] { "launch", "wait", "waitForState", "hotkey", "menu-open", "menu-close", "command", "click", "assert", "screenshot", "scroll", "dump", "record", "exit" })
             {
                 Console.WriteLine($"  {name}");
             }

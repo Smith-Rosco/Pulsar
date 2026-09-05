@@ -28,6 +28,8 @@ namespace Pulsar.E2E.Workflow
             ["click"] = StepType.Click,
             ["assert"] = StepType.Assert,
             ["screenshot"] = StepType.Screenshot,
+            ["scroll"] = StepType.Scroll,
+            ["dump"] = StepType.Dump,
             ["record"] = StepType.Record,
             ["exit"] = StepType.Exit
         };
@@ -186,6 +188,10 @@ namespace Pulsar.E2E.Workflow
             {
                 step.Action = action.GetString() ?? string.Empty;
             }
+            if (element.TryGetProperty("direction", out var direction) && direction.ValueKind == JsonValueKind.String)
+            {
+                step.Direction = direction.GetString() ?? string.Empty;
+            }
 
             return step;
         }
@@ -226,6 +232,14 @@ namespace Pulsar.E2E.Workflow
                     case StepType.Click:
                     case StepType.Assert:
                         Require(step, s => !string.IsNullOrWhiteSpace(s.AutomationId), "requires an 'automationId' field.");
+                        break;
+                    case StepType.Scroll:
+                        Require(step, s => !string.IsNullOrWhiteSpace(s.AutomationId), "requires an 'automationId' field.");
+                        Require(step, s =>
+                            string.IsNullOrWhiteSpace(s.Direction)
+                            || s.Direction.Equals("down", StringComparison.OrdinalIgnoreCase)
+                            || s.Direction.Equals("up", StringComparison.OrdinalIgnoreCase),
+                            "requires 'direction' of 'down' or 'up' (defaults to 'down').");
                         break;
                     case StepType.Wait:
                         Require(step, s => s.DurationMs >= 0, "requires a non-negative 'durationMs'.");

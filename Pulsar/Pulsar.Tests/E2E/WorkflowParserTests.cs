@@ -51,6 +51,8 @@ namespace Pulsar.Tests.E2E
                 { "type": "click", "id": "c", "automationId": "Pulsar.Slot.1" },
                 { "type": "assert", "id": "a", "automationId": "Pulsar.Slot.1", "expected": "visible" },
                 { "type": "screenshot", "id": "s", "file": "shot.png" },
+                { "type": "scroll", "id": "sc", "automationId": "Pulsar.Settings.Analytics.ScrollViewer", "direction": "down" },
+                { "type": "dump", "id": "d", "file": "tree.txt" },
                 { "type": "record", "id": "r", "action": "start" },
                 { "type": "exit", "id": "e" }
               ]
@@ -61,7 +63,7 @@ namespace Pulsar.Tests.E2E
 
             workflow.Steps.Select(s => s.Type).Should().Equal(
                 StepType.Launch, StepType.Wait, StepType.WaitForState, StepType.Hotkey,
-                StepType.Command, StepType.Click, StepType.Assert, StepType.Screenshot, StepType.Record, StepType.Exit);
+                StepType.Command, StepType.Click, StepType.Assert, StepType.Screenshot, StepType.Scroll, StepType.Dump, StepType.Record, StepType.Exit);
             workflow.Steps[1].DurationMs.Should().Be(250);
             workflow.Steps[2].Event.Should().Be("menu-opened");
             workflow.Steps[2].TimeoutMs.Should().Be(3000);
@@ -70,6 +72,8 @@ namespace Pulsar.Tests.E2E
             workflow.Steps[5].AutomationId.Should().Be("Pulsar.Slot.1");
             workflow.Steps[6].Expected.Should().Be("visible");
             workflow.Steps[7].File.Should().Be("shot.png");
+            workflow.Steps[8].AutomationId.Should().Be("Pulsar.Settings.Analytics.ScrollViewer");
+            workflow.Steps[8].Direction.Should().Be("down");
             workflow.App.ExePath.Should().Be("C:/x/Pulsar.exe");
             workflow.App.Fixture.Should().Be("fix.json");
         }
@@ -168,6 +172,32 @@ namespace Pulsar.Tests.E2E
 
             act.Should().Throw<WorkflowParseException>()
                 .WithMessage("*'c'*requires an 'automationId' field*");
+        }
+
+        [Fact]
+        public void Parse_ScrollWithoutAutomationId_Throws()
+        {
+            var json = """
+            { "steps": [ { "type": "scroll", "id": "sc" } ] }
+            """;
+
+            var act = () => WorkflowParser.Parse(json);
+
+            act.Should().Throw<WorkflowParseException>()
+                .WithMessage("*'sc'*requires an 'automationId' field*");
+        }
+
+        [Fact]
+        public void Parse_ScrollInvalidDirection_Throws()
+        {
+            var json = """
+            { "steps": [ { "type": "scroll", "id": "sc", "automationId": "Pulsar.Settings.Analytics.ScrollViewer", "direction": "sideways" } ] }
+            """;
+
+            var act = () => WorkflowParser.Parse(json);
+
+            act.Should().Throw<WorkflowParseException>()
+                .WithMessage("*'sc'*'direction' of 'down' or 'up'*");
         }
 
         [Fact]
