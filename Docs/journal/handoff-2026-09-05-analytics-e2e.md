@@ -2,6 +2,24 @@
 
 > 交接给新豆包会话。**先读本文件，再按 AGENTS.md §8 会话仪式读 journal**（`Docs/journal/NEXT.md` + `Docs/journal/2026-09-05.md` 尾部）。
 
+## 2026-09-05 19:xx 追加（本会话完成：P1 对齐修复 + E2E scroll/dump 步骤）
+
+**P1 对齐真相与修复（已提交 `1f4dedc`，UIA 权威验证）**：
+- 根因：Wpf.Ui `CardControl` 模板是 3 列 Grid（Icon(Auto) | Header(*) | Content(Auto)），Content 槽内容**按内容宽贴卡片右缘**——统计卡片体（徽章+度量）被右对齐到 851（卡片 638..1219 内），度量列被压成内容宽 76px，与表头列（# 48 + 4×125）永不对齐。
+- 修复：把卡片体网格移入 `<ui:CardControl.Header>`（星列，页面热力卡同款模式），col2 空 → 卡片体满宽 549 → 徽章 654..702 对 `#`、度量 702/827/953/1077 对表头 702/827/953/1078 ✓。
+- 验证：E2E v6 `dump` UIA 树三卡全对齐（前后差 ≤1px）；截图像素/OCR 复核一致。注意**本页所有 CardControl 的 Content 槽都是右对齐贴边**（KPI/热力行/推荐行）——用户只投诉统计列表，其余保持原样。
+- 遗留知识：树坐标 ≈ 截图物理像素 ÷1.5（DPI），窗口位置每次运行会漂移。
+
+**E2E scroll + dump 步骤（已提交 `71e70de`）**：
+- 截图不自动滚动 → 新增 `scroll` 步骤（按 AutomationId 找 ScrollViewer，UIA ScrollPattern `SetScrollPercent(-1, vertical)` 降级水平，Sleep 250ms 等重布局）；工作流在 screenshot 前插 scroll（13→14 步）。
+- 新增 `dump` 步骤：成功路径导出完整 UIA 树到 artifacts（诊断神器，本次定位全靠它）。`list-steps` 已更新；parser 测试 +2。
+- 验证：build 0 警告 0 错误；E2E 32/32；全量 **1072/1072**；数据态工作流 v6 PASS 22.1s（PID 39856）。
+
+**分支状态**：`feat/analytics-ui-polish` 现有 7 个提交（上会话 5 + 本会话 2），工作区干净；**合并回 main 未执行**（WorkBuddy 并行中，需协调）。
+**剩余**：P3 低干扰模式、P4 空态 CTA 等（未批准）；合并后 journal/NEXT 由 main 侧更新。
+
+---
+
 ## 0. 当前最重要的事（先做这个）
 
 - **WorkBuddy 正在原始仓库（`E:\8_Project\10_C#\Pulsar_Project`，main worktree）同步 apply changes。你绝不能在 main worktree 里改任何文件。**
