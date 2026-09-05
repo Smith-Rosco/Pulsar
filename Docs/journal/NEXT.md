@@ -5,6 +5,8 @@
 
 ## 待办
 
+- [ ] 复核 rules-stack 落地 audit log（2026-09-05，grill auto）：AGENTS.md v4.0.0 瘦身 / `dev.ps1 verify-rules` / ADR-022 / harness-matrix。**本地已提交未推送**——无否决后 push 到 origin/main。
+- [ ] 观察 1-2 个会话：AGENTS.md 瘦身后 agent 是否经 §3 指针去 `Docs/lessons/` 取坑位全文（防"全表靠内联"回潮，ADR-022 后续）。
 - [ ] 观察若干会话：确认无 harness 再向 `.workbuddy/memory/` 写正文（若复发 → 考虑 Junction 收口，ADR-019 后续）。**2026-09-05 检查：合规**——仅一行指向 journal 的指针（183B），无正文复发。
 
 ## 已完成（历史保留）
