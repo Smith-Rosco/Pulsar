@@ -20,6 +20,22 @@
 
 ---
 
+## 2026-09-05 20:0x 追加（P4 探索+实施：排序箭头/空态 CTA/趋势洞察；E2E 空态 fixture 修复）
+
+**P4 已按建议实施（提交 `624421a`→探索、`7f11648`→功能、`a41f878`→E2E 修复）**：
+- **排序状态可视化**：新 `SortArrowVisibilityConverter`（MultiBinding SortColumn+SortAscending，parameter "列|Up/Down"），表头 4 列各带 ↑↓ 双箭头，当前列显示强调色箭头。验证：UIA 树 `Executions` 后出现 12x13 字形（(773,284)，默认降序→下箭头）+ OCR 确认。
+- **空态 CTA**：VM 可选注入 `SettingsShellViewModel`（单例，无环）+ `GoToPluginsCommand` → `NavigateAsync(SettingsPageIds.Plugins)`；空态加 Hint + "Manage Plugins" 按钮。验证：空态 E2E 树 `(751,475,173x35)` 按钮 + 视觉截图。
+- **趋势洞察**：引擎加 `CheckUsageTrend`（近 7 天 vs 前 7 天 DailyStats，阈值 max≥10 & |Δ|≥50%，可注入 clock）+ `UsageTrendUp/Down` 枚举 + 双语 resx；顺带修复 `OptimizeSlotPlacement` 硬编码英文标题。注意：**该推荐设计为无动作按钮（ActionCommand="" → UI 双按钮隐藏），非 bug**。
+- **修坑**：VM `DisablePlugin`/`ExportCsv` catch 硬编码英文 → resx 双语。
+- **测试**：全量 1087/1087（+16：converter 11、趋势 4、GoToPlugins 1）。**坑**：测试命名空间不能平铺 `Pulsar.Tests.Core`（会截断 `Core.Plugin.Metadata` 相对引用向上解析到 `Pulsar.Core`），用 `Pulsar.Tests.Converters` 目录约定。
+- **E2E 重要发现**：空态工作流自数据 fixture 修复后从未真正通过（两工作流共用 Fixtures/ 目录→数据 fixture 总被安装→空态永不出现；此前"PASS"是旧 fixture 静默空态的症状）。修复：`Fixtures/empty/default-profiles-dark.json`（无 stats 兄弟文件）+ 空态工作流 fixture 指向它 + 空态工作流加 dump 步骤。空态/数据态工作流现在都 PASS（21.6s/23.6s）。
+- **验证**：数据态 v1 表头对齐保持（UIA 702/827/953/1078），排序箭头渲染；空态 v4 树+视觉双确认。
+
+**分支状态**：`feat/analytics-ui-polish` 现有 11 个提交（main..HEAD），工作区干净；**合并回 main 未执行**（WorkBuddy 并行中）。
+**剩余**：P3 低干扰模式（未批准）；插件下钻（P4 未做，探索文档 `Docs/proposals/ANALYTICS_P4_EXPLORATION.md` 有方案，2-4h）。
+
+---
+
 ## 0. 当前最重要的事（先做这个）
 
 - **WorkBuddy 正在原始仓库（`E:\8_Project\10_C#\Pulsar_Project`，main worktree）同步 apply changes。你绝不能在 main worktree 里改任何文件。**
