@@ -523,6 +523,12 @@ Docs/media/
 # not source workflows)
 Pulsar/Pulsar.E2E/Workflows/_bisect-*.json
 
+# Source namespace dirs that collide with generic build-output rules above:
+# `[Dd]ebug/` would silently ignore Pulsar/Pulsar/Core/Debug/ (a real source
+# folder) — this is exactly why Core/Debug/DebugModeOptions.cs was missing
+# from commits and main did not compile. Re-include the source folder.
+!Pulsar/Pulsar/Core/Debug/
+
 # Local build warning snapshots
 build_warnings_*.txt
 
