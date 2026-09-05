@@ -10,6 +10,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Localization;
 using Pulsar.Models;
+using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Microsoft.Win32;
 
@@ -24,6 +25,7 @@ namespace Pulsar.ViewModels.Settings
         private readonly ILocalizationService _loc;
         private readonly IPluginLogService? _logService;
         private readonly IDialogService? _dialogService;
+        private readonly SettingsShellViewModel? _settingsShell;
 
         public ObservableCollection<AnalyticsItem> MostUsedPlugins { get; } = new();
         public ObservableCollection<SlotHeatmapItem> SlotHeatmap { get; } = new();
@@ -79,7 +81,8 @@ namespace Pulsar.ViewModels.Settings
             ILocalizationService localizationService,
             IPluginRecommendationEngine? recommendationEngine = null,
             IPluginLogService? logService = null,
-            IDialogService? dialogService = null)
+            IDialogService? dialogService = null,
+            SettingsShellViewModel? settingsShell = null)
         {
             _readModel = readModel;
             _runtimeOps = runtimeOps;
@@ -88,6 +91,7 @@ namespace Pulsar.ViewModels.Settings
             _recommendationEngine = recommendationEngine;
             _logService = logService;
             _dialogService = dialogService;
+            _settingsShell = settingsShell;
         }
 
         partial void OnTimeRangeChanged(AnalyticsTimeRange value)
@@ -214,7 +218,7 @@ namespace Pulsar.ViewModels.Settings
             {
                 _logger.LogError(ex, "Failed to disable plugin {PluginId}", pluginId);
                 HasError = true;
-                ErrorMessage = $"Failed to disable plugin: {ex.Message}";
+                ErrorMessage = string.Format(_loc["Settings.Analytics.ErrorDisablePlugin"], ex.Message);
             }
         }
 
@@ -239,7 +243,7 @@ namespace Pulsar.ViewModels.Settings
                 {
                     _logger.LogError(ex, "Failed to export CSV");
                     HasError = true;
-                    ErrorMessage = $"Failed to export CSV: {ex.Message}";
+                    ErrorMessage = string.Format(_loc["Settings.Analytics.ErrorExportCsv"], ex.Message);
                 }
             }
         }
@@ -248,6 +252,17 @@ namespace Pulsar.ViewModels.Settings
         private async Task Refresh()
         {
             await LoadAsync();
+        }
+
+        [RelayCommand]
+        private async Task GoToPlugins()
+        {
+            if (_settingsShell == null)
+            {
+                return;
+            }
+
+            await _settingsShell.NavigateAsync(SettingsPageIds.Plugins, userInitiated: true);
         }
     }
 }

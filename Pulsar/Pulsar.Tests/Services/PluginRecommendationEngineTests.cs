@@ -43,14 +43,15 @@ namespace Pulsar.Tests.Services
             return mock.Object;
         }
 
-        private PluginRecommendationEngine CreateEngine()
+        private PluginRecommendationEngine CreateEngine(Func<DateTime>? clock = null)
         {
             return new PluginRecommendationEngine(
                 _registryMock.Object,
                 _usageTrackerMock.Object,
                 _healthMonitorMock.Object,
                 _loggerMock.Object,
-                _loc);
+                _loc,
+                clock);
         }
 
         [Fact]
@@ -254,6 +255,112 @@ namespace Pulsar.Tests.Services
             var recommendations = engine.GetRecommendationsForPlugin("plugin.never.used");
 
             recommendations.Should().AllSatisfy(r => r.PluginId.Should().Be("plugin.never.used"));
+        }
+
+        private static PluginUsageStats CreateStatsWithTrend(string id, int recentPerDay, int previousPerDay, DateTime now)
+        {
+            var daily = new Dictionary<string, int>();
+            for (int i = 0; i < 7; i++)
+            {
+                daily[now.AddDays(-i).ToString("yyyy-MM-dd")] = recentPerDay;
+                daily[now.AddDays(-i - 7).ToString("yyyy-MM-dd")] = previousPerDay;
+            }
+
+            return new PluginUsageStats
+            {
+                PluginId = id,
+                TotalExecutions = recentPerDay * 7 + previousPerDay * 7,
+                DailyStats = daily,
+                LastUsed = now
+            };
+        }
+
+        [Fact]
+        public void RecentUsageDoublesPrevious_TriggersUsageTrendUp()
+        {
+            var now = new DateTime(2026, 9, 2, 12, 0, 0);
+            var stats = CreateStatsWithTrend("plugin.used.often", recentPerDay: 20, previousPerDay: 5, now);
+            _usageTrackerMock.Setup(u => u.GetAllStats()).Returns(new Dictionary<string, PluginUsageStats>
+            {
+                ["plugin.used.often"] = stats
+            });
+            _healthMonitorMock.Setup(h => h.GetAllHealthReports()).Returns(new Dictionary<string, PluginHealthReport>
+            {
+                ["plugin.used.often"] = new PluginHealthReport { PluginId = "plugin.used.often" }
+            });
+
+            var engine = CreateEngine(() => now);
+            var recommendations = engine.GetRecommendations();
+
+            recommendations.Should().Contain(r =>
+                r.PluginId == "plugin.used.often" &&
+                r.Type == RecommendationType.UsageTrendUp);
+        }
+
+        [Fact]
+        public void RecentUsageHalvesPrevious_TriggersUsageTrendDown()
+        {
+            var now = new DateTime(2026, 9, 2, 12, 0, 0);
+            var stats = CreateStatsWithTrend("plugin.used.often", recentPerDay: 5, previousPerDay: 20, now);
+            _usageTrackerMock.Setup(u => u.GetAllStats()).Returns(new Dictionary<string, PluginUsageStats>
+            {
+                ["plugin.used.often"] = stats
+            });
+            _healthMonitorMock.Setup(h => h.GetAllHealthReports()).Returns(new Dictionary<string, PluginHealthReport>
+            {
+                ["plugin.used.often"] = new PluginHealthReport { PluginId = "plugin.used.often" }
+            });
+
+            var engine = CreateEngine(() => now);
+            var recommendations = engine.GetRecommendations();
+
+            recommendations.Should().Contain(r =>
+                r.PluginId == "plugin.used.often" &&
+                r.Type == RecommendationType.UsageTrendDown);
+        }
+
+        [Fact]
+        public void UsageChangeBelowThreshold_DoesNotTriggerTrend()
+        {
+            var now = new DateTime(2026, 9, 2, 12, 0, 0);
+            var stats = CreateStatsWithTrend("plugin.used.often", recentPerDay: 12, previousPerDay: 10, now);
+            _usageTrackerMock.Setup(u => u.GetAllStats()).Returns(new Dictionary<string, PluginUsageStats>
+            {
+                ["plugin.used.often"] = stats
+            });
+            _healthMonitorMock.Setup(h => h.GetAllHealthReports()).Returns(new Dictionary<string, PluginHealthReport>
+            {
+                ["plugin.used.often"] = new PluginHealthReport { PluginId = "plugin.used.often" }
+            });
+
+            var engine = CreateEngine(() => now);
+            var recommendations = engine.GetRecommendations();
+
+            recommendations.Should().NotContain(r =>
+                r.PluginId == "plugin.used.often" &&
+                (r.Type == RecommendationType.UsageTrendUp || r.Type == RecommendationType.UsageTrendDown));
+        }
+
+        [Fact]
+        public void PreviousWindowEmpty_DoesNotTriggerTrend()
+        {
+            var now = new DateTime(2026, 9, 2, 12, 0, 0);
+            var stats = CreateStatsWithTrend("plugin.used.often", recentPerDay: 15, previousPerDay: 0, now);
+            _usageTrackerMock.Setup(u => u.GetAllStats()).Returns(new Dictionary<string, PluginUsageStats>
+            {
+                ["plugin.used.often"] = stats
+            });
+            _healthMonitorMock.Setup(h => h.GetAllHealthReports()).Returns(new Dictionary<string, PluginHealthReport>
+            {
+                ["plugin.used.often"] = new PluginHealthReport { PluginId = "plugin.used.often" }
+            });
+
+            var engine = CreateEngine(() => now);
+            var recommendations = engine.GetRecommendations();
+
+            recommendations.Should().NotContain(r =>
+                r.PluginId == "plugin.used.often" &&
+                (r.Type == RecommendationType.UsageTrendUp || r.Type == RecommendationType.UsageTrendDown));
         }
     }
 }

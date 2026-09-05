@@ -5,6 +5,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:controls="clr-namespace:Pulsar.Views.Controls"
+      xmlns:converters="clr-namespace:Pulsar.Core.Converters"
       xmlns:models="clr-namespace:Pulsar.Models"
       xmlns:lex="clr-namespace:Pulsar.Core.Localization"
       mc:Ignorable="d" 
@@ -18,6 +19,7 @@
             </ResourceDictionary.MergedDictionaries>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+            <converters:SortArrowVisibilityConverter x:Key="SortArrowVisibilityConverter"/>
 
             <!-- 排序表头：轻量可点击文本（替代按钮化表头），列宽与下方卡片度量列对齐 -->
             <Style x:Key="AnalyticsSortHeaderText" TargetType="TextBlock">
@@ -78,6 +80,11 @@
                     </ui:CardControl.Style>
                     <controls:EmptyState Icon="DataPie24"
                                          Title="{lex:Locale Settings.Analytics.NoData}"
+                                         Hint="{lex:Locale Settings.Analytics.NoDataHint}"
+                                         ActionText="{lex:Locale Settings.Analytics.NoDataAction}"
+                                         ActionIcon="PuzzlePiece24"
+                                         ActionButtonStyle="{StaticResource PulsarSecondaryButtonStyle}"
+                                         ActionCommand="{Binding GoToPluginsCommand}"
                                          AutomationProperties.AutomationId="Pulsar.Settings.Analytics.EmptyState"
                                          Margin="{StaticResource Pulsar.Gap.Vertical.XXL}"/>
                 </ui:CardControl>
@@ -336,30 +343,110 @@
                     <TextBlock Grid.Column="0" Text="#" FontSize="{StaticResource Pulsar.Type.Caption}" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextFillColorTertiaryBrush}" Width="32"
                                Margin="{StaticResource Pulsar.Gap.Right.LG}" VerticalAlignment="Center"/>
-                    <TextBlock Grid.Column="1" Text="{lex:Locale Settings.Analytics.SortByExecutions}"
-                               Style="{StaticResource AnalyticsSortHeaderText}">
-                        <TextBlock.InputBindings>
+                    <Grid Grid.Column="1">
+                        <Grid.InputBindings>
                             <MouseBinding MouseAction="LeftClick" Command="{Binding SetSortCommand}" CommandParameter="Executions"/>
-                        </TextBlock.InputBindings>
-                    </TextBlock>
-                    <TextBlock Grid.Column="2" Text="{lex:Locale Settings.Analytics.SortBySuccessRate}"
-                               Style="{StaticResource AnalyticsSortHeaderText}">
-                        <TextBlock.InputBindings>
+                        </Grid.InputBindings>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{lex:Locale Settings.Analytics.SortByExecutions}" Style="{StaticResource AnalyticsSortHeaderText}"/>
+                            <ui:SymbolIcon Symbol="ArrowUp24" FontSize="12" Margin="{StaticResource Pulsar.Gap.Left.XS}"
+                                           VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorAccentBrush}">
+                                <ui:SymbolIcon.Visibility>
+                                    <MultiBinding Converter="{StaticResource SortArrowVisibilityConverter}" ConverterParameter="Executions|Up">
+                                        <Binding Path="SortColumn"/>
+                                        <Binding Path="SortAscending"/>
+                                    </MultiBinding>
+                                </ui:SymbolIcon.Visibility>
+                            </ui:SymbolIcon>
+                            <ui:SymbolIcon Symbol="ArrowDown24" FontSize="12" Margin="{StaticResource Pulsar.Gap.Left.XS}"
+                                           VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorAccentBrush}">
+                                <ui:SymbolIcon.Visibility>
+                                    <MultiBinding Converter="{StaticResource SortArrowVisibilityConverter}" ConverterParameter="Executions|Down">
+                                        <Binding Path="SortColumn"/>
+                                        <Binding Path="SortAscending"/>
+                                    </MultiBinding>
+                                </ui:SymbolIcon.Visibility>
+                            </ui:SymbolIcon>
+                        </StackPanel>
+                    </Grid>
+                    <Grid Grid.Column="2">
+                        <Grid.InputBindings>
                             <MouseBinding MouseAction="LeftClick" Command="{Binding SetSortCommand}" CommandParameter="SuccessRate"/>
-                        </TextBlock.InputBindings>
-                    </TextBlock>
-                    <TextBlock Grid.Column="3" Text="{lex:Locale Settings.Analytics.SortByDuration}"
-                               Style="{StaticResource AnalyticsSortHeaderText}">
-                        <TextBlock.InputBindings>
+                        </Grid.InputBindings>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{lex:Locale Settings.Analytics.SortBySuccessRate}" Style="{StaticResource AnalyticsSortHeaderText}"/>
+                            <ui:SymbolIcon Symbol="ArrowUp24" FontSize="12" Margin="{StaticResource Pulsar.Gap.Left.XS}"
+                                           VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorAccentBrush}">
+                                <ui:SymbolIcon.Visibility>
+                                    <MultiBinding Converter="{StaticResource SortArrowVisibilityConverter}" ConverterParameter="SuccessRate|Up">
+                                        <Binding Path="SortColumn"/>
+                                        <Binding Path="SortAscending"/>
+                                    </MultiBinding>
+                                </ui:SymbolIcon.Visibility>
+                            </ui:SymbolIcon>
+                            <ui:SymbolIcon Symbol="ArrowDown24" FontSize="12" Margin="{StaticResource Pulsar.Gap.Left.XS}"
+                                           VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorAccentBrush}">
+                                <ui:SymbolIcon.Visibility>
+                                    <MultiBinding Converter="{StaticResource SortArrowVisibilityConverter}" ConverterParameter="SuccessRate|Down">
+                                        <Binding Path="SortColumn"/>
+                                        <Binding Path="SortAscending"/>
+                                    </MultiBinding>
+                                </ui:SymbolIcon.Visibility>
+                            </ui:SymbolIcon>
+                        </StackPanel>
+                    </Grid>
+                    <Grid Grid.Column="3">
+                        <Grid.InputBindings>
                             <MouseBinding MouseAction="LeftClick" Command="{Binding SetSortCommand}" CommandParameter="Duration"/>
-                        </TextBlock.InputBindings>
-                    </TextBlock>
-                    <TextBlock Grid.Column="4" Text="{lex:Locale Settings.Analytics.SortByLastUsed}"
-                               Style="{StaticResource AnalyticsSortHeaderText}">
-                        <TextBlock.InputBindings>
+                        </Grid.InputBindings>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{lex:Locale Settings.Analytics.SortByDuration}" Style="{StaticResource AnalyticsSortHeaderText}"/>
+                            <ui:SymbolIcon Symbol="ArrowUp24" FontSize="12" Margin="{StaticResource Pulsar.Gap.Left.XS}"
+                                           VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorAccentBrush}">
+                                <ui:SymbolIcon.Visibility>
+                                    <MultiBinding Converter="{StaticResource SortArrowVisibilityConverter}" ConverterParameter="Duration|Up">
+                                        <Binding Path="SortColumn"/>
+                                        <Binding Path="SortAscending"/>
+                                    </MultiBinding>
+                                </ui:SymbolIcon.Visibility>
+                            </ui:SymbolIcon>
+                            <ui:SymbolIcon Symbol="ArrowDown24" FontSize="12" Margin="{StaticResource Pulsar.Gap.Left.XS}"
+                                           VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorAccentBrush}">
+                                <ui:SymbolIcon.Visibility>
+                                    <MultiBinding Converter="{StaticResource SortArrowVisibilityConverter}" ConverterParameter="Duration|Down">
+                                        <Binding Path="SortColumn"/>
+                                        <Binding Path="SortAscending"/>
+                                    </MultiBinding>
+                                </ui:SymbolIcon.Visibility>
+                            </ui:SymbolIcon>
+                        </StackPanel>
+                    </Grid>
+                    <Grid Grid.Column="4">
+                        <Grid.InputBindings>
                             <MouseBinding MouseAction="LeftClick" Command="{Binding SetSortCommand}" CommandParameter="LastUsed"/>
-                        </TextBlock.InputBindings>
-                    </TextBlock>
+                        </Grid.InputBindings>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{lex:Locale Settings.Analytics.SortByLastUsed}" Style="{StaticResource AnalyticsSortHeaderText}"/>
+                            <ui:SymbolIcon Symbol="ArrowUp24" FontSize="12" Margin="{StaticResource Pulsar.Gap.Left.XS}"
+                                           VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorAccentBrush}">
+                                <ui:SymbolIcon.Visibility>
+                                    <MultiBinding Converter="{StaticResource SortArrowVisibilityConverter}" ConverterParameter="LastUsed|Up">
+                                        <Binding Path="SortColumn"/>
+                                        <Binding Path="SortAscending"/>
+                                    </MultiBinding>
+                                </ui:SymbolIcon.Visibility>
+                            </ui:SymbolIcon>
+                            <ui:SymbolIcon Symbol="ArrowDown24" FontSize="12" Margin="{StaticResource Pulsar.Gap.Left.XS}"
+                                           VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorAccentBrush}">
+                                <ui:SymbolIcon.Visibility>
+                                    <MultiBinding Converter="{StaticResource SortArrowVisibilityConverter}" ConverterParameter="LastUsed|Down">
+                                        <Binding Path="SortColumn"/>
+                                        <Binding Path="SortAscending"/>
+                                    </MultiBinding>
+                                </ui:SymbolIcon.Visibility>
+                            </ui:SymbolIcon>
+                        </StackPanel>
+                    </Grid>
                 </Grid>
 
                 <!-- Usage Stats List -->

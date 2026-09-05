@@ -658,6 +658,16 @@
     <value>暂无使用数据。开始使用插件后即可查看统计信息。</value>
   </data>
   <data
+    name="Settings.Analytics.NoDataHint"
+    xml:space="preserve">
+    <value>从径向菜单执行任意插件，使用统计将显示在这里。</value>
+  </data>
+  <data
+    name="Settings.Analytics.NoDataAction"
+    xml:space="preserve">
+    <value>管理插件</value>
+  </data>
+  <data
     name="Settings.Analytics.Executions"
     xml:space="preserve">
     <value>次执行</value>
@@ -676,6 +686,16 @@
     name="Settings.Analytics.Loading"
     xml:space="preserve">
     <value>加载使用数据中...</value>
+  </data>
+  <data
+    name="Settings.Analytics.ErrorDisablePlugin"
+    xml:space="preserve">
+    <value>禁用插件失败：{0}</value>
+  </data>
+  <data
+    name="Settings.Analytics.ErrorExportCsv"
+    xml:space="preserve">
+    <value>导出 CSV 失败：{0}</value>
   </data>
   <data
     name="Settings.Analytics.SlotHeatmap"
@@ -3216,6 +3236,31 @@
     name="Plugin.Recommendation.InactiveFormat"
     xml:space="preserve">
     <value>{0} 已不活跃 {1} 天。请检查是否仍需使用。</value>
+  </data>
+  <data
+    name="Plugin.Recommendation.SlotOptimizationTitle"
+    xml:space="preserve">
+    <value>插槽优化：{0}</value>
+  </data>
+  <data
+    name="Plugin.Recommendation.UsageTrendUpTitle"
+    xml:space="preserve">
+    <value>用量增长</value>
+  </data>
+  <data
+    name="Plugin.Recommendation.UsageTrendUpFormat"
+    xml:space="preserve">
+    <value>{0} 近 7 天用量上升 {1}%（{3} → {2} 次）</value>
+  </data>
+  <data
+    name="Plugin.Recommendation.UsageTrendDownTitle"
+    xml:space="preserve">
+    <value>用量下滑</value>
+  </data>
+  <data
+    name="Plugin.Recommendation.UsageTrendDownFormat"
+    xml:space="preserve">
+    <value>{0} 近 7 天用量下滑 {1}%（{2} → {3} 次）</value>
   </data>
   <data
     name="Profile.ConfigurationIssues"

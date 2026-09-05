@@ -8,6 +8,7 @@ using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin;
 using Pulsar.Models;
 using Pulsar.Models.Enums;
+using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels.Dialogs;
 using Pulsar.ViewModels.Settings;
@@ -39,7 +40,8 @@ namespace Pulsar.Tests.ViewModels
             Dictionary<string, PluginUsageStats> allStats,
             List<IPulsarPlugin>? plugins = null,
             IPluginLogService? logService = null,
-            IDialogService? dialogService = null)
+            IDialogService? dialogService = null,
+            SettingsShellViewModel? settingsShell = null)
         {
             plugins ??= new List<IPulsarPlugin> { CreatePlugin("plugin.a", "Plugin A") };
             _registryMock.Setup(r => r.GetAllPlugins()).Returns(plugins);
@@ -57,7 +59,8 @@ namespace Pulsar.Tests.ViewModels
                 _loggerMock.Object,
                 _loc,
                 logService: logService,
-                dialogService: dialogService);
+                dialogService: dialogService,
+                settingsShell: settingsShell);
         }
 
         private static PluginUsageStats CreateStats(string id, int totalExecs, int todayCount)
@@ -148,6 +151,29 @@ namespace Pulsar.Tests.ViewModels
                     It.IsAny<DialogButtons>(),
                     It.IsAny<DialogSizeConstraints>()),
                 Times.Once);
+        }
+
+        [Fact]
+        public async Task GoToPlugins_NavigatesShellToPluginsPage()
+        {
+            var prefsMock = new Mock<ILocalUiPreferencesService>();
+            prefsMock.Setup(p => p.GetLastOpenedSettingsPageId()).Returns(SettingsPageIds.Analytics);
+            var navigationGuardMock = new Mock<ISettingsNavigationGuard>();
+            navigationGuardMock.Setup(g => g.CanNavigateAwayAsync(It.IsAny<string>(), It.IsAny<bool>()))
+                .ReturnsAsync(true);
+
+            var settingsShell = new SettingsShellViewModel(
+                new SettingsPageCatalog(_loc),
+                prefsMock.Object,
+                navigationGuardMock.Object,
+                new Mock<ILogger<SettingsShellViewModel>>().Object);
+
+            var vm = CreateViewModel(new Dictionary<string, PluginUsageStats>(), settingsShell: settingsShell);
+
+            await vm.GoToPluginsCommand.ExecuteAsync(null);
+
+            settingsShell.CurrentPageId.Should().Be(SettingsPageIds.Plugins);
+            prefsMock.Verify(p => p.SetLastOpenedSettingsPageId(SettingsPageIds.Plugins), Times.Once);
         }
     }
 }

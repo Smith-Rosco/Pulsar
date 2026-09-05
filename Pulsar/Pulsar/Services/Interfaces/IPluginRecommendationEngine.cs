@@ -13,7 +13,9 @@ namespace Pulsar.Services.Interfaces
         CheckPluginErrors,
         OptimizePerformance,
         InactivePlugin,
-        OptimizeSlotPlacement
+        OptimizeSlotPlacement,
+        UsageTrendUp,
+        UsageTrendDown
     }
 
     public class PluginRecommendation

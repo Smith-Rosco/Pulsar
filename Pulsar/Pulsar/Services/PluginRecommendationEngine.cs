@@ -15,25 +15,31 @@ namespace Pulsar.Services
         private readonly IPluginHealthMonitor _healthMonitor;
         private readonly ILogger<PluginRecommendationEngine> _logger;
         private readonly ILocalizationService _loc;
+        private readonly Func<DateTime> _clock;
 
         private const int UnusedDaysThreshold = 30;
         private const double HighErrorRateThreshold = 0.2;
         private const int MinExecutionsForRecommendation = 5;
         private const int InactiveDaysThreshold = 7;
         private const int MinExecsForInactivityAlert = 50;
+        private const int TrendWindowDays = 7;
+        private const int MinExecutionsForTrend = 10;
+        private const double TrendChangeThreshold = 0.5;
 
         public PluginRecommendationEngine(
             IPluginRegistry registry,
             IPluginUsageTracker usageTracker,
             IPluginHealthMonitor healthMonitor,
             ILogger<PluginRecommendationEngine> logger,
-            ILocalizationService localizationService)
+            ILocalizationService localizationService,
+            Func<DateTime>? clock = null)
         {
             _registry = registry;
             _usageTracker = usageTracker;
             _healthMonitor = healthMonitor;
             _logger = logger;
             _loc = localizationService;
+            _clock = clock ?? (() => DateTime.Now);
         }
 
         public List<PluginRecommendation> GetRecommendations()
@@ -59,6 +65,7 @@ namespace Pulsar.Services
                     CheckHighErrorRate(plugin, stats, health, recommendations);
                     CheckInactivePlugin(plugin, stats, recommendations);
                     CheckSlotOptimization(plugin, stats, recommendations);
+                    CheckUsageTrend(plugin, stats, recommendations);
                 }
             }
             catch (Exception ex)
@@ -86,6 +93,7 @@ namespace Pulsar.Services
                 CheckHighErrorRate(plugin, stats, health, recommendations);
                 CheckInactivePlugin(plugin, stats, recommendations);
                 CheckSlotOptimization(plugin, stats, recommendations);
+                CheckUsageTrend(plugin, stats, recommendations);
             }
             catch (Exception ex)
             {
@@ -210,12 +218,73 @@ namespace Pulsar.Services
                 recommendations.Add(new PluginRecommendation
                 {
                     Type = RecommendationType.OptimizeSlotPlacement,
-                    Title = $"Slot Optimization: {displayName}",
+                    Title = string.Format(_loc["Plugin.Recommendation.SlotOptimizationTitle"], displayName),
                     Message = _loc["Settings.Analytics.Recommendation.MoveSlot"],
                     PluginId = plugin.Id,
                     PluginName = displayName,
                     ActionLabel = "",
                     Icon = "\U0001f4c8",
+                    Severity = "Info"
+                });
+            }
+        }
+
+        /// <summary>
+        /// 用量趋势洞察：比较近 7 天与前一 7 天（DailyStats 本地日期键）的执行量，
+        /// 任一窗口 ≥ <see cref="MinExecutionsForTrend"/> 且变化幅度 ≥ <see cref="TrendChangeThreshold"/> 时给出增长/下滑推荐。
+        /// 纯信息型推荐（无动作按钮），由 UI 的 ActionCommand 为空分支呈现。
+        /// </summary>
+        private void CheckUsageTrend(IPulsarPlugin plugin, Models.PluginUsageStats stats, List<PluginRecommendation> recommendations)
+        {
+            if (stats.DailyStats == null || stats.DailyStats.Count == 0)
+                return;
+
+            var now = _clock();
+            var recent = 0;
+            var previous = 0;
+            for (int i = 0; i < TrendWindowDays; i++)
+            {
+                var recentKey = now.AddDays(-i).ToString("yyyy-MM-dd");
+                var previousKey = now.AddDays(-i - TrendWindowDays).ToString("yyyy-MM-dd");
+                recent += stats.DailyStats.GetValueOrDefault(recentKey);
+                previous += stats.DailyStats.GetValueOrDefault(previousKey);
+            }
+
+            if (previous <= 0 || Math.Max(recent, previous) < MinExecutionsForTrend)
+                return;
+
+            var change = (double)(recent - previous) / previous;
+            if (Math.Abs(change) < TrendChangeThreshold)
+                return;
+
+            var percentChange = (int)Math.Round(Math.Abs(change) * 100);
+            var displayName = LocalizePluginName(plugin);
+
+            if (change > 0)
+            {
+                recommendations.Add(new PluginRecommendation
+                {
+                    Type = RecommendationType.UsageTrendUp,
+                    Title = _loc["Plugin.Recommendation.UsageTrendUpTitle"],
+                    Message = string.Format(_loc["Plugin.Recommendation.UsageTrendUpFormat"], displayName, percentChange, recent, previous),
+                    PluginId = plugin.Id,
+                    PluginName = displayName,
+                    ActionLabel = "",
+                    Icon = "\U0001f4c8",
+                    Severity = "Info"
+                });
+            }
+            else
+            {
+                recommendations.Add(new PluginRecommendation
+                {
+                    Type = RecommendationType.UsageTrendDown,
+                    Title = _loc["Plugin.Recommendation.UsageTrendDownTitle"],
+                    Message = string.Format(_loc["Plugin.Recommendation.UsageTrendDownFormat"], displayName, percentChange, recent, previous),
+                    PluginId = plugin.Id,
+                    PluginName = displayName,
+                    ActionLabel = "",
+                    Icon = "\U0001f4c9",
                     Severity = "Info"
                 });
             }

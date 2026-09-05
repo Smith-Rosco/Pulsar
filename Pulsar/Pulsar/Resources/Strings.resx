@@ -402,6 +402,12 @@
    <data name="Settings.Analytics.NoData" xml:space="preserve">
      <value>No usage data available yet. Start using your plugins to see statistics here.</value>
    </data>
+   <data name="Settings.Analytics.NoDataHint" xml:space="preserve">
+     <value>Execute any plugin from the radial menu — usage statistics will appear here.</value>
+   </data>
+   <data name="Settings.Analytics.NoDataAction" xml:space="preserve">
+     <value>Manage Plugins</value>
+   </data>
    <data name="Settings.Analytics.Executions" xml:space="preserve">
      <value>executions</value>
    </data>
@@ -413,6 +419,12 @@
     </data>
     <data name="Settings.Analytics.Loading" xml:space="preserve">
       <value>Loading usage data...</value>
+    </data>
+    <data name="Settings.Analytics.ErrorDisablePlugin" xml:space="preserve">
+      <value>Failed to disable plugin: {0}</value>
+    </data>
+    <data name="Settings.Analytics.ErrorExportCsv" xml:space="preserve">
+      <value>Failed to export CSV: {0}</value>
     </data>
     <data name="Settings.Analytics.SlotHeatmap" xml:space="preserve">
       <value>Slot Position Usage</value>
@@ -1972,6 +1984,21 @@
   </data>
   <data name="Plugin.Recommendation.InactiveFormat" xml:space="preserve">
     <value>{0} has been inactive for {1} days. Check if it's still needed.</value>
+  </data>
+  <data name="Plugin.Recommendation.SlotOptimizationTitle" xml:space="preserve">
+    <value>Slot Optimization: {0}</value>
+  </data>
+  <data name="Plugin.Recommendation.UsageTrendUpTitle" xml:space="preserve">
+    <value>Usage Growing</value>
+  </data>
+  <data name="Plugin.Recommendation.UsageTrendUpFormat" xml:space="preserve">
+    <value>{0} usage is up {1}% in the last 7 days ({3} → {2} executions)</value>
+  </data>
+  <data name="Plugin.Recommendation.UsageTrendDownTitle" xml:space="preserve">
+    <value>Usage Declining</value>
+  </data>
+  <data name="Plugin.Recommendation.UsageTrendDownFormat" xml:space="preserve">
+    <value>{0} usage is down {1}% in the last 7 days ({2} → {3} executions)</value>
   </data>
   <!-- ==================== FirstLaunchSetupWizard ==================== -->
   <data name="FirstLaunch.GeneralProductivity" xml:space="preserve">
