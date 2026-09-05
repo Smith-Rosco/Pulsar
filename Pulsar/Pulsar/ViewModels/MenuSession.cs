@@ -58,10 +58,14 @@ namespace Pulsar.ViewModels
         private const double SubMenuCollapsedOpacity = 0.0;
 
         /// <summary>
-        /// Cascade sub-ring radius as a fraction of the root ring radius (visual
-        /// tuning; Change C may refine the exact ratio).
+        /// Cascade sub-ring radius as a fraction of the root ring radius.
+        /// 0.90 (r=81 @ root 90): child inner edge = 56 &gt; center slot radius 35,
+        /// giving 21-DIP clearance from the "Back" button. Fan3 wing spacing
+        /// = 81 &gt; slot 50 (no overlap); Ring5 adjacent = 95 &gt; 50.
+        /// History: 0.60 (r=54, overlapped center by 6) → 0.75 (r=67.5, 7.5-DIP
+        /// gap, still "过近" in manual QA 2026-09-05) → 0.90 (r=81).
         /// </summary>
-        private const double SubMenuRingRadiusRatio = 0.60;
+        private const double SubMenuRingRadiusRatio = 0.90;
 
         private static readonly TimeSpan MenuWatchdogTimeout = TimeSpan.FromSeconds(60);
 
@@ -2013,7 +2017,16 @@ namespace Pulsar.ViewModels
             }
 
             var pose = BuildCascadeParentPose();
-            return _subMenuLayoutEngine.HitTestChild(relativePosition, pose, cascade.LayoutStyle, childCount);
+            // relativePosition is viewport/window DIP (menu center = _menuCenterX/Y).
+            // The pose is now in MenuCanvas-local space (center = 250), so translate
+            // the point into local space before hit-testing. dx after translation:
+            // (relX - MenuCanvasLeft) - 250 = (relX - (_menuCenterX-250)) - 250
+            // = relX - _menuCenterX, identical to the pre-fix viewport-space dx, so
+            // hit-test geometry is preserved while render coordinates are corrected.
+            var localPosition = new Vector(
+                relativePosition.X - MenuCanvasLeft,
+                relativePosition.Y - MenuCanvasTop);
+            return _subMenuLayoutEngine.HitTestChild(localPosition, pose, cascade.LayoutStyle, childCount);
         }
 
         private int GetCascadePageChildCount(CascadeSubMenuDescriptor cascade)
@@ -2024,19 +2037,28 @@ namespace Pulsar.ViewModels
 
         private SubMenuParentPose BuildCascadeParentPose()
         {
+            // Slot X/Y are MenuCanvas-local coordinates (0..CanvasSize, center =
+            // CenterX/CenterY = 250). The canvas itself is translated to the menu
+            // center via MenuCanvasLeft/Top, so child positions MUST be computed in
+            // local space. Using _menuCenterX/_menuCenterY (viewport DIP) here
+            // double-translates children: render = (_menuCenter-250) + (_menuCenter+r)
+            // = 2*_menuCenter-250+r, flying them far from the menu center. It also
+            // makes maxSafeRadius negative when the menu center is outside the 500x500
+            // canvas, clamping subRingRadius to its 20-DIP minimum and collapsing
+            // multi-wing fans into an overlapping blob.
             double direction = Math.Atan2(
-                _subMenuOriginY - _rootMenuCenterY,
-                _subMenuOriginX - _rootMenuCenterX);
+                _subMenuOriginY - CenterY,
+                _subMenuOriginX - CenterX);
 
             double halfSlot = _currentSlotSize / 2;
             double maxSafeRadius = Math.Max(0, Math.Min(
-                Math.Min(_menuCenterX, CanvasSize - _menuCenterX),
-                Math.Min(_menuCenterY, CanvasSize - _menuCenterY)) - halfSlot);
+                Math.Min(CenterX, CanvasSize - CenterX),
+                Math.Min(CenterY, CanvasSize - CenterY)) - halfSlot);
             double subRingRadius = Math.Max(20, Math.Min(_currentRadius * SubMenuRingRadiusRatio, maxSafeRadius));
 
             return new SubMenuParentPose(
-                _menuCenterX,
-                _menuCenterY,
+                CenterX,
+                CenterY,
                 direction,
                 subRingRadius,
                 _currentSlotSize,

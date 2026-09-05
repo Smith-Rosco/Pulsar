@@ -157,6 +157,26 @@ namespace Pulsar.Services
                 }
             }
 
+            // [Fan hit-test fix 2026-09-05] The nearest-wing rule alone resolves
+            // EVERY angle inside the radial band [deadZone, fanExtent] to a wing, so
+            // the pointer triggers children from anywhere around the center slot —
+            // manual QA: children rendered in the parent's direction but firing when
+            // the cursor was near the center slot. Constrain the selection to the
+            // wing's own geometric sector (half the gap to the neighbouring wing):
+            // 2 wings → ±30°, 3 wings → ±15°, single tip → ±30°. Points between
+            // wings, or off to the side of the fan, now resolve to -1.
+            double halfSector = childCount switch
+            {
+                1 => FanWingAngle,
+                2 => FanWingAngle,
+                _ => FanWingAngle / 2.0
+            };
+
+            if (bestDiff > halfSector)
+            {
+                return -1;
+            }
+
             return best + 1;
         }
 

@@ -1,9 +1,10 @@
 # Tasks — Cascade SubMenu Fan QA 收尾
 
-> **执行状态（2026-09-05 20:10，QA 暂停点）**
+> **执行状态（2026-09-05 21:4x，QA 暂停点 · 位置问题分析已推进）**
 > - 已完成：1.1 / 1.2（QA 准备）、3.1（Fan 方向几何缺陷修复 + 6 个回归测试，全量 1066/1066 绿）。
-> - 进行中：2.x 人工 QA——A 组修复后重验**部分通过**（Fan2/3 子项可见且方向正确），用户反馈「位置仍有问题」（疑似 ADR-011 决策 6 `SubMenuRingRadiusRatio=0.6` 参数口径，需走 Amendment），B–H 未执行。
-> - 待办：A 组余项（A3/A4）与 B–H 全部用例；3.2 视 2.4 结果；4.1–4.3 收尾。
+> - 进行中：2.x 人工 QA——A 组修复后重验**部分通过**（Fan2/3 子项可见且方向正确），用户反馈「位置仍有问题」，B–H 未执行。
+> - **新增（2026-09-05 21:4x，未动代码/未跑 E2E，用户在打游戏）**：ADR-011 决策 6 修订**草案**已产出——`submenu-radius-geometry-amendment-draft.md`。纯几何量化钉死了位置问题的客观基线：Fan3 相邻翼距仅 27.95 DIP（槽位 50 → 重叠 22）；子项与中心圆重叠 6 DIP；子环与根环槽位带径向重叠 14 DIP；并发现「避开中心圆需 r≥60 且避开根环槽位带需 r≤40」的可行域矛盾，Fan3 结构性需 r≥96.6（根环外侧）。推荐方案 A（Fan 移根环外侧 r≈120），Ring 视 QA 现象再定。
+> - 待办：① 用户 QA 按下轮截图指引（草案 §5）拍 4 张现象照 → ② 草案定稿 → ADR-011 追加 Amendment 小节 → ③ 实施（Fan/Ring 半径参数化 + 新增"不重叠"回归断言）→ ④ A 组余项（A3/A4）与 B–H 全部用例 → ⑤ 3.2 视 2.4 结果 → ⑥ 4.1–4.3 收尾。
 > - 环境注意：人工 QA 必须用**真实配置的正常实例**（`--ui-debug` 不装鼠标钩子，无鼠标交互）；fixture 载入/还原步骤见 `qa-checklist.md` 准备节。
 
 ## 1. QA 准备
@@ -34,6 +35,8 @@
       - 回归测试：`SubMenuLayoutEngineTests` 新增 `ComputeChildPositions_Fan_ShouldRespectParentDirection`（direction=−90° 时三翼落 −120°/−90°/−60°）与 `Fan_LayoutAndHitTest_ShouldAgreeAtEveryChildCenter`（四个父方向 × 1–3 子项，布局输出位置命中必须回到自身）；新增 `CascadeSubMenuLayoutRuntimeTests`（真引擎 + 真 MenuSession：Fan2 子项落小环、Ring5 均布小环、filler 留根环）。
       - 全量 1066/1066 通过（原基线 1060 + 6）。
 - [ ] 3.2 若涉及分页语义调整：补 ADR-011 Amendment 后再改代码
+- [ ] 3.3 位置参数修订（ADR-011 决策 6，草案见 `submenu-radius-geometry-amendment-draft.md`）：QA 截图确认现象 → 定稿 Amendment → 实施（推荐方案 A：Fan 移根环外侧 r≈120；Ring 视现象另定）→ 更新 `CascadeSubMenuLayoutRuntimeTests` 断言并**新增"子项互不重叠 / 不撞中心圆"回归断言**（堵住本轮暴露的测试盲区）
+- [x] 3.4 **Fan 命中扇区约束修复（验证通过）**：用户实测「子 slot 沿父方向渲染（如右下），但鼠标在中心槽附近即触发」→ 根因 `SubMenuLayoutEngine.HitTestFan` 无角度扇区约束，`[deadZone, fanExtent]` 全圆周按最近翼角命中；修复为翼只在自己的几何扇区内命中（2 翼 ±30° / 3 翼 ±15° / 单翼 ±30°），扇区外返回 -1。已改 `Services/SubMenuLayoutEngine.cs` + 新增 3 个回归测试（`OutsideWingSector` / `NearCenter_OffWingDirection`（用户场景）/ `InsideWingSector`）。**验证：全量 1095/1095 通过（原 1092+3），构建 0 警告 0 错误**。spec 语义补全：`cascade-submenu-layout` 「Fan hit test picks nearest wing」未限定角度范围，本修复按 QA B1/B4（指哪亮哪/扇区外不误触）补齐
 
 ## 4. 文档收口 & 验证
 

@@ -280,6 +280,70 @@ namespace Pulsar.Tests.Services
             _engine.HitTestChild(new Vector(350, 250), Pose, SubMenuLayoutStyle.Fan, 4).Should().Be(1);
         }
 
+        [Fact]
+        public void HitTestChild_Fan_OutsideWingSector_ShouldReturnMinusOne()
+        {
+            // [Fan hit-test fix 2026-09-05] Wings own half the gap to their neighbour
+            // (3 wings → ±15°, 2 wings → ±30°, single tip → ±30°). Points off to the
+            // side of the fan must NOT resolve to a wing — previously every angle
+            // inside the radial band hit the nearest wing.
+            var pose = Pose; // direction 0 (east), band [40, 125]
+
+            // 3 wings: +60° / -60° are 30° past the lower/upper wing (±30°) → beyond 15°.
+            _engine.HitTestChild(new Vector(250 + 60 * Math.Cos(Math.PI / 3), 250 + 60 * Math.Sin(Math.PI / 3)),
+                pose, SubMenuLayoutStyle.Fan, 3).Should().Be(-1);
+            _engine.HitTestChild(new Vector(250 + 60 * Math.Cos(-Math.PI / 3), 250 + 60 * Math.Sin(-Math.PI / 3)),
+                pose, SubMenuLayoutStyle.Fan, 3).Should().Be(-1);
+
+            // 2 wings: ±70° are 40° past the wings (±30°) → beyond 30°.
+            _engine.HitTestChild(new Vector(250 + 60 * Math.Cos(7 * Math.PI / 18), 250 + 60 * Math.Sin(7 * Math.PI / 18)),
+                pose, SubMenuLayoutStyle.Fan, 2).Should().Be(-1);
+            _engine.HitTestChild(new Vector(250 + 60 * Math.Cos(-7 * Math.PI / 18), 250 + 60 * Math.Sin(-7 * Math.PI / 18)),
+                pose, SubMenuLayoutStyle.Fan, 2).Should().Be(-1);
+
+            // Single tip: +40° is 40° past the tip (0°) → beyond 30°.
+            _engine.HitTestChild(new Vector(250 + 60 * Math.Cos(2 * Math.PI / 9), 250 + 60 * Math.Sin(2 * Math.PI / 9)),
+                pose, SubMenuLayoutStyle.Fan, 1).Should().Be(-1);
+        }
+
+        [Fact]
+        public void HitTestChild_Fan_NearCenter_OffWingDirection_ShouldNotTrigger()
+        {
+            // Manual QA (2026-09-05): children rendered along the parent's direction
+            // (e.g. lower-right) but the pointer fired them from near the center slot
+            // — the old nearest-wing rule had no angular bound, so any point in the
+            // ring between the dead zone and the fan extent resolved to a wing. A
+            // point 60 DIP from center (between the dead zone 40 and extent 125) but
+            // 180° away from the fan must resolve to -1 for every child count.
+            var pose = Pose;
+            var offSide = new Vector(250 - 60, 250); // distance 60, angle 180°
+
+            for (int count = 1; count <= 3; count++)
+            {
+                _engine.HitTestChild(offSide, pose, SubMenuLayoutStyle.Fan, count)
+                    .Should().Be(-1, $"count={count}: off-fan-direction point near the center must not trigger a wing");
+            }
+        }
+
+        [Fact]
+        public void HitTestChild_Fan_InsideWingSector_ShouldHitNearestWing()
+        {
+            var pose = Pose; // direction 0 (east)
+
+            // 3 wings, +20° is 10° from the lower wing (+30°) → within 15° → child 3.
+            _engine.HitTestChild(new Vector(250 + 60 * Math.Cos(Math.PI / 9), 250 + 60 * Math.Sin(Math.PI / 9)),
+                pose, SubMenuLayoutStyle.Fan, 3).Should().Be(3);
+            // 3 wings, -20° → child 1.
+            _engine.HitTestChild(new Vector(250 + 60 * Math.Cos(-Math.PI / 9), 250 + 60 * Math.Sin(-Math.PI / 9)),
+                pose, SubMenuLayoutStyle.Fan, 3).Should().Be(1);
+            // 2 wings, +15° is 15° from the lower wing (+30°) → within 30° → child 2.
+            _engine.HitTestChild(new Vector(250 + 60 * Math.Cos(Math.PI / 12), 250 + 60 * Math.Sin(Math.PI / 12)),
+                pose, SubMenuLayoutStyle.Fan, 2).Should().Be(2);
+            // Single tip, +20° → child 1.
+            _engine.HitTestChild(new Vector(250 + 60 * Math.Cos(Math.PI / 9), 250 + 60 * Math.Sin(Math.PI / 9)),
+                pose, SubMenuLayoutStyle.Fan, 1).Should().Be(1);
+        }
+
         // ============ DIP discipline ============
 
         [Fact]
