@@ -36,6 +36,46 @@ jobs:
       - name: Publish Portable (Framework-Dependent Single File)
         run: dotnet publish Pulsar/Pulsar/Pulsar.csproj -c Release -o publish/portable -p:RuntimeIdentifier=win-x64 -p:SelfContained=false -p:PublishSingleFile=true
 
+      - name: Install Inno Setup (ISCC)
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress --yes
+          $iscc = Get-ChildItem "C:\Program Files (x86)\Inno Setup 6\ISCC.exe","C:\Program Files\Inno Setup 6\ISCC.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $iscc) { throw "ISCC not found after choco install" }
+          echo "ISCC: $($iscc.FullName)"
+          echo "ISCC_PATH=$($iscc.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Build Setup.exe (ISCC)
+        shell: pwsh
+        run: |
+          $ver = "${{ steps.version.outputs.version }}"
+          # pulsar.iss 硬编码源路径为 artifacts\publish\stage\Pulsar.exe
+          New-Item -ItemType Directory -Path artifacts\publish\stage -Force | Out-Null
+          Copy-Item publish\full\Pulsar.exe artifacts\publish\stage\ -Force
+          & $env:ISCC_PATH /DAppVersion=$ver scripts\installer\pulsar.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed" }
+          if (-not (Test-Path "artifacts\publish\Pulsar-v$ver-Setup.exe")) { throw "Setup.exe not produced" }
+          echo "Setup.exe: $((Get-Item "artifacts\publish\Pulsar-v$ver-Setup.exe").Length) bytes"
+
+      - name: Build Standalone zip + SHA256SUMS
+        shell: pwsh
+        run: |
+          $ver = "${{ steps.version.outputs.version }}"
+          # Standalone zip = full 产物的单文件打包（对齐 dev.ps1 publish 命名）
+          New-Item -ItemType Directory -Path standalone-stage -Force | Out-Null
+          Copy-Item publish\full\Pulsar.exe standalone-stage\ -Force
+          Compress-Archive -Path standalone-stage\* -DestinationPath "Pulsar-v$ver-Standalone-win-x64.zip" -Force
+          # SHA256SUMS
+          $files = @("Pulsar-v$ver-Standalone-win-x64.zip")
+          if (Test-Path "artifacts\publish\Pulsar-v$ver-Setup.exe") { $files += "artifacts\publish\Pulsar-v$ver-Setup.exe" }
+          $lines = foreach ($f in $files) {
+            $hash = (Get-FileHash $f -Algorithm SHA256).Hash.ToLower()
+            $name = Split-Path $f -Leaf
+            "$hash  $name"
+          }
+          $lines | Out-File -FilePath SHA256SUMS.txt -Encoding ascii
+          Get-Content SHA256SUMS.txt
+
       - name: Verify publish output (Full)
         shell: pwsh
         run: |
@@ -131,4 +171,9 @@ jobs:
           $ver = "${{ steps.version.outputs.version }}"
           Compress-Archive -Path publish\full\* -DestinationPath "Pulsar-$ver-full.zip"
           Compress-Archive -Path publish\portable\* -DestinationPath "Pulsar-$ver-portable.zip"
-          gh release upload ${{ github.ref_name }} "Pulsar-$ver-full.zip" "Pulsar-$ver-portable.zip"
+          $assets = @("Pulsar-$ver-full.zip", "Pulsar-$ver-portable.zip")
+          # installer (ADR-026): Setup.exe + Standalone zip + SHA256SUMS
+          if (Test-Path "artifacts\publish\Pulsar-v$ver-Setup.exe") { $assets += "artifacts\publish\Pulsar-v$ver-Setup.exe" }
+          if (Test-Path "Pulsar-v$ver-Standalone-win-x64.zip") { $assets += "Pulsar-v$ver-Standalone-win-x64.zip" }
+          if (Test-Path "SHA256SUMS.txt") { $assets += "SHA256SUMS.txt" }
+          gh release upload ${{ github.ref_name }} @assets

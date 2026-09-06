@@ -39,3 +39,17 @@ Assert-Zip -ZipPath $paths.ZipPortable
 Write-Output "Pack OK."
 Write-Output "ZIP full:     $($paths.ZipFull)"
 Write-Output "ZIP portable: $($paths.ZipPortable)"
+
+# installer (ADR-026): Standalone zip = full 产物的单文件打包（对齐 dev.ps1 publish 命名）
+$standaloneStage = Join-Path $repo 'artifacts\publish\standalone-stage'
+if (Test-Path -LiteralPath $standaloneStage) { Remove-Item -LiteralPath $standaloneStage -Recurse -Force }
+New-Item -ItemType Directory -Path $standaloneStage -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $paths.FullDir 'Pulsar.exe') -Destination $standaloneStage -Force
+Compress-ZipWithFallback -Dir $standaloneStage -ZipPath $paths.ZipStandalone
+Assert-Zip -ZipPath $paths.ZipStandalone
+Write-Output "ZIP standalone: $($paths.ZipStandalone)"
+
+# SHA256SUMS：覆盖 Standalone zip + Setup.exe（若存在）
+$manifestFiles = @($paths.ZipStandalone)
+if (Test-Path -LiteralPath $paths.SetupExe) { $manifestFiles += $paths.SetupExe }
+Write-Sha256Manifest -OutputPath $paths.Sha256Sums -Files $manifestFiles

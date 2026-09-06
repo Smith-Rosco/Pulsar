@@ -69,3 +69,24 @@ Write-BuildInfo -Dir $paths.PortableDir -Version $Version -Build $Build -Channel
 Assert-Publish -Dir $paths.FullDir -RequireCor3 $true
 Assert-Publish -Dir $paths.PortableDir -RequireCor3 $false
 Write-Output "Build OK. Effective version: $effective (csproj untouched: $Version)"
+
+# installer (ADR-026): 编译 Setup.exe。pulsar.iss 硬编码源路径为 artifacts\publish\stage\，
+# 因此把 full 产物复制到 stage 目录后调用 ISCC。ISCC 不可用时非致命跳过（Standalone zip 仍可用）。
+$iscc = Get-IsccPath
+if ($null -ne $iscc) {
+    $stageDir = Join-Path $repo 'artifacts\publish\stage'
+    if (Test-Path -LiteralPath $stageDir) { Remove-Item -LiteralPath $stageDir -Recurse -Force }
+    New-Item -ItemType Directory -Path $stageDir -Force | Out-Null
+    Copy-Item -LiteralPath (Join-Path $paths.FullDir '*') -Destination $stageDir -Recurse -Force
+
+    Write-Output "ISCC -> Pulsar-v$Version-Setup.exe"
+    & $iscc /DAppVersion=$Version $paths.IssScript
+    if ($LASTEXITCODE -ne 0) { throw "ISCC failed with exit code $LASTEXITCODE" }
+
+    $setupSource = Join-Path $repo "artifacts\publish\Pulsar-v$Version-Setup.exe"
+    if (-not (Test-Path -LiteralPath $setupSource)) { throw "ISCC did not produce Setup.exe: $setupSource" }
+    Copy-Item -LiteralPath $setupSource -Destination $paths.SetupExe -Force
+    Write-Output "Setup.exe: $($paths.SetupExe) ($([math]::Round((Get-Item $paths.SetupExe).Length/1MB,1)) MB)"
+} else {
+    Write-Warning "ISCC.exe (Inno Setup 6) not found; skipping Setup.exe. Install via winget install JRSoftware.InnoSetup"
+}

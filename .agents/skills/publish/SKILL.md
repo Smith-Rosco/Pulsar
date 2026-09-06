@@ -13,11 +13,11 @@ description: Pulsar 发布与打包流程。支持 local-artifact、local-versio
 
 | 脚本 | 作用 | 主要参数 |
 |---|---|---|
-| `Pulsar.Publish.Common.ps1` | 共享函数库（路径、版本读写、产物/ZIP 校验、无 BOM 写入）；被各脚本 dot-source，不直接运行 | - |
+| `Pulsar.Publish.Common.ps1` | 共享函数库（路径、版本读写、产物/ZIP 校验、无 BOM 写入、ISCC 路径查找、SHA256 清单）；被各脚本 dot-source，不直接运行 | - |
 | `Get-ReleaseInfo.ps1` | 输出仓库根、当前版本、最近 tag、自 tag 以来的提交（版本决策辅助） | - |
 | `Set-ProjectVersion.ps1` | 修改 `csproj` 的 `<Version>` 并同步 `<FileVersion>`/`<AssemblyVersion>`（`x.y.z.0`）；结构化校验；防降级与同版本重发（降级需 `-AllowDowngrade`） | `-Version 1.9.0` |
-| `Build-Publish.ps1` | 构建 full + portable 两个发布产物并校验（含清理本次版本目录/ZIP）；`-Build n` 支持 x.y.z.n 本地构建号 | `-Version 1.9.0 [-Build 2]` |
-| `Pack-Zips.ps1` | 将产物压缩为 `Pulsar-$version-{full,portable}.zip` 并校验（内置 pwsh → powershell → System32 tar 三级回退） | `-Version 1.9.0 [-Build 2]` |
+| `Build-Publish.ps1` | 构建 full + portable 两个发布产物并校验；**ISCC 可用时额外编译 Setup.exe**（复制 full 产物到 `artifacts\publish\stage\` 后调用 `scripts\installer\pulsar.iss`）；ISCC 不可用时非致命跳过 | `-Version 1.9.0 [-Build 2]` |
+| `Pack-Zips.ps1` | 将产物压缩为 `Pulsar-$version-{full,portable}.zip` 并校验；**额外生成 Standalone zip（full 单文件）+ SHA256SUMS.txt**（内置 pwsh → powershell → System32 tar 三级回退） | `-Version 1.9.0 [-Build 2]` |
 | `Update-Changelog.ps1` | 将 `CHANGELOG.md` 的 `[Unreleased]` 段固化为 `## [X.Y.Z] - 日期` 并插入新的空 Unreleased 段；段内无真实条目时拒绝执行 | `-Version 1.9.0` |
 | `New-ReleaseTag.ps1` | release 模式：commit 版本号 + 创建带完整 notes 的 tag + 校验 tag message | `-Version 1.9.0 -NotesFile <路径>` |
 | `Watch-Release.ps1` | 等待 release.yml CI 完成（含 run 注册轮询 ~60s）、验证 Release 资产、导出 body 供核对 | `-Version 1.9.0` |
@@ -84,6 +84,13 @@ pwsh .agents/skills/publish/scripts/Pack-Zips.ps1  -Version 1.9.0             # 
 - `portable` 目录：`Pulsar.exe`、`Pulsar.pdb`、`Assets\`，且**不得**含 `*_cor3.dll`。
 - 两个 ZIP 均以 `PK` 开头（`Compress-Archive` 魔数），并列出内容核对。
 - 两个目录均含 `build-info.txt`（版本 / 构建号 / channel / 时间 / commit）。
+
+**installer 产物（ADR-026，ISCC 可用时自动生成）**：
+- `Pulsar-v$version-Setup.exe`：Inno Setup 安装器（autopf 安装、可选自启、卸载保留 `%AppData%\Pulsar`）。
+- `Pulsar-v$version-Standalone-win-x64.zip`：full 产物的单文件打包（自包含，无需 .NET Runtime）。
+- `SHA256SUMS.txt`：上述两个文件的 SHA256 清单。
+- ISCC 路径查找顺序：`Program Files (x86)\Inno Setup 6` → `Program Files\Inno Setup 6` → `$env:LOCALAPPDATA\Programs\Inno Setup 6`（winget 用户级安装）。
+- ISCC 不可用时非致命跳过，仅输出警告；Standalone zip + SHA256SUMS 仍生成。
 
 portable 版构建后建议冒烟测试（`Start-Process` 启动 6 秒不崩溃即通过），确认本机 .NET 8 Desktop Runtime 兼容。
 
@@ -156,7 +163,7 @@ git push origin v1.9.0
 pwsh .agents/skills/publish/scripts/Watch-Release.ps1 -Version 1.9.0
 ```
 
-脚本会：取最新 `release.yml` run → `gh run watch --exit-status` 等待完成 → 导出 Release JSON 与 body 到 `$env:TEMP\pulsar-upload\` → 期望 `isDraft=false` 且 assets 含 `Pulsar-$version-full.zip` 与 `Pulsar-$version-portable.zip`。
+脚本会：取最新 `release.yml` run → `gh run watch --exit-status` 等待完成 → 导出 Release JSON 与 body 到 `$env:TEMP\pulsar-upload\` → 期望 `isDraft=false` 且 assets 含 `Pulsar-$version-full.zip` 与 `Pulsar-$version-portable.zip`（installer 启用时额外含 `Pulsar-v$version-Setup.exe`、`Pulsar-v$version-Standalone-win-x64.zip`、`SHA256SUMS.txt`）。
 
 **中文 notes 验证**：PowerShell 控制台默认编码（GBK）会把 `gh` 的 UTF-8 输出重解码成乱码，**切勿用终端输出或 PS 管道文件判断**。Watch-Release 已用 `cmd` 直接重定向导出 `body_check_$version.md`，用 Read 工具核对：应显示完整中文 notes，首字节对应 UTF-8 `E6 96 B0`（新），而非 mojibake。
 
@@ -193,6 +200,9 @@ Get-ChildItem -LiteralPath (Join-Path (git rev-parse --show-toplevel) 'Artifacts
 - tag message 首行带 BOM（Format-Hex 首三字节 `EF BB BF`）：notes 文件用了会带 BOM 的编码。修正：用 Write 工具或 `New-Object System.Text.UTF8Encoding($false)` 重写文件后重建 tag。
 - `git cat-file tag` / `gh` 输出经 PS 管道后中文乱码：cmd 直接重定向（`cmd /c "... > file"`）的字节才是真实数据；PS 管道经 `[Console]::OutputEncoding`(gb2312) 重解码会损坏中文。
 - `New-ReleaseTag.ps1` 误报 "Tag message does not start with '###'"：**`cmd /c` 命令行上下文不会像批处理文件那样把 `%%` 折叠成 `%`**——传给 git for-each-ref 的格式串必须写单个 `%(contents)`；若误写 `%%(contents)`，git 会原样输出字面量 `%(contents)`，导致校验误报（tag 本身仍正确，需用 `git cat-file tag` 核实）。此坑已修复；改动该行时不要重新引入双 `%`。
+- **ISCC 未找到 / Setup.exe 未生成**：`Get-IsccPath` 按 Program Files (x86) → Program Files → LOCALAPPDATA\Programs 顺序查找。winget 用户级安装会落到 `$env:LOCALAPPDATA\Programs\Inno Setup 6\`。CI 用 `choco install innosetup` 安装到 Program Files (x86)。ISCC 不可用时 Build-Publish 仅警告不抛错，Standalone zip + SHA256SUMS 仍生成。
+- **ISCC 编译失败**：pulsar.iss 硬编码源路径为 `artifacts\publish\stage\Pulsar.exe`（相对 scripts/installer/）。Build-Publish 会自动把 full 产物复制到该目录。手动编译时需确保 stage 目录存在且含 Pulsar.exe。ISCC 的 `PrivilegesRequired=admin` + HKCU 写入为非致命警告，不影响产物。
+- **Setup.exe 命名不一致**：pulsar.iss 的 `OutputBaseFilename=Pulsar-v{#AppVersion}-Setup`，`/DAppVersion=$version` 传入。Build-Publish 会把产物从 `artifacts\publish\` 复制到 `Artifacts\Pulsar-v$version-Setup.exe`。
 - 推送 tag 后 `Watch-Release.ps1` 报 "No release.yml run found"：GitHub Actions 对刚 push 的 tag 注册工作流有延迟，脚本已内置最多 ~60s（每 5s 一次，共 12 次）的 run 注册轮询；若仍失败再检查 tag 是否真的推送成功。
 - Release body 是 commit subject（如 `chore(release): bump version to 1.10.0`）而非完整 tag notes，且 tag message 已核对正确：**`gh release create --notes-from-tag` 在部分 gh 版本上会退化为读取 commit subject**（2026-09 实测：v1.9.1 正常、v1.10.0 退化，同一 workflow 不同 runner gh 版本行为不同）。release.yml 已改为用 GitHub API 显式读取 annotated tag message（`git/ref/tags/<tag>` → `git/tags/<sha>` → `--jq .message`）经 cmd 重定向写入 notes 文件再 `--notes-file`。若历史 release 已受影响，用 `Edit-ReleaseNotes.ps1` 修正 body；修改 workflow 时不要退回 `--notes-from-tag`。
 - release 已存在或 tag 已存在：停止并询问用户，不删除、不覆盖。
@@ -212,6 +222,10 @@ ZIP (full): <绝对路径或 GitHub Release 资产链接>
 ZIP (full) size: ... bytes (release 用 CI 资产大小)
 ZIP (portable): <绝对路径或 GitHub Release 资产链接>
 ZIP (portable) size: ... bytes
+Setup.exe: <绝对路径或 GitHub Release 资产链接> | skipped (ISCC 不可用)
+Setup.exe size: ... bytes
+ZIP (Standalone): <绝对路径或 GitHub Release 资产链接>
+SHA256SUMS: <绝对路径或 GitHub Release 资产链接>
 Pulsar.exe/PDB: present
 cor3 DLL count (full): ...
 Assets file count: ...

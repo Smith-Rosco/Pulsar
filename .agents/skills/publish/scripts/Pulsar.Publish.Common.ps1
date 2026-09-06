@@ -78,6 +78,11 @@ function Get-PublishPaths {
         PortableDir   = Join-Path $publishRoot 'portable'
         ZipFull       = Join-Path $Repo "Artifacts\Pulsar-$Version-full.zip"
         ZipPortable   = Join-Path $Repo "Artifacts\Pulsar-$Version-portable.zip"
+        # installer change (ADR-026): Standalone zip + Setup.exe + SHA256SUMS
+        ZipStandalone = Join-Path $Repo "Artifacts\Pulsar-v$Version-Standalone-win-x64.zip"
+        SetupExe      = Join-Path $Repo "Artifacts\Pulsar-v$Version-Setup.exe"
+        Sha256Sums    = Join-Path $Repo "Artifacts\SHA256SUMS.txt"
+        IssScript     = Join-Path $Repo 'scripts\installer\pulsar.iss'
     }
 }
 
@@ -191,4 +196,38 @@ function Assert-Zip {
     Write-Output ('ZIP magic: {0:X2}{1:X2} size={2} path={3}' -f $bytes[0], $bytes[1], $bytes.Length, $ZipPath)
     & 'C:\Windows\System32\tar.exe' -tf $ZipPath
     if ($LASTEXITCODE -ne 0) { throw "ZIP listing failed with exit code $LASTEXITCODE" }
+}
+
+function Get-IsccPath {
+    # 查找 Inno Setup 6 的 ISCC.exe。支持 Program Files (x86)、Program Files、
+    # 用户级安装（winget 默认）三个位置；均不存在时返回 $null。
+    $pfx86 = [Environment]::GetEnvironmentVariable('ProgramFiles(x86)')
+    $candidates = @(
+        (Join-Path $pfx86 'Inno Setup 6\ISCC.exe'),
+        (Join-Path $env:ProgramFiles 'Inno Setup 6\ISCC.exe'),
+        (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe')
+    )
+    foreach ($c in $candidates) {
+        if (Test-Path -LiteralPath $c -PathType Leaf) { return $c }
+    }
+    return $null
+}
+
+function Write-Sha256Manifest {
+    # 为指定文件列表生成 SHA256SUMS.txt（格式与 dev.ps1 publish 一致：hash  filename）。
+    param(
+        [Parameter(Mandatory = $true)][string]$OutputPath,
+        [Parameter(Mandatory = $true)][string[]]$Files
+    )
+    $lines = @()
+    foreach ($f in $Files) {
+        if (-not (Test-Path -LiteralPath $f -PathType Leaf)) {
+            throw "File not found for SHA256: $f"
+        }
+        $hash = (Get-FileHash -LiteralPath $f -Algorithm SHA256).Hash.ToLower()
+        $name = Split-Path -LiteralPath $f -Leaf
+        $lines += "$hash  $name"
+    }
+    Write-Utf8NoBom -Path $OutputPath -Content (($lines -join "`r`n") + "`r`n")
+    Write-Output "SHA256 manifest: $OutputPath ($($lines.Count) files)"
 }
