@@ -1,0 +1,105 @@
+{
+  "name": "ring-submenu-center-visible-qa",
+  "app": {
+    "exePath": "",
+    "fixture": "Fixtures/cascade-submenu-fan-qa.json",
+    "arguments": ""
+  },
+  "steps": [
+    {
+      "type": "launch",
+      "id": "launch-debug-instance"
+    },
+    {
+      "type": "wait",
+      "id": "settle-after-launch",
+      "durationMs": 3000
+    },
+    {
+      "type": "record",
+      "id": "start-recording",
+      "action": "start"
+    },
+    {
+      "type": "menu-open",
+      "id": "open-action-menu",
+      "mode": "action",
+      "args": { "profile": "Global" }
+    },
+    {
+      "type": "waitForState",
+      "id": "wait-menu-opened",
+      "event": "menu-opened",
+      "timeoutMs": 10000
+    },
+    {
+      "type": "wait",
+      "id": "wait-summon-bloom",
+      "durationMs": 800
+    },
+    {
+      "type": "command",
+      "id": "open-ring-slot3",
+      "command": "slot-click",
+      "args": { "slot": 3, "button": "left" }
+    },
+    {
+      "type": "wait",
+      "id": "wait-ring-enter",
+      "durationMs": 1800
+    },
+    {
+      "type": "screenshot",
+      "id": "screenshot-ring-open",
+      "file": "ring-open.png"
+    },
+    {
+      "type": "dump",
+      "id": "dump-ring-open",
+      "file": "ring-open-uia-tree.txt"
+    },
+    {
+      "type": "command",
+      "id": "click-child-1",
+      "command": "slot-click",
+      "args": { "slot": 1, "button": "left" }
+    },
+    {
+      "type": "waitForState",
+      "id": "wait-child-executed",
+      "event": "action-executed",
+      "payloadKey": "label",
+      "payloadValue": "QA5-A",
+      "timeoutMs": 6000
+    },
+    {
+      "type": "wait",
+      "id": "wait-after-execute",
+      "durationMs": 800
+    },
+    {
+      "type": "menu-close",
+      "id": "close-menu"
+    },
+    {
+      "type": "waitForState",
+      "id": "wait-menu-closed",
+      "event": "menu-closed",
+      "timeoutMs": 5000
+    },
+    {
+      "type": "wait",
+      "id": "settle-before-stop",
+      "durationMs": 800
+    },
+    {
+      "type": "record",
+      "id": "stop-recording",
+      "action": "stop"
+    },
+    {
+      "type": "exit",
+      "id": "exit-debug-instance"
+    }
+  ]
+}

@@ -58,7 +58,9 @@ namespace Pulsar.ViewModels
             int pageIndex,
             SlotViewModel centerSlot,
             ObservableCollection<SlotViewModel> slots,
-            PulsarContext? pulsarContext = null)
+            PulsarContext? pulsarContext = null,
+            ObservableCollection<SlotViewModel>? subMenuSlots = null,
+            SubMenuLayoutStyle effectiveLayoutStyle = SubMenuLayoutStyle.Fan)
         {
             if (descriptor == null)
             {
@@ -74,7 +76,14 @@ namespace Pulsar.ViewModels
                 return new SubMenuConfigResult { FallbackToRoot = true };
             }
 
-            var context = new SubMenuContext(centerSlot, slots, slotsPerPage, pageIndex, pulsarContext);
+            var context = new SubMenuContext(
+                centerSlot,
+                slots,
+                slotsPerPage,
+                pageIndex,
+                pulsarContext,
+                subMenuSlots,
+                effectiveLayoutStyle);
             var selectedWindow = strategy.ConfigureSubMenu(context, descriptor);
             return new SubMenuConfigResult { SelectedWindow = selectedWindow };
         }

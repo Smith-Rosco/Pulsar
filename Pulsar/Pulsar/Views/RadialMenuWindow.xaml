@@ -37,6 +37,61 @@
             <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVisibilityConverter"/>
             <converters:SlotBrushConverter x:Key="SlotBrushConverter"/>
             <sys:Boolean x:Key="FalseValue">False</sys:Boolean>
+
+            <!-- [ADR-024 D4/D7] Shared slot template for the root wheel (Slots) and the
+                 cascade layer (SubMenuSlots). Both collections hold SlotViewModel, so a
+                 single template keeps the two wheels visually identical. -->
+            <DataTemplate x:Key="SlotOrbTemplate">
+                <Grid RenderTransformOrigin="0.5,0.5"
+                      Opacity="{Binding CurrentOpacity}">
+                    <Grid.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform ScaleX="{Binding CurrentScale, FallbackValue=1}" ScaleY="{Binding CurrentScale, FallbackValue=1}"/>
+                            <TranslateTransform X="{Binding RenderOffsetX, FallbackValue=0}" Y="{Binding RenderOffsetY, FallbackValue=0}"/>
+                        </TransformGroup>
+                    </Grid.RenderTransform>
+
+                    <!-- [E2E] AutomationId must live on the SlotOrb (the element
+                         with the custom UIA peer), mirroring the center slot below.
+                         On the wrapper Grid it is invisible to UIA: the peer's
+                         GetAutomationIdCore then falls back to the template root's
+                         x:Name ('OrbRoot'), so ring slots were unlocatable. -->
+                    <controls:SlotOrb RenderTransformOrigin="0.5,0.5"
+                                       AutomationProperties.AutomationId="{Binding SlotAutomationId}"
+                                       IconKey="{Binding IconKey}"
+                                       OrbImage="{Binding IconImage}"
+                                       Label="{Binding Label}"
+                                       IsActive="{Binding IsActive}"
+                                       IsRecommended="{Binding IsRecommended}"
+                                       Size="{Binding Size}"
+                                       IsEnabled="{Binding IsEnabled}"
+                                       BadgeCount="{Binding BadgeCount}"
+                                       CustomFill="{Binding CustomFillBrush}"
+                                       CustomStroke="{Binding CustomStrokeBrush}"
+                                       CustomForeground="{Binding CustomForegroundBrush}"/>
+
+                     <!-- 光学对齐负值:抵消圆点视觉溢出,由几何决定,不进间距刻度 -->
+                     <Border HorizontalAlignment="Right"
+                             VerticalAlignment="Top"
+                             Margin="0,-6,-6,0"
+                             Style="{StaticResource SlotChipBorderStyle}"
+                             Background="{DynamicResource Theme.Orb.Chip.Background}"
+                             Padding="{StaticResource Pulsar.Pad.H8V2}"
+                             Visibility="{Binding ShowTypeBadge, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
+                        <TextBlock Text="{Binding TypeBadge}"
+                                   Style="{StaticResource SlotValueChipTextStyle}">
+                            <!-- FontSize 跟随 SlotValueChipTextStyle（令牌 11px）；
+                                 此前显式覆盖为 9px 属散值，已删除。 -->
+                            <TextBlock.Foreground>
+                                <MultiBinding Converter="{StaticResource SlotBrushConverter}" ConverterParameter="Type">
+                                    <Binding Path="TypeToneKey"/>
+                                    <Binding RelativeSource="{RelativeSource Self}"/>
+                                </MultiBinding>
+                            </TextBlock.Foreground>
+                        </TextBlock>
+                     </Border>
+                 </Grid>
+            </DataTemplate>
         </ResourceDictionary>
     </Window.Resources>
 
@@ -80,7 +135,8 @@
                 </Style>
             </Canvas.Style>
 
-            <ItemsControl ItemsSource="{Binding Slots}">
+            <ItemsControl ItemsSource="{Binding Slots}"
+                          ItemTemplate="{StaticResource SlotOrbTemplate}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <Canvas/>
@@ -92,59 +148,26 @@
                         <Setter Property="Canvas.Top" Value="{Binding Y}"/>
                     </Style>
                 </ItemsControl.ItemContainerStyle>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Grid RenderTransformOrigin="0.5,0.5"
-                              Opacity="{Binding CurrentOpacity}">
-                            <Grid.RenderTransform>
-                                <TransformGroup>
-                                    <ScaleTransform ScaleX="{Binding CurrentScale, FallbackValue=1}" ScaleY="{Binding CurrentScale, FallbackValue=1}"/>
-                                    <TranslateTransform X="{Binding RenderOffsetX, FallbackValue=0}" Y="{Binding RenderOffsetY, FallbackValue=0}"/>
-                                </TransformGroup>
-                            </Grid.RenderTransform>
+            </ItemsControl>
 
-                            <!-- [E2E] AutomationId must live on the SlotOrb (the element
-                                 with the custom UIA peer), mirroring the center slot below.
-                                 On the wrapper Grid it is invisible to UIA: the peer's
-                                 GetAutomationIdCore then falls back to the template root's
-                                 x:Name ('OrbRoot'), so ring slots were unlocatable. -->
-                            <controls:SlotOrb RenderTransformOrigin="0.5,0.5"
-                                               AutomationProperties.AutomationId="{Binding SlotAutomationId}"
-                                               IconKey="{Binding IconKey}"
-                                               OrbImage="{Binding IconImage}"
-                                               Label="{Binding Label}"
-                                               IsActive="{Binding IsActive}"
-                                               IsRecommended="{Binding IsRecommended}"
-                                               Size="{Binding Size}"
-                                               IsEnabled="{Binding IsEnabled}"
-                                               BadgeCount="{Binding BadgeCount}"
-                                               CustomFill="{Binding CustomFillBrush}"
-                                               CustomStroke="{Binding CustomStrokeBrush}"
-                                               CustomForeground="{Binding CustomForegroundBrush}"/>
-
-                             <!-- 光学对齐负值:抵消圆点视觉溢出,由几何决定,不进间距刻度 -->
-                             <Border HorizontalAlignment="Right"
-                                     VerticalAlignment="Top"
-                                     Margin="0,-6,-6,0"
-                                     Style="{StaticResource SlotChipBorderStyle}"
-                                     Background="{DynamicResource Theme.Orb.Chip.Background}"
-                                     Padding="{StaticResource Pulsar.Pad.H8V2}"
-                                     Visibility="{Binding ShowTypeBadge, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
-                                <TextBlock Text="{Binding TypeBadge}"
-                                           Style="{StaticResource SlotValueChipTextStyle}">
-                                    <!-- FontSize 跟随 SlotValueChipTextStyle（令牌 11px）；
-                                         此前显式覆盖为 9px 属散值，已删除。 -->
-                                    <TextBlock.Foreground>
-                                        <MultiBinding Converter="{StaticResource SlotBrushConverter}" ConverterParameter="Type">
-                                            <Binding Path="TypeToneKey"/>
-                                            <Binding RelativeSource="{RelativeSource Self}"/>
-                                        </MultiBinding>
-                                    </TextBlock.Foreground>
-                                </TextBlock>
-                             </Border>
-                         </Grid>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
+            <!-- [ADR-024 D4/D7] Cascade children render from their own collection
+                 (SubMenuSlots) so the root wheel's slots are never repurposed:
+                 Fan keeps the root wheel frozen in place with the parent slot as
+                 the collapse anchor; Ring replaces the wheel without touching the
+                 root slot VMs. Shares SlotOrbTemplate with the root ItemsControl. -->
+            <ItemsControl ItemsSource="{Binding SubMenuSlots}"
+                          ItemTemplate="{StaticResource SlotOrbTemplate}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <Canvas/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemContainerStyle>
+                    <Style TargetType="ContentPresenter">
+                        <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                        <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                    </Style>
+                </ItemsControl.ItemContainerStyle>
             </ItemsControl>
 
             <!-- [New] Center Container for Morphing Effect (Simplified) -->

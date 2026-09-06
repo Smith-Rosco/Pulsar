@@ -124,13 +124,22 @@ namespace Pulsar.Tests.ViewModels
                 "Cascade Label");
 
             var slots = CreateSlots();
+            // [ADR-024 D4/D7] The session supplies the dedicated child collection; the
+            // cascade strategy refuses to repurpose root slots without it.
+            var subMenuSlots = new ObservableCollection<SlotViewModel>();
+            for (int i = 1; i <= 8; i++)
+            {
+                subMenuSlots.Add(new SlotViewModel(i, 0, 0, 50));
+            }
+
             var result = coordinator.ConfigureSubMenu(
                 descriptor, 8, 0, CreateCenter(), slots,
-                Pulsar.Tests.TestHelpers.PulsarContextFactory.CreateTestContext());
+                Pulsar.Tests.TestHelpers.PulsarContextFactory.CreateTestContext(),
+                subMenuSlots);
 
             result.FallbackToRoot.Should().BeFalse();
-            slots[0].ActionStrategy.Should().BeOfType<PluginActionStrategy>();
-            slots[0].IsEnabled.Should().BeTrue();
+            subMenuSlots[0].ActionStrategy.Should().BeOfType<PluginActionStrategy>();
+            subMenuSlots[0].IsEnabled.Should().BeTrue();
         }
 
         [Fact]

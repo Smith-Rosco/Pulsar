@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Pulsar.E2E.Diagnostics;
 using Pulsar.E2E.Driver;
@@ -147,14 +148,21 @@ namespace Pulsar.E2E.Runner
 
                 case StepType.WaitForState:
                 {
-                    var wait = stateClient.WaitForEventAsync(step.Event, TimeSpan.FromMilliseconds(step.TimeoutMs))
+                    var wait = stateClient.WaitForEventAsync(
+                            step.Event,
+                            TimeSpan.FromMilliseconds(step.TimeoutMs),
+                            string.IsNullOrWhiteSpace(step.PayloadKey) ? null : step.PayloadKey,
+                            string.IsNullOrWhiteSpace(step.PayloadKey) ? null : step.PayloadValue)
                         .GetAwaiter().GetResult();
                     if (!wait.Success)
                     {
                         var observed = JsonSerializer.Serialize(wait.Observed.Select(e => e.Event).ToArray());
+                        var expected = string.IsNullOrWhiteSpace(step.PayloadKey)
+                            ? $"'{step.Event}'"
+                            : $"'{step.Event}' with payload {step.PayloadKey}='{step.PayloadValue}'";
                         throw new StepFailureException(step.Id, step.TypeRaw,
-                            $"waitForState timed out after {step.TimeoutMs}ms waiting for '{step.Event}'. Events observed: {observed}",
-                            JsonSerializer.SerializeToElement(new { timeoutMs = step.TimeoutMs, expectedEvent = step.Event, observedEvents = wait.Observed.Select(e => new { e.Event, e.TimestampUtc }) }));
+                            $"waitForState timed out after {step.TimeoutMs}ms waiting for {expected}. Events observed: {observed}",
+                            JsonSerializer.SerializeToElement(new { timeoutMs = step.TimeoutMs, expectedEvent = step.Event, expectedPayloadKey = step.PayloadKey, expectedPayloadValue = step.PayloadValue, observedEvents = wait.Observed.Select(e => new { e.Event, e.TimestampUtc }) }));
                     }
                     break;
                 }
@@ -178,7 +186,17 @@ namespace Pulsar.E2E.Runner
                         if (step.Type == StepType.MenuOpen)
                         {
                             var mode = step.Mode.Equals("task", StringComparison.OrdinalIgnoreCase) ? "task" : "action";
-                            CommandClient.Send(_launched.Process.Id, "menu-open", mode);
+                            if (step.Args is JsonElement argsEl && argsEl.ValueKind == JsonValueKind.Object)
+                            {
+                                var extra = JsonNode.Parse(argsEl.GetRawText()) as JsonObject;
+                                extra ??= new JsonObject();
+                                extra["mode"] = mode;
+                                CommandClient.Send(_launched.Process.Id, "menu-open", extra);
+                            }
+                            else
+                            {
+                                CommandClient.Send(_launched.Process.Id, "menu-open", mode);
+                            }
                         }
                         else if (step.Type == StepType.MenuClose)
                         {
@@ -186,7 +204,12 @@ namespace Pulsar.E2E.Runner
                         }
                         else
                         {
-                            CommandClient.Send(_launched.Process.Id, step.Command);
+                            JsonObject? argsObject = null;
+                            if (step.Args is JsonElement argsEl && argsEl.ValueKind == JsonValueKind.Object)
+                            {
+                                argsObject = JsonNode.Parse(argsEl.GetRawText()) as JsonObject;
+                            }
+                            CommandClient.Send(_launched.Process.Id, step.Command, argsObject);
                         }
                     }
                     catch (Exception ex)

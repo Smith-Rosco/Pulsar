@@ -370,6 +370,14 @@
                             </StackPanel>
                         </Grid>
 
+                        <!-- [ADR-024 D2] Same live fallback warning as AddSlotContent. -->
+                        <TextBlock Margin="{StaticResource Pulsar.Gap.Top.XS}"
+                                   FontSize="{StaticResource Pulsar.Type.Caption}"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource SystemFillColorCautionBrush}"
+                                   Text="{Binding FanOverCapWarning}"
+                                   Visibility="{Binding IsFanOverCap, Converter={StaticResource BoolToVis}}"/>
+
                         <!-- Empty state -->
                         <Border Margin="{StaticResource Pulsar.Gap.Top.MD}"
                                 Padding="{StaticResource Pulsar.Pad.H12V10}"

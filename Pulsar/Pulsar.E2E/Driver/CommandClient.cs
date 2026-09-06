@@ -5,6 +5,7 @@ using System.IO;
 using System.IO.Pipes;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Pulsar.E2E.Driver
 {
@@ -12,7 +13,7 @@ namespace Pulsar.E2E.Driver
     /// One-shot client for the debug instance's command pipe
     /// (<c>Pulsar.Debug.&lt;pid&gt;.cmd</c>). Commands are single JSON lines:
     /// <c>{"command":"menu-open","mode":"action"}</c> / <c>{"command":"menu-close"}</c>
-    /// / <c>{"command":"open-settings"}</c>.
+    /// / <c>{"command":"open-settings"}</c> / <c>{"command":"slot-click","slot":1}</c>.
     ///
     /// This is the spec-mandated explicit trigger channel used when the debug
     /// instance runs without global input hooks; it replaces SendInput for
@@ -30,15 +31,37 @@ namespace Pulsar.E2E.Driver
 
         public static void Send(int debugProcessId, string command, string? mode, TimeSpan timeout)
         {
+            var payload = new JsonObject { ["command"] = command };
+            if (mode != null)
+            {
+                payload["mode"] = mode;
+            }
+
+            WriteLine(debugProcessId, payload, timeout);
+        }
+
+        /// <summary>Sends a command with an arbitrary JSON object merged into the payload.</summary>
+        public static void Send(int debugProcessId, string command, JsonObject? extra, TimeSpan? timeout = null)
+        {
+            var payload = new JsonObject { ["command"] = command };
+            if (extra != null)
+            {
+                foreach (var kv in extra)
+                {
+                    payload[kv.Key] = kv.Value?.DeepClone();
+                }
+            }
+
+            WriteLine(debugProcessId, payload, timeout ?? DefaultTimeout);
+        }
+
+        private static void WriteLine(int debugProcessId, JsonObject payload, TimeSpan timeout)
+        {
             var pipeName = PipePrefix + debugProcessId + ".cmd";
             using var client = new NamedPipeClientStream(".", pipeName, PipeDirection.Out, PipeOptions.Asynchronous);
             client.Connect((int)timeout.TotalMilliseconds);
 
-            var payload = mode == null
-                ? JsonSerializer.Serialize(new { command })
-                : JsonSerializer.Serialize(new { command, mode });
-
-            var bytes = Encoding.UTF8.GetBytes(payload + "\n");
+            var bytes = Encoding.UTF8.GetBytes(payload.ToJsonString() + "\n");
             client.Write(bytes, 0, bytes.Length);
             client.Flush();
             // Keep the connection open briefly so the server side can finish its

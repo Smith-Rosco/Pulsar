@@ -17,7 +17,8 @@ namespace Pulsar.Services.Interfaces
         double DirectionRadians,
         double SubRingRadius,
         double SlotSize,
-        double DeadZoneRadius);
+        double DeadZoneRadius,
+        double FanMaxWingRadians = Math.PI / 6.0);
 
     /// <summary>
     /// Pure geometry seam for cascade sub-layouts (Ring / Fan), independent of the

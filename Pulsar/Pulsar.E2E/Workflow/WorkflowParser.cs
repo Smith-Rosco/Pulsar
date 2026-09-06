@@ -176,6 +176,18 @@ namespace Pulsar.E2E.Workflow
             {
                 step.Command = command.GetString() ?? string.Empty;
             }
+            if (element.TryGetProperty("args", out var args) && args.ValueKind == JsonValueKind.Object)
+            {
+                step.Args = args.Clone();
+            }
+            if (element.TryGetProperty("payloadKey", out var payloadKey) && payloadKey.ValueKind == JsonValueKind.String)
+            {
+                step.PayloadKey = payloadKey.GetString() ?? string.Empty;
+            }
+            if (element.TryGetProperty("payloadValue", out var payloadValue) && payloadValue.ValueKind == JsonValueKind.String)
+            {
+                step.PayloadValue = payloadValue.GetString() ?? string.Empty;
+            }
             if (element.TryGetProperty("expected", out var expected) && expected.ValueKind == JsonValueKind.String)
             {
                 step.Expected = expected.GetString() ?? "exists";

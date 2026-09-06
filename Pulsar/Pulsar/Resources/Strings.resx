@@ -2600,6 +2600,9 @@
   <data name="Dialog.AddSlot.SubActions.InvalidSelection" xml:space="preserve">
     <value>Select a valid plugin and action.</value>
   </data>
+  <data name="Dialog.AddSlot.SubActions.FanOverCap" xml:space="preserve">
+    <value>More than {0} sub-actions: the menu will open as a Ring instead of a Fan.</value>
+  </data>
   <data name="Dialog.AddSlot.LayoutStyle" xml:space="preserve">
     <value>Cascade Layout</value>
   </data>

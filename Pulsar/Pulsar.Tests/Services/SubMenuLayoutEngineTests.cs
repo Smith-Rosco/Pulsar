@@ -139,6 +139,59 @@ namespace Pulsar.Tests.Services
             AssertNear(positions[2], 250 + 100 * Math.Cos(-Math.PI / 3) - 25, 250 + 100 * Math.Sin(-Math.PI / 3) - 25);
         }
 
+        // ============ Fan sector constraint (2026-09-06 user spec) ============
+
+        // An 8-slot wheel: each root slot owns 45°, so the fan wings must clamp to
+        // ±22.5° (π/8) around the parent direction — never spilling into the
+        // neighbouring root slot's sector.
+        private static readonly SubMenuParentPose SectorPose = Pose with { FanMaxWingRadians = Math.PI / 8.0 };
+
+        [Fact]
+        public void ComputeChildPositions_Fan_TwoChildren_ShouldStayInsideParentSector()
+        {
+            var positions = _engine.ComputeChildPositions(SectorPose, SubMenuLayoutStyle.Fan, 2);
+
+            positions.Should().HaveCount(2);
+            // Upper wing at -22.5°, lower at +22.5° — exactly the sector boundary.
+            AssertNear(positions[0], 250 + 100 * Math.Cos(-Math.PI / 8) - 25, 250 + 100 * Math.Sin(-Math.PI / 8) - 25);
+            AssertNear(positions[1], 250 + 100 * Math.Cos(Math.PI / 8) - 25, 250 + 100 * Math.Sin(Math.PI / 8) - 25);
+        }
+
+        [Fact]
+        public void ComputeChildPositions_Fan_ThreeChildren_ShouldStayInsideParentSector()
+        {
+            var positions = _engine.ComputeChildPositions(SectorPose, SubMenuLayoutStyle.Fan, 3);
+
+            positions.Should().HaveCount(3);
+            // upper -22.5°, tip 0°, lower +22.5° — all within the 45° sector.
+            AssertNear(positions[0], 250 + 100 * Math.Cos(-Math.PI / 8) - 25, 250 + 100 * Math.Sin(-Math.PI / 8) - 25);
+            AssertNear(positions[1], 325, 225);
+            AssertNear(positions[2], 250 + 100 * Math.Cos(Math.PI / 8) - 25, 250 + 100 * Math.Sin(Math.PI / 8) - 25);
+        }
+
+        [Fact]
+        public void Fan_SectorConstraint_LayoutAndHitTest_ShouldAgree()
+        {
+            // Every laid-out child center must hit-test back to itself under the
+            // sector-constrained wings (the hit-test half-sectors follow the same
+            // clamped maxWing, so layout and hit-testing stay in lockstep).
+            foreach (var direction in new[] { 0.0, Math.PI / 2, -Math.PI / 2, Math.PI / 4 })
+            {
+                var pose = SectorPose with { DirectionRadians = direction };
+                for (int count = 1; count <= 3; count++)
+                {
+                    var positions = _engine.ComputeChildPositions(pose, SubMenuLayoutStyle.Fan, count);
+                    for (int i = 0; i < count; i++)
+                    {
+                        var center = new Vector(positions[i].X + 25, positions[i].Y + 25);
+                        int hit = _engine.HitTestChild(center, pose, SubMenuLayoutStyle.Fan, count);
+                        hit.Should().Be(i + 1,
+                            $"direction={direction}, count={count}: child {i}'s own center must hit-test to itself");
+                    }
+                }
+            }
+        }
+
         [Fact]
         public void Fan_LayoutAndHitTest_ShouldAgreeAtEveryChildCenter()
         {

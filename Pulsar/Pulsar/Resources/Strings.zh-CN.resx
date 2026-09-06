@@ -4256,6 +4256,11 @@
     <value>请选择有效的插件与动作。</value>
   </data>
   <data
+    name="Dialog.AddSlot.SubActions.FanOverCap"
+    xml:space="preserve">
+    <value>子动作超过 {0} 个：菜单将按环形（Ring）而非扇形（Fan）展开。</value>
+  </data>
+  <data
     name="Dialog.AddSlot.LayoutStyle"
     xml:space="preserve">
     <value>级联布局</value>

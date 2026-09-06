@@ -47,27 +47,35 @@ namespace Pulsar.Tests.ViewModels
 
             // Parent slot 1 center: root ring position for slot 1 with 8 slots.
             // Root slot 1 is at -90° (top) with radius 90 → center (250, 160).
-            // Sub-ring radius = 0.90 × 90 = 81; Fan 2 children sit at ±30° about the
-            // parent direction.
+            // [ADR-024 D1] Fan children sit on a circle CONCENTRIC with the main
+            // wheel but at R + gap = 90 + 70 = 160 — strictly outside the root ring,
+            // so overlap with root slots is structurally impossible.
+            // [2026-09-06 user spec] With 8 root slots each owns a 45° sector, so the
+            // wings clamp to the sector half-angle minus the wing orb's angular
+            // half-width (atan(25/160) ≈ 8.9°): a centre exactly on the sector edge
+            // leaves the orb's outer half spilling into the neighbouring sector
+            // (previously ±30°, then ±22.5° on the edge — QA Fan-2 feedback).
             double direction = -Math.PI / 2.0;
-            double subRadius = 81.0;
+            double subRadius = 160.0;
+            double maxWing = Math.PI / 8.0 - Math.Atan(25.0 / 160.0);
 
             var child0 = SlotCenter(session, 1);
             var child1 = SlotCenter(session, 2);
 
-            double expected0X = CanvasCenter + subRadius * Math.Cos(direction - Math.PI / 6.0);
-            double expected0Y = CanvasCenter + subRadius * Math.Sin(direction - Math.PI / 6.0);
-            double expected1X = CanvasCenter + subRadius * Math.Cos(direction + Math.PI / 6.0);
-            double expected1Y = CanvasCenter + subRadius * Math.Sin(direction + Math.PI / 6.0);
+            double expected0X = CanvasCenter + subRadius * Math.Cos(direction - maxWing);
+            double expected0Y = CanvasCenter + subRadius * Math.Sin(direction - maxWing);
+            double expected1X = CanvasCenter + subRadius * Math.Cos(direction + maxWing);
+            double expected1Y = CanvasCenter + subRadius * Math.Sin(direction + maxWing);
 
-            child0.cx.Should().BeApproximately(expected0X, 0.75, "child 0 (upper wing) must sit on the sub-ring, not on the root ring");
+            child0.cx.Should().BeApproximately(expected0X, 0.75, "child 0 (upper wing) must sit on the fan arc, not on the root ring");
             child0.cy.Should().BeApproximately(expected0Y, 0.75);
-            child1.cx.Should().BeApproximately(expected1X, 0.75, "child 1 (lower wing) must sit on the sub-ring, not on the root ring");
+            child1.cx.Should().BeApproximately(expected1X, 0.75, "child 1 (lower wing) must sit on the fan arc, not on the root ring");
             child1.cy.Should().BeApproximately(expected1Y, 0.75);
 
-            // The two children must NOT still be at their root ring spots.
-            Distance(child0.cx, child0.cy, CanvasCenter, CanvasCenter).Should().BeLessThan(90.0, "sub-ring (81.0) is inside the root ring (90)");
-            Distance(child1.cx, child1.cy, CanvasCenter, CanvasCenter).Should().BeLessThan(90.0);
+            // The two children must sit OUTSIDE the root slot's outer edge (90 + 25 = 115).
+            Distance(child0.cx, child0.cy, CanvasCenter, CanvasCenter).Should().BeGreaterThan(115.0,
+                "fan children sit at R+gap = 160, strictly outside the root slot's outer edge (115)");
+            Distance(child1.cx, child1.cy, CanvasCenter, CanvasCenter).Should().BeGreaterThan(115.0);
         }
 
         [Fact]
@@ -79,13 +87,16 @@ namespace Pulsar.Tests.ViewModels
 
             session.IsInSubMenu.Should().BeTrue();
 
-            // 5 children > FanMaxSlots(3) → Ring fallback on the same sub-ring (81.0).
+            // [ADR-024 D7] 5 children > FanMaxSlots(3) → Ring geometry, which is now
+            // replace-mode: centred on the PARENT SLOT (250,160), not the canvas centre.
+            const double parentCx = 250.0;
+            const double parentCy = 160.0;
             for (int i = 1; i <= 5; i++)
             {
                 var (cx, cy) = SlotCenter(session, i);
-                double dist = Distance(cx, cy, CanvasCenter, CanvasCenter);
+                double dist = Distance(cx, cy, parentCx, parentCy);
                 dist.Should().BeApproximately(81.0, 1.0,
-                    $"child slot {i} must sit on the 81.0-radius sub-ring (was reported invisible in manual QA)");
+                    $"child slot {i} must sit on the 81.0-radius sub-ring centred on the parent slot");
             }
         }
 
@@ -126,15 +137,18 @@ namespace Pulsar.Tests.ViewModels
             session.IsInSubMenu.Should().BeTrue();
 
             double direction = -Math.PI / 2.0;
-            double subRadius = 81.0;
+            double subRadius = 160.0;
+            // Sector half-angle minus the orb's angular half-width (see
+            // EnterCascade_Fan2_ChildSlotsShouldLeaveRootRing for the spec).
+            double maxWing = Math.PI / 8.0 - Math.Atan(25.0 / 160.0);
 
             var child0 = SlotCenter(session, 1);
             var child1 = SlotCenter(session, 2);
 
-            double expected0X = CanvasCenter + subRadius * Math.Cos(direction - Math.PI / 6.0);
-            double expected0Y = CanvasCenter + subRadius * Math.Sin(direction - Math.PI / 6.0);
-            double expected1X = CanvasCenter + subRadius * Math.Cos(direction + Math.PI / 6.0);
-            double expected1Y = CanvasCenter + subRadius * Math.Sin(direction + Math.PI / 6.0);
+            double expected0X = CanvasCenter + subRadius * Math.Cos(direction - maxWing);
+            double expected0Y = CanvasCenter + subRadius * Math.Sin(direction - maxWing);
+            double expected1X = CanvasCenter + subRadius * Math.Cos(direction + maxWing);
+            double expected1Y = CanvasCenter + subRadius * Math.Sin(direction + maxWing);
 
             child0.cx.Should().BeApproximately(expected0X, 0.75,
                 "child 0 must render around local canvas center (250), not viewport center (800)");
@@ -147,10 +161,46 @@ namespace Pulsar.Tests.ViewModels
             child0.cx.Should().BeLessThan(500, "child X must stay within the 500-wide canvas");
             child0.cy.Should().BeLessThan(500, "child Y must stay within the 500-tall canvas");
 
-            // Sub-ring radius must be 81.0, not clamped to 20 (pre-fix maxSafeRadius
-            // went negative because CanvasSize - _menuCenterX = 500-800 < 0).
-            Distance(child0.cx, child0.cy, CanvasCenter, CanvasCenter).Should().BeApproximately(81.0, 1.0,
-                "sub-ring radius must be 81.0 (not clamped to 20 by negative maxSafeRadius)");
+            // [ADR-024 D1] Fan arc radius must be R + gap = 160.0, not clamped to 20
+            // (pre-fix maxSafeRadius went negative because CanvasSize - _menuCenterX
+            // = 500-800 < 0).
+            Distance(child0.cx, child0.cy, CanvasCenter, CanvasCenter).Should().BeApproximately(160.0, 1.0,
+                "fan arc radius must be 160.0 (not clamped to 20 by negative maxSafeRadius)");
+        }
+
+        [Fact]
+        public async Task EnterCascade_Fan3_ChildrenStayNonOverlappingAndInsideSector()
+        {
+            // [2026-09-06 user spec, follow-up] A 3-child fan cannot fit three
+            // non-overlapping orbs inside one 45° sector at r=160 (3×50 arc > 122.5
+            // sector arc). The pose must relax to the tightest non-overlapping
+            // spread: children must NOT overlap each other and every wing centre
+            // must stay inside the parent slot's sector (never wider than π/8).
+            var (session, _) = CreateSessionWithRealEngines();
+            session.IsVisible = true;
+            await EnterCascadeWithSubActions(session, SubMenuLayoutStyle.Fan, childCount: 3);
+
+            session.IsInSubMenu.Should().BeTrue();
+
+            var c0 = SlotCenter(session, 1);
+            var c1 = SlotCenter(session, 2);
+            var c2 = SlotCenter(session, 3);
+
+            // Non-overlap: centre-to-centre distance ≥ slot size (50).
+            Distance(c0.cx, c0.cy, c1.cx, c1.cy).Should().BeGreaterThanOrEqualTo(50.0,
+                "children 1-2 must not overlap");
+            Distance(c1.cx, c1.cy, c2.cx, c2.cy).Should().BeGreaterThanOrEqualTo(50.0,
+                "children 2-3 must not overlap");
+
+            // Every child stays within the parent slot's 45° sector (direction -90°
+            // for slot 1, half-angle π/8 = 22.5°).
+            foreach (var (cx, cy) in new[] { c0, c1, c2 })
+            {
+                double angle = Math.Atan2(cy - CanvasCenter, cx - CanvasCenter);
+                double diff = Math.Abs(AngleDifference(angle, -Math.PI / 2.0));
+                diff.Should().BeLessThanOrEqualTo(Math.PI / 8.0 + 1e-6,
+                    "fan child centre must stay inside the parent slot's sector");
+            }
         }
 
         [Fact]
@@ -226,7 +276,12 @@ namespace Pulsar.Tests.ViewModels
 
         private static (double cx, double cy) SlotCenter(MenuSession session, int slotIndex)
         {
-            var slot = session.Slots.First(s => s.SlotIndex == slotIndex);
+            // [ADR-024 D4/D7] Cascade children live in SubMenuSlots (SlotIndex 1..N,
+            // pooled); root-wheel slots (e.g. fillers) remain in Slots. The submenu
+            // collection is consulted first so child lookups never resolve to the
+            // same-indexed root slot underneath.
+            var slot = session.SubMenuSlots.FirstOrDefault(s => s.SlotIndex == slotIndex)
+                       ?? session.Slots.First(s => s.SlotIndex == slotIndex);
             return (slot.X + slot.Size / 2.0, slot.Y + slot.Size / 2.0);
         }
 
@@ -235,6 +290,22 @@ namespace Pulsar.Tests.ViewModels
             double dx = x1 - x2;
             double dy = y1 - y2;
             return Math.Sqrt(dx * dx + dy * dy);
+        }
+
+        private static double AngleDifference(double a, double b)
+        {
+            double diff = a - b;
+            while (diff > Math.PI)
+            {
+                diff -= 2 * Math.PI;
+            }
+
+            while (diff < -Math.PI)
+            {
+                diff += 2 * Math.PI;
+            }
+
+            return diff;
         }
 
         private static (MenuSession, PluginSlot) CreateSessionWithRealEngines()

@@ -22,9 +22,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **级联子菜单三 bug 修复 + E2E 基建（2026-09-06 用户三报）**：①执行解析——`ExecuteSelectionAsync` 由只查根 `Slots` 改为 `ResolveActiveSlotSource()`（SubMenu+Cascade+idx≥1 → `SubMenuSlots`），子轮盘态选中子槽位释放不再误执行根槽（原误解析到同索引根槽 QA Fan-3）；②状态残留——`IsVisible=false` 分支统一清理子菜单态（`ReleaseSubMenuSlots` + 重置 descriptor/menuState/分页/原点），下次唤起不再凭空出现旧子槽位；③位置——E2E 权威几何验证渲染与 ADR-024 D1 完全一致（半径 160、±30° 翼弧、UIA 物理像素 ×1.5 换算吻合），"位置不对"确认为残留子槽位以旧位置渲染的可见症状（同根因②）。E2E：`DebugCommandServer` 增 `profile` 参数（`DebugForcedActiveProfile` 强制 profile，绕开前台无 profile 时 `InsertCreatorSlot` 干扰）、`slot-click/slot-hover` 前真实 `SetCursorPos` 停靠（防 16ms 光标采样回盖合成悬停）、`SetActionExecuted` 带 label payload；两个复现 workflow + UIA dump 全 PASS。
 - 新增 `scripts/dev.ps1` 开发命令封装（journal 11:52 起多次提及的遗愿落地）：`build` / `test` / `commit` / `all` 四个子命令，执行前自动修补沙箱 shell 剥离的 Windows 环境变量。env 修补**只补缺失、进程级、永不覆盖**（APPDATA / LOCALAPPDATA / USERPROFILE 经 USERPROFILE→HOMEDRIVE+HOMEPATH→USERNAME 链派生；ProgramFiles 优先 ProgramW6432；ProgramFiles(x86) 与 CommonProgramFiles(x86) 由补好的 ProgramFiles 派生；SystemRoot / windir / ProgramData 由 SystemDrive 派生），根治 dotnet NuGet `Value cannot be null (path1)` 崩溃；dotnet 不在 PATH 时回退 `%ProgramFiles%\dotnet\dotnet.exe`。build/test 目标固定 `Pulsar/Pulsar.sln` 与 `Pulsar.Tests.csproj`（规避 sln 不在仓库根的 MSB1009 坑）并透传额外参数；commit 默认 `git add -u` 仅暂存 tracked 改动（呼应「勿误提交」约定），`-All` 切 `git add -A`。PS 5.1 兼容、纯 ASCII（规避 PS 5.1 读无 BOM UTF-8 的中文乱码坑）、native 启动失败诚实退出 127（不谎报成功）。
 
 ### Changed
+- **级联子菜单几何二次规格（ADR-024 v1.2.0，用户 2026-09-06 优化点）**：
+  - **D1a Fan 扇区约束**：`SubMenuParentPose` 新增 `FanMaxWingRadians`（默认 30°）；`BuildCascadeParentPose` 传 `min(30°, π/slotsPerPage)` —— 8 槽主轮盘（每槽 45°）时 Fan 翼角收窄至 **±22.5°**，子槽位不再溢出到相邻根槽扇区；布局与命中测试同用该上限（2 翼 ±maxWing / 3 翼 -maxWing·0·+maxWing，half-sector 跟随）。**v1.2.1 补充**：翼角再扣掉 orb 角宽 `atan(slotSize/2/r)≈8.9°` → 8 槽 2 子槽实测 **±13.6°**，子槽 orb 整体落入父槽 45° 扇区（中心贴边时 orb 外半仍会溢出，用户 QA Fan-2 反馈）；3 子槽在 r=160 下 45° 扇区放不下 3 个不重叠 orb（3×50 弧长 > 扇区弧 122.5），取不重叠最窄翼展 ~18.7°（中心仍在扇区内）。
+  - **D7 Ring 中心 Slot 可见且为主 Slot**：`EnterCascadeVisualsAsync` Ring 分支不再把 CenterSlot 并入主轮盘淡出，而保留在父槽位并随子槽位一起 bloom 回显（opacity 1）；CenterSlot 继承父 Slot 的**图标+label**；`RadialMenuVisualStateCoordinator.UpdateVisuals` 新增 `preserveCenterIdentity`——cascade 子菜单内悬停锚点（0）不再把中心重置为通用"返回"，Ring 中心保持父身份、Fan 中心保持冻结根态。
+  - 测试：`SubMenuLayoutEngineTests` 新增扇区约束 3 用例（±22.5° 布局 + 布局/命中一致）；`CascadeSubMenuLayoutRuntimeTests` Fan 断言 ±30°→±22.5°→±13.6°（orb 外缘贴扇区）+ 新增 Fan3 不重叠/扇区内用例；**全量 1104/1104 通过，0 警告**；E2E `fan-sector-constraint-2` / `ring-center-visible-4` PASS（UIA dump 实测：Fan 子槽 dx=±37.7=160·sin13.6°、orb 外缘恰好 -112.5° 贴扇区边界；Ring 中心 orb 与父槽中心重合、label=父名）。
+- **级联子菜单 Fan/Ring 几何与交互重构落地（ADR-024，grilling 对齐 D1–D9）**：
+  - **D1+D6 Fan 几何**：`BuildCascadeParentPose` 重写——Fan 圆心保持主轮盘中心、半径 `R+gap`（gap=70，越 maxSafeRadius 225 动态压缩至保底 50），子槽位在主轮盘同心圆外圈展开，与根槽位重叠在结构上不可能；新增 `FanGap`/`FanMinGap` 常量。
+  - **D7 Ring 替换模式**：Ring 子轮盘以父 Slot 画布坐标为圆心展开完整子环；CenterSlot 移到父位置承载返回动作（仅 Ring），主轮盘纯淡出。
+  - **D4/D8 Fan 叠加模式**：主轮盘零变换冻结为只读背景，父 Slot 留原位高亮描边、作为单击收起锚点（`HitTestCascadeSubMenu` 父足迹返 0，`UpdateActiveSlotCore` index 0 点亮父 anchor）。
+  - **D3/D9 删视口 glide 与收缩动画**：`EnterSubMenuAsyncCore` 拆分 cascade/window 两条路径——cascade 走 `EnterCascadeVisualsAsync`（子槽位从父 Slot 绽开：位移+淡入，主轮盘零变换、画布不动）；返回走 `RestoreFromCascadeAsync`（无 glide）。window 子菜单保留原路径。
+  - **D5 动态甩出取消**：`UpdateFlickOutEscapeState` 改用 `GetActiveWheelMetrics()`（原点+半径跟随当前活跃轮盘，复用 pose 无第二真值源）。Root 阈值 135 位级不变；Fan 240；Ring 121.5。
+  - **D2 Fan 超限有效样式**：`EffectiveCascadeStyle()` 统一判定——Fan 描述符子动作数 > `SubMenuLayoutEngine.FanMaxSlots`（转公开）时按 Ring 渲染，pose/策略/动画与编辑器警示一致。
+  - 测试：`CascadeSubMenuStrategyTests` 全面改断言 `SubMenuSlots`（新增 Fan 不触 CenterSlot 用例）；`CascadeSubMenuLayoutRuntimeTests` 几何断言 81→160 / Ring 圆心改父 Slot；`SubMenuCoordinatorStrategyTests` 传入专用集合。**全量 1098/1098 通过，0 警告。**
+
 - 插件运行时宽门面拆分为三个窄 seam（ADR-012，架构审查候选 A）：`IPluginRegistry` 收缩为注册面（发现·激活·查询，8 方法），`ExecuteAsync` 移入新执行面 `IPluginExecutor`，重扫/停用/状态/授权/卸载移入新运维面 `IPluginRuntimeOps`；三个接口由同一 `PluginRuntimeKernel` 单例实现并经 DI 注册。透传包装类 `PluginRegistry` 删除，执行热路径/生命周期编排/设置页各自改注入最窄 seam。
 - 熔断策略去 UI/遥测依赖（ADR-013，架构审查候选 D）：`PluginCircuitBreakerPolicy` 收敛为纯状态机（构造仅 `ILogger`），打开/恢复经 `Tripped` / `Recovered` 事件广播；新增 `PluginBreakerNotificationService` 观察者 adapter 订阅事件并把迁移转成健康遥测记录与本地化托盘通知，启动协调器在托盘初始化后解析激活。文案与行为保持与迁移前一致。
 - 可回收 ALC 卸载不变量收口（架构审查候选 E）：`PluginLoader.TryUnloadExternalContext` 现在一次性完成 `Unload()` 发起 + 强制 GC 泵（`GC.Collect`×2 + `WaitForPendingFinalizers`），调用方（`PluginRuntimeKernel.DeactivatePluginAsync`）不再内联 GC 序列，只负责调用前的引用切断。

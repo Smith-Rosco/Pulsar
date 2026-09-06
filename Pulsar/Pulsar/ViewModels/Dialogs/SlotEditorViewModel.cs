@@ -13,6 +13,7 @@ using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Models;
 using Pulsar.Plugins.Core.Pki.Models;
 using Pulsar.Services.Interfaces;
+using Pulsar.Services;
 using Pulsar.ViewModels.Base;
 using Pulsar.ViewModels.Settings;
 using DialogResult = Pulsar.Models.Enums.DialogResult;
@@ -258,6 +259,24 @@ namespace Pulsar.ViewModels.Dialogs
 
         public string SubActionsSectionTitle => _loc["Dialog.AddSlot.SubActions"];
 
+        /// <summary>
+        /// [ADR-024 D2] Fan renders at most <see cref="SubMenuLayoutEngine.FanMaxSlots"/>
+        /// wings; a larger set silently falls back to Ring geometry. The engine cap is the
+        /// single source of truth, so the editor can never drift from what is rendered.
+        /// </summary>
+        public int FanMaxSubActions => SubMenuLayoutEngine.FanMaxSlots;
+
+        /// <summary>
+        /// [ADR-024 D2] True when the configured slot would not actually render as a Fan.
+        /// Historically this was invisible: with 8 slots/page a Fan slot carrying 4-8
+        /// sub-actions was drawn as Ring and the user never learned why.
+        /// </summary>
+        public bool IsFanOverCap => IsFanLayout && SubActions.Count > FanMaxSubActions;
+
+        public string FanOverCapWarning => string.Format(
+            _loc["Dialog.AddSlot.SubActions.FanOverCap"],
+            FanMaxSubActions);
+
         // ---- Constructor ----
 
         public SlotEditorViewModel(
@@ -301,6 +320,14 @@ namespace Pulsar.ViewModels.Dialogs
                 Slot = new PluginSlot { Slot = 0, PluginId = string.Empty };
                 _isConfigurationActive = false;
             }
+
+            // [ADR-024 D2] The Fan over-cap warning tracks the live sub-action count,
+            // so every mutation path (add / remove / clear / reload) refreshes it.
+            SubActions.CollectionChanged += (_, _) =>
+            {
+                OnPropertyChanged(nameof(IsFanOverCap));
+                OnPropertyChanged(nameof(FanOverCapWarning));
+            };
         }
 
         // ---- IDialogViewModel ----

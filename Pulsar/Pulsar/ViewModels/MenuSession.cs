@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Interop;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.Logging;
@@ -62,10 +63,26 @@ namespace Pulsar.ViewModels
         /// 0.90 (r=81 @ root 90): child inner edge = 56 &gt; center slot radius 35,
         /// giving 21-DIP clearance from the "Back" button. Fan3 wing spacing
         /// = 81 &gt; slot 50 (no overlap); Ring5 adjacent = 95 &gt; 50.
-        /// History: 0.60 (r=54, overlapped center by 6) → 0.75 (r=67.5, 7.5-DIP
-        /// gap, still "过近" in manual QA 2026-09-05) → 0.90 (r=81).
+        /// History: 0.60 (r=54, overlapped center by 6) 鈫?0.75 (r=67.5, 7.5-DIP
+        /// gap, still "杩囪繎" in manual QA 2026-09-05) 鈫?0.90 (r=81).
         /// </summary>
         private const double SubMenuRingRadiusRatio = 0.90;
+
+        /// <summary>
+        /// [ADR-024 D1/D6] Preferred outward distance from the root ring radius to the
+        /// Fan arc. At the default R = 90 a fan child's inner edge sits at
+        /// (90 + 70 - 25) = 135 against the root slot's outer edge (90 + 25) = 115 鈥?        /// a 20-DIP visual gap, and the overlap that existed at ratio 0.90 becomes
+        /// structurally impossible rather than tuned.
+        /// </summary>
+        private const double FanGap = 70;
+
+        /// <summary>
+        /// [ADR-024 D6] Floor for the Fan gap. 50 = slot size, the value at which a fan
+        /// child's inner edge exactly touches the root slot's outer edge. Large slot
+        /// counts push R toward <c>SlotLayoutEngine.MaxRadius</c> (180); the gap is then
+        /// compressed toward this floor so no-overlap always wins over the preferred gap.
+        /// </summary>
+        private const double FanMinGap = 50;
 
         private static readonly TimeSpan MenuWatchdogTimeout = TimeSpan.FromSeconds(60);
 
@@ -85,14 +102,14 @@ namespace Pulsar.ViewModels
         /// deadline-bounded show path races the page load against this budget: when
         /// the load lands inside it the model is applied before the shell surfaces
         /// (menu appears fully populated), and when it misses the shell surfaces
-        /// within the budget with the in-flight load patching content in — so a slow
+        /// within the budget with the in-flight load patching content in 鈥?so a slow
         /// enumeration can never delay the menu's appearance beyond the budget.
         /// </summary>
         private const int FirstFrameBudgetMsDefault = 50;
 
         private readonly TimeSpan _firstFrameBudget;
 
-        // 按键常量
+        // 鎸夐敭甯搁噺
         private const int VK_LCONTROL = 0xA2;
         private const int VK_RCONTROL = 0xA3;
         private const int VK_LSHIFT = 0xA0;
@@ -192,7 +209,7 @@ namespace Pulsar.ViewModels
 
         /// <summary>
         /// Flick-out escape state for gesture-summoned menus: the cursor has moved
-        /// beyond the flick-out cancel radius (wheel radius × configured multiplier)
+        /// beyond the flick-out cancel radius (wheel radius 脳 configured multiplier)
         /// while the menu is visible, so the menu dims as a cancel preview and a
         /// release cancels the gesture instead of resolving spatially. Hotkey
         /// sessions never update this flag.
@@ -220,6 +237,13 @@ namespace Pulsar.ViewModels
         private bool _isTransitioning;
         private CancellationTokenSource? _subMenuTransitionCts;
         private int _subMenuOriginSlotIndex = -1;
+
+        /// <summary>
+        /// [ADR-024 D4/D7] Pooled view models backing <see cref="SubMenuSlots"/>, so
+        /// repeated drill-ins reuse bindings instead of allocating fresh ones.
+        /// </summary>
+        private readonly List<SlotViewModel> _subMenuSlotPool = new();
+
         private double _subMenuOriginX;
         private double _subMenuOriginY;
 
@@ -306,6 +330,16 @@ namespace Pulsar.ViewModels
         public bool IsGestureSummoned => InvocationSource == MenuInvocationSource.RightDragGesture;
 
         public ObservableCollection<SlotViewModel> Slots { get; } = new();
+
+        /// <summary>
+        /// [ADR-024 D4/D7] Cascade children render from their own collection so the
+        /// root wheel's slots are never repurposed (the legacy path wiped them to
+        /// <see cref="SlotType.None"/>, which is why the main wheel vanished behind a
+        /// Fan). Empty in Root state; <see cref="RadialMenuWindow"/> binds a second
+        /// <c>ItemsControl</c> to it inside <c>MenuCanvas</c>.
+        /// </summary>
+        public ObservableCollection<SlotViewModel> SubMenuSlots { get; } = new();
+
         public SlotViewModel CenterSlot { get; private set; } = null!;
 
         public MenuSession(
@@ -401,12 +435,35 @@ namespace Pulsar.ViewModels
                         _subMenuTransitionCts = null;
                         _isTransitioning = false;
 
+                        // [ADR-024 D4/D7] A hidden menu must drop its submenu state.
+                        // Cascade children live in their own ItemsControl
+                        // (SubMenuSlots), so skipping this leaks the stale fan/ring
+                        // onto the next summon 鈥?children become visible without
+                        // entering the submenu (residual-submenu leak).
+
+                        if (_menuState != MenuState.Root
+                            || _activeSubMenuDescriptor != null
+                            || SubMenuSlots.Count > 0)
+                        {
+                            ReleaseSubMenuSlots();
+                            _activeSubMenuDescriptor = null;
+                            _menuState = MenuState.Root;
+                            _subMenuPage = 0;
+                            _subMenuTotalPages = 1;
+                            _subMenuOriginSlotIndex = -1;
+                            _subMenuOriginX = 0;
+                            _subMenuOriginY = 0;
+                            _subMenuWindows = new List<ProcessWindowInfo>();
+                            _subMenuProcessName = string.Empty;
+                            _activeSlotIndex = -1;
+                        }
+
                         foreach (var slot in Slots) slot.ResetAnimation();
                         CenterSlot?.ResetAnimation();
 
                         // Keep the Switch-mode inventory warm for the next summon:
                         // the menu's own dismiss is not a desktop change, so without
-                        // this a peek→dismiss→reopen cycle would re-enumerate the
+                        // this a peek鈫抎ismiss鈫抮eopen cycle would re-enumerate the
                         // desktop instead of reusing the fresh snapshot.
                         if (CurrentMode == RadialMenuMode.Task)
                         {
@@ -501,6 +558,69 @@ namespace Pulsar.ViewModels
         }
 
         /// <summary>
+        /// [E2E] Window-relative DIP centre of a slot as currently laid out.
+        /// Cascade children resolve against <see cref="SubMenuSlots"/>, everything
+        /// else against the root wheel; slot 0 resolves to the menu centre. Used by
+        /// the ui-debug command channel to synthesise clicks/hovers at the exact
+        /// coordinates the real input pipeline would observe. Production code never
+        /// calls this.
+        /// </summary>
+        public Vector GetSlotClickPoint(int slotIndex)
+        {
+            if (slotIndex == 0)
+            {
+                return new Vector(_menuCenterX, _menuCenterY);
+            }
+
+            if (_menuState == MenuState.SubMenu
+                && _activeSubMenuDescriptor is CascadeSubMenuDescriptor
+                && slotIndex >= 1
+                && slotIndex <= SubMenuSlots.Count)
+            {
+                var sub = SubMenuSlots[slotIndex - 1];
+                return new Vector(
+                    sub.X + sub.Size / 2 + MenuCanvasLeft,
+                    sub.Y + sub.Size / 2 + MenuCanvasTop);
+            }
+
+            var root = Slots.FirstOrDefault(s => s.SlotIndex == slotIndex);
+            if (root != null)
+            {
+                return new Vector(
+                    root.X + root.Size / 2 + MenuCanvasLeft,
+                    root.Y + root.Size / 2 + MenuCanvasTop);
+            }
+
+            return new Vector(_menuCenterX, _menuCenterY);
+        }
+
+        /// <summary>
+        /// Debug-only: converts a slot's window-relative click point to screen
+        /// pixels, so E2E can park the real cursor on the slot. The rendering
+        /// sampler feeds real cursor positions back into hover tracking; a
+        /// synthetic hover alone gets clobbered by the physical pointer.
+        /// </summary>
+        public System.Windows.Point GetSlotScreenPoint(int slotIndex)
+        {
+            var relative = GetSlotClickPoint(slotIndex);
+            if (_windowHandle == IntPtr.Zero)
+            {
+                return new System.Windows.Point(relative.X, relative.Y);
+            }
+
+            PulsarNative.GetWindowRect(_windowHandle, out var rect);
+            var devicePoint = new System.Windows.Point(relative.X, relative.Y);
+            var source = HwndSource.FromHwnd(_windowHandle);
+            var transform = source?.CompositionTarget?.TransformToDevice;
+            if (transform.HasValue)
+            {
+                devicePoint = transform.Value.Transform(devicePoint);
+            }
+
+            return new System.Windows.Point(devicePoint.X + rect.Left, devicePoint.Y + rect.Top);
+        }
+
+        /// <summary>
         /// Submenu travel speed grows with the distance between the current menu
         /// center and the click point.
         /// </summary>
@@ -524,18 +644,25 @@ namespace Pulsar.ViewModels
 
         // ============ IMenuSession ============
 
-        public void SetActionExecuted(bool value)
+        public void SetActionExecuted(bool value, SlotViewModel? executedSlot = null)
         {
             ActionExecuted = value;
 
             // [UI Debug Mode] Notify the E2E driver that a slot action actually ran.
+            // The label lets workflows assert WHICH slot executed (cascade children
+            // execute from SubMenuSlots; a root-slot resolution is a regression).
             if (value && _debugStatePublisher != null)
             {
+                var slot = executedSlot
+                    ?? (_activeSlotIndex >= 1
+                        ? ResolveActiveSlotSource().FirstOrDefault(s => s.SlotIndex == _activeSlotIndex)
+                        : null);
                 _debugStatePublisher.Publish(
                     IDebugStatePublisher.ActionExecuted,
                     new Dictionary<string, object?>
                     {
-                        ["slotIndex"] = _activeSlotIndex
+                        ["slotIndex"] = slot?.SlotIndex ?? _activeSlotIndex,
+                        ["label"] = slot?.Label
                     });
             }
         }
@@ -629,14 +756,14 @@ namespace Pulsar.ViewModels
                 // seeding the page provider from the cached Switch-mode inventory when
                 // one is available (a warm cache completes inside the budget), and race
                 // it against a short first-frame budget. When the load lands inside the
-                // budget the model is applied before the shell surfaces — a fully
+                // budget the model is applied before the shell surfaces 鈥?a fully
                 // populated first frame. When it misses, the shell surfaces within the
                 // budget and the in-flight load patches the content in (bounded
                 // two-phase fallback for the pathological case).
                 // A cache hit seeds the page provider from the snapshot; a miss must
                 // keep the seed null so ProcessPageProvider falls through to a live
                 // enumeration instead of treating the (non-null, empty) miss list as a
-                // valid warm cache — which would gray out every running app.
+                // valid warm cache 鈥?which would gray out every running app.
                 List<ProcessWindowInfo>? cachedWindows = null;
                 if (mode == RadialMenuMode.Task
                     && _inventoryCoordinator.TryGetCached(out var cachedWindowsSnapshot))
@@ -658,7 +785,7 @@ namespace Pulsar.ViewModels
                     return;
                 }
 
-                // SHOW THE SHELL NOW — content is already applied when the load won
+                // SHOW THE SHELL NOW 鈥?content is already applied when the load won
                 // the budget race (single-phase); otherwise it is being prepared in the
                 // background and will patch in.
                 IsVisible = true;
@@ -717,7 +844,7 @@ namespace Pulsar.ViewModels
                 // Genuine failure (exception) while the session is still the current,
                 // visible one: retry once in the background so the shell is never left
                 // empty. A dismissal (IsVisible false) or a newer session (generation
-                // bumped) must not trigger a retry — those discard the load by design.
+                // bumped) must not trigger a retry 鈥?those discard the load by design.
                 if (!patched && IsVisible && firstLoadGeneration == _sessionGeneration)
                 {
                     _logger?.LogDebug("[Show] First-frame load did not apply; retrying content in background.");
@@ -778,7 +905,7 @@ namespace Pulsar.ViewModels
                 }
                 else
                 {
-                    string activeProcess = _lastContext!.TargetProcessName;
+                    string activeProcess = DebugForcedActiveProfile ?? _lastContext!.TargetProcessName;
                     var slots = LoadSlotsFromConfig(activeProcess);
 
                     bool foundProfile = !string.IsNullOrEmpty(activeProcess)
@@ -819,7 +946,7 @@ namespace Pulsar.ViewModels
                 // post-surface (budget missed) cases. Dismissal cancels the session
                 // token via the IsVisible setter and a newer session bumps the
                 // generation counter, so the token/generation guard alone covers both
-                // "closed while loading" and "superseded" — no separate IsVisible
+                // "closed while loading" and "superseded" 鈥?no separate IsVisible
                 // check is needed (and none may be used: the pre-surface apply runs
                 // while IsVisible is still false by design).
                 await _ui.InvokeAsync(() =>
@@ -997,7 +1124,7 @@ namespace Pulsar.ViewModels
 
         /// <summary>
         /// Builds the settings slice the isolation service evaluates, from the cached
-        /// isolation fields (D4). A fresh instance each call — the service only reads
+        /// isolation fields (D4). A fresh instance each call 鈥?the service only reads
         /// these fields, never the live config.
         /// </summary>
         private ProfileSettings BuildIsolationSettingsSnapshot()
@@ -1015,7 +1142,7 @@ namespace Pulsar.ViewModels
         /// Feeds the right-click gesture detector. Returns true when the event was
         /// consumed by the gesture (swallowed and/or routed to a summon or release).
         /// Only active while the menu is closed, or while a gesture press is in
-        /// progress so its own right-button release can be claimed — even if the
+        /// progress so its own right-button release can be claimed 鈥?even if the
         /// feature is toggled off mid-gesture, an in-flight press must not leak its
         /// button-up to the source application.
         ///
@@ -1027,7 +1154,7 @@ namespace Pulsar.ViewModels
             bool gestureInProgress = _gestureDetector.IsPressed || _gestureDetector.IsSummoned;
 
             // Resolve a pending (probationary) down on its release even if the
-            // gesture config changed mid-flight — a swallowed down must always be
+            // gesture config changed mid-flight 鈥?a swallowed down must always be
             // paired with a resolved up so it never leaks to the source app.
             if (_pendingGestureDown && e.Action == GlobalMouseAction.Up && e.Button == GlobalMouseButton.Right)
             {
@@ -1076,7 +1203,7 @@ namespace Pulsar.ViewModels
             if (e.Action == GlobalMouseAction.Down && e.Button == GlobalMouseButton.Right)
             {
                 // [Gesture Isolation] A denied press never enters the state machine
-                // (no detector touch, no pending swallow) — it passes through to the
+                // (no detector touch, no pending swallow) 鈥?it passes through to the
                 // foreground application untouched, so its release flows out as a
                 // normal right-click. Evaluation is synchronous on the hook thread.
                 if (_gestureIsolationEnabled && _gestureIsolationService != null)
@@ -1113,7 +1240,7 @@ namespace Pulsar.ViewModels
 
                     // Immediate: summon on down (current behavior). OnThreshold: the
                     // detector stays WaitingForThreshold; the menu is summoned by
-                    // OnMouseMove → FeedDisplacement when the drag crosses the
+                    // OnMouseMove 鈫?FeedDisplacement when the drag crosses the
                     // threshold (at the down position).
                     if (_gestureSummonMode == GestureSummonMode.Immediate)
                     {
@@ -1129,8 +1256,7 @@ namespace Pulsar.ViewModels
                     // gesture feature is enabled. The modifier read on the hook
                     // thread is unreliable at the down instant (GetAsyncKeyState can
                     // lag; ResetModifierState clears the keyboard hook's tracked
-                    // state when a menu shows/hides). Do NOT pass the down through —
-                    // swallow it into a pending state and re-check the modifier on
+                    // state when a menu shows/hides). Do NOT pass the down through 鈥?                    // swallow it into a pending state and re-check the modifier on
                     // the next move or at release. If a modifier appears, the press
                     // is promoted to a gesture; otherwise the release replays a
                     // plain right-click so the app still gets its native menu.
@@ -1170,7 +1296,7 @@ namespace Pulsar.ViewModels
 
                 if (upDecision == RightDragGestureDecision.SubThresholdRelease)
                 {
-                    // D2: the press never crossed the drag threshold — hand a
+                    // D2: the press never crossed the drag threshold 鈥?hand a
                     // synthetic right-click to the source app so its native context
                     // menu appears, and swallow the gesture release.
                     e.Handled = true;
@@ -1433,6 +1559,13 @@ namespace Pulsar.ViewModels
         // ============ Input routing (called by the ViewModel event adapter) ============
 
         /// <summary>
+        /// Debug-only: forces Command-mode slot resolution to a named profile.
+        /// Null (default) resolves from the real foreground window, which is
+        /// environment-dependent and therefore non-deterministic in E2E runs.
+        /// </summary>
+        public string? DebugForcedActiveProfile { get; set; }
+
+        /// <summary>
         /// Routes a global mouse click. The ViewModel is responsible for viewport
         /// gating (which monitor the click landed on) and dispatcher marshaling; this
         /// method owns the interaction policy once the event is inside the menu.
@@ -1441,6 +1574,13 @@ namespace Pulsar.ViewModels
         /// </summary>
         public async Task HandleGlobalMouseClickAsync(GlobalMouseButton button, int clickSlotIndex, Vector relativeClickPoint)
         {
+            _logger?.LogDebug(
+                "[CLICK-TRACE] enter button={Button} idx={Idx} state={State} transitioning={Transitioning} point=({X:F0},{Y:F0})",
+                button, clickSlotIndex, _menuState, _isTransitioning, relativeClickPoint.X, relativeClickPoint.Y);
+            _logger?.LogDebug(
+                "[CLICK-TRACE] layout menuCenter=({Cx:F1},{Cy:F1}) canvas=({L:F1},{T:F1}) radius={R:F1} slotSize={S:F1}",
+                _menuCenterX, _menuCenterY, MenuCanvasLeft, MenuCanvasTop, _currentRadius, _currentSlotSize);
+
             if (_isTransitioning)
             {
                 return;
@@ -1475,7 +1615,19 @@ namespace Pulsar.ViewModels
                     return;
                 }
 
-                var slot = Slots.FirstOrDefault(s => s.SlotIndex == clickSlotIndex);
+                // [ADR-024 D4/D7] Cascade children live in SubMenuSlots; the root wheel
+                // keeps its own slots. In a cascade anything outside the submenu
+                // collection is the frozen backdrop 鈥?no root slot is reachable, which
+                // is exactly the "main wheel is a read-only background" contract.
+                var slot = _menuState == MenuState.SubMenu
+                    && _activeSubMenuDescriptor is CascadeSubMenuDescriptor
+                    && clickSlotIndex >= 1
+                    && clickSlotIndex <= SubMenuSlots.Count
+                        ? SubMenuSlots[clickSlotIndex - 1]
+                        : Slots.FirstOrDefault(s => s.SlotIndex == clickSlotIndex);
+                _logger?.LogDebug(
+                    "[CLICK-TRACE] resolved slot={Label} enabled={Enabled} subSlots={SubSlots} strategy={Strategy} state={State} subMenuSlots={SubMenuCount}",
+                    slot?.Label, slot?.IsEnabled, slot?.SubSlots.Count, slot?.ActionStrategy?.GetType().Name, _menuState, SubMenuSlots.Count);
                 if (slot == null || !slot.IsEnabled)
                 {
                     return;
@@ -1576,8 +1728,7 @@ namespace Pulsar.ViewModels
                 wasVisible, _isLoading, inCenterZone, escaped, _activeSlotIndex, _menuState);
 
             // D4: hide the menu synchronously on release, before any await. The menu
-            // disappears immediately and the awaits below only drive the action —
-            // they never delay the hide (hotkey-path parity).
+            // disappears immediately and the awaits below only drive the action 鈥?            // they never delay the hide (hotkey-path parity).
             IsVisible = false;
 
             if (!wasVisible)
@@ -1585,8 +1736,7 @@ namespace Pulsar.ViewModels
                 // Released while the menu was still loading. The user has not aimed at
                 // any slot, so the gesture resolves to a quick switch back to the
                 // previously-active window. The switch needs only the foreground window
-                // captured at session start — not the (still loading) switcher page —
-                // so run it now instead of waiting for the load to finish.
+                // captured at session start 鈥?not the (still loading) switcher page 鈥?                // so run it now instead of waiting for the load to finish.
                 if (_isLoading != 0)
                 {
                     _logger?.LogDebug("[RightDragGesture] Released during load; quick-switching immediately.");
@@ -1615,7 +1765,7 @@ namespace Pulsar.ViewModels
             if (escaped)
             {
                 // D3: flick-out escape release cancels the gesture. The menu is
-                // already hidden (D4 above); nothing else runs — no quick-switch, no
+                // already hidden (D4 above); nothing else runs 鈥?no quick-switch, no
                 // slot execution. The caller swallowed the release, so it never
                 // reaches the source application.
                 _logger?.LogDebug("[RightDragGesture] Flick-out escape release cancels the gesture.");
@@ -1643,6 +1793,10 @@ namespace Pulsar.ViewModels
 
         public async Task ExecuteSelectionAsync()
         {
+            _logger?.LogDebug(
+                "[EXEC-TRACE] enter activeIdx={Idx} state={State} subMenuSlots={SubMenuCount} subMenuActive={SubActive}",
+                _activeSlotIndex, _menuState, SubMenuSlots.Count, _activeSubMenuDescriptor?.GetType().Name);
+
             if (_activeSlotIndex < 0)
             {
                 return;
@@ -1668,7 +1822,10 @@ namespace Pulsar.ViewModels
                 return;
             }
 
-            var slot = Slots.FirstOrDefault(s => s.SlotIndex == _activeSlotIndex);
+            var slot = ResolveActiveSlotSource().FirstOrDefault(s => s.SlotIndex == _activeSlotIndex);
+            _logger?.LogDebug(
+                "[EXEC-TRACE] resolved slot={Label} enabled={Enabled} strategy={Strategy}",
+                slot?.Label, slot?.IsEnabled, slot?.ActionStrategy?.GetType().Name);
             if (slot == null || !slot.IsEnabled)
             {
                 return;
@@ -1965,7 +2122,7 @@ namespace Pulsar.ViewModels
         /// Move-driven flick-out escape tracking (StarPie <c>_lastEscapedState</c>
         /// model). Only gesture-summoned menus with flick-out enabled participate:
         /// when the cursor displacement from the menu center exceeds the flick-out
-        /// cancel radius (wheel radius × configured multiplier) the menu enters the
+        /// cancel radius (wheel radius 脳 configured multiplier) the menu enters the
         /// escape state (dimmed cancel preview); re-entering the radius clears it.
         /// Hotkey-summoned menus and disabled flick-out never update the state.
         /// </summary>
@@ -1982,12 +2139,43 @@ namespace Pulsar.ViewModels
                 return;
             }
 
-            double dx = _lastMouseX - _menuCenterX;
-            double dy = _lastMouseY - _menuCenterY;
+            // [ADR-024 D5] The cancel radius follows the wheel the user is actually
+            // driving instead of always measuring from _menuCenter. A Ring sub-wheel is
+            // anchored at the parent slot (D7), so its outer children sit 90 + 81 = 171
+            // DIP from _menuCenter 鈥?well outside the 135-DIP root threshold, which
+            // would silently cancel the gesture instead of executing the slot.
+            var activeWheel = GetActiveWheelMetrics();
+
+            double dx = _lastMouseX - activeWheel.CenterX;
+            double dy = _lastMouseY - activeWheel.CenterY;
             double dist = Math.Sqrt(dx * dx + dy * dy);
             double multiplier = _config?.Settings.GestureFlickOutRadiusMultiplier ?? 1.5;
-            double flickOutRadius = _slotLayoutEngine.CalculateOptimalRadius(_slotsPerPage, _currentSlotSize) * multiplier;
-            IsFlickOutEscaped = dist > flickOutRadius;
+            IsFlickOutEscaped = dist > activeWheel.Radius * multiplier;
+        }
+
+        /// <summary>
+        /// [ADR-024 D5] Centre (viewport DIP) and radius of the wheel the user is
+        /// currently driving. Root keeps the historical <c>_menuCenter</c> plus the
+        /// layout radius, so the root threshold is unchanged (135 DIP at the default
+        /// 8 slots/page). Cascade sub-wheels reuse <see cref="BuildCascadeParentPose"/>,
+        /// which already carries the centre and radius the layout engine renders with 鈥?        /// there is no second source of truth to keep in sync.
+        /// </summary>
+        private (double CenterX, double CenterY, double Radius) GetActiveWheelMetrics()
+        {
+            if (_menuState == MenuState.SubMenu
+                && _activeSubMenuDescriptor is CascadeSubMenuDescriptor)
+            {
+                var pose = BuildCascadeParentPose();
+                return (
+                    pose.CenterX + MenuCanvasLeft,
+                    pose.CenterY + MenuCanvasTop,
+                    pose.SubRingRadius);
+            }
+
+            return (
+                _menuCenterX,
+                _menuCenterY,
+                _slotLayoutEngine.CalculateOptimalRadius(_slotsPerPage, _currentSlotSize));
         }
 
         /// <summary>
@@ -2026,7 +2214,31 @@ namespace Pulsar.ViewModels
             var localPosition = new Vector(
                 relativePosition.X - MenuCanvasLeft,
                 relativePosition.Y - MenuCanvasTop);
-            return _subMenuLayoutEngine.HitTestChild(localPosition, pose, cascade.LayoutStyle, childCount);
+
+            // [ADR-024 D4/D8] In a Fan the parent slot stays on the root wheel and is
+            // the only way back. Its footprint wins over the fan band: the cursor is
+            // parked on it right after the click, and without this the nearest-wing
+            // rule would arm the tip child instead of dismissing.
+            SubMenuLayoutStyle effectiveStyle = EffectiveCascadeStyle(cascade);
+            if (effectiveStyle == SubMenuLayoutStyle.Fan
+                && IsWithinParentSlot(localPosition))
+            {
+                return 0;
+            }
+
+            return _subMenuLayoutEngine.HitTestChild(localPosition, pose, effectiveStyle, childCount);
+        }
+
+        /// <summary>
+        /// [ADR-024 D8] Whether a canvas-local point sits inside the parent slot's own
+        /// footprint (the Fan's dismiss anchor). The parent slot never moves, so its
+        /// centre is exactly the recorded submenu origin.
+        /// </summary>
+        private bool IsWithinParentSlot(Vector localPosition)
+        {
+            double dx = localPosition.X - _subMenuOriginX;
+            double dy = localPosition.Y - _subMenuOriginY;
+            return Math.Sqrt(dx * dx + dy * dy) <= _currentSlotSize / 2;
         }
 
         private int GetCascadePageChildCount(CascadeSubMenuDescriptor cascade)
@@ -2054,15 +2266,73 @@ namespace Pulsar.ViewModels
             double maxSafeRadius = Math.Max(0, Math.Min(
                 Math.Min(CenterX, CanvasSize - CenterX),
                 Math.Min(CenterY, CanvasSize - CenterY)) - halfSlot);
-            double subRingRadius = Math.Max(20, Math.Min(_currentRadius * SubMenuRingRadiusRatio, maxSafeRadius));
+
+            // [ADR-024 D1/D6/D7] Fan and Ring anchor differently:
+            //   Fan  鈥?replace-nothing: children sit on a circle CONCENTRIC with the
+            //          main wheel but at R + gap, i.e. strictly outside the root ring.
+            //          "Anchored to the parent slot" is expressed as direction
+            //          (the 卤30掳 wings straddle the parent's radial), not as centre.
+            //   Ring 鈥?replace-mode: the main wheel leaves entirely, so the sub-wheel
+            //          is centred on the parent slot's own position.
+            // A Fan descriptor carrying more children than FanMaxSlots is effectively a
+            // Ring (D2): the editor warns about exactly this, so the pose must agree
+            // with the warning instead of rendering an over-cap Fan as a concentric ring.
+            var cascade = _activeSubMenuDescriptor as CascadeSubMenuDescriptor;
+            bool isFan = EffectiveCascadeStyle(cascade) == SubMenuLayoutStyle.Fan;
+
+            double centerX;
+            double centerY;
+            double subRingRadius;
+
+            if (isFan)
+            {
+                centerX = CenterX;
+                centerY = CenterY;
+
+                double gap = FanGap;
+                if (_currentRadius + gap > maxSafeRadius)
+                {
+                    gap = Math.Max(FanMinGap, maxSafeRadius - _currentRadius);
+                }
+
+                subRingRadius = Math.Max(20, _currentRadius + gap);
+            }
+            else
+            {
+                centerX = _subMenuOriginX;
+                centerY = _subMenuOriginY;
+                subRingRadius = Math.Max(20, Math.Min(_currentRadius * SubMenuRingRadiusRatio, maxSafeRadius));
+            }
+
+            // [2026-09-06 user spec] The fan's wings must stay inside the parent
+            // slot's own sector: with 8 slots each root slot owns 45°, so the wing
+            // half-angle is at most π/slotsPerPage (22.5°), and never wider than
+            // the engine's 30° default cap. The wing ORB itself must also clear the
+            // sector edge — a centre exactly on the edge (π/slotsPerPage) leaves the
+            // outer half of the orb (≈8.9° at r=160) spilling into the neighbouring
+            // root slot's sector, which reads as "not constrained" (QA Fan-2).
+            // A 3-child fan cannot fit three non-overlapping orbs inside one 45°
+            // sector at this radius (3×50 arc > 122.5 sector arc), so it relaxes to
+            // the tightest non-overlapping spread (≈18.7° at r=160) — the sector
+            // constraint is applied as far as geometry allows.
+            int fanChildCount = GetCascadePageChildCount(cascade);
+            double sectorHalf = Math.PI / Math.Max(1, _slotsPerPage);
+            double orbHalfAngle = Math.Atan((_currentSlotSize / 2.0) / Math.Max(20.0, subRingRadius));
+            double maxWing = Math.Min(Math.PI / 6.0, sectorHalf - orbHalfAngle);
+            if (fanChildCount >= 3)
+            {
+                double minNonOverlap = 2.0 * Math.Asin((_currentSlotSize / 2.0 + 1.0) / Math.Max(20.0, subRingRadius));
+                maxWing = Math.Max(maxWing, Math.Min(Math.PI / 6.0, minNonOverlap));
+            }
 
             return new SubMenuParentPose(
-                CenterX,
-                CenterY,
+                centerX,
+                centerY,
                 direction,
                 subRingRadius,
                 _currentSlotSize,
-                Math.Max(10, _currentCenterSize / 2));
+                Math.Max(10, _currentCenterSize / 2),
+                maxWing);
         }
 
         private void ApplyCascadeChildLayout(CascadeSubMenuDescriptor cascade)
@@ -2074,15 +2344,91 @@ namespace Pulsar.ViewModels
             }
 
             var pose = BuildCascadeParentPose();
-            var positions = _subMenuLayoutEngine.ComputeChildPositions(pose, cascade.LayoutStyle, childCount);
+            var positions = _subMenuLayoutEngine.ComputeChildPositions(pose, EffectiveCascadeStyle(cascade), childCount);
 
-            var childSlots = Slots.Where(s => s.SlotIndex >= 1).OrderBy(s => s.SlotIndex).ToList();
-            for (int i = 0; i < childCount && i < childSlots.Count; i++)
+            // [ADR-024 D4/D7] Children live in SubMenuSlots, never in the root wheel.
+            for (int i = 0; i < childCount && i < SubMenuSlots.Count; i++)
             {
-                childSlots[i].X = positions[i].X;
-                childSlots[i].Y = positions[i].Y;
+                SubMenuSlots[i].X = positions[i].X;
+                SubMenuSlots[i].Y = positions[i].Y;
+            }
+
+            _logger?.LogDebug(
+                "[GEOMETRY-TRACE] style={Style} pose=(center {Px:F1},{Py:F1} dir {Dir:F1}掳 radius {Pr:F1} slot {Ps:F1}) canvas=(0,0) children: {Children}",
+                EffectiveCascadeStyle(cascade),
+                pose.CenterX, pose.CenterY,
+                pose.DirectionRadians * 180.0 / Math.PI,
+                pose.SubRingRadius,
+                pose.SlotSize,
+                string.Join(" | ", positions.Select(p => $"({p.X:F0},{p.Y:F0})")));
+        }
+
+        /// <summary>
+        /// [ADR-024 D1/D2] The style a cascade will actually render with. A Fan
+        /// descriptor carrying more children than <see cref="SubMenuLayoutEngine.FanMaxSlots"/>
+        /// is effectively a Ring 鈥?the editor warns the user about exactly that, so
+        /// the pose, the strategy and the animations must all agree with the warning
+        /// instead of rendering an over-cap Fan as a concentric ring.
+        /// </summary>
+        private SubMenuLayoutStyle EffectiveCascadeStyle(CascadeSubMenuDescriptor? cascade) =>
+            cascade is { LayoutStyle: SubMenuLayoutStyle.Fan }
+            && GetCascadePageChildCount(cascade) <= SubMenuLayoutEngine.FanMaxSlots
+                ? SubMenuLayoutStyle.Fan
+                : SubMenuLayoutStyle.Ring;
+
+        /// <summary>
+        /// [ADR-024 D4/D7] Sizes the dedicated submenu collection to the current
+        /// page's child count, reusing pooled slot view models across invocations.
+        /// </summary>
+        private void EnsureSubMenuSlots(int count)
+        {
+            while (_subMenuSlotPool.Count < count)
+            {
+                _subMenuSlotPool.Add(new SlotViewModel(_subMenuSlotPool.Count, CenterX, CenterY, 50));
+            }
+
+            SubMenuSlots.Clear();
+            for (int i = 0; i < count; i++)
+            {
+                var slot = _subMenuSlotPool[i];
+                slot.SlotIndex = i + 1;
+                slot.X = CenterX - slot.Size / 2;
+                slot.Y = CenterY - slot.Size / 2;
+                slot.CurrentScale = 1.0;
+                slot.CurrentOpacity = 1.0;
+                slot.AnimationOffsetX = 0;
+                slot.AnimationOffsetY = 0;
+                slot.IsActive = false;
+                SubMenuSlots.Add(slot);
             }
         }
+
+        /// <summary>
+        /// [ADR-024 D4/D7] Clears the submenu collection on exit. Pooled view models
+        /// are kept alive so repeated drill-ins do not churn bindings.
+        /// </summary>
+        private void ReleaseSubMenuSlots()
+        {
+            foreach (var slot in _subMenuSlotPool)
+            {
+                slot.IsActive = false;
+                slot.DataContext = null;
+                slot.ResetAnimation();
+            }
+
+            SubMenuSlots.Clear();
+        }
+
+        /// <summary>
+        /// [ADR-024 D8] The Fan's dismiss anchor is the parent slot, which still lives
+        /// in the root collection. Null outside a Fan cascade.
+        /// </summary>
+        private SlotViewModel? ResolveFanAnchorSlot() =>
+            EffectiveCascadeStyle(_activeSubMenuDescriptor as CascadeSubMenuDescriptor) == SubMenuLayoutStyle.Fan
+            && _subMenuOriginSlotIndex > 0
+            && _subMenuOriginSlotIndex <= Slots.Count
+                ? Slots[_subMenuOriginSlotIndex - 1]
+                : null;
 
         private int HitTestAt(Point center, Vector relativePosition)
         {
@@ -2168,7 +2514,7 @@ namespace Pulsar.ViewModels
             if (newCount != oldCount)
             {
                 _logger?.LogInformation(
-                    "[UpdateSlotsPerPage] Reconfiguring layout: {OldCount} → {NewCount} slots",
+                    "[UpdateSlotsPerPage] Reconfiguring layout: {OldCount} 鈫?{NewCount} slots",
                     oldCount, newCount);
             }
 
@@ -2235,14 +2581,48 @@ namespace Pulsar.ViewModels
                     ["slotIndex"] = index
                 });
 
-            if (_activeSlotIndex == 0) CenterSlot.IsActive = false;
-            else if (_activeSlotIndex > 0) Slots.FirstOrDefault(s => s.SlotIndex == _activeSlotIndex)!.IsActive = false;
-
-            _activeSlotIndex = index;
-            if (_activeSlotIndex == 0) CenterSlot.IsActive = true;
+            if (_activeSlotIndex == 0)
+            {
+                // [ADR-024 D8] In a Fan the previously-lit "0" was the parent anchor,
+                // not the centre orb 鈥?clear whichever one was actually lit.
+                var previousAnchor = ResolveFanAnchorSlot();
+                if (previousAnchor != null)
+                {
+                    previousAnchor.IsActive = false;
+                }
+                else
+                {
+                    CenterSlot.IsActive = false;
+                }
+            }
             else if (_activeSlotIndex > 0)
             {
-                var slot = Slots.FirstOrDefault(s => s.SlotIndex == _activeSlotIndex);
+                var previousSlot = ResolveActiveSlotSource().FirstOrDefault(s => s.SlotIndex == _activeSlotIndex);
+                if (previousSlot != null)
+                {
+                    previousSlot.IsActive = false;
+                }
+            }
+
+            _activeSlotIndex = index;
+            if (_activeSlotIndex == 0)
+            {
+                // [ADR-024 D8] In a Fan the "0" hit is the parent slot 鈥?the dismiss
+                // anchor 鈥?not the centre orb. Light the parent; the frozen centre
+                // keeps its root look and never reacts to hover.
+                var anchorSlot = ResolveFanAnchorSlot();
+                if (anchorSlot != null)
+                {
+                    anchorSlot.IsActive = true;
+                }
+                else
+                {
+                    CenterSlot.IsActive = true;
+                }
+            }
+            else if (_activeSlotIndex > 0)
+            {
+                var slot = ResolveActiveSlotSource().FirstOrDefault(s => s.SlotIndex == _activeSlotIndex);
                 if (slot != null && slot.IsEnabled)
                 {
                     slot.IsActive = true;
@@ -2277,15 +2657,43 @@ namespace Pulsar.ViewModels
 
         private void UpdateDynamicVisuals()
         {
+            // [2026-09-06 user spec] Cascade centres must keep their identity while
+            // the submenu is open: Ring = the parent slot (icon + label), Fan = the
+            // frozen root orb (ADR-024 D8). The coordinator would otherwise reset
+            // the centre to a generic "Back" the moment the dismiss anchor (0) is
+            // hovered — which in a Ring happens immediately, because the pointer
+            // sits on the parent slot that the ring just opened around.
+            bool preserveCenterIdentity = _menuState == MenuState.SubMenu
+                && _activeSubMenuDescriptor is CascadeSubMenuDescriptor;
+
             _visualStateCoordinator.UpdateVisuals(
                 _activeSlotIndex,
                 _menuState,
                 _centerText,
-                Slots,
+                ResolveActiveSlotSource(),
                 CenterSlot,
                 GetPreviewHostContext,
                 title => DynamicTitle = title,
-                ApplyCenterPreview);
+                ApplyCenterPreview,
+                preserveCenterIdentity);
+        }
+
+        /// <summary>
+        /// [ADR-024 D4/D7] Active-index lookups (hover highlight + centre preview) must
+        /// resolve against the collection the index actually refers to: cascade children
+        /// live in <see cref="SubMenuSlots"/>, everything else in the root wheel.
+        /// Index 0 in a Fan is the parent slot, which still lives in the root wheel 鈥?        /// the visual-state coordinator handles 0 as the centre/anchor case.
+        /// </summary>
+        private ObservableCollection<SlotViewModel> ResolveActiveSlotSource()
+        {
+            if (_menuState == MenuState.SubMenu
+                && _activeSubMenuDescriptor is CascadeSubMenuDescriptor
+                && _activeSlotIndex >= 1)
+            {
+                return SubMenuSlots;
+            }
+
+            return Slots;
         }
 
         private void ApplyCenterPreview(ResolvedWindowPreview preview)
@@ -2565,18 +2973,36 @@ namespace Pulsar.ViewModels
                 var enterDuration = GetSubMenuEnterDuration(submenuDistance);
                 var bloomDuration = GetSubMenuBloomDuration(enterDuration);
 
+                // [ADR-024 D4/D7] Cascade children are sized into their own collection
+                // before the strategy runs, so it never has to repurpose root slots.
+                var cascadeDescriptor = descriptor as CascadeSubMenuDescriptor;
+                bool isCascade = cascadeDescriptor is not null;
+                SubMenuLayoutStyle effectiveStyle = SubMenuLayoutStyle.Ring;
+                if (cascadeDescriptor is not null)
+                {
+                    effectiveStyle = EffectiveCascadeStyle(cascadeDescriptor);
+                    EnsureSubMenuSlots(GetCascadePageChildCount(cascadeDescriptor));
+                }
+
                 // Prepare child slot actions before starting the visual morph. A
                 // release during the morph must still be able to resolve a child
                 // slot from the pointer position and execute it immediately. An
                 // unregistered strategy id falls back to the root menu instead of
                 // entering a submenu (spec: submenu-coordinator-strategy).
                 var configResult = _subMenuCoordinator.ConfigureSubMenu(
-                    descriptor, _slotsPerPage, _subMenuPage, CenterSlot, Slots, _lastContext);
+                    descriptor,
+                    _slotsPerPage,
+                    _subMenuPage,
+                    CenterSlot,
+                    Slots,
+                    _lastContext,
+                    isCascade ? SubMenuSlots : null,
+                    effectiveStyle);
 
                 if (configResult.FallbackToRoot)
                 {
                     _logger?.LogWarning(
-                        "[MenuSession] Submenu strategy '{StrategyId}' not available — restoring root menu",
+                        "[MenuSession] Submenu strategy '{StrategyId}' not available 鈥?restoring root menu",
                         descriptor.StrategyId);
                     _menuState = MenuState.Root;
                     _subMenuWindows = new List<ProcessWindowInfo>();
@@ -2595,121 +3021,47 @@ namespace Pulsar.ViewModels
 
                 // Cascade children are laid out with Ring/Fan geometry (session owns
                 // the pose; the engine computes deterministic DIP positions).
-                if (descriptor is CascadeSubMenuDescriptor cascadeDescriptor)
+                if (cascadeDescriptor is not null)
                 {
                     ApplyCascadeChildLayout(cascadeDescriptor);
                 }
 
-                UpdateSubMenuCenterLabel();
-
-                var glideViewportCenter = AnimateMenuCenterAsync(
-                    submenuCenter,
-                    enterDuration,
-                    EasingFunctions.EaseInOutCubic,
-                    cancellationToken);
-
-                var childSlots = Slots.Where(s => s.SlotIndex >= 1).ToList();
-                var otherSlots = childSlots.Where(s => s != parentSlot).ToList();
+                // [ADR-024 D8] Fan keeps the root centre orb frozen with its root
+                // semantics, so the submenu page label must not touch it either.
+                if (!isCascade || effectiveStyle == SubMenuLayoutStyle.Ring)
+                {
+                    UpdateSubMenuCenterLabel();
+                }
 
                 _activeSlotIndex = -1;
                 CenterSlot.IsActive = false;
-                foreach (var slot in childSlots)
+                foreach (var slot in Slots)
                 {
                     slot.IsActive = false;
                 }
 
-                double clickedScaleTarget = parentSlot != null
-                    ? Math.Clamp(_currentCenterSize / Math.Max(1, parentSlot.Size), 1.0, 1.45)
-                    : 1.0;
-
-                var glideClicked = parentSlot == null
-                    ? Task.CompletedTask
-                    : AnimateSlotsAsync(
-                        new[] { parentSlot },
-                        _ => new SlotPose(
-                            clickedScaleTarget,
-                            1.0,
-                            CenterX - parentCenterX,
-                            CenterY - parentCenterY),
-                        enterDuration,
-                        EasingFunctions.EaseInOutCubic,
+                if (cascadeDescriptor is not null)
+                {
+                    // [ADR-024 D3/D4/D7/D9] No viewport glide and no collapse: the
+                    // canvas never moves, and the wheel the user is keeping stays put.
+                    await EnterCascadeVisualsAsync(
+                        cascadeDescriptor,
+                        parentSlot,
+                        parentCenterX,
+                        parentCenterY,
                         cancellationToken);
-
-                var collapseOthers = AnimateSlotsAsync(
-                    otherSlots,
-                    _ => new SlotPose(SubMenuCollapsedScale, SubMenuCollapsedOpacity, 0, 0),
-                    SubMenuCollapseDuration,
-                    EasingFunctions.EaseInCubic,
-                    cancellationToken);
-
-                var collapseCenter = AnimateSlotsAsync(
-                    new[] { CenterSlot },
-                    _ => new SlotPose(SubMenuCollapsedScale, SubMenuCollapsedOpacity, 0, 0),
-                    SubMenuCollapseDuration,
-                    EasingFunctions.EaseInCubic,
-                    cancellationToken);
-
-                await Task.WhenAll(glideClicked, collapseOthers, collapseCenter, glideViewportCenter);
-                cancellationToken.ThrowIfCancellationRequested();
-
-                if (parentSlot != null)
-                {
-                    if (parentSlot.IconImage != null)
-                    {
-                        CenterSlot.IconImage = parentSlot.IconImage;
-                    }
-                    else
-                    {
-                        CenterSlot.LoadIconData(parentSlot.IconKey);
-                    }
                 }
-
-                // Center shows the parent slot's identity (label + icon set above),
-                // not a generic "Back" string. Fall back to "Back" only when the
-                // parent slot has no label.
-                CenterText = !string.IsNullOrWhiteSpace(parentSlot?.Label)
-                    ? parentSlot.Label
-                    : _loc["RadialMenu.Back"];
-                CenterSlot.ResetAnimation();
-
-                // Fan mode: keep the parent wheel visible (filler slots bloom too,
-                // preserving the full ring shape). Ring mode: hide the parent wheel
-                // (only children bloom; fillers stay collapsed) — Ring replaces the
-                // parent wheel entirely, Fan overlays children on top of it.
-                bool hideFillers = false;
-                int bloomCount = _slotsPerPage;
-                if (descriptor is CascadeSubMenuDescriptor cascadeDesc)
+                else
                 {
-                    bloomCount = GetCascadePageChildCount(cascadeDesc);
-                    hideFillers = cascadeDesc.LayoutStyle == SubMenuLayoutStyle.Ring;
-                }
-                var bloomSlots = hideFillers ? childSlots.Take(bloomCount).ToList() : childSlots;
-
-                foreach (var slot in childSlots)
-                {
-                    slot.AnimationOffsetX = CenterX - (slot.X + slot.Size / 2);
-                    slot.AnimationOffsetY = CenterY - (slot.Y + slot.Size / 2);
-                    slot.CurrentScale = SubMenuCollapsedScale;
-                    slot.CurrentOpacity = SubMenuCollapsedOpacity;
-                }
-
-                await AnimateSlotsAsync(
-                    bloomSlots,
-                    _ => new SlotPose(1.0, 1.0, 0, 0),
-                    bloomDuration,
-                    EasingFunctions.EaseOutBack,
-                    cancellationToken);
-
-                if (clickedSlotIndex > 0 && clickedSlotIndex <= _slotsPerPage)
-                {
-                    var preSelected = Slots.FirstOrDefault(s => s.SlotIndex == clickedSlotIndex);
-                    bool shouldPreSelect = preSelected != null
-                        && preSelected.Type != SlotType.None
-                        && preSelected.IsEnabled;
-                    _ = _ui.BeginInvoke(() =>
-                    {
-                        UpdateActiveSlot(shouldPreSelect ? clickedSlotIndex : -1);
-                    });
+                    await EnterWindowSubMenuVisualsAsync(
+                        parentSlot,
+                        parentCenterX,
+                        parentCenterY,
+                        submenuCenter,
+                        enterDuration,
+                        bloomDuration,
+                        clickedSlotIndex,
+                        cancellationToken);
                 }
 
                 _previewService.ClearCache();
@@ -2731,6 +3083,325 @@ namespace Pulsar.ViewModels
                     _subMenuTransitionCts = null;
                 }
             }
+        }
+
+        /// <summary>
+        /// [ADR-024 D3/D4/D7/D8/D9] Cascade entry visuals. Nothing translates: there is
+        /// no viewport glide (the canvas never moves) and no collapse of the wheel the
+        /// user is keeping. Children bloom out of the parent slot's position; in Ring
+        /// mode the root wheel fades away and the centre orb stands in for the parent
+        /// slot at the parent's own position.
+        /// </summary>
+        private async Task EnterCascadeVisualsAsync(
+            CascadeSubMenuDescriptor cascade,
+            SlotViewModel? parentSlot,
+            double parentCenterX,
+            double parentCenterY,
+            CancellationToken cancellationToken)
+        {
+            bool isFan = EffectiveCascadeStyle(cascade) == SubMenuLayoutStyle.Fan;
+
+            foreach (var slot in SubMenuSlots)
+            {
+                slot.AnimationOffsetX = parentCenterX - (slot.X + slot.Size / 2);
+                slot.AnimationOffsetY = parentCenterY - (slot.Y + slot.Size / 2);
+                slot.CurrentScale = 1.0;
+                slot.CurrentOpacity = 0.0;
+            }
+
+            Task rootWheelFade = Task.CompletedTask;
+            if (isFan)
+            {
+                // [ADR-024 D4/D8] The main wheel is a frozen read-only backdrop 鈥?no
+                // transform of any kind. The parent slot stays lit: it is the only
+                // "click to dismiss" cue, and the frozen centre keeps its root look.
+            }
+            else
+            {
+                // [ADR-024 D7] Ring replaces the main wheel: pure fade, no scale, no
+                // translation. The centre orb moves to the parent slot's position and
+                // carries the back action with the parent's identity.
+                rootWheelFade = AnimateSlotsAsync(
+                    Slots.ToList(),
+                    _ => new SlotPose(1.0, 0.0, 0, 0),
+                    SubMenuCollapseDuration,
+                    EasingFunctions.EaseInCubic,
+                    cancellationToken);
+
+                if (parentSlot != null)
+                {
+                    if (parentSlot.IconImage != null)
+                    {
+                        CenterSlot.IconImage = parentSlot.IconImage;
+                    }
+                    else
+                    {
+                        CenterSlot.LoadIconData(parentSlot.IconKey);
+                    }
+
+                    // [2026-09-06 user spec] The ring's centre reads as the PARENT
+                    // slot: its icon (above) AND its label, not the descriptor's
+                    // back label — so the visible centre matches the slot the user
+                    // clicked to open the ring.
+                    if (!string.IsNullOrWhiteSpace(parentSlot.Label))
+                    {
+                        CenterSlot.Label = parentSlot.Label;
+                    }
+                }
+
+                CenterText = !string.IsNullOrWhiteSpace(parentSlot?.Label)
+                    ? parentSlot.Label
+                    : _loc["RadialMenu.Back"];
+                CenterSlot.ResetAnimation();
+
+                // [2026-09-06 user spec] The centre orb must remain VISIBLE as the
+                // ring's centre slot. It is held at the parent slot's position with
+                // the parent's identity (icon + label + back action) — but it is NOT
+                // part of the root wheel fade above, and it blooms back to full
+                // opacity together with the children below. Previously it faded with
+                // the wheel and never reappeared, leaving the ring with an empty
+                // centre (and the dead-zone hit area pointing at an invisible orb).
+                CenterSlot.AnimationOffsetX = parentCenterX - CenterX;
+                CenterSlot.AnimationOffsetY = parentCenterY - CenterY;
+                CenterSlot.CurrentScale = 1.0;
+                CenterSlot.CurrentOpacity = 0.0;
+            }
+
+            await rootWheelFade;
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var bloomTasks = new List<Task>
+            {
+                AnimateSlotsAsync(
+                    SubMenuSlots,
+                    _ => new SlotPose(1.0, 1.0, 0, 0),
+                    SubMenuRestoreBloomDuration,
+                    EasingFunctions.EaseOutBack,
+                    cancellationToken)
+            };
+
+            if (!isFan)
+            {
+                // The Ring's centre orb blooms back at the parent slot's position —
+                // same offset as the initial state, so it fades in without sliding.
+                bloomTasks.Add(AnimateSlotsAsync(
+                    new[] { CenterSlot },
+                    _ => new SlotPose(1.0, 1.0, parentCenterX - CenterX, parentCenterY - CenterY),
+                    SubMenuRestoreBloomDuration,
+                    EasingFunctions.EaseOutBack,
+                    cancellationToken));
+            }
+
+            await Task.WhenAll(bloomTasks);
+
+            _logger?.LogDebug(
+                "[VISUAL-TRACE] style={Style} centerVisible={Visible} centerOpacity={Op:F2} center=({Cx:F1},{Cy:F1}) parent=({Px:F1},{Py:F1}) label={Label} parentSlotNull={Null}",
+                isFan ? "Fan" : "Ring",
+                CenterSlot.CurrentOpacity > 0.5,
+                CenterSlot.CurrentOpacity,
+                CenterSlot.AnimationOffsetX + CenterX,
+                CenterSlot.AnimationOffsetY + CenterY,
+                parentCenterX,
+                parentCenterY,
+                CenterSlot.Label,
+                parentSlot == null);
+
+            if (isFan)
+            {
+                // [ADR-024 D8] Light the dismiss anchor as soon as the Fan is open 鈥?                // the pointer is parked on the parent slot at this moment anyway.
+                _ = _ui.BeginInvoke(() => UpdateActiveSlot(0));
+            }
+        }
+
+        /// <summary>
+        /// [ADR-024 D3] Window submenus keep the legacy root-slot reuse morph
+        /// (glide to the click point, collapse the wheel, bloom the window list).
+        /// Extracted verbatim so the cascade path can skip all of it.
+        /// </summary>
+        private async Task EnterWindowSubMenuVisualsAsync(
+            SlotViewModel? parentSlot,
+            double parentCenterX,
+            double parentCenterY,
+            Point submenuCenter,
+            TimeSpan enterDuration,
+            TimeSpan bloomDuration,
+            int clickedSlotIndex,
+            CancellationToken cancellationToken)
+        {
+            var glideViewportCenter = AnimateMenuCenterAsync(
+                submenuCenter,
+                enterDuration,
+                EasingFunctions.EaseInOutCubic,
+                cancellationToken);
+
+            var childSlots = Slots.Where(s => s.SlotIndex >= 1).ToList();
+            var otherSlots = childSlots.Where(s => s != parentSlot).ToList();
+
+            double clickedScaleTarget = parentSlot != null
+                ? Math.Clamp(_currentCenterSize / Math.Max(1, parentSlot.Size), 1.0, 1.45)
+                : 1.0;
+
+            var glideClicked = parentSlot == null
+                ? Task.CompletedTask
+                : AnimateSlotsAsync(
+                    new[] { parentSlot },
+                    _ => new SlotPose(
+                        clickedScaleTarget,
+                        1.0,
+                        CenterX - parentCenterX,
+                        CenterY - parentCenterY),
+                    enterDuration,
+                    EasingFunctions.EaseInOutCubic,
+                    cancellationToken);
+
+            var collapseOthers = AnimateSlotsAsync(
+                otherSlots,
+                _ => new SlotPose(SubMenuCollapsedScale, SubMenuCollapsedOpacity, 0, 0),
+                SubMenuCollapseDuration,
+                EasingFunctions.EaseInCubic,
+                cancellationToken);
+
+            var collapseCenter = AnimateSlotsAsync(
+                new[] { CenterSlot },
+                _ => new SlotPose(SubMenuCollapsedScale, SubMenuCollapsedOpacity, 0, 0),
+                SubMenuCollapseDuration,
+                EasingFunctions.EaseInCubic,
+                cancellationToken);
+
+            await Task.WhenAll(glideClicked, collapseOthers, collapseCenter, glideViewportCenter);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (parentSlot != null)
+            {
+                if (parentSlot.IconImage != null)
+                {
+                    CenterSlot.IconImage = parentSlot.IconImage;
+                }
+                else
+                {
+                    CenterSlot.LoadIconData(parentSlot.IconKey);
+                }
+            }
+
+            CenterText = !string.IsNullOrWhiteSpace(parentSlot?.Label)
+                ? parentSlot.Label
+                : _loc["RadialMenu.Back"];
+            CenterSlot.ResetAnimation();
+
+            foreach (var slot in childSlots)
+            {
+                slot.AnimationOffsetX = CenterX - (slot.X + slot.Size / 2);
+                slot.AnimationOffsetY = CenterY - (slot.Y + slot.Size / 2);
+                slot.CurrentScale = SubMenuCollapsedScale;
+                slot.CurrentOpacity = SubMenuCollapsedOpacity;
+            }
+
+            await AnimateSlotsAsync(
+                childSlots,
+                _ => new SlotPose(1.0, 1.0, 0, 0),
+                bloomDuration,
+                EasingFunctions.EaseOutBack,
+                cancellationToken);
+
+            if (clickedSlotIndex > 0 && clickedSlotIndex <= _slotsPerPage)
+            {
+                var preSelected = Slots.FirstOrDefault(s => s.SlotIndex == clickedSlotIndex);
+                bool shouldPreSelect = preSelected != null
+                    && preSelected.Type != SlotType.None
+                    && preSelected.IsEnabled;
+                _ = _ui.BeginInvoke(() =>
+                {
+                    UpdateActiveSlot(shouldPreSelect ? clickedSlotIndex : -1);
+                });
+            }
+        }
+
+        /// <summary>
+        /// [ADR-024 D3/D4/D7] Cascade exit. The root wheel was never touched, so there
+        /// is no glide back and, for Fan, nothing to re-bloom 鈥?only the submenu
+        /// collection retracts toward the parent slot. Ring additionally fades the root
+        /// wheel (and the centre orb that stood in for the parent slot) back in.
+        /// </summary>
+        private async Task RestoreFromCascadeAsync(double originX, double originY, CancellationToken cancellationToken)
+        {
+            bool wasRing = EffectiveCascadeStyle(_activeSubMenuDescriptor as CascadeSubMenuDescriptor)
+                == SubMenuLayoutStyle.Ring;
+
+            var retractChildren = AnimateSlotsAsync(
+                SubMenuSlots,
+                slot => new SlotPose(
+                    1.0,
+                    0.0,
+                    originX - (slot.X + slot.Size / 2),
+                    originY - (slot.Y + slot.Size / 2)),
+                SubMenuCollapseDuration,
+                EasingFunctions.EaseInCubic,
+                cancellationToken);
+
+            Task retractCentre = Task.CompletedTask;
+            if (wasRing)
+            {
+                retractCentre = AnimateSlotsAsync(
+                    new[] { CenterSlot },
+                    _ => new SlotPose(1.0, 0.0, 0, 0),
+                    SubMenuCollapseDuration,
+                    EasingFunctions.EaseInCubic,
+                    cancellationToken);
+            }
+
+            await Task.WhenAll(retractChildren, retractCentre);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            _subMenuWindows = new List<ProcessWindowInfo>();
+            _subMenuProcessName = string.Empty;
+            _activeSubMenuDescriptor = null;
+            _subMenuPage = 0;
+            _subMenuTotalPages = 1;
+            _subMenuOriginSlotIndex = -1;
+            _subMenuOriginX = 0;
+            _subMenuOriginY = 0;
+            _menuState = MenuState.Root;
+
+            ReleaseSubMenuSlots();
+            ResetCenterSlotForRootMenu();
+
+            if (!wasRing)
+            {
+                // [ADR-024 D4/D8] Fan: the main wheel never moved and never faded, so
+                // there is nothing to bring back 鈥?the anchor highlight is already
+                // cleared by the caller's IsActive sweep.
+                return;
+            }
+
+            // [ADR-024 D7] Ring replaced the wheel; fade it back in from the canvas
+            // centre. Root slot data was never overwritten, so no RefreshVisuals call
+            // (and none of its "pop" risk) is needed here.
+            foreach (var slot in Slots)
+            {
+                slot.AnimationOffsetX = 0;
+                slot.AnimationOffsetY = 0;
+                slot.CurrentScale = 1.0;
+                slot.CurrentOpacity = 0.0;
+            }
+
+            CenterSlot.AnimationOffsetX = 0;
+            CenterSlot.AnimationOffsetY = 0;
+            CenterSlot.CurrentScale = 1.0;
+            CenterSlot.CurrentOpacity = 0.0;
+
+            await Task.WhenAll(
+                AnimateSlotsAsync(
+                    Slots,
+                    _ => new SlotPose(1.0, 1.0, 0, 0),
+                    SubMenuRestoreBloomDuration,
+                    EasingFunctions.EaseOutBack,
+                    cancellationToken),
+                AnimateSlotsAsync(
+                    new[] { CenterSlot },
+                    _ => new SlotPose(1.0, 1.0, 0, 0),
+                    SubMenuRestoreBloomDuration,
+                    EasingFunctions.EaseOutBack,
+                    cancellationToken));
         }
 
         private void UpdateSubMenuCenterLabel()
@@ -2759,6 +3430,18 @@ namespace Pulsar.ViewModels
                 foreach (var slot in Slots)
                 {
                     slot.IsActive = false;
+                }
+
+                // [ADR-024 D4/D7] Cascade exit: the root wheel was never touched, so
+                // there is no glide back and (for Fan) nothing to re-bloom 鈥?only the
+                // submenu collection retracts toward the parent slot.
+                if (_activeSubMenuDescriptor is CascadeSubMenuDescriptor)
+                {
+                    await RestoreFromCascadeAsync(originX, originY, cancellationToken);
+
+                    ApplyCenterPreview(ResolvedWindowPreview.Icon(CenterSlot.IconImage));
+                    DynamicTitle = string.Empty;
+                    return;
                 }
 
                 var restoreCenterTask = AnimateMenuCenterAsync(

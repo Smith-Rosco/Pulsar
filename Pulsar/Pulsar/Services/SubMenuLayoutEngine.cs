@@ -17,12 +17,17 @@ namespace Pulsar.Services
     {
         /// <summary>
         /// StarPie's Fan caps at three wings (upper, tip, lower); more children fall
-        /// back to Ring.
+        /// back to Ring. Public so the slot editor can warn about the fallback instead
+        /// of letting it happen silently (ADR-024 D2).
         /// </summary>
-        private const int FanMaxSlots = 3;
+        public const int FanMaxSlots = 3;
 
         /// <summary>
         /// Angular spread of the two outer fan wings about the parent direction.
+        /// The DEFAULT cap: real menus pass the parent slot's own sector half-angle
+        /// (e.g. 22.5° for an 8-slot wheel) via <see cref="SubMenuParentPose.FanMaxWingRadians"/>
+        /// so a fan never spills into the neighbouring root slot's sector — the
+        /// engine only tightens, never widens beyond this default.
         /// </summary>
         private static readonly double FanWingAngle = Math.PI / 6.0; // 30°
 
@@ -47,9 +52,14 @@ namespace Pulsar.Services
                 // parent slot sits, while HitTestFan correctly compared in the parent's
                 // local basis — layout and hit-testing disagreed on every non-east
                 // parent. Found by manual QA (change 2026-09-05-cascade-submenu-fan-qa).
+                //
+                // [2026-09-06 user spec] The wings are additionally clamped to the
+                // parent slot's own sector (FanMaxWingRadians): with the main wheel
+                // frozen in Fan mode, a ±30° spread on an 8-slot wheel (22.5° sector
+                // half) visually spilled into the neighbouring root slots.
                 for (int i = 0; i < childCount; i++)
                 {
-                    double wingAngle = parentPose.DirectionRadians + GetFanWingAngle(i, childCount);
+                    double wingAngle = parentPose.DirectionRadians + GetFanWingAngle(i, childCount, parentPose.FanMaxWingRadians);
                     positions[i] = ComputePosition(parentPose, wingAngle);
                 }
 
@@ -149,7 +159,7 @@ namespace Pulsar.Services
             double bestDiff = double.MaxValue;
             for (int i = 0; i < childCount; i++)
             {
-                double diff = Math.Abs(AngleDifference(relAngle, GetFanWingAngle(i, childCount)));
+                double diff = Math.Abs(AngleDifference(relAngle, GetFanWingAngle(i, childCount, pose.FanMaxWingRadians)));
                 if (diff < bestDiff)
                 {
                     bestDiff = diff;
@@ -163,13 +173,13 @@ namespace Pulsar.Services
             // manual QA: children rendered in the parent's direction but firing when
             // the cursor was near the center slot. Constrain the selection to the
             // wing's own geometric sector (half the gap to the neighbouring wing):
-            // 2 wings → ±30°, 3 wings → ±15°, single tip → ±30°. Points between
-            // wings, or off to the side of the fan, now resolve to -1.
+            // 2 wings → ±maxWing, 3 wings → ±maxWing/2, single tip → ±maxWing.
+            // Points between wings, or off to the side of the fan, now resolve to -1.
             double halfSector = childCount switch
             {
-                1 => FanWingAngle,
-                2 => FanWingAngle,
-                _ => FanWingAngle / 2.0
+                1 => pose.FanMaxWingRadians,
+                2 => pose.FanMaxWingRadians,
+                _ => pose.FanMaxWingRadians / 2.0
             };
 
             if (bestDiff > halfSector)
@@ -187,7 +197,7 @@ namespace Pulsar.Services
             return (cx - pose.SlotSize / 2, cy - pose.SlotSize / 2);
         }
 
-        private static double GetFanWingAngle(int childIndex, int childCount)
+        private static double GetFanWingAngle(int childIndex, int childCount, double maxWing)
         {
             if (childCount == 1)
             {
@@ -196,14 +206,14 @@ namespace Pulsar.Services
 
             if (childCount == 2)
             {
-                return childIndex == 0 ? -FanWingAngle : FanWingAngle; // upper / lower wings
+                return childIndex == 0 ? -maxWing : maxWing; // upper / lower wings
             }
 
             return childIndex switch
             {
-                0 => -FanWingAngle, // upper
-                1 => 0,             // tip
-                _ => FanWingAngle   // lower
+                0 => -maxWing, // upper
+                1 => 0,        // tip
+                _ => maxWing   // lower
             };
         }
 

@@ -59,9 +59,28 @@ namespace Pulsar.ViewModels.Strategies
                 return null;
             }
 
-            context.CenterSlot.Label = cascade.Label;
-            context.CenterSlot.Type = SlotType.Action;
-            context.CenterSlot.ActionStrategy = new BackActionStrategy();
+            // [ADR-024 D4/D7] Children render from the session's dedicated submenu
+            // collection; the root wheel's slots are never repurposed. The session
+            // sizes the collection to the current page's child count.
+            var children = context.SubMenuSlots;
+            if (children == null)
+            {
+                _logger?.LogError(
+                    "[CascadeSubMenuStrategy] No SubMenuSlots provided — the session must supply the dedicated child collection");
+                return null;
+            }
+
+            // [ADR-024 D7] Ring is replace-mode: the centre orb stands in for the
+            // parent slot and carries the back action. Fan is overlay-mode: the main
+            // wheel stays visible and frozen, and the parent slot itself (still in the
+            // root collection) is the dismiss anchor — so the centre orb keeps its
+            // root semantics untouched.
+            if (context.EffectiveLayoutStyle == SubMenuLayoutStyle.Ring)
+            {
+                context.CenterSlot.Label = cascade.Label;
+                context.CenterSlot.Type = SlotType.Action;
+                context.CenterSlot.ActionStrategy = new BackActionStrategy();
+            }
 
             int startIndex = Math.Max(0, context.PageIndex * Math.Max(1, context.SlotsPerPage));
             var pageSubSlots = cascade.SubSlots
@@ -69,10 +88,9 @@ namespace Pulsar.ViewModels.Strategies
                 .Take(Math.Max(1, context.SlotsPerPage))
                 .ToList();
 
-            for (int i = 0; i < context.SlotsPerPage; i++)
+            for (int i = 0; i < children.Count; i++)
             {
-                var slot = context.Slots.FirstOrDefault(s => s.SlotIndex == i + 1);
-                if (slot == null) continue;
+                var slot = children[i];
 
                 if (i < pageSubSlots.Count)
                 {

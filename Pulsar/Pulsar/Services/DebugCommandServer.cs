@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Pulsar.Native;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels;
 using Pulsar.Views;
@@ -126,14 +127,24 @@ namespace Pulsar.Services
                             && modeEl.GetString()?.Equals("task", StringComparison.OrdinalIgnoreCase) == true
                                 ? RadialMenuMode.Task
                                 : RadialMenuMode.Action;
-                        _logger?.LogInformation("[DebugCommandServer] menu-open mode={Mode}", mode);
+                        string? profile = root.TryGetProperty("profile", out var profileEl) && profileEl.ValueKind == JsonValueKind.String
+                            ? profileEl.GetString()
+                            : null;
+                        _logger?.LogInformation("[DebugCommandServer] menu-open mode={Mode} profile={Profile}", mode, profile);
                         var dispatcher = Application.Current?.Dispatcher;
                         if (dispatcher == null)
                         {
                             _logger?.LogWarning("[DebugCommandServer] No WPF application dispatcher; command dropped");
                             return;
                         }
-                        _ = dispatcher.InvokeAsync(async () => await _menuViewModel.ShowMenuForExternalDriverAsync(mode));
+                        _ = dispatcher.InvokeAsync(async () =>
+                        {
+                            if (!string.IsNullOrWhiteSpace(profile))
+                            {
+                                _menuViewModel.DebugSetForcedActiveProfile(profile);
+                            }
+                            await _menuViewModel.ShowMenuForExternalDriverAsync(mode);
+                        });
                         break;
 
                     case "menu-close":
@@ -158,6 +169,46 @@ namespace Pulsar.Services
                         });
                         break;
 
+                    // [E2E] Deterministic input synthesis — exercises the same session
+                    // entry points as the real adapters without registering global
+                    // input hooks. slot-click/hover resolve the slot's current centre
+                    // from its live layout (cascade children included); selection-execute
+                    // runs the hotkey/gesture release path.
+                    case "slot-click":
+                    {
+                        int slot = TryGetInt(root, "slot", 0);
+                        string button = TryGetString(root, "button") ?? "left";
+                        _logger?.LogInformation("[DebugCommandServer] slot-click slot={Slot} button={Button}", slot, button);
+                        Application.Current?.Dispatcher?.Invoke(() =>
+                        {
+                            ParkCursorOnSlot(slot);
+                            _menuViewModel.SimulateSlotClick(slot, button);
+                        });
+                        break;
+                    }
+
+                    case "slot-hover":
+                    {
+                        int slot = TryGetInt(root, "slot", 0);
+                        _logger?.LogInformation("[DebugCommandServer] slot-hover slot={Slot}", slot);
+                        Application.Current?.Dispatcher?.Invoke(() =>
+                        {
+                            ParkCursorOnSlot(slot);
+                            _menuViewModel.SimulateSlotHover(slot);
+                        });
+                        break;
+                    }
+
+                    case "selection-execute":
+                        _logger?.LogInformation("[DebugCommandServer] selection-execute");
+                        Application.Current?.Dispatcher?.Invoke(_menuViewModel.SimulateSelectionExecute);
+                        break;
+
+                    case "selection-execute-dismiss":
+                        _logger?.LogInformation("[DebugCommandServer] selection-execute-dismiss");
+                        Application.Current?.Dispatcher?.Invoke(_menuViewModel.SimulateSelectionExecuteAndDismiss);
+                        break;
+
                     default:
                         _logger?.LogWarning("[DebugCommandServer] Unknown command: {Line}", line);
                         break;
@@ -171,6 +222,39 @@ namespace Pulsar.Services
             {
                 _logger?.LogWarning(ex, "[DebugCommandServer] Command execution failed: {Line}", line);
             }
+        }
+
+        private static int TryGetInt(JsonElement root, string name, int fallback)
+        {
+            return root.TryGetProperty(name, out var el) && el.ValueKind == JsonValueKind.Number
+                ? el.GetInt32()
+                : fallback;
+        }
+
+        /// <summary>
+        /// Moves the physical pointer onto the slot's current centre before a
+        /// synthetic click/hover. The rendering sampler feeds the real cursor
+        /// position back into hover tracking, so without this the next sampler
+        /// tick overwrites the synthetic hover with the stale pointer location.
+        /// </summary>
+        private void ParkCursorOnSlot(int slot)
+        {
+            try
+            {
+                var screenPoint = _menuViewModel.GetSlotScreenPoint(slot);
+                PulsarNative.SetCursorPos((int)screenPoint.X, (int)screenPoint.Y);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "[DebugCommandServer] Failed to park cursor on slot {Slot}", slot);
+            }
+        }
+
+        private static string? TryGetString(JsonElement root, string name)
+        {
+            return root.TryGetProperty(name, out var el) && el.ValueKind == JsonValueKind.String
+                ? el.GetString()
+                : null;
         }
     }
 }

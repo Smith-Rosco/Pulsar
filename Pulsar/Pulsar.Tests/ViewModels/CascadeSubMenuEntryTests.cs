@@ -120,6 +120,115 @@ namespace Pulsar.Tests.ViewModels
             session.IsInSubMenu.Should().BeFalse();
         }
 
+        [Fact]
+        public async Task ExecuteSelection_InCascadeSubMenu_ShouldResolveChildFromSubMenuSlots()
+        {
+            var (session, executor, pluginSlot) = CreateSession();
+            pluginSlot.CascadeLayoutStyle = SubMenuLayoutStyle.Fan;
+            pluginSlot.SubActions =
+            [
+                new SubSlotDescriptor("com.pulsar.command", "child-a", new Dictionary<string, string> { ["keys"] = "A" }, "Child A", string.Empty, string.Empty),
+                new SubSlotDescriptor("com.pulsar.command", "child-b", new Dictionary<string, string> { ["keys"] = "B" }, "Child B", string.Empty, string.Empty)
+            ];
+
+            var slot = session.Slots.First(s => s.SlotIndex == 1);
+            slot.DataContext = pluginSlot;
+            slot.SubSlots.Clear();
+            foreach (var sub in pluginSlot.SubActions)
+            {
+                slot.SubSlots.Add(sub);
+            }
+            slot.Label = "Fan Parent";
+            slot.IsEnabled = true;
+            slot.ActionStrategy = new NoOpStrategy();
+
+            // A configured root slot at the child's index — the regression this
+            // guards against: ExecuteSelectionAsync used to resolve the child index
+            // against the ROOT Slots collection, executing root slot 2 instead of
+            // the child (or nothing when slot 2 was empty).
+            var rootSlot2 = new PluginSlot
+            {
+                Slot = 2,
+                PluginId = "com.pulsar.command",
+                Action = "root-2",
+                Label = "Root Two",
+                Args = new Dictionary<string, string>()
+            };
+            var root2ViewModel = session.Slots.First(s => s.SlotIndex == 2);
+            root2ViewModel.DataContext = rootSlot2;
+            root2ViewModel.Label = "Root Two";
+            root2ViewModel.IsEnabled = true;
+            root2ViewModel.ActionStrategy = new PluginActionStrategy(
+                rootSlot2, executor.Object, null!,
+                Mock.Of<ITrayService>(), Mock.Of<IActionFeedbackService>());
+
+            session.IsVisible = true;
+            await session.HandleGlobalMouseClickAsync(GlobalMouseButton.Left, clickSlotIndex: 1, new Vector(150, 150));
+
+            session.IsInSubMenu.Should().BeTrue();
+            session.SubMenuSlots.Should().HaveCount(2);
+
+            // The unit session has no PulsarContext, so CascadeSubMenuStrategy would
+            // give the children NoOpStrategy. Swap in a mock to observe the
+            // RESOLUTION under test (which slot's strategy runs), independent of
+            // plugin wiring — the plugin pipeline itself is covered by the E2E.
+            var child2 = session.SubMenuSlots.First(s => s.SlotIndex == 2);
+            var childStrategy = new Mock<IActionStrategy>();
+            childStrategy
+                .Setup(s => s.ExecuteAsync(It.IsAny<SlotViewModel>(), It.IsAny<IMenuSession>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            child2.ActionStrategy = childStrategy.Object;
+
+            session.UpdateActiveSlot(2);
+            await session.ExecuteSelectionAsync();
+
+            // The child's strategy must run — never the root slot 2's plugin action.
+            childStrategy.Verify(
+                s => s.ExecuteAsync(child2, session, It.IsAny<CancellationToken>()),
+                Times.Once);
+            executor.Verify(exec => exec.ExecuteAsync(
+                "com.pulsar.command",
+                "root-2",
+                It.IsAny<IReadOnlyDictionary<string, string>>(),
+                It.IsAny<Pulsar.Core.Plugin.PulsarContext>(),
+                It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task Hide_WhileCascadeSubMenuOpen_ShouldClearSubMenuState()
+        {
+            var (session, _, pluginSlot) = CreateSession();
+            pluginSlot.CascadeLayoutStyle = SubMenuLayoutStyle.Ring;
+            pluginSlot.SubActions =
+            [
+                new SubSlotDescriptor("com.pulsar.command", "sendkeys", new Dictionary<string, string> { ["keys"] = "^c" }, "Copy", string.Empty, string.Empty)
+            ];
+
+            var slot = session.Slots.First(s => s.SlotIndex == 1);
+            slot.DataContext = pluginSlot;
+            slot.SubSlots.Clear();
+            foreach (var sub in pluginSlot.SubActions)
+            {
+                slot.SubSlots.Add(sub);
+            }
+            slot.Label = "Clipboard";
+            slot.IsEnabled = true;
+            slot.ActionStrategy = new NoOpStrategy();
+
+            session.IsVisible = true;
+            await session.HandleGlobalMouseClickAsync(GlobalMouseButton.Left, clickSlotIndex: 1, new Vector(150, 150));
+
+            session.IsInSubMenu.Should().BeTrue();
+            session.SubMenuSlots.Should().NotBeEmpty();
+
+            session.IsVisible = false;
+
+            // The residual-submenu leak: children must not survive the hide,
+            // otherwise the next summon re-renders them at the stale position.
+            session.IsInSubMenu.Should().BeFalse();
+            session.SubMenuSlots.Should().BeEmpty();
+        }
+
         private static (MenuSession, Mock<IPluginExecutor>, PluginSlot) CreateSession()
         {
             var pluginRegistry = new Mock<IPluginRegistry>();

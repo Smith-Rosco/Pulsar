@@ -29,13 +29,30 @@ namespace Pulsar.Tests.ViewModels
         [Fact]
         public void ConfigureSubMenu_ShouldSetCenterAsBackActionStrategy_WithCascadeLabel()
         {
-            var (context, descriptor, _) = CreateScenario(pageIndex: 0, subSlotCount: 1);
+            // [ADR-024 D7] Only Ring (replace-mode) stands the centre orb in for the
+            // parent slot, so this scenario uses an effective Ring layout.
+            var (context, descriptor, _) = CreateScenario(pageIndex: 0, subSlotCount: 1, effectiveLayoutStyle: SubMenuLayoutStyle.Ring);
 
             context.Strategy.ConfigureSubMenu(context.Context, descriptor);
 
             context.Context.CenterSlot.ActionStrategy.Should().BeOfType<BackActionStrategy>();
             context.Context.CenterSlot.Type.Should().Be(SlotType.Action);
             context.Context.CenterSlot.Label.Should().Be("Cascade Label");
+        }
+
+        [Fact]
+        public void ConfigureSubMenu_Fan_ShouldNotTouchCenterSlot()
+        {
+            // [ADR-024 D8] Fan is overlay-mode: the parent slot (still in the root
+            // collection) is the dismiss anchor, so the centre orb keeps its root
+            // semantics untouched.
+            var (context, descriptor, _) = CreateScenario(pageIndex: 0, subSlotCount: 1);
+
+            var labelBefore = context.Context.CenterSlot.Label;
+            context.Strategy.ConfigureSubMenu(context.Context, descriptor);
+
+            context.Context.CenterSlot.ActionStrategy.Should().NotBeOfType<BackActionStrategy>();
+            context.Context.CenterSlot.Label.Should().Be(labelBefore);
         }
 
         [Fact]
@@ -48,11 +65,12 @@ namespace Pulsar.Tests.ViewModels
 
             context.Strategy.ConfigureSubMenu(context.Context, descriptor);
 
-            context.Slots[0].ActionStrategy.Should().BeOfType<PluginActionStrategy>();
-            context.Slots[0].Type.Should().Be(SlotType.Action);
-            context.Slots[0].IsEnabled.Should().BeTrue();
-            context.Slots[0].DataContext.Should().BeOfType<SubSlotDescriptor>();
-            context.Slots[1].ActionStrategy.Should().BeOfType<PluginActionStrategy>();
+            // [ADR-024 D4/D7] Children render into SubMenuSlots, not the root slots.
+            context.SubMenuSlots[0].ActionStrategy.Should().BeOfType<PluginActionStrategy>();
+            context.SubMenuSlots[0].Type.Should().Be(SlotType.Action);
+            context.SubMenuSlots[0].IsEnabled.Should().BeTrue();
+            context.SubMenuSlots[0].DataContext.Should().BeOfType<SubSlotDescriptor>();
+            context.SubMenuSlots[1].ActionStrategy.Should().BeOfType<PluginActionStrategy>();
         }
 
         [Fact]
@@ -63,9 +81,9 @@ namespace Pulsar.Tests.ViewModels
 
             context.Strategy.ConfigureSubMenu(context.Context, descriptor);
 
-            context.Slots[0].ActionStrategy.Should().BeOfType<NoOpStrategy>();
-            context.Slots[0].Type.Should().Be(SlotType.None);
-            context.Slots[0].Label.Should().BeEmpty();
+            context.SubMenuSlots[0].ActionStrategy.Should().BeOfType<NoOpStrategy>();
+            context.SubMenuSlots[0].Type.Should().Be(SlotType.None);
+            context.SubMenuSlots[0].Label.Should().BeEmpty();
         }
 
         [Fact]
@@ -78,15 +96,16 @@ namespace Pulsar.Tests.ViewModels
 
             context.Strategy.ConfigureSubMenu(context.Context, descriptor);
 
-            context.Slots[0].ActionStrategy.Should().BeOfType<NoOpStrategy>();
-            context.Slots[0].IsEnabled.Should().BeFalse("an unknown plugin/action child must be marked not-enabled");
+            context.SubMenuSlots[0].ActionStrategy.Should().BeOfType<NoOpStrategy>();
+            context.SubMenuSlots[0].IsEnabled.Should().BeFalse("an unknown plugin/action child must be marked not-enabled");
         }
 
         [Fact]
         public void ConfigureSubMenu_ShouldPageChildren_FromSubSlotCount()
         {
             // 10 children, 8 slots per page → page 1 (pageIndex 1) shows children 8-9
-            // and leaves slots 3..7 as no-op fillers.
+            // and leaves the rest of the supplied collection as no-op fillers. The
+            // strategy fills exactly the SubMenuSlots collection it is handed.
             var (context, descriptor, metadataRegistry) = CreateScenario(pageIndex: 1, subSlotCount: 10);
             metadataRegistry
                 .Setup(registry => registry.GetActionMetadata(KnownPluginId, KnownAction))
@@ -94,11 +113,11 @@ namespace Pulsar.Tests.ViewModels
 
             context.Strategy.ConfigureSubMenu(context.Context, descriptor);
 
-            context.Slots[0].ActionStrategy.Should().BeOfType<PluginActionStrategy>();
-            context.Slots[1].ActionStrategy.Should().BeOfType<PluginActionStrategy>();
-            context.Slots[2].ActionStrategy.Should().BeOfType<NoOpStrategy>();
-            context.Slots[2].Type.Should().Be(SlotType.None);
-            context.Slots[7].ActionStrategy.Should().BeOfType<NoOpStrategy>();
+            context.SubMenuSlots[0].ActionStrategy.Should().BeOfType<PluginActionStrategy>();
+            context.SubMenuSlots[1].ActionStrategy.Should().BeOfType<PluginActionStrategy>();
+            context.SubMenuSlots[2].ActionStrategy.Should().BeOfType<NoOpStrategy>();
+            context.SubMenuSlots[2].Type.Should().Be(SlotType.None);
+            context.SubMenuSlots[7].ActionStrategy.Should().BeOfType<NoOpStrategy>();
         }
 
         [Fact]
@@ -117,7 +136,8 @@ namespace Pulsar.Tests.ViewModels
         private static (ScenarioData, CascadeSubMenuDescriptor, Mock<IPluginMetadataRegistry>) CreateScenario(
             int pageIndex,
             int subSlotCount,
-            int slotsPerPage = 8)
+            int slotsPerPage = 8,
+            SubMenuLayoutStyle effectiveLayoutStyle = SubMenuLayoutStyle.Fan)
         {
             var metadataRegistry = new Mock<IPluginMetadataRegistry>();
 
@@ -133,6 +153,15 @@ namespace Pulsar.Tests.ViewModels
             for (int i = 1; i <= slotsPerPage; i++)
             {
                 slots.Add(new SlotViewModel(i, 0, 0, 50));
+            }
+
+            // [ADR-024 D4/D7] The session sizes the dedicated child collection to the
+            // current page's child count and assigns SlotIndex 1..N; mirror that here.
+            // Pooled VMs are reused across pages, hence the larger backing list.
+            var subMenuSlots = new ObservableCollection<SlotViewModel>();
+            for (int i = 1; i <= slotsPerPage; i++)
+            {
+                subMenuSlots.Add(new SlotViewModel(i, 0, 0, 50));
             }
 
             var subSlots = new List<SubSlotDescriptor>();
@@ -153,14 +182,16 @@ namespace Pulsar.Tests.ViewModels
                 slots,
                 slotsPerPage,
                 pageIndex,
-                PulsarContextFactory.CreateTestContext());
+                PulsarContextFactory.CreateTestContext(),
+                subMenuSlots,
+                effectiveLayoutStyle);
 
-            return (new ScenarioData(strategy, context, slots), descriptor, metadataRegistry);
+            return (new ScenarioData(strategy, context, subMenuSlots), descriptor, metadataRegistry);
         }
 
         private sealed record ScenarioData(
             CascadeSubMenuStrategy Strategy,
             SubMenuContext Context,
-            ObservableCollection<SlotViewModel> Slots);
+            ObservableCollection<SlotViewModel> SubMenuSlots);
     }
 }

@@ -152,6 +152,21 @@ namespace Pulsar.ViewModels
         }
 
         /// <summary>
+        /// Debug-only: forces Command-mode slot resolution to a named profile so
+        /// E2E runs are independent of whichever window happens to be foreground.
+        /// </summary>
+        public void DebugSetForcedActiveProfile(string? profileName)
+        {
+            _session.DebugForcedActiveProfile = profileName;
+        }
+
+        /// <summary>Debug-only: slot centre in screen pixels (for parking the real cursor).</summary>
+        public System.Windows.Point GetSlotScreenPoint(int slotIndex)
+        {
+            return _session.GetSlotScreenPoint(slotIndex);
+        }
+
+        /// <summary>
         /// Resolves the configured theme preset to a token set, wraps it in the
         /// mode-tone decorator (Task→cool, Action→warm) and hands it to the renderer.
         /// Runs on menu open and on ConfigUpdated so preset/theme changes re-render.
@@ -361,6 +376,13 @@ namespace Pulsar.ViewModels
 
         public ObservableCollection<SlotViewModel> Slots => _session.Slots;
 
+        /// <summary>
+        /// [ADR-024 D4/D7] Cascade children render from their own collection so the
+        /// root wheel's slots are never repurposed. Bound by RadialMenuWindow.xaml's
+        /// second ItemsControl.
+        /// </summary>
+        public ObservableCollection<SlotViewModel> SubMenuSlots => _session.SubMenuSlots;
+
         public SlotViewModel CenterSlot => _session.CenterSlot;
 
         public string CenterText
@@ -430,5 +452,42 @@ namespace Pulsar.ViewModels
         }
 
         public void UpdateSlotsPerPage(int newCount) => _session.UpdateSlotsPerPage(newCount);
+
+        // ============ E2E driver surface (ui-debug command channel only) ============
+        // These synthesise input through the exact same session entry points the
+        // real input adapters use (HitTest → click / hover, release → selection),
+        // so a debug run can exercise the interaction pipeline without capturing
+        // the user's desktop input. Production code never calls them.
+
+        /// <summary>Debug-only: global mouse click at the slot's current centre.</summary>
+        public void SimulateSlotClick(int slotIndex, string button)
+        {
+            var point = _session.GetSlotClickPoint(slotIndex);
+            var mouseButton = button.Equals("right", StringComparison.OrdinalIgnoreCase)
+                ? GlobalMouseButton.Right
+                : GlobalMouseButton.Left;
+            _ = _session.HandleGlobalMouseClickAsync(mouseButton, slotIndex, point);
+        }
+
+        /// <summary>Debug-only: pointer move to the slot's current centre (hover path).</summary>
+        public void SimulateSlotHover(int slotIndex)
+        {
+            _session.HandlePointerMoved(_session.GetSlotClickPoint(slotIndex));
+        }
+
+        /// <summary>Debug-only: execute the current selection (hotkey/gesture release path).</summary>
+        public void SimulateSelectionExecute()
+        {
+            _ = _session.ExecuteSelectionAsync();
+        }
+
+        /// <summary>Debug-only: hotkey-release semantics — execute the current selection,
+        /// then dismiss the menu without restoring the submenu (mirrors
+        /// HandleModifierRelease's tail; used to reproduce residual-submenu leaks).</summary>
+        public void SimulateSelectionExecuteAndDismiss()
+        {
+            _ = _session.ExecuteSelectionAsync();
+            _session.IsVisible = false;
+        }
     }
 }

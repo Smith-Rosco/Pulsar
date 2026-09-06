@@ -66,7 +66,7 @@ namespace Pulsar.ViewModels.Strategies
 
         public async Task ExecuteAsync(SlotViewModel slot, IMenuSession context, CancellationToken cancellationToken = default)
         {
-            context.SetActionExecuted(true);
+            context.SetActionExecuted(true, slot);
             
             // [Fix] Hide the menu IMMEDIATELY before executing the plugin.
             // This prevents infinite loops if the plugin simulates input (e.g., Ctrl release)

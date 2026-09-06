@@ -5,11 +5,14 @@
 
 ## 待办
 
-- [ ] Fan 位置问题收尾（change `2026-09-05-cascade-submenu-fan-qa`，QA 暂停中）：用户打完游戏后按 `submenu-radius-geometry-amendment-draft.md` §5 拍 4 张现象照 → 草案定稿 → ADR-011 追加 Amendment（推荐方案 A：Fan 移根环外侧 r≈120；Ring 视现象）→ 实施 + 新增「子项互不重叠/不撞中心圆」回归断言 → A3/A4 + B–H 全部用例 → 3.2/4.x 收口归档。当前真实配置仍是 QA fixture（`Profiles.json.bak-before-fan-qa` 还原点）；E2E 待用户有空再跑。
+- [ ] ~~Fan 位置问题收尾（change `2026-09-05-cascade-submenu-fan-qa`，QA 暂停中）：用户打完游戏后按 `submenu-radius-geometry-amendment-draft.md` §5 拍 4 张现象照 → 草案定稿 → ADR-011 追加 Amendment（推荐方案 A：Fan 移根环外侧 r≈120；Ring 视现象）→ 实施 + 新增「子项互不重叠/不撞中心圆」回归断言 → A3/A4 + B–H 全部用例 → 3.2/4.x 收口归档。当前真实配置仍是 QA fixture（`Profiles.json.bak-before-fan-qa` 还原点）；E2E 待用户有空再跑。~~ **已过时（2026-09-06）：**ADR-024 D1 已定义 Fan 几何（R+gap=160、±30°、同心），本会话经 GEOMETRY-TRACE + DPI 换算实测与规格吻合；三 bug 修复已 E2E PASS。旧草案（r≈120）不再适用。
 - [ ] 观察 1-2 个会话：AGENTS.md 瘦身后 agent 是否经 §3 指针去 `Docs/lessons/` 取坑位全文（防"全表靠内联"回潮，ADR-022 后续）。
 - [ ] 观察若干会话：确认无 harness 再向 `.workbuddy/memory/` 写正文（若复发 → 考虑 Junction 收口，ADR-019 后续）。**2026-09-05 检查：合规**——仅一行指向 journal 的指针（183B），无正文复发。
 - [ ] OpenWiki 补缺页：余额恢复后 `openwiki --update` 补 3 页（architecture/system-overview · architecture/window-switching · quickstart）；反复跳过的页可临时切 deepseek-v4-pro。注意 `.github/workflows/openwiki-update.yml` 每天 08:00 UTC 定时跑，推 GitHub + 配 key 会每日消耗额度；本地补丁 `repository-runner.js`（2 处 "LOCAL PATCH (2026-09-05)"）在 `npm update -g openwiki` 后需重打。
 - [ ] user手动添加：须将设置页面的保存按钮改为图标家问题“保存”。同时，也需要将设置页面里的各种长文本描述精简化或者将详情藏入tooltip，保证观感简洁有序。
+- [ ] 子轮盘交付待用户真机验收：三 bug 修复（`artifacts/bug1-after-fix` · `bug2-after-fix` · `bug3-geometry`）+ ADR-024 v1.2.1 两项几何优化（Fan 扇区约束 orb 外缘收进扇区 / Ring 中心=父 Slot，`artifacts/fan-sector-constraint-2` · `ring-center-visible-4`），E2E 均已 PASS。
+- [ ] 提交未落地改动（34 文件，含 ADR-024 v1.2.0 + 三 bug 修复 + E2E 基建 + 扇区/回归单测）：等用户确认后 commit（当前 main 工作树）。
+- [ ] 可选清理：`MenuSession.cs` 的 `[CLICK-TRACE]`/`[EXEC-TRACE]`/`[GEOMETRY-TRACE]`/`[VISUAL-TRACE]` Debug 日志（提交前或后续随手删）。
 
 ## 已完成（历史保留）
 

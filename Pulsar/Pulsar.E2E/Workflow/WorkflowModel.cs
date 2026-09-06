@@ -70,6 +70,15 @@ namespace Pulsar.E2E.Workflow
         /// <summary>command: debug pipe command name (e.g. "open-settings").</summary>
         public string Command { get; set; } = string.Empty;
 
+        /// <summary>command: extra JSON object merged into the pipe payload
+        /// (e.g. {"slot":1,"button":"left"} for "slot-click").</summary>
+        public System.Text.Json.JsonElement? Args { get; set; }
+
+        /// <summary>waitForState: optional top-level payload key/value the event must
+        /// match (e.g. "label" = "QA2-B" on "action-executed").</summary>
+        public string PayloadKey { get; set; } = string.Empty;
+        public string PayloadValue { get; set; } = string.Empty;
+
         /// <summary>assert: expected state (exists / visible).</summary>
         public string Expected { get; set; } = "exists";
 

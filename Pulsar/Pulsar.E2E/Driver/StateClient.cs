@@ -45,12 +45,16 @@ namespace Pulsar.E2E.Driver
 
         /// <summary>
         /// Waits until an event named <paramref name="eventName"/> arrives, or the
-        /// timeout expires. Timeout produces a failure result carrying all events
-        /// seen so far for diagnostics.
+        /// timeout expires. When <paramref name="payloadKey"/> is non-empty the
+        /// event must additionally carry a top-level payload property equal to
+        /// <paramref name="payloadValue"/>. Timeout produces a failure result
+        /// carrying all events seen so far for diagnostics.
         /// </summary>
         public async Task<(bool Success, StateEvent? Matched, StateEvent[] Observed)> WaitForEventAsync(
             string eventName,
             TimeSpan timeout,
+            string? payloadKey = null,
+            string? payloadValue = null,
             CancellationToken externalToken = default)
         {
             var deadline = DateTime.UtcNow + timeout;
@@ -70,7 +74,8 @@ namespace Pulsar.E2E.Driver
                 while (_buffer.TryDequeue(out var buffered))
                 {
                     observed.Add(buffered);
-                    if (string.Equals(buffered.Event, eventName, StringComparison.OrdinalIgnoreCase))
+                    if (string.Equals(buffered.Event, eventName, StringComparison.OrdinalIgnoreCase)
+                        && MatchesPayload(buffered, payloadKey, payloadValue))
                     {
                         return (true, buffered, observed.ToArray());
                     }
@@ -97,6 +102,21 @@ namespace Pulsar.E2E.Driver
         public StateEvent[] SnapshotBuffer()
         {
             return _buffer.ToArray();
+        }
+
+        private static bool MatchesPayload(StateEvent evt, string? key, string? value)
+        {
+            if (string.IsNullOrEmpty(key))
+            {
+                return true;
+            }
+
+            if (evt.Payload is not JsonElement payload || payload.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            return payload.TryGetProperty(key, out var el) && string.Equals(el.ToString(), value, StringComparison.OrdinalIgnoreCase);
         }
 
         private async Task ConnectLoopAsync(string pipeName, CancellationToken token)

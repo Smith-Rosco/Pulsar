@@ -1,0 +1,145 @@
+{
+  "name": "cascade-submenu-residual-qa",
+  "app": {
+    "exePath": "",
+    "fixture": "Fixtures/cascade-submenu-fan-qa.json",
+    "arguments": ""
+  },
+  "steps": [
+    {
+      "type": "launch",
+      "id": "launch-debug-instance"
+    },
+    {
+      "type": "wait",
+      "id": "settle-after-launch",
+      "durationMs": 3000
+    },
+    {
+      "type": "record",
+      "id": "start-recording",
+      "action": "start"
+    },
+    {
+      "type": "menu-open",
+      "id": "open-action-menu",
+      "mode": "action",
+      "args": { "profile": "Global" }
+    },
+    {
+      "type": "waitForState",
+      "id": "wait-menu-opened",
+      "event": "menu-opened",
+      "timeoutMs": 10000
+    },
+    {
+      "type": "wait",
+      "id": "wait-summon-bloom",
+      "durationMs": 800
+    },
+    {
+      "type": "command",
+      "id": "open-fan-slot1",
+      "command": "slot-click",
+      "args": { "slot": 1, "button": "left" }
+    },
+    {
+      "type": "wait",
+      "id": "wait-fan-enter",
+      "durationMs": 1800
+    },
+    {
+      "type": "screenshot",
+      "id": "screenshot-fan-open",
+      "file": "fan-open.png"
+    },
+    {
+      "type": "dump",
+      "id": "dump-fan-open",
+      "file": "fan-open-uia-tree.txt"
+    },
+    {
+      "type": "command",
+      "id": "click-child-2",
+      "command": "slot-click",
+      "args": { "slot": 2, "button": "left" }
+    },
+    {
+      "type": "waitForState",
+      "id": "wait-child-executed",
+      "event": "action-executed",
+      "payloadKey": "label",
+      "payloadValue": "QA2-B",
+      "timeoutMs": 6000
+    },
+    {
+      "type": "waitForState",
+      "id": "wait-menu-hidden-after-execute",
+      "event": "menu-closed",
+      "timeoutMs": 6000
+    },
+    {
+      "type": "wait",
+      "id": "wait-fade",
+      "durationMs": 1000
+    },
+    {
+      "type": "menu-open",
+      "id": "reopen-action-menu",
+      "mode": "action",
+      "args": { "profile": "Global" }
+    },
+    {
+      "type": "waitForState",
+      "id": "wait-reopen-menu-opened",
+      "event": "menu-opened",
+      "timeoutMs": 10000
+    },
+    {
+      "type": "wait",
+      "id": "wait-reopen-bloom",
+      "durationMs": 800
+    },
+    {
+      "type": "screenshot",
+      "id": "screenshot-reopen",
+      "file": "reopen-after-execute.png"
+    },
+    {
+      "type": "dump",
+      "id": "dump-reopen",
+      "file": "reopen-uia-tree.txt"
+    },
+    {
+      "type": "assert",
+      "id": "assert-root-slots-visible",
+      "automationId": "Pulsar.Slot.1",
+      "expected": "visible",
+      "timeoutMs": 5000
+    },
+    {
+      "type": "menu-close",
+      "id": "close-menu"
+    },
+    {
+      "type": "waitForState",
+      "id": "wait-menu-closed",
+      "event": "menu-closed",
+      "timeoutMs": 5000
+    },
+    {
+      "type": "wait",
+      "id": "settle-before-stop",
+      "durationMs": 800
+    },
+    {
+      "type": "record",
+      "id": "stop-recording",
+      "action": "stop"
+    },
+    {
+      "type": "exit",
+      "id": "exit-debug-instance"
+    }
+  ]
+}

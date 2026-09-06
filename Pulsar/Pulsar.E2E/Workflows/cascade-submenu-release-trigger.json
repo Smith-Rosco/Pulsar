@@ -1,0 +1,120 @@
+{
+  "name": "cascade-submenu-release-trigger",
+  "app": {
+    "exePath": "",
+    "fixture": "Fixtures/cascade-submenu-fan-qa.json",
+    "arguments": ""
+  },
+  "steps": [
+    {
+      "type": "launch",
+      "id": "launch-debug-instance"
+    },
+    {
+      "type": "wait",
+      "id": "settle-after-launch",
+      "durationMs": 3000
+    },
+    {
+      "type": "record",
+      "id": "start-recording",
+      "action": "start"
+    },
+    {
+      "type": "menu-open",
+      "id": "open-action-menu",
+      "mode": "action",
+      "args": { "profile": "Global" }
+    },
+    {
+      "type": "waitForState",
+      "id": "wait-menu-opened",
+      "event": "menu-opened",
+      "timeoutMs": 10000
+    },
+    {
+      "type": "wait",
+      "id": "wait-summon-bloom",
+      "durationMs": 800
+    },
+    {
+      "type": "command",
+      "id": "open-fan-slot1",
+      "command": "slot-click",
+      "args": { "slot": 1, "button": "left" }
+    },
+    {
+      "type": "wait",
+      "id": "wait-fan-enter",
+      "durationMs": 1800
+    },
+    {
+      "type": "screenshot",
+      "id": "screenshot-fan-open",
+      "file": "fan-open.png"
+    },
+    {
+      "type": "dump",
+      "id": "dump-fan-open",
+      "file": "fan-open-uia-tree.txt"
+    },
+    {
+      "type": "command",
+      "id": "hover-child-2",
+      "command": "slot-hover",
+      "args": { "slot": 2 }
+    },
+    {
+      "type": "wait",
+      "id": "wait-hover",
+      "durationMs": 300
+    },
+    {
+      "type": "screenshot",
+      "id": "screenshot-fan-hover-child2",
+      "file": "fan-hover-child2.png"
+    },
+    {
+      "type": "command",
+      "id": "selection-execute-release",
+      "command": "selection-execute"
+    },
+    {
+      "type": "waitForState",
+      "id": "wait-release-executed-child2",
+      "event": "action-executed",
+      "payloadKey": "label",
+      "payloadValue": "QA2-B",
+      "timeoutMs": 6000
+    },
+    {
+      "type": "wait",
+      "id": "wait-after-execute",
+      "durationMs": 800
+    },
+    {
+      "type": "menu-close",
+      "id": "close-menu"
+    },
+    {
+      "type": "waitForState",
+      "id": "wait-menu-closed",
+      "event": "menu-closed",
+      "timeoutMs": 5000
+    },
+    {
+      "type": "wait",
+      "id": "settle-before-stop",
+      "durationMs": 800
+    },
+    {
+      "type": "record",
+      "id": "stop-recording",
+      "action": "stop"
+    },
+    {
+      "type": "exit",
+      "id": "exit-debug-instance"
+    }
+  ]
+}

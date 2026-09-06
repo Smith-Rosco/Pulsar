@@ -37,7 +37,8 @@ namespace Pulsar.ViewModels
             SlotViewModel centerSlot,
             Func<PreviewHostContext> getPreviewHostContext,
             Action<string> setDynamicTitle,
-            Action<ResolvedWindowPreview> setCenterPreview)
+            Action<ResolvedWindowPreview> setCenterPreview,
+            bool preserveCenterIdentity = false)
         {
             _previewCts?.Cancel();
             _previewCts = new CancellationTokenSource();
@@ -47,6 +48,19 @@ namespace Pulsar.ViewModels
             {
                 _previewService.ClearLivePreview();
                 setCenterPreview(ResolvedWindowPreview.Icon(null));
+
+                if (preserveCenterIdentity)
+                {
+                    // [2026-09-06 user spec] Cascade centres keep their identity:
+                    // in a Ring the centre IS the parent slot (icon + label + back
+                    // action), and in a Fan the frozen centre keeps its root look
+                    // (ADR-024 D8). The active "0" is the cascade's dismiss anchor,
+                    // not a generic Back button — resetting the label/icon here made
+                    // the Ring centre read as "Back" the moment it was hovered.
+                    setDynamicTitle(centerText);
+                    return;
+                }
+
                 setDynamicTitle(menuState == MenuState.SubMenu ? (_loc?["RadialMenu.Back"] ?? "Back") : (_loc?["Notification.Cancel"] ?? "Cancel"));
                 centerSlot.Label = menuState == MenuState.SubMenu ? (_loc?["RadialMenu.Back"] ?? "Back") : (_loc?["Notification.Cancel"] ?? "Cancel");
                 centerSlot.LoadIconData(string.Empty);

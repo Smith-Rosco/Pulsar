@@ -600,6 +600,18 @@
                             </StackPanel>
                         </Grid>
 
+                        <!-- [ADR-024 D2] Fan renders at most FanMaxSubActions wings; a
+                             larger set falls back to Ring geometry. Deliberately
+                             non-blocking: the engine cap guarantees the fallback is
+                             always correct, this only stops the fallback from being
+                             invisible. -->
+                        <TextBlock Margin="{StaticResource Pulsar.Gap.Top.XS}"
+                                   FontSize="{StaticResource Pulsar.Type.Caption}"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource SystemFillColorCautionBrush}"
+                                   Text="{Binding FanOverCapWarning}"
+                                   Visibility="{Binding IsFanOverCap, Converter={StaticResource BoolToVis}}"/>
+
                         <!-- Empty state -->
                         <Border Margin="{StaticResource Pulsar.Gap.Top.MD}"
                                 Padding="{StaticResource Pulsar.Pad.H12V8}"

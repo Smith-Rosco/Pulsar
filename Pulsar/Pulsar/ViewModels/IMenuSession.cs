@@ -12,7 +12,7 @@ namespace Pulsar.ViewModels
     {
         bool IsVisible { get; set; }
         bool IsInSubMenu { get; }
-        void SetActionExecuted(bool value);
+        void SetActionExecuted(bool value, SlotViewModel? executedSlot = null);
         void RestoreRootMenu();
         Task EnterSubMenuAsync(SubMenuDescriptor descriptor, int clickedSlotIndex);
     }
