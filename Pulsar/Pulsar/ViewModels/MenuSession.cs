@@ -888,10 +888,10 @@ namespace Pulsar.ViewModels
 
                     if (!foundProfile)
                     {
-                        InsertCreatorSlot(slots, _lastContext);
+                        InsertCreatorSlot(slots, _lastContext!);
                     }
 
-                    _pageProvider = _pageProviderFactory.CreateCommandPage(slots, _lastContext);
+                    _pageProvider = _pageProviderFactory.CreateCommandPage(slots, _lastContext!);
                 }
 
                 await _pageProvider.LoadAsync();
