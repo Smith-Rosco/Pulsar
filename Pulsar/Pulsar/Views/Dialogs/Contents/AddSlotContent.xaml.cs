@@ -104,6 +104,23 @@ namespace Pulsar.Views.Dialogs.Contents
             }
         }
 
+        private void SubActionParameters_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is ItemsControl itemsControl)
+            {
+                itemsControl.Tag = itemsControl.DataContext;
+            }
+        }
+
+        private void PickSubActionIcon_Click(object sender, System.EventArgs e)
+        {
+            if (sender is FrameworkElement element
+                && element.DataContext is SubSlotEditorRow row)
+            {
+                GetViewModel()?.PickSubActionIconCommand.Execute(row);
+            }
+        }
+
         private static T? FindChildByName<T>(DependencyObject parent, string name) where T : DependencyObject
         {
             if (parent is FrameworkElement fe && fe.Name == name)

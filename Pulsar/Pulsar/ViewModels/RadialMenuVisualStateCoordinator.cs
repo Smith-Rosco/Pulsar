@@ -61,8 +61,14 @@ namespace Pulsar.ViewModels
                 setCenterPreview(ResolvedWindowPreview.Icon(null));
                 setDynamicTitle(_loc?["RadialMenu.Pulsar"] ?? "Pulsar");
                 centerSlot.Label = centerText;
-                centerSlot.LoadIconData(string.Empty);
-                centerSlot.IconImage = null;
+                // In SubMenu state the center slot shows the parent slot's icon
+                // (set by MenuSession.EnterSubMenuAsyncCore). Don't clear it here
+                // — that would revert the "center = parent slot" UX.
+                if (menuState != MenuState.SubMenu)
+                {
+                    centerSlot.LoadIconData(string.Empty);
+                    centerSlot.IconImage = null;
+                }
                 centerSlot.BadgeCount = 0;
                 return;
             }

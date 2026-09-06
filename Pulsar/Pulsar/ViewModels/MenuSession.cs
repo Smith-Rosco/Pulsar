@@ -2664,8 +2664,27 @@ namespace Pulsar.ViewModels
                     }
                 }
 
-                CenterText = _loc["RadialMenu.Back"];
+                // Center shows the parent slot's identity (label + icon set above),
+                // not a generic "Back" string. Fall back to "Back" only when the
+                // parent slot has no label.
+                CenterText = !string.IsNullOrWhiteSpace(parentSlot?.Label)
+                    ? parentSlot.Label
+                    : _loc["RadialMenu.Back"];
                 CenterSlot.ResetAnimation();
+
+                // Fan mode: keep the parent wheel visible (filler slots bloom too,
+                // preserving the full ring shape). Ring mode: hide the parent wheel
+                // (only children bloom; fillers stay collapsed) — Ring replaces the
+                // parent wheel entirely, Fan overlays children on top of it.
+                bool hideFillers = false;
+                int bloomCount = _slotsPerPage;
+                if (descriptor is CascadeSubMenuDescriptor cascadeDesc)
+                {
+                    bloomCount = GetCascadePageChildCount(cascadeDesc);
+                    hideFillers = cascadeDesc.LayoutStyle == SubMenuLayoutStyle.Ring;
+                }
+                var bloomSlots = hideFillers ? childSlots.Take(bloomCount).ToList() : childSlots;
+
                 foreach (var slot in childSlots)
                 {
                     slot.AnimationOffsetX = CenterX - (slot.X + slot.Size / 2);
@@ -2675,7 +2694,7 @@ namespace Pulsar.ViewModels
                 }
 
                 await AnimateSlotsAsync(
-                    childSlots,
+                    bloomSlots,
                     _ => new SlotPose(1.0, 1.0, 0, 0),
                     bloomDuration,
                     EasingFunctions.EaseOutBack,
