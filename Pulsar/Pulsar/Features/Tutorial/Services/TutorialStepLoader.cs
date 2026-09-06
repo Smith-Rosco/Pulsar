@@ -394,6 +394,8 @@ namespace Pulsar.Features.Tutorial.Services
                     FocusMode = TutorialFocusMode.AlwaysObserving,
                     PrimaryAction = TutorialPrimaryAction.CompleteTutorial,
                     PrimaryButtonText = _loc["Tutorial.Finish"],
+                    LinkUrl = "https://github.com/Smith-Rosco/Pulsar/blob/main/Docs/manual/README.md",
+                    LinkTextKey = "Tutorial.OpenUserManual",
                     Layout = new TutorialLayout
                     {
                         CardPosition = CardPosition.TopRight,

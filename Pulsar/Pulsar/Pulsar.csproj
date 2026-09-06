@@ -23,6 +23,23 @@
     <AssemblyVersion>1.10.0.0</AssemblyVersion>
   </PropertyGroup>
 
+  <!--
+    Publish/packaging properties (ADR-026, change 2026-09-05-installer-and-portable-packaging).
+    Conditioned on RuntimeIdentifier so day-to-day builds are unaffected; they only kick in
+    for `dotnet publish -r win-x64` (dev.ps1 publish).
+  -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <!-- Why no trim: the plugin system loads plugin assemblies via reflection
+         (LocalPluginScanner + collectible ALC); trimming breaks reflection-based
+         discovery and is explicitly forbidden for Pulsar. -->
+    <PublishTrimmed>false</PublishTrimmed>
+    <SatelliteResourceLanguages>en;zh-Hans</SatelliteResourceLanguages>
+  </PropertyGroup>
+
 
   <ItemGroup>
     <None Remove="Pulsar.ico" />

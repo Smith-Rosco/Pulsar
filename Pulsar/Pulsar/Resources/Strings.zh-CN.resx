@@ -908,6 +908,21 @@
     <value>了解如何使用 Pulsar</value>
   </data>
   <data
+    name="Settings.About.UserManual"
+    xml:space="preserve">
+    <value>用户手册</value>
+  </data>
+  <data
+    name="Settings.About.UserManualDescription"
+    xml:space="preserve">
+    <value>安装、跑宏、登旧系统、切窗口、常见问题</value>
+  </data>
+  <data
+    name="Tutorial.OpenUserManual"
+    xml:space="preserve">
+    <value>查看用户手册</value>
+  </data>
+  <data
     name="Settings.About.License"
     xml:space="preserve">
     <value>许可证</value>

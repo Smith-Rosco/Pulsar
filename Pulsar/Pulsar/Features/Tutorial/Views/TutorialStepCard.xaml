@@ -156,12 +156,23 @@
                               VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled"
                               Margin="{StaticResource Pulsar.Gap.Bottom.XL}">
-                    <TextBlock x:Name="DescriptionText"
-                              Text="{lex:Locale Tutorial.DescriptionPlaceholder}"
-                              FontSize="{StaticResource Pulsar.Type.Subtitle}"
-                              Foreground="{StaticResource TutorialCard.Body}"
-                              TextWrapping="Wrap"
-                              LineHeight="20"/>
+                    <StackPanel>
+                        <TextBlock x:Name="DescriptionText"
+                                  Text="{lex:Locale Tutorial.DescriptionPlaceholder}"
+                                  FontSize="{StaticResource Pulsar.Type.Subtitle}"
+                                  Foreground="{StaticResource TutorialCard.Body}"
+                                  TextWrapping="Wrap"
+                                  LineHeight="20"/>
+                        <!-- Optional outbound link (e.g. user manual on the completion step) -->
+                        <TextBlock x:Name="LinkText"
+                                   Visibility="Collapsed"
+                                   Margin="{StaticResource Pulsar.Gap.Top.SM}">
+                            <Hyperlink Click="OnLinkClick"
+                                       Foreground="{DynamicResource AccentFillColorDefaultBrush}">
+                                <Run x:Name="LinkTextRun"/>
+                            </Hyperlink>
+                        </TextBlock>
+                    </StackPanel>
                 </ScrollViewer>
 
                 <!-- Wait-for-action helper text -->

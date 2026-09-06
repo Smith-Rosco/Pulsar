@@ -123,6 +123,15 @@
                                        AutomationProperties.Name="{lex:Locale Settings.About.Documentation}"/>
                         </controls:SettingsRow>
 
+                        <controls:SettingsRow Title="{lex:Locale Settings.About.UserManual}"
+                                              Description="{lex:Locale Settings.About.UserManualDescription}">
+                            <ui:Button Content="{lex:Locale Settings.About.Open}"
+                                       Icon="{ui:SymbolIcon ReadingList20}"
+                                       Command="{Binding OpenUserManualCommand}"
+                                       Style="{StaticResource PulsarSecondaryButtonStyle}"
+                                       AutomationProperties.Name="{lex:Locale Settings.About.UserManual}"/>
+                        </controls:SettingsRow>
+
                         <controls:SettingsRow Title="{lex:Locale Settings.About.License}"
                                               Description="{lex:Locale Settings.About.LicenseDescription}">
                             <ui:Button Content="{lex:Locale Settings.About.Open}"

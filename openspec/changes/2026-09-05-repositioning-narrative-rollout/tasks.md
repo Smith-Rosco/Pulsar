@@ -16,18 +16,18 @@
 
 ## 3. Demo 视频
 
-- [ ] 3.1 三支脚本定稿（Excel 跑宏 / 老旧网页脚本注入 / 登录填表自动化；各 30–60s，分镜 + 台词）
+- [x] 3.1 三支脚本定稿（Excel 跑宏 / 老旧网页脚本注入 / 登录填表自动化；各 30–60s，分镜 + 台词）
 - [ ] 3.2 录制 + 剪辑（录屏即可），输出 mp4（与 E2E recording.mp4 管线兼容）
 - [ ] 3.3 视频与脚本入库（`Docs/media/release/videos/`）
 
 ## 4. README 重写
 
-- [ ] 4.1 `README.md`（zh）首屏：定位语 + 三支柱场景 + 真实截图 + 与竞品差异化一句话（vs Quicker/Flow 话术取自重定位方案 §1.2）
-- [ ] 4.2 `README_EN.md` 同步重写，中英叙事一致
-- [ ] 4.3 自查：全文不再以「启动器」自居；「老旧系统」叙事不窄化（§9 反噬风险条款）；AI 愿景一句话 + roadmap 标注
+- [x] 4.1 `README.md`（zh）首屏：定位语 + 三支柱场景 + 真实截图 + 与竞品差异化一句话（vs Quicker/Flow 话术取自重定位方案 §1.2）
+- [x] 4.2 `README_EN.md` 同步重写，中英叙事一致
+- [x] 4.3 自查：全文不再以「启动器」自居；「老旧系统」叙事不窄化（§9 反噬风险条款）；AI 愿景一句话 + roadmap 标注
 
 ## 5. 发布说明模板 & 验证
 
 - [x] 5.1 建立 `RELEASE_NOTES` 模板（版本、亮点、下载、系统要求占位）供 Change 5 使用（仓库根 `RELEASE_NOTES.md`，含校验清单与叙事自查项）
 - [x] 5.2 `scripts/dev.ps1 build` 0 警告 0 错误；`scripts/dev.ps1 test` 全量通过（WorkBuddy 下 dev.ps1 退出码 127 问题复现，改走 bash + env 前缀 dotnet 等效验证：build 0 警告 0 错误、全量 1143/1143 通过；存量 CS8604 ×4 已修复，见 journal 16:47）
-- [ ] 5.3 journal 记录 + （如显示名语义有变）ADR 记录
+- [x] 5.3 journal 记录 + （如显示名语义有变）ADR 记录

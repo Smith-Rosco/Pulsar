@@ -85,6 +85,12 @@ namespace Pulsar.ViewModels
         }
 
         [RelayCommand]
+        private void OpenUserManual()
+        {
+            OpenUrl("https://github.com/Smith-Rosco/Pulsar/blob/main/Docs/manual/README.md");
+        }
+
+        [RelayCommand]
         private void OpenLicense()
         {
             OpenUrl("https://github.com/Smith-Rosco/Pulsar/blob/main/LICENSE");

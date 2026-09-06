@@ -120,6 +120,44 @@ Usage from inside pi: `/reload` (first install), then `/publish` or ask the agen
 
 ---
 
+## Distribution Packaging (`dev.ps1 publish` + Installer)
+
+> Introduced by change `2026-09-05-installer-and-portable-packaging` (ADR-026). This is the
+> **user-facing distribution** path (what GitHub Release ships); the older `/publish` skill above
+> remains a local-verification tool. Naming supersedes `full`/`portable` for future releases.
+
+```powershell
+.\scripts\dev.ps1 publish          # publish -> zip -> Setup.exe (if ISCC) -> SHA256SUMS.txt
+```
+
+Produces in `artifacts/publish/`:
+
+| Artifact | Shape | Notes |
+|----------|-------|-------|
+| `Pulsar-v{Version}-Standalone-win-x64.zip` | self-contained single-file, win-x64, **no trim** | 解压即用, no .NET runtime needed |
+| `Pulsar-v{Version}-Setup.exe` | Inno Setup installer (requires [Inno Setup 6](https://jrsoftware.org/isinfo.php)) | skipped with a warning if ISCC is absent |
+| `SHA256SUMS.txt` | manifest over all publish artifacts | attach to the GitHub Release |
+| `stage/` | raw publish output | input for the installer |
+
+Key properties (all conditioned on `RuntimeIdentifier` in `Pulsar.csproj`, so normal builds are unaffected):
+
+- `PublishSingleFile=true` + `SelfContained=true` + `IncludeNativeLibrariesForSelfExtract=true` (`*_cor3.dll` native WPF libs are embedded — they must never ship missing, see the warning above).
+- `PublishTrimmed=false` — **hard rule**: the plugin system loads plugin assemblies via reflection (collectible ALC); trimming breaks discovery (ADR-026).
+
+Installer semantics (`scripts/installer/pulsar.iss`):
+
+- Installs to `{autopf}\Pulsar`, start-menu entry, optional desktop icon and per-user autostart (HKCU Run).
+- Overwrite-install never touches `%AppData%\Pulsar`; uninstall **keeps user data** by default (stated in the uninstall confirmation).
+- Version injected via `/DAppVersion=` from `dev.ps1 publish`, falling back to `GetVersionNumbersString` of the published exe.
+
+Manual installer build:
+
+```powershell
+& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DAppVersion=1.10.0 scripts\installer\pulsar.iss
+```
+
+---
+
 ## Test Commands
 
 **Current Status**: xUnit test project at `Pulsar/Pulsar.Tests/` (410+ tests).

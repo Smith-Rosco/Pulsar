@@ -89,6 +89,18 @@ namespace Pulsar.Features.Tutorial.Models
         /// </summary>
         public string? WaitHintText { get; set; }
 
+        /// <summary>
+        /// 可选外链 URL（如完成页指向用户手册）。为空时卡片不渲染链接。
+        /// </summary>
+        [JsonPropertyName("linkUrl")]
+        public string? LinkUrl { get; set; }
+
+        /// <summary>
+        /// 外链文案的本地化键（为空时使用 Tutorial.OpenUserManual 默认文案）
+        /// </summary>
+        [JsonPropertyName("linkTextKey")]
+        public string? LinkTextKey { get; set; }
+
     }
 
     /// <summary>

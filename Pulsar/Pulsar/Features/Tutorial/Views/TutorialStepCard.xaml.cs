@@ -75,9 +75,51 @@ namespace Pulsar.Features.Tutorial.Views
             DescriptionText.Text = ResolveHotkeys(!string.IsNullOrEmpty(_currentStep.DescriptionKey)
                 ? (_loc?[_currentStep.DescriptionKey] ?? _currentStep.Description)
                 : _currentStep.Description);
+            ApplyStepLink(_currentStep);
             NextButton.Content = ResolvePrimaryButtonText(_currentStep);
 
             ApplyWaitHint(_currentStep);
+        }
+
+        /// <summary>
+        /// 步骤自带外链（如完成页的用户手册入口）——为空时隐藏链接行。
+        /// </summary>
+        private void ApplyStepLink(TutorialStep step)
+        {
+            var linkText = FindName("LinkText") as TextBlock;
+            if (linkText == null) return;
+
+            if (string.IsNullOrWhiteSpace(step.LinkUrl))
+            {
+                linkText.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            var text = _loc?[step.LinkTextKey ?? "Tutorial.OpenUserManual"] ?? "View the User Manual";
+            var run = FindName("LinkTextRun") as System.Windows.Documents.Run;
+            if (run != null) run.Text = text;
+            linkText.Tag = step.LinkUrl;
+            linkText.Visibility = Visibility.Visible;
+        }
+
+        private void OnLinkClick(object sender, System.Windows.RoutedEventArgs e)
+        {
+            if ((sender as System.Windows.Documents.Hyperlink)?.Parent is TextBlock { Tag: string url }
+                && !string.IsNullOrWhiteSpace(url))
+            {
+                try
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = url,
+                        UseShellExecute = true
+                    });
+                }
+                catch
+                {
+                    // 外链打开失败不打断教程流程
+                }
+            }
         }
 
         /// <summary>

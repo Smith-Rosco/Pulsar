@@ -35,6 +35,8 @@ Tired of redoing spreadsheets in Excel/WPS? Logging into one intranet system aft
 
 **In one sentence**: it brings automation to the legacy office systems that "modern tools can't handle" — turning them into actions on a hotkey.
 
+> **How it differs from similar tools**: Pulsar is not just another radial-menu launcher — it is an **office-automation engine** that turns repetitive office work into one-flick actions: deep Excel/WPS macro support, legacy intranet web scripts, and secure credential injection. That depth is what generalized action libraries don't cover. We are a **mouse-plus-hotkey office workbench**, not a search launcher: we don't compete with search boxes — we handle the legacy-system automation they can't.
+
 ### The three things it does best
 
 | | Scenario | Result |
@@ -143,10 +145,28 @@ Jump straight to the window you want; if the app isn't running, Pulsar starts it
 
 ## 📸 Screenshots
 
-<!-- TODO: Add real screenshots, replace these placeholders -->
-| Radial Menu | Settings | Plugin Editor |
-|-------------|----------|---------------|
-| `[Screenshot_RadialMenu]` | `[Screenshot_Settings]` | `[Screenshot_PluginEditor]` |
+<div align="center">
+  <img src="Docs/media/release/01-main-interface.png" width="640" alt="Pulsar main interface" /><br/>
+  <sub><b>Main interface</b> · every office action one screen away</sub>
+</div>
+
+<div align="center">
+  <br/>
+  <img src="Docs/media/release/02-radial-summoned.png" width="640" alt="Radial menu summoned" /><br/>
+  <sub><b>Radial summon</b> · fixed positions, blind muscle-memory operation</sub>
+</div>
+
+<div align="center">
+  <br/>
+  <img src="Docs/media/release/03-excel-macro-moment.png" width="640" alt="Excel macro moment" /><br/>
+  <sub><b>One-click macros</b> · saved macros fire on release</sub>
+</div>
+
+<div align="center">
+  <br/>
+  <img src="Docs/media/release/04-window-switch-menu.png" width="640" alt="Window switch submenu" /><br/>
+  <sub><b>Window switching</b> · not running? Pulsar launches it</sub>
+</div>
 
 ---
 
@@ -161,10 +181,17 @@ Switch the UI language anytime from the settings page:
 
 ---
 
+## 🧭 Roadmap & AI Vision
+
+We believe the next step of office automation is "**describe what you need, and get a ready-made action**". The roadmap has a "AI-generated slot configuration" PoC direction penciled in (AI builds wheel actions from a plain-language scenario) — this is an **exploratory vision note**, not a delivery promise; the core local automation capabilities are unaffected.
+
+---
+
 ## 🧑‍💻 For Developers
 
 Pulsar is MIT-licensed and open to contributions — code, plugins, and ideas are all welcome.
 
+- **[User Manual](./Docs/manual/README.md)**: install, run macros, sign into legacy systems, switch windows, FAQ (bilingual);
 - **[Developer Guide (DEVELOPER.md)](./DEVELOPER.md)**: tech stack, project structure, build/test commands, plugin development & architecture;
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** · **[PLUGIN_DEVELOPMENT.md](./PLUGIN_DEVELOPMENT.md)** · **[Docs index](./Docs/README.md)**;
 - Please read [CONTRIBUTING.md](./Docs/CONTRIBUTING.md) before contributing.

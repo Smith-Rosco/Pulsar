@@ -553,6 +553,15 @@
   <data name="Settings.About.DocumentationDescription" xml:space="preserve">
     <value>Learn how to use Pulsar</value>
   </data>
+  <data name="Settings.About.UserManual" xml:space="preserve">
+    <value>User Manual</value>
+  </data>
+  <data name="Settings.About.UserManualDescription" xml:space="preserve">
+    <value>Install, run macros, sign into legacy systems, switch windows, FAQ</value>
+  </data>
+  <data name="Tutorial.OpenUserManual" xml:space="preserve">
+    <value>View the User Manual</value>
+  </data>
   <data name="Settings.About.License" xml:space="preserve">
     <value>License</value>
   </data>
