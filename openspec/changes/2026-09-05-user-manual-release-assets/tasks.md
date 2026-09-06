@@ -15,6 +15,6 @@
 ## 3. 首个 GitHub Release 组装
 
 - [x] 3.1 Release 说明成稿（基于模板 + CHANGELOG 提炼，用户视角亮点 + 已知问题 + 系统要求）— **已完成**：`Docs/ops/RELEASE_NOTES-1.11.0.md`，含三支柱亮点、双形态下载表、系统要求、新增/改进/修复完整清单、安全隐私、已知限制（未签名 SmartScreen / ISCC 未实机验证 / 真实网络 QA 待验证 / 视频待录制）
-- [ ] 3.2 资产上传清单核对：`Pulsar-v{version}-Setup.exe` / `Pulsar-v{version}-Standalone-win-x64.zip` / SHA256 清单 /（可选）演示视频链接
-- [ ] 3.3 打 tag 并发布（人工执行，走 checklist）；验证 Release 页下载 + Change 3 更新检测对已发布 tag 的识别
+- [x] 3.2 资产上传清单核对：`Pulsar-v{version}-Setup.exe` / `Pulsar-v{version}-Standalone-win-x64.zip` / SHA256 清单 /（可选）演示视频链接
+- [x] 3.3 打 tag 并发布（人工执行，走 checklist）；验证 Release 页下载 + Change 3 更新检测对已发布 tag 的识别
 - [ ] 3.4 journal 收口：M1 验收标准逐条对照（全新机器可安装并自动更新；文档可无痛上手）
