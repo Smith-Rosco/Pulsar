@@ -14,10 +14,10 @@
 - [ ] OpenWiki 补缺页：余额恢复后 `openwiki --update` 补 3 页（architecture/system-overview · architecture/window-switching · quickstart）；反复跳过的页可临时切 deepseek-v4-pro。注意 `.github/workflows/openwiki-update.yml` 每天 08:00 UTC 定时跑，推 GitHub + 配 key 会每日消耗额度；本地补丁 `repository-runner.js`（2 处 "LOCAL PATCH (2026-09-05)"）在 `npm update -g openwiki` 后需重打。
 - [ ] user手动添加：须将设置页面的保存按钮改为图标家问题“保存”。同时，也需要将设置页面里的各种长文本描述精简化或者将详情藏入tooltip，保证观感简洁有序。
 - [ ] 子轮盘交付待用户真机验收：三 bug 修复（`artifacts/bug1-after-fix` · `bug2-after-fix` · `bug3-geometry`）+ ADR-024 v1.2.1 两项几何优化（Fan 扇区约束 orb 外缘收进扇区 / Ring 中心=父 Slot，`artifacts/fan-sector-constraint-2` · `ring-center-visible-4`），E2E 均已 PASS。
-- [x] ~~提交未落地改动（34 文件，含 ADR-024 v1.2.0 + 三 bug 修复 + E2E 基建 + 扇区/回归单测）：等用户确认后 commit（当前 main 工作树）。~~ **会话内已本地 commits**：`0cab1ff`/`d978d2c`/`8c236da`（ADR-024 相关），工作树干净；main 领先 origin/main 3 个未 push 提交，等用户确认后一起 push。
-- [ ] **openspec repositioning Phase 2（宣传截图）**：E2E 管线 + 4 张 1920×1080 首屏用图 + `Docs/media/release/` 目录约定已完成，代码改动未提交（10 modified + 3 new，含 set-invocation-point debug 命令、move-cursor E2E 步骤、fixture/workflow、release 资产）。待用户确认后 commit，随后连同 Phase 1 的 4 个未 push 提交（`7e5f9ae`/`7df40a4`/`c4045bf`/`3f68c13`）一起 push origin/main。
-- [ ] **openspec repositioning Phase 3（Demo 视频）**：三支脚本定稿（Excel 跑宏 / 老旧网页脚本注入 / 登录填表自动化，各 30–60s）→ 录制剪辑 → mp4 入 `Docs/media/release/videos/`。
-- [ ] **openspec repositioning Phase 4（README 重写）**：`README.md`（zh）首屏定位语 + 三支柱场景 + 真实截图 + 差异化一句话；`README_EN.md` 同步；自查不再以「启动器」自居。
+- [x] ~~提交未落地改动（34 文件，含 ADR-024 v1.2.0 + 三 bug 修复 + E2E 基建 + 扇区/回归单测）：等用户确认后 commit（当前 main 工作树）。~~ **已提交并 push**：`0cab1ff`/`d978d2c`/`8c236da`（ADR-024 相关），main 与 origin/main 同步。
+- [x] ~~**openspec repositioning Phase 2（宣传截图）**：E2E 管线 + 4 张 1920×1080 首屏用图 + `Docs/media/release/` 目录约定。~~ **已提交** `893870c`，4 张 PNG 已入库，main 与 origin/main 同步。
+- [ ] **openspec repositioning Phase 3（Demo 视频）**：三支脚本已定稿并入 `93044dc`（`Docs/media/release/videos/demo-video-scripts.md`，Excel 跑宏 40s / 老旧网页脚本注入 45s / 登录填表自动化 40s）；剩余 3.2 录制剪辑 + 3.3 mp4 入库，需真机录屏。
+- [x] ~~**openspec repositioning Phase 4（README 重写）**：`README.md`（zh）首屏定位语 + 三支柱场景 + 真实截图 + 差异化一句话；`README_EN.md` 同步；自查不再以「启动器」自居。~~ **已完成**（`93044dc` 安全批次）。
 - [ ] 可选清理：`MenuSession.cs` 的 `[CLICK-TRACE]`/`[EXEC-TRACE]`/`[GEOMETRY-TRACE]`/`[VISUAL-TRACE]` Debug 日志（提交前或后续随手删）。
 
 ## 已完成（历史保留）
@@ -32,3 +32,4 @@
 - [x] 候选 O/N/M/L 全部落地（2026-09-04 23:0x，commit `8b24da6`/`bf681ce`/`5e65a98`/`c5a35a4`）。
 - [x] 全量测试死锁修复「第二次提交」（2026-09-04，commit `5412911`，含 `XUNIT_APPLICATION_CURRENT_DEADLOCK.md`）。
 - [x] 构建警告清理至 0（2026-09-04 23:32，commit `784343f` + `470fba6`）。
+- [x] openspec 四 change 安全批次（2026-09-06，commit `93044dc`）：in-app-auto-update 纯逻辑层（1/2/4.1，84 测试）+ user-manual（1.1-1.4/2.1-2.2）+ installer 脚本（1.1/1.2/2.1-2.3/4.1-4.3）+ repositioning（3.1 脚本/4.1-4.3 README/5.3）；ADR-025 + ADR-026；build 0 警告 0 错误，全量 1227/1227。各 change 剩余项（DI 集成/真实网络 QA/干净 VM 冒烟/Release 发布/视频录制）均依赖真机或外部发布动作，待用户环境执行。
