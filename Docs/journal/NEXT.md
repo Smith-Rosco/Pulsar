@@ -4,6 +4,8 @@
 > **会话仪式**：Session start 必读本文件（小体积）；涉及具体某天的「做了什么/坑」才去读对应 `Docs/journal/YYYY-MM-DD.md` 尾部或归档。
 
 ## 待办
+- [x] ~~架构深化 1+2（C1 级联几何深化 + C2 SlotOrb 渲染编排）已本地提交（023f21a），待用户确认后 push。~~
+- [ ] 子轮盘触发统一 + 标题遮挡修复（2026-09-06 用户两报，ADR-024 v1.2.2 D10/D11）：Ring 命中统一为死区外至环外缘极坐标扇区触发（与父轮盘/Fan 同构）、cascade 期间动态标题抑制；全量 1129/1129 通过；改动未提交，待用户确认后 commit，随后连同上 4 个未 push 提交（0cab1ff/d978d2c/8c236da/023f21a）一起 push origin/main。
 
 - [ ] ~~Fan 位置问题收尾（change `2026-09-05-cascade-submenu-fan-qa`，QA 暂停中）：用户打完游戏后按 `submenu-radius-geometry-amendment-draft.md` §5 拍 4 张现象照 → 草案定稿 → ADR-011 追加 Amendment（推荐方案 A：Fan 移根环外侧 r≈120；Ring 视现象）→ 实施 + 新增「子项互不重叠/不撞中心圆」回归断言 → A3/A4 + B–H 全部用例 → 3.2/4.x 收口归档。当前真实配置仍是 QA fixture（`Profiles.json.bak-before-fan-qa` 还原点）；E2E 待用户有空再跑。~~ **已过时（2026-09-06）：**ADR-024 D1 已定义 Fan 几何（R+gap=160、±30°、同心），本会话经 GEOMETRY-TRACE + DPI 换算实测与规格吻合；三 bug 修复已 E2E PASS。旧草案（r≈120）不再适用。
 - [ ] 观察 1-2 个会话：AGENTS.md 瘦身后 agent 是否经 §3 指针去 `Docs/lessons/` 取坑位全文（防"全表靠内联"回潮，ADR-022 后续）。
@@ -12,7 +14,7 @@
 - [ ] user手动添加：须将设置页面的保存按钮改为图标家问题“保存”。同时，也需要将设置页面里的各种长文本描述精简化或者将详情藏入tooltip，保证观感简洁有序。
 - [ ] 子轮盘交付待用户真机验收：三 bug 修复（`artifacts/bug1-after-fix` · `bug2-after-fix` · `bug3-geometry`）+ ADR-024 v1.2.1 两项几何优化（Fan 扇区约束 orb 外缘收进扇区 / Ring 中心=父 Slot，`artifacts/fan-sector-constraint-2` · `ring-center-visible-4`），E2E 均已 PASS。
 - [x] ~~提交未落地改动（34 文件，含 ADR-024 v1.2.0 + 三 bug 修复 + E2E 基建 + 扇区/回归单测）：等用户确认后 commit（当前 main 工作树）。~~ **会话内已本地 commits**：`0cab1ff`/`d978d2c`/`8c236da`（ADR-024 相关），工作树干净；main 领先 origin/main 3 个未 push 提交，等用户确认后一起 push。
-- [ ] 架构深化 1+2（C1 级联几何深化 + C2 SlotOrb 渲染编排，2026-09-06 架构审查）：全量 1125/1125 通过，改动未提交；待用户确认后 commit（按 AGENTS.md §9 纪律），随后连同上述 3 个未 push 提交一起 push origin/main。
+- [x] 架构深化 1+2（C1 级联几何深化 + C2 SlotOrb 渲染编排，2026-09-06 架构审查）：全量 1125/1125 通过，改动未提交；待用户确认后 commit（按 AGENTS.md §9 纪律），随后连同上述 3 个未 push 提交一起 push origin/main。
 - [ ] 可选清理：`MenuSession.cs` 的 `[CLICK-TRACE]`/`[EXEC-TRACE]`/`[GEOMETRY-TRACE]`/`[VISUAL-TRACE]` Debug 日志（提交前或后续随手删）。
 
 ## 已完成（历史保留）

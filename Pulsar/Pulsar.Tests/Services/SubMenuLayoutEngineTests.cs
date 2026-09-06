@@ -272,12 +272,33 @@ namespace Pulsar.Tests.Services
         }
 
         [Fact]
-        public void HitTestChild_Ring_OutsideBand_ShouldReturnMinusOne()
+        public void HitTestChild_Ring_BeyondOuterBand_ShouldReturnMinusOne()
         {
-            // Beyond the outer band (distance > 125).
+            // [ADR-024 D10] The ring triggers by polar sector from the dead zone out
+            // to the outer band edge — matching the root wheel — but the empty space
+            // beyond the ring's outer edge stays inert (no accidental firing).
             _engine.HitTestChild(new Vector(450, 250), Pose, SubMenuLayoutStyle.Ring, 4).Should().Be(-1);
-            // Between dead zone and inner band (distance 60).
-            _engine.HitTestChild(new Vector(310, 250), Pose, SubMenuLayoutStyle.Ring, 4).Should().Be(-1);
+        }
+
+        [Fact]
+        public void HitTestChild_Ring_InsideBandGap_ShouldTriggerBySector()
+        {
+            // [ADR-024 D10] Points between the dead zone and the inner band edge were
+            // previously dead (-1) — the ring only fired when the cursor sat ON the
+            // child band. The root wheel fires from the dead zone outward by sector
+            // (SlotLayoutEngine.HitTest), so the ring must too: (310,250) is at dist 60
+            // (inside the 75..125 band gap) but east of centre → child 1.
+            _engine.HitTestChild(new Vector(310, 250), Pose, SubMenuLayoutStyle.Ring, 4).Should().Be(1);
+            _engine.HitTestChild(new Vector(250, 310), Pose, SubMenuLayoutStyle.Ring, 4).Should().Be(2);
+            _engine.HitTestChild(new Vector(190, 250), Pose, SubMenuLayoutStyle.Ring, 4).Should().Be(3);
+            _engine.HitTestChild(new Vector(250, 190), Pose, SubMenuLayoutStyle.Ring, 4).Should().Be(4);
+        }
+
+        [Fact]
+        public void HitTestChild_Ring_OuterBandEdge_ShouldTrigger()
+        {
+            // dist == bandOuter (125) is still inside the trigger band.
+            _engine.HitTestChild(new Vector(375, 250), Pose, SubMenuLayoutStyle.Ring, 4).Should().Be(1);
         }
 
         [Fact]

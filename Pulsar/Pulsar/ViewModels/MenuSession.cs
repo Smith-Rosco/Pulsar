@@ -2575,7 +2575,12 @@ namespace Pulsar.ViewModels
                 ResolveActiveSlotSource(),
                 CenterSlot,
                 GetPreviewHostContext,
-                title => DynamicTitle = title,
+                // [ADR-024 D11] While a cascade is open the dynamic title is
+                // suppressed: it is fixed below the wheel (Y = 385) and overlaps a
+                // Ring sub-wheel whose parent slot sits in the lower half, and it
+                // duplicates the centre's identity anyway (Ring = parent slot).
+                // Closing the cascade lets the next UpdateVisuals restore it.
+                title => DynamicTitle = preserveCenterIdentity ? string.Empty : title,
                 ApplyCenterPreview,
                 preserveCenterIdentity);
         }

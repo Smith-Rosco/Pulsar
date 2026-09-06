@@ -214,7 +214,6 @@ namespace Pulsar.Services
             int childCount,
             double dist)
         {
-            double bandInner = pose.SubRingRadius - pose.SlotSize / 2;
             double bandOuter = pose.SubRingRadius + pose.SlotSize / 2;
 
             if (dist < pose.DeadZoneRadius)
@@ -222,7 +221,14 @@ namespace Pulsar.Services
                 return 0;
             }
 
-            if (dist < bandInner || dist > bandOuter)
+            // [ADR-024 D10] Polar-sector triggering from the dead zone out to the
+            // outer band edge, matching the root wheel (SlotLayoutEngine.HitTest
+            // fires from the dead zone outward by sector). The narrow [r-25, r+25]
+            // band previously required the cursor ON the child ring; the space
+            // between the dead zone and the ring is now live too, so a fan-out
+            // gesture behaves identically on the ring and the root wheel. The empty
+            // space beyond the outer edge stays inert (no accidental firing).
+            if (dist > bandOuter)
             {
                 return -1;
             }

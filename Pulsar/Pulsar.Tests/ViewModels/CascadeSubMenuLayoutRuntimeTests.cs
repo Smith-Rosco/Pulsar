@@ -232,6 +232,90 @@ namespace Pulsar.Tests.ViewModels
                 "hit at child 1 viewport center must return slot 2");
         }
 
+        [Fact]
+        public async Task HitTestCascade_Ring_BandGapShouldTriggerChildBySector()
+        {
+            // [ADR-024 D10] Ring children trigger by polar sector from the dead zone
+            // out to the outer band edge, matching the root wheel (SlotLayoutEngine
+            // fires from the dead zone outward). Previously only the narrow band
+            // [r-25, r+25] fired, so the ring required the cursor ON the child ring.
+            // Real layout: parent slot 1 at (250,160), ring radius 81, dead zone 35,
+            // inner band 56 — a point halfway between the parent centre and child 1
+            // (dist ≈ 40.5) must resolve to child 1 by its sector.
+            var (session, _) = CreateSessionWithRealEngines();
+            session.IsVisible = true;
+            await EnterCascadeWithSubActions(session, SubMenuLayoutStyle.Fan, childCount: 5);
+
+            session.IsInSubMenu.Should().BeTrue();
+
+            var child1 = SlotCenter(session, 1);
+            var parent = new Vector(250, 160);
+            var midpoint = new Vector(
+                (child1.cx + parent.X) / 2.0,
+                (child1.cy + parent.Y) / 2.0);
+            var midpointViewport = new Vector(
+                midpoint.X + session.MenuCanvasLeft,
+                midpoint.Y + session.MenuCanvasTop);
+
+            session.HitTest(midpointViewport).Should().Be(1,
+                "a point inside the ring's band gap (not on the child ring) must still trigger the sector's child");
+
+            // The dead zone keeps the parent identity: 20 DIP inside the centre.
+            session.HitTest(new Vector(250, 140)).Should().Be(0,
+                "the ring centre (parent slot) stays the dismiss anchor inside the dead zone");
+        }
+
+        [Fact]
+        public async Task EnterCascade_DynamicTitle_ShouldStayEmptyWhileOpen_AndRestoreOnClose()
+        {
+            // [ADR-024 D11] The dynamic title is fixed below the wheel (Y = 385) and
+            // overlaps a Ring sub-wheel when the parent slot sits in the lower half;
+            // while a cascade is open it also duplicates the centre's identity
+            // (Ring = parent slot). The title is suppressed for the whole cascade and
+            // restored once it closes.
+            var (session, _) = CreateSessionWithRealEngines();
+            session.IsVisible = true;
+            await EnterCascadeWithSubActions(session, SubMenuLayoutStyle.Fan, childCount: 5);
+
+            session.IsInSubMenu.Should().BeTrue();
+
+            session.UpdateActiveSlot(0);
+            session.DynamicTitle.Should().BeEmpty(
+                "hovering the cascade centre must not resurrect the title (it would duplicate the centre identity)");
+
+            session.UpdateActiveSlot(1);
+            session.DynamicTitle.Should().BeEmpty(
+                "hovering a ring child must keep the title hidden while the cascade is open");
+
+            // Dismiss: clicking the Ring centre (parent slot) restores the root menu.
+            // RestoreRootMenu is fire-and-forget (RestoreRootMenuAsync), so poll for
+            // the state transition instead of asserting synchronously.
+            await session.HandleGlobalMouseClickAsync(
+                GlobalMouseButton.Left, clickSlotIndex: 0, new Vector(250, 160));
+            await WaitUntilAsync(() => !session.IsInSubMenu, TimeSpan.FromSeconds(2));
+            session.IsInSubMenu.Should().BeFalse();
+
+            session.UpdateActiveSlot(0);
+            session.DynamicTitle.Should().NotBeEmpty(
+                "after the cascade closes the title restores");
+        }
+
+        private static async Task WaitUntilAsync(Func<bool> condition, TimeSpan timeout)
+        {
+            var deadline = DateTime.UtcNow + timeout;
+            while (DateTime.UtcNow < deadline)
+            {
+                if (condition())
+                {
+                    return;
+                }
+
+                await Task.Delay(10);
+            }
+
+            throw new TimeoutException($"Condition not met within {timeout}.");
+        }
+
         private static async Task EnterCascadeWithSubActions(
             MenuSession session, SubMenuLayoutStyle style, int childCount)
         {

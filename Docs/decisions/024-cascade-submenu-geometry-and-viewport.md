@@ -87,6 +87,12 @@ Because the main wheel no longer moves, the parent slot must not glide to the ce
 - Ring: the main wheel fades out (no scale), children bloom from the parent slot position.
 - Exit reverses it. `SubMenuCollapsedScale` / `SubMenuCollapsedOpacity` are deleted along with the collapse calls.
 
+**D10 — Unified polar-sector triggering for Ring (v1.2.2, user report 2026-09-06).**
+The root wheel fires by **polar sector from the dead zone outward** (`SlotLayoutEngine.HitTest`: `dist > DeadZone` → angular sector, no radial upper bound). Ring previously required the cursor to sit ON the child band (`dist ∈ [r−25, r+25]`) — the interaction model was inconsistent with the root wheel ("must move close to the Slot" vs "point at the sector"). Ring now fires from the dead zone out to the ring's **outer band edge** (`dist ∈ [DeadZone, r + slotSize/2]` → angular sector); the space beyond the outer edge stays inert (no accidental firing when the cursor leaves the sub-wheel), matching Fan's `[DeadZone, fanExtent]` structure. The dead zone keeps its semantics unchanged: `dist < DeadZone → 0` = the parent-identity dismiss anchor (D7). Fan is untouched — it already uses the unified structure.
+
+**D11 — Dynamic title suppressed while a cascade is open (v1.2.2, user report 2026-09-06).**
+The dynamic title is fixed below the wheel (`TitleTopOffset = CenterY + R + slotSize/2 + 20` → Y = 385) and is the last child of the menu canvas (top Z order). A Ring sub-wheel whose parent slot sits in the lower half extends to `parentY + 0.90R + slotSize/2` (up to ≈446) and **overlaps the title band**; the title also duplicates the centre's identity while a cascade is open (Ring centre = parent slot, D7). While a cascade is open the title text is suppressed (empty); the coordinator still runs, so the centre orb and hover previews behave unchanged. Closing the cascade restores the title on the next `UpdateVisuals`.
+
 ---
 
 ## Considered Options
@@ -130,6 +136,7 @@ Risk:
 ---
 
 **Change History**:
+- v1.2.2 (2026-09-06): D10 Ring hit-testing unified to polar-sector triggering from the dead zone out to the outer band edge (root-wheel-consistent; previously a narrow `[r-25, r+25]` band); D11 dynamic title suppressed while a cascade is open (overlap with lower-half Ring + duplicate centre identity). Test-locked (1129/1129 green).
 - v1.2.1 (2026-09-06): D1a orb-clearance - fan wings clamp to sectorHalf minus the orb's angular half-width (13.6 deg at 8 slots / r=160), 3-child fan relaxes to tightest non-overlapping spread; E2E-verified (fan-sector-constraint-2).
 - v1.2.0 (2026-09-06): User-spec amendments - D1a fan wings clamped to the parent slot's own sector (pi/slotsPerPage, 22.5 deg at 8 slots); D7 Ring centre orb blooms back visible as the parent slot (icon + label), hover no longer resets cascade centres. E2E-verified (fan-sector-constraint, ring-center-visible-4).
 - v1.1.0 (2026-09-06): Route A implementation (dedicated SubMenuSlots collection + second ItemsControl), status Proposed - Accepted.
