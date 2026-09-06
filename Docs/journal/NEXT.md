@@ -20,13 +20,14 @@
 - [x] ~~**openspec repositioning Phase 4（README 重写）**：`README.md`（zh）首屏定位语 + 三支柱场景 + 真实截图 + 差异化一句话；`README_EN.md` 同步；自查不再以「启动器」自居。~~ **已完成**（`93044dc` 安全批次）。
 - [x] ~~可选清理：`MenuSession.cs` 的 `[CLICK-TRACE]`/`[EXEC-TRACE]`/`[GEOMETRY-TRACE]`/`[VISUAL-TRACE]` Debug 日志（提交前或后续随手删）。~~ **已完成**：7 条 trace 日志全部移除（CLICK-TRACE ×3 / EXEC-TRACE ×2 / GEOMETRY-TRACE ×1 / VISUAL-TRACE ×1），无残留变量；build 0 警告 0 错误，全量 1227/1227 通过。
 - [x] ~~openspec 四 change 纯代码剩余项（in-app-auto-update 3.x DI集成 / installer 3.1 单实例 / user-manual 3.1 Release说明）。~~ **已完成**：UpdateOrchestrator + About UI + 启动集成 + 命名 Mutex 单实例 + RELEASE_NOTES-1.11.0.md；build 0 警告 0 错误，全量 1227/1227。
-- [ ] **需真机/外部动作的剩余项**（无法在不唤起应用的约束下推进）：
-  - in-app-auto-update 4.3：真实网络 QA（正常+断网路径）+ 打测试 tag 验证 UpdateAvailable 全链路
-  - installer 1.3：干净 VM 冒烟（无 .NET Runtime 启动 Standalone）
-  - installer 2.4：真实安装→启动→覆盖升级→卸载（数据保留验证）
-  - installer 3.2/3.3：双实例交叉验证（安装版↔Standalone）
-  - user-manual 3.2/3.3：资产上传 + 打 tag v1.11.0 发布 GitHub Release
-  - repositioning 3.2/3.3：Demo 视频录制（3 支脚本已定稿）并入 Release 页
+- [x] ~~**需真机/外部动作的剩余项**（无法在不唤起应用的约束下推进）~~ **2026-09-06 23:55 真机验证收口**（commit `d346b3f`）：
+  - ~~in-app-auto-update 4.3：真实网络 QA（正常+断网路径）+ 打测试 tag 验证 UpdateAvailable 全链路~~ ✅ UpToDate + UpdateAvailable（v1.11.1 测试 release 验证托盘通知）均通过；发现并修复 Lazy<UpdateOrchestrator> 未注册的 DI bug
+  - ~~installer 2.4：真实安装→启动→覆盖升级→卸载（数据保留验证）~~ ✅ 静默安装→运行→静默卸载全链路通过；%AppData%\Pulsar 103 文件保留
+  - ~~installer 3.2/3.3：双实例交叉验证（安装版↔Standalone）~~ ✅ Mutex 单实例保护验证通过（第二个实例 5s 内自动退出）
+  - ~~user-manual 3.2/3.3：资产上传 + 打 tag v1.11.0 发布 GitHub Release~~ ✅ v1.11.0 已发布（三资产，notes 无 BOM 中文正常）
+- [ ] **剩余需外部环境的项**（本机无法完成）：
+  - installer 1.3：干净 VM 冒烟（无 .NET Runtime 环境启动 Standalone zip 验证自包含运行时）
+  - repositioning 3.2/3.3：Demo 视频录制（3 支脚本已定稿 `Docs/media/release/videos/demo-video-scripts.md`，需真机录屏+剪辑）
 
 ## 已完成（历史保留）
 
