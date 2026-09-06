@@ -18,7 +18,7 @@
 - [x] ~~**openspec repositioning Phase 2（宣传截图）**：E2E 管线 + 4 张 1920×1080 首屏用图 + `Docs/media/release/` 目录约定。~~ **已提交** `893870c`，4 张 PNG 已入库，main 与 origin/main 同步。
 - [ ] **openspec repositioning Phase 3（Demo 视频）**：三支脚本已定稿并入 `93044dc`（`Docs/media/release/videos/demo-video-scripts.md`，Excel 跑宏 40s / 老旧网页脚本注入 45s / 登录填表自动化 40s）；剩余 3.2 录制剪辑 + 3.3 mp4 入库，需真机录屏。
 - [x] ~~**openspec repositioning Phase 4（README 重写）**：`README.md`（zh）首屏定位语 + 三支柱场景 + 真实截图 + 差异化一句话；`README_EN.md` 同步；自查不再以「启动器」自居。~~ **已完成**（`93044dc` 安全批次）。
-- [ ] 可选清理：`MenuSession.cs` 的 `[CLICK-TRACE]`/`[EXEC-TRACE]`/`[GEOMETRY-TRACE]`/`[VISUAL-TRACE]` Debug 日志（提交前或后续随手删）。
+- [x] ~~可选清理：`MenuSession.cs` 的 `[CLICK-TRACE]`/`[EXEC-TRACE]`/`[GEOMETRY-TRACE]`/`[VISUAL-TRACE]` Debug 日志（提交前或后续随手删）。~~ **已完成**：7 条 trace 日志全部移除（CLICK-TRACE ×3 / EXEC-TRACE ×2 / GEOMETRY-TRACE ×1 / VISUAL-TRACE ×1），无残留变量；build 0 警告 0 错误，全量 1227/1227 通过。
 
 ## 已完成（历史保留）
 

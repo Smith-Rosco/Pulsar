@@ -1548,13 +1548,6 @@ namespace Pulsar.ViewModels
         /// </summary>
         public async Task HandleGlobalMouseClickAsync(GlobalMouseButton button, int clickSlotIndex, Vector relativeClickPoint)
         {
-            _logger?.LogDebug(
-                "[CLICK-TRACE] enter button={Button} idx={Idx} state={State} transitioning={Transitioning} point=({X:F0},{Y:F0})",
-                button, clickSlotIndex, _menuState, _isTransitioning, relativeClickPoint.X, relativeClickPoint.Y);
-            _logger?.LogDebug(
-                "[CLICK-TRACE] layout menuCenter=({Cx:F1},{Cy:F1}) canvas=({L:F1},{T:F1}) radius={R:F1} slotSize={S:F1}",
-                _menuCenterX, _menuCenterY, MenuCanvasLeft, MenuCanvasTop, _currentRadius, _currentSlotSize);
-
             if (_isTransitioning)
             {
                 return;
@@ -1599,9 +1592,6 @@ namespace Pulsar.ViewModels
                     && clickSlotIndex <= SubMenuSlots.Count
                         ? SubMenuSlots[clickSlotIndex - 1]
                         : Slots.FirstOrDefault(s => s.SlotIndex == clickSlotIndex);
-                _logger?.LogDebug(
-                    "[CLICK-TRACE] resolved slot={Label} enabled={Enabled} subSlots={SubSlots} strategy={Strategy} state={State} subMenuSlots={SubMenuCount}",
-                    slot?.Label, slot?.IsEnabled, slot?.SubSlots.Count, slot?.ActionStrategy?.GetType().Name, _menuState, SubMenuSlots.Count);
                 if (slot == null || !slot.IsEnabled)
                 {
                     return;
@@ -1767,10 +1757,6 @@ namespace Pulsar.ViewModels
 
         public async Task ExecuteSelectionAsync()
         {
-            _logger?.LogDebug(
-                "[EXEC-TRACE] enter activeIdx={Idx} state={State} subMenuSlots={SubMenuCount} subMenuActive={SubActive}",
-                _activeSlotIndex, _menuState, SubMenuSlots.Count, _activeSubMenuDescriptor?.GetType().Name);
-
             if (_activeSlotIndex < 0)
             {
                 return;
@@ -1797,9 +1783,6 @@ namespace Pulsar.ViewModels
             }
 
             var slot = ResolveActiveSlotSource().FirstOrDefault(s => s.SlotIndex == _activeSlotIndex);
-            _logger?.LogDebug(
-                "[EXEC-TRACE] resolved slot={Label} enabled={Enabled} strategy={Strategy}",
-                slot?.Label, slot?.IsEnabled, slot?.ActionStrategy?.GetType().Name);
             if (slot == null || !slot.IsEnabled)
             {
                 return;
@@ -2258,15 +2241,6 @@ namespace Pulsar.ViewModels
                 SubMenuSlots[i].X = positions[i].X;
                 SubMenuSlots[i].Y = positions[i].Y;
             }
-
-            _logger?.LogDebug(
-                "[GEOMETRY-TRACE] style={Style} pose=(center {Px:F1},{Py:F1} dir {Dir:F1}掳 radius {Pr:F1} slot {Ps:F1}) canvas=(0,0) children: {Children}",
-                EffectiveCascadeStyle(cascade),
-                pose.CenterX, pose.CenterY,
-                pose.DirectionRadians * 180.0 / Math.PI,
-                pose.SubRingRadius,
-                pose.SlotSize,
-                string.Join(" | ", positions.Select(p => $"({p.X:F0},{p.Y:F0})")));
         }
 
         /// <summary>
@@ -3100,18 +3074,6 @@ namespace Pulsar.ViewModels
             }
 
             await Task.WhenAll(bloomTasks);
-
-            _logger?.LogDebug(
-                "[VISUAL-TRACE] style={Style} centerVisible={Visible} centerOpacity={Op:F2} center=({Cx:F1},{Cy:F1}) parent=({Px:F1},{Py:F1}) label={Label} parentSlotNull={Null}",
-                isFan ? "Fan" : "Ring",
-                CenterSlot.CurrentOpacity > 0.5,
-                CenterSlot.CurrentOpacity,
-                CenterSlot.AnimationOffsetX + CenterX,
-                CenterSlot.AnimationOffsetY + CenterY,
-                parentCenterX,
-                parentCenterY,
-                CenterSlot.Label,
-                parentSlot == null);
 
             if (isFan)
             {
