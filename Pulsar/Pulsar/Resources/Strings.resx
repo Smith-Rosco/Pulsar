@@ -3236,7 +3236,10 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
     <value>Quick-switch window (ms)</value>
   </data>
   <data name="Settings.General.QuickSwitchTimeoutDescription" xml:space="preserve">
-    <value>Releasing the hotkey near the center within this time switches back to the previous window.</value>
+    <value>Quick-switch back when releasing near center</value>
+  </data>
+  <data name="Settings.General.QuickSwitchTimeoutDescriptionDetail" xml:space="preserve">
+    <value>Releasing the hotkey within the center zone before this timeout elapses switches back to the previous window.</value>
   </data>
   <data name="Settings.General.RightDragSummon" xml:space="preserve">
     <value>Right-Drag Gesture</value>
@@ -3254,13 +3257,19 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
     <value>Task switcher modifier</value>
   </data>
   <data name="Settings.General.RightDragSwitcherModifierDescription" xml:space="preserve">
-    <value>Hold this key with a right-click to open the task-switcher menu.</value>
+    <value>Modifier + right-click opens task switcher</value>
+  </data>
+  <data name="Settings.General.RightDragSwitcherModifierDescriptionDetail" xml:space="preserve">
+    <value>Hold this key together with a right-click to open the task-switcher menu.</value>
   </data>
   <data name="Settings.General.RightDragActionModifier" xml:space="preserve">
     <value>Action menu modifier</value>
   </data>
   <data name="Settings.General.RightDragActionModifierDescription" xml:space="preserve">
-    <value>Hold this key with a right-click to open the action menu.</value>
+    <value>Modifier + right-click opens action menu</value>
+  </data>
+  <data name="Settings.General.RightDragActionModifierDescriptionDetail" xml:space="preserve">
+    <value>Hold this key together with a right-click to open the action menu.</value>
   </data>
   <data name="Settings.General.RightDragModifiersConflict" xml:space="preserve">
     <value>The two modifiers must be different. The gesture stays disabled while they match.</value>
@@ -3314,6 +3323,9 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
     <value>Enable isolation filter</value>
   </data>
   <data name="Settings.Gesture.EnableToggleDescription" xml:space="preserve">
+    <value>Check foreground window before gesture</value>
+  </data>
+  <data name="Settings.Gesture.EnableToggleDescriptionDetail" xml:space="preserve">
     <value>When enabled, the foreground window is checked at each right-button press before the gesture is allowed to take over.</value>
   </data>
   <data name="Settings.Gesture.Mode" xml:space="preserve">

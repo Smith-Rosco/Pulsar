@@ -38,6 +38,7 @@
                 <Grid Margin="{StaticResource Pulsar.Gap.Right.SM}" VerticalAlignment="Center">
                     <ui:Button AutomationProperties.AutomationId="Pulsar.Settings.SaveChangesButton"
                                AutomationProperties.Name="{lex:Locale SettingsWindow.SaveChanges}"
+                               Content="{lex:Locale SettingsWindow.SaveChanges}"
                                Icon="{ui:SymbolIcon Save24}"
                                Style="{StaticResource PulsarPrimaryButtonStyle}"
                                Command="{Binding DataContext.SaveCommand, RelativeSource={RelativeSource AncestorType=Window}}"

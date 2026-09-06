@@ -5154,7 +5154,10 @@ Pulsar 会在当前页面运行一个网页脚本——这就是命令模式：�
     <value>快速切换窗口（毫秒）</value>
   </data>
   <data name="Settings.General.QuickSwitchTimeoutDescription" xml:space="preserve">
-    <value>在该时间内于中心区域松开热键即可切回上一个窗口。</value>
+    <value>中心区域松开时快速切回</value>
+  </data>
+  <data name="Settings.General.QuickSwitchTimeoutDescriptionDetail" xml:space="preserve">
+    <value>在超时时间内于中心区域松开热键，即切回上一个窗口。</value>
   </data>
   <data name="Settings.General.RightDragSummon" xml:space="preserve">
     <value>右键手势</value>
@@ -5172,12 +5175,18 @@ Pulsar 会在当前页面运行一个网页脚本——这就是命令模式：�
     <value>任务切换菜单修饰键</value>
   </data>
   <data name="Settings.General.RightDragSwitcherModifierDescription" xml:space="preserve">
+    <value>修饰键+右键打开任务切换</value>
+  </data>
+  <data name="Settings.General.RightDragSwitcherModifierDescriptionDetail" xml:space="preserve">
     <value>按住此键并右键时打开任务切换菜单。</value>
   </data>
   <data name="Settings.General.RightDragActionModifier" xml:space="preserve">
     <value>动作菜单修饰键</value>
   </data>
   <data name="Settings.General.RightDragActionModifierDescription" xml:space="preserve">
+    <value>修饰键+右键打开动作菜单</value>
+  </data>
+  <data name="Settings.General.RightDragActionModifierDescriptionDetail" xml:space="preserve">
     <value>按住此键并右键时打开动作菜单。</value>
   </data>
   <data name="Settings.General.RightDragModifiersConflict" xml:space="preserve">
@@ -5232,6 +5241,9 @@ Pulsar 会在当前页面运行一个网页脚本——这就是命令模式：�
     <value>启用隔离过滤</value>
   </data>
   <data name="Settings.Gesture.EnableToggleDescription" xml:space="preserve">
+    <value>手势前检查前台窗口</value>
+  </data>
+  <data name="Settings.Gesture.EnableToggleDescriptionDetail" xml:space="preserve">
     <value>启用后，每次右键按下都会在允许手势接管前检查前台窗口。</value>
   </data>
   <data name="Settings.Gesture.Mode" xml:space="preserve">

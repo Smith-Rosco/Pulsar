@@ -141,7 +141,8 @@
                                    Margin="0,0,0,12"/>
 
                         <controls:SettingsRow Title="{lex:Locale Settings.General.QuickSwitchTimeout}"
-                                              Description="{lex:Locale Settings.General.QuickSwitchTimeoutDescription}">
+                                              Description="{lex:Locale Settings.General.QuickSwitchTimeoutDescription}"
+                                              DescriptionToolTip="{lex:Locale Settings.General.QuickSwitchTimeoutDescriptionDetail}">
                             <ui:NumberBox Value="{Binding QuickSwitchTimeoutMs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           Minimum="80"
                                           Maximum="1500"
@@ -250,7 +251,8 @@
                         <Separator Margin="{StaticResource Pulsar.Gap.Vertical.MD}"/>
 
                         <controls:SettingsRow Title="{lex:Locale Settings.General.RightDragSwitcherModifier}"
-                                              Description="{lex:Locale Settings.General.RightDragSwitcherModifierDescription}">
+                                              Description="{lex:Locale Settings.General.RightDragSwitcherModifierDescription}"
+                                              DescriptionToolTip="{lex:Locale Settings.General.RightDragSwitcherModifierDescriptionDetail}">
                             <ComboBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
                                       IsEnabled="{Binding EnableRightDragSummon}"
                                       SelectedValue="{Binding RightDragSwitcherModifier, Mode=TwoWay}"
@@ -274,7 +276,8 @@
                         <Separator Margin="{StaticResource Pulsar.Gap.Vertical.MD}"/>
 
                         <controls:SettingsRow Title="{lex:Locale Settings.General.RightDragActionModifier}"
-                                              Description="{lex:Locale Settings.General.RightDragActionModifierDescription}">
+                                              Description="{lex:Locale Settings.General.RightDragActionModifierDescription}"
+                                              DescriptionToolTip="{lex:Locale Settings.General.RightDragActionModifierDescriptionDetail}">
                             <ComboBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
                                       IsEnabled="{Binding EnableRightDragSummon}"
                                       SelectedValue="{Binding RightDragActionModifier, Mode=TwoWay}"
@@ -310,7 +313,8 @@
                                        Margin="{StaticResource Pulsar.Gap.Bottom.MD}"/>
 
                             <controls:SettingsRow Title="{lex:Locale Settings.Gesture.EnableToggle}"
-                                                  Description="{lex:Locale Settings.Gesture.EnableToggleDescription}">
+                                                  Description="{lex:Locale Settings.Gesture.EnableToggleDescription}"
+                                                  DescriptionToolTip="{lex:Locale Settings.Gesture.EnableToggleDescriptionDetail}">
                                 <ui:ToggleSwitch IsChecked="{Binding GestureIsolationEnabled, Mode=TwoWay}"/>
                             </controls:SettingsRow>
 

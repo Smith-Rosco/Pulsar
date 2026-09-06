@@ -12,7 +12,7 @@
 - [ ] 观察 1-2 个会话：AGENTS.md 瘦身后 agent 是否经 §3 指针去 `Docs/lessons/` 取坑位全文（防"全表靠内联"回潮，ADR-022 后续）。
 - [ ] 观察若干会话：确认无 harness 再向 `.workbuddy/memory/` 写正文（若复发 → 考虑 Junction 收口，ADR-019 后续）。**2026-09-05 检查：合规**——仅一行指向 journal 的指针（183B），无正文复发。
 - [ ] OpenWiki 补缺页：余额恢复后 `openwiki --update` 补 3 页（architecture/system-overview · architecture/window-switching · quickstart）；反复跳过的页可临时切 deepseek-v4-pro。注意 `.github/workflows/openwiki-update.yml` 每天 08:00 UTC 定时跑，推 GitHub + 配 key 会每日消耗额度；本地补丁 `repository-runner.js`（2 处 "LOCAL PATCH (2026-09-05)"）在 `npm update -g openwiki` 后需重打。
-- [ ] user手动添加：须将设置页面的保存按钮改为图标家问题“保存”。同时，也需要将设置页面里的各种长文本描述精简化或者将详情藏入tooltip，保证观感简洁有序。
+- [x] ~~设置页 UI 精简：保存按钮改为图标+文字"保存"；长文本描述精简化或将详情藏入 tooltip，保证观感简洁有序。~~ **已完成**：SettingsWindow 保存按钮加 Content（Save Changes/保存更改）；SettingsGeneralPage 4 处偏长 Description 精简 + 新增 DescriptionToolTip（QuickSwitchTimeout / RightDragSwitcherModifier / RightDragActionModifier / Gesture.EnableToggle），中英双语 resx 同步；build 0 警告 0 错误，全量 1227/1227 通过。
 - [ ] 子轮盘交付待用户真机验收：三 bug 修复（`artifacts/bug1-after-fix` · `bug2-after-fix` · `bug3-geometry`）+ ADR-024 v1.2.1 两项几何优化（Fan 扇区约束 orb 外缘收进扇区 / Ring 中心=父 Slot，`artifacts/fan-sector-constraint-2` · `ring-center-visible-4`），E2E 均已 PASS。
 - [x] ~~提交未落地改动（34 文件，含 ADR-024 v1.2.0 + 三 bug 修复 + E2E 基建 + 扇区/回归单测）：等用户确认后 commit（当前 main 工作树）。~~ **已提交并 push**：`0cab1ff`/`d978d2c`/`8c236da`（ADR-024 相关），main 与 origin/main 同步。
 - [x] ~~**openspec repositioning Phase 2（宣传截图）**：E2E 管线 + 4 张 1920×1080 首屏用图 + `Docs/media/release/` 目录约定。~~ **已提交** `893870c`，4 张 PNG 已入库，main 与 origin/main 同步。
