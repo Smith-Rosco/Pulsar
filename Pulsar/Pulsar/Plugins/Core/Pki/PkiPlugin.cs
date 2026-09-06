@@ -49,7 +49,7 @@ namespace Pulsar.Plugins.Core.Pki
         public override string DisplayName => "AutoFill";
         public override string Version => "1.0.0";
         public override string Author => "Pulsar Team";
-        public override string Description => "Fill a saved password into the active application.";
+        public override string Description => "Securely fill saved credentials into the active application — DPAPI-protected, programmable sign-in actions for legacy systems.";
         public override string Icon => "\uE72E";
         public override bool CanDisable => false;
         public override PluginTier Tier => PluginTier.Core;
@@ -175,7 +175,7 @@ namespace Pulsar.Plugins.Core.Pki
                     {
                         Name = "fill",
                         Label = "Fill Password",
-                        Description = "Fill a saved password into the active application.",
+                        Description = "Securely fill a saved password into the active application.",
                         SuggestedLabelTemplate = "Fill Password",
                         SuggestedIconKey = "E72E",
                         SuggestedColorHex = "#4CAF50",

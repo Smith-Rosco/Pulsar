@@ -7,7 +7,7 @@
 
 ## 概述
 
-VbaRunner 是一个强大的自动化插件，允许在 Excel 或 WPS Office 中执行 VBA 脚本，支持交互式工作表选择和上下文感知执行。
+VbaRunner（显示名：**Excel 宏 / Excel Macros**）允许在 Excel 或 WPS Office 中一键运行已保存的 VBA 宏——把重复的表格操作变成一个动作，支持交互式工作表选择和上下文感知执行。
 
 ## 功能特性
 

@@ -3881,7 +3881,7 @@
   <data
     name="Plugin.Description.AutoFill"
     xml:space="preserve">
-    <value>将已保存的密码填入活动应用。</value>
+    <value>将已保存的凭据安全填入活动应用——DPAPI 加密保护、可编程的安全登录动作。</value>
   </data>
   <data
     name="Plugin.Description.AppSwitch"
@@ -3901,7 +3901,7 @@
   <data
     name="Plugin.Description.ExcelMacros"
     xml:space="preserve">
-    <value>在 Excel/WPS 中运行已保存的宏。</value>
+    <value>在 Excel/WPS 中一键运行已保存的宏，把重复的表格操作变成一个动作。</value>
   </data>
   <data
     name="Plugin.Description.PulsarSettings"

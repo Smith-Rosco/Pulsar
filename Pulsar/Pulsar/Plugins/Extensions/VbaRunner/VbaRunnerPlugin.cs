@@ -29,7 +29,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
         public string DisplayName => "Excel Macros";
         public string Version => "1.0.0";
         public string Author => "Pulsar Team";
-        public string Description => "Run saved macros in Excel/WPS.";
+        public string Description => "Run saved Excel/WPS macros with one click — turn repetitive spreadsheet work into a single action.";
         public string Icon => "\uE71D"; // Excel/Table Icon
         public bool CanDisable => true; // Extension plugin, can be disabled
         public PluginTier Tier => PluginTier.Extension;

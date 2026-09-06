@@ -1,13 +1,14 @@
-# Secret Fill Plugin
+# AutoFill Plugin (Secret Fill)
 
 **Plugin ID**: `com.pulsar.pki`
+**Display Name**: 自动填充 / AutoFill
 **Version**: `1.0.0`
 **Type**: Core Plugin
 **Author**: Pulsar Team
 
 ## Overview
 
-Secret Fill is Pulsar's core credential-fill plugin. It keeps the Pulsar-facing plugin contract thin and delegates runtime work to layered PKI services that validate requests, load secrets, decrypt them, build an injection plan, and execute the plan through Windows-specific adapters.
+AutoFill（内部代号 Secret Fill，实现类 PkiPlugin）is Pulsar's core credential-fill plugin. It securely fills saved credentials into the active application — DPAPI-protected, programmable sign-in actions for legacy systems — and keeps the Pulsar-facing plugin contract thin by delegating runtime work to layered PKI services that validate requests, load secrets, decrypt them, build an injection plan, and execute the plan through Windows-specific adapters.
 
 ## Supported Actions
 

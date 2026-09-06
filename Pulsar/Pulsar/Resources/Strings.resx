@@ -2371,7 +2371,7 @@
   </data>
   <!-- ==================== Plugin.Description (Built-in Plugin Description Localization) ==================== -->
   <data name="Plugin.Description.AutoFill" xml:space="preserve">
-    <value>Fill a saved password into the active application.</value>
+    <value>Securely fill saved credentials into the active application — DPAPI-protected, programmable sign-in actions for legacy systems.</value>
   </data>
   <data name="Plugin.Description.AppSwitch" xml:space="preserve">
     <value>Switch to an existing app, launch one directly, or switch first and launch only when needed.</value>
@@ -2380,10 +2380,10 @@
     <value>Open apps, files, folders, or URLs, or send a key sequence to the active window.</value>
   </data>
   <data name="Plugin.Description.WebScripts" xml:space="preserve">
-    <value>Run custom scripts in legacy intranet web pages that don't support browser extensions or userscripts.</value>
+    <value>Run custom scripts in legacy intranet web pages that don't support browser extensions or userscripts — turn repeated clicks on old enterprise systems into one-click actions.</value>
   </data>
   <data name="Plugin.Description.ExcelMacros" xml:space="preserve">
-    <value>Run saved macros in Excel/WPS.</value>
+    <value>Run saved Excel/WPS macros with one click — turn repetitive spreadsheet work into a single action.</value>
   </data>
   <data name="Plugin.Description.PulsarSettings" xml:space="preserve">
     <value>Open Pulsar settings or jump into quick profile setup using explicit built-in actions.</value>

@@ -21,7 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **存量 CS8604 警告清零（2026-09-06）**：`MenuSession.LoadPageContentAsync` 非 Task 分支向 `InsertCreatorSlot` / `IPageProviderFactory.CreateCommandPage` 传 `_lastContext`（`PulsarContext?` → 非空形参）产生 4 条 CS8604。该分支第 882 行已用 `_lastContext!.TargetProcessName` 解引用（null 会先 NRE），按文件既有约定补 `!`（MenuSession.cs:891/894）。**build 0 警告 0 错误，全量 1143/1143 通过**。注：stash 回溯确认该警告随 3f68c13（Ring 极坐标统一）引入，非本变更产物。
+
 ### Added
+- **内置插件显示身份叙事对齐 + 回归测试（openspec 2026-09-05-repositioning-narrative-rollout Phase 1）**：三支柱叙事落地插件显示层——VbaRunner 描述升「一键跑宏」（自动化领衔）、PkiPlugin 升「DPAPI 加密保护、可编程安全登录动作」（凭据护城河，DPAPI 已核实 `CredentialsManager`）、BookmarkletRunner 补「老旧企业系统重复点击 → 一键动作」（老旧系统助手）；EN/zh resx（`Plugin.Description.WebScripts/ExcelMacros/AutoFill`）与 C# 描述同步，插件 Id/配置键/显示名（resx 键推导源）全部不动。新增 `BuiltInPluginDisplayIdentityTests`（12 用例：显示名→resx 键约定绑定防改名断裂、zh 叙事关键词、Id 稳定、EN C#↔resx 同步防两套叙事）；`Docs/Plugins/PkiPlugin.md` 标题对齐 AutoFill、`VbaRunner.md` 补显示名。**全量 1143/1143 通过，0 错误**（存量 CS8604 警告 ×4 为 MenuSession 既有问题，stash 验证与本变更无关）。仓库根新增 `RELEASE_NOTES.md` 模板（供 user-manual-release-assets change 使用）。
+
+### Changed
 - **级联子菜单三 bug 修复 + E2E 基建（2026-09-06 用户三报）**：①执行解析——`ExecuteSelectionAsync` 由只查根 `Slots` 改为 `ResolveActiveSlotSource()`（SubMenu+Cascade+idx≥1 → `SubMenuSlots`），子轮盘态选中子槽位释放不再误执行根槽（原误解析到同索引根槽 QA Fan-3）；②状态残留——`IsVisible=false` 分支统一清理子菜单态（`ReleaseSubMenuSlots` + 重置 descriptor/menuState/分页/原点），下次唤起不再凭空出现旧子槽位；③位置——E2E 权威几何验证渲染与 ADR-024 D1 完全一致（半径 160、±30° 翼弧、UIA 物理像素 ×1.5 换算吻合），"位置不对"确认为残留子槽位以旧位置渲染的可见症状（同根因②）。E2E：`DebugCommandServer` 增 `profile` 参数（`DebugForcedActiveProfile` 强制 profile，绕开前台无 profile 时 `InsertCreatorSlot` 干扰）、`slot-click/slot-hover` 前真实 `SetCursorPos` 停靠（防 16ms 光标采样回盖合成悬停）、`SetActionExecuted` 带 label payload；两个复现 workflow + UIA dump 全 PASS。
 - 新增 `scripts/dev.ps1` 开发命令封装（journal 11:52 起多次提及的遗愿落地）：`build` / `test` / `commit` / `all` 四个子命令，执行前自动修补沙箱 shell 剥离的 Windows 环境变量。env 修补**只补缺失、进程级、永不覆盖**（APPDATA / LOCALAPPDATA / USERPROFILE 经 USERPROFILE→HOMEDRIVE+HOMEPATH→USERNAME 链派生；ProgramFiles 优先 ProgramW6432；ProgramFiles(x86) 与 CommonProgramFiles(x86) 由补好的 ProgramFiles 派生；SystemRoot / windir / ProgramData 由 SystemDrive 派生），根治 dotnet NuGet `Value cannot be null (path1)` 崩溃；dotnet 不在 PATH 时回退 `%ProgramFiles%\dotnet\dotnet.exe`。build/test 目标固定 `Pulsar/Pulsar.sln` 与 `Pulsar.Tests.csproj`（规避 sln 不在仓库根的 MSB1009 坑）并透传额外参数；commit 默认 `git add -u` 仅暂存 tracked 改动（呼应「勿误提交」约定），`-All` 切 `git add -A`。PS 5.1 兼容、纯 ASCII（规避 PS 5.1 读无 BOM UTF-8 的中文乱码坑）、native 启动失败诚实退出 127（不谎报成功）。
 

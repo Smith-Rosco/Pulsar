@@ -39,7 +39,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
         public string DisplayName => "Web Scripts";
         public string Version => "1.0.0";
         public string Author => "Pulsar Team";
-        public string Description => "Run custom scripts in legacy intranet web pages that don't support browser extensions or userscripts.";
+        public string Description => "Run custom scripts in legacy intranet web pages that don't support browser extensions or userscripts — turn repeated clicks on old enterprise systems into one-click actions.";
         public string Icon => "\uE896"; // Code/Script Icon
         public bool CanDisable => true; // Extension plugin, can be disabled
         public PluginTier Tier => PluginTier.Extension;

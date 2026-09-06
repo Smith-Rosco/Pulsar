@@ -159,7 +159,7 @@ namespace Pulsar.Tests.ViewModels.Settings
         public void DescriptionKey_IsDerivedFromPluginName_NotDescriptionText()
         {
             var loc = CreateLocalization("zh-CN");
-            var description = "Run custom scripts in legacy intranet web pages that don't support browser extensions or userscripts.";
+            var description = "Run custom scripts in legacy intranet web pages that don't support browser extensions or userscripts — turn repeated clicks on old enterprise systems into one-click actions.";
 
             // 新约定：键来自插件显示名 → 命中 Plugin.Description.WebScripts
             var byName = PluginLocalization.LocalizePluginDescription(loc, description, "Web Scripts");
