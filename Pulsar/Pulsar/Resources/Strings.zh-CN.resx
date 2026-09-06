@@ -1137,6 +1137,49 @@
     xml:space="preserve">
     <value>- 图像处理</value>
   </data>
+  <!-- ==================== Auto-Update (ADR-025) ==================== -->
+  <data name="Settings.About.UpdateTitle" xml:space="preserve">
+    <value>软件更新</value>
+  </data>
+  <data name="Settings.About.CheckForUpdates" xml:space="preserve">
+    <value>检查更新</value>
+  </data>
+  <data name="Settings.About.DownloadUpdate" xml:space="preserve">
+    <value>下载更新</value>
+  </data>
+  <data name="Settings.About.InstallUpdate" xml:space="preserve">
+    <value>安装并重启</value>
+  </data>
+  <data name="Settings.About.UpdateStatusUpToDate" xml:space="preserve">
+    <value>已是最新版本</value>
+  </data>
+  <data name="Settings.About.UpdateStatusChecking" xml:space="preserve">
+    <value>正在检查更新...</value>
+  </data>
+  <data name="Settings.About.Downloading" xml:space="preserve">
+    <value>正在下载...</value>
+  </data>
+  <data name="Update.Tray.Title" xml:space="preserve">
+    <value>发现新版本</value>
+  </data>
+  <data name="Update.Tray.BodyFormat" xml:space="preserve">
+    <value>Pulsar {0} 已发布。打开 设置 → 关于 进行下载。</value>
+  </data>
+  <data name="Update.Error.Network" xml:space="preserve">
+    <value>网络错误：无法连接更新服务器。</value>
+  </data>
+  <data name="Update.Error.Parse" xml:space="preserve">
+    <value>无法解析更新信息。</value>
+  </data>
+  <data name="Update.Error.NoAsset" xml:space="preserve">
+    <value>该版本未找到可下载资产。</value>
+  </data>
+  <data name="Update.Error.Download" xml:space="preserve">
+    <value>下载失败。</value>
+  </data>
+  <data name="Update.Error.NoDownload" xml:space="preserve">
+    <value>未找到已下载的更新文件。</value>
+  </data>
   <data
     name="Settings.Marketplace.Title"
     xml:space="preserve">

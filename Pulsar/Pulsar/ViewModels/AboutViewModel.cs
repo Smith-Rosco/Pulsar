@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -9,6 +10,7 @@ using Pulsar.Core.Localization;
 using Pulsar.Models;
 using Pulsar.Models.Enums;
 using Pulsar.Services.Interfaces;
+using Pulsar.Services.Updates;
 using Pulsar.ViewModels.Dialogs;
 
 namespace Pulsar.ViewModels
@@ -19,6 +21,7 @@ namespace Pulsar.ViewModels
         private readonly IDialogService? _dialogService;
         private readonly ILocalizationService? _loc;
         private readonly ILogger<AboutViewModel>? _logger;
+        private readonly UpdateOrchestrator? _updater;
 
         [ObservableProperty]
         private string _appName = "Pulsar";
@@ -47,16 +50,36 @@ namespace Pulsar.ViewModels
         [ObservableProperty]
         private string _buildConfiguration;
 
+        // ===== Auto-Update (ADR-025) =====
+        [ObservableProperty]
+        private UpdateState _updateState = UpdateState.Idle;
+
+        [ObservableProperty]
+        private string? _updateLatestTag;
+
+        [ObservableProperty]
+        private string? _updateErrorMessage;
+
+        [ObservableProperty]
+        private double _updateDownloadProgress;
+
+        public bool CanCheckForUpdates => UpdateState is UpdateState.Idle or UpdateState.UpToDate or UpdateState.Failed;
+        public bool CanDownload => UpdateState == UpdateState.UpdateAvailable;
+        public bool CanInstall => UpdateState == UpdateState.ReadyToInstall;
+        public bool ShowUpdateSection => _updater != null;
+
         public AboutViewModel(
             IConfigBackupService? backupService = null,
             IDialogService? dialogService = null,
             ILocalizationService? loc = null,
-            ILogger<AboutViewModel>? logger = null)
+            ILogger<AboutViewModel>? logger = null,
+            UpdateOrchestrator? updater = null)
         {
             _backupService = backupService;
             _dialogService = dialogService;
             _loc = loc;
             _logger = logger;
+            _updater = updater;
 
             var assembly = Assembly.GetExecutingAssembly();
             var version = assembly.GetName().Version;
@@ -70,6 +93,35 @@ namespace Pulsar.ViewModels
 #else
             BuildConfiguration = "Release";
 #endif
+
+            if (_updater != null)
+            {
+                SyncFromUpdater();
+                _updater.PropertyChanged += OnUpdaterPropertyChanged;
+            }
+        }
+
+        private void OnUpdaterPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName is nameof(UpdateOrchestrator.State)
+                or nameof(UpdateOrchestrator.LatestTag)
+                or nameof(UpdateOrchestrator.ErrorMessage)
+                or nameof(UpdateOrchestrator.DownloadProgress))
+            {
+                SyncFromUpdater();
+            }
+        }
+
+        private void SyncFromUpdater()
+        {
+            if (_updater == null) return;
+            UpdateState = _updater.State;
+            UpdateLatestTag = _updater.LatestTag;
+            UpdateErrorMessage = _updater.ErrorMessage;
+            UpdateDownloadProgress = _updater.DownloadProgress;
+            OnPropertyChanged(nameof(CanCheckForUpdates));
+            OnPropertyChanged(nameof(CanDownload));
+            OnPropertyChanged(nameof(CanInstall));
         }
 
         [RelayCommand]
@@ -94,6 +146,33 @@ namespace Pulsar.ViewModels
         private void OpenLicense()
         {
             OpenUrl("https://github.com/Smith-Rosco/Pulsar/blob/main/LICENSE");
+        }
+
+        [RelayCommand(CanExecute = nameof(CanCheckForUpdates))]
+        private async Task CheckForUpdatesAsync()
+        {
+            if (_updater == null) return;
+            await _updater.CheckAsync();
+            CheckForUpdatesCommand.NotifyCanExecuteChanged();
+            DownloadUpdateCommand.NotifyCanExecuteChanged();
+            InstallUpdateCommand.NotifyCanExecuteChanged();
+        }
+
+        [RelayCommand(CanExecute = nameof(CanDownload))]
+        private async Task DownloadUpdateAsync()
+        {
+            if (_updater == null) return;
+            await _updater.DownloadAsync();
+            CheckForUpdatesCommand.NotifyCanExecuteChanged();
+            DownloadUpdateCommand.NotifyCanExecuteChanged();
+            InstallUpdateCommand.NotifyCanExecuteChanged();
+        }
+
+        [RelayCommand(CanExecute = nameof(CanInstall))]
+        private async Task InstallUpdateAsync()
+        {
+            if (_updater == null) return;
+            await _updater.InstallAsync();
         }
 
         [RelayCommand]

@@ -80,6 +80,171 @@
                     </Grid>
                 </ui:CardControl>
 
+                <!-- Software Update (ADR-025) -->
+                <ui:CardExpander Icon="ArrowCircleUp24" Header="{lex:Locale Settings.About.UpdateTitle}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="True">
+                    <StackPanel>
+                        <Grid Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding AppVersion}"
+                                           FontSize="{StaticResource Pulsar.Type.Body}"
+                                           FontWeight="Medium"
+                                           Margin="{StaticResource Pulsar.Gap.Bottom.XS}"/>
+
+                                <!-- UpToDate badge -->
+                                <TextBlock Text="{lex:Locale Settings.About.UpdateStatusUpToDate}"
+                                           Foreground="{DynamicResource SystemFillColorSuccessBrush}"
+                                           FontSize="{StaticResource Pulsar.Type.Caption}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding UpdateState}" Value="UpToDate">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <!-- UpdateAvailable badge -->
+                                <TextBlock Text="{Binding UpdateLatestTag, StringFormat={}{0} available}"
+                                           Foreground="{DynamicResource SystemFillColorCautionBrush}"
+                                           FontSize="{StaticResource Pulsar.Type.Caption}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding UpdateState}" Value="UpdateAvailable">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <!-- Checking badge -->
+                                <TextBlock Text="{lex:Locale Settings.About.UpdateStatusChecking}"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                           FontSize="{StaticResource Pulsar.Type.Caption}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding UpdateState}" Value="Checking">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <!-- Failed badge -->
+                                <TextBlock Text="{Binding UpdateErrorMessage}"
+                                           Foreground="{DynamicResource SystemFillColorCautionBrush}"
+                                           FontSize="{StaticResource Pulsar.Type.Caption}"
+                                           TextWrapping="Wrap"
+                                           MaxWidth="400">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding UpdateState}" Value="Failed">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+
+                            <!-- Check button (visible when not checking/downloading) -->
+                            <ui:Button Grid.Column="1"
+                                       Content="{lex:Locale Settings.About.CheckForUpdates}"
+                                       Icon="{ui:SymbolIcon Refresh24}"
+                                       Command="{Binding CheckForUpdatesCommand}"
+                                       VerticalAlignment="Center">
+                                <ui:Button.Style>
+                                    <Style TargetType="ui:Button" BasedOn="{StaticResource PulsarSecondaryButtonStyle}">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding UpdateState}" Value="Checking">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding UpdateState}" Value="Downloading">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding UpdateState}" Value="ReadyToInstall">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ui:Button.Style>
+                            </ui:Button>
+                        </Grid>
+
+                        <!-- Download progress (visible when Downloading) -->
+                        <StackPanel Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding UpdateState}" Value="Downloading">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <TextBlock Text="{lex:Locale Settings.About.Downloading}"
+                                       FontSize="{StaticResource Pulsar.Type.Caption}"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                       Margin="{StaticResource Pulsar.Gap.Bottom.XS}"/>
+                            <ProgressBar Value="{Binding UpdateDownloadProgress}"
+                                         Minimum="0" Maximum="1"
+                                         Height="4"/>
+                        </StackPanel>
+
+                        <!-- Download button (visible when UpdateAvailable) -->
+                        <ui:Button Content="{lex:Locale Settings.About.DownloadUpdate}"
+                                   Icon="{ui:SymbolIcon Download24}"
+                                   Command="{Binding DownloadUpdateCommand}"
+                                   HorizontalAlignment="Left"
+                                   Margin="{StaticResource Pulsar.Gap.Bottom.SM}">
+                            <ui:Button.Style>
+                                <Style TargetType="ui:Button" BasedOn="{StaticResource PulsarPrimaryButtonStyle}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding UpdateState}" Value="UpdateAvailable">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ui:Button.Style>
+                        </ui:Button>
+
+                        <!-- Install button (visible when ReadyToInstall) -->
+                        <ui:Button Content="{lex:Locale Settings.About.InstallUpdate}"
+                                   Icon="{ui:SymbolIcon Play24}"
+                                   Command="{Binding InstallUpdateCommand}"
+                                   HorizontalAlignment="Left">
+                            <ui:Button.Style>
+                                <Style TargetType="ui:Button" BasedOn="{StaticResource PulsarPrimaryButtonStyle}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding UpdateState}" Value="ReadyToInstall">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ui:Button.Style>
+                        </ui:Button>
+                    </StackPanel>
+                </ui:CardExpander>
+
                 <!-- Configuration Backup -->
                 <ui:CardExpander Icon="Archive24" Header="{lex:Locale Settings.About.ConfigBackupTitle}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="True">
                     <StackPanel>

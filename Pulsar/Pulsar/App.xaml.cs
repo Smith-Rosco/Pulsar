@@ -11,6 +11,7 @@ using Pulsar.Services;
 using Pulsar.Services.Interfaces;
 using Pulsar.Core.Debug;
 using Pulsar.Services.WindowSwitching;
+using Pulsar.Services.Updates;
 using Pulsar.ViewModels;
 using Pulsar.ViewModels.Settings; // Added
 using Pulsar.ViewModels.Strategies;
@@ -27,7 +28,9 @@ using Serilog.Events;
 using Microsoft.Extensions.Logging;
 
 using System.Threading.Tasks;
+using System.Threading;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Windows.Threading;
 
 namespace Pulsar
@@ -38,11 +41,74 @@ namespace Pulsar
 
         public IServiceProvider Services { get; private set; } = null!;
 
+        // Single-instance mutex (installer 3.1). Named at Local\ scope so it works
+        // without admin elevation; UI Debug mode skips the guard to allow E2E multi-instance.
+        private static Mutex? _singleInstanceMutex;
+        private const string SingleInstanceMutexName = "Local\\Pulsar-SingleInstance-9F3A2C1E";
+
+        [DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        private const int SW_RESTORE = 9;
+
+        /// <summary>
+        /// Attempts to acquire the named single-instance mutex. Returns true if this
+        /// process is the first instance; false if another Pulsar is already running.
+        /// </summary>
+        private static bool TryAcquireSingleInstance()
+        {
+            _singleInstanceMutex = new Mutex(initiallyOwned: true, name: SingleInstanceMutexName, createdNew: out bool createdNew);
+            if (!createdNew)
+            {
+                _singleInstanceMutex.Dispose();
+                _singleInstanceMutex = null;
+                return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Finds an existing Pulsar process and brings its main window to the foreground.
+        /// Best-effort: if the window cannot be found or activated, the second instance
+        /// still exits silently.
+        /// </summary>
+        private static void ActivateExistingInstance()
+        {
+            try
+            {
+                var current = Process.GetCurrentProcess();
+                var existing = Process.GetProcessesByName(current.ProcessName)
+                    .FirstOrDefault(p => p.Id != current.Id && p.MainWindowHandle != IntPtr.Zero);
+
+                if (existing != null)
+                {
+                    ShowWindow(existing.MainWindowHandle, SW_RESTORE);
+                    SetForegroundWindow(existing.MainWindowHandle);
+                }
+            }
+            catch
+            {
+                // Best-effort activation; silently ignore failures.
+            }
+        }
+
         protected override void OnStartup(StartupEventArgs e)
         {
             // [UI Debug Mode] Parse the --ui-debug flag FIRST so logging, config
             // isolation and hook suppression are decided before any state is created.
             var debugOptions = DebugModeOptions.FromArgs(e.Args);
+
+            // [Single-Instance] Guard against multiple Pulsar processes (installer 3.1).
+            // Skipped in UI Debug mode so E2E harnesses can run parallel instances.
+            if (!debugOptions.IsUiDebug && !TryAcquireSingleInstance())
+            {
+                ActivateExistingInstance();
+                Shutdown();
+                return;
+            }
 
             // 0. Initialize Logging (Pulsar Sentinel - Unified Architecture)
             // Note: We use default settings here, will update from config later
@@ -177,6 +243,14 @@ namespace Pulsar
             serviceCollection.AddSingleton<ITrayService, TrayIconService>();
             serviceCollection.AddSingleton<IActionFeedbackService, ActionFeedbackService>();
             serviceCollection.AddSingleton<IActionFeedbackPresenter, ActionFeedbackPresenter>();
+
+            // [Auto-Update] Three-tier resilient update check + download (ADR-025).
+            // HttpClientUpdateGateway owns two HttpClients (follow / no-follow redirects);
+            // UpdateOrchestrator wraps the pure services with UI state and tray notification.
+            serviceCollection.AddSingleton<IUpdateHttpGateway, HttpClientUpdateGateway>();
+            serviceCollection.AddSingleton<UpdateCheckService>();
+            serviceCollection.AddSingleton<UpdateDownloadService>();
+            serviceCollection.AddSingleton<UpdateOrchestrator>();
             serviceCollection.AddSingleton<IThemeService, ThemeService>();
             // [RadialRenderer] Pluggable rendering seam + theme preset resolution.
             // Every renderer registers as a singleton; Default is registered LAST so

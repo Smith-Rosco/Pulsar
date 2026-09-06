@@ -15,7 +15,7 @@
 
 ## 3. 单实例与两形态一致性
 
-- [ ] 3.1 核实单实例互斥实现（App.xaml.cs / 启动协调器）；缺失则补命名 Mutex
+- [x] 3.1 核实单实例互斥实现（App.xaml.cs / 启动协调器）；缺失则补命名 Mutex — **已补**：`Local\Pulsar-SingleInstance-9F3A2C1E` 命名 Mutex + 已有窗口激活（SetForegroundWindow/ShowWindow）；UI Debug 模式跳过以允许 E2E 多实例
 - [ ] 3.2 两形态交叉验证：安装版运行中启动 Standalone（及反向）第二实例退出并聚焦
 - [ ] 3.3 相关测试/手动验证记录
 

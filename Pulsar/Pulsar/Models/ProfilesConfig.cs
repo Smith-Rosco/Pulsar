@@ -246,6 +246,14 @@ namespace Pulsar.Models
         public InputSettings Input { get; set; } = new();
 
         /// <summary>
+        /// In-app auto-update settings (ADR-025). Absent in legacy configs →
+        /// defaults apply (auto-check on). The mirror table is hardcoded in
+        /// <see cref="Services.Updates.UpdateDownloadService.DefaultMirrorTemplates"/>
+        /// and displayed read-only; users cannot edit it from the UI.
+        /// </summary>
+        public UpdateSettings Update { get; set; } = new();
+
+        /// <summary>
         /// Quick-switch window duration in milliseconds. Releasing the invocation key
         /// inside the center zone within this window switches back to the previous window.
         /// </summary>
@@ -443,6 +451,18 @@ namespace Pulsar.Models
         /// </summary>
         [JsonIgnore]
         public bool IsHybridMode => ModifierStateMode.Equals("Hybrid", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// In-app auto-update settings (ADR-025 three-tier check).
+    /// </summary>
+    public class UpdateSettings
+    {
+        /// <summary>
+        /// When true (default) the app checks for updates during deferred startup
+        /// and shows a single tray notification when a newer release is found.
+        /// </summary>
+        public bool AutoCheckEnabled { get; set; } = true;
     }
 
     /// <summary>

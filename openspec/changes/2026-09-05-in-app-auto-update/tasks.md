@@ -15,10 +15,10 @@
 
 ## 3. 集成：DI / 启动 / 设置
 
-- [ ] 3.1 `UpdateSettings`（检查开关、镜像只读展示）入 `ProfilesConfig` 体系（经 `ConfigEditSession` 写入，禁直接改快照）
-- [ ] 3.2 `App.xaml.cs` DI 注册 + `AppStartupCoordinator` 延迟阶段后台检查（对齐 ADR-013 时序；设置关闭则不启动）
-- [ ] 3.3 `AboutViewModel` / `SettingsAboutPage`：当前版本、三态徽标、手动检查按钮、下载进度、ReadyToInstall → 「运行安装包」移交；`Strings.resx`/`Strings.zh-CN.resx` 全部新键双语
-- [ ] 3.4 新版本检测 → `ITrayService.ShowNotification` 单次提示（防重复轰炸）
+- [x] 3.1 `UpdateSettings`（检查开关、镜像只读展示）入 `ProfilesConfig` 体系（经 `ConfigEditSession` 写入，禁直接改快照）
+- [x] 3.2 `App.xaml.cs` DI 注册 + `AppStartupCoordinator` 延迟阶段后台检查（对齐 ADR-013 时序；设置关闭则不启动）
+- [x] 3.3 `AboutViewModel` / `SettingsAboutPage`：当前版本、三态徽标、手动检查按钮、下载进度、ReadyToInstall → 「运行安装包」移交；`Strings.resx`/`Strings.zh-CN.resx` 全部新键双语
+- [x] 3.4 新版本检测 → `ITrayService.ShowNotification` 单次提示（防重复轰炸）
 
 ## 4. 决策文档 & 验证
 

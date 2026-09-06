@@ -691,6 +691,49 @@
   <data name="Settings.About.DrawingCommonDescription" xml:space="preserve">
     <value>- Image processing</value>
   </data>
+  <!-- ==================== Auto-Update (ADR-025) ==================== -->
+  <data name="Settings.About.UpdateTitle" xml:space="preserve">
+    <value>Software Update</value>
+  </data>
+  <data name="Settings.About.CheckForUpdates" xml:space="preserve">
+    <value>Check for Updates</value>
+  </data>
+  <data name="Settings.About.DownloadUpdate" xml:space="preserve">
+    <value>Download Update</value>
+  </data>
+  <data name="Settings.About.InstallUpdate" xml:space="preserve">
+    <value>Install and Restart</value>
+  </data>
+  <data name="Settings.About.UpdateStatusUpToDate" xml:space="preserve">
+    <value>You're up to date</value>
+  </data>
+  <data name="Settings.About.UpdateStatusChecking" xml:space="preserve">
+    <value>Checking for updates...</value>
+  </data>
+  <data name="Settings.About.Downloading" xml:space="preserve">
+    <value>Downloading...</value>
+  </data>
+  <data name="Update.Tray.Title" xml:space="preserve">
+    <value>Update Available</value>
+  </data>
+  <data name="Update.Tray.BodyFormat" xml:space="preserve">
+    <value>Pulsar {0} is available. Open Settings → About to download.</value>
+  </data>
+  <data name="Update.Error.Network" xml:space="preserve">
+    <value>Network error: could not reach the update server.</value>
+  </data>
+  <data name="Update.Error.Parse" xml:space="preserve">
+    <value>Could not parse the update information.</value>
+  </data>
+  <data name="Update.Error.NoAsset" xml:space="preserve">
+    <value>No downloadable asset found in the release.</value>
+  </data>
+  <data name="Update.Error.Download" xml:space="preserve">
+    <value>Download failed.</value>
+  </data>
+  <data name="Update.Error.NoDownload" xml:space="preserve">
+    <value>No update file downloaded.</value>
+  </data>
   <!-- ==================== Settings.Marketplace ==================== -->
   <data name="Settings.Marketplace.Title" xml:space="preserve">
     <value>Plugin Marketplace</value>

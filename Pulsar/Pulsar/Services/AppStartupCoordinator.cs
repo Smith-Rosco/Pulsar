@@ -46,6 +46,7 @@ namespace Pulsar.Services
         private readonly Lazy<IHotkeyService> _hotkeyService;
         private readonly Lazy<IGlobalMouseService> _globalMouseService;
         private readonly Lazy<ITutorialService> _tutorialService;
+        private readonly Lazy<Services.Updates.UpdateOrchestrator>? _updateOrchestrator;
         private readonly Func<RadialMenuWindow> _mainWindowFactory;
         private readonly Func<FirstLaunchSetupWizardViewModel> _wizardFactory;
         private readonly Func<IDebugStatePublisher>? _debugStatePublisherFactory;          // registered only in ui-debug
@@ -83,7 +84,8 @@ namespace Pulsar.Services
             Func<FirstLaunchSetupWizardViewModel>? wizardFactory = null,
             Func<IDebugStatePublisher>? debugStatePublisherFactory = null,
             Func<IDebugCommandServer>? debugCommandServerFactory = null,
-            Func<System.Windows.Threading.Dispatcher>? dispatcherProvider = null)
+            Func<System.Windows.Threading.Dispatcher>? dispatcherProvider = null,
+            Lazy<Services.Updates.UpdateOrchestrator>? updateOrchestrator = null)
         {
             _configService = configService;
             _debugOptions = debugOptions;
@@ -118,6 +120,7 @@ namespace Pulsar.Services
             _tutorialService = tutorialService ?? throw new InvalidOperationException(
                 "AppStartupCoordinator requires a Lazy<ITutorialService> from DI to avoid eager " +
                 "construction of TutorialOrchestrator and its 9 dependencies.");
+            _updateOrchestrator = updateOrchestrator;
             _mainWindowFactory = mainWindowFactory ?? throw new InvalidOperationException(
                 "AppStartupCoordinator requires a Func<RadialMenuWindow> from DI to defer WPF " +
                 "InitializeComponent until after theme and tray are initialized.");
@@ -246,6 +249,15 @@ namespace Pulsar.Services
                     ConfigureValidationPipeline();
 
                     await RunOnboardingStartupAsync(cancellationToken);
+
+                    // [Auto-Update] Deferred background check (ADR-025). Fire-and-forget:
+                    // the orchestrator reads the auto-check flag, waits 3s, runs the
+                    // three-tier check, and shows a single tray notification on UpdateAvailable.
+                    // Never blocks the deferred warm-up or first-launch tutorial.
+                    if (_updateOrchestrator is { } updater)
+                    {
+                        _ = updater.Value.StartupCheckAsync(cancellationToken);
+                    }
 
                     // First-launch decision: defer to IOnboardingStateService — the
                     // single source of truth for OnboardingState → semantic flags. This
