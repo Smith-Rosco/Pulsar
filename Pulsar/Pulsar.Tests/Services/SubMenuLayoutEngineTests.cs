@@ -415,6 +415,136 @@ namespace Pulsar.Tests.Services
                 }
             }
         }
+        // ============ Pose construction (deepened seam) ============
+        // [Architecture review 2026-09-06] BuildParentPose centralizes the cascade
+        // geometry that used to live in MenuSession (ADR-024 D1/D1a/D6/D7 specs,
+        // values cross-checked against the E2E GEOMETRY-TRACE artifacts).
+
+        [Fact]
+        public void BuildParentPose_Fan_ShouldKeepCanvasCenter_AtRadiusPlusGap_WithSectorConstrainedWings()
+        {
+            // Parent slot east at (340, 250); 8 slots/page; root R 90, slot 50,
+            // center 100 → maxSafe 225, preferred gap 70 → radius 160 (E2E default).
+            var pose = _engine.BuildParentPose(new SubMenuPoseContext(
+                ParentSlotCenterX: 340, ParentSlotCenterY: 250,
+                SlotsPerPage: 8, CurrentRadius: 90, SlotSize: 50, CenterSize: 100,
+                ChildCount: 2, DeclaredStyle: SubMenuLayoutStyle.Fan));
+
+            pose.CenterX.Should().BeApproximately(250, 1e-9);
+            pose.CenterY.Should().BeApproximately(250, 1e-9);
+            pose.SubRingRadius.Should().BeApproximately(160, 1e-9);
+            pose.DirectionRadians.Should().BeApproximately(0, 1e-9);
+            pose.DeadZoneRadius.Should().BeApproximately(50, 1e-9);
+            // Sector half (22.5°) minus orb half-angle (atan(25/160) ≈ 8.9°) = 13.6°.
+            pose.FanMaxWingRadians.Should().BeApproximately(Math.PI / 8 - Math.Atan(25.0 / 160), 1e-9);
+        }
+
+        [Fact]
+        public void BuildParentPose_Fan_ShouldCompressGapTowardFloor_WhenSafeRadiusExceeded()
+        {
+            // R 180 pushes R + 70 = 250 past maxSafe 225 → gap floors at 50 (ADR-024 D6).
+            var pose = _engine.BuildParentPose(new SubMenuPoseContext(
+                ParentSlotCenterX: 340, ParentSlotCenterY: 250,
+                SlotsPerPage: 8, CurrentRadius: 180, SlotSize: 50, CenterSize: 100,
+                ChildCount: 2, DeclaredStyle: SubMenuLayoutStyle.Fan));
+
+            pose.SubRingRadius.Should().BeApproximately(230, 1e-9);
+            pose.CenterX.Should().BeApproximately(250, 1e-9);
+        }
+
+        [Fact]
+        public void BuildParentPose_Fan_ThreeChildren_ShouldRelaxWingsToTightestNonOverlappingSpread()
+        {
+            // 3 children cannot fit three non-overlapping orbs in one 45° sector at
+            // r=160 (3×50 arc > sector arc) → wing relaxes to 2·asin(26/160) ≈ 18.7°.
+            var pose = _engine.BuildParentPose(new SubMenuPoseContext(
+                ParentSlotCenterX: 340, ParentSlotCenterY: 250,
+                SlotsPerPage: 8, CurrentRadius: 90, SlotSize: 50, CenterSize: 100,
+                ChildCount: 3, DeclaredStyle: SubMenuLayoutStyle.Fan));
+
+            pose.FanMaxWingRadians.Should().BeApproximately(2.0 * Math.Asin(26.0 / 160), 1e-9);
+        }
+
+        [Fact]
+        public void BuildParentPose_Ring_ShouldCenterOnParentSlot_AtRatioRadius()
+        {
+            // Ring replaces the main wheel: centre = parent slot, radius = R × 0.90 = 81.
+            var pose = _engine.BuildParentPose(new SubMenuPoseContext(
+                ParentSlotCenterX: 340, ParentSlotCenterY: 250,
+                SlotsPerPage: 8, CurrentRadius: 90, SlotSize: 50, CenterSize: 100,
+                ChildCount: 4, DeclaredStyle: SubMenuLayoutStyle.Ring));
+
+            pose.CenterX.Should().BeApproximately(340, 1e-9);
+            pose.CenterY.Should().BeApproximately(250, 1e-9);
+            pose.SubRingRadius.Should().BeApproximately(81, 1e-9);
+            pose.DirectionRadians.Should().BeApproximately(0, 1e-9);
+        }
+
+        [Fact]
+        public void BuildParentPose_Ring_ShouldDeriveDirectionFromParentPosition()
+        {
+            // Parent slot south of centre → direction π/2 (canvas Y grows downward).
+            var pose = _engine.BuildParentPose(new SubMenuPoseContext(
+                ParentSlotCenterX: 250, ParentSlotCenterY: 340,
+                SlotsPerPage: 8, CurrentRadius: 90, SlotSize: 50, CenterSize: 100,
+                ChildCount: 2, DeclaredStyle: SubMenuLayoutStyle.Ring));
+
+            pose.DirectionRadians.Should().BeApproximately(Math.PI / 2, 1e-9);
+            pose.CenterX.Should().BeApproximately(250, 1e-9);
+            pose.CenterY.Should().BeApproximately(340, 1e-9);
+        }
+
+        [Fact]
+        public void BuildParentPose_ShouldFloorDeadZone()
+        {
+            var pose = _engine.BuildParentPose(new SubMenuPoseContext(
+                ParentSlotCenterX: 340, ParentSlotCenterY: 250,
+                SlotsPerPage: 8, CurrentRadius: 90, SlotSize: 50, CenterSize: 10,
+                ChildCount: 2, DeclaredStyle: SubMenuLayoutStyle.Fan));
+
+            pose.DeadZoneRadius.Should().BeApproximately(10, 1e-9);
+        }
+
+        [Fact]
+        public void BuildParentPose_And_ComputeChildPositions_ShouldReproduceE2ESectorTrace()
+        {
+            // Cross-checked against E2E run fan-sector-constraint-2 GEOMETRY-TRACE:
+            // parent north at (250,160), 2 children on r=160, wings ±13.6° → top-left
+            // (187,69) | (263,69) on the 500×500 canvas.
+            var pose = _engine.BuildParentPose(new SubMenuPoseContext(
+                ParentSlotCenterX: 250, ParentSlotCenterY: 160,
+                SlotsPerPage: 8, CurrentRadius: 90, SlotSize: 50, CenterSize: 100,
+                ChildCount: 2, DeclaredStyle: SubMenuLayoutStyle.Fan));
+            var positions = _engine.ComputeChildPositions(pose, SubMenuLayoutStyle.Fan, 2);
+
+            positions.Should().HaveCount(2);
+            AssertNear(positions[0], 250 - 160 * Math.Sin(pose.FanMaxWingRadians) - 25, 250 - 160 * Math.Cos(pose.FanMaxWingRadians) - 25, 1e-6);
+            AssertNear(positions[1], 250 + 160 * Math.Sin(pose.FanMaxWingRadians) - 25, 250 - 160 * Math.Cos(pose.FanMaxWingRadians) - 25, 1e-6);
+            // Literal E2E values: (187,69) | (263,69) within 1 DIP.
+            positions[0].X.Should().BeApproximately(187, 1.0);
+            positions[0].Y.Should().BeApproximately(69, 1.0);
+            positions[1].X.Should().BeApproximately(263, 1.0);
+            positions[1].Y.Should().BeApproximately(69, 1.0);
+        }
+
+        [Fact]
+        public void ResolveEffectiveStyle_FanWithinCap_ShouldStayFan()
+        {
+            _engine.ResolveEffectiveStyle(SubMenuLayoutStyle.Fan, 3).Should().Be(SubMenuLayoutStyle.Fan);
+        }
+
+        [Fact]
+        public void ResolveEffectiveStyle_FanOverCap_ShouldResolveToRing()
+        {
+            _engine.ResolveEffectiveStyle(SubMenuLayoutStyle.Fan, 4).Should().Be(SubMenuLayoutStyle.Ring);
+        }
+
+        [Fact]
+        public void ResolveEffectiveStyle_Ring_ShouldStayRing()
+        {
+            _engine.ResolveEffectiveStyle(SubMenuLayoutStyle.Ring, 1).Should().Be(SubMenuLayoutStyle.Ring);
+        }
+
         private static void AssertNear((double X, double Y) position, double expectedX, double expectedY, double tolerance = 1e-6)
         {
             position.X.Should().BeApproximately(expectedX, tolerance);

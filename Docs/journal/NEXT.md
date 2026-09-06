@@ -11,7 +11,8 @@
 - [ ] OpenWiki 补缺页：余额恢复后 `openwiki --update` 补 3 页（architecture/system-overview · architecture/window-switching · quickstart）；反复跳过的页可临时切 deepseek-v4-pro。注意 `.github/workflows/openwiki-update.yml` 每天 08:00 UTC 定时跑，推 GitHub + 配 key 会每日消耗额度；本地补丁 `repository-runner.js`（2 处 "LOCAL PATCH (2026-09-05)"）在 `npm update -g openwiki` 后需重打。
 - [ ] user手动添加：须将设置页面的保存按钮改为图标家问题“保存”。同时，也需要将设置页面里的各种长文本描述精简化或者将详情藏入tooltip，保证观感简洁有序。
 - [ ] 子轮盘交付待用户真机验收：三 bug 修复（`artifacts/bug1-after-fix` · `bug2-after-fix` · `bug3-geometry`）+ ADR-024 v1.2.1 两项几何优化（Fan 扇区约束 orb 外缘收进扇区 / Ring 中心=父 Slot，`artifacts/fan-sector-constraint-2` · `ring-center-visible-4`），E2E 均已 PASS。
-- [ ] 提交未落地改动（34 文件，含 ADR-024 v1.2.0 + 三 bug 修复 + E2E 基建 + 扇区/回归单测）：等用户确认后 commit（当前 main 工作树）。
+- [x] ~~提交未落地改动（34 文件，含 ADR-024 v1.2.0 + 三 bug 修复 + E2E 基建 + 扇区/回归单测）：等用户确认后 commit（当前 main 工作树）。~~ **会话内已本地 commits**：`0cab1ff`/`d978d2c`/`8c236da`（ADR-024 相关），工作树干净；main 领先 origin/main 3 个未 push 提交，等用户确认后一起 push。
+- [ ] 架构深化 1+2（C1 级联几何深化 + C2 SlotOrb 渲染编排，2026-09-06 架构审查）：全量 1125/1125 通过，改动未提交；待用户确认后 commit（按 AGENTS.md §9 纪律），随后连同上述 3 个未 push 提交一起 push origin/main。
 - [ ] 可选清理：`MenuSession.cs` 的 `[CLICK-TRACE]`/`[EXEC-TRACE]`/`[GEOMETRY-TRACE]`/`[VISUAL-TRACE]` Debug 日志（提交前或后续随手删）。
 
 ## 已完成（历史保留）

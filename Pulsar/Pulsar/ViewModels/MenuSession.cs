@@ -58,32 +58,6 @@ namespace Pulsar.ViewModels
         private const double SubMenuCollapsedScale = 0.45;
         private const double SubMenuCollapsedOpacity = 0.0;
 
-        /// <summary>
-        /// Cascade sub-ring radius as a fraction of the root ring radius.
-        /// 0.90 (r=81 @ root 90): child inner edge = 56 &gt; center slot radius 35,
-        /// giving 21-DIP clearance from the "Back" button. Fan3 wing spacing
-        /// = 81 &gt; slot 50 (no overlap); Ring5 adjacent = 95 &gt; 50.
-        /// History: 0.60 (r=54, overlapped center by 6) 鈫?0.75 (r=67.5, 7.5-DIP
-        /// gap, still "杩囪繎" in manual QA 2026-09-05) 鈫?0.90 (r=81).
-        /// </summary>
-        private const double SubMenuRingRadiusRatio = 0.90;
-
-        /// <summary>
-        /// [ADR-024 D1/D6] Preferred outward distance from the root ring radius to the
-        /// Fan arc. At the default R = 90 a fan child's inner edge sits at
-        /// (90 + 70 - 25) = 135 against the root slot's outer edge (90 + 25) = 115 鈥?        /// a 20-DIP visual gap, and the overlap that existed at ratio 0.90 becomes
-        /// structurally impossible rather than tuned.
-        /// </summary>
-        private const double FanGap = 70;
-
-        /// <summary>
-        /// [ADR-024 D6] Floor for the Fan gap. 50 = slot size, the value at which a fan
-        /// child's inner edge exactly touches the root slot's outer edge. Large slot
-        /// counts push R toward <c>SlotLayoutEngine.MaxRadius</c> (180); the gap is then
-        /// compressed toward this floor so no-overlap always wins over the preferred gap.
-        /// </summary>
-        private const double FanMinGap = 50;
-
         private static readonly TimeSpan MenuWatchdogTimeout = TimeSpan.FromSeconds(60);
 
         /// <summary>
@@ -2247,94 +2221,26 @@ namespace Pulsar.ViewModels
             return Math.Max(0, Math.Min(_slotsPerPage, cascade.SubSlots.Count - start));
         }
 
+        /// <summary>
+        /// [Architecture review 2026-09-06] The pose construction now lives in
+        /// <see cref="ISubMenuLayoutEngine.BuildParentPose"/> — the single owner of
+        /// cascade geometry (ADR-024 D1/D1a/D5/D6/D7). This adapter only adapts
+        /// session state (slot origin, layout params, page child count) into a
+        /// <see cref="SubMenuPoseContext"/>; there is no geometry math here.
+        /// </summary>
         private SubMenuParentPose BuildCascadeParentPose()
         {
-            // Slot X/Y are MenuCanvas-local coordinates (0..CanvasSize, center =
-            // CenterX/CenterY = 250). The canvas itself is translated to the menu
-            // center via MenuCanvasLeft/Top, so child positions MUST be computed in
-            // local space. Using _menuCenterX/_menuCenterY (viewport DIP) here
-            // double-translates children: render = (_menuCenter-250) + (_menuCenter+r)
-            // = 2*_menuCenter-250+r, flying them far from the menu center. It also
-            // makes maxSafeRadius negative when the menu center is outside the 500x500
-            // canvas, clamping subRingRadius to its 20-DIP minimum and collapsing
-            // multi-wing fans into an overlapping blob.
-            double direction = Math.Atan2(
-                _subMenuOriginY - CenterY,
-                _subMenuOriginX - CenterX);
-
-            double halfSlot = _currentSlotSize / 2;
-            double maxSafeRadius = Math.Max(0, Math.Min(
-                Math.Min(CenterX, CanvasSize - CenterX),
-                Math.Min(CenterY, CanvasSize - CenterY)) - halfSlot);
-
-            // [ADR-024 D1/D6/D7] Fan and Ring anchor differently:
-            //   Fan  鈥?replace-nothing: children sit on a circle CONCENTRIC with the
-            //          main wheel but at R + gap, i.e. strictly outside the root ring.
-            //          "Anchored to the parent slot" is expressed as direction
-            //          (the 卤30掳 wings straddle the parent's radial), not as centre.
-            //   Ring 鈥?replace-mode: the main wheel leaves entirely, so the sub-wheel
-            //          is centred on the parent slot's own position.
-            // A Fan descriptor carrying more children than FanMaxSlots is effectively a
-            // Ring (D2): the editor warns about exactly this, so the pose must agree
-            // with the warning instead of rendering an over-cap Fan as a concentric ring.
             var cascade = _activeSubMenuDescriptor as CascadeSubMenuDescriptor;
-            bool isFan = EffectiveCascadeStyle(cascade) == SubMenuLayoutStyle.Fan;
-
-            double centerX;
-            double centerY;
-            double subRingRadius;
-
-            if (isFan)
-            {
-                centerX = CenterX;
-                centerY = CenterY;
-
-                double gap = FanGap;
-                if (_currentRadius + gap > maxSafeRadius)
-                {
-                    gap = Math.Max(FanMinGap, maxSafeRadius - _currentRadius);
-                }
-
-                subRingRadius = Math.Max(20, _currentRadius + gap);
-            }
-            else
-            {
-                centerX = _subMenuOriginX;
-                centerY = _subMenuOriginY;
-                subRingRadius = Math.Max(20, Math.Min(_currentRadius * SubMenuRingRadiusRatio, maxSafeRadius));
-            }
-
-            // [2026-09-06 user spec] The fan's wings must stay inside the parent
-            // slot's own sector: with 8 slots each root slot owns 45°, so the wing
-            // half-angle is at most π/slotsPerPage (22.5°), and never wider than
-            // the engine's 30° default cap. The wing ORB itself must also clear the
-            // sector edge — a centre exactly on the edge (π/slotsPerPage) leaves the
-            // outer half of the orb (≈8.9° at r=160) spilling into the neighbouring
-            // root slot's sector, which reads as "not constrained" (QA Fan-2).
-            // A 3-child fan cannot fit three non-overlapping orbs inside one 45°
-            // sector at this radius (3×50 arc > 122.5 sector arc), so it relaxes to
-            // the tightest non-overlapping spread (≈18.7° at r=160) — the sector
-            // constraint is applied as far as geometry allows.
-            int fanChildCount = GetCascadePageChildCount(cascade);
-            double sectorHalf = Math.PI / Math.Max(1, _slotsPerPage);
-            double orbHalfAngle = Math.Atan((_currentSlotSize / 2.0) / Math.Max(20.0, subRingRadius));
-            double maxWing = Math.Min(Math.PI / 6.0, sectorHalf - orbHalfAngle);
-            if (fanChildCount >= 3)
-            {
-                double minNonOverlap = 2.0 * Math.Asin((_currentSlotSize / 2.0 + 1.0) / Math.Max(20.0, subRingRadius));
-                maxWing = Math.Max(maxWing, Math.Min(Math.PI / 6.0, minNonOverlap));
-            }
-
-            return new SubMenuParentPose(
-                centerX,
-                centerY,
-                direction,
-                subRingRadius,
-                _currentSlotSize,
-                Math.Max(10, _currentCenterSize / 2),
-                maxWing);
+            return _subMenuLayoutEngine.BuildParentPose(new SubMenuPoseContext(
+                ParentSlotCenterX: _subMenuOriginX,
+                ParentSlotCenterY: _subMenuOriginY,
+                SlotsPerPage: _slotsPerPage,
+                CurrentRadius: _currentRadius,
+                SlotSize: _currentSlotSize,
+                CenterSize: _currentCenterSize,
+                ChildCount: cascade is null ? 0 : GetCascadePageChildCount(cascade),
+                DeclaredStyle: cascade?.LayoutStyle ?? SubMenuLayoutStyle.Ring));
         }
-
         private void ApplyCascadeChildLayout(CascadeSubMenuDescriptor cascade)
         {
             int childCount = GetCascadePageChildCount(cascade);
@@ -2364,19 +2270,15 @@ namespace Pulsar.ViewModels
         }
 
         /// <summary>
-        /// [ADR-024 D1/D2] The style a cascade will actually render with. A Fan
-        /// descriptor carrying more children than <see cref="SubMenuLayoutEngine.FanMaxSlots"/>
-        /// is effectively a Ring 鈥?the editor warns the user about exactly that, so
-        /// the pose, the strategy and the animations must all agree with the warning
-        /// instead of rendering an over-cap Fan as a concentric ring.
+        /// <summary>
+        /// [ADR-024 D1/D2] The style a cascade will actually render with: the rule
+        /// lives in <see cref="ISubMenuLayoutEngine.ResolveEffectiveStyle"/> (single
+        /// owner of the Fan cap); this adapter only supplies the page child count.
         /// </summary>
         private SubMenuLayoutStyle EffectiveCascadeStyle(CascadeSubMenuDescriptor? cascade) =>
-            cascade is { LayoutStyle: SubMenuLayoutStyle.Fan }
-            && GetCascadePageChildCount(cascade) <= SubMenuLayoutEngine.FanMaxSlots
-                ? SubMenuLayoutStyle.Fan
-                : SubMenuLayoutStyle.Ring;
-
-        /// <summary>
+            _subMenuLayoutEngine.ResolveEffectiveStyle(
+                cascade?.LayoutStyle ?? SubMenuLayoutStyle.Ring,
+                cascade is null ? 0 : GetCascadePageChildCount(cascade));
         /// [ADR-024 D4/D7] Sizes the dedicated submenu collection to the current
         /// page's child count, reusing pooled slot view models across invocations.
         /// </summary>

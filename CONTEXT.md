@@ -140,3 +140,17 @@ _Avoid_: the five "begin a session" dances that used to live in SettingsViewMode
 **Slot List Mutator**:
 The single owner of "move a Slot and renumber 1..N" semantics for every slot surface in the editor (the Settings slot list and the wheel preview). Both surfaces share the same underlying list, so the mutation math lives in one place and the insert-position convention (GongSolutions) is applied exactly once.
 _Avoid_: the five duplicated renumber loops in SlotEditorWorkspace / SlotWheelEditorViewModel / LegacySlotConverter
+
+### Cascade Sub-Menu & Rendering
+
+**Cascade Sub-Menu**:
+A child wheel summoned from a Slot (Ring replaces the main wheel centred on the parent Slot; Fan keeps the main wheel and fans outwards from it). Geometry, hit-testing, style resolution and the parent pose all flow through the Sub-Menu Layout Engine; the session only adapts its state into a pose context.
+_Avoid_: submenu math in MenuSession, "the old BuildCascadeParentPose"
+
+**Sub-Menu Layout Engine**:
+The single owner of cascade geometry (`ISubMenuLayoutEngine`): builds the parent pose from a `SubMenuPoseContext` (direction derived from the parent Slot position, Fan gap compression, Ring ratio clamping, sector-constrained wing angles), resolves the effective style (over-cap Fan is a Ring), and computes child positions / hit tests. Deterministic; the editor preview can reuse it.
+_Avoid_: geometry split across MenuSession and the engine
+
+**Radial Renderer Resolver**:
+The single seam that answers "which IRadialRenderer is active" (`IRadialRendererResolver`): reads the configured renderer id from the config snapshot, resolves it through the renderer factory, caches against the config revision and invalidates on plugin-registry changes. The view-model and SlotOrb both resolve through it; the view no longer service-locates.
+_Avoid_: `app.Services.GetService` inside views, the old static cached GetRenderer, the VM resolving through a second path

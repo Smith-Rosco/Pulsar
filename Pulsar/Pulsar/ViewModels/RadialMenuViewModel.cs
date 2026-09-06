@@ -43,9 +43,11 @@ namespace Pulsar.ViewModels
         private readonly ILogger<RadialMenuViewModel>? _logger;
 
         // [RadialRenderer] Injected rendering seam + preset resolution, applied on
-        // menu open and on ConfigUpdated. Optional so existing tests that construct
-        // the VM without a renderer keep working unchanged.
-        private readonly StyleRendererFactory? _rendererFactory;
+        // menu open and on ConfigUpdated. The resolver is the single seam shared
+        // with SlotOrb (architecture review 2026-09-06); _renderer stays as the
+        // legacy fallback for tests / older DI setups. Optional so existing tests
+        // that construct the VM without a renderer keep working unchanged.
+        private readonly IRadialRendererResolver? _rendererResolver;
         private readonly IRadialRenderer? _renderer;
         private readonly RadialThemePresetResolver? _presetResolver;
         private readonly IThemeService? _themeService;
@@ -65,7 +67,7 @@ namespace Pulsar.ViewModels
             ILocalizationService localizationService,
             ILogger<RadialMenuViewModel>? logger = null,
             IRadialRenderer? renderer = null,
-            StyleRendererFactory? rendererFactory = null,
+            IRadialRendererResolver? rendererResolver = null,
             RadialThemePresetResolver? presetResolver = null,
             IThemeService? themeService = null)
         {
@@ -76,7 +78,7 @@ namespace Pulsar.ViewModels
             _menuViewportService = menuViewportService;
             _configService = configService;
             _logger = logger;
-            _rendererFactory = rendererFactory;
+            _rendererResolver = rendererResolver;
             _renderer = renderer;
             _presetResolver = presetResolver;
             _themeService = themeService;
@@ -187,10 +189,11 @@ namespace Pulsar.ViewModels
                 var baseTokens = _presetResolver.Resolve(settings.RadialThemePreset, activeTheme);
                 var modeTokens = new ModeToneTokenDecorator(baseTokens, mode);
 
-                // [RadialRenderer] Resolve the active renderer through the factory from
-                // the configured id, falling back to the injected instance so existing
-                // tests / older DI setups keep working. Unknown ids resolve to Default.
-                var renderer = _rendererFactory?.Create(settings.RadialRenderer) ?? _renderer;
+                // [RadialRenderer] Resolve the active renderer through the shared
+                // resolver (same seam as SlotOrb), falling back to the injected
+                // instance so existing tests / older DI setups keep working. Unknown
+                // ids resolve to Default.
+                var renderer = _rendererResolver?.Resolve() ?? _renderer;
                 if (renderer == null) return;
 
                 renderer.Initialize(modeTokens);

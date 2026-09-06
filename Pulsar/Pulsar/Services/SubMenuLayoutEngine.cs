@@ -23,13 +23,122 @@ namespace Pulsar.Services
         public const int FanMaxSlots = 3;
 
         /// <summary>
-        /// Angular spread of the two outer fan wings about the parent direction.
-        /// The DEFAULT cap: real menus pass the parent slot's own sector half-angle
-        /// (e.g. 22.5° for an 8-slot wheel) via <see cref="SubMenuParentPose.FanMaxWingRadians"/>
-        /// so a fan never spills into the neighbouring root slot's sector — the
-        /// engine only tightens, never widens beyond this default.
+        /// [ADR-024 D1/D6] Preferred outward distance from the root ring radius to the
+        /// Fan arc. At the default R = 90 a fan child's inner edge sits at
+        /// (90 + 70 - 25) = 135 against the root slot's outer edge (90 + 25) = 115 —
+        /// a 20-DIP visual gap, and the overlap that existed at ratio 0.90 becomes
+        /// structurally impossible rather than tuned.
         /// </summary>
-        private static readonly double FanWingAngle = Math.PI / 6.0; // 30°
+        public const double FanGap = 70;
+
+        /// <summary>
+        /// [ADR-024 D6] Floor for the Fan gap. 50 = slot size, the value at which a fan
+        /// child's inner edge exactly touches the root slot's outer edge. Large slot
+        /// counts push R toward <c>SlotLayoutEngine.MaxRadius</c> (180); the gap is then
+        /// compressed toward this floor so no-overlap always wins over the preferred gap.
+        /// </summary>
+        public const double FanMinGap = 50;
+
+        /// <summary>
+        /// [ADR-024 D7] Cascade sub-ring radius as a fraction of the root ring radius.
+        /// 0.90 (r=81 @ root 90): child inner edge = 56 &gt; center slot radius 35,
+        /// giving 21-DIP clearance from the "Back" button. Fan3 wing spacing
+        /// = 81 &gt; slot 50 (no overlap); Ring5 adjacent = 95 &gt; 50.
+        /// History: 0.60 (r=54, overlapped center by 6) → 0.75 (r=67.5, 7.5-DIP
+        /// gap, still "过近" in manual QA 2026-09-05) → 0.90 (r=81).
+        /// </summary>
+        public const double SubMenuRingRadiusRatio = 0.90;
+
+        /// <summary>
+        /// The default cap lives on <see cref="SubMenuParentPose.FanMaxWingRadians"/>;
+        /// real menus pass the parent slot's own sector half-angle (e.g. 22.5° for an
+        /// 8-slot wheel) so a fan never spills into the neighbouring root slot's
+        /// sector — the engine only tightens, never widens beyond the 30° default.
+        /// </summary>
+        public SubMenuLayoutStyle ResolveEffectiveStyle(SubMenuLayoutStyle declaredStyle, int childCount)
+        {
+            return declaredStyle == SubMenuLayoutStyle.Fan && childCount <= FanMaxSlots
+                ? SubMenuLayoutStyle.Fan
+                : SubMenuLayoutStyle.Ring;
+        }
+
+        public SubMenuParentPose BuildParentPose(in SubMenuPoseContext context)
+        {
+            double canvasCenter = context.CanvasExtent / 2.0;
+            double direction = Math.Atan2(
+                context.ParentSlotCenterY - canvasCenter,
+                context.ParentSlotCenterX - canvasCenter);
+
+            double halfSlot = context.SlotSize / 2;
+            double maxSafeRadius = Math.Max(0, Math.Min(
+                Math.Min(canvasCenter, context.CanvasExtent - canvasCenter),
+                Math.Min(canvasCenter, context.CanvasExtent - canvasCenter)) - halfSlot);
+
+            // [ADR-024 D1/D6/D7] Fan and Ring anchor differently:
+            //   Fan  — replace-nothing: children sit on a circle CONCENTRIC with the
+            //          main wheel but at R + gap, i.e. strictly outside the root ring.
+            //          "Anchored to the parent slot" is expressed as direction
+            //          (the ±30° wings straddle the parent's radial), not as centre.
+            //   Ring — replace-mode: the main wheel leaves entirely, so the sub-wheel
+            //          is centred on the parent slot's own position.
+            // A Fan descriptor carrying more children than FanMaxSlots is effectively a
+            // Ring (D2): the editor warns about exactly this, so the pose must agree
+            // with the warning instead of rendering an over-cap Fan as a concentric ring.
+            bool isFan = ResolveEffectiveStyle(context.DeclaredStyle, context.ChildCount) == SubMenuLayoutStyle.Fan;
+
+            double centerX;
+            double centerY;
+            double subRingRadius;
+
+            if (isFan)
+            {
+                centerX = canvasCenter;
+                centerY = canvasCenter;
+
+                double gap = FanGap;
+                if (context.CurrentRadius + gap > maxSafeRadius)
+                {
+                    gap = Math.Max(FanMinGap, maxSafeRadius - context.CurrentRadius);
+                }
+
+                subRingRadius = Math.Max(20, context.CurrentRadius + gap);
+            }
+            else
+            {
+                centerX = context.ParentSlotCenterX;
+                centerY = context.ParentSlotCenterY;
+                subRingRadius = Math.Max(20, Math.Min(context.CurrentRadius * SubMenuRingRadiusRatio, maxSafeRadius));
+            }
+
+            // [2026-09-06 user spec] The fan's wings must stay inside the parent
+            // slot's own sector: with 8 slots each root slot owns 45°, so the wing
+            // half-angle is at most π/slotsPerPage (22.5°), and never wider than
+            // the engine's 30° default cap. The wing ORB itself must also clear the
+            // sector edge — a centre exactly on the edge (π/slotsPerPage) leaves the
+            // outer half of the orb (≈8.9° at r=160) spilling into the neighbouring
+            // root slot's sector, which reads as "not constrained" (QA Fan-2).
+            // A 3-child fan cannot fit three non-overlapping orbs inside one 45°
+            // sector at this radius (3×50 arc > 122.5 sector arc), so it relaxes to
+            // the tightest non-overlapping spread (≈18.7° at r=160) — the sector
+            // constraint is applied as far as geometry allows.
+            double sectorHalf = Math.PI / Math.Max(1, context.SlotsPerPage);
+            double orbHalfAngle = Math.Atan((context.SlotSize / 2.0) / Math.Max(20.0, subRingRadius));
+            double maxWing = Math.Min(Math.PI / 6.0, sectorHalf - orbHalfAngle);
+            if (context.ChildCount >= 3)
+            {
+                double minNonOverlap = 2.0 * Math.Asin((context.SlotSize / 2.0 + 1.0) / Math.Max(20.0, subRingRadius));
+                maxWing = Math.Max(maxWing, Math.Min(Math.PI / 6.0, minNonOverlap));
+            }
+
+            return new SubMenuParentPose(
+                centerX,
+                centerY,
+                direction,
+                subRingRadius,
+                context.SlotSize,
+                Math.Max(10, context.CenterSize / 2),
+                maxWing);
+        }
 
         public IReadOnlyList<(double X, double Y)> ComputeChildPositions(
             SubMenuParentPose parentPose,

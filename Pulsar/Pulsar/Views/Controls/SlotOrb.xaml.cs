@@ -1,4 +1,4 @@
-using Pulsar.Core.Rendering;
+﻿using Pulsar.Core.Rendering;
 using Pulsar.Helpers;
 using Pulsar.Services.Interfaces;
 using System;
@@ -24,21 +24,15 @@ namespace Pulsar.Views.Controls
         // ��ǰ��λ���� (X, Y)
         private Vector _currentOffset = new Vector(0, 0);
 
-        // [Time-based damping] The parallax converges exponentially with a fixed
-        // time constant (frame-rate independent) and a hard velocity ceiling, so a
-        // fast sweep across a large circle eases toward the far offset instead of
-        // snapping to it. Speed adapts to remaining distance up to the ceiling.
-        private const double ParallaxTimeConstant = 1.0 / 12.0; // ~83ms to close 63% of the gap
-        private const double MaxParallaxSpeed = 90.0;           // px/s, velocity ceiling
-
-        // �Ӳ�ǿ��: ����ƶ� 100px��Orb �ƶ� 12px
-        private const double ParallaxIntensity = 0.12;
-
-        // ���λ������ (����): �������Χ
-        private const double MaxOffsetLimit = 12.0;
-
         private DateTime _lastFrameTimeUtc = DateTime.MinValue;
         private bool _renderLoopSubscribed;
+
+        // [Architecture review 2026-09-06] Single seam for radial-renderer
+        // resolution: resolved once at construction (SlotOrb is instantiated inside
+        // XAML DataTemplates, so it cannot use constructor injection), then reused
+        // for every hover flip. The config-revision cache + registry invalidation
+        // that used to live here as static state now live in StyleRendererResolver.
+        private readonly IRadialRendererResolver? _rendererResolver;
 
         public SlotOrb()
         {
@@ -48,79 +42,8 @@ namespace Pulsar.Views.Controls
 
             // [Fix 3.1] �����ɼ��Ա仯��������ʱ��������λ��
             this.IsVisibleChanged += OnIsVisibleChanged;
-        }
 
-        // ============================
-        // [RadialRenderer] Highlight seam
-        // ============================
-        // SlotOrb is instantiated inside XAML DataTemplates (not via DI), so it
-        // resolves the registered renderer through the app service provider, matching
-        // the existing service-locator pattern used elsewhere in the codebase.
-        //
-        // The renderer is cached by config revision: a full GetSnapshot() is a JSON
-        // deep copy, and per-slot activation fires on every hover flip — resolving it
-        // each time would add avoidable GC pressure on the hot path. The cache refreshes
-        // only when Profiles.json changes (config save), which is exactly when the
-        // renderer selection can change — plus when the plugin renderer registry
-        // changes (contribution added/removed), so a removed plugin renderer can
-        // never leave a dangling cached reference (falls back to Default instead).
-        private static StyleRendererFactory? _cachedRendererFactory;
-        private static long _cachedRendererRevision = -1;
-        private static IRadialRenderer? _cachedRenderer;
-        private static bool _registryChangedHooked;
-
-        private static void HookRegistryInvalidation(App app)
-        {
-            if (_registryChangedHooked)
-            {
-                return;
-            }
-
-            var registry = app.Services.GetService<Core.Rendering.IRadialRendererRegistry>();
-            if (registry == null)
-            {
-                return;
-            }
-
-            registry.Changed += (_, _) =>
-            {
-                // Next GetRenderer() re-resolves through the factory; a removed plugin
-                // renderer then falls back to Default instead of staying cached.
-                _cachedRenderer = null;
-                _cachedRendererRevision = -1;
-            };
-            _registryChangedHooked = true;
-        }
-
-        private static IRadialRenderer? GetRenderer()
-        {
-            if (Application.Current is App app)
-            {
-                HookRegistryInvalidation(app);
-                // [RadialRenderer] Resolve through the factory + config so the active
-                // renderer (Default / ClassicRing / Glassmorphism) applies highlights
-                // consistently with the ViewModel's ApplyRadialRendering. Falls back to
-                // the legacy DI singleton when the factory is not wired (tests).
-                var factory = app.Services.GetService<StyleRendererFactory>();
-                if (factory != null)
-                {
-                    var config = app.Services.GetService<IConfigService>();
-                    if (config == null) return null;
-
-                    long revision = config.CurrentRevision;
-                    if (!ReferenceEquals(_cachedRendererFactory, factory) || _cachedRendererRevision != revision)
-                    {
-                        _cachedRendererFactory = factory;
-                        _cachedRendererRevision = revision;
-                        _cachedRenderer = factory.Create(config.GetSnapshot().Settings.RadialRenderer);
-                    }
-
-                    return _cachedRenderer;
-                }
-
-                return app.Services.GetService<IRadialRenderer>();
-            }
-            return null;
+            _rendererResolver = (Application.Current as App)?.Services.GetService<IRadialRendererResolver>();
         }
 
         /// <summary>
@@ -296,10 +219,10 @@ namespace Pulsar.Views.Controls
             var release = TimeSpan.FromMilliseconds(320);
             var easeOut = new QuadraticEase { EasingMode = EasingMode.EaseOut };
 
-            // [RadialRenderer] Route the highlight through the injected renderer.
-            // ShowActiveGlow gates whether the glow is drawn at all (matches the
-            // removed XAML MultiDataTrigger condition).
-            var renderer = GetRenderer();
+            // [RadialRenderer] Route the highlight through the renderer resolved by
+            // the shared seam. ShowActiveGlow gates whether the glow is drawn at all
+            // (matches the removed XAML MultiDataTrigger condition).
+            var renderer = orb._rendererResolver?.Resolve();
             if (renderer != null)
             {
                 orb.ApplyHighlight(renderer.ResolveHighlight(isActive && orb.ShowActiveGlow));
@@ -406,14 +329,9 @@ namespace Pulsar.Views.Controls
                     Pulsar.Native.PulsarNative.GetCursorPos(out var cursorPt);
                     var mouseScreen = new System.Drawing.Point(cursorPt.X, cursorPt.Y);
 
-                    double diffX = (mouseScreen.X - orbCenterScreen.X);
-                    double diffY = (mouseScreen.Y - orbCenterScreen.Y);
-
-                    // �������λ��
-                    double targetX = Math.Max(-MaxOffsetLimit, Math.Min(MaxOffsetLimit, diffX * ParallaxIntensity));
-                    double targetY = Math.Max(-MaxOffsetLimit, Math.Min(MaxOffsetLimit, diffY * ParallaxIntensity));
-
-                    targetOffset = new Vector(targetX, targetY);
+                    targetOffset = new Vector(
+                        ParallaxMotion.ComputeTargetOffset(mouseScreen.X - orbCenterScreen.X),
+                        ParallaxMotion.ComputeTargetOffset(mouseScreen.Y - orbCenterScreen.Y));
                 }
                 catch
                 {
@@ -425,38 +343,36 @@ namespace Pulsar.Views.Controls
                 targetOffset = new Vector(0, 0);
             }
 
-            // 2. Time-based lerp: the step depends only on elapsed time (so the
-            //    speed is consistent across refresh rates) and is capped by a
-            //    velocity ceiling. Close to the target it settles gently; far
-            //    from it (large circle sweeps) it approaches faster, but never
-            //    more than MaxParallaxSpeed per second.
+            // Time-based exponential approach capped by a velocity ceiling, with
+            // settle snapping — the math lives in ParallaxMotion (pure, tested);
+            // this loop only feeds it elapsed time and applies its result. The step
+            // depends only on dt (consistent across refresh rates), close to the
+            // target it settles gently, far from it (large circle sweeps) it
+            // approaches faster but never more than MaxSpeed per second.
             var now = DateTime.UtcNow;
             double dt = _lastFrameTimeUtc == DateTime.MinValue ? 0.0 : (now - _lastFrameTimeUtc).TotalSeconds;
             _lastFrameTimeUtc = now;
 
             if (dt > 0)
             {
-                double alpha = 1.0 - Math.Exp(-dt / ParallaxTimeConstant);
-                double maxStep = MaxParallaxSpeed * dt;
-
-                double stepX = Math.Clamp((targetOffset.X - _currentOffset.X) * alpha, -maxStep, maxStep);
-                double stepY = Math.Clamp((targetOffset.Y - _currentOffset.Y) * alpha, -maxStep, maxStep);
-
-                _currentOffset.X += stepX;
-                _currentOffset.Y += stepY;
-
-                // 3. Settle when close enough (stop sub-pixel jitter).
-                if (Math.Abs(targetOffset.X - _currentOffset.X) < 0.05) _currentOffset.X = targetOffset.X;
-                if (Math.Abs(targetOffset.Y - _currentOffset.Y) < 0.05) _currentOffset.Y = targetOffset.Y;
+                var (nextX, nextY, _) = ParallaxMotion.Step(
+                    targetOffset.X,
+                    targetOffset.Y,
+                    _currentOffset.X,
+                    _currentOffset.Y,
+                    dt);
+                _currentOffset = new Vector(nextX, nextY);
             }
 
-            // 4. Apply transform
+            // Apply transform (offset is in screen DIP; divide by DPI scale).
             var dpi = VisualTreeHelper.GetDpi(this);
             OrbTranslate.X = _currentOffset.X / dpi.DpiScaleX;
             OrbTranslate.Y = _currentOffset.Y / dpi.DpiScaleY;
 
-            // 5. Once a release has fully settled, stop the loop to save cycles.
-            if (!IsActive && Math.Abs(_currentOffset.X) < 0.05 && Math.Abs(_currentOffset.Y) < 0.05)
+            // Once a release has fully settled, stop the loop to save cycles.
+            if (!IsActive
+                && Math.Abs(_currentOffset.X) < ParallaxMotion.SettleThreshold
+                && Math.Abs(_currentOffset.Y) < ParallaxMotion.SettleThreshold)
             {
                 _currentOffset = new Vector(0, 0);
                 OrbTranslate.X = 0;
@@ -464,8 +380,6 @@ namespace Pulsar.Views.Controls
                 StopRenderLoop();
             }
         }
-
-
         private static void OnOrbImageChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is SlotOrb orb) orb.RefreshIcon(orb.IconKey); 

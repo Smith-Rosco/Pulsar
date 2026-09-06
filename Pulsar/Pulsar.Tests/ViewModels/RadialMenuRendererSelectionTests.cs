@@ -92,8 +92,10 @@ namespace Pulsar.Tests.ViewModels
             {
                 Settings = new ProfileSettings { RadialRenderer = "ClassicRing" }
             };
+            long revision = 1;
             var config = new Mock<IConfigService>();
             config.Setup(c => c.GetSnapshot()).Returns(snapshot);
+            config.SetupGet(c => c.CurrentRevision).Returns(() => revision);
 
             var vm = CreateViewModel(config, factory);
             classic.Verify(r => r.Initialize(It.IsAny<IRadialThemeTokens>()), Times.AtLeastOnce);
@@ -102,10 +104,11 @@ namespace Pulsar.Tests.ViewModels
             // Invoke the same re-render seam OnConfigUpdated runs on the next open,
             // bypassing Application.Current.Dispatcher (which sibling tests may own).
             snapshot.Settings.RadialRenderer = "Glassmorphism";
+            revision++; // resolver caches against CurrentRevision (SlotOrb parity)
             InvokeApplyRadialRendering(vm);
 
             glass.Verify(r => r.Initialize(It.IsAny<IRadialThemeTokens>()), Times.AtLeastOnce,
-                "the re-render must resolve the new renderer through the factory and initialize it");
+                "the re-render must resolve the new renderer through the resolver and initialize it");
         }
 
         private static void InvokeApplyRadialRendering(RadialMenuViewModel vm)
@@ -130,6 +133,11 @@ namespace Pulsar.Tests.ViewModels
                 systemThemeProvider: () => AppTheme.Light,
                 builtInFactory: _ => CreateTokens());
 
+            // [Architecture review 2026-09-06] The VM resolves through the same
+            // IRadialRendererResolver seam SlotOrb uses; the factory is wrapped into
+            // one so config edits + plugin contributions behave identically.
+            var rendererResolver = new StyleRendererResolver(factory, config.Object);
+
             return new RadialMenuViewModel(
                 session,
                 hotkey.Object,
@@ -139,7 +147,7 @@ namespace Pulsar.Tests.ViewModels
                 config.Object,
                 new Mock<ILocalizationService>().Object,
                 logger: null,
-                rendererFactory: factory,
+                rendererResolver: rendererResolver,
                 presetResolver: presetResolver);
         }
 

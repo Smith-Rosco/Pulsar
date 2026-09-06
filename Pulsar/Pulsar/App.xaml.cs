@@ -211,6 +211,14 @@ namespace Pulsar
                     }));
             serviceCollection.AddSingleton<Core.Rendering.StyleRendererFactory>();
             serviceCollection.AddSingleton<Core.Rendering.RadialThemePresetResolver>();
+            // [Architecture review 2026-09-06] Single seam for radial-renderer
+            // resolution: the VM (constructor injection) and SlotOrb (view) share it,
+            // replacing the view's service-locator + static cache.
+            serviceCollection.AddSingleton<Services.Interfaces.IRadialRendererResolver>(sp =>
+                new Services.StyleRendererResolver(
+                    sp.GetRequiredService<Core.Rendering.StyleRendererFactory>(),
+                    sp.GetRequiredService<IConfigService>(),
+                    sp.GetRequiredService<Core.Rendering.IRadialRendererRegistry>()));
             serviceCollection.AddSingleton<Func<Pulsar.Models.AppTheme, Core.Rendering.IRadialThemeTokens>>(
                 _ => Core.Rendering.RadialThemeTokenSet.FromTheme);
             serviceCollection.AddSingleton<IWindowPlacementService, WindowPlacementService>();
