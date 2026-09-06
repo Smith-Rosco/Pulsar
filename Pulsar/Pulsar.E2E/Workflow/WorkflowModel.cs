@@ -12,6 +12,7 @@ namespace Pulsar.E2E.Workflow
         Wait,
         WaitForState,
         Hotkey,
+        MoveCursor,
         MenuOpen,
         MenuClose,
         Command,
@@ -63,6 +64,11 @@ namespace Pulsar.E2E.Workflow
 
         /// <summary>hotkey: chord like "Ctrl+Space" or "Alt+P".</summary>
         public string Keys { get; set; } = string.Empty;
+
+        /// <summary>move-cursor: target screen coordinates in physical pixels.
+        /// The radial menu summons at the cursor, so park it before menu-open.</summary>
+        public int X { get; set; }
+        public int Y { get; set; }
 
         /// <summary>menu-open: "action" (default) or "task".</summary>
         public string Mode { get; set; } = string.Empty;

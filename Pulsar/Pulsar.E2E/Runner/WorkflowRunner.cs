@@ -171,6 +171,10 @@ namespace Pulsar.E2E.Runner
                     InputDriver.SendHotkey(step.Keys);
                     break;
 
+                case StepType.MoveCursor:
+                    InputDriver.MoveTo(step.X, step.Y);
+                    break;
+
                 case StepType.MenuOpen:
                 case StepType.MenuClose:
                 case StepType.Command:

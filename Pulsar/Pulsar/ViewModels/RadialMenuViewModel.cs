@@ -436,6 +436,10 @@ namespace Pulsar.ViewModels
 
         public Point? GetInvocationPointScreen() => _session.GetInvocationPointScreen();
 
+        /// <summary>Debug-only: override the screen coordinate the next menu summon
+        /// will centre on (E2E deterministic positioning). Pass physical screen px.</summary>
+        public void DebugSetInvocationPointScreen(Point point) => _session.SetInvocationPointScreen(point);
+
         public PreviewHostContext GetPreviewHostContext() => _session.GetPreviewHostContext();
 
         public void ClearVisuals() => _session.ClearVisuals();

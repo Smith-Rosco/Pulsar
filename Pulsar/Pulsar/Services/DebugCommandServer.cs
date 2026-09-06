@@ -152,6 +152,19 @@ namespace Pulsar.Services
                         Application.Current?.Dispatcher?.Invoke(() => _menuViewModel.CancelActiveMenu());
                         break;
 
+                    case "set-invocation-point":
+                    {
+                        // [E2E] Override the screen coordinate the next menu summon will
+                        // centre on (physical screen px). Lets promo workflows position the
+                        // radial menu deterministically without depending on cursor teleports.
+                        int x = TryGetInt(root, "x", 0);
+                        int y = TryGetInt(root, "y", 0);
+                        _logger?.LogInformation("[DebugCommandServer] set-invocation-point x={X} y={Y}", x, y);
+                        Application.Current?.Dispatcher?.Invoke(() =>
+                            _menuViewModel.DebugSetInvocationPointScreen(new Point(x, y)));
+                        break;
+                    }
+
                     case "open-settings":
                         _logger?.LogInformation("[DebugCommandServer] open-settings");
                         Application.Current?.Dispatcher?.Invoke(() =>

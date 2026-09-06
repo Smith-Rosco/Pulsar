@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using FlaUI.Core.Input;
 using FlaUI.Core.WindowsAPI;
 
@@ -15,6 +16,9 @@ namespace Pulsar.E2E.Driver
     /// </summary>
     public static class InputDriver
     {
+        [DllImport("user32.dll")]
+        private static extern bool SetCursorPos(int X, int Y);
+
         /// <summary>
         /// Sends a chord like "Ctrl+Space", "Alt+P", "Ctrl+Shift+L" as real key
         /// presses: modifiers down, final key down, all up (reverse order).
@@ -28,6 +32,15 @@ namespace Pulsar.E2E.Driver
             }
 
             Keyboard.TypeSimultaneously(keys.ToArray());
+        }
+
+        /// <summary>Moves the real cursor to the given physical screen coordinates.
+        /// Uses SetCursorPos (not FlaUI Mouse.MoveTo) because it is a deterministic
+        /// teleport that does not depend on FlaUI input-stack initialization.
+        /// The radial menu summons at the cursor, so park it before menu-open.</summary>
+        public static void MoveTo(int x, int y)
+        {
+            SetCursorPos(x, y);
         }
 
         /// <summary>Parses "Ctrl+Shift+5" into FlaUI virtual keys (case-insensitive).</summary>

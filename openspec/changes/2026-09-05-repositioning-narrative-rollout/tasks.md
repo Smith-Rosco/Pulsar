@@ -10,9 +10,9 @@
 
 ## 2. 宣传截图（E2E 管线）
 
-- [ ] 2.1 新增宣传用 E2E 工作流（fixture 注入真实感配置：办公场景 slot + 级联 + 渲染器预设），Dark 主题 1920×1080
-- [ ] 2.2 产出首屏用图：主界面全景 / 轮盘呼出 / Excel 跑宏瞬间 / 窗口切换子菜单 ≥4 张
-- [ ] 2.3 确定发布资产目录约定（如 `Docs/media/release/`）并入 git；确认与「UI 验证截图 never commit」纪律的边界并写入该目录 README
+- [x] 2.1 新增宣传用 E2E 工作流（fixture 注入真实感配置：办公场景 slot + 级联 + 渲染器预设），Dark 主题 1920×1080（fixture `office-workbench-dark.json`：8 commandMode + 6 switchMode + Fan 级联 + MatchaForest 预设；workflow `promo-release-screens.json`：34 步含 set-invocation-point 居中 + 5 张截图；E2E 基建新增 move-cursor 步骤（SetCursorPos P/Invoke）与 DebugCommandServer `set-invocation-point` 命令；纯黑壁纸 + MinimizeAll 一体化脚本 `run-promo-wallpaper.ps1` 保证干净背景）
+- [x] 2.2 产出首屏用图：主界面全景 / 轮盘呼出 / Excel 跑宏瞬间 / 窗口切换子菜单 ≥4 张（promo-release-9 PASS 30.7s，菜单像素质心 (1260,734) 确认居中；4 张 1920×1080 PNG 已入 `Docs/media/release/`：01-main-interface / 02-radial-summoned / 03-excel-macro-moment / 04-window-switch-menu）
+- [x] 2.3 确定发布资产目录约定（如 `Docs/media/release/`）并入 git；确认与「UI 验证截图 never commit」纪律的边界并写入该目录 README（`.gitignore` 从 `Docs/media/` 改为 `Docs/media/*` + `!Docs/media/release/` 例外；README 明确三方边界：release/ 入 git / Docs/media/ 其他子目录忽略 / E2E artifacts/ 不入 git；含命名约定、再生步骤、review checklist）
 
 ## 3. Demo 视频
 

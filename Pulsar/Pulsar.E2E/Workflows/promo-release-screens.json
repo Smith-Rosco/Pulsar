@@ -1,0 +1,189 @@
+{
+  "name": "promo-release-screens",
+  "app": {
+    "exePath": "",
+    "fixture": "Fixtures/promo/office-workbench-dark.json",
+    "arguments": ""
+  },
+  "steps": [
+    {
+      "type": "launch",
+      "id": "launch-debug-instance"
+    },
+    {
+      "type": "wait",
+      "id": "settle-after-launch",
+      "durationMs": 3000
+    },
+    {
+      "type": "command",
+      "id": "open-settings-window",
+      "command": "open-settings"
+    },
+    {
+      "type": "wait",
+      "id": "settle-settings-window",
+      "durationMs": 1800
+    },
+    {
+      "type": "assert",
+      "id": "assert-settings-window",
+      "automationId": "Pulsar.Settings.SaveChangesButton",
+      "expected": "visible",
+      "timeoutMs": 8000
+    },
+    {
+      "type": "wait",
+      "id": "settle-slots-page",
+      "durationMs": 900
+    },
+    {
+      "type": "click",
+      "id": "nav-to-plugins",
+      "automationId": "Pulsar.Settings.Nav.Plugins",
+      "timeoutMs": 5000
+    },
+    {
+      "type": "wait",
+      "id": "settle-plugins-page",
+      "durationMs": 1200
+    },
+    {
+      "type": "screenshot",
+      "id": "shot-main-plugins-page",
+      "file": "release-main-plugins-page.png"
+    },
+    {
+      "type": "click",
+      "id": "nav-to-slots",
+      "automationId": "Pulsar.Settings.Nav.Slots",
+      "timeoutMs": 5000
+    },
+    {
+      "type": "wait",
+      "id": "settle-slots-page-again",
+      "durationMs": 1000
+    },
+    {
+      "type": "screenshot",
+      "id": "shot-slots-page",
+      "file": "release-slots-page.png"
+    },
+    {
+      "type": "hotkey",
+      "id": "close-settings",
+      "keys": "Alt+F4"
+    },
+    {
+      "type": "wait",
+      "id": "settle-after-close-settings",
+      "durationMs": 900
+    },
+    {
+      "type": "command",
+      "id": "set-invocation-point-action-menu",
+      "command": "set-invocation-point",
+      "args": { "x": 1280, "y": 720 }
+    },
+    {
+      "type": "menu-open",
+      "id": "open-action-menu",
+      "mode": "action",
+      "args": { "profile": "Global" }
+    },
+    {
+      "type": "waitForState",
+      "id": "wait-menu-opened",
+      "event": "menu-opened",
+      "timeoutMs": 10000
+    },
+    {
+      "type": "wait",
+      "id": "wait-summon-bloom",
+      "durationMs": 1400
+    },
+    {
+      "type": "screenshot",
+      "id": "shot-radial-summoned",
+      "file": "release-radial-summoned.png"
+    },
+    {
+      "type": "command",
+      "id": "hover-excel-macro-slot",
+      "command": "slot-hover",
+      "args": { "slot": 1 }
+    },
+    {
+      "type": "wait",
+      "id": "wait-hover-highlight",
+      "durationMs": 700
+    },
+    {
+      "type": "screenshot",
+      "id": "shot-excel-macro-moment",
+      "file": "release-excel-macro-moment.png"
+    },
+    {
+      "type": "menu-close",
+      "id": "close-action-menu"
+    },
+    {
+      "type": "waitForState",
+      "id": "wait-action-menu-closed",
+      "event": "menu-closed",
+      "timeoutMs": 6000
+    },
+    {
+      "type": "wait",
+      "id": "settle-between-menus",
+      "durationMs": 700
+    },
+    {
+      "type": "command",
+      "id": "set-invocation-point-task-menu",
+      "command": "set-invocation-point",
+      "args": { "x": 1280, "y": 720 }
+    },
+    {
+      "type": "menu-open",
+      "id": "open-task-menu",
+      "mode": "task",
+      "args": { "profile": "Global" }
+    },
+    {
+      "type": "waitForState",
+      "id": "wait-task-menu-opened",
+      "event": "menu-opened",
+      "timeoutMs": 10000
+    },
+    {
+      "type": "wait",
+      "id": "wait-task-bloom",
+      "durationMs": 1400
+    },
+    {
+      "type": "screenshot",
+      "id": "shot-window-switch-menu",
+      "file": "release-window-switch-menu.png"
+    },
+    {
+      "type": "menu-close",
+      "id": "close-task-menu"
+    },
+    {
+      "type": "waitForState",
+      "id": "wait-task-menu-closed",
+      "event": "menu-closed",
+      "timeoutMs": 6000
+    },
+    {
+      "type": "wait",
+      "id": "settle-before-stop",
+      "durationMs": 500
+    },
+    {
+      "type": "exit",
+      "id": "exit-debug-instance"
+    }
+  ]
+}

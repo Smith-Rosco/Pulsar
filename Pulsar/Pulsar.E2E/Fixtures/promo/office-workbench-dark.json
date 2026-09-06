@@ -1,0 +1,271 @@
+{
+  "settings": {
+    "language": "zh-CN",
+    "centerSlotBehavior": "MRU_Window",
+    "triggerDistance": 100,
+    "theme": "Dark",
+    "hoverScale": 1.2,
+    "springiness": 6,
+    "maxDisplacement": 20,
+    "radialRenderer": "Default",
+    "radialThemePreset": "MatchaForest",
+    "hotkeys": {
+      "ShowGrid": {
+        "key": "Q",
+        "modifiers": "Control,Shift"
+      },
+      "ShowSwitcher": {
+        "key": "Q",
+        "modifiers": "Control"
+      }
+    },
+    "input": {
+      "modifierStateMode": "Hybrid",
+      "enableModifierStateLogging": false
+    },
+    "quickSwitchCenterZoneRadius": 30,
+    "hasCompletedTutorial": true,
+    "lastTutorialStep": null,
+    "tutorialCrashedAt": null,
+    "selectedTutorialScenarioId": null,
+    "onboardingState": "Complete",
+    "logging": {
+      "minimumLevel": "Information",
+      "mainLogRetentionDays": 7,
+      "pluginLogRetentionDays": 30,
+      "pluginLogMaxSizeBytes": 100000000,
+      "enableDebugOutput": true,
+      "customLogDirectory": null
+    },
+    "hasCompletedInitialDetection": true,
+    "slotsPerPage": 8,
+    "enableRightDragSummon": false,
+    "rightDragSwitcherModifier": "Control",
+    "rightDragActionModifier": "Shift",
+    "summonMode": "Immediate",
+    "gestureDragThreshold": 25,
+    "gestureFlickOutCancelEnabled": true,
+    "gestureFlickOutRadiusMultiplier": 1.5,
+    "gestureIsolationEnabled": false,
+    "gestureIsolationMode": "Allowlist",
+    "gestureIsolationBlockFullscreen": true,
+    "quickSwitchTimeoutMs": 250
+  },
+  "plugins": {},
+  "profiles": {
+    "Global": {
+      "icon": null,
+      "alias": null,
+      "commandMode": [
+        {
+          "plugin": "com.pulsar.vbarunner",
+          "action": "run",
+          "args": {
+            "scriptPath": "%USERPROFILE%\\Documents\\Pulsar\\Scripts\\format-report.bas",
+            "macro": "FormatReport"
+          },
+          "label": "一键跑宏",
+          "icon": "AllApps",
+          "color": "#217346",
+          "order": 0,
+          "slot": 1
+        },
+        {
+          "plugin": "com.pulsar.bookmarklet",
+          "action": "run",
+          "args": {
+            "code": "document.querySelector('#login').click()"
+          },
+          "label": "登录老旧系统",
+          "icon": "Globe",
+          "color": "#D97706",
+          "order": 0,
+          "slot": 2
+        },
+        {
+          "plugin": "com.pulsar.pki",
+          "action": "fill",
+          "args": {
+            "field": "username",
+            "secret": "hr-portal"
+          },
+          "label": "自动填写登录",
+          "icon": "Lock",
+          "color": "#7C3AED",
+          "order": 0,
+          "slot": 3
+        },
+        {
+          "plugin": "com.pulsar.vbarunner",
+          "action": "run",
+          "args": {
+            "scriptPath": "%USERPROFILE%\\Documents\\Pulsar\\Scripts\\report-pack.bas",
+            "macro": "PackReport"
+          },
+          "label": "报表整理",
+          "icon": "Page",
+          "color": "#0E7490",
+          "order": 0,
+          "slot": 4,
+          "subActions": [
+            {
+              "pluginId": "com.pulsar.vbarunner",
+              "action": "run",
+              "args": {
+                "scriptPath": "%USERPROFILE%\\Documents\\Pulsar\\Scripts\\report-pack.bas",
+                "macro": "SumMonth"
+              },
+              "label": "汇总本月",
+              "iconKey": "Page",
+              "colorHex": ""
+            },
+            {
+              "pluginId": "com.pulsar.vbarunner",
+              "action": "run",
+              "args": {
+                "scriptPath": "%USERPROFILE%\\Documents\\Pulsar\\Scripts\\report-pack.bas",
+                "macro": "DedupeRows"
+              },
+              "label": "清洗重复行",
+              "iconKey": "Edit",
+              "colorHex": ""
+            },
+            {
+              "pluginId": "com.pulsar.vbarunner",
+              "action": "run",
+              "args": {
+                "scriptPath": "%USERPROFILE%\\Documents\\Pulsar\\Scripts\\report-pack.bas",
+                "macro": "BuildCharts"
+              },
+              "label": "生成图表",
+              "iconKey": "SaveLocal",
+              "colorHex": ""
+            }
+          ]
+        },
+        {
+          "plugin": "com.pulsar.winswitcher",
+          "action": "switch",
+          "args": {
+            "app": "chrome"
+          },
+          "label": "切换浏览器",
+          "icon": "Switch",
+          "color": "#2563EB",
+          "order": 0,
+          "slot": 5
+        },
+        {
+          "plugin": "com.pulsar.winswitcher",
+          "action": "launch",
+          "args": {
+            "path": "E:\\Work\\reports"
+          },
+          "label": "打开项目文件夹",
+          "icon": "Library",
+          "color": "",
+          "order": 0,
+          "slot": 6
+        },
+        {
+          "plugin": "com.pulsar.command",
+          "action": "sendkeys",
+          "args": {
+            "keys": "Ctrl+S"
+          },
+          "label": "保存当前文件",
+          "icon": "Save",
+          "color": "",
+          "order": 0,
+          "slot": 7
+        },
+        {
+          "plugin": "com.pulsar.winswitcher",
+          "action": "launch",
+          "args": {
+            "path": "calc.exe"
+          },
+          "label": "打开计算器",
+          "icon": "System",
+          "color": "",
+          "order": 0,
+          "slot": 8
+        }
+      ],
+      "switchMode": [
+        {
+          "plugin": "com.pulsar.winswitcher",
+          "action": "switch",
+          "args": {
+            "app": "chrome"
+          },
+          "label": "Chrome",
+          "icon": "Globe",
+          "color": "",
+          "order": 0,
+          "slot": 1
+        },
+        {
+          "plugin": "com.pulsar.winswitcher",
+          "action": "switch",
+          "args": {
+            "app": "excel"
+          },
+          "label": "Excel",
+          "icon": "AllApps",
+          "color": "#217346",
+          "order": 0,
+          "slot": 2
+        },
+        {
+          "plugin": "com.pulsar.winswitcher",
+          "action": "switch",
+          "args": {
+            "app": "notepad"
+          },
+          "label": "记事本",
+          "icon": "Page",
+          "color": "",
+          "order": 0,
+          "slot": 3
+        },
+        {
+          "plugin": "com.pulsar.winswitcher",
+          "action": "switch",
+          "args": {
+            "app": "explorer"
+          },
+          "label": "文件资源管理器",
+          "icon": "Library",
+          "color": "",
+          "order": 0,
+          "slot": 4
+        },
+        {
+          "plugin": "com.pulsar.winswitcher",
+          "action": "switch",
+          "args": {
+            "app": "wps"
+          },
+          "label": "WPS 表格",
+          "icon": "Document",
+          "color": "",
+          "order": 0,
+          "slot": 5
+        },
+        {
+          "plugin": "com.pulsar.winswitcher",
+          "action": "switch",
+          "args": {
+            "app": "cmd"
+          },
+          "label": "终端",
+          "icon": "CommandPrompt",
+          "color": "",
+          "order": 0,
+          "slot": 6
+        }
+      ]
+    }
+  }
+}

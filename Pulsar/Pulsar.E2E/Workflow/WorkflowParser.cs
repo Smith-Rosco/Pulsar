@@ -22,6 +22,7 @@ namespace Pulsar.E2E.Workflow
             ["wait"] = StepType.Wait,
             ["waitforstate"] = StepType.WaitForState,
             ["hotkey"] = StepType.Hotkey,
+            ["move-cursor"] = StepType.MoveCursor,
             ["menu-open"] = StepType.MenuOpen,
             ["menu-close"] = StepType.MenuClose,
             ["command"] = StepType.Command,

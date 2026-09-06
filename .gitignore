@@ -516,8 +516,12 @@ reference/
 Temp/
 
 # Local UI-verification media captures (settings-tab screenshots from manual
-# verification runs; may contain real profile data - never commit)
-Docs/media/
+# verification runs; may contain real profile data - never commit).
+# Use "ignore contents" rather than "ignore directory" so that the curated
+# release/ subdirectory can be re-included below.
+Docs/media/*
+# Curated release/promotional assets — tracked in git (see Docs/media/release/README.md)
+!Docs/media/release/
 
 # E2E recorder bisect-debug workflow iterations (throwaway debug variants,
 # not source workflows)
