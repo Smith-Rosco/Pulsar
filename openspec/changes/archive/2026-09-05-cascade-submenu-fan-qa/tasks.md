@@ -1,5 +1,7 @@
 # Tasks — Cascade SubMenu Fan QA 收尾
 
+> **收口（2026-09-06 16:1x）**：ADR-024 系列（D1/D1a/D6/D7/D10/D11）已落地并 push（`3f68c13`）；E2E `fan-sector-constraint-2` / `ring-center-visible-4` PASS；全量 **1129/1129**、build 0 新警告。3.3 位置参数草案已被 ADR-024 D1/D1a/D6 取代（本清单关闭，草案留档）；2.x 人工 QA 仍待用户真机（E2E 已部分替代），QA 结果另行记录。本 change 归档。
+>
 > **执行状态（2026-09-05 21:4x，QA 暂停点 · 位置问题分析已推进）**
 > - 已完成：1.1 / 1.2（QA 准备）、3.1（Fan 方向几何缺陷修复 + 6 个回归测试，全量 1066/1066 绿）。
 > - 进行中：2.x 人工 QA——A 组修复后重验**部分通过**（Fan2/3 子项可见且方向正确），用户反馈「位置仍有问题」，B–H 未执行。
@@ -35,11 +37,11 @@
       - 回归测试：`SubMenuLayoutEngineTests` 新增 `ComputeChildPositions_Fan_ShouldRespectParentDirection`（direction=−90° 时三翼落 −120°/−90°/−60°）与 `Fan_LayoutAndHitTest_ShouldAgreeAtEveryChildCenter`（四个父方向 × 1–3 子项，布局输出位置命中必须回到自身）；新增 `CascadeSubMenuLayoutRuntimeTests`（真引擎 + 真 MenuSession：Fan2 子项落小环、Ring5 均布小环、filler 留根环）。
       - 全量 1066/1066 通过（原基线 1060 + 6）。
 - [ ] 3.2 若涉及分页语义调整：补 ADR-011 Amendment 后再改代码
-- [ ] 3.3 位置参数修订（ADR-011 决策 6，草案见 `submenu-radius-geometry-amendment-draft.md`）：QA 截图确认现象 → 定稿 Amendment → 实施（推荐方案 A：Fan 移根环外侧 r≈120；Ring 视现象另定）→ 更新 `CascadeSubMenuLayoutRuntimeTests` 断言并**新增"子项互不重叠 / 不撞中心圆"回归断言**（堵住本轮暴露的测试盲区）
+- [x] ~~3.3 位置参数修订（ADR-011 决策 6，草案见 `submenu-radius-geometry-amendment-draft.md`）~~ **已关闭（2026-09-06）**：草案方案 A（Fan 移根环外侧 r≈120）被 ADR-024 D1（Fan 同心外弧 `R+gap=160`，重叠结构性不可能）+ D1a（扇区约束）+ D6（gap 压缩）取代并经 E2E 验证；草案留档不适用。原计划「新增子项互不重叠/不撞中心圆回归断言」已由 ADR-024 各轮布局/命中测试覆盖。
 - [x] 3.4 **Fan 命中扇区约束修复（验证通过）**：用户实测「子 slot 沿父方向渲染（如右下），但鼠标在中心槽附近即触发」→ 根因 `SubMenuLayoutEngine.HitTestFan` 无角度扇区约束，`[deadZone, fanExtent]` 全圆周按最近翼角命中；修复为翼只在自己的几何扇区内命中（2 翼 ±30° / 3 翼 ±15° / 单翼 ±30°），扇区外返回 -1。已改 `Services/SubMenuLayoutEngine.cs` + 新增 3 个回归测试（`OutsideWingSector` / `NearCenter_OffWingDirection`（用户场景）/ `InsideWingSector`）。**验证：全量 1095/1095 通过（原 1092+3），构建 0 警告 0 错误**。spec 语义补全：`cascade-submenu-layout` 「Fan hit test picks nearest wing」未限定角度范围，本修复按 QA B1/B4（指哪亮哪/扇区外不误触）补齐
 
 ## 4. 文档收口 & 验证
 
-- [ ] 4.1 `Docs/roadmap/IMPLEMENTATION_VERIFICATION.md`：未落地清单 #1 划线并注明 QA 结果
-- [ ] 4.2 journal 记录 QA 结论与任何修复
-- [ ] 4.3 `scripts/dev.ps1 build` → 0 警告 0 错误；`scripts/dev.ps1 test` → 全量通过（1059+ 基线）
+- [x] ~~4.1 `Docs/roadmap/IMPLEMENTATION_VERIFICATION.md`：未落地清单 #1 划线并注明 QA 结果~~（2026-09-06 收口：已划线——方向三 🟢 全部落地、E2E `fan-sector-constraint-2`/`ring-center-visible-4` PASS、全量 1129/1129；仅剩人工 QA 2.x）
+- [x] ~~4.2 journal 记录 QA 结论与任何修复~~（2026-09-06 收口：journal 14:15/14:45/15:00/15:38/16:06 会话块已记录全部 QA 结论与修复，本次收口另记）
+- [x] ~~4.3 `scripts/dev.ps1 build` → 0 警告 0 错误；`scripts/dev.ps1 test` → 全量通过~~（2026-09-06：build 无新增警告，**全量 1129/1129** 通过）

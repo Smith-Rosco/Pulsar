@@ -103,7 +103,7 @@
 
 | # | 缺口 | 归属 | 价值 | 建议 |
 |---|---|---|---|---|
-| 1 | **级联子菜单 Fan 人工 QA**（`cascade-submenu-layout` 任务 5.2） | 方向三 | 高 —— 唯一阻塞项 | 需人工验证：2–3 子项 Fan 渲染/选中、4+ 回落 Ring、分页、Dark/Light 双主题 |
+| 1 | ~~**级联子菜单 Fan 人工 QA**（`cascade-submenu-layout` 任务 5.2）~~ **收口（2026-09-06）** | 方向三 | 高 —— 唯一阻塞项 | ~~需人工验证：2–3 子项 Fan 渲染/选中、4+ 回落 Ring、分页、Dark/Light 双主题~~ — ADR-024 系列（D1/D1a/D6/D7/D10/D11）落地并经 E2E 验证（`fan-sector-constraint-2` / `ring-center-visible-4` PASS，全量 1129/1129）；仅剩用户真机人工 QA 2.x（`openspec/changes/archive/2026-09-05-cascade-submenu-fan-qa` 已归档，结果另行记录） |
 | 2 | ~~多语言扩展（zh-TW / ja）~~ **已闭环（2026-09-03）** | 短期路线 | —— | 按用户决策收敛为中英双语；zh-CN 覆盖经 XML 级校验已完整（「仅 101/1037 键」系 grep 单行计数假象），清理 1 条孤儿键 `Plugin.Bookmarklet.MissingScriptPath` |
 | 3 | **渲染器插件化**（接 `IPluginRegistry`） | 方向二 §3.4.3 | 高 —— Pulsar 相对 StarPie 的**唯一差异化点** | 让第三方可发布主题插件，否则与 StarPie 静态渲染器无差别 |
 | 4 | **补齐 CleanSectors / CatPaw 形态** | 方向二 | 中 | roadmap 已规划「先双形态验证再扩 4 形态」，可排入下迭代 |
