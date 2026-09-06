@@ -53,12 +53,14 @@ dotnet publish $csproj `
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish (full) failed with exit code $LASTEXITCODE" }
 
 # portable：framework-dependent 单文件，不含运行时
+# EnableCompressionInSingleFile 仅支持 self-contained（NETSDK1176），portable 必须显式关闭。
 Write-Output "Publishing portable -> $($paths.PortableDir)"
 dotnet publish $csproj `
     -c Release `
     -r win-x64 `
     --self-contained false `
     -p:PublishSingleFile=true `
+    -p:EnableCompressionInSingleFile=false `
     "-p:PublishDir=$($paths.PortableDir)\" `
     @verArgs
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish (portable) failed with exit code $LASTEXITCODE" }
@@ -77,7 +79,7 @@ if ($null -ne $iscc) {
     $stageDir = Join-Path $repo 'artifacts\publish\stage'
     if (Test-Path -LiteralPath $stageDir) { Remove-Item -LiteralPath $stageDir -Recurse -Force }
     New-Item -ItemType Directory -Path $stageDir -Force | Out-Null
-    Copy-Item -LiteralPath (Join-Path $paths.FullDir '*') -Destination $stageDir -Recurse -Force
+    Copy-Item -Path (Join-Path $paths.FullDir '*') -Destination $stageDir -Recurse -Force
 
     Write-Output "ISCC -> Pulsar-v$Version-Setup.exe"
     & $iscc /DAppVersion=$Version $paths.IssScript

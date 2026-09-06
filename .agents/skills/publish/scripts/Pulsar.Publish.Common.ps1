@@ -118,16 +118,19 @@ function Assert-Publish {
     if (-not (Test-Path -LiteralPath $assetsDir -PathType Container)) {
         throw "Missing publish artifact directory: $assetsDir"
     }
-    $cor3 = @(Get-ChildItem -LiteralPath $Dir -Filter '*_cor3.dll' -File)
-    if ($RequireCor3 -and $cor3.Count -eq 0) {
-        throw "No *_cor3.dll found in $Dir (full)"
+    # .NET 8 single-file publish embeds the runtime in Pulsar.exe (IncludeNativeLibrariesForSelfExtract),
+    # so there are no separate *_cor3.dll files. Distinguish full vs portable by exe size:
+    # full (self-contained) >= 50 MB; portable (framework-dependent) < 20 MB.
+    $exe = Get-Item -LiteralPath (Join-Path $Dir 'Pulsar.exe')
+    $exeMb = [math]::Round($exe.Length / 1MB, 1)
+    if ($RequireCor3 -and $exe.Length -lt 50MB) {
+        throw "full Pulsar.exe too small ($exeMb MB); self-contained runtime not embedded: $Dir"
     }
-    if (-not $RequireCor3 -and $cor3.Count -gt 0) {
-        throw "portable must not contain *_cor3.dll: $Dir"
+    if (-not $RequireCor3 -and $exe.Length -ge 20MB) {
+        throw "portable Pulsar.exe too large ($exeMb MB); may accidentally include runtime: $Dir"
     }
     $assetCount = @(Get-ChildItem -LiteralPath $assetsDir -Recurse -File).Count
-    $exe = Get-Item -LiteralPath (Join-Path $Dir 'Pulsar.exe')
-    Write-Output "Valid: $Dir exe=$($exe.Length) bytes, cor3=$($cor3.Count), assets=$assetCount"
+    Write-Output "Valid: $Dir exe=$exeMb MB, assets=$assetCount"
 }
 
 function Test-ZipMagic {

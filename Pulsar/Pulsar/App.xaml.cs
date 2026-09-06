@@ -353,6 +353,7 @@ namespace Pulsar
             // configured there too), so the startup module no longer holds it.
             serviceCollection.AddSingleton<Lazy<IGlobalMouseService>>(sp => new Lazy<IGlobalMouseService>(() => sp.GetRequiredService<IGlobalMouseService>()));
             serviceCollection.AddSingleton<Lazy<ITutorialService>>(sp => new Lazy<ITutorialService>(() => sp.GetRequiredService<ITutorialService>()));
+            serviceCollection.AddSingleton<Lazy<Services.Updates.UpdateOrchestrator>>(sp => new Lazy<Services.Updates.UpdateOrchestrator>(() => sp.GetRequiredService<Services.Updates.UpdateOrchestrator>()));
             serviceCollection.AddSingleton<Func<RadialMenuWindow>>(sp => () => sp.GetRequiredService<RadialMenuWindow>());  // WPF InitializeComponent
             serviceCollection.AddSingleton<Func<FirstLaunchSetupWizardViewModel>>(sp => () => sp.GetRequiredService<FirstLaunchSetupWizardViewModel>());  // AddTransient → avoid captive
             // [Architecture review 2026-09-05, candidate 1] CreateProfileStrategy opens
@@ -517,6 +518,26 @@ namespace Pulsar
                     Shutdown();
                 }
             }, DispatcherPriority.Loaded);
+
+            // --settings flag (QA/debug): open Settings window after startup completes.
+            // Does not affect production behavior (flag absent by default).
+            if (Array.IndexOf(e.Args, "--settings") >= 0)
+            {
+                Dispatcher.BeginInvoke(async () =>
+                {
+                    await Task.Delay(2500);
+                    try
+                    {
+                        var settingsWindow = Services.GetRequiredService<Views.SettingsWindow>();
+                        settingsWindow.Show();
+                        Log.Information("[--settings] SettingsWindow opened via CLI flag");
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "[--settings] Failed to open SettingsWindow");
+                    }
+                }, DispatcherPriority.Background);
+            }
 
         }
 
