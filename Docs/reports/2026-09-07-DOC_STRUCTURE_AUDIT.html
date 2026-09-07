@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pulsar 文档结构审计报告 · 2026-09-07</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --ink:#1a2230; --muted:#5b6676; --line:#e2e6ec;
+    --accent:#2563eb; --red:#dc2626; --orange:#ea580c; --yellow:#ca8a04; --green:#16a34a;
+    --purple:#7c3aed; --code-bg:#eef1f5;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.65;font-size:15px;padding:32px 16px}
+  .wrap{max-width:1080px;margin:0 auto}
+  header{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:28px 32px;margin-bottom:24px}
+  h1{font-size:26px;margin-bottom:6px}
+  .meta{color:var(--muted);font-size:13px}
+  h2{font-size:20px;margin:36px 0 14px;padding-bottom:8px;border-bottom:2px solid var(--line)}
+  h2 .tag{font-size:12px;vertical-align:middle;margin-left:8px}
+  h3{font-size:16px;margin:18px 0 8px}
+  p{margin:8px 0}
+  ul,ol{margin:8px 0 8px 22px}
+  li{margin:4px 0}
+  code{background:var(--code-bg);border-radius:4px;padding:1px 6px;font-family:Consolas,monospace;font-size:13px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 24px;margin:14px 0}
+  .tldr{border-left:4px solid var(--accent)}
+  .tldr li{margin:6px 0}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14px;background:var(--card)}
+  th{background:#eef2f7;text-align:left;padding:9px 12px;border:1px solid var(--line);font-size:13px}
+  td{padding:8px 12px;border:1px solid var(--line);vertical-align:top}
+  tr:nth-child(even) td{background:#fafbfc}
+  .p0{background:var(--red);color:#fff;padding:2px 9px;border-radius:10px;font-size:12px;font-weight:600}
+  .p1{background:var(--orange);color:#fff;padding:2px 9px;border-radius:10px;font-size:12px;font-weight:600}
+  .p2{background:var(--yellow);color:#fff;padding:2px 9px;border-radius:10px;font-size:12px;font-weight:600}
+  .p3{background:var(--green);color:#fff;padding:2px 9px;border-radius:10px;font-size:12px;font-weight:600}
+  .ok{color:var(--green);font-weight:600}
+  .bad{color:var(--red);font-weight:600}
+  .warn{color:var(--orange);font-weight:600}
+  .tree{font-family:Consolas,"Courier New",monospace;font-size:13.5px;background:#0f172a;color:#dbe4f0;border-radius:12px;padding:22px 26px;overflow-x:auto;line-height:1.75;white-space:pre}
+  .tree .lock{color:#f0b429}
+  .tree .new{color:#4ade80;font-weight:bold}
+  .tree .move{color:#60a5fa}
+  .tree .del{color:#f87171;text-decoration:line-through}
+  .tree .merge{color:#c084fc}
+  .tree .keep{color:#94a3b8}
+  .tree .comment{color:#64748b}
+  .legend{font-size:13px;color:var(--muted);margin:6px 0 12px}
+  .legend span{margin-right:16px;white-space:nowrap}
+  .legend b{font-weight:700}
+  .flow{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+  .stage{flex:1;min-width:240px;background:var(--card);border:1px solid var(--line);border-top:3px solid var(--accent);border-radius:10px;padding:14px 16px}
+  .stage b{display:block;margin-bottom:6px}
+  .stage small{color:var(--muted)}
+  footer{margin:40px 0 12px;color:var(--muted);font-size:12.5px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Pulsar 仓库文档结构审计报告</h1>
+  <div class="meta">日期：2026-09-07 · 范围：全仓非代码文档（openspec/ 除外，按约定不审；artifacts/ 仅建议不动手）· 方法：全量文件清点 + 语义重叠抽查 + 交叉引用 Grep 核实</div>
+</header>
+
+<div class="card tldr">
+  <h3 style="margin-top:0">🔑 关键判断摘要（TL;DR）</h3>
+  <ul>
+    <li><b>最大的问题不是"乱"，而是"三个权威源"：</b>插件体系概念在 <code>ARCHITECTURE.md §2.2/§3</code>、<code>PLUGIN_DEVELOPMENT.md</code>、<code>Docs/architecture/PLUGIN_SYSTEM.md</code> 三处平行书写（抽查 IPulsarPlugin/断路器内容命中 14/17/9 处），任何一处改动都会造成另外两处静默漂移。</li>
+    <li><b>Docs/README.md 这张"目录地图"已经失真：</b>自诩 v5.2.0 登记了 11 个目录，实际 Docs/ 有 17 个一级条目；未登记的 6 个目录（demo/journal/manual/media/screenshots/diagrams）+ 2 个散文件，且计数列几乎全错（lessons 24→29、decisions 19→26、ops 1→3）。索引是路由中枢，它失真 = 所有文档路由失真。</li>
+    <li><b>"怎么做事"的规范写了三份且互相脱节：</b><code>DEVELOPER.md</code>（架构复述+文档导航）、<code>Docs/CONTRIBUTING.md</code>（v1.0.0，其 .draft.md 流程全仓零使用、"全英文"规则被现实推翻）与 <code>AGENTS.md</code>。</li>
+    <li><b>确认孤儿：</b><code>Docs/screenshots/</code> 5 个文件零外部引用，且 journal 2026-09-07 已裁定弃用 → 可删。</li>
+    <li><b>对外门面有硬伤：</b>README/README_EN 徽章与下载链接停在 v1.10.0，而 CHANGELOG 已发布 [1.11.0]（2026-09-06）。</li>
+    <li><b>结构病是双向的：</b>既有过细（roadmap/proposals/agents/diagrams 各 2-3 文件的"一目录一文件味"），也有过笼（archive/ 62 文件平铺，其中 54 个来自 2026-03）。</li>
+  </ul>
+</div>
+
+<!-- ============ 问题清单 ============ -->
+<h2>一、问题清单（P0–P3）</h2>
+<table>
+  <tr><th style="width:60px">级别</th><th style="width:210px">问题</th><th>证据（已核实）</th><th style="width:280px">处置建议</th></tr>
+  <tr><td><span class="p0">P0</span></td><td>插件概念三处权威源</td><td>ARCHITECTURE §2.2/§3.1-3.2、PLUGIN_DEVELOPMENT §核心概念/接口参考、Docs/architecture/PLUGIN_SYSTEM.md 三处平行维护；grep 命中 14/17/9</td><td>收敛为单一权威源：<b>Docs/architecture/PLUGIN_SYSTEM.md</b> 管概念；ARCHITECTURE 收敛为概览+链接；PLUGIN_DEVELOPMENT 只留开发者 how-to，概念段改引用</td></tr>
+  <tr><td><span class="p0">P0</span></td><td>Docs/README 目录地图失真</td><td>登记 11 目录 vs 实际 17 条目；计数列全错（lessons/decisions/ops 等）</td><td>重写为 v6.0：全部目录登记 + 计数改为"自动可校验"或删除具体数字</td></tr>
+  <tr><td><span class="p0">P0</span></td><td>README 版本滞后</td><td>README/README_EN 徽章+下载链接 = v1.10.0；CHANGELOG [1.11.0] 2026-09-06</td><td>同步到 v1.11.0；在 ops/RELEASE_CHECKLIST 增加"更新 README 徽章"检查项（若尚无）</td></tr>
+  <tr><td><span class="p0">P0</span></td><td>screenshots/ 孤儿目录</td><td>5 个 png 零外部引用；journal 2026-09-07:329 已裁定删除 README 截图段</td><td>整个目录删除（git 历史可找回，无需归档）</td></tr>
+  <tr><td><span class="p1">P1</span></td><td>三份"做事规范"互相脱节</td><td>DEVELOPER.md §架构概览/文档导航 ↔ AGENTS §2/§4/§5；CONTRIBUTING 的 .draft.md 流程零实际使用、全英文规则被 manual/reports 等中文文档推翻</td><td>分工重划：DEVELOPER.md = 人用入门（环境/构建/发布）；AGENTS.md = AI 内核（不变量+路由）；CONTRIBUTING 重写为与现行实践一致的文档生命周期（或并入 AGENTS §4）</td></tr>
+  <tr><td><span class="p1">P1</span></td><td>Release Notes 三处同构</td><td>根 RELEASE_NOTES.md（{VERSION} 模板）+ Docs/ops/RELEASE_NOTES-1.11.0.md（实例）+ CHANGELOG 段落同构</td><td>模板迁入 <code>Docs/ops/TEMPLATE_RELEASE_NOTES.md</code>；历史实例按版本留在 ops/ 或归档；根目录该文件移除（不在锁定清单内）</td></tr>
+  <tr><td><span class="p1">P1</span></td><td>roadmap/ + proposals/ 过细</td><td>各 3 文件；Docs/README 自己都写明"A directory with one file is a smell"</td><td>合并为 <code>Docs/planning/</code>（6 文件），子主题用文件名前缀区分</td></tr>
+  <tr><td><span class="p1">P1</span></td><td>diagrams/ 与 architecture/ 分离</td><td>2 个文件（架构图 html/json）仅 journal 引用，未入任何索引</td><td>并入 <code>Docs/architecture/</code>——架构图与架构文档同处</td></tr>
+  <tr><td><span class="p2">P2</span></td><td>archive/ 62 文件平铺</td><td>2026-03 ×54、2026-06 ×1、2026-08 ×4、2026-09 ×2</td><td>按月分桶：<code>archive/2026-03/</code> 等；archive/README.md 保留索引</td></tr>
+  <tr><td><span class="p2">P2</span></td><td>Docs/Plugins 命名不一致</td><td>目录大写 P，与其余目录（全小写）及 CONTEXT.md 术语不一致</td><td>改名 <code>Docs/plugins/</code>（小写），同步修 8 个文件的互链</td></tr>
+  <tr><td><span class="p2">P2</span></td><td>demo/ 与 media/ 职责重叠</td><td>demo/ 3 gif+3 mp4 属发布演示资产；media/release/README.md:37 已定义媒体边界，demo 未纳入</td><td>demo/ 并入 <code>Docs/media/release/</code>，媒体单一出口（可选，涉及二进制移动）</td></tr>
+  <tr><td><span class="p2">P2</span></td><td>PLUGIN_QUICKSTART.md 未入索引</td><td>位于 Docs/ 根但目录地图无记录；内容是 PLUGIN_DEVELOPMENT 的精简子集（漏斗关系成立，非真冗余）</td><td>保留漏斗定位，纳入 Docs/README 索引；或并入 PLUGIN_DEVELOPMENT 首章</td></tr>
+  <tr><td><span class="p3">P3</span></td><td>reports/ 半活资产无保鲜期</td><td>8 个文件（市场/竞品 HTML）仅互引+journal 引用</td><td>在 Docs/README 标注"截至 2026-09 有效"，过期移 archive</td></tr>
+  <tr><td><span class="p3">P3</span></td><td>ARCHITECTURE 自相矛盾标注</td><td>标头 v4.0.0（2026-03-01）但正文 §2.2 写 "Plugin System v4.1"</td><td>收敛时一并修正；此类文件今后不加"Last Updated"以外的人工版本号，避免再漂移</td></tr>
+</table>
+
+<!-- ============ 结构评估 ============ -->
+<h2>二、三个审计维度逐一回答</h2>
+
+<div class="card">
+<h3>① 冗余 / 冲突</h3>
+<p><b class="bad">存在，且集中在"概念复述"上。</b>核心冗余链有三条：</p>
+<ul>
+  <li><b>插件体系</b>：ARCHITECTURE ↔ PLUGIN_DEVELOPMENT ↔ architecture/PLUGIN_SYSTEM.md（P0）。</li>
+  <li><b>做事规范</b>：DEVELOPER ↔ CONTRIBUTING ↔ AGENTS（P1）。CONTRIBUTING 内部还自相矛盾：要求"全英文"，但仓库现实是 manual/reports/journal 大量中文。</li>
+  <li><b>发布文案</b>：RELEASE_NOTES 模板 / 实例 / CHANGELOG 三处同构（P1）。</li>
+</ul>
+<p>无冲突但需登记的良性重叠：<code>PLUGIN_QUICKSTART → PLUGIN_DEVELOPMENT</code>（快读→深读漏斗，保留）。</p>
+</div>
+
+<div class="card">
+<h3>② 文件结构语义是否合适</h3>
+<p><b class="warn">大体骨架是对的，问题是"编外"。</b>architecture/guides/lessons/decisions 四类核心目录语义清晰、命名一致，是本仓库的资产。<span class="ok">✅ 保留不动。</span></p>
+<p>问题在于 6 个目录脱离索引运行：journal（ADR-019 单源，引用最密集的活资产）、manual（发布门禁级）、media/release（manual 4 处直链）都没被登记——它们恰恰是最该被路由到的目录。<b>语义没错，治理错了。</b></p>
+<p>归属错位的文件：<code>Docs/diagrams/</code>（应属 architecture）、根 <code>RELEASE_NOTES.md</code>（应属 ops）、<code>Docs/screenshots/</code>（应删除）。</p>
+</div>
+
+<div class="card">
+<h3>③ 过细化 vs 过笼统</h3>
+<table>
+  <tr><th>方向</th><th>对象</th><th>判断</th></tr>
+  <tr><td class="bad">过细</td><td>roadmap/(3)、proposals/(3)、agents/(3)、diagrams/(2)</td><td>"一目录一两文件"。roadmap+proposals 可合并；diagrams 并入 architecture；agents/ 是机器配置，保持独立但必须登记（内容特殊，不建议合并）</td></tr>
+  <tr><td class="bad">过细</td><td>根目录 10 个 md</td><td>其中 AGENTS/CLAUDE/README 位置锁定（harness 发现机制依赖）；其余 7 个有收敛空间（见结构提案）</td></tr>
+  <tr><td class="warn">过笼</td><td>archive/ 62 文件平铺</td><td>54 个来自同一个月，检索靠肉眼扫文件名 → 按月分桶</td></tr>
+  <tr><td class="warn">过笼</td><td>guides/ 9 文件混装</td><td>实际混了三类受众：UI 规范（人看）、AI prompt（AI 看）、操作手册（运维）。量还不大，暂不拆，但新文件入 guide 前先问受众</td></tr>
+</table>
+</div>
+
+<!-- ============ 双语处置 ============ -->
+<h2>三、双语内容处置（供你复核）</h2>
+<table>
+  <tr><th>对象</th><th>现状核实</th><th>建议</th></tr>
+  <tr><td><code>README.md / README_EN.md</code></td><td class="ok">结构完全同步 ✅，但双双滞后 v1.10.0</td><td><b>保留双语</b>（对外门面是双语刚需）；同步版本；RELEASE_CHECKLIST 增加"双 README 同步"项</td></tr>
+  <tr><td><code>Docs/manual/ en/zh 各 5 章</code></td><td class="ok">活资产，发布门禁强制核链（RELEASE_CHECKLIST 引用）</td><td><b>保留双语</b>，结构已对齐，无需动作</td></tr>
+  <tr><td><code>Docs/CONTRIBUTING.md</code>"全英文"规则</td><td class="bad">已被现实推翻（manual/zh、reports、journal 大量中文且 journal 是 ADR-019 认可的单源）</td><td>重写时废除全英文强规，改为：<b>面向用户的内容双语（README/manual）；面向 AI 与贡献者的内容中文优先</b></td></tr>
+  <tr><td><code>Docs/Plugins/</code> 中文插件文档</td><td class="ok">单语中文，无对应英文副本</td><td>维持单语（受众为中文用户），入索引即可</td></tr>
+</table>
+
+<!-- ============ 目标结构 ============ -->
+<h2>四、修改后的目标结构（可视化）</h2>
+<p class="legend">
+  <span><b class="lock" style="color:#f0b429">▉</b>位置锁定</span>
+  <span><b class="keep" style="color:#94a3b8">＝</b>保留</span>
+  <span><b class="new" style="color:#4ade80">＋</b>新建/合并</span>
+  <span><b class="move" style="color:#60a5fa">→</b>迁入</span>
+  <span><b class="del" style="color:#f87171">✕</b>删除</span>
+</p>
+<div class="tree"><code>Pulsar_Project/
+├── README.md · README_EN.md          <span class="lock">[锁定]</span> <span class="comment">对外门面，双语同步，徽章→v1.11.0</span>
+├── AGENTS.md                          <span class="lock">[锁定]</span> <span class="comment">AI 内核：不变量 · 坑点 Top5 · 任务路由（唯一）</span>
+├── CLAUDE.md                          <span class="lock">[锁定]</span> <span class="comment">OpenWiki 指针，不动</span>
+├── ARCHITECTURE.md                    <span class="merge">[收敛]</span> <span class="comment">概览层：愿景 + 分层图 + 链接；接口/断路器代码段下沉到权威源</span>
+├── CONTEXT.md                         <span class="keep">[保留]</span> <span class="comment">领域术语单一源</span>
+├── PLUGIN_DEVELOPMENT.md              <span class="keep">[保留]</span> <span class="comment">插件开发唯一 how-to 权威源（概念段改引用）</span>
+├── DEVELOPER.md                       <span class="merge">[收敛]</span> <span class="comment">开发者入门：环境/构建/发布；架构复述删除，指向权威源</span>
+├── CHANGELOG.md                       <span class="keep">[保留]</span> <span class="comment">唯一变更史</span>
+├── RELEASE_NOTES.md                   <span class="move">[迁出]</span> <span class="comment">→ Docs/ops/TEMPLATE_RELEASE_NOTES.md</span>
+└── Docs/
+    ├── README.md                      <span class="merge">[重写 v6]</span> <span class="comment">★ 索引中枢：目录全登记（17→13 条目）+ 任务路由</span>
+    ├── CONTRIBUTING.md                <span class="merge">[重写]</span> <span class="comment">现行文档生命周期；删 .draft.md 流程；废全英文强规</span>
+    ├── architecture/                  <span class="keep">[聚合]</span> <span class="comment">概念权威层</span>
+    │   ├── PLUGIN_SYSTEM.md           <span class="new">★ 唯一插件概念权威源</span> <span class="comment">（吸收 ARCHITECTURE §2.2 细节）</span>
+    │   ├── DIALOG_SYSTEM.md · INPUT_INJECTION.md   <span class="keep">[保留]</span>
+    │   └── pulsar-plugin-system.architecture.html/json  <span class="move">← 自 diagrams/ 迁入</span>
+    ├── guides/                        <span class="keep">[保留]</span> <span class="comment">9 个 how-to</span>
+    ├── lessons/                       <span class="keep">[保留]</span> <span class="comment">29 个坑点（Symptom→Root cause→Pattern）</span>
+    ├── decisions/                     <span class="keep">[保留]</span> <span class="comment">ADR 001–026，append-only</span>
+    ├── plugins/                       <span class="merge">[改名]</span> <span class="comment">← Docs/Plugins/（统一小写）</span>
+    ├── manual/                        <span class="keep">[保留]</span> <span class="comment">双语用户手册 en/zh（发布门禁）</span>
+    ├── ops/
+    │   ├── BUILD_AND_RUN.md · RELEASE_CHECKLIST.md   <span class="keep">[保留]</span>
+    │   ├── TEMPLATE_RELEASE_NOTES.md  <span class="move">← 自根目录迁入</span>
+    │   └── RELEASE_NOTES-1.11.0.md    <span class="keep">[保留]</span> <span class="comment">历史实例随版本累积</span>
+    ├── planning/                      <span class="new">[合并]</span> <span class="comment">← roadmap/ + proposals/（6 文件）</span>
+    ├── reports/                       <span class="keep">[保留]</span> <span class="comment">研究报告，标注保鲜期</span>
+    ├── journal/                       <span class="keep">[保留]</span> <span class="comment">ADR-019 单源工作记忆，不动</span>
+    ├── media/
+    │   ├── release/                   <span class="keep">[保留]</span> <span class="comment">入 git 的发布媒体（manual 直链）</span>
+    │   └── demo/ → release/           <span class="move">[可选归位]</span> <span class="comment">演示 gif/mp4 统一出口（涉二进制，可后置）</span>
+    └── archive/
+        ├── 2026-03/ · 2026-06/ · 2026-08/ · 2026-09/   <span class="new">[分桶]</span> <span class="comment">62 文件按月归位</span>
+        └── <span class="del">screenshots/ → 删除（零引用孤儿）</span>
+</code></div>
+<p class="legend" style="margin-top:10px">一级条目：Docs/ 17 → <b>13</b>；根目录 md：10 → <b>9</b>（RELEASE_NOTES 迁出）。journal、decisions、lessons、openspec、.agents/.opencode/.workbuddy 一律不动。</p>
+
+<!-- ============ 迁移路线 ============ -->
+<h2>五、迁移路线图（三阶段，每阶段可独立 commit）</h2>
+<div class="flow">
+  <div class="stage">
+    <b>阶段 1 · 止血（纯低风险）</b>
+    <small>
+    ① 删 Docs/screenshots/（零引用）<br>
+    ② README/README_EN 徽章+链接 → v1.11.0<br>
+    ③ 重写 Docs/README.md v6（全登记+修计数）<br>
+    ④ 重写 CONTRIBUTING.md<br>
+    ⑤ diagrams/ → architecture/<br>
+    风险：几乎为零；引用修复 ≈ 10 处
+    </small>
+  </div>
+  <div class="stage">
+    <b>阶段 2 · 收敛（动内容）</b>
+    <small>
+    ① 插件概念收敛到 PLUGIN_SYSTEM.md，<br>ARCHITECTURE/PLUGIN_DEVELOPMENT 段落改引用<br>
+    ② DEVELOPER.md 删架构复述、CONTRIBUTING 并轨<br>
+    ③ RELEASE_NOTES 模板 → ops/<br>
+    ④ roadmap+proposals → planning/<br>
+    风险：中；需逐文件 diff 复核，引用修复 ≈ 30 处（AGENTS.md 占大头）
+    </small>
+  </div>
+  <div class="stage">
+    <b>阶段 3 · 归位（结构整形）</b>
+    <small>
+    ① archive/ 按月分桶（62 文件）<br>
+    ② Docs/Plugins → plugins/<br>
+    ③ demo/ → media/release/（可选）<br>
+    ④ PLUGIN_QUICKSTART 入索引<br>
+    风险：低-中（多为移动+改链）；建议每步单独 commit
+    </small>
+  </div>
+</div>
+
+<div class="card">
+<h3>引用修复工作量预估</h3>
+<p>全仓 Grep 显示 35 个文件存在对 Docs 子目录的路径引用，其中 <code>AGENTS.md</code> 一家约 20 处（lessons×5、ops、architecture×3、guides×3、decisions×3、journal、archive、agents、CONTRIBUTING、Docs/README）。本次提案刻意<b>不改 architecture/guides/lessons/decisions/journal 五个高频引用目录的路径</b>，正是为了把引用修复量压到最小——动的只有 diagrams→architecture（3 处）、roadmap/proposals→planning（约 8 处）、Plugins→plugins（约 10 处）。</p>
+</div>
+
+<!-- ============ artifacts ============ -->
+<h2>六、artifacts/ 专项建议（按约定：只建议，不动手）</h2>
+<div class="card">
+<ul>
+  <li><b class="bad">P1</b>　<code>Pulsar-1.11.1-full.zip / portable.zip</code>（安装包）不应进 git：建议移出仓库，由 GitHub Release 附件托管，并将 <code>artifacts/*.zip</code> 加入 .gitignore。</li>
+  <li><b class="warn">P2</b>　30 个 mp4 / 40 个 png 属生成类产物（演示/评测媒体），与 <code>Docs/media/release/</code> 的"入 git 发布媒体"职责重叠。建议：<b>确需长期保留的</b>移入 Docs/media/ 并入 git；<b>其余</b>整个 artifacts/ 加入 .gitignore，仅本地留存。</li>
+  <li><b class="warn">P2</b>　24 个 txt + 7 个 json 是评测/审计中间产物，无索引无引用 → gitignore 即可。</li>
+  <li><b class="ok">P3</b>　若采纳，artifacts/ 从仓库"文档版图"中除名，本次目标结构即无需为其留位。</li>
+</ul>
+</div>
+
+<!-- ============ 不做 ============ -->
+<h2>七、明确不做的事</h2>
+<div class="card">
+<ul>
+  <li><b>openspec/</b>：按你的约定不审不动（347 文件自成体系，有自己的工作流）。</li>
+  <li><b>AGENTS.md / CLAUDE.md / README.md 的位置</b>：锁定。harness（Claude Code/Cursor/opencode/OpenWiki）的发现机制依赖根路径；只改内容。</li>
+  <li><b>journal/、decisions/、lessons/</b>：ADR-019/021 治理下的 append-only 资产，结构不动。</li>
+  <li><b>manual/ 双语</b>：发布门禁级资产，双语保留。</li>
+  <li><b>所有历史 ADR / archive 内容</b>：不做追溯改写（诚实文档 + append-only 原则），只做位置归位。</li>
+</ul>
+</div>
+
+<footer>
+  Pulsar 文档结构审计 · 2026-09-07 · 生成于 WorkBuddy 会话 · 关键论断均经 Grep/Read 二次核实（子代理结论 100% 抽查通过）<br>
+  附注（2026-09-08 重建）：原文件因 Docs/ 目录被外部进程删除而丢失，本版由会话上下文逐字重建。
+</footer>
+
+</div>
+</body>
+</html>
