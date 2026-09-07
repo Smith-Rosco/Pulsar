@@ -75,7 +75,7 @@ Operational guide for agents working on the **Pulsar** codebase (.NET 8, WPF/Win
 | Propose / track a spec change | [openspec/](./openspec/) — `/opsx-propose` … `/opsx-archive` (delivery `both`, see `.opencode/commands/`) |
 | Cross-session working memory | `Docs/journal/` — single store (ADR-019). `NEXT.md` + per-day files (session-journal skill, ritual §8); oversized days → `Docs/journal/archive/` (ADR-021). Never duplicate into harness-native memory. |
 | Roadmap & design proposals | [Docs/planning/](./Docs/planning/) |
-| Historical fix reports (not current truth) | [Docs/archive/](./Docs/archive/) — date-prefixed `YYYY-MM-DD-NAME.md` |
+| Historical fix reports (not current truth) | [Docs/archive/](./Docs/archive/) — date-prefixed `YYYY-MM-DD-NAME.md`, bucketed by month (`2026-03/`, …) |
 
 ---
 

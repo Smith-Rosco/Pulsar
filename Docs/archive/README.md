@@ -25,21 +25,21 @@ Files are named `YYYY-MM-DD-DESCRIPTIVE_NAME.md`. Nothing here is current truth 
 
 | Document | Date | Description |
 |----------|------|-------------|
-| [2026-03-02-HANDOVER_V4.1.0.md](./2026-03-02-HANDOVER_V4.1.0.md) | 2026-03-02 | Final handover document (v4.1.0) - Superseded by [AGENTS.md](../../AGENTS.md) |
-| [2026-03-02-HANDOVER.md](./2026-03-02-HANDOVER.md) | 2026-03-02 | Intermediate handover (Phase 2 Task 2) |
-| [2026-03-02-HANDOVER_PHASE1.md](./2026-03-02-HANDOVER_PHASE1.md) | 2026-03-02 | Phase 1 completion handover |
-| [2026-03-02-HANDOVER_PHASE2.md](./2026-03-02-HANDOVER_PHASE2.md) | 2026-03-02 | Phase 2 planning handover |
+| [2026-03-02-HANDOVER_V4.1.0.md](./2026-03/2026-03-02-HANDOVER_V4.1.0.md) | 2026-03-02 | Final handover document (v4.1.0) - Superseded by [AGENTS.md](../../AGENTS.md) |
+| [2026-03-02-HANDOVER.md](./2026-03/2026-03-02-HANDOVER.md) | 2026-03-02 | Intermediate handover (Phase 2 Task 2) |
+| [2026-03-02-HANDOVER_PHASE1.md](./2026-03/2026-03-02-HANDOVER_PHASE1.md) | 2026-03-02 | Phase 1 completion handover |
+| [2026-03-02-HANDOVER_PHASE2.md](./2026-03/2026-03-02-HANDOVER_PHASE2.md) | 2026-03-02 | Phase 2 planning handover |
 
 ### 2. Bookmarklet Runner v2.0.0 (2026-03-04)
 
 | Document | Purpose |
 |----------|---------|
-| [2026-03-04-BOOKMARKLET_V2_IMPLEMENTATION_SUMMARY.md](./2026-03-04-BOOKMARKLET_V2_IMPLEMENTATION_SUMMARY.md) | Complete implementation summary |
-| [2026-03-04-BOOKMARKLET_V2_GIT_COMMIT_SUMMARY.md](./2026-03-04-BOOKMARKLET_V2_GIT_COMMIT_SUMMARY.md) | Git commit report (commits: 62ecf39, 097ec30) |
-| [2026-03-04-BOOKMARKLET_V2_QUICK_REFERENCE.md](./2026-03-04-BOOKMARKLET_V2_QUICK_REFERENCE.md) | Quick reference guide |
-| [2026-03-04-BOOKMARKLET_V2_TESTING_GUIDE.md](./2026-03-04-BOOKMARKLET_V2_TESTING_GUIDE.md) | Testing procedures |
-| [2026-03-04-BOOKMARKLET_V2_TEST_ERROR_CHECKLIST.md](./2026-03-04-BOOKMARKLET_V2_TEST_ERROR_CHECKLIST.md) | Error testing checklist |
-| [2026-03-04-BOOKMARKLET_V2_FINAL_DIAGNOSIS.md](./2026-03-04-BOOKMARKLET_V2_FINAL_DIAGNOSIS.md) | Issue diagnosis report |
+| [2026-03-04-BOOKMARKLET_V2_IMPLEMENTATION_SUMMARY.md](./2026-03/2026-03-04-BOOKMARKLET_V2_IMPLEMENTATION_SUMMARY.md) | Complete implementation summary |
+| [2026-03-04-BOOKMARKLET_V2_GIT_COMMIT_SUMMARY.md](./2026-03/2026-03-04-BOOKMARKLET_V2_GIT_COMMIT_SUMMARY.md) | Git commit report (commits: 62ecf39, 097ec30) |
+| [2026-03-04-BOOKMARKLET_V2_QUICK_REFERENCE.md](./2026-03/2026-03-04-BOOKMARKLET_V2_QUICK_REFERENCE.md) | Quick reference guide |
+| [2026-03-04-BOOKMARKLET_V2_TESTING_GUIDE.md](./2026-03/2026-03-04-BOOKMARKLET_V2_TESTING_GUIDE.md) | Testing procedures |
+| [2026-03-04-BOOKMARKLET_V2_TEST_ERROR_CHECKLIST.md](./2026-03/2026-03-04-BOOKMARKLET_V2_TEST_ERROR_CHECKLIST.md) | Error testing checklist |
+| [2026-03-04-BOOKMARKLET_V2_FINAL_DIAGNOSIS.md](./2026-03/2026-03-04-BOOKMARKLET_V2_FINAL_DIAGNOSIS.md) | Issue diagnosis report |
 
 **Current Documentation**: See [Docs/Plugins/BookmarkletRunner.md](../Plugins/BookmarkletRunner.md)
 
@@ -47,25 +47,25 @@ Files are named `YYYY-MM-DD-DESCRIPTIVE_NAME.md`. Nothing here is current truth 
 
 | Document | Date | Description |
 |----------|------|-------------|
-| [2026-03-02-PLUGIN_SYSTEM_MODERNIZATION_PHASE1.md](./2026-03-02-PLUGIN_SYSTEM_MODERNIZATION_PHASE1.md) | 2026-03-02 | Phase 1 completion report |
-| [2026-03-01-PLUGIN_SETTINGS_MIGRATION.md](./2026-03-01-PLUGIN_SETTINGS_MIGRATION.md) | 2026-03-01 | Settings migration guide |
-| [2026-03-01-REFACTORING_REPORT.md](./2026-03-01-REFACTORING_REPORT.md) | 2026-03-01 | Refactoring summary |
+| [2026-03-02-PLUGIN_SYSTEM_MODERNIZATION_PHASE1.md](./2026-03/2026-03-02-PLUGIN_SYSTEM_MODERNIZATION_PHASE1.md) | 2026-03-02 | Phase 1 completion report |
+| [2026-03-01-PLUGIN_SETTINGS_MIGRATION.md](./2026-03/2026-03-01-PLUGIN_SETTINGS_MIGRATION.md) | 2026-03-01 | Settings migration guide |
+| [2026-03-01-REFACTORING_REPORT.md](./2026-03/2026-03-01-REFACTORING_REPORT.md) | 2026-03-01 | Refactoring summary |
 
 ### 4. Phase 2 Task Reports
 
 | Document | Task | Description |
 |----------|------|-------------|
-| [2026-03-02-PHASE2_TASKS.md](./2026-03-02-PHASE2_TASKS.md) | Overview | Phase 2 task planning |
-| [2026-03-02-HANDOVER_PHASE2_TASK1.md](./2026-03-02-HANDOVER_PHASE2_TASK1.md) | Task 1 | Task 1 handover |
-| [2026-03-02-PHASE2_TASK1_COMPLETION_REPORT.md](./2026-03-02-PHASE2_TASK1_COMPLETION_REPORT.md) | Task 1 | Task 1 completion |
-| [2026-03-02-PHASE2_TASK2_COMPLETION_REPORT.md](./2026-03-02-PHASE2_TASK2_COMPLETION_REPORT.md) | Task 2 | Permission system completion |
-| [2026-03-02-PHASE2_TASK3_SUMMARY.md](./2026-03-02-PHASE2_TASK3_SUMMARY.md) | Task 3 | Task 3 summary |
-| [2026-03-02-PHASE2_TASK4_COMPLETION_REPORT.md](./2026-03-02-PHASE2_TASK4_COMPLETION_REPORT.md) | Task 4 | Task 4 completion |
-| [2026-03-02-PHASE2_TASK5_COMPLETION_SUMMARY.md](./2026-03-02-PHASE2_TASK5_COMPLETION_SUMMARY.md) | Task 5 | Task 5 summary |
-| [2026-03-02-PHASE2_TASK5_TEST_REPORT.md](./2026-03-02-PHASE2_TASK5_TEST_REPORT.md) | Task 5 | Task 5 test report |
-| [2026-03-02-DELIVERY_SUMMARY_PHASE2_TASK1.md](./2026-03-02-DELIVERY_SUMMARY_PHASE2_TASK1.md) | Task 1 | Task 1 delivery summary |
-| [2026-03-02-README_PHASE2_TASK1.md](./2026-03-02-README_PHASE2_TASK1.md) | Task 1 | Task 1 README |
-| [2026-03-17-PHASE2_PROGRESS_REPORT.md](./2026-03-17-PHASE2_PROGRESS_REPORT.md) | Progress | Phase 2 progress report |
+| [2026-03-02-PHASE2_TASKS.md](./2026-03/2026-03-02-PHASE2_TASKS.md) | Overview | Phase 2 task planning |
+| [2026-03-02-HANDOVER_PHASE2_TASK1.md](./2026-03/2026-03-02-HANDOVER_PHASE2_TASK1.md) | Task 1 | Task 1 handover |
+| [2026-03-02-PHASE2_TASK1_COMPLETION_REPORT.md](./2026-03/2026-03-02-PHASE2_TASK1_COMPLETION_REPORT.md) | Task 1 | Task 1 completion |
+| [2026-03-02-PHASE2_TASK2_COMPLETION_REPORT.md](./2026-03/2026-03-02-PHASE2_TASK2_COMPLETION_REPORT.md) | Task 2 | Permission system completion |
+| [2026-03-02-PHASE2_TASK3_SUMMARY.md](./2026-03/2026-03-02-PHASE2_TASK3_SUMMARY.md) | Task 3 | Task 3 summary |
+| [2026-03-02-PHASE2_TASK4_COMPLETION_REPORT.md](./2026-03/2026-03-02-PHASE2_TASK4_COMPLETION_REPORT.md) | Task 4 | Task 4 completion |
+| [2026-03-02-PHASE2_TASK5_COMPLETION_SUMMARY.md](./2026-03/2026-03-02-PHASE2_TASK5_COMPLETION_SUMMARY.md) | Task 5 | Task 5 summary |
+| [2026-03-02-PHASE2_TASK5_TEST_REPORT.md](./2026-03/2026-03-02-PHASE2_TASK5_TEST_REPORT.md) | Task 5 | Task 5 test report |
+| [2026-03-02-DELIVERY_SUMMARY_PHASE2_TASK1.md](./2026-03/2026-03-02-DELIVERY_SUMMARY_PHASE2_TASK1.md) | Task 1 | Task 1 delivery summary |
+| [2026-03-02-README_PHASE2_TASK1.md](./2026-03/2026-03-02-README_PHASE2_TASK1.md) | Task 1 | Task 1 README |
+| [2026-03-17-PHASE2_PROGRESS_REPORT.md](./2026-03/2026-03-17-PHASE2_PROGRESS_REPORT.md) | Progress | Phase 2 progress report |
 
 ### 5. Historical Bug-Fix Reports
 
@@ -73,24 +73,24 @@ Migrated from `Docs/lessons/` on 2026-09-02. These narrate a specific fix on a s
 
 | Document | Date | Area |
 |----------|------|------|
-| [2026-03-08-QUICK_SWITCH_FIX_SUMMARY.md](./2026-03-08-QUICK_SWITCH_FIX_SUMMARY.md) | 2026-03-08 | Quick Switch extraction into `QuickSwitchEngine` |
-| [2026-03-08-QUICK_SWITCH_REMOTE_DESKTOP_FIX.md](./2026-03-08-QUICK_SWITCH_REMOTE_DESKTOP_FIX.md) | 2026-03-08 | Quick Switch failure over fullscreen RDP |
-| [2026-03-08-REMOTE_DESKTOP_FOCUS_FIX_REPORT.md](./2026-03-08-REMOTE_DESKTOP_FOCUS_FIX_REPORT.md) | 2026-03-08 | Focus handling over remote desktop |
-| [2026-03-09-ARCHITECTURE_FIX_SUMMARY.md](./2026-03-09-ARCHITECTURE_FIX_SUMMARY.md) | 2026-03-09 | Slots-per-page architecture fix summary |
-| [2026-03-09-DYNAMIC_ADAPTIVE_LAYOUT.md](./2026-03-09-DYNAMIC_ADAPTIVE_LAYOUT.md) | 2026-03-09 | Adaptive layout / visual density |
-| [2026-03-09-DYNAMIC_SLOTS_ARCHITECTURE_FIX.md](./2026-03-09-DYNAMIC_SLOTS_ARCHITECTURE_FIX.md) | 2026-03-09 | Slot overlap beyond 8 slots per page |
-| [2026-03-09-DYNAMIC_SLOTS_PER_PAGE_IMPLEMENTATION.md](./2026-03-09-DYNAMIC_SLOTS_PER_PAGE_IMPLEMENTATION.md) | 2026-03-09 | Configurable slots-per-page implementation |
-| [2026-03-09-DYNAMIC_LAYOUT_TEST_GUIDE.md](./2026-03-09-DYNAMIC_LAYOUT_TEST_GUIDE.md) | 2026-03-09 | Layout testing procedures |
-| [2026-03-09-TODO_SLOTS_PER_PAGE.md](./2026-03-09-TODO_SLOTS_PER_PAGE.md) | 2026-03-09 | Outstanding work for slots per page |
-| [2026-03-09-RDP_MODIFIER_KEY_STUCK.md](./2026-03-09-RDP_MODIFIER_KEY_STUCK.md) | 2026-03-09 | Stuck modifier keys over RDP |
-| [2026-03-15-TUTORIAL_ARCHITECTURE_FIX.md](./2026-03-15-TUTORIAL_ARCHITECTURE_FIX.md) | 2026-03-15 | Tutorial vs. actual architecture mismatch |
-| [2026-03-15-TUTORIAL_FIX_FINAL.md](./2026-03-15-TUTORIAL_FIX_FINAL.md) | 2026-03-15 | Final tutorial architecture fix |
-| [2026-03-15-TUTORIAL_REFACTORING.md](./2026-03-15-TUTORIAL_REFACTORING.md) | 2026-03-15 | Tutorial system refactoring |
-| [2026-03-18-MULTI_WINDOW_SWITCHING_LOGIC.md](./2026-03-18-MULTI_WINDOW_SWITCHING_LOGIC.md) | 2026-03-18 | Multi-window process switching |
-| [2026-03-18-SUBMENU_SLOT_OPACITY_BUG.md](./2026-03-18-SUBMENU_SLOT_OPACITY_BUG.md) | 2026-03-18 | Sub-radial slots greyed out |
-| [2026-03-18-WINEVENT_HOOK_THREAD_CONTEXT.md](./2026-03-18-WINEVENT_HOOK_THREAD_CONTEXT.md) | 2026-03-18 | WinEvent hook never firing |
-| [2026-03-23-SLOT_DIALOG_REFACTOR_HANDOFF.md](./2026-03-23-SLOT_DIALOG_REFACTOR_HANDOFF.md) | 2026-03-23 | Slot dialog refactor handover |
-| [2026-08-29-PULSAR_HANDOFF.md](./2026-08-29-PULSAR_HANDOFF.md) | 2026-08-29 | Project handover |
+| [2026-03-08-QUICK_SWITCH_FIX_SUMMARY.md](./2026-03/2026-03-08-QUICK_SWITCH_FIX_SUMMARY.md) | 2026-03-08 | Quick Switch extraction into `QuickSwitchEngine` |
+| [2026-03-08-QUICK_SWITCH_REMOTE_DESKTOP_FIX.md](./2026-03/2026-03-08-QUICK_SWITCH_REMOTE_DESKTOP_FIX.md) | 2026-03-08 | Quick Switch failure over fullscreen RDP |
+| [2026-03-08-REMOTE_DESKTOP_FOCUS_FIX_REPORT.md](./2026-03/2026-03-08-REMOTE_DESKTOP_FOCUS_FIX_REPORT.md) | 2026-03-08 | Focus handling over remote desktop |
+| [2026-03-09-ARCHITECTURE_FIX_SUMMARY.md](./2026-03/2026-03-09-ARCHITECTURE_FIX_SUMMARY.md) | 2026-03-09 | Slots-per-page architecture fix summary |
+| [2026-03-09-DYNAMIC_ADAPTIVE_LAYOUT.md](./2026-03/2026-03-09-DYNAMIC_ADAPTIVE_LAYOUT.md) | 2026-03-09 | Adaptive layout / visual density |
+| [2026-03-09-DYNAMIC_SLOTS_ARCHITECTURE_FIX.md](./2026-03/2026-03-09-DYNAMIC_SLOTS_ARCHITECTURE_FIX.md) | 2026-03-09 | Slot overlap beyond 8 slots per page |
+| [2026-03-09-DYNAMIC_SLOTS_PER_PAGE_IMPLEMENTATION.md](./2026-03/2026-03-09-DYNAMIC_SLOTS_PER_PAGE_IMPLEMENTATION.md) | 2026-03-09 | Configurable slots-per-page implementation |
+| [2026-03-09-DYNAMIC_LAYOUT_TEST_GUIDE.md](./2026-03/2026-03-09-DYNAMIC_LAYOUT_TEST_GUIDE.md) | 2026-03-09 | Layout testing procedures |
+| [2026-03-09-TODO_SLOTS_PER_PAGE.md](./2026-03/2026-03-09-TODO_SLOTS_PER_PAGE.md) | 2026-03-09 | Outstanding work for slots per page |
+| [2026-03-09-RDP_MODIFIER_KEY_STUCK.md](./2026-03/2026-03-09-RDP_MODIFIER_KEY_STUCK.md) | 2026-03-09 | Stuck modifier keys over RDP |
+| [2026-03-15-TUTORIAL_ARCHITECTURE_FIX.md](./2026-03/2026-03-15-TUTORIAL_ARCHITECTURE_FIX.md) | 2026-03-15 | Tutorial vs. actual architecture mismatch |
+| [2026-03-15-TUTORIAL_FIX_FINAL.md](./2026-03/2026-03-15-TUTORIAL_FIX_FINAL.md) | 2026-03-15 | Final tutorial architecture fix |
+| [2026-03-15-TUTORIAL_REFACTORING.md](./2026-03/2026-03-15-TUTORIAL_REFACTORING.md) | 2026-03-15 | Tutorial system refactoring |
+| [2026-03-18-MULTI_WINDOW_SWITCHING_LOGIC.md](./2026-03/2026-03-18-MULTI_WINDOW_SWITCHING_LOGIC.md) | 2026-03-18 | Multi-window process switching |
+| [2026-03-18-SUBMENU_SLOT_OPACITY_BUG.md](./2026-03/2026-03-18-SUBMENU_SLOT_OPACITY_BUG.md) | 2026-03-18 | Sub-radial slots greyed out |
+| [2026-03-18-WINEVENT_HOOK_THREAD_CONTEXT.md](./2026-03/2026-03-18-WINEVENT_HOOK_THREAD_CONTEXT.md) | 2026-03-18 | WinEvent hook never firing |
+| [2026-03-23-SLOT_DIALOG_REFACTOR_HANDOFF.md](./2026-03/2026-03-23-SLOT_DIALOG_REFACTOR_HANDOFF.md) | 2026-03-23 | Slot dialog refactor handover |
+| [2026-08-29-PULSAR_HANDOFF.md](./2026-08/2026-08-29-PULSAR_HANDOFF.md) | 2026-08-29 | Project handover |
 
 ### 6. Repository Health Reports
 
@@ -98,42 +98,42 @@ Periodic repository health snapshots. Each is dated and immutable once archived.
 
 | Document | Date | Result |
 |----------|------|--------|
-| [2026-09-02-REPO_HEALTH_REVIEW.md](./2026-09-02-REPO_HEALTH_REVIEW.md) | 2026-09-02 | 9.0/10 — build/test green, no blocking issues |
-| [2026-09-02-USER_PERSPECTIVE_REVIEW.md](./2026-09-02-USER_PERSPECTIVE_REVIEW.md) | 2026-09-02 | User-perspective review of the launcher |
+| [2026-09-02-REPO_HEALTH_REVIEW.md](./2026-09/2026-09-02-REPO_HEALTH_REVIEW.md) | 2026-09-02 | 9.0/10 — build/test green, no blocking issues |
+| [2026-09-02-USER_PERSPECTIVE_REVIEW.md](./2026-09/2026-09-02-USER_PERSPECTIVE_REVIEW.md) | 2026-09-02 | User-perspective review of the launcher |
 
 ### 7. PKI & Secrets
 
 | Document | Date | Description |
 |----------|------|-------------|
-| [2026-03-01-PKI_IMPLEMENTATION.md](./2026-03-01-PKI_IMPLEMENTATION.md) | 2026-03-01 | PKI implementation notes |
-| [2026-03-26-PKI_REFACTORING_AND_BUGS.md](./2026-03-26-PKI_REFACTORING_AND_BUGS.md) | 2026-03-26 | PKI refactoring and bug fixes |
+| [2026-03-01-PKI_IMPLEMENTATION.md](./2026-03/2026-03-01-PKI_IMPLEMENTATION.md) | 2026-03-01 | PKI implementation notes |
+| [2026-03-26-PKI_REFACTORING_AND_BUGS.md](./2026-03/2026-03-26-PKI_REFACTORING_AND_BUGS.md) | 2026-03-26 | PKI refactoring and bug fixes |
 
 ### 8. Tutorial System Design Docs (2026-03-17)
 
 | Document | Purpose |
 |----------|---------|
-| [2026-03-17-TUTORIAL_SYSTEM.md](./2026-03-17-TUTORIAL_SYSTEM.md) | Complete tutorial system design |
-| [2026-03-17-TUTORIAL_SYSTEM_HANDOVER.md](./2026-03-17-TUTORIAL_SYSTEM_HANDOVER.md) | Tutorial system handover |
-| [2026-03-17-TUTORIAL_SYSTEM_INDEX.md](./2026-03-17-TUTORIAL_SYSTEM_INDEX.md) | Tutorial system index |
-| [2026-03-17-TUTORIAL_SYSTEM_PART2.md](./2026-03-17-TUTORIAL_SYSTEM_PART2.md) | Tutorial system Part 2 |
-| [2026-03-17-TUTORIAL_SYSTEM_PART3.md](./2026-03-17-TUTORIAL_SYSTEM_PART3.md) | Tutorial system Part 3 |
-| [2026-03-17-TUTORIAL_SYSTEM_PART4.md](./2026-03-17-TUTORIAL_SYSTEM_PART4.md) | Tutorial system Part 4 |
-| [2026-03-17-TUTORIAL_SYSTEM_REFACTORING_GUIDE.md](./2026-03-17-TUTORIAL_SYSTEM_REFACTORING_GUIDE.md) | Tutorial system refactoring guide |
+| [2026-03-17-TUTORIAL_SYSTEM.md](./2026-03/2026-03-17-TUTORIAL_SYSTEM.md) | Complete tutorial system design |
+| [2026-03-17-TUTORIAL_SYSTEM_HANDOVER.md](./2026-03/2026-03-17-TUTORIAL_SYSTEM_HANDOVER.md) | Tutorial system handover |
+| [2026-03-17-TUTORIAL_SYSTEM_INDEX.md](./2026-03/2026-03-17-TUTORIAL_SYSTEM_INDEX.md) | Tutorial system index |
+| [2026-03-17-TUTORIAL_SYSTEM_PART2.md](./2026-03/2026-03-17-TUTORIAL_SYSTEM_PART2.md) | Tutorial system Part 2 |
+| [2026-03-17-TUTORIAL_SYSTEM_PART3.md](./2026-03/2026-03-17-TUTORIAL_SYSTEM_PART3.md) | Tutorial system Part 3 |
+| [2026-03-17-TUTORIAL_SYSTEM_PART4.md](./2026-03/2026-03-17-TUTORIAL_SYSTEM_PART4.md) | Tutorial system Part 4 |
+| [2026-03-17-TUTORIAL_SYSTEM_REFACTORING_GUIDE.md](./2026-03/2026-03-17-TUTORIAL_SYSTEM_REFACTORING_GUIDE.md) | Tutorial system refactoring guide |
 
 ### 9. Feature Development Records
 
 | Document | Date | Description |
 |----------|------|-------------|
-| [2026-03-09-VBARUNNER_SMART_DIRECTIVES_COMPLETE.md](./2026-03-09-VBARUNNER_SMART_DIRECTIVES_COMPLETE.md) | 2026-03-09 | VbaRunner Smart Directives complete |
+| [2026-03-09-VBARUNNER_SMART_DIRECTIVES_COMPLETE.md](./2026-03/2026-03-09-VBARUNNER_SMART_DIRECTIVES_COMPLETE.md) | 2026-03-09 | VbaRunner Smart Directives complete |
 
 ### 10. UX Refactoring Records
 
 | Document | Date | Description |
 |----------|------|-------------|
-| [2026-06-27-UX_REFACTORING_S1_S3.md](./2026-06-27-UX_REFACTORING_S1_S3.md) | 2026-06-27 | UX refactoring S1–S3 |
-| [2026-08-16-FULLSCREEN_VIEWPORT.md](./2026-08-16-FULLSCREEN_VIEWPORT.md) | 2026-08-16 | Fullscreen viewport handling |
-| [2026-08-16-SUBMENU_ANIMATION_KANDO.md](./2026-08-16-SUBMENU_ANIMATION_KANDO.md) | 2026-08-16 | Submenu animation (Kando-style) |
-| [2026-08-16-UX_REFACTORING_S4.md](./2026-08-16-UX_REFACTORING_S4.md) | 2026-08-16 | UX refactoring S4 |
+| [2026-06-27-UX_REFACTORING_S1_S3.md](./2026-06/2026-06-27-UX_REFACTORING_S1_S3.md) | 2026-06-27 | UX refactoring S1–S3 |
+| [2026-08-16-FULLSCREEN_VIEWPORT.md](./2026-08/2026-08-16-FULLSCREEN_VIEWPORT.md) | 2026-08-16 | Fullscreen viewport handling |
+| [2026-08-16-SUBMENU_ANIMATION_KANDO.md](./2026-08/2026-08-16-SUBMENU_ANIMATION_KANDO.md) | 2026-08-16 | Submenu animation (Kando-style) |
+| [2026-08-16-UX_REFACTORING_S4.md](./2026-08/2026-08-16-UX_REFACTORING_S4.md) | 2026-08-16 | UX refactoring S4 |
 
 ### 11. Refactor & Optimization Reports (archived 2026-09-04)
 
@@ -141,9 +141,9 @@ Moved from `guides/` and `architecture/` on 2026-09-04 — historical narratives
 
 | Document | Date | Description |
 |----------|------|-------------|
-| [2026-03-21-WINDOW_SWITCHING_REFACTORING.md](./2026-03-21-WINDOW_SWITCHING_REFACTORING.md) | 2026-03-21 | Window switching refactor guide (was `guides/`) |
-| [2026-03-17-PLUGIN_OPTIMIZATION_RECOMMENDATIONS.md](./2026-03-17-PLUGIN_OPTIMIZATION_RECOMMENDATIONS.md) | 2026-03-17 | Plugin optimization recommendations (was `architecture/`) |
-| [2026-03-17-PLUGIN_SYSTEM_REFACTORING_REPORT.md](./2026-03-17-PLUGIN_SYSTEM_REFACTORING_REPORT.md) | 2026-03-17 | Plugin system refactor report (was `architecture/`) |
+| [2026-03-21-WINDOW_SWITCHING_REFACTORING.md](./2026-03/2026-03-21-WINDOW_SWITCHING_REFACTORING.md) | 2026-03-21 | Window switching refactor guide (was `guides/`) |
+| [2026-03-17-PLUGIN_OPTIMIZATION_RECOMMENDATIONS.md](./2026-03/2026-03-17-PLUGIN_OPTIMIZATION_RECOMMENDATIONS.md) | 2026-03-17 | Plugin optimization recommendations (was `architecture/`) |
+| [2026-03-17-PLUGIN_SYSTEM_REFACTORING_REPORT.md](./2026-03/2026-03-17-PLUGIN_SYSTEM_REFACTORING_REPORT.md) | 2026-03-17 | Plugin system refactor report (was `architecture/`) |
 
 ---
 

@@ -253,7 +253,7 @@ Pulsar/
 - **[Docs/architecture/PLUGIN_SYSTEM.md](./Docs/architecture/PLUGIN_SYSTEM.md)** - Plugin system concepts (tiers, runtime kernel, lifecycle, breaker) — authoritative
 - **[PLUGIN_DEVELOPMENT.md](./PLUGIN_DEVELOPMENT.md)** - Complete plugin development guide (interface reference — authoritative)
 - **[AGENTS.md](./AGENTS.md)** - AI Agent operational guide and coding conventions
-- **[PKI Implementation Archive](./Docs/archive/2026-03-01-PKI_IMPLEMENTATION.md)** - Historical PKI implementation details
+- **[PKI Implementation Archive](./Docs/archive/2026-03/2026-03-01-PKI_IMPLEMENTATION.md)** - Historical PKI implementation details
 
 ---
 
