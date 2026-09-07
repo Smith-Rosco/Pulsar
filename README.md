@@ -102,7 +102,7 @@
 - 高频动作固定在固定方位，练几次就能盲操作，告别在菜单里来回翻找。
 
 <div align="center">
-  <img src="Pulsar/Pulsar/Assets/Brand/demo.gif" width="640" alt="Pulsar 径向菜单演示" />
+  <img src="Pulsar/Pulsar/Assets/Brand/demo.webp" width="640" alt="Pulsar 径向菜单演示" />
 </div>
 
 ### 5. 🪟 智能窗口切换

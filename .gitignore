@@ -13,6 +13,7 @@ export-*.mp4
 # 原始 mp4 与冗余 gif 仅留本地，按需传 GitHub Release（~60MB，不入 git）
 Docs/demo/*.mp4
 Docs/demo/*.gif
+Docs/demo/compressed/
 
 # Local OpenCode tooling
 opencode.jsonc

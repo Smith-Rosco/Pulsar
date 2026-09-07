@@ -102,7 +102,7 @@ Store frequently used usernames and passwords locally with system-level encrypti
 - Frequent actions sit at fixed positions — practice a few times and you can go "blind", no more hunting through menus.
 
 <div align="center">
-  <img src="Pulsar/Pulsar/Assets/Brand/demo.gif" width="640" alt="Pulsar Radial Menu Demo" />
+  <img src="Pulsar/Pulsar/Assets/Brand/demo.webp" width="640" alt="Pulsar Radial Menu Demo" />
 </div>
 
 ### 5. 🪟 Smart window switching
