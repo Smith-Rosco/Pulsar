@@ -30,6 +30,18 @@ workflow.
 | `03-excel-macro-moment.png` | Slot 1 ("一键跑宏" / Excel Macros) hover-highlighted | `shot-excel-macro-moment` |
 | `04-window-switch-menu.png` | Task-mode radial menu (window switcher, 6 app slots) | `shot-window-switch-menu` |
 
+### Demo animations (`demos/`, 2026-09)
+
+Looping webp demos recorded from the real workflow (OBS capture → webp), used
+in the README "实拍演示 / Demo" section. Raw mp4 / redundant gif stay local in
+`Docs/demo/` (gitignored) and ship as GitHub Release assets if needed.
+
+| File | Scene | README caption theme |
+|---|---|---|
+| `demo-1-one-key-macro.webp` | Excel: messy sheet (mixed formats/colours/column widths) → slot release → clean report | One-click macros + link to the VBA AI-prompt guide |
+| `demo-2-tame-legacy.webp` | Legacy intranet portal: manual 登录→查询→导出, then one slot release replays it all | Legacy web automation + link to the bookmarklet AI-prompt guide |
+| `demo-3-one-slide-login.webp` | Login page: manual typing first, then one slot release fills & signs in | Secure fill (text injection; also works on non-web desktop apps) |
+
 ## Regeneration
 
 These images are produced deterministically by the E2E promo pipeline:

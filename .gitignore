@@ -9,6 +9,11 @@
 # Source video for demo GIF (converted file only)
 export-*.mp4
 
+# Demo raw assets — webp 动图（Docs/media/release/demos/）已覆盖 README 演示需求；
+# 原始 mp4 与冗余 gif 仅留本地，按需传 GitHub Release（~60MB，不入 git）
+Docs/demo/*.mp4
+Docs/demo/*.gif
+
 # Local OpenCode tooling
 opencode.jsonc
 .opencode/
