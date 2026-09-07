@@ -20,7 +20,7 @@
 - [ ] `Pulsar-v{version}-Standalone-win-x64.zip`（独立版，self-contained single-file）
 - [ ] SHA256 清单（覆盖以上全部资产，附在 Release 正文）
 - [ ]（可选）演示视频链接（`Docs/media/release/videos/` 或外部托管）
-- [ ] 发布说明：基于仓库根 `RELEASE_NOTES.md` 模板成稿（用户视角亮点 + 已知问题 + 系统要求）
+- [ ] 发布说明：基于 `Docs/ops/TEMPLATE_RELEASE_NOTES.md` 模板成稿（用户视角亮点 + 已知问题 + 系统要求）
 
 ## 3. 发布后动作（Post-Release）
 
