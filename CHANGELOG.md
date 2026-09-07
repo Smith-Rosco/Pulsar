@@ -21,7 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **文档结构 v6（ADR-027）**：文档审计报告（`Docs/reports/2026-09-07-DOC_STRUCTURE_AUDIT.html`）+ 新增 ADR-027（单一权威源与全量索引登记）。`Docs/architecture/PLUGIN_SYSTEM.md` 成为插件体系概念唯一权威源（吸收 ARCHITECTURE §2.2/§3 的运行时 seam 细节、断路器观察 seam、PulsarContext 不可变性说明）；`CONTRIBUTING.md` v2.0.0 重写（废 .draft.md 流程与全英文强规，新增权威源/索引纪律）；插件脚本目录（VbaRunner/BookmarkletRunner 的 TestScripts/DemoScripts、`Pulsar/Samples/`）原地纳管并各补 README。
+
 ### Changed
+- **文档结构 v6 落地**：`Docs/README.md` 重写为 v6.0.0 全量索引（每个一级条目都登记，ADR 表至 027）；`roadmap/`+`proposals/` 合并为 `Docs/planning/`；`diagrams/` 并入 `Docs/architecture/`；`Docs/Plugins/` 改名 `Docs/plugins/`；`Docs/archive/` 62 文件按月分桶（`2026-03/`…）并修复分桶引起的相对链接位移（仅修移动前有效的链接）；根目录 `RELEASE_NOTES.md` 模板迁入 `Docs/ops/TEMPLATE_RELEASE_NOTES.md`；`DEVELOPER.md` 架构复述收敛为速览表+权威源链接（220→188 行）；`ARCHITECTURE.md` 插件章节收敛为概览+链接（385→263 行）；README/README_EN 版本徽章与下载链接 v1.10.0→v1.11.0；孤儿目录 `Docs/screenshots/` 删除（零引用）。活文档断链清零（历史文档/CHANGELOG 按append-only 不回改）。
+
+### Fixed
 - **发布路径收口**：`scripts/dev.ps1 publish` 废弃为指路 stub（打印 publish skill 的调用方式并 exit 2，不再构建任何产物）。旧实现与 skill 输出重叠（stage/Setup/Standalone/SHA256，单次 ~330M 冗余、stage 结尾不回收），且其启动时对 `artifacts\publish\` 的全量删除会连带清掉 skill 的 `publish/v<ver>/` 产物。发布自此只有 skill 一条路径；`Get-PulsarVersion`（仅旧 publish 使用）一并移除。
 - **发布产物收敛（ADR-026 修订）**：publish skill 本地构建不再产出 Setup.exe / Standalone zip / SHA256SUMS（改为 GitHub Release 的 CI-only 资产，`release.yml` 不变）；本地终态仅剩 `artifacts/Pulsar-$version-{full,portable}.zip` 两个文件，`publish/v<ver>/` 产物目录在打包校验成功后自动删除（`-KeepPublishDirs` 保留）。回退路径（CI 不可用手动上传）通过 `Build-Publish.ps1` / `Pack-Zips.ps1` 新增的 `-WithInstaller` 开关显式产出 installer 三件套，且 stage 中转目录与 `publish\` 内 Setup 副本用后即删（消除双份）。此前单次本地发布冗余 ~330M（同一份 full Pulsar.exe 落 4 处 + Setup 落 2 处）。
 - **架构深化 C1（Execution Handoff）**：`IMenuSession` 新增 `BeginExecution(slot)`，把「记录执行 Slot + 立刻隐藏菜单」的顺序收归实现。此前策略层 5 处手写 `IsVisible = false`，其中仅 2 处配对 `SetActionExecuted`、且 `WindowSwitchStrategy` 未传 slot（导致 E2E 断言退化为按索引猜测）。现 3 处真正的动作执行走 seam，2 处导航类保持原样。
