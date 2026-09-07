@@ -21,7 +21,7 @@
 
 <br/>
 
-[🚀 Quick Start](#-quick-start) · [✨ Features](#-features) · [🎬 Demo](#-demo) · [📸 Screenshots](#-screenshots) · [🧑‍💻 For Developers](#-for-developers) · [🤝 Community](#-community--contributing)
+[🚀 Quick Start](#-quick-start) · [✨ Features](#-features) · [🎬 Demo](#-demo) · [🧑‍💻 For Developers](#-for-developers) · [🤝 Community](#-community--contributing)
 
 </div>
 
@@ -157,33 +157,6 @@ First, type the username and password by hand. Then clear the field, slide towar
 
 <div align="center">
   <img src="Docs/media/release/demos/demo-3-one-slide-login.webp" width="640" alt="One-slide sign-in demo" />
-</div>
-
----
-
-## 📸 Screenshots
-
-<div align="center">
-  <img src="Docs/media/release/01-main-interface.png" width="640" alt="Pulsar main interface" /><br/>
-  <sub><b>Main interface</b> · every office action one screen away</sub>
-</div>
-
-<div align="center">
-  <br/>
-  <img src="Docs/media/release/02-radial-summoned.png" width="640" alt="Radial menu summoned" /><br/>
-  <sub><b>Radial summon</b> · fixed positions, blind muscle-memory operation</sub>
-</div>
-
-<div align="center">
-  <br/>
-  <img src="Docs/media/release/03-excel-macro-moment.png" width="640" alt="Excel macro moment" /><br/>
-  <sub><b>One-click macros</b> · saved macros fire on release</sub>
-</div>
-
-<div align="center">
-  <br/>
-  <img src="Docs/media/release/04-window-switch-menu.png" width="640" alt="Window switch submenu" /><br/>
-  <sub><b>Window switching</b> · not running? Pulsar launches it</sub>
 </div>
 
 ---

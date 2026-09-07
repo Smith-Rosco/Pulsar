@@ -21,7 +21,7 @@
 
 <br/>
 
-[🚀 快速开始](#-快速开始) · [✨ 功能特性](#-功能特性) · [🎬 演示](#-演示) · [📸 截图](#-截图) · [🧑‍💻 开发者](#-开发者) · [🤝 社区与贡献](#-社区与贡献)
+[🚀 快速开始](#-快速开始) · [✨ 功能特性](#-功能特性) · [🎬 演示](#-演示) · [🧑‍💻 开发者](#-开发者) · [🤝 社区与贡献](#-社区与贡献)
 
 </div>
 
@@ -157,33 +157,6 @@
 
 <div align="center">
   <img src="Docs/media/release/demos/demo-3-one-slide-login.webp" width="640" alt="一滑登录演示" />
-</div>
-
----
-
-## 📸 截图
-
-<div align="center">
-  <img src="Docs/media/release/02-radial-summoned.png" width="640" alt="径向菜单呼出" /><br/>
-  <sub><b>径向呼出</b> · 固定方位，闭眼盲操作</sub>
-</div>
-
-<div align="center">
-  <br/>
-  <img src="Docs/media/release/01-main-interface.png" width="640" alt="设置界面" /><br/>
-  <sub><b>设置界面</b> · 插件生命周期与健康一目了然</sub>
-</div>
-
-<div align="center">
-  <br/>
-  <img src="Docs/media/release/03-excel-macro-moment.png" width="640" alt="一键跑宏" /><br/>
-  <sub><b>一键跑宏</b> · 松开即执行</sub>
-</div>
-
-<div align="center">
-  <br/>
-  <img src="Docs/media/release/04-window-switch-menu.png" width="640" alt="窗口切换子菜单" /><br/>
-  <sub><b>窗口切换</b> · 没在运行？直接启动</sub>
 </div>
 
 ---
