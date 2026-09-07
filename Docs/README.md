@@ -23,8 +23,8 @@ Then follow the task router below.
 | Directory | What goes here | Count | Current truth? |
 |---|---|---|---|
 | **[architecture/](./architecture/)** | Stable conceptual truths about system design | 3 | Yes |
-| **[guides/](./guides/)** | How-to playbooks for recurring tasks | 7 | Yes |
-| **[lessons/](./lessons/)** | Reusable pitfalls: Symptom → Root cause → Correct pattern | 21 | Yes |
+| **[guides/](./guides/)** | How-to playbooks for recurring tasks | 9 | Yes |
+| **[lessons/](./lessons/)** | Reusable pitfalls: Symptom → Root cause → Correct pattern | 24 | Yes |
 | **[decisions/](./decisions/)** | ADRs — immutable once accepted, only superseded | 19 | Yes |
 | **[Plugins/](./Plugins/)** | Per-plugin user/developer docs | 8 | Yes |
 | **[ops/](./ops/)** | Commands and operational procedures | 1 | Yes |
@@ -78,6 +78,8 @@ Two rules keep this structure honest:
 - **[CREATE_SLOT_DIALOG_GUIDELINES.md](./guides/CREATE_SLOT_DIALOG_GUIDELINES.md)** — slot dialog structure and validation rules
 - **[COMPONENT_LIBRARY.md](./guides/COMPONENT_LIBRARY.md)** — reusable UI components (ExpandableCard, JellyOrb)
 - **[VBARUNNER_AI_SCRIPTING.md](./guides/VBARUNNER_AI_SCRIPTING.md)** — AI guide for generating VBA with Smart Directives
+- **[AI_PROMPT_VBA_RUNNER.md](./guides/AI_PROMPT_VBA_RUNNER.md)** — copy-paste AI prompt for `.bas` scripts (README-linked)
+- **[AI_PROMPT_BOOKMARKLET.md](./guides/AI_PROMPT_BOOKMARKLET.md)** — copy-paste AI prompt for legacy-web bookmarklet scripts (README-linked)
 - **[CONFIG_BACKUP_AND_RESTORE.md](./guides/CONFIG_BACKUP_AND_RESTORE.md)** — configuration backup and restore
 - **[LOGGING_GUIDELINES.md](./guides/LOGGING_GUIDELINES.md)** — structured logging conventions
 - **[PLUGIN_MIGRATION_GUIDE.md](./guides/PLUGIN_MIGRATION_GUIDE.md)** — migrating legacy plugins to the modern model
@@ -118,6 +120,11 @@ Reusable pitfalls. Each follows `Rule (TL;DR)` → `Symptom` → `Root cause` �
 **Plugin runtime**
 - [PLUGIN_RUNTIME_INSTALL_UNINSTALL_PITFALLS.md](./lessons/PLUGIN_RUNTIME_INSTALL_UNINSTALL_PITFALLS.md) — runtime install/uninstall: activation, ALC unload, GC-driven teardown
 - [PLUGIN_LOCALIZATION_SILENT_ENGLISH_FALLBACK.md](./lessons/PLUGIN_LOCALIZATION_SILENT_ENGLISH_FALLBACK.md) — silent English fallback when a plugin localization key is missing
+
+**Script authoring & demo assets**
+- [VBA_INJECT_ATTRIBUTE_LINE_BREAKS_COMPILE.md](./lessons/VBA_INJECT_ATTRIBUTE_LINE_BREAKS_COMPILE.md) — `.bas` with `Attribute VB_Name` header: procedure registers but full compile fails (0x800A03EC); bisect-based debugging method
+- [PKI_FILL_SENDKEYS_FOCUS_CONTRACT.md](./lessons/PKI_FILL_SENDKEYS_FOCUS_CONTRACT.md) — `pki/fill` is keyboard injection: target pages must honour the autofocus/form-submit contract
+- [DEMO_SCRIPT_AUTHORING_PITFALLS.md](./lessons/DEMO_SCRIPT_AUTHORING_PITFALLS.md) — bookmarklet pacing via `setTimeout`, CSV+UTF-8 BOM downloads, mojibake, DOM contracts, literal slot args
 
 ---
 
