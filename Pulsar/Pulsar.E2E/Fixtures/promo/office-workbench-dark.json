@@ -73,9 +73,9 @@
           "plugin": "com.pulsar.bookmarklet",
           "action": "run",
           "args": {
-            "scriptPath": "%USERPROFILE%\\Documents\\Pulsar\\Scripts\\legacy-login.js"
+            "scriptPath": "%USERPROFILE%\\Documents\\Pulsar\\Scripts\\legacy-report.js"
           },
-          "label": "登录老旧系统",
+          "label": "一键出报表",
           "icon": "E774",
           "color": "#D97706",
           "order": 0,
@@ -88,7 +88,7 @@
             "secretId": "00000000-0000-0000-0000-000000000000",
             "autoEnter": "true"
           },
-          "label": "自动填写登录",
+          "label": "登录 OA",
           "icon": "E928",
           "color": "#7C3AED",
           "order": 0,
@@ -155,14 +155,15 @@
           "slot": 5
         },
         {
-          "plugin": "com.pulsar.winswitcher",
-          "action": "launch",
+          "plugin": "com.pulsar.pki",
+          "action": "fill",
           "args": {
-            "path": "%USERPROFILE%\\Documents\\Pulsar\\Demo\\reports"
+            "secretId": "00000000-0000-0000-0000-000000000000",
+            "autoEnter": "true"
           },
-          "label": "打开项目文件夹",
-          "icon": "ED25",
-          "color": "",
+          "label": "登录邮箱",
+          "icon": "E928",
+          "color": "#7C3AED",
           "order": 0,
           "slot": 6
         },
@@ -179,14 +180,15 @@
           "slot": 7
         },
         {
-          "plugin": "com.pulsar.winswitcher",
-          "action": "launch",
+          "plugin": "com.pulsar.pki",
+          "action": "fill",
           "args": {
-            "path": "calc.exe"
+            "secretId": "00000000-0000-0000-0000-000000000000",
+            "autoEnter": "true"
           },
-          "label": "打开计算器",
-          "icon": "E8EF",
-          "color": "",
+          "label": "登录报销",
+          "icon": "E928",
+          "color": "#7C3AED",
           "order": 0,
           "slot": 8
         }
