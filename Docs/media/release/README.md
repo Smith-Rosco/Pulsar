@@ -33,8 +33,10 @@ workflow.
 ### Demo animations (`demos/`, 2026-09)
 
 Looping webp demos recorded from the real workflow (OBS capture → webp), used
-in the README "实拍演示 / Demo" section. Raw mp4 / redundant gif stay local in
-`Docs/demo/` (gitignored) and ship as GitHub Release assets if needed.
+in the README "实拍演示 / Demo" section. Raw mp4 / redundant gif live outside
+git (local-only, gitignored); the former `Docs/demo/` staging directory was
+retired on 2026-09-08 — this directory is the single home for tracked demo
+assets, and raw captures ship as GitHub Release assets if needed.
 
 | File | Scene | README caption theme |
 |---|---|---|
