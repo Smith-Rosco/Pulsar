@@ -1,199 +1,71 @@
 # Documentation Contributing Guide
 
-**Version**: v1.0.0  
-**Last Updated**: 2026-03-01
+**Version**: v2.0.0
+**Last Updated**: 2026-09-08
+**Supersedes**: v1.0.0 (2026-03-01) — the `.draft.md` lifecycle and the English-primary rule from v1.0.0 were never followed in practice and are removed here.
 
 ---
 
 ## Overview
 
-This guide defines standards and best practices for creating and maintaining Pulsar documentation.
+This guide defines how Pulsar documentation is created, routed, and retired. The
+operational (build/test/commit) rules live in [AGENTS.md](../AGENTS.md); this
+file covers documents only.
+
+Two principles govern everything below:
+
+1. **One fact, one home.** A fact lives in exactly one authoritative file;
+   every other mention links to it. Never copy concepts between documents —
+   copied text drifts.
+2. **The index is the contract.** Every document that is added, moved, or
+   deleted MUST be reflected in [Docs/README.md](./README.md) in the same
+   change. A document not in the index does not exist.
+
+---
+
+## Language Policy (v2.0.0)
+
+The v1.0.0 "English-primary" rule is abolished — it was contradicted by the
+repo's own practice (journal, manual/zh, plugin docs, reports are Chinese).
+
+| Audience | Language |
+|---|---|
+| User-facing (README, README_EN, Docs/manual/) | Bilingual — README keeps zh/en pair in sync; manual keeps en/zh trees in sync |
+| AI- and contributor-facing (AGENTS.md, guides, lessons, architecture, ADRs, ops) | Chinese-first is acceptable; grep-able keywords (`Symptom:`, `Root cause:`, `Rule (TL;DR):`) stay English |
+| `Docs/journal/` | Chinese (owner's working language; ADR-019) |
+| Historical documents | Original language, never retro-translated |
 
 ---
 
 ## Document Lifecycle
 
-### 1. Draft Phase
-- **File Naming**: Add `.draft.md` suffix (e.g., `NEW_FEATURE.draft.md`)
-- **Header**: Include "Status: Draft" in document header
-- **Purpose**: Work in progress, not yet reviewed
+1. **Draft** — write in its final home directory; no `.draft.md` suffix needed
+   (practice showed the suffix adds a rename step with zero review value).
+2. **Published** — standard naming (below), registered in `Docs/README.md`.
+3. **Archived** — moved to `Docs/archive/YYYY-MM/` with its date prefix kept;
+   add a one-line note at top: `> ARCHIVED YYYY-MM-DD — superseded by <link>`
+   when a replacement exists. Never rewrite archived content.
+4. **Deleted** — only for zero-reference orphans (verify with a repo-wide grep
+   before deleting). Git history is the archive of last resort.
 
-### 2. Review Phase
-- **File Naming**: Remove `.draft.md` suffix
-- **Header**: Change to "Status: Under Review"
-- **Purpose**: Awaiting team approval
-
-### 3. Published Phase
-- **File Naming**: Standard naming convention (see below)
-- **Header**: "Status: Published" with version number
-- **Purpose**: Active, maintained documentation
-
-### 4. Archived Phase
-- **Location**: Move to `Docs/archive/`
-- **Header**: Add "⚠️ ARCHIVED DOCUMENT" warning at top
-- **Purpose**: Historical reference, no longer updated
-
-### 5. Deprecated Phase
-- **Header**: Add "⚠️ DEPRECATED" warning
-- **Retention**: Keep for 6 months, then delete
-- **Purpose**: Obsolete content scheduled for removal
+ADRs are immutable once accepted: supersede (ADR-NNN header `Superseded by
+ADR-XXX`), never edit.
 
 ---
 
 ## Naming Conventions
 
-### Core Documents (Root Level)
-- **Format**: `UPPERCASE_WITH_UNDERSCORES.md`
-- **Examples**: `ARCHITECTURE.md`, `PLUGIN_DEVELOPMENT.md`, `AGENTS.md`
-- **Location**: Project root directory
-
-### Guide Documents (docs/guides/)
-- **Format**: `UPPERCASE_WITH_UNDERSCORES.md`
-- **Examples**: `COMPONENT_LIBRARY.md`, `UI_BEST_PRACTICES.md`
-- **Location**: `docs/guides/`
-
-### Archive Documents (Docs/archive/)
-- **Format**: `YYYY-MM-DD-DESCRIPTIVE_NAME.md`
-- **Examples**: `2026-03-02-HANDOVER_V4.1.0.md`, `2026-03-09-ARCHITECTURE_FIX_SUMMARY.md`
-- **Location**: `Docs/archive/`
-
-### Architecture Decision Records (docs/decisions/)
-- **Format**: `NNN-descriptive-title.md` (NNN = zero-padded number)
-- **Examples**: `001-plugin-metadata-system.md`, `002-circuit-breaker-pattern.md`
-- **Location**: `docs/decisions/`
+| Kind | Format | Location |
+|---|---|---|
+| Root-level core docs | `UPPERCASE_WITH_UNDERSCORES.md` | repo root |
+| Guides / lessons / architecture / ops | `UPPERCASE_WITH_UNDERSCORES.md` | `Docs/<dir>/` |
+| ADRs | `NNN-descriptive-title.md` (zero-padded, sequential) | `Docs/decisions/` |
+| Archive | `YYYY-MM-DD-DESCRIPTIVE_NAME.md` | `Docs/archive/YYYY-MM/` |
+| Daily journal | `YYYY-MM-DD.md` | `Docs/journal/` |
 
 ---
 
-## Language Standards
-
-### Primary Language: English
-- All documentation must be written in English
-- Chinese is only permitted in code comments or inline examples
-- Rationale: Ensures accessibility for international contributors and AI agents
-
-### Exceptions
-- User-facing UI text (handled separately in localization files)
-- Historical documents (can remain in original language if archived)
-
----
-
-## Document Template
-
-```markdown
-# Document Title
-
-**Status**: Draft | Published | Archived | Deprecated  
-**Version**: v1.0.0  
-**Last Updated**: YYYY-MM-DD  
-**Author**: [Your Name]  
-**Related Documents**: [Link to related docs]
-
----
-
-## Table of Contents
-
-[Auto-generated or manual list]
-
----
-
-## Overview
-
-[1-2 paragraph introduction explaining the document's purpose and scope]
-
----
-
-## [Main Section 1]
-
-[Content]
-
-### [Subsection 1.1]
-
-[Content]
-
----
-
-## [Main Section 2]
-
-[Content]
-
----
-
-## Related Documents
-
-- [Document Name](./path/to/document.md) - Brief description
-
----
-
-**Change History**:
-- v1.0.0 (YYYY-MM-DD): Initial version
-- v1.1.0 (YYYY-MM-DD): Added section X
-```
-
----
-
-## Content Guidelines
-
-### Writing Style
-
-1. **Be Concise**: Prioritize actionable information over verbose explanations
-2. **Use Active Voice**: "The plugin executes" not "The plugin is executed"
-3. **Avoid Jargon**: Explain technical terms on first use
-4. **Use Examples**: Include code snippets and practical examples
-5. **Structure Clearly**: Use headings, lists, and tables for readability
-
-### Code Examples
-
-- **Always include language identifier** in code blocks:
-  ```csharp
-  public class Example { }
-  ```
-- **Keep examples minimal**: Show only relevant code
-- **Add comments**: Explain non-obvious logic
-- **Test examples**: Ensure code compiles and runs
-
-### Links
-
-- **Use relative paths** for internal documents:
-  ```markdown
-  [ARCHITECTURE.md](../ARCHITECTURE.md)
-  ```
-- **Use descriptive text** for links:
-  ```markdown
-  ✅ See [Plugin Development Guide](../PLUGIN_DEVELOPMENT.md)
-  ❌ See [here](../PLUGIN_DEVELOPMENT.md)
-  ```
-
----
-
-## Document Types
-
-### Architecture Documents
-- **Purpose**: Describe system design and technical decisions
-- **Audience**: Developers, architects
-- **Update Frequency**: When architecture changes
-- **Examples**: `ARCHITECTURE.md`
-
-### Development Guides
-- **Purpose**: Teach how to implement features
-- **Audience**: Developers
-- **Update Frequency**: When APIs or patterns change
-- **Examples**: `PLUGIN_DEVELOPMENT.md`, `COMPONENT_LIBRARY.md`
-
-### Operational Guides
-- **Purpose**: Explain workflows and conventions
-- **Audience**: AI agents, developers
-- **Update Frequency**: When processes change
-- **Examples**: `AGENTS.md`
-
-### Architecture Decision Records (ADR)
-- **Purpose**: Document important architectural decisions
-- **Audience**: Future developers, architects
-- **Update Frequency**: Immutable (never updated, only superseded)
-- **Format**: See [ADR Template](#adr-template)
-
----
-
-## Document Routing: specs vs ADR vs lessons vs journal
+## Document Routing: specs vs ADR vs lessons vs journal vs report
 
 When a change produces knowledge, route it to exactly **one** home by what it
 answers. Do not copy the same fact into multiple locations.
@@ -204,97 +76,53 @@ answers. Do not copy the same fact into multiple locations.
 | Architecture decision | **Why** we chose this over alternatives (trade-offs, rejected options) | `Docs/decisions/NNN-*.md` (ADR) | when an architectural choice lands |
 | Lesson / pitfall | **What broke and how to avoid it** (symptom → root cause → fix) | `Docs/lessons/*.md` | after fixing a non-obvious bug |
 | Working memory | **Where things stand** (progress, next steps, open questions) | `Docs/journal/YYYY-MM-DD.md` | session start/end via `session-journal` skill |
+| Point-in-time research / comparison | **What the landscape looked like** at date X | `Docs/reports/` (with a validity note) | market eval, benchmark, one-off analysis |
 
 **Decision flow** — ask "what does this answer?":
 1. It defines system behavior → `openspec/specs/` (proposal/design lives in `openspec/changes/` until merged)
 2. It records a human trade-off the code can't show → ADR in `Docs/decisions/`
 3. It's a hard-won fix that should not recur → `Docs/lessons/`
 4. It's transient progress → `Docs/journal/` (never promote to specs/lessons)
-
-Specs, ADRs, and lessons are **not duplicates of each other**: one feature can
-touch all three, but each captures a different kind of knowledge. The
-`openspec/changes/<name>/` artifacts are temporary working assets; once synced
-and archived they are superseded by the merged `openspec/specs/` truth.
+5. It's a dated snapshot of research or comparison → `Docs/reports/` (label the validity date; archive when stale)
 
 **Working memory is single-source (ADR-019)**: `Docs/journal/` is the only
 cross-harness working-memory store. AI harnesses that maintain their own local
 memory (`~/.workbuddy/memory/`, `.opencode/**`, etc.) must **not** copy journal
 content into those files — at most a one-line pointer back to
-`Docs/journal/YYYY-MM-DD.md`. Harness-local stores are machine-local and
-gitignored, so they can never serve as the shared record.
-
-**Language exception for working memory**: the primary-language rule above does
-not apply to `Docs/journal/` — entries are written in Chinese (project owner's
-working language). All other document types remain English-primary.
+`Docs/journal/YYYY-MM-DD.md`.
 
 ---
 
-## ADR Template
+## Size & Authority Discipline (v2.0.0)
 
-```markdown
-# ADR-NNN: [Decision Title]
-
-**Status**: Proposed | Accepted | Deprecated | Superseded by ADR-XXX  
-**Date**: YYYY-MM-DD  
-**Deciders**: [List of people involved]
-
----
-
-## Context
-
-[Describe the issue or problem that requires a decision]
-
-## Decision
-
-[Describe the decision that was made]
-
-## Rationale
-
-[Explain why this decision was made, including alternatives considered]
-
-## Consequences
-
-### Positive
-- [Benefit 1]
-- [Benefit 2]
-
-### Negative
-- [Drawback 1]
-- [Drawback 2]
-
-### Neutral
-- [Impact 1]
-- [Impact 2]
+- **One file = one topic.** If a file answers two unrelated questions, split it
+  or rename it to the narrower truth.
+- **Authoritative sources are named, not implied.** The current map:
+  - Plugin system *concepts* (tiers, Circuit Breaker, lifecycle, PulsarContext):
+    `Docs/architecture/PLUGIN_SYSTEM.md`
+  - Plugin *development how-to* (interfaces, manifests, checklists):
+    `PLUGIN_DEVELOPMENT.md` (repo root)
+  - System architecture *overview*: `ARCHITECTURE.md` (repo root)
+  - Terminology: `CONTEXT.md`
+  - Change history: `CHANGELOG.md`
+  - Operational procedures: `Docs/ops/`
+  - Documentation rules: this file
+- When two documents must say the same thing, the second one links to the
+  first — it does not restate it. If you find yourself pasting a section from
+  another doc, stop and link instead.
+- Keep root-level docs lean. Detail belongs in `Docs/` subdirectories; the root
+  file routes to it.
 
 ---
 
-## Related Decisions
+## AI-Optimized Writing Rules
 
-- [ADR-XXX: Related Decision](./XXX-related-decision.md)
-```
-
----
-
-## Maintenance
-
-### Regular Reviews
-- **Quarterly**: Review all Published documents for accuracy
-- **After Major Changes**: Update affected documentation immediately
-- **Archive Old Content**: Move outdated docs to archive/ with proper markers
-
-### Updating Documents
-1. Read the existing document completely
-2. Make changes while preserving structure
-3. Update "Last Updated" date
-4. Increment version number if significant changes
-5. Add entry to "Change History"
-6. Update related documents if necessary
-
-### Deprecating Documents
-1. Add "⚠️ DEPRECATED" warning at top
-2. Explain why deprecated and link to replacement
-3. Set removal date (6 months from deprecation)
-4. Update docs/README.md to reflect status
+- Put the decision or constraint near the top; details later.
+- Use consistent grep-able keywords: `Symptom:` · `Root cause:` · `Correct pattern:` · `Incorrect pattern:` · `Applies to:` · `Rule (TL;DR):`
+- Prefer tables for comparisons; keep code samples minimal and canonical.
+- Use relative links with descriptive text:
+  ✅ See [Plugin Development Guide](../PLUGIN_DEVELOPMENT.md)
+  ❌ See [here](../PLUGIN_DEVELOPMENT.md)
 
 ---
 
@@ -302,42 +130,20 @@ working language). All other document types remain English-primary.
 
 Before publishing a document, verify:
 
-- [ ] Document follows naming conventions
-- [ ] Header includes all required fields (Status, Version, Date)
-- [ ] Content is written in English
-- [ ] Code examples are tested and working
-- [ ] Links are valid (no broken links)
-- [ ] Related documents are cross-referenced
-- [ ] Table of contents is accurate
-- [ ] Spelling and grammar are correct
-- [ ] Document is added to docs/README.md index
+- [ ] Naming matches the table above
+- [ ] Registered in `Docs/README.md` (or index entry updated)
+- [ ] No concept restated from another file — linked instead
+- [ ] Links valid (no broken relative paths)
+- [ ] Grep-able keywords present (lessons) / Status header present (ADR)
+- [ ] Related documents cross-referenced
 
 ---
 
-## Tools
+## Change History
 
-### Recommended Markdown Editors
-- Visual Studio Code with Markdown extensions
-- Typora
-- MarkText
-
-### Linting
-- Use markdownlint for consistency
-- Configure `.markdownlint.json` in project root
-
-### Link Checking
-- Use markdown-link-check to verify links
-- Run before committing documentation changes
-
----
-
-## Questions?
-
-- Check [docs/README.md](./README.md) for documentation index
-- Review [AGENTS.md](../AGENTS.md) for development guidelines
-- Ask in team chat or create an issue
-
----
-
-**Maintained by**: Pulsar Documentation Team  
-**Feedback**: Submit issues or pull requests to improve this guide
+- v2.0.0 (2026-09-08): Rewritten after docs-structure audit (see
+  `Docs/reports/2026-09-07-DOC_STRUCTURE_AUDIT.html`). Removed unused `.draft.md`
+  lifecycle; replaced English-primary rule with audience-based language policy;
+  added size/authority discipline, reports routing, archive month-buckets,
+  mandatory index sync.
+- v1.0.0 (2026-03-01): Initial version.
