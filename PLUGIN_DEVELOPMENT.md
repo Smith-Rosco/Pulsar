@@ -90,60 +90,23 @@ namespace MyCompany.Pulsar.Plugins
 
 ## 🧩 核心概念
 
-### 插件分层架构
+> 插件体系概念的**唯一权威源**是 [Docs/architecture/PLUGIN_SYSTEM.md](./Docs/architecture/PLUGIN_SYSTEM.md)（分层架构、Runtime Kernel、生命周期、Circuit Breaker、PulsarContext 契约）。本节只保留面向插件作者的选择指南与使用建议，不复述概念细节。
 
-Pulsar 插件分为两个层级：
+### 插件分层：Core vs Extension，选哪个？
 
-| 层级 | 说明 | 特性 | 示例 |
-|------|------|------|------|
-| **Core Plugin** | 核心基础设施插件 | - 不可禁用<br>- 崩溃导致应用退出<br>- 无 Circuit Breaker 保护 | PKI、WinSwitcher |
-| **Extension Plugin** | 扩展功能插件 | - 可禁用<br>- 崩溃隔离<br>- Circuit Breaker 保护 | VbaRunner、BookmarkletRunner |
+- 应用核心功能的一部分 → **Core**（不可禁用、崩溃即应用退出、无熔断）
+- 可选的增强功能 → **Extension**（可禁用、崩溃隔离、熔断保护）
 
-**选择指南**:
-- 如果插件是应用核心功能的一部分，选择 **Core**
-- 如果插件是可选的增强功能，选择 **Extension**
+### Circuit Breaker（要点）
 
-### Circuit Breaker 熔断机制
+Extension 插件受熔断保护：1 分钟内崩溃 3 次 → 熔断 60 秒 → Half-Open 单次重试。熔断判定是纯状态机（ADR-013）：`PluginCircuitBreakerPolicy` 通过 `Tripped` / `Recovered` 事件广播迁移；健康遥测与托盘通知由观察者 `PluginBreakerNotificationService` 完成，策略本身不持有 UI/遥测依赖。完整状态图见权威源。
 
-Extension 插件受 Circuit Breaker 保护：
+### PulsarContext 使用建议
 
-- **触发条件**: 1 分钟内崩溃 3 次
-- **熔断时长**: 60 秒
-- **恢复策略**: Half-Open 状态，允许单次重试
-
-**状态转换**:
-```
-Closed (正常) → Open (熔断) → Half-Open (试探) → Closed (恢复)
-     ↑                                              ↓
-     └──────────────── 成功执行 ────────────────────┘
-```
-
-熔断判定是纯状态机（ADR-013）：`PluginCircuitBreakerPolicy` 通过 `Tripped` / `Recovered` 事件广播迁移；健康遥测记录与托盘通知由观察者 `PluginBreakerNotificationService` 完成，策略本身不持有 UI/遥测依赖。
-
-### PulsarContext 上下文
-
-`PulsarContext` 在径向菜单调用时捕获，提供运行时环境信息：
-
-```csharp
-public class PulsarContext
-{
-    // 轻量级属性 (同步获取)
-    public IntPtr TargetWindowHandle { get; }
-    public string TargetProcessName { get; }  // 大写，如 "EXCEL"
-    public int TargetProcessId { get; }
-    public string TargetExePath { get; }
-    
-    // 重量级属性 (懒加载，按需异步获取)
-    public Task<IReadOnlyList<ProcessWindowInfo>> GetTargetProcessWindowsAsync();
-    public Task<string?> GetClipboardTextAsync();
-    public Task<string?> GetSelectedTextAsync();
-}
-```
-
-**性能优化建议**:
 - 优先使用轻量级属性
 - 仅在必要时调用懒加载方法
 - 避免在循环中重复调用懒加载方法
+- **永远不要**在插件内查询实时窗口状态，一律使用 `PulsarContext`
 
 ---
 

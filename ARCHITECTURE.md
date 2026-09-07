@@ -1,7 +1,7 @@
-# Pulsar Architecture Design Document (PADD) v4.0.0
+# Pulsar Architecture Design Document (PADD) v5.0.0
 
-**Status**: Published | **Core**: Plugin System v4.0 with Metadata & Circuit Breaker | **Last Updated**: 2026-03-01  
-**Related Documents**: [PLUGIN_DEVELOPMENT.md](./PLUGIN_DEVELOPMENT.md), [AGENTS.md](./AGENTS.md)
+**Status**: Published | **Core**: Plugin System with Metadata & Circuit Breaker | **Last Updated**: 2026-09-08  
+**Related Documents**: [Docs/architecture/PLUGIN_SYSTEM.md](./Docs/architecture/PLUGIN_SYSTEM.md) (plugin concepts — authoritative), [PLUGIN_DEVELOPMENT.md](./PLUGIN_DEVELOPMENT.md), [AGENTS.md](./AGENTS.md)
 
 ---
 
@@ -34,71 +34,11 @@ Pulsar triggers two independent modes via different hotkeys, with strictly isola
 
 ---
 
-### 2.2 Plugin System v4.1
+### 2.2 Plugin System
 
-**Architecture**: Pulsar core no longer contains specific business logic, only responsible for: **Capture Context** → **Dispatch Tasks** → **Render Feedback**
+**Architecture**: Pulsar core contains no business logic — it only **Captures Context → Dispatches Tasks → Renders Feedback**. All business logic lives in plugins.
 
-#### Plugin Tier Architecture
-
-| Tier | Description | Characteristics | Examples |
-|------|-------------|-----------------|----------|
-| **Core Plugin** | Essential infrastructure plugins | - Cannot be disabled<br>- Crash causes app exit<br>- No Circuit Breaker protection | PKI, WinSwitcher |
-| **Extension Plugin** | Optional feature plugins | - Can be disabled<br>- Crash isolation<br>- Circuit Breaker protection | VbaRunner, BookmarkletRunner |
-
-**Key Distinction**:
-- **Core plugins**: Loaded at startup, critical for basic functionality, no Circuit Breaker (crashes are fatal)
-- **Extension plugins**: Optional features, isolated failures, automatic recovery via Circuit Breaker
-
-#### Runtime Kernel
-
-The plugin runtime is organized around a single deep implementation — `PluginRuntimeKernel` — instead of a wide facade. All runtime components are composed via DI through `AddPluginRuntime()` extension method.
-
-- `PluginCatalog`: owns descriptor discovery, metadata registration, and dependency ordering
-- `PluginRuntimeStateStore`: owns authoritative lifecycle state for loaded plugin instances; uses `ConcurrentDictionary` for thread-safe access
-- `PluginExecutionPipeline`: enforces deterministic execution ordering for availability checks, activation readiness, execution scope, outcome classification, and telemetry
-- `PluginCircuitBreakerPolicy`: owns extension-plugin breaker counters and cooldown windows; uses `ConcurrentDictionary` with atomic `AddOrUpdate`/`TryRemove` operations
-- `PluginHost`: remains an instance-hosting primitive for isolated load/unload concerns and host-local state bridging
-- Three narrow seams, all implemented by the same `PluginRuntimeKernel` singleton and registered as such in DI (see ADR-012):
-  - `IPluginRegistry` — **registration seam** (8 methods): load/discover/activate/query descriptors and instances; served to discovery, startup, validation, and read-model consumers.
-  - `IPluginExecutor` — **execution seam** (1 method `ExecuteAsync`): the only seam a Slot execution path may hold; served to the strategy layer (`PluginActionStrategy`).
-  - `IPluginRuntimeOps` — **runtime-ops seam** (5 methods): refresh discovery, deactivate, set state, grant permissions, unload all; served to lifecycle orchestration (`ExternalPluginLifecycleOps`), Settings/analytics, and the exit path.
-
-#### Lifecycle Model
-
-The runtime kernel defines one shared lifecycle vocabulary across registry-managed and host-managed execution paths:
-
-`Unloaded` -> `Loaded` -> `Enabled` / `Disabled` -> `Running` -> `Enabled`
-
-Fault and recovery transitions are explicit:
-
-- Unhandled activation or execution failures move the plugin to `Faulted`
-- Extension-plugin cooldown expiry moves the plugin through `Recovering` before execution is retried
-- Unload transitions return the plugin to `Unloaded`
-
-#### Circuit Breaker Mechanism
-
-Extension plugins are protected by Circuit Breaker:
-
-- **Trigger Condition**: 3 crashes within 1 minute
-- **Breaker Duration**: 60 seconds
-- **Recovery Strategy**: Half-Open state, allows single retry
-
-**Breaker State Transitions**:
-```
-Closed (Normal) → Open (Breaker) → Half-Open (Test) → Closed (Recovered)
-     ↑                                                    ↓
-     └──────────────── Successful Execution ─────────────┘
-```
-
-The breaker is implemented as a dedicated runtime policy service and is no longer stored as field-level dictionaries in `PluginRuntimeKernel`.
-
-Its side effects live behind an observation seam (ADR-013): the policy raises `Tripped` / `Recovered` with `PluginId` (+ cooldown) payloads, and `PluginBreakerNotificationService` — a singleton adapter subscribed at startup — relays trips to health telemetry and a localized tray toast, and recoveries to health telemetry only.
-
-#### Supported Plugin Forms
-
-1. **Native Plugins (C# DLL)**: Run within Pulsar process, access full WPF objects
-2. **FFI Plugins (Rust/C++ DLL)**: Called via P/Invoke, pursuing extreme computational performance and system-level operations
-3. **Adapters (Legacy EXE)**: Compatible with old standalone tools (e.g., VBA Runner), encapsulating process calls through plugin layer
+> **Authoritative source**: plugin tiers, runtime kernel & three seams (ADR-012), lifecycle model, Circuit Breaker incl. observation seam (ADR-013), supported plugin forms, `PulsarContext` contract, and the plugin interface contract are documented **once** in [Docs/architecture/PLUGIN_SYSTEM.md](./Docs/architecture/PLUGIN_SYSTEM.md). This file deliberately does not restate them.
 
 ---
 
@@ -106,92 +46,18 @@ Its side effects live behind an observation seam (ADR-013): the policy raises `T
 
 ### 3.1 Unified Context Object (PulsarContext)
 
-Pulsar freezes system state at invocation moment and encapsulates it as an immutable object passed to plugins. This eliminates plugin overhead of searching for windows and race condition risks.
+Pulsar freezes system state at invocation moment and encapsulates it as an immutable object passed to plugins — eliminating plugin window-search overhead and race conditions. Lightweight properties are synchronous; heavyweight ones (clipboard, window list, selected text) are lazy-loaded. Context is fully read-only after construction; per-execution mutable data (plugin ID, permission interceptor) lives in `PluginExecutionContext` (`AsyncLocal`), never on `PulsarContext`.
 
-```csharp
-public class PulsarContext
-{
-    // Lightweight properties (synchronous acquisition)
-    public IntPtr TargetWindowHandle { get; }
-    public string TargetProcessName { get; }  // Uppercase, e.g., "EXCEL"
-    public int TargetProcessId { get; }
-    public string TargetExePath { get; }
-    
-    // Heavyweight properties (lazy-loaded, on-demand async acquisition)
-    public Task<IReadOnlyList<ProcessWindowInfo>> GetTargetProcessWindowsAsync();
-    public Task<string?> GetClipboardTextAsync();
-    public Task<string?> GetSelectedTextAsync();
-}
-```
-
-**Performance Optimization**:
-- **Lazy Loading**: Heavy properties (clipboard, window list) are only loaded when accessed
-- **Context Capture**: Captured once at radial menu invocation, avoiding repeated queries
-- **Immutability**: Context is fully read-only after construction — all fields are `{ get; }` or `Lazy<Task<...>>` with no setters (not even `internal`). Per-execution mutable data (plugin ID, permission interceptor) is stored in `PluginExecutionContext` (an `AsyncLocal`-based execution scope), not on `PulsarContext`.
+> Full contract and rules: [Docs/architecture/PLUGIN_SYSTEM.md](./Docs/architecture/PLUGIN_SYSTEM.md) — authoritative source.
 
 ---
 
 ### 3.2 Plugin Interface Contract
 
-#### IPulsarPlugin (Required)
+Plugin interfaces (`IPulsarPlugin`, `IPluginTiered`, `IPluginMetadataProvider`, plus the configurable/lifecycle extensions) are specified in the authoritative sources:
 
-```csharp
-public interface IPulsarPlugin
-{
-    // Metadata
-    string Id { get; }                    // Unique identifier (reverse domain format)
-    string DisplayName { get; }           // Display name
-    string Version { get; }               // Semantic version (e.g., "1.0.0")
-    string Author { get; }                // Author/maintainer
-    string Description { get; }           // Brief description
-    string Icon { get; }                  // Segoe Fluent Icons or Emoji
-    bool CanDisable { get; }              // Whether can be disabled
-    
-    // Lifecycle
-    void Initialize(IServiceProvider services);
-    
-    // Execution
-    Task<PluginResult> ExecuteAsync(
-        string action,
-        IReadOnlyDictionary<string, string> args,
-        PulsarContext context
-    );
-}
-```
-
-#### IPluginTiered (Recommended)
-
-```csharp
-public interface IPluginTiered
-{
-    PluginTier Tier { get; }
-}
-
-public enum PluginTier
-{
-    Core,       // Core plugin
-    Extension   // Extension plugin
-}
-```
-
-#### IPluginMetadataProvider (Optional)
-
-Plugins can provide rich metadata for UI rendering and configuration validation:
-
-```csharp
-public interface IPluginMetadataProvider
-{
-    PluginMetadata GetMetadata();
-}
-
-public class PluginMetadata
-{
-    public DisplayInfo Display { get; set; }        // Name, icon, category
-    public UIHints UI { get; set; }                 // Badge, color, sort order
-    public PluginCapabilities Capabilities { get; set; }  // Actions, dependencies
-    public ConfigSchema Schema { get; set; }        // Configuration schema
-}
-```
+- Concepts & contracts: [Docs/architecture/PLUGIN_SYSTEM.md](./Docs/architecture/PLUGIN_SYSTEM.md)
+- Developer-facing reference with examples: [PLUGIN_DEVELOPMENT.md](./PLUGIN_DEVELOPMENT.md)
 
 ---
 
@@ -384,12 +250,14 @@ Pulsar/
 
 ## 7. Related Documents
 
-- **[PLUGIN_DEVELOPMENT.md](./PLUGIN_DEVELOPMENT.md)** - Complete plugin development guide
+- **[Docs/architecture/PLUGIN_SYSTEM.md](./Docs/architecture/PLUGIN_SYSTEM.md)** - Plugin system concepts (tiers, runtime kernel, lifecycle, breaker) — authoritative
+- **[PLUGIN_DEVELOPMENT.md](./PLUGIN_DEVELOPMENT.md)** - Complete plugin development guide (interface reference — authoritative)
 - **[AGENTS.md](./AGENTS.md)** - AI Agent operational guide and coding conventions
 - **[PKI Implementation Archive](./Docs/archive/2026-03-01-PKI_IMPLEMENTATION.md)** - Historical PKI implementation details
 
 ---
 
 **Version History**:
+- v5.0.0 (2026-09-08): Plugin-system detail sections (§2.2/§3.1/§3.2) collapsed to summaries linking to `Docs/architecture/PLUGIN_SYSTEM.md` — single authoritative source (ADR-027); fixed self-contradictory version stamps
 - v4.0.0 (2026-03-01): Added plugin tier architecture, Circuit Breaker, metadata system, Focus Boomerang
 - v2.0 (2026-01-26): Initial plugin system design

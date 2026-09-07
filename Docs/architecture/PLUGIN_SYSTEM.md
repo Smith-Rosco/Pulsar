@@ -44,84 +44,34 @@ Closed (Normal) → Open (Breaker) → Half-Open (Test) → Closed (Recovered)
      └──────────────── Successful Execution ─────────────┘
 ```
 
-**User Feedback**: When a plugin is disabled, the runtime breaker policy invokes `ITrayService.ShowNotification` to alert the user via a Windows Toast/Balloon tip.
+**User Feedback**: When a plugin is disabled, the runtime breaker policy invokes `ITrayService.ShowNotification` to alert the user via a Windows Toast/Balloon tip. Side effects live behind an observation seam (ADR-013): the policy raises `Tripped` / `Recovered` with `PluginId` (+ cooldown) payloads, and `PluginBreakerNotificationService` — a singleton adapter subscribed at startup — relays trips to health telemetry and a localized tray toast, and recoveries to health telemetry only.
 
 ---
 
 ## Runtime Kernel
 
-Pulsar now separates plugin runtime responsibilities into explicit internal services:
+Pulsar separates plugin runtime responsibilities into explicit internal services:
 
 - `PluginCatalog`: discovery, descriptor registration, metadata, dependency ordering
 - `PluginRuntimeStateStore`: authoritative lifecycle state and runtime snapshots for loaded plugins
 - `PluginExecutionPipeline`: deterministic execution ordering for enablement, breaker availability, activation, execution scope, outcome classification, and telemetry
 - `PluginCircuitBreakerPolicy`: crash counters, cooldown windows, and recovery signaling for extension plugins
 - `PluginHost`: isolated instance hosting, unload behavior, and host-local state bridging
-- `PluginRuntimeKernel`: the single deep implementation behind three narrow DI seams — registration (`IPluginRegistry`), execution (`IPluginExecutor`), and runtime ops (`IPluginRuntimeOps`). The former wide facade (`IPluginRegistry` with 14 methods + a pass-through `PluginRegistry` class) was split along consumer lines in ADR-012; no facade remains.
+- `PluginRuntimeKernel`: the single deep implementation behind three narrow DI seams, composed via the `AddPluginRuntime()` extension method (ADR-012):
+  - `IPluginRegistry` — **registration seam** (8 methods): load/discover/activate/query descriptors and instances; served to discovery, startup, validation, and read-model consumers.
+  - `IPluginExecutor` — **execution seam** (1 method `ExecuteAsync`): the only seam a Slot execution path may hold; served to the strategy layer (`PluginActionStrategy`).
+  - `IPluginRuntimeOps` — **runtime-ops seam** (5 methods): refresh discovery, deactivate, set state, grant permissions, unload all; served to lifecycle orchestration (`ExternalPluginLifecycleOps`), Settings/analytics, and the exit path.
 
 ---
 
 ## Plugin Interface Contract
 
-### IPulsarPlugin (Required)
-
-```csharp
-public interface IPulsarPlugin
-{
-    // Metadata
-    string Id { get; }                    // Unique identifier (reverse domain format)
-    string DisplayName { get; }           // Display name
-    string Version { get; }               // Semantic version (e.g., "1.0.0")
-    string Author { get; }                // Author/maintainer
-    string Description { get; }           // Brief description
-    string Icon { get; }                  // Segoe Fluent Icons or Emoji
-    bool CanDisable { get; }              // Whether can be disabled
-    
-    // Lifecycle
-    void Initialize(IServiceProvider services);
-    
-    // Execution
-    Task<PluginResult> ExecuteAsync(
-        string action,
-        IReadOnlyDictionary<string, string> args,
-        PulsarContext context
-    );
-}
-```
-
-### IPluginTiered (Recommended)
-
-```csharp
-public interface IPluginTiered
-{
-    PluginTier Tier { get; }
-}
-
-public enum PluginTier
-{
-    Core,       // Core plugin
-    Extension   // Extension plugin
-}
-```
-
-### IPluginMetadataProvider (Optional)
-
-Plugins can provide rich metadata for UI rendering and configuration validation:
-
-```csharp
-public interface IPluginMetadataProvider
-{
-    PluginMetadata GetMetadata();
-}
-
-public class PluginMetadata
-{
-    public DisplayInfo Display { get; set; }        // Name, icon, category
-    public UIHints UI { get; set; }                 // Badge, color, sort order
-    public PluginCapabilities Capabilities { get; set; }  // Actions, dependencies
-    public ConfigSchema Schema { get; set; }        // Configuration schema
-}
-```
+The developer-facing interface reference — `IPulsarPlugin` (required),
+`IPluginTiered` (recommended), `IPluginMetadataProvider`, `IPluginConfigurable`,
+and `IPluginLifecycle` (optional), with code samples and parameter metadata —
+is owned by **[PLUGIN_DEVELOPMENT.md](../../PLUGIN_DEVELOPMENT.md)** (see its
+接口参考 / Interface Reference chapter). This document intentionally does not
+restate the interface code.
 
 ---
 
@@ -148,7 +98,7 @@ public class PulsarContext
 **Performance Optimization**:
 - **Lazy Loading**: Heavy properties (clipboard, window list) are only loaded when accessed
 - **Context Capture**: Captured once at radial menu invocation, avoiding repeated queries
-- **Immutability**: Context is read-only, preventing plugin side effects
+- **Immutability**: Context is fully read-only after construction — all fields are `{ get; }` or `Lazy<Task<...>>` with no setters (not even `internal`). Per-execution mutable data (plugin ID, permission interceptor) is stored in `PluginExecutionContext` (an `AsyncLocal`-based execution scope), not on `PulsarContext`.
 
 **Critical Rule**: Never query live window state inside plugins; always use `PulsarContext`.
 
@@ -230,4 +180,5 @@ Plugins are configured via `Profiles.json`:
 ---
 
 **Change History**:
+- v1.1.0 (2026-09-08): Designated the **single authoritative source** for plugin-system concepts (ADR-027). Absorbed runtime seam details, breaker observation seam, and PulsarContext immutability notes previously duplicated in `ARCHITECTURE.md` §2.2/§3 — those sections now link here.
 - v1.0.0 (2026-03-03): Initial extraction from AGENTS.md and ARCHITECTURE.md
