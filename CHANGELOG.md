@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ...
 
   ### Changed
+- **发布路径收口**：`scripts/dev.ps1 publish` 废弃为指路 stub（打印 publish skill 的调用方式并 exit 2，不再构建任何产物）。旧实现与 skill 输出重叠（stage/Setup/Standalone/SHA256，单次 ~330M 冗余、stage 结尾不回收），且其启动时对 `artifacts\publish\` 的全量删除会连带清掉 skill 的 `publish/v<ver>/` 产物。发布自此只有 skill 一条路径；`Get-PulsarVersion`（仅旧 publish 使用）一并移除。
+- **发布产物收敛（ADR-026 修订）**：publish skill 本地构建不再产出 Setup.exe / Standalone zip / SHA256SUMS（改为 GitHub Release 的 CI-only 资产，`release.yml` 不变）；本地终态仅剩 `artifacts/Pulsar-$version-{full,portable}.zip` 两个文件，`publish/v<ver>/` 产物目录在打包校验成功后自动删除（`-KeepPublishDirs` 保留）。回退路径（CI 不可用手动上传）通过 `Build-Publish.ps1` / `Pack-Zips.ps1` 新增的 `-WithInstaller` 开关显式产出 installer 三件套，且 stage 中转目录与 `publish\` 内 Setup 副本用后即删（消除双份）。此前单次本地发布冗余 ~330M（同一份 full Pulsar.exe 落 4 处 + Setup 落 2 处）。
   - ...
 
   ### Fixed

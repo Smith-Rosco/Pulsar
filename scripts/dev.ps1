@@ -16,8 +16,8 @@
   Commands:
     build         dotnet build Pulsar\Pulsar.sln        (extra args passed through)
     test          dotnet test Pulsar.Tests.csproj       (extra args passed through)
-    publish       self-contained single-file publish (win-x64) + Standalone zip
-                  + SHA256SUMS.txt manifest (extra args passed to dotnet publish)
+    publish       (deprecated, 2026-09-07) no longer builds anything; prints a
+                  pointer to .agents/skills/publish/ scripts and exits 2
     commit        git add (-u by default, -A with -All) + git commit -Message
     verify-rules  check AGENTS.md-referenced paths & key files exist (fail-fast)
     all           build, then full test
@@ -242,74 +242,20 @@ function Invoke-Commit {
     Write-Host '[dev] commit created.'
 }
 
-function Get-PulsarVersion {
-    $csproj = Join-Path $repoRoot 'Pulsar\Pulsar\Pulsar.csproj'
-    $line = Select-String -LiteralPath $csproj -Pattern '<Version>([^<]+)</Version>' | Select-Object -First 1
-    if ($null -eq $line) { throw "[dev] cannot read <Version> from $csproj" }
-    return $line.Matches[0].Groups[1].Value
-}
-
 function Invoke-Publish {
-    # Self-contained single-file publish -> Standalone zip + SHA256 manifest.
-    # Idempotent: stage dir is wiped and rebuilt on every run.
-    $csproj = Join-Path $repoRoot 'Pulsar\Pulsar\Pulsar.csproj'
-    $version = Get-PulsarVersion
-    $outRoot = Join-Path $repoRoot 'artifacts\publish'
-    $stageDir = Join-Path $outRoot 'stage'
-    $zipPath = Join-Path $outRoot ("Pulsar-v{0}-Standalone-win-x64.zip" -f $version)
-    $hashPath = Join-Path $outRoot 'SHA256SUMS.txt'
-
-    Write-Host ("[dev] publish version: v{0}" -f $version)
-    if (Test-Path -LiteralPath $outRoot) {
-        Remove-Item -LiteralPath $outRoot -Recurse -Force -Confirm:$false
-    }
-    New-Item -ItemType Directory -Path $stageDir -Force | Out-Null
-
-    Invoke-Step -Title ('dotnet publish (self-contained single-file, win-x64)') -Action {
-        & $dotnet publish $csproj -c Release -r win-x64 --self-contained true `
-            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
-            -o $stageDir @Rest
-    }
-
-    # Zip the stage contents (single-file exe) into the Standalone artifact.
-    $zipStage = Join-Path $outRoot 'zip-work'
-    New-Item -ItemType Directory -Path (Join-Path $zipStage 'Pulsar') -Force | Out-Null
-    Copy-Item -Path (Join-Path $stageDir '*') -Destination (Join-Path $zipStage 'Pulsar') -Recurse -Force
-    Invoke-Step -Title ('Compress-Archive -> ' + $zipPath) -Action {
-        Compress-Archive -Path (Join-Path $zipStage 'Pulsar') -DestinationPath $zipPath -Force
-    }
-
-    # Installer (ADR-026): build Setup.exe when Inno Setup ISCC is available.
-    # Non-fatal when absent: the Standalone zip is still produced.
-    $isccCandidates = @(
-        (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'),
-        (Join-Path $env:ProgramFiles 'Inno Setup 6\ISCC.exe'),
-        (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe')
-    )
-    $iscc = $isccCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
-    if ($null -ne $iscc) {
-        $issPath = Join-Path $repoRoot 'scripts\installer\pulsar.iss'
-        Invoke-Step -Title ('ISCC -> Pulsar-v{0}-Setup.exe' -f $version) -Action {
-            & $iscc /DAppVersion=$version $issPath
-        }
-    }
-    else {
-        Write-Host '[dev] ISCC.exe (Inno Setup 6) not found; skipping Setup.exe (Standalone zip only).' -ForegroundColor Yellow
-    }
-
-    # SHA256 manifest covers every publish artifact present in artifacts\publish.
-    $artifacts = Get-ChildItem -LiteralPath $outRoot -File |
-        Where-Object { $_.Name -ne 'SHA256SUMS.txt' }
-    $lines = $artifacts | ForEach-Object {
-        $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-        ('{0}  {1}' -f $hash, $_.Name)
-    }
-    $lines | Set-Content -LiteralPath $hashPath -Encoding ASCII
-    Write-Host ("[dev] SHA256 manifest: {0}" -f $hashPath)
-    Get-Content -LiteralPath $hashPath
-
-    Remove-Item -LiteralPath $zipStage -Recurse -Force -Confirm:$false
-    Write-Host ("[dev] publish complete: v{0} | zip + stage in {1}" -f $version, $outRoot)
+    # Deprecated 2026-09-07: publishing is owned by the publish skill
+    # (.agents/skills/publish/) as the single source of truth. The old
+    # implementation duplicated the skill's outputs (stage/, Setup.exe,
+    # Standalone zip, SHA256SUMS.txt; ~330M redundancy per run) and its
+    # startup wipe of artifacts\publish could destroy skill outputs.
+    # ASCII-only on purpose (PS 5.1 reads BOM-less UTF-8 as ANSI).
+    Write-Host '[dev] publish is DEPRECATED and no longer builds anything.' -ForegroundColor Yellow
+    Write-Host '[dev] Publishing now lives in the publish skill:'
+    Write-Host '[dev]   pwsh .agents/skills/publish/scripts/Build-Publish.ps1 -Version x.y.z'
+    Write-Host '[dev]   pwsh .agents/skills/publish/scripts/Pack-Zips.ps1  -Version x.y.z'
+    Write-Host '[dev] Local end state: artifacts/Pulsar-x.y.z-{full,portable}.zip only.'
+    Write-Host '[dev] CI-unavailable fallback (manual upload): add -WithInstaller to BOTH scripts.'
+    exit 2
 }
 
 Write-Host ("[dev] Pulsar dev helper | task: {0} | repo: {1}" -f $Task, $repoRoot)

@@ -6,7 +6,11 @@
 param(
     [Parameter(Mandatory = $true)]
     [string]$Version,
-    [int]$Build = 0
+    [int]$Build = 0,
+    # 本地默认只保留 full/portable 两个目录（打包后由 Pack-Zips 收尾为两个 ZIP）。
+    # Setup.exe/Standalone zip/SHA256SUMS 属于 GitHub Release 的 CI 职责；
+    # 仅回退路径（CI 不可用、手动上传）时加 -WithInstaller 本地产出 installer 资产。
+    [switch]$WithInstaller
 )
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
@@ -72,9 +76,11 @@ Assert-Publish -Dir $paths.FullDir -RequireCor3 $true
 Assert-Publish -Dir $paths.PortableDir -RequireCor3 $false
 Write-Output "Build OK. Effective version: $effective (csproj untouched: $Version)"
 
-# installer (ADR-026): 编译 Setup.exe。pulsar.iss 硬编码源路径为 artifacts\publish\stage\，
-# 因此把 full 产物复制到 stage 目录后调用 ISCC。ISCC 不可用时非致命跳过（Standalone zip 仍可用）。
-$iscc = Get-IsccPath
+# installer (ADR-026，本地需 -WithInstaller 显式启用)：编译 Setup.exe。
+# pulsar.iss 硬编码源路径为 artifacts\publish\stage\，因此先把 full 产物复制到 stage。
+# ISCC 不可用时非致命跳过。默认（无 -WithInstaller）完全不触 ISCC，本地不留 stage。
+$iscc = $null
+if ($WithInstaller) { $iscc = Get-IsccPath }
 if ($null -ne $iscc) {
     $stageDir = Join-Path $repo 'artifacts\publish\stage'
     if (Test-Path -LiteralPath $stageDir) { Remove-Item -LiteralPath $stageDir -Recurse -Force }
@@ -88,7 +94,11 @@ if ($null -ne $iscc) {
     $setupSource = Join-Path $repo "artifacts\publish\Pulsar-v$Version-Setup.exe"
     if (-not (Test-Path -LiteralPath $setupSource)) { throw "ISCC did not produce Setup.exe: $setupSource" }
     Copy-Item -LiteralPath $setupSource -Destination $paths.SetupExe -Force
+    Remove-Item -LiteralPath $setupSource -Force   # 只保留 artifacts 根一份，不留 publish\ 副本
+    Remove-Item -LiteralPath $stageDir -Recurse -Force   # stage 用后即删
     Write-Output "Setup.exe: $($paths.SetupExe) ($([math]::Round((Get-Item $paths.SetupExe).Length/1MB,1)) MB)"
-} else {
+} elseif ($WithInstaller) {
     Write-Warning "ISCC.exe (Inno Setup 6) not found; skipping Setup.exe. Install via winget install JRSoftware.InnoSetup"
+} else {
+    Write-Output "Installer assets skipped locally (CI builds Setup.exe/Standalone/SHA256SUMS for GitHub Release). Use -WithInstaller for the manual-upload fallback path."
 }

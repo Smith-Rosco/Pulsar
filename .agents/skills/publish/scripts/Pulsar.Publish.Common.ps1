@@ -217,7 +217,7 @@ function Get-IsccPath {
 }
 
 function Write-Sha256Manifest {
-    # 为指定文件列表生成 SHA256SUMS.txt（格式与 dev.ps1 publish 一致：hash  filename）。
+    # 生成 SHA256SUMS.txt（`<hash>  <filename>` 两空格格式）。
     param(
         [Parameter(Mandatory = $true)][string]$OutputPath,
         [Parameter(Mandatory = $true)][string[]]$Files

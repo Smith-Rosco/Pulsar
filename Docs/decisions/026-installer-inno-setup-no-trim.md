@@ -69,3 +69,14 @@ distribution must boot on machines without the .NET 8 Desktop Runtime.
 - The update service's "ReadyToInstall → run the downloaded installer" handoff
   targets `Pulsar-v{Version}-Setup.exe` for installer-based installs and the
   Standalone zip for portable ones.
+
+---
+
+## 修订（2026-09-07，append-only）：本地产物收敛为两个 ZIP
+
+原 ADR 声明的「本地 publish 产出 Setup.exe + Standalone zip + SHA256SUMS」调整为 **CI-only 资产**（`release.yml` 继续产出并上传 GitHub Release，本节不改变其语义）。变更动机：实测一次本地发布会把同一份 ~80MB full Pulsar.exe 落 4 处（full/、full.zip、Standalone.zip、stage/standalone-stage 残留）、Setup.exe 落 2 处，单次约 330M 冗余，多版本累积后 `artifacts/` 达 966M。
+
+- **本地终态**：`artifacts/` 根仅保留 `Pulsar-$version-{full,portable}.zip`；`publish/v<ver>/` 产物目录在打包校验成功后由 Pack-Zips 自动删除（`-KeepPublishDirs` 可保留）。
+- **回退路径**（CI 不可用、手动上传）：`Build-Publish.ps1` 与 `Pack-Zips.ps1` 均加 `-WithInstaller` 显式产出 installer 三件套；stage/publish 内 Setup 副本用后即删（不再双份）。
+- GitHub Release 资产清单（Setup/Standalone/SHA256SUMS）与更新服务的安装器路径不变。
+- 承载实现：`.agents/skills/publish/scripts/`（Build-Publish.ps1 / Pack-Zips.ps1）。

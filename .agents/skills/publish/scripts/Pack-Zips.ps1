@@ -4,7 +4,13 @@
 param(
     [Parameter(Mandatory = $true)]
     [string]$Version,
-    [int]$Build = 0
+    [int]$Build = 0,
+    # 与 Build-Publish.ps1 -WithInstaller 配对：额外产出 Standalone zip + SHA256SUMS.txt
+    #（覆盖 Setup.exe，若存在）。默认不产，本地终态只有两个 ZIP。
+    [switch]$WithInstaller,
+    # 打包成功后默认删除 publish\v<ver>\ 产物目录（~96M，内容已进 ZIP）。
+    # 冒烟测试/后续调试需要目录时加 -KeepPublishDirs。
+    [switch]$KeepPublishDirs
 )
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
@@ -40,16 +46,30 @@ Write-Output "Pack OK."
 Write-Output "ZIP full:     $($paths.ZipFull)"
 Write-Output "ZIP portable: $($paths.ZipPortable)"
 
-# installer (ADR-026): Standalone zip = full 产物的单文件打包（对齐 dev.ps1 publish 命名）
+# installer (ADR-026)：Standalone zip + SHA256SUMS 仅在 -WithInstaller 时产出
+#（GitHub Release 资产由 CI 构建，本地默认不重复）；stage 中转目录用后即删。
 $standaloneStage = Join-Path $repo 'artifacts\publish\standalone-stage'
-if (Test-Path -LiteralPath $standaloneStage) { Remove-Item -LiteralPath $standaloneStage -Recurse -Force }
-New-Item -ItemType Directory -Path $standaloneStage -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $paths.FullDir 'Pulsar.exe') -Destination $standaloneStage -Force
-Compress-ZipWithFallback -Dir $standaloneStage -ZipPath $paths.ZipStandalone
-Assert-Zip -ZipPath $paths.ZipStandalone
-Write-Output "ZIP standalone: $($paths.ZipStandalone)"
+if ($WithInstaller) {
+    if (Test-Path -LiteralPath $standaloneStage) { Remove-Item -LiteralPath $standaloneStage -Recurse -Force }
+    New-Item -ItemType Directory -Path $standaloneStage -Force | Out-Null
+    Copy-Item -LiteralPath (Join-Path $paths.FullDir 'Pulsar.exe') -Destination $standaloneStage -Force
+    Compress-ZipWithFallback -Dir $standaloneStage -ZipPath $paths.ZipStandalone
+    Assert-Zip -ZipPath $paths.ZipStandalone
+    Remove-Item -LiteralPath $standaloneStage -Recurse -Force
+    Write-Output "ZIP standalone: $($paths.ZipStandalone)"
 
-# SHA256SUMS：覆盖 Standalone zip + Setup.exe（若存在）
-$manifestFiles = @($paths.ZipStandalone)
-if (Test-Path -LiteralPath $paths.SetupExe) { $manifestFiles += $paths.SetupExe }
-Write-Sha256Manifest -OutputPath $paths.Sha256Sums -Files $manifestFiles
+    # SHA256SUMS：覆盖 Standalone zip + Setup.exe（若存在）
+    $manifestFiles = @($paths.ZipStandalone)
+    if (Test-Path -LiteralPath $paths.SetupExe) { $manifestFiles += $paths.SetupExe }
+    Write-Sha256Manifest -OutputPath $paths.Sha256Sums -Files $manifestFiles
+} elseif (Test-Path -LiteralPath $standaloneStage) {
+    Remove-Item -LiteralPath $standaloneStage -Recurse -Force
+}
+
+# 本地终态收敛：默认删除 publish\v<ver>\ 产物目录（内容已进 ZIP 且已校验）。
+if (-not $KeepPublishDirs) {
+    if (Test-Path -LiteralPath $paths.PublishRoot) {
+        Remove-Item -LiteralPath $paths.PublishRoot -Recurse -Force
+        Write-Output "Cleaned publish dirs: $($paths.PublishRoot) (use -KeepPublishDirs to keep)"
+    }
+}
