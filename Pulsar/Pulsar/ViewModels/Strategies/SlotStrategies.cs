@@ -66,12 +66,11 @@ namespace Pulsar.ViewModels.Strategies
 
         public async Task ExecuteAsync(SlotViewModel slot, IMenuSession context, CancellationToken cancellationToken = default)
         {
-            context.SetActionExecuted(true, slot);
-            
             // [Fix] Hide the menu IMMEDIATELY before executing the plugin.
             // This prevents infinite loops if the plugin simulates input (e.g., Ctrl release)
             // which would otherwise re-trigger the hotkey hook while the menu is still visible.
-            context.IsVisible = false;
+            // BeginExecution owns the mark→hide order (and the slot identity); see IMenuSession.
+            context.BeginExecution(slot);
 
             var result = await _executor.ExecuteAsync(_pluginSlot.PluginId, _pluginSlot.Action, _pluginSlot.Args, _pulsarContext);
 
@@ -140,7 +139,9 @@ namespace Pulsar.ViewModels.Strategies
             _logger?.LogInformation("[WinSwitch] ExecuteAsync START: hWnd=0x{Hwnd:X} title='{Title}' process='{Process}'",
                 _window.Handle.ToInt64(), _window.Title, _window.ProcessName);
 
-            context.SetActionExecuted(true);
+            // Marks the executing slot (previously dropped, so the E2E label fell back
+            // to index resolution) and hides before any focus work — see IMenuSession.
+            context.BeginExecution(slot);
 
             var stopwatch = Stopwatch.StartNew();
             bool success = false;
@@ -149,11 +150,9 @@ namespace Pulsar.ViewModels.Strategies
             {
                 // Prevent focus restore from undoing the switch after menu dismisses.
                 _windowService.SetFocusRestoreMode(FocusRestoreMode.NoRestore);
-                _logger?.LogInformation("[WinSwitch] SetFocusRestoreMode=NoRestore, hiding menu...");
+                _logger?.LogInformation("[WinSwitch] SetFocusRestoreMode=NoRestore, menu already hidden...");
 
-                // Hide first to avoid focus-steal and visual glitches while switching foreground windows.
-                context.IsVisible = false;
-                _logger?.LogInformation("[WinSwitch] Menu hidden, calling ActivateWindow(0x{Hwnd:X})...",
+                _logger?.LogInformation("[WinSwitch] Calling ActivateWindow(0x{Hwnd:X})...",
                     _window.Handle.ToInt64());
 
                 if (!_windowService.ActivateWindow(_window))

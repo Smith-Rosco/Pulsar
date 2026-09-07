@@ -12,7 +12,13 @@ using Pulsar.Services.Interfaces;
 
 namespace Pulsar.ViewModels
 {
-    internal sealed class RadialMenuVisualStateCoordinator
+    /// <summary>
+    /// Owns the Radial Menu's centre visual state and the cascade policies that shape it
+    /// (ADR-024 D8 centre identity, D11 dynamic-title suppression). The Menu Session
+    /// reports facts through <see cref="VisualStateContext"/>; what those facts imply
+    /// is decided here, not at the call site.
+    /// </summary>
+    internal sealed class RadialMenuVisualStateCoordinator : IRadialMenuVisualStateCoordinator
     {
         private readonly IPreviewService _previewService;
         private readonly ILogger? _logger;
@@ -29,17 +35,30 @@ namespace Pulsar.ViewModels
             _loc = localizationService;
         }
 
-        public void UpdateVisuals(
-            int activeSlotIndex,
-            MenuState menuState,
-            string centerText,
-            IReadOnlyCollection<SlotViewModel> slots,
-            SlotViewModel centerSlot,
-            Func<PreviewHostContext> getPreviewHostContext,
-            Action<string> setDynamicTitle,
-            Action<ResolvedWindowPreview> setCenterPreview,
-            bool preserveCenterIdentity = false)
+        /// <inheritdoc />
+        public void UpdateVisuals(VisualStateContext context)
         {
+            var activeSlotIndex = context.ActiveSlotIndex;
+            var menuState = context.MenuState;
+            var centerText = context.CenterText;
+            var slots = context.Slots;
+            var centerSlot = context.CenterSlot;
+            var getPreviewHostContext = context.GetPreviewHostContext;
+            var setCenterPreview = context.SetCenterPreview;
+
+            // [ADR-024 D8 + D11] The cascade policies live here, not at the call site.
+            // D8 — in a Ring the centre IS the parent Slot, in a Fan the frozen centre
+            // keeps its root look; the active "0" is the cascade's dismiss anchor, not a
+            // generic Back button, so the label/icon must not be reset on hover.
+            // D11 — while a cascade is open the dynamic title is suppressed: it is fixed
+            // below the wheel (Y = 385) and overlaps a Ring whose parent Slot sits in
+            // the lower half, and it duplicates the centre's identity anyway.
+            // Closing the cascade lets the next UpdateVisuals restore it.
+            var preserveCenterIdentity = menuState == MenuState.SubMenu && context.IsCascadeSubMenu;
+            var setDynamicTitle = preserveCenterIdentity
+                ? _ => context.SetDynamicTitle(string.Empty)
+                : context.SetDynamicTitle;
+
             _previewCts?.Cancel();
             _previewCts = new CancellationTokenSource();
             var token = _previewCts.Token;
@@ -51,12 +70,6 @@ namespace Pulsar.ViewModels
 
                 if (preserveCenterIdentity)
                 {
-                    // [2026-09-06 user spec] Cascade centres keep their identity:
-                    // in a Ring the centre IS the parent slot (icon + label + back
-                    // action), and in a Fan the frozen centre keeps its root look
-                    // (ADR-024 D8). The active "0" is the cascade's dismiss anchor,
-                    // not a generic Back button — resetting the label/icon here made
-                    // the Ring centre read as "Back" the moment it was hovered.
                     setDynamicTitle(centerText);
                     return;
                 }

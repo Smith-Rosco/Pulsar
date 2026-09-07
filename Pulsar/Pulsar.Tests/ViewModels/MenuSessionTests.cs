@@ -75,6 +75,28 @@ namespace Pulsar.Tests.ViewModels
             session.IsVisible.Should().BeFalse();
         }
 
+        /// <summary>
+        /// The one test that guards the "hide before acting" invariant for every Slot
+        /// Action at once. Strategies used to hand-write <c>SetActionExecuted</c> +
+        /// <c>IsVisible = false</c> (5 call sites, 2 of which paired the mark, 1 of
+        /// which dropped the slot identity); they now call <see cref="IMenuSession.BeginExecution"/>,
+        /// so this ordering is asserted once, here.
+        /// </summary>
+        [Fact]
+        public void BeginExecution_ShouldRecordExecutingSlotAndHideMenu()
+        {
+            var session = CreateSession();
+            session.IsVisible = true;
+
+            session.BeginExecution(new SlotViewModel(3, 0, 0, 40));
+
+            session.ActionExecuted.Should().BeTrue(
+                "the executing slot must be recorded so E2E assertions never fall back to index resolution");
+            session.IsVisible.Should().BeFalse(
+                "the menu must be hidden before the action produces any observable effect, or a plugin " +
+                "that simulates input re-triggers the hotkey hook while the menu is still visible");
+        }
+
         private static MenuSession CreateSession(int engineHitTest = -1, double deadZoneRadius = 0)
         {
             var slotLayoutEngine = new Mock<ISlotLayoutEngine>();

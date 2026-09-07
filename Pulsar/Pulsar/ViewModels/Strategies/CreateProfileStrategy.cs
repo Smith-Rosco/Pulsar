@@ -31,8 +31,9 @@ namespace Pulsar.ViewModels.Strategies
 
         public async Task ExecuteAsync(SlotViewModel slot, IMenuSession context, CancellationToken cancellationToken = default)
         {
-            // 1. Close Menu
-            context.IsVisible = false;
+            // 1. Close Menu (and record this slot as the executing one — it is a real
+            //    Action, so E2E can assert it; see IMenuSession.BeginExecution).
+            context.BeginExecution(slot);
 
             // 2. Add Profile if missing
             await ConfigEditSession.RunAsync(_configService, session =>

@@ -66,6 +66,10 @@ _Avoid_: page builder, slot loader
 **Focus Boomerang**:
 The guarantee that focus returns to the window that invoked the Radial Menu before a plugin injects input into it.
 
+**Execution Handoff**:
+The single point at which a Slot Action begins: the Menu Session records WHICH Slot is executing and hides the menu before the action produces any observable effect. Strategies declare intent; the session owns the sequence. Hiding first is load-bearing — a plugin that simulates input would otherwise re-trigger the hotkey hook while the menu is still visible.
+_Avoid_: the hand-written `SetActionExecuted` + `IsVisible = false` pairs, "hide the menu before executing" comments.
+
 ### Plugin System
 
 **Plugin**:
@@ -150,6 +154,10 @@ _Avoid_: submenu math in MenuSession, "the old BuildCascadeParentPose"
 **Sub-Menu Layout Engine**:
 The single owner of cascade geometry (`ISubMenuLayoutEngine`): builds the parent pose from a `SubMenuPoseContext` (direction derived from the parent Slot position, Fan gap compression, Ring ratio clamping, sector-constrained wing angles), resolves the effective style (over-cap Fan is a Ring), and computes child positions / hit tests. Deterministic; the editor preview can reuse it.
 _Avoid_: geometry split across MenuSession and the engine
+
+**Visual State Coordinator**:
+The module owning the Radial Menu centre's visual state — label, icon, badge, dynamic title, and window-preview capture with its cancellation — together with the cascade policies that shape it (ADR-024 D8 centre identity, D11 dynamic-title suppression). The Menu Session reports facts through a Visual State Context and the coordinator decides what those facts imply; neither policy is derived at the call site.
+_Avoid_: centre update logic in MenuSession, the nine-parameter `UpdateVisuals`.
 
 **Radial Renderer Resolver**:
 The single seam that answers "which IRadialRenderer is active" (`IRadialRendererResolver`): reads the configured renderer id from the config snapshot, resolves it through the renderer factory, caches against the config revision and invalidates on plugin-registry changes. The view-model and SlotOrb both resolve through it; the view no longer service-locates.

@@ -13,6 +13,20 @@ namespace Pulsar.ViewModels
         bool IsVisible { get; set; }
         bool IsInSubMenu { get; }
         void SetActionExecuted(bool value, SlotViewModel? executedSlot = null);
+
+        /// <summary>
+        /// Opens the execution window for a Slot Action: records WHICH slot is running
+        /// (so E2E/debug assertions never fall back to guessing by index) and hides the
+        /// menu in the same breath, before the action produces any observable effect.
+        /// </summary>
+        /// <remarks>
+        /// The ordering is load-bearing and therefore owned by the implementation, not
+        /// by callers: a plugin that simulates input (e.g. a Ctrl release) would
+        /// re-trigger the hotkey hook while the menu is still visible — an infinite
+        /// loop. Strategies declare intent; the session owns the sequence.
+        /// </remarks>
+        void BeginExecution(SlotViewModel slot);
+
         void RestoreRootMenu();
         Task EnterSubMenuAsync(SubMenuDescriptor descriptor, int clickedSlotIndex);
     }

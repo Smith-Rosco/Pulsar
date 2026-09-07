@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
@@ -13,24 +14,32 @@ namespace Pulsar.Tests.ViewModels
     public class WindowSwitchStrategyTests
     {
         [Fact]
-        public async Task ExecuteAsync_ShouldHideMenuBeforeAttemptingActivation()
+        public async Task ExecuteAsync_ShouldBeginExecutionBeforeAttemptingActivation()
         {
             var windowService = new Mock<IWindowService>();
-            IMenuSession? observedContext = null;
+            var order = new List<string>();
+            var slot = new SlotViewModel(1, 0, 0, 40);
 
             windowService
                 .Setup(service => service.ActivateWindow(It.IsAny<ProcessWindowInfo>()))
-                .Callback(() => observedContext!.IsVisible.Should().BeFalse())
+                .Callback(() => order.Add("activate"))
                 .Returns(true);
 
             var strategy = new WindowSwitchStrategy(CreateWindow(), windowService.Object);
             var context = new Mock<IMenuSession>();
             context.SetupProperty(c => c.IsVisible, true);
-            observedContext = context.Object;
+            context
+                .Setup(c => c.BeginExecution(It.IsAny<SlotViewModel>()))
+                .Callback(() => order.Add("begin"));
 
-            await strategy.ExecuteAsync(new SlotViewModel(1, 0, 0, 40), context.Object);
+            await strategy.ExecuteAsync(slot, context.Object);
 
-            context.Object.IsVisible.Should().BeFalse();
+            // The strategy no longer writes IsVisible itself. It declares intent
+            // through the seam, and the seam owns the mark→hide order — so this
+            // test no longer has to restate an invariant it does not own.
+            order.Should().Equal("begin", "activate");
+            context.Verify(c => c.BeginExecution(slot), Times.Once);
+            context.VerifySet(c => c.IsVisible = false, Times.Never);
             windowService.Verify(service => service.ActivateWindow(It.IsAny<ProcessWindowInfo>()), Times.Once);
         }
 

@@ -21,6 +21,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **架构深化 C1（Execution Handoff）**：`IMenuSession` 新增 `BeginExecution(slot)`，把「记录执行 Slot + 立刻隐藏菜单」的顺序收归实现。此前策略层 5 处手写 `IsVisible = false`，其中仅 2 处配对 `SetActionExecuted`、且 `WindowSwitchStrategy` 未传 slot（导致 E2E 断言退化为按索引猜测）。现 3 处真正的动作执行走 seam，2 处导航类保持原样。
+- **架构深化 C3（Visual State Coordinator）**：`UpdateVisuals` 的 9 参数（含 3 回调 + 1 布尔开关）收敛为单个 `VisualStateContext`；ADR-024 D8（中心身份保留）与 D11（cascade 期间抑制动态标题）的推导从 `MenuSession` 搬入协调器，语义不再两地重复。新增 `IRadialMenuVisualStateCoordinator` seam，该模块此前测试覆盖为 0。
+- **架构深化 C2（部分）**：删除 `WindowService.IsProcessNameBlacklisted` —— 与 `WindowEligibilityEvaluator` 内实现逐字相同但**生产零调用**，仅被自身 8 条测试钉住。规则收敛到唯一实现并改为 public，测试改指。
+
+### Fixed
+- `WindowSwitchStrategy` 不再丢弃执行 Slot 身份（`SetActionExecuted(true)` 未传 slot），E2E「哪个 Slot 执行了」标签不再退化为索引解析。
+
 ## [1.11.0] - 2026-09-06
 
 ### Added

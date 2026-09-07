@@ -29,6 +29,9 @@
   - installer 1.3：干净 VM 冒烟（无 .NET Runtime 环境启动 Standalone zip 验证自包含运行时）
   - repositioning 3.2/3.3：Demo 视频录制（3 支脚本已定稿 `Docs/media/release/videos/demo-video-scripts.md`，需真机录屏+剪辑）
 
+- [ ] **架构审查 C2 未竟（2026-09-07 暂停，等用户裁决）**：`WindowInventoryService` 的两阶段编排是否收归前门 `IWindowEligibilityEvaluator`。两阶段是**有意的性能设计**（廉价结构筛 → 只对幸存窗口解析进程元数据），黑名单谓词本就来自前门，重复的是「两阶段协议」。要收口需先给前门设计两阶段词汇（如 `EvaluateStructural(snapshot)` / `EvaluateSnapshot(snapshot, scope)`）；风险点：热路径 + 该文件 0 专属测试 + 需真机验证窗口切换。**裁决后若决定不做，应记录为 ADR 以免后续审查重复提出。**
+- [ ] 架构审查 C4（设置面 Draft 泄漏）/ C5（教程层）/ C6（推荐引擎时钟 seam）未排期，见 `%TEMP%/architecture-review-20260907-075329.html`。
+
 ## 已完成（历史保留）
 
 - [x] ~~archify 插件系统架构图（2026-09-05，commit `7ecb5bd` + `dadc7b2`）：15 组件/15 关系/3 boundary，showcase 9/9 检查通过，12 处源码引用对照 `8df4281` 经 `--repo-root` 核验；`deliver` 冻结 spec `9a7582b4` → HTML `cd3021c8`。可视证据（visual-check PNG/JSON）与 `Pulsar/graphify-out/` 已入 gitignore，不入库。~~

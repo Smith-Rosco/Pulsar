@@ -112,7 +112,7 @@ namespace Pulsar.ViewModels
         private readonly ILogger<MenuSession>? _logger;
         private readonly ILocalizationService _loc;
         private readonly IUiDispatcher _ui;
-        private readonly RadialMenuVisualStateCoordinator _visualStateCoordinator;
+        private readonly IRadialMenuVisualStateCoordinator _visualStateCoordinator;
         private readonly RadialMenuSubMenuCoordinator _subMenuCoordinator;
         private readonly RadialMenuLayoutCoordinator _layoutCoordinator;
 
@@ -338,7 +338,8 @@ namespace Pulsar.ViewModels
             Action<RadialMenuMode>? rendererWarmup = null,
             IDebugStatePublisher? debugStatePublisher = null,
             ISubMenuLayoutEngine? subMenuLayoutEngine = null,
-            IEnumerable<ISubMenuStrategy>? subMenuStrategies = null)
+            IEnumerable<ISubMenuStrategy>? subMenuStrategies = null,
+            IRadialMenuVisualStateCoordinator? visualStateCoordinator = null)
         {
             _configService = configService;
             _windowService = windowService;
@@ -361,7 +362,8 @@ namespace Pulsar.ViewModels
             _globalMouseService = globalMouseService;
             _rendererWarmup = rendererWarmup;
 
-            _visualStateCoordinator = new RadialMenuVisualStateCoordinator(previewService, logger, _loc);
+            _visualStateCoordinator = visualStateCoordinator
+                ?? new RadialMenuVisualStateCoordinator(previewService, logger, _loc);
             _subMenuLayoutEngine = subMenuLayoutEngine ?? new SubMenuLayoutEngine();
             _subMenuCoordinator = new RadialMenuSubMenuCoordinator(
                 subMenuStrategies ?? Array.Empty<ISubMenuStrategy>(),
@@ -639,6 +641,16 @@ namespace Pulsar.ViewModels
                         ["label"] = slot?.Label
                     });
             }
+        }
+
+        /// <inheritdoc />
+        public void BeginExecution(SlotViewModel slot)
+        {
+            // Order matters: record the executing slot first (its identity is
+            // resolved from live selection state), then hide before anything
+            // observable happens. See IMenuSession.BeginExecution.
+            SetActionExecuted(true, slot);
+            IsVisible = false;
         }
 
         public void RestoreRootMenu()
@@ -2539,24 +2551,20 @@ namespace Pulsar.ViewModels
             // the centre to a generic "Back" the moment the dismiss anchor (0) is
             // hovered — which in a Ring happens immediately, because the pointer
             // sits on the parent slot that the ring just opened around.
-            bool preserveCenterIdentity = _menuState == MenuState.SubMenu
-                && _activeSubMenuDescriptor is CascadeSubMenuDescriptor;
-
-            _visualStateCoordinator.UpdateVisuals(
-                _activeSlotIndex,
-                _menuState,
-                _centerText,
-                ResolveActiveSlotSource(),
-                CenterSlot,
-                GetPreviewHostContext,
-                // [ADR-024 D11] While a cascade is open the dynamic title is
-                // suppressed: it is fixed below the wheel (Y = 385) and overlaps a
-                // Ring sub-wheel whose parent slot sits in the lower half, and it
-                // duplicates the centre's identity anyway (Ring = parent slot).
-                // Closing the cascade lets the next UpdateVisuals restore it.
-                title => DynamicTitle = preserveCenterIdentity ? string.Empty : title,
-                ApplyCenterPreview,
-                preserveCenterIdentity);
+            // The session only reports facts; ADR-024 D8 (centre identity) and D11
+            // (dynamic-title suppression) are the visual-state module's policy now.
+            _visualStateCoordinator.UpdateVisuals(new VisualStateContext
+            {
+                ActiveSlotIndex = _activeSlotIndex,
+                MenuState = _menuState,
+                CenterText = _centerText,
+                Slots = ResolveActiveSlotSource(),
+                CenterSlot = CenterSlot,
+                IsCascadeSubMenu = _activeSubMenuDescriptor is CascadeSubMenuDescriptor,
+                GetPreviewHostContext = GetPreviewHostContext,
+                SetDynamicTitle = title => DynamicTitle = title,
+                SetCenterPreview = ApplyCenterPreview,
+            });
         }
 
         /// <summary>
