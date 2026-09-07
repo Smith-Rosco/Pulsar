@@ -31,3 +31,15 @@
 - [x] 5.1 建立 `RELEASE_NOTES` 模板（版本、亮点、下载、系统要求占位）供 Change 5 使用（仓库根 `RELEASE_NOTES.md`，含校验清单与叙事自查项）
 - [x] 5.2 `scripts/dev.ps1 build` 0 警告 0 错误；`scripts/dev.ps1 test` 全量通过（WorkBuddy 下 dev.ps1 退出码 127 问题复现，改走 bash + env 前缀 dotnet 等效验证：build 0 警告 0 错误、全量 1143/1143 通过；存量 CS8604 ×4 已修复，见 journal 16:47）
 - [x] 5.3 journal 记录 + （如显示名语义有变）ADR 记录
+
+## 6. 程序设计级发现（录制前实测暴露；后续修复方向，不在本次变更范围）
+
+> 来源：2026-09-07 为 3.2 录制做配置预跑验证时实测发现。逐条已核实现象与根因。
+
+- [ ] 6.1 **VbaModuleInjector 未剥离 Attribute VB_Name 行**（实测确认）：VBE 导出的 .bas 首行 `Attribute VB_Name = "..."` 经 CodeModule.AddFromString 注入后，模块无法完整编译，Application.Run 报「宏不可用」。规避：演示 .bas 已去 Attribute 行（可编译）；治本：VbaModuleInjector.InjectModule 在 AddFromString 前剥离 Attribute 行（按行过滤，保留其余内容）。
+- [ ] 6.2 **槽位参数不展开环境变量**：全库无 ExpandEnvironmentVariables 处理槽位参数（仅 SettingsViewModel UI 层有）。用户配置 %USERPROFILE%/%APPDATA% 路径会静默失效。规避：demo-profile.ps1 注入时展开为绝对路径；治本：插件执行前统一展开（参数解析层/ExecutablePathResolver）。
+- [ ] 6.3 **Pulsar.Simulator 参数解析缺陷**：CommandLineParser 短名前缀匹配把 -args 解析为 -a rgs（与 -action 冲突报 multiple times）、-plugin 解析为 -p lugin（报 Plugin not found）；且 Plugins 目录缺失时扩展插件（bookmarklet/vbarunner）不可加载测试。规避：用 -g/--args 传参、仅测内置插件；治本：文档注明参数写法或改选项名避免前缀歧义。
+- [ ] 6.4 **vbarunner 对无 VBA 引擎的 WPS 无优雅降级**：WPS 未装 VBA 组件时 VBProject 返回空壳对象（Name 空、VBComponents.Count=0、Add 抛 null 引用），用户看到「宏没反应」而非可读错误。治本：检测空壳并返回「WPS 未安装 VBA 组件（vbeapi.dll 仅接口存根），请安装 VBA for WPS」可读错误。
+- [ ] 6.5 **WPS 信任开关与 VBA 组件两级前置**：HKCU\Software\Kingsoft\Office\6.0\et\Application Settings\KDEVBProjectTrust（默认 0，信任 VBA 工程对象模型访问）与 VBA 组件安装缺一不可；VbaRunner.md 应补充 WPS 前置检测与引导。
+- [ ] 6.6 **演示凭据注入已自动化**（本次完成，记录约定）：demo-profile.ps1 switch 自动生成 DPAPI 凭据（ProtectedData CurrentUser，与 SecretRepository 解密一致）写入 secrets.json 并回填 Slot3 secretId；restore 同时恢复 Profiles.json 与 secrets.json。后续 PkiPlugin 若支持导入/CLI 添加凭据，可替代该注入。- [ ] 6.7 **SlotOrb.RefreshIcon 未对图标 key 做 NormalizeIconKey**（实测确认，文本图标根因）：径向菜单把配置 icon 字符串原样传入 SlotOrb → GetGlyph 只认 hex 码位，**名称形式（如 ReportDocument）被原样当文本渲染**，码位形式（E9F9）才渲染字形。设置页 ResolveIconDisplay 对名称同样 fallback 原样。规避（已落地）：宣传 fixture 全部改用码位（commandMode）与 exe 路径（switchMode，走 ExtractExeIcon 显示程序真图标）；治本：RefreshIcon/GetGlyph 对非路径 key 先 NormalizeIconKey（名称→码位→字形），并对 ResolveIconDisplay 补名称反查。
+- [ ] 6.8 **本机环境变更**（2026-09-07 记录，供后续引用）：Microsoft Office 16.0 已安装（EXCEL.EXE 在 Office16），WPS 已卸载（App Paths 清除、仅 Kingsoft 残留 backup）。Excel COM + VBProject + AccessVBOM=1 实测可用，vbarunner 宏注入链（Add→AddFromString→Run→Remove）端到端验证通过（.bas 无 Attribute 行）。VBA 阻塞解除，视频一按真实宏执行录制；分镜 S4 已由「WPS 表格」改为「新开 Excel 窗口」。

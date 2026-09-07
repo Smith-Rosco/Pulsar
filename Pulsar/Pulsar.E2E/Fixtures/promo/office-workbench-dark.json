@@ -3,12 +3,11 @@
     "language": "zh-CN",
     "centerSlotBehavior": "MRU_Window",
     "triggerDistance": 100,
-    "theme": "Dark",
+    "theme": "Light",
     "hoverScale": 1.2,
     "springiness": 6,
     "maxDisplacement": 20,
     "radialRenderer": "Default",
-    "radialThemePreset": "MatchaForest",
     "hotkeys": {
       "ShowGrid": {
         "key": "Q",
@@ -65,7 +64,7 @@
             "macro": "FormatReport"
           },
           "label": "一键跑宏",
-          "icon": "AllApps",
+          "icon": "E9F9",
           "color": "#217346",
           "order": 0,
           "slot": 1
@@ -74,10 +73,10 @@
           "plugin": "com.pulsar.bookmarklet",
           "action": "run",
           "args": {
-            "code": "document.querySelector('#login').click()"
+            "scriptPath": "%USERPROFILE%\\Documents\\Pulsar\\Scripts\\legacy-login.js"
           },
           "label": "登录老旧系统",
-          "icon": "Globe",
+          "icon": "E774",
           "color": "#D97706",
           "order": 0,
           "slot": 2
@@ -86,11 +85,11 @@
           "plugin": "com.pulsar.pki",
           "action": "fill",
           "args": {
-            "field": "username",
-            "secret": "hr-portal"
+            "secretId": "00000000-0000-0000-0000-000000000000",
+            "autoEnter": "true"
           },
           "label": "自动填写登录",
-          "icon": "Lock",
+          "icon": "E928",
           "color": "#7C3AED",
           "order": 0,
           "slot": 3
@@ -103,7 +102,7 @@
             "macro": "PackReport"
           },
           "label": "报表整理",
-          "icon": "Page",
+          "icon": "E8A5",
           "color": "#0E7490",
           "order": 0,
           "slot": 4,
@@ -116,7 +115,7 @@
                 "macro": "SumMonth"
               },
               "label": "汇总本月",
-              "iconKey": "Page",
+              "iconKey": "CalculatorAddition",
               "colorHex": ""
             },
             {
@@ -127,7 +126,7 @@
                 "macro": "DedupeRows"
               },
               "label": "清洗重复行",
-              "iconKey": "Edit",
+              "iconKey": "Filter",
               "colorHex": ""
             },
             {
@@ -138,7 +137,7 @@
                 "macro": "BuildCharts"
               },
               "label": "生成图表",
-              "iconKey": "SaveLocal",
+              "iconKey": "AreaChart",
               "colorHex": ""
             }
           ]
@@ -150,7 +149,7 @@
             "app": "chrome"
           },
           "label": "切换浏览器",
-          "icon": "Switch",
+          "icon": "E8F9",
           "color": "#2563EB",
           "order": 0,
           "slot": 5
@@ -159,10 +158,10 @@
           "plugin": "com.pulsar.winswitcher",
           "action": "launch",
           "args": {
-            "path": "E:\\Work\\reports"
+            "path": "%USERPROFILE%\\Documents\\Pulsar\\Demo\\reports"
           },
           "label": "打开项目文件夹",
-          "icon": "Library",
+          "icon": "ED25",
           "color": "",
           "order": 0,
           "slot": 6
@@ -174,7 +173,7 @@
             "keys": "Ctrl+S"
           },
           "label": "保存当前文件",
-          "icon": "Save",
+          "icon": "E74E",
           "color": "",
           "order": 0,
           "slot": 7
@@ -186,7 +185,7 @@
             "path": "calc.exe"
           },
           "label": "打开计算器",
-          "icon": "System",
+          "icon": "E8EF",
           "color": "",
           "order": 0,
           "slot": 8
@@ -200,7 +199,7 @@
             "app": "chrome"
           },
           "label": "Chrome",
-          "icon": "Globe",
+          "icon": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
           "color": "",
           "order": 0,
           "slot": 1
@@ -212,7 +211,7 @@
             "app": "excel"
           },
           "label": "Excel",
-          "icon": "AllApps",
+          "icon": "C:\\Program Files\\Microsoft Office\\Root\\Office16\\EXCEL.EXE",
           "color": "#217346",
           "order": 0,
           "slot": 2
@@ -224,7 +223,7 @@
             "app": "notepad"
           },
           "label": "记事本",
-          "icon": "Page",
+          "icon": "C:\\Windows\\System32\\notepad.exe",
           "color": "",
           "order": 0,
           "slot": 3
@@ -236,7 +235,7 @@
             "app": "explorer"
           },
           "label": "文件资源管理器",
-          "icon": "Library",
+          "icon": "C:\\Windows\\explorer.exe",
           "color": "",
           "order": 0,
           "slot": 4
@@ -245,10 +244,10 @@
           "plugin": "com.pulsar.winswitcher",
           "action": "switch",
           "args": {
-            "app": "wps"
+            "app": "powershell"
           },
-          "label": "WPS 表格",
-          "icon": "Document",
+          "label": "PowerShell",
+          "icon": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
           "color": "",
           "order": 0,
           "slot": 5
@@ -260,7 +259,7 @@
             "app": "cmd"
           },
           "label": "终端",
-          "icon": "CommandPrompt",
+          "icon": "C:\\Windows\\System32\\cmd.exe",
           "color": "",
           "order": 0,
           "slot": 6
