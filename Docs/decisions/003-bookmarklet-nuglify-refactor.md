@@ -191,7 +191,7 @@ foreach (var warning in validationResult.Warnings)
 
 ### 4. 更新文档
 
-**文件**: `Docs/Plugins/BookmarkletRunner.md`
+**文件**: `Docs/plugins/BookmarkletRunner.md`
 
 **新增章节**:
 - ✅ 脚本处理引擎（NUglify vs Regex）

@@ -61,7 +61,7 @@ Successfully implemented a declarative prerequisite system for VbaRunner plugin 
 ### New Files Created
 - `Pulsar/Pulsar/Plugins/Extensions/VbaRunner/ScriptDirectives.cs`
 - `Pulsar/Pulsar/Plugins/Extensions/VbaRunner/PrerequisiteValidator.cs`
-- `Docs/Plugins/VbaRunner_Directives.md`
+- `Docs/plugins/VbaRunner_Directives.md`
 
 ### Modified Files
 - `Pulsar/Pulsar/Plugins/Extensions/VbaRunner/ScriptDirectiveParser.cs`
@@ -160,7 +160,7 @@ End Sub
 
 ## Documentation
 
-- **User Guide**: `Docs/Plugins/VbaRunner_Directives.md`
+- **User Guide**: `Docs/plugins/VbaRunner_Directives.md`
 - **Architecture**: Covered in this summary
 - **Migration Guide**: Included in directive documentation
 
