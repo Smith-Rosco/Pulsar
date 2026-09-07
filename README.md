@@ -10,7 +10,7 @@
 ### 重度办公效率工作台 · 驯服老旧办公系统
 **An office automation workbench for Windows — one-click macros, secure fill & sign-in, and custom scripts for legacy intranet web pages**
 
-[![Release Version](https://img.shields.io/badge/Release-v1.10.0-2563EB.svg?style=flat-square&logo=github)](https://github.com/Smith-Rosco/Pulsar/releases)
+[![Release Version](https://img.shields.io/badge/Release-v1.11.0-2563EB.svg?style=flat-square&logo=github)](https://github.com/Smith-Rosco/Pulsar/releases)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(x64)-0078D4.svg?style=flat-square&logo=windows)](https://www.microsoft.com/windows)
 [![License](https://img.shields.io/badge/License-MIT-10B981.svg?style=flat-square)](LICENSE)
 [![Language](https://img.shields.io/badge/Language-zh--CN%20%7C%20en-8B5CF6.svg?style=flat-square)](#-多语言支持)
@@ -66,8 +66,8 @@
 | **独立版（full）** | 自带运行环境，**解压即用**，任何电脑都能直接跑 | ~80 MB | 大多数用户，省心首选 |
 | **轻量版（portable）** | 体积小巧，但需要先安装 [.NET 8 桌面运行时](https://dotnet.microsoft.com/download/dotnet/8.0) | ~8.5 MB | 下载慢 / 硬盘紧张的用户 |
 
-- **独立版**：[⬇️ Pulsar-1.10.0-full.zip](https://github.com/Smith-Rosco/Pulsar/releases/download/v1.10.0/Pulsar-1.10.0-full.zip)
-- **轻量版**：[⬇️ Pulsar-1.10.0-portable.zip](https://github.com/Smith-Rosco/Pulsar/releases/download/v1.10.0/Pulsar-1.10.0-portable.zip)
+- **独立版**：[⬇️ Pulsar-1.11.0-full.zip](https://github.com/Smith-Rosco/Pulsar/releases/download/v1.11.0/Pulsar-1.11.0-full.zip)
+- **轻量版**：[⬇️ Pulsar-1.11.0-portable.zip](https://github.com/Smith-Rosco/Pulsar/releases/download/v1.11.0/Pulsar-1.11.0-portable.zip)
 - 更多历史版本与更新记录：[Releases 页面](https://github.com/Smith-Rosco/Pulsar/releases)
 
 ### 🚀 使用
