@@ -390,6 +390,31 @@ End Sub
 
 ---
 
+### Error: "Unable to run the macro... the macro is unavailable" (COM 0x800A03EC) — script has an `Attribute` header
+
+**Cause**: The `.bas` file is in VBE "exported module" format whose first line is
+`Attribute VB_Name = "..."`. `CodeModule.AddFromString` does not process these
+lines: the procedure registers fine (`ProcStartLine` resolves), but the leftover
+attribute line breaks **full module compilation** at first `Application.Run`.
+**Procedure registration ≠ module compiles.** (Fixed at plugin level —
+`VbaModuleInjector` now strips attribute lines before injection; still, never
+emit them. See [lessons/VBA_INJECT_ATTRIBUTE_LINE_BREAKS_COMPILE.md](../lessons/VBA_INJECT_ATTRIBUTE_LINE_BREAKS_COMPILE.md).)
+
+**Fix**: Save scripts as plain code with no `Attribute` header lines.
+
+---
+
+### Type-inference order: dates turn into numbers (46255) after style reset
+
+**Cause**: Column types were inferred **after** clearing styles. Once
+`NumberFormat` is reset to General, Excel COM returns date cells as plain
+doubles (`IsDate(46255) = False`). Also note `IsDate("1,200") = True` in VBA —
+strip thousands separators and check `IsNumeric` **before** `IsDate`.
+
+**Fix**: Infer column types first, then clear styles; numeric-before-date checks.
+
+---
+
 ### Error: "Wrong number of arguments"
 
 **Cause**: Mismatch between `@Runner` directive and Sub signature.

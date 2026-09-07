@@ -131,24 +131,60 @@
 
 ## 🎬 演示
 
-<!-- TODO: 替换为真实的演示视频封面与链接 -->
+### 📊 一键跑宏
+
+一张典型的"脏表"：格式不统一、配色混乱、列宽不合理。呼出轮盘，滑向「一键跑宏」方位、松开——脚本自动跑完：统一字体、清掉乱色、列宽自适应、冻结表头，报表直接清爽成型。
+
 <div align="center">
-  <a href="https://github.com/Smith-Rosco/Pulsar" target="_blank">
-    <img src="Pulsar/Pulsar/Assets/Brand/demo.gif" width="640" alt="Pulsar 演示视频封面（占位）" />
-  </a>
-  <p>
-    <a href="https://github.com/Smith-Rosco/Pulsar"><b>📺 点击观看演示视频（占位链接）</b></a>
-  </p>
+  <img src="Docs/media/release/demos/demo-1-one-key-macro.webp" width="640" alt="一键跑宏演示" />
+</div>
+
+> 💡 不会写宏？把 [**VBA 脚本 AI 提示词**](./Docs/guides/AI_PROMPT_VBA_RUNNER.md) 整段喂给 AI，描述你的需求，就能得到能直接运行的宏脚本。
+
+### 🌐 驯服老旧系统
+
+先看经典操作：在这个十年没升级的内网报表系统里，**登录 → 查询 → 导出**，每一步都要手点。刷新页面，然后只做一次"呼出、滑动、松开"——登录、查询、导出一气呵成，CSV 自动下载。Pulsar 从桌面层注入脚本，插件装不上的老系统也能自动化。
+
+<div align="center">
+  <img src="Docs/media/release/demos/demo-2-tame-legacy.webp" width="640" alt="驯服老旧系统演示" />
+</div>
+
+> 💡 不会写脚本？[**网页脚本 AI 提示词**](./Docs/guides/AI_PROMPT_BOOKMARKLET.md) 整段喂给 AI 即可，还附赠"页面改版回验清单"。
+
+### 🔐 登录，只要一滑
+
+先手动输入一遍账号密码；然后清空账号，滑向轮盘的登录方位——账号密码自动注入、自动提交，一步完成登录。注入走的是**文本注入**（键盘层），所以不只网页：任何"账号框 + 密码框"的桌面软件登录窗都适用。
+
+<div align="center">
+  <img src="Docs/media/release/demos/demo-3-one-slide-login.webp" width="640" alt="一滑登录演示" />
 </div>
 
 ---
 
 ## 📸 截图
 
-<!-- TODO: 添加真实截图，替换以下占位符 -->
-| 径向菜单 | 设置界面 | 插件编辑 |
-|---------|---------|---------|
-| `[截图_径向菜单]` | `[截图_设置界面]` | `[截图_插件编辑]` |
+<div align="center">
+  <img src="Docs/media/release/02-radial-summoned.png" width="640" alt="径向菜单呼出" /><br/>
+  <sub><b>径向呼出</b> · 固定方位，闭眼盲操作</sub>
+</div>
+
+<div align="center">
+  <br/>
+  <img src="Docs/media/release/01-main-interface.png" width="640" alt="设置界面" /><br/>
+  <sub><b>设置界面</b> · 插件生命周期与健康一目了然</sub>
+</div>
+
+<div align="center">
+  <br/>
+  <img src="Docs/media/release/03-excel-macro-moment.png" width="640" alt="一键跑宏" /><br/>
+  <sub><b>一键跑宏</b> · 松开即执行</sub>
+</div>
+
+<div align="center">
+  <br/>
+  <img src="Docs/media/release/04-window-switch-menu.png" width="640" alt="窗口切换子菜单" /><br/>
+  <sub><b>窗口切换</b> · 没在运行？直接启动</sub>
+</div>
 
 ---
 

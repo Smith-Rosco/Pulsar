@@ -131,14 +131,32 @@ Jump straight to the window you want; if the app isn't running, Pulsar starts it
 
 ## 🎬 Demo
 
-<!-- TODO: Replace with a real video cover and link -->
+### 📊 One-click macros
+
+A typical messy sheet — inconsistent formats, random colours, unreasonable column widths. Summon the wheel, slide toward the macro slot, release — the script runs on its own: unified fonts, stray colours cleared, columns auto-fitted, header frozen. The report cleans itself up.
+
 <div align="center">
-  <a href="https://github.com/Smith-Rosco/Pulsar" target="_blank">
-    <img src="Pulsar/Pulsar/Assets/Brand/demo.gif" width="640" alt="Pulsar Demo Video Cover (placeholder)" />
-  </a>
-  <p>
-    <a href="https://github.com/Smith-Rosco/Pulsar"><b>📺 Click to watch the demo video (placeholder link)</b></a>
-  </p>
+  <img src="Docs/media/release/demos/demo-1-one-key-macro.webp" width="640" alt="One-click macro demo" />
+</div>
+
+> 💡 Can't write macros? Paste the [**VBA script AI prompt**](./Docs/guides/AI_PROMPT_VBA_RUNNER.md) into any AI chat, describe what you need, and get a ready-to-run macro script.
+
+### 🌐 Taming legacy systems
+
+First, the classic routine on a decade-old intranet reporting portal: **sign in → query → export**, click by click. Now refresh the page and do one "summon, slide, release" — sign-in, query and export run back-to-back, and the CSV downloads itself. Pulsar injects scripts from the desktop layer, so systems that can't take browser extensions get automated anyway.
+
+<div align="center">
+  <img src="Docs/media/release/demos/demo-2-tame-legacy.webp" width="640" alt="Taming legacy systems demo" />
+</div>
+
+> 💡 Can't write scripts? Paste the [**web-script AI prompt**](./Docs/guides/AI_PROMPT_BOOKMARKLET.md) into any AI chat — it even asks the AI to hand over a "DOM contract checklist" for future page redesigns.
+
+### 🔐 Sign in, one slide
+
+First, type the username and password by hand. Then clear the field, slide toward the sign-in slot — credentials are injected and submitted automatically in one motion. This works via **text injection** at the keyboard layer, so it isn't limited to web pages: any desktop app with a "username + password" login box works too.
+
+<div align="center">
+  <img src="Docs/media/release/demos/demo-3-one-slide-login.webp" width="640" alt="One-slide sign-in demo" />
 </div>
 
 ---
