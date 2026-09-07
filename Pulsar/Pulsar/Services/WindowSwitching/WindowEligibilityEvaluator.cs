@@ -109,7 +109,11 @@ namespace Pulsar.Services.WindowSwitching
             return name => IsProcessNameBlacklisted(name, blacklist);
         }
 
-        private static bool IsProcessNameBlacklisted(string? processName, IEnumerable<string> blacklist)
+        /// <summary>
+        /// 进程名黑名单判定的唯一实现。此前 WindowService 另有一份逐字相同的副本（生产零调用，
+        /// 只有它自己的测试在用），会误导后来者去改那份死的 —— 已删除，规则收敛到这里。
+        /// </summary>
+        public static bool IsProcessNameBlacklisted(string? processName, IEnumerable<string> blacklist)
         {
             if (string.IsNullOrWhiteSpace(processName))
             {

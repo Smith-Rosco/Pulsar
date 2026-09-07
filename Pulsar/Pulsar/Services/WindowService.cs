@@ -607,24 +607,12 @@ namespace Pulsar.Services
             return eligibility.Included;
         }
 
-        internal static bool IsProcessNameBlacklisted(string? processName, IEnumerable<string> blacklist)
-        {
-            if (string.IsNullOrWhiteSpace(processName))
-            {
-                return false;
-            }
-
-            foreach (var entry in blacklist)
-            {
-                if (!string.IsNullOrWhiteSpace(entry) &&
-                    string.Equals(entry, processName, StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
+        // [Architecture review 2026-09-07, C2] A byte-identical copy of
+        // WindowEligibilityEvaluator.IsProcessNameBlacklisted used to live here. It had
+        // ZERO production callers — only its own tests — while the copy inside the
+        // evaluator is the one that actually decides. Keeping it invited the next
+        // maintainer to "fix" the dead one. The rule now has one public home:
+        // WindowEligibilityEvaluator.IsProcessNameBlacklisted.
 
         /// <summary>
         /// True when the given window class name is in the system blacklist of

@@ -240,10 +240,10 @@ namespace Pulsar.Tests.Services
         {
             var blacklist = new HashSet<string>(new[] { "chrome", "wps" }, StringComparer.OrdinalIgnoreCase);
 
-            WindowService.IsProcessNameBlacklisted("chrome", blacklist).Should().BeTrue();
-            WindowService.IsProcessNameBlacklisted("CHROME", blacklist).Should().BeTrue();
-            WindowService.IsProcessNameBlacklisted("Wps", blacklist).Should().BeTrue();
-            WindowService.IsProcessNameBlacklisted("notepad", blacklist).Should().BeFalse();
+            WindowEligibilityEvaluator.IsProcessNameBlacklisted("chrome", blacklist).Should().BeTrue();
+            WindowEligibilityEvaluator.IsProcessNameBlacklisted("CHROME", blacklist).Should().BeTrue();
+            WindowEligibilityEvaluator.IsProcessNameBlacklisted("Wps", blacklist).Should().BeTrue();
+            WindowEligibilityEvaluator.IsProcessNameBlacklisted("notepad", blacklist).Should().BeFalse();
         }
 
         [Fact]
@@ -251,9 +251,9 @@ namespace Pulsar.Tests.Services
         {
             var blacklist = new HashSet<string>(new[] { "chrome" }, StringComparer.OrdinalIgnoreCase);
 
-            WindowService.IsProcessNameBlacklisted(null!, blacklist).Should().BeFalse();
-            WindowService.IsProcessNameBlacklisted(string.Empty, blacklist).Should().BeFalse();
-            WindowService.IsProcessNameBlacklisted("   ", blacklist).Should().BeFalse();
+            WindowEligibilityEvaluator.IsProcessNameBlacklisted(null!, blacklist).Should().BeFalse();
+            WindowEligibilityEvaluator.IsProcessNameBlacklisted(string.Empty, blacklist).Should().BeFalse();
+            WindowEligibilityEvaluator.IsProcessNameBlacklisted("   ", blacklist).Should().BeFalse();
         }
 
         [Fact]
@@ -261,8 +261,8 @@ namespace Pulsar.Tests.Services
         {
             var blacklist = new HashSet<string>(new[] { "", "  ", "chrome" }, StringComparer.OrdinalIgnoreCase);
 
-            WindowService.IsProcessNameBlacklisted("chrome", blacklist).Should().BeTrue();
-            WindowService.IsProcessNameBlacklisted("notepad", blacklist).Should().BeFalse();
+            WindowEligibilityEvaluator.IsProcessNameBlacklisted("chrome", blacklist).Should().BeTrue();
+            WindowEligibilityEvaluator.IsProcessNameBlacklisted("notepad", blacklist).Should().BeFalse();
         }
 
         [Fact]
@@ -275,10 +275,10 @@ namespace Pulsar.Tests.Services
 
             foreach (var process in blacklist)
             {
-                WindowService.IsProcessNameBlacklisted(process, blacklist).Should().BeTrue();
+                WindowEligibilityEvaluator.IsProcessNameBlacklisted(process, blacklist).Should().BeTrue();
             }
 
-            WindowService.IsProcessNameBlacklisted("notepad", blacklist).Should().BeFalse();
+            WindowEligibilityEvaluator.IsProcessNameBlacklisted("notepad", blacklist).Should().BeFalse();
         }
 
         private static ProcessWindowInfo CreateWindow(
