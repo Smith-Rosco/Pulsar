@@ -29,11 +29,11 @@
   - installer 1.3：干净 VM 冒烟（无 .NET Runtime 环境启动 Standalone zip 验证自包含运行时）
   - repositioning 3.2/3.3：Demo 视频录制（3 支脚本已定稿 `Docs/media/release/videos/demo-video-scripts.md`，需真机录屏+剪辑）
 
-- [ ] **架构审查 C2 未竟（2026-09-07 暂停，等用户裁决）**：`WindowInventoryService` 的两阶段编排是否收归前门 `IWindowEligibilityEvaluator`。两阶段是**有意的性能设计**（廉价结构筛 → 只对幸存窗口解析进程元数据），黑名单谓词本就来自前门，重复的是「两阶段协议」。要收口需先给前门设计两阶段词汇（如 `EvaluateStructural(snapshot)` / `EvaluateSnapshot(snapshot, scope)`）；风险点：热路径 + 该文件 0 专属测试 + 需真机验证窗口切换。**裁决后若决定不做，应记录为 ADR 以免后续审查重复提出。**
-- [ ] 架构审查 C4（设置面 Draft 泄漏，2026-09-07 口径已修正）：不是「1 属性 + 10 处访问」的机械替换——需给 `SettingsEditorSession` 设计变更 API（写点 :112/:492/:952）+ 定脏标记归属 + 绑定刷新语义，Session 0 专属测试。grill 第二轮建议与 C5 同批、测试先行，**等用户裁决**（延期 or 本会话做）。
-- [ ] 架构审查 C5（教程层）：改动面最大（XAML + 1168 行 0 测试 View），建议与 C4 同批进专门会话。
+- [x] ~~**架构审查 C2 未竟（2026-09-07 暂停，等用户裁决）**~~ **已收口**（commit 见下方提交状态行）：用户裁决走 (a)。前门新增 `EvaluateStructural(snapshot)` / `EvaluateSnapshot(snapshot, scope)` 两阶段词汇；`WindowInventoryService` 改注入前门 evaluator，`IWindowInventoryService` 移除黑名单谓词参数（作用域按路径固定）；coordinator 不再转发谓词。新增前门词汇测试 10 + inventory 协议测试 4（该文件首次有网）；全量 1248/1248。**需真机回归窗口切换（P1 项 3）。**
+- [ ] 架构审查 C4（设置面 Draft 泄漏，2026-09-07 口径已修正）：不是「1 属性 + 10 处访问」的机械替换——需给 `SettingsEditorSession` 设计变更 API（写点 :112/:492/:952）+ 定脏标记归属 + 绑定刷新语义，Session 0 专属测试。grill 第二轮建议与 C5 同批、测试先行，**等用户裁决**（延期 or 本会话做）。**2026-09-07 用户已裁决：(b) 与 C5 合并进专门会话。**
+- [ ] 架构审查 C5（教程层）：改动面最大（XAML + 1168 行 0 测试 View），与 C4 同批进专门会话（用户已裁决）。
 - [x] ~~架构审查 C6（推荐引擎时钟 seam 空壳）~~ **已落地**（commit `1bc09ad`）：3 处裸 `DateTime.UtcNow` 收口到 `_clock().ToUniversalTime()`（时区语义保持：趋势日键仍本地日期）；Unused/Inactive 阈值测试注入固定时钟 + 新增「近期使用不触发」反向守护；全量 1234/1234。
-- [ ] **C1/C3/C2 半部 + C6 已本地提交**（`e441e73` / `b6980e2` / `1bc09ad`），main ahead origin/main 3，待用户 push。
+- [ ] **C1/C3/C2 全量 + C6 已本地提交**（`e441e73` / `b6980e2` / `1bc09ad` / `5a71f17`），main ahead origin/main 5，待用户 push。
 
 ## 已完成（历史保留）
 
