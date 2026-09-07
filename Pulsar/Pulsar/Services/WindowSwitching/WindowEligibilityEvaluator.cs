@@ -94,6 +94,18 @@ namespace Pulsar.Services.WindowSwitching
             return (_policy.Evaluate(snapshot, processBlacklist), snapshot);
         }
 
+        public EligibilityResult EvaluateStructural(WindowEligibilitySnapshot snapshot)
+            => _policy.EvaluateStructural(snapshot);
+
+        public EligibilityResult EvaluateSnapshot(WindowEligibilitySnapshot snapshot, EligibilityScope scope)
+        {
+            var processBlacklist = scope == EligibilityScope.Discovery
+                ? BuildProcessBlacklistPredicate()
+                : null;
+
+            return _policy.Evaluate(snapshot, processBlacklist);
+        }
+
         /// <summary>
         /// 取当前进程黑名单的稳定引用，包成按进程名判定的谓词。锁内捕获引用
         /// （<see cref="UpdateBlacklist"/> 整体替换、不原地修改），谓词调用路径无锁。

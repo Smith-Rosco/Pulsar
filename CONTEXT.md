@@ -45,7 +45,7 @@ The module owning the desktop-window inventory cache lifecycle: invalidate-on-re
 _Avoid_: cache service, inventory cache logic
 
 **Eligibility Evaluator**:
-The front module that turns an HWND into a Window Eligibility verdict for a given scope (Discovery applies the process blacklist, Explicit ignores it). Owns snapshot assembly (including the conditional title read) and the process blacklist, composing the Window Eligibility policy as its pure core.
+The front module that turns an HWND or a pre-built Window Eligibility snapshot into a verdict for a given scope (Discovery applies the process blacklist, Explicit ignores it). Owns snapshot assembly (including the conditional title read), the process blacklist, and the two-phase protocol — cheap `EvaluateStructural` first, then `EvaluateSnapshot(snapshot, scope)` on survivors — so the inventory enumeration and the one-shot quick-switch path share a single decision point. Composes the Window Eligibility policy as its pure core.
 _Avoid_: eligibility service, window checker
 
 **Window Capture**:

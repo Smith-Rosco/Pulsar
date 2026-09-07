@@ -231,7 +231,6 @@ namespace Pulsar
             serviceCollection.AddSingleton<IWindowInventoryCoordinator>(sp =>
                 new WindowInventoryCoordinator(
                     sp.GetRequiredService<IWindowInventoryService>(),
-                    sp.GetRequiredService<IWindowEligibilityEvaluator>(),
                     sp.GetRequiredService<WindowTrackingService>(),
                     sp.GetRequiredService<IWindowCaptureService>(),
                     sp.GetRequiredService<WindowInventoryCache>(),

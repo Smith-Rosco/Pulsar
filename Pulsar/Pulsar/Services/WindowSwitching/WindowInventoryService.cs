@@ -12,15 +12,16 @@ namespace Pulsar.Services.WindowSwitching
 {
     internal sealed class WindowInventoryService : IWindowInventoryService
     {
-        private readonly IWindowEligibilityPolicy _eligibilityPolicy;
+        // C2 收口：枚举编排不再注入 policy 手搓两阶段，统一走前门
+        // IWindowEligibilityEvaluator 的两阶段词汇（EvaluateStructural → EvaluateSnapshot(scope)）。
+        private readonly IWindowEligibilityEvaluator _eligibilityEvaluator;
 
-        public WindowInventoryService(IWindowEligibilityPolicy eligibilityPolicy)
+        public WindowInventoryService(IWindowEligibilityEvaluator eligibilityEvaluator)
         {
-            _eligibilityPolicy = eligibilityPolicy;
+            _eligibilityEvaluator = eligibilityEvaluator;
         }
 
         public Task<List<ProcessWindowInfo>> GetActiveWindowsAsync(
-            Func<string, bool> isBlacklisted,
             Func<IntPtr, WindowTrackingSnapshot> snapshotWindow,
             Func<string, ImageSource?> extractIcon,
             IProcessRegistryService? processRegistryService)
@@ -30,7 +31,7 @@ namespace Pulsar.Services.WindowSwitching
                 List<ProcessWindowInfo> results = EnumerateWindows(
                     processIdFilter: null,
                     metaByPid: null,
-                    isBlacklisted,
+                    scope: EligibilityScope.Discovery,
                     snapshotWindow,
                     extractIcon);
 
@@ -40,10 +41,10 @@ namespace Pulsar.Services.WindowSwitching
 
         /// <summary>
         /// 按单个进程 ID 枚举窗口。进程元数据只读取一次，窗口匹配走单一枚举通道。
+        /// 显式激活路径：进程黑名单不参与（Explicit）。
         /// </summary>
         public Task<List<ProcessWindowInfo>> GetProcessWindowsAsync(
             int targetProcessId,
-            Func<string, bool>? isBlacklisted,
             Func<IntPtr, WindowTrackingSnapshot> snapshotWindow,
             Func<string, ImageSource?> extractIcon)
         {
@@ -60,17 +61,17 @@ namespace Pulsar.Services.WindowSwitching
 
                 metaByPid[targetProcessId] = meta;
 
-                return EnumerateWindows(pidSet, metaByPid, isBlacklisted, snapshotWindow, extractIcon);
+                return EnumerateWindows(pidSet, metaByPid, EligibilityScope.Explicit, snapshotWindow, extractIcon);
             });
         }
 
         /// <summary>
         /// 按进程名枚举窗口（覆盖该进程的整个进程树）。单次枚举、进程元数据按进程预取一次，
         /// 避免 SwitchToProcessAsync 对每个进程做一次全桌面枚举（O(P×W) → O(W)）。
+        /// 显式激活路径：进程黑名单不参与（Explicit）。
         /// </summary>
         public Task<List<ProcessWindowInfo>> GetProcessWindowsAsync(
             string processName,
-            Func<string, bool>? isBlacklisted,
             Func<IntPtr, WindowTrackingSnapshot> snapshotWindow,
             Func<string, ImageSource?> extractIcon)
         {
@@ -134,22 +135,22 @@ namespace Pulsar.Services.WindowSwitching
                     return new List<ProcessWindowInfo>();
                 }
 
-                return EnumerateWindows(pidSet, metaByPid, isBlacklisted, snapshotWindow, extractIcon);
+                return EnumerateWindows(pidSet, metaByPid, EligibilityScope.Explicit, snapshotWindow, extractIcon);
             });
         }
 
-        public Task<HashSet<string>> GetRunningProcessNamesAsync(Func<string, bool> isBlacklisted)
+        public Task<HashSet<string>> GetRunningProcessNamesAsync()
         {
             return Task.Run(async () =>
             {
-                var processes = await GetRunningProcessesAsync(isBlacklisted);
+                var processes = await GetRunningProcessesAsync();
                 return processes
                     .Select(process => process.ProcessName)
                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
             });
         }
 
-        public Task<List<RunningProcessInfo>> GetRunningProcessesAsync(Func<string, bool> isBlacklisted)
+        public Task<List<RunningProcessInfo>> GetRunningProcessesAsync()
         {
             return Task.Run(() =>
             {
@@ -170,7 +171,7 @@ namespace Pulsar.Services.WindowSwitching
 
                         // 先用廉价结构判定筛掉绝大多数窗口，再解析进程元数据（见 EnumerateWindows 同款注释）。
                         var snapshot = BuildSnapshot(hWnd, classBuilder.ToString(), virtualScreen);
-                        if (!_eligibilityPolicy.EvaluateStructural(snapshot).Included)
+                        if (!_eligibilityEvaluator.EvaluateStructural(snapshot).Included)
                         {
                             return true;
                         }
@@ -179,8 +180,9 @@ namespace Pulsar.Services.WindowSwitching
                         if (meta == null) return true;
 
                         // [Deepen] 与快速切换共用同一"可切换窗口"判定（结构规则 + 物理可见性 + 类名黑名单 + 进程黑名单）。
-                        if (!_eligibilityPolicy.EvaluateIdentity(
-                                snapshot with { ProcessName = meta.ProcessName }, isBlacklisted).Included)
+                        // 运行中进程枚举是发现路径：进程黑名单生效（Discovery）。
+                        if (!_eligibilityEvaluator.EvaluateSnapshot(
+                                snapshot with { ProcessName = meta.ProcessName }, EligibilityScope.Discovery).Included)
                         {
                             return true;
                         }
@@ -249,7 +251,8 @@ namespace Pulsar.Services.WindowSwitching
 
                     snapshot = snapshot with { ProcessName = processName, Title = title };
 
-                    var verdict = _eligibilityPolicy.Evaluate(snapshot, processBlacklist: null);
+                    // Inspector 是诊断面：完整判定（结构 + 身份），进程黑名单不参与（Explicit）。
+                    var verdict = _eligibilityEvaluator.EvaluateSnapshot(snapshot, EligibilityScope.Explicit);
                     results.Add(new WindowEligibilityReport(
                         hWnd,
                         title,
@@ -269,7 +272,7 @@ namespace Pulsar.Services.WindowSwitching
         private List<ProcessWindowInfo> EnumerateWindows(
             IReadOnlyCollection<int>? processIdFilter,
             IReadOnlyDictionary<int, ProcessMeta>? metaByPid,
-            Func<string, bool>? isBlacklisted,
+            EligibilityScope scope,
             Func<IntPtr, WindowTrackingSnapshot> snapshotWindow,
             Func<string, ImageSource?> extractIcon)
         {
@@ -297,7 +300,7 @@ namespace Pulsar.Services.WindowSwitching
                 // 不含进程名 —— 解析进程元数据（全系统进程快照 + 打开进程句柄）比这里
                 // 所有 native 读取加起来还贵一个量级，而它会淘汰掉桌面上 90%+ 的顶层窗口。
                 var snapshot = BuildSnapshot(hWnd, className, virtualScreen);
-                if (!_eligibilityPolicy.EvaluateStructural(snapshot).Included)
+                if (!_eligibilityEvaluator.EvaluateStructural(snapshot).Included)
                 {
                     return true;
                 }
@@ -333,8 +336,8 @@ namespace Pulsar.Services.WindowSwitching
                 snapshot = snapshot with { ProcessName = processName };
 
                 // [Deepen] 与快速切换共用同一"可切换窗口"判定。
-                // 进程黑名单由调用方决定作用域（发现路径传入 isBlacklisted，显式激活路径传 null）。
-                if (!_eligibilityPolicy.EvaluateIdentity(snapshot, isBlacklisted).Included)
+                // 进程黑名单由 scope 决定（发现路径 Discovery 生效，显式激活路径 Explicit 忽略）。
+                if (!_eligibilityEvaluator.EvaluateSnapshot(snapshot, scope).Included)
                 {
                     return true;
                 }
@@ -354,8 +357,8 @@ namespace Pulsar.Services.WindowSwitching
                 // [Deepen] 标题依赖规则（TitlePattern）：仅在存在此类规则时二次判定，
                 // 使发现路径的标题规则生效，同时保持无标题规则时零额外读取（首次判定快照不含标题）。
                 // 复用已有快照 —— 重新 BuildSnapshot 会把全部 native 读取再做一遍。
-                if (_eligibilityPolicy.HasTitleDependentRules
-                    && !_eligibilityPolicy.EvaluateIdentity(snapshot with { Title = title }, isBlacklisted).Included)
+                if (_eligibilityEvaluator.HasTitleDependentRules
+                    && !_eligibilityEvaluator.EvaluateSnapshot(snapshot with { Title = title }, scope).Included)
                 {
                     return true;
                 }

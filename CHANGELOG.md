@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **架构深化 C1（Execution Handoff）**：`IMenuSession` 新增 `BeginExecution(slot)`，把「记录执行 Slot + 立刻隐藏菜单」的顺序收归实现。此前策略层 5 处手写 `IsVisible = false`，其中仅 2 处配对 `SetActionExecuted`、且 `WindowSwitchStrategy` 未传 slot（导致 E2E 断言退化为按索引猜测）。现 3 处真正的动作执行走 seam，2 处导航类保持原样。
 - **架构深化 C3（Visual State Coordinator）**：`UpdateVisuals` 的 9 参数（含 3 回调 + 1 布尔开关）收敛为单个 `VisualStateContext`；ADR-024 D8（中心身份保留）与 D11（cascade 期间抑制动态标题）的推导从 `MenuSession` 搬入协调器，语义不再两地重复。新增 `IRadialMenuVisualStateCoordinator` seam，该模块此前测试覆盖为 0。
 - **架构深化 C2（部分）**：删除 `WindowService.IsProcessNameBlacklisted` —— 与 `WindowEligibilityEvaluator` 内实现逐字相同但**生产零调用**，仅被自身 8 条测试钉住。规则收敛到唯一实现并改为 public，测试改指。
+- **架构深化 C2（收口）**：前门 `IWindowEligibilityEvaluator` 新增两阶段词汇 `EvaluateStructural(snapshot)` / `EvaluateSnapshot(snapshot, scope)`；`WindowInventoryService` 不再注入 policy 手搓编排，枚举统一走前门（结构筛 → 幸存窗口才解析进程元数据 → 身份/标题判定），`IWindowInventoryService` 移除进程黑名单谓词参数（作用域按路径固定：发现 Discovery / 显式 Explicit）；`WindowInventoryCoordinator` 不再持有 evaluator 只为转发谓词。判定协议一处，ADR-010 的单一决策点补完。新增前门词汇测试 10 条 + inventory 协议测试 4 条（该文件此前 0 专属测试）。
 - **架构深化 C6（推荐引擎时钟 seam 收口）**：`PluginRecommendationEngine` 的 `_clock` 成为唯一时间源——`CheckUnusedPlugin` / `CheckInactivePlugin` 的 3 处裸 `DateTime.UtcNow` 改走 `_clock().ToUniversalTime()`（时区语义不变：趋势日键仍用本地日期）。Unused/Inactive 阈值测试改为注入固定时钟，新增「近期使用不触发」反向守护，该 seam 由空壳变实。
 
 ### Fixed

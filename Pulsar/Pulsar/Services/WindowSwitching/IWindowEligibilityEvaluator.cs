@@ -32,6 +32,23 @@ namespace Pulsar.Services.WindowSwitching
         /// </summary>
         (EligibilityResult Result, WindowEligibilitySnapshot Snapshot) EvaluateWithSnapshot(IntPtr hwnd, EligibilityScope scope);
 
+        /// <summary>
+        /// 第一道筛：只判定不依赖进程名的硬规则（自身窗口 / 可见性 / cloaked / 样式 / owner /
+        /// 物理可见性 / 类名黑名单）。快照的 <see cref="WindowEligibilitySnapshot.ProcessName"/>
+        /// 可以为空 —— 全桌面枚举用它先淘汰绝大多数窗口，避免为每个窗口解析进程元数据
+        /// （解析进程元数据比所有廉价 native 读取加起来还贵一个量级）。
+        /// </summary>
+        EligibilityResult EvaluateStructural(WindowEligibilitySnapshot snapshot);
+
+        /// <summary>
+        /// 对<b>已建好的快照</b>做完整判定（结构 + 身份）。两阶段枚举先经
+        /// <see cref="EvaluateStructural"/> 筛掉大多数窗口，只为幸存窗口解析进程名后调用本方法；
+        /// 单快照路径（Inspector 诊断报告）直接调用。scope 决定进程黑名单是否参与
+        /// （<see cref="EligibilityScope.Discovery"/> 生效 / <see cref="EligibilityScope.Explicit"/> 忽略）。
+        /// 快照须含 ProcessName（存在标题依赖规则时还须含 Title，见 <see cref="HasTitleDependentRules"/>）。
+        /// </summary>
+        EligibilityResult EvaluateSnapshot(WindowEligibilitySnapshot snapshot, EligibilityScope scope);
+
         /// <summary>更新进程黑名单（与系统默认黑名单合并后原子替换）。</summary>
         void UpdateBlacklist(IEnumerable<string> userBlacklist);
 

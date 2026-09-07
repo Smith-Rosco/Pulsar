@@ -18,7 +18,6 @@ namespace Pulsar.Services.WindowSwitching
     public sealed class WindowInventoryCoordinator : IWindowInventoryCoordinator
     {
         private readonly IWindowInventoryService _inventoryService;
-        private readonly IWindowEligibilityEvaluator _eligibilityEvaluator;
         private readonly WindowTrackingService _trackingService;
         private readonly IWindowCaptureService _captureService;
         private readonly WindowInventoryCache _cache;
@@ -30,7 +29,6 @@ namespace Pulsar.Services.WindowSwitching
 
         public WindowInventoryCoordinator(
             IWindowInventoryService inventoryService,
-            IWindowEligibilityEvaluator eligibilityEvaluator,
             WindowTrackingService trackingService,
             IWindowCaptureService captureService,
             WindowInventoryCache cache,
@@ -38,7 +36,6 @@ namespace Pulsar.Services.WindowSwitching
             int currentProcessId)
         {
             _inventoryService = inventoryService;
-            _eligibilityEvaluator = eligibilityEvaluator;
             _trackingService = trackingService;
             _captureService = captureService;
             _cache = cache;
@@ -86,7 +83,6 @@ namespace Pulsar.Services.WindowSwitching
             }
 
             var windows = await _inventoryService.GetActiveWindowsAsync(
-                _eligibilityEvaluator.IsDiscoveryBlacklisted,
                 _trackingService.SnapshotWindow,
                 _captureService.ExtractIcon,
                 null);
@@ -125,7 +121,6 @@ namespace Pulsar.Services.WindowSwitching
                     }
 
                     var windows = await _inventoryService.GetActiveWindowsAsync(
-                        _eligibilityEvaluator.IsDiscoveryBlacklisted,
                         _trackingService.SnapshotWindow,
                         _captureService.ExtractIcon,
                         null);

@@ -373,7 +373,6 @@ namespace Pulsar.Services
                 {
                     targetWindows = await _inventoryService.GetProcessWindowsAsync(
                         targetName,
-                        null,
                         _trackingService.SnapshotWindow,
                         _captureService.ExtractIcon);
                 }
@@ -471,17 +470,17 @@ namespace Pulsar.Services
 
         public Task<HashSet<string>> GetRunningProcessNamesAsync()
         {
-            return _inventoryService.GetRunningProcessNamesAsync(_eligibilityEvaluator.IsDiscoveryBlacklisted);
+            return _inventoryService.GetRunningProcessNamesAsync();
         }
 
         public Task<List<RunningProcessInfo>> GetRunningProcessesAsync()
         {
-            return _inventoryService.GetRunningProcessesAsync(_eligibilityEvaluator.IsDiscoveryBlacklisted);
+            return _inventoryService.GetRunningProcessesAsync();
         }
 
         public Task<List<ProcessWindowInfo>> GetProcessWindowsAsync(int targetProcessId)
         {
-            return _inventoryService.GetProcessWindowsAsync(targetProcessId, null, _trackingService.SnapshotWindow, _captureService.ExtractIcon);
+            return _inventoryService.GetProcessWindowsAsync(targetProcessId, _trackingService.SnapshotWindow, _captureService.ExtractIcon);
         }
 
         // --- Native Helpers ---

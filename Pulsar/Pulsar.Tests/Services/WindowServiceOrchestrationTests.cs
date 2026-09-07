@@ -40,7 +40,6 @@ namespace Pulsar.Tests.Services
                 inventory
                     .Setup(i => i.GetProcessWindowsAsync(
                         "testapp",
-                        null,
                         It.IsAny<Func<IntPtr, WindowTrackingSnapshot>>(),
                         It.IsAny<Func<string, ImageSource?>>()))
                     .ReturnsAsync(new List<ProcessWindowInfo> { window });
@@ -91,7 +90,6 @@ namespace Pulsar.Tests.Services
                 inventory
                     .Setup(i => i.GetProcessWindowsAsync(
                         "ghost",
-                        null,
                         It.IsAny<Func<IntPtr, WindowTrackingSnapshot>>(),
                         It.IsAny<Func<string, ImageSource?>>()))
                     .ReturnsAsync(new List<ProcessWindowInfo>());
@@ -257,7 +255,6 @@ namespace Pulsar.Tests.Services
                     TaskCreationOptions.RunContinuationsAsynchronously);
                 inventory
                     .Setup(i => i.GetActiveWindowsAsync(
-                        It.IsAny<Func<string, bool>>(),
                         It.IsAny<Func<IntPtr, WindowTrackingSnapshot>>(),
                         It.IsAny<Func<string, ImageSource?>>(),
                         It.IsAny<IProcessRegistryService?>()))
@@ -305,7 +302,6 @@ namespace Pulsar.Tests.Services
 
             var coordinator = new WindowInventoryCoordinator(
                 inventory.Object,
-                evaluator.Object,
                 tracking,
                 Mock.Of<IWindowCaptureService>(),
                 cache,
