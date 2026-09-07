@@ -111,48 +111,24 @@ dotnet publish Pulsar/Pulsar/Pulsar.csproj -c Release -r win-x64 --self-containe
 
 ---
 
-## 🏗️ 架构概览
+## 🏗️ 架构速览
 
-### PulsarContext — 不可变上下文快照
+> 以下每条只给一句话结论；细节在权威源，**不在此复述**。
 
-径向菜单唤起时，Pulsar 将系统状态冻结为不可变的 `PulsarContext`，消除竞态条件。重型属性（剪贴板、窗口列表）懒加载。每次执行的可变数据存放在栈作用域的 `PluginExecutionContext`（AsyncLocal），**绝不**放在 `PulsarContext` 上。
-
-### 焦点回旋镖（Focus Boomerang）
-
-执行输入注入的插件（如 PKI）遵循 `捕获 → 执行 → 隐藏 → 恢复焦点 → 延迟 → 注入` 循环，可靠地将焦点返回到原始窗口。
-
-### 扩展插件断路器
-
-扩展插件由断路器保护（纯状态机，ADR-013）：1 分钟内崩溃 3 次触发 60 秒禁用期，之后进入半开状态允许单次重试。状态迁移通过 `Tripped` / `Recovered` 事件广播，由 `PluginBreakerNotificationService` 转为健康遥测与托盘通知。
-
-### 插件运行时三窄 seam（ADR-012）
-
-插件运行时是同一 `PluginRuntimeKernel` 单例上的三个窄 seam，按消费方注入**最窄**的面，绝不注入具体类：
-
-- `IPluginRegistry`（注册面）：发现 · 激活 · 查询
-- `IPluginExecutor`（执行面）：`ExecuteAsync`
-- `IPluginRuntimeOps`（运维面）：重扫 · 停用 · 状态 · 授权 · 卸载
-
-### 配置单写者（ADR-005 / 009）
-
-`Profiles.json` 是配置的唯一事实来源。`ConfigService.GetSnapshot()` 返回深拷贝，**只读不写**；所有写入经 `ConfigEditSession`（revision 守卫），并发冲突时 `RebaseAsync` 合并未改动区域。
-
-### 多主题注入
-
-多窗口（Multi-Headed UI）场景下 `App.xaml` 不设全局样式，由 `IThemeService.ApplyTheme()` 为每个 Window/Page 手动注入；Page 必须在 `InitializeComponent()` **之后**调用 `ApplyTheme()`。
+| 机制 | 一句话 | 权威源 |
+| :--- | :--- | :--- |
+| PulsarContext | 唤起时冻结的不可变上下文快照，重型属性懒加载；每次执行的可变数据在 `PluginExecutionContext`（AsyncLocal） | [PLUGIN_SYSTEM.md](./Docs/architecture/PLUGIN_SYSTEM.md) |
+| 插件运行时三窄 seam | 同一 `PluginRuntimeKernel` 单例上的注册/执行/运维三个窄面，按消费方注入最窄面 | [PLUGIN_SYSTEM.md](./Docs/architecture/PLUGIN_SYSTEM.md) · [ADR-012](./Docs/decisions/012-plugin-runtime-three-seams.md) |
+| 扩展插件断路器 | 纯状态机：1 分钟 3 崩溃 → 60 秒禁用 → 半开重试 | [PLUGIN_SYSTEM.md](./Docs/architecture/PLUGIN_SYSTEM.md) · [ADR-013](./Docs/decisions/013-circuit-breaker-observation-seam.md) |
+| 焦点回旋镖 | 输入注入类插件遵循 `捕获→执行→隐藏→恢复焦点→延迟→注入` 循环 | [ARCHITECTURE.md §3.3](./ARCHITECTURE.md) |
+| 配置单写者 | `Profiles.json` 唯一事实源；`GetSnapshot()` 深拷贝只读，写入经 `ConfigEditSession`（revision 守卫） | [ADR-005](./Docs/decisions/005-config-single-writer.md) · [ADR-009](./Docs/decisions/009-config-snapshot-seam.md) |
+| 多主题注入 | `App.xaml` 无全局样式，每个 Window/Page 在 `InitializeComponent()` **之后**调 `ApplyTheme()` | [WPF_THEME_INJECTION_PITFALLS.md](./Docs/lessons/WPF_THEME_INJECTION_PITFALLS.md) |
 
 ---
 
 ## 🧩 插件系统
 
-**分层**：
-
-| 分层 | 定位 | 故障语义 |
-| :--- | :--- | :--- |
-| **核心插件（Core）** | 基础设施（PKI、窗口切换、系统命令） | 始终加载，崩溃即致命（fail-fast） |
-| **扩展插件（Extension）** | 可选能力（宏、网页脚本、命令） | 断路器保护，崩溃自动禁用 |
-
-**外部插件安全模型**：外部插件由 `plugin.manifest.json` 描述（不实例化类型），执行前必须通过 `PluginPermissionService` 权限门控——每个清单声明的权限都需在 `PluginProfile.GrantedPermissions` 中存在。
+分层（Core/Extension）语义、生命周期与熔断细节见 [PLUGIN_SYSTEM.md](./Docs/architecture/PLUGIN_SYSTEM.md)；外部插件安全模型（manifest 权限门控、先授权后实例化）是硬性不变量，见 [AGENTS.md §2](./AGENTS.md)。
 
 **内置插件清单**：
 
@@ -190,25 +166,18 @@ dotnet publish Pulsar/Pulsar/Pulsar.csproj -c Release -r win-x64 --self-containe
 
 ## 🌐 本地化约定
 
-- **禁止**在 C# / XAML 硬编码用户可见字符串；使用 `ILocalizationService`（`_loc["Key"]`、XAML `{lex:Locale Key}`）；
-- 插件元数据按约定自动本地化：参数 → `SlotParam.{AlphaNumOnly(Label)}`，动作 → `SlotAction.{AlphaNumOnly(Label)}`，回退为原始标签文本；
-- 新增翻译：同时更新 `Resources/Strings.resx`（EN）与 `Resources/Strings.zh-CN.resx`（ZH），键名格式 `Category.SubCategory.Description`，占位符用 `{0}`/`{1}` + `string.Format(...)`；
-- 插件错误/成功消息（`PluginResult.Error()` / `PluginResult.Ok()`）必须走 `ILocalizationService`。
+硬性规则全文见 [AGENTS.md §2 Localization](./AGENTS.md)（唯一权威源）。要点：禁止在 C#/XAML 硬编码用户可见字符串；插件元数据按 `SlotParam.{AlphaNumOnly(Label)}` / `SlotAction.{AlphaNumOnly(Label)}` 约定自动本地化；新增翻译同步 `Strings.resx` + `Strings.zh-CN.resx`。
 
 ---
 
 ## 📚 文档导航
 
+完整索引与任务路由的唯一入口是 **[Docs/README.md](./Docs/README.md)**。常用直达：
+
 | 资源 | 描述 |
 |------|------|
-| [README.md](./README.md) | 用户向项目首页 |
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | 系统架构深入解析 |
-| [PLUGIN_DEVELOPMENT.md](./PLUGIN_DEVELOPMENT.md) | 插件开发指南 |
 | [AGENTS.md](./AGENTS.md) | AI 辅助开发规范（不变量、坑点速查、任务路由） |
-| [Docs/](./Docs/) | 完整文档索引 |
 | [Docs/architecture/](./Docs/architecture/) | 架构细节（插件系统、对话框系统、输入注入等） |
-| [Docs/guides/](./Docs/guides/) | 操作手册（UI 规范、VBA 智能脚本、配置备份等） |
-| [Docs/lessons/](./Docs/lessons/) | WPF 坑点与已知问题归档 |
 | [Docs/ops/BUILD_AND_RUN.md](./Docs/ops/BUILD_AND_RUN.md) | 构建与运行参考 |
 | [openspec/](./openspec/) | 行为规格（specs / changes / archive） |
 
