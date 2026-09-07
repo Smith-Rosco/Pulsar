@@ -91,13 +91,14 @@ namespace Pulsar.Tests.Services
         [Fact]
         public void PluginUnusedOver30Days_TriggersDisableUnusedPlugin_Recommendation()
         {
+            var nowUtc = new DateTime(2026, 9, 7, 0, 0, 0, DateTimeKind.Utc);
             _usageTrackerMock.Setup(u => u.GetAllStats()).Returns(new Dictionary<string, PluginUsageStats>
             {
                 ["plugin.used.often"] = new PluginUsageStats
                 {
                     PluginId = "plugin.used.often",
                     TotalExecutions = 50,
-                    LastUsed = DateTime.UtcNow.AddDays(-45)
+                    LastUsed = nowUtc.AddDays(-45)
                 }
             });
             _usageTrackerMock.Setup(u => u.GetStats("plugin.used.often"))
@@ -105,7 +106,7 @@ namespace Pulsar.Tests.Services
                 {
                     PluginId = "plugin.used.often",
                     TotalExecutions = 50,
-                    LastUsed = DateTime.UtcNow.AddDays(-45)
+                    LastUsed = nowUtc.AddDays(-45)
                 });
             _healthMonitorMock.Setup(h => h.GetAllHealthReports()).Returns(new Dictionary<string, PluginHealthReport>
             {
@@ -114,12 +115,48 @@ namespace Pulsar.Tests.Services
             _healthMonitorMock.Setup(h => h.GetHealthReport("plugin.used.often"))
                 .Returns(new PluginHealthReport { PluginId = "plugin.used.often" });
 
-            var engine = CreateEngine();
+            var engine = CreateEngine(() => nowUtc);
             var recommendations = engine.GetRecommendations();
 
             recommendations.Should().Contain(r =>
                 r.PluginId == "plugin.used.often" &&
                 r.Type == RecommendationType.DisableUnusedPlugin);
+        }
+
+        [Fact]
+        public void RecentlyUsedPlugin_DoesNotTriggerUnusedOrInactive_Recommendation()
+        {
+            var nowUtc = new DateTime(2026, 9, 7, 0, 0, 0, DateTimeKind.Utc);
+            _usageTrackerMock.Setup(u => u.GetAllStats()).Returns(new Dictionary<string, PluginUsageStats>
+            {
+                ["plugin.used.often"] = new PluginUsageStats
+                {
+                    PluginId = "plugin.used.often",
+                    TotalExecutions = 50,
+                    LastUsed = nowUtc.AddDays(-5)
+                }
+            });
+            _usageTrackerMock.Setup(u => u.GetStats("plugin.used.often"))
+                .Returns(new PluginUsageStats
+                {
+                    PluginId = "plugin.used.often",
+                    TotalExecutions = 50,
+                    LastUsed = nowUtc.AddDays(-5)
+                });
+            _healthMonitorMock.Setup(h => h.GetAllHealthReports()).Returns(new Dictionary<string, PluginHealthReport>
+            {
+                ["plugin.used.often"] = new PluginHealthReport { PluginId = "plugin.used.often" }
+            });
+            _healthMonitorMock.Setup(h => h.GetHealthReport("plugin.used.often"))
+                .Returns(new PluginHealthReport { PluginId = "plugin.used.often" });
+
+            var engine = CreateEngine(() => nowUtc);
+            var recommendations = engine.GetRecommendations();
+
+            recommendations.Should().NotContain(r =>
+                r.PluginId == "plugin.used.often" &&
+                (r.Type == RecommendationType.DisableUnusedPlugin ||
+                 r.Type == RecommendationType.InactivePlugin));
         }
 
         [Fact]

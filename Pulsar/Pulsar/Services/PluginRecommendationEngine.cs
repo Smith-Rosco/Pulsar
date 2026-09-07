@@ -108,11 +108,12 @@ namespace Pulsar.Services
 
         private void CheckUnusedPlugin(IPulsarPlugin plugin, Models.PluginUsageStats stats, List<PluginRecommendation> recommendations)
         {
+            var nowUtc = _clock().ToUniversalTime();
             if (stats.TotalExecutions == 0 || 
-                (stats.LastUsed.HasValue && (DateTime.UtcNow - stats.LastUsed.Value).TotalDays > UnusedDaysThreshold))
+                (stats.LastUsed.HasValue && (nowUtc - stats.LastUsed.Value).TotalDays > UnusedDaysThreshold))
             {
                 var daysSinceLastUse = stats.LastUsed.HasValue 
-                    ? (int)(DateTime.UtcNow - stats.LastUsed.Value).TotalDays 
+                    ? (int)(nowUtc - stats.LastUsed.Value).TotalDays 
                     : -1;
 
                 var displayName = LocalizePluginName(plugin);
@@ -187,7 +188,7 @@ namespace Pulsar.Services
             if (!stats.LastUsed.HasValue)
                 return;
 
-            var daysSinceLastUse = (DateTime.UtcNow - stats.LastUsed.Value).TotalDays;
+            var daysSinceLastUse = (_clock().ToUniversalTime() - stats.LastUsed.Value).TotalDays;
             if (daysSinceLastUse > InactiveDaysThreshold)
             {
                 var displayName = LocalizePluginName(plugin);
