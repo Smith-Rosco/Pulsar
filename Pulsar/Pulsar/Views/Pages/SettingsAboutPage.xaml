@@ -165,7 +165,7 @@
                             <!-- Check button (visible when not checking/downloading) -->
                             <ui:Button Grid.Column="1"
                                        Content="{lex:Locale Settings.About.CheckForUpdates}"
-                                       Icon="{ui:SymbolIcon Refresh24}"
+                                       Icon="{ui:SymbolIcon ArrowClockwise24}"
                                        Command="{Binding CheckForUpdatesCommand}"
                                        VerticalAlignment="Center">
                                 <ui:Button.Style>
@@ -210,7 +210,7 @@
 
                         <!-- Download button (visible when UpdateAvailable) -->
                         <ui:Button Content="{lex:Locale Settings.About.DownloadUpdate}"
-                                   Icon="{ui:SymbolIcon Download24}"
+                                   Icon="{ui:SymbolIcon ArrowDownload24}"
                                    Command="{Binding DownloadUpdateCommand}"
                                    HorizontalAlignment="Left"
                                    Margin="{StaticResource Pulsar.Gap.Bottom.SM}">

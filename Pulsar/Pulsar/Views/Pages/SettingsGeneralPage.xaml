@@ -8,7 +8,8 @@
       xmlns:models="clr-namespace:Pulsar.Models"
       xmlns:controls="clr-namespace:Pulsar.Views.Controls"
       xmlns:lex="clr-namespace:Pulsar.Core.Localization"
-      mc:Ignorable="d" 
+      xmlns:helpers="clr-namespace:Pulsar.Helpers"
+      mc:Ignorable="d"
       d:DesignHeight="600" d:DesignWidth="800"
       Title="{lex:Locale Settings.General.Title}">
 
@@ -20,7 +21,7 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <Grid Margin="0">
+    <Grid Margin="0" helpers:ComboBoxSelectionLeftAlign.EnableLeftAlign="True">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>

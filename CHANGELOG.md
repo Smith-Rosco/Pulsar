@@ -13,8 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ...
 
   ### Changed
-- **发布路径收口**：`scripts/dev.ps1 publish` 废弃为指路 stub（打印 publish skill 的调用方式并 exit 2，不再构建任何产物）。旧实现与 skill 输出重叠（stage/Setup/Standalone/SHA256，单次 ~330M 冗余、stage 结尾不回收），且其启动时对 `artifacts\publish\` 的全量删除会连带清掉 skill 的 `publish/v<ver>/` 产物。发布自此只有 skill 一条路径；`Get-PulsarVersion`（仅旧 publish 使用）一并移除。
-- **发布产物收敛（ADR-026 修订）**：publish skill 本地构建不再产出 Setup.exe / Standalone zip / SHA256SUMS（改为 GitHub Release 的 CI-only 资产，`release.yml` 不变）；本地终态仅剩 `artifacts/Pulsar-$version-{full,portable}.zip` 两个文件，`publish/v<ver>/` 产物目录在打包校验成功后自动删除（`-KeepPublishDirs` 保留）。回退路径（CI 不可用手动上传）通过 `Build-Publish.ps1` / `Pack-Zips.ps1` 新增的 `-WithInstaller` 开关显式产出 installer 三件套，且 stage 中转目录与 `publish\` 内 Setup 副本用后即删（消除双份）。此前单次本地发布冗余 ~330M（同一份 full Pulsar.exe 落 4 处 + Setup 落 2 处）。
   - ...
 
   ### Fixed
@@ -24,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **发布路径收口**：`scripts/dev.ps1 publish` 废弃为指路 stub（打印 publish skill 的调用方式并 exit 2，不再构建任何产物）。旧实现与 skill 输出重叠（stage/Setup/Standalone/SHA256，单次 ~330M 冗余、stage 结尾不回收），且其启动时对 `artifacts\publish\` 的全量删除会连带清掉 skill 的 `publish/v<ver>/` 产物。发布自此只有 skill 一条路径；`Get-PulsarVersion`（仅旧 publish 使用）一并移除。
+- **发布产物收敛（ADR-026 修订）**：publish skill 本地构建不再产出 Setup.exe / Standalone zip / SHA256SUMS（改为 GitHub Release 的 CI-only 资产，`release.yml` 不变）；本地终态仅剩 `artifacts/Pulsar-$version-{full,portable}.zip` 两个文件，`publish/v<ver>/` 产物目录在打包校验成功后自动删除（`-KeepPublishDirs` 保留）。回退路径（CI 不可用手动上传）通过 `Build-Publish.ps1` / `Pack-Zips.ps1` 新增的 `-WithInstaller` 开关显式产出 installer 三件套，且 stage 中转目录与 `publish\` 内 Setup 副本用后即删（消除双份）。此前单次本地发布冗余 ~330M（同一份 full Pulsar.exe 落 4 处 + Setup 落 2 处）。
 - **架构深化 C1（Execution Handoff）**：`IMenuSession` 新增 `BeginExecution(slot)`，把「记录执行 Slot + 立刻隐藏菜单」的顺序收归实现。此前策略层 5 处手写 `IsVisible = false`，其中仅 2 处配对 `SetActionExecuted`、且 `WindowSwitchStrategy` 未传 slot（导致 E2E 断言退化为按索引猜测）。现 3 处真正的动作执行走 seam，2 处导航类保持原样。
 - **架构深化 C3（Visual State Coordinator）**：`UpdateVisuals` 的 9 参数（含 3 回调 + 1 布尔开关）收敛为单个 `VisualStateContext`；ADR-024 D8（中心身份保留）与 D11（cascade 期间抑制动态标题）的推导从 `MenuSession` 搬入协调器，语义不再两地重复。新增 `IRadialMenuVisualStateCoordinator` seam，该模块此前测试覆盖为 0。
 - **架构深化 C2（部分）**：删除 `WindowService.IsProcessNameBlacklisted` —— 与 `WindowEligibilityEvaluator` 内实现逐字相同但**生产零调用**，仅被自身 8 条测试钉住。规则收敛到唯一实现并改为 public，测试改指。
@@ -32,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - `WindowSwitchStrategy` 不再丢弃执行 Slot 身份（`SetActionExecuted(true)` 未传 slot），E2E「哪个 Slot 执行了」标签不再退化为索引解析。
+- **About 页打开闪退**：`SettingsAboutPage.xaml` 引用了 Fluent 图标枚举中不存在的 `Refresh24` / `Download24`（自动更新功能引入时的笔误），XAML 解析即抛 `XamlParseException`。改为合法的 `ArrowClockwise24` / `ArrowDownload24`；新增 `XamlIconTokenValidityTests`（反射比对全仓 XAML 的 `SymbolRegular`/`SymbolDerived` token 与 `SymbolRegular` 枚举成员，防止同类笔误再入）。
+- **设置页 ComboBox 收起态文字对齐不一致**（有的贴左、有的居中悬空）：根因是 WPF 核心对「UIElement 内容」（显式 `ComboBoxItem` 内含 TextBlock/StackPanel）的收起态 `SelectionBoxItem` 生成固定宽度 VisualBrush Rectangle，固定宽 + 默认 Stretch = 居中；字符串项（`ItemsSource` + `DisplayMemberPath`）则生成撑满 TextBlock 贴左。新增可继承附加属性 `ComboBoxSelectionLeftAlign.EnableLeftAlign`（`Helpers/`，Loaded/SelectionChanged 时把该自动 Rectangle 设为 Left），挂于 `SettingsGeneralPage` / `SettingsAnalyticsPage` 根节点。刻意**不改** `ComboBox.HorizontalContentAlignment`——Wpf.Ui 4.3 模板的内层 Grid 对齐绑在该属性上，设 Left 会连「内容+箭头+点击层」一起缩成内容宽（箭头左移、点击区缩小的回归即由此而来）。E2E 像素级验收：4 个组合框内容起点 x≈18（原 18/18/89/92），箭头位置不变。
 
 ## [1.11.0] - 2026-09-06
 

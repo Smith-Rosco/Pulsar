@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -68,7 +69,15 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
                     try { component.Name = moduleName; } catch { /* Name collision unlikely but possible */ }
                     
                     // Inject Code
-                    component.CodeModule.AddFromString(content);
+                    // Strip VBE-export module attribute lines (e.g. "Attribute VB_Name = \"Module1\"").
+                    // AddFromString does not process them, and their presence breaks full module
+                    // compilation, making Application.Run fail with 0x800A03EC
+                    // ("macro not available in this workbook or all macros are disabled").
+                    string sanitized = Regex.Replace(
+                        content,
+                        @"(?m)^\s*Attribute\s+VB_\w+\s*=.*$",
+                        string.Empty);
+                    component.CodeModule.AddFromString(sanitized);
                 }
                 catch (COMException ex)
                 {

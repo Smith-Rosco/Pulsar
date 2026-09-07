@@ -64,7 +64,7 @@
                         BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}"
                         BorderThickness="1"
                         HorizontalAlignment="Center">
-                    <ui:SymbolIcon Symbol="DialPad24"
+                    <ui:SymbolIcon Symbol="Dialpad24"
                                    FontSize="{StaticResource Pulsar.Type.Title}"
                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                    HorizontalAlignment="Center"
