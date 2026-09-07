@@ -600,20 +600,20 @@ pulsar-lint check-plugin MyPlugin.cs
 ## 📖 参考文档
 
 ### 核心文档
-- [PLUGIN_MIGRATION_GUIDE.md](../guides/PLUGIN_MIGRATION_GUIDE.md) - 完整迁移步骤和示例
-- [PLUGIN_DEVELOPMENT.md](../../PLUGIN_DEVELOPMENT.md) - 插件开发完整指南
+- [PLUGIN_MIGRATION_GUIDE.md](../../guides/PLUGIN_MIGRATION_GUIDE.md) - 完整迁移步骤和示例
+- [PLUGIN_DEVELOPMENT.md](../../../PLUGIN_DEVELOPMENT.md) - 插件开发完整指南
 - [PLUGIN_SYSTEM.md](./PLUGIN_SYSTEM.md) - 插件系统架构详解
 - [PLUGIN_SYSTEM_REFACTORING_REPORT.md](./PLUGIN_SYSTEM_REFACTORING_REPORT.md) - 重构审查报告
 
 ### 源码参考
-- [PluginBase.cs](../../Pulsar/Pulsar/Core/Plugin/PluginBase.cs) - 插件抽象基类 (247 行)
-- [PluginFactory.cs](../../Pulsar/Pulsar/Core/Plugin/PluginFactory.cs) - 插件工厂 (213 行)
-- [CommandPlugin.cs](../../Pulsar/Pulsar/Plugins/Extensions/Command/CommandPlugin.cs) - 重构后的参考实现（原 `BasicCommand/SimpleCommandPlugin.cs`）
-- [CommandPluginMetadata.cs](../../Pulsar/Pulsar/Plugins/Extensions/Command/CommandPluginMetadata.cs) - 元数据定义（原 `SimpleCommandPlugin.Refactored.cs` 的详细注释版已并入正式实现，不再单独保留）
+- [PluginBase.cs](../../../Pulsar/Pulsar/Core/Plugin/PluginBase.cs) - 插件抽象基类 (247 行)
+- [PluginFactory.cs](../../../Pulsar/Pulsar/Core/Plugin/PluginFactory.cs) - 插件工厂 (213 行)
+- [CommandPlugin.cs](../../../Pulsar/Pulsar/Plugins/Extensions/Command/CommandPlugin.cs) - 重构后的参考实现（原 `BasicCommand/SimpleCommandPlugin.cs`）
+- [CommandPluginMetadata.cs](../../../Pulsar/Pulsar/Plugins/Extensions/Command/CommandPluginMetadata.cs) - 元数据定义（原 `SimpleCommandPlugin.Refactored.cs` 的详细注释版已并入正式实现，不再单独保留）
 
 ### 架构文档
-- [ARCHITECTURE.md](../../ARCHITECTURE.md) - 系统架构概览
-- [AGENTS.md](../../AGENTS.md) - AI Agent 操作指南
+- [ARCHITECTURE.md](../../../ARCHITECTURE.md) - 系统架构概览
+- [AGENTS.md](../../../AGENTS.md) - AI Agent 操作指南
 
 ---
 

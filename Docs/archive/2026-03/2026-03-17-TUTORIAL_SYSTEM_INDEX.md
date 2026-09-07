@@ -4,7 +4,7 @@
 **Version**: v1.0.0  
 **Last Updated**: 2026-03-15  
 **Author**: Architecture Team  
-**Related Documents**: [DIALOG_SYSTEM.md](./DIALOG_SYSTEM.md), [UI_BEST_PRACTICES.md](../guides/UI_BEST_PRACTICES.md)
+**Related Documents**: [DIALOG_SYSTEM.md](./DIALOG_SYSTEM.md), [UI_BEST_PRACTICES.md](../../guides/UI_BEST_PRACTICES.md)
 
 ---
 
@@ -164,11 +164,11 @@ TutorialStepCard (Instruction Card with Arrow)
 
 ## 🔗 Related Documents
 
-- [AGENTS.md](../../AGENTS.md) - AI agent operational guide
-- [ARCHITECTURE.md](../../ARCHITECTURE.md) - System architecture overview
+- [AGENTS.md](../../../AGENTS.md) - AI agent operational guide
+- [ARCHITECTURE.md](../../../ARCHITECTURE.md) - System architecture overview
 - [DIALOG_SYSTEM.md](./DIALOG_SYSTEM.md) - Dialog system architecture
-- [UI_BEST_PRACTICES.md](../guides/UI_BEST_PRACTICES.md) - UI development guidelines
-- [PLUGIN_DEVELOPMENT.md](../../PLUGIN_DEVELOPMENT.md) - Plugin development guide
+- [UI_BEST_PRACTICES.md](../../guides/UI_BEST_PRACTICES.md) - UI development guidelines
+- [PLUGIN_DEVELOPMENT.md](../../../PLUGIN_DEVELOPMENT.md) - Plugin development guide
 
 ---
 

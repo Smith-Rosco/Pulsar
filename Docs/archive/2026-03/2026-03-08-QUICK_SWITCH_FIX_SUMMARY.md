@@ -168,8 +168,8 @@ IntPtr realCurrentWindow = currentIsPulsar ? _previousWindowHandle : current;
 ## 相关文档
 
 - [完整分析文档](./2026-03-08-QUICK_SWITCH_REMOTE_DESKTOP_FIX.md) - 详细的问题分析和解决方案
-- [架构文档](../architecture/PLUGIN_SYSTEM.md) - 插件系统架构
-- [窗口服务](../../Pulsar/Pulsar/Services/WindowService.cs) - 实现代码
+- [架构文档](../../architecture/PLUGIN_SYSTEM.md) - 插件系统架构
+- [窗口服务](../../../Pulsar/Pulsar/Services/WindowService.cs) - 实现代码
 
 ---
 

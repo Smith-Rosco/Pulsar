@@ -3,7 +3,7 @@
 **Status**: Draft  
 **Version**: v1.0.0  
 **Last Updated**: 2026-03-15  
-**Related Documents**: [DIALOG_SYSTEM.md](./DIALOG_SYSTEM.md), [UI_BEST_PRACTICES.md](../guides/UI_BEST_PRACTICES.md)
+**Related Documents**: [DIALOG_SYSTEM.md](./DIALOG_SYSTEM.md), [UI_BEST_PRACTICES.md](../../guides/UI_BEST_PRACTICES.md)
 
 ---
 

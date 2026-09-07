@@ -373,9 +373,9 @@ _logger.LogInformation(
 
 ### 相关文档
 
-- [ARCHITECTURE.md](../../ARCHITECTURE.md) - 系统架构概览
-- [PLUGIN_SYSTEM.md](../architecture/PLUGIN_SYSTEM.md) - 插件系统文档
-- [WPF_THEME_INJECTION_PITFALLS.md](../lessons/WPF_THEME_INJECTION_PITFALLS.md) - 类似的时序问题案例
+- [ARCHITECTURE.md](../../../ARCHITECTURE.md) - 系统架构概览
+- [PLUGIN_SYSTEM.md](../../architecture/PLUGIN_SYSTEM.md) - 插件系统文档
+- [WPF_THEME_INJECTION_PITFALLS.md](../../lessons/WPF_THEME_INJECTION_PITFALLS.md) - 类似的时序问题案例
 
 ---
 

@@ -280,9 +280,9 @@ dotnet build Pulsar/Pulsar/Pulsar.csproj --no-incremental
 
 ## 参考文档
 
-- [ARCHITECTURE.md](../../ARCHITECTURE.md) - 系统架构概览
-- [AGENTS.md](../../AGENTS.md) - AI Agent 操作指南
-- [PLUGIN_DEVELOPMENT.md](../../PLUGIN_DEVELOPMENT.md) - 插件开发指南
+- [ARCHITECTURE.md](../../../ARCHITECTURE.md) - 系统架构概览
+- [AGENTS.md](../../../AGENTS.md) - AI Agent 操作指南
+- [PLUGIN_DEVELOPMENT.md](../../../PLUGIN_DEVELOPMENT.md) - 插件开发指南
 
 ---
 

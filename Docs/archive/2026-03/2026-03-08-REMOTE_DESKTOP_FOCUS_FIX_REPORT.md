@@ -4,7 +4,7 @@
 > **Archived Date**: 2026-03-08  
 > **Original Date**: 2026-03-08  
 > **Status**: Historical reference only, no longer maintained  
-> **Reason**: Implementation completed. For architectural decision, see [004-window-history-stack.md](../decisions/004-window-history-stack.md)
+> **Reason**: Implementation completed. For architectural decision, see [004-window-history-stack.md](../../decisions/004-window-history-stack.md)
 
 **日期**: 2026-03-08  
 **版本**: v2.0.0  
@@ -325,9 +325,9 @@ private void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
 
 ## 📚 相关文档
 
-- [ADR-007: 窗口历史栈机制](../decisions/004-window-history-stack.md)
+- [ADR-007: 窗口历史栈机制](../../decisions/004-window-history-stack.md)
 - [远程桌面修复指南](../guides/REMOTE_DESKTOP_FIX.md)
-- [AGENTS.md](../../AGENTS.md) - 架构指南
+- [AGENTS.md](../../../AGENTS.md) - 架构指南
 
 ---
 

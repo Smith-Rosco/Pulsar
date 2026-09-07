@@ -185,4 +185,4 @@ When adding or updating a plugin action used by `Create Slot`:
 
 - [Docs/guides/UI_BEST_PRACTICES.md](./UI_BEST_PRACTICES.md)
 - [Docs/architecture/DIALOG_SYSTEM.md](../architecture/DIALOG_SYSTEM.md)
-- [Docs/archive/2026-03-23-SLOT_DIALOG_REFACTOR_HANDOFF.md](../archive/2026-03-23-SLOT_DIALOG_REFACTOR_HANDOFF.md)
+- [Slot Dialog Refactor Handoff（已归档）](../archive/2026-03/2026-03-23-SLOT_DIALOG_REFACTOR_HANDOFF.md)

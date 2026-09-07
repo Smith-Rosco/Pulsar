@@ -1,6 +1,6 @@
 # Roadmap 实现状况对比验证报告
 
-> **验证日期**: 2026-09-03 | **验证对象**: [README.md](./README.md)（2026-08-31 提案）+ [RIGHT_DRAG_GESTURE_ANALYSIS.md](./RIGHT_DRAG_GESTURE_ANALYSIS.md)
+> **验证日期**: 2026-09-03 | **验证对象**: [README.md](./ROADMAP_INDEX.md)（2026-08-31 提案）+ [RIGHT_DRAG_GESTURE_ANALYSIS.md](./RIGHT_DRAG_GESTURE_ANALYSIS.md)
 > **验证方式**: roadmap 条目 → openspec 变更归档 → `Pulsar/` 源码实证 → 编译 + 全量测试
 
 ---

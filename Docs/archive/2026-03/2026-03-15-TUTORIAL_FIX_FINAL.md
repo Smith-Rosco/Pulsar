@@ -260,10 +260,10 @@ dotnet build Pulsar/Pulsar/Pulsar.csproj --no-incremental
 
 ## 📚 相关文档
 
-- [ARCHITECTURE.md](../../ARCHITECTURE.md) - 系统架构概览
-- [AGENTS.md](../../AGENTS.md) - AI Agent 操作指南
-- [SettingsSlotsPage.xaml](../../Pulsar/Pulsar/Views/Pages/SettingsSlotsPage.xaml) - UI 结构
-- [ProfilesConfig.cs](../../Pulsar/Pulsar/Models/ProfilesConfig.cs) - 配置模型
+- [ARCHITECTURE.md](../../../ARCHITECTURE.md) - 系统架构概览
+- [AGENTS.md](../../../AGENTS.md) - AI Agent 操作指南
+- [SettingsSlotsPage.xaml](../../../Pulsar/Pulsar/Views/Pages/SettingsSlotsPage.xaml) - UI 结构
+- [ProfilesConfig.cs](../../../Pulsar/Pulsar/Models/ProfilesConfig.cs) - 配置模型
 
 ---
 

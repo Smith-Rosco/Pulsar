@@ -249,9 +249,9 @@ Users can switch modes in `Profiles.json`:
 
 ### Related Pulsar Documents
 
-- [INPUT_INJECTION.md](../architecture/INPUT_INJECTION.md) - Input injection architecture
-- [PLUGIN_SYSTEM.md](../architecture/PLUGIN_SYSTEM.md) - Plugin system architecture
-- [AGENTS.md](../../AGENTS.md) - AI agent operational guide
+- [INPUT_INJECTION.md](../../architecture/INPUT_INJECTION.md) - Input injection architecture
+- [PLUGIN_SYSTEM.md](../../architecture/PLUGIN_SYSTEM.md) - Plugin system architecture
+- [AGENTS.md](../../../AGENTS.md) - AI agent operational guide
 
 ---
 
