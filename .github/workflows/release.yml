@@ -64,10 +64,10 @@ jobs:
         shell: pwsh
         run: |
           $ver = "${{ steps.version.outputs.version }}"
-          # Standalone zip = full 产物的单文件打包（对齐 dev.ps1 publish 命名）
-          New-Item -ItemType Directory -Path standalone-stage -Force | Out-Null
-          Copy-Item publish\full\Pulsar.exe standalone-stage\ -Force
-          Compress-Archive -Path standalone-stage\* -DestinationPath "Pulsar-v$ver-Standalone-win-x64.zip" -Force
+          # Standalone zip = full 产物的完整打包（exe + PDB + Assets/，与 publish skill 本地产物对齐）。
+          # 此前只拷 Pulsar.exe，导致 GitHub Release 的 Standalone 缺 Assets/（Presets/Scripts/
+          # TutorialSteps 等运行时文件），v1.12.0 及之前版本均受影响——2026-09-08 发布复核发现。
+          Compress-Archive -Path publish\full\* -DestinationPath "Pulsar-v$ver-Standalone-win-x64.zip" -Force
           # SHA256SUMS
           $files = @("Pulsar-v$ver-Standalone-win-x64.zip")
           if (Test-Path "artifacts\publish\Pulsar-v$ver-Setup.exe") { $files += "artifacts\publish\Pulsar-v$ver-Setup.exe" }
