@@ -21,10 +21,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- 暂无。
+
+## [1.12.0] - 2026-09-08
+
 ### Added
 - **文档结构 v6（ADR-027）**：文档审计报告（`Docs/reports/2026-09-07-DOC_STRUCTURE_AUDIT.html`）+ 新增 ADR-027（单一权威源与全量索引登记）。`Docs/architecture/PLUGIN_SYSTEM.md` 成为插件体系概念唯一权威源（吸收 ARCHITECTURE §2.2/§3 的运行时 seam 细节、断路器观察 seam、PulsarContext 不可变性说明）；`CONTRIBUTING.md` v2.0.0 重写（废 .draft.md 流程与全英文强规，新增权威源/索引纪律）；插件脚本目录（VbaRunner/BookmarkletRunner 的 TestScripts/DemoScripts、`Pulsar/Samples/`）原地纳管并各补 README。
+- **主题感知托盘图标**：托盘图标随亮/暗主题自动切换（`Assets/Icons/` dark/light 双 ico，随主题事件即时换标）；旧 `Assets/Brand/` 品牌资产迁移清理，图标概念稿与生成脚本入 `Design/icon-concepts/`。
 
 ### Changed
+- **架构深化批次（2026-09-08，候选 C1/C2/C3/C5/C6/C7/C8 + S2/S3/S4）**：快速切换执行收束（4 处手写 mark→switch→notify 序列并入 `MenuSession.ExecuteQuickSwitchAsync` 单一执行路径）；TrayService 拆分（`AutoStartRegistryService` 注册表隔离 + `TrayMenuBuilder` 菜单纯函数化 + 托盘宿主编排化，服务定位改 `Func<SettingsWindow>` 工厂注入）；`PluginDescriptor.ImplementationType` setter 收口 internal（SDK 表面只读，pin-severing 锁进运行时）；插件本地化约定收口 `PluginLocalization.ConventionLookup`；`DialogService.HasTemplate` 对话框模板映射校验；usage tracker clock seam；wizard 分支 dispatcher seam；删除 DemandPermission 死链（`IPluginPermissionInterceptor` 全链路，真实 manifest 权限门保留）。
+- **窗口历史单一权威（ADR-028）**：`QuickSwitchEngine` 吸收 MenuPrevious 槽（`SetMenuSnapshot/GetMenuSnapshot`）成为 Window History 单一权威，`WindowService` 5 处读写重指引擎，删除 `IFocusHistory`/`QuickSwitchAsync` 死代码。
+- **README 双语重写**：新增「与同类工具对比」章节（Quicker/Flow Launcher/PowerToys/Kando/StarPie 等），去营销腔重排章节，版本号/链接/功能描述等事实零改动。
 - **文档结构 v6 落地**：`Docs/README.md` 重写为 v6.0.0 全量索引（每个一级条目都登记，ADR 表至 027）；`roadmap/`+`proposals/` 合并为 `Docs/planning/`；`diagrams/` 并入 `Docs/architecture/`；`Docs/Plugins/` 改名 `Docs/plugins/`；`Docs/archive/` 62 文件按月分桶（`2026-03/`…）并修复分桶引起的相对链接位移（仅修移动前有效的链接）；根目录 `RELEASE_NOTES.md` 模板迁入 `Docs/ops/TEMPLATE_RELEASE_NOTES.md`；`DEVELOPER.md` 架构复述收敛为速览表+权威源链接（220→188 行）；`ARCHITECTURE.md` 插件章节收敛为概览+链接（385→263 行）；README/README_EN 版本徽章与下载链接 v1.10.0→v1.11.0；孤儿目录 `Docs/screenshots/` 删除（零引用）。活文档断链清零（历史文档/CHANGELOG 按append-only 不回改）。
 
 ### Fixed
@@ -40,6 +48,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `WindowSwitchStrategy` 不再丢弃执行 Slot 身份（`SetActionExecuted(true)` 未传 slot），E2E「哪个 Slot 执行了」标签不再退化为索引解析。
 - **About 页打开闪退**：`SettingsAboutPage.xaml` 引用了 Fluent 图标枚举中不存在的 `Refresh24` / `Download24`（自动更新功能引入时的笔误），XAML 解析即抛 `XamlParseException`。改为合法的 `ArrowClockwise24` / `ArrowDownload24`；新增 `XamlIconTokenValidityTests`（反射比对全仓 XAML 的 `SymbolRegular`/`SymbolDerived` token 与 `SymbolRegular` 枚举成员，防止同类笔误再入）。
 - **设置页 ComboBox 收起态文字对齐不一致**（有的贴左、有的居中悬空）：根因是 WPF 核心对「UIElement 内容」（显式 `ComboBoxItem` 内含 TextBlock/StackPanel）的收起态 `SelectionBoxItem` 生成固定宽度 VisualBrush Rectangle，固定宽 + 默认 Stretch = 居中；字符串项（`ItemsSource` + `DisplayMemberPath`）则生成撑满 TextBlock 贴左。新增可继承附加属性 `ComboBoxSelectionLeftAlign.EnableLeftAlign`（`Helpers/`，Loaded/SelectionChanged 时把该自动 Rectangle 设为 Left），挂于 `SettingsGeneralPage` / `SettingsAnalyticsPage` 根节点。刻意**不改** `ComboBox.HorizontalContentAlignment`——Wpf.Ui 4.3 模板的内层 Grid 对齐绑在该属性上，设 Left 会连「内容+箭头+点击层」一起缩成内容宽（箭头左移、点击区缩小的回归即由此而来）。E2E 像素级验收：4 个组合框内容起点 x≈18（原 18/18/89/92），箭头位置不变。
+- **插件执行-拆除竞态**：卸载/停用/覆盖安装在动作仍执行时会拆除 ALC，导致文件占用无法删除与僵尸执行。`PluginExecutionPipeline` 新增 `AcquireExecutionGateAsync`（持有期间新执行按既有单动作策略 Blocked），`DeactivatePluginAsync` 拆卸前先 drain 执行闸门（预算 ExecutionTimeout+5s，可注入），超时 fail-close 抛错中止拆卸、文件不删。
+- **热键修饰键模式启动后修改不生效**：`HotkeyService.RebuildCache` 末尾补调 `ConfigureHookMode`——启动后修改 ModifierStateMode 立即生效，无需重启。
 
 ## [1.11.0] - 2026-09-06
 
