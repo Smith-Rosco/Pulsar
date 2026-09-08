@@ -34,7 +34,10 @@ jobs:
         run: dotnet publish Pulsar/Pulsar/Pulsar.csproj -c Release -o publish/full -p:RuntimeIdentifier=win-x64 -p:SelfContained=true -p:PublishSingleFile=true -p:PublishReadyToRun=true
 
       - name: Publish Portable (Framework-Dependent Single File)
-        run: dotnet publish Pulsar/Pulsar/Pulsar.csproj -c Release -o publish/portable -p:RuntimeIdentifier=win-x64 -p:SelfContained=false -p:PublishSingleFile=true
+        # EnableCompressionInSingleFile=false 必须显式传：csproj 的 RuntimeIdentifier
+        # 条件属性为 single-file 打开了压缩，但压缩仅支持 self-contained（NETSDK1176），
+        # 与本地 publish skill 的 portable 命令保持一致。
+        run: dotnet publish Pulsar/Pulsar/Pulsar.csproj -c Release -o publish/portable -p:RuntimeIdentifier=win-x64 -p:SelfContained=false -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=false
 
       - name: Install Inno Setup (ISCC)
         shell: pwsh
@@ -82,9 +85,10 @@ jobs:
           foreach ($f in @('Pulsar.exe', 'Pulsar.pdb')) {
             if (-not (Test-Path "publish/full/$f")) { throw "缺少 full/$f" }
           }
-          if (-not (Get-ChildItem publish/full -Filter '*_cor3.dll' -ErrorAction SilentlyContinue)) {
-            throw "缺少 *_cor3.dll (full)"
-          }
+          # .NET 8 单文件自包含把运行时嵌入 Pulsar.exe（IncludeNativeLibrariesForSelfExtract），
+          # 无独立 *_cor3.dll——以 exe 体积断言自包含（对齐 publish skill：full >= 50MB）。
+          $exe = (Get-Item 'publish/full/Pulsar.exe').Length
+          if ($exe -lt 50MB) { throw "full Pulsar.exe too small ($([math]::Round($exe/1MB,1)) MB); runtime not embedded" }
           if (-not (Test-Path 'publish/full/Assets')) { throw "缺少 Assets/ (full)" }
 
       - name: Verify publish output (Portable)
