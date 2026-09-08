@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -23,6 +24,13 @@ namespace Pulsar.Services
         private readonly ILocalizationService _loc;
         private readonly IThemeService _themeService;
 
+        // Theme-aware tray icons: white-background mark for Light theme, black-background mark for Dark.
+        // Loaded once from embedded resources and cached for the app lifetime.
+        private System.Drawing.Icon? _lightTrayIcon;
+        private System.Drawing.Icon? _darkTrayIcon;
+        private readonly System.Collections.Generic.List<MemoryStream> _iconStreams = new();
+        private bool _trayIconsAttempted;
+
         // ponytail: IThemeService from Pulsar.Services.Interfaces (not Wpf.Ui.IThemeService)
         private readonly ILogger<TrayIconService>? _logger;
 
@@ -42,7 +50,7 @@ namespace Pulsar.Services
                 Visibility = Visibility.Visible
             };
 
-            TryLoadCustomIcon();
+            ApplyTrayIcon();
 
             // Subscribe before building so a theme change can never slip between
             // menu construction and event subscription.
@@ -71,25 +79,16 @@ namespace Pulsar.Services
             BuildContextMenu();
         }
 
-        private void TryLoadCustomIcon()
+        private void ApplyTrayIcon()
         {
             if (_taskbarIcon == null) return;
 
-            try
+            var icon = LoadThemedIcon(_themeService.CurrentTheme);
+            if (icon != null)
             {
-                var iconUri = new Uri("pack://application:,,,/Pulsar.ico");
-                var streamInfo = Application.GetResourceStream(iconUri);
-
-                if (streamInfo != null)
-                {
-                    _taskbarIcon.Icon = new Icon(streamInfo.Stream);
-                    _logger?.LogInformation("[TrayIconService] Loaded custom Pulsar.ico");
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "[TrayIconService] Failed to load custom icon");
+                _taskbarIcon.Icon = icon;
+                _logger?.LogInformation("[TrayIconService] Tray icon applied for theme {Theme}", _themeService.CurrentTheme);
+                return;
             }
 
             try
@@ -100,6 +99,51 @@ namespace Pulsar.Services
             catch (Exception ex)
             {
                 _logger?.LogWarning(ex, "[TrayIconService] Failed to load system icon");
+            }
+        }
+
+        private System.Drawing.Icon? LoadThemedIcon(AppTheme theme)
+        {
+            EnsureTrayIconsLoaded();
+            var preferred = theme == AppTheme.Dark ? _darkTrayIcon : _lightTrayIcon;
+            // Degrade to whichever variant actually loaded rather than showing no icon.
+            return preferred ?? _lightTrayIcon ?? _darkTrayIcon;
+        }
+
+        private void EnsureTrayIconsLoaded()
+        {
+            if (_trayIconsAttempted) return;
+            _trayIconsAttempted = true;
+            _lightTrayIcon = TryLoadIconResource("pack://application:,,,/Pulsar;component/Assets/Icons/pulsar-light.ico");
+            _darkTrayIcon = TryLoadIconResource("pack://application:,,,/Pulsar;component/Assets/Icons/pulsar-dark.ico");
+        }
+
+        private System.Drawing.Icon? TryLoadIconResource(string packUri)
+        {
+            try
+            {
+                var streamInfo = Application.GetResourceStream(new Uri(packUri, UriKind.Absolute));
+                if (streamInfo == null)
+                {
+                    _logger?.LogWarning("[TrayIconService] Tray icon resource not found: {Uri}", packUri);
+                    return null;
+                }
+
+                // GDI+ may keep reading from the source stream, so copy the bytes into a stream
+                // that stays alive (disposed together with the service) instead of the pack stream.
+                var memory = new MemoryStream();
+                using (streamInfo.Stream)
+                {
+                    streamInfo.Stream.CopyTo(memory);
+                }
+                memory.Position = 0;
+                _iconStreams.Add(memory);
+                return new Icon(memory);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "[TrayIconService] Failed to load tray icon {Uri}", packUri);
+                return null;
             }
         }
 
@@ -214,6 +258,9 @@ namespace Pulsar.Services
             // Update existing context menu in-place so the currently displayed popup reflects the new theme
             if (_taskbarIcon?.ContextMenu is ContextMenu menu)
                 _themeService.ApplyContextMenuTheme(menu, theme);
+
+            // Swap the tray mark so it matches the active Light/Dark theme.
+            ApplyTrayIcon();
 
             // The checkable "light theme" item must stay in sync with the dictionaries above.
             if (_toggleThemeItem != null)

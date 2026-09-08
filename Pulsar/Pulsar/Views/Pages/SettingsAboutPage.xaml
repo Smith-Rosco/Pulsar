@@ -52,17 +52,12 @@
                                    Height="52"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"
-                                   Source="pack://application:,,,/Pulsar;component/Assets/Brand/lettermark.png"
+                                   Source="pack://application:,,,/Pulsar;component/Assets/Icons/pulsar-mark-256.png"
                                    Stretch="Uniform" />
                         </Border>
 
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <Image Height="26"
-                                   Margin="{StaticResource Pulsar.Gap.Bottom.XXS}"
-                                   HorizontalAlignment="Left"
-                                   Source="pack://application:,,,/Pulsar;component/Assets/Brand/wordmark.png"
-                                   Stretch="Uniform" />
-                            <TextBlock Text="{Binding ProductName}" 
+                            <TextBlock Text="{Binding ProductName}"
                                        FontSize="{StaticResource Pulsar.Type.Body}" 
                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                        Margin="{StaticResource Pulsar.Gap.Bottom.SM}"/>

@@ -46,8 +46,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Assets\\Brand\\lettermark.png" />
-    <Resource Include="Assets\\Brand\\wordmark.png" />
+    <!-- Theme-aware tray icons (white/black backgrounds) + transparent mark for in-app surfaces -->
+    <Resource Include="Assets\Icons\pulsar-light.ico" />
+    <Resource Include="Assets\Icons\pulsar-dark.ico" />
+    <Resource Include="Assets\Icons\pulsar-mark-256.png" />
   </ItemGroup>
 
   <ItemGroup>
