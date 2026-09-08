@@ -653,6 +653,30 @@ namespace Pulsar.ViewModels
             IsVisible = false;
         }
 
+        /// <summary>
+        /// Single execution path for the quick switch ("previous window" action).
+        /// Every quick-switch trigger routes through here so the
+        /// mark → switch → notify sequence lives in exactly one place; the
+        /// internal triggers used to hand-write this sequence and bypass the
+        /// execution handoff that slot actions go through (C1).
+        /// Does NOT hide the menu: callers own the hide timing (synchronous D4
+        /// hide on gesture release, post-switch hide on key-up paths).
+        /// </summary>
+        private async Task ExecuteQuickSwitchAsync()
+        {
+            // No slot identity: a quick switch fires from the center zone with
+            // nothing selected, so the mark records "an action ran" only.
+            SetActionExecuted(true);
+            bool switched = await _windowService.SwitchToPreviousWindow();
+            if (!switched)
+            {
+                _trayService.ShowNotification(
+                    _loc?["QuickSwitch.FailedTitle"] ?? "Quick Switch",
+                    _loc?["QuickSwitch.FailedBody"] ?? "No previous window to switch to.",
+                    PulsarNotificationIcon.Warning);
+            }
+        }
+
         public void RestoreRootMenu()
         {
             if (_isTransitioning)
@@ -794,15 +818,7 @@ namespace Pulsar.ViewModels
                 if (_pendingQuickSwitch)
                 {
                     _logger?.LogDebug("[Show] Pending Quick Switch detected, executing immediately.");
-                    SetActionExecuted(true);
-                    bool switched = await _windowService.SwitchToPreviousWindow();
-                    if (!switched)
-                    {
-                        _trayService.ShowNotification(
-                            _loc?["QuickSwitch.FailedTitle"] ?? "Quick Switch",
-                            _loc?["QuickSwitch.FailedBody"] ?? "No previous window to switch to.",
-                            PulsarNotificationIcon.Warning);
-                    }
+                    await ExecuteQuickSwitchAsync();
                     IsVisible = false;
                     return;
                 }
@@ -1663,15 +1679,7 @@ namespace Pulsar.ViewModels
                 && _menuState == MenuState.Root)
             {
                 _logger?.LogDebug("[HandleKeyUp] Quick Switch triggered (visibleDuration: {DurationMs}ms)", visibleDuration);
-                SetActionExecuted(true);
-                bool switched = await _windowService.SwitchToPreviousWindow();
-                if (!switched)
-                {
-                    _trayService.ShowNotification(
-                        _loc["QuickSwitch.FailedTitle"],
-                        _loc["QuickSwitch.FailedBody"],
-                        PulsarNotificationIcon.Warning);
-                }
+                await ExecuteQuickSwitchAsync();
                 IsVisible = false;
                 return;
             }
@@ -1718,15 +1726,7 @@ namespace Pulsar.ViewModels
                     _logger?.LogDebug("[RightDragGesture] Released during load; quick-switching immediately.");
                     _pendingQuickSwitch = true;
                     _gestureReleaseHandledDuringLoad = true;
-                    SetActionExecuted(true);
-                    bool switched = await _windowService.SwitchToPreviousWindow();
-                    if (!switched)
-                    {
-                        _trayService.ShowNotification(
-                            _loc["QuickSwitch.FailedTitle"],
-                            _loc["QuickSwitch.FailedBody"],
-                            PulsarNotificationIcon.Warning);
-                    }
+                    await ExecuteQuickSwitchAsync();
                 }
 
                 return;
@@ -1751,15 +1751,7 @@ namespace Pulsar.ViewModels
             if (inCenterZone)
             {
                 _logger?.LogDebug("[RightDragGesture] Spatial quick switch on right release.");
-                SetActionExecuted(true);
-                bool switched = await _windowService.SwitchToPreviousWindow();
-                if (!switched)
-                {
-                    _trayService.ShowNotification(
-                        _loc["QuickSwitch.FailedTitle"],
-                        _loc["QuickSwitch.FailedBody"],
-                        PulsarNotificationIcon.Warning);
-                }
+                await ExecuteQuickSwitchAsync();
 
                 return;
             }
