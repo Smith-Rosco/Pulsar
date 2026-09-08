@@ -80,8 +80,8 @@ pwsh .agents/skills/publish/scripts/Pack-Zips.ps1  -Version 1.9.0             # 
 ```
 
 产物规则（脚本内断言，失败抛错）：
-- `full` 目录：`Pulsar.exe`、`Pulsar.pdb`、至少一个 `*_cor3.dll`、`Assets\`。
-- `portable` 目录：`Pulsar.exe`、`Pulsar.pdb`、`Assets\`，且**不得**含 `*_cor3.dll`。
+- `full` 目录：`Pulsar.exe`、`Pulsar.pdb`、`Assets\`；Pulsar.exe **≥ 50 MB**（.NET 8 单文件自包含把运行时嵌入 exe，`IncludeNativeLibrariesForSelfExtract`，无独立 `*_cor3.dll`——以 exe 体积断言自包含，勿再校验 cor3）。
+- `portable` 目录：`Pulsar.exe`、`Pulsar.pdb`、`Assets\`，且 Pulsar.exe **< 20 MB**（framework-dependent，误含运行时会超阈值）。
 - 两个 ZIP 均以 `PK` 开头（`Compress-Archive` 魔数），并列出内容核对。
 - 两个目录均含 `build-info.txt`（版本 / 构建号 / channel / 时间 / commit）。
 
