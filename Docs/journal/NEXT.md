@@ -44,10 +44,10 @@
 - [ ] 架构审查 S1（附注）：`RadialMenuLayoutCoordinator` / `CommandPageProvider` / `ProcessPageProvider` 仍 0 直接测试（ADR-023:53 承诺的 page-provider tests 未兑现），后续候选。
 - [x] ~~**openspec 四个在途 change 收尾**（2026-09-08）：任务据实勾选（真机验证/用户裁决取消/技术债治本逐条注明证据）+ delta 同步主 specs + 归档。~~ **已完成**：`in-app-auto-update` / `installer-and-portable-packaging` / `repositioning-narrative-rollout` / `user-manual-release-assets` 全部归档；新建主 spec `app-update-service`、`app-packaging-distribution`，`plugin-display-identity` 追加叙事对齐需求；`validate --specs` 96/96、`--changes` 4/4。在途 change 清零。
 - [x] ~~**repositioning 6.1–6.8 技术债收尾**（2026-09-08）：~~ **已完成**：6.1 Attribute 剥离（治本已在 `InjectModule`）、6.2 环境变量展开（`ExecutablePathResolver` + `PluginRuntimeKernel.ExecuteAsync`）、6.3 Simulator `-g/--args` 短名消歧、6.4 WPS 空壳 VBProject 检测（`EnsureVbaProjectIsUsable`）、6.5 VbaRunner.md 两级前置章节、6.7 `SlotOrb` NormalizeIconKey + `ResolveIconDisplay` 名称反查；6.6/6.8 为记录项。全量 1303/1303。
-- [ ] **槽位轮盘滚轮翻页待用户真机复测**（2026-09-08 第二轮修复）：命中策略改为根 `Grid` 显式 Transparent + `Root_PreviewMouseWheel` 按 `GetPosition(WheelHost)` 判定（不再依赖子元素命中测试）。待确认：中心空白区可翻页、页码条/提示文本区域滚轮仍走页面滚动。
+- [x] ~~**槽位轮盘滚轮翻页待用户真机复测**（2026-09-08 第二轮修复）：命中策略改为根 `Grid` 显式 Transparent + `Root_PreviewMouseWheel` 按 `GetPosition(WheelHost)` 判定（不再依赖子元素命中测试）。~~ **已复测通过（2026-09-09 00:03 用户真机）**：轮盘中心空白区悬停滚轮可翻页 ✅（第一轮「必须悬停 slot」缺陷消除）。外侧（页码条/提示文本）未单独复测，理论上手感不变（不 Handled，交还宿主页面滚动）——后续顺手可验。
 - [x] ~~README 对比章节（2026-09-08 用户新增「🆚 与同类工具对比」+「✨ 四个不可替代点」，README.md / README_EN.md 双语 + 导航锚点）未提交，可与低成本批次一并 commit+push。~~ **已随 2026-09-08 清空工作树批次提交**（含去 AI 味重写、Design/icon-concepts 纳管、NEXT 取消项）。
 
-- [ ] 图标方向再评估：用户 2026-09-08 深夜改要「方案二径向菜单·无边框」（`Design/icon-concepts/14-radial-dial-noborder.png`，深靛蓝满幅底+白核心+八扇区）；当前工程内仍是 B/C 亮暗双 ico（commit `3f15d07`）。若拍板径向菜单版，需重出 light/dark ico 并替换 Assets/Icons 与根 Pulsar.ico。
+- [x] ~~图标方向再评估：用户 2026-09-08 深夜改要「方案二径向菜单·无边框」~~ **已拍板（2026-09-08 23:55）**：径向菜单版定稿，亮 15/暗 14 源经 build_radial_ico.py 出 ico 并覆盖 Assets/Icons + 根 Pulsar.ico；build 0/0、1303 测试通过；真机托盘/About 渲染待用户 QA。
 
 ## 已完成（历史保留）
 
