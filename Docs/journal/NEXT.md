@@ -25,10 +25,10 @@
   - ~~installer 2.4：真实安装→启动→覆盖升级→卸载（数据保留验证）~~ ✅ 静默安装→运行→静默卸载全链路通过；%AppData%\Pulsar 103 文件保留
   - ~~installer 3.2/3.3：双实例交叉验证（安装版↔Standalone）~~ ✅ Mutex 单实例保护验证通过（第二个实例 5s 内自动退出）
   - ~~user-manual 3.2/3.3：资产上传 + 打 tag v1.11.0 发布 GitHub Release~~ ✅ v1.11.0 已发布（三资产，notes 无 BOM 中文正常）
-- [ ] **剩余需外部环境的项**（本机无法完成；Demo 视频已于 2026-09-08 取消）：
-  - installer 1.3：干净 VM 冒烟（无 .NET Runtime 环境启动 Standalone zip 验证自包含运行时）
+- [x] ~~**剩余需外部环境的项**（本机无法完成；Demo 视频已于 2026-09-08 取消）：
+  - installer 1.3：干净 VM 冒烟（无 .NET Runtime 环境启动 Standalone zip 验证自包含运行时）~~ **已收口（2026-09-08 用户真机验证）**：v1.12.0 Standalone zip（commit `b5c0ed4` 构建的本地包）在无 .NET 的新机器上解压运行通过——自包含运行时冒烟 ✅，同时覆盖窗口切换真机回归 ✅ 与托盘菜单/主题图标真机观察 ✅（C2 收口 P1 项 3 一并关闭）。
 
-- [x] ~~**架构审查 C2 未竟（2026-09-07 暂停，等用户裁决）**~~ **已收口**（commit 见下方提交状态行）：用户裁决走 (a)。前门新增 `EvaluateStructural(snapshot)` / `EvaluateSnapshot(snapshot, scope)` 两阶段词汇；`WindowInventoryService` 改注入前门 evaluator，`IWindowInventoryService` 移除黑名单谓词参数（作用域按路径固定）；coordinator 不再转发谓词。新增前门词汇测试 10 + inventory 协议测试 4（该文件首次有网）；全量 1248/1248。**需真机回归窗口切换（P1 项 3）。**
+- [x] ~~**架构审查 C2 未竟（2026-09-07 暂停，等用户裁决）**~~ **已收口**（commit 见下方提交状态行）：用户裁决走 (a)。前门新增 `EvaluateStructural(snapshot)` / `EvaluateSnapshot(snapshot, scope)` 两阶段词汇；`WindowInventoryService` 改注入前门 evaluator，`IWindowInventoryService` 移除黑名单谓词参数（作用域按路径固定）；coordinator 不再转发谓词。新增前门词汇测试 10 + inventory 协议测试 4（该文件首次有网）；全量 1248/1248。~~ 需真机回归窗口切换（P1 项 3）**已验证通过**（2026-09-08 用户新机器真机，随 v1.12.0 Standalone 冒烟一并收口）。
 - [ ] 架构审查 C4（设置面 Draft 泄漏，2026-09-07 口径已修正）：不是「1 属性 + 10 处访问」的机械替换——需给 `SettingsEditorSession` 设计变更 API（写点 :112/:492/:952）+ 定脏标记归属 + 绑定刷新语义，Session 0 专属测试。grill 第二轮建议与 C5 同批、测试先行，**等用户裁决**（延期 or 本会话做）。**2026-09-07 用户已裁决：(b) 与 C5 合并进专门会话。**
 - [ ] 架构审查 C5（教程层）：改动面最大（XAML + 1168 行 0 测试 View），与 C4 同批进专门会话（用户已裁决）。
 - [x] ~~架构审查 C6（推荐引擎时钟 seam 空壳）~~ **已落地**（commit `1bc09ad`）：3 处裸 `DateTime.UtcNow` 收口到 `_clock().ToUniversalTime()`（时区语义保持：趋势日键仍本地日期）；Unused/Inactive 阈值测试注入固定时钟 + 新增「近期使用不触发」反向守护；全量 1234/1234。
