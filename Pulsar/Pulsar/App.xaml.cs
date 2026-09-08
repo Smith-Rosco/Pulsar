@@ -239,6 +239,13 @@ namespace Pulsar
             serviceCollection.AddSingleton<QuickSwitchEngine>();
             serviceCollection.AddSingleton<WindowTrackingService>();
             serviceCollection.AddSingleton<IWindowInventoryService, WindowInventoryService>();
+            // [C2] Tray decomposition: autostart registry + menu builder are separate
+            // collaborators; TrayIconService becomes a thin host (icon/subscription/notification).
+            // SettingsWindow is opened through the existing Func<SettingsWindow> factory
+            // (registered below for the tutorial feature) instead of service-locating
+            // through IServiceProvider.
+            serviceCollection.AddSingleton<IAutoStartService, AutoStartRegistryService>();
+            serviceCollection.AddSingleton<TrayMenuBuilder>();
             serviceCollection.AddSingleton<ITrayService, TrayIconService>();
             serviceCollection.AddSingleton<IActionFeedbackService, ActionFeedbackService>();
             serviceCollection.AddSingleton<IActionFeedbackPresenter, ActionFeedbackPresenter>();

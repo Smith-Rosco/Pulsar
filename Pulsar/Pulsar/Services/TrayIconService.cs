@@ -6,7 +6,6 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using Hardcodet.Wpf.TaskbarNotification;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Localization;
 using Pulsar.Models;
@@ -16,13 +15,20 @@ using Wpf.Ui.Controls;
 
 namespace Pulsar.Services
 {
+    /// <summary>
+    /// 托盘宿主编排（C2 收口）：只拥有 TaskbarIcon 生命周期、主题感知图标、
+    /// 语言/主题订阅与气泡通知。菜单构建委托 <see cref="TrayMenuBuilder"/>，
+    /// 自启动注册表委托 <see cref="IAutoStartService"/>，设置窗口经
+    /// <c>Func&lt;SettingsWindow&gt;</c> 工厂打开（组合根装配，服务定位已移除）。
+    /// </summary>
     public class TrayIconService : ITrayService
     {
         private TaskbarIcon? _taskbarIcon;
-        private System.Windows.Controls.MenuItem? _toggleThemeItem;
-        private readonly IServiceProvider _serviceProvider;
         private readonly ILocalizationService _loc;
         private readonly IThemeService _themeService;
+        private readonly IAutoStartService _autoStartService;
+        private readonly TrayMenuBuilder _menuBuilder;
+        private readonly Func<SettingsWindow> _settingsWindowFactory;
 
         // Theme-aware tray icons: white-background mark for Light theme, black-background mark for Dark.
         // Loaded once from embedded resources and cached for the app lifetime.
@@ -34,11 +40,19 @@ namespace Pulsar.Services
         // ponytail: IThemeService from Pulsar.Services.Interfaces (not Wpf.Ui.IThemeService)
         private readonly ILogger<TrayIconService>? _logger;
 
-        public TrayIconService(IServiceProvider serviceProvider, ILocalizationService loc, Pulsar.Services.Interfaces.IThemeService themeService, ILogger<TrayIconService>? logger = null)
+        public TrayIconService(
+            ILocalizationService loc,
+            Pulsar.Services.Interfaces.IThemeService themeService,
+            IAutoStartService autoStartService,
+            TrayMenuBuilder menuBuilder,
+            Func<SettingsWindow> settingsWindowFactory,
+            ILogger<TrayIconService>? logger = null)
         {
-            _serviceProvider = serviceProvider;
             _loc = loc;
             _themeService = themeService;
+            _autoStartService = autoStartService;
+            _menuBuilder = menuBuilder;
+            _settingsWindowFactory = settingsWindowFactory;
             _logger = logger;
         }
 
@@ -149,80 +163,31 @@ namespace Pulsar.Services
 
         private void BuildContextMenu()
         {
-            var contextMenu = new ContextMenu();
-            _themeService.ApplyContextMenuTheme(contextMenu, _themeService.CurrentTheme);
+            if (_taskbarIcon == null) return;
 
-            var settingsItem = new System.Windows.Controls.MenuItem
-            {
-                Header = _loc["Tray.Settings"],
-                Icon = new SymbolIcon(SymbolRegular.Settings24)
-            };
-            // [E2E] Stable UIA id (language-independent; never look up by text).
-            System.Windows.Automation.AutomationProperties.SetAutomationId(settingsItem, "Pulsar.Tray.Settings");
-            settingsItem.Click += OnSettingsClicked;
-            contextMenu.Items.Add(settingsItem);
+            _taskbarIcon.ContextMenu = _menuBuilder.Build(new TrayMenuBuilder.TrayMenuRequest(
+                _loc,
+                _themeService.CurrentTheme,
+                _autoStartService.IsEnabled(),
+                OpenSettings,
+                ToggleTheme,
+                _autoStartService.Toggle,
+                RestartApp,
+                ExitApp));
+        }
 
-            contextMenu.Items.Add(new Separator());
-
-            var toggleThemeItem = new System.Windows.Controls.MenuItem
-            {
-                Header = _loc["Tray.ToggleTheme"],
-                Icon = new SymbolIcon(SymbolRegular.DarkTheme24),
-                IsCheckable = true,
-                IsChecked = _themeService.CurrentTheme == AppTheme.Light
-            };
-            System.Windows.Automation.AutomationProperties.SetAutomationId(toggleThemeItem, "Pulsar.Tray.ToggleTheme");
-            toggleThemeItem.Click += OnToggleThemeClicked;
-            contextMenu.Items.Add(toggleThemeItem);
-            _toggleThemeItem = toggleThemeItem;
-
-            var autoStartItem = new System.Windows.Controls.MenuItem
-            {
-                Header = _loc["Tray.AutoStart"],
-                Icon = new SymbolIcon(SymbolRegular.Power24),
-                IsCheckable = true,
-                IsChecked = IsAutoStartEnabled()
-            };
-            System.Windows.Automation.AutomationProperties.SetAutomationId(autoStartItem, "Pulsar.Tray.AutoStart");
-            autoStartItem.Click += OnAutoStartClicked;
-            contextMenu.Items.Add(autoStartItem);
-
-            var restartItem = new System.Windows.Controls.MenuItem
-            {
-                Header = _loc["Tray.Restart"],
-                Icon = new SymbolIcon(SymbolRegular.ArrowRepeatAll24)
-            };
-            System.Windows.Automation.AutomationProperties.SetAutomationId(restartItem, "Pulsar.Tray.Restart");
-            restartItem.Click += OnRestartClicked;
-            contextMenu.Items.Add(restartItem);
-
-            contextMenu.Items.Add(new Separator());
-
-            var exitItem = new System.Windows.Controls.MenuItem
-            {
-                Header = _loc["Tray.Exit"],
-                Icon = new SymbolIcon(SymbolRegular.DoorArrowLeft24)
-            };
-            System.Windows.Automation.AutomationProperties.SetAutomationId(exitItem, "Pulsar.Tray.Exit");
-            exitItem.Click += (s, e) =>
-            {
-                Dispose();
-                Application.Current.Shutdown();
-            };
-            contextMenu.Items.Add(exitItem);
-
-            if (_taskbarIcon != null)
-            {
-                _taskbarIcon.ContextMenu = contextMenu;
-            }
+        private static System.Windows.Controls.MenuItem? FindMenuAutomationItem(ContextMenu menu, string automationId)
+        {
+            return menu.Items.OfType<System.Windows.Controls.MenuItem>()
+                .FirstOrDefault(item => System.Windows.Automation.AutomationProperties.GetAutomationId(item) == automationId);
         }
 
         private void OnTrayMouseDoubleClick(object sender, RoutedEventArgs e)
         {
-            OnSettingsClicked(sender, e);
+            OpenSettings();
         }
 
-        private void OnSettingsClicked(object? sender, EventArgs e)
+        private void OpenSettings()
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
@@ -230,7 +195,7 @@ namespace Pulsar.Services
 
                 if (window == null)
                 {
-                    window = _serviceProvider.GetRequiredService<SettingsWindow>();
+                    window = _settingsWindowFactory();
                     window.Show();
                 }
                 else
@@ -263,9 +228,10 @@ namespace Pulsar.Services
             ApplyTrayIcon();
 
             // The checkable "light theme" item must stay in sync with the dictionaries above.
-            if (_toggleThemeItem != null)
+            if (_taskbarIcon?.ContextMenu is ContextMenu rebuiltMenu
+                && FindMenuAutomationItem(rebuiltMenu, "Pulsar.Tray.ToggleTheme") is { } toggleItem)
             {
-                _toggleThemeItem.IsChecked = theme == AppTheme.Light;
+                toggleItem.IsChecked = theme == AppTheme.Light;
             }
 
             // Sync SettingsViewModel config + ComboBox binding
@@ -274,7 +240,7 @@ namespace Pulsar.Services
                 vm.SyncThemeFromService();
         }
 
-        private void OnToggleThemeClicked(object? sender, EventArgs e)
+        private void ToggleTheme()
         {
             try
             {
@@ -287,7 +253,7 @@ namespace Pulsar.Services
             }
         }
 
-        private void OnRestartClicked(object? sender, EventArgs e)
+        private void RestartApp()
         {
             var processPath = Environment.ProcessPath;
             if (string.IsNullOrEmpty(processPath)) return;
@@ -297,41 +263,10 @@ namespace Pulsar.Services
             Application.Current.Shutdown();
         }
 
-        private static bool IsAutoStartEnabled()
+        private void ExitApp()
         {
-            try
-            {
-                using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run");
-                return key?.GetValue("Pulsar") != null;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        private static void OnAutoStartClicked(object? sender, EventArgs e)
-        {
-            try
-            {
-                using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
-                if (key == null) return;
-
-                var existing = key.GetValue("Pulsar");
-                if (existing != null)
-                {
-                    key.DeleteValue("Pulsar");
-                }
-                else
-                {
-                    var path = Environment.ProcessPath;
-                    if (!string.IsNullOrEmpty(path))
-                        key.SetValue("Pulsar", $"\"{path}\"");
-                }
-            }
-            catch (Exception)
-            {
-            }
+            Dispose();
+            Application.Current.Shutdown();
         }
 
         public void ShowNotification(string title, string message, PulsarNotificationIcon icon)
@@ -349,8 +284,6 @@ namespace Pulsar.Services
 
             _taskbarIcon.Dispatcher.Invoke(() =>
             {
-                _logger?.LogInformation("[TrayIconService] ShowNotification - ON UI THREAD");
-
                 try
                 {
                     var balloonIcon = icon switch
@@ -361,17 +294,13 @@ namespace Pulsar.Services
                         _ => BalloonIcon.None
                     };
 
-                    _logger?.LogInformation("[TrayIconService] Calling ShowBalloonTip - Title='{Title}', Icon={BalloonIcon}", title, balloonIcon);
                     _taskbarIcon.ShowBalloonTip(title, message, balloonIcon);
-                    _logger?.LogInformation("[TrayIconService] ShowBalloonTip returned successfully");
                 }
                 catch (Exception ex)
                 {
                     _logger?.LogError(ex, "[TrayIconService] ShowBalloonTip EXCEPTION: {ErrorMessage}", ex.Message);
                 }
             });
-
-            _logger?.LogInformation("[TrayIconService] ShowNotification - Dispatcher.Invoke completed");
         }
 
         public void Dispose()

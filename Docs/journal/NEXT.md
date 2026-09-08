@@ -36,7 +36,12 @@
 - [x] ~~**架构审查 C3（MRU「上一个窗口」单一权威）**~~ **已落地并 push**（2026-09-08）：`QuickSwitchEngine` 吸收 MenuPrevious 槽（`SetMenuSnapshot/GetMenuSnapshot`，不过滤）成为 Window History 单一权威；`WindowService` 5 处读写重指引擎；删除 `IFocusHistory` 全链路 + `QuickSwitchAsync` + `QuickSwitchResult` + `RecordPreviousWindow` ×2 + `RegisterOrUpdateWindow`；引擎 +6 测试、门面 +1 双轨钉死测试，WindowTrackingServiceTests 重写；全量 1257/1257，build 0 警告 0 错误。ADR-028 + CONTEXT.md Window History 术语已更新。**已提交 `b3619ab` 并 push origin/main**（`Docs/reports/2026-09-07-DOC_STRUCTURE_AUDIT.html` 噪声改动已 restore）。
 - [ ] **低成本批次 6 项已实施未提交**（2026-09-08，全量 1269/1269）：S2（RebuildCache 补调 ConfigureHookMode）/ S3（wizard 走 dispatcher seam）/ C7（PluginLocalization.ConventionLookup 收口）/ C6（DialogService.HasTemplate 校验+集成映射测试）/ C8（usage tracker 注入 clock）。**待用户确认后 commit+push**（含 journal/NEXT 本日更新）。
 - [x] ~~**S4 删除 DemandPermission 死链**（grill Q6，护栏 1 命中暂停）~~ **已落地**（2026-09-08，用户「同意删除」）：删除 `IPluginPermissionInterceptor` 接口 + 2 adapter + `PluginPermissionDeniedException` + `PluginExecutionContext` 属性/ctor/`DemandPermission` + kernel attach；`PluginPermissionService`/`IsKnown` 真实权限门保留；TESTING_GUIDE.md 过时示例同步修正；全量 1269/1269。
-- [ ] **剩余项目在 handoff**：`%TEMP%\pulsar-handoff-2026-09-08.md` —— C1（Execution Handoff 收束）/ C2（TrayService 拆分）/ C4（执行-拆除竞态 seam）/ C5（ImplementationType 不可变性）+ S1 附注；推荐顺序 C1 → C4 → C5 → C2。
+- [x] ~~**剩余项目在 handoff**：`%TEMP%\pulsar-handoff-2026-09-08.md` —— C1（Execution Handoff 收束）/ C2（TrayService 拆分）/ C4（执行-拆除竞态 seam）/ C5（ImplementationType 不可变性）+ S1 附注；推荐顺序 C1 → C4 → C5 → C2。~~ **四项全部落地（2026-09-08 下午，grill auto-with-guardrails + TDD）**：
+  - **C1** `19c7f43`：4 处手写 mark→switch→notify 收束进 `MenuSession.ExecuteQuickSwitchAsync()`；ProcessGroupStrategy/BackActionStrategy 直写 IsVisible 经裁定保留（无目标/取消不属动作执行）；1269/1269。
+  - **C4** `091f575`：`PluginExecutionPipeline.AcquireExecutionGateAsync` seam + `DeactivatePluginAsync` 先 drain 后拆（超时 fail-close 抛异常中止卸载），+5 并发交叉测试；1274/1274。
+  - **C5** `c4f20ce`：`ImplementationType` setter 收口 internal（护栏 1 暂停后用户选方案 D，非破坏）；1274/1274。
+  - **C2**：`IAutoStartService`/`AutoStartRegistryService`（注册表隔离，可注入测试子键）+ `TrayMenuBuilder`（菜单纯函数化，AutomationId 结构钉死）+ `TrayIconService` 编排化（服务定位 → `Func<SettingsWindow>` 工厂，复用 tutorial 既有注册）；+5 测试。ITrayService 接口与 12 处消费方零改动。
+- [ ] 架构审查 S1（附注）：`RadialMenuLayoutCoordinator` / `CommandPageProvider` / `ProcessPageProvider` 仍 0 直接测试（ADR-023:53 承诺的 page-provider tests 未兑现），后续候选。
 - [x] ~~README 对比章节（2026-09-08 用户新增「🆚 与同类工具对比」+「✨ 四个不可替代点」，README.md / README_EN.md 双语 + 导航锚点）未提交，可与低成本批次一并 commit+push。~~ **已随 2026-09-08 清空工作树批次提交**（含去 AI 味重写、Design/icon-concepts 纳管、NEXT 取消项）。
 
 ## 已完成（历史保留）
