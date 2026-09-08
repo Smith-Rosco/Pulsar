@@ -429,7 +429,12 @@ namespace Pulsar.Services
 
             try
             {
-                await await System.Windows.Application.Current.Dispatcher.InvokeAsync(
+                // Via the dispatcher seam (ctor-injected; defaults to
+                // Application.Current?.Dispatcher), matching the tutorial branch.
+                // Hosts without a WPF Application yield null → NRE → caught and
+                // logged below, exactly like the tutorial path.
+                var uiDispatcher = _dispatcherProvider();
+                await await uiDispatcher.InvokeAsync(
                     () => _dialogService.ShowCustomAsync(_localizationService["FirstLaunch.SetupTitle"], wizard, DialogButtons.None, DialogSizeConstraints.LargeResizable, AppTheme.Light),
                     System.Windows.Threading.DispatcherPriority.Normal,
                     cancellationToken);

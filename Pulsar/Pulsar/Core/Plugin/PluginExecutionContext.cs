@@ -43,13 +43,6 @@ namespace Pulsar.Core.Plugin
         /// </summary>
         public string? TargetProcessName { get; }
 
-        /// <summary>
-        /// Per-execution permission gate, populated by the runtime pipeline.
-        /// External plugins may call <see cref="DemandPermission"/> before touching
-        /// a sensitive capability instead of relying only on the plugin-level check.
-        /// </summary>
-        public IPluginPermissionInterceptor? PermissionInterceptor { get; }
-
         private readonly PluginExecutionContext? _previous;
 
         private PluginExecutionContext(
@@ -57,7 +50,6 @@ namespace Pulsar.Core.Plugin
             string action,
             Guid executionId,
             string? targetProcessName,
-            IPluginPermissionInterceptor? permissionInterceptor,
             PluginExecutionContext? previous)
         {
             PluginId = pluginId;
@@ -65,7 +57,6 @@ namespace Pulsar.Core.Plugin
             ExecutionId = executionId;
             StartTimeUtc = DateTime.UtcNow;
             TargetProcessName = targetProcessName;
-            PermissionInterceptor = permissionInterceptor;
             _previous = previous;
         }
 
@@ -76,8 +67,7 @@ namespace Pulsar.Core.Plugin
             string pluginId,
             string action,
             Guid? executionId = null,
-            string? targetProcessName = null,
-            IPluginPermissionInterceptor? permissionInterceptor = null)
+            string? targetProcessName = null)
         {
             var previous = _current.Value;
             var context = new PluginExecutionContext(
@@ -85,26 +75,11 @@ namespace Pulsar.Core.Plugin
                 action,
                 executionId ?? Guid.NewGuid(),
                 targetProcessName,
-                permissionInterceptor,
                 previous
             );
 
             _current.Value = context;
             return context;
-        }
-
-        /// <summary>
-        /// Demands a manifest permission inside the current execution scope.
-        /// Unknown permissions always fail closed.
-        /// </summary>
-        public void DemandPermission(string permission)
-        {
-            if (PermissionInterceptor == null)
-            {
-                throw new PluginPermissionDeniedException(permission);
-            }
-
-            PermissionInterceptor.Demand(permission);
         }
 
         /// <summary>

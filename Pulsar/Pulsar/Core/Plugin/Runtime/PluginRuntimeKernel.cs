@@ -497,15 +497,10 @@ namespace Pulsar.Core.Plugin.Runtime
                 return new PluginExecutionOutcome(PluginResult.Error($"Plugin unavailable: {pluginId}"), PluginExecutionOutcomeKind.Blocked);
             }
 
-            IPluginPermissionInterceptor permissionInterceptor = request.Descriptor.IsExternal
-                ? new GrantedPluginPermissionInterceptor(request.GrantedPermissions)
-                : AllowAllPluginPermissionInterceptor.Instance;
-
             using var executionScope = PluginExecutionContext.BeginScope(
                 pluginId,
                 request.Action,
-                targetProcessName: request.Context.TargetProcessName,
-                permissionInterceptor: permissionInterceptor);
+                targetProcessName: request.Context.TargetProcessName);
 
             var stopwatch = Stopwatch.StartNew();
             var readyState = PluginLifecycleState.Enabled;

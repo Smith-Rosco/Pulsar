@@ -95,6 +95,16 @@ namespace Pulsar.Services
                 if (content is IDialogViewModel dialogVm)
                 {
                     dialogVm.RequestClose = (result) => vm.CloseCommand.Execute(result);
+
+                    // Fail loudly instead of silently rendering the type name:
+                    // a dialog VM without a registered DataTemplate falls back to
+                    // ToString() with no exception, no log and no compile error.
+                    if (!HasTemplate(System.Windows.Application.Current?.Resources, content.GetType()))
+                    {
+                        throw new InvalidOperationException(
+                            $"No DataTemplate registered for dialog view model '{content.GetType().Name}'. " +
+                            "Register it in Themes/DialogTemplates.xaml.");
+                    }
                 }
 
                 vm.ConfigureButtons(buttons);
@@ -398,6 +408,16 @@ namespace Pulsar.Services
                     ? colorPickerVm.HasCustomColor ? colorPickerVm.SelectedHex : string.Empty
                     : null;
             });
+        }
+
+        /// <summary>
+        /// Resolves whether a dialog view model type has an implicit
+        /// <see cref="DataTemplate"/> in the given resources (the merged
+        /// <c>Themes/DialogTemplates.xaml</c> in production).
+        /// </summary>
+        internal static bool HasTemplate(ResourceDictionary? resources, Type viewModelType)
+        {
+            return resources?[new DataTemplateKey(viewModelType)] is DataTemplate;
         }
 
         private async Task<T> RunOnUi<T>(Func<T> action)

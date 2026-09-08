@@ -50,7 +50,6 @@ Pulsar.Tests/
 │   ├── PluginExecutionPipelineTimeoutTests.cs    # 超时测试
 │   ├── HotReloadTests.cs                         # 热重载测试
 │   └── Security/                                 # 插件安全测试
-│       ├── PermissionInterceptorTests.cs         # 权限拦截器测试
 │       └── PluginPermissionTests.cs              # 权限系统测试
 ├── Plugins/                            # 扩展插件测试
 │   ├── BookmarkletRunnerPluginTests.cs # 书签运行器测试
@@ -334,20 +333,23 @@ public async Task LoadAsync_ShouldLoadValidConfig_WhenFileExists()
 
 ```csharp
 [Fact]
-public void CheckPermission_ShouldThrowException_WhenPermissionDenied()
+public void Evaluate_ShouldReportMissingPermissions_WhenNotGranted()
 {
     // Arrange
-    var interceptor = new PermissionInterceptor();
-    var pluginId = "test.plugin";
-    var permission = PluginPermission.ReadClipboard;
-    
-    // 不授予任何权限
+    var descriptor = CreateExtensionDescriptor(
+        "test.permissions.plugin",
+        isExternal: true,
+        permissions: new[] { PluginPermissions.ClipboardRead, PluginPermissions.InputInject });
+    var service = new PluginPermissionService();
 
-    // Act & Assert
-    var act = () => interceptor.CheckPermission(pluginId, permission, "TestOperation");
-    
-    act.Should().Throw<UnauthorizedAccessException>()
-        .WithMessage("*does not have permission*");
+    // Act — 外部插件未授予任何 manifest 权限
+    var result = service.Evaluate(descriptor, Array.Empty<string>());
+
+    // Assert
+    result.Granted.Should().BeFalse();
+    result.MissingPermissions.Should().BeEquivalentTo(
+        PluginPermissions.ClipboardRead,
+        PluginPermissions.InputInject);
 }
 ```
 

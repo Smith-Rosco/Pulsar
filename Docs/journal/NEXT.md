@@ -34,7 +34,10 @@
 - [ ] 架构审查 C5（教程层）：改动面最大（XAML + 1168 行 0 测试 View），与 C4 同批进专门会话（用户已裁决）。
 - [x] ~~架构审查 C6（推荐引擎时钟 seam 空壳）~~ **已落地**（commit `1bc09ad`）：3 处裸 `DateTime.UtcNow` 收口到 `_clock().ToUniversalTime()`（时区语义保持：趋势日键仍本地日期）；Unused/Inactive 阈值测试注入固定时钟 + 新增「近期使用不触发」反向守护；全量 1234/1234。
 - [x] ~~**C1/C3/C2 全量 + C6 已本地提交**（`e441e73` / `b6980e2` / `1bc09ad` / `5a71f17`），main ahead origin/main 5，待用户 push。~~ **已 push**（2026-09-08 会话开始，`6b91e79..09a7f1d` 13 commits 含 C 系列）。
-- [x] ~~**架构审查 C3（MRU「上一个窗口」单一权威）**~~ **已落地**（2026-09-08）：`QuickSwitchEngine` 吸收 MenuPrevious 槽（`SetMenuSnapshot/GetMenuSnapshot`，不过滤）成为 Window History 单一权威；`WindowService` 5 处读写重指引擎；删除 `IFocusHistory` 全链路 + `QuickSwitchAsync` + `QuickSwitchResult` + `RecordPreviousWindow` ×2 + `RegisterOrUpdateWindow`；引擎 +6 测试、门面 +1 双轨钉死测试，WindowTrackingServiceTests 重写；全量 1257/1257，build 0 警告 0 错误。ADR-028 + CONTEXT.md Window History 术语已更新。**改动未提交，待用户确认后 commit**（另有 `Docs/reports/2026-09-07-DOC_STRUCTURE_AUDIT.html` 未暂存改动待定夺）。
+- [x] ~~**架构审查 C3（MRU「上一个窗口」单一权威）**~~ **已落地并 push**（2026-09-08）：`QuickSwitchEngine` 吸收 MenuPrevious 槽（`SetMenuSnapshot/GetMenuSnapshot`，不过滤）成为 Window History 单一权威；`WindowService` 5 处读写重指引擎；删除 `IFocusHistory` 全链路 + `QuickSwitchAsync` + `QuickSwitchResult` + `RecordPreviousWindow` ×2 + `RegisterOrUpdateWindow`；引擎 +6 测试、门面 +1 双轨钉死测试，WindowTrackingServiceTests 重写；全量 1257/1257，build 0 警告 0 错误。ADR-028 + CONTEXT.md Window History 术语已更新。**已提交 `b3619ab` 并 push origin/main**（`Docs/reports/2026-09-07-DOC_STRUCTURE_AUDIT.html` 噪声改动已 restore）。
+- [ ] **低成本批次 6 项已实施未提交**（2026-09-08，全量 1269/1269）：S2（RebuildCache 补调 ConfigureHookMode）/ S3（wizard 走 dispatcher seam）/ C7（PluginLocalization.ConventionLookup 收口）/ C6（DialogService.HasTemplate 校验+集成映射测试）/ C8（usage tracker 注入 clock）。**待用户确认后 commit+push**（含 journal/NEXT 本日更新）。
+- [x] ~~**S4 删除 DemandPermission 死链**（grill Q6，护栏 1 命中暂停）~~ **已落地**（2026-09-08，用户「同意删除」）：删除 `IPluginPermissionInterceptor` 接口 + 2 adapter + `PluginPermissionDeniedException` + `PluginExecutionContext` 属性/ctor/`DemandPermission` + kernel attach；`PluginPermissionService`/`IsKnown` 真实权限门保留；TESTING_GUIDE.md 过时示例同步修正；全量 1269/1269。
+- [ ] **剩余项目在 handoff**：`%TEMP%\pulsar-handoff-2026-09-08.md` —— C1（Execution Handoff 收束）/ C2（TrayService 拆分）/ C4（执行-拆除竞态 seam）/ C5（ImplementationType 不可变性）+ S1 附注；推荐顺序 C1 → C4 → C5 → C2。
 
 ## 已完成（历史保留）
 

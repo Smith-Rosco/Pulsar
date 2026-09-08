@@ -56,6 +56,11 @@ namespace Pulsar.Tests.Services
             return new PluginUsageTracker(_loggerMock.Object, statsFilePath: _testFilePath);
         }
 
+        private PluginUsageTracker CreateTracker(Func<DateTime> clock)
+        {
+            return new PluginUsageTracker(_loggerMock.Object, statsFilePath: _testFilePath, clock: clock);
+        }
+
         [Fact]
         public void RecordExecution_SingleCall_UpdatesAllFields()
         {
@@ -409,6 +414,52 @@ namespace Pulsar.Tests.Services
             {
                 d(state);
             }
+        }
+
+        [Fact]
+        public void RecordExecution_WithFixedClock_UsesClockForDateKeyAndLastUsed()
+        {
+            var fixedTime = new DateTime(2026, 9, 8, 10, 30, 0, DateTimeKind.Local);
+            using var tracker = CreateTracker(() => fixedTime);
+
+            tracker.RecordExecution("clocked.plugin", true, 50);
+
+            var stats = tracker.GetStats("clocked.plugin");
+            stats.DailyStats.Should().ContainKey("2026-09-08");
+            stats.LastUsed.Should().NotBeNull();
+            stats.LastUsed!.Value.ToUniversalTime().Should().Be(fixedTime.ToUniversalTime());
+        }
+
+        [Fact]
+        public void GetUnusedPlugins_WithFixedClock_UsesClockForThreshold()
+        {
+            DateTime current = new(2026, 8, 1, 12, 0, 0, DateTimeKind.Local);
+            using var tracker = CreateTracker(() => current);
+            tracker.RecordExecution("stale.plugin", true, 50);
+
+            current = new DateTime(2026, 9, 8, 12, 0, 0, DateTimeKind.Local);
+            tracker.RecordExecution("fresh.plugin", true, 50);
+
+            var unused = tracker.GetUnusedPlugins(30);
+
+            unused.Should().Contain("stale.plugin");
+            unused.Should().NotContain("fresh.plugin");
+        }
+
+        [Fact]
+        public void RecordExecution_WithAdvancingClock_ShouldCleanStatsOlderThan30Days()
+        {
+            DateTime current = new(2026, 7, 1, 9, 0, 0, DateTimeKind.Local);
+            using var tracker = CreateTracker(() => current);
+            tracker.RecordExecution("cleaned.plugin", true, 50, profileName: "p", slotIndex: 1, mode: "Task");
+            tracker.GetStats("cleaned.plugin").DailyStats.Should().ContainKey("2026-07-01");
+
+            current = new DateTime(2026, 9, 8, 9, 0, 0, DateTimeKind.Local);
+            tracker.RecordExecution("cleaned.plugin", true, 50);
+
+            var stats = tracker.GetStats("cleaned.plugin");
+            stats.DailyStats.Should().NotContainKey("2026-07-01");
+            stats.DailyStats.Should().ContainKey("2026-09-08");
         }
     }
 }

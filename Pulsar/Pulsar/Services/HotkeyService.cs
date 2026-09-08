@@ -288,6 +288,11 @@ namespace Pulsar.Services
             {
                 RebuildCacheCore(_config.Settings.Hotkeys);
             }
+
+            // The hook mode is config-driven and must follow every commit path,
+            // not just startup. _config was refreshed above, so this re-applies
+            // the current Input.ModifierStateMode (missing section → Hybrid default).
+            ConfigureHookMode();
         }
 
         public void RegisterAction(string actionId, Action callback)

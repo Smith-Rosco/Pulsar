@@ -225,5 +225,23 @@ namespace Pulsar.Tests.Services
             hook.UseHybridMode.Should().BeTrue(
                 "a missing Input section keeps the same fallback the previous startup-module write used");
         }
+
+        [Fact]
+        public void ConfigUpdated_WhenInputModeChanged_ShouldRefreshHookMode()
+        {
+            var config = new ProfilesConfig();
+            config.Settings.Input.ModifierStateMode = "Legacy";
+            var service = CreateService(out var configServiceMock, out var hook, config);
+            hook.UseHybridMode.Should().BeFalse("initial hook mode follows the config");
+
+            // Simulate a config edit committed outside the Settings save path
+            // (Settings save, ConfigEditSession, tutorial). The shared snapshot
+            // reference lets us flip the value in place, as a real commit would.
+            config.Settings.Input.ModifierStateMode = "Hybrid";
+            configServiceMock.Raise(x => x.ConfigUpdated += null);
+
+            hook.UseHybridMode.Should().BeTrue(
+                "hook mode must follow config updates, not stay frozen at startup value");
+        }
     }
 }

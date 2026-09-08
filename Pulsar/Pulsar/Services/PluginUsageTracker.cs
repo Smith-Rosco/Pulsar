@@ -21,6 +21,7 @@ namespace Pulsar.Services
     public class PluginUsageTracker : IPluginUsageTracker, IDisposable
     {
         private readonly ILogger<PluginUsageTracker> _logger;
+        private readonly Func<DateTime> _clock;
         private readonly ConcurrentDictionary<string, PluginUsageStats> _stats = new();
         private readonly string _statsFilePath;
         private readonly System.Threading.Timer _autoSaveTimer;
@@ -29,9 +30,13 @@ namespace Pulsar.Services
 
         public PluginUsageTracker(
             ILogger<PluginUsageTracker> logger,
-            string? statsFilePath = null)
+            string? statsFilePath = null,
+            Func<DateTime>? clock = null)
         {
             _logger = logger;
+            // Single clock source for date keys, unused thresholds and cleanup
+            // cutoffs (mirrors UsageStatsReadModel's read-side clock seam).
+            _clock = clock ?? (() => DateTime.Now);
 
             if (!string.IsNullOrWhiteSpace(statsFilePath))
             {
@@ -77,7 +82,7 @@ namespace Pulsar.Services
 
                 lock (stats)
                 {
-                    var now = DateTime.Now;
+                    var now = _clock();
 
                     stats.TotalExecutions++;
                     if (success)
@@ -205,7 +210,7 @@ namespace Pulsar.Services
         /// </summary>
         public List<string> GetUnusedPlugins(int days = 30)
         {
-            var threshold = DateTime.UtcNow.AddDays(-days);
+            var threshold = _clock().ToUniversalTime().AddDays(-days);
             return _stats.Values
                 .Where(s => s.LastUsed == null || s.LastUsed < threshold)
                 .Select(s => s.PluginId)
@@ -348,7 +353,7 @@ namespace Pulsar.Services
         /// </summary>
         private void CleanupOldDailyStats(PluginUsageStats stats)
         {
-            var cutoffDate = DateTime.Now.AddDays(-30).ToString("yyyy-MM-dd");
+            var cutoffDate = _clock().AddDays(-30).ToString("yyyy-MM-dd");
             var keysToRemove = stats.DailyStats.Keys.Where(k => string.Compare(k, cutoffDate) < 0).ToList();
             foreach (var key in keysToRemove)
             {

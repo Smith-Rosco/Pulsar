@@ -4,7 +4,6 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
-using System.Text.RegularExpressions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
 using Pulsar.Core.Localization;
@@ -177,14 +176,7 @@ namespace Pulsar.Models
 
         internal static string LocalizeLabel(string? label)
         {
-            if (string.IsNullOrEmpty(label)) return label ?? string.Empty;
-            var loc = Loc;
-            if (loc == null) return label;
-
-            var safeKey = Regex.Replace(label, @"[^a-zA-Z0-9]", "");
-            var key = $"SlotAction.{safeKey}";
-            var localized = loc[key];
-            return localized != key ? localized : label;
+            return PluginLocalization.ConventionLookup(Loc, "SlotAction.", label);
         }
 
         [ObservableProperty]
@@ -250,13 +242,7 @@ namespace Pulsar.Models
             {
                 var text = Metadata.Label;
                 if (string.IsNullOrEmpty(text)) return text;
-                var loc = FieldLoc;
-                if (loc == null) return text;
-
-                var safeKey = Regex.Replace(text, @"[^a-zA-Z0-9]", "");
-                var key = $"SlotParam.{safeKey}";
-                var localized = loc[key];
-                return localized != key ? localized : text;
+                return PluginLocalization.ConventionLookup(FieldLoc, "SlotParam.", text);
             }
         }
 

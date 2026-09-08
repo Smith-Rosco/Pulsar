@@ -14,19 +14,24 @@ namespace Pulsar.Core.Localization
     public static class PluginLocalization
     {
         public static string LocalizePluginName(ILocalizationService loc, string displayName)
-            => Localize(loc, "Plugin.Name.", displayName, displayName);
+            => ConventionLookup(loc, "Plugin.Name.", displayName);
 
         public static string LocalizePluginDescription(ILocalizationService loc, string description, string displayName)
-            => Localize(loc, "Plugin.Description.", description, displayName);
+            => ConventionLookup(loc, "Plugin.Description.", description, displayName);
 
         public static string LocalizePluginCategory(ILocalizationService loc, string category)
-            => Localize(loc, "Plugin.Category.", category, category);
+            => ConventionLookup(loc, "Plugin.Category.", category);
 
-        private static string Localize(ILocalizationService loc, string prefix, string value, string keySource)
+        /// <summary>
+        /// 约定式本地化查表的单一实现（SlotAction./SlotParam./Plugin.* 共用）：
+        /// key = {prefix}{AlphaNumOnly(keySource)}，命中则取本地化值，未命中回退原文。
+        /// keySource 缺省时与 value 相同；描述类键按显示名推导时显式传入。
+        /// </summary>
+        public static string ConventionLookup(ILocalizationService? loc, string prefix, string? value, string? keySource = null)
         {
             if (loc == null || string.IsNullOrWhiteSpace(value))
             {
-                return value;
+                return value ?? string.Empty;
             }
 
             if (string.IsNullOrWhiteSpace(keySource))
