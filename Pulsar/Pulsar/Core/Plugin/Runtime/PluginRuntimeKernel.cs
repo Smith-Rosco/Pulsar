@@ -446,6 +446,44 @@ namespace Pulsar.Core.Plugin.Runtime
             }
         }
 
+        /// <summary>
+        /// Coordination seam between the execution path and lifecycle teardown (C4):
+        /// acquires the per-plugin execution gate so that (a) any in-flight action
+        /// has completed and (b) no new action can start while the caller tears the
+        /// plugin down. Returns <c>null</c> when the gate could not be acquired
+        /// within <paramref name="timeout"/> (e.g. a plugin that ignores
+        /// cancellation and hangs past its execution budget); the caller must treat
+        /// that as a fail-closed signal, not a free pass to tear down anyway.
+        /// The caller MUST dispose the returned handle; disposal releases the gate.
+        /// The lock object itself stays in the dictionary for the app lifetime (same
+        /// as the execution path) so a racing ExecuteAsync always observes the same gate.
+        /// </summary>
+        public async Task<IDisposable?> AcquireExecutionGateAsync(string pluginId, TimeSpan timeout, CancellationToken cancellationToken = default)
+        {
+            var executionLock = _executionLocks.GetOrAdd(pluginId, static _ => new SemaphoreSlim(1, 1));
+            if (!await executionLock.WaitAsync(timeout, cancellationToken).ConfigureAwait(false))
+            {
+                return null;
+            }
+
+            return new ExecutionGateReleaser(executionLock);
+        }
+
+        private sealed class ExecutionGateReleaser : IDisposable
+        {
+            private readonly SemaphoreSlim _executionLock;
+
+            public ExecutionGateReleaser(SemaphoreSlim executionLock)
+            {
+                _executionLock = executionLock;
+            }
+
+            public void Dispose()
+            {
+                _executionLock.Release();
+            }
+        }
+
         private async Task<PluginExecutionOutcome> ExecuteCoreAsync(PluginExecutionRequest request, CancellationToken cancellationToken = default)
         {
             var pluginId = request.Descriptor.Id;
@@ -628,7 +666,8 @@ namespace Pulsar.Core.Plugin.Runtime
             PluginExecutionPipeline executionPipeline,
             ILogger<PluginRuntimeKernel>? logger = null,
             IConfigService? configService = null,
-            Core.Rendering.IRadialRendererRegistry? rendererRegistry = null)
+            Core.Rendering.IRadialRendererRegistry? rendererRegistry = null,
+            TimeSpan? executionDrainTimeout = null)
         {
             _serviceProvider = serviceProvider;
             _loader = loader;
@@ -638,7 +677,21 @@ namespace Pulsar.Core.Plugin.Runtime
             _logger = logger ?? NullLogger<PluginRuntimeKernel>.Instance;
             _configService = configService;
             _rendererRegistry = rendererRegistry;
+            _executionDrainTimeout = executionDrainTimeout;
         }
+
+        private readonly TimeSpan? _executionDrainTimeout;
+
+        /// <summary>
+        /// How long <see cref="DeactivatePluginAsync"/> waits for in-flight plugin
+        /// actions to complete before failing closed. Defaults to one execution
+        /// budget plus a settle buffer (the pipeline force-cancels at
+        /// ExecutionTimeout, but a plugin that ignores cancellation may still hold
+        /// its gate for a while); tests inject a small value.
+        /// </summary>
+        private TimeSpan ExecutionDrainTimeout =>
+            _executionDrainTimeout
+                ?? (_executionPipeline.ExecutionTimeout + TimeSpan.FromSeconds(5));
 
         public async Task LoadCoreAsync()
         {
@@ -681,47 +734,68 @@ namespace Pulsar.Core.Plugin.Runtime
         /// </summary>
         public async Task DeactivatePluginAsync(string pluginId)
         {
-            if (_runtimeStateStore.TryGetPlugin(pluginId, out var plugin))
+            // C4: drain the per-plugin execution gate BEFORE any teardown step runs.
+            // Without this, uninstall/disable/overwrite-install can tear down the
+            // ALC while an action is still executing: the live stack frame pins the
+            // collectible assembly (un-unloadable) and the action zombies on a
+            // deregistered plugin. Holding the gate both waits out the in-flight
+            // action and blocks new executions (they observe Blocked, same as the
+            // one-action-at-a-time policy). A drain timeout fails closed: the
+            // caller's DeactivateFailed branch aborts file deletion.
+            IDisposable? executionGate = await _executionPipeline.AcquireExecutionGateAsync(pluginId, ExecutionDrainTimeout);
+            if (executionGate == null)
             {
-                if (plugin is IPluginLifecycle lifecycle)
+                _logger.LogError(
+                    "[PluginRuntimeKernel] Plugin {PluginId} is still executing after {Timeout:F1}s; deactivate aborted",
+                    pluginId, ExecutionDrainTimeout.TotalSeconds);
+                throw new InvalidOperationException(
+                    $"Plugin {pluginId} is still executing after {ExecutionDrainTimeout.TotalSeconds:0.#}s; deactivate aborted so the action cannot zombie on a torn-down plugin.");
+            }
+
+            using (executionGate)
+            {
+                if (_runtimeStateStore.TryGetPlugin(pluginId, out var plugin))
                 {
-                    try
+                    if (plugin is IPluginLifecycle lifecycle)
                     {
-                        await lifecycle.OnUnloadAsync();
+                        try
+                        {
+                            await lifecycle.OnUnloadAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "[PluginRuntimeKernel] OnUnloadAsync failed for {PluginId}", pluginId);
+                        }
                     }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "[PluginRuntimeKernel] OnUnloadAsync failed for {PluginId}", pluginId);
-                    }
+
+                    _runtimeStateStore.RemovePlugin(pluginId);
+
+                    // Drop renderer contributions so the UI falls back to built-ins.
+                    _rendererRegistry?.UnregisterOwner(pluginId);
                 }
 
-                _runtimeStateStore.RemovePlugin(pluginId);
+                // Sever the implementation type BEFORE dropping the catalog entry.
+                // External descriptors carry a Type loaded from the collectible ALC,
+                // so any live holder (e.g. the Plugin Manager page's descriptor list)
+                // keeps the context alive and the DLL locked. Nulling the Type breaks
+                // that pin; the catalog entry is then removed and the GC below can
+                // actually collect the context.
+                if (_catalog.TryGetDescriptor(pluginId, out var descriptor) && descriptor != null)
+                {
+                    descriptor.ImplementationType = null;
+                }
 
-                // Drop renderer contributions so the UI falls back to built-ins.
-                _rendererRegistry?.UnregisterOwner(pluginId);
+                _catalog.RemoveDescriptor(pluginId);
+                _loader.InvalidateDiscoveryCache();
+
+                // TryUnloadExternalContext owns the whole collectible-ALC teardown:
+                // Unload() initiation plus the forced GC pump that actually releases
+                // the plugin DLL file locks, so the directory is deletable right
+                // after this call (candidate E, architecture review 2026-09-04).
+                _loader.TryUnloadExternalContext(pluginId);
+
+                _logger.LogInformation("[PluginRuntimeKernel] Deactivated plugin {PluginId}", pluginId);
             }
-
-            // Sever the implementation type BEFORE dropping the catalog entry.
-            // External descriptors carry a Type loaded from the collectible ALC,
-            // so any live holder (e.g. the Plugin Manager page's descriptor list)
-            // keeps the context alive and the DLL locked. Nulling the Type breaks
-            // that pin; the catalog entry is then removed and the GC below can
-            // actually collect the context.
-            if (_catalog.TryGetDescriptor(pluginId, out var descriptor) && descriptor != null)
-            {
-                descriptor.ImplementationType = null;
-            }
-
-            _catalog.RemoveDescriptor(pluginId);
-            _loader.InvalidateDiscoveryCache();
-
-            // TryUnloadExternalContext owns the whole collectible-ALC teardown:
-            // Unload() initiation plus the forced GC pump that actually releases
-            // the plugin DLL file locks, so the directory is deletable right
-            // after this call (candidate E, architecture review 2026-09-04).
-            _loader.TryUnloadExternalContext(pluginId);
-
-            _logger.LogInformation("[PluginRuntimeKernel] Deactivated plugin {PluginId}", pluginId);
         }
 
         public PluginDescriptor? GetDescriptor(string pluginId)
