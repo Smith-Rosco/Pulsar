@@ -47,7 +47,8 @@
 - [x] ~~**槽位轮盘滚轮翻页待用户真机复测**（2026-09-08 第二轮修复）：命中策略改为根 `Grid` 显式 Transparent + `Root_PreviewMouseWheel` 按 `GetPosition(WheelHost)` 判定（不再依赖子元素命中测试）。~~ **已复测通过（2026-09-09 00:03 用户真机）**：轮盘中心空白区悬停滚轮可翻页 ✅（第一轮「必须悬停 slot」缺陷消除）。外侧（页码条/提示文本）未单独复测，理论上手感不变（不 Handled，交还宿主页面滚动）——后续顺手可验。
 - [x] ~~README 对比章节（2026-09-08 用户新增「🆚 与同类工具对比」+「✨ 四个不可替代点」，README.md / README_EN.md 双语 + 导航锚点）未提交，可与低成本批次一并 commit+push。~~ **已随 2026-09-08 清空工作树批次提交**（含去 AI 味重写、Design/icon-concepts 纳管、NEXT 取消项）。
 
-- [x] ~~图标方向再评估：用户 2026-09-08 深夜改要「方案二径向菜单·无边框」~~ **已拍板（2026-09-08 23:55）**：径向菜单版定稿，亮 15/暗 14 源经 build_radial_ico.py 出 ico 并覆盖 Assets/Icons + 根 Pulsar.ico；build 0/0、1303 测试通过；真机托盘/About 渲染待用户 QA。
+- [x] ~~图标方向再评估：用户 2026-09-08 深夜改要「方案二径向菜单·无边框」~~ **已拍板并收口（2026-09-08 23:55 拍板 → 2026-09-09 00:08 真机 QA 通过）**：径向菜单版定稿，亮 15/暗 14 源经 build_radial_ico.py 出 ico 并覆盖 Assets/Icons + 根 Pulsar.ico；build 0/0、1303 测试通过；托盘/About 渲染用户真机确认 ✅（commit `dbc21e1`，待 push）。
+- [x] ~~**6.2/6.4/6.7 治本改动补单测**（2026-09-09 00:0x）~~ **已完成并提交**：新增 4 个测试类 25 用例 —— `ExecutablePathResolverTests`（环境变量展开 ×5）/ `IconHelperIconKeyTests`（名称反查+归一化 ×8）/ `PluginRuntimeKernelEnvArgsTests`（args 展开 ×6）/ `VbaModuleInjectorWpsGuardTests`（WPS 空壳守护 ×6）。补测中发现并修复实现 bug：`EnsureVbaProjectIsUsable` 探测异常后误落入「VBComponents null」抛错分支（与注释 "assume usable" 语义矛盾），已改为 catch 即放行；dynamic 绑定失败与 getter 抛出两个分支均有用例钉死。验证：build 0 警告 0 错误，全量 **1328/1328**（1303 基线 + 25 新增）。
 
 ## 已完成（历史保留）
 

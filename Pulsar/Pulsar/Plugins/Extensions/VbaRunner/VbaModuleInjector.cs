@@ -125,7 +125,12 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
             dynamic project = vbProject;
             object? components = null;
             try { components = project.VBComponents; }
-            catch { /* probe failure -> assume usable, let the real call surface the error */ }
+            catch
+            {
+                // 探测失败（dynamic 绑定失败 / getter 抛出）→ 保守放行，
+                // 由真实调用暴露错误；不得落入下方 null 抛错分支。
+                return;
+            }
 
             if (components == null)
             {
