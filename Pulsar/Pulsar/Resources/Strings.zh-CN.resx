@@ -5635,4 +5635,31 @@ Pulsar 会在当前页面运行一个网页脚本——这就是命令模式：�
     name="CommandSlot.AutoSignIn"
     xml:space="preserve">
     <value>自动登录</value>
-  </data></root>
+  </data>  <data name="SettingsPage.Gesture.Title" xml:space="preserve">
+    <value>手势召唤</value>
+  </data>
+  <data name="SettingsPage.Gesture.Description" xml:space="preserve">
+    <value>配置右键拖拽召唤、修饰键与进程隔离过滤。</value>
+  </data>
+  <data name="SettingsPage.Gesture.ModifiersSection" xml:space="preserve">
+    <value>修饰键</value>
+  </data>
+  <data name="SettingsPage.Appearance.Title" xml:space="preserve">
+    <value>外观</value>
+  </data>
+  <data name="SettingsPage.Appearance.Description" xml:space="preserve">
+    <value>自定义主题、渲染器风格与主题预设。</value>
+  </data>
+  <data name="SettingsPage.Appearance.ThemeSection" xml:space="preserve">
+    <value>主题与渲染器</value>
+  </data>
+  <data name="SettingsPage.ConfigureDetails" xml:space="preserve">
+    <value>配置详情</value>
+  </data>
+  <data name="SettingsPage.ConfigureDetailsHint" xml:space="preserve">
+    <value>在独立标签页中打开；离开时若无未保存修改将自动回收。</value>
+  </data>
+  <data name="SettingsWindow.CloseTab" xml:space="preserve">
+    <value>关闭标签页</value>
+  </data>
+</root>

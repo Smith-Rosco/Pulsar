@@ -37,7 +37,10 @@ namespace Pulsar.Views
         private readonly ILocalizationService _localizationService;
         private readonly Dictionary<string, Page> _pages = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, NavigationViewItem> _navItemMap = new(StringComparer.OrdinalIgnoreCase);
+        private readonly ITransientPageService _transientPageService;
+        private readonly DataTemplate _transientNavItemTemplate;
         private NavigationViewItem? _previousActiveItem;
+        private string? _activePageId;
         private bool _isClosingProgrammatically;
         private bool _isApplyingSelection;
         private bool _isNavAnimating;
@@ -50,6 +53,7 @@ namespace Pulsar.Views
             SettingsPageCatalog pageCatalog,
             SettingsPageFactory pageFactory,
             ISettingsNavigationGuard navigationGuard,
+            ITransientPageService transientPageService,
             IThemeService themeService,
             ILogger<SettingsWindow> logger,
             ILocalizationService localizationService)
@@ -59,9 +63,11 @@ namespace Pulsar.Views
             _shellViewModel = shellViewModel;
             _pageCatalog = pageCatalog;
             _pageFactory = pageFactory;
+            _transientPageService = transientPageService;
             _themeService = themeService;
             _logger = logger;
             _localizationService = localizationService;
+            _transientNavItemTemplate = (DataTemplate)Resources["TransientNavItemContentTemplate"];
 
             if (navigationGuard is SettingsNavigationGuard concreteNavigationGuard)
             {
@@ -72,6 +78,8 @@ namespace Pulsar.Views
 
             BuildNavigationItems();
 
+            _pageCatalog.TransientPageRegistered += OnTransientPageRegistered;
+            _pageCatalog.TransientPageUnregistered += OnTransientPageUnregistered;
             _themeService.ThemeChanged += OnThemeChanged;
             _shellViewModel.PropertyChanged += ShellViewModel_PropertyChanged;
             _localizationService.LanguageChanged += OnLanguageChanged;
@@ -133,7 +141,19 @@ namespace Pulsar.Views
                 // ① 标题显式 NoWrap + 省略号：行高恒为单行，不会因换行而变高；
                 // ② MaxHeight 钉死为 WPF-UI 的紧凑行高 40：即使上游模板/本地化再变化，
                 //    折叠与展开下行高也保持一致。
-                item.ContentTemplate = NavigationItemContentTemplate;
+                // 临时页（动态标签页）用斜体标题 + hover 关闭钮模板（openspec
+                // 2026-09-08-dynamic-settings-tabs），行高约束同上。
+                // HorizontalContentAlignment=Stretch 让内容模板 Grid 铺满整行行宽，
+                // 关闭钮因此贴住整个 Tab 的最右缘（默认 Left 会导致按钮悬在文本旁）。
+                if (registration.IsTransient)
+                {
+                    item.ContentTemplate = _transientNavItemTemplate;
+                    item.HorizontalContentAlignment = HorizontalAlignment.Stretch;
+                }
+                else
+                {
+                    item.ContentTemplate = NavigationItemContentTemplate;
+                }
                 item.MaxHeight = CompactNavItemHeight;
 
                 // Stable UIA identity for E2E settings-page workflows; localized
@@ -174,6 +194,11 @@ namespace Pulsar.Views
             RootNavigation.PaneClosed += OnNavPaneStateChanged;
             NavPaneGrid.SizeChanged += OnNavPaneSizeChanged;
             DpiChanged += OnWindowDpiChanged;
+            // 自愈兜底：条目重建（临时页注册/注销、语言切换）后，无论内部容器何时
+            // 完成生成/布局，每次布局稳定都会重新校准指示器位置——不再依赖
+            // "UpdateLayout 后一次测量即可用"的假设（该假设在 WPF-UI 4.3 的
+            // NavigationView 内部 ListView 容器延迟生成下不成立）。
+            RootNavigation.LayoutUpdated += OnNavPaneLayoutUpdated;
         }
 
         private void UnhookNavIndicatorReposition()
@@ -182,6 +207,14 @@ namespace Pulsar.Views
             RootNavigation.PaneClosed -= OnNavPaneStateChanged;
             NavPaneGrid.SizeChanged -= OnNavPaneSizeChanged;
             DpiChanged -= OnWindowDpiChanged;
+            RootNavigation.LayoutUpdated -= OnNavPaneLayoutUpdated;
+        }
+
+        private void OnNavPaneLayoutUpdated(object? sender, EventArgs e)
+        {
+            // 动画期间由动画自身管理指示器；动画结束后由 finally 落定基础值。
+            if (_isNavAnimating) return;
+            RepositionNavIndicatorImmediate(clearHeldAnimations: true);
         }
 
         private void OnNavPaneStateChanged(NavigationView sender, RoutedEventArgs e)
@@ -224,6 +257,16 @@ namespace Pulsar.Views
         private void NavigateToCurrentShellPage()
         {
             var pageId = _shellViewModel.CurrentPageId;
+            var previousPageId = _activePageId;
+            _activePageId = pageId;
+
+            // 导航离开钩子（openspec 2026-09-08-dynamic-settings-tabs）：来源页为干净
+            // 临时页时自动回收（注销注册 → 移除导航项与页面缓存）；脏临时页保留。
+            if (!string.Equals(previousPageId, pageId, StringComparison.OrdinalIgnoreCase))
+            {
+                _transientPageService.NotifyNavigatedAwayFrom(previousPageId);
+            }
+
             if (!_pageCatalog.TryGetRegistration(pageId, out var registration))
             {
                 _logger.LogWarning("[SettingsWindow] No registration found for shell page '{PageId}'", pageId);
@@ -239,6 +282,53 @@ namespace Pulsar.Views
 
             NavigateWithAnimation(page);
             ApplySelectedNavigationItem(registration.Id);
+        }
+
+        private void OnTransientPageRegistered(SettingsPageRegistration registration)
+        {
+            RebuildNavigationPreservingSelection();
+        }
+
+        private void OnTransientPageUnregistered(string pageId)
+        {
+            // 页面实例随回收销毁（重开时按当前配置重建）。
+            _pages.Remove(pageId);
+
+            // 关闭的是当前页（Tab 关闭钮）：回落到默认页，避免悬空指向已注销页面。
+            if (string.Equals(_shellViewModel.CurrentPageId, pageId, StringComparison.OrdinalIgnoreCase))
+            {
+                _activePageId = null;
+                _ = _shellViewModel.NavigateAsync(_pageCatalog.DefaultPageId, userInitiated: false);
+            }
+
+            RebuildNavigationPreservingSelection();
+        }
+
+        /// <summary>
+        /// 目录变更（临时页注册/注销、语言切换）共用的导航项重建入口：
+        /// 从目录（含临时注册）整体重建并恢复选中态，随后重排自绘指示器。
+        /// 重建后强制走一轮同步布局——否则指示器测量到的还是旧条目 bounds（高度 0
+        /// 或旧坐标），表现为回收/增删后指示器停在原地。
+        /// </summary>
+        private void RebuildNavigationPreservingSelection()
+        {
+            var activePageId = _shellViewModel.CurrentPageId;
+            _previousActiveItem = null;
+            BuildNavigationItems();
+            ApplySelectedNavigationItem(activePageId);
+            RootNavigation.UpdateLayout();
+            RepositionNavIndicator();
+        }
+
+        /// <summary>
+        /// 临时页 Tab 的关闭钮：干净页直接回收；脏页经守卫确认（保存/放弃/取消）后回收。
+        /// </summary>
+        private async void TransientTabClose_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.Button { Tag: string pageId })
+            {
+                await _transientPageService.CloseTransientPageAsync(pageId);
+            }
         }
 
         private void ApplySelectedNavigationItem(string pageId)
@@ -308,13 +398,65 @@ namespace Pulsar.Views
 
         private void InitializeNavIndicator()
         {
-            var activeItem = _navItemMap.Values.FirstOrDefault(i => i.IsActive);
+            RepositionNavIndicatorImmediate(clearHeldAnimations: true);
+        }
+
+        /// <summary>
+        /// 活动条目解析：优先按 shell 的 CurrentPageId（单一事实来源，条目重建后
+        /// 依然成立），回退到 IsActive 扫描。
+        /// </summary>
+        private NavigationViewItem? FindActiveNavItem()
+        {
+            var currentId = _shellViewModel.CurrentPageId;
+            if (!string.IsNullOrEmpty(currentId)
+                && _navItemMap.TryGetValue(currentId, out var byId))
+            {
+                return byId;
+            }
+
+            return _navItemMap.Values.FirstOrDefault(i => i.IsActive);
+        }
+
+        /// <summary>
+        /// 同步重定位指示器（不等待布局）。调用方保证不在动画期间
+        /// （<see cref="OnNavPaneLayoutUpdated"/> 已过滤）。
+        /// </summary>
+        /// <param name="clearHeldAnimations">
+        /// true 时先摘除 Canvas.Top/Height 上的残留动画：上一轮动画以 HoldEnd
+        /// 挂起时，<see cref="Canvas.SetTop"/> 写入的基础值会被活动动画覆盖，
+        /// 表现为指示器"停在原地"。动画收尾阶段（finally）用 false，避免
+        /// 掐断正在收尾的 snap 动画。
+        /// </param>
+        private void RepositionNavIndicatorImmediate(bool clearHeldAnimations)
+        {
+            var activeItem = FindActiveNavItem();
             if (activeItem == null) return;
 
             var bounds = GetItemRelativeBounds(activeItem);
-            if (bounds.Height <= 0) return;
+            if (bounds.Height <= 0)
+            {
+                // 条目尚未完成容器生成/布局：不写旧值；LayoutUpdated 稳定后会再次进入。
+                return;
+            }
+
+            if (clearHeldAnimations)
+            {
+                NavIndicator.BeginAnimation(Canvas.TopProperty, null);
+                NavIndicator.BeginAnimation(FrameworkElement.HeightProperty, null);
+            }
 
             var centerY = bounds.Top + (bounds.Height - IndicatorHeight) / 2;
+            var currentTop = Canvas.GetTop(NavIndicator);
+            var currentLeft = Canvas.GetLeft(NavIndicator);
+            var settled = NavIndicator.Visibility == Visibility.Visible
+                && !double.IsNaN(currentTop) && Math.Abs(currentTop - centerY) < 0.5
+                && !double.IsNaN(currentLeft) && Math.Abs(currentLeft - bounds.Left) < 0.5;
+            if (settled)
+            {
+                // 已贴合目标：跳过写入，终止 LayoutUpdated 自愈回环。
+                return;
+            }
+
             Canvas.SetLeft(NavIndicator, bounds.Left);
             Canvas.SetTop(NavIndicator, centerY);
             NavIndicator.Height = IndicatorHeight;
@@ -325,7 +467,12 @@ namespace Pulsar.Views
         private async Task AnimateNavIndicatorAsync(string? oldPageId, string? newPageId)
         {
             if (_isNavAnimating || string.IsNullOrEmpty(newPageId)) return;
-            if (!_navItemMap.TryGetValue(newPageId, out var newItem)) return;
+            if (!_navItemMap.TryGetValue(newPageId, out var newItem))
+            {
+                // 新条目不在位（如旧临时项被回收重建期间）：退化为直接重定位。
+                RepositionNavIndicator();
+                return;
+            }
 
             _isNavAnimating = true;
 
@@ -343,7 +490,12 @@ namespace Pulsar.Views
                 var oldBounds = GetItemRelativeBounds(oldItem);
                 var newBounds = GetItemRelativeBounds(newItem);
 
-                if (oldBounds.Height <= 0 || newBounds.Height <= 0) return;
+                if (oldBounds.Height <= 0 || newBounds.Height <= 0)
+                {
+                    // 任一端 bounds 无效（布局未完成/条目已被回收移除）：退化为直接重定位。
+                    RepositionNavIndicator();
+                    return;
+                }
 
                 var oldCenterY = oldBounds.Top + (oldBounds.Height - IndicatorHeight) / 2;
                 var newCenterY = newBounds.Top + (newBounds.Height - IndicatorHeight) / 2;
@@ -380,6 +532,10 @@ namespace Pulsar.Views
             }
             finally
             {
+                // 先把目标位置写入基础值（不清动画，让 snap 平滑收尾后精确落在
+                // base 上），再解除动画标志——解除后 LayoutUpdated 自愈才会生效，
+                // 顺序保证自愈不会在动画进行中清除动画。
+                RepositionNavIndicatorImmediate(clearHeldAnimations: false);
                 _isNavAnimating = false;
             }
         }
@@ -436,10 +592,39 @@ namespace Pulsar.Views
                 return;
             }
 
+            // 点在临时页 Tab 的关闭钮上：交给按钮的 Click 处理，不触发导航。
+            if (IsTransientCloseClick(e.OriginalSource as DependencyObject))
+            {
+                return;
+            }
+
             if (sender is NavigationViewItem item)
             {
                 await _shellViewModel.NavigateAsync(item.Tag?.ToString(), userInitiated: true);
             }
+        }
+
+        /// <summary>
+        /// 判定鼠标事件源是否落在临时页 Tab 的关闭钮内（命中检测沿可视树上行，
+        /// 在到达所属 NavigationViewItem 前先碰到关闭钮即视为关闭意图）。
+        /// </summary>
+        private static bool IsTransientCloseClick(DependencyObject? source)
+        {
+            for (var node = source; node != null; node = VisualTreeHelper.GetParent(node))
+            {
+                if (node is NavigationViewItem)
+                {
+                    return false;
+                }
+
+                if (node is System.Windows.Controls.Button button &&
+                    string.Equals(AutomationProperties.GetAutomationId(button), "Pulsar.Settings.NavCloseTab", StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private async void NavigationItem_KeyUp(object sender, KeyEventArgs e)
@@ -465,10 +650,8 @@ namespace Pulsar.Views
         {
             await Dispatcher.InvokeAsync(() =>
             {
-                var activePageId = _shellViewModel.CurrentPageId;
-                _previousActiveItem = null;
-                BuildNavigationItems();
-                ApplySelectedNavigationItem(activePageId);
+                // 目录（含临时注册）整体重建并恢复选中：已打开的临时页条目保留。
+                RebuildNavigationPreservingSelection();
             });
             await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
             InitializeNavIndicator();
@@ -505,6 +688,8 @@ namespace Pulsar.Views
 
         protected override void OnClosed(EventArgs e)
         {
+            _pageCatalog.TransientPageRegistered -= OnTransientPageRegistered;
+            _pageCatalog.TransientPageUnregistered -= OnTransientPageUnregistered;
             _themeService.ThemeChanged -= OnThemeChanged;
             _shellViewModel.PropertyChanged -= ShellViewModel_PropertyChanged;
             _localizationService.LanguageChanged -= OnLanguageChanged;
@@ -516,7 +701,18 @@ namespace Pulsar.Views
                 item.KeyUp -= NavigationItem_KeyUp;
             }
 
+            // 临时页是会话级的（settings-transient-pages spec）：先摘除目录事件再注销，
+            // 避免注销事件触发窗口重建导航；下次打开设置窗口侧边栏只有常驻条目。
+            foreach (var transientId in _pageCatalog.Pages
+                         .Where(p => p.IsTransient)
+                         .Select(p => p.Id)
+                         .ToList())
+            {
+                _pageCatalog.UnregisterTransient(transientId);
+            }
+
             _pages.Clear();
+            _activePageId = null;
             TrimMemory();
             base.OnClosed(e);
         }

@@ -1,0 +1,157 @@
+<Page x:Class="Pulsar.Views.Pages.SettingsAppearancePage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:controls="clr-namespace:Pulsar.Views.Controls"
+      xmlns:lex="clr-namespace:Pulsar.Core.Localization"
+      xmlns:helpers="clr-namespace:Pulsar.Helpers"
+      mc:Ignorable="d"
+      d:DesignHeight="600" d:DesignWidth="800"
+      Title="{lex:Locale SettingsPage.Appearance.Title}">
+
+    <!-- 外观常驻页（openspec 2026-09-08-dynamic-settings-tabs P1）：从 General 页迁出的
+         主题 / 渲染器 / 主题预设（升级为带色块的网格选择）。语言选择留在 General 页。
+         绑定目标为 SettingsViewModel（与迁移前一致），数据模型不动。 -->
+    <Grid Margin="0" helpers:ComboBoxSelectionLeftAlign.EnableLeftAlign="True">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <controls:SettingsPageHeader Grid.Row="0"
+                                     Title="{lex:Locale SettingsPage.Appearance.Title}"
+                                     Description="{lex:Locale SettingsPage.Appearance.Description}"/>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="{StaticResource Pulsar.Gap.Right.XL}">
+
+                <ui:CardExpander Icon="Color24" Header="{lex:Locale SettingsPage.Appearance.ThemeSection}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="True">
+                    <StackPanel>
+                        <!-- 绑定走 DataContext.* + RelativeSource Page（与 General 页同款
+                             已验证模式；裸 {Binding X, RelativeSource=Page} 会解析到 Page
+                             对象自身的属性导致静默失败——2026-09-08 冒烟缺陷 4 的根因）。
+                             【例外】ThemePresetOptions 是 Page 自有的
+                             ObservableCollection<ThemePresetOption>：ViewModel 上存在同名
+                             IReadOnlyList<string> 属性（旧 UI 遗留），DataContext.* 会绑到
+                             字符串列表，ItemTemplate 的 Swatch/DisplayName 全部解析失败，
+                             色块列表整体变空白（2026-09-08 冒烟缺陷 6 根因）——必须绑定
+                             Page 自身属性，不加 DataContext. 前缀。 -->
+                        <controls:SettingsRow Title="{lex:Locale Settings.General.Theme}"
+                                              Description="{lex:Locale Settings.General.ThemeDescription}">
+                            <ComboBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
+                                      SelectedValue="{Binding DataContext.CurrentTheme, RelativeSource={RelativeSource AncestorType=Page}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      SelectedValuePath="Tag"
+                                      AutomationProperties.Name="{lex:Locale Settings.General.Theme}">
+                                <ComboBoxItem Tag="Dark">
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:SymbolIcon Symbol="WeatherMoon20" FontSize="{StaticResource Pulsar.Type.Subtitle}" Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
+                                        <TextBlock Text="{lex:Locale Settings.General.Dark}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="Light">
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:SymbolIcon Symbol="WeatherSunny20" FontSize="{StaticResource Pulsar.Type.Subtitle}" Margin="{StaticResource Pulsar.Gap.Right.SM}"/>
+                                        <TextBlock Text="{lex:Locale Settings.General.Light}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </ComboBoxItem>
+                            </ComboBox>
+                        </controls:SettingsRow>
+
+                        <controls:SettingsRow Title="{lex:Locale Settings.Appearance.RendererStyle}"
+                                              Description="{lex:Locale Settings.Appearance.RendererStyleDescription}"
+                                              DescriptionToolTip="{lex:Locale Settings.Appearance.RendererStyleDescriptionDetail}">
+                            <ComboBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
+                                      ItemsSource="{Binding DataContext.RendererOptions, RelativeSource={RelativeSource AncestorType=Page}}"
+                                      SelectedValue="{Binding DataContext.RendererStyle, RelativeSource={RelativeSource AncestorType=Page}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      SelectedValuePath="Id"
+                                      DisplayMemberPath="DisplayName"
+                                      AutomationProperties.Name="{lex:Locale Settings.Appearance.RendererStyle}"/>
+                        </controls:SettingsRow>
+
+                        <!-- 语言设置（2026-09-08 用户决策：从 General 移入外观页，覆盖审计 Q15）。 -->
+                        <controls:SettingsRow Title="{lex:Locale Settings.General.Language}">
+                            <ComboBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
+                                      ItemsSource="{Binding DataContext.SupportedLanguages, RelativeSource={RelativeSource AncestorType=Page}}"
+                                      SelectedItem="{Binding DataContext.SelectedLanguage, RelativeSource={RelativeSource AncestorType=Page}, Mode=TwoWay}"
+                                      DisplayMemberPath="DisplayName"
+                                      AutomationProperties.Name="{lex:Locale Settings.General.Language}"/>
+                        </controls:SettingsRow>
+                    </StackPanel>
+                </ui:CardExpander>
+
+                <!-- 主题预设：色块网格（不做实时渲染预览）。色值移植自
+                     RadialThemePresetCatalog（见 SettingsAppearancePage.xaml.cs）。 -->
+                <ui:CardExpander Icon="PaintBrush24" Header="{lex:Locale Settings.Appearance.ThemePreset}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="True">
+                    <StackPanel>
+                        <TextBlock Text="{lex:Locale Settings.Appearance.ThemePresetDescription}"
+                                   ToolTip="{lex:Locale Settings.Appearance.ThemePresetDescriptionDetail}"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="460"
+                                   HorizontalAlignment="Left"
+                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                   FontSize="{StaticResource Pulsar.Type.Caption}"
+                                   Margin="{StaticResource Pulsar.Gap.Bottom.MD}"/>
+
+                        <ListBox ItemsSource="{Binding ThemePresetOptions, RelativeSource={RelativeSource AncestorType=Page}, Mode=OneWay}"
+                                 SelectedValue="{Binding DataContext.ThemePreset, RelativeSource={RelativeSource AncestorType=Page}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 SelectedValuePath="Tag"
+                                 AutomationProperties.Name="{lex:Locale Settings.Appearance.ThemePreset}"
+                                 Background="Transparent"
+                                 BorderThickness="0">
+                            <ListBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ListBox.ItemsPanel>
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Margin" Value="0,0,8,8"/>
+                                    <Setter Property="Padding" Value="10,6"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="ListBoxItem">
+                                                <Border x:Name="Root"
+                                                        Background="{DynamicResource ControlFillColorDefaultBrush}"
+                                                        BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                                                        BorderThickness="1"
+                                                        CornerRadius="{StaticResource Pulsar.Radius.MD}"
+                                                        Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="Root" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsSelected" Value="True">
+                                                        <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+                                                        <Setter TargetName="Root" Property="BorderThickness" Value="2"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Rectangle Width="16" Height="16" RadiusX="4" RadiusY="4"
+                                                   Fill="{Binding Swatch}"
+                                                   Stroke="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                                                   StrokeThickness="1"
+                                                   Margin="{StaticResource Pulsar.Gap.Right.SM}"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </StackPanel>
+                </ui:CardExpander>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

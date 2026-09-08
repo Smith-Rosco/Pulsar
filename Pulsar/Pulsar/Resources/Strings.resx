@@ -3621,4 +3621,31 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
   </data>
   <data name="CommandSlot.AutoSignIn" xml:space="preserve">
     <value>Auto Sign-In</value>
-  </data></root>
+  </data>  <data name="SettingsPage.Gesture.Title" xml:space="preserve">
+    <value>Gesture Summon</value>
+  </data>
+  <data name="SettingsPage.Gesture.Description" xml:space="preserve">
+    <value>Configure right-drag gesture summoning, modifier keys, and process isolation.</value>
+  </data>
+  <data name="SettingsPage.Gesture.ModifiersSection" xml:space="preserve">
+    <value>Modifier Keys</value>
+  </data>
+  <data name="SettingsPage.Appearance.Title" xml:space="preserve">
+    <value>Appearance</value>
+  </data>
+  <data name="SettingsPage.Appearance.Description" xml:space="preserve">
+    <value>Personalize theme, renderer style, and theme presets.</value>
+  </data>
+  <data name="SettingsPage.Appearance.ThemeSection" xml:space="preserve">
+    <value>Theme &amp; Renderer</value>
+  </data>
+  <data name="SettingsPage.ConfigureDetails" xml:space="preserve">
+    <value>Configure details</value>
+  </data>
+  <data name="SettingsPage.ConfigureDetailsHint" xml:space="preserve">
+    <value>Opens a dedicated settings tab; it closes automatically when you leave it with no unsaved changes.</value>
+  </data>
+  <data name="SettingsWindow.CloseTab" xml:space="preserve">
+    <value>Close tab</value>
+  </data>
+</root>

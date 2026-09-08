@@ -54,13 +54,22 @@ namespace Pulsar.ViewModels.Settings
                 return true;
             }
 
-            if (userInitiated && !await _navigationGuard.CanNavigateAwayAsync(registration.Id, isWindowClosing: false))
+            // 脏守卫分流（openspec 2026-09-08-dynamic-settings-tabs，settings-dirty-state-guard delta）：
+            // 从临时页导航离开不提示——临时页保留、关窗时经 CanCloseAsync 统一提示；
+            // 从常驻页导航离开维持原有 save/discard/cancel 提示。
+            var sourceIsTransient = _pageCatalog.IsTransient(CurrentPageId);
+            if (userInitiated && !sourceIsTransient &&
+                !await _navigationGuard.CanNavigateAwayAsync(registration.Id, isWindowClosing: false))
             {
                 return false;
             }
 
             CurrentPageId = registration.Id;
-            _localUiPreferencesService.SetLastOpenedSettingsPageId(registration.Id);
+            if (!registration.IsTransient)
+            {
+                // 临时页是会话级的，不能作为"上次打开的设置页"跨会话恢复。
+                _localUiPreferencesService.SetLastOpenedSettingsPageId(registration.Id);
+            }
             return true;
         }
 

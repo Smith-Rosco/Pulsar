@@ -22,6 +22,50 @@
             <converters:StringEmptyToVisibilityConverter x:Key="StringEmptyToVis"/>
             <BooleanToVisibilityConverter x:Key="BoolToVis"/>
             <DropShadowEffect x:Key="DropShadowEffect" BlurRadius="20" ShadowDepth="4" Direction="270" Color="Black" Opacity="0.3"/>
+
+            <!-- 临时页（动态标签页）导航项模板（openspec 2026-09-08-dynamic-settings-tabs）：
+                 斜体标题 + hover 关闭钮（贴整个 Tab 最右侧：item HorizontalContentAlignment=Stretch
+                 使本 Grid 铺满行宽；文本列 * 截断，按钮列 Auto 靠右，互不遮挡）。
+                 关闭钮 Tag 绑定页面 id，供 code-behind 回收；AutomationId 供 E2E 定位。 -->
+            <DataTemplate x:Key="TransientNavItemContentTemplate">
+                <Grid Background="Transparent">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding}"
+                               FontStyle="Italic"
+                               TextWrapping="NoWrap"
+                               TextTrimming="CharacterEllipsis"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Left"
+                               Margin="0,0,6,0"/>
+                    <Button Grid.Column="1"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Padding="2"
+                            Margin="0,0,2,0"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Tag="{Binding Tag, RelativeSource={RelativeSource AncestorType=ui:NavigationViewItem}}"
+                            Click="TransientTabClose_Click"
+                            ToolTip="{lex:Locale SettingsWindow.CloseTab}"
+                            AutomationProperties.AutomationId="Pulsar.Settings.NavCloseTab">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Opacity" Value="0"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ui:NavigationViewItem}}" Value="True">
+                                        <Setter Property="Opacity" Value="1"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <ui:SymbolIcon Symbol="Dismiss16" FontSize="12"/>
+                    </Button>
+                </Grid>
+            </DataTemplate>
         </ResourceDictionary>
     </Window.Resources>
 

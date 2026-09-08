@@ -313,6 +313,25 @@ namespace Pulsar
             serviceCollection.AddSingleton<ISettingsNavigationGuard, SettingsNavigationGuard>();
             serviceCollection.AddSingleton<Services.Interfaces.ICustomIconStore, Services.CustomIconStore>();
             serviceCollection.AddSingleton<SettingsPageCatalog>();
+            // 临时页（动态标签页）协调器：定义在组合根登记，Open 时才进目录/侧边栏
+            // （openspec 2026-09-08-dynamic-settings-tabs D11）。
+            serviceCollection.AddSingleton<ITransientPageService>(sp =>
+            {
+                var transientPages = new SettingsTransientPageService(
+                    sp.GetRequiredService<SettingsPageCatalog>(),
+                    sp.GetRequiredService<SettingsShellViewModel>(),
+                    sp.GetRequiredService<ISettingsNavigationGuard>(),
+                    sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<SettingsTransientPageService>>());
+                transientPages.RegisterDefinition(new Pulsar.Models.Settings.SettingsPageRegistration(
+                    SettingsPageIds.Gesture,
+                    "SettingsPage.Gesture.Title",
+                    "Gesture",
+                    Wpf.Ui.Controls.SymbolRegular.Dialpad24,
+                    typeof(Pulsar.Views.Pages.SettingsGesturePage),
+                    groupId: SettingsPageGroupIds.System,
+                    isTransient: true));
+                return transientPages;
+            });
             serviceCollection.AddSingleton<IAppStartupCoordinator, AppStartupCoordinator>();
             serviceCollection.AddSingleton<GlobalKeyboardHook>();
             serviceCollection.AddSingleton<GlobalMouseHook>();

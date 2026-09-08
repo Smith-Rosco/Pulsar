@@ -17,7 +17,8 @@ namespace Pulsar.Models.Settings
             SymbolRegular icon,
             Type pageType,
             string? tutorialMarkerId = null,
-            string? groupId = null)
+            string? groupId = null,
+            bool isTransient = false)
         {
             Id = id;
             _titleKey = titleKey;
@@ -26,6 +27,7 @@ namespace Pulsar.Models.Settings
             PageType = pageType;
             TutorialMarkerId = tutorialMarkerId;
             GroupId = groupId;
+            IsTransient = isTransient;
         }
 
         public string Id { get; }
@@ -66,5 +68,11 @@ namespace Pulsar.Models.Settings
         /// 分组信息仅用于呈现（组间分隔），不参与页面解析。
         /// </summary>
         public string? GroupId { get; }
+
+        /// <summary>
+        /// 临时页标记（openspec 2026-09-08-dynamic-settings-tabs）：按需注册到侧边栏
+        /// （语义分组末尾、斜体标题 + 关闭钮），导航离开且无未保存修改时自动回收。
+        /// </summary>
+        public bool IsTransient { get; }
     }
 }

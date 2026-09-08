@@ -3,7 +3,7 @@
 **Status**: Published  
 **Scope**: Architecture  
 **Applies To**: All dialogs in Pulsar  
-**Last Updated**: 2026-03-07
+**Last Updated**: 2026-09-08
 
 ---
 
@@ -12,6 +12,8 @@
 Pulsar uses a unified dialog architecture (v4.1.0+) where all dialogs are managed through `DialogService` and displayed in `DialogHostWindow`. Never create standalone `Window` classes for dialogs.
 
 **Always choose the correct size preset** based on dialog content complexity.
+
+**Heavy configuration belongs in settings transient pages, not modals** (ADR-029, openspec `2026-09-08-dynamic-settings-tabs`): rich, revisited configuration (gesture summon, plugin settings, process blacklist) migrates to sidebar transient pages / dedicated settings pages. Dialogs remain the right tool for one-shot confirmations, pickers (Icon/Process/Secret/Color) and warnings — not for long-form configuration editing.
 
 ---
 

@@ -21,6 +21,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **设置窗口动态标签页（临时页）机制**（openspec `2026-09-08-dynamic-settings-tabs`，ADR-029，2026-09-08 审计通过）：
+  - `SettingsPageCatalog` 支持运行时注册/注销临时页（`IsTransient`，插入语义分组末尾，事件驱动侧边栏增删）；`SettingsPageFactory` 由 `switch` 改为按 id 注册的构造器字典；新增 `ITransientPageService`（打开=注册+导航激活、关闭=守卫确认后回收、导航离开钩子）。
+  - 临时页语义（VS Code preview-tab 同款）：**按类型单例**（重复触发=激活既有实例，Tab 数量以注册类型数为上界）、**干净页导航离开自动回收**、**脏页保留不阻塞跳转**（关窗时经 `CanCloseAsync` 统一提示保存/放弃——`settings-dirty-state-guard` 的导航提示从此仅限常驻页来源）、条目**斜体 + hover 关闭钮**（脏页关闭需确认）、**会话级**（关窗不恢复、不写入"上次打开页"偏好）；语言切换重建导航保留已打开临时项。
+  - **P0 迁移**：右键拖拽召唤完整配置（召唤模式/阈值/Switcher 与 Action 修饰键/手势隔离过滤/冲突警告）从 General 页卡片（原 30+ 控件、7 层嵌套）迁至临时页 `SettingsGesturePage`；原卡片保留总开关 + "配置详情"入口按钮。
+  - **P1 迁移**：外观（主题/渲染器风格/主题预设）从 General 页迁至独立常驻页 `SettingsAppearancePage`，主题预设升级为带色块网格（色值移植自 `RadialThemePresetCatalog`，无实时渲染预览）；语言选择移入外观页（2026-09-08 冒烟反馈用户决策，覆盖审计 Q15）。
+  - **冒烟修复（第 1 轮，4 项）**：①临时页关闭钮贴 Tab 最右缘（`HorizontalContentAlignment=Stretch` + 双列模板）；②自动回收后指示器跟随（重建后 `UpdateLayout` + bounds 无效时 Loaded 优先级重试 + 动画 early-return 兜底重定位）；③语言设置移入外观页；④外观页改动无法保存——预设 ListBox 绑定误用 `{Binding ThemePreset, RelativeSource=Page}`（源是 Page 对象自身而非 DataContext，静默失败），统一改为 `DataContext.*` 路径。
+  - **冒烟修复（第 2 轮，2 项）**：⑤指示器在标签页关闭后仍不跟随——一层层修复均未命中真因，改为**自愈式重定位**：`RootNavigation.LayoutUpdated` 钩子（非动画期）在每次布局稳定后校准指示器与当前页条目（`CurrentPageId` 优先解析，动画收尾先落基础值再解除动画标志、写值前摘除残留 HoldEnd 动画、定位去重终止回环），不再依赖"WPF-UI 4.3 内部 ListView 容器同步生成"这一不成立假设；⑥外观页预设列表整体空白——第 1 轮修复④把绑定统一加 `DataContext.*` 前缀时误伤了 Page 自有属性：`SettingsViewModel` 上存在同名 `ThemePresetOptions`（`IReadOnlyList<string>` 旧属性），列表实际绑到字符串集合，ItemTemplate 的 `Swatch`/`DisplayName` 全部解析失败渲染为空；该绑定改回 Page 自身属性（不加前缀）并在 XAML 注释中记录同名属性陷阱。
+  - 规格变更：新增 `settings-transient-pages` spec；修改 `settings-shell-navigation`、`settings-dirty-state-guard` spec（delta 见 change 目录）。✅ 构建 0 警告 0 错误；全量测试 1303/1303 通过（基线 1283 + 新增 20）。GUI 手动冒烟（打开/回收/指示条位置/中英切换）待执行。
+
 ### Fixed
 - **设置页三处布局/配色缺陷（2026-09-08 用户报告）**：
   - 使用分析页 Top-3 排名徽章序号不可见——**四段根因**：①徽章底色用了 `SystemFillColorAccentBrush`，该令牌在 WPF-UI 4.3.0 的主题字典里**根本不存在**（实测 `TryFindResource` 为 null）；②文字硬编码 `White`；③元素本地 `ThemesDictionary` 在查找顺序上遮蔽 Application 级运行时桥接值（Light 静态字典没有 `AccentFillColorDefaultBrush`）→ `ThemeService.ApplyStandardTheme` 末尾新增 `CopyRuntimeAccentResources(element.Resources)`；④**最终根因是 WPF 依赖属性优先级**：徽章 Border 上的本地 `Background` 属性静默压制了 `IsTopThree` 触发器（本地值 > Style 触发器），accent 底色从未生效、白字一直压在浅灰底上——删除本地属性、默认色改由 Style Setter 提供。同页柱状图/迷你趋势图填充、accent 色文字从死令牌迁出；对话框危险按钮、分段控件硬编码 `White` 同步修复。

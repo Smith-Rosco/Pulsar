@@ -1,0 +1,219 @@
+<Page x:Class="Pulsar.Views.Pages.SettingsGesturePage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:models="clr-namespace:Pulsar.Models"
+      xmlns:controls="clr-namespace:Pulsar.Views.Controls"
+      xmlns:lex="clr-namespace:Pulsar.Core.Localization"
+      xmlns:helpers="clr-namespace:Pulsar.Helpers"
+      mc:Ignorable="d"
+      d:DesignHeight="700" d:DesignWidth="800"
+      Title="{lex:Locale SettingsPage.Gesture.Title}">
+
+    <!-- 临时页（openspec 2026-09-08-dynamic-settings-tabs）：承载从 General 页迁出的
+         右键拖拽召唤完整配置。绑定路径与迁移前逐控件一致（ProfileSettings，
+         数据模型不动），仅承载容器从 CardExpander 变为独立页面。 -->
+    <Grid Margin="0" helpers:ComboBoxSelectionLeftAlign.EnableLeftAlign="True">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <controls:SettingsPageHeader Grid.Row="0"
+                                     Title="{lex:Locale SettingsPage.Gesture.Title}"
+                                     Description="{lex:Locale SettingsPage.Gesture.Description}"/>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel DataContext="{Binding GeneralSettings}" Margin="{StaticResource Pulsar.Gap.Right.XL}">
+
+                <!-- Summon basics -->
+                <ui:CardExpander Icon="DialPad24" Header="{lex:Locale Settings.General.RightDragSummon}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="True">
+                    <StackPanel>
+                        <controls:SettingsRow Title="{lex:Locale Settings.General.RightDragSummonToggle}"
+                                              Description="{lex:Locale Settings.General.RightDragSummonDescription}"
+                                              DescriptionToolTip="{lex:Locale Settings.General.RightDragSummonDescriptionDetail}">
+                            <ui:ToggleSwitch IsChecked="{Binding EnableRightDragSummon, Mode=TwoWay}"/>
+                        </controls:SettingsRow>
+
+                        <TextBlock Text="{lex:Locale Settings.General.RightDragModifiersConflict}"
+                                   Foreground="{DynamicResource DangerForegroundBrush}"
+                                   FontSize="{StaticResource Pulsar.Type.Body}"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="420"
+                                   HorizontalAlignment="Left"
+                                   Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding RightDragModifiersConflict}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <controls:SettingsRow Title="{lex:Locale Settings.General.GestureSummonMode}"
+                                              Description="{lex:Locale Settings.General.GestureSummonModeDescription}"
+                                              DescriptionToolTip="{lex:Locale Settings.General.GestureSummonModeDescriptionDetail}">
+                            <ComboBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
+                                      IsEnabled="{Binding EnableRightDragSummon}"
+                                      SelectedValue="{Binding SummonMode, Mode=TwoWay}"
+                                      SelectedValuePath="Tag"
+                                      AutomationProperties.Name="{lex:Locale Settings.General.GestureSummonMode}">
+                                <ComboBoxItem Tag="{x:Static models:GestureSummonMode.Immediate}">
+                                    <TextBlock Text="{lex:Locale Settings.General.SummonModeImmediate}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="{x:Static models:GestureSummonMode.OnThreshold}">
+                                    <TextBlock Text="{lex:Locale Settings.General.SummonModeOnThreshold}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                            </ComboBox>
+                        </controls:SettingsRow>
+
+                        <controls:SettingsRow Title="{lex:Locale Settings.General.GestureDragThreshold}"
+                                              Description="{lex:Locale Settings.General.GestureDragThresholdDescription}"
+                                              DescriptionToolTip="{lex:Locale Settings.General.GestureDragThresholdDescriptionDetail}">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SummonMode}" Value="{x:Static models:GestureSummonMode.OnThreshold}">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                                <Slider Width="140"
+                                        Minimum="5"
+                                        Maximum="100"
+                                        IsSnapToTickEnabled="True"
+                                        TickFrequency="1"
+                                        Value="{Binding GestureDragThreshold, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        IsEnabled="{Binding EnableRightDragSummon}"
+                                        VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding GestureDragThreshold, StringFormat={}{0:0}px}"
+                                           Margin="{StaticResource Pulsar.Gap.Left.SM}"
+                                           VerticalAlignment="Center"
+                                           MinWidth="40"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                            </StackPanel>
+                        </controls:SettingsRow>
+                    </StackPanel>
+                </ui:CardExpander>
+
+                <!-- Modifiers -->
+                <ui:CardExpander Icon="Keyboard24" Header="{lex:Locale SettingsPage.Gesture.ModifiersSection}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="True">
+                    <StackPanel>
+                        <controls:SettingsRow Title="{lex:Locale Settings.General.RightDragSwitcherModifier}"
+                                              Description="{lex:Locale Settings.General.RightDragSwitcherModifierDescription}"
+                                              DescriptionToolTip="{lex:Locale Settings.General.RightDragSwitcherModifierDescriptionDetail}">
+                            <ComboBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
+                                      IsEnabled="{Binding EnableRightDragSummon}"
+                                      SelectedValue="{Binding RightDragSwitcherModifier, Mode=TwoWay}"
+                                      SelectedValuePath="Tag"
+                                      AutomationProperties.Name="{lex:Locale Settings.General.RightDragSwitcherModifier}">
+                                <ComboBoxItem Tag="Alt">
+                                    <TextBlock Text="{lex:Locale Settings.General.ModifierAlt}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="Control">
+                                    <TextBlock Text="{lex:Locale Settings.General.ModifierCtrl}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="Shift">
+                                    <TextBlock Text="{lex:Locale Settings.General.ModifierShift}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="Win">
+                                    <TextBlock Text="{lex:Locale Settings.General.ModifierWin}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                            </ComboBox>
+                        </controls:SettingsRow>
+
+                        <controls:SettingsRow Title="{lex:Locale Settings.General.RightDragActionModifier}"
+                                              Description="{lex:Locale Settings.General.RightDragActionModifierDescription}"
+                                              DescriptionToolTip="{lex:Locale Settings.General.RightDragActionModifierDescriptionDetail}">
+                            <ComboBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
+                                      IsEnabled="{Binding EnableRightDragSummon}"
+                                      SelectedValue="{Binding RightDragActionModifier, Mode=TwoWay}"
+                                      SelectedValuePath="Tag"
+                                      AutomationProperties.Name="{lex:Locale Settings.General.RightDragActionModifier}">
+                                <ComboBoxItem Tag="Alt">
+                                    <TextBlock Text="{lex:Locale Settings.General.ModifierAlt}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="Control">
+                                    <TextBlock Text="{lex:Locale Settings.General.ModifierCtrl}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="Shift">
+                                    <TextBlock Text="{lex:Locale Settings.General.ModifierShift}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="Win">
+                                    <TextBlock Text="{lex:Locale Settings.General.ModifierWin}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                            </ComboBox>
+                        </controls:SettingsRow>
+                    </StackPanel>
+                </ui:CardExpander>
+
+                <!-- Gesture isolation filter -->
+                <ui:CardExpander Icon="Filter24" Header="{lex:Locale Settings.Gesture.Title}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="True">
+                    <StackPanel IsEnabled="{Binding EnableRightDragSummon}">
+                        <TextBlock Text="{lex:Locale Settings.Gesture.TitleDescription}"
+                                   ToolTip="{lex:Locale Settings.Gesture.TitleDescriptionDetail}"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   FontSize="{StaticResource Pulsar.Type.Body}"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="420"
+                                   HorizontalAlignment="Left"
+                                   Margin="{StaticResource Pulsar.Gap.Bottom.MD}"/>
+
+                        <controls:SettingsRow Title="{lex:Locale Settings.Gesture.EnableToggle}"
+                                              Description="{lex:Locale Settings.Gesture.EnableToggleDescription}"
+                                              DescriptionToolTip="{lex:Locale Settings.Gesture.EnableToggleDescriptionDetail}">
+                            <ui:ToggleSwitch IsChecked="{Binding GestureIsolationEnabled, Mode=TwoWay}"/>
+                        </controls:SettingsRow>
+
+                        <controls:SettingsRow Title="{lex:Locale Settings.Gesture.Mode}"
+                                              Description="{lex:Locale Settings.Gesture.ModeDescription}"
+                                              DescriptionToolTip="{lex:Locale Settings.Gesture.ModeDescriptionDetail}">
+                            <ComboBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
+                                      IsEnabled="{Binding GestureIsolationEnabled}"
+                                      SelectedValue="{Binding GestureIsolationMode, Mode=TwoWay}"
+                                      SelectedValuePath="Tag"
+                                      AutomationProperties.Name="{lex:Locale Settings.Gesture.Mode}">
+                                <ComboBoxItem Tag="{x:Static models:GestureIsolationMode.Allowlist}">
+                                    <TextBlock Text="{lex:Locale Settings.Gesture.ModeAllowlist}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="{x:Static models:GestureIsolationMode.Blocklist}">
+                                    <TextBlock Text="{lex:Locale Settings.Gesture.ModeBlocklist}" VerticalAlignment="Center"/>
+                                </ComboBoxItem>
+                            </ComboBox>
+                        </controls:SettingsRow>
+
+                        <controls:SettingsRow Title="{lex:Locale Settings.Gesture.Processes}"
+                                              Description="{lex:Locale Settings.Gesture.ProcessesDescription}"
+                                              DescriptionToolTip="{lex:Locale Settings.Gesture.ProcessesDescriptionDetail}">
+                            <TextBox Width="{StaticResource Pulsar.Settings.ControlWidth}"
+                                     MinHeight="90"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     VerticalScrollBarVisibility="Auto"
+                                     IsEnabled="{Binding GestureIsolationEnabled}"
+                                     Text="{Binding GestureIsolationProcessesText, Mode=TwoWay}"
+                                     AutomationProperties.Name="{lex:Locale Settings.Gesture.Processes}"/>
+                        </controls:SettingsRow>
+
+                        <controls:SettingsRow Title="{lex:Locale Settings.Gesture.BlockFullscreen}"
+                                              Description="{lex:Locale Settings.Gesture.BlockFullscreenDescription}"
+                                              DescriptionToolTip="{lex:Locale Settings.Gesture.BlockFullscreenDescriptionDetail}">
+                            <ui:ToggleSwitch IsChecked="{Binding GestureIsolationBlockFullscreen, Mode=TwoWay}"
+                                             IsEnabled="{Binding GestureIsolationEnabled}"/>
+                        </controls:SettingsRow>
+                    </StackPanel>
+                </ui:CardExpander>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

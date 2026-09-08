@@ -24,10 +24,12 @@ namespace Pulsar.Tests.Services
         {
             var catalog = CreateCatalog();
 
+            // Appearance 常驻页加入系统组（openspec 2026-09-08-dynamic-settings-tabs P1）。
             catalog.Pages.Select(p => p.Id).Should().Equal(
                 SettingsPageIds.Slots,
                 SettingsPageIds.Plugins,
                 SettingsPageIds.General,
+                SettingsPageIds.Appearance,
                 SettingsPageIds.Analytics,
                 SettingsPageIds.About);
         }
@@ -57,7 +59,7 @@ namespace Pulsar.Tests.Services
         }
 
         [Fact]
-        public void SystemGroup_ShouldContainGeneralAnalyticsAbout()
+        public void SystemGroup_ShouldContainGeneralAppearanceAnalyticsAbout()
         {
             var catalog = CreateCatalog();
 
@@ -66,8 +68,10 @@ namespace Pulsar.Tests.Services
                 .Select(p => p.Id)
                 .ToList();
 
+            // Appearance 常驻页加入系统组（openspec 2026-09-08-dynamic-settings-tabs P1）。
             systemIds.Should().Equal(
                 SettingsPageIds.General,
+                SettingsPageIds.Appearance,
                 SettingsPageIds.Analytics,
                 SettingsPageIds.About);
         }
