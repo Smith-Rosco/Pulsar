@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -12,7 +11,7 @@ using Pulsar.Services.Interfaces;
 
 namespace Pulsar.Services
 {
-    public class FocusManager : IFocusManager, IFocusHistory
+    public class FocusManager : IFocusManager
     {
         private readonly IFocusNativeAdapter _native;
         private readonly ILogger<FocusManager> _logger;
@@ -26,9 +25,6 @@ namespace Pulsar.Services
         private FocusStateSnapshot? _capturedSnapshot;
         private FocusRestoreMode _restoreMode = FocusRestoreMode.RestorePrevious;
         private IntPtr _restoreTarget;
-
-        private IntPtr _previousWindow;
-        private IntPtr _currentWindow;
 
         private readonly int _ownProcessId;
 
@@ -361,29 +357,6 @@ namespace Pulsar.Services
             };
         }
 
-        public async Task<QuickSwitchResult> QuickSwitchAsync()
-        {
-            var prev = ((IFocusHistory)this).GetPreviousWindow();
-            if (prev == IntPtr.Zero || !_native.IsWindow(prev))
-            {
-                _logger.LogWarning("[FocusManager] QuickSwitch: no valid previous window");
-                return new QuickSwitchResult { Success = false, NoValidHistory = true };
-            }
-
-            var result = await ActivateWindowAsync(prev);
-            if (result.Success)
-            {
-                SetRestoreMode(FocusRestoreMode.NoRestore);
-            }
-
-            return new QuickSwitchResult
-            {
-                Success = result.Success,
-                SwitchedToHandle = prev,
-                NoValidHistory = false
-            };
-        }
-
         public FocusStateSnapshot? Snapshot()
         {
             lock (_stateLock)
@@ -487,34 +460,6 @@ namespace Pulsar.Services
 
             _logger.LogWarning("[FocusManager] Activation verification failed for 0x{hWnd:X}", hWnd.ToInt64());
             return false;
-        }
-
-        void IFocusHistory.RecordWindow(IntPtr hWnd)
-        {
-            lock (_stateLock)
-            {
-                if (hWnd != _currentWindow)
-                {
-                    _previousWindow = _currentWindow;
-                    _currentWindow = hWnd;
-                }
-            }
-        }
-
-        IntPtr IFocusHistory.GetPreviousWindow()
-        {
-            lock (_stateLock)
-            {
-                return _previousWindow;
-            }
-        }
-
-        IReadOnlyList<IntPtr> IFocusHistory.SnapshotHistory()
-        {
-            lock (_stateLock)
-            {
-                return new[] { _previousWindow, _currentWindow };
-            }
         }
     }
 }

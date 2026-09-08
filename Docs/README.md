@@ -186,6 +186,7 @@ ADRs are immutable once accepted; supersede rather than edit.
 | [025](./decisions/025-in-app-auto-update-three-tier-check.md) | In-app auto-update three-tier check |
 | [026](./decisions/026-installer-inno-setup-no-trim.md) | Installer (Inno Setup) — no IL trimming |
 | [027](./decisions/027-documentation-structure-v6-single-authoritative-sources.md) | Documentation structure v6 — single authoritative sources, full index registry |
+| [028](./decisions/028-window-history-single-authority.md) | Window history single authority — MenuPrevious + MRU stack in one module |
 
 ---
 

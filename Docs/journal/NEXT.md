@@ -33,7 +33,8 @@
 - [ ] 架构审查 C4（设置面 Draft 泄漏，2026-09-07 口径已修正）：不是「1 属性 + 10 处访问」的机械替换——需给 `SettingsEditorSession` 设计变更 API（写点 :112/:492/:952）+ 定脏标记归属 + 绑定刷新语义，Session 0 专属测试。grill 第二轮建议与 C5 同批、测试先行，**等用户裁决**（延期 or 本会话做）。**2026-09-07 用户已裁决：(b) 与 C5 合并进专门会话。**
 - [ ] 架构审查 C5（教程层）：改动面最大（XAML + 1168 行 0 测试 View），与 C4 同批进专门会话（用户已裁决）。
 - [x] ~~架构审查 C6（推荐引擎时钟 seam 空壳）~~ **已落地**（commit `1bc09ad`）：3 处裸 `DateTime.UtcNow` 收口到 `_clock().ToUniversalTime()`（时区语义保持：趋势日键仍本地日期）；Unused/Inactive 阈值测试注入固定时钟 + 新增「近期使用不触发」反向守护；全量 1234/1234。
-- [ ] **C1/C3/C2 全量 + C6 已本地提交**（`e441e73` / `b6980e2` / `1bc09ad` / `5a71f17`），main ahead origin/main 5，待用户 push。
+- [x] ~~**C1/C3/C2 全量 + C6 已本地提交**（`e441e73` / `b6980e2` / `1bc09ad` / `5a71f17`），main ahead origin/main 5，待用户 push。~~ **已 push**（2026-09-08 会话开始，`6b91e79..09a7f1d` 13 commits 含 C 系列）。
+- [x] ~~**架构审查 C3（MRU「上一个窗口」单一权威）**~~ **已落地**（2026-09-08）：`QuickSwitchEngine` 吸收 MenuPrevious 槽（`SetMenuSnapshot/GetMenuSnapshot`，不过滤）成为 Window History 单一权威；`WindowService` 5 处读写重指引擎；删除 `IFocusHistory` 全链路 + `QuickSwitchAsync` + `QuickSwitchResult` + `RecordPreviousWindow` ×2 + `RegisterOrUpdateWindow`；引擎 +6 测试、门面 +1 双轨钉死测试，WindowTrackingServiceTests 重写；全量 1257/1257，build 0 警告 0 错误。ADR-028 + CONTEXT.md Window History 术语已更新。**改动未提交，待用户确认后 commit**（另有 `Docs/reports/2026-09-07-DOC_STRUCTURE_AUDIT.html` 未暂存改动待定夺）。
 
 ## 已完成（历史保留）
 

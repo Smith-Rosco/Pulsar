@@ -27,11 +27,6 @@ namespace Pulsar.Services.Interfaces
         System.IntPtr GetPreviousWindow();
 
         /// <summary>
-        /// 记录当前活动窗口
-        /// </summary>
-        void RecordPreviousWindow();
-
-        /// <summary>
         /// 切换回上一个记录的窗口 (用于快速切换模式)
         /// </summary>
         Task<bool> SwitchToPreviousWindow();

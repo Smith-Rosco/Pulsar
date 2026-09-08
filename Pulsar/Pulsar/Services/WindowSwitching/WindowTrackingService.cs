@@ -14,7 +14,7 @@ namespace Pulsar.Services.WindowSwitching
     }
 
     /// <summary>
-    /// 窗口追踪注册表（FirstSeen / LastActivation）与上一窗口句柄。
+    /// 窗口追踪注册表（FirstSeen / LastActivation），供窗口清单排序使用。
     /// 经 DI 注入 WindowService；构造函数公开以便容器实例化。
     /// </summary>
     public sealed class WindowTrackingService
@@ -27,13 +27,6 @@ namespace Pulsar.Services.WindowSwitching
         }
 
         private readonly ConcurrentDictionary<IntPtr, WindowRegistryEntry> _windowRegistry = new();
-
-        public IntPtr PreviousWindowHandle { get; private set; }
-
-        public void SetPreviousWindow(IntPtr handle)
-        {
-            PreviousWindowHandle = handle;
-        }
 
         public WindowTrackingSnapshot SnapshotWindow(IntPtr hwnd)
         {
@@ -52,28 +45,6 @@ namespace Pulsar.Services.WindowSwitching
                 {
                     FirstSeenTime = DateTime.Now,
                     LastActivationTime = DateTime.MinValue
-                });
-
-            return new WindowTrackingSnapshot
-            {
-                FirstSeenTime = entry.FirstSeenTime,
-                ActivationTime = entry.LastActivationTime
-            };
-        }
-
-        public WindowTrackingSnapshot RegisterOrUpdateWindow(IntPtr hwnd)
-        {
-            var entry = _windowRegistry.AddOrUpdate(
-                hwnd,
-                _ => new WindowRegistryEntry
-                {
-                    FirstSeenTime = DateTime.Now,
-                    LastActivationTime = DateTime.Now
-                },
-                (_, existing) =>
-                {
-                    existing.LastActivationTime = DateTime.Now;
-                    return existing;
                 });
 
             return new WindowTrackingSnapshot

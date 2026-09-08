@@ -226,7 +226,7 @@ namespace Pulsar.Services
             // credential window). The quick-switch engine independently re-checks
             // Alt-Tab validity when resolving targets (ResolveTarget /
             // FindValidHistoryWindow), so an invalid previous window is never chosen.
-            _trackingService.SetPreviousWindow(handle);
+            _quickSwitchEngine.SetMenuSnapshot(handle);
 
             // Only feed the quick-switch MRU history with Alt-Tab-valid windows so
             // helper/host windows (e.g. WPS's KxWppQuickHelpBarContainer) that
@@ -284,7 +284,7 @@ namespace Pulsar.Services
 
         public IntPtr GetPreviousWindow()
         {
-            return _trackingService.PreviousWindowHandle;
+            return _quickSwitchEngine.GetMenuSnapshot();
         }
 
         public void RegisterHideAction(Action hideAction)
@@ -423,7 +423,7 @@ namespace Pulsar.Services
                         Intent = WindowSelectionIntent.ProcessActivation,
                         SkipMode = WindowSelectionSkipMode.SkipCurrentForeground,
                         CurrentForegroundHandle = PulsarNative.GetForegroundWindow(),
-                        PreviousWindowHandle = _trackingService.PreviousWindowHandle
+                        PreviousWindowHandle = _quickSwitchEngine.GetMenuSnapshot()
                     });
 
                 if (targetWindow == null)
@@ -499,18 +499,12 @@ namespace Pulsar.Services
             return await new WindowActivator(focusManager).ActivateWindowAsync(window, isWindow);
         }
 
-        // 补充实现 IWindowService.RecordPreviousWindow()
-        public void RecordPreviousWindow()
-        {
-            _trackingService.SetPreviousWindow(PulsarNative.GetForegroundWindow());
-        }
-
         public async Task<bool> SwitchToPreviousWindow()
         {
             IntPtr current = PulsarNative.GetForegroundWindow();
             PulsarNative.GetWindowThreadProcessId(current, out uint currentPid);
             bool currentIsPulsar = (currentPid == _currentProcessId);
-            IntPtr realCurrentWindow = currentIsPulsar ? _trackingService.PreviousWindowHandle : current;
+            IntPtr realCurrentWindow = currentIsPulsar ? _quickSwitchEngine.GetMenuSnapshot() : current;
 
             // Always suppress focus restore when a quick switch is requested —
             // the user explicitly asked to leave the current app. Even if activation
@@ -522,7 +516,7 @@ namespace Pulsar.Services
             {
                 var resolution = _quickSwitchEngine.ResolveTarget(
                     realCurrentWindow,
-                    _trackingService.PreviousWindowHandle,
+                    _quickSwitchEngine.GetMenuSnapshot(),
                     QuickSwitchTimeoutMs,
                     IsAltTabWindow,
                     _isWindow,
@@ -644,7 +638,7 @@ namespace Pulsar.Services
                 Intent = WindowSelectionIntent.GroupedSwitch,
                 SkipMode = WindowSelectionSkipMode.SkipPreviousWindow,
                 CurrentForegroundHandle = PulsarNative.GetForegroundWindow(),
-                PreviousWindowHandle = _trackingService.PreviousWindowHandle
+                PreviousWindowHandle = _quickSwitchEngine.GetMenuSnapshot()
             };
 
             _logger.LogDebug(

@@ -15,7 +15,6 @@ namespace Pulsar.Services.Interfaces
         void ActivateMenu(Window window);
         Task<FocusReleaseResult> ReleaseAsync(FocusRestoreMode? mode = null, IntPtr targetWindow = default);
         Task<FocusActivationResult> ActivateWindowAsync(IntPtr hWnd, FocusActivationOptions? options = null);
-        Task<QuickSwitchResult> QuickSwitchAsync();
         void RegisterModifierTracker(IModifierStateTracker tracker);
         FocusStateSnapshot? Snapshot();
     }

@@ -214,5 +214,96 @@ namespace Pulsar.Tests.Services
 
             result.TargetWindow.Should().Be(next);
         }
+
+        [Fact]
+        public void SetMenuSnapshot_ThenGetMenuSnapshot_ReturnsSameHandle()
+        {
+            var engine = new QuickSwitchEngine();
+            IntPtr snapshot = new(0x1001);
+
+            engine.SetMenuSnapshot(snapshot);
+
+            engine.GetMenuSnapshot().Should().Be(snapshot);
+        }
+
+        [Fact]
+        public void SetMenuSnapshot_DoesNotAffectHistoryStack()
+        {
+            var engine = new QuickSwitchEngine();
+            IntPtr historyWindow = new(0x2001);
+
+            engine.RecordWindowActivation(historyWindow, 10);
+            engine.SetMenuSnapshot(new IntPtr(0x1001));
+
+            engine.SnapshotHistory().Should().ContainInOrder(historyWindow);
+        }
+
+        [Fact]
+        public void RecordWindowActivation_DoesNotAffectMenuSnapshot()
+        {
+            var engine = new QuickSwitchEngine();
+            IntPtr snapshot = new(0x1001);
+
+            engine.SetMenuSnapshot(snapshot);
+            engine.RecordWindowActivation(new IntPtr(0x2001), 10);
+
+            engine.GetMenuSnapshot().Should().Be(snapshot);
+        }
+
+        [Fact]
+        public void MenuSnapshot_AndHistoryTop_CanDiverge()
+        {
+            // Two-view contract: the unfiltered menu snapshot (e.g. a non-Alt-Tab
+            // credential window) and the filtered MRU history top (e.g. Chrome)
+            // are independent — the dual-track behaviour quick switch depends on.
+            var engine = new QuickSwitchEngine();
+            IntPtr credentialWindow = new(0x3001);
+            IntPtr chrome = new(0x3002);
+
+            engine.SetMenuSnapshot(credentialWindow);
+            engine.RecordWindowActivation(chrome, 10);
+
+            engine.GetMenuSnapshot().Should().Be(credentialWindow);
+            engine.SnapshotHistory().Should().ContainInOrder(chrome);
+        }
+
+        [Fact]
+        public void RecordWindowActivation_ShouldTrimHistory_ToMaxSize()
+        {
+            var engine = new QuickSwitchEngine();
+
+            for (int i = 1; i <= 12; i++)
+            {
+                engine.RecordWindowActivation(new IntPtr(0x4000 + i), 10);
+            }
+
+            var snapshot = engine.SnapshotHistory();
+
+            snapshot.Should().HaveCount(10);
+            // Snapshot order is most-recent-first (stack top = front).
+            snapshot[0].Should().Be(new IntPtr(0x4000 + 12));
+        }
+
+        [Fact]
+        public void ResolveTarget_ShouldFallThroughTwoClosedWindows_ToThirdInHistory()
+        {
+            var engine = new QuickSwitchEngine();
+            IntPtr current = new(11);
+            IntPtr closedA = new(22);
+            IntPtr closedB = new(33);
+            IntPtr valid = new(44);
+
+            // Most recent last: current, valid, closedA, closedB.
+            engine.RecordWindowActivation(current, 10);
+            engine.RecordWindowActivation(valid, 10);
+            engine.RecordWindowActivation(closedA, 10);
+            engine.RecordWindowActivation(closedB, 10);
+
+            var result = engine.ResolveTarget(current, IntPtr.Zero, 5000,
+                _ => true,
+                h => h == current || h == valid);
+
+            result.TargetWindow.Should().Be(valid);
+        }
     }
 }

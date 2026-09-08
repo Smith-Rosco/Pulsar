@@ -143,6 +143,27 @@ namespace Pulsar.Tests.Services
         }
 
         [Fact]
+        public void SetPreviousWindow_WithIneligibleWindow_ShouldSetMenuSnapshotButSkipHistory()
+        {
+            // 双轨契约：菜单唤起快照不过滤（供 PulsarContext / SkipPreviousWindow），
+            // 而历史栈只收 Alt-Tab 合格窗口。非真实窗口（PID 0、非 Alt-Tab）应命中
+            // 快照槽、被历史拒绝——两条轨独立且并存。
+            var hwnd = new IntPtr(0x1234);
+            var (service, _, _, _, _, quickSwitch, _) = CreateService();
+            try
+            {
+                service.SetPreviousWindow(hwnd);
+
+                quickSwitch.GetMenuSnapshot().Should().Be(hwnd);
+                quickSwitch.SnapshotHistory().Should().BeEmpty();
+            }
+            finally
+            {
+                service.Dispose();
+            }
+        }
+
+        [Fact]
         public async Task SwitchToPreviousWindow_WhenFirstActivationFails_ShouldFallThroughToNextHistoryWindow()
         {
             using var win1 = new TestWindow("First");

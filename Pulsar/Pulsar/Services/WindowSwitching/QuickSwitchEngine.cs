@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace Pulsar.Services.WindowSwitching
 {
@@ -12,7 +13,8 @@ namespace Pulsar.Services.WindowSwitching
     }
 
     /// <summary>
-    /// 快速切换的 MRU 历史栈与"上一对窗口"记忆（无 P/Invoke、无锁竞争外的副作用）。
+    /// 上一个窗口的单一权威：MRU 历史栈、"上一对窗口"记忆，以及菜单唤起时捕获的
+    /// 不过滤快照（MenuPrevious）。无 P/Invoke、无锁竞争外的副作用。
     /// 经 DI 注入 WindowService；构造函数公开以便容器实例化。
     /// </summary>
     public sealed class QuickSwitchEngine
@@ -42,6 +44,26 @@ namespace Pulsar.Services.WindowSwitching
         private readonly object _switchPairLock = new();
         private readonly Stack<IntPtr> _windowHistory = new();
         private SwitchPairSnapshot? _activeSwitchPair;
+        private IntPtr _menuSnapshot;
+
+        /// <summary>
+        /// 记录菜单唤起时捕获的前台窗口（MenuPrevious）。刻意不做 Alt-Tab 过滤——
+        /// 该快照供 PulsarContext / SkipPreviousWindow / realCurrent 使用，需要知道
+        /// 用户实际所在的程序（即使是非 Alt-Tab 窗口）。切换决策由 ResolveTarget
+        /// 独立校验目标合法性，因此不合法快照永远不会被选中。
+        /// </summary>
+        public void SetMenuSnapshot(IntPtr handle)
+        {
+            Interlocked.Exchange(ref _menuSnapshot, handle);
+        }
+
+        /// <summary>
+        /// 读取菜单唤起时捕获的前台窗口（MenuPrevious）。
+        /// </summary>
+        public IntPtr GetMenuSnapshot()
+        {
+            return Volatile.Read(ref _menuSnapshot);
+        }
 
         public void RecordWindowActivation(IntPtr hwnd, int maxHistorySize)
         {
