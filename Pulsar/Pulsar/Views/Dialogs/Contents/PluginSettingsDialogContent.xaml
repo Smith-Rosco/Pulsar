@@ -224,8 +224,11 @@
                                             <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                                             <Style.Triggers>
                                                 <Trigger Property="IsChecked" Value="True">
-                                                    <Setter Property="Background" Value="{DynamicResource SystemFillColorAccentBackground3}"/>
-                                                    <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
+                                                    <!-- 选中态铺 accent 底 + OnAccent 文字（与分段控件选中态一致）。
+                                                         原 SystemFillColorAccentBackground3 在 WPF-UI 4.3.0 中不存在，
+                                                         底色解析为 null，选中态只剩文字变色、没有填充。 -->
+                                                    <Setter Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+                                                    <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
                                                 </Trigger>
                                             </Style.Triggers>
                                         </Style>

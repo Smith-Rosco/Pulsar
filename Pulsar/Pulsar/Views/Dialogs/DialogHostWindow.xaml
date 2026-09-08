@@ -35,7 +35,9 @@
                 <Style.Triggers>
                     <DataTrigger Binding="{Binding UseDangerStyleForTertiary}" Value="True">
                         <Setter Property="Background" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
-                        <Setter Property="Foreground" Value="White"/>
+                        <!-- 危险填充上的文字：深色主题下 SystemFillColorCriticalBrush 是浅红，
+                             硬编码 White 几乎不可读；用随亮度翻转的 TextOnAccentFillColorPrimaryBrush。 -->
+                        <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
                         <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
                     </DataTrigger>
                 </Style.Triggers>

@@ -127,6 +127,15 @@ namespace Pulsar.Views
                     Icon = new SymbolIcon(registration.Icon)
                 };
 
+                // 折叠窗格时标题列被压到 0 宽，WPF-UI 的 LeftCompactNavigationViewItemTemplate
+                // 对行高只给了 MinHeight，行高是"内容测量"出来的 —— 本地化标题越长，测量出的行高
+                // 越高，于是每个 Tab 被上下拉伸、且拉伸量随标题长度变化。
+                // ① 标题显式 NoWrap + 省略号：行高恒为单行，不会因换行而变高；
+                // ② MaxHeight 钉死为 WPF-UI 的紧凑行高 40：即使上游模板/本地化再变化，
+                //    折叠与展开下行高也保持一致。
+                item.ContentTemplate = NavigationItemContentTemplate;
+                item.MaxHeight = CompactNavItemHeight;
+
                 // Stable UIA identity for E2E settings-page workflows; localized
                 // display text is never used for lookup (Pulsar is bilingual).
                 AutomationProperties.SetAutomationId(item, "Pulsar.Settings.Nav." + registration.Id);
@@ -272,6 +281,30 @@ namespace Pulsar.Views
 
         private const double IndicatorWidth = 3;
         private const double IndicatorHeight = 22;
+
+        /// <summary>
+        /// WPF-UI 紧凑导航行的标准行高（<c>LeftCompactNavigationViewItemTemplate</c> 的 MinHeight）。
+        /// 用作 <c>NavigationViewItem.MaxHeight</c>，使折叠/展开窗格时行高保持恒定。
+        /// </summary>
+        private const double CompactNavItemHeight = 40;
+
+        /// <summary>
+        /// 导航项标题模板。WPF-UI 把字符串内容交给隐式生成的 TextBlock 渲染；折叠窗格后标题列
+        /// 宽度归零，行高由内容测量决定，本地化标题越长行越高（Tab 被上下拉伸）。
+        /// 这里显式指定 NoWrap + 字符省略号，把行高锁死为单行。
+        /// </summary>
+        private static readonly DataTemplate NavigationItemContentTemplate = CreateNavigationItemContentTemplate();
+
+        private static DataTemplate CreateNavigationItemContentTemplate()
+        {
+            var textBlock = new FrameworkElementFactory(typeof(System.Windows.Controls.TextBlock));
+            textBlock.SetBinding(System.Windows.Controls.TextBlock.TextProperty, new System.Windows.Data.Binding());
+            textBlock.SetValue(System.Windows.Controls.TextBlock.TextWrappingProperty, TextWrapping.NoWrap);
+            textBlock.SetValue(System.Windows.Controls.TextBlock.TextTrimmingProperty, TextTrimming.CharacterEllipsis);
+            textBlock.SetValue(System.Windows.Controls.TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center);
+            textBlock.SetValue(System.Windows.Controls.TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Left);
+            return new DataTemplate { VisualTree = textBlock };
+        }
 
         private void InitializeNavIndicator()
         {

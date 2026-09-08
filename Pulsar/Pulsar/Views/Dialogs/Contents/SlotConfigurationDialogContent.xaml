@@ -102,7 +102,8 @@
                                 <Trigger Property="IsChecked" Value="True">
                                     <Setter TargetName="SegBorder" Property="Background" Value="{DynamicResource AccentFillColorSecondaryBrush}"/>
                                     <Setter TargetName="SegBorder" Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
-                                    <Setter Property="Foreground" Value="White"/>
+                                    <!-- 选中态铺 accent 填充 → 文字用随亮度翻转的 OnAccent 令牌，不能硬编码 White。 -->
+                                    <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>

@@ -137,6 +137,44 @@ namespace Pulsar.Tests.Services
             });
         }
 
+        [Fact]
+        public void ApplyTheme_ShouldCopyRuntimeAccentResourcesOntoElement()
+        {
+            RunInSta(() =>
+            {
+                // WPF allows only one Application per AppDomain; reuse one if a sibling test
+                // already created it (same guard as SettingsSaveSessionTests / DirtyStateTests).
+                if (Application.Current == null)
+                {
+                    _ = new Application();
+                }
+
+                var service = new ThemeService(NullLogger<ThemeService>.Instance);
+                service.Initialize(AppTheme.Light);
+
+                var element = new FrameworkElement();
+                service.ApplyTheme(element, AppTheme.Light);
+
+                // The element-local ThemesDictionary/ControlsDictionary shadow Application-level
+                // resources in lookup order. Accent keys computed at runtime
+                // (ApplicationAccentColorManager → Application.Current.Resources) must therefore be
+                // copied onto the element, otherwise {DynamicResource Accent*} on themed elements
+                // resolves a static value (or nothing) — the rank-badge invisibility bug.
+                var fill = element.Resources["AccentFillColorDefaultBrush"] as SolidColorBrush;
+                fill.Should().NotBeNull(
+                    "element-local accent fill must be copied from the runtime manager");
+                fill!.Color.Should().NotBe(Colors.Transparent,
+                    "the copied accent fill must be a real colour, not a missing lookup");
+
+                var textOnAccent = element.Resources["TextOnAccentFillColorPrimaryBrush"];
+                textOnAccent.Should().NotBeNull(
+                    "text-on-accent contrast is derived at runtime and must shadow the static dictionary");
+
+                element.Resources["SystemAccentColor"].Should().NotBeNull(
+                    "the accent colour itself must be available at element level");
+            });
+        }
+
         private static void RunInSta(Action action) => StaTestRunner.RunInSta(action);
     }
 }

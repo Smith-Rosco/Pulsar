@@ -32,7 +32,7 @@
                 <Setter Property="Margin" Value="{StaticResource Pulsar.Gap.Right.SM}"/>
                 <Style.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorAccentBrush}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
                     </Trigger>
                 </Style.Triggers>
             </Style>
@@ -51,7 +51,11 @@
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
                       AutomationProperties.AutomationId="Pulsar.Settings.Analytics.ScrollViewer">
-            <StackPanel Margin="{StaticResource Pulsar.Gap.Right.XL}" MaxWidth="720" HorizontalAlignment="Left">
+            <!-- 内容宽度必须跟随视口而不是被内容撑开：HorizontalAlignment="Left" 会让
+                 StackPanel 收缩到"最宽子项所需宽度"，于是①卡片占不满可用区域，②展开/折叠任意
+                 卡片时最宽项变化会带动所有卡片一起变宽。改为 Stretch（MaxWidth 仍作为阅读宽度上限）。
+                 与 SettingsPluginsPage 的 Width="{Binding ViewportWidth}" 是同一问题的两种解法。 -->
+            <StackPanel Margin="{StaticResource Pulsar.Gap.Right.XL}" MaxWidth="720" HorizontalAlignment="Stretch">
 
                 <!-- Loading Indicator -->
                 <StackPanel Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
@@ -137,7 +141,7 @@
                         <StackPanel>
                             <TextBlock Text="{Binding ActivePluginCount}"
                                        FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="Bold"
-                                       Foreground="{DynamicResource SystemFillColorAccentBrush}"/>
+                                       Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
                             <TextBlock Text="{lex:Locale Settings.Analytics.SummaryActivePlugins}"
                                        FontSize="{StaticResource Pulsar.Type.Caption}"
                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
@@ -206,7 +210,7 @@
                                             <Border Width="{Binding BarWidth, FallbackValue=0}"
                                                     HorizontalAlignment="Left"
                                                     CornerRadius="{StaticResource Pulsar.Radius.SM}"
-                                                    Background="{DynamicResource SystemFillColorAccentBrush}"
+                                                    Background="{DynamicResource AccentFillColorDefaultBrush}"
                                                     MinWidth="4">
                                                 <Border.Style>
                                                     <Style TargetType="Border">
@@ -276,7 +280,7 @@
                                             <Border Width="{Binding BarWidth, FallbackValue=0}"
                                                     HorizontalAlignment="Left"
                                                     CornerRadius="{StaticResource Pulsar.Radius.SM}"
-                                                    Background="{DynamicResource SystemFillColorAccentBrush}"
+                                                    Background="{DynamicResource AccentFillColorDefaultBrush}"
                                                     MinWidth="2">
                                                 <Border.Style>
                                                     <Style TargetType="Border">
@@ -452,6 +456,7 @@
 
                 <!-- Usage Stats List -->
                 <ItemsControl ItemsSource="{Binding MostUsedPlugins}"
+                              AutomationProperties.AutomationId="Pulsar.Settings.Analytics.MostUsedList"
                               Visibility="{Binding HasData, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
@@ -469,16 +474,22 @@
                                     </Grid.RowDefinitions>
 
                                     <!-- Rank Badge -->
+                                    <!-- Rank Badge：注意 Border 上不能写本地 Background 属性——WPF 优先级
+                                         本地值 > Style 触发器，本地写死会让下面的 Top3 accent 触发器永远失效
+                                         （此前序号"看不见"的最终根因）。默认底色由 Style Setter 提供。 -->
                                     <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
                                             Width="32" Height="32" CornerRadius="{StaticResource Pulsar.Radius.LG}"
-                                            Margin="{StaticResource Pulsar.Gap.Right.LG}" VerticalAlignment="Center"
-                                            Background="{DynamicResource ControlFillColorDisabledBrush}">
+                                            Margin="{StaticResource Pulsar.Gap.Right.LG}" VerticalAlignment="Center">
                                         <Border.Style>
                                             <Style TargetType="Border">
                                                 <Setter Property="Background" Value="{DynamicResource ControlFillColorDisabledBrush}"/>
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsTopThree}" Value="True">
-                                                        <Setter Property="Background" Value="{DynamicResource SystemFillColorAccentBrush}"/>
+                                                        <!-- Top3 用 accent 底色 + OnAccent 文字（与 PulsarPrimaryButtonStyle /
+                                                             SlotOrb 徽章同源）。此前用的 SystemFillColorAccentBrush 在
+                                                             WPF-UI 4.3.0 的主题字典里根本不存在（TryFindResource => null），
+                                                             徽章没有底色，文字直接糊在卡片上看不见。 -->
+                                                        <Setter Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
@@ -491,7 +502,9 @@
                                                     <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsTopThree}" Value="True">
-                                                            <Setter Property="Foreground" Value="White"/>
+                                                            <!-- accent 填充上的文字：TextOnAccentFillColorPrimaryBrush 由运行时
+                                                                 accent 管理器按填充亮度派生（与主按钮一致），不能硬编码 White。 -->
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -592,7 +605,7 @@
                                                                 HorizontalAlignment="Left"
                                                                 VerticalAlignment="Bottom"
                                                                 CornerRadius="{StaticResource Pulsar.Radius.XS}"
-                                                                Background="{DynamicResource SystemFillColorAccentBrush}"
+                                                                Background="{DynamicResource AccentFillColorDefaultBrush}"
                                                                 Height="{Binding BarHeight, FallbackValue=0}">
                                                             <Border.Style>
                                                                 <Style TargetType="Border">
@@ -643,7 +656,7 @@
                                             <ui:SymbolIcon.Style>
                                                 <Style TargetType="ui:SymbolIcon">
                                                     <Setter Property="Symbol" Value="Info24"/>
-                                                    <Setter Property="Foreground" Value="{DynamicResource SystemFillColorAccentBrush}"/>
+                                                    <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding Severity}" Value="Warning">
                                                             <Setter Property="Symbol" Value="Warning24"/>

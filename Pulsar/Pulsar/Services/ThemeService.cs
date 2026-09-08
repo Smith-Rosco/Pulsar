@@ -277,9 +277,47 @@ namespace Pulsar.Services
 
             element.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri(pulsarThemePath, UriKind.Absolute) });
 
+            // 4. Re-apply the runtime accent keys on the element itself.
+            //
+            // The accent manager computes contrast-aware values (e.g. TextOnAccentFillColorPrimaryBrush
+            // is derived from the *brightness of the user's accent*, not from the theme). Those values
+            // land in Application-level resources via BridgeAccentResources — but a themed element
+            // carries its own ThemesDictionary/ControlsDictionary, and WPF resolves element-local
+            // dictionaries BEFORE Application resources. The static dictionary would therefore shadow
+            // the runtime value: ThemesDictionary hardcodes white-in-Light / black-in-Dark, which is
+            // wrong for any accent whose brightness does not match that assumption (e.g. a yellow
+            // Windows accent in Light theme → white text on a yellow fill = invisible).
+            // Copying the computed keys onto the element puts them back on top of the lookup chain.
+            CopyRuntimeAccentResources(element.Resources);
+
             if (element is FluentWindow fw)
             {
                 fw.WindowBackdropType = backdrop;
+            }
+        }
+
+        /// <summary>
+        /// Copies the accent keys that <see cref="Wpf.Ui.Appearance.ApplicationAccentColorManager"/>
+        /// computed for the current accent into <paramref name="target"/>. Only accent-family keys
+        /// are copied — everything else in <see cref="Wpf.Ui.UiApplication.Current.Resources"/>
+        /// belongs to WPF-UI and must not override Pulsar's own tokens.
+        /// </summary>
+        private void CopyRuntimeAccentResources(ResourceDictionary target)
+        {
+            try
+            {
+                foreach (System.Collections.DictionaryEntry entry in Wpf.Ui.UiApplication.Current.Resources)
+                {
+                    if (entry.Key is string key &&
+                        (key.Contains("Accent", StringComparison.Ordinal) || key.StartsWith("SystemAccent", StringComparison.Ordinal)))
+                    {
+                        target[key] = entry.Value;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "[ThemeService] Failed to copy runtime accent resources onto the element.");
             }
         }
 

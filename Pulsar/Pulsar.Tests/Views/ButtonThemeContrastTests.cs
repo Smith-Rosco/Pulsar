@@ -136,9 +136,13 @@ namespace Pulsar.Tests.Views
 
         /// <summary>
         /// Renders a control in an isolated visual tree (no Window / Application) so
-        /// tests do not interfere with each other's Application.Current state. The
-        /// segmented style's foreground triggers use literal colors, so no theme
-        /// dictionary is required for the color assertions.
+        /// tests do not interfere with each other's Application.Current state.
+        ///
+        /// The theme dictionary is merged in because the segmented style's checked
+        /// foreground is a <c>DynamicResource</c> to
+        /// <c>TextOnAccentFillColorPrimaryBrush</c> (white in Light). It used to be a
+        /// literal <c>White</c>, which was invisible against the Dark-theme accent
+        /// fill; the test therefore has to resolve a real theme, not a literal.
         /// </summary>
         private static TextBlock RenderIsolated(FrameworkElement element)
         {
@@ -148,6 +152,7 @@ namespace Pulsar.Tests.Views
                 Width = 200,
                 Height = 60
             };
+            root.Resources.MergedDictionaries.Add(BuildLightTheme());
 
             root.Measure(new Size(200, 60));
             root.Arrange(new Rect(0, 0, 200, 60));

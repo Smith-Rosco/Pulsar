@@ -21,7 +21,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- 暂无。
+### Fixed
+- **设置页三处布局/配色缺陷（2026-09-08 用户报告）**：
+  - 使用分析页 Top-3 排名徽章序号不可见——**四段根因**：①徽章底色用了 `SystemFillColorAccentBrush`，该令牌在 WPF-UI 4.3.0 的主题字典里**根本不存在**（实测 `TryFindResource` 为 null）；②文字硬编码 `White`；③元素本地 `ThemesDictionary` 在查找顺序上遮蔽 Application 级运行时桥接值（Light 静态字典没有 `AccentFillColorDefaultBrush`）→ `ThemeService.ApplyStandardTheme` 末尾新增 `CopyRuntimeAccentResources(element.Resources)`；④**最终根因是 WPF 依赖属性优先级**：徽章 Border 上的本地 `Background` 属性静默压制了 `IsTopThree` 触发器（本地值 > Style 触发器），accent 底色从未生效、白字一直压在浅灰底上——删除本地属性、默认色改由 Style Setter 提供。同页柱状图/迷你趋势图填充、accent 色文字从死令牌迁出；对话框危险按钮、分段控件硬编码 `White` 同步修复。
+  - 关于页/分析页卡片宽度不占满视图，且折叠或展开任意卡片会带动**所有**卡片宽度一起变化——`ScrollViewer` 内容面板用 `HorizontalAlignment="Left"` + `MaxWidth`，面板宽度由内容（最宽子项）决定而非视口。改为 `Stretch`（`MaxWidth` 退化为阅读宽度上限）。✅ 用户已确认修复。
+  - 折叠侧边栏后导航 Tab 被上下拉伸、拉伸量随标题长度增长——为导航项显式指定 `NoWrap` + 省略号的标题模板，并把行高上限钉为 WPF-UI 紧凑行高 40，使折叠/展开下行高恒定。✅ 用户已确认修复。
+  - 关于页"应用标识"卡片内容居中/居右——`CardControl` 模板是 `Auto|*|Auto` 三列，`Content` 落在最右 Auto 列（右对齐、宽度收缩），`HorizontalContentAlignment="Stretch"` 无效（列本身是 Auto）。修复：图标+文字移入 `<ui:CardControl.Header>` 槽位（中间 `*` 列），居左且占满整行。
+
+### Added
+- `Pulsar.Tests.UI.SettingsLayoutGuardTests`：三条静态 XAML 扫描守卫（禁止硬编码 White/Black 前景色；禁止引用 4.3.0 不存在的 `SystemFillColorAccent*` 令牌；禁止设置页用 `HorizontalAlignment="Left"` + `MaxWidth` 让面板按内容定宽），覆盖上述缺陷类、防止复发。
+- `Pulsar.Tests.Services.ThemeServiceTests` 新增 `ApplyTheme_ShouldCopyRuntimeAccentResourcesOntoElement`：断言 `ApplyTheme` 后 accent 填充/对比文字/色值已复制到元素本地资源（回归守卫：元素本地字典不得再遮蔽运行时桥接值）。
+- `Docs/lessons/WPF_SETTINGS_PANEL_WIDTH_CONTENT_DRIVEN.md`：视口宽度 vs 内容宽度的坑与修法（含与 `SettingsPluginsPage` 现有 `ViewportWidth` 绑定的对照）。
+- `Docs/lessons/WPF_FLUENT_ACCENT_TOKENS_UNRESOLVED.md` v1.3.0：v1.2.0 两主题令牌实测表之外，补记元素本地字典遮蔽根因与 CardControl 三列模板坑。
 
 ## [1.12.0] - 2026-09-08
 
