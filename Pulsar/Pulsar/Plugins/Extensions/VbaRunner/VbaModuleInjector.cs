@@ -61,7 +61,13 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
                 {
                     // Access VBProject - this might fail if Trust Access is off
                     var vbProject = workbook.VBProject;
-                    
+
+                    // WPS without the VBA component returns a *stub* VBProject:
+                    // Name is empty, VBComponents.Count is 0 and Add() throws a
+                    // NullReferenceException, which used to surface as "macro did
+                    // nothing". Detect it up-front and fail with an actionable message.
+                    EnsureVbaProjectIsUsable(vbProject);
+
                     // Create new module
                     component = vbProject.VBComponents.Add(vbext_ct_StdModule);
                     
@@ -98,6 +104,46 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
             }, "Inject Module");
 
             return component!;
+        }
+
+        /// <summary>
+        /// Detects the WPS "stub" VBProject: WPS without the VBA component hands out a
+        /// shell object (empty Name, VBComponents.Count == 0, Add() throws NRE). A real
+        /// Excel/WPS workbook always has at least one component (ThisWorkbook/Sheet).
+        /// Conservative by design: any probing failure is treated as "usable" so the
+        /// normal path is never blocked by the probe itself.
+        /// </summary>
+        private static void EnsureVbaProjectIsUsable(object? vbProject)
+        {
+            if (vbProject == null)
+            {
+                throw new InvalidOperationException(
+                    "VBA project is unavailable (null VBProject). If you are using WPS, install the VBA component " +
+                    "(vbeapi.dll ships as an interface stub only) and enable 'Trust access to the VBA project object model'.");
+            }
+
+            dynamic project = vbProject;
+            object? components = null;
+            try { components = project.VBComponents; }
+            catch { /* probe failure -> assume usable, let the real call surface the error */ }
+
+            if (components == null)
+            {
+                throw new InvalidOperationException(
+                    "VBA project exposes no components (VBComponents is null). If you are using WPS, install the VBA component " +
+                    "(vbeapi.dll ships as an interface stub only) and enable 'Trust access to the VBA project object model'.");
+            }
+
+            int count = -1;
+            try { count = (int)((dynamic)components).Count; }
+            catch { /* non-COM / unexpected shape -> assume usable */ }
+
+            if (count == 0)
+            {
+                throw new InvalidOperationException(
+                    "VBA project contains no components (VBComponents.Count == 0). If you are using WPS, install the VBA component " +
+                    "(vbeapi.dll ships as an interface stub only) and enable 'Trust access to the VBA project object model'.");
+            }
         }
 
         private void ExecuteMacro(dynamic workbook, string moduleName, string macroName, object? argument)

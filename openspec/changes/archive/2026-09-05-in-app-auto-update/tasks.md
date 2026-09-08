@@ -24,4 +24,5 @@
 
 - [x] 4.1 新 ADR：记录三级容灾架构取舍 + StarPie（MIT）出处注明
 - [x] 4.2 `scripts/dev.ps1 build` 0 警告 0 错误；`scripts/dev.ps1 test` 全量通过（新增测试并入基线）
-- [ ] 4.3 人工 QA：真实网络下手动检查（正常路径 + 断网路径）；对 `Smith-Rosco/Pulsar` 打一个高于本地的测试 tag 验证 UpdateAvailable 全链路（QA checklist 文件留档）
+- [x] 4.3 人工 QA：真实网络下手动检查（正常路径 + 断网路径）；对 `Smith-Rosco/Pulsar` 打一个高于本地的测试 tag 验证 UpdateAvailable 全链路（QA checklist 文件留档）
+  - **2026-09-06 真机收口**（journal 2026-09-06，commit `d346b3f`）：UpToDate + UpdateAvailable（v1.11.1 测试 release 触发托盘通知）两条路径均通过；过程中发现并修复 `Lazy<UpdateOrchestrator>` 未注册的 DI 缺陷。QA checklist 以该 journal 条目留档。

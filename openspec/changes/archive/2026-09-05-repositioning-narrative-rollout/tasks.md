@@ -17,8 +17,8 @@
 ## 3. Demo 视频
 
 - [x] 3.1 三支脚本定稿（Excel 跑宏 / 老旧网页脚本注入 / 登录填表自动化；各 30–60s，分镜 + 台词）
-- [ ] 3.2 录制 + 剪辑（录屏即可），输出 mp4（与 E2E recording.mp4 管线兼容）
-- [ ] 3.3 视频与脚本入库（`Docs/media/release/videos/`）
+- [x] ~~3.2 录制 + 剪辑（录屏即可），输出 mp4（与 E2E recording.mp4 管线兼容）~~ **已取消（2026-09-08 用户裁决）**：现有动图已足够，不再录制视频；3.1 的三支脚本文档保留备查。
+- [x] ~~3.3 视频与脚本入库（`Docs/media/release/videos/`）~~ **随 3.2 一并取消**（同上裁决）。
 
 ## 4. README 重写
 
@@ -36,10 +36,17 @@
 
 > 来源：2026-09-07 为 3.2 录制做配置预跑验证时实测发现。逐条已核实现象与根因。
 
-- [ ] 6.1 **VbaModuleInjector 未剥离 Attribute VB_Name 行**（实测确认）：VBE 导出的 .bas 首行 `Attribute VB_Name = "..."` 经 CodeModule.AddFromString 注入后，模块无法完整编译，Application.Run 报「宏不可用」。规避：演示 .bas 已去 Attribute 行（可编译）；治本：VbaModuleInjector.InjectModule 在 AddFromString 前剥离 Attribute 行（按行过滤，保留其余内容）。
-- [ ] 6.2 **槽位参数不展开环境变量**：全库无 ExpandEnvironmentVariables 处理槽位参数（仅 SettingsViewModel UI 层有）。用户配置 %USERPROFILE%/%APPDATA% 路径会静默失效。规避：demo-profile.ps1 注入时展开为绝对路径；治本：插件执行前统一展开（参数解析层/ExecutablePathResolver）。
-- [ ] 6.3 **Pulsar.Simulator 参数解析缺陷**：CommandLineParser 短名前缀匹配把 -args 解析为 -a rgs（与 -action 冲突报 multiple times）、-plugin 解析为 -p lugin（报 Plugin not found）；且 Plugins 目录缺失时扩展插件（bookmarklet/vbarunner）不可加载测试。规避：用 -g/--args 传参、仅测内置插件；治本：文档注明参数写法或改选项名避免前缀歧义。
-- [ ] 6.4 **vbarunner 对无 VBA 引擎的 WPS 无优雅降级**：WPS 未装 VBA 组件时 VBProject 返回空壳对象（Name 空、VBComponents.Count=0、Add 抛 null 引用），用户看到「宏没反应」而非可读错误。治本：检测空壳并返回「WPS 未安装 VBA 组件（vbeapi.dll 仅接口存根），请安装 VBA for WPS」可读错误。
-- [ ] 6.5 **WPS 信任开关与 VBA 组件两级前置**：HKCU\Software\Kingsoft\Office\6.0\et\Application Settings\KDEVBProjectTrust（默认 0，信任 VBA 工程对象模型访问）与 VBA 组件安装缺一不可；VbaRunner.md 应补充 WPS 前置检测与引导。
-- [ ] 6.6 **演示凭据注入已自动化**（本次完成，记录约定）：demo-profile.ps1 switch 自动生成 DPAPI 凭据（ProtectedData CurrentUser，与 SecretRepository 解密一致）写入 secrets.json 并回填 Slot3 secretId；restore 同时恢复 Profiles.json 与 secrets.json。后续 PkiPlugin 若支持导入/CLI 添加凭据，可替代该注入。- [ ] 6.7 **SlotOrb.RefreshIcon 未对图标 key 做 NormalizeIconKey**（实测确认，文本图标根因）：径向菜单把配置 icon 字符串原样传入 SlotOrb → GetGlyph 只认 hex 码位，**名称形式（如 ReportDocument）被原样当文本渲染**，码位形式（E9F9）才渲染字形。设置页 ResolveIconDisplay 对名称同样 fallback 原样。规避（已落地）：宣传 fixture 全部改用码位（commandMode）与 exe 路径（switchMode，走 ExtractExeIcon 显示程序真图标）；治本：RefreshIcon/GetGlyph 对非路径 key 先 NormalizeIconKey（名称→码位→字形），并对 ResolveIconDisplay 补名称反查。
-- [ ] 6.8 **本机环境变更**（2026-09-07 记录，供后续引用）：Microsoft Office 16.0 已安装（EXCEL.EXE 在 Office16），WPS 已卸载（App Paths 清除、仅 Kingsoft 残留 backup）。Excel COM + VBProject + AccessVBOM=1 实测可用，vbarunner 宏注入链（Add→AddFromString→Run→Remove）端到端验证通过（.bas 无 Attribute 行）。VBA 阻塞解除，视频一按真实宏执行录制；分镜 S4 已由「WPS 表格」改为「新开 Excel 窗口」。
+- [x] 6.1 **VbaModuleInjector 未剥离 Attribute VB_Name 行**（实测确认）：…治本：VbaModuleInjector.InjectModule 在 AddFromString 前剥离 Attribute 行（按行过滤，保留其余内容）。
+  - **治本已落地**：`VbaModuleInjector.InjectModule` 在 `AddFromString` 前用正则 `(?m)^\s*Attribute\s+VB_\w+\s*=.*$` 剥离属性行（保留其余内容，含空白行结构）。
+- [x] 6.2 **槽位参数不展开环境变量**：…治本：插件执行前统一展开（参数解析层/ExecutablePathResolver）。
+  - **治本已落地（2026-09-08）**：`ExecutablePathResolver.Resolve` 对 launchPath 先 `Environment.ExpandEnvironmentVariables`；`PluginRuntimeKernel.ExecuteAsync` 门面对 args 值统一展开（`ExpandEnvironmentVariablesInArgs`，无变化则返回原字典，保留引用相等）。未定义变量保持原样。
+- [x] 6.3 **Pulsar.Simulator 参数解析缺陷**：…治本：文档注明参数写法或改选项名避免前缀歧义。
+  - **治本已落地**：args 选项短名由 `-a` 改为 `-g`（`[Option('g', "args")]`），现短名集合 `-p/-a/-g/-c/-l` 两两不互为前缀，前缀匹配歧义消除。
+- [x] 6.4 **vbarunner 对无 VBA 引擎的 WPS 无优雅降级**：…治本：检测空壳并返回可读错误。
+  - **治本已落地（2026-09-08）**：`VbaModuleInjector.EnsureVbaProjectIsUsable` 在注入前探测空壳（`VBProject` 为 null / `VBComponents` 为 null / `Count == 0`）→ 抛出含「安装 VBA for WPS + 开启信任」指引的 `InvalidOperationException`；探测异常一律保守判定为可用，不误伤正常路径。
+- [x] 6.5 **WPS 信任开关与 VBA 组件两级前置**：…VbaRunner.md 应补充 WPS 前置检测与引导。
+  - **已补充（2026-09-08）**：`Docs/plugins/VbaRunner.md` 新增「WPS 前置检测（两级前置，缺一不可）」章节（VBA 组件安装 + `KDEVBProjectTrust=1`，Excel 侧 `AccessVBOM=1`），并在「故障排除」加入空壳错误的定位入口。
+- [x] 6.6 **演示凭据注入已自动化**（本次完成，记录约定）：…后续 PkiPlugin 若支持导入/CLI 添加凭据，可替代该注入。
+- [x] 6.7 **SlotOrb.RefreshIcon 未对图标 key 做 NormalizeIconKey**（实测确认，文本图标根因）：…治本：RefreshIcon/GetGlyph 对非路径 key 先 NormalizeIconKey（名称→码位→字形），并对 ResolveIconDisplay 补名称反查。
+  - **治本已落地（2026-09-08）**：`SlotOrb.RefreshIcon` 对非路径 key 先 `IconHelper.NormalizeIconKey`（名称 → 码位）再取字形，归一化无结果时回退原 key（PUA 字符/emoji 不受影响）；`IconHelper.ResolveIconDisplay` 新增 `_byName` 反查，名称形式显示 `Code · Name` 而不是原始字符串。全量测试 1303/1303 通过。
+- [x] 6.8 **本机环境变更**（2026-09-07 记录，供后续引用）：…分镜 S4 已由「WPS 表格」改为「新开 Excel 窗口」。（记录项，无需代码动作；VBA 阻塞已解除）

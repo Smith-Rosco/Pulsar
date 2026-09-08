@@ -881,7 +881,9 @@ namespace Pulsar.Core.Plugin.Runtime
             {
                 Descriptor = descriptor,
                 Action = action,
-                Args = args,
+                // 槽位参数统一展开环境变量（%USERPROFILE% / %APPDATA% …）：
+                // 此前全链路无展开处理，用户配置带变量的路径会静默失效。
+                Args = ExpandEnvironmentVariablesInArgs(args),
                 Context = context,
                 GrantedPermissions = GetGrantedPermissions(pluginId),
                 IsEnabled = () => IsPluginEnabled(pluginId),
@@ -890,6 +892,32 @@ namespace Pulsar.Core.Plugin.Runtime
             });
 
             return outcome.Result;
+        }
+
+        /// <summary>
+        /// Expands %ENV_VAR% references in slot argument values. Unchanged
+        /// dictionaries are returned as-is (no allocation, reference equality
+        /// preserved for tests). Undefined variables are left untouched by
+        /// <see cref="Environment.ExpandEnvironmentVariables"/>.
+        /// </summary>
+        internal static IReadOnlyDictionary<string, string> ExpandEnvironmentVariablesInArgs(IReadOnlyDictionary<string, string>? args)
+        {
+            if (args == null) return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (args.Count == 0) return args;
+
+            Dictionary<string, string>? expanded = null;
+            foreach (var pair in args)
+            {
+                var value = pair.Value;
+                var expandedValue = string.IsNullOrEmpty(value) ? value : Environment.ExpandEnvironmentVariables(value);
+                if (!string.Equals(expandedValue, value, StringComparison.Ordinal))
+                {
+                    expanded ??= new Dictionary<string, string>(args, StringComparer.OrdinalIgnoreCase);
+                    expanded[pair.Key] = expandedValue!;
+                }
+            }
+
+            return expanded ?? args;
         }
 
         /// <summary>

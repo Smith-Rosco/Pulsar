@@ -282,11 +282,22 @@ namespace Pulsar.Views.Controls
             }
         }
 
-        private void WheelHost_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        private void Root_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
-            // 槽位设置页:鼠标悬停在可视化轮盘范围内时,滚轮直接翻页。
-            // 拖拽进行中不响应,避免翻页打断拖放操作。
-            if (Vm == null || _isDragging || Vm.TotalPages <= 1)
+            // 槽位设置页:鼠标落在可视化轮盘范围内(含中心空白)时,滚轮直接翻页。
+            // 判定只看 WheelHost 的实际布局矩形,不依赖子元素的命中测试——
+            // 此前用「透明椭圆填充」兜底无效:Background/Fill=null 的空白区不参与命中测试,
+            // 而命中失败时隧道路径根本不含本控件,handler 不会被调用。
+            // 轮盘外(页码条/提示文本)不 Handled,交还宿主页面正常滚动。
+            if (Vm == null || _isDragging || Vm.TotalPages <= 1 || e.Delta == 0)
+            {
+                return;
+            }
+
+            var point = e.GetPosition(WheelHost);
+            if (point.X < 0 || point.Y < 0
+                || point.X > WheelHost.ActualWidth
+                || point.Y > WheelHost.ActualHeight)
             {
                 return;
             }
@@ -296,7 +307,7 @@ namespace Pulsar.Views.Controls
             {
                 Vm.GoToPage(Vm.CurrentPage - 1);
             }
-            else if (e.Delta < 0)
+            else
             {
                 Vm.GoToPage(Vm.CurrentPage + 1);
             }

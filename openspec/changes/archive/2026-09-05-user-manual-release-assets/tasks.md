@@ -17,4 +17,5 @@
 - [x] 3.1 Release 说明成稿（基于模板 + CHANGELOG 提炼，用户视角亮点 + 已知问题 + 系统要求）— **已完成**：`Docs/ops/RELEASE_NOTES-1.11.0.md`，含三支柱亮点、双形态下载表、系统要求、新增/改进/修复完整清单、安全隐私、已知限制（未签名 SmartScreen / ISCC 未实机验证 / 真实网络 QA 待验证 / 视频待录制）
 - [x] 3.2 资产上传清单核对：`Pulsar-v{version}-Setup.exe` / `Pulsar-v{version}-Standalone-win-x64.zip` / SHA256 清单 /（可选）演示视频链接
 - [x] 3.3 打 tag 并发布（人工执行，走 checklist）；验证 Release 页下载 + Change 3 更新检测对已发布 tag 的识别
-- [ ] 3.4 journal 收口：M1 验收标准逐条对照（全新机器可安装并自动更新；文档可无痛上手）
+- [x] 3.4 journal 收口：M1 验收标准逐条对照（全新机器可安装并自动更新；文档可无痛上手）
+  - **2026-09-08 对照收口**（以 journal 真机记录为验收证据）：① 全新机器可安装并自动更新 —— v1.11.0 / v1.12.0 均已在 GitHub Release 发布并验证（三资产、notes 中文无 BOM）；更新链路 UpdateAvailable 全链路已在 Change 1 的 4.3 真机验证通过（v1.11.1 测试 release 触发托盘通知）。② 全新机器安装 —— v1.12.0 Standalone zip 在无 .NET 新机器解压运行通过（Change 2 的 1.3）。③ 文档可无痛上手 —— 用户手册 + README 双语重写 + RELEASE_NOTES 模板已入库（本 change 1.x/2.x）。剩余未覆盖项（installer 覆盖升级真机、手册多读者试用）留作后续观察，不阻塞 M1。

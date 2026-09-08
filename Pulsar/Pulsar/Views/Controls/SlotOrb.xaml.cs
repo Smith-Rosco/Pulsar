@@ -512,7 +512,19 @@ namespace Pulsar.Views.Controls
                 else
                 {
                     // Glyph key
-                    var glyph = IconHelper.GetGlyph(key);
+                    // 先归一化（名称 → 码位）：IconHelper.GetGlyph 只解析码位，名称形式
+                    // （如 "ReportDocument"）若不先 NormalizeIconKey 会被原样当文本渲染。
+                    var normalized = IconHelper.NormalizeIconKey(key);
+                    var glyph = string.IsNullOrEmpty(normalized)
+                        ? IconHelper.GetGlyph(key)
+                        : IconHelper.GetGlyph(normalized);
+
+                    // 兜底：归一化改变了语义（如 PUA 字符/emoji）时仍按原 key 解析一次
+                    if (string.IsNullOrEmpty(glyph) && !string.IsNullOrEmpty(normalized) && normalized != key)
+                    {
+                        glyph = IconHelper.GetGlyph(key);
+                    }
+
                     if (!string.IsNullOrEmpty(glyph)) { newGlyph = glyph; showingImage = false; }
                 }
             }

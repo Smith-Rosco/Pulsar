@@ -16,9 +16,15 @@ namespace Pulsar.Helpers
         /// </summary>
         public static string Resolve(string processName, string launchPath)
         {
-            if (!string.IsNullOrWhiteSpace(launchPath))
+            // 槽位配置里允许使用 %APPDATA% / %USERPROFILE% / %LOCALAPPDATA% 等环境变量：
+            // 执行前统一展开，未定义的变量 ExpandEnvironmentVariables 会原样保留。
+            string? expandedPath = string.IsNullOrWhiteSpace(launchPath)
+                ? null
+                : Environment.ExpandEnvironmentVariables(launchPath);
+
+            if (!string.IsNullOrWhiteSpace(expandedPath))
             {
-                string fullPath = launchPath;
+                string fullPath = expandedPath;
                 if (!Path.IsPathRooted(fullPath))
                 {
                     string systemDir = Environment.GetFolderPath(Environment.SpecialFolder.System);

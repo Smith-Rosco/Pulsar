@@ -269,20 +269,25 @@ namespace Pulsar.Helpers
         // ============================================================
         private static Dictionary<string, IconItem>? _byCode;
         private static Dictionary<string, IconItem>? _byCharacter;
+        private static Dictionary<string, IconItem>? _byName;
 
         private static void EnsureLookups()
         {
             if (_byCode != null) return;
             var byCode = new Dictionary<string, IconItem>(StringComparer.OrdinalIgnoreCase);
             var byChar = new Dictionary<string, IconItem>(StringComparer.Ordinal);
+            var byName = new Dictionary<string, IconItem>(StringComparer.OrdinalIgnoreCase);
             foreach (var item in GlyphData.CommonIcons)
             {
                 byCode[item.Code] = item;
                 if (!string.IsNullOrEmpty(item.Character))
                     byChar[item.Character] = item;
+                if (!string.IsNullOrEmpty(item.Name))
+                    byName[item.Name] = item;
             }
             _byCode = byCode;
             _byCharacter = byChar;
+            _byName = byName;
         }
 
         /// <summary>
@@ -320,6 +325,12 @@ namespace Pulsar.Helpers
                 if (_byCharacter.TryGetValue(glyph, out var byGlyph))
                     return $"{byGlyph.Code} · {byGlyph.Name}";
             }
+
+            // Try lookup by icon Name (e.g. "ReportDocument") -> "E756 · ReportDocument".
+            // Settings UI used to fall back to the raw key here, so name-form keys looked
+            // like unresolved text even though the glyph existed.
+            if (_byName!.TryGetValue(key.Trim(), out var byName))
+                return $"{byName.Code} · {byName.Name}";
 
             // Fallback: raw key
             return key.Trim();
@@ -365,8 +376,7 @@ namespace Pulsar.Helpers
             }
 
             // Name match → return Code
-            var byName = _byCode.Values.FirstOrDefault(i => string.Equals(i.Name, input, StringComparison.OrdinalIgnoreCase));
-            if (byName != null) return byName.Code;
+            if (_byName!.TryGetValue(input, out var byName)) return byName.Code;
 
             // Try parsing as implicit hex (only if it looks like one and is in PUA range)
             if (input.Length <= 6 && int.TryParse(input, System.Globalization.NumberStyles.HexNumber, null, out int codePoint))

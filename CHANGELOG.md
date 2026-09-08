@@ -37,6 +37,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 关于页/分析页卡片宽度不占满视图，且折叠或展开任意卡片会带动**所有**卡片宽度一起变化——`ScrollViewer` 内容面板用 `HorizontalAlignment="Left"` + `MaxWidth`，面板宽度由内容（最宽子项）决定而非视口。改为 `Stretch`（`MaxWidth` 退化为阅读宽度上限）。✅ 用户已确认修复。
   - 折叠侧边栏后导航 Tab 被上下拉伸、拉伸量随标题长度增长——为导航项显式指定 `NoWrap` + 省略号的标题模板，并把行高上限钉为 WPF-UI 紧凑行高 40，使折叠/展开下行高恒定。✅ 用户已确认修复。
   - 关于页"应用标识"卡片内容居中/居右——`CardControl` 模板是 `Auto|*|Auto` 三列，`Content` 落在最右 Auto 列（右对齐、宽度收缩），`HorizontalContentAlignment="Stretch"` 无效（列本身是 Auto）。修复：图标+文字移入 `<ui:CardControl.Header>` 槽位（中间 `*` 列），居左且占满整行。
+- **槽位轮盘滚轮翻页在中心空白区不响应**（2026-09-08 用户复测）：原实现把 `PreviewMouseWheel` 挂在 `WheelHost`，并用一层 `Fill="Transparent"` 椭圆兜底命中——但 WPF 中命中失败的空白区会让**隧道路径根本不含本控件**，handler 不会被调用。改为：根 `Grid` 显式 `Transparent` 背景（空白区参与命中）+ `Root_PreviewMouseWheel` 内按 `e.GetPosition(WheelHost)` 判定是否落在轮盘矩形内，命中则翻页并 `Handled`（轮盘外不拦截，交还宿主页面滚动）。判定只看布局矩形，不再依赖子元素命中测试。
+- **名称形式的图标 key 不渲染字形**（openspec repositioning 6.7）：`SlotOrb.RefreshIcon` 直接把配置里的 icon 字符串交给 `IconHelper.GetGlyph`，而 `GetGlyph` 只解析码位——名称形式（如 `ReportDocument`）被原样当文本渲染。修复：`RefreshIcon` 对非路径 key 先 `NormalizeIconKey`（名称→码位）再取字形，归一化无结果时回退原 key（PUA 字符/emoji 不受影响）；`IconHelper.ResolveIconDisplay` 新增 `_byName` 反查，设置页对名称形式显示 `Code · Name` 而非原始字符串。
+- **槽位参数与可执行路径不展开环境变量**（openspec repositioning 6.2）：`%USERPROFILE%`/`%APPDATA%` 形式的配置此前全链路无处理，静默失效。修复：`ExecutablePathResolver.Resolve` 入口展开 launchPath；`PluginRuntimeKernel.ExecuteAsync` 门面对 args 值统一展开（`ExpandEnvironmentVariablesInArgs`，无变化则返回原字典以保留引用相等，未定义变量保持原样）。
+- **WPS 未安装 VBA 组件时静默失败**（openspec repositioning 6.4/6.5）：`VbaModuleInjector` 新增 `EnsureVbaProjectIsUsable`，在注入前识别空壳 `VBProject`（null / `VBComponents` 为 null / `Count == 0`）并抛出含「安装 VBA for WPS + 开启信任」指引的可读错误，替代此前的「宏没反应」。探测保守设计：探测异常一律判定为可用，不误伤正常路径。`Docs/plugins/VbaRunner.md` 同步新增「WPS 前置检测（两级前置）」章节。
+
+### Changed
+- **openspec 在途变更收尾（2026-09-08）**：4 个 change（`in-app-auto-update` / `installer-and-portable-packaging` / `repositioning-narrative-rollout` / `user-manual-release-assets`）的任务状态据实勾选（真机验证/用户裁决取消/技术债治本逐条注明证据与 commit），repositioning 的 3.2/3.3（Demo 视频）按用户裁决标为取消；delta 同步至主 specs（新建 `app-update-service`、`app-packaging-distribution`，`plugin-display-identity` 追加叙事对齐需求）；`openspec validate --specs` 96/96、`--changes` 4/4 通过后全部归档。在途 change 清零。
 
 ### Added
 - `Pulsar.Tests.UI.SettingsLayoutGuardTests`：三条静态 XAML 扫描守卫（禁止硬编码 White/Black 前景色；禁止引用 4.3.0 不存在的 `SystemFillColorAccent*` 令牌；禁止设置页用 `HorizontalAlignment="Left"` + `MaxWidth` 让面板按内容定宽），覆盖上述缺陷类、防止复发。

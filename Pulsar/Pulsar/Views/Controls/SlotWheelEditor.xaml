@@ -26,30 +26,25 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid>
+    <!-- 根 Grid 显式 Transparent 背景：Background=null 的空白区不参与 WPF 命中测试，
+         滚轮事件的隧道路径就不含本控件，中心空白处收不到 PreviewMouseWheel。
+         Transparent 参与命中测试，故整个控件区域先接管，再由 handler 按鼠标位置
+         判定是否落在轮盘内（轮盘外不 Handled，交还宿主页面滚动）。 -->
+    <Grid Background="Transparent"
+          PreviewMouseWheel="Root_PreviewMouseWheel">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Wheel Host -->
+        <!-- Wheel Host（几何容器；滚轮命中由根 Grid 统一接管，见根 Grid 注释） -->
         <Grid x:Name="WheelHost"
               Grid.Row="0"
               Width="{Binding CanvasSize, Mode=OneWay}"
               Height="{Binding CanvasSize, Mode=OneWay}"
               HorizontalAlignment="Center"
-              VerticalAlignment="Center"
-              PreviewMouseWheel="WheelHost_PreviewMouseWheel">
-
-            <!-- Wheel Hit-Test Filler:Transparent 填充使整个圆形区域(含中心)可命中滚轮。
-                 WPF 中 Background=null 的空白区不参与命中测试,此前仅圆环线与槽位球体
-                 能触发滚轮翻页;Transparent 填充可命中,尺寸与导引环一致。 -->
-            <Ellipse Width="{Binding Radius, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=2}"
-                     Height="{Binding Radius, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=2}"
-                     HorizontalAlignment="Center"
-                     VerticalAlignment="Center"
-                     Fill="Transparent"/>
+              VerticalAlignment="Center">
 
             <!-- Guide Ring -->
             <Ellipse Width="{Binding Radius, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=2}"
