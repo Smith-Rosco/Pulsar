@@ -43,7 +43,17 @@ namespace Pulsar.Core.Plugin
         /// locked. It is cleared (set to null) when the plugin is deactivated so the
         /// context can actually be collected.
         /// </summary>
-        public required Type? ImplementationType { get; set; }
+        /// <remarks>
+        /// Internal setter (C5): pin-severing on deactivation is a runtime-owned
+        /// private contract between <see cref="Runtime.PluginRuntimeKernel"/> and the
+        /// loader — it must not be expressible by SDK consumers, who should observe
+        /// an activated descriptor as immutable. Pulsar.Tests is covered by
+        /// InternalsVisibleTo so test fixtures can still construct descriptors.
+        /// Not <c>required</c>: CS9032 forbids a required member with a less-visible
+        /// setter; a missing type still fails loudly at activation time
+        /// (PluginLoader.ActivatePlugin throws).
+        /// </remarks>
+        public Type? ImplementationType { get; internal set; }
 
         public required IReadOnlyList<string> Dependencies { get; init; }
 
