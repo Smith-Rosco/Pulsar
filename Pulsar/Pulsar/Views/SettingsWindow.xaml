@@ -31,31 +31,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <ui:TitleBar Title="{lex:Locale SettingsWindow.Title}" Grid.Row="0">
-            <!-- 保存操作位于 TitleBar 右侧；未保存状态以紧贴保存按钮的右上角小红点 Badge 呈现，
-                 避免水平布局推挤与占位紊乱，悬浮时 ToolTip 提供状态解释 -->
-            <ui:TitleBar.TrailingContent>
-                <Grid Margin="{StaticResource Pulsar.Gap.Right.SM}" VerticalAlignment="Center">
-                    <ui:Button AutomationProperties.AutomationId="Pulsar.Settings.SaveChangesButton"
-                               AutomationProperties.Name="{lex:Locale SettingsWindow.SaveChanges}"
-                               Content="{lex:Locale SettingsWindow.SaveChanges}"
-                               Icon="{ui:SymbolIcon Save24}"
-                               Style="{StaticResource PulsarPrimaryButtonStyle}"
-                               Command="{Binding DataContext.SaveCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                               ToolTip="{lex:Locale SettingsWindow.SaveChangesTooltip}"/>
-
-                    <!-- 未保存小红点徽标 (Badge，无描边) -->
-                    <Border Width="8" Height="8"
-                            CornerRadius="4"
-                            Background="{DynamicResource SystemFillColorCautionBrush}"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Top"
-                            Margin="0,3,4,0"
-                            IsHitTestVisible="False"
-                            Visibility="{Binding DataContext.HasUnsavedChanges, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}"/>
-                </Grid>
-            </ui:TitleBar.TrailingContent>
-        </ui:TitleBar>
+        <ui:TitleBar Title="{lex:Locale SettingsWindow.Title}" Grid.Row="0"/>
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
@@ -75,9 +51,32 @@
                         <SolidColorBrush x:Key="NavigationViewSelectionIndicatorForeground" Color="Transparent"/>
                     </ui:NavigationView.Resources>
 
-                    <!-- 保存操作已上移至 TitleBar 右侧（见上方 TitleBar.RightHeader）。
-                         原位于 FooterMenuItems（左下角页脚）是违反惯例的位置，
-                         First-Timer 用户找不到保存按钮。 -->
+                    <!-- 保存操作回到侧边栏底部（2026-09-08 用户决策）：
+                         UX_REFACTOR_PROPOSAL [P1] 曾将其上移至 TitleBar（c5c3592），
+                         经复盘用户偏好原位，现回退至 FooterMenuItems。
+                         未保存状态沿用 InfoBadge 小红点，颜色改用 Fluent 令牌
+                         SystemFillColorCautionBrush（原为硬编码 #E74856）。 -->
+                    <ui:NavigationView.FooterMenuItems>
+                        <ui:NavigationViewItem
+                            AutomationProperties.AutomationId="Pulsar.Settings.SaveChangesButton"
+                            AutomationProperties.Name="{lex:Locale SettingsWindow.SaveChanges}"
+                            Content="{lex:Locale SettingsWindow.SaveChanges}"
+                            Icon="{ui:SymbolIcon Save24}"
+                            Command="{Binding DataContext.SaveCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            ToolTip="{lex:Locale SettingsWindow.SaveChangesTooltip}">
+                            <ui:NavigationViewItem.InfoBadge>
+                                <ui:InfoBadge>
+                                    <ui:InfoBadge.Template>
+                                        <ControlTemplate TargetType="ui:InfoBadge">
+                                            <Ellipse Width="8" Height="8"
+                                                     Fill="{DynamicResource SystemFillColorCautionBrush}"
+                                                     Visibility="{Binding DataContext.HasUnsavedChanges, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}"/>
+                                        </ControlTemplate>
+                                    </ui:InfoBadge.Template>
+                                </ui:InfoBadge>
+                            </ui:NavigationViewItem.InfoBadge>
+                        </ui:NavigationViewItem>
+                    </ui:NavigationView.FooterMenuItems>
                 </ui:NavigationView>
 
                 <Canvas IsHitTestVisible="False">

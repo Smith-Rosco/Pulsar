@@ -292,6 +292,13 @@ namespace Pulsar.Views.Controls
         public static readonly DependencyProperty OrbImageProperty =
             DependencyProperty.Register(nameof(OrbImage), typeof(ImageSource), typeof(SlotOrb), new PropertyMetadata(null, OnOrbImageChanged));
 
+        // [UX] 文本标签底衬开关:径向菜单中心 Slot 无需底衬(桌面背景已由 Halo scrim 保证对比度),
+        // 关闭后标签直接透出,避免浅色主题下出现刺眼的白色色块。默认 true 保持环上文本 Slot 的可读性。
+        public static readonly DependencyProperty ShowLabelBackplateProperty =
+            DependencyProperty.Register(nameof(ShowLabelBackplate), typeof(bool), typeof(SlotOrb), new PropertyMetadata(true));
+
+        public bool ShowLabelBackplate { get => (bool)GetValue(ShowLabelBackplateProperty); set => SetValue(ShowLabelBackplateProperty, value); }
+
         public string IconKey { get => (string)GetValue(IconKeyProperty); set => SetValue(IconKeyProperty, value); }
         public string Label { get => (string)GetValue(LabelProperty); set => SetValue(LabelProperty, value); }
         public double Size { get => (double)GetValue(SizeProperty); set => SetValue(SizeProperty, value); }

@@ -39,7 +39,17 @@
               Width="{Binding CanvasSize, Mode=OneWay}"
               Height="{Binding CanvasSize, Mode=OneWay}"
               HorizontalAlignment="Center"
-              VerticalAlignment="Center">
+              VerticalAlignment="Center"
+              PreviewMouseWheel="WheelHost_PreviewMouseWheel">
+
+            <!-- Wheel Hit-Test Filler:Transparent 填充使整个圆形区域(含中心)可命中滚轮。
+                 WPF 中 Background=null 的空白区不参与命中测试,此前仅圆环线与槽位球体
+                 能触发滚轮翻页;Transparent 填充可命中,尺寸与导引环一致。 -->
+            <Ellipse Width="{Binding Radius, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=2}"
+                     Height="{Binding Radius, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=2}"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Center"
+                     Fill="Transparent"/>
 
             <!-- Guide Ring -->
             <Ellipse Width="{Binding Radius, Mode=OneWay, Converter={StaticResource Multiply}, ConverterParameter=2}"

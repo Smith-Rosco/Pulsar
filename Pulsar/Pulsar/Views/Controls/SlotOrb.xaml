@@ -322,6 +322,11 @@
                             <Setter Property="Background" Value="{DynamicResource Theme.Orb.Label.Background}"/>
 
                             <Style.Triggers>
+                                <!-- ShowLabelBackplate=False:径向菜单中心 Slot 关闭底衬,
+                                     标签文本直接透出,不叠加白色/深色色块 -->
+                                <DataTrigger Binding="{Binding ShowLabelBackplate, ElementName=OrbRoot}" Value="False">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                </DataTrigger>
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding RenderGlyph, ElementName=OrbRoot}" Value=""/>

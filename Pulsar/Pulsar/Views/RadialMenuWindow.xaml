@@ -192,7 +192,7 @@
                         </Grid.RenderTransform>
                         
                         <!-- Normal slot orb (overlay/fallback) -->
-                        <controls:SlotOrb 
+                        <controls:SlotOrb
                             DataContext="{Binding CenterSlot}"
                             AutomationProperties.AutomationId="{Binding SlotAutomationId}"
                             Size="{Binding Size}"
@@ -204,7 +204,8 @@
                             BadgeCount="{Binding BadgeCount}"
                             CustomFill="{Binding CustomFillBrush}"
                             CustomStroke="{Binding CustomStrokeBrush}"
-                             CustomForeground="{Binding CustomForegroundBrush}">
+                             CustomForeground="{Binding CustomForegroundBrush}"
+                             ShowLabelBackplate="False">
                               <controls:SlotOrb.Style>
                                 <Style TargetType="controls:SlotOrb">
                                     <!-- Default: Transparent (Preview Visible) -->

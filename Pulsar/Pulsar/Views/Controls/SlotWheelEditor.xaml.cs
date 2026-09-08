@@ -282,6 +282,26 @@ namespace Pulsar.Views.Controls
             }
         }
 
+        private void WheelHost_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            // 槽位设置页:鼠标悬停在可视化轮盘范围内时,滚轮直接翻页。
+            // 拖拽进行中不响应,避免翻页打断拖放操作。
+            if (Vm == null || _isDragging || Vm.TotalPages <= 1)
+            {
+                return;
+            }
+
+            e.Handled = true;
+            if (e.Delta > 0)
+            {
+                Vm.GoToPage(Vm.CurrentPage - 1);
+            }
+            else if (e.Delta < 0)
+            {
+                Vm.GoToPage(Vm.CurrentPage + 1);
+            }
+        }
+
         private void WheelItems_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
             var item = FindItem(e.OriginalSource as DependencyObject);
