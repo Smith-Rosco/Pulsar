@@ -1,8 +1,8 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="Pulsar/Pulsar/Assets/Brand/wordmark.png">
-  <img alt="Pulsar" src="Pulsar/Pulsar/Assets/Brand/wordmark.png">
+  <source media="(prefers-color-scheme: dark)" srcset="Pulsar/Pulsar/Assets/Icons/pulsar-dark-256.png">
+  <img alt="Pulsar" src="Pulsar/Pulsar/Assets/Icons/pulsar-light-256.png" width="128" height="128">
 </picture>
 
 # Pulsar
@@ -13,7 +13,7 @@
 [![Release Version](https://img.shields.io/badge/Release-v1.11.0-2563EB.svg?style=flat-square&logo=github)](https://github.com/Smith-Rosco/Pulsar/releases)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(x64)-0078D4.svg?style=flat-square&logo=windows)](https://www.microsoft.com/windows)
 [![License](https://img.shields.io/badge/License-MIT-10B981.svg?style=flat-square)](LICENSE)
-[![Language](https://img.shields.io/badge/Language-zh--CN%20%7C%20en-8B5CF6.svg?style=flat-square)](#-internationalization)
+[![Language](https://img.shields.io/badge/Language-zh--CN%20%7C%20en-8B5CF6.svg?style=flat-square)](README.md)
 
 <br/>
 
@@ -21,139 +21,133 @@
 
 <br/>
 
-[🚀 Quick Start](#-quick-start) · [✨ Features](#-features) · [🎬 Demo](#-demo) · [🧑‍💻 For Developers](#-for-developers) · [🤝 Community](#-community--contributing)
+[Quick Start](#quick-start) · [What it does](#what-it-does) · [vs. Similar Tools](#vs-similar-tools) · [Demo](#demo) · [For Developers](#for-developers) · [Community](#community--contributing)
 
 </div>
 
 ---
 
-## 💡 What is it?
+## What is it?
 
-**Pulsar** is an office automation workbench for Windows, built for people who spend their days stuck repeating the same operations.
+Pulsar is an office automation workbench for Windows. Press a hotkey and a circular menu opens next to your cursor; high-frequency actions become a single slide-and-release gesture.
 
-Tired of redoing spreadsheets in Excel/WPS? Logging into one intranet system after another? Filling in the same forms over and over? — Press a hotkey and a circular menu appears right next to your cursor. Every high-frequency action becomes a one-shot gesture you can trigger by sliding toward it.
+It sits apart from search launchers, plain radial menus and RPA tools. Pulsar covers what they leave out: legacy intranet systems that can't take browser extensions, login forms you fill by hand every time, and macros you keep re-running in Excel/WPS.
 
-**In one sentence**: it brings automation to the legacy office systems that "modern tools can't handle" — turning them into actions on a hotkey.
-
-> **How it differs from similar tools**: Pulsar is not just another radial-menu launcher — it is an **office-automation engine** that turns repetitive office work into one-flick actions: deep Excel/WPS macro support, legacy intranet web scripts, and secure credential injection. That depth is what generalized action libraries don't cover. We are a **mouse-plus-hotkey office workbench**, not a search launcher: we don't compete with search boxes — we handle the legacy-system automation they can't.
-
-### The three things it does best
-
-| | Scenario | Result |
-| :--- | :--- | :--- |
-| 📊 **One-click macros** | Repetitive spreadsheets & data work in Excel/WPS | Saved macros become one action on the wheel — fire and forget |
-| 🌐 **Legacy web automation** | Intranet systems without browser-extension/userscript support | Custom one-click entries for old web pages — repetitive entry becomes automated |
-| 🔐 **Secure fill & sign-in** | Logging into many systems, filling forms | Credentials encrypted & stored locally; inject once, auto-submit |
-
-### Nice-to-haves
-
-- **Radial menu**: actions live at fixed positions — build muscle memory and operate "blind", no more digging through menus;
-- **Smart window switching**: jump to the window you want; not running? Pulsar launches it for you;
-- **Global hotkeys**: summon Pulsar from any app, no need to switch back first;
-- **Beginner friendly**: a first-run tutorial gets you started in minutes, plus ready-made office action presets and a script example library;
-- **Bilingual**: switch the UI between Simplified Chinese and English anytime.
+If you rebuild the same spreadsheet every day, sign into several intranet systems in a row, or fill in the same form over and over, this is for you.
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
-### ⬇️ Download
+### Download
 
-Each release ships two packages — pick the one that fits:
+The two packages differ only in whether the runtime is bundled:
 
-| Package | What it is | Size | Best for |
-| :--- | :--- | :--- | :--- |
-| **Standalone (full)** | Self-contained — **extract & run**, no dependencies to install | ~80 MB | Most users; the hassle-free choice |
-| **Portable (lightweight)** | Tiny download, but requires the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) first | ~8.5 MB | Slow connections / tight disk space |
+| Package | What it is | Size |
+| :--- | :--- | :--- |
+| **Standalone (full)** | Self-contained, extract & run | ~80 MB |
+| **Portable (lightweight)** | Needs the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) installed first | ~8.5 MB |
 
-- **Standalone**: [⬇️ Pulsar-1.11.0-full.zip](https://github.com/Smith-Rosco/Pulsar/releases/download/v1.11.0/Pulsar-1.11.0-full.zip)
-- **Portable**: [⬇️ Pulsar-1.11.0-portable.zip](https://github.com/Smith-Rosco/Pulsar/releases/download/v1.11.0/Pulsar-1.11.0-portable.zip)
+Most people want the standalone build. Pick portable if the download is slow or disk space is tight.
+
+- **Standalone**: [Pulsar-1.11.0-full.zip](https://github.com/Smith-Rosco/Pulsar/releases/download/v1.11.0/Pulsar-1.11.0-full.zip)
+- **Portable**: [Pulsar-1.11.0-portable.zip](https://github.com/Smith-Rosco/Pulsar/releases/download/v1.11.0/Pulsar-1.11.0-portable.zip)
 - Older versions & release notes: [Releases page](https://github.com/Smith-Rosco/Pulsar/releases)
 
-### 🚀 Usage
+### Usage
 
-1. Download your package, **extract** it into a stable folder (e.g. `C:\Pulsar`), and double-click `Pulsar.exe` — Pulsar waits in your system tray;
-2. Press **`Ctrl+Shift+Q`** to summon the command menu (or **`Ctrl+Q`** for switch mode);
+1. Extract into a stable folder (e.g. `C:\Pulsar`) and double-click `Pulsar.exe` — Pulsar waits in your system tray;
+2. Press `Ctrl+Shift+Q` to summon the command menu, `Ctrl+Q` for switch mode;
 3. Slide toward the action you want and release — it executes instantly;
-4. Want to tweak things? Open Settings from Pulsar.
+4. Settings live in the settings window.
 
-> 💡 First time? Follow the built-in **onboarding tutorial** — you'll be up to speed in minutes.
+> First run includes an onboarding tutorial. It takes a few minutes.
 
 ---
 
-## ✨ Features
+## What it does
 
-### 1. 📊 One-click macros (Excel/WPS)
+### One-click macros (Excel/WPS)
 
-Save your frequently used macros as "one action on the wheel". No more opening the VBA editor every time you need a report or a cleanup — slide once, the macro runs.
+Save a macro you use often as one action on the wheel. Reports and data cleanup no longer mean opening the VBA editor — slide once and the macro runs.
 
-### 2. 🌐 Legacy web automation
+### Legacy web automation
 
-Many corporate intranet systems are too old for modern browser extensions or userscripts. Pulsar lets you build one-click entries for those pages, turning daily repetitive web work into automation.
+A lot of corporate intranet systems are too old for browser extensions or userscripts. Pulsar injects scripts from the desktop layer and gives those pages one-click entries.
 
-### 3. 🔐 Secure fill & sign-in
+### Secure fill & sign-in
 
-Store frequently used usernames and passwords locally with system-level encryption. At login, inject them with one action — auto-fill and auto-submit, with no plaintext credentials ever touching disk.
+Credentials are encrypted with Windows DPAPI and stored on your machine, then injected and submitted in one action. No plaintext on disk. Injection happens as text injection at the keyboard layer, so it isn't limited to web pages: any desktop app with a username + password box works too.
 
-### 4. 🎯 Radial menu: operate by muscle memory
+### Radial menu
 
-- **Command mode** (`Ctrl+Shift+Q`): shows the actions available right now;
-- **Switch mode** (`Ctrl+Q`): fast window switching; auto-launches apps that aren't running;
-- Frequent actions sit at fixed positions — practice a few times and you can go "blind", no more hunting through menus.
+- **Command mode** (`Ctrl+Shift+Q`): the actions available right now;
+- **Switch mode** (`Ctrl+Q`): window switching, auto-launching apps that aren't running;
+- Actions stay at fixed positions, so once you've used it for a while you can operate by muscle memory instead of scanning menus.
 
 <div align="center">
-  <img src="Pulsar/Pulsar/Assets/Brand/demo.webp" width="640" alt="Pulsar Radial Menu Demo" />
+  <img src="Docs/media/release/demos/demo-radial-menu.webp" width="640" alt="Pulsar Radial Menu Demo" />
 </div>
 
-### 5. 🪟 Smart window switching
-
-Jump straight to the window you want; if the app isn't running, Pulsar starts it for you.
-
-### 6. 🧩 Built-in tools
+### Built-in tools
 
 | Tool | What it does |
 | :--- | :--- |
-| **Secret Fill** | Encrypted credential storage; inject into any window with one action |
-| **App Switcher** | Smart window switching; auto-launches apps that aren't running |
+| **Secret Fill** | Encrypted credential storage; inject into any window in one action |
+| **App Switcher** | Window switching; auto-launches apps that aren't running |
 | **Pulsar Control** | Open settings, quick-add context apps |
-| **Command Runner** | Launch apps/files/folders/URLs; send keystrokes to the foreground window |
-| **VBA Script Runner** | Run saved Excel/WPS macros with one click |
+| **Command Runner** | Launch apps / files / folders / URLs; send keystrokes to the foreground window |
+| **VBA Script Runner** | Run saved Excel/WPS macros in one click |
 | **Web Scripts** | Run custom scripts on legacy intranet web pages |
 
-### 7. 🎓 Beginner friendly
+### Getting started
 
 - First-run onboarding tutorial — learn the core operations step by step;
-- Built-in **script editor** and **example library** — start from examples even if you've never written a script;
-- **Office action preset packs** — install once, use immediately;
+- Built-in script editor and example library — start from an example if you've never written a script;
+- Office action preset packs — install and use;
 - UI in Simplified Chinese / English.
 
 ---
 
-## 🎬 Demo
+## vs. Similar Tools
 
-### 📊 One-click macros
+Pick a tool by the problem you need to solve, not by which one is "stronger":
 
-A typical messy sheet — inconsistent formats, random colours, unreasonable column widths. Summon the wheel, slide toward the macro slot, release — the script runs on its own: unified fonts, stray colours cleared, columns auto-fitted, header frozen. The report cleans itself up.
+| Your need | Recommended tool | Why |
+| :--- | :--- | :--- |
+| Taming legacy intranet systems (macros + old web pages + secure sign-in) | **Pulsar** | Built for legacy office systems: desktop-layer script injection + DPAPI-encrypted credential injection + fixed-position radial menu |
+| Universal button panel with a huge library of ready-made actions | [Quicker](https://getquicker.net) | The strongest community-shared action-library ecosystem, with a handy context panel; closed-source, and the free tier caps daily triggers |
+| Keyboard-first: search files, search everything | [Flow Launcher](https://www.flowlauncher.com) · [Microsoft PowerToys](https://learn.microsoft.com/windows/powertoys/) (Run / Command Palette) | The benchmark search launchers; Pulsar deliberately has no search box — complementary, not competing |
+| Cross-platform / pure radial menu | [Kando](https://github.com/kando-menu/kando) · [StarPie](https://github.com/SoftBlack42/StarPie) · [RadialActions](https://github.com/danielchalmers/RadialActions) | Great open-source radial / circular menus for launching apps, files and shortcuts — no office-automation layer |
+| Long-running, cross-system heavy process automation | Power Automate Desktop · Yingdao RPA (影刀) | Professional RPA tools; Pulsar focuses on high-frequency micro-actions you finish with one flick — when you outgrow it, they're the upgrade path |
+
+---
+
+## Demo
+
+### One-click macros
+
+A typical messy sheet: inconsistent formats, random colours, unreasonable column widths. Summon the wheel, slide toward the macro slot, release. The script unifies fonts, clears the stray colours, auto-fits the columns and freezes the header row.
 
 <div align="center">
   <img src="Docs/media/release/demos/demo-1-one-key-macro.webp" width="640" alt="One-click macro demo" />
 </div>
 
-> 💡 Can't write macros? Paste the [**VBA script AI prompt**](./Docs/guides/AI_PROMPT_VBA_RUNNER.md) into any AI chat, describe what you need, and get a ready-to-run macro script.
+> Can't write macros? Paste the [VBA script AI prompt](./Docs/guides/AI_PROMPT_VBA_RUNNER.md) into any AI chat, describe what you need, and you'll get a macro script that runs as-is.
 
-### 🌐 Taming legacy systems
+### Taming legacy systems
 
-First, the classic routine on a decade-old intranet reporting portal: **sign in → query → export**, click by click. Now refresh the page and do one "summon, slide, release" — sign-in, query and export run back-to-back, and the CSV downloads itself. Pulsar injects scripts from the desktop layer, so systems that can't take browser extensions get automated anyway.
+On this decade-old intranet reporting portal, sign in → query → export is three separate click-throughs. With Pulsar it's one summon, slide and release: all three run, and the CSV downloads itself.
 
 <div align="center">
   <img src="Docs/media/release/demos/demo-2-tame-legacy.webp" width="640" alt="Taming legacy systems demo" />
 </div>
 
-> 💡 Can't write scripts? Paste the [**web-script AI prompt**](./Docs/guides/AI_PROMPT_BOOKMARKLET.md) into any AI chat — it even asks the AI to hand over a "DOM contract checklist" for future page redesigns.
+> Can't write scripts? Paste the [web-script AI prompt](./Docs/guides/AI_PROMPT_BOOKMARKLET.md) into any AI chat. It also asks for a "DOM contract checklist" to re-verify after page redesigns.
 
-### 🔐 Sign in, one slide
+### Sign in, one slide
 
-First, type the username and password by hand. Then clear the field, slide toward the sign-in slot — credentials are injected and submitted automatically in one motion. This works via **text injection** at the keyboard layer, so it isn't limited to web pages: any desktop app with a "username + password" login box works too.
+Type the username and password by hand once. Then clear the field, slide toward the sign-in slot, and the credentials are injected and submitted.
 
 <div align="center">
   <img src="Docs/media/release/demos/demo-3-one-slide-login.webp" width="640" alt="One-slide sign-in demo" />
@@ -161,24 +155,7 @@ First, type the username and password by hand. Then clear the field, slide towar
 
 ---
 
-## 🌐 Internationalization
-
-Switch the UI language anytime from the settings page:
-
-| Language | Status |
-| :--- | :---: |
-| 🇨🇳 简体中文 | 🟢 Full support |
-| 🇺🇸 English | 🟢 Full support |
-
----
-
-## 🧭 Roadmap & AI Vision
-
-We believe the next step of office automation is "**describe what you need, and get a ready-made action**". The roadmap has a "AI-generated slot configuration" PoC direction penciled in (AI builds wheel actions from a plain-language scenario) — this is an **exploratory vision note**, not a delivery promise; the core local automation capabilities are unaffected.
-
----
-
-## 🧑‍💻 For Developers
+## For Developers
 
 Pulsar is MIT-licensed and open to contributions — code, plugins, and ideas are all welcome.
 
@@ -187,9 +164,11 @@ Pulsar is MIT-licensed and open to contributions — code, plugins, and ideas ar
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** · **[PLUGIN_DEVELOPMENT.md](./PLUGIN_DEVELOPMENT.md)** · **[Docs index](./Docs/README.md)**;
 - Please read [CONTRIBUTING.md](./Docs/CONTRIBUTING.md) before contributing.
 
+Plugins come in two tiers: Core plugins can't be disabled, while Extension plugins sit behind a circuit breaker — three crashes within a minute disables one for 60 seconds, so a bad plugin can't take the host down.
+
 ---
 
-## 🤝 Community & Contributing
+## Community & Contributing
 
 - **Changelog**: [CHANGELOG.md](./CHANGELOG.md) — version history
 - **Contributing guide**: [CONTRIBUTING.md](./Docs/CONTRIBUTING.md) — how to contribute
@@ -197,12 +176,12 @@ Pulsar is MIT-licensed and open to contributions — code, plugins, and ideas ar
 
 ---
 
-## 📌 Project Status
+## Roadmap
 
-Pulsar is in active development. The architecture, plugin API, and core features are stable, and the built-in tool & plugin ecosystem keeps growing.
+Pulsar is in active development; the architecture, plugin API and core features are stable. "Describe a scenario in plain language and let AI generate the wheel configuration" is being explored, with no schedule attached — nothing in the local automation stack depends on it.
 
 ---
 
-## 📄 License
+## License
 
 MIT — see [LICENSE](./LICENSE).

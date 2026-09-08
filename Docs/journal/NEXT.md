@@ -11,12 +11,12 @@
 - [ ] ~~Fan 位置问题收尾（change `2026-09-05-cascade-submenu-fan-qa`，QA 暂停中）：用户打完游戏后按 `submenu-radius-geometry-amendment-draft.md` §5 拍 4 张现象照 → 草案定稿 → ADR-011 追加 Amendment（推荐方案 A：Fan 移根环外侧 r≈120；Ring 视现象）→ 实施 + 新增「子项互不重叠/不撞中心圆」回归断言 → A3/A4 + B–H 全部用例 → 3.2/4.x 收口归档。当前真实配置仍是 QA fixture（`Profiles.json.bak-before-fan-qa` 还原点）；E2E 待用户有空再跑。~~ **已过时（2026-09-06）：**ADR-024 D1 已定义 Fan 几何（R+gap=160、±30°、同心），本会话经 GEOMETRY-TRACE + DPI 换算实测与规格吻合；三 bug 修复已 E2E PASS。旧草案（r≈120）不再适用。
 - [ ] 观察 1-2 个会话：AGENTS.md 瘦身后 agent 是否经 §3 指针去 `Docs/lessons/` 取坑位全文（防"全表靠内联"回潮，ADR-022 后续）。
 - [ ] 观察若干会话：确认无 harness 再向 `.workbuddy/memory/` 写正文（若复发 → 考虑 Junction 收口，ADR-019 后续）。**2026-09-05 检查：合规**——仅一行指向 journal 的指针（183B），无正文复发。
-- [ ] OpenWiki 补缺页：余额恢复后 `openwiki --update` 补 3 页（architecture/system-overview · architecture/window-switching · quickstart）；反复跳过的页可临时切 deepseek-v4-pro。注意 `.github/workflows/openwiki-update.yml` 每天 08:00 UTC 定时跑，推 GitHub + 配 key 会每日消耗额度；本地补丁 `repository-runner.js`（2 处 "LOCAL PATCH (2026-09-05)"）在 `npm update -g openwiki` 后需重打。
+- [x] ~~OpenWiki 补缺页：余额恢复后 `openwiki --update` 补 3 页（architecture/system-overview · architecture/window-switching · quickstart）；反复跳过的页可临时切 deepseek-v4-pro。注意 `.github/workflows/openwiki-update.yml` 每天 08:00 UTC 定时跑，推 GitHub + 配 key 会每日消耗额度；本地补丁 `repository-runner.js`（2 处 "LOCAL PATCH (2026-09-05)"）在 `npm update -g openwiki` 后需重打。~~ **已取消（2026-09-08 用户裁决）**：成本高、产出效果不佳；现有 `openwiki/` 内容维持现状。
 - [x] ~~设置页 UI 精简：保存按钮改为图标+文字"保存"；长文本描述精简化或将详情藏入 tooltip，保证观感简洁有序。~~ **已完成**：SettingsWindow 保存按钮加 Content（Save Changes/保存更改）；SettingsGeneralPage 4 处偏长 Description 精简 + 新增 DescriptionToolTip（QuickSwitchTimeout / RightDragSwitcherModifier / RightDragActionModifier / Gesture.EnableToggle），中英双语 resx 同步；build 0 警告 0 错误，全量 1227/1227 通过。
 - [ ] 子轮盘交付待用户真机验收：三 bug 修复（`artifacts/bug1-after-fix` · `bug2-after-fix` · `bug3-geometry`）+ ADR-024 v1.2.1 两项几何优化（Fan 扇区约束 orb 外缘收进扇区 / Ring 中心=父 Slot，`artifacts/fan-sector-constraint-2` · `ring-center-visible-4`），E2E 均已 PASS。
 - [x] ~~提交未落地改动（34 文件，含 ADR-024 v1.2.0 + 三 bug 修复 + E2E 基建 + 扇区/回归单测）：等用户确认后 commit（当前 main 工作树）。~~ **已提交并 push**：`0cab1ff`/`d978d2c`/`8c236da`（ADR-024 相关），main 与 origin/main 同步。
 - [x] ~~**openspec repositioning Phase 2（宣传截图）**：E2E 管线 + 4 张 1920×1080 首屏用图 + `Docs/media/release/` 目录约定。~~ **已提交** `893870c`，4 张 PNG 已入库，main 与 origin/main 同步。
-- [ ] **openspec repositioning Phase 3（Demo 视频）**：三支脚本已定稿并入 `93044dc`（`Docs/media/release/videos/demo-video-scripts.md`，Excel 跑宏 40s / 老旧网页脚本注入 45s / 登录填表自动化 40s）；剩余 3.2 录制剪辑 + 3.3 mp4 入库，需真机录屏。
+- [x] ~~**openspec repositioning Phase 3（Demo 视频）**：三支脚本已定稿并入 `93044dc`（`Docs/media/release/videos/demo-video-scripts.md`，Excel 跑宏 40s / 老旧网页脚本注入 45s / 登录填表自动化 40s）；剩余 3.2 录制剪辑 + 3.3 mp4 入库，需真机录屏。~~ **已取消（2026-09-08 用户裁决）**：现有动图已足够，不再录视频；脚本文档保留备查。
 - [x] ~~**openspec repositioning Phase 4（README 重写）**：`README.md`（zh）首屏定位语 + 三支柱场景 + 真实截图 + 差异化一句话；`README_EN.md` 同步；自查不再以「启动器」自居。~~ **已完成**（`93044dc` 安全批次）。
 - [x] ~~可选清理：`MenuSession.cs` 的 `[CLICK-TRACE]`/`[EXEC-TRACE]`/`[GEOMETRY-TRACE]`/`[VISUAL-TRACE]` Debug 日志（提交前或后续随手删）。~~ **已完成**：7 条 trace 日志全部移除（CLICK-TRACE ×3 / EXEC-TRACE ×2 / GEOMETRY-TRACE ×1 / VISUAL-TRACE ×1），无残留变量；build 0 警告 0 错误，全量 1227/1227 通过。
 - [x] ~~openspec 四 change 纯代码剩余项（in-app-auto-update 3.x DI集成 / installer 3.1 单实例 / user-manual 3.1 Release说明）。~~ **已完成**：UpdateOrchestrator + About UI + 启动集成 + 命名 Mutex 单实例 + RELEASE_NOTES-1.11.0.md；build 0 警告 0 错误，全量 1227/1227。
@@ -25,9 +25,8 @@
   - ~~installer 2.4：真实安装→启动→覆盖升级→卸载（数据保留验证）~~ ✅ 静默安装→运行→静默卸载全链路通过；%AppData%\Pulsar 103 文件保留
   - ~~installer 3.2/3.3：双实例交叉验证（安装版↔Standalone）~~ ✅ Mutex 单实例保护验证通过（第二个实例 5s 内自动退出）
   - ~~user-manual 3.2/3.3：资产上传 + 打 tag v1.11.0 发布 GitHub Release~~ ✅ v1.11.0 已发布（三资产，notes 无 BOM 中文正常）
-- [ ] **剩余需外部环境的项**（本机无法完成）：
+- [ ] **剩余需外部环境的项**（本机无法完成；Demo 视频已于 2026-09-08 取消）：
   - installer 1.3：干净 VM 冒烟（无 .NET Runtime 环境启动 Standalone zip 验证自包含运行时）
-  - repositioning 3.2/3.3：Demo 视频录制（3 支脚本已定稿 `Docs/media/release/videos/demo-video-scripts.md`，需真机录屏+剪辑）
 
 - [x] ~~**架构审查 C2 未竟（2026-09-07 暂停，等用户裁决）**~~ **已收口**（commit 见下方提交状态行）：用户裁决走 (a)。前门新增 `EvaluateStructural(snapshot)` / `EvaluateSnapshot(snapshot, scope)` 两阶段词汇；`WindowInventoryService` 改注入前门 evaluator，`IWindowInventoryService` 移除黑名单谓词参数（作用域按路径固定）；coordinator 不再转发谓词。新增前门词汇测试 10 + inventory 协议测试 4（该文件首次有网）；全量 1248/1248。**需真机回归窗口切换（P1 项 3）。**
 - [ ] 架构审查 C4（设置面 Draft 泄漏，2026-09-07 口径已修正）：不是「1 属性 + 10 处访问」的机械替换——需给 `SettingsEditorSession` 设计变更 API（写点 :112/:492/:952）+ 定脏标记归属 + 绑定刷新语义，Session 0 专属测试。grill 第二轮建议与 C5 同批、测试先行，**等用户裁决**（延期 or 本会话做）。**2026-09-07 用户已裁决：(b) 与 C5 合并进专门会话。**
@@ -38,6 +37,7 @@
 - [ ] **低成本批次 6 项已实施未提交**（2026-09-08，全量 1269/1269）：S2（RebuildCache 补调 ConfigureHookMode）/ S3（wizard 走 dispatcher seam）/ C7（PluginLocalization.ConventionLookup 收口）/ C6（DialogService.HasTemplate 校验+集成映射测试）/ C8（usage tracker 注入 clock）。**待用户确认后 commit+push**（含 journal/NEXT 本日更新）。
 - [x] ~~**S4 删除 DemandPermission 死链**（grill Q6，护栏 1 命中暂停）~~ **已落地**（2026-09-08，用户「同意删除」）：删除 `IPluginPermissionInterceptor` 接口 + 2 adapter + `PluginPermissionDeniedException` + `PluginExecutionContext` 属性/ctor/`DemandPermission` + kernel attach；`PluginPermissionService`/`IsKnown` 真实权限门保留；TESTING_GUIDE.md 过时示例同步修正；全量 1269/1269。
 - [ ] **剩余项目在 handoff**：`%TEMP%\pulsar-handoff-2026-09-08.md` —— C1（Execution Handoff 收束）/ C2（TrayService 拆分）/ C4（执行-拆除竞态 seam）/ C5（ImplementationType 不可变性）+ S1 附注；推荐顺序 C1 → C4 → C5 → C2。
+- [x] ~~README 对比章节（2026-09-08 用户新增「🆚 与同类工具对比」+「✨ 四个不可替代点」，README.md / README_EN.md 双语 + 导航锚点）未提交，可与低成本批次一并 commit+push。~~ **已随 2026-09-08 清空工作树批次提交**（含去 AI 味重写、Design/icon-concepts 纳管、NEXT 取消项）。
 
 ## 已完成（历史保留）
 

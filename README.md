@@ -1,8 +1,8 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="Pulsar/Pulsar/Assets/Brand/wordmark.png">
-  <img alt="Pulsar" src="Pulsar/Pulsar/Assets/Brand/wordmark.png">
+  <source media="(prefers-color-scheme: dark)" srcset="Pulsar/Pulsar/Assets/Icons/pulsar-dark-256.png">
+  <img alt="Pulsar" src="Pulsar/Pulsar/Assets/Icons/pulsar-light-256.png" width="128" height="128">
 </picture>
 
 # Pulsar
@@ -13,7 +13,7 @@
 [![Release Version](https://img.shields.io/badge/Release-v1.11.0-2563EB.svg?style=flat-square&logo=github)](https://github.com/Smith-Rosco/Pulsar/releases)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(x64)-0078D4.svg?style=flat-square&logo=windows)](https://www.microsoft.com/windows)
 [![License](https://img.shields.io/badge/License-MIT-10B981.svg?style=flat-square)](LICENSE)
-[![Language](https://img.shields.io/badge/Language-zh--CN%20%7C%20en-8B5CF6.svg?style=flat-square)](#-多语言支持)
+[![Language](https://img.shields.io/badge/Language-zh--CN%20%7C%20en-8B5CF6.svg?style=flat-square)](README_EN.md)
 
 <br/>
 
@@ -21,139 +21,133 @@
 
 <br/>
 
-[🚀 快速开始](#-快速开始) · [✨ 功能特性](#-功能特性) · [🎬 演示](#-演示) · [🧑‍💻 开发者](#-开发者) · [🤝 社区与贡献](#-社区与贡献)
+[快速开始](#快速开始) · [它能做什么](#它能做什么) · [与同类工具对比](#与同类工具对比) · [演示](#演示) · [开发者](#开发者) · [社区与贡献](#社区与贡献)
 
 </div>
 
 ---
 
-## 💡 这是什么？
+## 这是什么
 
-**Pulsar** 是一款 Windows 办公自动化工作台，专为每天被重复操作困住的办公族打造。
+Pulsar 是 Windows 上的办公自动化工作台。按一下热键，圆形菜单在鼠标旁边展开，高频操作变成一次滑动就能触发。
 
-每天在 Excel/WPS 里重复制表？在好几个内网系统之间来回登录？一遍遍填同一份表单？——按下热键，一个圆形菜单立刻在你鼠标旁展开，这些高频动作全部变成"滑一下就能触发"的一键操作。
+它和搜索启动器、纯轮盘菜单、RPA 都不是一类东西。Pulsar 处理的是它们覆盖不到的部分：装不上浏览器扩展的老旧内网系统、每次都要手填的登录表单、Excel/WPS 里反复要跑的宏。
 
-**一句话**：把"现代工具管不了"的老旧办公系统，也变成热键上的一个动作。
+如果你每天在 Excel 里重复制表、在几个内网系统之间来回登录、反复填同一份表单，可以接着往下看。
 
-> **和同类工具的区别**：Pulsar 不是又一个轮盘菜单，而是把重复办公操作变成一键动作的**办公自动化引擎**——深度支持 Excel/WPS 宏、老旧内网网页脚本与安全凭据注入，这是泛化动作库覆盖不到的深度。我们是**鼠标+热键的办公工作台**，不是搜索启动器：我们不和搜索框竞争，我们处理的是它们管不了的老系统自动化。
+---
 
-### 它最擅长这三件事
+## 快速开始
 
-| | 场景 | 效果 |
+### 下载
+
+两个包的区别只在于运行环境是否自带：
+
+| 版本 | 说明 | 体积 |
 | :--- | :--- | :--- |
-| 📊 **一键跑宏** | Excel/WPS 里重复的制表、数据处理 | 已保存的宏变成轮盘上的一个动作，一点即跑 |
-| 🌐 **老旧网页自动化** | 不支持浏览器插件/油猴的内网系统 | 为网页定制一键操作入口，重复录入变自动化 |
-| 🔐 **安全填表登录** | 多个系统反复登录、填表 | 账号密码加密保存在本地，一键注入、自动提交 |
+| **独立版（full）** | 自带运行环境，解压即用 | ~80 MB |
+| **轻量版（portable）** | 需先安装 [.NET 8 桌面运行时](https://dotnet.microsoft.com/download/dotnet/8.0) | ~8.5 MB |
 
-### 还有这些贴心功能
+大多数人选独立版；下载慢或者硬盘紧张时用轻量版。
 
-- **径向菜单**：动作固定在固定方位，练几次就能凭肌肉记忆"闭眼操作"，不再翻菜单；
-- **智能窗口切换**：快速切到目标窗口，应用没打开还会自动帮你启动；
-- **全局热键**：在任何程序里都能随时唤出，不用先切回 Pulsar；
-- **新手友好**：首次启动的引导教程带你几分钟上手，还有现成的办公动作预设包和脚本示例库可以直接用；
-- **中英双语**：界面语言随时切换。
+- **独立版**：[Pulsar-1.11.0-full.zip](https://github.com/Smith-Rosco/Pulsar/releases/download/v1.11.0/Pulsar-1.11.0-full.zip)
+- **轻量版**：[Pulsar-1.11.0-portable.zip](https://github.com/Smith-Rosco/Pulsar/releases/download/v1.11.0/Pulsar-1.11.0-portable.zip)
+- 历史版本与更新记录：[Releases 页面](https://github.com/Smith-Rosco/Pulsar/releases)
 
----
+### 使用
 
-## 🚀 快速开始
+1. 解压到固定目录（如 `C:\Pulsar`），双击 `Pulsar.exe`，Pulsar 会在系统托盘后台待命；
+2. 按 `Ctrl+Shift+Q` 唤出命令菜单，`Ctrl+Q` 进入切换模式；
+3. 朝目标动作的方向滑过去，松开即执行；
+4. 配置在设置里改。
 
-### ⬇️ 下载
-
-每个版本提供两种安装包，按需选择：
-
-| 版本 | 说明 | 体积 | 适合谁 |
-| :--- | :--- | :--- | :--- |
-| **独立版（full）** | 自带运行环境，**解压即用**，任何电脑都能直接跑 | ~80 MB | 大多数用户，省心首选 |
-| **轻量版（portable）** | 体积小巧，但需要先安装 [.NET 8 桌面运行时](https://dotnet.microsoft.com/download/dotnet/8.0) | ~8.5 MB | 下载慢 / 硬盘紧张的用户 |
-
-- **独立版**：[⬇️ Pulsar-1.11.0-full.zip](https://github.com/Smith-Rosco/Pulsar/releases/download/v1.11.0/Pulsar-1.11.0-full.zip)
-- **轻量版**：[⬇️ Pulsar-1.11.0-portable.zip](https://github.com/Smith-Rosco/Pulsar/releases/download/v1.11.0/Pulsar-1.11.0-portable.zip)
-- 更多历史版本与更新记录：[Releases 页面](https://github.com/Smith-Rosco/Pulsar/releases)
-
-### 🚀 使用
-
-1. 下载对应版本并**解压**到一个固定文件夹（如 `C:\Pulsar`），双击 `Pulsar.exe` 运行，Pulsar 会在系统托盘后台待命；
-2. 按 **`Ctrl+Shift+Q`** 唤出命令菜单（或 **`Ctrl+Q`** 进入切换模式）；
-3. 朝着目标动作的方向滑过去、松开，动作立即执行；
-4. 想调整配置？在 Pulsar 设置里打开即可。
-
-> 💡 首次使用建议跟着内置的**新手引导**走一遍，几分钟就能上手。
+> 首次启动有引导教程，跟着走一遍大概几分钟。
 
 ---
 
-## ✨ 功能特性
+## 它能做什么
 
-### 1. 📊 一键跑宏（Excel/WPS）
+### 一键跑宏（Excel/WPS）
 
-把你常用的宏保存成"轮盘上的一个动作"。以后做报表、整理数据，不用再打开 VBA 编辑器——滑一下，宏自动跑完。
+把常用的宏存成轮盘上的一个动作。之后做报表、整理数据不用再开 VBA 编辑器，滑一下就跑完。
 
-### 2. 🌐 老旧网页自动化
+### 老旧网页自动化
 
-很多公司内网系统年代久远，不支持现代浏览器扩展或油猴脚本。Pulsar 可以为这类网页定制一键操作入口，把每天重复的网页操作变成自动执行。
+很多公司内网系统年代久远，装不了浏览器扩展或油猴脚本。Pulsar 从桌面层注入脚本，给这类网页加一键操作入口。
 
-### 3. 🔐 安全填表与登录
+### 安全填表与登录
 
-常用账号密码用系统级加密保存在你自己电脑上。需要登录时一键注入，自动填表、自动提交——密码不落地明文，也不用担心输错。
+账号密码用 Windows DPAPI 加密存在本机，需要时一键注入并自动提交，明文不落地。注入走键盘层的文本注入，所以不限于网页，「账号框 + 密码框」的桌面软件登录窗同样适用。
 
-### 4. 🎯 径向菜单：凭肌肉记忆操作
+### 径向菜单
 
 - **命令模式**（`Ctrl+Shift+Q`）：展示当前可用的快捷动作；
-- **切换模式**（`Ctrl+Q`）：快速切换窗口，应用未运行时自动补位启动；
-- 高频动作固定在固定方位，练几次就能盲操作，告别在菜单里来回翻找。
+- **切换模式**（`Ctrl+Q`）：切换窗口，没在跑的应用自动帮你启动；
+- 动作方位固定，用熟之后可以凭肌肉记忆操作，不用在菜单里翻找。
 
 <div align="center">
-  <img src="Pulsar/Pulsar/Assets/Brand/demo.webp" width="640" alt="Pulsar 径向菜单演示" />
+  <img src="Docs/media/release/demos/demo-radial-menu.webp" width="640" alt="Pulsar 径向菜单演示" />
 </div>
 
-### 5. 🪟 智能窗口切换
+### 内置工具
 
-快速定位并切换到目标窗口；应用没在运行？自动帮你启动。
-
-### 6. 🧩 内置工具一览
-
-| 工具 | 一句话说明 |
+| 工具 | 说明 |
 | :--- | :--- |
 | **秘密填充** | 加密保存账号密码，一键注入任意窗口 |
-| **应用切换器** | 智能窗口切换，未运行的应用自动启动 |
+| **应用切换器** | 窗口切换，未运行的应用自动启动 |
 | **Pulsar 设置** | 打开设置、快捷添加上下文应用 |
-| **命令启动器** | 启动应用/文件/文件夹/网址，还可给前台窗口发送按键 |
-| **Excel 宏执行器** | 在 Excel/WPS 中一键运行已保存的宏 |
+| **命令启动器** | 启动应用 / 文件 / 文件夹 / 网址，还能给前台窗口发送按键 |
+| **Excel 宏执行器** | 在 Excel/WPS 中运行已保存的宏 |
 | **网页脚本执行器** | 在老旧内网网页中运行自定义脚本 |
 
-### 7. 🎓 新手友好
+### 上手
 
-- 首次启动的引导教程，边看边点学会核心操作；
-- 内置**脚本编辑器**与**示例库**，不会写也能从示例开始；
-- **办公动作预设包**一键安装，开箱即用；
+- 首次启动有引导教程，边看边点；
+- 内置脚本编辑器与示例库，不会写也能从示例改起；
+- 办公动作预设包可一键安装；
 - 界面支持简体中文 / English。
 
 ---
 
-## 🎬 演示
+## 与同类工具对比
 
-### 📊 一键跑宏
+选工具看的是要解决的问题，不是谁更强：
 
-一张典型的"脏表"：格式不统一、配色混乱、列宽不合理。呼出轮盘，滑向「一键跑宏」方位、松开——脚本自动跑完：统一字体、清掉乱色、列宽自适应、冻结表头，报表直接清爽成型。
+| 你需要 | 推荐工具 | 为什么 |
+| :--- | :--- | :--- |
+| 驯服老旧内网系统（宏 + 老网页 + 安全登录） | **Pulsar** | 为老旧办公系统设计：桌面层脚本注入 + DPAPI 加密凭据注入 + 固定方位径向菜单 |
+| 万能按钮面板 + 海量现成动作 | [Quicker](https://getquicker.net) | 社区共享动作库生态最强，上下文面板好用；闭源，免费版有每日触发限制 |
+| 键盘党搜文件、搜一切 | [Flow Launcher](https://www.flowlauncher.com) · [Microsoft PowerToys](https://learn.microsoft.com/windows/powertoys/)（Run / Command Palette） | 搜索启动器标杆；Pulsar 不做搜索框，和它们互补 |
+| 跨平台 / 纯轮盘菜单 | [Kando](https://github.com/kando-menu/kando) · [StarPie](https://github.com/SoftBlack42/StarPie) · [RadialActions](https://github.com/danielchalmers/RadialActions) | 开源轮盘 / 环形菜单，启动应用、文件、快捷键都好用，不含办公自动化 |
+| 长链条、跨系统的重型流程自动化 | Power Automate Desktop · 影刀 RPA | 专业 RPA 工具；Pulsar 只做一滑就完事的高频小动作，超出范围时它们是升级路径 |
+
+---
+
+## 演示
+
+### 一键跑宏
+
+一张典型的脏表：格式不统一、配色混乱、列宽不合理。呼出轮盘，滑向「一键跑宏」松开，脚本自动跑完：统一字体、清掉多余配色、列宽自适应、冻结表头。
 
 <div align="center">
   <img src="Docs/media/release/demos/demo-1-one-key-macro.webp" width="640" alt="一键跑宏演示" />
 </div>
 
-> 💡 不会写宏？把 [**VBA 脚本 AI 提示词**](./Docs/guides/AI_PROMPT_VBA_RUNNER.md) 整段喂给 AI，描述你的需求，就能得到能直接运行的宏脚本。
+> 不会写宏？把 [VBA 脚本 AI 提示词](./Docs/guides/AI_PROMPT_VBA_RUNNER.md) 整段喂给 AI，描述你的需求，就能拿到能直接跑的宏脚本。
 
-### 🌐 驯服老旧系统
+### 驯服老旧系统
 
-先看经典操作：在这个十年没升级的内网报表系统里，**登录 → 查询 → 导出**，每一步都要手点。刷新页面，然后只做一次"呼出、滑动、松开"——登录、查询、导出一气呵成，CSV 自动下载。Pulsar 从桌面层注入脚本，插件装不上的老系统也能自动化。
+这个内网报表系统十年没升级，登录 → 查询 → 导出每一步都要手点。用 Pulsar 只做一次呼出、滑动、松开，三步跑完，CSV 自动下载。
 
 <div align="center">
   <img src="Docs/media/release/demos/demo-2-tame-legacy.webp" width="640" alt="驯服老旧系统演示" />
 </div>
 
-> 💡 不会写脚本？[**网页脚本 AI 提示词**](./Docs/guides/AI_PROMPT_BOOKMARKLET.md) 整段喂给 AI 即可，还附赠"页面改版回验清单"。
+> 不会写脚本？[网页脚本 AI 提示词](./Docs/guides/AI_PROMPT_BOOKMARKLET.md) 整段喂给 AI 即可，还附了一份「页面改版回验清单」。
 
-### 🔐 登录，只要一滑
+### 一滑登录
 
-先手动输入一遍账号密码；然后清空账号，滑向轮盘的登录方位——账号密码自动注入、自动提交，一步完成登录。注入走的是**文本注入**（键盘层），所以不只网页：任何"账号框 + 密码框"的桌面软件登录窗都适用。
+先手动输一遍账号密码，然后清空，滑向轮盘的登录方位，账号密码自动注入并提交。
 
 <div align="center">
   <img src="Docs/media/release/demos/demo-3-one-slide-login.webp" width="640" alt="一滑登录演示" />
@@ -161,35 +155,20 @@
 
 ---
 
-## 🌐 多语言支持
+## 开发者
 
-可在设置页面中随时切换界面语言：
-
-| 语言 | 支持状态 |
-| :--- | :---: |
-| 🇨🇳 简体中文 | 🟢 完整支持 |
-| 🇺🇸 English | 🟢 完整支持 |
-
----
-
-## 🧭 路线图与 AI 愿景
-
-我们相信办公自动化的下一步是「**说一句需求，自动生成动作配置**」。Pulsar 的路线图已立项「AI 生成 Slot 配置」的 PoC 方向（让 AI 根据你描述的场景自动生成轮盘动作）——这是**愿景方向的探索性标注**，不承诺交付时间，核心的本地化自动化能力不受其影响。
-
----
-
-## 🧑‍💻 开发者
-
-Pulsar 采用 MIT 开源，欢迎贡献代码、插件与建议。
+Pulsar 用 MIT 开源，欢迎贡献代码、插件与建议。
 
 - **[用户手册](./Docs/manual/README.md)**：安装、跑宏、登旧系统、切窗口、常见问题（中英双语）；
-- **[开发文档（DEVELOPER.md）](./DEVELOPER.md)**：技术栈、项目结构、构建/测试命令、插件开发与架构设计；
+- **[开发文档（DEVELOPER.md）](./DEVELOPER.md)**：技术栈、项目结构、构建 / 测试命令、插件开发与架构设计；
 - **[架构详解](./ARCHITECTURE.md)** · **[插件开发指南](./PLUGIN_DEVELOPMENT.md)** · **[完整文档索引](./Docs/README.md)**；
 - 贡献前请阅读 [CONTRIBUTING.md](./Docs/CONTRIBUTING.md)。
 
+插件分核心（Core）与扩展（Extension）两类：核心插件不可禁用，扩展插件带熔断器，一分钟内崩溃三次就临时停用 60 秒，不会拖垮主程序。
+
 ---
 
-## 🤝 社区与贡献
+## 社区与贡献
 
 - **更新日志**：[CHANGELOG.md](./CHANGELOG.md) — 版本更新记录
 - **贡献指南**：[CONTRIBUTING.md](./Docs/CONTRIBUTING.md) — 如何参与贡献
@@ -197,12 +176,12 @@ Pulsar 采用 MIT 开源，欢迎贡献代码、插件与建议。
 
 ---
 
-## 📌 项目状态
+## 路线图
 
-Pulsar 正在活跃开发中，核心功能与插件体系已趋于稳定，内置工具与插件生态持续增长。
+Pulsar 仍在活跃开发，核心功能与插件体系已趋于稳定。「用一句话描述场景、由 AI 生成轮盘动作配置」在探索中，暂无排期，现有的本地自动化能力不依赖它。
 
 ---
 
-## 📄 开源许可证
+## 开源许可证
 
 本项目采用 [MIT License](LICENSE) 开源。
