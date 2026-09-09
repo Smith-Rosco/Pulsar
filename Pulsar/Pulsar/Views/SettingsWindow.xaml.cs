@@ -506,6 +506,26 @@ namespace Pulsar.Views
                 var stretchBottom = Math.Max(oldBottomCenter, newBottomCenter);
                 var stretchHeight = stretchBottom - stretchTop;
 
+                // [FIX 2026-09-09] 崩溃防御（17:36 FTL 现场）：Phase 1/2 是单值动画
+                // （From=null，origin = 属性当前基础值）。指示器尚未被布局回调写入
+                // 基础值时 Canvas.Top/Left 为 NaN——渲染 tick 以 NaN origin 取值抛
+                // AnimationException（未处理 → 进程崩溃）。动画前先把基础值落好；
+                // 落不了（无活动条目，如页注册竞态下选区未应用）就放弃动画退化为重定位。
+                if (double.IsNaN(oldCenterY) || double.IsNaN(newCenterY) || double.IsNaN(stretchHeight))
+                {
+                    RepositionNavIndicator();
+                    return;
+                }
+
+                if (double.IsNaN(Canvas.GetTop(NavIndicator)) || double.IsNaN(Canvas.GetLeft(NavIndicator)))
+                {
+                    RepositionNavIndicatorImmediate(clearHeldAnimations: true);
+                    if (double.IsNaN(Canvas.GetTop(NavIndicator)) || double.IsNaN(Canvas.GetLeft(NavIndicator)))
+                    {
+                        return; // 无活动条目可定位：无从动画，交回 LayoutUpdated 自愈
+                    }
+                }
+
                 var stretchDuration = TimeSpan.FromMilliseconds(120);
                 var snapDuration = TimeSpan.FromMilliseconds(130);
                 var easing = new CubicEase { EasingMode = EasingMode.EaseInOut };
