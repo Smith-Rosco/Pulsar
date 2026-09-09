@@ -19,9 +19,11 @@ namespace Pulsar.ViewModels.Settings
 {
     public partial class SlotWheelEditorViewModel : ObservableObject
     {
-        private const double SourceCanvasSize = 500;
-        private const double SourceCenter = 250;
-        private const double SourceDefaultSlotSize = 50;
+        // [R1 2026-09-09] Values now alias WheelGeometry — the 500/250/50 literals
+        // were the third hard-coded copy of the design-space geometry.
+        private const double SourceCanvasSize = WheelGeometry.CanvasSize;
+        private const double SourceCenter = WheelGeometry.CenterX;
+        private const double SourceDefaultSlotSize = WheelGeometry.DefaultSlotSize;
         private const int HighlightDurationMs = 2000;
 
         private readonly ISlotLayoutEngine _layoutEngine;

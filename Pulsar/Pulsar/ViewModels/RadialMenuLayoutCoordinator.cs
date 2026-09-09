@@ -10,9 +10,9 @@ namespace Pulsar.ViewModels
 {
     internal sealed class RadialMenuLayoutCoordinator
     {
-        private const double CenterX = 250;
-        private const double CenterY = 250;
-        private const double DefaultSlotSize = 50;
+        // [R1 2026-09-09] Canvas center / neutral slot size now come from WheelGeometry
+        // (were private consts duplicating the 250/50 literals).
+        private const double DefaultSlotSize = WheelGeometry.DefaultSlotSize;
 
         private readonly ISlotLayoutEngine _slotLayoutEngine;
         private readonly IAnimationController _animationController;
@@ -56,11 +56,11 @@ namespace Pulsar.ViewModels
 
         public void RefreshAnimationTargets(
             ObservableCollection<SlotViewModel> slots,
-            double viewportCenterX = 250,
-            double viewportCenterY = 250)
+            double viewportCenterX = WheelGeometry.CenterX,
+            double viewportCenterY = WheelGeometry.CenterY)
         {
-            double offsetX = viewportCenterX - 250;
-            double offsetY = viewportCenterY - 250;
+            double offsetX = viewportCenterX - WheelGeometry.CenterX;
+            double offsetY = viewportCenterY - WheelGeometry.CenterY;
 
             _animationController.SetSlotTargets(slots
                 .Select(slot => new SlotAnimationTarget
@@ -116,7 +116,7 @@ namespace Pulsar.ViewModels
 
         private (double X, double Y) GetSlotPosition(int index, int totalSlots, double radius, double slotSize)
         {
-            var p = new LayoutParameters(CenterX, CenterY, radius, 0, totalSlots);
+            var p = new LayoutParameters(WheelGeometry.CenterX, WheelGeometry.CenterY, radius, 0, totalSlots);
             var centerPos = _slotLayoutEngine.GetSlotPosition(index, totalSlots, p);
             return (centerPos.X + (DefaultSlotSize - slotSize) / 2, centerPos.Y + (DefaultSlotSize - slotSize) / 2);
         }

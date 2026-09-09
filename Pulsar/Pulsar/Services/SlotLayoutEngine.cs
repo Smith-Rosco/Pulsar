@@ -9,7 +9,6 @@ namespace Pulsar.Services
         private const double DegToRad = Math.PI / 180.0;
         private const double RadToDeg = 180.0 / Math.PI;
         private const double BaseRadius = 90.0;
-        private const double DefaultSlotSize = 50.0;
         private const double MinSlotSpacing = 10.0;
         private const double MaxRadius = 180.0;
 
@@ -20,10 +19,17 @@ namespace Pulsar.Services
             var slotSize = CalculateOptimalSlotSize(slotCount);
             var deadZoneRatio = CalculateDeadZoneRatio(slotCount);
             var deadZoneRadius = radius * deadZoneRatio;
-            const double centerX = 250;
-            const double centerY = 250;
 
-            return new LayoutParameters(centerX, centerY, radius, deadZoneRadius, slotCount);
+            // [R1 2026-09-09] Canvas center from WheelGeometry (was hard-coded 250,250).
+            // Note: radius intentionally uses the default slot size here (historical
+            // behavior, pinned by pose snapshot tests) — the scaled-slotSize radius
+            // variant lives at RadialMenuLayoutCoordinator.GetLayoutMetrics.
+            return new LayoutParameters(
+                WheelGeometry.CenterX,
+                WheelGeometry.CenterY,
+                radius,
+                deadZoneRadius,
+                slotCount);
         }
 
         public (double X, double Y) GetSlotPosition(int index, int totalSlots, LayoutParameters p)
@@ -34,7 +40,7 @@ namespace Pulsar.Services
             double x = p.CenterX + p.Radius * Math.Cos(angleRad);
             double y = p.CenterY + p.Radius * Math.Sin(angleRad);
 
-            return (x - DefaultSlotSize / 2, y - DefaultSlotSize / 2);
+            return (x - WheelGeometry.DefaultSlotSize / 2, y - WheelGeometry.DefaultSlotSize / 2);
         }
 
         public int HitTest(Vector point, LayoutParameters p)
@@ -61,7 +67,7 @@ namespace Pulsar.Services
             return slotIndex;
         }
 
-        public double CalculateOptimalRadius(int slotCount, double slotSize = DefaultSlotSize, double baseRadius = BaseRadius)
+        public double CalculateOptimalRadius(int slotCount, double slotSize = WheelGeometry.DefaultSlotSize, double baseRadius = BaseRadius)
         {
             if (slotCount <= 6)
             {
