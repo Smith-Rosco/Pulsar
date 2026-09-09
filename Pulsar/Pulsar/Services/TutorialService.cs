@@ -39,11 +39,14 @@ namespace Pulsar.Services
             ITutorialTriggerEngine triggerEngine,
             ITutorialSpotlightController spotlightController,
             IWaitStepHintTimeout waitStepHintTimeout,
-            ILocalizationService loc)
+            ILocalizationService loc,
+            ISettingsWindowAccessor settingsWindowAccessor,
+            ITutorialStepCardFactory stepCardFactory,
+            IOnboardingStateService onboardingStateService)
         {
             _configService = configService;
             _logger = logger;
-            
+
             _orchestrator = new TutorialOrchestrator(
                 loc,
                 configService,
@@ -52,7 +55,10 @@ namespace Pulsar.Services
                 overlayManager,
                 triggerEngine,
                 spotlightController,
-                waitStepHintTimeout);
+                waitStepHintTimeout,
+                settingsWindowAccessor,
+                stepCardFactory,
+                onboardingStateService);
 
             // Connect orchestrator events to service events
             _orchestrator.StepChanged += OnOrchestratorStepChanged;

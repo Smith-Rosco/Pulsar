@@ -33,6 +33,9 @@ namespace Pulsar.Features.Tutorial.Services
         private readonly ITutorialSpotlightController _spotlightController;
         private readonly IWaitStepHintTimeout _waitStepHintTimeout;
         private readonly TutorialScenarioRegistry _scenarioRegistry;
+        private readonly ISettingsWindowAccessor _settingsWindowAccessor;
+        private readonly ITutorialStepCardFactory _stepCardFactory;
+        private readonly IOnboardingStateService _onboardingStateService;
 
         private string DefaultWaitHintText => _loc["Tutorial.NoActionDetectedHint"];
         
@@ -61,6 +64,9 @@ namespace Pulsar.Features.Tutorial.Services
             ITutorialTriggerEngine triggerEngine,
             ITutorialSpotlightController spotlightController,
             IWaitStepHintTimeout waitStepHintTimeout,
+            ISettingsWindowAccessor settingsWindowAccessor,
+            ITutorialStepCardFactory stepCardFactory,
+            IOnboardingStateService onboardingStateService,
             TutorialScenarioRegistry? scenarioRegistry = null)
         {
             _loc = loc;
@@ -71,6 +77,9 @@ namespace Pulsar.Features.Tutorial.Services
             _triggerEngine = triggerEngine;
             _spotlightController = spotlightController;
             _waitStepHintTimeout = waitStepHintTimeout;
+            _settingsWindowAccessor = settingsWindowAccessor;
+            _stepCardFactory = stepCardFactory;
+            _onboardingStateService = onboardingStateService;
             _scenarioRegistry = scenarioRegistry ?? new TutorialScenarioRegistry();
             
             _steps = InitializeSteps();
@@ -121,7 +130,7 @@ namespace Pulsar.Features.Tutorial.Services
 
                 _steps = InitializeSteps();
                 _currentStepIndex = 0;
-                await UpdateConfigAsync(s => s.LastTutorialStep = null);
+                await _onboardingStateService.MarkTutorialStartedAsync();
                 
                 await ShowStepAsync(CurrentStep!);
             }
@@ -158,7 +167,7 @@ namespace Pulsar.Features.Tutorial.Services
                 {
                     // Step 2→3 优化：当 ActionExecuted/Switch 触发时，跳过确认步骤（step3）
                     // 直接进入 Command Mode 步骤（step4），用 toast 通知替代
-                    if (fromTrigger && ShouldSkipStep(_currentStepIndex + 1))
+                    if (fromTrigger && TutorialFlowPolicy.ShouldSkipConfirmationStep(_steps, _currentStepIndex + 1))
                     {
                         _logger.LogInformation("[TutorialOrchestrator] Skipping confirmation step (index {SkipIndex}), advancing from step {CurrentIndex} to step {TargetIndex}",
                             _currentStepIndex + 1, _currentStepIndex, _currentStepIndex + 2);
@@ -202,12 +211,7 @@ namespace Pulsar.Features.Tutorial.Services
         /// </summary>
         private bool ShouldSkipStep(int stepIndex)
         {
-            if (stepIndex < 0 || stepIndex >= _steps.Count)
-                return false;
-
-            var step = _steps[stepIndex];
-            // 跳过条件：步骤 ID 包含 "switch_mode_success" 且类型为 Instruction
-            return step.Id == "step3_switch_mode_success" && step.Type == TutorialStepType.Instruction;
+            return TutorialFlowPolicy.ShouldSkipConfirmationStep(_steps, stepIndex);
         }
 
         /// <summary>
@@ -301,18 +305,18 @@ namespace Pulsar.Features.Tutorial.Services
                 CleanupStepCard();
 
                 // 更新配置中的当前步骤
-                await UpdateConfigAsync(s => s.LastTutorialStep = step.Id);
+                await _onboardingStateService.MarkTutorialStepReachedAsync(step.Id);
 
                 // 创建或更新遮罩窗口
                 _overlayManager.EnsureOverlayWindow();
 
                 // 根据 FocusMode 确定初始状态
-                var initialState = DetermineFocusState(step);
+                var initialState = TutorialFlowPolicy.DetermineFocusState(step);
 
                 _spotlightController.ApplyForStep(step);
 
                 // 创建并显示步骤卡片
-                _stepCard = new TutorialStepCard();
+                _stepCard = _stepCardFactory.Create();
                 _stepCard.SetStep(step, _currentStepIndex, _steps.Count);
                 _stepCard.BackClicked += OnStepCardBackClicked;
                 _stepCard.NextClicked += OnStepCardNextClicked;
@@ -430,13 +434,7 @@ namespace Pulsar.Features.Tutorial.Services
 
                 _waitStepHintTimeout.Cancel();
 
-                await UpdateConfigAsync(s =>
-                {
-                    s.HasCompletedTutorial = true;
-                    s.OnboardingState = "Complete";
-                    s.LastTutorialStep = null;
-                    s.TutorialCrashedAt = null;
-                });
+                await _onboardingStateService.MarkTutorialCompletedAsync();
 
                 _triggerEngine.Cleanup();
                 CleanupStepCard();
@@ -509,27 +507,22 @@ namespace Pulsar.Features.Tutorial.Services
         }
 
         /// <summary>
-        /// 获取 SettingsWindow 实例（用于访问 NavigationView）
+        /// 确保 SettingsWindow 可见并置于前台（激活已有窗口或经组合根工厂新开一个）。
         /// </summary>
-        private SettingsWindow? GetSettingsWindow()
+        private Task OpenSettingsWindowAsync()
         {
-            try
-            {
-                foreach (Window window in System.Windows.Application.Current.Windows)
-                {
-                    if (window is SettingsWindow settingsWindow && window.IsVisible)
-                    {
-                        return settingsWindow;
-                    }
-                }
+            _logger.LogInformation("[TutorialOrchestrator] Opening settings window from tutorial");
 
-                return null;
-            }
-            catch (Exception ex)
+            if (_settingsWindowAccessor.TryOpenOrActivateSettingsWindow())
             {
-                _logger.LogWarning(ex, "[TutorialOrchestrator] Failed to get SettingsWindow");
-                return null;
+                _logger.LogInformation("[TutorialOrchestrator] Settings window opened successfully");
             }
+            else
+            {
+                _logger.LogError("[TutorialOrchestrator] Failed to open settings window from tutorial");
+            }
+
+            return Task.CompletedTask;
         }
 
         public async Task SkipAsync()
@@ -540,11 +533,7 @@ namespace Pulsar.Features.Tutorial.Services
 
                 _waitStepHintTimeout.Cancel();
 
-                await UpdateConfigAsync(s =>
-                {
-                    s.HasCompletedTutorial = false;
-                    s.LastTutorialStep = "Skipped";
-                });
+                await _onboardingStateService.MarkTutorialSkippedAsync();
 
                 _triggerEngine.Cleanup();
                 CleanupStepCard();
@@ -598,23 +587,7 @@ namespace Pulsar.Features.Tutorial.Services
         /// </summary>
         private OverlayState DetermineFocusState(TutorialStep step)
         {
-            switch (step.FocusMode)
-            {
-                case TutorialFocusMode.AlwaysFocused:
-                    return OverlayState.Focused;
-
-                case TutorialFocusMode.AlwaysObserving:
-                    return OverlayState.Observing;
-
-                case TutorialFocusMode.Auto:
-                    // Instruction 步骤默认 Focused，WaitForAction 默认 Observing
-                    return step.Type == TutorialStepType.Instruction
-                        ? OverlayState.Focused
-                        : OverlayState.Observing;
-
-                default:
-                    return OverlayState.Focused;
-            }
+            return TutorialFlowPolicy.DetermineFocusState(step);
         }
 
         /// <summary>
@@ -694,11 +667,7 @@ namespace Pulsar.Features.Tutorial.Services
 
                 _waitStepHintTimeout.Cancel();
 
-                await UpdateConfigAsync(s =>
-                {
-                    s.HasCompletedTutorial = false;
-                    s.LastTutorialStep = "Skipped";
-                });
+                await _onboardingStateService.MarkTutorialSkippedAsync();
 
                 _triggerEngine.Cleanup();
                 CleanupStepCard();
@@ -750,22 +719,6 @@ namespace Pulsar.Features.Tutorial.Services
         }
 
         /// <summary>
-        /// 更新配置的辅助方法
-        /// </summary>
-        private async Task UpdateConfigAsync(Action<ProfileSettings> updateAction)
-        {
-            try
-            {
-                await ConfigEditSession.RunAsync(_configService, session => session.UpdateSettings(updateAction));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "[TutorialOrchestrator] Error updating config");
-                // 配置保存失败不应该阻止教程继续
-            }
-        }
-
-        /// <summary>
         /// 处理教程错误
         /// </summary>
         private async Task HandleErrorAsync(Exception ex)
@@ -781,11 +734,7 @@ namespace Pulsar.Features.Tutorial.Services
                 CleanupStepCard();
                 
                 // 标记崩溃步骤,不标记为已完成
-                await UpdateConfigAsync(s =>
-                {
-                    s.TutorialCrashedAt = CurrentStep?.Id;
-                    s.LastTutorialStep = null;
-                });
+                await _onboardingStateService.MarkTutorialCrashedAsync(CurrentStep?.Id, clearLastTutorialStep: true);
                 
                 // 关闭遮罩窗口
                 _overlayManager.Close();
@@ -845,10 +794,7 @@ namespace Pulsar.Features.Tutorial.Services
 
             try
             {
-                await UpdateConfigAsync(s =>
-                {
-                    s.TutorialCrashedAt = CurrentStep?.Id;
-                });
+                await _onboardingStateService.MarkTutorialCrashedAsync(CurrentStep?.Id);
             }
             catch (Exception ex)
             {
@@ -856,50 +802,8 @@ namespace Pulsar.Features.Tutorial.Services
             }
             
             _isTransitioning = false;
-            
+
             _logger.LogInformation("[TutorialOrchestrator] Force cleanup completed");
-        }
-
-        private Task OpenSettingsWindowAsync()
-        {
-            _logger.LogInformation("[TutorialOrchestrator] Opening settings window from tutorial");
-
-            var settingsWindow = GetSettingsWindow();
-            if (settingsWindow != null)
-            {
-                _logger.LogInformation("[TutorialOrchestrator] Settings window already open, activating");
-                settingsWindow.Activate();
-                return Task.CompletedTask;
-            }
-
-            _logger.LogInformation("[TutorialOrchestrator] Creating new settings window");
-
-            var app = System.Windows.Application.Current as App;
-            if (app?.Services == null)
-            {
-                _logger.LogError("[TutorialOrchestrator] App services are unavailable while opening settings window");
-                return Task.CompletedTask;
-            }
-
-            try
-            {
-                var window = app.Services.GetService<SettingsWindow>();
-                if (window == null)
-                {
-                    _logger.LogError("[TutorialOrchestrator] Failed to resolve SettingsWindow from DI container");
-                    return Task.CompletedTask;
-                }
-
-                window.Show();
-                window.Activate();
-                _logger.LogInformation("[TutorialOrchestrator] Settings window opened successfully");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "[TutorialOrchestrator] Error opening settings window");
-            }
-
-            return Task.CompletedTask;
         }
     }
 }

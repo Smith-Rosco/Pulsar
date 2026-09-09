@@ -21,6 +21,9 @@ namespace Pulsar.Features.Tutorial.Services
         Task MarkSetupCompletedAsync();
         Task MarkTutorialCompletedAsync();
         Task MarkTutorialSkippedAsync();
+        Task MarkTutorialStartedAsync();
+        Task MarkTutorialStepReachedAsync(string stepId);
+        Task MarkTutorialCrashedAsync(string? stepId, bool clearLastTutorialStep = false);
     }
 
     public sealed class OnboardingStateService : IOnboardingStateService
@@ -87,6 +90,44 @@ namespace Pulsar.Features.Tutorial.Services
         {
             await ConfigEditSession.RunAsync(_configService, session =>
                 session.UpdateSettings(settings => settings.LastTutorialStep = "Skipped"));
+        }
+
+        /// <summary>
+        /// Clears the last-step marker when a tutorial run begins. Previously the
+        /// Orchestrator wrote this directly via ConfigEditSession (C5, 2026-09-09).
+        /// </summary>
+        public async Task MarkTutorialStartedAsync()
+        {
+            await ConfigEditSession.RunAsync(_configService, session =>
+                session.UpdateSettings(settings => settings.LastTutorialStep = null));
+        }
+
+        /// <summary>
+        /// Persists tutorial progress (the id of the step currently being shown).
+        /// </summary>
+        public async Task MarkTutorialStepReachedAsync(string stepId)
+        {
+            await ConfigEditSession.RunAsync(_configService, session =>
+                session.UpdateSettings(settings => settings.LastTutorialStep = stepId));
+        }
+
+        /// <summary>
+        /// Records the step the tutorial crashed at, without marking completion.
+        /// <paramref name="clearLastTutorialStep"/> mirrors the Orchestrator's
+        /// graceful-shutdown path, which additionally resets LastTutorialStep; the
+        /// force-cleanup path only writes the crash marker.
+        /// </summary>
+        public async Task MarkTutorialCrashedAsync(string? stepId, bool clearLastTutorialStep = false)
+        {
+            await ConfigEditSession.RunAsync(_configService, session =>
+                session.UpdateSettings(settings =>
+                {
+                    settings.TutorialCrashedAt = stepId;
+                    if (clearLastTutorialStep)
+                    {
+                        settings.LastTutorialStep = null;
+                    }
+                }));
         }
     }
 }

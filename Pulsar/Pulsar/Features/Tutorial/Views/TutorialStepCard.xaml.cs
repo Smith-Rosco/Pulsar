@@ -26,17 +26,24 @@ namespace Pulsar.Features.Tutorial.Views
         private int _currentIndex;
         private int _totalSteps;
         private readonly ILocalizationService? _loc;
+        private readonly IConfigService? _configService;
 
         private TextBlock? _waitHintText;
         private System.Windows.Controls.Button? _backButton;
         private System.Windows.Controls.Button? _continueButton;
         private System.Windows.Controls.ProgressBar? _stepProgressBar;
 
-        public TutorialStepCard()
+        /// <summary>
+        /// Dependencies are constructor-injected (C5, 2026-09-09) via
+        /// ITutorialStepCardFactory. The optional parameters keep the XAML
+        /// designer/previewer working; at runtime the factory always supplies both.
+        /// </summary>
+        public TutorialStepCard(ILocalizationService? loc = null, IConfigService? configService = null)
         {
             InitializeComponent();
 
-            _loc = (System.Windows.Application.Current as App)?.Services.GetService(typeof(ILocalizationService)) as ILocalizationService;
+            _loc = loc;
+            _configService = configService;
             _waitHintText = FindName("WaitHintText") as TextBlock;
             _backButton = FindName("BackButton") as System.Windows.Controls.Button;
             _continueButton = FindName("ContinueButton") as System.Windows.Controls.Button;
@@ -129,9 +136,7 @@ namespace Pulsar.Features.Tutorial.Views
         {
             try
             {
-                var app = System.Windows.Application.Current as App;
-                var configService = app?.Services.GetService(typeof(IConfigService)) as IConfigService;
-                return TutorialHotkeyResolver.Resolve(text, configService?.GetSnapshot().Settings.Hotkeys);
+                return TutorialHotkeyResolver.Resolve(text, _configService?.GetSnapshot().Settings.Hotkeys);
             }
             catch
             {

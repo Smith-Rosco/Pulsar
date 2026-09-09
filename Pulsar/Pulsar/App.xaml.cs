@@ -355,6 +355,7 @@ namespace Pulsar
             serviceCollection.AddSingleton<IOverlayManager, Pulsar.Features.Tutorial.Services.OverlayManager>();
             serviceCollection.AddSingleton<IWindowLayoutManager, WindowLayoutManager>();
             serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.ISettingsWindowAccessor, Pulsar.Features.Tutorial.Services.SettingsWindowAccessor>();
+            serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.ITutorialStepCardFactory, Pulsar.Features.Tutorial.Services.TutorialStepCardFactory>();
             serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.ITutorialTriggerEngine, Pulsar.Features.Tutorial.Services.TutorialTriggerEngine>();
             serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.ITutorialSpotlightController, Pulsar.Features.Tutorial.Services.TutorialSpotlightController>();
             serviceCollection.AddSingleton<Pulsar.Features.Tutorial.Services.IWaitStepHintTimeout, Pulsar.Features.Tutorial.Services.WaitStepHintTimeout>();

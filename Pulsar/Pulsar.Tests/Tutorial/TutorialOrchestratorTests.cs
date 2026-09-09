@@ -40,7 +40,10 @@ namespace Pulsar.Tests.Tutorial
                 overlayManager,
                 triggerEngine,
                 spotlightController,
-                waitStepHintTimeout);
+                waitStepHintTimeout,
+                Mock.Of<ISettingsWindowAccessor>(),
+                new TutorialStepCardFactory(loc.Object, configService),
+                Mock.Of<IOnboardingStateService>());
         }
 
         [Fact]

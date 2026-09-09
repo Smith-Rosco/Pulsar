@@ -81,7 +81,12 @@ namespace Pulsar.Tests.Tutorial
                     mockOverlay.Object,
                     mockTriggerEngine.Object,
                     mockSpotlight.Object,
-                    mockWaitHint.Object);
+                    mockWaitHint.Object,
+                    Mock.Of<ISettingsWindowAccessor>(),
+                    Mock.Of<ITutorialStepCardFactory>(),
+                    // Real service: crash recovery must still reach config SaveAsync
+                    // through ConfigEditSession for this test's assertions to hold.
+                    new OnboardingStateService(mockConfig.Object));
 
                 // Load steps from our temp file
                 // (TutorialOrchestrator uses defaultLoader, but we can't inject the path.
