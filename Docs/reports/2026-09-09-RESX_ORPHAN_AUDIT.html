@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<title>resx 孤儿键审计报告（2026-09-09）</title>
+<style>
+body{font-family:'Segoe UI',system-ui,sans-serif;max-width:1100px;margin:24px auto;padding:0 16px;color:#1f2937;line-height:1.55}
+h1{font-size:1.5em;border-bottom:2px solid #3b82f6;padding-bottom:8px} h2{font-size:1.2em;margin-top:28px;border-left:4px solid #3b82f6;padding-left:8px}
+code{background:#f3f4f6;padding:1px 5px;border-radius:4px;font-size:.92em}
+table{border-collapse:collapse;width:100%;font-size:.9em;margin:10px 0} td,th{border:1px solid #e5e7eb;padding:5px 9px;text-align:left} th{background:#f9fafb}
+.box{border:1px solid #e5e7eb;border-radius:8px;padding:12px 16px;margin:12px 0}
+.A{background:#fef2f2;border-left:4px solid #ef4444} .B{background:#fffbeb;border-left:4px solid #f59e0b} .OK{background:#f0fdf4;border-left:4px solid #22c55e}
+.meta{color:#6b7280;font-size:.9em}
+details{margin:8px 0} summary{cursor:pointer;font-weight:600}
+</style></head><body>
+<h1>resx 孤儿键审计报告</h1>
+<p class="meta">2026-09-09 · 非侵入式评估（只报告，不删键）· 数据源：Strings.resx + Strings.zh-CN.resx 共 1166 键 · 扫描语料：全部 .cs / .xaml / Resources/Tutorial/*.json（排除 obj/bin）</p>
+
+<h2>关键判断摘要</h2>
+<div class="box OK"><b>总量收敛：表面 ~296 疑似孤儿 → 实际高风险死键约 67（A 组）+ 历史遗留约 22（B 组），其余为约定动态键与父前缀误判。</b><br>
+三类"假孤儿"必须在删除前排除——①约定查找键（AlphaNumOnly 动态拼接，56 键）；②数据驱动键（Tutorial 步骤 JSON 引用、Plugin.Health.{Status} / Plugin.Permission.{小写} 运行时拼接）；③父前缀共享造成的误判（如 Notification.* 前缀活但个别键死）。</div>
+
+<h2>分类结果总览</h2>
+<table><thead><tr><th>类别</th><th>数量</th><th>处置</th></tr></thead><tbody>
+<tr><td>活键（源码/数据直查命中）</td><td>895</td><td>保留</td></tr>
+<tr><td>约定动态键（受保护）</td><td>56</td><td>保留——SlotParam.*/SlotAction.*/Plugin.Name/Description/Category/Permission/Health 前缀 + AlphaNumOnly/PermissionKey/Status 运行时拼接（PluginLocalization.cs:30、ExternalPluginManagerViewModel.cs:377、PluginViewModel.cs:91）</td></tr>
+<tr><td>A 组：高置信死键</td><td>83</td><td>建议删除（独立 change）</td></tr>
+<tr><td>B 组：历史遗留/需对照</td><td>6</td><td>人工复核现用键名后删除</td></tr>
+<tr><td>父前缀误判嫌疑区</td><td>126</td><td>逐键人工核查（多数为父前缀共享误判，实际多数可判死，但不进本轮）</td></tr>
+</tbody></table>
+
+<h2>A 组：高置信死键（83）</h2>
+<div class="box A">
+<p><b>删除建议：可整族删除（双语同步），风险低。</b>佐证：对应 UI/流程已不存在（权限对话框删除、Marketplace 废弃、S4 死链清理）。</p>
+<table><thead><tr><th>#</th><th>键名</th><th>族</th></tr></thead><tbody>
+<tr><td>1</td><td><code>Dialog.Permission.CriticalRisk</code></td><td>Dialog.Permission</td></tr>
+<tr><td>2</td><td><code>Dialog.Permission.Deny</code></td><td>Dialog.Permission</td></tr>
+<tr><td>3</td><td><code>Dialog.Permission.Grant</code></td><td>Dialog.Permission</td></tr>
+<tr><td>4</td><td><code>Dialog.Permission.HighRisk</code></td><td>Dialog.Permission</td></tr>
+<tr><td>5</td><td><code>Dialog.Permission.LowRisk</code></td><td>Dialog.Permission</td></tr>
+<tr><td>6</td><td><code>Dialog.Permission.MediumRisk</code></td><td>Dialog.Permission</td></tr>
+<tr><td>7</td><td><code>Dialog.Permission.PluginPrefix</code></td><td>Dialog.Permission</td></tr>
+<tr><td>8</td><td><code>Dialog.Permission.Reason</code></td><td>Dialog.Permission</td></tr>
+<tr><td>9</td><td><code>Dialog.Permission.RememberChoice</code></td><td>Dialog.Permission</td></tr>
+<tr><td>10</td><td><code>Dialog.Permission.RequestsPermissions</code></td><td>Dialog.Permission</td></tr>
+<tr><td>11</td><td><code>Dialog.Permission.Title</code></td><td>Dialog.Permission</td></tr>
+<tr><td>12</td><td><code>Dialog.Permission.UnknownRisk</code></td><td>Dialog.Permission</td></tr>
+<tr><td>13</td><td><code>PluginPermission.AccessAllServices</code></td><td>PluginPermission</td></tr>
+<tr><td>14</td><td><code>PluginPermission.AccessAllServicesDesc</code></td><td>PluginPermission</td></tr>
+<tr><td>15</td><td><code>PluginPermission.AccessCredentials</code></td><td>PluginPermission</td></tr>
+<tr><td>16</td><td><code>PluginPermission.AccessCredentialsDesc</code></td><td>PluginPermission</td></tr>
+<tr><td>17</td><td><code>PluginPermission.AccessEnvironment</code></td><td>PluginPermission</td></tr>
+<tr><td>18</td><td><code>PluginPermission.AccessEnvironmentDesc</code></td><td>PluginPermission</td></tr>
+<tr><td>19</td><td><code>PluginPermission.AccessNetwork</code></td><td>PluginPermission</td></tr>
+<tr><td>20</td><td><code>PluginPermission.AccessNetworkDesc</code></td><td>PluginPermission</td></tr>
+<tr><td>21</td><td><code>PluginPermission.AccessRegistry</code></td><td>PluginPermission</td></tr>
+<tr><td>22</td><td><code>PluginPermission.AccessRegistryDesc</code></td><td>PluginPermission</td></tr>
+<tr><td>23</td><td><code>PluginPermission.BypassPermissionCheck</code></td><td>PluginPermission</td></tr>
+<tr><td>24</td><td><code>PluginPermission.BypassPermissionCheckDesc</code></td><td>PluginPermission</td></tr>
+<tr><td>25</td><td><code>PluginPermission.ExecuteNativeCode</code></td><td>PluginPermission</td></tr>
+<tr><td>26</td><td><code>PluginPermission.ExecuteNativeCodeDesc</code></td><td>PluginPermission</td></tr>
+<tr><td>27</td><td><code>PluginPermission.KillProcess</code></td><td>PluginPermission</td></tr>
+<tr><td>28</td><td><code>PluginPermission.KillProcessDesc</code></td><td>PluginPermission</td></tr>
+<tr><td>29</td><td><code>PluginPermission.LoadAssembly</code></td><td>PluginPermission</td></tr>
+<tr><td>30</td><td><code>PluginPermission.LoadAssemblyDesc</code></td><td>PluginPermission</td></tr>
+<tr><td>31</td><td><code>PluginPermission.ModifyConfiguration</code></td><td>PluginPermission</td></tr>
+<tr><td>32</td><td><code>PluginPermission.ModifyConfigurationDesc</code></td><td>PluginPermission</td></tr>
+<tr><td>33</td><td><code>PluginPermission.ModifyCredentials</code></td><td>PluginPermission</td></tr>
+<tr><td>34</td><td><code>PluginPermission.ModifyCredentialsDesc</code></td><td>PluginPermission</td></tr>
+<tr><td>35</td><td><code>PluginPermission.ModifyPluginRegistry</code></td><td>PluginPermission</td></tr>
+<tr><td>36</td><td><code>PluginPermission.ModifyPluginRegistryDesc</code></td><td>PluginPermission</td></tr>
+<tr><td>37</td><td><code>PluginPermission.ReadClipboard</code></td><td>PluginPermission</td></tr>
+<tr><td>38</td><td><code>PluginPermission.ReadClipboardDesc</code></td><td>PluginPermission</td></tr>
+<tr><td>39</td><td><code>PluginPermission.ReadFileSystem</code></td><td>PluginPermission</td></tr>
+<tr><td>40</td><td><code>PluginPermission.ReadFileSystemDesc</code></td><td>PluginPermission</td></tr>
+<tr><td>41</td><td><code>PluginPermission.ReadProcessPath</code></td><td>PluginPermission</td></tr>
+<tr><td>42</td><td><code>PluginPermission.ReadProcessPathDesc</code></td><td>PluginPermission</td></tr>
+<tr><td>43</td><td><code>PluginPermission.ReadProcessWindows</code></td><td>PluginPermission</td></tr>
+<tr><td>44</td><td><code>PluginPermission.ReadProcessWindowsDesc</code></td><td>PluginPermission</td></tr>
+<tr><td>45</td><td><code>PluginPermission.ReadSelectedText</code></td><td>PluginPermission</td></tr>
+<tr><td>46</td><td><code>PluginPermission.ReadSelectedTextDesc</code></td><td>PluginPermission</td></tr>
+<tr><td>47</td><td><code>PluginPermission.ReadWindowInfo</code></td><td>PluginPermission</td></tr>
+<tr><td>48</td><td><code>PluginPermission.ReadWindowInfoDesc</code></td><td>PluginPermission</td></tr>
+<tr><td>49</td><td><code>PluginPermission.RegisterHotkey</code></td><td>PluginPermission</td></tr>
+<tr><td>50</td><td><code>PluginPermission.RegisterHotkeyDesc</code></td><td>PluginPermission</td></tr>
+<tr><td>51</td><td><code>PluginPermission.ShowNotification</code></td><td>PluginPermission</td></tr>
+<tr><td>52</td><td><code>PluginPermission.ShowNotificationDesc</code></td><td>PluginPermission</td></tr>
+<tr><td>53</td><td><code>PluginPermission.SimulateKeyboard</code></td><td>PluginPermission</td></tr>
+<tr><td>54</td><td><code>PluginPermission.SimulateKeyboardDesc</code></td><td>PluginPermission</td></tr>
+<tr><td>55</td><td><code>PluginPermission.SimulateMouse</code></td><td>PluginPermission</td></tr>
+<tr><td>56</td><td><code>PluginPermission.SimulateMouseDesc</code></td><td>PluginPermission</td></tr>
+<tr><td>57</td><td><code>PluginPermission.StartProcess</code></td><td>PluginPermission</td></tr>
+<tr><td>58</td><td><code>PluginPermission.StartProcessDesc</code></td><td>PluginPermission</td></tr>
+<tr><td>59</td><td><code>PluginPermission.UnknownPermission</code></td><td>PluginPermission</td></tr>
+<tr><td>60</td><td><code>PluginPermission.WriteClipboard</code></td><td>PluginPermission</td></tr>
+<tr><td>61</td><td><code>PluginPermission.WriteClipboardDesc</code></td><td>PluginPermission</td></tr>
+<tr><td>62</td><td><code>PluginPermission.WriteFileSystem</code></td><td>PluginPermission</td></tr>
+<tr><td>63</td><td><code>PluginPermission.WriteFileSystemDesc</code></td><td>PluginPermission</td></tr>
+<tr><td>64</td><td><code>Settings.Marketplace.AdjustSearch</code></td><td>Settings.Marketplace</td></tr>
+<tr><td>65</td><td><code>Settings.Marketplace.AllPlugins</code></td><td>Settings.Marketplace</td></tr>
+<tr><td>66</td><td><code>Settings.Marketplace.Categories</code></td><td>Settings.Marketplace</td></tr>
+<tr><td>67</td><td><code>Settings.Marketplace.ClearAllFilters</code></td><td>Settings.Marketplace</td></tr>
+<tr><td>68</td><td><code>Settings.Marketplace.ClearFilters</code></td><td>Settings.Marketplace</td></tr>
+<tr><td>69</td><td><code>Settings.Marketplace.Description</code></td><td>Settings.Marketplace</td></tr>
+<tr><td>70</td><td><code>Settings.Marketplace.Install</code></td><td>Settings.Marketplace</td></tr>
+<tr><td>71</td><td><code>Settings.Marketplace.InstallFromFile</code></td><td>Settings.Marketplace</td></tr>
+<tr><td>72</td><td><code>Settings.Marketplace.InstallFromFileTooltip</code></td><td>Settings.Marketplace</td></tr>
+<tr><td>73</td><td><code>Settings.Marketplace.Installed</code></td><td>Settings.Marketplace</td></tr>
+<tr><td>74</td><td><code>Settings.Marketplace.InstalledOnly</code></td><td>Settings.Marketplace</td></tr>
+<tr><td>75</td><td><code>Settings.Marketplace.LoadingPlugins</code></td><td>Settings.Marketplace</td></tr>
+<tr><td>76</td><td><code>Settings.Marketplace.NoPluginsFound</code></td><td>Settings.Marketplace</td></tr>
+<tr><td>77</td><td><code>Settings.Marketplace.Refresh</code></td><td>Settings.Marketplace</td></tr>
+<tr><td>78</td><td><code>Settings.Marketplace.SearchPlaceholder</code></td><td>Settings.Marketplace</td></tr>
+<tr><td>79</td><td><code>Settings.Marketplace.Statistics</code></td><td>Settings.Marketplace</td></tr>
+<tr><td>80</td><td><code>Settings.Marketplace.Title</code></td><td>Settings.Marketplace</td></tr>
+<tr><td>81</td><td><code>Settings.Marketplace.Uninstall</code></td><td>Settings.Marketplace</td></tr>
+<tr><td>82</td><td><code>Settings.Marketplace.Update</code></td><td>Settings.Marketplace</td></tr>
+<tr><td>83</td><td><code>Settings.Marketplace.UpdateAvailable</code></td><td>Settings.Marketplace</td></tr>
+</tbody></table>
+<details><summary>族级判定依据</summary><ul><li><code>Dialog.Permission</code>：权限确认对话框 UI 已删除：DialogTemplates.xaml 无模板注册、cs/xaml 全无引用；PluginPermissionService 现为静默门控</li><li><code>PluginPermission</code>：S4 已删除 DemandPermission 死链（2026-09-08）；现行权限本地化走 Plugin.Permission.{小写} 动态键（ExternalPluginManagerViewModel:377），大写 PluginPermission.* 族 UI 已不存在</li><li><code>Settings.Marketplace</code>：在线插件市场已废弃（SettingsPageCatalog/SettingsViewModel 无 Marketplace 页面引用；Notification.OnlinePluginsDeprecated 佐证）</li></ul></details>
+</div>
+
+<h2>B 组：历史遗留 / 需对照现用键（6）</h2>
+<div class="box B">
+<p><b>处置：先核对现行 UI 实际使用的键名（或英文 fallback 文本），确认语义已迁移后整族删除。</b>不建议本轮直接删。</p>
+<table><thead><tr><th>#</th><th>键名</th><th>族</th></tr></thead><tbody>
+<tr><td>1</td><td><code>Dialog.PluginLogViewer.ExpandRange</code></td><td>Dialog.PluginLogViewer</td></tr>
+<tr><td>2</td><td><code>Dialog.PluginLogViewer.Export</code></td><td>Dialog.PluginLogViewer</td></tr>
+<tr><td>3</td><td><code>Dialog.PluginLogViewer.LoadMore</code></td><td>Dialog.PluginLogViewer</td></tr>
+<tr><td>4</td><td><code>Dialog.PluginLogViewer.NoLogs</code></td><td>Dialog.PluginLogViewer</td></tr>
+<tr><td>5</td><td><code>Dialog.PluginLogViewer.OpenFolder</code></td><td>Dialog.PluginLogViewer</td></tr>
+<tr><td>6</td><td><code>Dialog.PluginLogViewer.SearchPlaceholder</code></td><td>Dialog.PluginLogViewer</td></tr>
+</tbody></table>
+</div>
+
+<h2>父前缀误判嫌疑区（126，未列入本轮处置）</h2>
+<div class="box">
+<p>整键无引用，但父前缀（如 <code>Notification.</code>、<code>Dialog.AddSlot.</code>）在源码其它键中出现——按"前缀活 ≠ 键活"不自动判死。已知其中 <code>Notification.Deprecated*</code> / <code>Notification.Online*Deprecated</code> 与 A 组 Marketplace 废弃同源，<code>Dialog.AddSlot.Choose*/Scenario*</code> 与 B 组旧向导同源，下轮一并处理。</p>
+<details><summary>完整清单</summary><table><thead><tr><th>#</th><th>键名</th><th>族</th></tr></thead><tbody>
+<tr><td>1</td><td><code>CommandSlot.AutoSignIn</code></td><td>CommandSlot</td></tr>
+<tr><td>2</td><td><code>Dialog.AddSlot.Action</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>3</td><td><code>Dialog.AddSlot.AdvancedDesc</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>4</td><td><code>Dialog.AddSlot.AdvancedDesc2</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>5</td><td><code>Dialog.AddSlot.AdvancedDesc3</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>6</td><td><code>Dialog.AddSlot.CategoryAll</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>7</td><td><code>Dialog.AddSlot.ChooseBehavior</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>8</td><td><code>Dialog.AddSlot.ChooseBehaviorDesc</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>9</td><td><code>Dialog.AddSlot.ChooseOutcome</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>10</td><td><code>Dialog.AddSlot.ChooseScenario</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>11</td><td><code>Dialog.AddSlot.ChooseScenarioBegin</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>12</td><td><code>Dialog.AddSlot.ChooseSlotType</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>13</td><td><code>Dialog.AddSlot.ChooseTypeHint</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>14</td><td><code>Dialog.AddSlot.CompleteSetupHint</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>15</td><td><code>Dialog.AddSlot.ConfigureSlot</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>16</td><td><code>Dialog.AddSlot.DisclosureHint1</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>17</td><td><code>Dialog.AddSlot.DisclosureHint2</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>18</td><td><code>Dialog.AddSlot.DisclosureTitle</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>19</td><td><code>Dialog.AddSlot.IconPlaceholder</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>20</td><td><code>Dialog.AddSlot.OpenSettings</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>21</td><td><code>Dialog.AddSlot.OpenTarget</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>22</td><td><code>Dialog.AddSlot.Optional</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>23</td><td><code>Dialog.AddSlot.Plugin</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>24</td><td><code>Dialog.AddSlot.PreviewHint</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>25</td><td><code>Dialog.AddSlot.QuickAdd</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>26</td><td><code>Dialog.AddSlot.RunVba</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>27</td><td><code>Dialog.AddSlot.ScanTypes</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>28</td><td><code>Dialog.AddSlot.ScenarioBased</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>29</td><td><code>Dialog.AddSlot.ScenarioBasedDesc</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>30</td><td><code>Dialog.AddSlot.ScenarioFillCredential</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>31</td><td><code>Dialog.AddSlot.ScenarioFillCredentialDesc</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>32</td><td><code>Dialog.AddSlot.ScenarioOpen</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>33</td><td><code>Dialog.AddSlot.ScenarioOpenDesc</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>34</td><td><code>Dialog.AddSlot.ScenarioSendKeys</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>35</td><td><code>Dialog.AddSlot.ScenarioSendKeysDesc</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>36</td><td><code>Dialog.AddSlot.ScenarioSwitchApp</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>37</td><td><code>Dialog.AddSlot.ScenarioSwitchAppDesc</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>38</td><td><code>Dialog.AddSlot.Script</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>39</td><td><code>Dialog.AddSlot.SelectActionBlock</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>40</td><td><code>Dialog.AddSlot.SendKeys</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>41</td><td><code>Dialog.AddSlot.ShowingCategoryFormat</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>42</td><td><code>Dialog.AddSlot.SwitchHint</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>43</td><td><code>Dialog.AddSlot.SwitchOrLaunch</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>44</td><td><code>Dialog.AddSlot.Target</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>45</td><td><code>Dialog.AddSlot.TypeBegin</code></td><td>Dialog.AddSlot</td></tr>
+<tr><td>46</td><td><code>Dialog.SlotConfig.Appearance</code></td><td>Dialog.SlotConfig</td></tr>
+<tr><td>47</td><td><code>Dialog.SlotConfig.AppearanceHint</code></td><td>Dialog.SlotConfig</td></tr>
+<tr><td>48</td><td><code>Dialog.SlotConfig.Behavior</code></td><td>Dialog.SlotConfig</td></tr>
+<tr><td>49</td><td><code>Dialog.SlotConfig.DraftProgress</code></td><td>Dialog.SlotConfig</td></tr>
+<tr><td>50</td><td><code>Dialog.SlotConfig.MetadataHint</code></td><td>Dialog.SlotConfig</td></tr>
+<tr><td>51</td><td><code>Dialog.SlotConfig.NeedsSetup</code></td><td>Dialog.SlotConfig</td></tr>
+<tr><td>52</td><td><code>Dialog.SlotConfig.NoAction</code></td><td>Dialog.SlotConfig</td></tr>
+<tr><td>53</td><td><code>Dialog.SlotConfig.ReadyToSave</code></td><td>Dialog.SlotConfig</td></tr>
+<tr><td>54</td><td><code>Dialog.SlotConfig.UpdateBehavior</code></td><td>Dialog.SlotConfig</td></tr>
+<tr><td>55</td><td><code>Feedback.SwitchFailed</code></td><td>Feedback</td></tr>
+<tr><td>56</td><td><code>Feedback.SwitchFailedBody</code></td><td>Feedback</td></tr>
+<tr><td>57</td><td><code>Feedback.SwitchFailedHelp</code></td><td>Feedback</td></tr>
+<tr><td>58</td><td><code>FirstLaunch.BrowserDocsDesc</code></td><td>FirstLaunch</td></tr>
+<tr><td>59</td><td><code>FirstLaunch.DeveloperWorkflowDesc</code></td><td>FirstLaunch</td></tr>
+<tr><td>60</td><td><code>FirstLaunch.GeneralProductivityDesc</code></td><td>FirstLaunch</td></tr>
+<tr><td>61</td><td><code>FirstLaunch.SelectScenarioError</code></td><td>FirstLaunch</td></tr>
+<tr><td>62</td><td><code>Notification.DeprecatedManageMessage</code></td><td>Notification</td></tr>
+<tr><td>63</td><td><code>Notification.DeprecatedMessage</code></td><td>Notification</td></tr>
+<tr><td>64</td><td><code>Notification.FailedLoadPluginsFormat</code></td><td>Notification</td></tr>
+<tr><td>65</td><td><code>Notification.FeatureDeprecated</code></td><td>Notification</td></tr>
+<tr><td>66</td><td><code>Notification.FillCredential</code></td><td>Notification</td></tr>
+<tr><td>67</td><td><code>Notification.LoadedPluginsFormat</code></td><td>Notification</td></tr>
+<tr><td>68</td><td><code>Notification.LoadingPlugins</code></td><td>Notification</td></tr>
+<tr><td>69</td><td><code>Notification.OnlinePluginsDeprecated</code></td><td>Notification</td></tr>
+<tr><td>70</td><td><code>Notification.OnlineUpdatesDeprecated</code></td><td>Notification</td></tr>
+<tr><td>71</td><td><code>Notification.OpenProgram</code></td><td>Notification</td></tr>
+<tr><td>72</td><td><code>Notification.RunScript</code></td><td>Notification</td></tr>
+<tr><td>73</td><td><code>Notification.RunVba</code></td><td>Notification</td></tr>
+<tr><td>74</td><td><code>Notification.SendKeysAction</code></td><td>Notification</td></tr>
+<tr><td>75</td><td><code>Notification.SwitchApp</code></td><td>Notification</td></tr>
+<tr><td>76</td><td><code>Plugin.Command.UnknownAction</code></td><td>Plugin.Command</td></tr>
+<tr><td>77</td><td><code>Plugin.HealthIcons</code></td><td>Plugin</td></tr>
+<tr><td>78</td><td><code>Plugin.ViewLogsErrorFormat</code></td><td>Plugin</td></tr>
+<tr><td>79</td><td><code>Profile.ConfigurationIssues</code></td><td>Profile</td></tr>
+<tr><td>80</td><td><code>Profile.OpenConfiguration</code></td><td>Profile</td></tr>
+<tr><td>81</td><td><code>Settings.Analytics.ModeAction</code></td><td>Settings.Analytics</td></tr>
+<tr><td>82</td><td><code>Settings.Analytics.ModeTask</code></td><td>Settings.Analytics</td></tr>
+<tr><td>83</td><td><code>Settings.Analytics.Ops</code></td><td>Settings.Analytics</td></tr>
+<tr><td>84</td><td><code>Settings.Analytics.SlotPercentageFormat</code></td><td>Settings.Analytics</td></tr>
+<tr><td>85</td><td><code>Settings.Analytics.TrendNoData</code></td><td>Settings.Analytics</td></tr>
+<tr><td>86</td><td><code>Settings.ExternalPlugins.AboutLine1</code></td><td>Settings.ExternalPlugins</td></tr>
+<tr><td>87</td><td><code>Settings.ExternalPlugins.AboutLine2</code></td><td>Settings.ExternalPlugins</td></tr>
+<tr><td>88</td><td><code>Settings.ExternalPlugins.AboutLine3</code></td><td>Settings.ExternalPlugins</td></tr>
+<tr><td>89</td><td><code>Settings.ExternalPlugins.AboutLine4</code></td><td>Settings.ExternalPlugins</td></tr>
+<tr><td>90</td><td><code>Settings.ExternalPlugins.AboutLine5</code></td><td>Settings.ExternalPlugins</td></tr>
+<tr><td>91</td><td><code>Settings.ExternalPlugins.AboutLine6</code></td><td>Settings.ExternalPlugins</td></tr>
+<tr><td>92</td><td><code>Settings.ExternalPlugins.AboutTitle</code></td><td>Settings.ExternalPlugins</td></tr>
+<tr><td>93</td><td><code>Settings.ExternalPlugins.ByAuthorFormat</code></td><td>Settings.ExternalPlugins</td></tr>
+<tr><td>94</td><td><code>Settings.ExternalPlugins.Description</code></td><td>Settings.ExternalPlugins</td></tr>
+<tr><td>95</td><td><code>Settings.ExternalPlugins.InstallFromFile</code></td><td>Settings.ExternalPlugins</td></tr>
+<tr><td>96</td><td><code>Settings.ExternalPlugins.InstallFromFileTooltip</code></td><td>Settings.ExternalPlugins</td></tr>
+<tr><td>97</td><td><code>Settings.ExternalPlugins.InstallHint</code></td><td>Settings.ExternalPlugins</td></tr>
+<tr><td>98</td><td><code>Settings.ExternalPlugins.Installed</code></td><td>Settings.ExternalPlugins</td></tr>
+<tr><td>99</td><td><code>Settings.ExternalPlugins.InstalledHeaderFormat</code></td><td>Settings.ExternalPlugins</td></tr>
+<tr><td>100</td><td><code>Settings.ExternalPlugins.InstalledPluginsHeader</code></td><td>Settings.ExternalPlugins</td></tr>
+<tr><td>101</td><td><code>Settings.ExternalPlugins.LoadingPlugins</code></td><td>Settings.ExternalPlugins</td></tr>
+<tr><td>102</td><td><code>Settings.ExternalPlugins.NoPlugins</code></td><td>Settings.ExternalPlugins</td></tr>
+<tr><td>103</td><td><code>Settings.ExternalPlugins.PluginDisabledFormat</code></td><td>Settings.ExternalPlugins</td></tr>
+<tr><td>104</td><td><code>Settings.ExternalPlugins.PluginEnabledFormat</code></td><td>Settings.ExternalPlugins</td></tr>
+<tr><td>105</td><td><code>Settings.ExternalPlugins.StatusCount</code></td><td>Settings.ExternalPlugins</td></tr>
+<tr><td>106</td><td><code>Settings.ExternalPlugins.StatusCountFormat</code></td><td>Settings.ExternalPlugins</td></tr>
+<tr><td>107</td><td><code>Settings.ExternalPlugins.Title</code></td><td>Settings.ExternalPlugins</td></tr>
+<tr><td>108</td><td><code>Settings.ExternalPlugins.ToggleToolTip</code></td><td>Settings.ExternalPlugins</td></tr>
+<tr><td>109</td><td><code>Settings.ExternalPlugins.Uninstall</code></td><td>Settings.ExternalPlugins</td></tr>
+<tr><td>110</td><td><code>Settings.General.HotkeyClearTooltip</code></td><td>Settings.General</td></tr>
+<tr><td>111</td><td><code>Settings.General.HotkeyConflict</code></td><td>Settings.General</td></tr>
+<tr><td>112</td><td><code>Settings.General.HotkeyNone</code></td><td>Settings.General</td></tr>
+<tr><td>113</td><td><code>Settings.General.HotkeyReserved</code></td><td>Settings.General</td></tr>
+<tr><td>114</td><td><code>Settings.General.OpenAppLogs</code></td><td>Settings.General</td></tr>
+<tr><td>115</td><td><code>Settings.General.OpenPluginLogs</code></td><td>Settings.General</td></tr>
+<tr><td>116</td><td><code>Settings.General.PressKeysPlaceholder</code></td><td>Settings.General</td></tr>
+<tr><td>117</td><td><code>Settings.General.ResetTutorialDone</code></td><td>Settings.General</td></tr>
+<tr><td>118</td><td><code>Settings.Slots.ConfigurationSummary</code></td><td>Settings.Slots</td></tr>
+<tr><td>119</td><td><code>Settings.Slots.DragToReorder</code></td><td>Settings.Slots</td></tr>
+<tr><td>120</td><td><code>Settings.Slots.HealthPrefix</code></td><td>Settings.Slots</td></tr>
+<tr><td>121</td><td><code>Settings.Slots.HealthStatus</code></td><td>Settings.Slots</td></tr>
+<tr><td>122</td><td><code>Settings.Slots.PluginType</code></td><td>Settings.Slots</td></tr>
+<tr><td>123</td><td><code>Settings.Slots.TypePrefix</code></td><td>Settings.Slots</td></tr>
+<tr><td>124</td><td><code>Tutorial.FirstCommandHint</code></td><td>Tutorial</td></tr>
+<tr><td>125</td><td><code>Tutorial.FirstSwitchHint</code></td><td>Tutorial</td></tr>
+<tr><td>126</td><td><code>Tutorial.OpenSettings</code></td><td>Tutorial</td></tr>
+</tbody></table></details>
+</div>
+
+<h2>约定动态键（受保护清单，56）</h2>
+<div class="box OK"><p>这些键<b>永不</b>出现在源码字面（AlphaNumOnly 规范化 / PermissionKey / Health.Status 运行时拼接），任何孤儿清理必须先按前缀排除：</p>
+<p><code>Plugin.Category.Apps</code> · <code>Plugin.Category.Automation</code> · <code>Plugin.Category.Credentials</code> · <code>Plugin.Category.General</code> · <code>Plugin.Category.Productivity</code> · <code>Plugin.Category.System</code> · <code>Plugin.Category.Web</code> · <code>Plugin.Description.AppSwitch</code> · <code>Plugin.Description.AutoFill</code> · <code>Plugin.Description.ExcelMacros</code> · <code>Plugin.Description.OpenType</code> · <code>Plugin.Description.PulsarSettings</code> · <code>Plugin.Description.WebScripts</code> · <code>Plugin.Health.Critical</code> · <code>Plugin.Health.Disabled</code> · <code>Plugin.Health.Healthy</code> · <code>Plugin.Health.Unused</code> · <code>Plugin.Health.Warning</code> · <code>Plugin.Name.AppSwitch</code> · <code>Plugin.Name.AutoFill</code> · <code>Plugin.Name.ExcelMacros</code> · <code>Plugin.Name.OpenType</code> · <code>Plugin.Name.PulsarSettings</code> · <code>Plugin.Name.WebScripts</code> · <code>Plugin.Permission.clipboardread</code> · <code>Plugin.Permission.clipboardwrite</code> · <code>Plugin.Permission.filesystemread</code> · <code>Plugin.Permission.filesystemwrite</code> · <code>Plugin.Permission.inputinject</code> · <code>Plugin.Permission.networkclient</code> · <code>Plugin.Permission.processlaunch</code> · <code>Plugin.Permission.windowfocus</code> · <code>SlotAction.FillPassword</code> · <code>SlotAction.LaunchApp</code> · <code>SlotAction.OpenSettings</code> · <code>SlotAction.OpenTarget</code> · <code>SlotAction.QuickAddCurrentApp</code> · <code>SlotAction.RunBrowserScript</code> · <code>SlotAction.RunMacro</code> · <code>SlotAction.RunScript</code> · <code>SlotAction.SendKeys</code> · <code>SlotAction.SwitchExistingApp</code> · <code>SlotAction.SwitchOrLaunch</code> · <code>SlotParam.Arguments</code> · <code>SlotParam.Delayms</code> · <code>SlotParam.ExecutablePath</code> · <code>SlotParam.Folder</code> · <code>SlotParam.Keys</code> · <code>SlotParam.LaunchArguments</code> · <code>SlotParam.LaunchPath</code> · <code>SlotParam.MacroName</code> · <code>SlotParam.Password</code> · <code>SlotParam.Path</code> · <code>SlotParam.PressEnterAfterFill</code> · <code>SlotParam.ProcessName</code> · <code>SlotParam.ScriptFile</code></p></div>
+
+<h2>建议的执行路径</h2>
+<ol>
+<li>独立 change（如 <code>resx-orphan-cleanup</code>）：P1 删 A 组 83 键（双语）+ grep 复核 + 全量测试；</li>
+<li>人工复核 B 组对照现用键名后整族删除；</li>
+<li>嫌疑区 126 键逐键核实（可用「英文 value 全文反查源码」辅助）；</li>
+<li>考虑加守护测试：resx 键必须被源码/数据/约定三类之一引用（防新增孤儿）。</li>
+</ol>
+</body></html>
