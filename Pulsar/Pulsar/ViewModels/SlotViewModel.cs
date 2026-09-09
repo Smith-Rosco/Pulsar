@@ -98,7 +98,10 @@ namespace Pulsar.ViewModels
         }
 
         // [New] Helper for Badge Visibility
-        public bool HasBadge => BadgeCount > 1;
+        // [UX 2026-09-09] >=1 即有徽章：级联命令 slot 只有 1 个子动作时也展开
+        // 子轮盘，需要标识；窗口切换 slot 由 ProcessPageProvider 保证单窗口
+        // 不设 BadgeCount，视觉不变。
+        public bool HasBadge => BadgeCount >= 1;
 
         public bool ShowTypeBadge => !string.IsNullOrWhiteSpace(TypeBadge) && Size >= 52;
 

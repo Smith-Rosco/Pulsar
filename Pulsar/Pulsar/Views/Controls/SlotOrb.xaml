@@ -278,11 +278,13 @@
                     <Style TargetType="Border">
                         <Setter Property="Visibility" Value="Visible"/>
                         <Style.Triggers>
-                            <!-- Only show if BadgeCount > 1 -->
+                            <!-- Show if BadgeCount >= 1.
+                                 [UX 2026-09-09] 原规则 ">1 才显示" 是窗口切换语义
+                                 (1 个窗口无需子菜单)；级联命令 slot 即使只有 1 个
+                                 子动作也会展开子轮盘，必须标识。窗口页在
+                                 ProcessPageProvider 侧已用 Count>1 自行守卫，
+                                 单窗口槽位 BadgeCount 保持 0，不受影响。 -->
                             <DataTrigger Binding="{Binding BadgeCount, ElementName=OrbRoot}" Value="0">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding BadgeCount, ElementName=OrbRoot}" Value="1">
                                 <Setter Property="Visibility" Value="Collapsed"/>
                             </DataTrigger>
                             <DataTrigger Binding="{Binding BadgeCount, ElementName=OrbRoot}" Value="{x:Null}">

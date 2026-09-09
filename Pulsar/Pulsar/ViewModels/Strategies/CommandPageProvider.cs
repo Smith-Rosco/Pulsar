@@ -97,6 +97,12 @@ namespace Pulsar.ViewModels.Strategies
                     }
                 }
 
+                // [UX 2026-09-09] 带子轮盘的 slot 必须有可见标识：右上角数字气泡
+                // 显示子动作数量（>=1 即显示）。此前 BadgeCount 只被窗口切换页
+                // 使用，级联命令 slot 无法与叶子 slot 区分，用户无法预知点击
+                // 会展开子轮盘。
+                slot.BadgeCount = slot.SubSlots.Count;
+
                 if (item.PluginId == "internal:create_profile")
                 {
                     slot.ActionStrategy = new CreateProfileStrategy(
