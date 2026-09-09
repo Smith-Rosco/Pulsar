@@ -146,8 +146,11 @@
     <Thickness x:Key="Pulsar.Pad.H4V2">4,2</Thickness>
     <Thickness x:Key="Pulsar.Pad.H8V2">8,2</Thickness>
     <Thickness x:Key="Pulsar.Pad.H8V4">8,4</Thickness>
+    <Thickness x:Key="Pulsar.Pad.H10V8">10,8</Thickness>
     <Thickness x:Key="Pulsar.Pad.H12V4">12,4</Thickness>
+    <Thickness x:Key="Pulsar.Pad.H12V6">12,6</Thickness>
     <Thickness x:Key="Pulsar.Pad.H12V8">12,8</Thickness>
+    <Thickness x:Key="Pulsar.Pad.H12V10">12,10</Thickness>
     <Thickness x:Key="Pulsar.Pad.H12V12">12,12</Thickness>
     <Thickness x:Key="Pulsar.Pad.H16V8">16,8</Thickness>
     <Thickness x:Key="Pulsar.Pad.H16V12">16,12</Thickness>
