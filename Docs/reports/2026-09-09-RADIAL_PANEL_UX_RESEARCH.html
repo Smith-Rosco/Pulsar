@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="DrsX3Ocu2Jsbb0TV4qGBZL">
+<head data-page-node-id="YgxoqROXolmDe2CpKc2UB3">
+<meta charset="UTF-8" data-page-node-id="BBFhsoF6sWLNFplKLYqcxB">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="n93sxsfaCICGBiooAt2TwW">
+<title>轮盘面板 UX 优化 / 重构调研报告 · 2026-09-09</title>
+<style>
+  :root {
+    --bg: #fafafa; --card: #ffffff; --ink: #1a1a1a; --muted: #616161;
+    --line: #e0e0e0; --accent: #0067c0; --p0: #c62828; --p1: #e65100;
+    --p2: #2e7d32; --p3: #616161; --code: #f5f5f5; --good: #2e7d32;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #181818; --card: #252526; --ink: #e8e8e8; --muted: #9e9e9e;
+      --line: #3d3d3d; --accent: #4db2ff; --p0: #ef5350; --p1: #ffa726;
+      --p2: #66bb6a; --p3: #9e9e9e; --code: #1e1e1e; --good: #66bb6a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+    line-height: 1.7; font-size: 15px;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 40px 24px 80px; }
+  header { border-bottom: 3px solid var(--accent); padding-bottom: 18px; margin-bottom: 28px; }
+  h1 { font-size: 26px; margin: 0 0 8px; }
+  .meta { color: var(--muted); font-size: 13px; }
+  h2 { font-size: 20px; margin: 44px 0 14px; padding-left: 10px; border-left: 4px solid var(--accent); }
+  h3 { font-size: 16px; margin: 26px 0 10px; }
+  p { margin: 8px 0; }
+  code {
+    background: var(--code); padding: 1px 6px; border-radius: 4px;
+    font-family: Consolas, "Cascadia Mono", monospace; font-size: 13px;
+  }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+  th, td { border: 1px solid var(--line); padding: 8px 12px; text-align: left; vertical-align: top; }
+  th { background: var(--code); font-weight: 600; }
+  .pill {
+    display: inline-block; padding: 1px 10px; border-radius: 999px;
+    color: #fff; font-size: 12px; font-weight: 700; white-space: nowrap;
+  }
+  .p0 { background: var(--p0); } .p1 { background: var(--p1); }
+  .p2 { background: var(--p2); } .p3 { background: var(--p3); }
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 10px; padding: 16px 20px; margin: 14px 0;
+  }
+  .tldr { border-left: 4px solid var(--accent); }
+  .good { border-left: 4px solid var(--good); }
+  .warn { border-left: 4px solid var(--p0); }
+  ul { padding-left: 22px; margin: 8px 0; }
+  li { margin: 4px 0; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .ev { color: var(--muted); font-family: Consolas, monospace; font-size: 12px; }
+  .num { font-variant-numeric: tabular-nums; font-weight: 600; }
+  footer { margin-top: 60px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body data-page-node-id="BnQ0vb83A44svVs4io0I06">
+<div class="wrap" data-page-node-id="HnHtTNmPcFcUIv01UG2LgH">
+
+<header data-page-node-id="vzWVjbvRGIHjA8gSiJL8uz">
+  <h1 data-page-node-id="DIVt4syWFpox1WBkKs4nAE">轮盘面板 UX 优化 / 重构调研报告</h1>
+  <div class="meta" data-page-node-id="FjmYHv8zf6UpnXjeBhJ2Up">
+    日期：2026-09-09 · 评估范围：RadialMenuWindow + MenuSession 交互层 · 非侵入式评审（未改动任何源码）<br data-page-node-id="VK505ExrDJCXvKLMVVyqxU">
+    方法：代码证据链（file:line）+ 径向菜单交互文献对照 + 既有决策（ADR-008/011/020/023/024、UX_REFACTOR_PROPOSAL）对齐
+  </div>
+</header>
+
+<h2 data-page-node-id="RuiTEaQS5u4BHqW2BjjD7l">〇、关键判断摘要（TL;DR）</h2>
+<div class="card tldr" data-page-node-id="r2D0AgXDbUM45K4UzxchCR">
+  <ol data-page-node-id="NwGPieMQj0LPDncYLlzlTB">
+    <li data-page-node-id="GrMH3OqXei5ocvSR1ccVac"><strong data-page-node-id="VlrMZg9RnnZdsE9pYYjtOF">轮盘交互模型本身不需要推翻重做。</strong>空间定位 + 肌肉记忆的核心模型与径向菜单研究文献（pie menu / marking menu）的最佳实践高度一致，且 ADR-024 刚完成级联子菜单几何收口（Fan/Ring、统一极坐标命中）。重构对象应是<strong data-page-node-id="9nakQgtC9hrlihRUGf9Nuz">结构债务与感知延迟</strong>，不是交互范式。</li>
+    <li data-page-node-id="bx5hGLxpcrKTyw4Aa6K5SY"><strong data-page-node-id="CI3r8I5EIbFv99gidSYpcd">P0-1 · 感知延迟预算超支</strong>：召唤 ≈250ms + hover 进入 300ms + 磁吸速度上限 120px/s + 翻页边界回弹缓动——对「每天唤起 200 次」的 Persona 是持续摩擦，与「高性能启动器」定位直接矛盾。</li>
+    <li data-page-node-id="hkTh8RCfIojnDRrJ4iGTXa"><strong data-page-node-id="YlBg69YeqwNwaxm7hKsxYA">P0-2 · MenuSession.cs 已膨胀到 3609 行</strong>：手势状态机、子菜单进出视觉、翻页、watchdog、中心预览全在一个文件里。它是后续<strong data-page-node-id="NAzk3LHKYFdDsu9F313wlr">任何</strong> UX 迭代的摩擦源，建议与 UX 改造并行推进拆分（且已有三次成功先例可循）。</li>
+    <li data-page-node-id="yoHtZ0xYrXgM8aGMHelRR2"><strong data-page-node-id="1n2OCUzn0ZQtoEJTWdDE3B">P0-3 · 键盘无法选择槽位</strong>：仅 Esc + 左右翻页，无方向键/数字键直达。无障碍与「手不在鼠标上」场景缺位，UIA Peer 也只是 Custom 控件最小实现。</li>
+    <li data-page-node-id="3n4Q5q0mmBG6UwYGR5yg1r"><strong data-page-node-id="s1nHmOuod7UIkAfauPqUmy">推荐路线：两轨并行</strong>——UX 轨做 6 项快赢（不碰架构），重构轨按 4 步拆 MenuSession。每步都有现成 E2E/单测管线兜底。</li>
+  </ol>
+</div>
+
+<h2 data-page-node-id="LcdOXeehxu0ZCjdZfG4B5l">一、范围与基线</h2>
+<p data-page-node-id="q0Mmvwmun4nzudh6namIre">本次调研只覆盖<strong data-page-node-id="UXOMFD33hqfpeTBWId1O1e">轮盘面板本身</strong>（召唤 → 悬停 → 选择 → 子菜单 → 消退的全交互闭环），即 <code data-page-node-id="SGYqth2SDr9fDWB7kkdftY">RadialMenuWindow</code>、<code data-page-node-id="EXIu800uwK3R0QZHQTFF0L">MenuSession</code>、<code data-page-node-id="I1AKk2LXwHQZZyY1ranT4i">SlotOrb</code>、<code data-page-node-id="4iNIgmYcKpymKcsmV1qfTs">SlotLayoutEngine</code> 及其协调器。设置窗口、教程系统等界面不在范围内。</p>
+<div class="card" data-page-node-id="aUFYphfkAPspJH3pzcxj68">
+  <strong data-page-node-id="12ey3ODJhdyCWK5CWCCTho">基线一：2026-09-01 全局 UX 改造已完成的部分（本报告不重复提案）</strong>
+  <ul data-page-node-id="FJfrA55Na72wDWYihMxiSH">
+    <li data-page-node-id="0k2t2Py11MOoJwDVGfG6yD">令牌管道（排版 6 级 / 时长 3 级 / 间距 8 档 / 圆角 6 档），577 处裸值收敛，僵尸令牌清零。</li>
+    <li data-page-node-id="2VdHuzROSilg377HOZjD9F">浅色主题激活反馈三通道（描边加粗 + 填充提亮 + 外圈同心环）——已落地 <code data-page-node-id="zUQUF3hBF4qxT4BY0SI640">SlotOrb.xaml:107-170</code>。</li>
+    <li data-page-node-id="FCKF87iZvI50ACfmoM2CAJ">常驻金色脉冲 → 进入一次性淡入；逐球 DropShadow 移除；BackEase → 指数缓动（SlotOrb 层）。</li>
+  </ul>
+  <strong data-page-node-id="H9hUBPQ5tJEXSn5EH2e7mN">基线二：既有交互决策（必须继承，不可逆改）</strong>
+  <ul data-page-node-id="hBtlpzFrf8iLpdLl3903VC">
+    <li data-page-node-id="3cvdXBJfhGKjlCQK15o65R">ADR-008：MenuSession 状态机 + VM 薄投影；ADR-020：右拖手势编排收口 MenuSession。</li>
+    <li data-page-node-id="s4pFsTnJ9iEvyGo0GYLUet">ADR-024（v1.2.2）：Fan 同心外弧 + Ring 替换式几何、D10 统一极坐标扇区命中、D11 级联期间动态标题抑制、D5 flick-out 动态半径。</li>
+    <li data-page-node-id="MlKcK9gzBD4wiESaFVQQE5">全屏视口吞事件 + 500×500 内容坐标系 + 边缘 clamp + 光标 warping（archive FULLSCREEN_VIEWPORT）。</li>
+  </ul>
+</div>
+
+<h2 data-page-node-id="XKDItruqRGXQEboxxPa66R">二、交互闭环现状盘点（带证据）</h2>
+<table data-page-node-id="Dl5XJoK0r7lwKCWuGoHvYT">
+  <tr data-page-node-id="1T21VEJbM9JWTK9dACXyd6"><th style="width:15%" data-page-node-id="HRh2ks89h050dPll3T3chO">环节</th><th data-page-node-id="d9xc03dQQpBmeEx0bqSpJ7">现状</th><th style="width:33%" data-page-node-id="BV7daZTVRt5F7l8s2FKCZ6">证据 / 数值</th></tr>
+  <tr data-page-node-id="arvCysENMqnMVWYXuPS6zn">
+    <td data-page-node-id="sesDFwOd1ur3x0uIAlTOe5">召唤</td>
+    <td data-page-node-id="8r2R62DMU6GxJZbR6LeeN4">热键 / 右拖手势双通道；窗口常驻 1×1 隐藏；Scale 0.8→1.0（150ms）+ Opacity（100ms）；边缘 clamp + SetCursorPos warping。</td>
+    <td class="ev" data-page-node-id="d2x1nrCTVdYiwKLjLUHvtj">RadialMenuWindow.xaml.cs:82-93, 155-190 · MenuViewportService.cs:149-169</td>
+  </tr>
+  <tr data-page-node-id="StBxUhvhjAcNjtWps41gjS">
+    <td data-page-node-id="KfV5IXuwqAbxxFhLzLSpXe">布局</td>
+    <td data-page-node-id="11c6W3wZK4K8hAqTy2I9dj">8 槽：R=90 / slot 50 / 中心 70 / 死区 54；10 槽：R≈97 / 46 / 65 / 59；12 槽：R≈116 / 42 / 60 / 72。半角扇区随槽数收窄（8 槽 22.5°）。</td>
+    <td class="ev" data-page-node-id="BBmcmRatXqF82v46GaNDAr">SlotLayoutEngine.cs:11-110 · RadialMenuLayoutCoordinator.cs:13-15</td>
+  </tr>
+  <tr data-page-node-id="yJEpMN2USZyeqeyl7dhd9r">
+    <td data-page-node-id="2JLvGVISLUtChmQDMQpx5R">命中</td>
+    <td data-page-node-id="AzxFhi2U8wS9Cso9rnjtv8">死区内=中心（0），死区外按极坐标角度扇区命中、无径向上限（D10 后 Ring 同构）。全屏视口都参与命中。</td>
+    <td class="ev" data-page-node-id="uot8VYDLoagaZa7erHJrBH">MenuSession.cs:2149-2324 · SlotLayoutEngine.cs:40-62</td>
+  </tr>
+  <tr data-page-node-id="CEe4UftuXu1PkcTBGRrdv1">
+    <td data-page-node-id="qwueCL3QfcR5HhXKE1ubIG">悬停反馈</td>
+    <td data-page-node-id="aR0eYDpizJTV50PUH2Asr6">代码驱动 enter=300ms / release=320ms（QuadraticEase）；激活 Scale→1.15 + ZIndex=99；磁吸偏移时间常数 0.10s、速度上限 120px/s。</td>
+    <td class="ev" data-page-node-id="Mbwue89ImYOeIKCPnJk041">SlotOrb.xaml.cs:218-263 · SlotViewModel.cs:234-299</td>
+  </tr>
+  <tr data-page-node-id="15ZUvQsI3Y5GaBNHmGLswx">
+    <td data-page-node-id="dfYP9Bc1MqtWX0lX9JU1fl">选择</td>
+    <td data-page-node-id="c3doIITDI577ZXz5sdS2KY">手势：松键即执行；热键：点击执行；中心 = Cancel / 子菜单 = Back；flick-out 逃逸（距心 &gt; 1.5×R）整段取消。</td>
+    <td class="ev" data-page-node-id="cBtC3kTEAhq72PTm1bhGCZ">MenuSession.cs:1577-1798, 2090-2114</td>
+  </tr>
+  <tr data-page-node-id="1bVe1w0tvHKf26g0vhmF0Y">
+    <td data-page-node-id="Aur2NHzgTFDzQ3y6T7FkAb">子菜单</td>
+    <td data-page-node-id="i4q7mK9I50SuvGHhQrNykZ">Fan（≤3 项，同心外弧 R+gap=160，冻结主轮）/ Ring（替换式，父槽成中心）。进入 bloom ≈150ms，退出反向。</td>
+    <td class="ev" data-page-node-id="sgPFofIbbJsB3cfjZhxbOB">ADR-024 D1-D9 · MenuSession.cs:2802-3276</td>
+  </tr>
+  <tr data-page-node-id="Fkzx7Mxsyl3emrxUX5GMpn">
+    <td data-page-node-id="byAJ8ei88TiVlilqnvtbQE">翻页</td>
+    <td data-page-node-id="oIpG3KlCA6loSAwiA8lcVq">滚轮 / ←→ 翻页；边界 nudge（offset ±14，260ms，CubicEase+<strong data-page-node-id="2hw0S84iaBY9h9DAc093AD">BackEase 0.35</strong>）。</td>
+    <td class="ev" data-page-node-id="eTWz5qbGRlT8sWJqTBzI4X">RadialMenuWindow.xaml.cs:273-330 · MenuSession.cs:3483</td>
+  </tr>
+  <tr data-page-node-id="WOYlvIpfloVcnrZQZsqGbt">
+    <td data-page-node-id="vnBdACx6jHqBDQNBVH8lZO">消退</td>
+    <td data-page-node-id="zHOdKbKsaUsgzLhlAYLaQ0">Opacacity→0 160ms 后 Collapse + Release；watchdog 60s 无交互自动关闭。</td>
+    <td class="ev" data-page-node-id="N7a1DGQiMwQYfuge1fi4Jg">RadialMenuWindow.xaml.cs:214-230 · MenuSession.cs:3412-3455</td>
+  </tr>
+  <tr data-page-node-id="oTEJcuQYjdSCg1dSJk2Fia">
+    <td data-page-node-id="psO4NzpQNan4TcnY5Z4oq3">无障碍</td>
+    <td data-page-node-id="W5E7r3MDBxMYDi9qgcoj2P">Esc 取消 + ←→ 翻页是<strong data-page-node-id="HrE4flicBIxvRt0OmSVspf">仅有的</strong>键盘能力；UIA Peer 提供 AutomationId/Name，ControlType=Custom。</td>
+    <td class="ev" data-page-node-id="X7Dd26yUptD933viKLhOal">RadialMenuWindow.xaml.cs:243-271 · SlotOrbAutomationPeer.cs:29-61</td>
+  </tr>
+</table>
+
+<h2 data-page-node-id="Kae4u8096KLPHtiTIoAiu8">三、问题清单（P0–P3）</h2>
+
+<h3 data-page-node-id="SqKJeLSjfNXaBKNQdH27tK"><span class="pill p0" data-page-node-id="YLQVpTByG0Hg8Dkj2Axb1p">P0</span> 感知延迟预算超支：每个环节都比必要值慢一拍</h3>
+<div class="card warn" data-page-node-id="o4d23AZVcYmazkxXCLFG5T">
+  <p data-page-node-id="jeH9vgsYrxVBtRe4qRQGWG"><strong data-page-node-id="pg69mENfmc5ATRT8gzkbMa">证据链</strong></p>
+  <ul data-page-node-id="chUdafmmLpXb1jR7rYvh6w">
+    <li data-page-node-id="1eTX8OMk87iBWD8QDKwk2A">hover 激活 enter=<span class="num" data-page-node-id="K7esgM4atrGlHLs02mfQJ3">300ms</span>（SlotOrb.xaml.cs:218-263）——径向菜单的优势是「指向即选择」，300ms 的激活过渡意味着快速划过 3 个槽位时反馈永远追不上光标。</li>
+    <li data-page-node-id="FM9Gfu9Emb5J7CRiKmWuJU">磁吸速度上限 <span class="num" data-page-node-id="7nvHfCLqcVrbWVJ7Jr5ImA">120px/s</span> + 0.10s 时间常数（SlotViewModel.cs:234-299）——对快速甩向目标的 Power User 是主动减速带；磁吸本意是「稳定目标」，不是「拖住用户」。</li>
+    <li data-page-node-id="RBqlCcYeGKcyn8CvBuglhC">召唤两段动画叠加 ≈<span class="num" data-page-node-id="ezXBEK3s0bFjfZIm5lPU3G">250ms</span> 后才达终态（RadialMenuWindow.xaml.cs:177-190）——文献基准：启动器类 UI 召唤反馈应在 100ms 内可交互（Nielsen 响应性 0.1s 准则）。</li>
+    <li data-page-node-id="rfRzao5VslqtHiJyj1jjql">翻页边界 nudge 用 <strong data-page-node-id="pXpzls5rilywXcTQdwUuzh">BackEase 0.35</strong>（RadialMenuWindow.xaml.cs:273-330）——2026-09-01 已裁定「回弹缓动推迟终态感知，全局改指数」，这是漏网的最后残留，动效语言不一致。</li>
+  </ul>
+  <p data-page-node-id="fsXTB0ti5EazeobObBKFRN"><strong data-page-node-id="Ci6MoXlM59xBBARSUMnF1V">建议</strong>：hover enter 压到 ≤120ms（release 保持现状即可）；磁吸速度上限提至 ≥400px/s 或改为「接近才吸附」（距目标 &lt;20px 时启用）；nudge 换 <code data-page-node-id="wSTLBCc8uu4v6ivUxA3kqK">Pulsar.Easing.Standard</code>。三项都是常量级修改，低风险高感知。</p>
+</div>
+
+<h3 data-page-node-id="uABpicCxaXitS7s27y35pB"><span class="pill p0" data-page-node-id="hfJnoQp9MNFCUMGojCF8Bi">P0</span> MenuSession.cs 3609 行：所有 UX 迭代的共同摩擦源</h3>
+<div class="card warn" data-page-node-id="9A9FBbFJ2awXxF5MqZ2JKO">
+  <p data-page-node-id="Ts8K1kauRKUBtqVwEZHknq"><strong data-page-node-id="sGisgoFj9YGpmf1loSD7JU">证据链</strong>：<code data-page-node-id="OYqYrFFJ6AXcj9OTFByKgf">MenuSession.cs</code> 约 100 个方法（MenuSession.cs:526-3575），手势状态机（1154-1449）、子菜单进出视觉（2802-3276）、翻页与 watchdog（1956-2061, 3412-3455）、中心预览、flick-out 全部同居。几何常量 <code data-page-node-id="EdiAFrbcWnb9A0QBygNvKo">(250,250)</code> 在 <strong data-page-node-id="cBzmBozSbuHIvJdE4EN2uC">3 处</strong>硬编码（SlotLayoutEngine.cs:23-24 · MenuSession.cs:46-47 · RadialMenuLayoutCoordinator.cs:13，ADR-024 自己也点名了）。<br data-page-node-id="Mh8U13qCW2A2coHr1NcU2s">
+  <strong data-page-node-id="XHm952vsWGVlQUhjcTFDt1">佐证（债务已经咬人）</strong>：Fan 子菜单重叠主轮、Ring 命中模型不一致、动态标题遮挡——最近三个生产 bug 全部源自这层几何/状态纠缠（ADR-024 Context 节）。</p>
+  <p data-page-node-id="YkxxxV7798FjBzJzZtRjA4"><strong data-page-node-id="8GCSqtCdvtt1BGzqHGETyI">建议</strong>：沿用已被验证的 coordinator 抽取模式（Layout / SubMenu / VisualState 三次成功先例），按 4 步拆：<br data-page-node-id="Psoe3mXgAqD0WZZjxHnE72">
+  ① <code data-page-node-id="u9mGDnIe2XiBTkM7PHidVD">GestureController</code>（右拖状态机 + flick-out，1154-1449）<br data-page-node-id="YEw1Oh6fWzbI2turFpPWs0">
+  ② <code data-page-node-id="m8aFyAJ1xyxb3ZpxTBzVq3">SubMenuTransitionController</code>（进出 bloom 动画编排，2802-3276）<br data-page-node-id="dKAuYlrNdk5c7dna6H1QD9">
+  ③ <code data-page-node-id="4XuyOsFoMItqkKoERWWEhq">WheelGeometry</code> 静态常量类（250 基准 / 半径 / 死区单一真相源）<br data-page-node-id="6nlyAphr7BQfQgl9vF4oAZ">
+  ④ <code data-page-node-id="1027ZUlv6yUt5BHzK1pNVd">MenuWatchdog</code> 独立服务（3412-3455，最无争议的一块）<br data-page-node-id="EcY2C84SiNFjTnGyuCe2hz">
+  每步独立 commit + 测试先行的钉死用例（沿用 C1-C5 批次的 grill auto-with-guardrails 流程）。</p>
+</div>
+
+<h3 data-page-node-id="tGTiRwJkhUQTMqYoPmPa3M"><span class="pill p0" data-page-node-id="3HsYd5CAbRohK2MJulR58Y">P0</span> 键盘与无障碍：轮盘是纯鼠标设备</h3>
+<div class="card warn" data-page-node-id="FwcBRYvpQLWb4prNwvUSQl">
+  <p data-page-node-id="bz6Om4CwzKdsmeE2eaGKMJ"><strong data-page-node-id="XNeFCYFW7rbntlFg2tYKOr">证据链</strong>：PreviewKeyDown 只处理 Esc 与 ←→（RadialMenuWindow.xaml.cs:243-271）；SlotViewModel 无任何键盘导航成员；UIA Peer ControlType=Custom（SlotOrbAutomationPeer.cs:29-61），屏幕阅读器只能读到一串无名 Custom 节点。</p>
+  <p data-page-node-id="5py7tOpbeIldDHzAxZDw9A"><strong data-page-node-id="IbGTjyPiHu3sJR1hNEOin5">为什么是 P0 而非 P2</strong>：① 触控板 / 手部受伤 / 单手操作场景完全无法使用；② Windows 径向同类（如游戏轮盘）普遍支持方向键扇区选择；③ 现有极坐标扇区模型天然映射方向键（8 槽 = 8 方向），实现成本极低——命中已有 <code data-page-node-id="kA26nAms6iRxMzJdjn2D73">HitTest(Vector)</code>，方向键合成一个远点向量即可复用全链路（含 hover/preview）。</p>
+  <p data-page-node-id="GsvBJEGdSNjlk2mGxPvCFO"><strong data-page-node-id="jEcCz1GqTVMA2PA7axqUja">建议</strong>：方向键（含对角组合）映射最近扇区 + Enter 执行 + 数字键 1-8 直达；UIA Peer 补 <code data-page-node-id="iu52z7kwLNc73RSWWBFs3t">ControlType.Button</code> / ExpandCollapse 语义。需用户裁决是否纳入。</p>
+</div>
+
+<h3 data-page-node-id="KtaxHK9LqSEqadMkIuHreH"><span class="pill p1" data-page-node-id="CdrapODd3LDBfP9kCTSs0B">P1</span> 槽位标签 40px 截断：可读性瓶颈</h3>
+<div class="card" data-page-node-id="QnrmjA2GV5BtOznIjeIsYR">
+  <p data-page-node-id="M9gHN44mA5ocYPEUQHXYiB"><strong data-page-node-id="cZ2HtzYVj2ZA7oVJgIV0w1">证据链</strong>：标签 backplate FontSize=11、MaxWidth=<span class="num" data-page-node-id="ETZv02jRynu9LFyBdavGFQ">40</span>、TextTrimming 省略号（SlotOrb.xaml:302-351）。50px 的 orb 上 40px 宽的标签意味着 4-5 个汉字后必然截断——「资源管理器」这类常见名称都显示不全。用户被逼迫靠<strong data-page-node-id="Nzc1AVMnZgJZj1Qq1q5Cpt">纯图标 + 位置</strong>识别，新用户（Persona 李）学习成本高，且更长的本地化串（如德语）会全军覆没。</p>
+  <p data-page-node-id="Qom6sM7tvJCovOBPFHHxod"><strong data-page-node-id="u76CPGZsv5moELEsmZH7R8">建议</strong>：标签宽度与扇区角宽挂钩（8 槽 45° 扇区在 R=90 处弦长约 69px，还有余量）；或激活态展开完整标签（hover 时 backplate 延展）。同时校验 12 槽 / 6 槽两端的极限值。</p>
+</div>
+
+<h3 data-page-node-id="000gk036VVJX6bGTvPFAyG"><span class="pill p1" data-page-node-id="MUdVDFCWzQkMA9syfxu3im">P1</span> S1 测试债：几何回归的防波堤缺失</h3>
+<div class="card" data-page-node-id="diVtA3BHuNWixzPcoA5z01">
+  <p data-page-node-id="r8qDFys8tVZ1BAsfdvluZl"><strong data-page-node-id="t1PjCyarilz5VK1aHwDFNm">证据链</strong>：<code data-page-node-id="R1kRvnztucWdHdjEUzFsHK">RadialMenuLayoutCoordinator</code> / <code data-page-node-id="AoKYMGSFoLQXJeatCCvHHF">CommandPageProvider</code> / <code data-page-node-id="YSoXi3Nl6Ob0HuMtd2fpkH">ProcessPageProvider</code> 直接测试为 0（NEXT.md S1；ADR-023:53 承诺的 page-provider tests 未兑现）。对比：Fan 重叠 bug 与 Ring 命中 bug 都是「改一处几何、崩三处行为」的典型——而这三类恰恰是最适合纯函数化单测的（输入槽数 → 输出 pose）。</p>
+  <p data-page-node-id="ShV21AOzA5MkhJthqMUSRa"><strong data-page-node-id="bsrbxMLKAYATkMnBbITxNz">建议</strong>：与 P0-2 的拆分绑定做——拆出 <code data-page-node-id="2GCdU1zwCCINC9faHNkLyi">WheelGeometry</code> 时同步补 pose 快照测试（8/10/12 槽全参数钉死），把 ADR-023 的欠账一并清掉。</p>
+</div>
+
+<h3 data-page-node-id="NZQmLoiEaMF9NydjYf8fV9"><span class="pill p1" data-page-node-id="FsBBrcKvFXNIPTtLC4Dyi7">P1</span> 中心节点语义密度过高</h3>
+<div class="card" data-page-node-id="GHVNdm9q8ZbW3yONVWdfDr">
+  <p data-page-node-id="AEb81sHpfWor6TJXQ3zgu8"><strong data-page-node-id="5liITHphfiMsJWb3RmU6sw">证据链</strong>：中心同时承担 5 种角色——Cancel 锚点（根态）/ Back 锚点（子菜单）/ 窗口实时预览宿主 / morph 动画目标 / 死区原点。VisualStateCoordinator 里 D8「preserveCenterIdentity」等条件分支（RadialMenuVisualStateCoordinator.cs:49-101）+ MenuSession 里 3 个独立方法（UpdateSubMenuCenterLabel / ResetCenterSlotForRootMenu / ApplyCenterPreview）共同维护它。每次级联交互改动都要人工核对中心身份不被误重置——D7/D8/D11 的两次返工都与此相关。</p>
+  <p data-page-node-id="1GNXcKEofpyZciVO4k8l6E"><strong data-page-node-id="HaaH5UHXRvdGl5OAIYhxF6">建议</strong>：不改视觉行为，改归属——中心身份策略收敛为单一 <code data-page-node-id="C6CVlbyayqCEOzd5BJoq3Y">CenterIdentityPolicy</code>（输入：MenuState + activeSlotIndex + cascade 类型 → 输出：label/icon/preview 指令），coordinator 只执行。这与 P0-2 的②同步做。</p>
+</div>
+
+<h3 data-page-node-id="ryrxGoYJuDVoSRfJZE5No5"><span class="pill p2" data-page-node-id="ua4FBQwaj6HkP9HyKWHBu5">P2</span> 视口边缘的体验断层</h3>
+<div class="card" data-page-node-id="5cb52msyjgH6Ux1MMg7seD">
+  <p data-page-node-id="HS9lDjWkgyEL78ku47mlIk"><strong data-page-node-id="GPdG7JtyTW7DjobSA42Cnw">证据链</strong>：clamp 位移中心后靠 SetCursorPos 强制 warp 光标（RadialMenuWindow.xaml.cs:155-160, MenuViewportService.cs:165-169）。光标瞬移是可感知的「跳变」，且与 Windows 原生指针加速曲线冲突；在多显示器边界 / 高 DPI 屏上换算误差会被放大。</p>
+  <p data-page-node-id="uGFTOaBGtFPCGQ2ZhDt5l5"><strong data-page-node-id="0SzGTjAQ96CK1j32SV2Wuj">建议</strong>：评估「菜单贴边变形」替代方案（扇区向屏内压缩半角——pie menu 文献中的 screen-edge adaptation），至少为 warp 前后补一帧视觉连续性说明。属探索项，先做真机复现收集样本再定。</p>
+</div>
+
+<h3 data-page-node-id="vDChGOGwwtJkA23QFqXBAB"><span class="pill p2" data-page-node-id="4FCfHJF3RIDFBYK3IF3TZi">P2</span> 空轮盘 / 弱内容态没有专门设计</h3>
+<div class="card" data-page-node-id="25Mc9HxaIYGLWAUErRmBe9">
+  <p data-page-node-id="NPKe5Vp2xZztoCjBETDENY"><strong data-page-node-id="SzU2DdmLRXXsJKNqkZ38QD">证据链</strong>：设置界面已有统一 <code data-page-node-id="7PBD5OyumdBqYohCgsI9Bl">EmptyState</code> 组件（6 处），但轮盘本身的空态路径未见同等待遇——Command 页无槽位、Window 页无窗口、插件全部被断路器熔断时，轮盘呈现什么状态没有专门设计与测试钉死。（此条未做穷尽验证，实施前先跑一遍空配置真机确认。）</p>
+</div>
+
+<h3 data-page-node-id="VKNDnOh6YtUCtMpeErzDXN"><span class="pill p3" data-page-node-id="ETfmznDcExDoz60lrDyDY2">P3</span> 卫生项</h3>
+<div class="card" data-page-node-id="2XwEGngerG8muflloodH1j">
+  <ul data-page-node-id="vwSYShHzKV1rccfKQ1XQts">
+    <li data-page-node-id="vmVzUudCuxzPdGA9cQNQNU">XAML 死注释：RadialMenuWindow.xaml:296-302 存在自我争论式的过时注释（讨论 ZIndex 该怎么放却未删）；:26-29 的历史说明建议迁去 lesson 文档。</li>
+    <li data-page-node-id="sBkPDEBHfRdRElIrOJ2KFa">watchdog 60s 常量与 1s 轮询写死在 MenuSession（:61, 3412-3455），拆分时顺手参数化。</li>
+    <li data-page-node-id="mQw0XCQRu69UJSD0jfQnAE">dismiss 淡出 160ms 与 flick-out 变暗 200ms 两套节奏（xaml:111-136 vs xaml.cs:214-230）——统一到时长令牌。</li>
+  </ul>
+</div>
+
+<h2 data-page-node-id="vFSlHcdeBtdy9kd8qyhEaC">四、文献对照：轮盘做得对的地方（要保护，勿误伤）</h2>
+<div class="card good" data-page-node-id="R6B82U08lNcG18WJLUwRdB">
+  <table data-page-node-id="Xs2Cs4xQhGC9NGsB4BvVYc">
+    <tr data-page-node-id="6eXW5WxjSKRtU9nwlopQrK"><th data-page-node-id="pazaK8YgQVT7ruR3QbTk8o">设计点</th><th data-page-node-id="cMqbavmsD8Cb7xJ35rB7rD">文献依据</th><th data-page-node-id="YhrTEOimgla6XSwUaiJDjh">现状评价</th></tr>
+    <tr data-page-node-id="PcOH93iFK0MkrIHJzkroqG">
+      <td data-page-node-id="uQ4C0W8BA5GCVj8Ti2tela">角度扇区命中（无径向上限，死区外即触发）</td>
+      <td data-page-node-id="ISnUDfnOzcSET4Dmu5iaor">Pie Menu（Callahan et al. 1988）：角度方向的目标宽度远大于线性菜单，选择更快更稳</td>
+      <td data-page-node-id="rB4q42lfJeVo2jT2zeE9zK">✅ D10 后根轮与 Ring 统一同构，是正确的核心资产</td>
+    </tr>
+    <tr data-page-node-id="QVIKYNtLEDCL3rsUEGCylc">
+      <td data-page-node-id="IzhnGOZNoNM3SUoBcHFJmG">固定槽位位置 + 空间记忆</td>
+      <td data-page-node-id="JluOSeBzwmaidkyn5S196S">Marking Menu（Kurtenbach & Buxton 1994）：固定方位映射是肌肉记忆的前提</td>
+      <td data-page-node-id="Hl3RuLZh1iB4GgkzIiAxeK">✅ 槽位按索引固定布局，勿引入任何「自动重排」</td>
+    </tr>
+    <tr data-page-node-id="Z4xhVccyTblqy1yFMFK8l0">
+      <td data-page-node-id="r8gqLVwGD5F6O7MSEkVhou">中心死区</td>
+      <td data-page-node-id="Mdjjtz9DYr9gQrToi1hNOU">径向菜单研究共识：内圈死区消除中心选择歧义、防误触</td>
+      <td data-page-node-id="05KKXqVzeDtZhfaDadbpiR">✅ 死区半径 0.60R-0.65R 与惯例吻合（0.5R-0.7R 区间内）</td>
+    </tr>
+    <tr data-page-node-id="qVOIAZgpB7bH3sBzqnGBhM">
+      <td data-page-node-id="GyX65GG8O7PU66JFcQB1Qe">每页槽数 6-12</td>
+      <td data-page-node-id="qCZkwK6W9VTLuPW5SEa25q">经验阈值：超过 12 项角度分辨率先于视觉尺寸崩坏</td>
+      <td data-page-node-id="evohACzO0W0nLSrFEgn17A">✅ 上限 12、编辑器已有 Fan&gt;3 告警（ADR-024 D2）</td>
+    </tr>
+    <tr data-page-node-id="ji4w1Iec12hYyxXJOwAjdl">
+      <td data-page-node-id="NR0pi3ut8E4FvWhtFk2HWk">手势按住-划-松开的选择语法</td>
+      <td data-page-node-id="m6KcYRpvV79J6j9pjKqsxb">Marking Menu 的 stroke-through 选择：专家无需视觉确认</td>
+      <td data-page-node-id="nJN4mNAZqispWdf5RW0DpX">✅ 右拖 + 松键执行已是专家通道，与 flick-out 取消互补</td>
+    </tr>
+    <tr data-page-node-id="m9HPcPcvBFFX4mSNTVnydK">
+      <td data-page-node-id="oku89eJJIAuFrvgWWqjhUC">子菜单连续 morph（非替换跳变）</td>
+      <td data-page-node-id="070SOUaMnGoxizMOOXAqTA">空间连续性：上下文保持减少认知重置</td>
+      <td data-page-node-id="yMpqZ0eX9tPyx63T49Qt3M">✅ 中心 morph + Fan/Ring bloom 是对外叙事的差异化卖点（README 三支柱之一），重构时严禁退化为「内容替换」</td>
+    </tr>
+  </table>
+  <p class="muted" data-page-node-id="7FzVeEQNIsOeqscn8rz6Il">另一个要保护的非交互资产：E2E 管线（UIA AutomationId + 命令通道 + 截屏断言）已在子菜单三 bug 回归中证明价值——下列每项改动都必须有对应 E2E 或单测钉住。</p>
+</div>
+
+<h2 data-page-node-id="PlqLirptTSu698z8ZwNv3j">五、建议路线</h2>
+
+<h3 data-page-node-id="wedP1gNdhdx4kM9iXJR2Ae">UX 轨（快赢批次，不碰架构，合计约一个会话量）</h3>
+<p class="muted">状态更新（2026-09-09 下午）：U1–U6 已按 grill auto-with-guardrails 落地并本地提交，全量 1388/1388 通过（新增 27 测试）；U2/U4/U5 手感与视觉待真机复测；UIA ControlType 变更顺延（E2E 依赖 Custom peer）。</p>
+<table data-page-node-id="Fa4JdjEIjEEGYSHaMP5sQV">
+  <tr data-page-node-id="5BnHGcQCX4GxSMiRfxBLJS"><th data-page-node-id="JoAJ5yQukfTlnQHd6u8tuF">#</th><th data-page-node-id="BE2hRp7Q6ZJuKYHyfMntmT">改动</th><th data-page-node-id="IwPLTKcBlqh3c1zN39WINJ">级别</th><th data-page-node-id="bbMCfvRLRz1J2dfI9M0Ge6">风险</th><th data-page-node-id="zKLrvVfasgJWkFgBrUBl82">验证</th></tr>
+  <tr data-page-node-id="gPJ6DlLMZf3I72NNreoSDW"><td data-page-node-id="JubE7o3JczuwwgC2kouj42">U1</td><td data-page-node-id="4Aep2Gwq2xwqh002mO62On">hover enter 300ms → ≤120ms；release 保持</td><td data-page-node-id="urzrCDXnZklhAmoDQR1Cyu"><span class="pill p0" data-page-node-id="ZSX3zQo7x7v0yUbk1UBR8n">P0</span></td><td data-page-node-id="YNeF1MwjGn2GG43zNgCFXk">低（常量）</td><td data-page-node-id="cTSXyWUkbX6kBLfwZS0JbY">现有 RadialMenuAnimationDurationTests 扩展 + 真机手感</td></tr>
+  <tr data-page-node-id="Fl1J1NHwcbQmgzhOKAwGHi"><td data-page-node-id="Eu7H6dF7C0czHLniMqYGdc">U2</td><td data-page-node-id="Czt17G20dQAX9N2lD1ZvzO">磁吸速度上限 120→≥400px/s 或近距离才吸附</td><td data-page-node-id="MBcELqRWYTAevmrjRla8D1"><span class="pill p0" data-page-node-id="DOMNAKqJycL4NxQlBFQvpk">P0</span></td><td data-page-node-id="AyTnKHdSHEl7ibKk99GLrM">中（手感调参）</td><td data-page-node-id="zwUDQosh0z3dHSTq2zl6lA">SlotViewModelTests + 真机 A/B</td></tr>
+  <tr data-page-node-id="tBVCz0tY8qojTxXVVoS8m9"><td data-page-node-id="X6CFWawSl4LNVFYOiSUpTe">U3</td><td data-page-node-id="H6lHNneuTuTJqsghQBxXVK">翻页 nudge BackEase → Pulsar.Easing.Standard</td><td data-page-node-id="v9EDhw7uumz0NCLWJ3gIYo"><span class="pill p0" data-page-node-id="X6anVoXg8k5zV69KfVsEbb">P0</span></td><td data-page-node-id="y9kJOh83XYKfiCAJoq4fNk">极低</td><td data-page-node-id="CQycDdFfw5soj4RNi0ES23">构建 + E2E 翻页用例</td></tr>
+  <tr data-page-node-id="rbpyCn06E92zY28cX3inDH"><td data-page-node-id="CMzyqYzeAPSTVXpFZZJ1vi">U4</td><td data-page-node-id="qT4gPDHannP46swGRAjsDG">方向键扇区选择 + Enter 执行 + 数字键直达</td><td data-page-node-id="kRI7eQBcy9tyVlO7AW08s8"><span class="pill p0" data-page-node-id="RoW3ky5XAMFaepfOEZ4J8i">P0</span></td><td data-page-node-id="wCYeIRShCxVddav9djfbzU">低（复用 HitTest）</td><td data-page-node-id="VlverDUB9DoUzLfJITMNVB">新单测（合成向量）+ E2E 键盘用例</td></tr>
+  <tr data-page-node-id="SlEZo5LNJJBo92zjNJ19QC"><td data-page-node-id="EoadEl94u8uPcxUWvBWCRE">U5</td><td data-page-node-id="tVyiAD6zpQV7uNluocU7nH">标签 MaxWidth 与扇区角宽挂钩，消除 40px 截断</td><td data-page-node-id="EQtkasUDH8VePGdBGIg1Rj"><span class="pill p1" data-page-node-id="KcO5oN3sgWwttoPTIwgSZZ">P1</span></td><td data-page-node-id="IvHEayBE42GHz7spfqGuNl">低</td><td data-page-node-id="jG9O87HemGqIiUOuiZIhBE">6/8/10/12 槽截图对比</td></tr>
+  <tr data-page-node-id="WsycNKTqplFjlZkCYamGDR"><td data-page-node-id="YLfASVUDfXeKNxZNf2YcTH">U6</td><td data-page-node-id="WOkS7lGukc55shwoXajiGa">卫生项：死注释、双淡出节奏统一、watchdog 参数化</td><td data-page-node-id="fphxcDiBijLjD171hW24Tl"><span class="pill p3" data-page-node-id="lW0lX2hApFXa8iCQSQldi7">P3</span></td><td data-page-node-id="y5UbdcbL6gEscWF7HyFaii">极低</td><td data-page-node-id="IrL9dFSN6DvMg3aRKVNJpq">构建 0/0 + 全量测试</td></tr>
+</table>
+
+<h3 data-page-node-id="4cWKgDGeeQqNxcqOTy0ori">重构轨（与 UX 轨并行或紧随，沿用 grill auto-with-guardrails + TDD）</h3>
+<table data-page-node-id="SkqDlam2qPwWJCDxBIEJ8E">
+  <tr data-page-node-id="NtzO7F40R5j2dOOZ5zXxFh"><th data-page-node-id="B4gHlaw90zRnVUs9qezEXE">步</th><th data-page-node-id="OS1fSxB6kFPIENxq8awVWN">内容</th><th data-page-node-id="QYGPzc6bAWeP6spvq3n1e4">连带收益</th></tr>
+  <tr data-page-node-id="5poCMteHs23U4jkOYwSAvS"><td data-page-node-id="ptxjJT6oDH4ZIaKczFKLWV">R1</td><td data-page-node-id="uV1j5hVx4HkPnwaHAGKNXQ"><code data-page-node-id="zhsekqIWc4LyeRa7tBCFV4">WheelGeometry</code>：250 基准/半径/死区/扇区单一真相源（3 处硬编码收口）</td><td data-page-node-id="DItRS7gKZS8noItmKLmNW5">清掉 S1 欠账（pose 快照测试 8/10/12 槽）</td></tr>
+  <tr data-page-node-id="wmabkwKICSGd7W9liaLCFr"><td data-page-node-id="ZcKzfyc2Qx8Ap9AzgwlpE3">R2</td><td data-page-node-id="DTGKUmKBVL5fFMNs58KvkY"><code data-page-node-id="DJCJJlwiv5VQ0w26IspO1o">GestureController</code>：右拖状态机 + flick-out（MenuSession 1154-1449 迁出）</td><td data-page-node-id="PxQyCxaKtlM33heDAwLi6y">手势可独立单测；ADR-020 后续深化</td></tr>
+  <tr data-page-node-id="qPoFfK2f5jvisUmyd0qAHz"><td data-page-node-id="xfKURIU3HHyaLp9LPkBnGX">R3</td><td data-page-node-id="J5NPhicv8oMs58CfbekRbx"><code data-page-node-id="i2xIWuE0OTLvAmzJu0WtCF">SubMenuTransitionController</code> + <code data-page-node-id="B2GAEInBQ8xblXIr0hxXxb">CenterIdentityPolicy</code>（2802-3276 + 视觉态中心分支）</td><td data-page-node-id="3ENNEYU76eLFPiRPy0DSbt">中心身份单点维护，D7/D8 类返工不再发生</td></tr>
+  <tr data-page-node-id="MIqyEBw6gR0fULVHSuPVTO"><td data-page-node-id="daoHNFCr8fHSthTuSMBBfX">R4</td><td data-page-node-id="4xYEPNX8ur1zIHQdGSKsOX"><code data-page-node-id="MXrcBWk9p3khbx7psjv20f">MenuWatchdog</code> 独立服务（3412-3455）</td><td data-page-node-id="B9snRMGQyvN0usufqEozSU">MenuSession 预计降至 ~1800 行以内</td></tr>
+</table>
+
+<div class="card tldr" data-page-node-id="w6BF42z14PRSB0yJhLLZl8">
+  <strong data-page-node-id="3RHOHrH51kiQvKfoJ6tVya">推荐顺序</strong>：U1/U3（当天可完成、立竿见影）→ R1（几何收口 + 补测试）→ U4/U5 → R2 → R3 → U2（手感调参放后，因需多轮真机 A/B）→ R4/U6。P2 两项（光标 warp、空轮盘态）单独立项，先收集真机证据再裁决。<br data-page-node-id="CCfVqHzdaxgP1v5iaGrz9u"><br data-page-node-id="Kt9HGIejyErWD0GBnxfXB6">
+  <strong data-page-node-id="Fi27yMwOA5UAOqes3dB7nA">护栏约定</strong>：全部改动只做本地 commit，push 由你执行；若涉及 ADR-024 已定几何语义（扇区、死区、flick-out 半径），先暂停确认再动。
+</div>
+
+<h2 data-page-node-id="Xb61pbfUvnrcJH7X6rFbq6">六、遗留与未验证项（诚实声明）</h2>
+<ul data-page-node-id="scel5SDfQttgRtJTBlh8kM">
+  <li data-page-node-id="CMgd8yRGO5IVIwmWLSbx5n">空轮盘态（P2）未做穷尽代码走查，报告中已标注「实施前先真机确认」。</li>
+  <li data-page-node-id="dKhTQ4b1DUHYWv2Cgg0yG5">本报告引用的文献均为经典结论（Callahan 1988 / Kurtenbach &amp; Buxton 1994 / Nielsen 0.1s 响应准则），未做新一轮网络检索复核；若需要，可补一份带链接的文献附录。</li>
+  <li data-page-node-id="XKFTj5ErwEDH5OSjAfEmGY">NEXT.md 记录 git 在 E 盘的提交仍被安全软件拦截（阻塞中）——本报告为新增文件，未做任何 commit；待你放行后可与主题重构批次一并提交。</li>
+  <li data-page-node-id="F7PmbOKv42JItkaaoSTcnB">子轮盘交付（三 bug 修复 + ADR-024 v1.2.1 几何优化）仍待你真机验收，本报告的 R3 依赖验收通过后再动。</li>
+</ul>
+
+<footer data-page-node-id="8BbSNjMCuePcRAE8Dz3YkP">
+  生成：Nova ⚡ · 2026-09-09 · 非侵入式评审（未改动任何源码/构建）<br data-page-node-id="SxEcACFf5GajayOFZOdVX4">
+  证据基线：工作区当前未提交状态（含 2026-09-09 主题重构与图标圆角化在途改动）
+</footer>
+
+</div>
+</body>
+</html>

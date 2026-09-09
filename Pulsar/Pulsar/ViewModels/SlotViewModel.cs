@@ -232,7 +232,10 @@ namespace Pulsar.ViewModels
         // velocity ceiling: the magnetic pull adapts to how far the target is but
         // never snaps to it during fast sweeps across the wheel.
         private const double MagneticTimeConstant = 0.10; // ~100ms to close 63% of the gap
-        private const double MaxMagneticSpeed = 120.0;    // px/s, velocity ceiling
+        // [UX 2026-09-09] 120→400px/s：磁吸的职责是"稳定目标"，不是"拖住用户"。
+        // 120px/s 的上限对快速甩向目标的 Power User 是主动减速带（Persona 张
+        // 每天 200 次唤起）；400px/s 只在最后 ~10px 的收尾段介入，手感 A/B 待真机复测。
+        internal const double MaxMagneticSpeed = 400.0;   // px/s, velocity ceiling
 
         private DateTime _lastMagneticUpdateUtc = DateTime.MinValue;
 

@@ -107,8 +107,9 @@
 
             <!-- [Flick-out cancel] Dim the menu while in the escape state (cancel
                  preview). Gesture-only: IsFlickOutEscaped is never set for hotkey
-                 menus, so hotkey summons are unaffected. 200ms fade matches the
-                 window's dismiss fade rhythm. -->
+                 menus, so hotkey summons are unaffected. [UX 2026-09-09 U6] 0.2s →
+                 0.16s：与窗口 dismiss 淡出（MenuTiming.DismissFade = 160ms，代码常量
+                 非 XAML 令牌，故此处以裸值对齐并注明）统一为同一消退节奏。 -->
             <Canvas.Style>
                 <Style TargetType="Canvas">
                     <Setter Property="Opacity" Value="1"/>
@@ -118,7 +119,7 @@
                                 <BeginStoryboard>
                                     <Storyboard>
                                         <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0.6"
-                                                         Duration="0:0:0.2"/>
+                                                         Duration="0:0:0.16"/>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </DataTrigger.EnterActions>
@@ -126,7 +127,7 @@
                                 <BeginStoryboard>
                                     <Storyboard>
                                         <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1"
-                                                         Duration="0:0:0.2"/>
+                                                         Duration="0:0:0.16"/>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </DataTrigger.ExitActions>
@@ -172,7 +173,7 @@
 
             <!-- [New] Center Container for Morphing Effect (Simplified) -->
             <Grid Width="500" Height="500" Canvas.Left="0" Canvas.Top="0">
-                
+
                 <!-- Shared Background Container -->
                 <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
                     
@@ -291,20 +292,10 @@
                 </Grid>
             </Grid>
 
-            <!-- [Optimized] Dynamic Title with Hard Shadow (No DropShadowEffect for Performance) -->
-
-            <!-- [New] Halo Dimmer Background (Simulated Frost) -->
-            <!-- Placed BEHIND the center orb but visually it serves as a backdrop. 
-                 Actually, it should be at ZIndex -1 relative to Slots if we want Slots on top?
-                 Currently Slots are drawn first (Z-Order bottom), then Center Container.
-                 Wait, ItemsControl (Slots) is defined BEFORE Center Container. So Slots are BELOW Center Container?
-                 Yes.
-                 To put this BEHIND everything, we should put it as the FIRST child of Canvas. -->
-
             <!-- [Optimized] Dynamic Title with Hard Shadow (No DropShadowEffect for Performance).
                  A local translucent scrim keeps the white title readable on both light and
                  dark desktop backgrounds after the wheel-level gradient scrim was removed. -->
-            <Grid Canvas.Left="0" 
+            <Grid Canvas.Left="0"
                   Canvas.Top="{Binding TitleTopOffset}" 
                   Width="500"
                   IsHitTestVisible="False">

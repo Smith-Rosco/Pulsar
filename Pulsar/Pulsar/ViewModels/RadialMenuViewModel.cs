@@ -460,6 +460,21 @@ namespace Pulsar.ViewModels
 
         public void UpdateSlotsPerPage(int newCount) => _session.UpdateSlotsPerPage(newCount);
 
+        /// <summary>
+        /// [UX 2026-09-09 U4] Keyboard navigation surface: moves the active slot
+        /// highlight (and its hover preview) without synthesizing a click. Mirrors
+        /// what the mouse-hover path does before release. Index 0 = center.
+        /// </summary>
+        public void UpdateActiveSlot(int index) => _session.UpdateActiveSlot(index);
+
+        /// <summary>
+        /// [UX 2026-09-09 U4] Keyboard confirmation: executes the current selection
+        /// through the exact same session entry point the click/release paths use
+        /// (Enter key). Unlike <see cref="SimulateSelectionExecute"/> this is a
+        /// production input path, not a debug-only driver surface.
+        /// </summary>
+        public Task ExecuteSelectionAsync() => _session.ExecuteSelectionAsync();
+
         // ============ E2E driver surface (ui-debug command channel only) ============
         // These synthesise input through the exact same session entry points the
         // real input adapters use (HitTest → click / hover, release → selection),

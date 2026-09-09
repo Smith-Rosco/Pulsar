@@ -5,6 +5,7 @@ using Pulsar.ViewModels;
 using Pulsar.Native;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading;
@@ -240,6 +241,10 @@ namespace Pulsar.Views
             base.OnClosed(e);
         }
 
+        // [UX 2026-09-09 U4] Arrow keys held right now — a second key turns a
+        // cardinal direction into its diagonal (Left+Up = top-left sector).
+        private readonly HashSet<Key> _heldDirectionKeys = new();
+
         private void OnPreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (!_viewModel.IsVisible)
@@ -254,19 +259,87 @@ namespace Pulsar.Views
                     e.Handled = true;
                     break;
 
+                // [UX 2026-09-09 U4] Arrows select the nearest sector instead of
+                // paging. Paging moved to PgUp/PgDn (the mouse wheel still pages);
+                // sector selection via the same polar geometry the mouse uses
+                // keeps keyboard and mouse positions interchangeable.
                 case Key.Left:
+                case Key.Right:
+                case Key.Up:
+                case Key.Down:
+                    if (_heldDirectionKeys.Add(e.Key))
+                    {
+                        ResolveKeyboardDirection();
+                    }
+                    e.Handled = true;
+                    break;
+
+                case Key.PageUp:
                     if (_viewModel.HandlePagingKey(-1))
                     {
                         e.Handled = true;
                     }
                     break;
 
-                case Key.Right:
+                case Key.PageDown:
                     if (_viewModel.HandlePagingKey(1))
                     {
                         e.Handled = true;
                     }
                     break;
+
+                case Key.Enter:
+                    _ = _viewModel.ExecuteSelectionAsync();
+                    e.Handled = true;
+                    break;
+
+                default:
+                    int? digit = e.Key switch
+                    {
+                        Key.D1 or Key.NumPad1 => 1,
+                        Key.D2 or Key.NumPad2 => 2,
+                        Key.D3 or Key.NumPad3 => 3,
+                        Key.D4 or Key.NumPad4 => 4,
+                        Key.D5 or Key.NumPad5 => 5,
+                        Key.D6 or Key.NumPad6 => 6,
+                        Key.D7 or Key.NumPad7 => 7,
+                        Key.D8 or Key.NumPad8 => 8,
+                        Key.D9 or Key.NumPad9 => 9,
+                        _ => null
+                    };
+                    if (digit.HasValue)
+                    {
+                        var resolved = RadialKeyboardNavigator.ResolveDigitSlotIndex(
+                            digit.Value, _viewModel.Slots.Count);
+                        if (resolved.HasValue)
+                        {
+                            _viewModel.UpdateActiveSlot(resolved.Value);
+                            e.Handled = true;
+                        }
+                    }
+                    break;
+            }
+        }
+
+        private void OnPreviewKeyUp(object sender, KeyEventArgs e)
+        {
+            // Selection stays where it is when a direction key is released — only
+            // a newly PRESSED key (or a fresh diagonal combination) moves it.
+            _heldDirectionKeys.Remove(e.Key);
+        }
+
+        private void ResolveKeyboardDirection()
+        {
+            var (dirX, dirY) = RadialKeyboardNavigator.DirectionFromKeys(
+                _heldDirectionKeys.Contains(Key.Left),
+                _heldDirectionKeys.Contains(Key.Right),
+                _heldDirectionKeys.Contains(Key.Up),
+                _heldDirectionKeys.Contains(Key.Down));
+
+            int slotIndex = RadialKeyboardNavigator.ResolveSlotIndex(dirX, dirY, _viewModel.Slots.Count);
+            if (slotIndex > 0)
+            {
+                _viewModel.UpdateActiveSlot(slotIndex);
             }
         }
 
@@ -309,8 +382,10 @@ namespace Pulsar.Views
 
             double offset = direction == BoundaryDirection.FirstPage ? 14 : -14;
             var duration = TimeSpan.FromMilliseconds(260);
-            var nudgeEase = new CubicEase { EasingMode = EasingMode.EaseOut };
-            var settleEase = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.35 };
+            // [UX 2026-09-09] BackEase 是 2026-09-01「回弹缓动推迟终态感知，全局改
+            // 指数」裁定的最后残留；对齐 Pulsar.Easing.Standard（QuarticEase EaseOut）。
+            var nudgeEase = new QuarticEase { EasingMode = EasingMode.EaseOut };
+            var settleEase = new QuarticEase { EasingMode = EasingMode.EaseOut };
 
             var scaleXAnimation = new DoubleAnimationUsingKeyFrames();
             scaleXAnimation.KeyFrames.Add(new EasingDoubleKeyFrame(0.985, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(70))));

@@ -304,8 +304,11 @@
                  The Viewbox is sized proportionally to the orb itself (0.64x), so the
                  larger center slot gets a larger label while small ring slots stay
                  compact. MaxWidth=40 in design units keeps "取消" (22 units at FontSize
-                 11) and short labels such as "Cancel"/"Back"/"Pulsar" fully visible; only very
-                 long window/process titles are ellipsized before scaling. -->
+                 11) and short labels such as "Cancel"/"Back"/"Pulsar" fully visible at
+                 rest; on activation it expands to 72 (UX 2026-09-09 U5) so long
+                 window/process titles become readable exactly where the user is
+                 looking — the static layout never widens, so adjacent labels cannot
+                 collide. -->
             <Viewbox Stretch="Uniform"
                      StretchDirection="Both"
                      MaxWidth="{Binding Size, ElementName=OrbRoot, Converter={StaticResource SizeFactor}, ConverterParameter=0.64}"
@@ -346,7 +349,38 @@
                                MaxWidth="40"
                                TextTrimming="CharacterEllipsis"
                                HorizontalAlignment="Center"
-                               VerticalAlignment="Center"/>
+                               VerticalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Style.Triggers>
+                                    <!-- [UX 2026-09-09 U5] 激活态展开标签宽度：默认 40 设计
+                                         单位仅容纳 4-5 个字符（"资源管理器"必然截断），
+                                         hover 展开到 72 让长标题在用户注视处完整可读。
+                                         时长对齐 Pulsar.Duration.Fast。 -->
+                                    <DataTrigger Binding="{Binding IsActive, ElementName=OrbRoot}" Value="True">
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetProperty="MaxWidth"
+                                                                     To="72"
+                                                                     Duration="{StaticResource Pulsar.Duration.Fast}"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+                                        <DataTrigger.ExitActions>
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetProperty="MaxWidth"
+                                                                     To="40"
+                                                                     Duration="{StaticResource Pulsar.Duration.Fast}"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.ExitActions>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
                 </Border>
             </Viewbox>
             </Grid>

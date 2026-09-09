@@ -47,6 +47,15 @@ namespace Pulsar.Views.Controls
         }
 
         /// <summary>
+        /// [UX 2026-09-09 U1] Hover 反馈节奏的单一来源，internal 供测试钉死。
+        /// Enter 与 Pulsar.Duration.Fast (120ms) 对齐——径向菜单的优势是"指向即
+        /// 选择"，300ms 的过渡追不上快速划动的光标（Persona 张 每天 200 次唤起）。
+        /// Release 保持 320ms：释放是非阻塞的平静相，慢收尾构成"呼吸"节奏。
+        /// </summary>
+        internal static readonly TimeSpan HoverEnterDuration = TimeSpan.FromMilliseconds(120);
+        internal static readonly TimeSpan HoverReleaseDuration = TimeSpan.FromMilliseconds(320);
+
+        /// <summary>
         /// Writes the renderer-resolved highlight (glow brush / effect / opacity) onto
         /// the <see cref="ActiveShape"/> glow layer. This replaces the hard-coded
         /// highlight effect that used to live in the active-state XAML trigger.
@@ -55,10 +64,9 @@ namespace Pulsar.Views.Controls
         {
             if (ActiveShape == null) return;
 
-            // Opacity transition (matches the original 300ms enter / 320ms release feel).
             var duration = highlight.Opacity > 0
-                ? TimeSpan.FromMilliseconds(300)
-                : TimeSpan.FromMilliseconds(320);
+                ? HoverEnterDuration
+                : HoverReleaseDuration;
             var easeOut = new QuadraticEase { EasingMode = EasingMode.EaseOut };
 
             // Glow brush: a custom fill wins over the theme-derived glow brush,
@@ -214,9 +222,10 @@ namespace Pulsar.Views.Controls
 
             // Fluid motion language: a single QuadraticEase family and matched
             // durations so activation and release feel like one breathing gesture
-            // rather than a sequence of disconnected jerks.
-            var enter = TimeSpan.FromMilliseconds(300);
-            var release = TimeSpan.FromMilliseconds(320);
+            // rather than a sequence of disconnected jerks. Durations come from the
+            // HoverEnter/ReleaseDuration constants (single source, test-pinned).
+            var enter = HoverEnterDuration;
+            var release = HoverReleaseDuration;
             var easeOut = new QuadraticEase { EasingMode = EasingMode.EaseOut };
 
             // [RadialRenderer] Route the highlight through the renderer resolved by
