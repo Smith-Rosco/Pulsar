@@ -17,6 +17,12 @@
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <!-- 自带 Wpf.Ui 控件样式：模板内 BasedOn="{StaticResource {x:Type ui:TextBox}}"
+                     等隐式样式引用必须在自身资源链内解析（AddSlotContent 同款先例），
+                     否则作为 Page 内容复用时（transient slot-editor tab）StaticResource 查
+                     找不经过宿主窗口链，模板实例化即崩。颜色令牌仍走 DynamicResource
+                     继承宿主 ThemesDictionary，主题切换不受影响。 -->
+                <ui:ControlsDictionary/>
                 <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/SlotStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
