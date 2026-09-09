@@ -4,12 +4,18 @@
 The two renders keep their own background gradients (light ice field / deep
 indigo field); only subject bbox is normalized so both pair at identical scale.
 Transparent mark is white-keyed from the LIGHT render (clean on light surfaces).
+
+Since 2026-09-09: masters are output as ROUNDED-RECTANGLE tiles (RGBA, corners
+transparent, radius CORNER_RADIUS px at 256). Dial geometry is safe for this
+radius (dial radius ~90/256, corner circle bound ~37 px; see repo journal).
 """
 import math
 import os
 from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+
+CORNER_RADIUS = 36  # px on the 256 master; scales proportionally for ico sizes
 
 JOBS = [
     {"name": "light", "src": "15-radial-dial-light.png", "mask_t": 40,
@@ -20,6 +26,29 @@ JOBS = [
 
 PADDING_RATIO = 0.10
 ICON_SIZES = [16, 24, 32, 48, 64, 128, 256]
+
+
+def rounded_rect_alpha(size, radius):
+    """Anti-aliased alpha mask: opaque inside the rounded rect, transparent
+    corners. Smooth 1px falloff at the corner arc (distance-based)."""
+    mask = Image.new("L", (size, size), 0)
+    mp = mask.load()
+    r = float(radius)
+    inner = size - 1 - r
+    for y in range(size):
+        for x in range(size):
+            cx = r if x < r else (inner if x > inner else float(x))
+            cy = r if y < r else (inner if y > inner else float(y))
+            d = math.hypot(x - cx, y - cy)
+            if d >= r + 0.5:
+                a = 0
+            elif d <= r - 0.5:
+                a = 255
+            else:
+                a = int(255 * (r + 0.5 - d))
+            mp[x, y] = a
+    return mask
+
 
 
 def corner_anchor(px, w, h, k=12):
@@ -54,7 +83,9 @@ def centered_square_master(path, mask_t):
     l = min(max(0, int(cx - side / 2)), w - side)
     t = min(max(0, int(cy - side / 2)), h - side)
     sub = im.crop((l, t, l + side, t + side))
-    return sub.resize((256, 256), Image.LANCZOS)
+    master = sub.resize((256, 256), Image.LANCZOS).convert("RGBA")
+    master.putalpha(rounded_rect_alpha(256, CORNER_RADIUS))
+    return master
 
 
 def transparent_mark_from_render(path):
