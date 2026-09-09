@@ -47,16 +47,8 @@ namespace Pulsar.ViewModels
         private const double CenterX = CanvasSize / 2;
         private const double CenterY = CanvasSize / 2;
 
-        // Kando-inspired timing: a short anticipation collapse, a distance-adaptive
-        // root-translation glide, and a slightly overshooting bloom for the new ring.
-        private static readonly TimeSpan SubMenuCollapseDuration = TimeSpan.FromMilliseconds(110);
-        private static readonly TimeSpan SubMenuRestoreBloomDuration = TimeSpan.FromMilliseconds(160);
-        private const double SubMenuEnterMinDurationMs = 110;
-        private const double SubMenuEnterMaxDurationMs = 240;
-        private const double SubMenuBloomMinDurationMs = 150;
-        private const double SubMenuBloomMaxDurationMs = 230;
-        private const double SubMenuCollapsedScale = 0.45;
-        private const double SubMenuCollapsedOpacity = 0.0;
+        // [R3 2026-09-09] Submenu transition timing/scale constants and orchestration
+        // moved to SubMenuTransitionController (single source of truth there).
 
         /// <summary>
         /// Gesture-release await equals <see cref="MenuTiming.DismissAwait"/>:
@@ -204,10 +196,10 @@ namespace Pulsar.ViewModels
         /// </summary>
         private SubMenuDescriptor? _activeSubMenuDescriptor;
 
-        // Submenu transition state. During a transition all pointer/keyboard input
-        // is ignored so a partially-morphed menu can never be acted upon.
-        private bool _isTransitioning;
-        private CancellationTokenSource? _subMenuTransitionCts;
+        // [R3 2026-09-09] Submenu transition guard + CTS lifecycle and the enter/exit
+        // morph choreography live in SubMenuTransitionController; the session keeps
+        // descriptor state, strategy configuration and preview priming.
+        private readonly SubMenuTransitionController _subMenuTransition = null!;
         private int _subMenuOriginSlotIndex = -1;
 
         /// <summary>
@@ -399,8 +391,48 @@ namespace Pulsar.ViewModels
                 () => IsVisible = false,
                 logger);
 
+            // [R3 2026-09-09] Submenu transition orchestration: the controller owns
+            // the morph choreography and the transition guard; session state stays
+            // here and is exposed as live getters / state callbacks (zero copying).
+            _subMenuTransition = new SubMenuTransitionController(new SubMenuTransitionHost
+            {
+                CenterSlot = () => CenterSlot,
+                Slots = () => Slots,
+                SubMenuSlots = () => SubMenuSlots,
+                CurrentCenterSize = () => _currentCenterSize,
+                Ui = _ui,
+                Loc = _loc,
+                UpdateActiveSlot = UpdateActiveSlot,
+                SetCenterText = text => CenterText = text,
+                AnimateMenuCenter = AnimateMenuCenterAsync,
+                EffectiveCascadeStyle = EffectiveCascadeStyle,
+                SlotsPerPage = () => _slotsPerPage,
+                ClearSubMenuState = ClearSubMenuStateForTransition,
+                ReleaseSubMenuSlots = ReleaseSubMenuSlots,
+                ResetCenterForRoot = ResetCenterSlotForRootMenu,
+                RestoreRootMenuFromCoordinator = () => _subMenuCoordinator.RestoreRootMenu(_pageProvider, _pagingController, Slots, CenterSlot)
+            });
+
             _pulsarText = _loc["RadialMenu.Pulsar"];
             _centerText = _pulsarText;
+        }
+
+        /// <summary>
+        /// [R3 2026-09-09] Submenu descriptor/window/page/origin bookkeeping reset,
+        /// invoked by the transition controller at the exact point where the session
+        /// used to reset these fields inline (both cascade and window exit paths).
+        /// </summary>
+        private void ClearSubMenuStateForTransition()
+        {
+            _subMenuWindows = new List<ProcessWindowInfo>();
+            _subMenuProcessName = string.Empty;
+            _activeSubMenuDescriptor = null;
+            _subMenuPage = 0;
+            _subMenuTotalPages = 1;
+            _subMenuOriginSlotIndex = -1;
+            _subMenuOriginX = 0;
+            _subMenuOriginY = 0;
+            _menuState = MenuState.Root;
         }
 
         // ============ Public projection surface ============
@@ -435,9 +467,7 @@ namespace Pulsar.ViewModels
                         _sessionCts?.Cancel();
                         _sessionCts = null;
                         _hotkeyService.ResetModifierState();
-                        _subMenuTransitionCts?.Cancel();
-                        _subMenuTransitionCts = null;
-                        _isTransitioning = false;
+                        _subMenuTransition.HardReset();
 
                         // [ADR-024 D4/D7] A hidden menu must drop its submenu state.
                         // Cascade children live in their own ItemsControl
@@ -625,26 +655,11 @@ namespace Pulsar.ViewModels
         }
 
         /// <summary>
-        /// Submenu travel speed grows with the distance between the current menu
-        /// center and the click point.
+        /// [R3 2026-09-09] Alias kept for the duration-contract tests; the math
+        /// lives in <see cref="SubMenuTransitionController.GetSubMenuEnterDuration"/>.
         /// </summary>
-        internal static TimeSpan GetSubMenuEnterDuration(double distanceDip)
-        {
-            double velocityDipPerMs = 1.8 + (distanceDip * 0.002);
-            double durationMs = distanceDip / velocityDipPerMs;
-            return TimeSpan.FromMilliseconds(Math.Clamp(
-                durationMs,
-                SubMenuEnterMinDurationMs,
-                SubMenuEnterMaxDurationMs));
-        }
-
-        private static TimeSpan GetSubMenuBloomDuration(TimeSpan enterDuration)
-        {
-            return TimeSpan.FromMilliseconds(Math.Clamp(
-                enterDuration.TotalMilliseconds + 30,
-                SubMenuBloomMinDurationMs,
-                SubMenuBloomMaxDurationMs));
-        }
+        internal static TimeSpan GetSubMenuEnterDuration(double distanceDip) =>
+            SubMenuTransitionController.GetSubMenuEnterDuration(distanceDip);
 
         // ============ IMenuSession ============
 
@@ -707,7 +722,7 @@ namespace Pulsar.ViewModels
 
         public void RestoreRootMenu()
         {
-            if (_isTransitioning)
+            if (_subMenuTransition.IsTransitioning)
             {
                 return;
             }
@@ -1329,7 +1344,7 @@ namespace Pulsar.ViewModels
         /// </summary>
         public async Task HandleGlobalMouseClickAsync(GlobalMouseButton button, int clickSlotIndex, Vector relativeClickPoint)
         {
-            if (_isTransitioning)
+            if (_subMenuTransition.IsTransitioning)
             {
                 return;
             }
@@ -1608,10 +1623,10 @@ namespace Pulsar.ViewModels
             // A submenu transition is visual work only. It must never consume the
             // release of the key that owns the menu lifetime. Cancel the transition
             // and close synchronously so a slow animation cannot leave the panel up.
-            if (_isTransitioning && releaseTriggersExecution)
+            if (_subMenuTransition.IsTransitioning && releaseTriggersExecution)
             {
                 _logger?.LogDebug("[HandleKeyUp] Cancelling submenu transition on hotkey release");
-                _subMenuTransitionCts?.Cancel();
+                _subMenuTransition.CancelCurrentTransition();
                 if (_menuState == MenuState.SubMenu)
                 {
                     double releaseX = _lastMouseX;
@@ -1649,7 +1664,7 @@ namespace Pulsar.ViewModels
                 return;
             }
 
-            if (_isTransitioning)
+            if (_subMenuTransition.IsTransitioning)
             {
                 return;
             }
@@ -1729,7 +1744,7 @@ namespace Pulsar.ViewModels
 
         public bool HandleMouseWheel(int delta, bool treatFeedbackAsHandled)
         {
-            if (!IsVisible || _isTransitioning) return false;
+            if (!IsVisible || _subMenuTransition.IsTransitioning) return false;
             if (_menuState == MenuState.SubMenu) return HandleSubMenuMouseWheel(delta, treatFeedbackAsHandled);
             if (_pageProvider == null) return false;
 
@@ -1831,7 +1846,7 @@ namespace Pulsar.ViewModels
 
             UpdateFlickOutEscapeState();
 
-            if (_isTransitioning) return;
+            if (_subMenuTransition.IsTransitioning) return;
 
             _animationController.UpdateMagnetism(relativePosition);
 
@@ -2121,7 +2136,7 @@ namespace Pulsar.ViewModels
                 return;
             }
 
-            if (_isTransitioning)
+            if (_subMenuTransition.IsTransitioning)
             {
                 return;
             }
@@ -2462,83 +2477,6 @@ namespace Pulsar.ViewModels
 
         // ============ Submenu morph ============
 
-        private readonly record struct SlotPose(
-            double Scale,
-            double Opacity,
-            double OffsetX,
-            double OffsetY);
-
-        private static SlotPose GetPose(SlotViewModel slot) => new(
-            slot.CurrentScale,
-            slot.CurrentOpacity,
-            slot.AnimationOffsetX,
-            slot.AnimationOffsetY);
-
-        private static void ApplyPose(SlotViewModel slot, SlotPose pose)
-        {
-            slot.CurrentScale = pose.Scale;
-            slot.CurrentOpacity = pose.Opacity;
-            slot.AnimationOffsetX = pose.OffsetX;
-            slot.AnimationOffsetY = pose.OffsetY;
-        }
-
-        private static async Task AnimateAsync(
-            TimeSpan duration,
-            Func<double, double>? easing,
-            Action<double> update,
-            CancellationToken cancellationToken)
-        {
-            easing ??= EasingFunctions.EaseOutCubic;
-
-            if (duration <= TimeSpan.Zero)
-            {
-                update(1);
-                return;
-            }
-
-            var stopwatch = Stopwatch.StartNew();
-            while (stopwatch.Elapsed < duration)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                double progress = Math.Clamp(stopwatch.Elapsed.TotalMilliseconds / duration.TotalMilliseconds, 0, 1);
-                update(easing(progress));
-                await Task.Delay(16, cancellationToken);
-            }
-
-            cancellationToken.ThrowIfCancellationRequested();
-            update(1);
-        }
-
-        private static async Task AnimateSlotsAsync(
-            IReadOnlyCollection<SlotViewModel> slots,
-            Func<SlotViewModel, SlotPose> getTarget,
-            TimeSpan duration,
-            Func<double, double>? easing,
-            CancellationToken cancellationToken)
-        {
-            if (slots.Count == 0)
-            {
-                return;
-            }
-
-            var startPoses = slots.Select(GetPose).ToArray();
-            var targetPoses = slots.Select(getTarget).ToArray();
-            var slotList = slots.ToArray();
-
-            await AnimateAsync(duration, easing, progress =>
-            {
-                for (int i = 0; i < slotList.Length; i++)
-                {
-                    ApplyPose(slotList[i], new SlotPose(
-                        Lerp(startPoses[i].Scale, targetPoses[i].Scale, progress),
-                        Lerp(startPoses[i].Opacity, targetPoses[i].Opacity, progress),
-                        Lerp(startPoses[i].OffsetX, targetPoses[i].OffsetX, progress),
-                        Lerp(startPoses[i].OffsetY, targetPoses[i].OffsetY, progress)));
-                }
-            }, cancellationToken);
-        }
-
         private async Task AnimateMenuCenterAsync(
             Point target,
             TimeSpan duration,
@@ -2548,7 +2486,7 @@ namespace Pulsar.ViewModels
             double startX = _menuCenterX;
             double startY = _menuCenterY;
 
-            await AnimateAsync(duration, easing, progress =>
+            await SubMenuTransitionController.AnimateAsync(duration, easing, progress =>
             {
                 _menuCenterX = Lerp(startX, target.X, progress);
                 _menuCenterY = Lerp(startY, target.Y, progress);
@@ -2564,15 +2502,12 @@ namespace Pulsar.ViewModels
 
         private async Task EnterSubMenuAsyncCore(SubMenuDescriptor descriptor, int clickedSlotIndex)
         {
-            if (_isTransitioning)
+            if (_subMenuTransition.IsTransitioning)
             {
                 return;
             }
 
-            _isTransitioning = true;
-            _subMenuTransitionCts?.Cancel();
-            var transitionCts = new CancellationTokenSource();
-            _subMenuTransitionCts = transitionCts;
+            var transitionCts = _subMenuTransition.BeginTransition();
             var cancellationToken = transitionCts.Token;
 
             try
@@ -2614,8 +2549,8 @@ namespace Pulsar.ViewModels
                 double submenuDistance = Math.Sqrt(
                     Math.Pow(submenuCenter.X - _menuCenterX, 2)
                     + Math.Pow(submenuCenter.Y - _menuCenterY, 2));
-                var enterDuration = GetSubMenuEnterDuration(submenuDistance);
-                var bloomDuration = GetSubMenuBloomDuration(enterDuration);
+                var enterDuration = SubMenuTransitionController.GetSubMenuEnterDuration(submenuDistance);
+                var bloomDuration = SubMenuTransitionController.GetSubMenuBloomDuration(enterDuration);
 
                 // [ADR-024 D4/D7] Cascade children are sized into their own collection
                 // before the strategy runs, so it never has to repurpose root slots.
@@ -2688,7 +2623,7 @@ namespace Pulsar.ViewModels
                 {
                     // [ADR-024 D3/D4/D7/D9] No viewport glide and no collapse: the
                     // canvas never moves, and the wheel the user is keeping stays put.
-                    await EnterCascadeVisualsAsync(
+                    await _subMenuTransition.EnterCascadeVisualsAsync(
                         cascadeDescriptor,
                         parentSlot,
                         parentCenterX,
@@ -2697,7 +2632,7 @@ namespace Pulsar.ViewModels
                 }
                 else
                 {
-                    await EnterWindowSubMenuVisualsAsync(
+                    await _subMenuTransition.EnterWindowSubMenuVisualsAsync(
                         parentSlot,
                         parentCenterX,
                         parentCenterY,
@@ -2721,335 +2656,21 @@ namespace Pulsar.ViewModels
             }
             finally
             {
-                _isTransitioning = false;
-                if (ReferenceEquals(_subMenuTransitionCts, transitionCts))
-                {
-                    _subMenuTransitionCts = null;
-                }
+                _subMenuTransition.EndTransition(transitionCts);
             }
-        }
-
-        /// <summary>
-        /// [ADR-024 D3/D4/D7/D8/D9] Cascade entry visuals. Nothing translates: there is
-        /// no viewport glide (the canvas never moves) and no collapse of the wheel the
-        /// user is keeping. Children bloom out of the parent slot's position; in Ring
-        /// mode the root wheel fades away and the centre orb stands in for the parent
-        /// slot at the parent's own position.
-        /// </summary>
-        private async Task EnterCascadeVisualsAsync(
-            CascadeSubMenuDescriptor cascade,
-            SlotViewModel? parentSlot,
-            double parentCenterX,
-            double parentCenterY,
-            CancellationToken cancellationToken)
-        {
-            bool isFan = EffectiveCascadeStyle(cascade) == SubMenuLayoutStyle.Fan;
-
-            foreach (var slot in SubMenuSlots)
-            {
-                slot.AnimationOffsetX = parentCenterX - (slot.X + slot.Size / 2);
-                slot.AnimationOffsetY = parentCenterY - (slot.Y + slot.Size / 2);
-                slot.CurrentScale = 1.0;
-                slot.CurrentOpacity = 0.0;
-            }
-
-            Task rootWheelFade = Task.CompletedTask;
-            if (isFan)
-            {
-                // [ADR-024 D4/D8] The main wheel is a frozen read-only backdrop 鈥?no
-                // transform of any kind. The parent slot stays lit: it is the only
-                // "click to dismiss" cue, and the frozen centre keeps its root look.
-            }
-            else
-            {
-                // [ADR-024 D7] Ring replaces the main wheel: pure fade, no scale, no
-                // translation. The centre orb moves to the parent slot's position and
-                // carries the back action with the parent's identity.
-                rootWheelFade = AnimateSlotsAsync(
-                    Slots.ToList(),
-                    _ => new SlotPose(1.0, 0.0, 0, 0),
-                    SubMenuCollapseDuration,
-                    EasingFunctions.EaseInCubic,
-                    cancellationToken);
-
-                if (parentSlot != null)
-                {
-                    if (parentSlot.IconImage != null)
-                    {
-                        CenterSlot.IconImage = parentSlot.IconImage;
-                    }
-                    else
-                    {
-                        CenterSlot.LoadIconData(parentSlot.IconKey);
-                    }
-
-                    // [2026-09-06 user spec] The ring's centre reads as the PARENT
-                    // slot: its icon (above) AND its label, not the descriptor's
-                    // back label — so the visible centre matches the slot the user
-                    // clicked to open the ring.
-                    if (!string.IsNullOrWhiteSpace(parentSlot.Label))
-                    {
-                        CenterSlot.Label = parentSlot.Label;
-                    }
-                }
-
-                CenterText = !string.IsNullOrWhiteSpace(parentSlot?.Label)
-                    ? parentSlot.Label
-                    : _loc["RadialMenu.Back"];
-                CenterSlot.ResetAnimation();
-
-                // [2026-09-06 user spec] The centre orb must remain VISIBLE as the
-                // ring's centre slot. It is held at the parent slot's position with
-                // the parent's identity (icon + label + back action) — but it is NOT
-                // part of the root wheel fade above, and it blooms back to full
-                // opacity together with the children below. Previously it faded with
-                // the wheel and never reappeared, leaving the ring with an empty
-                // centre (and the dead-zone hit area pointing at an invisible orb).
-                CenterSlot.AnimationOffsetX = parentCenterX - CenterX;
-                CenterSlot.AnimationOffsetY = parentCenterY - CenterY;
-                CenterSlot.CurrentScale = 1.0;
-                CenterSlot.CurrentOpacity = 0.0;
-            }
-
-            await rootWheelFade;
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var bloomTasks = new List<Task>
-            {
-                AnimateSlotsAsync(
-                    SubMenuSlots,
-                    _ => new SlotPose(1.0, 1.0, 0, 0),
-                    SubMenuRestoreBloomDuration,
-                    EasingFunctions.EaseOutBack,
-                    cancellationToken)
-            };
-
-            if (!isFan)
-            {
-                // The Ring's centre orb blooms back at the parent slot's position —
-                // same offset as the initial state, so it fades in without sliding.
-                bloomTasks.Add(AnimateSlotsAsync(
-                    new[] { CenterSlot },
-                    _ => new SlotPose(1.0, 1.0, parentCenterX - CenterX, parentCenterY - CenterY),
-                    SubMenuRestoreBloomDuration,
-                    EasingFunctions.EaseOutBack,
-                    cancellationToken));
-            }
-
-            await Task.WhenAll(bloomTasks);
-
-            if (isFan)
-            {
-                // [ADR-024 D8] Light the dismiss anchor as soon as the Fan is open 鈥?                // the pointer is parked on the parent slot at this moment anyway.
-                _ = _ui.BeginInvoke(() => UpdateActiveSlot(0));
-            }
-        }
-
-        /// <summary>
-        /// [ADR-024 D3] Window submenus keep the legacy root-slot reuse morph
-        /// (glide to the click point, collapse the wheel, bloom the window list).
-        /// Extracted verbatim so the cascade path can skip all of it.
-        /// </summary>
-        private async Task EnterWindowSubMenuVisualsAsync(
-            SlotViewModel? parentSlot,
-            double parentCenterX,
-            double parentCenterY,
-            Point submenuCenter,
-            TimeSpan enterDuration,
-            TimeSpan bloomDuration,
-            int clickedSlotIndex,
-            CancellationToken cancellationToken)
-        {
-            var glideViewportCenter = AnimateMenuCenterAsync(
-                submenuCenter,
-                enterDuration,
-                EasingFunctions.EaseInOutCubic,
-                cancellationToken);
-
-            var childSlots = Slots.Where(s => s.SlotIndex >= 1).ToList();
-            var otherSlots = childSlots.Where(s => s != parentSlot).ToList();
-
-            double clickedScaleTarget = parentSlot != null
-                ? Math.Clamp(_currentCenterSize / Math.Max(1, parentSlot.Size), 1.0, 1.45)
-                : 1.0;
-
-            var glideClicked = parentSlot == null
-                ? Task.CompletedTask
-                : AnimateSlotsAsync(
-                    new[] { parentSlot },
-                    _ => new SlotPose(
-                        clickedScaleTarget,
-                        1.0,
-                        CenterX - parentCenterX,
-                        CenterY - parentCenterY),
-                    enterDuration,
-                    EasingFunctions.EaseInOutCubic,
-                    cancellationToken);
-
-            var collapseOthers = AnimateSlotsAsync(
-                otherSlots,
-                _ => new SlotPose(SubMenuCollapsedScale, SubMenuCollapsedOpacity, 0, 0),
-                SubMenuCollapseDuration,
-                EasingFunctions.EaseInCubic,
-                cancellationToken);
-
-            var collapseCenter = AnimateSlotsAsync(
-                new[] { CenterSlot },
-                _ => new SlotPose(SubMenuCollapsedScale, SubMenuCollapsedOpacity, 0, 0),
-                SubMenuCollapseDuration,
-                EasingFunctions.EaseInCubic,
-                cancellationToken);
-
-            await Task.WhenAll(glideClicked, collapseOthers, collapseCenter, glideViewportCenter);
-            cancellationToken.ThrowIfCancellationRequested();
-
-            if (parentSlot != null)
-            {
-                if (parentSlot.IconImage != null)
-                {
-                    CenterSlot.IconImage = parentSlot.IconImage;
-                }
-                else
-                {
-                    CenterSlot.LoadIconData(parentSlot.IconKey);
-                }
-            }
-
-            CenterText = !string.IsNullOrWhiteSpace(parentSlot?.Label)
-                ? parentSlot.Label
-                : _loc["RadialMenu.Back"];
-            CenterSlot.ResetAnimation();
-
-            foreach (var slot in childSlots)
-            {
-                slot.AnimationOffsetX = CenterX - (slot.X + slot.Size / 2);
-                slot.AnimationOffsetY = CenterY - (slot.Y + slot.Size / 2);
-                slot.CurrentScale = SubMenuCollapsedScale;
-                slot.CurrentOpacity = SubMenuCollapsedOpacity;
-            }
-
-            await AnimateSlotsAsync(
-                childSlots,
-                _ => new SlotPose(1.0, 1.0, 0, 0),
-                bloomDuration,
-                EasingFunctions.EaseOutBack,
-                cancellationToken);
-
-            if (clickedSlotIndex > 0 && clickedSlotIndex <= _slotsPerPage)
-            {
-                var preSelected = Slots.FirstOrDefault(s => s.SlotIndex == clickedSlotIndex);
-                bool shouldPreSelect = preSelected != null
-                    && preSelected.Type != SlotType.None
-                    && preSelected.IsEnabled;
-                _ = _ui.BeginInvoke(() =>
-                {
-                    UpdateActiveSlot(shouldPreSelect ? clickedSlotIndex : -1);
-                });
-            }
-        }
-
-        /// <summary>
-        /// [ADR-024 D3/D4/D7] Cascade exit. The root wheel was never touched, so there
-        /// is no glide back and, for Fan, nothing to re-bloom 鈥?only the submenu
-        /// collection retracts toward the parent slot. Ring additionally fades the root
-        /// wheel (and the centre orb that stood in for the parent slot) back in.
-        /// </summary>
-        private async Task RestoreFromCascadeAsync(double originX, double originY, CancellationToken cancellationToken)
-        {
-            bool wasRing = EffectiveCascadeStyle(_activeSubMenuDescriptor as CascadeSubMenuDescriptor)
-                == SubMenuLayoutStyle.Ring;
-
-            var retractChildren = AnimateSlotsAsync(
-                SubMenuSlots,
-                slot => new SlotPose(
-                    1.0,
-                    0.0,
-                    originX - (slot.X + slot.Size / 2),
-                    originY - (slot.Y + slot.Size / 2)),
-                SubMenuCollapseDuration,
-                EasingFunctions.EaseInCubic,
-                cancellationToken);
-
-            Task retractCentre = Task.CompletedTask;
-            if (wasRing)
-            {
-                retractCentre = AnimateSlotsAsync(
-                    new[] { CenterSlot },
-                    _ => new SlotPose(1.0, 0.0, 0, 0),
-                    SubMenuCollapseDuration,
-                    EasingFunctions.EaseInCubic,
-                    cancellationToken);
-            }
-
-            await Task.WhenAll(retractChildren, retractCentre);
-            cancellationToken.ThrowIfCancellationRequested();
-
-            _subMenuWindows = new List<ProcessWindowInfo>();
-            _subMenuProcessName = string.Empty;
-            _activeSubMenuDescriptor = null;
-            _subMenuPage = 0;
-            _subMenuTotalPages = 1;
-            _subMenuOriginSlotIndex = -1;
-            _subMenuOriginX = 0;
-            _subMenuOriginY = 0;
-            _menuState = MenuState.Root;
-
-            ReleaseSubMenuSlots();
-            ResetCenterSlotForRootMenu();
-
-            if (!wasRing)
-            {
-                // [ADR-024 D4/D8] Fan: the main wheel never moved and never faded, so
-                // there is nothing to bring back 鈥?the anchor highlight is already
-                // cleared by the caller's IsActive sweep.
-                return;
-            }
-
-            // [ADR-024 D7] Ring replaced the wheel; fade it back in from the canvas
-            // centre. Root slot data was never overwritten, so no RefreshVisuals call
-            // (and none of its "pop" risk) is needed here.
-            foreach (var slot in Slots)
-            {
-                slot.AnimationOffsetX = 0;
-                slot.AnimationOffsetY = 0;
-                slot.CurrentScale = 1.0;
-                slot.CurrentOpacity = 0.0;
-            }
-
-            CenterSlot.AnimationOffsetX = 0;
-            CenterSlot.AnimationOffsetY = 0;
-            CenterSlot.CurrentScale = 1.0;
-            CenterSlot.CurrentOpacity = 0.0;
-
-            await Task.WhenAll(
-                AnimateSlotsAsync(
-                    Slots,
-                    _ => new SlotPose(1.0, 1.0, 0, 0),
-                    SubMenuRestoreBloomDuration,
-                    EasingFunctions.EaseOutBack,
-                    cancellationToken),
-                AnimateSlotsAsync(
-                    new[] { CenterSlot },
-                    _ => new SlotPose(1.0, 1.0, 0, 0),
-                    SubMenuRestoreBloomDuration,
-                    EasingFunctions.EaseOutBack,
-                    cancellationToken));
         }
 
         private void UpdateSubMenuCenterLabel()
         {
+            // [R3 2026-09-09] Page-label decision routed through CenterIdentityPolicy.
             var processName = CenterSlot.Label;
-            CenterSlot.Label = _subMenuTotalPages > 1
-                ? string.Format(_loc["RadialMenu.SubMenuPageFormat"], processName, _subMenuPage + 1, _subMenuTotalPages)
-                : processName;
+            CenterSlot.Label = CenterIdentityPolicy.SubMenuPageLabel(
+                processName, _subMenuPage, _subMenuTotalPages, _loc["RadialMenu.SubMenuPageFormat"]);
         }
 
         private async Task RestoreRootMenuAsync()
         {
-            _isTransitioning = true;
-            _subMenuTransitionCts?.Cancel();
-            var transitionCts = new CancellationTokenSource();
-            _subMenuTransitionCts = transitionCts;
+            var transitionCts = _subMenuTransition.BeginTransition();
             var cancellationToken = transitionCts.Token;
 
             try
@@ -3067,91 +2688,21 @@ namespace Pulsar.ViewModels
                 // [ADR-024 D4/D7] Cascade exit: the root wheel was never touched, so
                 // there is no glide back and (for Fan) nothing to re-bloom 鈥?only the
                 // submenu collection retracts toward the parent slot.
-                if (_activeSubMenuDescriptor is CascadeSubMenuDescriptor)
+                if (_activeSubMenuDescriptor is CascadeSubMenuDescriptor cascadeDescriptor)
                 {
-                    await RestoreFromCascadeAsync(originX, originY, cancellationToken);
+                    await _subMenuTransition.RestoreFromCascadeAsync(
+                        cascadeDescriptor, originX, originY, cancellationToken);
 
                     ApplyCenterPreview(ResolvedWindowPreview.Icon(CenterSlot.IconImage));
                     DynamicTitle = string.Empty;
                     return;
                 }
 
-                var restoreCenterTask = AnimateMenuCenterAsync(
+                await _subMenuTransition.RestoreWindowSubMenuAsync(
+                    originX,
+                    originY,
                     new Point(_rootMenuCenterX, _rootMenuCenterY),
-                    SubMenuCollapseDuration,
-                    EasingFunctions.EaseInOutCubic,
                     cancellationToken);
-
-                var collapseSlotsTask = AnimateSlotsAsync(
-                    Slots,
-                    slot => new SlotPose(
-                        SubMenuCollapsedScale,
-                        SubMenuCollapsedOpacity,
-                        CenterX - (slot.X + slot.Size / 2),
-                        CenterY - (slot.Y + slot.Size / 2)),
-                    SubMenuCollapseDuration,
-                    EasingFunctions.EaseInCubic,
-                    cancellationToken);
-
-                var collapseCenterTask = AnimateSlotsAsync(
-                    new[] { CenterSlot },
-                    _ => new SlotPose(
-                        SubMenuCollapsedScale,
-                        SubMenuCollapsedOpacity,
-                        originX - CenterX,
-                        originY - CenterY),
-                    SubMenuCollapseDuration,
-                    EasingFunctions.EaseInCubic,
-                    cancellationToken);
-
-                await Task.WhenAll(restoreCenterTask, collapseSlotsTask, collapseCenterTask);
-                cancellationToken.ThrowIfCancellationRequested();
-
-                _subMenuWindows = new List<ProcessWindowInfo>();
-                _subMenuProcessName = string.Empty;
-                _activeSubMenuDescriptor = null;
-                _subMenuPage = 0;
-                _subMenuTotalPages = 1;
-                _subMenuOriginSlotIndex = -1;
-                _subMenuOriginX = 0;
-                _subMenuOriginY = 0;
-
-                _menuState = MenuState.Root;
-                ResetCenterSlotForRootMenu();
-                _subMenuCoordinator.RestoreRootMenu(_pageProvider, _pagingController, Slots, CenterSlot);
-
-                var desiredOpacityByIndex = Slots.ToDictionary(slot => slot.SlotIndex, slot => slot.CurrentOpacity);
-
-                foreach (var slot in Slots)
-                {
-                    slot.AnimationOffsetX = CenterX - (slot.X + slot.Size / 2);
-                    slot.AnimationOffsetY = CenterY - (slot.Y + slot.Size / 2);
-                    slot.CurrentScale = SubMenuCollapsedScale;
-                    slot.CurrentOpacity = SubMenuCollapsedOpacity;
-                }
-
-                CenterSlot.AnimationOffsetX = 0;
-                CenterSlot.AnimationOffsetY = 0;
-                CenterSlot.CurrentScale = SubMenuCollapsedScale;
-                CenterSlot.CurrentOpacity = SubMenuCollapsedOpacity;
-
-                await Task.WhenAll(
-                    AnimateSlotsAsync(
-                        Slots,
-                        slot => new SlotPose(
-                            1.0,
-                            desiredOpacityByIndex.TryGetValue(slot.SlotIndex, out var opacity) ? opacity : 0,
-                            0,
-                            0),
-                        SubMenuRestoreBloomDuration,
-                        EasingFunctions.EaseOutBack,
-                        cancellationToken),
-                    AnimateSlotsAsync(
-                        new[] { CenterSlot },
-                        _ => new SlotPose(1.0, 1.0, 0, 0),
-                        SubMenuRestoreBloomDuration,
-                        EasingFunctions.EaseOutBack,
-                        cancellationToken));
 
                 ApplyCenterPreview(ResolvedWindowPreview.Icon(CenterSlot.IconImage));
 
@@ -3162,11 +2713,7 @@ namespace Pulsar.ViewModels
             }
             finally
             {
-                _isTransitioning = false;
-                if (ReferenceEquals(_subMenuTransitionCts, transitionCts))
-                {
-                    _subMenuTransitionCts = null;
-                }
+                _subMenuTransition.EndTransition(transitionCts);
             }
         }
 

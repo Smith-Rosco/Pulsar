@@ -98,9 +98,13 @@ namespace Pulsar.Tests.ViewModels
                 new Point(250, 250)));
             session.IsVisible = true;
 
-            typeof(MenuSession)
-                .GetField("_isTransitioning", BindingFlags.NonPublic | BindingFlags.Instance)!
-                .SetValue(session, true);
+            // [R3 2026-09-09] Transition guard now lives in SubMenuTransitionController.
+            var transition = typeof(MenuSession)
+                .GetField("_subMenuTransition", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .GetValue(session)!;
+            transition.GetType()
+                .GetMethod("BeginTransition", BindingFlags.Public | BindingFlags.Instance, Type.EmptyTypes)!
+                .Invoke(transition, null);
 
             session.HandleKeyUp(new GlobalKeyStruct(
                 0x09,
