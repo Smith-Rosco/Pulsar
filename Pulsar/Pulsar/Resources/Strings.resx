@@ -3651,4 +3651,16 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
   <data name="Settings.SlotEditor.TabTitleFormat" xml:space="preserve">
     <value>{0} · {1}</value>
   </data>
+  <data name="Settings.SlotEditor.DraftTabTitleFormat" xml:space="preserve">
+    <value>New Slot · {0}</value>
+  </data>
+  <data name="Settings.SlotEditor.CreateFooterHint" xml:space="preserve">
+    <value>Confirm the sub-action and required parameters, then save. The slot will be added to the current context.</value>
+  </data>
+  <data name="Dialog.AddSlot.SubActions.Unnamed" xml:space="preserve">
+    <value>Unnamed sub-action</value>
+  </data>
+  <data name="Dialog.AddSlot.SubActions.ToggleExpand" xml:space="preserve">
+    <value>Expand or collapse</value>
+  </data>
 </root>

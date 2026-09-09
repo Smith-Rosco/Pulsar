@@ -92,6 +92,27 @@ namespace Pulsar.ViewModels.Dialogs
         [ObservableProperty]
         private string _colorHex;
 
+        /// <summary>
+        /// [3.4 手风琴] 行展开状态；互斥（同时只展开一行）由 owner
+        /// <see cref="SlotEditorViewModel"/> 在 PropertyChanged 里统一裁决。
+        /// </summary>
+        [ObservableProperty]
+        private bool _isExpanded;
+
+        /// <summary>折叠态摘要：动作名（如 "Run"）；空选择时为空串。</summary>
+        public string SummaryActionText => ActionLabel;
+
+        /// <summary>折叠态摘要：展开与否决定正文可见性（XAML BoolToVis 用）。</summary>
+        public bool IsCollapsed => !IsExpanded;
+
+        [RelayCommand]
+        private void ToggleExpand() => IsExpanded = !IsExpanded;
+
+        partial void OnIsExpandedChanged(bool value) => OnPropertyChanged(nameof(IsCollapsed));
+
+        /// <summary>折叠态摘要：有名称显示名称，否则显示 resx 占位（Unnamed）。</summary>
+        public bool HasLabel => !string.IsNullOrWhiteSpace(Label);
+
         public Dictionary<string, string> Args { get; }
 
         public IReadOnlyList<SubSlotPluginOption> AvailablePlugins { get; }
@@ -143,6 +164,7 @@ namespace Pulsar.ViewModels.Dialogs
         {
             _backingSlot.Action = value;
             Rebuild();
+            OnPropertyChanged(nameof(SummaryActionText));
         }
 
         partial void OnSelectedActionOptionChanged(SlotActionOption? value)
@@ -155,7 +177,11 @@ namespace Pulsar.ViewModels.Dialogs
             Action = value?.Value ?? string.Empty;
         }
 
-        partial void OnLabelChanged(string value) => _backingSlot.Label = value;
+        partial void OnLabelChanged(string value)
+        {
+            _backingSlot.Label = value;
+            OnPropertyChanged(nameof(HasLabel));
+        }
 
         partial void OnIconKeyChanged(string value) => _backingSlot.IconKey = value;
 

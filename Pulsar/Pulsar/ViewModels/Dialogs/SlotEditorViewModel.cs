@@ -31,6 +31,14 @@ namespace Pulsar.ViewModels.Dialogs
         private readonly Func<string, SecretDisplayMetadata?>? _secretDisplayResolver;
         private readonly ILocalizationService _loc;
         private readonly IPluginMetadataRegistry? _metadataRegistry;
+        private readonly Func<PluginSlot, Task>? _commitInPlaceAsync;
+
+        /// <summary>
+        /// 嵌入模式（unify-slot-editor-transient-pages 3.1/3.3）：VM 承载在 transient
+        /// tab 而非模态对话框中。Save 不再 RequestClose，改为回调宿主提交（提交后
+        /// 宿主负责草稿 tab → 实体 tab 的重注册）。
+        /// </summary>
+        public bool IsEmbedded => _commitInPlaceAsync != null;
 
         private static readonly ObservableCollection<SlotActionOption> _emptyActions = new();
         private static readonly ObservableCollection<SlotParameterEditorField> _emptyFields = new();
@@ -103,7 +111,12 @@ namespace Pulsar.ViewModels.Dialogs
 
         public ICommand PrimaryCommand => SaveCommand;
 
-        public ICommand SecondaryCommand => CancelCommand;
+        /// <summary>
+        /// 模态模式 = Cancel（关闭对话框）；嵌入式新建 tab = 返回类型选择相位
+        /// （配置相位；选择相位由页头返回箭头承载，见 AddSlotContent）。
+        /// </summary>
+        public ICommand SecondaryCommand =>
+            IsEmbedded && IsCreateMode && IsConfigurationActive ? GoBackToPickerCommand : CancelCommand;
 
         // ---- Action selector ----
 
@@ -290,7 +303,8 @@ namespace Pulsar.ViewModels.Dialogs
             ILocalizationService loc,
             PluginSlot? existingSlot = null,
             IPluginMetadataRegistry? metadataRegistry = null,
-            Func<string, SecretDisplayMetadata?>? secretDisplayResolver = null)
+            Func<string, SecretDisplayMetadata?>? secretDisplayResolver = null,
+            Func<PluginSlot, Task>? commitInPlaceAsync = null)
         {
             EditorMode = editorMode;
             _allTypeCards = allTypeCards;
@@ -302,6 +316,7 @@ namespace Pulsar.ViewModels.Dialogs
             _loc = loc;
             _metadataRegistry = metadataRegistry;
             _secretDisplayResolver = secretDisplayResolver;
+            _commitInPlaceAsync = commitInPlaceAsync;
             AvailablePlugins = BuildAvailablePlugins();
 
             PrimaryButtonText = _loc["Dialog.AddSlot.SaveSlot"];
@@ -319,6 +334,12 @@ namespace Pulsar.ViewModels.Dialogs
             {
                 Slot = new PluginSlot { Slot = 0, PluginId = string.Empty };
                 _isConfigurationActive = false;
+            }
+
+            // 嵌入式新建（tab）：选择类型前无槽可保存，隐藏主按钮（模态语义不变）。
+            if (IsEmbedded && IsCreateMode)
+            {
+                IsPrimaryButtonVisible = IsConfigurationActive;
             }
 
             // [ADR-024 D2] The Fan over-cap warning tracks the live sub-action count,
@@ -352,7 +373,7 @@ namespace Pulsar.ViewModels.Dialogs
         }
 
         [RelayCommand]
-        private void Save()
+        private async Task Save()
         {
             _shouldShowFieldValidation = true;
             ValidateFieldStates();
@@ -365,6 +386,14 @@ namespace Pulsar.ViewModels.Dialogs
             }
 
             MaterializeSubActions();
+
+            // 嵌入式（tab）：不关对话框，回调宿主提交（CommitCreatedSlot + tab 重注册）。
+            if (_commitInPlaceAsync != null && CreatedSlot != null)
+            {
+                await _commitInPlaceAsync(CreatedSlot);
+                return;
+            }
+
             RequestClose?.Invoke(DialogResult.Confirmed);
         }
 
@@ -417,12 +446,15 @@ namespace Pulsar.ViewModels.Dialogs
                 return;
             }
 
-            var row = new SubSlotEditorRow(
+            var row = HookRow(new SubSlotEditorRow(
                 null,
                 _metadataRegistry,
                 PickSubActionParameterValueAsync,
                 _secretDisplayResolver,
-                AvailablePlugins);
+                AvailablePlugins));
+
+            // 新行默认展开（3.4 手风琴）：互斥裁决同时收起旧行，焦点即落新行。
+            row.IsExpanded = true;
             SubActions.Add(row);
             OnPropertyChanged(nameof(HasSubActions));
         }
@@ -435,6 +467,7 @@ namespace Pulsar.ViewModels.Dialogs
                 return;
             }
 
+            UnhookRow(row);
             row.Dispose();
             OnPropertyChanged(nameof(HasSubActions));
         }
@@ -557,12 +590,12 @@ namespace Pulsar.ViewModels.Dialogs
 
             foreach (var descriptor in Slot.SubActions)
             {
-                SubActions.Add(new SubSlotEditorRow(
+                SubActions.Add(HookRow(new SubSlotEditorRow(
                     descriptor,
                     _metadataRegistry,
                     PickSubActionParameterValueAsync,
                     _secretDisplayResolver,
-                    AvailablePlugins));
+                    AvailablePlugins)));
             }
 
             OnPropertyChanged(nameof(HasSubActions));
@@ -572,11 +605,45 @@ namespace Pulsar.ViewModels.Dialogs
         {
             foreach (var row in SubActions)
             {
+                UnhookRow(row);
                 row.Dispose();
             }
 
             SubActions.Clear();
             OnPropertyChanged(nameof(HasSubActions));
+        }
+
+        /// <summary>
+        /// [3.4 手风琴] 行展开互斥由 owner 统一裁决：任一行展开时收起其余行。
+        /// 订阅随行的加入/移除成对挂钩，Dispose 前先解绑。
+        /// </summary>
+        private SubSlotEditorRow HookRow(SubSlotEditorRow row)
+        {
+            row.PropertyChanged += OnSubActionRowPropertyChanged;
+            return row;
+        }
+
+        private void UnhookRow(SubSlotEditorRow row)
+        {
+            row.PropertyChanged -= OnSubActionRowPropertyChanged;
+        }
+
+        private void OnSubActionRowPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName != nameof(SubSlotEditorRow.IsExpanded)
+                || sender is not SubSlotEditorRow expandedRow
+                || !expandedRow.IsExpanded)
+            {
+                return;
+            }
+
+            foreach (var row in SubActions)
+            {
+                if (!ReferenceEquals(row, expandedRow) && row.IsExpanded)
+                {
+                    row.IsExpanded = false;
+                }
+            }
         }
 
         private void MaterializeSubActions()
@@ -662,6 +729,12 @@ namespace Pulsar.ViewModels.Dialogs
             SyncSelectedActionStates();
             ValidateFieldStates();
 
+            // 嵌入式新建（tab）：主/次按钮随相位切换（选择相位无槽可保存/无源可返回）。
+            if (IsEmbedded && IsCreateMode)
+            {
+                IsPrimaryButtonVisible = IsConfigurationActive;
+            }
+            OnPropertyChanged(nameof(SecondaryCommand));
             OnPropertyChanged(nameof(AvailableActions));
             OnPropertyChanged(nameof(RequiredParameters));
             OnPropertyChanged(nameof(OptionalParameters));

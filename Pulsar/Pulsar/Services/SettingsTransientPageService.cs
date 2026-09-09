@@ -141,6 +141,15 @@ namespace Pulsar.Services
             return closed;
         }
 
+        /// <inheritdoc />
+        public Task<bool> DiscardTransientPageAsync(string pageId)
+        {
+            // 复用实体消失路径的强制回收（不走守卫）：调用方保证页面状态可废弃
+            // （draft 已提交为实体 / 实体已删除），不该再对它弹 save/discard/cancel。
+            CloseSlotEditorPage(pageId);
+            return Task.FromResult(true);
+        }
+
         public void NotifyNavigatedAwayFrom(string? sourcePageId)
         {
             if (string.IsNullOrEmpty(sourcePageId) || !IsOpen(sourcePageId))

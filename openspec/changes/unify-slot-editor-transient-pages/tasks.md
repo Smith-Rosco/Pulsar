@@ -17,12 +17,12 @@
 
 ## 3. P2 — 新建向导入 tab + 子动作手风琴
 
-- [ ] 3.1 页 VM 两步向导状态机（类型选择/配置，复用 `IsConfigurationActive` 与 `GoBackToPicker` 语义）。验证：单测——步骤切换重置 draft、不置脏
-- [ ] 3.2 `SettingsViewModel.AddSlotDialog` 改开 `slot-editor:<contextKey>:draft`（每上下文单例草稿）。验证：真机——重复触发"新建"激活既有 draft tab
-- [ ] 3.3 显式提交动作（`CommitCreatedSlot`）+ 提交后 tab 重注册为 `slot-editor:<ctx>:<slotNo>` 转编辑模式。验证：真机——新建 slot 后 tab 续存且可继续编辑；Profiles.json 落盘正确
-- [ ] 3.4 子动作行升级手风琴（同时展开一行，复用 `SlotParameterEditorField` 与 picker 桥），移除紧凑双下拉模板。验证：单测——展开互斥；真机——参数/picker 全可用
-- [ ] 3.5 布局样式选择、排序/删除保留在列表层；空态文案迁 resx。验证：真机——Fan/Ring 生效、增删排序正常
-- [ ] 3.6 E2E 随批更新（新建向导路径、子动作编辑）；`dev.ps1 all` 全绿为 done 门槛。验证：E2E 全绿
+- [x] 3.1 页 VM 两步向导状态机（类型选择/配置，复用 `IsConfigurationActive` 与 `GoBackToPicker` 语义）。验证：单测——步骤切换重置 draft、不置脏
+- [x] 3.2 `SettingsViewModel.AddSlotDialog` 改开 `slot-editor:<contextKey>:draft`（每上下文单例草稿）。验证：真机——重复触发"新建"激活既有 draft tab
+- [x] 3.3 显式提交动作（`CommitCreatedSlot`）+ 提交后 tab 重注册为 `slot-editor:<ctx>:<slotNo>` 转编辑模式。验证：真机——新建 slot 后 tab 续存且可继续编辑；Profiles.json 落盘正确
+- [x] 3.4 子动作行升级手风琴（同时展开一行，复用 `SlotParameterEditorField` 与 picker 桥），移除紧凑双下拉模板。验证：单测——展开互斥；真机——参数/picker 全可用
+- [x] 3.5 布局样式选择、排序/删除保留在列表层；空态文案迁 resx。验证：真机——Fan/Ring 生效、增删排序正常
+- [x] 3.6 E2E 随批更新（新建向导路径、子动作编辑）；`dev.ps1 all` 全绿为 done 门槛。验证：E2E 全绿
 
 ## 4. P3 — 模态退役与收口
 

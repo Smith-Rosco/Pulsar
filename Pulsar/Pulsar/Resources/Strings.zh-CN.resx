@@ -5665,4 +5665,16 @@ Pulsar 会在当前页面运行一个网页脚本——这就是命令模式：�
   <data name="Settings.SlotEditor.TabTitleFormat" xml:space="preserve">
     <value>{0} · {1}</value>
   </data>
+  <data name="Settings.SlotEditor.DraftTabTitleFormat" xml:space="preserve">
+    <value>新建 Slot · {0}</value>
+  </data>
+  <data name="Settings.SlotEditor.CreateFooterHint" xml:space="preserve">
+    <value>确认动作与必填参数后保存，slot 将加入当前上下文。</value>
+  </data>
+  <data name="Dialog.AddSlot.SubActions.Unnamed" xml:space="preserve">
+    <value>未命名子动作</value>
+  </data>
+  <data name="Dialog.AddSlot.SubActions.ToggleExpand" xml:space="preserve">
+    <value>展开/收起</value>
+  </data>
 </root>

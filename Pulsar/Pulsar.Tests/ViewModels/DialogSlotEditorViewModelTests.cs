@@ -847,5 +847,135 @@ namespace Pulsar.Tests.ViewModels
                 : Guid.NewGuid().ToString();
             RefreshSlot(slot);
         }
+
+        // ---- [unify-slot-editor-transient-pages 3.1/3.3/3.4] Embedded tab flow ----
+
+        [Fact]
+        public async Task EmbeddedCommit_Save_ShouldInvokeCallbackAndNotRequestClose()
+        {
+            var loc = CreateLoc();
+            var committed = new List<PluginSlot>();
+            var closeResults = new List<Pulsar.Models.Enums.DialogResult>();
+            var vm = new SlotEditorViewModel(
+                SlotEditorMode.Create,
+                BuildTestCards(loc),
+                CreateDraftSlot,
+                (slot, action) => { slot.Action = action ?? string.Empty; RefreshSlot(slot); },
+                field => { field.Value = "selected.exe"; RefreshSlot(field.Slot); return Task.CompletedTask; },
+                slot => { slot.IconKey = "E8A7"; return Task.CompletedTask; },
+                slot => { slot.Color = "#32CD32"; return Task.CompletedTask; },
+                loc,
+                metadataRegistry: CreateMetadataRegistry(),
+                commitInPlaceAsync: slot => { committed.Add(slot); return Task.CompletedTask; });
+            vm.RequestClose += result => closeResults.Add(result);
+
+            vm.IsEmbedded.Should().BeTrue();
+            // Picker phase: nothing to save yet.
+            vm.IsPrimaryButtonVisible.Should().BeFalse();
+
+            vm.SelectSlotTypeCommand.Execute(vm.PrimaryCards.First(c => c.PluginId == "com.pulsar.winswitcher"));
+
+            // Configuration phase: primary visible, secondary switches to GoBackToPicker.
+            vm.IsPrimaryButtonVisible.Should().BeTrue();
+            vm.SecondaryCommand.Should().BeSameAs(vm.GoBackToPickerCommand);
+
+            foreach (var field in vm.RequiredParameters)
+            {
+                field.Value = "value";
+            }
+
+            await vm.SaveCommand.ExecuteAsync(null);
+
+            committed.Should().ContainSingle();
+            committed[0].Should().BeSameAs(vm.CreatedSlot);
+            closeResults.Should().BeEmpty("嵌入式提交不关闭对话框（tab 不因保存而消失）");
+        }
+
+        [Fact]
+        public void EmbeddedCommit_PickerPhaseSecondary_ShouldRemainCancel()
+        {
+            var loc = CreateLoc();
+            var vm = new SlotEditorViewModel(
+                SlotEditorMode.Create,
+                BuildTestCards(loc),
+                CreateDraftSlot,
+                (slot, action) => { slot.Action = action ?? string.Empty; RefreshSlot(slot); },
+                field => Task.CompletedTask,
+                slot => Task.CompletedTask,
+                slot => Task.CompletedTask,
+                loc,
+                metadataRegistry: CreateMetadataRegistry(),
+                commitInPlaceAsync: _ => Task.CompletedTask);
+
+            // Picker phase: no configuration to go back from — Cancel semantics preserved.
+            vm.SecondaryCommand.Should().BeSameAs(vm.CancelCommand);
+        }
+
+        [Fact]
+        public void SubActionAccordion_NewRowsShouldExpandExclusively()
+        {
+            var loc = CreateLoc();
+            var vm = CreateEditVmWithSubActions(loc);
+            vm.AddSubActionCommand.Execute(null);
+            vm.AddSubActionCommand.Execute(null);
+
+            var rows = vm.SubActions;
+            rows.Should().HaveCount(2);
+            rows[0].IsExpanded.Should().BeFalse("新行默认展开，先前行被互斥收起");
+            rows[1].IsExpanded.Should().BeTrue();
+
+            // Mutex adjudicates on explicit expand too.
+            rows[0].IsExpanded = true;
+            rows[1].IsExpanded.Should().BeFalse();
+
+            // Toggle collapses without touching siblings (already collapsed).
+            rows[0].ToggleExpandCommand.Execute(null);
+            rows[0].IsExpanded.Should().BeFalse();
+            rows[1].IsExpanded.Should().BeFalse();
+        }
+
+        [Fact]
+        public void SubActionAccordion_RemovedRowShouldStopParticipatingInMutex()
+        {
+            var loc = CreateLoc();
+            var vm = CreateEditVmWithSubActions(loc);
+            vm.AddSubActionCommand.Execute(null);
+            var first = vm.SubActions[0];
+            first.IsExpanded = false;
+            vm.AddSubActionCommand.Execute(null);
+            var second = vm.SubActions[1];
+            second.IsExpanded.Should().BeTrue();
+
+            vm.RemoveSubActionCommand.Execute(second);
+            // Removed row must no longer participate: expanding it back works standalone.
+            first.IsExpanded = true;
+            vm.SubActions.Should().ContainSingle();
+            vm.SubActions[0].IsExpanded.Should().BeTrue();
+        }
+
+        /// <summary>Edit 模式 VM（live slot），供手风琴互斥测试使用。</summary>
+        private static SlotEditorViewModel CreateEditVmWithSubActions(ILocalizationService loc)
+        {
+            var slot = new PluginSlot
+            {
+                Slot = 1,
+                PluginId = "com.pulsar.winswitcher",
+                Action = "switch",
+                Color = string.Empty,
+                Args = new Dictionary<string, string>()
+            };
+            return new SlotEditorViewModel(
+                SlotEditorMode.Edit,
+                BuildTestCards(loc),
+                CreateDraftSlot,
+                (s, action) => { s.Action = action ?? string.Empty; RefreshSlot(s); },
+                field => Task.CompletedTask,
+                s => Task.CompletedTask,
+                s => Task.CompletedTask,
+                loc,
+                existingSlot: slot,
+                metadataRegistry: CreateMetadataRegistry());
+        }
+
     }
 }

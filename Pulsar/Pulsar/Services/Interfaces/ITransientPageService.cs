@@ -36,6 +36,14 @@ namespace Pulsar.Services.Interfaces
         Task<bool> CloseTransientPageAsync(string typeId);
 
         /// <summary>
+        /// 强制回收临时页（不走守卫确认）。仅供程序化生命周期使用：实体转换
+        /// （draft → 已落盘实体）或实体已消失（unify D7）时，页面未保存状态随
+        /// 之废弃，不应对一个已不存在的页面弹出 save/discard/cancel。
+        /// </summary>
+        /// <param name="pageId">组合注册 id（如 "slot-editor:Global:1"）。</param>
+        Task<bool> DiscardTransientPageAsync(string pageId);
+
+        /// <summary>
         /// 导航离开钩子：来源页为干净（无未保存修改）的临时页时自动回收；
         /// 脏临时页保留（不阻塞导航，关窗时统一提示）。
         /// </summary>

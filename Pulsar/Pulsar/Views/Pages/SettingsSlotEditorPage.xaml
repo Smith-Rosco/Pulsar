@@ -1,13 +1,58 @@
 <Page x:Class="Pulsar.Views.Pages.SettingsSlotEditorPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:contents="clr-namespace:Pulsar.Views.Dialogs.Contents">
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:lex="clr-namespace:Pulsar.Core.Localization">
 
     <!--
-        Slot 编辑器临时页（openspec unify-slot-editor-transient-pages P1，D3）。
-        编辑面直接复用模态对话框的 SlotConfigurationDialogContent：DataContext 为
-        组合而来的 SlotEditorViewModel（Edit 模式、live PluginSlot），保存语义与
-        设置窗口底部统一保存按钮共用同一脏链，页面自身无保存按钮。
+        Slot 编辑器临时页（openspec unify-slot-editor-transient-pages P1/P2，D3）。
+        编辑模式复用 SlotConfigurationDialogContent；新建模式复用 AddSlotContent
+        （两步向导：类型选择 → 配置）并附加嵌入式提交页脚（3.1/3.3：无模态外壳，
+        PrimaryCommand = VM.SaveCommand，提交回调宿主转换 tab）。内容在 code-behind
+        按 EditorMode 装配。
     -->
-    <contents:SlotConfigurationDialogContent />
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        </ResourceDictionary>
+    </Page.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <ContentControl x:Name="EditorHost" Grid.Row="0"/>
+
+        <!-- 嵌入式新建提交页脚（仅 Create 模式；编辑模式统一走窗口底部保存） -->
+        <Border Grid.Row="1"
+                Padding="{StaticResource Pulsar.Pad.H12V10}"
+                BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
+                BorderThickness="0,1,0,0"
+                Visibility="{Binding IsCreateMode, Converter={StaticResource BoolToVis}}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Text="{lex:Locale Settings.SlotEditor.CreateFooterHint}"
+                           FontSize="{StaticResource Pulsar.Type.Caption}"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                           VerticalAlignment="Center"
+                           TextWrapping="Wrap"/>
+                <ui:Button Grid.Column="1"
+                           Content="{Binding PrimaryButtonText}"
+                           Style="{StaticResource PulsarPrimaryButtonStyle}"
+                           Padding="{StaticResource Pulsar.Pad.H12V8}"
+                           MinWidth="120"
+                           Command="{Binding PrimaryCommand}"
+                           Visibility="{Binding IsPrimaryButtonVisible, Converter={StaticResource BoolToVis}}"/>
+            </Grid>
+        </Border>
+    </Grid>
 </Page>

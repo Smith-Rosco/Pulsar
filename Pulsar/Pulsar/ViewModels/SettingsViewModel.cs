@@ -390,6 +390,25 @@ namespace Pulsar.ViewModels
         [RelayCommand]
         public async Task AddSlotDialog()
         {
+            // [unify-slot-editor-transient-pages 3.2] 新建入口改道：每上下文单例草稿 tab
+            // （slot-editor:<contextKey>:draft）。重复触发"新建"激活既有草稿 tab（继续
+            // 上次的草稿）；提交后转实体编辑 tab（3.3）。UseTransientSlotEditor=false 走
+            // 下方保留的模态路径（P3 退役前的回退）。
+            if (UseTransientSlotEditor && _transientPages != null && _entityPages != null)
+            {
+                var contextKey = _slotEditor.CurrentContext?.Key ?? "Global";
+                var contextName = _slotEditor.CurrentContext?.DisplayName ?? contextKey;
+                var draftEntityId = $"{contextKey}:draft";
+
+                _entityPages.Register(
+                    $"{SettingsPageIds.SlotEditor}:{draftEntityId}",
+                    _ => BuildSlotCreationPage(contextKey, contextName));
+
+                var draftTitle = string.Format(_loc["Settings.SlotEditor.DraftTabTitleFormat"], contextName);
+                await _transientPages.OpenTransientPageAsync(SettingsPageIds.SlotEditor, draftEntityId, draftTitle);
+                return;
+            }
+
             var cards = BuildSlotTypeCards();
             var vm = new SlotEditorViewModel(
                 SlotEditorMode.Create,
@@ -911,6 +930,70 @@ namespace Pulsar.ViewModels
                 secretDisplayResolver: rawSecretId => _slotEditor.ResolveSecretDisplay(rawSecretId));
 
             return new Views.Pages.SettingsSlotEditorPage(vm, _themeService);
+        }
+
+        /// <summary>
+        /// 构造新建（Create）草稿临时页（unify 3.2）：两步向导 VM（类型选择 → 配置）
+        /// 嵌入式提交（3.1/3.3），Save 不关对话框而是回调宿主提交并转换 tab。
+        /// </summary>
+        private Views.Pages.SettingsSlotEditorPage BuildSlotCreationPage(string contextKey, string contextName)
+        {
+            var cards = BuildSlotTypeCards();
+            var vm = new SlotEditorViewModel(
+                SlotEditorMode.Create,
+                cards,
+                _slotEditor.CreateSlotDraft,
+                _slotEditor.SetSlotDraftAction,
+                PickSlotParameterValue,
+                PickIcon,
+                PickColor,
+                _loc,
+                metadataRegistry: _pluginMetadataRegistry,
+                secretDisplayResolver: rawSecretId => _slotEditor.ResolveSecretDisplay(rawSecretId),
+                commitInPlaceAsync: created => CommitCreatedSlotFromTabAsync(created, contextKey, contextName));
+
+            return new Views.Pages.SettingsSlotEditorPage(vm, _themeService);
+        }
+
+        /// <summary>
+        /// 嵌入式提交（unify 3.3）：落盘新 slot（CommitCreatedSlot）后把草稿 tab
+        /// 重注册为实体编辑 tab（slot-editor:&lt;ctx&gt;:&lt;slotNo&gt;）——新建 → 编辑
+        /// 连续体验，无需二次点击。
+        /// </summary>
+        private async Task CommitCreatedSlotFromTabAsync(PluginSlot? createdSlot, string contextKey, string contextName)
+        {
+            if (createdSlot == null)
+            {
+                return;
+            }
+
+            _slotEditor.CommitCreatedSlot(createdSlot);
+            SendNotification(_loc["Notification.Success"], string.Format(_loc["Notification.SlotAddedFormat"], createdSlot.Label), ControlAppearance.Success);
+
+            // P2 Fix: If the newly created slot is a PKI slot and secretId is still empty,
+            // immediately open the secret picker so the user can link a secret.
+            if (createdSlot.PluginId == "com.pulsar.pki"
+                && (!createdSlot.Args.TryGetValue("secretId", out var sid) || string.IsNullOrEmpty(sid)))
+            {
+                await PickSecret(createdSlot);
+            }
+
+            if (_transientPages == null || _entityPages == null)
+            {
+                return;
+            }
+
+            var draftCompositeId = $"{SettingsPageIds.SlotEditor}:{contextKey}:draft";
+            _entityPages.Remove(draftCompositeId);
+
+            var entityId = $"{contextKey}:{createdSlot.Slot}";
+            _entityPages.Register($"{SettingsPageIds.SlotEditor}:{entityId}", _ => BuildSlotEditorPage(createdSlot));
+
+            // 强制回收草稿 tab（不走脏确认：草稿已提交为实体，其"未保存"状态已落地），
+            // 再激活实体编辑 tab —— 与 P1 同一激活语义（同实体二次点击复用）。
+            await _transientPages.DiscardTransientPageAsync(draftCompositeId);
+            var title = string.Format(_loc["Settings.SlotEditor.TabTitleFormat"], createdSlot.Label, contextName);
+            await _transientPages.OpenTransientPageAsync(SettingsPageIds.SlotEditor, entityId, title);
         }
 
         [RelayCommand]

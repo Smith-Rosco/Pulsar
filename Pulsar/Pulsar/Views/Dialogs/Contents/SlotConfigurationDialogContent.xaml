@@ -407,6 +407,8 @@
                                       Visibility="{Binding HasSubActions, Converter={StaticResource BoolToVis}}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="{x:Type viewmodels:SubSlotEditorRow}">
+                                    <!-- [3.4 手风琴] 折叠 = 头部摘要（chevron + 名称/动作 + 排序/删除）；
+                                         展开 = 完整编辑表单。互斥由 SlotEditorViewModel 裁决。 -->
                                     <Border Margin="0,0,0,8"
                                             Padding="{StaticResource Pulsar.Pad.H10V8}"
                                             CornerRadius="{StaticResource Pulsar.Radius.MD}"
@@ -414,27 +416,74 @@
                                             BorderBrush="{DynamicResource ControlStrokeColorSecondaryBrush}"
                                             BorderThickness="1">
                                         <StackPanel>
+                                            <!-- Row header -->
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="2*"/>
+                                                    <ColumnDefinition Width="Auto"/>
                                                     <ColumnDefinition Width="*"/>
                                                     <ColumnDefinition Width="Auto"/>
                                                     <ColumnDefinition Width="Auto"/>
                                                     <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
 
-                                                <ComboBox Grid.Column="0"
-                                                          ItemsSource="{Binding AvailablePlugins}"
-                                                          DisplayMemberPath="DisplayName"
-                                                          SelectedValuePath="PluginId"
-                                                          SelectedValue="{Binding PluginId, Mode=TwoWay}"
-                                                          Margin="0,0,6,0"/>
+                                                <ui:Button Grid.Column="0"
+                                                           Width="26" Height="26"
+                                                           Padding="{StaticResource Pulsar.Pad.XS}"
+                                                           Margin="0,0,6,0"
+                                                           Style="{StaticResource PulsarIconButtonStyle}"
+                                                           ToolTip="{lex:Locale Dialog.AddSlot.SubActions.ToggleExpand}"
+                                                           Command="{Binding ToggleExpandCommand}">
+                                                    <ui:Button.Icon>
+                                                        <ui:SymbolIcon Symbol="ChevronDown24"
+                                                                       Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVis}}"/>
+                                                    </ui:Button.Icon>
+                                                </ui:Button>
+                                                <ui:Button Grid.Column="0"
+                                                           Width="26" Height="26"
+                                                           Padding="{StaticResource Pulsar.Pad.XS}"
+                                                           Margin="0,0,6,0"
+                                                           Style="{StaticResource PulsarIconButtonStyle}"
+                                                           ToolTip="{lex:Locale Dialog.AddSlot.SubActions.ToggleExpand}"
+                                                           Command="{Binding ToggleExpandCommand}">
+                                                    <ui:Button.Icon>
+                                                        <ui:SymbolIcon Symbol="ChevronRight24"
+                                                                       Visibility="{Binding IsCollapsed, Converter={StaticResource BoolToVis}}"/>
+                                                    </ui:Button.Icon>
+                                                </ui:Button>
 
-                                                <ComboBox Grid.Column="1"
-                                                          ItemsSource="{Binding AvailableActions}"
-                                                          DisplayMemberPath="Label"
-                                                          SelectedItem="{Binding SelectedActionOption, Mode=TwoWay}"
-                                                          Margin="0,0,6,0"/>
+                                                <!-- Summary (click toggles too) -->
+                                                <Button Grid.Column="1"
+                                                        HorizontalContentAlignment="Left"
+                                                        Background="Transparent"
+                                                        BorderThickness="0"
+                                                        Padding="0"
+                                                        Cursor="Hand"
+                                                        Command="{Binding ToggleExpandCommand}">
+                                                    <Button.Template>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <ContentPresenter/>
+                                                        </ControlTemplate>
+                                                    </Button.Template>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding Label}"
+                                                                   FontSize="{StaticResource Pulsar.Type.Body}"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                                                   VerticalAlignment="Center"
+                                                                   Visibility="{Binding HasLabel, Converter={StaticResource BoolToVis}}"/>
+                                                        <TextBlock Text="{lex:Locale Dialog.AddSlot.SubActions.Unnamed}"
+                                                                   FontSize="{StaticResource Pulsar.Type.Body}"
+                                                                   FontStyle="Italic"
+                                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                                   VerticalAlignment="Center"
+                                                                   Visibility="{Binding HasLabel, Converter={StaticResource BoolToVisInverse}}"/>
+                                                        <TextBlock Text="{Binding SummaryActionText}"
+                                                                   FontSize="{StaticResource Pulsar.Type.Caption}"
+                                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                                   Margin="{StaticResource Pulsar.Gap.Left.MD}"
+                                                                   VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Button>
 
                                                 <ui:Button Grid.Column="2"
                                                            Width="26" Height="26"
@@ -474,46 +523,69 @@
                                                        TextWrapping="Wrap"
                                                        Visibility="{Binding HasInvalidSelection, Converter={StaticResource BoolToVis}}"/>
 
-                                            <!-- Parameter fields (Tag bridge → row) -->
-                                            <ItemsControl ItemsSource="{Binding RequiredParameters}"
-                                                          Loaded="SubActionParameters_Loaded"
-                                                          ItemTemplate="{StaticResource SlotParameterFieldTemplate}"
-                                                          Margin="{StaticResource Pulsar.Gap.Top.XS}"/>
+                                            <!-- Expanded editor body -->
+                                            <StackPanel Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVis}}">
+                                                <Grid Margin="{StaticResource Pulsar.Gap.Top.SM}">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="2*"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
 
-                                            <ItemsControl ItemsSource="{Binding OptionalParameters}"
-                                                          Loaded="SubActionParameters_Loaded"
-                                                          ItemTemplate="{StaticResource SlotParameterFieldTemplate}"/>
+                                                    <ComboBox Grid.Column="0"
+                                                              ItemsSource="{Binding AvailablePlugins}"
+                                                              DisplayMemberPath="DisplayName"
+                                                              SelectedValuePath="PluginId"
+                                                              SelectedValue="{Binding PluginId, Mode=TwoWay}"
+                                                              Margin="0,0,6,0"/>
 
-                                            <ItemsControl ItemsSource="{Binding AdvancedParameters}"
-                                                          Loaded="SubActionParameters_Loaded"
-                                                          ItemTemplate="{StaticResource SlotParameterFieldTemplate}"/>
+                                                    <ComboBox Grid.Column="1"
+                                                              ItemsSource="{Binding AvailableActions}"
+                                                              DisplayMemberPath="Label"
+                                                              SelectedItem="{Binding SelectedActionOption, Mode=TwoWay}"
+                                                              Margin="0,0,6,0"/>
+                                                </Grid>
 
-                                            <!-- Label / icon / color -->
-                                            <Grid Margin="{StaticResource Pulsar.Gap.Top.XS}">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
+                                                <!-- Parameter fields (Tag bridge → row) -->
+                                                <ItemsControl ItemsSource="{Binding RequiredParameters}"
+                                                              Loaded="SubActionParameters_Loaded"
+                                                              ItemTemplate="{StaticResource SlotParameterFieldTemplate}"
+                                                              Margin="{StaticResource Pulsar.Gap.Top.XS}"/>
 
-                                                <ui:TextBox Grid.Column="0"
-                                                            Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}"
-                                                            PlaceholderText="{lex:Locale Dialog.AddSlot.Label}"
-                                                            Margin="0,0,6,0"/>
+                                                <ItemsControl ItemsSource="{Binding OptionalParameters}"
+                                                              Loaded="SubActionParameters_Loaded"
+                                                              ItemTemplate="{StaticResource SlotParameterFieldTemplate}"/>
 
-                                                <Button Grid.Column="1"
-                                                        Width="56" Height="30"
-                                                        Background="{Binding ColorHex, Converter={StaticResource HexToBrush}}"
-                                                        Margin="0,0,4,0"
-                                                        ToolTip="{lex:Locale Dialog.AddSlot.PickColor}"
-                                                        Command="{Binding DataContext.PickSubActionColorCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                        CommandParameter="{Binding}"/>
+                                                <ItemsControl ItemsSource="{Binding AdvancedParameters}"
+                                                              Loaded="SubActionParameters_Loaded"
+                                                              ItemTemplate="{StaticResource SlotParameterFieldTemplate}"/>
 
-                                                <controls:IconSelector Grid.Column="2"
-                                                                        IconKey="{Binding IconKey, Mode=TwoWay}"
-                                                                        Width="120"
-                                                                        BrowseClicked="PickSubActionIcon_Click"/>
-                                            </Grid>
+                                                <!-- Label / icon / color -->
+                                                <Grid Margin="{StaticResource Pulsar.Gap.Top.XS}">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <ui:TextBox Grid.Column="0"
+                                                                Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}"
+                                                                PlaceholderText="{lex:Locale Dialog.AddSlot.Label}"
+                                                                Margin="0,0,6,0"/>
+
+                                                    <Button Grid.Column="1"
+                                                            Width="56" Height="30"
+                                                            Background="{Binding ColorHex, Converter={StaticResource HexToBrush}}"
+                                                            Margin="0,0,4,0"
+                                                            ToolTip="{lex:Locale Dialog.AddSlot.PickColor}"
+                                                            Command="{Binding DataContext.PickSubActionColorCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                            CommandParameter="{Binding}"/>
+
+                                                    <controls:IconSelector Grid.Column="2"
+                                                                            IconKey="{Binding IconKey, Mode=TwoWay}"
+                                                                            Width="120"
+                                                                            BrowseClicked="PickSubActionIcon_Click"/>
+                                                </Grid>
+                                            </StackPanel>
                                         </StackPanel>
                                     </Border>
                                 </DataTemplate>

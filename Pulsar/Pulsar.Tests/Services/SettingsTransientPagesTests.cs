@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Messaging;
@@ -526,6 +527,37 @@ namespace Pulsar.Tests.Services
             catalog.IsTransient("slot-editor:Global:1").Should().BeTrue(
                 "前缀清理只作用于被删上下文（含结尾冒号，不误伤 Global）");
         }
+
+        // ---------- [unify-slot-editor-transient-pages 3.3] 草稿 tab 强制回收 ----------
+
+        [Fact]
+        public async Task DiscardTransientPage_ShouldUnregisterWithoutDirtyGuardConfirmation()
+        {
+            var catalog = CreateCatalog();
+            var guard = CreateGuard(dirty: true); // 全局脏：CloseTransientPage 会被守卫拦住
+            var shell = CreateShell(catalog, guard.Object);
+            var entityPages = new SettingsEntityPageStore();
+            var removed = new List<string>();
+            entityPages.Register(SettingsPageIds.SlotEditor + ":Global:draft", _ =>
+            {
+                removed.Add("should-not-build");
+                return null!;
+            });
+            var service = CreateService(catalog, shell, guard.Object, entityPages);
+            service.RegisterDefinition(CreateTransientRegistration(id: SettingsPageIds.SlotEditor));
+
+            await service.OpenTransientPageAsync(SettingsPageIds.SlotEditor, "Global:draft", "draft");
+            service.IsOpen(SettingsPageIds.SlotEditor + ":Global:draft").Should().BeTrue();
+
+            // 脏状态下 Discard 仍直接回收（草稿已提交为实体，不弹 save/discard/cancel）。
+            await service.DiscardTransientPageAsync(SettingsPageIds.SlotEditor + ":Global:draft");
+
+            service.IsOpen(SettingsPageIds.SlotEditor + ":Global:draft").Should().BeFalse();
+            entityPages.TryGet(SettingsPageIds.SlotEditor + ":Global:draft", out _).Should().BeFalse();
+            removed.Should().BeEmpty("闭包随页面一并移除，不会被再次调用");
+            // 恰好 1 次 = OpenTransientPageAsync 导航确认；Discard 本身不得再走守卫。
+            guard.Verify(g => g.CanNavigateAwayAsync(It.IsAny<string?>(), It.IsAny<bool>()), Times.Exactly(1));
+        }
     }
 }
 
@@ -550,5 +582,7 @@ namespace Pulsar.Tests.TestInfrastructure
         public string? GetLastOpenedSettingsPageId() => _getLast();
 
         public void SetLastOpenedSettingsPageId(string? pageId) => _setLast(pageId);
+
+
     }
 }
