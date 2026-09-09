@@ -1432,9 +1432,6 @@
   <data name="Notification.SlotAddedFormat" xml:space="preserve">
     <value>Slot '{0}' added.</value>
   </data>
-  <data name="Notification.EditSlotFormat" xml:space="preserve">
-    <value>Edit Slot {0}</value>
-  </data>
   <data name="Notification.ConfirmDeletion" xml:space="preserve">
     <value>Confirm Deletion</value>
   </data>
@@ -1488,9 +1485,6 @@
   </data>
   <data name="Notification.SecretConfiguration" xml:space="preserve">
     <value>Secret Configuration</value>
-  </data>
-  <data name="Notification.CreateSlot" xml:space="preserve">
-    <value>Create Slot</value>
   </data>
   <data name="Notification.NewProfile" xml:space="preserve">
     <value>New Profile</value>

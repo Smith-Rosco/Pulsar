@@ -45,10 +45,9 @@
         <contents:QuickSecretsContent/>
     </DataTemplate>
 
-    <DataTemplate DataType="{x:Type dialogs:SlotEditorViewModel}">
-        <contents:AddSlotContent/>
-    </DataTemplate>
-
+    <!-- [P3 4.1] SlotEditorViewModel 模态模板已退役：slot 编辑统一走 transient tab
+         （SettingsSlotEditorPage 直接实例化 AddSlotContent / SlotConfigurationDialogContent，
+         不经 VM→DataTemplate 模态查找）。 -->
     <DataTemplate DataType="{x:Type dialogs:SecretPickerViewModel}">
         <contents:SecretPickerContent/>
     </DataTemplate>

@@ -2316,11 +2316,6 @@
     <value>槽位'{0}'已添加。</value>
   </data>
   <data
-    name="Notification.EditSlotFormat"
-    xml:space="preserve">
-    <value>编辑槽位 {0}</value>
-  </data>
-  <data
     name="Notification.ConfirmDeletion"
     xml:space="preserve">
     <value>确认删除</value>
@@ -2409,11 +2404,6 @@
     name="Notification.SecretConfiguration"
     xml:space="preserve">
     <value>密钥配置</value>
-  </data>
-  <data
-    name="Notification.CreateSlot"
-    xml:space="preserve">
-    <value>创建槽位</value>
   </data>
   <data
     name="Notification.NewProfile"

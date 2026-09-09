@@ -73,3 +73,31 @@ settings-registry consensus.
   `settings-dirty-state-guard`).
 - Known deferred work: per-page dirty state (P2), entity-scoped transient ids (P3),
   deep-link entries into settings (API already supports it).
+
+## Addendum (2026-09-09): Slot editor P3 — modal retirement
+
+Via openspec change `unify-slot-editor-transient-pages` (tasks 4.1–4.2). The
+entity-scoped transient ids deferred above (Decision §2) are now the only slot
+editing surface:
+
+- **Entry points** (`SettingsViewModel.AddSlotDialog` / `OpenSlotConfiguration`)
+  open entity tabs exclusively: edit = `slot-editor:<ctx>:<slotNo>` (live
+  `PluginSlot`, window-bottom save via the shared dirty chain), create =
+  `slot-editor:<ctx>:draft` (two-step wizard, in-place commit converts the tab
+  to an edit tab). The `UseTransientSlotEditor` fallback flag and both modal
+  fallback branches were deleted.
+- **Template registry**: the `SlotEditorViewModel → AddSlotContent` DataTemplate
+  in `Themes/DialogTemplates.xaml` was removed; `SettingsSlotEditorPage`
+  instantiates the content controls directly. `DialogTemplateRegistrationTests`
+  gains an explicit `NonModalVmExemptions` list (with rationale) instead of a
+  silent skip — future re-migrations must consciously edit it.
+- **Reuse, not deletion**: `AddSlotContent` / `SlotConfigurationDialogContent`
+  remain as content controls embedded in the page (with their self-contained
+  `ui:ControlsDictionary` merge — see `Docs/lessons/` on implicit-style
+  resolution). Only the modal hosting flow died.
+- **Scope discipline on resx cleanup**: full-scan found ~296 candidate orphan
+  keys, but most are convention-lookup keys (`SlotParam.*` / `SlotAction.*` /
+  `PluginPermission.*`, resolved via `SlotParam.{AlphaNumOnly(Label)}` style
+  name building). Only the two keys orphaned by this change
+  (`Notification.CreateSlot`, `Notification.EditSlotFormat`) were removed; a
+  dedicated audit change is required before touching the rest.

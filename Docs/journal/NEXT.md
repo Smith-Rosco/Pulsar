@@ -71,3 +71,5 @@
 - [x] 全量测试死锁修复「第二次提交」（2026-09-04，commit `5412911`，含 `XUNIT_APPLICATION_CURRENT_DEADLOCK.md`）。
 - [x] 构建警告清理至 0（2026-09-04 23:32，commit `784343f` + `470fba6`）。
 - [x] openspec 四 change 安全批次（2026-09-06，commit `93044dc`）：in-app-auto-update 纯逻辑层（1/2/4.1，84 测试）+ user-manual（1.1-1.4/2.1-2.2）+ installer 脚本（1.1/1.2/2.1-2.3/4.1-4.3）+ repositioning（3.1 脚本/4.1-4.3 README/5.3）；ADR-025 + ADR-026；build 0 警告 0 错误，全量 1227/1227。各 change 剩余项（DI 集成/真实网络 QA/干净 VM 冒烟/Release 发布/视频录制）均依赖真机或外部发布动作，待用户环境执行。
+- [ ] **unify-slot-editor-transient-pages 4.4 归档**：P3 模态退役已落地（tasks 4.1-4.3，全量 1443/1443，build 0/0）；ADR-029 Addendum 已写，**等用户文档评审通过后执行 `/opsx-archive`（delivery both）**，`openspec validate` 须过。
+- [ ] resx 孤儿键独立审计（低成本 change 候选）：全量扫描 1168 键发现 ~296 疑似孤儿，须先排除约定查找键（`SlotParam.*`/`SlotAction.*`/`PluginPermission.*` 等动态拼接前缀）；范围纪律见 ADR-029 Addendum。

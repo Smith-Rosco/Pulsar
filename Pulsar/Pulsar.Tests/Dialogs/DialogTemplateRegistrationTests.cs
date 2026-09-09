@@ -18,6 +18,16 @@ namespace Pulsar.Tests.Dialogs
     /// </summary>
     public class DialogTemplateRegistrationTests
     {
+        /// <summary>
+        /// 不再经模态 DataTemplate 展示的对话框 VM 豁免清单：
+        /// - SlotEditorViewModel：P3（unify-slot-editor-transient-pages 4.1）模态退役，
+        ///   slot 编辑统一走 transient tab（SettingsSlotEditorPage 直接实例化内容控件）。
+        /// </summary>
+        private static readonly HashSet<Type> NonModalVmExemptions = new()
+        {
+            typeof(Pulsar.ViewModels.Dialogs.SlotEditorViewModel),
+        };
+
         [Fact]
         public void DialogTemplates_ShouldRegisterEveryDialogViewModel()
         {
@@ -31,6 +41,7 @@ namespace Pulsar.Tests.Dialogs
 
             var dialogVmTypes = typeof(IDialogViewModel).Assembly.GetTypes()
                 .Where(t => t.IsClass && !t.IsAbstract && typeof(IDialogViewModel).IsAssignableFrom(t))
+                .Where(t => !NonModalVmExemptions.Contains(t))
                 .ToList();
 
             dialogVmTypes.Should().NotBeEmpty("the dialog system must have at least one custom VM");

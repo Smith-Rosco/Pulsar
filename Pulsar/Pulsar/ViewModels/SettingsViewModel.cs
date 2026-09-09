@@ -59,13 +59,6 @@ namespace Pulsar.ViewModels
         private readonly SettingsEntityPageStore? _entityPages;
         private readonly ProfilesConfig _fallbackConfig = new();
 
-        /// <summary>
-        /// Slot 编辑入口改道开关（unify-slot-editor-transient-pages 2.4）：true = 编辑进
-        /// 实体级 transient tab；改回 false 即回退到旧模态对话框（P3 退役前的回退路径，
-        /// 旧路径代码保留不删）。
-        /// </summary>
-        private const bool UseTransientSlotEditor = true;
-
         // ===== Drag & Drop =====
         private CancellationTokenSource? _notificationDebounceToken;
 
@@ -390,70 +383,25 @@ namespace Pulsar.ViewModels
         [RelayCommand]
         public async Task AddSlotDialog()
         {
-            // [unify-slot-editor-transient-pages 3.2] 新建入口改道：每上下文单例草稿 tab
-            // （slot-editor:<contextKey>:draft）。重复触发"新建"激活既有草稿 tab（继续
-            // 上次的草稿）；提交后转实体编辑 tab（3.3）。UseTransientSlotEditor=false 走
-            // 下方保留的模态路径（P3 退役前的回退）。
-            if (UseTransientSlotEditor && _transientPages != null && _entityPages != null)
+            // [unify-slot-editor-transient-pages 3.2 / P3 4.1] 新建入口：每上下文单例
+            // 草稿 tab（slot-editor:<contextKey>:draft）。重复触发"新建"激活既有草稿
+            // tab（继续上次的草稿）；提交后转实体编辑 tab（3.3）。旧模态路径已退役。
+            // 两个 transient 服务为可选注入；未提供时静默跳过（同 CommitCreatedSlotFromTabAsync）。
+            if (_transientPages == null || _entityPages == null)
             {
-                var contextKey = _slotEditor.CurrentContext?.Key ?? "Global";
-                var contextName = _slotEditor.CurrentContext?.DisplayName ?? contextKey;
-                var draftEntityId = $"{contextKey}:draft";
-
-                _entityPages.Register(
-                    $"{SettingsPageIds.SlotEditor}:{draftEntityId}",
-                    _ => BuildSlotCreationPage(contextKey, contextName));
-
-                var draftTitle = string.Format(_loc["Settings.SlotEditor.DraftTabTitleFormat"], contextName);
-                await _transientPages.OpenTransientPageAsync(SettingsPageIds.SlotEditor, draftEntityId, draftTitle);
                 return;
             }
 
-            var cards = BuildSlotTypeCards();
-            var vm = new SlotEditorViewModel(
-                SlotEditorMode.Create,
-                cards,
-                _slotEditor.CreateSlotDraft,
-                _slotEditor.SetSlotDraftAction,
-                PickSlotParameterValue,
-                PickIcon,
-                PickColor,
-                _loc,
-                metadataRegistry: _pluginMetadataRegistry,
-                secretDisplayResolver: rawSecretId => _slotEditor.ResolveSecretDisplay(rawSecretId));
+            var contextKey = _slotEditor.CurrentContext?.Key ?? "Global";
+            var contextName = _slotEditor.CurrentContext?.DisplayName ?? contextKey;
+            var draftEntityId = $"{contextKey}:draft";
 
-            // [Architecture review 2026-09-04, candidate M] Recipe owns the show/confirm
-            // shell; the confirmed side awaits PickSecret, so it uses the async overload.
-            await _dialogFlows.RunAsync(
-                _loc["Notification.CreateSlot"],
-                vm,
-                async vm2 =>
-                {
-                    if (vm2.CreatedSlot == null) return;
+            _entityPages.Register(
+                $"{SettingsPageIds.SlotEditor}:{draftEntityId}",
+                _ => BuildSlotCreationPage(contextKey, contextName));
 
-                    _slotEditor.CommitCreatedSlot(vm2.CreatedSlot);
-                    SendNotification(_loc["Notification.Success"], string.Format(_loc["Notification.SlotAddedFormat"], vm2.CreatedSlot.Label), ControlAppearance.Success);
-
-                    // P2 Fix: If the newly created slot is a PKI slot and secretId is still empty,
-                    // immediately open the secret picker so the user can link a secret.
-                    if (vm2.CreatedSlot.PluginId == "com.pulsar.pki"
-                        && (!vm2.CreatedSlot.Args.TryGetValue("secretId", out var sid) || string.IsNullOrEmpty(sid)))
-                    {
-                        await PickSecret(vm2.CreatedSlot);
-                    }
-                },
-                DialogButtons.None,
-                new DialogSizeConstraints
-                {
-                    Width = 860,
-                    Height = 700,
-                    MinWidth = 760,
-                    MinHeight = 620,
-                    MaxWidth = 1280,
-                    MaxHeight = 920,
-                    AllowResize = true,
-                    ShowMaximizeButton = true
-                });
+            var draftTitle = string.Format(_loc["Settings.SlotEditor.DraftTabTitleFormat"], contextName);
+            await _transientPages.OpenTransientPageAsync(SettingsPageIds.SlotEditor, draftEntityId, draftTitle);
         }
 
         [RelayCommand]
@@ -865,47 +813,26 @@ namespace Pulsar.ViewModels
                 return;
             }
 
-            // [unify-slot-editor-transient-pages 2.4] 编辑入口改道：实体级 transient tab
-            // （slot-editor:<contextKey>:<slotNo>），同一 slot 二次点击激活既有 tab。
-            // 页面无独立保存按钮，统一走窗口底部保存（与既有脏链共用）。
-            // UseTransientSlotEditor=false 时走下方保留的模态路径（P3 退役前的回退）。
-            if (UseTransientSlotEditor && _transientPages != null && _entityPages != null)
+            // [unify-slot-editor-transient-pages 2.4 / P3 4.1] 编辑入口：实体级 transient
+            // tab（slot-editor:<contextKey>:<slotNo>），同一 slot 二次点击激活既有 tab。
+            // 页面无独立保存按钮，统一走窗口底部保存（与既有脏链共用）。旧模态路径已退役。
+            // 两个 transient 服务为可选注入；未提供时静默跳过（同 CommitCreatedSlotFromTabAsync）。
+            if (_transientPages == null || _entityPages == null)
             {
-                var contextKey = _slotEditor.CurrentContext?.Key ?? "Global";
-                var contextName = _slotEditor.CurrentContext?.DisplayName ?? contextKey;
-                var entityId = $"{contextKey}:{slot.Slot}";
-                var compositeId = $"{SettingsPageIds.SlotEditor}:{entityId}";
-
-                // 页面构造闭包持有 live slot 与本 VM 的委托 seam（D3 组合优先）；
-                // 注册即覆盖，tab 回收由 transient 协调器清理。
-                _entityPages.Register(compositeId, _ => BuildSlotEditorPage(slot));
-
-                var title = string.Format(_loc["Settings.SlotEditor.TabTitleFormat"], slot.Label, contextName);
-                await _transientPages.OpenTransientPageAsync(SettingsPageIds.SlotEditor, entityId, title);
                 return;
             }
 
-            var cards = BuildSlotTypeCards();
-            var vm = new SlotEditorViewModel(
-                SlotEditorMode.Edit,
-                cards,
-                _slotEditor.CreateSlotDraft,
-                _slotEditor.SetSlotAction,
-                PickSlotParameterValue,
-                PickIcon,
-                PickColor,
-                _loc,
-                existingSlot: slot,
-                metadataRegistry: _pluginMetadataRegistry,
-                secretDisplayResolver: rawSecretId => _slotEditor.ResolveSecretDisplay(rawSecretId));
+            var contextKey = _slotEditor.CurrentContext?.Key ?? "Global";
+            var contextName = _slotEditor.CurrentContext?.DisplayName ?? contextKey;
+            var entityId = $"{contextKey}:{slot.Slot}";
+            var compositeId = $"{SettingsPageIds.SlotEditor}:{entityId}";
 
-            // [Architecture review 2026-09-04, candidate M] Kept direct: show-only flow — the
-            // dialog result is deliberately ignored, so the recipe's confirmed side doesn't apply.
-            await _dialogService.ShowCustomAsync(
-                string.Format(_loc["Notification.EditSlotFormat"], slot.Slot),
-                vm,
-                DialogButtons.OkCancel,
-                DialogSizeConstraints.LargeResizable);
+            // 页面构造闭包持有 live slot 与本 VM 的委托 seam（D3 组合优先）；
+            // 注册即覆盖，tab 回收由 transient 协调器清理。
+            _entityPages.Register(compositeId, _ => BuildSlotEditorPage(slot));
+
+            var title = string.Format(_loc["Settings.SlotEditor.TabTitleFormat"], slot.Label, contextName);
+            await _transientPages.OpenTransientPageAsync(SettingsPageIds.SlotEditor, entityId, title);
         }
 
         /// <summary>
