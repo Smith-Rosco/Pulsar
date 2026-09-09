@@ -30,6 +30,7 @@
   - 实际删除范围：`UseTransientSlotEditor` 回退开关 + `AddSlotDialog`/`OpenSlotConfiguration` 模态 fallback 分支 + `DialogTemplates.xaml` 的 `SlotEditorViewModel` 模板注册（两个 UserControl 本体保留——被 `SettingsSlotEditorPage` 复用）。全仓 grep 零残留；全量 1443/1443，build 0 警告 0 错误。
 - [x] 4.2 resx 清理孤儿键；`SettingsViewModel` 移除对话框专用命令。验证：构建 0/0
   - 删除本次产生的 2 个孤儿键（`Notification.CreateSlot` / `Notification.EditSlotFormat`，双语）。全量扫描另发现 ~296 个疑似孤儿键，但多为约定查找键（`SlotParam.*`/`SlotAction.*`/`PluginPermission.*` 动态拼接），**不在本 change 范围**，需独立审计 change 处理（ADR-029 增补已记录）。
-- [ ] 4.3 ADR-029 增补 P3 落地决议（或独立 ADR）；journal + NEXT.md 收口。验证：文档评审通过
-  - ADR-029 Addendum (2026-09-09) 已写（含 `NonModalVmExemptions` 豁免清单与 resx 范围纪律）；journal/NEXT.md 已更新。**等用户文档评审**。
-- [ ] 4.4 openspec archive（`/opsx-archive`，delivery both）。验证：`openspec validate` 通过，specs 归档落位
+- [x] 4.3 ADR-029 增补 P3 落地决议（或独立 ADR）；journal + NEXT.md 收口。验证：文档评审通过
+  - ADR-029 Addendum (2026-09-09) 已写（含 `NonModalVmExemptions` 豁免清单与 resx 范围纪律）；journal/NEXT.md 已更新。用户已确认（2026-09-09 22:21「确定」）。
+- [x] 4.4 openspec archive（`/opsx-archive`，delivery both）。验证：`openspec validate` 通过，specs 归档落位
+  - specs 97/97 通过；3 个 delta 已落主 specs（cascade-submenu-editor ×2 MODIFIED / settings-transient-pages ×1 MODIFIED +1 ADDED / slot-editor-transient-page 新建）；change 移至 `openspec/changes/archive/2026-09-09-unify-slot-editor-transient-pages/`。注：CLI `openspec archive` 因「ADDED 已在主 specs」拒绝执行（spec-update 不幂等），按流程 step 5 手动 mv 归档。
