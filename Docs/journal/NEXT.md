@@ -20,6 +20,7 @@
 - [ ] **右键手势延迟优化（搁置，2026-09-09 用户裁定不深入，后续有机会再做）**：手势开启时普通右键响应慢 = pending-swallow 设计固有代价（DOWN 被吞、松键后 mouse_event 回放）+ LL 鼠标钩子同步执行订阅者（回调阻塞拖慢全系统输入，UI 繁忙时放大）。非回归（R2 前后 replay 调用点逐字一致）。优化候选方向：(a) 钩子回调极速化/独立线程；(b) 评估回放时序（如 down 即乐观透传 + 特例召回，需重审 LEAK-FIX 语义）。另：Gesture 临时页注册竞态（页面打不开仅警告）与 `e.Handled=true` 崩溃韧性策略亦未决策，随本项一并择机处理。崩溃防御本体已修（`5a2c930`）。
 - [ ] **重构轨 R2 已落地（2026-09-09 15:45，grill auto-with-guardrails）**：`GestureInputRouter`（新增）迁出右拖手势 claim/promote/replay 编排（MenuSession **3609→3357 行**；公共面 `FeedRightDragGesture`/`FeedGlobalMouseMove` 不变）；新增 15 用例（编排策略首次脱离完整 harness 可测），既有 Leak/Isolation 套件原样通过作行为守护；全量 **1420/1420**，build 0/0。flick-out 判定（一行决策，依赖子菜单 pose）明确不迁（ROI 过低）。**R4 已落地（17:15）：MenuWatchdog 迁出（3357→3317 行），+7 用例，全量 1427/1427，build 0/0。剩余：R3 SubMenuTransitionController + CenterIdentityPolicy（需子轮盘真机验收通过后动）。**
 
+- [ ] resx 孤儿键独立审计（低成本 change 候选）：全量扫描 1168 键发现 ~296 疑似孤儿，须先排除约定查找键（`SlotParam.*`/`SlotAction.*`/`PluginPermission.*` 等动态拼接前缀）；范围纪律见 ADR-029 Addendum。
+
 ## 已完成（历史保留）
 
-- [ ] resx 孤儿键独立审计（低成本 change 候选）：全量扫描 1168 键发现 ~296 疑似孤儿，须先排除约定查找键（`SlotParam.*`/`SlotAction.*`/`PluginPermission.*` 等动态拼接前缀）；范围纪律见 ADR-029 Addendum。
