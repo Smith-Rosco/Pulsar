@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>resx 父前缀嫌疑区 126 键逐键核查（2026-09-10）</title>
+<style>
+:root { color-scheme: light; }
+body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; margin: 24px auto; max-width: 1080px; color: #1a1a1a; background: #fafafa; line-height: 1.55; }
+h1 { font-size: 1.5em; } h2 { font-size: 1.2em; margin-top: 1.6em; border-bottom: 2px solid #2563eb; padding-bottom: 4px; }
+.meta { color: #555; font-size: 0.9em; }
+.box { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 14px 18px; margin: 12px 0; }
+.verdict { background: #ecfdf5; border: 1px solid #10b981; }
+.warn { background: #fffbeb; border: 1px solid #f59e0b; }
+code { background: #eef2f7; padding: 1px 5px; border-radius: 4px; font-size: 0.92em; }
+table { border-collapse: collapse; width: 100%; font-size: 0.86em; }
+th, td { border: 1px solid #d5d9de; padding: 5px 8px; text-align: left; vertical-align: top; }
+th { background: #e8edf3; position: sticky; top: 0; }
+.famrow td { background: #dbe4ee; font-weight: 600; }
+.resx { color: #64748b; font-size: 0.92em; }
+.big { font-size: 1.6em; font-weight: 700; }
+</style>
+</head>
+<body>
+<h1>resx 父前缀嫌疑区 126 键 · 逐键核查报告</h1>
+<p class="meta">生成：2026-09-10 07:48 · 上游：Docs/reports/2026-09-09-RESX_ORPHAN_AUDIT.html（嫌疑区 126 键，当时未列入处置）· 本轮=只读核查，未删任何键</p>
+
+<h2>关键判断摘要</h2>
+<div class="box verdict">
+<p><span class="big">126 / 126 全部判定为死键</span>（零生产引用，可整批复删）。</p>
+<ul>
+<li><b>0 存活</b> · <b>3 仅测试陈旧引用</b>（CommandSlot.AutoSignIn / FirstLaunch.GeneralProductivityDesc / FirstLaunch.SelectScenarioError——引用点为测试 mock 与 allowlist，生产查询路径 0 命中）· <b>123 纯 0 引用</b>。</li>
+<li><b>动态拼接风险已排除</b>：全语料扫描 <code>"Fam." +</code> / <code>$"Fam.{…}"</code> / <code>Format("Fam.{0}")</code> 三类模式，唯一命中为 TutorialStepLoader.cs:251/260 的 <code>"Tutorial." + suffix</code>；其实测派生集合仅 8 键（step ID 末段 PascalCase），与嫌疑区 Tutorial 键零交集。</li>
+<li><b>数据驱动键已排除</b>：TutorialSteps*.json（5 文件）全字符串反查 0 命中嫌疑键；preset 键由 PresetCatalogService 静态写死，不含 AutoSignIn。</li>
+<li><b>替代关系实锤</b>：FirstLaunch.*Desc 三键被现行 FirstLaunch.*SlotDesc（OnboardingTemplateService switch 表）替代；Notification.Deprecated*/Online*Deprecated 与 Marketplace 废弃同源（与上轮 A 组判断一致）；Dialog.AddSlot.Choose*/Scenario* 系旧添加向导遗产（44 键整族无一存活）。</li>
+</ul>
+</div>
+
+<h2>核查方法（可复现）</h2>
+<div class="box">
+<ol>
+<li>键清单：从上游报告「父前缀误判嫌疑区」小节精确提取 126 键（已校正首轮脚本跨节误读）。</li>
+<li>语料：Pulsar/ 下全部 .cs/.xaml/.json（622 生产 + 190 测试文件；排除 bin/obj/.cache、*.Designer.cs、*.g.cs、resx 定义本身）。</li>
+<li>整键词边界匹配（前后非 [A-Za-z0-9_]），生产命中→存活；仅测试命中→TEST-ONLY；双零→死键。</li>
+<li>族前缀动态拼接三模式扫描（上列）＋ Tutorial 派生集合推演 ＋ preset 静态键清单比对 ＋ 英文 value 反查（6 键 value 有硬编码副本，仅记录不影响判定）。</li>
+<li>resx 现状对账：126 键在 Strings.resx 与 Strings.zh-CN.resx（各 1077 键）中均 EN+ZH 双语存在，删除时须同步双删。</li>
+<li>抽样复核：8 键（含 QuickAdd / ExternalPlugins.Title / RunVba / SwitchFailed / OpenConfiguration / HealthIcons / FirstCommandHint / HotkeyReserved）裸子串 grep 逐键复验，全部 0 命中。</li>
+</ol>
+</div>
+
+<h2>处置建议</h2>
+<div class="box warn">
+<ul>
+<li><b>126 键可整批复删</b>（双语同步，两文件 1077 → 951）。上轮 89 键删除已验证流程（grill auto-with-guardrails 惯例、tempered-dot 正则、对账 178/178）。</li>
+<li>3 键测试陈旧引用建议随删除一并清理测试代码（PresetLocalizationKeysTests.cs:25 allowlist 项、OnboardingVerificationTests.cs:114/125 两行 mock——删除后 mock 无副作用，仅卫生问题，可不动）。</li>
+<li>等待用户裁决后立 change 实施；默认沿用上轮未走 opsx change 的惯例。</li>
+</ul>
+</div>
+
+<h2>逐键清单（126）</h2>
+<div class="box" style="padding:0; max-height: 70vh; overflow:auto;">
+<table>
+<thead><tr><th>#</th><th>键名</th><th>判定</th><th>证据 / 备注</th></tr></thead>
+<tbody>
+<tr class="famrow"><td colspan="4">Dialog.AddSlot（44 键）</td></tr>
+<tr><td>1</td><td><code>Dialog.AddSlot.Action</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>2</td><td><code>Dialog.AddSlot.AdvancedDesc</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>3</td><td><code>Dialog.AddSlot.AdvancedDesc2</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>4</td><td><code>Dialog.AddSlot.AdvancedDesc3</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>5</td><td><code>Dialog.AddSlot.CategoryAll</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>6</td><td><code>Dialog.AddSlot.ChooseBehavior</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>7</td><td><code>Dialog.AddSlot.ChooseBehaviorDesc</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>8</td><td><code>Dialog.AddSlot.ChooseOutcome</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>9</td><td><code>Dialog.AddSlot.ChooseScenario</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>10</td><td><code>Dialog.AddSlot.ChooseScenarioBegin</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>11</td><td><code>Dialog.AddSlot.ChooseSlotType</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>12</td><td><code>Dialog.AddSlot.ChooseTypeHint</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>13</td><td><code>Dialog.AddSlot.CompleteSetupHint</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>14</td><td><code>Dialog.AddSlot.ConfigureSlot</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>15</td><td><code>Dialog.AddSlot.DisclosureHint1</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>16</td><td><code>Dialog.AddSlot.DisclosureHint2</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>17</td><td><code>Dialog.AddSlot.DisclosureTitle</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>18</td><td><code>Dialog.AddSlot.IconPlaceholder</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>19</td><td><code>Dialog.AddSlot.OpenSettings</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>；英文 value 在 7 个文件以硬编码形式出现（不影响判定）</td></tr>
+<tr><td>20</td><td><code>Dialog.AddSlot.OpenTarget</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>21</td><td><code>Dialog.AddSlot.Optional</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>22</td><td><code>Dialog.AddSlot.Plugin</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>23</td><td><code>Dialog.AddSlot.PreviewHint</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>24</td><td><code>Dialog.AddSlot.QuickAdd</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>；英文 value 在 1 个文件以硬编码形式出现（不影响判定）</td></tr>
+<tr><td>25</td><td><code>Dialog.AddSlot.RunVba</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>26</td><td><code>Dialog.AddSlot.ScanTypes</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>27</td><td><code>Dialog.AddSlot.ScenarioBased</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>28</td><td><code>Dialog.AddSlot.ScenarioBasedDesc</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>29</td><td><code>Dialog.AddSlot.ScenarioFillCredential</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>30</td><td><code>Dialog.AddSlot.ScenarioFillCredentialDesc</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>31</td><td><code>Dialog.AddSlot.ScenarioOpen</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>32</td><td><code>Dialog.AddSlot.ScenarioOpenDesc</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>33</td><td><code>Dialog.AddSlot.ScenarioSendKeys</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>34</td><td><code>Dialog.AddSlot.ScenarioSendKeysDesc</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>35</td><td><code>Dialog.AddSlot.ScenarioSwitchApp</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>36</td><td><code>Dialog.AddSlot.ScenarioSwitchAppDesc</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>37</td><td><code>Dialog.AddSlot.Script</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>38</td><td><code>Dialog.AddSlot.SelectActionBlock</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>39</td><td><code>Dialog.AddSlot.SendKeys</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>40</td><td><code>Dialog.AddSlot.ShowingCategoryFormat</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>41</td><td><code>Dialog.AddSlot.SwitchHint</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>42</td><td><code>Dialog.AddSlot.SwitchOrLaunch</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>43</td><td><code>Dialog.AddSlot.Target</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>44</td><td><code>Dialog.AddSlot.TypeBegin</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr class="famrow"><td colspan="4">Settings.ExternalPlugins（24 键）</td></tr>
+<tr><td>45</td><td><code>Settings.ExternalPlugins.AboutLine1</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>46</td><td><code>Settings.ExternalPlugins.AboutLine2</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>47</td><td><code>Settings.ExternalPlugins.AboutLine3</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>48</td><td><code>Settings.ExternalPlugins.AboutLine4</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>49</td><td><code>Settings.ExternalPlugins.AboutLine5</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>50</td><td><code>Settings.ExternalPlugins.AboutLine6</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>51</td><td><code>Settings.ExternalPlugins.AboutTitle</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>52</td><td><code>Settings.ExternalPlugins.ByAuthorFormat</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>53</td><td><code>Settings.ExternalPlugins.Description</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>54</td><td><code>Settings.ExternalPlugins.InstallFromFile</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>55</td><td><code>Settings.ExternalPlugins.InstallFromFileTooltip</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>56</td><td><code>Settings.ExternalPlugins.InstallHint</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>57</td><td><code>Settings.ExternalPlugins.Installed</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>58</td><td><code>Settings.ExternalPlugins.InstalledHeaderFormat</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>59</td><td><code>Settings.ExternalPlugins.InstalledPluginsHeader</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>60</td><td><code>Settings.ExternalPlugins.LoadingPlugins</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>61</td><td><code>Settings.ExternalPlugins.NoPlugins</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>62</td><td><code>Settings.ExternalPlugins.PluginDisabledFormat</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>63</td><td><code>Settings.ExternalPlugins.PluginEnabledFormat</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>64</td><td><code>Settings.ExternalPlugins.StatusCount</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>65</td><td><code>Settings.ExternalPlugins.StatusCountFormat</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>66</td><td><code>Settings.ExternalPlugins.Title</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>；英文 value 在 2 个文件以硬编码形式出现（不影响判定）</td></tr>
+<tr><td>67</td><td><code>Settings.ExternalPlugins.ToggleToolTip</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>68</td><td><code>Settings.ExternalPlugins.Uninstall</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr class="famrow"><td colspan="4">Dialog.SlotConfig（9 键）</td></tr>
+<tr><td>69</td><td><code>Dialog.SlotConfig.Appearance</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>70</td><td><code>Dialog.SlotConfig.AppearanceHint</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>71</td><td><code>Dialog.SlotConfig.Behavior</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>72</td><td><code>Dialog.SlotConfig.DraftProgress</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>73</td><td><code>Dialog.SlotConfig.MetadataHint</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>74</td><td><code>Dialog.SlotConfig.NeedsSetup</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>75</td><td><code>Dialog.SlotConfig.NoAction</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>76</td><td><code>Dialog.SlotConfig.ReadyToSave</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>77</td><td><code>Dialog.SlotConfig.UpdateBehavior</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr class="famrow"><td colspan="4">Settings.General（8 键）</td></tr>
+<tr><td>78</td><td><code>Settings.General.HotkeyClearTooltip</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>79</td><td><code>Settings.General.HotkeyConflict</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>80</td><td><code>Settings.General.HotkeyNone</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>81</td><td><code>Settings.General.HotkeyReserved</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>；英文 value 在 1 个文件以硬编码形式出现（不影响判定）</td></tr>
+<tr><td>82</td><td><code>Settings.General.OpenAppLogs</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>83</td><td><code>Settings.General.OpenPluginLogs</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>84</td><td><code>Settings.General.PressKeysPlaceholder</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>85</td><td><code>Settings.General.ResetTutorialDone</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr class="famrow"><td colspan="4">Settings.Slots（6 键）</td></tr>
+<tr><td>86</td><td><code>Settings.Slots.ConfigurationSummary</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>87</td><td><code>Settings.Slots.DragToReorder</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>88</td><td><code>Settings.Slots.HealthPrefix</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>89</td><td><code>Settings.Slots.HealthStatus</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>90</td><td><code>Settings.Slots.PluginType</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>91</td><td><code>Settings.Slots.TypePrefix</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr class="famrow"><td colspan="4">Settings.Analytics（5 键）</td></tr>
+<tr><td>92</td><td><code>Settings.Analytics.ModeAction</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>93</td><td><code>Settings.Analytics.ModeTask</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>94</td><td><code>Settings.Analytics.Ops</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>95</td><td><code>Settings.Analytics.SlotPercentageFormat</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>96</td><td><code>Settings.Analytics.TrendNoData</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr class="famrow"><td colspan="4">其它散键（30 键）</td></tr>
+<tr><td>97</td><td><code>CommandSlot.AutoSignIn</code></td><td>死键（仅测试陈旧引用）<br><span class="resx">resx: EN+ZH</span></td><td>仅 PresetLocalizationKeysTests allowlist + PresetInstallServiceTests 引用；生产 SignIn preset（PresetCatalogService.cs:116）实际用 CommandSlot.RunSignInDemo；全仓 grep（含 preset JSON 路径）0 命中</td></tr>
+<tr><td>98</td><td><code>Feedback.SwitchFailed</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>99</td><td><code>Feedback.SwitchFailedBody</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>100</td><td><code>Feedback.SwitchFailedHelp</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>101</td><td><code>FirstLaunch.BrowserDocsDesc</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>同族被 FirstLaunch.BrowserDocsSlotDesc 替代（OnboardingTemplateService.cs:19）</td></tr>
+<tr><td>102</td><td><code>FirstLaunch.DeveloperWorkflowDesc</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>同族被 FirstLaunch.DeveloperWorkflowSlotDesc 替代（OnboardingTemplateService.cs:18）</td></tr>
+<tr><td>103</td><td><code>FirstLaunch.GeneralProductivityDesc</code></td><td>死键（仅测试陈旧引用）<br><span class="resx">resx: EN+ZH</span></td><td>仅 OnboardingVerificationTests mock 引用（ GetString mock 永不命中，line112 通配返回 key 本身）；生产现行键为 FirstLaunch.GeneralProductivitySlotDesc（OnboardingTemplateService.cs:20）</td></tr>
+<tr><td>104</td><td><code>FirstLaunch.SelectScenarioError</code></td><td>死键（仅测试陈旧引用）<br><span class="resx">resx: EN+ZH</span></td><td>仅 OnboardingVerificationTests mock 引用；生产 0 命中（VM 从不查询该键）</td></tr>
+<tr><td>105</td><td><code>Notification.DeprecatedManageMessage</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>106</td><td><code>Notification.DeprecatedMessage</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>107</td><td><code>Notification.FailedLoadPluginsFormat</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>108</td><td><code>Notification.FeatureDeprecated</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>109</td><td><code>Notification.FillCredential</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>110</td><td><code>Notification.LoadedPluginsFormat</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>111</td><td><code>Notification.LoadingPlugins</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>112</td><td><code>Notification.OnlinePluginsDeprecated</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>113</td><td><code>Notification.OnlineUpdatesDeprecated</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>114</td><td><code>Notification.OpenProgram</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>115</td><td><code>Notification.RunScript</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>116</td><td><code>Notification.RunVba</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>117</td><td><code>Notification.SendKeysAction</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>118</td><td><code>Notification.SwitchApp</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>119</td><td><code>Plugin.Command.UnknownAction</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>；英文 value 在 3 个文件以硬编码形式出现（不影响判定）</td></tr>
+<tr><td>120</td><td><code>Plugin.HealthIcons</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>121</td><td><code>Plugin.ViewLogsErrorFormat</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>；英文 value 在 1 个文件以硬编码形式出现（不影响判定）</td></tr>
+<tr><td>122</td><td><code>Profile.ConfigurationIssues</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>123</td><td><code>Profile.OpenConfiguration</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>整键全语料（.cs/.xaml/.json，含词边界与拼接模式）0 命中</td></tr>
+<tr><td>124</td><td><code>Tutorial.FirstCommandHint</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>TutorialStepLoader 动态派生集合实测仅 8 键（Welcome/Intro/Success/Completion +Desc，源自 TutorialSteps*.json step ID），不含本键；tutorial JSON 全字符串反查 0 命中</td></tr>
+<tr><td>125</td><td><code>Tutorial.FirstSwitchHint</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>同上</td></tr>
+<tr><td>126</td><td><code>Tutorial.OpenSettings</code></td><td>死键（0 引用）<br><span class="resx">resx: EN+ZH</span></td><td>同上；英文 value 在 7 个文件以硬编码形式出现（不影响判定）</td></tr>
+</tbody>
+</table>
+</div>
+
+<p class="meta">工具链：Python 3.13.12 只读扫描 · 脚本 .workbuddy/tmp_suspect_check.py（临时，不入库）· 原始结果 .workbuddy/tmp_suspect_results.json</p>
+</body>
+</html>
