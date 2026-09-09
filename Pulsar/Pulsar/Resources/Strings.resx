@@ -735,66 +735,6 @@
     <value>No update file downloaded.</value>
   </data>
   <!-- ==================== Settings.Marketplace ==================== -->
-  <data name="Settings.Marketplace.Title" xml:space="preserve">
-    <value>Plugin Marketplace</value>
-  </data>
-  <data name="Settings.Marketplace.Description" xml:space="preserve">
-    <value>Discover and install plugins to extend Pulsar's functionality</value>
-  </data>
-  <data name="Settings.Marketplace.InstallFromFile" xml:space="preserve">
-    <value>Install from File</value>
-  </data>
-  <data name="Settings.Marketplace.InstallFromFileTooltip" xml:space="preserve">
-    <value>Install a plugin from a local ZIP file</value>
-  </data>
-  <data name="Settings.Marketplace.Refresh" xml:space="preserve">
-    <value>Refresh</value>
-  </data>
-  <data name="Settings.Marketplace.InstalledOnly" xml:space="preserve">
-    <value>Installed Only</value>
-  </data>
-  <data name="Settings.Marketplace.SearchPlaceholder" xml:space="preserve">
-    <value>Search plugins by name, author, or tags...</value>
-  </data>
-  <data name="Settings.Marketplace.ClearFilters" xml:space="preserve">
-    <value>Clear Filters</value>
-  </data>
-  <data name="Settings.Marketplace.Categories" xml:space="preserve">
-    <value>Categories</value>
-  </data>
-  <data name="Settings.Marketplace.AllPlugins" xml:space="preserve">
-    <value>All Plugins</value>
-  </data>
-  <data name="Settings.Marketplace.Statistics" xml:space="preserve">
-    <value>Statistics</value>
-  </data>
-  <data name="Settings.Marketplace.LoadingPlugins" xml:space="preserve">
-    <value>Loading plugins...</value>
-  </data>
-  <data name="Settings.Marketplace.Installed" xml:space="preserve">
-    <value>Installed</value>
-  </data>
-  <data name="Settings.Marketplace.UpdateAvailable" xml:space="preserve">
-    <value>Update Available</value>
-  </data>
-  <data name="Settings.Marketplace.Install" xml:space="preserve">
-    <value>Install</value>
-  </data>
-  <data name="Settings.Marketplace.Update" xml:space="preserve">
-    <value>Update</value>
-  </data>
-  <data name="Settings.Marketplace.Uninstall" xml:space="preserve">
-    <value>Uninstall</value>
-  </data>
-  <data name="Settings.Marketplace.NoPluginsFound" xml:space="preserve">
-    <value>No plugins found</value>
-  </data>
-  <data name="Settings.Marketplace.AdjustSearch" xml:space="preserve">
-    <value>Try adjusting your search or filters</value>
-  </data>
-  <data name="Settings.Marketplace.ClearAllFilters" xml:space="preserve">
-    <value>Clear All Filters</value>
-  </data>
   <!-- ==================== Settings.ExternalPlugins ==================== -->
   <data name="Settings.ExternalPlugins.Title" xml:space="preserve">
     <value>External Plugins</value>
@@ -1183,24 +1123,6 @@
     <value>Comma-separated values...</value>
   </data>
   <!-- ==================== Dialog.PluginLogViewer ==================== -->
-  <data name="Dialog.PluginLogViewer.SearchPlaceholder" xml:space="preserve">
-    <value>Search logs...</value>
-  </data>
-  <data name="Dialog.PluginLogViewer.Export" xml:space="preserve">
-    <value>Export</value>
-  </data>
-  <data name="Dialog.PluginLogViewer.OpenFolder" xml:space="preserve">
-    <value>Open Folder</value>
-  </data>
-  <data name="Dialog.PluginLogViewer.NoLogs" xml:space="preserve">
-    <value>No logs for selected filters</value>
-  </data>
-  <data name="Dialog.PluginLogViewer.ExpandRange" xml:space="preserve">
-    <value>Try expanding the time range or clearing search.</value>
-  </data>
-  <data name="Dialog.PluginLogViewer.LoadMore" xml:space="preserve">
-    <value>Load More</value>
-  </data>
   <!-- ==================== Dialog.ProcessPicker ==================== -->
   <data name="Dialog.ProcessPicker.SearchPlaceholder" xml:space="preserve">
     <value>Search running apps...</value>
@@ -1228,27 +1150,6 @@
     <value>Leave blank to keep current password</value>
   </data>
   <!-- ==================== Dialog.Permission ==================== -->
-  <data name="Dialog.Permission.Title" xml:space="preserve">
-    <value>Permission Request</value>
-  </data>
-  <data name="Dialog.Permission.PluginPrefix" xml:space="preserve">
-    <value>Plugin </value>
-  </data>
-  <data name="Dialog.Permission.RequestsPermissions" xml:space="preserve">
-    <value> requests the following permissions:</value>
-  </data>
-  <data name="Dialog.Permission.Reason" xml:space="preserve">
-    <value>Reason for request:</value>
-  </data>
-  <data name="Dialog.Permission.RememberChoice" xml:space="preserve">
-    <value>Remember my choice (don't ask again)</value>
-  </data>
-  <data name="Dialog.Permission.Deny" xml:space="preserve">
-    <value>Deny</value>
-  </data>
-  <data name="Dialog.Permission.Grant" xml:space="preserve">
-    <value>Grant Permission</value>
-  </data>
   <!-- ==================== Dialog.InputProfile ==================== -->
   <data name="Dialog.InputProfile.AppProcess" xml:space="preserve">
     <value>Application Process</value>
@@ -2111,21 +2012,6 @@
     <value>Generates a documentation command slot for quick reference access</value>
   </data>
   <!-- ==================== Dialog.Permission ==================== -->
-  <data name="Dialog.Permission.LowRisk" xml:space="preserve">
-    <value>Low Risk</value>
-  </data>
-  <data name="Dialog.Permission.MediumRisk" xml:space="preserve">
-    <value>Medium Risk</value>
-  </data>
-  <data name="Dialog.Permission.HighRisk" xml:space="preserve">
-    <value>High Risk</value>
-  </data>
-  <data name="Dialog.Permission.CriticalRisk" xml:space="preserve">
-    <value>Critical Risk</value>
-  </data>
-  <data name="Dialog.Permission.UnknownRisk" xml:space="preserve">
-    <value>Unknown Risk</value>
-  </data>
   <!-- ==================== Dialog.SlotConfig ==================== -->
   <data name="Dialog.SlotConfig.HeaderFormat" xml:space="preserve">
     <value>Slot {0} · {1}</value>
@@ -2162,159 +2048,6 @@
     <value>It will continue automatically after completing the action. If it doesn't continue automatically, you can click "Continue".</value>
   </data>
   <!-- ==================== PluginPermission ==================== -->
-  <data name="PluginPermission.ReadWindowInfo" xml:space="preserve">
-    <value>Read Window Information</value>
-  </data>
-  <data name="PluginPermission.ReadWindowInfoDesc" xml:space="preserve">
-    <value>Allows plugin to read basic window information (process name, PID, window handle)</value>
-  </data>
-  <data name="PluginPermission.ReadProcessPath" xml:space="preserve">
-    <value>Read Process Path</value>
-  </data>
-  <data name="PluginPermission.ReadProcessPathDesc" xml:space="preserve">
-    <value>Allows plugin to read the full path of the target process</value>
-  </data>
-  <data name="PluginPermission.ShowNotification" xml:space="preserve">
-    <value>Show Notification</value>
-  </data>
-  <data name="PluginPermission.ShowNotificationDesc" xml:space="preserve">
-    <value>Allows plugin to display system notification messages</value>
-  </data>
-  <data name="PluginPermission.ReadClipboard" xml:space="preserve">
-    <value>Read Clipboard</value>
-  </data>
-  <data name="PluginPermission.ReadClipboardDesc" xml:space="preserve">
-    <value>Allows plugin to read clipboard content</value>
-  </data>
-  <data name="PluginPermission.WriteClipboard" xml:space="preserve">
-    <value>Write Clipboard</value>
-  </data>
-  <data name="PluginPermission.WriteClipboardDesc" xml:space="preserve">
-    <value>Allows plugin to modify clipboard content</value>
-  </data>
-  <data name="PluginPermission.ReadSelectedText" xml:space="preserve">
-    <value>Read Selected Text</value>
-  </data>
-  <data name="PluginPermission.ReadSelectedTextDesc" xml:space="preserve">
-    <value>Allows plugin to read currently selected text</value>
-  </data>
-  <data name="PluginPermission.ReadProcessWindows" xml:space="preserve">
-    <value>Read Process Windows</value>
-  </data>
-  <data name="PluginPermission.ReadProcessWindowsDesc" xml:space="preserve">
-    <value>Allows plugin to get the list of all windows for the target process</value>
-  </data>
-  <data name="PluginPermission.SimulateKeyboard" xml:space="preserve">
-    <value>Simulate Keyboard</value>
-  </data>
-  <data name="PluginPermission.SimulateKeyboardDesc" xml:space="preserve">
-    <value>Allows plugin to simulate keyboard input</value>
-  </data>
-  <data name="PluginPermission.SimulateMouse" xml:space="preserve">
-    <value>Simulate Mouse</value>
-  </data>
-  <data name="PluginPermission.SimulateMouseDesc" xml:space="preserve">
-    <value>Allows plugin to simulate mouse operations</value>
-  </data>
-  <data name="PluginPermission.StartProcess" xml:space="preserve">
-    <value>Start Process</value>
-  </data>
-  <data name="PluginPermission.StartProcessDesc" xml:space="preserve">
-    <value>Allows plugin to start external programs</value>
-  </data>
-  <data name="PluginPermission.KillProcess" xml:space="preserve">
-    <value>Kill Process</value>
-  </data>
-  <data name="PluginPermission.KillProcessDesc" xml:space="preserve">
-    <value>Allows plugin to terminate processes (dangerous operation)</value>
-  </data>
-  <data name="PluginPermission.ReadFileSystem" xml:space="preserve">
-    <value>Read File System</value>
-  </data>
-  <data name="PluginPermission.ReadFileSystemDesc" xml:space="preserve">
-    <value>Allows plugin to read the file system</value>
-  </data>
-  <data name="PluginPermission.WriteFileSystem" xml:space="preserve">
-    <value>Write File System</value>
-  </data>
-  <data name="PluginPermission.WriteFileSystemDesc" xml:space="preserve">
-    <value>Allows plugin to write to the file system (dangerous operation)</value>
-  </data>
-  <data name="PluginPermission.AccessRegistry" xml:space="preserve">
-    <value>Access Registry</value>
-  </data>
-  <data name="PluginPermission.AccessRegistryDesc" xml:space="preserve">
-    <value>Allows plugin to access the Windows Registry (dangerous operation)</value>
-  </data>
-  <data name="PluginPermission.AccessEnvironment" xml:space="preserve">
-    <value>Access Environment</value>
-  </data>
-  <data name="PluginPermission.AccessEnvironmentDesc" xml:space="preserve">
-    <value>Allows plugin to access environment variables</value>
-  </data>
-  <data name="PluginPermission.AccessCredentials" xml:space="preserve">
-    <value>Access Credentials</value>
-  </data>
-  <data name="PluginPermission.AccessCredentialsDesc" xml:space="preserve">
-    <value>Allows plugin to read passwords from the saved credential manager (sensitive operation)</value>
-  </data>
-  <data name="PluginPermission.ModifyCredentials" xml:space="preserve">
-    <value>Modify Credentials</value>
-  </data>
-  <data name="PluginPermission.ModifyCredentialsDesc" xml:space="preserve">
-    <value>Allows plugin to add/delete credentials (sensitive operation)</value>
-  </data>
-  <data name="PluginPermission.AccessNetwork" xml:space="preserve">
-    <value>Access Network</value>
-  </data>
-  <data name="PluginPermission.AccessNetworkDesc" xml:space="preserve">
-    <value>Allows plugin to initiate network requests</value>
-  </data>
-  <data name="PluginPermission.ExecuteNativeCode" xml:space="preserve">
-    <value>Execute Native Code</value>
-  </data>
-  <data name="PluginPermission.ExecuteNativeCodeDesc" xml:space="preserve">
-    <value>Allows plugin to execute native code (dangerous operation)</value>
-  </data>
-  <data name="PluginPermission.LoadAssembly" xml:space="preserve">
-    <value>Load Assembly</value>
-  </data>
-  <data name="PluginPermission.LoadAssemblyDesc" xml:space="preserve">
-    <value>Allows plugin to dynamically load external assemblies (dangerous operation)</value>
-  </data>
-  <data name="PluginPermission.ModifyConfiguration" xml:space="preserve">
-    <value>Modify Configuration</value>
-  </data>
-  <data name="PluginPermission.ModifyConfigurationDesc" xml:space="preserve">
-    <value>Allows plugin to modify Pulsar configuration</value>
-  </data>
-  <data name="PluginPermission.RegisterHotkey" xml:space="preserve">
-    <value>Register Hotkey</value>
-  </data>
-  <data name="PluginPermission.RegisterHotkeyDesc" xml:space="preserve">
-    <value>Allows plugin to register global hotkeys (system-level operation)</value>
-  </data>
-  <data name="PluginPermission.ModifyPluginRegistry" xml:space="preserve">
-    <value>Modify Plugin Registry</value>
-  </data>
-  <data name="PluginPermission.ModifyPluginRegistryDesc" xml:space="preserve">
-    <value>Allows plugin to modify the plugin registry (system-level operation)</value>
-  </data>
-  <data name="PluginPermission.AccessAllServices" xml:space="preserve">
-    <value>Access All Services</value>
-  </data>
-  <data name="PluginPermission.AccessAllServicesDesc" xml:space="preserve">
-    <value>Allows plugin to access all dependency injection services (system-level operation)</value>
-  </data>
-  <data name="PluginPermission.BypassPermissionCheck" xml:space="preserve">
-    <value>Bypass Permission Check</value>
-  </data>
-  <data name="PluginPermission.BypassPermissionCheckDesc" xml:space="preserve">
-    <value>Allows plugin to bypass permission checks (core plugins only)</value>
-  </data>
-  <data name="PluginPermission.UnknownPermission" xml:space="preserve">
-    <value>Unknown Permission</value>
-  </data>
   <!-- ==================== VbaRunner ==================== -->
   <data name="VbaRunner.SelectorTitle" xml:space="preserve">
     <value>Pulsar - Select Worksheet</value>
