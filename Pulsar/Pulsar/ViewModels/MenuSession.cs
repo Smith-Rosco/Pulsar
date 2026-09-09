@@ -58,8 +58,6 @@ namespace Pulsar.ViewModels
         private const double SubMenuCollapsedScale = 0.45;
         private const double SubMenuCollapsedOpacity = 0.0;
 
-        private static readonly TimeSpan MenuWatchdogTimeout = TimeSpan.FromSeconds(60);
-
         /// <summary>
         /// Gesture-release await equals <see cref="MenuTiming.DismissAwait"/>:
         /// the Dismiss fade (160ms) plus a small grace. The gesture release must
@@ -227,8 +225,9 @@ namespace Pulsar.ViewModels
         private double _lastClickRelativeY = -1;
 
         private CancellationTokenSource? _layoutAnimationCts;
-        private CancellationTokenSource? _menuWatchdogCts;
-        private DateTime _lastMenuInteractionUtc = DateTime.UtcNow;
+        // [R4 2026-09-09] Inactivity watchdog extracted to MenuWatchdog; the session
+        // keeps Touch()/Start()/Cancel() call sites, the dismissal action and IsVisible.
+        private readonly MenuWatchdog _menuWatchdog = null!;
         private HotkeyInvocationSnapshot? _activeHotkeyInvocation;
         private readonly List<HotkeyInvocationSnapshot> _suppressedHotkeyReleases = new();
         private Point? _invocationPointScreen;
@@ -392,6 +391,14 @@ namespace Pulsar.ViewModels
                 ApplyPendingGestureConfig,
                 logger);
 
+            // [R4 2026-09-09] Watchdog: the session owns dismissal (IsVisible=false);
+            // timing loop, heartbeat and CTS lifecycle live in MenuWatchdog.
+            _menuWatchdog = new MenuWatchdog(
+                _ui,
+                () => IsVisible,
+                () => IsVisible = false,
+                logger);
+
             _pulsarText = _loc["RadialMenu.Pulsar"];
             _centerText = _pulsarText;
         }
@@ -424,8 +431,7 @@ namespace Pulsar.ViewModels
                         _suppressedHotkeyReleases.Clear();
                         _invocationPointScreen = null;
                         IsFlickOutEscaped = false;
-                        _menuWatchdogCts?.Cancel();
-                        _menuWatchdogCts = null;
+                        _menuWatchdog.Cancel();
                         _sessionCts?.Cancel();
                         _sessionCts = null;
                         _hotkeyService.ResetModifierState();
@@ -472,8 +478,8 @@ namespace Pulsar.ViewModels
                     {
                         _hotkeyService.ResetModifierState();
                         UpdateMouseTrackingLayout();
-                        _lastMenuInteractionUtc = DateTime.UtcNow;
-                        StartMenuWatchdog();
+                        _menuWatchdog.Touch();
+                        _menuWatchdog.Start();
                     }
                 }
             }
@@ -547,7 +553,7 @@ namespace Pulsar.ViewModels
         /// </summary>
         public void Touch()
         {
-            _lastMenuInteractionUtc = DateTime.UtcNow;
+            _menuWatchdog.Touch();
         }
 
         public void UpdateActiveSlot(int index)
@@ -1328,7 +1334,7 @@ namespace Pulsar.ViewModels
                 return;
             }
 
-            _lastMenuInteractionUtc = DateTime.UtcNow;
+            _menuWatchdog.Touch();
             _lastClickRelativeX = relativeClickPoint.X;
             _lastClickRelativeY = relativeClickPoint.Y;
 
@@ -1546,7 +1552,7 @@ namespace Pulsar.ViewModels
         {
             if (IsVisible)
             {
-                _lastMenuInteractionUtc = DateTime.UtcNow;
+                _menuWatchdog.Touch();
 
                 // Rendering-based mouse tracking is intentionally throttled. Use the
                 // position captured at key release when available so a fast move to
@@ -1809,7 +1815,7 @@ namespace Pulsar.ViewModels
         {
             if (!IsVisible) return;
 
-            _lastMenuInteractionUtc = DateTime.UtcNow;
+            _menuWatchdog.Touch();
             _lastMouseX = relativePosition.X;
             _lastMouseY = relativePosition.Y;
 
@@ -3155,53 +3161,8 @@ namespace Pulsar.ViewModels
         }
 
         // ============ Watchdog ============
-
-        private void StartMenuWatchdog()
-        {
-            _menuWatchdogCts?.Cancel();
-            var cts = new CancellationTokenSource();
-            _menuWatchdogCts = cts;
-            _ = WatchdogLoopAsync(cts);
-        }
-
-        private async Task WatchdogLoopAsync(CancellationTokenSource cts)
-        {
-            while (!cts.IsCancellationRequested)
-            {
-                var idleDuration = DateTime.UtcNow - _lastMenuInteractionUtc;
-                var remaining = MenuWatchdogTimeout - idleDuration;
-                if (remaining <= TimeSpan.Zero)
-                {
-                    await _ui.InvokeAsync(() =>
-                    {
-                        if (!IsVisible)
-                        {
-                            return;
-                        }
-
-                        _logger?.LogWarning(
-                            "[MenuSession] Watchdog dismissed the menu after {TimeoutMs}ms of inactivity",
-                            MenuWatchdogTimeout.TotalMilliseconds);
-                        IsVisible = false;
-                    });
-
-                    return;
-                }
-
-                var wait = remaining < TimeSpan.FromSeconds(1)
-                    ? remaining
-                    : TimeSpan.FromSeconds(1);
-
-                try
-                {
-                    await Task.Delay(wait, cts.Token);
-                }
-                catch (TaskCanceledException)
-                {
-                    return;
-                }
-            }
-        }
+        // [R4 2026-09-09] Moved to MenuWatchdog (timing loop + heartbeat + CTS);
+        // session keeps Touch()/Start()/Cancel() call sites and the dismissal action.
 
         // ============ Helpers ============
 
