@@ -30,10 +30,9 @@ namespace Pulsar.ViewModels
             {
                 if (Config.Settings.ThemeEnum != value)
                 {
-                    Config.Settings.Theme = value.ToString();
+                    _session.UpdateSettings(s => s.Theme = value.ToString());
                     OnPropertyChanged();
                     ApplySettingsTheme(value);
-                    MarkDirty();
                 }
             }
         }
@@ -42,9 +41,8 @@ namespace Pulsar.ViewModels
         {
             var serviceTheme = _themeService.CurrentTheme;
             if (Config.Settings.ThemeEnum == serviceTheme) return;
-            Config.Settings.Theme = serviceTheme.ToString();
+            _session.UpdateSettings(s => s.Theme = serviceTheme.ToString());
             OnPropertyChanged(nameof(CurrentTheme));
-            MarkDirty();
         }
 
         // ===== Radial Renderer Style + Theme Preset =====
@@ -112,9 +110,8 @@ namespace Pulsar.ViewModels
             {
                 if (string.Equals(Config.Settings.RadialRenderer, value, StringComparison.OrdinalIgnoreCase)) return;
 
-                Config.Settings.RadialRenderer = value;
+                _session.UpdateSettings(s => s.RadialRenderer = value);
                 OnPropertyChanged();
-                MarkDirty();
             }
         }
 
@@ -129,9 +126,8 @@ namespace Pulsar.ViewModels
             {
                 if (string.Equals(Config.Settings.RadialThemePreset, value, StringComparison.OrdinalIgnoreCase)) return;
 
-                Config.Settings.RadialThemePreset = value;
+                _session.UpdateSettings(s => s.RadialThemePreset = value);
                 OnPropertyChanged();
-                MarkDirty();
             }
         }
 
@@ -140,12 +136,11 @@ namespace Pulsar.ViewModels
             get => Config.Settings.Hotkeys.TryGetValue(HotkeyActionIds.ShowGrid, out var h) ? h : new HotkeyConfig();
             set
             {
-                Config.Settings.Hotkeys[HotkeyActionIds.ShowGrid] = value;
+                _session.UpdateSettings(s => s.Hotkeys[HotkeyActionIds.ShowGrid] = value);
                 OnPropertyChanged();
                 _hotkeyService.ApplyHotkey(HotkeyActionIds.ShowGrid, value);
                 var validation = _hotkeyService.ValidateHotkey(HotkeyActionIds.ShowGrid, value);
                 ShowGridHotkeyValidation = validation;
-                MarkDirty(); // [Phase 2]
             }
         }
 
@@ -154,12 +149,11 @@ namespace Pulsar.ViewModels
             get => Config.Settings.Hotkeys.TryGetValue(HotkeyActionIds.ShowSwitcher, out var h) ? h : new HotkeyConfig();
             set
             {
-                Config.Settings.Hotkeys[HotkeyActionIds.ShowSwitcher] = value;
+                _session.UpdateSettings(s => s.Hotkeys[HotkeyActionIds.ShowSwitcher] = value);
                 OnPropertyChanged();
                 _hotkeyService.ApplyHotkey(HotkeyActionIds.ShowSwitcher, value);
                 var validation = _hotkeyService.ValidateHotkey(HotkeyActionIds.ShowSwitcher, value);
                 ShowSwitcherHotkeyValidation = validation;
-                MarkDirty(); // [Phase 2]
             }
         }
 
@@ -273,7 +267,7 @@ namespace Pulsar.ViewModels
                 var current = Config.Settings.Logging.MinimumLevel;
                 if (string.Equals(current, value, StringComparison.OrdinalIgnoreCase)) return;
 
-                Config.Settings.Logging.MinimumLevel = value;
+                _session.UpdateSettings(s => s.Logging.MinimumLevel = value);
                 OnPropertyChanged();
 
                 if (Enum.TryParse<LogEventLevel>(value, true, out var level))
@@ -284,8 +278,6 @@ namespace Pulsar.ViewModels
                 {
                     _logger.LogWarning("[SettingsViewModel] Invalid log level value: {Value}", value);
                 }
-
-                MarkDirty();
             }
         }
 

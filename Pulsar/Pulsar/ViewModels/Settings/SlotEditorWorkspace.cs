@@ -76,6 +76,18 @@ namespace Pulsar.ViewModels.Settings
         private readonly IMessenger _messenger;
         private readonly ISmartSubActionDefaults? _smartDefaults;
 
+        /// <summary>
+        /// [C4] The single route by which this workspace writes slot lists back into the
+        /// config draft. Injected (rather than holding the draft) so the Settings editor
+        /// session stays the only module that mutates the draft, while this workspace
+        /// keeps its read-only view of profiles for context enumeration.
+        /// </summary>
+        private readonly Action<string, IReadOnlyList<PluginSlot>> _writeSlotList;
+
+        /// <summary>
+        /// Read-only view of the config draft, refreshed by <see cref="Load"/> and used to
+        /// enumerate contexts and count slots. Never written to — see <see cref="_writeSlotList"/>.
+        /// </summary>
         private ProfilesConfig _config = new();
         private bool _suppressSlotSync;
         private int _suppressDirtyCount;
@@ -98,12 +110,14 @@ namespace Pulsar.ViewModels.Settings
             IPluginMetadataRegistry metadataRegistry,
             IPkiSecretMetadataResolver secretMetadataResolver,
             Func<ValidationResult?> validationResultProvider,
+            Action<string, IReadOnlyList<PluginSlot>> writeSlotList,
             IMessenger? messenger = null,
             ISmartSubActionDefaults? smartDefaults = null)
         {
             _metadataRegistry = metadataRegistry;
             _secretMetadataResolver = secretMetadataResolver;
             _validationResultProvider = validationResultProvider;
+            _writeSlotList = writeSlotList ?? throw new ArgumentNullException(nameof(writeSlotList));
             _messenger = messenger ?? WeakReferenceMessenger.Default;
             _smartDefaults = smartDefaults;
 
@@ -143,11 +157,6 @@ namespace Pulsar.ViewModels.Settings
 
             WithSuppressedSlotSync(RefreshContexts);
             ResetDirty();
-        }
-
-        public void AttachConfig(ProfilesConfig config)
-        {
-            _config = config ?? new ProfilesConfig();
         }
 
         public void ResetDirty()
@@ -356,27 +365,7 @@ namespace Pulsar.ViewModels.Settings
         {
             if (_config == null || CurrentContext == null || CurrentSlots == null) return;
 
-            var listToSave = CurrentSlots.ToList();
-
-            if (CurrentContext.Key == "Launcher")
-            {
-                if (!_config.Profiles.ContainsKey("Global")) _config.Profiles["Global"] = new ProcessProfile();
-                _config.Profiles["Global"].SwitchMode = listToSave;
-            }
-            else if (CurrentContext.Key == "Global")
-            {
-                if (!_config.Profiles.ContainsKey("Global")) _config.Profiles["Global"] = new ProcessProfile();
-                _config.Profiles["Global"].CommandMode = listToSave;
-            }
-            else
-            {
-                if (!_config.Profiles.TryGetValue(CurrentContext.Key, out var profile))
-                {
-                    profile = new ProcessProfile();
-                    _config.Profiles[CurrentContext.Key] = profile;
-                }
-                profile.CommandMode = listToSave;
-            }
+            _writeSlotList(CurrentContext.Key, CurrentSlots.ToList());
         }
 
         // ============ Slot CRUD ============

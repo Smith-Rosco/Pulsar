@@ -63,6 +63,11 @@ namespace Pulsar.ViewModels
         /// <summary>
         /// The working draft, owned by the editor session. Falls back to an empty
         /// config before the first load so bindings (theme, hotkeys) have a value.
+        ///
+        /// [C4] Read-only for this view model: every user edit goes through a named
+        /// <see cref="SettingsEditorSession"/> change method, which also marks the
+        /// editor dirty. Binding targets (e.g. <see cref="GeneralSettings"/>) keep
+        /// mutating their own sub-objects, which is how the UI reports edits.
         /// </summary>
         private ProfilesConfig Config => _session.Draft ?? _fallbackConfig;
 
@@ -109,8 +114,7 @@ namespace Pulsar.ViewModels
         {
             if (value == null) return;
             _loc.SetLanguage(value.Code);
-            Config.Settings.Language = value.Code;
-            MarkDirty();
+            _session.UpdateSettings(s => s.Language = value.Code);
         }
 
         /// <summary>
@@ -228,12 +232,15 @@ namespace Pulsar.ViewModels
             _customIconStore = customIconStore;
             _rendererFactory = rendererFactory;
 
-            _session = new SettingsEditorSession(configService, secretStore);
+            // [C4] The workspace is assigned right below; the lambda only runs after
+            // construction, so the null-forgiving operator documents that ordering.
+            _session = new SettingsEditorSession(configService, secretStore, () => _slotEditor!.MarkDirty());
 
             _slotEditor = new SlotEditorWorkspace(
                 pluginMetadataRegistry,
                 secretMetadataResolver,
                 () => _configService.LastValidationResult,
+                _session.SyncSlots,
                 smartDefaults: smartDefaults ?? new SmartSubActionDefaults());
             _slotEditor.PropertyChanged += OnSlotEditorPropertyChanged;
 
@@ -489,16 +496,15 @@ namespace Pulsar.ViewModels
                     return;
                 }
 
-                Config.Profiles[processName] = new ProcessProfile 
-                { 
+                _session.AddProcessProfile(processName, new ProcessProfile
+                {
                     Icon = iconKey,
                     Alias = alias,
-                    CommandMode = new List<PluginSlot>() 
-                };
+                    CommandMode = new List<PluginSlot>()
+                });
                 RefreshContexts();
                 CurrentContext = AvailableContexts.FirstOrDefault(c => c.Key == processName);
-                
-                MarkDirty(); // [Phase 2]
+
                 SendNotification(_loc["Notification.Success"], string.Format(_loc["Notification.ProfileCreatedFormat"], ProcessNameFormatter.ToDisplayName(processName)), ControlAppearance.Success);
             });
         }
@@ -545,14 +551,16 @@ namespace Pulsar.ViewModels
             // [Architecture review 2026-09-04, candidate M] Recipe owns the show/confirm shell.
             await _dialogFlows.RunAsync(_loc["Notification.EditProfile"], vm, vm2 =>
             {
-                profileData.Alias = vm2.Alias;
-                profileData.Icon = vm2.IconKey;
+                _session.UpdateProcessProfile(profileKey, p =>
+                {
+                    p.Alias = vm2.Alias;
+                    p.Icon = vm2.IconKey;
+                });
 
                 // Refresh UI
                 RefreshContexts();
                 CurrentContext = AvailableContexts.FirstOrDefault(c => c.Key == profileKey);
 
-                MarkDirty(); // [Phase 2]
                 SendNotification(_loc["Notification.Success"], _loc["Notification.ProfileUpdated"], ControlAppearance.Success);
             });
         }
@@ -947,14 +955,14 @@ namespace Pulsar.ViewModels
                 async () =>
                 {
                     // [Fix] Suppress sync to prevent zombie resurrection of the deleted profile
-                    await _slotEditor.WithSuppressedSlotSyncAsync(async () =>
+                    await _slotEditor.WithSuppressedSlotSyncAsync(() =>
                     {
-                        if (Config.Profiles.Remove(profileName))
+                        // [C4] Deletion is now a draft edit like any other: it waits for
+                        // Save. Committing here used to silently persist every *other*
+                        // unsaved change in the window (slots, theme, hotkeys) along
+                        // with the deletion.
+                        if (_session.RemoveProcessProfile(profileName))
                         {
-                            // [Fix] Save changes to disk through the active edit session
-                            await _session.CommitConfigAsync();
-                            ResyncSettingsReferences();
-
                             SendNotification(_loc["Notification.Deleted"], string.Format(_loc["Notification.ProfileDeletedFormat"], profileName), ControlAppearance.Info);
 
                             // [Fix] Refresh contexts and fallback to Global or first available
@@ -967,6 +975,8 @@ namespace Pulsar.ViewModels
 
                             CurrentContext = fallback;
                         }
+
+                        return Task.CompletedTask;
                     });
                 });
         }

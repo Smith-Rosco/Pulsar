@@ -244,15 +244,42 @@ namespace Pulsar.Tests.ViewModels
                 "a message without the old keywords must no longer downgrade to Warning");
         }
 
-        private static SlotEditorWorkspace CreateWorkspace()
+        // ============ [C4] Draft write routing ============
+
+        [Fact]
+        public void SyncSlotsToConfig_RoutesThroughInjectedWriter_NotThroughTheHeldDraft()
         {
+            var writes = new List<(string Key, List<PluginSlot> Slots)>();
+            var workspace = CreateWorkspace(writes);
+            var config = CreateConfig();
+            workspace.Load(config, new Dictionary<Guid, SecretPayload>());
+
+            workspace.CurrentContext = workspace.AvailableContexts.Single(c => c.Key == "Global");
+            workspace.CurrentSlots.Add(new PluginSlot { Slot = 2, Label = "Added" });
+
+            workspace.SyncSlotsToConfig();
+
+            writes.Should().Contain(w => w.Key == "Global" && w.Slots.Count == 2,
+                "the slot list must travel through the injected writer");
+
+            config.Profiles["Global"].CommandMode.Should().HaveCount(1,
+                "the workspace holds the draft for READING only; writing it directly would "
+                + "bypass the editor session that owns dirty tracking (C4)");
+        }
+
+        private static SlotEditorWorkspace CreateWorkspace(
+            List<(string Key, List<PluginSlot> Slots)>? writes = null)
+        {
+            var sink = writes ?? new List<(string Key, List<PluginSlot> Slots)>();
+
             var registry = new PluginMetadataRegistry(NullLogger<PluginMetadataRegistry>.Instance);
             registry.Register(CreateCommandMetadata());
 
             return new SlotEditorWorkspace(
                 registry,
                 new Mock<IPkiSecretMetadataResolver>().Object,
-                () => null);
+                () => null,
+                (key, slots) => sink.Add((key, slots.ToList())));
         }
 
         private static ProfilesConfig CreateConfig()

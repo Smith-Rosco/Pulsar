@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Pulsar.Models;
 using Pulsar.Plugins.Core.Pki.Contracts;
@@ -18,17 +19,34 @@ namespace Pulsar.ViewModels.Settings
     /// All config writes from the Settings window flow through this module, so the
     /// five "begin a session" dances that used to live in the ViewModel collapse to
     /// one seam, and a stale-revision bug has exactly one place to look.
+    ///
+    /// [Architecture review 2026-09-09, candidate C4] The draft is no longer mutated
+    /// by callers. Every user-visible edit goes through a named change method here,
+    /// which also raises the dirty notification — so "changed the draft but forgot to
+    /// mark the editor dirty" is no longer expressible. <see cref="Draft"/> remains
+    /// public because bindings read through it, but callers must treat it as read-only.
     /// </summary>
     public sealed class SettingsEditorSession
     {
         private readonly IConfigService _configService;
         private readonly IPkiSecretStore _secretStore;
+
+        /// <summary>
+        /// Raised on every user-visible draft change, so dirty tracking is a property
+        /// of the write rather than a discipline at each call site.
+        /// </summary>
+        private readonly Action? _onDraftMutated;
+
         private ConfigEditSession? _editSession;
 
-        public SettingsEditorSession(IConfigService configService, IPkiSecretStore secretStore)
+        public SettingsEditorSession(
+            IConfigService configService,
+            IPkiSecretStore secretStore,
+            Action? onDraftMutated = null)
         {
             _configService = configService;
             _secretStore = secretStore;
+            _onDraftMutated = onDraftMutated;
         }
 
         /// <summary>
@@ -64,6 +82,116 @@ namespace Pulsar.ViewModels.Settings
             return _editSession.Draft;
         }
 
+        // ===== Draft change API (C4) =====
+        //
+        // Every user-visible edit of the working draft goes through one of these
+        // methods. Each one mutates the draft and then raises the dirty
+        // notification, so a write can never silently lose its dirty mark.
+
+        /// <summary>
+        /// Applies a user edit to the draft's top-level <see cref="ProfileSettings"/>.
+        /// </summary>
+        public void UpdateSettings(Action<ProfileSettings> mutate)
+        {
+            ArgumentNullException.ThrowIfNull(mutate);
+
+            var draft = Draft;
+            if (draft?.Settings == null) return;
+
+            mutate(draft.Settings);
+            _onDraftMutated?.Invoke();
+        }
+
+        /// <summary>
+        /// Applies a user edit to a process profile. No-op (and no dirty mark) when the
+        /// profile does not exist, so a stale context can never resurrect a deleted profile.
+        /// </summary>
+        public void UpdateProcessProfile(string processName, Action<ProcessProfile> mutate)
+        {
+            ArgumentNullException.ThrowIfNull(mutate);
+
+            if (string.IsNullOrWhiteSpace(processName)) return;
+
+            var draft = Draft;
+            if (draft == null || !draft.Profiles.TryGetValue(processName, out var profile)) return;
+
+            mutate(profile);
+            _onDraftMutated?.Invoke();
+        }
+
+        /// <summary>
+        /// Adds a new process profile. Overwrites an existing entry with the same key.
+        /// </summary>
+        public void AddProcessProfile(string processName, ProcessProfile profile)
+        {
+            ArgumentNullException.ThrowIfNull(profile);
+
+            if (string.IsNullOrWhiteSpace(processName)) return;
+
+            var draft = Draft;
+            if (draft == null) return;
+
+            draft.Profiles[processName] = profile;
+            _onDraftMutated?.Invoke();
+        }
+
+        /// <summary>
+        /// Removes a process profile. Returns false (and leaves the editor clean) when
+        /// no such profile exists.
+        /// </summary>
+        public bool RemoveProcessProfile(string processName)
+        {
+            if (string.IsNullOrWhiteSpace(processName)) return false;
+
+            var draft = Draft;
+            if (draft == null) return false;
+
+            if (!draft.Profiles.Remove(processName)) return false;
+
+            _onDraftMutated?.Invoke();
+            return true;
+        }
+
+        /// <summary>
+        /// Writes the workspace's current slot list back into the draft. This is an
+        /// internal sync of already-tracked UI state, not a user edit, so it
+        /// deliberately does not raise the dirty notification — switching context in
+        /// the slot editor is navigation, not a change.
+        /// </summary>
+        public void SyncSlots(string contextKey, IReadOnlyList<PluginSlot> slots)
+        {
+            if (string.IsNullOrWhiteSpace(contextKey)) return;
+
+            var draft = Draft;
+            if (draft == null) return;
+
+            var list = slots.ToList();
+
+            if (string.Equals(contextKey, "Launcher", StringComparison.OrdinalIgnoreCase))
+            {
+                EnsureProfile(draft, "Global").SwitchMode = list;
+            }
+            else if (string.Equals(contextKey, "Global", StringComparison.OrdinalIgnoreCase))
+            {
+                EnsureProfile(draft, "Global").CommandMode = list;
+            }
+            else
+            {
+                EnsureProfile(draft, contextKey).CommandMode = list;
+            }
+        }
+
+        private static ProcessProfile EnsureProfile(ProfilesConfig draft, string profileKey)
+        {
+            if (!draft.Profiles.TryGetValue(profileKey, out var profile))
+            {
+                profile = new ProcessProfile();
+                draft.Profiles[profileKey] = profile;
+            }
+
+            return profile;
+        }
+
         public Task<Dictionary<Guid, SecretPayload>> LoadSecretsAsync()
         {
             return _secretStore.LoadAsync();
@@ -92,20 +220,6 @@ namespace Pulsar.ViewModels.Settings
 
             await _editSession.CommitAsync();
             return allSecrets;
-        }
-
-        /// <summary>
-        /// Commits the config draft without touching the secret store. Used by flows
-        /// that only mutate the draft (e.g. deleting a Profile).
-        /// </summary>
-        public async Task CommitConfigAsync()
-        {
-            if (_editSession == null)
-            {
-                _editSession = await ConfigEditSession.BeginAsync(_configService);
-            }
-
-            await _editSession.CommitAsync();
         }
 
         /// <summary>

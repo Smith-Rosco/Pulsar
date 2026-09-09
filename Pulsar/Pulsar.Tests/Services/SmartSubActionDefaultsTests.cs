@@ -147,6 +147,7 @@ namespace Pulsar.Tests.Services
                 registry,
                 new Mock<IPkiSecretMetadataResolver>().Object,
                 () => null,
+                (_, _) => { },
                 smartDefaults: new SmartSubActionDefaults());
         }
 
