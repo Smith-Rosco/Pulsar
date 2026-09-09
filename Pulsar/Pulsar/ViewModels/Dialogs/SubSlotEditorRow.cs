@@ -172,6 +172,15 @@ namespace Pulsar.ViewModels.Dialogs
             }
 
             await _pickParameterValueAsync(field);
+
+            // [Fix 2026-09-09, unify-slot-editor-transient-pages D5 aftermath] Parameter
+            // pickers only see the backing PluginSlot: e.g. SettingsViewModel.PickProcess
+            // writes the extracted app icon (cache path) and a suggested Label onto
+            // _backingSlot. The row->backing sync is one-way, so read the results back
+            // into the observables; otherwise ToDescriptor() materializes an empty
+            // IconKey and the cascade submenu renders a blank icon.
+            Label = _backingSlot.Label;
+            IconKey = _backingSlot.IconKey;
             OnPropertyChanged(nameof(HasInvalidSelection));
         }
 

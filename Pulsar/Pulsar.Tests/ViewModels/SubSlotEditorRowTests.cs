@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using Pulsar.Core.Plugin.Metadata;
@@ -54,7 +55,17 @@ namespace Pulsar.Tests.ViewModels
             var switchMetadata = new SlotActionMetadata
             {
                 Name = "switch",
-                Label = "Switch"
+                Label = "Switch",
+                Parameters = new[]
+                {
+                    new SlotParameterMetadata
+                    {
+                        Key = "app",
+                        Type = "text",
+                        Label = "Application",
+                        Group = SlotParameterGroup.Required
+                    }
+                }
             };
 
             var mock = new Mock<IPluginMetadataRegistry>();
@@ -147,6 +158,43 @@ namespace Pulsar.Tests.ViewModels
             row.SelectedActionOption.Should().NotBeNull();
             row.SelectedActionOption!.Value.Should().Be("run");
             row.RequiredParameters.Should().ContainSingle(f => f.Metadata.Key == "path");
+        }
+
+        [Fact]
+        public async Task ParameterPickerWritingBackingSlot_ShouldReadBackIntoDescriptor()
+        {
+            // [Fix 2026-09-09] Pickers (e.g. PickProcess) only see the backing PluginSlot
+            // and write the extracted icon cache path plus a suggested Label onto it.
+            // The row must read those back into its observables, or ToDescriptor()
+            // materialized an empty IconKey and the submenu icon rendered blank.
+            IPluginMetadataRegistry registry = CreateRegistry();
+            var row = new SubSlotEditorRow(
+                null,
+                registry,
+                field =>
+                {
+                    // Simulate SettingsViewModel.PickProcess side effects on the slot it sees.
+                    field.Slot["app"] = "NOTEPAD";
+                    field.Slot["path"] = @"C:\Windows\System32\notepad.exe";
+                    field.Slot.Label = "Notepad";
+                    field.Slot.IconKey = @"C:\Users\test\Cache\Icons\notepad.png";
+                    return Task.CompletedTask;
+                },
+                availablePlugins: new List<SubSlotPluginOption>());
+            row.PluginId = "com.pulsar.winswitcher";
+            row.SelectedActionOption = row.AvailableActions.Single(o => o.Value == "switch");
+
+            var field = row.RequiredParameters.Single(f => f.Metadata.Key == "app");
+            await row.PickParameterValueCommand.ExecuteAsync(field);
+
+            row.IconKey.Should().Be(@"C:\Users\test\Cache\Icons\notepad.png");
+            row.Label.Should().Be("Notepad");
+
+            var descriptor = row.ToDescriptor();
+            descriptor.IconKey.Should().Be(@"C:\Users\test\Cache\Icons\notepad.png");
+            descriptor.Label.Should().Be("Notepad");
+            descriptor.Args!["app"].Should().Be("NOTEPAD");
+            descriptor.Args!["path"].Should().Be(@"C:\Windows\System32\notepad.exe");
         }
     }
 }
