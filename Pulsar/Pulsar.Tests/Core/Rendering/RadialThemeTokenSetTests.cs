@@ -67,7 +67,10 @@ namespace Pulsar.Tests.Rendering
                 var darkTokens = RadialThemeTokenSet.FromTheme(Pulsar.Models.AppTheme.Dark);
                 var lightTokens = RadialThemeTokenSet.FromTheme(Pulsar.Models.AppTheme.Light);
 
-                ((SolidColorBrush)darkTokens.OrbFill).Color.Should().Be((Color)ColorConverter.ConvertFromString("#2D2D2D"));
+                // Pins the ui-ux-pro-max design-system orb surfaces (slate ramp):
+                // dark = slate-700 #334155, light = #FFFFFF. Update together with the
+                // theme files when the design system palette changes intentionally.
+                ((SolidColorBrush)darkTokens.OrbFill).Color.Should().Be((Color)ColorConverter.ConvertFromString("#334155"));
                 ((SolidColorBrush)lightTokens.OrbFill).Color.Should().Be((Color)ColorConverter.ConvertFromString("#FFFFFF"));
             });
         }

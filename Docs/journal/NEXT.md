@@ -50,6 +50,9 @@
 
 - [x] ~~图标方向再评估：用户 2026-09-08 深夜改要「方案二径向菜单·无边框」~~ **已拍板并收口（2026-09-08 23:55 拍板 → 2026-09-09 00:08 真机 QA 通过）**：径向菜单版定稿，亮 15/暗 14 源经 build_radial_ico.py 出 ico 并覆盖 Assets/Icons + 根 Pulsar.ico；build 0/0、1303 测试通过；托盘/About 渲染用户真机确认 ✅（commit `dbc21e1`，待 push）。
 - [x] ~~**6.2/6.4/6.7 治本改动补单测**（2026-09-09 00:0x）~~ **已完成并提交**：新增 4 个测试类 25 用例 —— `ExecutablePathResolverTests`（环境变量展开 ×5）/ `IconHelperIconKeyTests`（名称反查+归一化 ×8）/ `PluginRuntimeKernelEnvArgsTests`（args 展开 ×6）/ `VbaModuleInjectorWpsGuardTests`（WPS 空壳守护 ×6）。补测中发现并修复实现 bug：`EnsureVbaProjectIsUsable` 探测异常后误落入「VBComponents null」抛错分支（与注释 "assume usable" 语义矛盾），已改为 catch 即放行；dynamic 绑定失败与 getter 抛出两个分支均有用例钉死。验证：build 0 警告 0 错误，全量 **1328/1328**（1303 基线 + 25 新增）。
+- [ ] **主题重构（ui-ux-pro-max，2026-09-09 中午）**：`Theme.Dark/Light.xaml` 按设计系统「Code dark + run green」（Slate 色阶）重构——键名契约不变，语义组重排；Orb #2D2D2D→#334155、激活通道→Sky 系、深色危险 hover→#EF4444；`RadialThemeTokenSetTests` 钉死值同步；全量 1361/1361、build 0/0；`Docs/design-system/pulsar/MASTER.md` 持久化 + `artifacts/theme-refactor-preview.html` 预览。
+- [ ] **图标圆角化（2026-09-09 12:20）**：`build_radial_ico.py` 加 36px 圆角矩形遮罩，light/dark ico（7 尺寸帧）+ 256 masters + 根 Pulsar.ico 全部圆角透明；build 0/0、1361/1361。
+- [ ] **⚠️ 提交被安全软件拦截（阻塞中）**：git.exe 在 E 盘写 loose object 恒定 `Permission denied`（PS/py/cmd 正常、C 盘仓库正常、E 盘任何仓库均失败）→ 判定为安全软件（勒索防护/自定义防护）对 git 在 E 盘的进程级拦截。**待用户放行 git（或确认处置方式）后重试 `git add` + 两次提交（主题重构 / 图标圆角）。**
 
 ## 已完成（历史保留）
 

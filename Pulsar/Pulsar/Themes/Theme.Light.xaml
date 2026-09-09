@@ -3,65 +3,74 @@
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
     <!-- ============================================================
-         仅保留径向菜单专用 + 渲染器需要的令牌。
-         通用颜色已全部迁移至 WPF.Ui Fluent 令牌（跟随系统主题）：
-         AccentFillColorDefaultBrush / TextFillColorPrimaryBrush /
-         ControlFillColorDefaultBrush / SystemFillColorCriticalBrush 等。
-         曾经的 Theme.Window/Text/Accent/Control/Input/ScrollBar 系列
-         已清理 —— 界面层已零引用（此前与 Fluent 并存形成"两套产品观感"）。
+         Pulsar 浅色主题 —— ui-ux-pro-max 设计系统 Slate 亮色对应
+         ============================================================
+         与 Theme.Dark.xaml 同构：键名一一对应、分组顺序一致，便于对照维护。
+         亮色策略：表面取高亮白/浅 slate，文字取 slate-900，
+         类型/健康色取 600–700 档（加深以保证浅底对比度）。
+
+         架构不变（键名即契约，禁止改名）：
+         · 通用界面颜色由 WPF.Ui Fluent 令牌承担（跟随系统主题），
+           本文件仅保留径向菜单专用 + 渲染器需要的令牌。
+         · 键名被 RadialThemeTokenSet / SlotBrushConverter /
+           SlotPresentation 按键读取，Pulsar.Tests 断言其存在性。
          ============================================================ -->
 
-    <!-- 强调色三元组：RadialThemeTokenSet 渲染器按键读取（菜单绘制用）。
-         界面按钮请用 Fluent 的 AccentFillColorDefaultBrush，勿用此键。 -->
+    <!-- 强调色三元组：浅色下与 ThemeService 记录的 Fluent Light Accent
+         (#0067C0) 一致；运行态仍由 ModeToneTokenDecorator 按模式覆盖。 -->
     <SolidColorBrush x:Key="Theme.Accent" Color="#0067C0"/>
     <SolidColorBrush x:Key="Theme.Accent.Hover" Color="#197CCB"/>
     <SolidColorBrush x:Key="Theme.Accent.Foreground" Color="#FFFFFF"/>
 
-    <!-- 危险操作 hover：Fluent 无 critical 的 hover 变体，ButtonStyles.xaml:304 依赖本键。
-         与 Theme.Orb.* 同属有意保留的例外。（基键 Theme.Destructive 已零引用，已删。） -->
-    <SolidColorBrush x:Key="Theme.Destructive.Hover" Color="#D83B2A"/>
+    <!-- 危险操作 hover：浅色基态为 Fluent light critical (#C42B1C)，
+         hover 取 red-600 更饱和以示状态变化（ButtonStyles.xaml:301 依赖本键）。 -->
+    <SolidColorBrush x:Key="Theme.Destructive.Hover" Color="#FFDC2626"/>
 
-    <SolidColorBrush x:Key="SlotTypeBrushDefault" Color="#FF4B5563"/>
-    <SolidColorBrush x:Key="SlotTypeBrushSecret" Color="#FFD4A017"/>
-    <SolidColorBrush x:Key="SlotTypeBrushApp" Color="#FF0284C7"/>
-    <SolidColorBrush x:Key="SlotTypeBrushCommand" Color="#FF15803D"/>
-    <SolidColorBrush x:Key="SlotTypeBrushScript" Color="#FFDC2626"/>
-    <SolidColorBrush x:Key="SlotTypeBrushVba" Color="#FFB45309"/>
+    <!-- 槽位类型色（600–700 档，浅底可辨；色相即语义） -->
+    <SolidColorBrush x:Key="SlotTypeBrushDefault" Color="#FF475569"/>   <!-- slate-600 -->
+    <SolidColorBrush x:Key="SlotTypeBrushSecret" Color="#FFD4A017"/>    <!-- gold：密钥/凭据 -->
+    <SolidColorBrush x:Key="SlotTypeBrushApp" Color="#FF0284C7"/>       <!-- sky-600：应用/窗口 -->
+    <SolidColorBrush x:Key="SlotTypeBrushCommand" Color="#FF15803D"/>   <!-- green-700：命令 -->
+    <SolidColorBrush x:Key="SlotTypeBrushScript" Color="#FFDC2626"/>    <!-- red-600：脚本 -->
+    <SolidColorBrush x:Key="SlotTypeBrushVba" Color="#FFB45309"/>       <!-- amber-700：VBA 宏 -->
 
+    <!-- 槽位健康色（600/700 档） -->
     <SolidColorBrush x:Key="SlotHealthBrushReady" Color="#FF15803D"/>
     <SolidColorBrush x:Key="SlotHealthBrushWarning" Color="#FFD97706"/>
     <SolidColorBrush x:Key="SlotHealthBrushError" Color="#FFDC2626"/>
 
-    <SolidColorBrush x:Key="Theme.Orb.Fill" Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="Theme.Orb.Stroke" Color="#D1D1D1"/>
-    <SolidColorBrush x:Key="Theme.Orb.Text" Color="#1A1A1A"/>
+    <!-- Orb 表面：纯白填充 + slate-300 描边 + slate-900 文字 -->
+    <SolidColorBrush x:Key="Theme.Orb.Fill" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="Theme.Orb.Stroke" Color="#FFCBD5E1"/>
+    <SolidColorBrush x:Key="Theme.Orb.Text" Color="#FF0F172A"/>
 
     <!-- 激活态三通道 —— 浅色主题不使用发光。
          半透明辉光在浅底上几乎不可见，曾导致 Theme.Orb.Active.Glow
          被设为全透明 #00FFFFFF，使径向菜单的激活反馈彻底消失。
-         改为：填充提亮 + 描边加深 + 外圈环，三者均不依赖 BlurEffect。 -->
-    <SolidColorBrush x:Key="Theme.Orb.Active.Fill" Color="#FFD6E9F8"/>
-    <SolidColorBrush x:Key="Theme.Orb.Active.Stroke" Color="#FF0067C0"/>
-    <SolidColorBrush x:Key="Theme.Orb.Active.Ring" Color="#990067C0"/>
+         改为：填充提亮（sky-200）+ 描边加深（sky-600）+ 外圈环，
+         三者均不依赖 BlurEffect。 -->
+    <SolidColorBrush x:Key="Theme.Orb.Active.Fill" Color="#FFBAE6FD"/>
+    <SolidColorBrush x:Key="Theme.Orb.Active.Stroke" Color="#FF0284C7"/>
+    <SolidColorBrush x:Key="Theme.Orb.Active.Ring" Color="#990284C7"/>
     <!-- 保留以兼容旧引用，但浅色下已不作为激活反馈通道 -->
     <SolidColorBrush x:Key="Theme.Orb.Active.Glow" Color="#00FFFFFF"/>
     <!-- 推荐态光晕。明暗两版取值暂同，待浅色下对比度实测后再分色。 -->
     <SolidColorBrush x:Key="Theme.Orb.Recommended" Color="#FFFFD700"/>
 
-    <!-- Slot title (text-only orb) readability tokens: local semi-opaque backplate -->
+    <!-- 文字型 Slot 标题可读性：白 90% 底衬 + slate-900 文字，
+         保证任意桌面像素上文字对比度。 -->
     <SolidColorBrush x:Key="Theme.Orb.Label.Background" Color="#E6FFFFFF"/>
-    <SolidColorBrush x:Key="Theme.Orb.Label.Foreground" Color="#FF1A1A1A"/>
+    <SolidColorBrush x:Key="Theme.Orb.Label.Foreground" Color="#FF0F172A"/>
 
+    <!-- 动态标题条：黑 70% scrim 隔离桌面像素，白字 + 黑投影。
+         类型徽标底衬：白 80%。 -->
     <SolidColorBrush x:Key="Theme.Radial.Title.Foreground" Color="#FFFFFFFF"/>
     <SolidColorBrush x:Key="Theme.Radial.Title.Shadow" Color="#FF000000"/>
     <SolidColorBrush x:Key="Theme.Radial.Title.Scrim" Color="#B2000000"/>
     <SolidColorBrush x:Key="Theme.Orb.Chip.Background" Color="#CCFFFFFF"/>
 
-    <!-- 数值令牌（排版 / 时长 / 间距 / 圆角 / 缓动）已迁移至 Styles/Tokens.xaml，
-         并在 App.xaml 全局加载。此前在此处定义但从未被任何界面引用 ——
-         令牌若未接入，等于不存在。
-         曾存在 Theme.Orb.BlurOpacity（Dark=1.0 / Light=0.0）—— 激活反馈已改
-         为三通道（填充/描边/外环，见 Theme.Orb.Active.*），该键已零引用，已删除：
-         它曾让浅色主题"关掉能力"，正是 P0 缺陷的根源。 -->
+    <!-- 数值令牌（排版 / 时长 / 间距 / 圆角 / 缓动）在 Styles/Tokens.xaml，
+         App.xaml 全局加载；主题色令牌必须在 ThemeService 中按窗口手动注入，
+         否则会污染径向菜单的透明画布（见 App.xaml GLOBAL STYLE ISOLATION）。 -->
 
 </ResourceDictionary>
