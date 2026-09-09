@@ -657,9 +657,21 @@ namespace Pulsar.Models
         /// key is omitted entirely when there are no sub-actions so legacy files stay
         /// byte-compatible.
         /// </summary>
+        /// <remarks>
+        /// [UX fix 2026-09-09] Must raise PropertyChanged: the settings dirty chain is
+        /// <c>SlotEditorWorkspace.OnSlotPropertyChanged → MarkDirty()</c>, and the Edit
+        /// dialog's <c>MaterializeSubActions()</c> writes back through this property. As a
+        /// plain auto-property the assignment was silent, so adding/removing sub-actions
+        /// never armed the save button and the edits were silently lost on close.
+        /// </remarks>
+        private List<SubSlotDescriptor>? _subActions;
         [JsonPropertyName("subActions")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public List<SubSlotDescriptor>? SubActions { get; set; }
+        public List<SubSlotDescriptor>? SubActions
+        {
+            get => _subActions;
+            set => SetProperty(ref _subActions, value);
+        }
 
         /// <summary>
         /// Optional layout style for this slot's cascade submenu. Absent (null) in
@@ -668,9 +680,18 @@ namespace Pulsar.Models
         /// <c>layoutStyle</c>; the key is omitted entirely when null so legacy files
         /// stay byte-compatible.
         /// </summary>
+        /// <remarks>
+        /// [UX fix 2026-09-09] Raises PropertyChanged for the same reason as
+        /// <see cref="SubActions"/> (dirty-chain arming via MaterializeSubActions).
+        /// </remarks>
+        private SubMenuLayoutStyle? _cascadeLayoutStyle;
         [JsonPropertyName("layoutStyle")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public SubMenuLayoutStyle? CascadeLayoutStyle { get; set; }
+        public SubMenuLayoutStyle? CascadeLayoutStyle
+        {
+            get => _cascadeLayoutStyle;
+            set => SetProperty(ref _cascadeLayoutStyle, value);
+        }
 
         // [UI Support] 徽章与颜色
         [JsonIgnore]
