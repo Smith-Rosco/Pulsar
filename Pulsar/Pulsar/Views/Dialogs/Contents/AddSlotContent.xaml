@@ -661,8 +661,7 @@
                                                 <ComboBox Grid.Column="1"
                                                           ItemsSource="{Binding AvailableActions}"
                                                           DisplayMemberPath="Label"
-                                                          SelectedValuePath="Value"
-                                                          SelectedValue="{Binding Action, Mode=TwoWay}"
+                                                          SelectedItem="{Binding SelectedActionOption, Mode=TwoWay}"
                                                           Margin="0,0,6,0"/>
 
                                                 <ui:Button Grid.Column="2"

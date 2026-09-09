@@ -73,6 +73,16 @@ namespace Pulsar.ViewModels.Dialogs
         [ObservableProperty]
         private string _action;
 
+        // [UX fix 2026-09-09, unify-slot-editor-transient-pages D5] The action selector
+        // binds SelectedItem to this VM-owned property instead of SelectedValue->Action.
+        // Rebuild() clears and repopulates AvailableActions while a selection commit is in
+        // flight; with SelectedValue TwoWay that reset pushed null back into Action and
+        // swallowed the user's first pick (had to select twice). The VM-owned selected
+        // item is synced explicitly at the end of Rebuild, and a null arriving from the
+        // ComboBox while _isRebuilding is ignored.
+        [ObservableProperty]
+        private SlotActionOption? _selectedActionOption;
+
         [ObservableProperty]
         private string _label;
 
@@ -133,6 +143,16 @@ namespace Pulsar.ViewModels.Dialogs
         {
             _backingSlot.Action = value;
             Rebuild();
+        }
+
+        partial void OnSelectedActionOptionChanged(SlotActionOption? value)
+        {
+            if (_isRebuilding)
+            {
+                return;
+            }
+
+            Action = value?.Value ?? string.Empty;
         }
 
         partial void OnLabelChanged(string value) => _backingSlot.Label = value;
@@ -216,6 +236,21 @@ namespace Pulsar.ViewModels.Dialogs
                         AdvancedParameters.Add(CreateField(parameter));
                     }
                 }
+
+                // Restore the selected-item projection for the current Action while the
+                // rebuild guard is still active (setting it here cannot re-enter the
+                // Action write-back, unlike a ComboBox-driven reset).
+                SlotActionOption? selectedOption = null;
+                foreach (var option in AvailableActions)
+                {
+                    if (string.Equals(option.Value, Action, StringComparison.OrdinalIgnoreCase))
+                    {
+                        selectedOption = option;
+                        break;
+                    }
+                }
+
+                SelectedActionOption = selectedOption;
 
                 OnPropertyChanged(nameof(ActionLabel));
                 OnPropertyChanged(nameof(HasParameters));
