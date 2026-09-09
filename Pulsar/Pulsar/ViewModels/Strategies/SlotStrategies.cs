@@ -47,8 +47,8 @@ namespace Pulsar.ViewModels.Strategies
         private readonly IPluginUsageTracker? _usageTracker;
 
         public PluginActionStrategy(
-            PluginSlot pluginSlot, 
-            IPluginExecutor executor, 
+            PluginSlot pluginSlot,
+            IPluginExecutor executor,
             PulsarContext pulsarContext,
             ITrayService trayService,
             IActionFeedbackService feedbackService,
@@ -95,6 +95,14 @@ namespace Pulsar.ViewModels.Strategies
             // [New] Elegant Error Handling
             if (!result.Success)
             {
+                // [FIX 2026-09-09] 失败必须留痕：此前插件早退错误（缺参数/未知动作/
+                // 脚本错误等）只进通用 toast（"操作未完成"），真实原因既不在文件日志
+                // 也不在通知里，用户无从排查（现场 18:01:48 全日志 0 条 ERR）。
+                // 走 Serilog 静态 Log（与 App.xaml.cs 同一文件 sink），无需穿 DI 链。
+                Serilog.Log.Warning(
+                    "Slot execution failed: plugin={PluginId} action={Action} message={Message}",
+                    _pluginSlot.PluginId, _pluginSlot.Action, result.Message);
+
                 var feedback = _feedbackService.Create(_pluginSlot.PluginId, _pluginSlot.Action, result);
                 _feedbackPresenter.Present(result, feedback);
             }

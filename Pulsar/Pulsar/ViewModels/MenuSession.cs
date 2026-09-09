@@ -1392,6 +1392,16 @@ namespace Pulsar.ViewModels
                         new CascadeSubMenuDescriptor(slot.SubSlots.ToList(), layoutStyle, slot.Label),
                         clickSlotIndex);
                 }
+                else if (_menuState == MenuState.SubMenu
+                    && _activeSubMenuDescriptor is CascadeSubMenuDescriptor)
+                {
+                    // [FIX 2026-09-09] 子菜单项左键只选中、不执行。核心交互模型是
+                    // "松开快捷键/手势键才触发"（HandleModifierRelease /
+                    // HandleGestureRightReleaseAsync → ExecuteSelectionAsync）；
+                    // 此前点击即执行既违背该模型，也让误触直接跑脚本
+                    // （现场 18:01:48：点击子项立即执行 vbarunner 脚本失败）。
+                    UpdateActiveSlotCore(clickSlotIndex);
+                }
                 else
                 {
                     await slot.ExecuteAsync(this);
