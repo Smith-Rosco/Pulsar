@@ -19,6 +19,17 @@ namespace Pulsar.Services.Interfaces
         Task<bool> OpenTransientPageAsync(string typeId);
 
         /// <summary>
+        /// 打开实体级临时页（模板 + 实体双参，openspec unify-slot-editor-transient-pages D1/D2）：
+        /// 按 "<c>templateId:entityId</c>" 组合 id 克隆模板注册后注册并导航；组合 id 即注册 id，
+        /// 同一实体的重复触发激活既有 tab（VS Code preview-tab 语义）。目录/回收/单例判定
+        /// 全部按组合 id 原样工作。
+        /// </summary>
+        /// <param name="templateId">模板定义 id（须已 RegisterDefinition 登记）。</param>
+        /// <param name="entityId">实体标识（如 "Global:1"），与模板 id 拼装为组合注册 id。</param>
+        /// <param name="titleOverride">tab 标题覆盖（已本地化的实体标题，如 slot 标签 + 上下文）；空则用模板标题。</param>
+        Task<bool> OpenTransientPageAsync(string templateId, string entityId, string? titleOverride = null);
+
+        /// <summary>
         /// 关闭（回收）临时页：存在未保存修改时先走守卫确认流程（保存/放弃/取消），
         /// 用户取消则保持打开并返回 false。
         /// </summary>

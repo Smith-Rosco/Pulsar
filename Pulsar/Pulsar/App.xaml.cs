@@ -313,6 +313,9 @@ namespace Pulsar
             serviceCollection.AddSingleton<ISettingsNavigationGuard, SettingsNavigationGuard>();
             serviceCollection.AddSingleton<Services.Interfaces.ICustomIconStore, Services.CustomIconStore>();
             serviceCollection.AddSingleton<SettingsPageCatalog>();
+            // 实体级临时页构造器注册表（unify-slot-editor-transient-pages D1/D2）：
+            // 单例桥接 transient 服务（回收清理）与每窗口 SettingsPageFactory（页面构造）。
+            serviceCollection.AddSingleton<SettingsEntityPageStore>();
             // 临时页（动态标签页）协调器：定义在组合根登记，Open 时才进目录/侧边栏
             // （openspec 2026-09-08-dynamic-settings-tabs D11）。
             serviceCollection.AddSingleton<ITransientPageService>(sp =>
@@ -321,6 +324,7 @@ namespace Pulsar
                     sp.GetRequiredService<SettingsPageCatalog>(),
                     sp.GetRequiredService<SettingsShellViewModel>(),
                     sp.GetRequiredService<ISettingsNavigationGuard>(),
+                    sp.GetRequiredService<SettingsEntityPageStore>(),
                     sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<SettingsTransientPageService>>());
                 transientPages.RegisterDefinition(new Pulsar.Models.Settings.SettingsPageRegistration(
                     SettingsPageIds.Gesture,
@@ -329,6 +333,16 @@ namespace Pulsar
                     Wpf.Ui.Controls.SymbolRegular.Dialpad24,
                     typeof(Pulsar.Views.Pages.SettingsGesturePage),
                     groupId: SettingsPageGroupIds.System,
+                    isTransient: true));
+                // Slot 编辑器模板（unify-slot-editor-transient-pages 2.2）：实体 tab 在
+                // Open 时按组合 id 克隆注册，模板本身不出现在目录/侧边栏。
+                transientPages.RegisterDefinition(new Pulsar.Models.Settings.SettingsPageRegistration(
+                    SettingsPageIds.SlotEditor,
+                    "Settings.SlotEditor.TabTitleFormat",
+                    "SlotEditor",
+                    Wpf.Ui.Controls.SymbolRegular.Edit24,
+                    typeof(Pulsar.Views.Pages.SettingsSlotEditorPage),
+                    groupId: SettingsPageGroupIds.Workbench,
                     isTransient: true));
                 return transientPages;
             });

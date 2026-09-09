@@ -9,6 +9,7 @@ namespace Pulsar.Models.Settings
     public sealed class SettingsPageRegistration
     {
         private readonly string _titleKey;
+        private readonly string? _titleOverride;
 
         public SettingsPageRegistration(
             string id,
@@ -18,10 +19,12 @@ namespace Pulsar.Models.Settings
             Type pageType,
             string? tutorialMarkerId = null,
             string? groupId = null,
-            bool isTransient = false)
+            bool isTransient = false,
+            string? titleOverride = null)
         {
             Id = id;
             _titleKey = titleKey;
+            _titleOverride = titleOverride;
             LegacyViewName = legacyViewName;
             Icon = icon;
             PageType = pageType;
@@ -36,6 +39,13 @@ namespace Pulsar.Models.Settings
         {
             get
             {
+                // 实体级临时页（unify-slot-editor-transient-pages D1）：组合 id 的标题由
+                // 发起方按实体组合（已本地化），不走 resx 键查找。
+                if (!string.IsNullOrEmpty(_titleOverride))
+                {
+                    return _titleOverride;
+                }
+
                 try
                 {
                     if (Application.Current is App app)
@@ -74,5 +84,23 @@ namespace Pulsar.Models.Settings
         /// （语义分组末尾、斜体标题 + 关闭钮），导航离开且无未保存修改时自动回收。
         /// </summary>
         public bool IsTransient { get; }
+
+        /// <summary>
+        /// 以本注册为模板克隆一条实体级临时页注册（unify-slot-editor-transient-pages D1）：
+        /// 新 id = 组合 id，标题可被实体标题覆盖，其余元数据（图标/页面类型/分组）原样保留。
+        /// </summary>
+        public SettingsPageRegistration CloneAsTransientEntity(string id, string? titleOverride = null)
+        {
+            return new SettingsPageRegistration(
+                id,
+                _titleKey,
+                LegacyViewName,
+                Icon,
+                PageType,
+                TutorialMarkerId,
+                GroupId,
+                isTransient: true,
+                titleOverride: titleOverride ?? _titleOverride);
+        }
     }
 }

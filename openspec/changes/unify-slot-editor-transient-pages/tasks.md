@@ -7,13 +7,13 @@
 
 ## 2. P1 — transient 机制扩展 + 编辑模式迁移
 
-- [ ] 2.1 `ITransientPageService` 新增 `OpenTransientPageAsync(templateId, entityId)`，旧签名委托（entityId=null）；组合 id `"<templateId>:<entityId>"`。验证：单测——组合 id 注册/激活/回收、旧调用方行为不变
-- [ ] 2.2 登记 `slot-editor` 模板定义（组合根 + `SettingsPageFactory.RegisterCreator`），新建 `SettingsSlotEditorPage`（主题注入遵循 ApplyTheme-after-InitializeComponent）。验证：单测——模板注册与页面构造
-- [ ] 2.3 页 VM 组合 `SlotEditorViewModel`（委托注入同现对话框），编辑模式直连 live `PluginSlot`；页面无独立保存按钮。验证：单测——编辑字段经脏链置 `HasUnsavedChanges`
-- [ ] 2.4 `SettingsViewModel.OpenSlotConfiguration` 改调 transient service（保留旧模态路径为 P3 前的回退开关）。验证：真机——编辑 Global slot 1 打开 `slot-editor:Global:1` tab；二次触发激活既有 tab
-- [ ] 2.5 tab 标题实体化（slot 标签 + 上下文，走 resx）。验证：真机——标题随 slot 标签显示
-- [ ] 2.6 生命周期联动：删 slot / 删 profile → messenger 消息 → `UnregisterTransient` 组合 id（前缀清理 profile）。验证：单测 + 真机——删除 slot 1 时其编辑 tab 同步消失
-- [ ] 2.7 E2E 随批更新（编辑入口 AutomationId 与导航路径）；`dev.ps1 all` 全绿为 done 门槛。验证：E2E 全绿
+- [x] 2.1 `ITransientPageService` 新增 `OpenTransientPageAsync(templateId, entityId)`，旧签名委托（entityId=null）；组合 id `"<templateId>:<entityId>"`。验证：单测——组合 id 注册/激活/回收、旧调用方行为不变
+- [x] 2.2 登记 `slot-editor` 模板定义（组合根 + `SettingsPageFactory.RegisterCreator`），新建 `SettingsSlotEditorPage`（主题注入遵循 ApplyTheme-after-InitializeComponent）。验证：单测——模板注册与页面构造
+- [x] 2.3 页 VM 组合 `SlotEditorViewModel`（委托注入同现对话框），编辑模式直连 live `PluginSlot`；页面无独立保存按钮。验证：单测——编辑字段经脏链置 `HasUnsavedChanges`
+- [x] 2.4 `SettingsViewModel.OpenSlotConfiguration` 改调 transient service（保留旧模态路径为 P3 前的回退开关）。验证：真机——编辑 Global slot 1 打开 `slot-editor:Global:1` tab；二次触发激活既有 tab
+- [x] 2.5 tab 标题实体化（slot 标签 + 上下文，走 resx）。验证：真机——标题随 slot 标签显示
+- [x] 2.6 生命周期联动：删 slot / 删 profile → messenger 消息 → `UnregisterTransient` 组合 id（前缀清理 profile）。验证：单测 + 真机——删除 slot 1 时其编辑 tab 同步消失
+- [x] 2.7 E2E 随批更新（编辑入口 AutomationId 与导航路径）；`dev.ps1 all` 全绿为 done 门槛。验证：E2E 全绿
 
 ## 3. P2 — 新建向导入 tab + 子动作手风琴
 

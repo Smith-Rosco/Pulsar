@@ -5662,4 +5662,7 @@ Pulsar 会在当前页面运行一个网页脚本——这就是命令模式：�
   <data name="SettingsWindow.CloseTab" xml:space="preserve">
     <value>关闭标签页</value>
   </data>
+  <data name="Settings.SlotEditor.TabTitleFormat" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
 </root>

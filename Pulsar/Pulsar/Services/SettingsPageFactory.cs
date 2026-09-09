@@ -22,6 +22,7 @@ namespace Pulsar.Services
         private readonly AboutViewModel _aboutViewModel;
         private readonly IThemeService _themeService;
         private readonly ILocalizationService _localizationService;
+        private readonly SettingsEntityPageStore _entityPages;
         private readonly Dictionary<string, Func<SettingsViewModel, Page>> _creators;
 
         public SettingsPageFactory(
@@ -30,7 +31,8 @@ namespace Pulsar.Services
             SettingsAnalyticsPageViewModel analyticsViewModel,
             AboutViewModel aboutViewModel,
             IThemeService themeService,
-            ILocalizationService localizationService)
+            ILocalizationService localizationService,
+            SettingsEntityPageStore entityPageStore)
         {
             _pluginManagerViewModel = pluginManagerViewModel;
             _externalPluginManagerViewModel = externalPluginManagerViewModel;
@@ -38,6 +40,7 @@ namespace Pulsar.Services
             _aboutViewModel = aboutViewModel;
             _themeService = themeService;
             _localizationService = localizationService;
+            _entityPages = entityPageStore;
 
             _creators = new Dictionary<string, Func<SettingsViewModel, Page>>(StringComparer.OrdinalIgnoreCase)
             {
@@ -59,6 +62,14 @@ namespace Pulsar.Services
 
         public Page CreatePage(string pageId, SettingsViewModel settingsViewModel)
         {
+            // 实体级临时页（unify-slot-editor-transient-pages D1/D2）：组合 id 的构造器
+            // 由发起打开的 SettingsViewModel 闭包登记在单例 store 里（需要实体引用），
+            // 优先于静态注册表解析。
+            if (_entityPages.TryGet(pageId ?? string.Empty, out var entityCreator))
+            {
+                return entityCreator(settingsViewModel);
+            }
+
             if (_creators.TryGetValue(pageId ?? string.Empty, out var creator))
             {
                 return creator(settingsViewModel);

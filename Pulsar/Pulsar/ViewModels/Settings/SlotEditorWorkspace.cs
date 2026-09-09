@@ -457,6 +457,9 @@ namespace Pulsar.ViewModels.Settings
 
             CurrentSlots.Remove(item);
             MarkDirty();
+
+            // unify-slot-editor-transient-pages D7：transient 协调器据此回收该 slot 的编辑 tab。
+            _messenger.Send(new SlotRemovedMessage(CurrentContext?.Key ?? string.Empty, item.Slot));
         }
 
         public void MoveSlotUp(PluginSlot item)

@@ -55,7 +55,16 @@ namespace Pulsar.ViewModels
         private readonly ILoggingConfigService _loggingConfigService;
         private readonly SlotEditorWorkspace _slotEditor;
         private readonly SettingsEditorSession _session;
+        private readonly ITransientPageService? _transientPages;
+        private readonly SettingsEntityPageStore? _entityPages;
         private readonly ProfilesConfig _fallbackConfig = new();
+
+        /// <summary>
+        /// Slot 编辑入口改道开关（unify-slot-editor-transient-pages 2.4）：true = 编辑进
+        /// 实体级 transient tab；改回 false 即回退到旧模态对话框（P3 退役前的回退路径，
+        /// 旧路径代码保留不删）。
+        /// </summary>
+        private const bool UseTransientSlotEditor = true;
 
         // ===== Drag & Drop =====
         private CancellationTokenSource? _notificationDebounceToken;
@@ -209,7 +218,9 @@ namespace Pulsar.ViewModels
             IProcessRegistryService? processRegistryService = null,
             ICustomIconStore? customIconStore = null,
             ISmartSubActionDefaults? smartDefaults = null,
-            Core.Rendering.StyleRendererFactory? rendererFactory = null)
+            Core.Rendering.StyleRendererFactory? rendererFactory = null,
+            ITransientPageService? transientPageService = null,
+            SettingsEntityPageStore? entityPageStore = null)
         {
             _configService = configService;
             _windowService = windowService;
@@ -231,6 +242,8 @@ namespace Pulsar.ViewModels
             _processRegistryService = processRegistryService;
             _customIconStore = customIconStore;
             _rendererFactory = rendererFactory;
+            _transientPages = transientPageService;
+            _entityPages = entityPageStore;
 
             // [C4] The workspace is assigned right below; the lambda only runs after
             // construction, so the null-forgiving operator documents that ordering.
@@ -833,6 +846,26 @@ namespace Pulsar.ViewModels
                 return;
             }
 
+            // [unify-slot-editor-transient-pages 2.4] 编辑入口改道：实体级 transient tab
+            // （slot-editor:<contextKey>:<slotNo>），同一 slot 二次点击激活既有 tab。
+            // 页面无独立保存按钮，统一走窗口底部保存（与既有脏链共用）。
+            // UseTransientSlotEditor=false 时走下方保留的模态路径（P3 退役前的回退）。
+            if (UseTransientSlotEditor && _transientPages != null && _entityPages != null)
+            {
+                var contextKey = _slotEditor.CurrentContext?.Key ?? "Global";
+                var contextName = _slotEditor.CurrentContext?.DisplayName ?? contextKey;
+                var entityId = $"{contextKey}:{slot.Slot}";
+                var compositeId = $"{SettingsPageIds.SlotEditor}:{entityId}";
+
+                // 页面构造闭包持有 live slot 与本 VM 的委托 seam（D3 组合优先）；
+                // 注册即覆盖，tab 回收由 transient 协调器清理。
+                _entityPages.Register(compositeId, _ => BuildSlotEditorPage(slot));
+
+                var title = string.Format(_loc["Settings.SlotEditor.TabTitleFormat"], slot.Label, contextName);
+                await _transientPages.OpenTransientPageAsync(SettingsPageIds.SlotEditor, entityId, title);
+                return;
+            }
+
             var cards = BuildSlotTypeCards();
             var vm = new SlotEditorViewModel(
                 SlotEditorMode.Edit,
@@ -854,6 +887,30 @@ namespace Pulsar.ViewModels
                 vm,
                 DialogButtons.OkCancel,
                 DialogSizeConstraints.LargeResizable);
+        }
+
+        /// <summary>
+        /// 构造实体级 slot 编辑临时页（unify-slot-editor-transient-pages 2.2/2.3）：
+        /// 委托注入与旧模态完全同源（D3），Edit 模式直连 live <c>PluginSlot</c>，
+        /// 脏链经 workspace 的 slot PropertyChanged 订阅生效。
+        /// </summary>
+        private Views.Pages.SettingsSlotEditorPage BuildSlotEditorPage(PluginSlot slot)
+        {
+            var cards = BuildSlotTypeCards();
+            var vm = new SlotEditorViewModel(
+                SlotEditorMode.Edit,
+                cards,
+                _slotEditor.CreateSlotDraft,
+                _slotEditor.SetSlotAction,
+                PickSlotParameterValue,
+                PickIcon,
+                PickColor,
+                _loc,
+                existingSlot: slot,
+                metadataRegistry: _pluginMetadataRegistry,
+                secretDisplayResolver: rawSecretId => _slotEditor.ResolveSecretDisplay(rawSecretId));
+
+            return new Views.Pages.SettingsSlotEditorPage(vm, _themeService);
         }
 
         [RelayCommand]
@@ -964,6 +1021,10 @@ namespace Pulsar.ViewModels
                         if (_session.RemoveProcessProfile(profileName))
                         {
                             SendNotification(_loc["Notification.Deleted"], string.Format(_loc["Notification.ProfileDeletedFormat"], profileName), ControlAppearance.Info);
+
+                            // unify-slot-editor-transient-pages D7：transient 协调器据此
+                            // 一次性回收该上下文的全部 slot 编辑 tab。
+                            WeakReferenceMessenger.Default.Send(new ProfileRemovedMessage(profileName));
 
                             // [Fix] Refresh contexts and fallback to Global or first available
                             RefreshContexts();

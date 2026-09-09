@@ -3648,4 +3648,7 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
   <data name="SettingsWindow.CloseTab" xml:space="preserve">
     <value>Close tab</value>
   </data>
+  <data name="Settings.SlotEditor.TabTitleFormat" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
 </root>

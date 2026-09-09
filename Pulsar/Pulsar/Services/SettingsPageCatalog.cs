@@ -17,6 +17,13 @@ namespace Pulsar.Services
         public const string Plugins = "Plugins";
         public const string Analytics = "Analytics";
         public const string About = "About";
+
+        /// <summary>
+        /// Slot 编辑器临时页模板 id（unify-slot-editor-transient-pages D1）。
+        /// 实体 tab 的注册 id 为组合串 "<c>slot-editor:&lt;contextKey&gt;:&lt;slotNo&gt;</c>"，
+        /// 由 <c>OpenTransientPageAsync(templateId, entityId)</c> 在打开时拼装。
+        /// </summary>
+        public const string SlotEditor = "slot-editor";
     }
 
     /// <summary>

@@ -1,10 +1,12 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.Messaging;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Pulsar.Core.Localization;
+using Pulsar.Core.Messages;
 using Pulsar.Models.Settings;
 using Pulsar.Services;
 using Pulsar.Services.Interfaces;
@@ -53,8 +55,10 @@ namespace Pulsar.Tests.Services
         }
 
         private static SettingsTransientPageService CreateService(
-            SettingsPageCatalog catalog, SettingsShellViewModel shell, ISettingsNavigationGuard guard) =>
-            new(catalog, shell, guard, NullLogger<SettingsTransientPageService>.Instance);
+            SettingsPageCatalog catalog, SettingsShellViewModel shell, ISettingsNavigationGuard guard,
+            SettingsEntityPageStore? entityPages = null) =>
+            new(catalog, shell, guard, entityPages ?? new SettingsEntityPageStore(),
+                NullLogger<SettingsTransientPageService>.Instance);
 
         // ---------- 目录：注册 / 注销 / 单例 ----------
 
@@ -387,6 +391,140 @@ namespace Pulsar.Tests.Services
             await service.OpenTransientPageAsync(SettingsPageIds.Gesture);
 
             lastOpened.Should().BeNull("临时页是会话级的，不能作为'上次打开的设置页'跨会话恢复");
+        }
+
+        // ---------- 实体级临时页（unify-slot-editor-transient-pages P1，D1/D2/D7） ----------
+
+        private static SettingsPageRegistration CreateSlotEditorTemplate() =>
+            new(SettingsPageIds.SlotEditor, "Settings.SlotEditor.TabTitleFormat", "SlotEditor",
+                SymbolRegular.Edit24, typeof(object),
+                groupId: SettingsPageGroupIds.Workbench, isTransient: true);
+
+        [Fact]
+        public async Task OpenTransientPageAsync_EntityScoped_ShouldRegisterCompositeIdAndNavigate()
+        {
+            var catalog = CreateCatalog();
+            var guard = CreateGuard();
+            var shell = CreateShell(catalog, guard.Object);
+            var entityPages = new SettingsEntityPageStore();
+            var service = CreateService(catalog, shell, guard.Object, entityPages);
+            service.RegisterDefinition(CreateSlotEditorTemplate());
+
+            var result = await service.OpenTransientPageAsync(
+                SettingsPageIds.SlotEditor, "Global:1", "My Slot · Global");
+
+            result.Should().BeTrue();
+            shell.CurrentPageId.Should().Be("slot-editor:Global:1", "组合 id 即注册/导航 id");
+            catalog.TryGetRegistration("slot-editor:Global:1", out var registration).Should().BeTrue();
+            registration.IsTransient.Should().BeTrue();
+            registration.Title.Should().Be("My Slot · Global", "实体标题覆盖模板 resx 键");
+            catalog.TryGetRegistration(SettingsPageIds.SlotEditor, out _).Should().BeFalse(
+                "模板本身不进目录/侧边栏");
+        }
+
+        [Fact]
+        public async Task OpenTransientPageAsync_EntityScoped_RepeatedTrigger_ShouldActivateExistingTab()
+        {
+            var catalog = CreateCatalog();
+            var guard = CreateGuard();
+            var shell = CreateShell(catalog, guard.Object);
+            var service = CreateService(catalog, shell, guard.Object, new SettingsEntityPageStore());
+            service.RegisterDefinition(CreateSlotEditorTemplate());
+
+            await service.OpenTransientPageAsync(SettingsPageIds.SlotEditor, "Global:1", "A");
+            await shell.NavigateAsync(SettingsPageIds.General, userInitiated: true);
+            var countBefore = catalog.Pages.Count;
+
+            var secondOpen = await service.OpenTransientPageAsync(SettingsPageIds.SlotEditor, "Global:1", "A");
+
+            secondOpen.Should().BeTrue();
+            catalog.Pages.Count.Should().Be(countBefore, "同一实体的编辑 tab 按组合 id 单例");
+            shell.CurrentPageId.Should().Be("slot-editor:Global:1");
+        }
+
+        [Fact]
+        public async Task OpenTransientPageAsync_EntityScoped_DifferentEntities_ShouldGetDistinctTabs()
+        {
+            var catalog = CreateCatalog();
+            var guard = CreateGuard();
+            var shell = CreateShell(catalog, guard.Object);
+            var service = CreateService(catalog, shell, guard.Object, new SettingsEntityPageStore());
+            service.RegisterDefinition(CreateSlotEditorTemplate());
+
+            await service.OpenTransientPageAsync(SettingsPageIds.SlotEditor, "Global:1", "A");
+            await service.OpenTransientPageAsync(SettingsPageIds.SlotEditor, "Global:2", "B");
+
+            catalog.IsTransient("slot-editor:Global:1").Should().BeTrue();
+            catalog.IsTransient("slot-editor:Global:2").Should().BeTrue();
+            shell.CurrentPageId.Should().Be("slot-editor:Global:2");
+        }
+
+        [Fact]
+        public async Task OpenTransientPageAsync_UnknownTemplate_ShouldReject()
+        {
+            var catalog = CreateCatalog();
+            var shell = CreateShell(catalog, new Mock<ISettingsNavigationGuard>().Object);
+            var service = CreateService(catalog, shell, new Mock<ISettingsNavigationGuard>().Object);
+
+            var result = await service.OpenTransientPageAsync("no-such-template", "Global:1");
+
+            result.Should().BeFalse();
+            catalog.TryGetRegistration("no-such-template:Global:1", out _).Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task CloseTransientPageAsync_EntityScoped_ShouldAlsoDropEntityCreator()
+        {
+            var catalog = CreateCatalog();
+            var guard = CreateGuard();
+            var shell = CreateShell(catalog, guard.Object);
+            var entityPages = new SettingsEntityPageStore();
+            var service = CreateService(catalog, shell, guard.Object, entityPages);
+            service.RegisterDefinition(CreateSlotEditorTemplate());
+
+            entityPages.Register("slot-editor:Global:1", _ => throw new InvalidOperationException("not built in test"));
+            await service.OpenTransientPageAsync(SettingsPageIds.SlotEditor, "Global:1", "A");
+
+            (await service.CloseTransientPageAsync("slot-editor:Global:1")).Should().BeTrue();
+
+            entityPages.TryGet("slot-editor:Global:1", out _).Should().BeFalse(
+                "tab 回收时实体构造器闭包一并释放（防 live slot 悬挂）");
+        }
+
+        [Fact]
+        public async Task SlotRemovedMessage_ShouldRecycleSlotEditorTab()
+        {
+            var catalog = CreateCatalog();
+            var guard = CreateGuard();
+            var shell = CreateShell(catalog, guard.Object);
+            var service = CreateService(catalog, shell, guard.Object, new SettingsEntityPageStore());
+            service.RegisterDefinition(CreateSlotEditorTemplate());
+            await service.OpenTransientPageAsync(SettingsPageIds.SlotEditor, "Global:1", "A");
+
+            WeakReferenceMessenger.Default.Send(new SlotRemovedMessage("Global", 1));
+
+            catalog.IsTransient("slot-editor:Global:1").Should().BeFalse(
+                "slot 删除后其编辑 tab 同步消失（D7 幽灵 tab 防护）");
+        }
+
+        [Fact]
+        public async Task ProfileRemovedMessage_ShouldRecycleAllContextTabs()
+        {
+            var catalog = CreateCatalog();
+            var guard = CreateGuard();
+            var shell = CreateShell(catalog, guard.Object);
+            var service = CreateService(catalog, shell, guard.Object, new SettingsEntityPageStore());
+            service.RegisterDefinition(CreateSlotEditorTemplate());
+            await service.OpenTransientPageAsync(SettingsPageIds.SlotEditor, "Notepad:1", "A");
+            await service.OpenTransientPageAsync(SettingsPageIds.SlotEditor, "Notepad:2", "B");
+            await service.OpenTransientPageAsync(SettingsPageIds.SlotEditor, "Global:1", "C");
+
+            WeakReferenceMessenger.Default.Send(new ProfileRemovedMessage("Notepad"));
+
+            catalog.IsTransient("slot-editor:Notepad:1").Should().BeFalse();
+            catalog.IsTransient("slot-editor:Notepad:2").Should().BeFalse();
+            catalog.IsTransient("slot-editor:Global:1").Should().BeTrue(
+                "前缀清理只作用于被删上下文（含结尾冒号，不误伤 Global）");
         }
     }
 }

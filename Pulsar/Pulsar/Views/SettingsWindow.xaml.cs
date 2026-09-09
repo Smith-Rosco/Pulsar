@@ -9,6 +9,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Automation;
 using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pulsar.Core.Localization;
 using Pulsar.Core.Messages;
@@ -733,6 +734,11 @@ namespace Pulsar.Views
 
             _pages.Clear();
             _activePageId = null;
+
+            // 实体级临时页构造器闭包持有本窗口会话的 live slot 与 SettingsViewModel
+            // （unify-slot-editor-transient-pages D2）：窗口关闭即清空，防止跨会话悬挂。
+            App.Current.Services.GetRequiredService<SettingsEntityPageStore>().Clear();
+
             TrimMemory();
             base.OnClosed(e);
         }
