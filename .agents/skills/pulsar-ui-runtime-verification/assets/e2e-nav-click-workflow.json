@@ -1,0 +1,37 @@
+{
+  "name": "settings-nav-click",
+  "app": {
+    "exePath": "E:/8_Project/10_C#/Pulsar_Project/Pulsar/Pulsar/bin/Debug/net8.0-windows/Pulsar.exe",
+    "fixture": "E:/8_Project/10_C#/Pulsar_Project/Pulsar/Pulsar.E2E/Fixtures/default-profiles-dark.json",
+    "arguments": ""
+  },
+  "steps": [
+    { "type": "launch", "id": "launch" },
+    { "type": "wait", "id": "settle-launch", "durationMs": 2500 },
+    { "type": "command", "id": "open-settings", "command": "open-settings" },
+    { "type": "wait", "id": "settle-settings", "durationMs": 2000 },
+    { "type": "assert", "id": "assert-nav-slots", "automationId": "Pulsar.Settings.Nav.Slots", "expected": "visible", "timeoutMs": 8000 },
+
+    { "type": "click", "id": "to-appearance-1", "automationId": "Pulsar.Settings.Nav.Appearance", "timeoutMs": 5000 },
+    { "type": "wait", "id": "w1", "durationMs": 1400 },
+    { "type": "click", "id": "to-slots-1", "automationId": "Pulsar.Settings.Nav.Slots", "timeoutMs": 5000 },
+    { "type": "wait", "id": "w2", "durationMs": 1400 },
+
+    { "type": "click", "id": "to-plugins-1", "automationId": "Pulsar.Settings.Nav.Plugins", "timeoutMs": 5000 },
+    { "type": "wait", "id": "w3", "durationMs": 1400 },
+    { "type": "click", "id": "to-slots-2", "automationId": "Pulsar.Settings.Nav.Slots", "timeoutMs": 5000 },
+    { "type": "wait", "id": "w4", "durationMs": 1400 },
+
+    { "type": "click", "id": "to-analytics-1", "automationId": "Pulsar.Settings.Nav.Analytics", "timeoutMs": 5000 },
+    { "type": "wait", "id": "w5", "durationMs": 1400 },
+    { "type": "click", "id": "to-slots-3", "automationId": "Pulsar.Settings.Nav.Slots", "timeoutMs": 5000 },
+    { "type": "wait", "id": "w6", "durationMs": 1400 },
+
+    { "type": "click", "id": "to-general-1", "automationId": "Pulsar.Settings.Nav.General", "timeoutMs": 5000 },
+    { "type": "wait", "id": "w7", "durationMs": 1400 },
+    { "type": "click", "id": "to-slots-4", "automationId": "Pulsar.Settings.Nav.Slots", "timeoutMs": 5000 },
+    { "type": "wait", "id": "w8", "durationMs": 1800 },
+
+    { "type": "exit", "id": "exit" }
+  ]
+}
