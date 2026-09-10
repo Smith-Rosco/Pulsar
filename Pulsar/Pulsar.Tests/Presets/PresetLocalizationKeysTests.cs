@@ -21,8 +21,7 @@ namespace Pulsar.Tests.Presets
             "Preset.Pack.SignIn.Description",
             "Preset.Pack.SignIn.SlotDescription",
             "CommandSlot.RunFormFillDemo",
-            "CommandSlot.RunSignInDemo",
-            "CommandSlot.AutoSignIn"
+            "CommandSlot.RunSignInDemo"
         };
 
         private static HashSet<string> KeysIn(string culture)

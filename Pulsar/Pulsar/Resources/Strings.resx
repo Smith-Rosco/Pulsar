@@ -29,13 +29,7 @@
   <data name="Settings.General.Description" xml:space="preserve">
     <value>Configure application behavior and appearance</value>
   </data>
-  <data name="Settings.General.OpenAppLogs" xml:space="preserve">
-    <value>Open App Logs</value>
-  </data>
-  <data name="Settings.General.OpenPluginLogs" xml:space="preserve">
-    <value>Open Plugin Logs</value>
-  </data>
-  <data name="Settings.General.OpenLogs" xml:space="preserve">
+      <data name="Settings.General.OpenLogs" xml:space="preserve">
     <value>Open Logs</value>
   </data>
   <data name="Settings.General.ResetDefaults" xml:space="preserve">
@@ -47,10 +41,7 @@
   <data name="Settings.General.ResetTutorialConfirm" xml:space="preserve">
     <value>This will let you go through the tutorial again from the beginning. Your slots and settings will not be affected. Continue?</value>
   </data>
-  <data name="Settings.General.ResetTutorialDone" xml:space="preserve">
-    <value>Tutorial has been reset — it will start on next launch.</value>
-  </data>
-  <data name="Settings.General.ResetTutorialDescription" xml:space="preserve">
+    <data name="Settings.General.ResetTutorialDescription" xml:space="preserve">
     <value>Restart the onboarding tutorial from the beginning</value>
   </data>
   <data name="Settings.General.Appearance" xml:space="preserve">
@@ -119,10 +110,7 @@
   <data name="Settings.General.ShowMenuDescription" xml:space="preserve">
     <value>Trigger the radial menu (Action Mode)</value>
   </data>
-  <data name="Settings.General.PressKeysPlaceholder" xml:space="preserve">
-    <value>Press keys...</value>
-  </data>
-  <data name="Settings.General.ShowSwitcher" xml:space="preserve">
+    <data name="Settings.General.ShowSwitcher" xml:space="preserve">
     <value>Show Switcher</value>
   </data>
   <data name="Settings.General.ShowSwitcherDescription" xml:space="preserve">
@@ -235,10 +223,7 @@
   <data name="Settings.Slots.RemoveSlot" xml:space="preserve">
     <value>Remove Slot</value>
   </data>
-  <data name="Settings.Slots.DragToReorder" xml:space="preserve">
-    <value>Drag to reorder</value>
-  </data>
-  <data name="Settings.Slots.Wheel.CenterHint" xml:space="preserve">
+    <data name="Settings.Slots.Wheel.CenterHint" xml:space="preserve">
     <value>Center</value>
   </data>
   <data name="Settings.Slots.Wheel.DragDropHint" xml:space="preserve">
@@ -277,25 +262,10 @@
   <data name="Settings.Slots.Wheel.Delete" xml:space="preserve">
     <value>Delete</value>
   </data>
-  <data name="Settings.Slots.PluginType" xml:space="preserve">
-    <value>Plugin type</value>
-  </data>
-  <data name="Settings.Slots.HealthStatus" xml:space="preserve">
-    <value>Configuration health status</value>
-  </data>
-  <data name="Settings.Slots.ConfigurationSummary" xml:space="preserve">
-    <value>Configuration summary</value>
-  </data>
-  <data name="Settings.Slots.AddSlot" xml:space="preserve">
+        <data name="Settings.Slots.AddSlot" xml:space="preserve">
     <value>Add Slot</value>
   </data>
-  <data name="Settings.Slots.TypePrefix" xml:space="preserve">
-    <value>Type · </value>
-  </data>
-  <data name="Settings.Slots.HealthPrefix" xml:space="preserve">
-    <value>Health · </value>
-  </data>
-  <!-- ==================== Settings.Plugins ==================== -->
+      <!-- ==================== Settings.Plugins ==================== -->
   <data name="Settings.Plugins.Title" xml:space="preserve">
     <value>Plugins</value>
   </data>
@@ -453,10 +423,7 @@
     <data name="Settings.Analytics.FavoriteSlot" xml:space="preserve">
       <value>Favorite Slot</value>
     </data>
-    <data name="Settings.Analytics.Ops" xml:space="preserve">
-      <value>ops</value>
-    </data>
-    <data name="Settings.Analytics.Plugins" xml:space="preserve">
+        <data name="Settings.Analytics.Plugins" xml:space="preserve">
       <value>plugins</value>
     </data>
     <data name="Settings.Analytics.JustNow" xml:space="preserve">
@@ -480,19 +447,10 @@
     <data name="Settings.Analytics.FavoriteSlotFormat" xml:space="preserve">
       <value>Favorite: Slot #{0}</value>
     </data>
-    <data name="Settings.Analytics.ModeTask" xml:space="preserve">
-      <value>Task</value>
-    </data>
-    <data name="Settings.Analytics.ModeAction" xml:space="preserve">
-      <value>Action</value>
-    </data>
-    <data name="Settings.Analytics.ErrorLoading" xml:space="preserve">
+            <data name="Settings.Analytics.ErrorLoading" xml:space="preserve">
       <value>Failed to load analytics data. Please try again.</value>
     </data>
-    <data name="Settings.Analytics.SlotPercentageFormat" xml:space="preserve">
-      <value>{0}%</value>
-    </data>
-    <data name="Settings.Analytics.FilterAllTime" xml:space="preserve">
+        <data name="Settings.Analytics.FilterAllTime" xml:space="preserve">
       <value>All Time</value>
     </data>
     <data name="Settings.Analytics.FilterToday" xml:space="preserve">
@@ -525,10 +483,7 @@
     <data name="Settings.Analytics.ExportCsv" xml:space="preserve">
       <value>Export CSV</value>
     </data>
-    <data name="Settings.Analytics.TrendNoData" xml:space="preserve">
-      <value>No recent data</value>
-    </data>
-    <data name="Settings.Analytics.Recommendation.MoveSlot" xml:space="preserve">
+        <data name="Settings.Analytics.Recommendation.MoveSlot" xml:space="preserve">
       <value>Consider moving to a prime-access slot</value>
     </data>
     <!-- ==================== Settings.About ==================== -->
@@ -736,64 +691,7 @@
   </data>
   <!-- ==================== Settings.Marketplace ==================== -->
   <!-- ==================== Settings.ExternalPlugins ==================== -->
-  <data name="Settings.ExternalPlugins.Title" xml:space="preserve">
-    <value>External Plugins</value>
-  </data>
-  <data name="Settings.ExternalPlugins.Description" xml:space="preserve">
-    <value>Install and manage plugins from local ZIP files</value>
-  </data>
-  <data name="Settings.ExternalPlugins.InstallFromFile" xml:space="preserve">
-    <value>Install from File</value>
-  </data>
-  <data name="Settings.ExternalPlugins.InstallFromFileTooltip" xml:space="preserve">
-    <value>Install a plugin from a local ZIP file</value>
-  </data>
-  <data name="Settings.ExternalPlugins.LoadingPlugins" xml:space="preserve">
-    <value>Loading external plugins...</value>
-  </data>
-  <data name="Settings.ExternalPlugins.Installed" xml:space="preserve">
-    <value>Installed</value>
-  </data>
-  <data name="Settings.ExternalPlugins.Uninstall" xml:space="preserve">
-    <value>Uninstall</value>
-  </data>
-  <data name="Settings.ExternalPlugins.ToggleToolTip" xml:space="preserve">
-    <value>Enable or disable this plugin (takes effect immediately)</value>
-  </data>
-  <data name="Settings.ExternalPlugins.PluginEnabledFormat" xml:space="preserve">
-    <value>Enabled {0}</value>
-  </data>
-  <data name="Settings.ExternalPlugins.PluginDisabledFormat" xml:space="preserve">
-    <value>Disabled {0}</value>
-  </data>
-  <data name="Settings.ExternalPlugins.NoPlugins" xml:space="preserve">
-    <value>No external plugins installed</value>
-  </data>
-  <data name="Settings.ExternalPlugins.InstallHint" xml:space="preserve">
-    <value>Click 'Install from File' to add plugins from ZIP packages</value>
-  </data>
-  <data name="Settings.ExternalPlugins.AboutTitle" xml:space="preserve">
-    <value>About External Plugins</value>
-  </data>
-  <data name="Settings.ExternalPlugins.AboutLine1" xml:space="preserve">
-    <value>• External plugins are loaded from ZIP files and installed to your local AppData folder</value>
-  </data>
-  <data name="Settings.ExternalPlugins.AboutLine2" xml:space="preserve">
-    <value>• Built-in plugins (AutoFill, App Switch, etc.) are managed in the</value>
-  </data>
-  <data name="Settings.ExternalPlugins.AboutLine3" xml:space="preserve">
-    <value>Plugins</value>
-  </data>
-  <data name="Settings.ExternalPlugins.AboutLine4" xml:space="preserve">
-    <value> tab</value>
-  </data>
-  <data name="Settings.ExternalPlugins.AboutLine5" xml:space="preserve">
-    <value>• After installation, restart Pulsar to load the new plugin</value>
-  </data>
-  <data name="Settings.ExternalPlugins.AboutLine6" xml:space="preserve">
-    <value>• Uninstalling a plugin requires a restart to complete removal</value>
-  </data>
-  <!-- ==================== RadialMenu ==================== -->
+                                        <!-- ==================== RadialMenu ==================== -->
   <data name="RadialMenu.Title" xml:space="preserve">
     <value>Pulsar Overlay</value>
   </data>
@@ -816,28 +714,10 @@
     <value>Already on last page</value>
   </data>
   <!-- ==================== Dialog.AddSlot ==================== -->
-  <data name="Dialog.AddSlot.ChooseBehavior" xml:space="preserve">
-    <value>Choose behavior</value>
-  </data>
-  <data name="Dialog.AddSlot.ScenarioBased" xml:space="preserve">
-    <value>Scenario-Based</value>
-  </data>
-  <data name="Dialog.AddSlot.ScenarioBasedDesc" xml:space="preserve">
-    <value>Start from common intent</value>
-  </data>
-  <data name="Dialog.AddSlot.Advanced" xml:space="preserve">
+        <data name="Dialog.AddSlot.Advanced" xml:space="preserve">
     <value>Advanced</value>
   </data>
-  <data name="Dialog.AddSlot.AdvancedDesc" xml:space="preserve">
-    <value>Choose plugin and action manually</value>
-  </data>
-  <data name="Dialog.AddSlot.SwitchHint" xml:space="preserve">
-    <value>Need something else? Switch to Advanced to pick any plugin and full parameter model manually.</value>
-  </data>
-  <data name="Dialog.AddSlot.ConfigureSlot" xml:space="preserve">
-    <value>Configure slot</value>
-  </data>
-  <data name="Dialog.AddSlot.CreateSlot" xml:space="preserve">
+        <data name="Dialog.AddSlot.CreateSlot" xml:space="preserve">
     <value>Create slot</value>
   </data>
   <data name="Dialog.AddSlot.CreateSlotFormat" xml:space="preserve">
@@ -849,10 +729,7 @@
   <data name="Dialog.AddSlot.DisplayLabelPlaceholder" xml:space="preserve">
     <value>Display label</value>
   </data>
-  <data name="Dialog.AddSlot.Action" xml:space="preserve">
-    <value>Action</value>
-  </data>
-  <data name="Dialog.AddSlot.Appearance" xml:space="preserve">
+    <data name="Dialog.AddSlot.Appearance" xml:space="preserve">
     <value>Appearance</value>
   </data>
   <data name="Dialog.AddSlot.Color" xml:space="preserve">
@@ -864,16 +741,10 @@
   <data name="Dialog.AddSlot.Icon" xml:space="preserve">
     <value>Icon</value>
   </data>
-  <data name="Dialog.AddSlot.IconPlaceholder" xml:space="preserve">
-    <value>e.g. Settings24 or C:\icon.png</value>
-  </data>
-  <data name="Dialog.AddSlot.BrowseIcon" xml:space="preserve">
+    <data name="Dialog.AddSlot.BrowseIcon" xml:space="preserve">
     <value>Browse icon file</value>
   </data>
-  <data name="Dialog.AddSlot.Optional" xml:space="preserve">
-    <value>Optional</value>
-  </data>
-  <data name="Dialog.AddSlot.SaveSlot" xml:space="preserve">
+    <data name="Dialog.AddSlot.SaveSlot" xml:space="preserve">
     <value>Save Slot</value>
   </data>
   <data name="Dialog.AddSlot.Cancel" xml:space="preserve">
@@ -882,25 +753,7 @@
   <data name="Dialog.AddSlot.SelectActionValidation" xml:space="preserve">
     <value>Select an action before saving.</value>
   </data>
-  <data name="Dialog.AddSlot.ChooseBehaviorDesc" xml:space="preserve">
-    <value>Choose the primary behavior for this slot, then fill in the details that make it work.</value>
-  </data>
-  <data name="Dialog.AddSlot.ChooseSlotType" xml:space="preserve">
-    <value>Choose a slot type</value>
-  </data>
-  <data name="Dialog.AddSlot.ChooseScenario" xml:space="preserve">
-    <value>Choose a common scenario</value>
-  </data>
-  <data name="Dialog.AddSlot.AdvancedDesc2" xml:space="preserve">
-    <value>Start from common intent and refine manually.</value>
-  </data>
-  <data name="Dialog.AddSlot.AdvancedDesc3" xml:space="preserve">
-    <value>Choose a plugin type and action directly.</value>
-  </data>
-  <data name="Dialog.AddSlot.TypeBegin" xml:space="preserve">
-    <value>Choose a type to begin</value>
-  </data>
-  <data name="Dialog.AddSlot.NeedsSetup" xml:space="preserve">
+              <data name="Dialog.AddSlot.NeedsSetup" xml:space="preserve">
     <value>Needs required setup</value>
   </data>
   <data name="Dialog.AddSlot.DraftProgress" xml:space="preserve">
@@ -909,79 +762,16 @@
   <data name="Dialog.AddSlot.ReadyToSave" xml:space="preserve">
     <value>Ready to save</value>
   </data>
-  <data name="Dialog.AddSlot.ChooseTypeHint" xml:space="preserve">
-    <value>Choose a slot type to unlock actions and required details.</value>
-  </data>
-  <data name="Dialog.AddSlot.CompleteSetupHint" xml:space="preserve">
-    <value>Complete the required setup, then adjust label, icon, or color if you want extra polish.</value>
-  </data>
-  <data name="Dialog.AddSlot.NewSlot" xml:space="preserve">
+      <data name="Dialog.AddSlot.NewSlot" xml:space="preserve">
     <value>New slot</value>
   </data>
-  <data name="Dialog.AddSlot.Plugin" xml:space="preserve">
-    <value>Plugin</value>
-  </data>
-  <data name="Dialog.AddSlot.Draft" xml:space="preserve">
+    <data name="Dialog.AddSlot.Draft" xml:space="preserve">
     <value>Draft</value>
   </data>
-  <data name="Dialog.AddSlot.PreviewHint" xml:space="preserve">
-    <value>Preview badges and setup status update as you shape the slot.</value>
-  </data>
-  <data name="Dialog.AddSlot.ScanTypes" xml:space="preserve">
-    <value>Scan the available slot types to find the behavior you need.</value>
-  </data>
-  <data name="Dialog.AddSlot.ChooseOutcome" xml:space="preserve">
-    <value>Choose the outcome you want, and we'll guide you through the required details.</value>
-  </data>
-  <data name="Dialog.AddSlot.ShowingCategoryFormat" xml:space="preserve">
-    <value>Showing {0} slot types.</value>
-  </data>
-  <data name="Dialog.AddSlot.DisclosureTitle" xml:space="preserve">
-    <value>Appearance</value>
-  </data>
-  <data name="Dialog.AddSlot.DisclosureHint1" xml:space="preserve">
-    <value>Select a slot type before adjusting appearance.</value>
-  </data>
-  <data name="Dialog.AddSlot.DisclosureHint2" xml:space="preserve">
-    <value>Keep the suggested presentation or make small refinements to the label, color, and icon.</value>
-  </data>
-  <data name="Dialog.AddSlot.ScenarioSwitchApp" xml:space="preserve">
-    <value>Switch App</value>
-  </data>
-  <data name="Dialog.AddSlot.ScenarioSwitchAppDesc" xml:space="preserve">
-    <value>Switch to a running app without typing its name.</value>
-  </data>
-  <data name="Dialog.AddSlot.ScenarioOpen" xml:space="preserve">
-    <value>Open Program, File, Folder, or URL</value>
-  </data>
-  <data name="Dialog.AddSlot.ScenarioOpenDesc" xml:space="preserve">
-    <value>Open something through the default handler.</value>
-  </data>
-  <data name="Dialog.AddSlot.ScenarioSendKeys" xml:space="preserve">
-    <value>Send Keys or Insert Text</value>
-  </data>
-  <data name="Dialog.AddSlot.ScenarioSendKeysDesc" xml:space="preserve">
-    <value>Send a key sequence or paste text into the active window.</value>
-  </data>
-  <data name="Dialog.AddSlot.ScenarioFillCredential" xml:space="preserve">
-    <value>Fill Credential</value>
-  </data>
-  <data name="Dialog.AddSlot.ScenarioFillCredentialDesc" xml:space="preserve">
-    <value>Fill a saved credential into the active field.</value>
-  </data>
-  <data name="Dialog.AddSlot.CategoryAll" xml:space="preserve">
-    <value>All</value>
-  </data>
-  <data name="Dialog.AddSlot.ChooseTypeBegin" xml:space="preserve">
+                                  <data name="Dialog.AddSlot.ChooseTypeBegin" xml:space="preserve">
     <value>Choose a slot type to begin.</value>
   </data>
-  <data name="Dialog.AddSlot.ChooseScenarioBegin" xml:space="preserve">
-    <value>Choose a scenario to begin.</value>
-  </data>
-  <data name="Dialog.AddSlot.SelectActionBlock" xml:space="preserve">
-    <value>Select an action before saving.</value>
-  </data>
-  <data name="Dialog.AddSlot.CompleteRequiredFormat" xml:space="preserve">
+      <data name="Dialog.AddSlot.CompleteRequiredFormat" xml:space="preserve">
     <value>Complete the required fields: {0}.</value>
   </data>
   <data name="Dialog.AddSlot.FieldRequiredFormat" xml:space="preserve">
@@ -990,62 +780,11 @@
   <data name="Dialog.AddSlot.RunScript" xml:space="preserve">
     <value>Run Script</value>
   </data>
-  <data name="Dialog.AddSlot.RunVba" xml:space="preserve">
-    <value>Run Macro</value>
-  </data>
-  <data name="Dialog.AddSlot.SwitchOrLaunch" xml:space="preserve">
-    <value>Switch Or Launch App</value>
-  </data>
-  <data name="Dialog.AddSlot.App" xml:space="preserve">
+      <data name="Dialog.AddSlot.App" xml:space="preserve">
     <value>App</value>
   </data>
-  <data name="Dialog.AddSlot.SendKeys" xml:space="preserve">
-    <value>Send Keys</value>
-  </data>
-  <data name="Dialog.AddSlot.Target" xml:space="preserve">
-    <value>Target</value>
-  </data>
-  <data name="Dialog.AddSlot.OpenTarget" xml:space="preserve">
-    <value>Open Target</value>
-  </data>
-  <data name="Dialog.AddSlot.QuickAdd" xml:space="preserve">
-    <value>Quick Add Current App</value>
-  </data>
-  <data name="Dialog.AddSlot.OpenSettings" xml:space="preserve">
-    <value>Open Settings</value>
-  </data>
-  <data name="Dialog.AddSlot.Script" xml:space="preserve">
-    <value>Script</value>
-  </data>
-  <!-- ==================== Dialog.SlotConfig ==================== -->
-  <data name="Dialog.SlotConfig.UpdateBehavior" xml:space="preserve">
-    <value>Update the slot's behavior first to refresh the preview.</value>
-  </data>
-  <data name="Dialog.SlotConfig.NeedsSetup" xml:space="preserve">
-    <value>Needs required setup</value>
-  </data>
-  <data name="Dialog.SlotConfig.DraftProgress" xml:space="preserve">
-    <value>Draft in progress</value>
-  </data>
-  <data name="Dialog.SlotConfig.ReadyToSave" xml:space="preserve">
-    <value>Ready to save</value>
-  </data>
-  <data name="Dialog.SlotConfig.NoAction" xml:space="preserve">
-    <value>No action selected yet</value>
-  </data>
-  <data name="Dialog.SlotConfig.MetadataHint" xml:space="preserve">
-    <value>Action, validation, and summary details stay anchored here while you edit.</value>
-  </data>
-  <data name="Dialog.SlotConfig.Appearance" xml:space="preserve">
-    <value>Appearance and polish</value>
-  </data>
-  <data name="Dialog.SlotConfig.AppearanceHint" xml:space="preserve">
-    <value>Keep the suggested presentation or make small refinements to the label, color, or icon.</value>
-  </data>
-  <data name="Dialog.SlotConfig.Behavior" xml:space="preserve">
-    <value>Behavior</value>
-  </data>
-  <!-- ==================== Dialog.SecretPicker ==================== -->
+              <!-- ==================== Dialog.SlotConfig ==================== -->
+                    <!-- ==================== Dialog.SecretPicker ==================== -->
   <data name="Dialog.SecretPicker.SelectSecret" xml:space="preserve">
     <value>Select a secret to inject</value>
   </data>
@@ -1402,25 +1141,7 @@
   <data name="Notification.UnsavedChangesBody" xml:space="preserve">
     <value>You have unsaved changes. Do you want to save before closing?</value>
   </data>
-  <data name="Notification.SwitchApp" xml:space="preserve">
-    <value>Switch App</value>
-  </data>
-  <data name="Notification.OpenProgram" xml:space="preserve">
-    <value>Open Program</value>
-  </data>
-  <data name="Notification.SendKeysAction" xml:space="preserve">
-    <value>Send Keys</value>
-  </data>
-  <data name="Notification.FillCredential" xml:space="preserve">
-    <value>Fill Credential</value>
-  </data>
-  <data name="Notification.RunScript" xml:space="preserve">
-    <value>Run Script</value>
-  </data>
-  <data name="Notification.RunVba" xml:space="preserve">
-    <value>Run Macro</value>
-  </data>
-  <data name="Notification.CleanCacheBody" xml:space="preserve">
+              <data name="Notification.CleanCacheBody" xml:space="preserve">
     <value>This will remove cached icons for processes not seen in the last 30 days (blacklisted processes are never removed).\n\nAre you sure you want to proceed?</value>
   </data>
   <data name="Notification.CacheCleaned" xml:space="preserve">
@@ -1486,25 +1207,7 @@
   <data name="Notification.SuccessfullyUninstalledFormat" xml:space="preserve">
     <value>Successfully uninstalled {0}</value>
   </data>
-  <data name="Notification.FeatureDeprecated" xml:space="preserve">
-    <value>Feature Deprecated</value>
-  </data>
-  <data name="Notification.OnlinePluginsDeprecated" xml:space="preserve">
-    <value>Online plugin installation is not implemented.\n\nPlease use 'External Plugins' page to install plugins from ZIP files.</value>
-  </data>
-  <data name="Notification.OnlineUpdatesDeprecated" xml:space="preserve">
-    <value>Online plugin updates are not implemented.\n\nPlease manually download and install the latest version from 'External Plugins' page.</value>
-  </data>
-  <data name="Notification.LoadingPlugins" xml:space="preserve">
-    <value>Loading plugins...</value>
-  </data>
-  <data name="Notification.LoadedPluginsFormat" xml:space="preserve">
-    <value>Loaded {0} plugins</value>
-  </data>
-  <data name="Notification.FailedLoadPluginsFormat" xml:space="preserve">
-    <value>Failed to load plugins: {0}</value>
-  </data>
-  <data name="Notification.ScanningPlugins" xml:space="preserve">
+              <data name="Notification.ScanningPlugins" xml:space="preserve">
     <value>Scanning installed plugins...</value>
   </data>
   <data name="Notification.FoundPluginsFormat" xml:space="preserve">
@@ -1531,13 +1234,7 @@
   <data name="Notification.FileFilterZip" xml:space="preserve">
     <value>Plugin Package (*.zip)|*.zip|All Files (*.*)|*.*</value>
   </data>
-  <data name="Notification.DeprecatedMessage" xml:space="preserve">
-    <value>This feature is deprecated. Please use 'External Plugins' page to install plugins from files.</value>
-  </data>
-  <data name="Notification.DeprecatedManageMessage" xml:space="preserve">
-    <value>This feature is deprecated. Please use 'External Plugins' page to manage plugins.</value>
-  </data>
-  <data name="Notification.ProcessBlacklistTitle" xml:space="preserve">
+      <data name="Notification.ProcessBlacklistTitle" xml:space="preserve">
     <value>Process Blacklist</value>
   </data>
   <data name="Notification.OnboardingWizardFailedTitle" xml:space="preserve">
@@ -1615,10 +1312,7 @@
   <data name="Tutorial.Welcome" xml:space="preserve">
     <value>Welcome to Pulsar</value>
   </data>
-  <data name="Tutorial.OpenSettings" xml:space="preserve">
-    <value>Open Settings</value>
-  </data>
-  <data name="Tutorial.WelcomeDesc" xml:space="preserve">
+    <data name="Tutorial.WelcomeDesc" xml:space="preserve">
     <value>Welcome! This tutorial will show you Pulsar's two modes in action. You'll switch to Notepad using Switch Mode ({SwitchHotkey}), then insert text into it using Command Mode ({CommandHotkey}). Let's get started!</value>
   </data>
   <data name="Tutorial.SwitchMode" xml:space="preserve">
@@ -1636,10 +1330,7 @@
   <data name="Tutorial.FirstSwitchDesc" xml:space="preserve">
     <value>Great — you switched to Notepad! In the next step you'll use Command Mode to insert text into Notepad. Click "Next" to continue.</value>
   </data>
-  <data name="Tutorial.FirstSwitchHint" xml:space="preserve">
-    <value>Pulsar switched you to Notepad! Click "Next" to continue.</value>
-  </data>
-  <data name="Tutorial.CommandMode" xml:space="preserve">
+    <data name="Tutorial.CommandMode" xml:space="preserve">
     <value>Command Mode: run an action</value>
   </data>
   <data name="Tutorial.CommandModeDesc" xml:space="preserve">
@@ -1654,10 +1345,7 @@
   <data name="Tutorial.FirstCommandDesc" xml:space="preserve">
     <value>Pulsar typed into Notepad! You just combined both modes: Switch Mode got you to Notepad, and Command Mode did something inside it. That's the core Pulsar workflow.</value>
   </data>
-  <data name="Tutorial.FirstCommandHint" xml:space="preserve">
-    <value>Pulsar typed into Notepad! You've mastered the core workflow.</value>
-  </data>
-  <data name="Tutorial.OnboardingComplete" xml:space="preserve">
+    <data name="Tutorial.OnboardingComplete" xml:space="preserve">
     <value>Onboarding complete</value>
   </data>
   <data name="Tutorial.OnboardingCompleteDesc" xml:space="preserve">
@@ -1775,16 +1463,7 @@
   <data name="Feedback.AppNotAvailableHelp" xml:space="preserve">
     <value>Open the app first or add a launch path to this slot.</value>
   </data>
-  <data name="Feedback.SwitchFailed" xml:space="preserve">
-    <value>Switch failed</value>
-  </data>
-  <data name="Feedback.SwitchFailedBody" xml:space="preserve">
-    <value>Pulsar could not switch to that app.</value>
-  </data>
-  <data name="Feedback.SwitchFailedHelp" xml:space="preserve">
-    <value>Try again after the app is ready.</value>
-  </data>
-  <data name="Feedback.FixCommandSlot" xml:space="preserve">
+        <data name="Feedback.FixCommandSlot" xml:space="preserve">
     <value>Fix slot setup</value>
   </data>
   <data name="Feedback.FixCommandSlotBody" xml:space="preserve">
@@ -1884,21 +1563,9 @@
   <data name="Plugin.DaysAgoFormat" xml:space="preserve">
     <value>{0} days ago</value>
   </data>
-  <data name="Plugin.ViewLogsErrorFormat" xml:space="preserve">
-    <value>View Logs ({0} errors)</value>
-  </data>
-  <!-- ==================== Profile ==================== -->
-  <data name="Profile.ConfigurationIssues" xml:space="preserve">
-    <value>Configuration issues detected</value>
-  </data>
-  <data name="Profile.OpenConfiguration" xml:space="preserve">
-    <value>Open full configuration for details</value>
-  </data>
-  <!-- ==================== Plugin.HealthIcons ==================== -->
-  <data name="Plugin.HealthIcons" xml:space="preserve">
-    <value>⚡ ✓ ⚠ 💤 🚫 ✅ ⚠️ 🔴 💤 🚫</value>
-  </data>
-  <!-- ==================== Plugin.Recommendation ==================== -->
+    <!-- ==================== Profile ==================== -->
+      <!-- ==================== Plugin.HealthIcons ==================== -->
+    <!-- ==================== Plugin.Recommendation ==================== -->
   <data name="Plugin.Recommendation.UnusedNeverUsed" xml:space="preserve">
     <value>{0} has never been used. Consider disabling it to improve performance.</value>
   </data>
@@ -1951,22 +1618,13 @@
   <data name="FirstLaunch.GeneralProductivity" xml:space="preserve">
     <value>General Productivity</value>
   </data>
-  <data name="FirstLaunch.GeneralProductivityDesc" xml:space="preserve">
-    <value>Start with everyday apps and simple command examples.</value>
-  </data>
-  <data name="FirstLaunch.DeveloperWorkflow" xml:space="preserve">
+    <data name="FirstLaunch.DeveloperWorkflow" xml:space="preserve">
     <value>Developer Workflow</value>
   </data>
-  <data name="FirstLaunch.DeveloperWorkflowDesc" xml:space="preserve">
-    <value>Editor and terminal-oriented defaults.</value>
-  </data>
-  <data name="FirstLaunch.BrowserDocs" xml:space="preserve">
+    <data name="FirstLaunch.BrowserDocs" xml:space="preserve">
     <value>Browser &amp; Documents</value>
   </data>
-  <data name="FirstLaunch.BrowserDocsDesc" xml:space="preserve">
-    <value>Focused on browsing, note-taking, and quick lookups.</value>
-  </data>
-  <data name="FirstLaunch.SetupTitle" xml:space="preserve">
+    <data name="FirstLaunch.SetupTitle" xml:space="preserve">
     <value>Welcome to Pulsar</value>
   </data>
   <data name="FirstLaunch.SetupDescription" xml:space="preserve">
@@ -1999,10 +1657,7 @@
   <data name="FirstLaunch.Skip" xml:space="preserve">
     <value>Skip for Now</value>
   </data>
-  <data name="FirstLaunch.SelectScenarioError" xml:space="preserve">
-    <value>Please select a scenario first.</value>
-  </data>
-  <data name="FirstLaunch.GeneralProductivitySlotDesc" xml:space="preserve">
+    <data name="FirstLaunch.GeneralProductivitySlotDesc" xml:space="preserve">
     <value>Generates a Notepad command slot for quick note-taking</value>
   </data>
   <data name="FirstLaunch.DeveloperWorkflowSlotDesc" xml:space="preserve">
@@ -2680,10 +2335,7 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
   <data name="Plugin.Command.Error.SendKeysFailed" xml:space="preserve">
     <value>Failed to send keys: {0}</value>
   </data>
-  <data name="Plugin.Command.UnknownAction" xml:space="preserve">
-    <value>Unknown action: {0}</value>
-  </data>
-  <!-- ==================== Common Plugin Errors ==================== -->
+    <!-- ==================== Common Plugin Errors ==================== -->
   <data name="Plugin.Common.MissingRequiredParameter" xml:space="preserve">
     <value>Missing required parameter: {0}</value>
   </data>
@@ -2858,19 +2510,7 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
     <value>Plugin not initialized</value>
   </data>
   <!-- ==================== Hotkey Localization ==================== -->
-  <data name="Settings.General.HotkeyNone" xml:space="preserve">
-    <value>(None)</value>
-  </data>
-  <data name="Settings.General.HotkeyConflict" xml:space="preserve">
-    <value>Conflict: already assigned to "{0}"</value>
-  </data>
-  <data name="Settings.General.HotkeyReserved" xml:space="preserve">
-    <value>This combination is reserved by Windows</value>
-  </data>
-  <data name="Settings.General.HotkeyClearTooltip" xml:space="preserve">
-    <value>Press Backspace/Delete to clear</value>
-  </data>
-  <data name="Dialog.Button.Ok" xml:space="preserve">
+          <data name="Dialog.Button.Ok" xml:space="preserve">
     <value>OK</value>
   </data>
   <data name="Dialog.Button.Cancel" xml:space="preserve">
@@ -2942,16 +2582,7 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
   <data name="Settings.Plugins.GroupSystemFormat" xml:space="preserve">
     <value>System Plugins ({0})</value>
   </data>
-  <data name="Settings.ExternalPlugins.InstalledHeaderFormat" xml:space="preserve">
-    <value>Installed External Plugins ({0})</value>
-  </data>
-  <data name="Settings.ExternalPlugins.ByAuthorFormat" xml:space="preserve">
-    <value>by {0}</value>
-  </data>
-  <data name="Settings.ExternalPlugins.StatusCountFormat" xml:space="preserve">
-    <value>{0} external plugins installed</value>
-  </data>
-  <data name="Settings.ExternalPlugins.StatusLoadFailedFormat" xml:space="preserve">
+        <data name="Settings.ExternalPlugins.StatusLoadFailedFormat" xml:space="preserve">
     <value>Failed to load plugins: {0}</value>
   </data>
   <data name="Settings.ExternalPlugins.StatusInstallingFormat" xml:space="preserve">
@@ -2993,16 +2624,10 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
   <data name="PluginLogViewer.Critical" xml:space="preserve">
     <value>Critical</value>
   </data>
-  <data name="Settings.ExternalPlugins.InstalledPluginsHeader" xml:space="preserve">
-    <value>Installed External Plugins</value>
-  </data>
-  <data name="Settings.ExternalPlugins.ByAuthor" xml:space="preserve">
+    <data name="Settings.ExternalPlugins.ByAuthor" xml:space="preserve">
     <value>by </value>
   </data>
-  <data name="Settings.ExternalPlugins.StatusCount" xml:space="preserve">
-    <value> external plugins installed</value>
-  </data>
-  <data name="Settings.General.QuickSwitchTimeout" xml:space="preserve">
+    <data name="Settings.General.QuickSwitchTimeout" xml:space="preserve">
     <value>Quick-switch window (ms)</value>
   </data>
   <data name="Settings.General.QuickSwitchTimeoutDescription" xml:space="preserve">
@@ -3346,9 +2971,7 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
   <data name="CommandSlot.RunSignInDemo" xml:space="preserve">
     <value>Run Sign-In Demo</value>
   </data>
-  <data name="CommandSlot.AutoSignIn" xml:space="preserve">
-    <value>Auto Sign-In</value>
-  </data>  <data name="SettingsPage.Gesture.Title" xml:space="preserve">
+    <data name="SettingsPage.Gesture.Title" xml:space="preserve">
     <value>Gesture Summon</value>
   </data>
   <data name="SettingsPage.Gesture.Description" xml:space="preserve">

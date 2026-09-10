@@ -111,7 +111,6 @@ namespace Pulsar.Tests.Tutorial
             mockLoc.Setup(l => l.CurrentLanguage).Returns("en");
             mockLoc.Setup(l => l.GetString(It.IsAny<string>())).Returns<string>(key => key);
             mockLoc.Setup(l => l["FirstLaunch.GeneralProductivity"]).Returns("General");
-            mockLoc.Setup(l => l["FirstLaunch.GeneralProductivityDesc"]).Returns("Desc");
             mockLoc.Setup(l => l["FirstLaunch.SetupTitle"]).Returns("Setup");
             mockLoc.Setup(l => l["FirstLaunch.SetupDescription"]).Returns("Desc");
             mockLoc.Setup(l => l["FirstLaunch.SetupHint"]).Returns("Hint");
@@ -122,7 +121,6 @@ namespace Pulsar.Tests.Tutorial
             mockLoc.Setup(l => l["FirstLaunch.CreateConfig"]).Returns("Create");
             mockLoc.Setup(l => l["FirstLaunch.Skip"]).Returns("Skip");
             mockLoc.Setup(l => l["FirstLaunch.Footer"]).Returns("Footer");
-            mockLoc.Setup(l => l["FirstLaunch.SelectScenarioError"]).Returns("Err");
             mockLoc.Setup(l => l["FirstLaunch.SelectAppError"]).Returns("ErrApp");
             mockLoc.Setup(l => l["Settings.General.Language"]).Returns("Lang");
 

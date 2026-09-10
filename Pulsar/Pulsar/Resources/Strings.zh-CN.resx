@@ -41,17 +41,7 @@
     xml:space="preserve">
     <value>配置应用程序行为和外观</value>
   </data>
-  <data
-    name="Settings.General.OpenAppLogs"
-    xml:space="preserve">
-    <value>打开应用日志</value>
-  </data>
-  <data
-    name="Settings.General.OpenPluginLogs"
-    xml:space="preserve">
-    <value>打开插件日志</value>
-  </data>
-  <data
+      <data
     name="Settings.General.OpenLogs"
     xml:space="preserve">
     <value>打开日志</value>
@@ -71,12 +61,7 @@
     xml:space="preserve">
     <value>这将让你从头重新体验教程。你的槽位和设置不会受到影响。是否继续？</value>
   </data>
-  <data
-    name="Settings.General.ResetTutorialDone"
-    xml:space="preserve">
-    <value>教程已重置，下次启动时将重新开始。</value>
-  </data>
-  <data
+    <data
     name="Settings.General.ResetTutorialDescription"
     xml:space="preserve">
     <value>重新开始新手引导教程</value>
@@ -191,12 +176,7 @@
     xml:space="preserve">
     <value>触发径向菜单（操作模式）</value>
   </data>
-  <data
-    name="Settings.General.PressKeysPlaceholder"
-    xml:space="preserve">
-    <value>按下按键...</value>
-  </data>
-  <data
+    <data
     name="Settings.General.ShowSwitcher"
     xml:space="preserve">
     <value>显示切换器</value>
@@ -382,12 +362,7 @@
     xml:space="preserve">
     <value>移除槽位</value>
   </data>
-  <data
-    name="Settings.Slots.DragToReorder"
-    xml:space="preserve">
-    <value>拖拽以排序</value>
-  </data>
-  <data
+    <data
     name="Settings.Slots.Wheel.CenterHint"
     xml:space="preserve">
     <value>中心</value>
@@ -452,37 +427,12 @@
     xml:space="preserve">
     <value>删除</value>
   </data>
-  <data
-    name="Settings.Slots.PluginType"
-    xml:space="preserve">
-    <value>插件类型</value>
-  </data>
-  <data
-    name="Settings.Slots.HealthStatus"
-    xml:space="preserve">
-    <value>配置健康状态</value>
-  </data>
-  <data
-    name="Settings.Slots.ConfigurationSummary"
-    xml:space="preserve">
-    <value>配置摘要</value>
-  </data>
-  <data
+        <data
     name="Settings.Slots.AddSlot"
     xml:space="preserve">
     <value>添加槽位</value>
   </data>
-  <data
-    name="Settings.Slots.TypePrefix"
-    xml:space="preserve">
-    <value>类型 · </value>
-  </data>
-  <data
-    name="Settings.Slots.HealthPrefix"
-    xml:space="preserve">
-    <value>健康 · </value>
-  </data>
-  <data
+      <data
     name="Settings.Plugins.Title"
     xml:space="preserve">
     <value>插件</value>
@@ -742,12 +692,7 @@
     xml:space="preserve">
     <value>常用插槽</value>
   </data>
-  <data
-    name="Settings.Analytics.Ops"
-    xml:space="preserve">
-    <value>次</value>
-  </data>
-  <data
+    <data
     name="Settings.Analytics.Plugins"
     xml:space="preserve">
     <value>个插件</value>
@@ -787,27 +732,12 @@
     xml:space="preserve">
     <value>常用: 插槽 #{0}</value>
   </data>
-  <data
-    name="Settings.Analytics.ModeTask"
-    xml:space="preserve">
-    <value>任务</value>
-  </data>
-  <data
-    name="Settings.Analytics.ModeAction"
-    xml:space="preserve">
-    <value>动作</value>
-  </data>
-  <data
+      <data
     name="Settings.Analytics.ErrorLoading"
     xml:space="preserve">
     <value>加载分析数据失败，请重试。</value>
   </data>
-  <data
-    name="Settings.Analytics.SlotPercentageFormat"
-    xml:space="preserve">
-    <value>{0}%</value>
-  </data>
-  <data
+    <data
     name="Settings.Analytics.FilterAllTime"
     xml:space="preserve">
     <value>全部时间</value>
@@ -862,12 +792,7 @@
     xml:space="preserve">
     <value>导出 CSV</value>
   </data>
-  <data
-    name="Settings.Analytics.TrendNoData"
-    xml:space="preserve">
-    <value>暂无近期数据</value>
-  </data>
-  <data
+    <data
     name="Settings.Analytics.Recommendation.MoveSlot"
     xml:space="preserve">
     <value>建议移至优选插槽</value>
@@ -1180,102 +1105,7 @@
   <data name="Update.Error.NoDownload" xml:space="preserve">
     <value>未找到已下载的更新文件。</value>
   </data>
-  <data
-    name="Settings.ExternalPlugins.Title"
-    xml:space="preserve">
-    <value>外部插件</value>
-  </data>
-  <data
-    name="Settings.ExternalPlugins.Description"
-    xml:space="preserve">
-    <value>从本地ZIP文件安装和管理插件</value>
-  </data>
-  <data
-    name="Settings.ExternalPlugins.InstallFromFile"
-    xml:space="preserve">
-    <value>从文件安装</value>
-  </data>
-  <data
-    name="Settings.ExternalPlugins.InstallFromFileTooltip"
-    xml:space="preserve">
-    <value>从本地ZIP文件安装插件</value>
-  </data>
-  <data
-    name="Settings.ExternalPlugins.LoadingPlugins"
-    xml:space="preserve">
-    <value>正在加载外部插件...</value>
-  </data>
-  <data
-    name="Settings.ExternalPlugins.Installed"
-    xml:space="preserve">
-    <value>已安装</value>
-  </data>
-  <data
-    name="Settings.ExternalPlugins.Uninstall"
-    xml:space="preserve">
-    <value>卸载</value>
-  </data>
-  <data
-    name="Settings.ExternalPlugins.ToggleToolTip"
-    xml:space="preserve">
-    <value>启用或禁用此插件（立即生效）</value>
-  </data>
-  <data
-    name="Settings.ExternalPlugins.PluginEnabledFormat"
-    xml:space="preserve">
-    <value>已启用 {0}</value>
-  </data>
-  <data
-    name="Settings.ExternalPlugins.PluginDisabledFormat"
-    xml:space="preserve">
-    <value>已禁用 {0}</value>
-  </data>
-  <data
-    name="Settings.ExternalPlugins.NoPlugins"
-    xml:space="preserve">
-    <value>未安装外部插件</value>
-  </data>
-  <data
-    name="Settings.ExternalPlugins.InstallHint"
-    xml:space="preserve">
-    <value>点击"从文件安装"以从ZIP包添加插件</value>
-  </data>
-  <data
-    name="Settings.ExternalPlugins.AboutTitle"
-    xml:space="preserve">
-    <value>关于外部插件</value>
-  </data>
-  <data
-    name="Settings.ExternalPlugins.AboutLine1"
-    xml:space="preserve">
-    <value>• 外部插件从ZIP文件加载并安装到您的本地AppData文件夹</value>
-  </data>
-  <data
-    name="Settings.ExternalPlugins.AboutLine2"
-    xml:space="preserve">
-    <value>• 内置插件（凭据管理、应用切换等）在以下选项卡中管理：</value>
-  </data>
-  <data
-    name="Settings.ExternalPlugins.AboutLine3"
-    xml:space="preserve">
-    <value>插件</value>
-  </data>
-  <data
-    name="Settings.ExternalPlugins.AboutLine4"
-    xml:space="preserve">
-    <value> 选项卡</value>
-  </data>
-  <data
-    name="Settings.ExternalPlugins.AboutLine5"
-    xml:space="preserve">
-    <value>• 安装后，重启Pulsar以加载新插件</value>
-  </data>
-  <data
-    name="Settings.ExternalPlugins.AboutLine6"
-    xml:space="preserve">
-    <value>• 卸载插件需要重启以完成移除</value>
-  </data>
-  <data
+                                        <data
     name="RadialMenu.Title"
     xml:space="preserve">
     <value>Pulsar 覆盖层</value>
@@ -1310,42 +1140,12 @@
     xml:space="preserve">
     <value>已是最后一页</value>
   </data>
-  <data
-    name="Dialog.AddSlot.ChooseBehavior"
-    xml:space="preserve">
-    <value>选择行为</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.ScenarioBased"
-    xml:space="preserve">
-    <value>基于场景</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.ScenarioBasedDesc"
-    xml:space="preserve">
-    <value>从常见意图开始</value>
-  </data>
-  <data
+        <data
     name="Dialog.AddSlot.Advanced"
     xml:space="preserve">
     <value>高级</value>
   </data>
-  <data
-    name="Dialog.AddSlot.AdvancedDesc"
-    xml:space="preserve">
-    <value>手动选择插件和操作</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.SwitchHint"
-    xml:space="preserve">
-    <value>需要其他选项？切换到高级模式以手动选择任意插件和完整参数模型。</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.ConfigureSlot"
-    xml:space="preserve">
-    <value>配置槽位</value>
-  </data>
-  <data
+        <data
     name="Dialog.AddSlot.CreateSlot"
     xml:space="preserve">
     <value>创建槽位</value>
@@ -1365,12 +1165,7 @@
     xml:space="preserve">
     <value>显示标签</value>
   </data>
-  <data
-    name="Dialog.AddSlot.Action"
-    xml:space="preserve">
-    <value>操作</value>
-  </data>
-  <data
+    <data
     name="Dialog.AddSlot.Appearance"
     xml:space="preserve">
     <value>外观</value>
@@ -1390,22 +1185,12 @@
     xml:space="preserve">
     <value>图标</value>
   </data>
-  <data
-    name="Dialog.AddSlot.IconPlaceholder"
-    xml:space="preserve">
-    <value>例如 Settings24 或 C:\icon.png</value>
-  </data>
-  <data
+    <data
     name="Dialog.AddSlot.BrowseIcon"
     xml:space="preserve">
     <value>浏览图标文件</value>
   </data>
-  <data
-    name="Dialog.AddSlot.Optional"
-    xml:space="preserve">
-    <value>可选</value>
-  </data>
-  <data
+    <data
     name="Dialog.AddSlot.SaveSlot"
     xml:space="preserve">
     <value>保存槽位</value>
@@ -1420,37 +1205,7 @@
     xml:space="preserve">
     <value>保存前请选择操作。</value>
   </data>
-  <data
-    name="Dialog.AddSlot.ChooseBehaviorDesc"
-    xml:space="preserve">
-    <value>选择此槽位的主要行为，然后填写使其生效的详细信息。</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.ChooseSlotType"
-    xml:space="preserve">
-    <value>选择槽位类型</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.ChooseScenario"
-    xml:space="preserve">
-    <value>选择常见场景</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.AdvancedDesc2"
-    xml:space="preserve">
-    <value>从常见意图开始并手动细化。</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.AdvancedDesc3"
-    xml:space="preserve">
-    <value>直接选择插件类型和操作。</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.TypeBegin"
-    xml:space="preserve">
-    <value>选择类型以开始</value>
-  </data>
-  <data
+              <data
     name="Dialog.AddSlot.NeedsSetup"
     xml:space="preserve">
     <value>需要必要设置</value>
@@ -1465,127 +1220,22 @@
     xml:space="preserve">
     <value>准备保存</value>
   </data>
-  <data
-    name="Dialog.AddSlot.ChooseTypeHint"
-    xml:space="preserve">
-    <value>选择槽位类型以解锁操作和必要详情。</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.CompleteSetupHint"
-    xml:space="preserve">
-    <value>完成必要设置，然后根据需要调整标签、图标或颜色。</value>
-  </data>
-  <data
+      <data
     name="Dialog.AddSlot.NewSlot"
     xml:space="preserve">
     <value>新槽位</value>
   </data>
-  <data
-    name="Dialog.AddSlot.Plugin"
-    xml:space="preserve">
-    <value>插件</value>
-  </data>
-  <data
+    <data
     name="Dialog.AddSlot.Draft"
     xml:space="preserve">
     <value>草稿</value>
   </data>
-  <data
-    name="Dialog.AddSlot.PreviewHint"
-    xml:space="preserve">
-    <value>预览徽章和设置状态会随着您构建槽位而更新。</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.ScanTypes"
-    xml:space="preserve">
-    <value>浏览可用的槽位类型以找到您需要的行为。</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.ChooseOutcome"
-    xml:space="preserve">
-    <value>选择您想要的结果，我们将引导您完成所需的详细信息。</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.ShowingCategoryFormat"
-    xml:space="preserve">
-    <value>显示 {0} 种槽位类型。</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.DisclosureTitle"
-    xml:space="preserve">
-    <value>外观</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.DisclosureHint1"
-    xml:space="preserve">
-    <value>在调整外观前选择槽位类型。</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.DisclosureHint2"
-    xml:space="preserve">
-    <value>保留建议的呈现方式，或对标签、颜色和图标进行小幅调整。</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.ScenarioSwitchApp"
-    xml:space="preserve">
-    <value>切换应用</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.ScenarioSwitchAppDesc"
-    xml:space="preserve">
-    <value>无需输入名称即可切换到正在运行的应用。</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.ScenarioOpen"
-    xml:space="preserve">
-    <value>打开程序、文件、文件夹或URL</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.ScenarioOpenDesc"
-    xml:space="preserve">
-    <value>通过默认处理程序打开内容。</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.ScenarioSendKeys"
-    xml:space="preserve">
-    <value>发送按键或插入文本</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.ScenarioSendKeysDesc"
-    xml:space="preserve">
-    <value>向活动窗口发送按键序列或粘贴文本。</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.ScenarioFillCredential"
-    xml:space="preserve">
-    <value>填写凭证</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.ScenarioFillCredentialDesc"
-    xml:space="preserve">
-    <value>将已保存的凭证填入活动字段。</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.CategoryAll"
-    xml:space="preserve">
-    <value>全部</value>
-  </data>
-  <data
+                                  <data
     name="Dialog.AddSlot.ChooseTypeBegin"
     xml:space="preserve">
     <value>选择槽位类型以开始。</value>
   </data>
-  <data
-    name="Dialog.AddSlot.ChooseScenarioBegin"
-    xml:space="preserve">
-    <value>选择场景以开始。</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.SelectActionBlock"
-    xml:space="preserve">
-    <value>保存前请选择操作。</value>
-  </data>
-  <data
+      <data
     name="Dialog.AddSlot.CompleteRequiredFormat"
     xml:space="preserve">
     <value>请完成必填字段：{0}。</value>
@@ -1600,97 +1250,12 @@
     xml:space="preserve">
     <value>运行脚本</value>
   </data>
-  <data
-    name="Dialog.AddSlot.RunVba"
-    xml:space="preserve">
-    <value>运行宏</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.SwitchOrLaunch"
-    xml:space="preserve">
-    <value>切换或启动应用</value>
-  </data>
-  <data
+      <data
     name="Dialog.AddSlot.App"
     xml:space="preserve">
     <value>应用</value>
   </data>
-  <data
-    name="Dialog.AddSlot.SendKeys"
-    xml:space="preserve">
-    <value>发送按键</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.Target"
-    xml:space="preserve">
-    <value>目标</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.OpenTarget"
-    xml:space="preserve">
-    <value>打开目标</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.QuickAdd"
-    xml:space="preserve">
-    <value>快速添加当前应用</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.OpenSettings"
-    xml:space="preserve">
-    <value>打开设置</value>
-  </data>
-  <data
-    name="Dialog.AddSlot.Script"
-    xml:space="preserve">
-    <value>脚本</value>
-  </data>
-  <data
-    name="Dialog.SlotConfig.UpdateBehavior"
-    xml:space="preserve">
-    <value>请先更新槽位的行为以刷新预览。</value>
-  </data>
-  <data
-    name="Dialog.SlotConfig.NeedsSetup"
-    xml:space="preserve">
-    <value>需要必要设置</value>
-  </data>
-  <data
-    name="Dialog.SlotConfig.DraftProgress"
-    xml:space="preserve">
-    <value>草稿进行中</value>
-  </data>
-  <data
-    name="Dialog.SlotConfig.ReadyToSave"
-    xml:space="preserve">
-    <value>准备保存</value>
-  </data>
-  <data
-    name="Dialog.SlotConfig.NoAction"
-    xml:space="preserve">
-    <value>尚未选择操作</value>
-  </data>
-  <data
-    name="Dialog.SlotConfig.MetadataHint"
-    xml:space="preserve">
-    <value>操作、验证和摘要详情在您编辑时保持在此处。</value>
-  </data>
-  <data
-    name="Dialog.SlotConfig.Appearance"
-    xml:space="preserve">
-    <value>外观与美化</value>
-  </data>
-  <data
-    name="Dialog.SlotConfig.AppearanceHint"
-    xml:space="preserve">
-    <value>保留建议的呈现方式，或对标签、颜色和图标进行小幅调整。</value>
-  </data>
-  <data
-    name="Dialog.SlotConfig.Behavior"
-    xml:space="preserve">
-    <value>行为</value>
-  </data>
-  <data
+                                <data
     name="Dialog.SecretPicker.SelectSecret"
     xml:space="preserve">
     <value>选择要注入的密钥</value>
@@ -2265,37 +1830,7 @@
     xml:space="preserve">
     <value>您有未保存的更改。关闭前要保存吗？</value>
   </data>
-  <data
-    name="Notification.SwitchApp"
-    xml:space="preserve">
-    <value>切换应用</value>
-  </data>
-  <data
-    name="Notification.OpenProgram"
-    xml:space="preserve">
-    <value>打开程序</value>
-  </data>
-  <data
-    name="Notification.SendKeysAction"
-    xml:space="preserve">
-    <value>发送按键</value>
-  </data>
-  <data
-    name="Notification.FillCredential"
-    xml:space="preserve">
-    <value>填写凭证</value>
-  </data>
-  <data
-    name="Notification.RunScript"
-    xml:space="preserve">
-    <value>运行脚本</value>
-  </data>
-  <data
-    name="Notification.RunVba"
-    xml:space="preserve">
-    <value>运行宏</value>
-  </data>
-  <data
+              <data
     name="Notification.CleanCacheBody"
     xml:space="preserve">
     <value>这将移除过去30天内未出现的进程的缓存图标（黑名单进程除外）。\n\n确定要继续吗？</value>
@@ -2405,37 +1940,7 @@
     xml:space="preserve">
     <value>成功卸载{0}</value>
   </data>
-  <data
-    name="Notification.FeatureDeprecated"
-    xml:space="preserve">
-    <value>功能已弃用</value>
-  </data>
-  <data
-    name="Notification.OnlinePluginsDeprecated"
-    xml:space="preserve">
-    <value>在线插件安装功能尚未实现。\n\n请使用"外部插件"页面从ZIP文件安装插件。</value>
-  </data>
-  <data
-    name="Notification.OnlineUpdatesDeprecated"
-    xml:space="preserve">
-    <value>在线插件更新功能尚未实现。\n\n请手动从"外部插件"页面下载并安装最新版本。</value>
-  </data>
-  <data
-    name="Notification.LoadingPlugins"
-    xml:space="preserve">
-    <value>正在加载插件...</value>
-  </data>
-  <data
-    name="Notification.LoadedPluginsFormat"
-    xml:space="preserve">
-    <value>已加载 {0} 个插件</value>
-  </data>
-  <data
-    name="Notification.FailedLoadPluginsFormat"
-    xml:space="preserve">
-    <value>加载插件失败：{0}</value>
-  </data>
-  <data
+              <data
     name="Notification.ScanningPlugins"
     xml:space="preserve">
     <value>正在扫描已安装的插件...</value>
@@ -2480,17 +1985,7 @@
     xml:space="preserve">
     <value>插件包 (*.zip)|*.zip|所有文件 (*.*)|*.*</value>
   </data>
-  <data
-    name="Notification.DeprecatedMessage"
-    xml:space="preserve">
-    <value>此功能已弃用。请使用"外部插件"页面从文件安装插件。</value>
-  </data>
-  <data
-    name="Notification.DeprecatedManageMessage"
-    xml:space="preserve">
-    <value>此功能已弃用。请使用"外部插件"页面管理插件。</value>
-  </data>
-  <data
+      <data
     name="Notification.ProcessBlacklistTitle"
     xml:space="preserve">
     <value>进程黑名单</value>
@@ -2615,12 +2110,7 @@
     xml:space="preserve">
     <value>欢迎使用Pulsar</value>
   </data>
-  <data
-    name="Tutorial.OpenSettings"
-    xml:space="preserve">
-    <value>打开设置</value>
-  </data>
-  <data
+    <data
     name="Tutorial.WelcomeDesc"
     xml:space="preserve">
     <value>欢迎！本教程将带你体验 Pulsar 的两种模式：先用切换模式（{SwitchHotkey}）切换到记事本，再用命令模式（{CommandHotkey}）向记事本插入文本。我们开始吧！</value>
@@ -2650,12 +2140,7 @@
     xml:space="preserve">
     <value>太好了——你已切换到记事本！下一步将使用命令模式向记事本插入文本。点击"下一步"继续。</value>
   </data>
-  <data
-    name="Tutorial.FirstSwitchHint"
-    xml:space="preserve">
-    <value>Pulsar 已切换到记事本！点击"下一步"继续。</value>
-  </data>
-  <data
+    <data
     name="Tutorial.CommandMode"
     xml:space="preserve">
     <value>命令模式：运行动作</value>
@@ -2680,12 +2165,7 @@
     xml:space="preserve">
     <value>Pulsar 已向记事本键入文本！你刚刚结合了两种模式：切换模式让你到达记事本，命令模式在记事本内执行了操作。这就是 Pulsar 的核心工作流。</value>
   </data>
-  <data
-    name="Tutorial.FirstCommandHint"
-    xml:space="preserve">
-    <value>Pulsar 已向记事本键入文本！你已经掌握了核心工作流。</value>
-  </data>
-  <data
+    <data
     name="Tutorial.OnboardingComplete"
     xml:space="preserve">
     <value>入门完成</value>
@@ -2875,22 +2355,7 @@
     xml:space="preserve">
     <value>请先打开应用，或为此槽位添加启动路径。</value>
   </data>
-  <data
-    name="Feedback.SwitchFailed"
-    xml:space="preserve">
-    <value>切换失败</value>
-  </data>
-  <data
-    name="Feedback.SwitchFailedBody"
-    xml:space="preserve">
-    <value>Pulsar无法切换到该应用。</value>
-  </data>
-  <data
-    name="Feedback.SwitchFailedHelp"
-    xml:space="preserve">
-    <value>请在应用就绪后重试。</value>
-  </data>
-  <data
+        <data
     name="Feedback.FixCommandSlot"
     xml:space="preserve">
     <value>修复槽位设置</value>
@@ -3055,17 +2520,7 @@
     xml:space="preserve">
     <value>{0}天前</value>
   </data>
-  <data
-    name="Plugin.ViewLogsErrorFormat"
-    xml:space="preserve">
-    <value>查看日志（{0} 个错误）</value>
-  </data>
-  <data
-    name="Plugin.HealthIcons"
-    xml:space="preserve">
-    <value>⚡ ✓ ⚠ 💤 🚫 ✅ ⚠️ 🔴 💤 🚫</value>
-  </data>
-  <data
+      <data
     name="Plugin.Recommendation.UnusedNeverUsed"
     xml:space="preserve">
     <value>{0} 从未被使用。考虑禁用以提升性能。</value>
@@ -3145,47 +2600,22 @@
     xml:space="preserve">
     <value>{0} 近 7 天用量下滑 {1}%（{2} → {3} 次）</value>
   </data>
-  <data
-    name="Profile.ConfigurationIssues"
-    xml:space="preserve">
-    <value>检测到配置问题</value>
-  </data>
-  <data
-    name="Profile.OpenConfiguration"
-    xml:space="preserve">
-    <value>打开完整配置查看详情</value>
-  </data>
-  <data
+      <data
     name="FirstLaunch.GeneralProductivity"
     xml:space="preserve">
     <value>通用效率</value>
   </data>
-  <data
-    name="FirstLaunch.GeneralProductivityDesc"
-    xml:space="preserve">
-    <value>从日常应用开始，配以简单的命令示例。</value>
-  </data>
-  <data
+    <data
     name="FirstLaunch.DeveloperWorkflow"
     xml:space="preserve">
     <value>开发者工作流</value>
   </data>
-  <data
-    name="FirstLaunch.DeveloperWorkflowDesc"
-    xml:space="preserve">
-    <value>偏好编辑器和终端导向的默认配置。</value>
-  </data>
-  <data
+    <data
     name="FirstLaunch.BrowserDocs"
     xml:space="preserve">
     <value>浏览器与文档</value>
   </data>
-  <data
-    name="FirstLaunch.BrowserDocsDesc"
-    xml:space="preserve">
-    <value>专注于浏览、笔记和快速查阅任务。</value>
-  </data>
-  <data
+    <data
     name="FirstLaunch.SetupTitle"
     xml:space="preserve">
     <value>欢迎使用Pulsar</value>
@@ -3240,12 +2670,7 @@
     xml:space="preserve">
     <value>暂时跳过</value>
   </data>
-  <data
-    name="FirstLaunch.SelectScenarioError"
-    xml:space="preserve">
-    <value>请先选择一个场景</value>
-  </data>
-  <data
+    <data
     name="FirstLaunch.GeneralProductivitySlotDesc"
     xml:space="preserve">
     <value>会生成一个记事本命令槽，适合快速记笔记</value>
@@ -4295,12 +3720,7 @@ Pulsar 会在当前页面运行一个网页脚本——这就是命令模式：�
     xml:space="preserve">
     <value>按键发送失败：{0}</value>
   </data>
-  <data
-    name="Plugin.Command.UnknownAction"
-    xml:space="preserve">
-    <value>δ֪������{0}</value>
-  </data>
-  <!-- ==================== Common Plugin Errors ==================== -->
+    <!-- ==================== Common Plugin Errors ==================== -->
   <data
     name="Plugin.Common.MissingRequiredParameter"
     xml:space="preserve">
@@ -4586,27 +4006,7 @@ Pulsar 会在当前页面运行一个网页脚本——这就是命令模式：�
     xml:space="preserve">
     <value>插件未初始化</value>
   </data>
-  <data
-    name="Settings.General.HotkeyNone"
-    xml:space="preserve">
-    <value>(无)</value>
-  </data>
-  <data
-    name="Settings.General.HotkeyConflict"
-    xml:space="preserve">
-    <value>冲突：已分配给"{0}"</value>
-  </data>
-  <data
-    name="Settings.General.HotkeyReserved"
-    xml:space="preserve">
-    <value>此组合键为 Windows 系统保留</value>
-  </data>
-  <data
-    name="Settings.General.HotkeyClearTooltip"
-    xml:space="preserve">
-    <value>按 Backspace/Delete 清除</value>
-  </data>
-  <data name="Dialog.Button.Ok" xml:space="preserve">
+          <data name="Dialog.Button.Ok" xml:space="preserve">
     <value>确定</value>
   </data>
   <data name="Dialog.Button.Cancel" xml:space="preserve">
@@ -4678,16 +4078,7 @@ Pulsar 会在当前页面运行一个网页脚本——这就是命令模式：�
   <data name="Settings.Plugins.GroupSystemFormat" xml:space="preserve">
     <value>系统插件（{0}）</value>
   </data>
-  <data name="Settings.ExternalPlugins.InstalledHeaderFormat" xml:space="preserve">
-    <value>已安装的外部插件（{0}）</value>
-  </data>
-  <data name="Settings.ExternalPlugins.ByAuthorFormat" xml:space="preserve">
-    <value>作者：{0}</value>
-  </data>
-  <data name="Settings.ExternalPlugins.StatusCountFormat" xml:space="preserve">
-    <value>已安装 {0} 个外部插件</value>
-  </data>
-  <data name="Settings.ExternalPlugins.StatusLoadFailedFormat" xml:space="preserve">
+        <data name="Settings.ExternalPlugins.StatusLoadFailedFormat" xml:space="preserve">
     <value>加载插件失败：{0}</value>
   </data>
   <data name="Settings.ExternalPlugins.StatusInstallingFormat" xml:space="preserve">
@@ -4729,16 +4120,10 @@ Pulsar 会在当前页面运行一个网页脚本——这就是命令模式：�
   <data name="PluginLogViewer.Critical" xml:space="preserve">
     <value>严重</value>
   </data>
-  <data name="Settings.ExternalPlugins.InstalledPluginsHeader" xml:space="preserve">
-    <value>已安装的外部插件</value>
-  </data>
-  <data name="Settings.ExternalPlugins.ByAuthor" xml:space="preserve">
+    <data name="Settings.ExternalPlugins.ByAuthor" xml:space="preserve">
     <value>作者：</value>
   </data>
-  <data name="Settings.ExternalPlugins.StatusCount" xml:space="preserve">
-    <value> 个外部插件已安装</value>
-  </data>
-  <data name="Settings.General.QuickSwitchTimeout" xml:space="preserve">
+    <data name="Settings.General.QuickSwitchTimeout" xml:space="preserve">
     <value>快速切换窗口（毫秒）</value>
   </data>
   <data name="Settings.General.QuickSwitchTimeoutDescription" xml:space="preserve">
@@ -5176,11 +4561,7 @@ Pulsar 会在当前页面运行一个网页脚本——这就是命令模式：�
     xml:space="preserve">
     <value>运行登录演示</value>
   </data>
-  <data
-    name="CommandSlot.AutoSignIn"
-    xml:space="preserve">
-    <value>自动登录</value>
-  </data>  <data name="SettingsPage.Gesture.Title" xml:space="preserve">
+    <data name="SettingsPage.Gesture.Title" xml:space="preserve">
     <value>手势召唤</value>
   </data>
   <data name="SettingsPage.Gesture.Description" xml:space="preserve">
