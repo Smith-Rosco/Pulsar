@@ -10,9 +10,18 @@
              xmlns:converters="clr-namespace:Pulsar.Core.Converters"
              xmlns:controls="clr-namespace:Pulsar.Views.Controls"
              mc:Ignorable="d"
-             MinWidth="760"
-             MinHeight="520"
+             d:DesignWidth="760"
+             d:DesignHeight="520"
              d:DataContext="{d:DesignInstance Type=viewmodels:SlotEditorViewModel}">
+    <!--
+        [2026-09-10 溢出修复] 不得再钉 MinWidth/MinHeight：本控件 P3（69d89fe）起
+        只作为 SettingsSlotEditorPage（transient tab）的内容面存在——模态框已退役。
+        旧的 MinWidth="760" 是模态时期按对话框固定宽度定的，tab 内容区实际只有
+        ≈700px（窗口 1000 − 导航栏 250 − Frame Margin 2×24），而内容 ScrollViewer
+        HorizontalScrollBarVisibility="Disabled" 不横向滚动 → 直接裁掉右侧
+        （状态徽标 / IconSelector）。尺寸交给宿主（Frame/Page）裁决；d:Design* 仅供
+        设计期预览。同类缺陷见 Docs/lessons/WPF_SETTINGS_PANEL_WIDTH_CONTENT_DRIVEN.md。
+    -->
 
     <UserControl.Resources>
         <ResourceDictionary>

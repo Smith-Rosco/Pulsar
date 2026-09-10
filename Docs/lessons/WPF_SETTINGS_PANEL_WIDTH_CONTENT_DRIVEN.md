@@ -2,8 +2,8 @@
 
 **Status**: Published
 **Scope**: Lesson
-**Applies To**: `Views/Pages/Settings*.xaml` — any `ScrollViewer` content panel
-**Last Updated**: 2026-09-08
+**Applies To**: `Views/Pages/Settings*.xaml` — any `ScrollViewer` content panel; and any dialog content control reused as a settings tab page (`Views/Dialogs/Contents/*.xaml` hosted by `SettingsSlotEditorPage`)
+**Last Updated**: 2026-09-10
 
 ---
 
@@ -89,5 +89,65 @@ Guard added: `Pulsar.Tests.UI.SettingsLayoutGuardTests.Settings_pages_do_not_siz
 
 ---
 
+## Sibling Defect (2026-09-10): A Retired Modal's Fixed Size Pinned Inside a Tab
+
+**Same defect class, different attribute**: instead of `HorizontalAlignment="Left" + MaxWidth`, the panel
+pins a **minimum** — `MinWidth`/`MinHeight` — so it refuses to shrink to the tab's content area.
+
+### Symptom (as reported 2026-09-10)
+
+> 编辑槽位的标签页内容溢出
+
+The right edge of the slot-editor tab (status badge, `IconSelector`, colour swatch) is cut off.
+
+### Root Cause
+
+`SlotConfigurationDialogContent` / `AddSlotContent` were modal dialog bodies and carried
+`MinWidth="760" MinHeight="520"`. Commit `69d89fe` retired the modal (P3) and made
+`SettingsSlotEditorPage` — a transient settings **tab** — their only host, but the sizes stayed.
+
+| | Width |
+|---|---|
+| Settings window | 1000 |
+| − `NavigationView` open pane (`OpenPaneLength="250"`) | 750 |
+| − `Frame` margin (`Pulsar.Pad.XXL` = 24 × 2) | **≈702** |
+| Content's `MinWidth` | **760** |
+
+A `MinWidth` above the viewport is not a "minimum" the parent can negotiate — the child is arranged at
+760 and the surplus has nowhere to go. The content `ScrollViewer` sets
+`HorizontalScrollBarVisibility="Disabled"`, so there is not even a scrollbar to reveal the clipped part;
+it is silently cut. (Vertical is safe: `VerticalScrollBarVisibility="Auto"` turns the overflow into a
+scrollbar.)
+
+### Correct Pattern
+
+Size the control from its host; keep the design-time twin only for the designer:
+
+```xml
+<UserControl mc:Ignorable="d"
+             d:DesignWidth="760" d:DesignHeight="520">   <!-- ✅ -->
+```
+
+```xml
+<UserControl MinWidth="760" MinHeight="520">               <!-- ❌ in a tab host -->
+```
+
+Redundant padding adds up too: the host `Frame` already carries 24px, and each content adds
+`Padding="20,16"` of its own.
+
+### Guard
+
+`Pulsar.Tests.UI.SettingsLayoutGuardTests.Tab_hosted_dialog_contents_do_not_pin_a_fixed_dialog_size`.
+It resolves the hosted set from the page code-behind (`new Dialogs.Contents.X()`), then scans **only the
+root tag** of each content's XAML — inner containers legitimately use `MinWidth` (e.g. a 90px label
+column). Comments are stripped first, because the in-file comments documenting this very rule name
+`MinWidth`. Mutation check (2026-09-10): re-adding `MinWidth="760"` turns it red with the exact file+value.
+
+Adding a new tab-hosted dialog content needs **no** test edit — the code-behind scan picks it up.
+
+---
+
 **Change History**:
 - v1.0.0 (2026-09-08): Initial version
+- v1.1.0 (2026-09-10): Added the sibling defect — a retired modal's fixed `MinWidth/MinHeight` pinned
+  inside a transient settings tab (slot editor), plus the code-behind-driven guard.

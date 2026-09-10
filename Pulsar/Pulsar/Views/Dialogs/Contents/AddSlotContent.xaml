@@ -10,9 +10,15 @@
              xmlns:converters="clr-namespace:Pulsar.Core.Converters"
              xmlns:controls="clr-namespace:Pulsar.Views.Controls"
              mc:Ignorable="d"
-             MinWidth="760"
-             MinHeight="520"
+             d:DesignWidth="760"
+             d:DesignHeight="520"
              d:DataContext="{d:DesignInstance Type=viewmodels:SlotEditorViewModel}">
+    <!--
+        [2026-09-10 溢出修复] 同 SlotConfigurationDialogContent：P3（69d89fe）模态退役后
+        本控件只被 SettingsSlotEditorPage（transient tab）承载，故不得钉 MinWidth/MinHeight
+        —— 旧的 MinWidth="760" 大于 tab 内容区 ≈700px，且内容 ScrollViewer 横向滚动为
+        Disabled，会把右侧内容裁掉。尺寸由宿主裁决，d:Design* 仅供设计期预览。
+    -->
 
     <UserControl.Resources>
         <ResourceDictionary>

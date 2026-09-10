@@ -14,6 +14,13 @@
 //      shrinks to the widest child, so cards never fill the view AND expanding any
 //      card re-widens every card on the page.
 //
+//   3. A dialog-era content control reused as a settings tab page (via
+//      SettingsSlotEditorPage) still pinning its fixed dialog size with
+//      MinWidth/MinHeight. The tab's content area is (~700px) narrower than the
+//      retired modal dialog (760px), and the content ScrollViewer disables
+//      horizontal scrolling, so the right edge was silently clipped.
+//      See Docs/lessons/WPF_SETTINGS_PANEL_WIDTH_CONTENT_DRIVEN.md.
+//
 // These are source scans rather than rendered-layout assertions on purpose: the
 // test host has no desktop session, so Window.Show() yields ActualWidth == 0 and
 // WPF-UI's VisualState pane animations never run (verified — see journal
@@ -57,6 +64,20 @@ namespace Pulsar.Tests.UI
 
         private static readonly Regex WidthCapped = new(
             @"MaxWidth\s*=\s*""[^""]+""", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        /// <summary>
+        /// The content controls a settings <c>Page</c> instantiates directly in its code-behind
+        /// (<c>new Dialogs.Contents.X()</c>). Those run inside the tab's content area, not inside
+        /// a modal dialog, so they must stay host-sized. Resolved from the code-behind rather than
+        /// hard-listed, so a new reuse site is guarded without editing this test.
+        /// </summary>
+        private static readonly Regex HostedDialogContent = new(
+            @"new\s+Dialogs\.Contents\.(?<type>\w+)\s*\(\s*\)", RegexOptions.Compiled);
+
+        /// <summary>Root-element fixed size: dialog-era <c>MinWidth</c>/<c>MinHeight</c>.
+        /// The Blend design-time twins (<c>d:DesignWidth</c>/<c>d:DesignHeight</c>) must not match.</summary>
+        private static readonly Regex FixedMinSize = new(
+            @"(?<![\w:])Min(?:Width|Height)\s*=\s*""[^""]+""", RegexOptions.Compiled);
 
         /// <summary>
         /// Accent tokens that do not exist in WPF-UI 4.3.0's theme dictionaries at all
@@ -142,6 +163,69 @@ namespace Pulsar.Tests.UI
                 + "them all. Use HorizontalAlignment=\"Stretch\" (keep MaxWidth as a reading-width "
                 + "cap) or bind Width to the ScrollViewer's ViewportWidth:\n  - "
                 + string.Join("\n  - ", violations));
+        }
+
+        [Fact]
+        public void Tab_hosted_dialog_contents_do_not_pin_a_fixed_dialog_size()
+        {
+            var root = ResolvePulsarRoot();
+            var pagesDir = Path.Combine(root, "Views", "Pages");
+            var contentsDir = Path.Combine(root, "Views", "Dialogs", "Contents");
+
+            var hosted = Directory
+                .EnumerateFiles(pagesDir, "*.xaml.cs", SearchOption.TopDirectoryOnly)
+                .Where(p => !ExcludedPath.IsMatch(p))
+                .SelectMany(file => HostedDialogContent.Matches(File.ReadAllText(file))
+                    .Cast<Match>()
+                    .Select(m => m.Groups["type"].Value))
+                .Distinct()
+                .OrderBy(name => name, StringComparer.Ordinal)
+                .ToList();
+
+            // Guard the guard: a rename in the page's code-behind must not silently
+            // turn this scan into a no-op.
+            Assert.True(hosted.Count > 0,
+                "No dialog content control is hosted by a settings page code-behind — the "
+                + "'new Dialogs.Contents.X()' scan matched nothing, so this guard proved nothing.");
+
+            var violations = new List<string>();
+            foreach (var name in hosted)
+            {
+                var xamlPath = Path.Combine(contentsDir, name + ".xaml");
+                Assert.True(File.Exists(xamlPath),
+                    $"{name} is hosted by a settings page but {Path.GetRelativePath(root, xamlPath)} does not exist.");
+
+                // Comments document this very rule, so they must not count as usages.
+                var rootTag = RootElementTag(StripComments(File.ReadAllText(xamlPath)));
+                foreach (Match m in FixedMinSize.Matches(rootTag))
+                {
+                    violations.Add($"{Path.GetRelativePath(root, xamlPath)}: {m.Value}");
+                }
+            }
+
+            Assert.True(violations.Count == 0,
+                "A dialog content control hosted by a settings tab still pins its retired modal "
+                + "size with MinWidth/MinHeight. The tab's content area is narrower than the old "
+                + "dialog and its ScrollViewer disables horizontal scrolling, so the right edge "
+                + "(status badge, icon selector) is clipped. Let the host size the content; keep "
+                + "only d:DesignWidth/d:DesignHeight for the designer:\n  - "
+                + string.Join("\n  - ", violations));
+        }
+
+        /// <summary>The control's own start tag — inner containers may legitimately carry
+        /// <c>MinWidth</c> (e.g. a 90px label column), only the root must not.</summary>
+        private static string RootElementTag(string xaml)
+        {
+            var start = xaml.IndexOf('<');
+            while (start >= 0)
+            {
+                var end = xaml.IndexOf('>', start);
+                if (end < 0) return xaml;
+                var tag = xaml.Substring(start, end - start + 1);
+                if (tag.StartsWith("<UserControl", StringComparison.OrdinalIgnoreCase)) return tag;
+                start = xaml.IndexOf('<', end);
+            }
+            return xaml;
         }
 
         private static string Trim(string snippet)
