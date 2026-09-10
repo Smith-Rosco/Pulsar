@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -88,7 +88,7 @@ namespace Pulsar.ViewModels
         private const int VK_ESCAPE = 0x1B;
 
         private readonly IConfigService _configService;
-        private readonly IWindowService _windowService;
+        private readonly IWindowFocusContextService _windowFocusContext;
         private readonly IWindowInventoryCoordinator _inventoryCoordinator;
         private readonly IHotkeyService _hotkeyService;
         private readonly ITrayService _trayService;
@@ -309,7 +309,7 @@ namespace Pulsar.ViewModels
 
         public MenuSession(
             IConfigService configService,
-            IWindowService windowService,
+            IWindowFocusContextService windowFocusContext,
             IWindowInventoryCoordinator inventoryCoordinator,
             IHotkeyService hotkeyService,
             ITrayService trayService,
@@ -333,7 +333,7 @@ namespace Pulsar.ViewModels
             IRadialMenuVisualStateCoordinator? visualStateCoordinator = null)
         {
             _configService = configService;
-            _windowService = windowService;
+            _windowFocusContext = windowFocusContext;
             _inventoryCoordinator = inventoryCoordinator;
             _hotkeyService = hotkeyService;
             _trayService = trayService;
@@ -710,7 +710,7 @@ namespace Pulsar.ViewModels
             // No slot identity: a quick switch fires from the center zone with
             // nothing selected, so the mark records "an action ran" only.
             SetActionExecuted(true);
-            bool switched = await _windowService.SwitchToPreviousWindow();
+            bool switched = await _windowFocusContext.SwitchToPreviousWindow();
             if (!switched)
             {
                 _trayService.ShowNotification(
@@ -771,9 +771,9 @@ namespace Pulsar.ViewModels
                 IntPtr foregroundHandle = PulsarNative.GetForegroundWindow();
                 _logger?.LogDebug("[Show] Foreground Handle: {Hwnd}", foregroundHandle);
 
-                _windowService.SetPreviousWindow(foregroundHandle);
+                _windowFocusContext.SetPreviousWindow(foregroundHandle);
 
-                _lastContext = PulsarContext.Capture(_windowService, _logger);
+                _lastContext = PulsarContext.Capture(_windowFocusContext, _logger);
 
                 _showStartTime = DateTime.Now;
                 _pendingQuickSwitch = false;

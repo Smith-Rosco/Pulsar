@@ -15,18 +15,18 @@ namespace Pulsar.Plugins.Core.SecretFill.Services
     {
         internal static TimeSpan ExecutionTimeout = TimeSpan.FromSeconds(15);
 
-        private readonly IWindowService _windowService;
+        private readonly IWindowShellService _shellService;
         private readonly IFocusManager _focusManager;
         private readonly ISendKeysWriter _sendKeysWriter;
         private readonly ILogger<SendKeysInjectionExecutor> _logger;
 
         public SendKeysInjectionExecutor(
-            IWindowService windowService,
+            IWindowShellService shellService,
             IFocusManager focusManager,
             ISendKeysWriter sendKeysWriter,
             ILogger<SendKeysInjectionExecutor> logger)
         {
-            _windowService = windowService;
+            _shellService = shellService;
             _focusManager = focusManager;
             _sendKeysWriter = sendKeysWriter;
             _logger = logger;
@@ -48,7 +48,7 @@ namespace Pulsar.Plugins.Core.SecretFill.Services
                         case InjectionStepType.HideLauncher:
                             try
                             {
-                                _windowService.HideMainWindow();
+                                _shellService.HideMainWindow();
                             }
                             catch (Exception ex)
                             {

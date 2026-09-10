@@ -33,7 +33,7 @@ namespace Pulsar.ViewModels.Settings
         private readonly ILogger? _logger;
         private readonly IPluginLogService? _logService;
         private readonly IDialogService? _dialogService;
-        private readonly IWindowService? _windowService;
+        private readonly IWindowDiscoveryService? _discoveryService;
         private readonly IProcessRegistryService? _processRegistryService;
         private readonly IDiscoveryExclusionPolicy? _exclusionPolicy;
         private readonly IScriptFileService? _scriptFileService;
@@ -158,7 +158,7 @@ namespace Pulsar.ViewModels.Settings
             IPluginLogService? logService = null,
             IDialogService? dialogService = null,
             ILogger<PluginViewModel>? logger = null,
-            IWindowService? windowService = null,
+            IWindowDiscoveryService? discoveryService = null,
             IProcessRegistryService? processRegistryService = null,
             IScriptFileService? scriptFileService = null,
             IScriptValidationService? scriptValidationService = null,
@@ -175,7 +175,7 @@ namespace Pulsar.ViewModels.Settings
             _logService = logService;
             _dialogService = dialogService;
             _logger = logger;
-            _windowService = windowService;
+            _discoveryService = discoveryService;
             _processRegistryService = processRegistryService;
             _scriptFileService = scriptFileService;
             _scriptValidationService = scriptValidationService;
@@ -550,7 +550,7 @@ namespace Pulsar.ViewModels.Settings
             // 自定义配置对话框：仅当插件在 metadata 里声明 HasCustomConfigDialog，
             // 且宿主提供了对话框所需的功能服务时才走自定义路径；否则回落到通用
             // schema 对话框（行为与改前按 ID 特判等价，但分支依据来自插件自述）。
-            if (HasCustomConfigDialog && _windowService != null && _processRegistryService != null)
+            if (HasCustomConfigDialog && _discoveryService != null && _processRegistryService != null)
             {
                 var currentConfig = GetCurrentConfig();
                 var currentBlacklist = currentConfig.TryGetValue("ExcludeProcesses", out var val)
@@ -560,7 +560,7 @@ namespace Pulsar.ViewModels.Settings
                     && bool.TryParse(diagnostics?.ToString(), out var diagnosticsEnabled)
                     && diagnosticsEnabled;
 
-                var vm = new ProcessBlacklistViewModel(_windowService, _processRegistryService, currentBlacklist, enableSwitchDiagnostics);
+                var vm = new ProcessBlacklistViewModel(_discoveryService, _processRegistryService, currentBlacklist, enableSwitchDiagnostics);
                 var result = await _dialogService.ShowCustomAsync(
                     _loc?["Notification.ProcessBlacklistTitle"] ?? "Process Blacklist",
                     vm,
@@ -598,7 +598,7 @@ namespace Pulsar.ViewModels.Settings
                 HasSettings = Settings.Count > 0;
             }
 
-            var dialogVm = new Pulsar.ViewModels.Dialogs.PluginSettingsDialogViewModel(this, _windowService, _configService, _loc, _exclusionPolicy);
+            var dialogVm = new Pulsar.ViewModels.Dialogs.PluginSettingsDialogViewModel(this, _discoveryService, _configService, _loc, _exclusionPolicy);
             var dialogResult = await _dialogService.ShowCustomAsync(
                 string.Format(_loc?["Notification.ConfigureTitleFormat"] ?? "Configure {0}", Name),
                 dialogVm,

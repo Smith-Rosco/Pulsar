@@ -25,7 +25,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
         private const string LogPrefix = "[WinSwitcher]";
         
         // Initialized in Initialize() method with null check - guaranteed non-null after initialization
-        private IWindowService _windowService = null!;
+        private IWindowActivationService _windowActivationService = null!;
         private IProcessLauncher _processLauncher = null!;
         private IDiscoveryExclusionPolicy _exclusionPolicy = null!;
         private ILogger<WinSwitcherPlugin>? _logger;
@@ -47,14 +47,14 @@ namespace Pulsar.Plugins.Core.WinSwitcher
 
         public void Initialize(IServiceProvider services)
         {
-            _windowService = (services.GetService(typeof(IWindowService)) as IWindowService)!;
+            _windowActivationService = (services.GetService(typeof(IWindowActivationService)) as IWindowActivationService)!;
             _logger = services.GetService(typeof(ILogger<WinSwitcherPlugin>)) as ILogger<WinSwitcherPlugin>;
             _trayService = services.GetService(typeof(ITrayService)) as ITrayService;
             _loc = services.GetService(typeof(ILocalizationService)) as ILocalizationService;
 
-            if (_windowService == null)
+            if (_windowActivationService == null)
             {
-                throw new InvalidOperationException("IWindowService service is not available");
+                throw new InvalidOperationException("IWindowActivationService service is not available");
             }
 
             _processLauncher = (services.GetService(typeof(IProcessLauncher)) as IProcessLauncher)!;
@@ -203,7 +203,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
             PulsarContext context,
             CancellationToken cancellationToken = default)
         {
-            if (_windowService == null)
+            if (_windowActivationService == null)
             {
                 return PluginResult.Error(_loc?["Plugin.WinSwitcher.WindowServiceNotInitialized"] ?? "WindowService not initialized", PluginErrorSeverity.Critical);
             }
@@ -232,7 +232,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
 
             _logger?.LogDebug($"{LogPrefix} Attempting to activate: {{ProcessName}}", processName);
 
-            bool switched = await _windowService.SwitchToProcessAsync(processName);
+            bool switched = await _windowActivationService.SwitchToProcessAsync(processName);
             
             if (switched)
             {
@@ -348,7 +348,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
             _logger?.LogDebug($"{LogPrefix} Smart switch for: {{ProcessName}}", processName);
 
             // 1. 尝试切换
-            bool switched = await _windowService.SwitchToProcessAsync(processName);
+            bool switched = await _windowActivationService.SwitchToProcessAsync(processName);
             if (switched)
             {
                 _logger?.LogInformation($"{LogPrefix} Switched to existing window: {{ProcessName}}", processName);

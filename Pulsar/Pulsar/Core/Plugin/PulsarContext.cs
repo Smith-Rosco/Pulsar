@@ -63,10 +63,10 @@ namespace Pulsar.Core.Plugin
         /// <summary>
         /// 捕获当前上下文 (轻量级，非阻塞)
         /// </summary>
-        /// <param name="windowService">窗口服务</param>
+        /// <param name="windowService">焦点上下文服务（Pulsar 只读取唤起前窗口句柄）</param>
         /// <param name="logger">日志记录器</param>
         /// <returns>上下文实例</returns>
-        public static PulsarContext Capture(IWindowService windowService, ILogger? logger = null)
+        public static PulsarContext Capture(IWindowFocusContextService windowService, ILogger? logger = null)
         {
             var hwnd = windowService.GetPreviousWindow();
             string processName = string.Empty;

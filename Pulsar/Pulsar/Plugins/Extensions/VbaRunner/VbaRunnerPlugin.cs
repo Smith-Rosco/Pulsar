@@ -18,7 +18,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
     /// </summary>
     public class VbaRunnerPlugin : IPulsarPlugin, IPluginTiered, IPluginLifecycle, IPluginMetadataProvider, IPluginConfigurable
     {
-        private IWindowService? _windowService;
+        private IWindowShellService? _shellService;
         private IFocusManager? _focusManager;
         private ScriptEngine? _scriptEngine;
         private ILogger<VbaRunnerPlugin>? _logger;
@@ -41,14 +41,14 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
 
         public void Initialize(IServiceProvider services)
         {
-            _windowService = services.GetService(typeof(IWindowService)) as IWindowService;
+            _shellService = services.GetService(typeof(IWindowShellService)) as IWindowShellService;
             _focusManager = services.GetService(typeof(IFocusManager)) as IFocusManager;
             _logger = services.GetService(typeof(ILogger<VbaRunnerPlugin>)) as ILogger<VbaRunnerPlugin>;
             _loc = services.GetService(typeof(ILocalizationService)) as ILocalizationService;
 
-            if (_windowService == null)
+            if (_shellService == null)
             {
-                _logger?.LogWarning("[VbaRunnerPlugin] IWindowService not available");
+                _logger?.LogWarning("[VbaRunnerPlugin] IWindowShellService not available");
             }
             
             _logger?.LogInformation("[VbaRunnerPlugin] Initialized successfully");
@@ -237,7 +237,7 @@ namespace Pulsar.Plugins.Extensions.VbaRunner
 
             // 3. 隐藏 Pulsar 主窗口
             _logger?.LogDebug("[VbaRunnerPlugin] Hiding main window...");
-            _windowService?.HideMainWindow();
+            _shellService?.HideMainWindow();
 
             // 4. 尝试恢复目标窗口焦点 (如果已知)
             if (context.TargetWindowHandle != IntPtr.Zero)

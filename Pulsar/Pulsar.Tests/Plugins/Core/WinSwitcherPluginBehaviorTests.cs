@@ -158,7 +158,7 @@ namespace Pulsar.Tests.Plugins.Core
         {
             var windowService = new Mock<IWindowService>();
             var services = new Mock<IServiceProvider>();
-            services.Setup(s => s.GetService(typeof(IWindowService))).Returns(windowService.Object);
+            services.Setup(s => s.GetService(typeof(IWindowActivationService))).Returns(windowService.Object);
 
             var act = () => new WinSwitcherPlugin().Initialize(services.Object);
 
@@ -171,7 +171,7 @@ namespace Pulsar.Tests.Plugins.Core
         {
             var windowService = new Mock<IWindowService>();
             var services = new Mock<IServiceProvider>();
-            services.Setup(s => s.GetService(typeof(IWindowService))).Returns(windowService.Object);
+            services.Setup(s => s.GetService(typeof(IWindowActivationService))).Returns(windowService.Object);
             services.Setup(s => s.GetService(typeof(IProcessLauncher))).Returns(new Mock<IProcessLauncher>().Object);
 
             var act = () => new WinSwitcherPlugin().Initialize(services.Object);
@@ -437,7 +437,7 @@ namespace Pulsar.Tests.Plugins.Core
             var policy = new Mock<IDiscoveryExclusionPolicy>();
             policy.SetupGet(p => p.Rules).Returns(new List<WindowEligibilityRule>());
             var services = new Mock<IServiceProvider>();
-            services.Setup(s => s.GetService(typeof(IWindowService))).Returns(windowService.Object);
+            services.Setup(s => s.GetService(typeof(IWindowActivationService))).Returns(windowService.Object);
             services.Setup(s => s.GetService(typeof(IProcessLauncher))).Returns(launcher.Object);
             services.Setup(s => s.GetService(typeof(IDiscoveryExclusionPolicy))).Returns(policy.Object);
 

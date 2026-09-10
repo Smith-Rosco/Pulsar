@@ -20,11 +20,11 @@ namespace Pulsar.ViewModels.Dialogs
     /// Window Inspector：列出全部顶层窗口的"可切换"判定报告（含原因），支持
     /// 定位（闪烁）与一键排除（生成最具体的身份规则并运行时 + 持久化双写）。
     /// 排除规则的读写经由 <see cref="IDiscoveryExclusionPolicy"/> 单一所有者（[W2]），
-    /// 判定报告与闪烁仍走 <see cref="IWindowService"/>。
+    /// 判定报告与闪烁仍走 <see cref="IWindowDiscoveryService"/>。
     /// </summary>
     public partial class WindowInspectorViewModel : ObservableObject, IDialogViewModel
     {
-        private readonly IWindowService _windowService;
+        private readonly IWindowDiscoveryService _discoveryService;
         private readonly IDiscoveryExclusionPolicy _exclusionPolicy;
         private readonly ILocalizationService? _loc;
         private readonly ILogger<WindowInspectorViewModel>? _logger;
@@ -49,12 +49,12 @@ namespace Pulsar.ViewModels.Dialogs
         public Task<bool> CanCloseAsync(DialogResult result) => Task.FromResult(true);
 
         public WindowInspectorViewModel(
-            IWindowService windowService,
+            IWindowDiscoveryService discoveryService,
             IDiscoveryExclusionPolicy exclusionPolicy,
             ILocalizationService? loc = null,
             ILogger<WindowInspectorViewModel>? logger = null)
         {
-            _windowService = windowService;
+            _discoveryService = discoveryService;
             _exclusionPolicy = exclusionPolicy;
             _loc = loc;
             _logger = logger;
@@ -74,7 +74,7 @@ namespace Pulsar.ViewModels.Dialogs
             IsLoading = true;
             try
             {
-                var report = await _windowService.GetWindowEligibilityReportAsync();
+                var report = await _discoveryService.GetWindowEligibilityReportAsync();
                 Rows = new ObservableCollection<WindowInspectorRow>(
                     report.Select(r => new WindowInspectorRow(r, _loc)));
             }
@@ -92,7 +92,7 @@ namespace Pulsar.ViewModels.Dialogs
                 return;
             }
 
-            _windowService.FlashWindow(row.Report.Hwnd);
+            _discoveryService.FlashWindow(row.Report.Hwnd);
         }
 
         [RelayCommand]

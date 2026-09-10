@@ -18,7 +18,7 @@ namespace Pulsar.ViewModels.Dialogs
     public partial class PluginSettingsDialogViewModel : ObservableObject, IDialogViewModel
     {
         private readonly PluginViewModel _pluginViewModel;
-        private readonly IWindowService? _windowService;
+        private readonly IWindowDiscoveryService? _discoveryService;
         private readonly IConfigService? _configService;
         private readonly IDiscoveryExclusionPolicy? _exclusionPolicy;
         private readonly ILocalizationService? _loc;
@@ -51,13 +51,13 @@ namespace Pulsar.ViewModels.Dialogs
 
         public PluginSettingsDialogViewModel(
             PluginViewModel pluginViewModel,
-            IWindowService? windowService = null,
+            IWindowDiscoveryService? discoveryService = null,
             IConfigService? configService = null,
             ILocalizationService? loc = null,
             IDiscoveryExclusionPolicy? exclusionPolicy = null)
         {
             _pluginViewModel = pluginViewModel;
-            _windowService = windowService;
+            _discoveryService = discoveryService;
             _configService = configService;
             _exclusionPolicy = exclusionPolicy;
             _loc = loc;
@@ -112,13 +112,13 @@ namespace Pulsar.ViewModels.Dialogs
         private async Task OpenWindowInspectorAsync()
         {
             var dialogService = _pluginViewModel.DialogService;
-            if (dialogService == null || _windowService == null)
+            if (dialogService == null || _discoveryService == null)
             {
                 return;
             }
 
             var inspector = new WindowInspectorViewModel(
-                _windowService,
+                _discoveryService,
                 _exclusionPolicy ?? throw new InvalidOperationException("IDiscoveryExclusionPolicy is not available"),
                 _loc);
 

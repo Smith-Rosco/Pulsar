@@ -83,7 +83,7 @@ namespace Pulsar.Tests.Plugins.Extensions.BookmarkletRunner
             focusManager.Setup(x => x.ActivateWindowAsync(It.IsAny<IntPtr>(), null))
                 .ReturnsAsync(new Pulsar.Core.Focus.FocusActivationResult { Success = true });
             var services = new Mock<IServiceProvider>();
-            services.Setup(x => x.GetService(typeof(IWindowService))).Returns(windowService.Object);
+            services.Setup(x => x.GetService(typeof(IWindowShellService))).Returns(windowService.Object);
             services.Setup(x => x.GetService(typeof(IFocusManager))).Returns(focusManager.Object);
             services.Setup(x => x.GetService(typeof(ILogger<BookmarkletRunnerPlugin>)))
                 .Returns(NullLogger<BookmarkletRunnerPlugin>.Instance);
@@ -129,7 +129,7 @@ namespace Pulsar.Tests.Plugins.Extensions.BookmarkletRunner
             focusManager.Setup(x => x.ActivateWindowAsync(It.IsAny<IntPtr>(), null))
                 .ReturnsAsync(new Pulsar.Core.Focus.FocusActivationResult { Success = true });
             var services = new Mock<IServiceProvider>();
-            services.Setup(x => x.GetService(typeof(IWindowService))).Returns(windowService.Object);
+            services.Setup(x => x.GetService(typeof(IWindowShellService))).Returns(windowService.Object);
             services.Setup(x => x.GetService(typeof(IFocusManager))).Returns(focusManager.Object);
             services.Setup(x => x.GetService(typeof(ILogger<BookmarkletRunnerPlugin>)))
                 .Returns(NullLogger<BookmarkletRunnerPlugin>.Instance);
@@ -175,7 +175,7 @@ namespace Pulsar.Tests.Plugins.Extensions.BookmarkletRunner
             focusManager.Setup(x => x.ActivateWindowAsync(It.IsAny<IntPtr>(), null))
                 .ReturnsAsync(new Pulsar.Core.Focus.FocusActivationResult { Success = true });
             var services = new Mock<IServiceProvider>();
-            services.Setup(x => x.GetService(typeof(IWindowService))).Returns(windowService.Object);
+            services.Setup(x => x.GetService(typeof(IWindowShellService))).Returns(windowService.Object);
             services.Setup(x => x.GetService(typeof(IFocusManager))).Returns(focusManager.Object);
             services.Setup(x => x.GetService(typeof(ILogger<BookmarkletRunnerPlugin>)))
                 .Returns(NullLogger<BookmarkletRunnerPlugin>.Instance);

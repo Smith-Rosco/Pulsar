@@ -26,7 +26,7 @@ namespace Pulsar.Views
         private readonly ILogger<RadialMenuWindow> _logger;
 
         // [Fix] 添加 WindowService 字段以解决报错
-        private readonly IWindowService _windowService;
+        private readonly IWindowShellService _shellService;
         private readonly IFocusManager _focusManager;
         private readonly IMenuViewportService _menuViewportService;
 
@@ -36,7 +36,7 @@ namespace Pulsar.Views
 
         public RadialMenuWindow(
             RadialMenuViewModel vm,
-            IWindowService windowService,
+            IWindowShellService shellService,
             IThemeService themeService,
             ILogger<RadialMenuWindow> logger,
             IFocusManager focusManager,
@@ -44,7 +44,7 @@ namespace Pulsar.Views
         {
             // Initialize Fields First
             _viewModel = vm;
-            _windowService = windowService;
+            _shellService = shellService;
             _themeService = themeService;
             _logger = logger;
             _focusManager = focusManager;
@@ -67,7 +67,7 @@ namespace Pulsar.Views
             };
 
             // 3. [Fix] 注册隐藏自身的能力
-            _windowService.RegisterHideAction(() =>
+            _shellService.RegisterHideAction(() =>
             {
                 this.Dispatcher.Invoke(() =>
                 {

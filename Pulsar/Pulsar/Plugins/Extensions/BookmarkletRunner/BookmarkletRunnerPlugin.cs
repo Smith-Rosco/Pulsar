@@ -20,7 +20,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
     /// </summary>
     public class BookmarkletRunnerPlugin : IPulsarPlugin, IPluginTiered, IPluginMetadataProvider, IPluginConfigurable
     {
-        private IWindowService? _windowService;
+        private IWindowShellService? _shellService;
         private IFocusManager? _focusManager;
         private ILogger<BookmarkletRunnerPlugin>? _logger;
         private ILocalizationService? _loc;
@@ -51,14 +51,14 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
 
         public void Initialize(IServiceProvider services)
         {
-            _windowService = services.GetService(typeof(IWindowService)) as IWindowService;
+            _shellService = services.GetService(typeof(IWindowShellService)) as IWindowShellService;
             _focusManager = services.GetService(typeof(IFocusManager)) as IFocusManager;
             _logger = services.GetService(typeof(ILogger<BookmarkletRunnerPlugin>)) as ILogger<BookmarkletRunnerPlugin>;
             _loc = services.GetService(typeof(ILocalizationService)) as ILocalizationService;
 
-            if (_windowService == null)
+            if (_shellService == null)
             {
-                throw new InvalidOperationException("IWindowService is not available");
+                throw new InvalidOperationException("IWindowShellService is not available");
             }
 
             _logger?.LogInformation("[BookmarkletRunner] Initialized successfully");
@@ -146,7 +146,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
             PulsarContext context,
             CancellationToken cancellationToken = default)
         {
-            if (_windowService == null)
+            if (_shellService == null)
             {
                 return PluginResult.Error(_loc?["Plugin.Bookmarklet.NotInitialized"] ?? "Plugin not initialized");
             }
@@ -258,7 +258,7 @@ namespace Pulsar.Plugins.Extensions.BookmarkletRunner
             }
 
             // 5. 隐藏 Pulsar 主窗口
-            _windowService?.HideMainWindow();
+            _shellService?.HideMainWindow();
             _logger?.LogDebug("[BookmarkletRunner] Pulsar window hidden");
 
             // 6. 聚焦浏览器窗口

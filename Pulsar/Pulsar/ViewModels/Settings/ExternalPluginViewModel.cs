@@ -51,7 +51,7 @@ namespace Pulsar.ViewModels.Settings
             IPluginMetadataRegistry? metadataRegistry = null)
             : base(descriptor, registry, runtimeOps, configService, localizationService,
                    usageTracker, healthMonitor, logService, dialogService, pluginLogger,
-                   windowService: null, processRegistryService: null,
+                   discoveryService: null, processRegistryService: null,
                    scriptFileService: null, scriptValidationService: null,
                    exampleLibraryService: null, metadataRegistry: metadataRegistry)
         {

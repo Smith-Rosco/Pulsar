@@ -67,7 +67,7 @@ namespace Pulsar.ViewModels.Settings
         private readonly IPluginLogService? _logService;
         private readonly IDialogService? _dialogService;
         private readonly ILogger<PluginViewModel>? _itemLogger;
-        private readonly IWindowService? _windowService;
+        private readonly IWindowDiscoveryService? _discoveryService;
         private readonly IProcessRegistryService? _processRegistryService;
         private readonly IScriptFileService? _scriptFileService;
         private readonly IScriptValidationService? _scriptValidationService;
@@ -97,7 +97,7 @@ namespace Pulsar.ViewModels.Settings
             IPluginUsageTracker? usageTracker = null, IPluginHealthMonitor? healthMonitor = null,
             IPluginLogService? logService = null, IDialogService? dialogService = null,
             ILogger<PluginViewModel>? itemLogger = null,
-            IWindowService? windowService = null, IProcessRegistryService? processRegistryService = null,
+            IWindowDiscoveryService? discoveryService = null, IProcessRegistryService? processRegistryService = null,
             IScriptFileService? scriptFileService = null, IScriptValidationService? scriptValidationService = null,
             ExampleLibraryService? exampleLibraryService = null,
             IPluginMetadataRegistry? metadataRegistry = null,
@@ -111,7 +111,7 @@ namespace Pulsar.ViewModels.Settings
             _logService = logService;
             _dialogService = dialogService;
             _itemLogger = itemLogger;
-            _windowService = windowService;
+            _discoveryService = discoveryService;
             _processRegistryService = processRegistryService;
             _scriptFileService = scriptFileService;
             _scriptValidationService = scriptValidationService;
@@ -185,7 +185,7 @@ namespace Pulsar.ViewModels.Settings
             {
                 Plugins.Add(new PluginViewModel(plugin, _registry, _runtimeOps, _configService,
                     _loc!, _usageTracker, _healthMonitor, _logService, _dialogService,
-                    _itemLogger, _windowService, _processRegistryService,
+                    _itemLogger, _discoveryService, _processRegistryService,
                     _scriptFileService, _scriptValidationService, _exampleLibraryService,
                     _metadataRegistry, _exclusionPolicy));
             }
