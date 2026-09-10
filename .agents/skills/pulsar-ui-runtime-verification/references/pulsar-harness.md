@@ -118,3 +118,18 @@ python "<skill>/scripts/analyze-nav-trace.py" artifacts/<before>.log artifacts/<
 - **行尾必须 LF**：`.gitattributes` 为 `* text=auto eol=lf` 且 `core.safecrlf=true`，带 CRLF 的文件在 `git add` 阶段**直接 fatal**（`fatal: CRLF would be replaced by LF in <file>`）。自查 `grep -qU $'\r' <file>`，必要时 `sed -i 's/\r$//' <file>`。
   **已知源头（实测确认）**：`skill-creator` 的 `init_skill.py` 在 Windows 上生成的 4 个文件（`SKILL.md` / `example.py` / `api_reference.md` / `example_asset.txt`）**全部是 CRLF**（`write_text()` 默认把 `\n` 按 `os.linesep` 转换）；同一批次里由 Write 工具产出的文件是 LF。→ **用脚手架生成技能后，入库前必须先做行尾转换。**
   两份镜像副本要求逐字一致 → 转换须**两侧同做**。
+
+## 7. 技能发现路径（各 harness 从哪里读它）
+
+本技能有两份副本，必须逐字一致：
+
+| 副本 | 路径 | 谁读它 |
+|---|---|---|
+| WorkBuddy 用户级 | `C:\Users\milo\.workbuddy\skills\pulsar-ui-runtime-verification\` | WorkBuddy（跨项目可用） |
+| 仓库共享 | `<repo>\.agents\skills\pulsar-ui-runtime-verification\` | **OpenCode** 等读 `.agents/skills` 的 harness；入库随仓库分发 |
+
+- **OpenCode 直接读 `.agents/skills/`**（官方文档 Agent Skills：「Project agent-compatible」路径，与 `.opencode/skills/`、`.claude/skills/` 并列；项目级从 cwd 逐级向上扫到 git worktree 根，沿途全部收集，同名以项目级覆盖全局级）。
+  → **不需要**再往 `.opencode/skills/` 镜像第三份。该目录里现存的 `openspec-*` / `session-journal` 是历史遗留（早期镜像习惯），不必跟风复制；新增技能没有"三处同步"的义务。
+- 若将来要供 Claude Code 使用，`~/.claude/skills/` 与 `<repo>/.claude/skills/` 是同族的 compatible 路径（**未实测**，需自行验证后再宣称支持）。
+- 入口指针：`AGENTS.md` §4 任务路由表有一行指向本技能——新增技能后记得同类登记，否则 always-on 的 AGENTS.md 里没有发现它的线索。
+- 校验：`python <skill-creator>/scripts/package_skill.py <skill-dir> <out-dir>` → 期望 `Skill is valid`；改完正文要重跑（并重建 zip）。

@@ -70,6 +70,7 @@ Operational guide for agents working on the **Pulsar** codebase (.NET 8, WPF/Win
 | Config persistence/writes | `ConfigService.cs` + `ConfigEditSession.cs`. `GetSnapshot()` = deep copy, never mutate; all writes via `ConfigEditSession` (revision-guarded). [009](./Docs/decisions/009-config-snapshot-seam.md), [005](./Docs/decisions/005-config-single-writer.md) |
 | Input injection (PKI) | [Docs/architecture/INPUT_INJECTION.md](./Docs/architecture/INPUT_INJECTION.md) |
 | WPF UI issues | [Docs/lessons/](./Docs/lessons/) |
+| Prove a UI/runtime defect fix (animation, layout overflow) | `.agents/skills/pulsar-ui-runtime-verification/SKILL.md` — evidence over eyeballing: temp trace → self-driven E2E clicks → before/after signature diff; when layout is unmeasurable headless (`ActualWidth == 0`) pin it with a static XAML guard |
 | Architectural decisions / docs standards | [Docs/decisions/](./Docs/decisions/), [Docs/CONTRIBUTING.md](./Docs/CONTRIBUTING.md) — **Document routing** (spec vs ADR vs lessons vs journal) |
 | Architecture overview | [ARCHITECTURE.md](./ARCHITECTURE.md), [Docs/README.md](./Docs/README.md) |
 | Thread safety & concurrency | [Docs/architecture/PLUGIN_SYSTEM.md](./Docs/architecture/PLUGIN_SYSTEM.md) (`ConcurrentDictionary`, `Interlocked`, `Dispatcher.InvokeAsync`) |
