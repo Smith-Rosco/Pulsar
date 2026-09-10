@@ -36,5 +36,8 @@
 - [x] **PKI 模块重命名为 Secret Fill（2026-09-10 17:4x，grill auto-with-guardrails，ADR-031）**：`PKI` 全称 **Public Key Infrastructure**，而本模块是 DPAPI 凭据存储 + SendKeys 注入（零证书、零非对称密钥对）——名字语义错误。**层 1/2/4 改名，层 3 逐字冻结**：目录 `Plugins/Core/{Pki→SecretFill}/`、命名空间 `Pulsar.Plugins.Core.SecretFill`、`PkiPlugin→SecretFillPlugin` / `IPkiSecretStore→ISecretStore` / `PkiExecution*→SecretFillExecution*` 等（70 文件）；**`com.pulsar.pki` 保持逐字不变**（用户 `Profiles.json` 5 处 slot `plugin` 值 = 冻结契约，`secrets.json` 0 处无需迁移）。**历史记录不改写**（`CHANGELOG`/`RELEASE_NOTES`/`Docs/archive`/`Docs/journal`/`openspec/changes`）；`CONTEXT.md` 术语表新增 `Secret Fill`（`_Avoid_: PKI`）+ `Plugin Id` 条目。验证：build **0/0**；全量 **1521/1521**（与基线一致）；**层3 三重计数恒等**（源码树 59→59 / 用户 Profiles.json 5→5 / PluginUsageStats 1→1）。新增 `Docs/decisions/031-secret-fill-rename-plugin-id-frozen.md`。**未 commit**（push 由用户执行）。
   - **层3（`com.pulsar.pki` → 新 ID）明确不做**：收益为零（用户只看得到 `AutoFill` 显示名），成本是配置迁移 + 旧 ID 别名读路径；等有插件市场/外部消费者时再议（是待办候选）。
 
+- [x] **架构审查候选 W1 已落地（2026-09-10 19:1x，grill auto + TDD）**：`WinSwitcherPlugin.LaunchApplicationAsync` 直调 `Process.Start` → 改走既有 `IProcessLauncher` seam（ADR-012；`Initialize` GetService + fail-fast）；ExecuteAsync 决策树（launch 验证/异常映射、switch-or-launch 回退、activate）新增 15 用例首次 Moq 可测（红 6 → 绿 25/25）。build 0/0，全量 **1556/1556**。`IWindowActivationService.LaunchApplicationAsync` 实证**零调用方**，判范围外 → 删除候选见下条。W2/W3/W4 候选未开。
+- [ ] **接口删除候选（低成本轮）**：`IWindowActivationService.LaunchApplicationAsync`（`WindowService.cs:342` + 接口 `IWindowActivationService.cs:27`）零调用方——连同实现一起删（接口变更 = 契约变更，需用户裁决 + 全量回归）。同轮可顺带复查 `WindowService` 其余 facade 方法的活跃度。
+
 ## 已完成（历史保留）
 

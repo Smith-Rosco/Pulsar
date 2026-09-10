@@ -26,6 +26,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
         
         // Initialized in Initialize() method with null check - guaranteed non-null after initialization
         private IWindowService _windowService = null!;
+        private IProcessLauncher _processLauncher = null!;
         private ILogger<WinSwitcherPlugin>? _logger;
         private ITrayService? _trayService;
         private ILocalizationService? _loc;
@@ -55,6 +56,13 @@ namespace Pulsar.Plugins.Core.WinSwitcher
             if (_windowService == null)
             {
                 throw new InvalidOperationException("IWindowService service is not available");
+            }
+
+            _processLauncher = (services.GetService(typeof(IProcessLauncher)) as IProcessLauncher)!;
+
+            if (_processLauncher == null)
+            {
+                throw new InvalidOperationException("IProcessLauncher service is not available");
             }
 
             _logger?.LogInformation($"{LogPrefix} Initialized successfully");
@@ -325,7 +333,7 @@ namespace Pulsar.Plugins.Core.WinSwitcher
                     WindowStyle = ProcessWindowStyle.Normal
                 };
 
-                Process.Start(startInfo);
+                _processLauncher.Launch(startInfo);
                 _logger?.LogInformation($"{LogPrefix} Successfully launched: {{ExePath}}", exePath);
                 return Task.FromResult(PluginResult.Ok(string.Format(_loc?["Plugin.WinSwitcher.Launched"] ?? "Launched {0}", Path.GetFileName(exePath))));
             }
