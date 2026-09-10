@@ -499,21 +499,37 @@ def cmd_all(args) -> None:
 
 # ------------------------------------------------------------------------ changelog
 
+def _mask_html_comments(text: str) -> str:
+    """Blank out HTML comment bodies, preserving line structure and offsets.
+
+    Offsets stay identical so a match found in the masked copy can be applied
+    to the original text.
+    """
+    return re.sub(r"<!--.*?-->", lambda m: re.sub(r"[^\n]", " ", m.group(0)), text, flags=re.S)
+
+
 def cmd_changelog(args) -> None:
     t = REPORT.stage("固化 CHANGELOG")
     version = args.version
     text = CHANGELOG.read_text(encoding="utf-8-sig")
-    m = re.search(r"## \[Unreleased\]\n(.*?)(?=\n## |\Z)", text, re.S)
+    # 文件顶部的模板注释块里也有一个示例 `## [Unreleased]`（缩进 2 空格）。先按行结构
+    # 屏蔽 HTML 注释再定位，否则会把注释内的示例标题当成真实段替换掉——
+    # 2026-09-10 发布 v1.14.0 时正是踩到这个坑（污染注释模板 + 真实段未固化）。
+    masked = _mask_html_comments(text)
+    m = re.search(r"^## \[Unreleased\][ \t]*\n(.*?)(?=^## |\Z)", masked, re.S | re.M)
     if not m:
         REPORT.fail("changelog", "未找到 [Unreleased] 段"); raise SystemExit(REPORT.render_l1())
-    body = m.group(1).strip()
+    body = text[m.start(1):m.end(1)].strip()
     real = [ln for ln in body.splitlines() if ln.strip() and not re.fullmatch(r"[-*]?\s*(暂无|TODO|TBD)?\s*", ln)]
     if not real:
         REPORT.fail("changelog", "[Unreleased] 段无真实条目（只有占位符），拒绝固化",
                     hint="先按提交记录补全 CHANGELOG 的 Unreleased 段")
         raise SystemExit(REPORT.render_l1())
     today = datetime.now().strftime("%Y-%m-%d")
-    text = text.replace("## [Unreleased]", f"## [{version}] - {today}\n\n## [Unreleased]", 1)
+    # 只替换标题那一行本体，body（含全部换行）原样保留——避免 re.M 下 lookahead 把
+    # 行尾 \n 划进 body 后又被重建串吃掉，造成段标题粘连、内容丢失。
+    heading = "## [Unreleased]"
+    text = text[:m.start()] + f"## [{version}] - {today}\n\n{heading}" + text[m.start() + len(heading):]
     CHANGELOG.write_bytes(text.encode("utf-8"))
     REPORT.check(f"CHANGELOG [Unreleased] → [{version}] - {today}", True, f"{len(real)} 条真实条目")
     REPORT.end_stage(t)
