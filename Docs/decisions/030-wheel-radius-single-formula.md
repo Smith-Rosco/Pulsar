@@ -1,6 +1,6 @@
 # ADR-030: Root wheel radius single formula (kill the dual-path divergence)
 
-**Status**: Implemented（代码已落地 2026-09-10，build 0/0、全量 1491/1491；**Accepted 待用户真机 sanity**——N=10/12 配置各一轮：中心环带命中、边缘槽命中、编辑器预览对照）
+**Status**: Accepted（2026-09-10 实施并经用户真机 sanity 确认：build 0/0、全量 1491/1491，N=10/12 中心环带命中 / 边缘槽命中 / 编辑器预览对照均通过）
 **Date**: 2026-09-10
 **Deciders**: Project owner (milo), pending grilling session
 **Origin**: R1 遗留（`Docs/journal/NEXT.md` R1 条目「⚠ 已记录未修」；R1 引入 `WheelGeometry` 时收口了 (250,250) 硬编码，半径双路径留待本 ADR）
