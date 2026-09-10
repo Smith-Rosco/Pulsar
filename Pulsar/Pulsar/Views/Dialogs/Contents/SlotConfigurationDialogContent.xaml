@@ -161,25 +161,41 @@
                                    Width="26" Height="26"
                                    Padding="{StaticResource Pulsar.Pad.XS}"
                                    Margin="{StaticResource Pulsar.Gap.Right.SM}"
-                                   Icon="{ui:SymbolIcon FolderOpen16}"
                                    Style="{StaticResource PulsarIconButtonStyle}"
-                                   ToolTip="{lex:Locale Dialog.PluginSettings.Browse}"
-                                   AutomationProperties.Name="{lex:Locale Dialog.PluginSettings.Browse}"
+                                   ToolTip="{Binding PickerButtonTooltip}"
+                                   AutomationProperties.Name="{Binding PickerButtonTooltip}"
                                    Command="{Binding Tag.PickParameterValueCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                    CommandParameter="{Binding}"
-                                   Visibility="{Binding HasPicker, Converter={StaticResource BoolToVis}}"/>
+                                   Visibility="{Binding HasPicker, Converter={StaticResource BoolToVis}}">
+                            <ui:Button.Icon>
+                                <!-- 图标随选择器语义走：密码→钥匙，进程→窗口，文件→文件夹。
+                                     此前恒为 FolderOpen16，「选择密码」行上也显示文件夹，语义不对。 -->
+                                <ui:SymbolIcon Symbol="{Binding PickerButtonIcon}"/>
+                            </ui:Button.Icon>
+                        </ui:Button>
 
                         <ui:ToggleSwitch Grid.Column="1"
                                          IsChecked="{Binding Value, Mode=TwoWay, Converter={StaticResource StringToBool}}"
                                          Visibility="{Binding IsBoolType, Converter={StaticResource BoolToVis}}"/>
 
+                        <!-- ⚠️ Visibility 只能有一个来源。此前这里同时挂了本地
+                             Visibility="{Binding IsBoolType...}" 与 Style 内的
+                             IsSecretSelector DataTrigger —— WPF 中本地值优先级高于
+                             Style Trigger，Trigger 永远不生效，于是 secret 字段上
+                             TextBox 与下面的 Border 同时可见：TextBox 的
+                             PlaceholderText（"Select a saved password"）与 Border 的
+                             DisplayValue（"No secret selected"）叠在同一格。
+                             现全部收进 Style.Triggers，由两个 DataTrigger 统一裁决。 -->
                         <ui:TextBox Grid.Column="1"
                                     Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                    PlaceholderText="{Binding Placeholder}"
-                                    Visibility="{Binding IsBoolType, Converter={StaticResource BoolToVisInverse}}">
+                                    PlaceholderText="{Binding Placeholder}">
                             <ui:TextBox.Style>
                                 <Style TargetType="ui:TextBox" BasedOn="{StaticResource {x:Type ui:TextBox}}">
+                                    <Setter Property="Visibility" Value="Visible"/>
                                     <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsBoolType}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
                                         <DataTrigger Binding="{Binding IsSecretSelector}" Value="True">
                                             <Setter Property="Visibility" Value="Collapsed"/>
                                         </DataTrigger>

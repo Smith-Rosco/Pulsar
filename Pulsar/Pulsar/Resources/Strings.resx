@@ -744,6 +744,15 @@
     <data name="Dialog.AddSlot.BrowseIcon" xml:space="preserve">
     <value>Browse icon file</value>
   </data>
+  <data name="Dialog.AddSlot.PickProcess" xml:space="preserve">
+    <value>Choose a running app</value>
+  </data>
+  <data name="Dialog.AddSlot.PickFile" xml:space="preserve">
+    <value>Browse for a file</value>
+  </data>
+  <data name="Dialog.AddSlot.PickSecret" xml:space="preserve">
+    <value>Choose a saved password</value>
+  </data>
     <data name="Dialog.AddSlot.SaveSlot" xml:space="preserve">
     <value>Save Slot</value>
   </data>
@@ -865,6 +874,9 @@
   <!-- ==================== Dialog.ProcessPicker ==================== -->
   <data name="Dialog.ProcessPicker.SearchPlaceholder" xml:space="preserve">
     <value>Search running apps...</value>
+  </data>
+  <data name="Dialog.ProcessPicker.Refresh" xml:space="preserve">
+    <value>Refresh list</value>
   </data>
   <!-- ==================== Dialog.QuickSecrets ==================== -->
   <data name="Dialog.QuickSecrets.LabelRequired" xml:space="preserve">

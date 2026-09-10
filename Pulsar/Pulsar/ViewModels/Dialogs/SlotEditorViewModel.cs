@@ -453,7 +453,9 @@ namespace Pulsar.ViewModels.Dialogs
                 _secretDisplayResolver,
                 AvailablePlugins));
 
-            // 新行默认展开（3.4 手风琴）：互斥裁决同时收起旧行，焦点即落新行。
+            // 新行默认展开（3.4 手风琴）：这是用户主动添加，展开是期待的结果；
+            // 互斥裁决同时收起旧行，焦点即落新行。【默认折叠】（2026-09-10 用户反馈）
+            // 只适用于从已保存配置载入的行 —— 见 ReloadSubActionRows。
             row.IsExpanded = true;
             SubActions.Add(row);
             OnPropertyChanged(nameof(HasSubActions));
@@ -588,14 +590,19 @@ namespace Pulsar.ViewModels.Dialogs
                 return;
             }
 
+            // [2026-09-10 用户反馈] 从已保存配置载入的行一律折叠：多数 slot 没有子动作，
+        // 少数有的也不该一进门就占满一屏；展开是用户按需动作。
             foreach (var descriptor in Slot.SubActions)
             {
-                SubActions.Add(HookRow(new SubSlotEditorRow(
+                var row = HookRow(new SubSlotEditorRow(
                     descriptor,
                     _metadataRegistry,
                     PickSubActionParameterValueAsync,
                     _secretDisplayResolver,
-                    AvailablePlugins)));
+                    AvailablePlugins));
+
+                row.IsExpanded = false;
+                SubActions.Add(row);
             }
 
             OnPropertyChanged(nameof(HasSubActions));
@@ -614,8 +621,10 @@ namespace Pulsar.ViewModels.Dialogs
         }
 
         /// <summary>
-        /// [3.4 手风琴] 行展开互斥由 owner 统一裁决：任一行展开时收起其余行。
+        /// 挂上行的展开互斥裁决（[3.4 手风琴]：任一行展开时收起其余行），并返回该行。
         /// 订阅随行的加入/移除成对挂钩，Dispose 前先解绑。
+        /// 注意本方法不管初始展开态——折叠策略由调用点决定
+        /// （<see cref="AddSubAction"/> 展开、<see cref="ReloadSubActionRows"/> 折叠）。
         /// </summary>
         private SubSlotEditorRow HookRow(SubSlotEditorRow row)
         {

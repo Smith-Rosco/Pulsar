@@ -227,25 +227,37 @@
                                    Height="26"
                                    Padding="{StaticResource Pulsar.Pad.XS}"
                                    Margin="{StaticResource Pulsar.Gap.Right.SM}"
-                                   Icon="{ui:SymbolIcon FolderOpen16}"
                                    Style="{StaticResource PulsarIconButtonStyle}"
-                                   ToolTip="{lex:Locale Dialog.AddSlot.BrowseIcon}"
-                                   AutomationProperties.Name="{lex:Locale Dialog.AddSlot.BrowseIcon}"
+                                   ToolTip="{Binding PickerButtonTooltip}"
+                                   AutomationProperties.Name="{Binding PickerButtonTooltip}"
                                    Command="{Binding Tag.PickParameterValueCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                    CommandParameter="{Binding}"
-                                   Visibility="{Binding HasPicker, Converter={StaticResource BoolToVis}}"/>
+                                   Visibility="{Binding HasPicker, Converter={StaticResource BoolToVis}}">
+                            <ui:Button.Icon>
+                                <!-- 图标随选择器语义走（密码→钥匙 / 进程→窗口 / 文件→文件夹），
+                                     不再恒为 FolderOpen16。 -->
+                                <ui:SymbolIcon Symbol="{Binding PickerButtonIcon}"/>
+                            </ui:Button.Icon>
+                        </ui:Button>
 
                         <ui:ToggleSwitch Grid.Column="1"
                                          IsChecked="{Binding Value, Mode=TwoWay, Converter={StaticResource StringToBool}}"
                                          Visibility="{Binding IsBoolType, Converter={StaticResource BoolToVis}}"/>
 
+                        <!-- ⚠️ Visibility 只能有一个来源：本地值优先级高于 Style Trigger，
+                             二者并存会让 IsSecretSelector 的 DataTrigger 永久失效，
+                             secret 字段上 TextBox 与 Border 叠在同一格（placeholder 重叠）。
+                             详见 SlotConfigurationDialogContent.xaml 同位置注释。 -->
                         <ui:TextBox Grid.Column="1"
                                     Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                    PlaceholderText="{Binding Placeholder}"
-                                    Visibility="{Binding IsBoolType, Converter={StaticResource BoolToVisInverse}}">
+                                    PlaceholderText="{Binding Placeholder}">
                             <ui:TextBox.Style>
                                 <Style TargetType="ui:TextBox" BasedOn="{StaticResource {x:Type ui:TextBox}}">
+                                    <Setter Property="Visibility" Value="Visible"/>
                                     <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsBoolType}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
                                         <DataTrigger Binding="{Binding IsSecretSelector}" Value="True">
                                             <Setter Property="Visibility" Value="Collapsed"/>
                                         </DataTrigger>

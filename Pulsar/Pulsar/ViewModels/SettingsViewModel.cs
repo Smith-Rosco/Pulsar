@@ -883,9 +883,10 @@ namespace Pulsar.ViewModels
         }
 
         /// <summary>
-        /// 嵌入式提交（unify 3.3）：落盘新 slot（CommitCreatedSlot）后把草稿 tab
-        /// 重注册为实体编辑 tab（slot-editor:&lt;ctx&gt;:&lt;slotNo&gt;）——新建 → 编辑
-        /// 连续体验，无需二次点击。
+        /// 嵌入式提交（unify 3.3 + save-flow fix 2026-09-10）：把新 slot 提交为实体
+        /// <b>并立即落盘</b>，随后把草稿 tab 重注册为实体编辑 tab
+        /// （<c>slot-editor:&lt;ctx&gt;:&lt;slotNo&gt;</c>）——新建 → 编辑连续体验，
+        /// 无需二次点击，也不会再触发「未保存更改」守卫。
         /// </summary>
         private async Task CommitCreatedSlotFromTabAsync(PluginSlot? createdSlot, string contextKey, string contextName)
         {
@@ -895,7 +896,6 @@ namespace Pulsar.ViewModels
             }
 
             _slotEditor.CommitCreatedSlot(createdSlot);
-            SendNotification(_loc["Notification.Success"], string.Format(_loc["Notification.SlotAddedFormat"], createdSlot.Label), ControlAppearance.Success);
 
             // P2 Fix: If the newly created slot is a PKI slot and secretId is still empty,
             // immediately open the secret picker so the user can link a secret.
@@ -910,15 +910,29 @@ namespace Pulsar.ViewModels
                 return;
             }
 
-            var draftCompositeId = $"{SettingsPageIds.SlotEditor}:{contextKey}:draft";
-            _entityPages.Remove(draftCompositeId);
+            // [Save-flow fix 2026-09-10] 「保存槽位」应当是用户能做的最后一次决策：
+            // 它同时把新槽位提交为实体（内存）并落盘（Save → ResetDirty），于是后续
+            // 任何导航守卫都不会再弹「未保存更改」。此前这里只提交内存、不落盘，
+            // 提交后的任何一次导航都会撞上守卫对话框（用户实测：保存槽位 → 未保存
+            // 更改 → 保存 → 又跳一次），保存机制因此显得反复跳转。
+            await Save();
 
+            var draftCompositeId = $"{SettingsPageIds.SlotEditor}:{contextKey}:draft";
+
+            // 一次性切换：先把草稿 tab 重注册为实体编辑 tab，再单次导航过去。
+            // 注意不能先导航到常驻页再导航回来——第一次导航离开临时页时
+            // SettingsShellViewModel 会走 userInitiated 路径评估守卫，
+            // 那时 Save 尚未发生（本 bug 的原形态）。
+            _entityPages.Remove(draftCompositeId);
             var entityId = $"{contextKey}:{createdSlot.Slot}";
             _entityPages.Register($"{SettingsPageIds.SlotEditor}:{entityId}", _ => BuildSlotEditorPage(createdSlot));
 
-            // 强制回收草稿 tab（不走脏确认：草稿已提交为实体，其"未保存"状态已落地），
-            // 再激活实体编辑 tab —— 与 P1 同一激活语义（同实体二次点击复用）。
+            // 草稿 tab 注销（不走脏确认：草稿已提交为实体并落盘），单次导航到实体编辑 tab。
             await _transientPages.DiscardTransientPageAsync(draftCompositeId);
+
+            // 提交成功的通知放在落盘之后：避免"保存失败但提示已添加"的假成功。
+            SendNotification(_loc["Notification.Success"], string.Format(_loc["Notification.SlotAddedFormat"], createdSlot.Label), ControlAppearance.Success);
+
             var title = string.Format(_loc["Settings.SlotEditor.TabTitleFormat"], createdSlot.Label, contextName);
             await _transientPages.OpenTransientPageAsync(SettingsPageIds.SlotEditor, entityId, title);
         }

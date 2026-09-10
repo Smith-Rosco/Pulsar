@@ -934,6 +934,49 @@ namespace Pulsar.Tests.ViewModels
             rows[1].IsExpanded.Should().BeFalse();
         }
 
+        /// <summary>
+        /// [2026-09-10 用户反馈] 子动作行默认折叠：多数 slot 没有子动作，一进门就展开
+        /// 会占满一屏。仅"新增子动作"是用户主动动作，其新行仍展开。
+        /// </summary>
+        [Fact]
+        public void SubActionRows_LoadedFromSlotShouldStartCollapsed()
+        {
+            var loc = CreateLoc();
+            var slot = new PluginSlot
+            {
+                Slot = 1,
+                PluginId = "com.pulsar.winswitcher",
+                Action = "switch",
+                Color = string.Empty,
+                Args = new Dictionary<string, string>(),
+                SubActions = new List<SubSlotDescriptor>
+                {
+                    new("com.pulsar.command", "run", new Dictionary<string, string>(), "First", string.Empty, string.Empty),
+                    new("com.pulsar.command", "run", new Dictionary<string, string>(), "Second", string.Empty, string.Empty)
+                }
+            };
+
+            var vm = new SlotEditorViewModel(
+                SlotEditorMode.Edit,
+                BuildTestCards(loc),
+                CreateDraftSlot,
+                (s, action) => { s.Action = action ?? string.Empty; RefreshSlot(s); },
+                field => Task.CompletedTask,
+                s => Task.CompletedTask,
+                s => Task.CompletedTask,
+                loc,
+                existingSlot: slot,
+                metadataRegistry: CreateMetadataRegistry());
+
+            vm.SubActions.Should().HaveCount(2);
+            vm.SubActions.Should().OnlyContain(row => !row.IsExpanded,
+                "从已保存配置载入的子动作行一律折叠，展开是按需动作");
+
+            // 反向保证：新增（用户主动）仍是展开的，否则折叠化会吃掉"加完就能编"的体验。
+            vm.AddSubActionCommand.Execute(null);
+            vm.SubActions[^1].IsExpanded.Should().BeTrue("新增子动作后新行展开，便于立即编辑");
+        }
+
         [Fact]
         public void SubActionAccordion_RemovedRowShouldStopParticipatingInMutex()
         {

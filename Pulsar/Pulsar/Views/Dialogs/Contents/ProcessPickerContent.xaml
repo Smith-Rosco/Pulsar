@@ -5,11 +5,21 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:viewmodels="clr-namespace:Pulsar.ViewModels.Dialogs"
+             xmlns:converters="clr-namespace:Pulsar.Core.Converters"
              xmlns:lex="clr-namespace:Pulsar.Core.Localization"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="400">
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Self-merge ButtonStyles.xaml（同时带入 Tokens.xaml）：App.xaml 刻意
+                     不加载 ButtonStyles.xaml，本控件又用到了 PulsarSecondaryButtonStyle，
+                     不自带就是运行时资源查找失败。 -->
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid>
@@ -18,10 +28,37 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <ui:TextBox Grid.Row="0" x:Name="SearchBox" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
-                    PlaceholderText="{lex:Locale Dialog.ProcessPicker.SearchPlaceholder}" 
-                    Icon="{ui:SymbolIcon Search24}"
-                    Margin="{StaticResource Pulsar.Gap.Bottom.LG}"/>
+        <Grid Grid.Row="0" Margin="{StaticResource Pulsar.Gap.Bottom.LG}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <ui:TextBox Grid.Column="0" x:Name="SearchBox" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                        PlaceholderText="{lex:Locale Dialog.ProcessPicker.SearchPlaceholder}" 
+                        Icon="{ui:SymbolIcon Search24}"/>
+
+            <!-- 刷新：进程可能在对话框打开期间启动/退出，首屏之后没有别的刷新入口。
+                 刷新中换成 ProgressRing，兼作按钮的忙碌反馈。 -->
+            <ui:Button Grid.Column="1"
+                       x:Name="RefreshButton"
+                       Margin="{StaticResource Pulsar.Gap.Left.SM}"
+                       Padding="{StaticResource Pulsar.Pad.H10V8}"
+                       Style="{StaticResource PulsarSecondaryButtonStyle}"
+                       Command="{Binding RefreshCommand}"
+                       IsEnabled="{Binding CanRefresh}"
+                       ToolTip="{lex:Locale Dialog.ProcessPicker.Refresh}"
+                       AutomationProperties.Name="{lex:Locale Dialog.ProcessPicker.Refresh}"
+                       AutomationProperties.AutomationId="Pulsar.ProcessPicker.Refresh">
+                <Grid>
+                    <ui:SymbolIcon Symbol="ArrowClockwise24"
+                                   Visibility="{Binding IsRefreshing, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                    <ui:ProgressRing IsIndeterminate="True"
+                                     Width="16" Height="16"
+                                     Visibility="{Binding IsRefreshing, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                </Grid>
+            </ui:Button>
+        </Grid>
 
         <ListBox Grid.Row="1" ItemsSource="{Binding FilteredProcesses}" 
                  SelectedItem="{Binding SelectedProcess}"

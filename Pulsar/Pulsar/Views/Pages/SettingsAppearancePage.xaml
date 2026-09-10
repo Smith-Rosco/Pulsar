@@ -82,8 +82,20 @@
                 </ui:CardExpander>
 
                 <!-- 主题预设：色块网格（不做实时渲染预览）。色值移植自
-                     RadialThemePresetCatalog（见 SettingsAppearancePage.xaml.cs）。 -->
-                <ui:CardExpander Icon="PaintBrush24" Header="{lex:Locale Settings.Appearance.ThemePreset}" Margin="{StaticResource Pulsar.Gap.Bottom.MD}" IsExpanded="True">
+                     RadialThemePresetCatalog（见 SettingsAppearancePage.xaml.cs）。
+                     [2026-09-10 用户反馈] 配置项少的卡片不做折叠——只有标题 + 一行
+                     色块，折叠只会多一次点击。此处保留 CardExpander 的卡片外观
+                     （图标 + 标题 + 边框），但 IsEnabled=False 锁死在展开态：
+                     Wpf.Ui 的 CardExpander 没有"常驻展开"开关，IsEnabled=False 会
+                     让点击标题栏不再切换（IsExpanded 保持 True），同时灰化整个卡片
+                     会连色块选择一起禁用——所以正文里的交互控件必须显式
+                     IsEnabled="True" 重新点亮（子元素显式值优先于继承）；
+                     标题栏的灰化已由标题 TextBlock 的显式前景色校正。 -->
+                <ui:CardExpander Icon="PaintBrush24" Header="{lex:Locale Settings.Appearance.ThemePreset}"
+                                 Margin="{StaticResource Pulsar.Gap.Bottom.MD}"
+                                 IsExpanded="True"
+                                 IsEnabled="False"
+                                 HorizontalContentAlignment="Stretch">
                     <StackPanel>
                         <TextBlock Text="{lex:Locale Settings.Appearance.ThemePresetDescription}"
                                    ToolTip="{lex:Locale Settings.Appearance.ThemePresetDescriptionDetail}"
@@ -94,7 +106,9 @@
                                    FontSize="{StaticResource Pulsar.Type.Caption}"
                                    Margin="{StaticResource Pulsar.Gap.Bottom.MD}"/>
 
-                        <ListBox ItemsSource="{Binding ThemePresetOptions, RelativeSource={RelativeSource AncestorType=Page}, Mode=OneWay}"
+                        <!-- 父级 IsEnabled=False（锁展开），ListBox 显式点亮。 -->
+                        <ListBox x:Name="ThemePresetList"
+                                 ItemsSource="{Binding ThemePresetOptions, RelativeSource={RelativeSource AncestorType=Page}, Mode=OneWay}"
                                  SelectedValue="{Binding DataContext.ThemePreset, RelativeSource={RelativeSource AncestorType=Page}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                  SelectedValuePath="Tag"
                                  AutomationProperties.Name="{lex:Locale Settings.Appearance.ThemePreset}"

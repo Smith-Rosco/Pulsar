@@ -95,6 +95,8 @@ namespace Pulsar.ViewModels.Dialogs
         /// <summary>
         /// [3.4 手风琴] 行展开状态；互斥（同时只展开一行）由 owner
         /// <see cref="SlotEditorViewModel"/> 在 PropertyChanged 里统一裁决。
+        /// 默认折叠（2026-09-10 用户反馈）：多数 slot 没有子动作，进编辑页时
+        /// 一屏展开的表单没有意义，用户按需展开即可；仅"新增子动作"后的新行展开。
         /// </summary>
         [ObservableProperty]
         private bool _isExpanded;

@@ -1190,6 +1190,21 @@
     xml:space="preserve">
     <value>浏览图标文件</value>
   </data>
+  <data
+    name="Dialog.AddSlot.PickProcess"
+    xml:space="preserve">
+    <value>选择运行中的应用</value>
+  </data>
+  <data
+    name="Dialog.AddSlot.PickFile"
+    xml:space="preserve">
+    <value>浏览文件</value>
+  </data>
+  <data
+    name="Dialog.AddSlot.PickSecret"
+    xml:space="preserve">
+    <value>选择已保存的密码</value>
+  </data>
     <data
     name="Dialog.AddSlot.SaveSlot"
     xml:space="preserve">
@@ -1384,6 +1399,11 @@
     name="Dialog.ProcessPicker.SearchPlaceholder"
     xml:space="preserve">
     <value>搜索运行中的应用...</value>
+  </data>
+  <data
+    name="Dialog.ProcessPicker.Refresh"
+    xml:space="preserve">
+    <value>刷新列表</value>
   </data>
   <data
     name="Dialog.QuickSecrets.LabelRequired"

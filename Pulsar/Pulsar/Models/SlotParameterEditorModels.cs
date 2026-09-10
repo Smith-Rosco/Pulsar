@@ -294,6 +294,53 @@ namespace Pulsar.Models
             _ => "Choose"
         };
 
+        /// <summary>
+        /// 选择器按钮的图标（Fluent Symbol 名）。随选择器语义走 —— 密码用钥匙、
+        /// 进程用窗口、文件用文件夹。此前 XAML 恒为 FolderOpen16，于是「选择密码」
+        /// 行上也画着文件夹，语义不对（2026-09-10 用户反馈）。
+        /// </summary>
+        public string PickerButtonIcon => Metadata.PickerIntent switch
+        {
+            SlotPickerIntent.Process => "WindowConsole20",
+            SlotPickerIntent.File => "FolderOpen16",
+            SlotPickerIntent.Secret => "Key24",
+            _ => "ChevronRight16"
+        };
+
+        /// <summary>
+        /// 选择器按钮的 ToolTip / 无障碍名。与 <see cref="PickerButtonLabel"/> 不同，
+        /// 这是给用户的完整句子（已本地化），不是按钮上那一个词。
+        /// 此前 XAML 复用 <c>Dialog.PluginSettings.Browse</c>（"浏览"），
+        /// 连密码选择器也显示成"浏览"。
+        /// </summary>
+        public string PickerButtonTooltip
+        {
+            get
+            {
+                var loc = FieldLoc;
+                if (loc == null)
+                {
+                    return PickerButtonLabel;
+                }
+
+                var key = Metadata.PickerIntent switch
+                {
+                    SlotPickerIntent.Process => "Dialog.AddSlot.PickProcess",
+                    SlotPickerIntent.File => "Dialog.AddSlot.PickFile",
+                    SlotPickerIntent.Secret => "Dialog.AddSlot.PickSecret",
+                    _ => null
+                };
+
+                if (key == null)
+                {
+                    return PickerButtonLabel;
+                }
+
+                var text = loc[key];
+                return string.IsNullOrWhiteSpace(text) ? PickerButtonLabel : text;
+            }
+        }
+
         public bool IsSecretSelector => Metadata.PickerIntent == SlotPickerIntent.Secret;
 
         public bool IsReadOnlySelector => IsSecretSelector;

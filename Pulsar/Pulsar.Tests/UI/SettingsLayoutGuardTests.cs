@@ -21,6 +21,15 @@
 //      horizontal scrolling, so the right edge was silently clipped.
 //      See Docs/lessons/WPF_SETTINGS_PANEL_WIDTH_CONTENT_DRIVEN.md.
 //
+//   4. Visibility declared TWICE for one element: a local Visibility binding on
+//      the tag AND a Visibility Setter/DataTrigger in the element's own Style.
+//      WPF resolves a local value above a Style trigger, so the trigger is dead
+//      forever — both branches then render at once. On a secret slot parameter
+//      this stacked the TextBox placeholder ("Select a saved password") on top
+//      of the picker Border's DisplayValue ("No secret selected") in the same
+//      grid column (found 2026-09-10). Consolidate every condition into
+//      Style.Triggers and keep the local attribute off the tag.
+//
 // These are source scans rather than rendered-layout assertions on purpose: the
 // test host has no desktop session, so Window.Show() yields ActualWidth == 0 and
 // WPF-UI's VisualState pane animations never run (verified — see journal
@@ -89,6 +98,23 @@ namespace Pulsar.Tests.UI
         /// </summary>
         private static readonly Regex DeadAccentToken = new(
             @"SystemFillColorAccentBrush|SystemFillColorAccentBackground\d", RegexOptions.Compiled);
+
+        /// <summary>
+        /// An element start tag that carries a LOCAL <c>Visibility</c> attribute (usually a
+        /// binding). Captured with the tag body so the Style block that follows can be inspected
+        /// for a competing Visibility declaration.
+        /// </summary>
+        private static readonly Regex LocalVisibilityTag = new(
+            @"<(?<tag>[A-Za-z_][\w:.]*)\b(?<body>[^>]*?)\bVisibility\s*=\s*""(?<value>[^""]*)""",
+            RegexOptions.Compiled | RegexOptions.Singleline);
+
+        /// <summary>
+        /// A Visibility assignment inside a Style (<c>&lt;Setter Property="Visibility"</c> or
+        /// <c>&lt;Trigger</c>/<c>&lt;DataTrigger</c> whose setter targets Visibility). Matched
+        /// loosely against the element's own Style block.
+        /// </summary>
+        private static readonly Regex StyleVisibilitySetter = new(
+            @"<Setter\s+Property=""Visibility""", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         [Fact]
         public void No_xaml_foreground_is_hardcoded_to_white_or_black()
@@ -212,6 +238,63 @@ namespace Pulsar.Tests.UI
                 + string.Join("\n  - ", violations));
         }
 
+        [Fact]
+        public void No_element_declares_visibility_both_locally_and_in_its_own_style()
+        {
+            var root = ResolvePulsarRoot();
+            var violations = new List<string>();
+
+            foreach (var file in EnumerateXaml(root))
+            {
+                // Comments in these very templates explain the trap, so they must not count.
+                var text = StripComments(File.ReadAllText(file));
+                foreach (Match m in LocalVisibilityTag.Matches(text))
+                {
+                    // A local Visibility on the tag already outranks any Style trigger, so a
+                    // competing setter inside this element's own <Style> is unreachable. Locate
+                    // the element's opening tag, then its matching </Type.Style> (or the next
+                    // </Type> as a lower bound) and look for a Visibility Setter in that window.
+                    var tag = m.Groups["tag"].Value;
+                    var openEnd = m.Index + m.Length;
+                    var styleStart = text.IndexOf($"<{tag}.Style", openEnd, StringComparison.Ordinal);
+                    if (styleStart < 0) continue;
+
+                    var styleEnd = text.IndexOf($"</{tag}.Style>", styleStart, StringComparison.Ordinal);
+                    if (styleEnd < 0) styleEnd = text.IndexOf($"</{tag}", styleStart, StringComparison.Ordinal);
+                    if (styleEnd < 0) continue;
+
+                    var styleBlock = text.Substring(styleStart, styleEnd - styleStart);
+                    if (StyleVisibilitySetter.IsMatch(styleBlock))
+                    {
+                        var rel = Path.GetRelativePath(root, file);
+                        var line = LineOf(text, m.Index);
+                        violations.Add($"{rel}:{line}: <{tag}> has local Visibility=\"{Trim(m.Groups["value"].Value, 60)}\" "
+                            + "and a Visibility Setter in its own Style");
+                    }
+                }
+            }
+
+            Assert.True(violations.Count == 0,
+                "An element declares Visibility twice — once as a local attribute on the tag and "
+                + "again inside its own Style. WPF resolves the local value above the Style "
+                + "trigger, so the trigger never fires and both branches render simultaneously "
+                + "(this stacked the secret-field TextBox placeholder on top of the picker "
+                + "Border's DisplayValue). Move EVERY condition into Style.Triggers and delete the "
+                + "local Visibility attribute from the tag:\n  - "
+                + string.Join("\n  - ", violations));
+        }
+
+        /// <summary>1-based line number of a character offset, for human-readable failures.</summary>
+        private static int LineOf(string text, int offset)
+        {
+            var line = 1;
+            for (var i = 0; i < offset && i < text.Length; i++)
+            {
+                if (text[i] == '\n') line++;
+            }
+            return line;
+        }
+
         /// <summary>The control's own start tag — inner containers may legitimately carry
         /// <c>MinWidth</c> (e.g. a 90px label column), only the root must not.</summary>
         private static string RootElementTag(string xaml)
@@ -232,6 +315,14 @@ namespace Pulsar.Tests.UI
         {
             var flat = snippet.Replace("\r", " ").Replace("\n", " ");
             return flat.Length <= 140 ? flat : flat.Substring(0, 140) + "…";
+        }
+
+        /// <summary>Collapse a short attribute value for a failure line, capped at
+        /// <paramref name="max"/> characters.</summary>
+        private static string Trim(string snippet, int max)
+        {
+            var flat = snippet.Replace("\r", " ").Replace("\n", " ");
+            return flat.Length <= max ? flat : flat.Substring(0, max) + "…";
         }
 
         /// <summary>XAML comments legitimately mention token names (they document the fix),
