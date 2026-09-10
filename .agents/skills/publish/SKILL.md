@@ -131,6 +131,7 @@ python scripts/publish.py watch --version 1.9.0
 - **优先重跑对应子命令**：publish.py 断言失败会输出具体 `{name, detail}`，先读完整输出再定位。
 - **沙箱/新终端下 dotnet 报 NU1301 或 ConfigurationDefaults 异常**：publish.py 已内置 winreg env 自愈（含从 `SystemDrive` 推导 `ProgramFiles`）；若在 publish.py 之外手动跑 dotnet，用 `scripts/dotnet-env.sh` 修复环境。
 - 历史编码/编码坑（BOM、commentChar、`--notes-from-tag` 退化）已固化进 `tag`/`watch` 子命令，不再需要人工干预；修改脚本时不要回退这些防护。
+- **`changelog` 子命令曾把 HTML 注释模板误当真实段**（2026-09-10 v1.14.0 暴露）：`CHANGELOG.md` 顶部的模板注释里有一个缩进 2 空格的示例 `## [Unreleased]`，旧实现的 `re.search` / `str.replace` 都命中它 → 注释模板被改写成版本段，真实 `[Unreleased]` 段纹丝不动，且脚本仍报 PASS。已修：定位前按行结构屏蔽 HTML 注释 + 行首锚定 `^`；替换时只改标题行本体、body 原样保留（`re.M` 下 lookahead 会把行尾 `\n` 划进 body，重建串会吃掉它 → 段标题粘连、内容丢失）。**改动 `cmd_changelog` 时不要回退这两条防护。**
 - Release 已存在或 tag 已存在：停止并询问用户，不删除、不覆盖。
 
 ## 8. 完成报告（L1：只报结果）
