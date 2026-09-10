@@ -1,9 +1,9 @@
 # ADR-031: Rename the PKI Module to Secret Fill (Symbols Only; Plugin Id Frozen)
 
-**Status**: Accepted
+**Status**: Accepted — **partially superseded** (item 1, the layer-3 freeze, is reversed by [032](./032-secret-fill-plugin-id-migration.md); items 2–6 remain in force)
 **Date**: 2026-09-10
 **Deciders**: milo (owner), WorkBuddy agent (implementation)
-**Related**: [CONTEXT.md](../../CONTEXT.md) glossary, [027-documentation-structure-v6-single-authoritative-sources.md](./027-documentation-structure-v6-single-authoritative-sources.md), [007-external-plugin-permission-consent.md](./007-external-plugin-permission-consent.md)
+**Related**: [CONTEXT.md](../../CONTEXT.md) glossary, [027-documentation-structure-v6-single-authoritative-sources.md](./027-documentation-structure-v6-single-authoritative-sources.md), [007-external-plugin-permission-consent.md](./007-external-plugin-permission-consent.md), [032-secret-fill-plugin-id-migration.md](./032-secret-fill-plugin-id-migration.md)
 
 ---
 
@@ -133,3 +133,8 @@ layer 3 later would cost a migration regardless of direction.
 
 - `v1.0.0` (2026-09-10): initial decision — symbols renamed to `SecretFill`,
   persisted plugin id frozen, historical records preserved.
+- `v1.0.1` (2026-09-10): item 1 (layer-3 freeze) **superseded** by ADR-032,
+  which renamed the id to `com.pulsar.secretfill` behind a load-time migration.
+  The body above is left as written; see ADR-032 for the reversal. Items 2–6
+  (naming rationale, namespace rename, qualified `Execution`, no history rewrite,
+  glossary ban) remain in force.

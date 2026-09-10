@@ -12,7 +12,7 @@ namespace Pulsar.Core.Plugin.Metadata
     public class PluginManifest
     {
         /// <summary>
-        /// 插件唯一标识符（反向域名格式，如 "com.pulsar.pki"）
+        /// 插件唯一标识符（反向域名格式，如 "com.pulsar.secretfill"）
         /// </summary>
         [JsonPropertyName("id")]
         public string Id { get; set; } = string.Empty;

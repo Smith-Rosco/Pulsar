@@ -1,4 +1,4 @@
-# 临时脚本：用 Simulator 预跑 Demo fixture 的三个插件动作（dry-run）
+﻿# 临时脚本：用 Simulator 预跑 Demo fixture 的三个插件动作（dry-run）
 $ErrorActionPreference = 'Stop'
 $sim = Join-Path $PSScriptRoot 'bin\Release\net8.0-windows\Pulsar.Simulator.exe'
 
@@ -17,7 +17,7 @@ $json2 = '{"scriptPath":"%USERPROFILE%\\Documents\\Pulsar\\Scripts\\format-repor
 Run-Sim '2) vbarunner 一键跑宏' 'com.pulsar.vbarunner' 'run' $json2
 
 $json3 = '{"field":"username","secret":"hr-portal"}'
-Run-Sim '3) pki 自动填写登录' 'com.pulsar.pki' 'fill' $json3
+Run-Sim '3) pki 自动填写登录' 'com.pulsar.secretfill' 'fill' $json3
 
 $json4 = '{"scriptPath":"%USERPROFILE%\\Documents\\Pulsar\\Scripts\\report-pack.bas","macro":"PackReport"}'
 Run-Sim '4) vbarunner 报表整理(子动作主宏)' 'com.pulsar.vbarunner' 'run' $json4

@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Pulsar.Core.Localization;
@@ -51,7 +51,7 @@ namespace Pulsar.Tests.Services
                 PluginResult.Error("Missing required parameter: path"));
 
             var pkiFeedback = _service.Create(
-                "com.pulsar.pki",
+                "com.pulsar.secretfill",
                 "fill",
                 PluginResult.Error("Missing required parameter: secretId", PluginErrorSeverity.Recoverable, PluginErrorCode.MissingRequiredParameter));
 
@@ -80,7 +80,7 @@ namespace Pulsar.Tests.Services
             var rawMessage = "Secret not found: 01234567-89ab-cdef-0123-456789abcdef";
 
             var feedback = _service.Create(
-                "com.pulsar.pki",
+                "com.pulsar.secretfill",
                 "fill",
                 PluginResult.Error(rawMessage, PluginErrorSeverity.Recoverable, PluginErrorCode.NotFound));
 

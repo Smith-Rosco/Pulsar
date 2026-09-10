@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Pulsar.Core.Plugin;
 
 namespace Pulsar.Services
 {
@@ -26,9 +27,9 @@ namespace Pulsar.Services
     /// </summary>
     public static class WorkbenchPillarCatalog
     {
-        public const string VbaRunnerPluginId = "com.pulsar.vbarunner";
-        public const string BookmarkletPluginId = "com.pulsar.bookmarklet";
-        public const string SecretFillPluginId = "com.pulsar.pki";
+        public const string VbaRunnerPluginId = PluginIds.VbaRunner;
+        public const string BookmarkletPluginId = PluginIds.Bookmarklet;
+        public const string SecretFillPluginId = PluginIds.SecretFill;
 
         /// <summary>设置导航中的工作台页（支柱组），顺序即展示顺序。</summary>
         public static readonly IReadOnlyList<string> PillarPageIds =

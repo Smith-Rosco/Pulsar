@@ -22,7 +22,7 @@ namespace Pulsar.Plugins.Core.SystemCommand
         private const string LegacyOpenSettingsAction = "pulsar.system.open_settings";
         private const string LegacyQuickAddProfileAction = "pulsar.system.quick_add_profile";
 
-        public string Id => "com.pulsar.system";
+        public string Id => PluginIds.SystemCommand;
         public string DisplayName => "Pulsar Settings";
         public string Version => "1.0.0";
         public string Author => "Pulsar Team";

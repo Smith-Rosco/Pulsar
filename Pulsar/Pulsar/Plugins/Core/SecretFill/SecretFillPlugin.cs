@@ -45,7 +45,7 @@ namespace Pulsar.Plugins.Core.SecretFill
             };
         }
 
-        public override string Id => "com.pulsar.pki";
+        public override string Id => PluginIds.SecretFill;
         public override string DisplayName => "AutoFill";
         public override string Version => "1.0.0";
         public override string Author => "Pulsar Team";

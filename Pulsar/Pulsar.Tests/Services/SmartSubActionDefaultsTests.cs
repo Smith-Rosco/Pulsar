@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
@@ -53,7 +53,7 @@ namespace Pulsar.Tests.Services
         {
             var defaults = new SmartSubActionDefaults();
 
-            var catalog = defaults.ForPlugin("com.pulsar.pki", "fill");
+            var catalog = defaults.ForPlugin("com.pulsar.secretfill", "fill");
 
             catalog.Should().BeNull();
         }
@@ -97,7 +97,7 @@ namespace Pulsar.Tests.Services
         {
             var workspace = CreateWorkspace();
 
-            var draft = workspace.CreateSlotDraft("com.pulsar.pki");
+            var draft = workspace.CreateSlotDraft("com.pulsar.secretfill");
 
             draft.SubActions.Should().BeNull();
         }

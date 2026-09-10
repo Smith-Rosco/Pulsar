@@ -1,3 +1,4 @@
+using Pulsar.Core.Plugin;
 using Pulsar.Models;
 using System.Windows;
 using System.Windows.Controls;
@@ -17,7 +18,7 @@ namespace Pulsar.Views.TemplateSelectors
                 if (slot.PluginId == "com.pulsar.winswitcher")
                     return LauncherTemplate;
 
-                if (slot.PluginId == "com.pulsar.pki")
+                if (PluginIds.IsSecretFill(slot.PluginId))
                     return SecretTemplate;
 
                 return CommandTemplate; // Default to command

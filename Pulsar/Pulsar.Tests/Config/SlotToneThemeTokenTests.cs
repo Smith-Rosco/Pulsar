@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.Runtime.ExceptionServices;
 using System.Threading;
@@ -149,7 +149,7 @@ namespace Pulsar.Tests.Config
         [Fact]
         public void SlotPresentation_ShouldPreserveExistingToneKeyContract()
         {
-            SlotPresentation.ResolveTypeToneKey("com.pulsar.pki").Should().Be("SlotTypeBrushSecret");
+            SlotPresentation.ResolveTypeToneKey("com.pulsar.secretfill").Should().Be("SlotTypeBrushSecret");
             SlotPresentation.ResolveTypeToneKey("com.pulsar.command").Should().Be("SlotTypeBrushCommand");
             SlotPresentation.ResolveTypeToneKey("unknown.plugin").Should().Be("SlotTypeBrushDefault");
 

@@ -1,4 +1,4 @@
-// [Path]: Pulsar.Tests/Config/ProfilesConfigDefaultsTests.cs
+﻿// [Path]: Pulsar.Tests/Config/ProfilesConfigDefaultsTests.cs
 
 using System;
 using System.Linq;
@@ -217,7 +217,7 @@ namespace Pulsar.Tests.Config
         public void PluginSlot_TypeBadge_ShouldReturnCorrectBadge()
         {
             // Arrange & Act & Assert
-            new PluginSlot { PluginId = "com.pulsar.pki" }.TypeBadge.Should().Be("Fill");
+            new PluginSlot { PluginId = "com.pulsar.secretfill" }.TypeBadge.Should().Be("Fill");
             new PluginSlot { PluginId = "com.pulsar.winswitcher" }.TypeBadge.Should().Be("App");
             new PluginSlot { PluginId = "com.pulsar.command" }.TypeBadge.Should().Be("Open");
             new PluginSlot { PluginId = "com.pulsar.bookmarklet" }.TypeBadge.Should().Be("Script");

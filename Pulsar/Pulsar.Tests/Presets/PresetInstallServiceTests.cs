@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -232,7 +232,7 @@ namespace Pulsar.Tests.Presets
                 "sign-in",
                 new List<CommandSlotTemplate>
                 {
-                    Template("com.pulsar.pki", "fill", "CommandSlot.AutoSignIn",
+                    Template("com.pulsar.secretfill", "fill", "CommandSlot.AutoSignIn",
                         new Dictionary<string, string>())
                 },
                 new[] { PluginPermissions.InputInject });
@@ -255,7 +255,7 @@ namespace Pulsar.Tests.Presets
                 "sign-in",
                 new List<CommandSlotTemplate>
                 {
-                    Template("com.pulsar.pki", "fill", "CommandSlot.AutoSignIn",
+                    Template("com.pulsar.secretfill", "fill", "CommandSlot.AutoSignIn",
                         new Dictionary<string, string>())
                 },
                 new[] { PluginPermissions.InputInject });

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
@@ -86,7 +86,7 @@ namespace Pulsar.Tests.ViewModels.Settings
             CreateDescriptor("com.pulsar.command", "Command Runner", canDisable: false),
             CreateDescriptor("com.pulsar.vbarunner", "Macro Runner", canDisable: true),
             CreateDescriptor("com.pulsar.bookmarklet", "Web Scripts", canDisable: true),
-            CreateDescriptor("com.pulsar.pki", "Secure Form Fill", canDisable: false)
+            CreateDescriptor("com.pulsar.secretfill", "Secure Form Fill", canDisable: false)
         ];
 
         [Fact]
@@ -108,7 +108,7 @@ namespace Pulsar.Tests.ViewModels.Settings
             pillarGroup.Plugins.Select(p => p.Id).Should().Equal(
                 "com.pulsar.vbarunner",
                 "com.pulsar.bookmarklet",
-                "com.pulsar.pki");
+                "com.pulsar.secretfill");
         }
 
         [Fact]
@@ -130,7 +130,7 @@ namespace Pulsar.Tests.ViewModels.Settings
             vm.Plugins.Select(p => p.Id).Should().Equal(
                 "com.pulsar.vbarunner",
                 "com.pulsar.bookmarklet",
-                "com.pulsar.pki",
+                "com.pulsar.secretfill",
                 "com.pulsar.command",
                 "com.pulsar.winswitcher");
 
@@ -147,7 +147,7 @@ namespace Pulsar.Tests.ViewModels.Settings
             // 搜索只命中支柱插件时，应只剩支柱组（空的系统组不应出现）
             vm.GroupedPlugins.Should().ContainSingle("搜索过滤后应只剩命中的分组");
             vm.GroupedPlugins[0].GroupId.Should().Be(PluginGroupIds.Pillars);
-            vm.GroupedPlugins[0].Plugins.Select(p => p.Id).Should().Equal("com.pulsar.pki");
+            vm.GroupedPlugins[0].Plugins.Select(p => p.Id).Should().Equal("com.pulsar.secretfill");
         }
     }
 }

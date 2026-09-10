@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using FluentAssertions;
 using Pulsar.Services;
 using Xunit;
@@ -17,7 +17,7 @@ namespace Pulsar.Tests.Services
             WorkbenchPillarCatalog.PillarPluginIds.Should().Equal(
                 "com.pulsar.vbarunner",
                 "com.pulsar.bookmarklet",
-                "com.pulsar.pki");
+                "com.pulsar.secretfill");
         }
 
         [Fact]
@@ -25,7 +25,7 @@ namespace Pulsar.Tests.Services
         {
             var macro = WorkbenchPillarCatalog.GetPluginPriority("com.pulsar.vbarunner");
             var webScripts = WorkbenchPillarCatalog.GetPluginPriority("com.pulsar.bookmarklet");
-            var secureFill = WorkbenchPillarCatalog.GetPluginPriority("com.pulsar.pki");
+            var secureFill = WorkbenchPillarCatalog.GetPluginPriority("com.pulsar.secretfill");
             var winSwitcher = WorkbenchPillarCatalog.GetPluginPriority("com.pulsar.winswitcher");
             var command = WorkbenchPillarCatalog.GetPluginPriority("com.pulsar.command");
 
@@ -41,7 +41,7 @@ namespace Pulsar.Tests.Services
         {
             WorkbenchPillarCatalog.IsPillarPlugin("com.pulsar.vbarunner").Should().BeTrue();
             WorkbenchPillarCatalog.IsPillarPlugin("com.pulsar.bookmarklet").Should().BeTrue();
-            WorkbenchPillarCatalog.IsPillarPlugin("com.pulsar.pki").Should().BeTrue();
+            WorkbenchPillarCatalog.IsPillarPlugin("com.pulsar.secretfill").Should().BeTrue();
 
             WorkbenchPillarCatalog.IsPillarPlugin("com.pulsar.winswitcher").Should().BeFalse();
             WorkbenchPillarCatalog.IsPillarPlugin("com.pulsar.command").Should().BeFalse();
@@ -74,7 +74,7 @@ namespace Pulsar.Tests.Services
         [Fact]
         public void PriorityLookup_ShouldBeCaseInsensitive()
         {
-            WorkbenchPillarCatalog.GetPluginPriority("COM.PULSAR.PKI").Should().Be(2);
+            WorkbenchPillarCatalog.GetPluginPriority("COM.PULSAR.SECRETFILL").Should().Be(2);
             WorkbenchPillarCatalog.GetScenarioPriority("Excel").Should().Be(0);
         }
     }

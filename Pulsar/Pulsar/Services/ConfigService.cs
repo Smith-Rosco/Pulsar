@@ -1,3 +1,4 @@
+using Pulsar.Core.Plugin;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 using Pulsar.Services.Validation;
@@ -255,6 +256,20 @@ namespace Pulsar.Services
                 // while a read handle is still open.
                 loaded = loadedFromDisk;
                 
+                // [Migration ADR-032] Secret Fill plugin id rename:
+                // com.pulsar.pki → com.pulsar.secretfill. Applies to slot `plugin`
+                // values AND the root `plugins` dictionary keys. Idempotent.
+                int migratedPluginIdCount = MigrateLegacyPluginIds(loaded);
+
+                if (migratedPluginIdCount > 0 && loaded != null
+                    && !string.Equals(reloadReason, ResetReloadReason, StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogInformation(
+                        "[ConfigService] Migrated {Count} legacy plugin id reference(s) ({Legacy} → {Current}); persisting",
+                        migratedPluginIdCount, PluginIds.LegacySecretFill, PluginIds.SecretFill);
+                    await SaveAsync(loaded, expectedRevision: null);
+                }
+
                 // [Architectural Fix] Ensure Profiles dictionary is case-insensitive
                 // System.Text.Json always creates case-sensitive dictionaries by default.
                 // We must rebuild it with OrdinalIgnoreCase to match PulsarContext's uppercase logic
@@ -273,7 +288,7 @@ namespace Pulsar.Services
 
                     // [Migration] Persist the fix once so existing Profiles.json heals on
                     // disk (idempotent: a second load finds nothing to fix and skips).
-                    if (migratedPathCount > 0 && !string.Equals(reloadReason, ResetReloadReason, StringComparison.OrdinalIgnoreCase))
+                    if (migratedPathCount > 0 && migratedPluginIdCount == 0 && !string.Equals(reloadReason, ResetReloadReason, StringComparison.OrdinalIgnoreCase))
                     {
                         _logger.LogInformation("[ConfigService] Migrated {Count} relative switch launch path(s) to absolute; persisting", migratedPathCount);
                         await SaveAsync(loaded, expectedRevision: null);
@@ -1084,6 +1099,96 @@ namespace Pulsar.Services
             }
 
             return fixedCount;
+        }
+
+        /// <summary>
+        /// 迁移（ADR-032）：把 Secret Fill 的历史插件 ID <c>com.pulsar.pki</c>
+        /// 归一化为当前值 <c>com.pulsar.secretfill</c>。
+        ///
+        /// <para>
+        /// 覆盖两个持久化位点：① 每个 profile 下 <c>CommandMode</c> / <c>SwitchMode</c>
+        /// 中 slot 的 <c>PluginId</c>；② 根级 <c>Plugins</c> 字典的 key（启停 / 权限 /
+        /// 私有配置档案）。
+        /// </para>
+        ///
+        /// <para>
+        /// 幂等 —— 第二次加载找不到任何历史值即跳过、不再落盘。字典 key 重命名在
+        /// 快照后重建，不边遍历边改（<see cref="Dictionary{TKey,TValue}"/> 不允许
+        /// 遍历中改 key）。同名冲突时以**新 ID 侧已存在的档案为准**，避免覆盖用户
+        /// 在新 ID 下的既有配置。
+        /// </para>
+        /// </summary>
+        /// <returns>本次迁移的引用数（slot + 字典 key 合计）。</returns>
+        private static int MigrateLegacyPluginIds(ProfilesConfig? config)
+        {
+            if (config == null) return 0;
+
+            int migrated = 0;
+
+            // ① slot 的 PluginId
+            if (config.Profiles != null)
+            {
+                foreach (var profile in config.Profiles.Values)
+                {
+                    migrated += MigrateLegacyPluginIdsInSlots(profile?.CommandMode);
+                    migrated += MigrateLegacyPluginIdsInSlots(profile?.SwitchMode);
+                }
+            }
+
+            // ② 根级 Plugins 字典 key
+            if (config.Plugins != null)
+            {
+                var needsRename = config.Plugins.Keys.Any(
+                    k => string.Equals(k, PluginIds.LegacySecretFill, StringComparison.OrdinalIgnoreCase));
+
+                if (needsRename)
+                {
+                    var rebuilt = new Dictionary<string, PluginProfile>(StringComparer.OrdinalIgnoreCase);
+
+                    foreach (var kvp in config.Plugins)
+                    {
+                        var isLegacy = string.Equals(kvp.Key, PluginIds.LegacySecretFill, StringComparison.OrdinalIgnoreCase);
+
+                        if (!isLegacy)
+                        {
+                            rebuilt[kvp.Key] = kvp.Value;
+                            continue;
+                        }
+
+                        // 新 ID 侧已有档案 → 保留既有（不清洗用户配置），丢弃历史条目。
+                        if (config.Plugins.ContainsKey(PluginIds.SecretFill))
+                        {
+                            continue;
+                        }
+
+                        rebuilt[PluginIds.SecretFill] = kvp.Value;
+                        migrated++;
+                    }
+
+                    config.Plugins = rebuilt;
+                }
+            }
+
+            return migrated;
+        }
+
+        /// <summary>把一组 slot 上的历史插件 ID 就地归一化，返回改动数。</summary>
+        private static int MigrateLegacyPluginIdsInSlots(IEnumerable<PluginSlot>? slots)
+        {
+            if (slots == null) return 0;
+
+            int migrated = 0;
+
+            foreach (var slot in slots)
+            {
+                if (slot == null) continue;
+                if (!string.Equals(slot.PluginId, PluginIds.LegacySecretFill, StringComparison.OrdinalIgnoreCase)) continue;
+
+                slot.PluginId = PluginIds.SecretFill;
+                migrated++;
+            }
+
+            return migrated;
         }
 
         private static object NormalizeNumber(JsonElement element)

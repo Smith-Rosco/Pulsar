@@ -1,5 +1,6 @@
 using System;
 using Pulsar.Core.Localization;
+using Pulsar.Core.Plugin;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Pulsar.Models
@@ -68,26 +69,30 @@ namespace Pulsar.Models
 
         public static string ResolveTypeBadge(string pluginId)
         {
-            return pluginId switch
+            // Normalize first (ADR-032): a slot carrying the legacy Secret Fill id
+            // (com.pulsar.pki) — e.g. held in memory before ConfigService's load-time
+            // migration, or passed by a test/UI caller — must still resolve its badge.
+            return PluginIds.Normalize(pluginId) switch
             {
-                "com.pulsar.pki" => Loc?["Slot.TypeFill"] ?? "Fill",
-                "com.pulsar.winswitcher" => Loc?["Slot.TypeApp"] ?? "App",
-                "com.pulsar.command" => Loc?["Slot.TypeOpen"] ?? "Open",
-                "com.pulsar.bookmarklet" => Loc?["Slot.TypeScript"] ?? "Script",
-                "com.pulsar.vbarunner" => Loc?["Slot.TypeMacros"] ?? "Macros",
+                PluginIds.SecretFill => Loc?["Slot.TypeFill"] ?? "Fill",
+                PluginIds.WinSwitcher => Loc?["Slot.TypeApp"] ?? "App",
+                PluginIds.Command => Loc?["Slot.TypeOpen"] ?? "Open",
+                PluginIds.Bookmarklet => Loc?["Slot.TypeScript"] ?? "Script",
+                PluginIds.VbaRunner => Loc?["Slot.TypeMacros"] ?? "Macros",
                 _ => Loc?["Slot.TypePlugin"] ?? "Plugin"
             };
         }
 
         public static string ResolveTypeToneKey(string pluginId)
         {
-            return pluginId switch
+            // See ResolveTypeBadge — legacy id normalizes before the switch.
+            return PluginIds.Normalize(pluginId) switch
             {
-                "com.pulsar.pki" => "SlotTypeBrushSecret",
-                "com.pulsar.winswitcher" => "SlotTypeBrushApp",
-                "com.pulsar.command" => "SlotTypeBrushCommand",
-                "com.pulsar.bookmarklet" => "SlotTypeBrushScript",
-                "com.pulsar.vbarunner" => "SlotTypeBrushVba",
+                PluginIds.SecretFill => "SlotTypeBrushSecret",
+                PluginIds.WinSwitcher => "SlotTypeBrushApp",
+                PluginIds.Command => "SlotTypeBrushCommand",
+                PluginIds.Bookmarklet => "SlotTypeBrushScript",
+                PluginIds.VbaRunner => "SlotTypeBrushVba",
                 _ => "SlotTypeBrushDefault"
             };
         }

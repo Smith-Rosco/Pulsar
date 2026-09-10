@@ -1,4 +1,4 @@
-// [Path]: Pulsar.Tests/Config/PluginSlotSubActionsTests.cs
+﻿// [Path]: Pulsar.Tests/Config/PluginSlotSubActionsTests.cs
 
 using System;
 using System.Collections.Generic;
@@ -114,7 +114,7 @@ namespace Pulsar.Tests.Config
             var slot = new PluginSlot
             {
                 Slot = 2,
-                PluginId = "com.pulsar.pki",
+                PluginId = "com.pulsar.secretfill",
                 Action = "fill"
             };
 
@@ -124,7 +124,7 @@ namespace Pulsar.Tests.Config
             var restored = JsonSerializer.Deserialize<PluginSlot>(json, options);
             restored!.SubActions.Should().BeNull();
             restored.Slot.Should().Be(2);
-            restored.PluginId.Should().Be("com.pulsar.pki");
+            restored.PluginId.Should().Be("com.pulsar.secretfill");
         }
 
         [Fact]

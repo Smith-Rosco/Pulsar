@@ -190,6 +190,7 @@ ADRs are immutable once accepted; supersede rather than edit.
 | [029](./decisions/029-settings-transient-pages.md) | Settings transient pages — per-type singleton, clean-leave auto-recycle |
 | [030](./decisions/030-wheel-radius-single-formula.md) | Wheel radius single formula — `CalculateOptimalLayout` derives radius from `CalculateOptimalSlotSize(N)` |
 | [031](./decisions/031-secret-fill-rename-plugin-id-frozen.md) | PKI module renamed to Secret Fill — symbols only, plugin id `com.pulsar.pki` frozen |
+| [032](./decisions/032-secret-fill-plugin-id-migration.md) | Secret Fill plugin id unfrozen — renamed to `com.pulsar.secretfill` with load-time config + usage-stats migration |
 
 ---
 

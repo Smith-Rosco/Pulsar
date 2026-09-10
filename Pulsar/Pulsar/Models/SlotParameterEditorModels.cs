@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
+using Pulsar.Core.Plugin;
 using Pulsar.Core.Localization;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Helpers;
@@ -48,7 +49,7 @@ namespace Pulsar.Models
                 new SlotTypeCard
                 {
                     Id = "switch-app",
-                    PluginId = "com.pulsar.winswitcher",
+                    PluginId = PluginIds.WinSwitcher,
                     DefaultAction = "switch",
                     IconKey = "E8F9",
                     Title = loc["Dialog.AddSlot.CardSwitchApp"],
@@ -59,7 +60,7 @@ namespace Pulsar.Models
                 new SlotTypeCard
                 {
                     Id = "open-target",
-                    PluginId = "com.pulsar.command",
+                    PluginId = PluginIds.Command,
                     DefaultAction = "run",
                     IconKey = "E8A7",
                     Title = loc["Dialog.AddSlot.CardOpenTarget"],
@@ -70,7 +71,7 @@ namespace Pulsar.Models
                 new SlotTypeCard
                 {
                     Id = "send-keys",
-                    PluginId = "com.pulsar.command",
+                    PluginId = PluginIds.Command,
                     DefaultAction = "sendkeys",
                     IconKey = "E765",
                     Title = loc["Dialog.AddSlot.CardSendKeys"],
@@ -81,7 +82,7 @@ namespace Pulsar.Models
                 new SlotTypeCard
                 {
                     Id = "fill-secret",
-                    PluginId = "com.pulsar.pki",
+                    PluginId = PluginIds.SecretFill,
                     DefaultAction = "fill",
                     IconKey = "E72E",
                     Title = loc["Dialog.AddSlot.CardFillPassword"],
@@ -92,7 +93,7 @@ namespace Pulsar.Models
                 new SlotTypeCard
                 {
                     Id = "run-script",
-                    PluginId = "com.pulsar.command",
+                    PluginId = PluginIds.Command,
                     DefaultAction = "run",
                     IconKey = "E943",
                     Title = loc["Dialog.AddSlot.CardRunScript"],
@@ -103,7 +104,7 @@ namespace Pulsar.Models
                 new SlotTypeCard
                 {
                     Id = "system",
-                    PluginId = "com.pulsar.system",
+                    PluginId = PluginIds.SystemCommand,
                     DefaultAction = "open-settings",
                     IconKey = "E713",
                     Title = loc["Dialog.AddSlot.CardSystem"],

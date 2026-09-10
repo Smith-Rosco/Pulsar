@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
@@ -55,7 +55,7 @@ namespace Pulsar.Tests.ViewModels
                     SuggestedIconKey = "E8AB",
                     SuggestedColorHex = "#2196F3"
                 });
-            mock.Setup(m => m.GetActionMetadata("com.pulsar.pki", "fill"))
+            mock.Setup(m => m.GetActionMetadata("com.pulsar.secretfill", "fill"))
                 .Returns(new SlotActionMetadata
                 {
                     Name = "fill",
@@ -233,7 +233,7 @@ namespace Pulsar.Tests.ViewModels
             vm.IsEditMode.Should().BeTrue();
             vm.IsAppearanceExpanded.Should().BeTrue();
             vm.Slot.Should().Be(slot);
-            vm.Slot!.PluginId.Should().Be("com.pulsar.pki");
+            vm.Slot!.PluginId.Should().Be("com.pulsar.secretfill");
         }
 
         [Fact]
@@ -392,7 +392,7 @@ namespace Pulsar.Tests.ViewModels
             cards.Should().ContainSingle(c => c.Id == "switch-app" && c.PluginId == "com.pulsar.winswitcher" && c.DefaultAction == "switch");
             cards.Should().ContainSingle(c => c.Id == "open-target" && c.PluginId == "com.pulsar.command" && c.DefaultAction == "run");
             cards.Should().ContainSingle(c => c.Id == "send-keys" && c.PluginId == "com.pulsar.command" && c.DefaultAction == "sendkeys");
-            cards.Should().ContainSingle(c => c.Id == "fill-secret" && c.PluginId == "com.pulsar.pki" && c.DefaultAction == "fill");
+            cards.Should().ContainSingle(c => c.Id == "fill-secret" && c.PluginId == "com.pulsar.secretfill" && c.DefaultAction == "fill");
             cards.Should().ContainSingle(c => c.Id == "run-script" && c.PluginId == "com.pulsar.command" && c.DefaultAction == "run");
             cards.Should().ContainSingle(c => c.Id == "system" && c.PluginId == "com.pulsar.system" && c.DefaultAction == "open-settings");
         }
@@ -495,7 +495,7 @@ namespace Pulsar.Tests.ViewModels
             vm.GoBackToPickerCommand.Execute(null);
             var fillSecretCard = vm.PrimaryCards.First(c => c.Id == "fill-secret");
             vm.SelectSlotTypeCommand.Execute(fillSecretCard);
-            vm.Slot!.PluginId.Should().Be("com.pulsar.pki");
+            vm.Slot!.PluginId.Should().Be("com.pulsar.secretfill");
             vm.Slot.Action.Should().Be("fill");
         }
 
@@ -658,7 +658,7 @@ namespace Pulsar.Tests.ViewModels
             slot.IconKey = pluginId switch
             {
                 "com.pulsar.winswitcher" => "E8AB",
-                "com.pulsar.pki" => "E72E",
+                "com.pulsar.secretfill" => "E72E",
                 _ => string.Equals(slot.Action, "sendkeys", StringComparison.OrdinalIgnoreCase) ? "E765" : "E756"
             };
 
@@ -680,7 +680,7 @@ namespace Pulsar.Tests.ViewModels
                 yield break;
             }
 
-            if (string.Equals(pluginId, "com.pulsar.pki", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(pluginId, "com.pulsar.secretfill", StringComparison.OrdinalIgnoreCase))
             {
                 yield return new SlotActionOption
                 {
@@ -745,7 +745,7 @@ namespace Pulsar.Tests.ViewModels
                 yield break;
             }
 
-            if (string.Equals(pluginId, "com.pulsar.pki", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(pluginId, "com.pulsar.secretfill", StringComparison.OrdinalIgnoreCase))
             {
                 yield return new SlotParameterEditorField(slot, new SlotParameterMetadata
                 {
@@ -780,7 +780,7 @@ namespace Pulsar.Tests.ViewModels
             var slot = new PluginSlot
             {
                 Slot = 2,
-                PluginId = "com.pulsar.pki",
+                PluginId = "com.pulsar.secretfill",
                 Action = "fill",
                 Label = "Fill Secret",
                 IconKey = "E72E",

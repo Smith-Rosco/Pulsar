@@ -86,7 +86,7 @@ namespace Pulsar.Services.ActionFeedback
                 return new ActionFeedback(ActionFeedbackKind.Success, title, message, null, PulsarNotificationIcon.Info);
             }
 
-            if (string.Equals(pluginId, "com.pulsar.pki", StringComparison.OrdinalIgnoreCase))
+            if (PluginIds.IsSecretFill(pluginId))
             {
                 return new ActionFeedback(
                     ActionFeedbackKind.Success,
@@ -109,7 +109,7 @@ namespace Pulsar.Services.ActionFeedback
             // SecretFill keeps its credential-specific feedback kinds, now keyed off the
             // stable ErrorCode produced by SecretFillPlugin's stage mapping instead of
             // matching on (bilingual) message needles.
-            if (string.Equals(pluginId, "com.pulsar.pki", StringComparison.OrdinalIgnoreCase))
+            if (PluginIds.IsSecretFill(pluginId))
             {
                 switch (errorCode)
                 {

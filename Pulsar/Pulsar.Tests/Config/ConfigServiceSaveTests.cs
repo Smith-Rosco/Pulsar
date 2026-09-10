@@ -1,4 +1,4 @@
-// [Path]: Pulsar.Tests/Config/ConfigServiceSaveTests.cs
+﻿// [Path]: Pulsar.Tests/Config/ConfigServiceSaveTests.cs
 
 using System;
 using System.IO;
@@ -205,7 +205,7 @@ namespace Pulsar.Tests.Config
                     new()
                     {
                         Slot = 1,
-                        PluginId = "com.pulsar.pki",
+                        PluginId = "com.pulsar.secretfill",
                         Action = "fill",
                         Label = "Secret",
                         Args = new System.Collections.Generic.Dictionary<string, string>

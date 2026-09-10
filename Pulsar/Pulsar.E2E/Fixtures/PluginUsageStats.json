@@ -1,4 +1,4 @@
-[
+﻿[
   {
     "pluginId": "com.pulsar.command",
     "totalExecutions": 54,
@@ -42,7 +42,7 @@
     }
   },
   {
-    "pluginId": "com.pulsar.pki",
+    "pluginId": "com.pulsar.secretfill",
     "totalExecutions": 10,
     "successCount": 10,
     "failureCount": 0,

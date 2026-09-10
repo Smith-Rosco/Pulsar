@@ -1,6 +1,7 @@
 // [Path]: Pulsar/Pulsar/Services/PluginUsageTracker.cs
 
 using Microsoft.Extensions.Logging;
+using Pulsar.Core.Plugin;
 using Pulsar.Models;
 using Pulsar.Services.Interfaces;
 using System;
@@ -322,6 +323,23 @@ namespace Pulsar.Services
                     _stats.Clear();
                     foreach (var stats in statsList)
                     {
+                        if (stats == null) continue;
+
+                        // [Migration ADR-032] Secret Fill plugin id rename:
+                        // com.pulsar.pki → com.pulsar.secretfill. Records keyed by the
+                        // legacy id would silently orphan (analytics / recommendations
+                        // read by current id), losing the user's execution history.
+                        stats.PluginId = PluginIds.Normalize(stats.PluginId);
+
+                        if (_stats.TryGetValue(stats.PluginId, out var existing))
+                        {
+                            // Both ids present on disk (partial migration / re-install):
+                            // fold the legacy record into the current one rather than
+                            // dropping either — history is user-visible.
+                            Merge(existing, stats);
+                            continue;
+                        }
+
                         _stats[stats.PluginId] = stats;
                     }
                     _logger.LogInformation("[PluginUsageTracker] Loaded stats for {Count} plugins", _stats.Count);
@@ -334,6 +352,88 @@ namespace Pulsar.Services
             finally
             {
                 _saveLock.Release();
+            }
+        }
+
+        /// <summary>
+        /// 把 <paramref name="incoming"/> 的统计累加进 <paramref name="target"/>
+        /// （ADR-032 迁移用：两条历史 ID 记录折叠成一条）。
+        ///
+        /// <para>
+        /// 语义：计数类**相加**，日期取**边界**（First 取更早、Last 取更晚），
+        /// 字典类**逐 key 相加**（slot / hour / 日粒度同理）。
+        /// <see cref="PluginUsageStats.AverageExecutionTimeMs"/> 不做加权平均——
+        /// 由 <c>TotalExecutionTimeMs / TotalExecutions</c> 的既有计算路径在下次
+        /// 记录时自然修正，避免引入第二套平均算法。
+        /// </para>
+        /// </summary>
+        private static void Merge(PluginUsageStats target, PluginUsageStats incoming)
+        {
+            target.TotalExecutions += incoming.TotalExecutions;
+            target.SuccessCount += incoming.SuccessCount;
+            target.FailureCount += incoming.FailureCount;
+            target.TaskModeExecutions += incoming.TaskModeExecutions;
+            target.ActionModeExecutions += incoming.ActionModeExecutions;
+            target.TotalExecutionTimeMs += incoming.TotalExecutionTimeMs;
+
+            if (incoming.FirstUsed.HasValue &&
+                (!target.FirstUsed.HasValue || incoming.FirstUsed.Value < target.FirstUsed.Value))
+            {
+                target.FirstUsed = incoming.FirstUsed;
+            }
+
+            if (incoming.LastUsed.HasValue &&
+                (!target.LastUsed.HasValue || incoming.LastUsed.Value > target.LastUsed.Value))
+            {
+                target.LastUsed = incoming.LastUsed;
+            }
+
+            AddInto(target.DailyStats, incoming.DailyStats);
+            AddInto(target.SlotUsage, incoming.SlotUsage);
+            AddInto(target.HourlyUsage, incoming.HourlyUsage);
+            AddInto(target.UsedInProfiles, incoming.UsedInProfiles);
+
+            foreach (var (day, slots) in incoming.DailySlotUsage)
+            {
+                if (!target.DailySlotUsage.TryGetValue(day, out var bucket))
+                {
+                    bucket = new Dictionary<int, int>();
+                    target.DailySlotUsage[day] = bucket;
+                }
+
+                AddInto(bucket, slots);
+            }
+
+            foreach (var (day, hours) in incoming.DailyHourlyUsage)
+            {
+                if (!target.DailyHourlyUsage.TryGetValue(day, out var bucket))
+                {
+                    bucket = new Dictionary<int, int>();
+                    target.DailyHourlyUsage[day] = bucket;
+                }
+
+                AddInto(bucket, hours);
+            }
+        }
+
+        private static void AddInto<TKey>(Dictionary<TKey, int> target, Dictionary<TKey, int> incoming)
+            where TKey : notnull
+        {
+            if (incoming == null) return;
+
+            foreach (var (key, value) in incoming)
+            {
+                target[key] = target.TryGetValue(key, out var current) ? current + value : value;
+            }
+        }
+
+        private static void AddInto(HashSet<string> target, HashSet<string> incoming)
+        {
+            if (incoming == null) return;
+
+            foreach (var item in incoming)
+            {
+                target.Add(item);
             }
         }
 

@@ -461,5 +461,116 @@ namespace Pulsar.Tests.Services
             stats.DailyStats.Should().NotContainKey("2026-07-01");
             stats.DailyStats.Should().ContainKey("2026-09-08");
         }
+
+        // ── ADR-032: Secret Fill plugin id migration (com.pulsar.pki → com.pulsar.secretfill)
+
+        [Fact]
+        public async Task LoadAsync_ShouldMigrateLegacySecretFillStatsKey()
+        {
+            // Arrange — a legacy record keyed by the old id would orphan the user's
+            // history (analytics / recommendations read by the current id).
+            await WriteStatsFileAsync(new[]
+            {
+                new PluginUsageStats
+                {
+                    PluginId = "com.pulsar.pki",
+                    TotalExecutions = 19,
+                    SuccessCount = 19,
+                    FirstUsed = new DateTime(2026, 9, 5, 12, 0, 0, DateTimeKind.Local),
+                    LastUsed = new DateTime(2026, 9, 9, 14, 0, 0, DateTimeKind.Local),
+                    DailyStats = new Dictionary<string, int> { ["2026-09-09"] = 19 },
+                    SlotUsage = new Dictionary<int, int> { [4] = 19 }
+                }
+            });
+
+            using var tracker = CreateTracker();
+
+            // Act
+            await tracker.LoadAsync();
+
+            // Assert — history survives under the current id
+            var stats = tracker.GetStats("com.pulsar.secretfill");
+            stats.TotalExecutions.Should().Be(19, "the user's execution history must not be dropped");
+            stats.DailyStats.Should().ContainKey("2026-09-09");
+            tracker.GetStats("com.pulsar.pki").TotalExecutions.Should().Be(0, "no record should remain under the legacy id");
+        }
+
+        [Fact]
+        public async Task LoadAsync_ShouldMergeWhenBothLegacyAndCurrentRecordsExist()
+        {
+            // Arrange — both ids on disk (partial migration / re-install). Neither may
+            // be dropped: the analytics surface is user-visible history.
+            await WriteStatsFileAsync(new[]
+            {
+                new PluginUsageStats
+                {
+                    PluginId = "com.pulsar.pki",
+                    TotalExecutions = 19,
+                    SuccessCount = 19,
+                    FirstUsed = new DateTime(2026, 9, 1, 8, 0, 0, DateTimeKind.Local),
+                    LastUsed = new DateTime(2026, 9, 5, 8, 0, 0, DateTimeKind.Local),
+                    DailyStats = new Dictionary<string, int> { ["2026-09-05"] = 19 },
+                    SlotUsage = new Dictionary<int, int> { [4] = 19 }
+                },
+                new PluginUsageStats
+                {
+                    PluginId = "com.pulsar.secretfill",
+                    TotalExecutions = 3,
+                    SuccessCount = 2,
+                    FailureCount = 1,
+                    FirstUsed = new DateTime(2026, 9, 8, 8, 0, 0, DateTimeKind.Local),
+                    LastUsed = new DateTime(2026, 9, 10, 8, 0, 0, DateTimeKind.Local),
+                    DailyStats = new Dictionary<string, int> { ["2026-09-10"] = 3 },
+                    SlotUsage = new Dictionary<int, int> { [4] = 2, [7] = 1 }
+                }
+            });
+
+            using var tracker = CreateTracker();
+
+            // Act
+            await tracker.LoadAsync();
+
+            // Assert — counters summed, date bounds widened, dicts merged per key
+            var stats = tracker.GetStats("com.pulsar.secretfill");
+            stats.TotalExecutions.Should().Be(22);
+            stats.SuccessCount.Should().Be(21);
+            stats.FailureCount.Should().Be(1);
+            stats.FirstUsed.Should().Be(new DateTime(2026, 9, 1, 8, 0, 0, DateTimeKind.Local), "earliest first-use wins");
+            stats.LastUsed.Should().Be(new DateTime(2026, 9, 10, 8, 0, 0, DateTimeKind.Local), "latest last-use wins");
+            stats.DailyStats.Should().ContainKey("2026-09-05").WhoseValue.Should().Be(19);
+            stats.DailyStats.Should().ContainKey("2026-09-10").WhoseValue.Should().Be(3);
+            stats.SlotUsage[4].Should().Be(21, "slot 4 appears in both records and must be summed");
+            stats.SlotUsage[7].Should().Be(1);
+        }
+
+        [Fact]
+        public async Task LoadAsync_ShouldLeaveUnrelatedPluginStatsUntouched()
+        {
+            // Arrange — the migration must only touch the Secret Fill id.
+            await WriteStatsFileAsync(new[]
+            {
+                new PluginUsageStats { PluginId = "com.pulsar.winswitcher", TotalExecutions = 42 },
+                new PluginUsageStats { PluginId = "com.pulsar.pki", TotalExecutions = 1 }
+            });
+
+            using var tracker = CreateTracker();
+
+            // Act
+            await tracker.LoadAsync();
+
+            // Assert
+            tracker.GetStats("com.pulsar.winswitcher").TotalExecutions.Should().Be(42);
+            tracker.GetStats("com.pulsar.secretfill").TotalExecutions.Should().Be(1);
+        }
+
+        private async Task WriteStatsFileAsync(IEnumerable<PluginUsageStats> stats)
+        {
+            var dir = Path.GetDirectoryName(_testFilePath)!;
+            Directory.CreateDirectory(dir);
+            var json = System.Text.Json.JsonSerializer.Serialize(
+                stats.ToList(),
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
+            await File.WriteAllTextAsync(_testFilePath, json);
+        }
     }
 }

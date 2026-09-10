@@ -1,5 +1,5 @@
 {
-  "id": "com.pulsar.pki",
+  "id": "com.pulsar.secretfill",
   "version": "2.1.0",
   "minPulsarVersion": "4.0.0",
   "maxPulsarVersion": "5.0.0",
@@ -25,7 +25,7 @@
     "Credentials",
     "Automation"
   ],
-  "documentationUrl": "https://pulsar.dev/docs/plugins/pki",
+  "documentationUrl": "https://pulsar.dev/docs/plugins/secretfill",
   "homepage": "https://pulsar.dev",
   "isCore": true,
   "tier": "Core",

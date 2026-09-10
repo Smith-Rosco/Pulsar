@@ -14,7 +14,7 @@ namespace Pulsar.Core.Plugin
     public interface IPulsarPlugin
     {
         /// <summary>
-        /// 插件唯一标识符 (建议使用反向域名，如 "com.pulsar.pki")
+        /// 插件唯一标识符 (建议使用反向域名，如 "com.pulsar.secretfill")
         /// </summary>
         string Id { get; }
 

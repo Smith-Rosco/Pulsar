@@ -13,6 +13,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Pulsar.Core.Messages;
+using Pulsar.Core.Plugin;
 using Pulsar.Core.Plugin.Metadata;
 using Pulsar.Plugins.Core.SecretFill.Contracts;
 using Pulsar.Plugins.Core.SecretFill.Models;
@@ -437,7 +438,7 @@ namespace Pulsar.ViewModels
                 var newItem = new PluginSlot
                 {
                     Slot = nextSlot,
-                    PluginId = "com.pulsar.pki",
+                    PluginId = PluginIds.SecretFill,
                     Action = "fill",
                     Label = vm2.Label,
                     IconKey = "E72E", // Lock Icon
@@ -688,7 +689,7 @@ namespace Pulsar.ViewModels
         [RelayCommand]
         public async Task EditSecret(PluginSlot slot)
         {
-            if (slot == null || slot.PluginId != "com.pulsar.pki") return;
+            if (slot == null || !PluginIds.IsSecretFill(slot.PluginId)) return;
 
             if (!slot.Args.TryGetValue("secretId", out var secretIdStr) || !Guid.TryParse(secretIdStr, out var secretId))
             {
@@ -734,7 +735,7 @@ namespace Pulsar.ViewModels
         /// </summary>
         private async Task PickSecret(PluginSlot slot)
         {
-            if (slot == null || slot.PluginId != "com.pulsar.pki") return;
+            if (slot == null || !PluginIds.IsSecretFill(slot.PluginId)) return;
 
             var labelMap = _slotEditor.BuildLegacySecretLabelMap();
 
@@ -899,7 +900,7 @@ namespace Pulsar.ViewModels
 
             // P2 Fix: If the newly created slot is a SecretFill slot and secretId is still empty,
             // immediately open the secret picker so the user can link a secret.
-            if (createdSlot.PluginId == "com.pulsar.pki"
+            if (PluginIds.IsSecretFill(createdSlot.PluginId)
                 && (!createdSlot.Args.TryGetValue("secretId", out var sid) || string.IsNullOrEmpty(sid)))
             {
                 await PickSecret(createdSlot);

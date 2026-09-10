@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -67,7 +67,7 @@ namespace Pulsar.Tests.Config
                     new()
                     {
                         Slot = 2,
-                        PluginId = "com.pulsar.pki",
+                        PluginId = "com.pulsar.secretfill",
                         Action = "fill",
                         Label = "My Secret",
                         Args = new Dictionary<string, string>
@@ -139,7 +139,7 @@ namespace Pulsar.Tests.Config
         {
             return new PluginMetadata
             {
-                Id = "com.pulsar.pki",
+                Id = "com.pulsar.secretfill",
                 Display = new DisplayInfo
                 {
                     Name = "SecretFill",

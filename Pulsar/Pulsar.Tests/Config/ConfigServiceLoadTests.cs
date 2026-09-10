@@ -410,6 +410,139 @@ namespace Pulsar.Tests.Config
         /// <summary>
         /// Create ConfigService with test directory
         /// </summary>
+        [Fact]
+        public async Task LoadAsync_ShouldMigrateLegacySecretFillPluginId_InSlots()
+        {
+            // Arrange — ADR-032: slots persisted with the historical Secret Fill id
+            // (com.pulsar.pki) must be normalized to com.pulsar.secretfill at load,
+            // otherwise the runtime lookup fails with "Plugin not found".
+            var legacyConfig = new ProfilesConfig
+            {
+                Settings = new ProfileSettings { HasCompletedTutorial = true },
+                Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["Global"] = new ProcessProfile
+                    {
+                        CommandMode = new List<PluginSlot>
+                        {
+                            new PluginSlot { Slot = 1, PluginId = "com.pulsar.pki", Action = "fill", Label = "Sign in" }
+                        },
+                        SwitchMode = new List<PluginSlot>
+                        {
+                            new PluginSlot { Slot = 2, PluginId = "com.pulsar.pki", Action = "fill", Label = "Portal" }
+                        }
+                    }
+                }
+            };
+
+            await File.WriteAllTextAsync(_configPath, JsonSerializer.Serialize(legacyConfig, new JsonSerializerOptions { WriteIndented = true }));
+            var service = CreateConfigService();
+
+            // Act
+            var config = await service.LoadAsync();
+
+            // Assert — in-memory migration on both slot lists
+            config.Profiles["Global"].CommandMode.Single().PluginId.Should().Be("com.pulsar.secretfill");
+            config.Profiles["Global"].SwitchMode.Single().PluginId.Should().Be("com.pulsar.secretfill");
+
+            // Assert — persisted so the on-disk config heals without a manual re-save
+            var persisted = JsonSerializer.Deserialize<ProfilesConfig>(
+                await File.ReadAllTextAsync(_configPath),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            persisted!.Profiles["Global"].CommandMode.Single().PluginId.Should().Be("com.pulsar.secretfill");
+            persisted.Profiles["Global"].SwitchMode.Single().PluginId.Should().Be("com.pulsar.secretfill");
+        }
+
+        [Fact]
+        public async Task LoadAsync_ShouldMigrateLegacySecretFillPluginId_InPluginsDictionary()
+        {
+            // Arrange — the root `plugins` dictionary is keyed by plugin id; a legacy
+            // key would orphan the user's enable/permission/config profile.
+            var legacyConfig = new ProfilesConfig
+            {
+                Settings = new ProfileSettings { HasCompletedTutorial = true },
+                Plugins = new Dictionary<string, PluginProfile>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["com.pulsar.pki"] = new PluginProfile { Enabled = false }
+                }
+            };
+
+            await File.WriteAllTextAsync(_configPath, JsonSerializer.Serialize(legacyConfig, new JsonSerializerOptions { WriteIndented = true }));
+            var service = CreateConfigService();
+
+            // Act
+            var config = await service.LoadAsync();
+
+            // Assert — key renamed, payload preserved
+            config.Plugins.Should().NotContainKey("com.pulsar.pki");
+            config.Plugins.Should().ContainKey("com.pulsar.secretfill");
+            config.Plugins["com.pulsar.secretfill"].Enabled.Should().BeFalse("the migrated profile must keep the user's enable state");
+
+            var persisted = JsonSerializer.Deserialize<ProfilesConfig>(
+                await File.ReadAllTextAsync(_configPath),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            persisted!.Plugins.Should().ContainKey("com.pulsar.secretfill");
+        }
+
+        [Fact]
+        public async Task LoadAsync_ShouldPreferExistingCurrentIdProfile_WhenBothIdsPresent()
+        {
+            // Arrange — both ids in the dictionary (partial migration / re-install).
+            // The current-id profile wins; the legacy one is dropped rather than
+            // overwriting user config written under the new id.
+            var mixedConfig = new ProfilesConfig
+            {
+                Settings = new ProfileSettings { HasCompletedTutorial = true },
+                Plugins = new Dictionary<string, PluginProfile>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["com.pulsar.pki"] = new PluginProfile { Enabled = false },
+                    ["com.pulsar.secretfill"] = new PluginProfile { Enabled = true }
+                }
+            };
+
+            await File.WriteAllTextAsync(_configPath, JsonSerializer.Serialize(mixedConfig, new JsonSerializerOptions { WriteIndented = true }));
+            var service = CreateConfigService();
+
+            // Act
+            var config = await service.LoadAsync();
+
+            // Assert — current-id profile preserved untouched
+            config.Plugins.Should().ContainKey("com.pulsar.secretfill");
+            config.Plugins["com.pulsar.secretfill"].Enabled.Should().BeTrue();
+            config.Plugins.Should().NotContainKey("com.pulsar.pki");
+        }
+
+        [Fact]
+        public async Task LoadAsync_ShouldBeIdempotent_WhenNoLegacyPluginIdPresent()
+        {
+            // Arrange — a fully migrated config must load byte-stable (second load
+            // finds nothing to fix and must NOT trigger another persist).
+            var currentConfig = new ProfilesConfig
+            {
+                Settings = new ProfileSettings { HasCompletedTutorial = true },
+                Profiles = new Dictionary<string, ProcessProfile>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["Global"] = new ProcessProfile
+                    {
+                        SwitchMode = new List<PluginSlot>
+                        {
+                            new PluginSlot { Slot = 1, PluginId = "com.pulsar.secretfill", Action = "fill" }
+                        }
+                    }
+                }
+            };
+
+            await File.WriteAllTextAsync(_configPath, JsonSerializer.Serialize(currentConfig, new JsonSerializerOptions { WriteIndented = true }));
+            var firstWrite = await File.ReadAllTextAsync(_configPath);
+
+            var service = CreateConfigService();
+            var config = await service.LoadAsync();
+
+            // Assert — untouched, no rewrite
+            config.Profiles["Global"].SwitchMode.Single().PluginId.Should().Be("com.pulsar.secretfill");
+            (await File.ReadAllTextAsync(_configPath)).Should().Be(firstWrite, "an already-migrated config must not be rewritten");
+        }
+
         private ConfigService CreateConfigService()
         {
             return new ConfigService(_mockLogger.Object, configPath: _configPath);

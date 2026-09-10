@@ -1,4 +1,4 @@
-{
+﻿{
   "settings": {
     "language": "zh-CN",
     "centerSlotBehavior": "MRU_Window",
@@ -82,7 +82,7 @@
           "slot": 2
         },
         {
-          "plugin": "com.pulsar.pki",
+          "plugin": "com.pulsar.secretfill",
           "action": "fill",
           "args": {
             "secretId": "00000000-0000-0000-0000-000000000000",
@@ -155,7 +155,7 @@
           "slot": 5
         },
         {
-          "plugin": "com.pulsar.pki",
+          "plugin": "com.pulsar.secretfill",
           "action": "fill",
           "args": {
             "secretId": "00000000-0000-0000-0000-000000000000",
@@ -180,7 +180,7 @@
           "slot": 7
         },
         {
-          "plugin": "com.pulsar.pki",
+          "plugin": "com.pulsar.secretfill",
           "action": "fill",
           "args": {
             "secretId": "00000000-0000-0000-0000-000000000000",
