@@ -238,6 +238,16 @@ namespace Pulsar.Views
             // 等待本次布局/缩放完成后再读取最新坐标，避免用旧 bounds 定位
             _ = Dispatcher.InvokeAsync(() =>
             {
+                // 动画期间指示器归动画独占：事件驱动的重定位（DPI 变化 / 窗格开合 /
+                // 面板尺寸 / 导航项重建）必须让路。否则 InitializeNavIndicator 的
+                // clearHeldAnimations=true 会把正在跑的 stretch 动画整段摘掉，指示器
+                // 直接瞬移到目标。2026-09-10 追踪现场（切换 Appearance → Slots）：
+                //   24.469 [ANIM] PHASE1 baseTop=207.0 → stretchTop=69.7 stretchH=159.3
+                //   24.470 [SNAP] caller=InitializeNavIndicator clearAnim=True animating=True
+                //   24.599 [ANIM] PHASE2 atTop=69.7 atH=22.0  ← 已在终点：零可见位移
+                // 让路后由动画收尾（finally 落定基础值）+ LayoutUpdated 自愈接管。
+                if (_isNavAnimating) return;
+
                 InitializeNavIndicator();
             }, System.Windows.Threading.DispatcherPriority.Render);
         }
@@ -419,8 +429,9 @@ namespace Pulsar.Views
         }
 
         /// <summary>
-        /// 同步重定位指示器（不等待布局）。调用方保证不在动画期间
-        /// （<see cref="OnNavPaneLayoutUpdated"/> 已过滤）。
+        /// 同步重定位指示器（不等待布局）。调用方保证不在动画期间：布局回调
+        /// （<see cref="OnNavPaneLayoutUpdated"/>）与事件驱动的延迟重定位
+        /// （<see cref="RepositionNavIndicator"/>）都已用 <c>_isNavAnimating</c> 过滤。
         /// </summary>
         /// <param name="clearHeldAnimations">
         /// true 时先摘除 Canvas.Top/Height 上的残留动画：上一轮动画以 HoldEnd
@@ -494,6 +505,9 @@ namespace Pulsar.Views
                 if (oldBounds.Height <= 0 || newBounds.Height <= 0)
                 {
                     // 任一端 bounds 无效（布局未完成/条目已被回收移除）：退化为直接重定位。
+                    // 同时放弃动画独占——否则紧随其后的延迟重定位会被 RepositionNavIndicator
+                    // 的动画守卫拦下，指示器停在旧位置不动。
+                    _isNavAnimating = false;
                     RepositionNavIndicator();
                     return;
                 }
@@ -507,13 +521,15 @@ namespace Pulsar.Views
                 var stretchBottom = Math.Max(oldBottomCenter, newBottomCenter);
                 var stretchHeight = stretchBottom - stretchTop;
 
-                // [FIX 2026-09-09] 崩溃防御（17:36 FTL 现场）：Phase 1/2 是单值动画
-                // （From=null，origin = 属性当前基础值）。指示器尚未被布局回调写入
-                // 基础值时 Canvas.Top/Left 为 NaN——渲染 tick 以 NaN origin 取值抛
+                // [FIX 2026-09-09] 崩溃防御（17:36 FTL 现场）：指示器尚未被布局回调写入
+                // 基础值时 Canvas.Top/Left 为 NaN——渲染 tick 以 NaN 取值抛
                 // AnimationException（未处理 → 进程崩溃）。动画前先把基础值落好；
                 // 落不了（无活动条目，如页注册竞态下选区未应用）就放弃动画退化为重定位。
+                // [2026-09-10] 动画起点已改为显式 From（见下），隐式 origin 取值那条崩溃
+                // 通道不复存在；此处保留为「基础值必须可读」的前置条件。
                 if (double.IsNaN(oldCenterY) || double.IsNaN(newCenterY) || double.IsNaN(stretchHeight))
                 {
+                    _isNavAnimating = false;
                     RepositionNavIndicator();
                     return;
                 }
@@ -527,13 +543,26 @@ namespace Pulsar.Views
                     }
                 }
 
+                // 动画起点显式取「当前生效值」，不依赖 From=null 的隐式 origin：隐式 origin
+                // 会被并发的延迟重定位写入的基础值改写（2026-09-10 追踪：切到 Slots 时
+                // [SNAP] 抢在 PHASE1 前后写入基础值 → phase 2 起点错位，指示器先跳后滑）。
+                // 显式 From 后 phase 1 从当前位置起步、phase 2 从 phase 1 的落点续跑，
+                // 与并发写入彻底解耦，并顺带覆盖 Height 为 NaN 的取值崩溃。
+                var startTop = Canvas.GetTop(NavIndicator);
+                var startHeight = NavIndicator.Height;
+                if (double.IsNaN(startTop) || double.IsNaN(startHeight))
+                {
+                    RepositionNavIndicatorImmediate(clearHeldAnimations: true);
+                    return;
+                }
+
                 var stretchDuration = TimeSpan.FromMilliseconds(120);
                 var snapDuration = TimeSpan.FromMilliseconds(130);
                 var easing = new CubicEase { EasingMode = EasingMode.EaseInOut };
 
                 // Phase 1: Stretch
-                var stretchTopAnim = new DoubleAnimation(stretchTop, stretchDuration) { EasingFunction = easing };
-                var stretchHeightAnim = new DoubleAnimation(stretchHeight, stretchDuration) { EasingFunction = easing };
+                var stretchTopAnim = new DoubleAnimation(startTop, stretchTop, stretchDuration) { EasingFunction = easing };
+                var stretchHeightAnim = new DoubleAnimation(startHeight, stretchHeight, stretchDuration) { EasingFunction = easing };
 
                 stretchTopAnim.FillBehavior = FillBehavior.HoldEnd;
                 stretchHeightAnim.FillBehavior = FillBehavior.HoldEnd;
@@ -543,9 +572,9 @@ namespace Pulsar.Views
 
                 await Task.Delay(stretchDuration);
 
-                // Phase 2: Snap to new position
-                var snapTopAnim = new DoubleAnimation(newCenterY, snapDuration) { EasingFunction = easing };
-                var snapHeightAnim = new DoubleAnimation(IndicatorHeight, snapDuration) { EasingFunction = easing };
+                // Phase 2: Snap to new position（起点 = phase 1 的落点，保证帧间连续）
+                var snapTopAnim = new DoubleAnimation(stretchTop, newCenterY, snapDuration) { EasingFunction = easing };
+                var snapHeightAnim = new DoubleAnimation(stretchHeight, IndicatorHeight, snapDuration) { EasingFunction = easing };
                 NavIndicator.BeginAnimation(Canvas.TopProperty, snapTopAnim);
                 NavIndicator.BeginAnimation(FrameworkElement.HeightProperty, snapHeightAnim);
 

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>tab 指示器「切到第一个 tab 无动画」· 根因与验证</title>
+<style>
+body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; margin: 24px auto; max-width: 1080px; color: #1a1a1a; background: #fafafa; line-height: 1.55; }
+h1 { font-size: 1.5em; margin-bottom: 2px; }
+h2 { font-size: 1.12em; margin-top: 26px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
+.sub { color: #64748b; font-size: 0.88em; margin-top: 0; }
+.box { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 14px 18px; margin: 12px 0; }
+.verdict { background: #ecfdf5; border: 1px solid #10b981; }
+.warn { background: #fffbeb; border: 1px solid #f59e0b; }
+.muted { background: #f1f5f9; border: 1px solid #cbd5e1; }
+code { background: #eef2f7; padding: 1px 5px; border-radius: 4px; font-size: 0.92em; font-family: Consolas, "Courier New", monospace; }
+pre { background: #0f172a; color: #e2e8f0; padding: 12px 14px; border-radius: 6px; overflow-x: auto; font-size: 0.84em; line-height: 1.5; }
+pre .k { color: #f472b6; }
+pre .g { color: #4ade80; }
+pre .r { color: #f87171; }
+pre .m { color: #94a3b8; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 0.92em; }
+th, td { border: 1px solid #d8dee6; padding: 7px 10px; text-align: left; vertical-align: top; }
+th { background: #e8edf3; }
+td.ok { color: #047857; font-weight: 600; }
+td.bad { color: #b91c1c; font-weight: 600; }
+ul { margin: 6px 0 6px 0; padding-left: 22px; }
+li { margin: 3px 0; }
+.tag { display: inline-block; font-size: 0.76em; padding: 1px 7px; border-radius: 10px; background: #e2e8f0; color: #334155; margin-right: 6px; }
+.tag.p0 { background: #fee2e2; color: #b91c1c; }
+.tag.p1 { background: #fef3c7; color: #92400e; }
+</style>
+</head>
+<body>
+
+<h1>tab 指示器「切到第一个 tab 无动画」· 根因与验证</h1>
+<p class="sub">2026-09-10 · Pulsar（.NET 8 / WPF）· <code>Views/SettingsWindow.xaml.cs</code> · 自绘 <code>NavIndicator</code> 两段式切换动画</p>
+
+<div class="box verdict">
+<strong>结论</strong>：这不是页面加载慢，也不是"第一个 tab"特有问题——是<strong>事件驱动的延迟重定位缺少动画门</strong>，把正在跑的 stretch 动画整段摘掉，指示器 1 帧瞬移到目标。<br>
+<strong>"第一个 tab" 是伪线索</strong>：真正的变量是「哪一次导航恰好带出布局事件」。用户环境在导航到 Slots 时连发 7 次 <code>Window.DpiChanged</code>（23ms 内），必然踩中 250ms 的动画窗口。<br>
+修复：给唯一的公共重定位入口补 <code>_isNavAnimating</code> 门 + 动画起点改显式 <code>From</code>（顺带修掉"先跳后滑"的次生缺陷）。<strong>修复前后对照：动画被摘掉的签名 3 → 0，零位移瞬态 2 → 0。</strong>
+</div>
+
+<h2>一、关键判据</h2>
+<table>
+<tr><th style="width:34%">判据</th><th style="width:33%">修复前（用户真机）</th><th style="width:33%">修复后（自动注入事件）</th></tr>
+<tr><td><code>clearAnim=True animating=True</code>（<code>BeginAnimation(prop, null)</code> 在动画期间执行 = 动画被摘掉）</td><td class="bad">3 次</td><td class="ok">0 次</td></tr>
+<tr><td><code>PHASE2 … atH=22.0</code>（phase 2 起步时高度已收缩 = 零可见位移）</td><td class="bad">2 次</td><td class="ok">0 次</td></tr>
+<tr><td>守卫命中（<code>SKIP animating-suppressed</code>）</td><td>—（未实现）</td><td class="ok">36 / 280 次注入事件</td></tr>
+<tr><td>8 次导航走完 PHASE1 → PHASE2</td><td>部分被摘断</td><td class="ok">8 / 8（phase 2 起步高度 62 / 119 / 159 / 199 = 拉伸态）</td></tr>
+</table>
+
+<h2>二、根因</h2>
+<p>指示器由 <code>ShellViewModel_PropertyChanged</code> 驱动两段动画（stretch 120ms + snap 130ms）。<code>SettingsWindow</code> 有 <strong>4 条</strong>重定位入口，其中<strong>只有</strong> <code>OnNavPaneLayoutUpdated</code> 有 <code>if (_isNavAnimating) return;</code>。<code>RepositionNavIndicator()</code>——DPI 变化 / 窗格开合 / 面板尺寸 / 导航项重建的<strong>公共入口</strong>——的延迟回调没有门，直接跑 <code>InitializeNavIndicator()</code> → <code>RepositionNavIndicatorImmediate(clearHeldAnimations: true)</code> → <code>BeginAnimation(prop, null)</code>。</p>
+<p><code>clearHeldAnimations</code> 本来是为「写基础值前摘掉上一轮 HoldEnd 残留」设计的；在动画<strong>进行中</strong>执行就变成破坏性操作。</p>
+
+<pre><span class="m"># 修复前（用户真机 11:46:24，Appearance → Slots）</span>
+24.363 <span class="k">[NAV]</span> old=<span class="g">'Appearance'</span> new=<span class="g">'Slots'</span> animating=False
+24.388 <span class="k">[REPOS]</span> dpi-changed animating=True          <span class="m">← ×7 连发，排队 7 个延迟重定位</span>
+24.469 <span class="k">[ANIM]</span> PHASE1 baseTop=207.0 → stretchTop=69.7 stretchH=159.3
+24.470 <span class="r">[SNAP] caller=InitializeNavIndicator top=207.0→69.7 clearAnim=True animating=True</span>  <span class="m">← 1ms 后把动画摘掉</span>
+24.599 <span class="r">[ANIM] PHASE2 atTop=69.7 atH=22.0</span>          <span class="m">← 已在终点：零可见位移 = 用户看到的"瞬态"</span>
+
+<span class="m"># 修复后（同一对页面，11:56:32，期间注入 280 次布局事件）</span>
+32.201 <span class="k">[ANIM]</span> PHASE1 startTop=207.0 startH=22.0 → stretchTop=69.7 stretchH=159.3
+32.220 <span class="k">[REPOS]</span> <span class="g">SKIP animating-suppressed</span>          <span class="m">← 守卫拦下（36 次中的一次）</span>
+32.327 <span class="k">[ANIM]</span> <span class="g">PHASE2 atTop=69.7 atH=159.3</span> → top=69.7 h=22  <span class="m">← 仍在拉伸态起步：真的在动</span>
+32.470 <span class="k">[SNAP] caller=OnNavPaneLayoutUpdated animating=False</span>  <span class="m">← 动画结束后自愈落定</span></pre>
+
+<h3>次生缺陷：隐式 origin 会被并发写入改写</h3>
+<p>phase 1/2 原先用 <code>DoubleAnimation(to, duration)</code>（<code>From=null</code>），起点取自属性的<strong>当前生效值</strong>。当并发的重定位抢先写入基础值，phase 2 的起点就被改写：用户日志里出现过 <code>atTop=69.7 atH=102.0 → top=149.7</code>（先跳后滑）。现已改为显式 <code>From</code>：phase 1 取当前生效值、phase 2 取 phase 1 的落点，帧间连续，与并发写入彻底解耦，并顺带消除 <code>Height</code> 为 NaN 时的取值崩溃通道。</p>
+
+<h2>三、修复（<code>Views/SettingsWindow.xaml.cs</code>，+40 / −10）</h2>
+<ul>
+<li><span class="tag p0">P0</span><code>RepositionNavIndicator()</code> 延迟回调加 <code>if (_isNavAnimating) return;</code>——在<strong>执行时</strong>判定（事件可能在动画开始前排入队列）。收尾由动画 <code>finally</code> + <code>OnNavPaneLayoutUpdated</code> 自愈接管，位置不会丢。</li>
+<li><span class="tag p0">P0</span>两条 in-animation 退化路径（<code>boundsInvalid</code> / <code>NaN centers</code>）显式 <code>_isNavAnimating = false</code> 后再 defer——它们已放弃动画独占，否则会被自己刚加的门拦下，指示器卡在旧位置。</li>
+<li><span class="tag p1">P1</span>phase 1/2 改显式 <code>From</code>（<code>startTop/startHeight</code> → <code>stretchTop/stretchHeight</code>）。</li>
+</ul>
+
+<h2>四、验证方式（无头可用，自驱动）</h2>
+<p>本题属于「事件时序 × 动画」竞态，截图/目视都不可靠，所以采用<strong>同一驱动 + 事件注入的前后对照</strong>：</p>
+<ul>
+<li>用仓库既有 <code>Pulsar.E2E</code> 驱动设置窗口：<code>click</code> 步骤走 FlaUI <strong>真实鼠标输入</strong>（<code>Mouse.MoveTo</code> + <code>Click</code>）→ 与手点同一条 <code>PreviewMouseLeftButtonUp</code> 路径；工作流 22 步、8 次导航，含 4 次「非首个 → Slots」。</li>
+<li>用户环境独有的 <code>DpiChanged</code> 连发用 fixture 复现不出来 → 改为<strong>注入同一汇聚路径</strong>：<code>SetWindowPos(+SWP_NOZORDER|SWP_NOACTIVATE)</code> 在导航期间持续抖动窗口尺寸，触发 <code>NavPaneGrid.SizeChanged</code> → <code>RepositionNavIndicator()</code>。<strong>280 次注入全部命中</strong>（与追踪中 280 条 <code>pane-size-changed</code> 逐条对应）。守卫位于汇聚点，因此与触发源种类无关。</li>
+<li>build <strong>0 警告 / 0 错误</strong>；全量测试 <strong>1492 / 1492</strong> 通过；拆除临时诊断后对最终产物再跑一次 E2E <strong>PASS</strong>。</li>
+</ul>
+
+<div class="box muted">
+<strong>诚实边界</strong>
+<ul>
+<li>注入的是 <code>SizeChanged</code>，而用户环境实际触发的是 <code>DpiChanged</code> —— 两者在 <code>RepositionNavIndicator()</code> 汇聚，是<strong>同一行守卫</strong>；本次未在真机复现 <code>DpiChanged</code> 那条具体入口。</li>
+<li>本报告未做像素级目视确认（动画观感），全部结论基于可机读的事件日志判据。</li>
+</ul>
+</div>
+
+<h2>五、开放观察（未处理）</h2>
+<div class="box warn">
+<code>Window.DpiChanged</code> 在导航到 Slots 时连发 <strong>7 次</strong>（23ms 内），而自动化跑同一导航为 <strong>0 次</strong>。已排除「页面尺寸撑大窗口」：窗口固定 <code>1000×700</code>、无 <code>SizeToContent</code>、<code>WindowStartupLocation=CenterScreen</code>、<code>PaneDisplayMode=Left</code>。修复后该连发<strong>已无害</strong>（动画期间被丢弃），但来源未解，疑与多显示器 / DPI 环境有关。
+<br><br><strong>建议</strong>：下次真机排查时在 <code>OnWindowDpiChanged</code> 记录 <code>e.OldDpi / e.NewDpi</code>（本次已临时加过，随诊断一并拆除）。
+</div>
+
+<h2>六、文件清单</h2>
+<ul>
+<li><code>Pulsar/Pulsar/Views/SettingsWindow.xaml.cs</code> — 修复（+40 / −10）</li>
+<li><code>Docs/lessons/WPF_INDICATOR_ANIMATION_TORN_BY_LAYOUT_EVENT.md</code> — 新增 lesson：动画门必须覆盖所有写入入口；<code>From</code> 必须显式钉死</li>
+<li><code>Docs/journal/2026-09-10.md</code> · <code>Docs/journal/NEXT.md</code> — 会话记忆与待办</li>
+<li>证据（<code>artifacts/</code>，未入库）：<code>nav-trace-BEFORE-userrun.log</code>（用户真机·修复前）· <code>nav-trace-AFTER-inject.log</code>（自动注入·修复后）· <code>nav-indicator-diag.json</code> · <code>nav-resize-inject.ps1</code></li>
+</ul>
+
+</body>
+</html>
