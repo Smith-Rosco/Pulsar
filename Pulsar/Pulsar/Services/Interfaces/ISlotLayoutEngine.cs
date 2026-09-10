@@ -5,6 +5,13 @@ namespace Pulsar.Services.Interfaces
 {
     public interface ISlotLayoutEngine
     {
+        /// <summary>
+        /// [ADR-030] Single-source layout: <see cref="LayoutParameters.Radius"/> is
+        /// derived from the slot count's OPTIMAL (scaled) slot size — identical to
+        /// RadialMenuLayoutCoordinator.GetLayoutMetrics. Callers (dead zone, wheel
+        /// editor) must consume THIS, never recompute radius from the default slot
+        /// size (the pre-030 phantom-radius path).
+        /// </summary>
         LayoutParameters CalculateOptimalLayout(int slotCount);
         double CalculateOptimalSlotSize(int slotCount);
         double CalculateOptimalCenterSize(int slotCount);

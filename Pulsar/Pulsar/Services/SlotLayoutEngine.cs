@@ -14,16 +14,18 @@ namespace Pulsar.Services
 
         public LayoutParameters CalculateOptimalLayout(int slotCount)
         {
-            var radius = CalculateOptimalRadius(slotCount);
-            var centerSize = CalculateOptimalCenterSize(slotCount);
+            // [ADR-030] Radius single source: always derived from the slot-count's
+            // OPTIMAL (scaled) slot size — the same semantic as
+            // RadialMenuLayoutCoordinator.GetLayoutMetrics. The pre-030 variant
+            // (default 50px slot size) produced a phantom radius for N > 8 and
+            // desynced the dead zone / wheel editor from the rendered ring.
             var slotSize = CalculateOptimalSlotSize(slotCount);
+            var radius = CalculateOptimalRadius(slotCount, slotSize);
+            var centerSize = CalculateOptimalCenterSize(slotCount);
             var deadZoneRatio = CalculateDeadZoneRatio(slotCount);
             var deadZoneRadius = radius * deadZoneRatio;
 
             // [R1 2026-09-09] Canvas center from WheelGeometry (was hard-coded 250,250).
-            // Note: radius intentionally uses the default slot size here (historical
-            // behavior, pinned by pose snapshot tests) — the scaled-slotSize radius
-            // variant lives at RadialMenuLayoutCoordinator.GetLayoutMetrics.
             return new LayoutParameters(
                 WheelGeometry.CenterX,
                 WheelGeometry.CenterY,

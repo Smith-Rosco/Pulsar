@@ -17,18 +17,22 @@ namespace Pulsar.Tests.ViewModels
     /// [R1/S1 2026-09-09] RadialMenuLayoutCoordinator 直接测试——该协调器此前
     /// 0 直接测试（S1 测试债）。使用真实 SlotLayoutEngine（无 mock 几何），
     /// IAnimationController / IPageProvider / IPagingController 用 Moq 隔离。
-    /// 半径语义说明：GetLayoutMetrics 走**缩放 slotSize** 半径路径，与
-    /// CalculateOptimalLayout 的固定-50 路径的分歧已在 pose 快照测试中记录。
+    /// [ADR-030 2026-09-10] 半径单一公式收敛后，GetLayoutMetrics 与
+    /// CalculateOptimalLayout 数值恒等——恒等断言见 RadiusPaths_AreIdentical。
     /// </summary>
     public class RadialMenuLayoutCoordinatorTests
     {
         private readonly Mock<IAnimationController> _animation = new();
+        private readonly SlotLayoutEngine _engine;
         private readonly RadialMenuLayoutCoordinator _coordinator;
 
         public RadialMenuLayoutCoordinatorTests()
         {
+            // Same engine instance injected into the coordinator → the identity
+            // assertion below compares the two code paths on one shared engine.
+            _engine = new SlotLayoutEngine();
             _coordinator = new RadialMenuLayoutCoordinator(
-                new SlotLayoutEngine(), _animation.Object, logger: null);
+                _engine, _animation.Object, logger: null);
         }
 
         [Theory]
@@ -42,6 +46,26 @@ namespace Pulsar.Tests.ViewModels
             r.Should().BeApproximately(radius, 1e-9);
             c.Should().BeApproximately(centerSize, 1e-9);
             s.Should().BeApproximately(slotSize, 1e-9);
+        }
+
+        [Theory]
+        [InlineData(6)]
+        [InlineData(7)]
+        [InlineData(8)]
+        [InlineData(9)]
+        [InlineData(10)]
+        [InlineData(11)]
+        [InlineData(12)]
+        public void RadiusPaths_AreIdentical(int slotCount)
+        {
+            // [ADR-030] Single-source guarantee: the engine layout and the
+            // coordinator metrics must derive the SAME radius (this pins the
+            // convergence; re-introducing a second path fails here).
+            var pose = _engine.CalculateOptimalLayout(slotCount);
+            var (r, _, _) = _coordinator.GetLayoutMetrics(slotCount, currentCenterSize: 70, currentSlotSize: 50);
+
+            r.Should().BeApproximately(pose.Radius, 1e-9,
+                $"engine layout radius and coordinator metrics radius must be identical (N={slotCount})");
         }
 
         [Fact]
