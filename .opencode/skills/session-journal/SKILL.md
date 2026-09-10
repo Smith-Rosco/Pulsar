@@ -117,6 +117,32 @@ the cap (or the file is already over):
 3. Continue recording in the fresh file. Newer-day files stay small so the
    session-start ritual stays cheap.
 
+**First decide ADD-APPEND vs FRESH-NEW (rotation is not one-time-per-day).**
+A day can be rotated more than once. Before rotating, check whether
+`Docs/journal/archive/YYYY-MM-DD.md` **already exists**:
+
+- **Does not exist →** fresh rotation: `git mv` the whole file, write the
+  pointer header (steps 1–2 above).
+- **Already exists →** an earlier session of the same day was already rotated.
+  Do **not** overwrite it. Instead **append** the not-yet-archived blocks to the
+  existing archive, then rewrite the in-stay file down to a fresh pointer
+  header. Verify **zero overlap** first — compare the in-file `## Session`
+  headings against the archive's (they must be disjoint), then check the
+  archive's `## Session` count equals old + new.
+
+Also true of a "rotated but regrown" day file (pointer header at top, plus new
+sessions below): its size is the *new* sessions' weight; rotate again the same
+way when it re-exceeds the cap.
+
+**Rotate promptly.** Do not wait for "the next append". A backlog of
+un-rotated oversized days defeats ADR-021 entirely: the pre-work ritual reads
+the newest day file whole, so every session pays for all un-countered history.
+If you find several over-cap day files at once, rotate each one (the day may
+still be today's if it is already over and you are about to append).
+
+Verify verbatim move by byte-count + `sha256sum` **before and after** — they
+must match exactly. Never "clean up" while rotating.
+
 ## Rules
 
 - Only append; never rewrite, reorder, or **delete** past entries or past
