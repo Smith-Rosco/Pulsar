@@ -61,17 +61,6 @@ namespace Pulsar.Tests.Services
         }
 
         [Fact]
-        public async Task GetRunningProcessNamesAsync_WhenStructuralFilterExcludesEverything_ShouldReturnEmpty()
-        {
-            var evaluator = CreateExcludingEvaluator();
-            var inventory = new WindowInventoryService(evaluator.Object);
-
-            var names = await inventory.GetRunningProcessNamesAsync();
-
-            names.Should().BeEmpty();
-        }
-
-        [Fact]
         public async Task GetProcessWindowsAsync_UnknownProcessId_ShouldReturnEmpty()
         {
             var evaluator = CreateExcludingEvaluator();

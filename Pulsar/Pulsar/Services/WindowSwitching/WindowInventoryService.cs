@@ -139,17 +139,6 @@ namespace Pulsar.Services.WindowSwitching
             });
         }
 
-        public Task<HashSet<string>> GetRunningProcessNamesAsync()
-        {
-            return Task.Run(async () =>
-            {
-                var processes = await GetRunningProcessesAsync();
-                return processes
-                    .Select(process => process.ProcessName)
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            });
-        }
-
         public Task<List<RunningProcessInfo>> GetRunningProcessesAsync()
         {
             return Task.Run(() =>

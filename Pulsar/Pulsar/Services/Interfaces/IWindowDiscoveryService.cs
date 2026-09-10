@@ -19,11 +19,6 @@ namespace Pulsar.Services.Interfaces
         Task<List<ProcessWindowInfo>> GetActiveWindowsAsync();
 
         /// <summary>
-        /// 获取当前正在运行的进程名集合（轻量级，无完整窗口候选构建）。
-        /// </summary>
-        Task<HashSet<string>> GetRunningProcessNamesAsync();
-
-        /// <summary>
         /// 获取当前正在运行的进程元数据（轻量级，包含可用的可执行路径）。
         /// </summary>
         Task<List<RunningProcessInfo>> GetRunningProcessesAsync();

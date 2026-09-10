@@ -372,11 +372,6 @@ namespace Pulsar.Services
         public Task<List<ProcessWindowInfo>> GetActiveWindowsAsync()
             => _inventoryCoordinator.GetActiveWindowsAsync();
 
-        public Task<HashSet<string>> GetRunningProcessNamesAsync()
-        {
-            return _inventoryService.GetRunningProcessNamesAsync();
-        }
-
         public Task<List<RunningProcessInfo>> GetRunningProcessesAsync()
         {
             return _inventoryService.GetRunningProcessesAsync();

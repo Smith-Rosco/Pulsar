@@ -37,9 +37,6 @@ namespace Pulsar.Services.Interfaces
             Func<IntPtr, WindowTrackingSnapshot> snapshotWindow,
             Func<string, ImageSource?> extractIcon);
 
-        /// <summary>当前正在运行的进程名集合（轻量级，发现路径：Discovery 作用域）。</summary>
-        Task<HashSet<string>> GetRunningProcessNamesAsync();
-
         /// <summary>当前正在运行的进程元数据（轻量级，发现路径：Discovery 作用域）。</summary>
         Task<List<RunningProcessInfo>> GetRunningProcessesAsync();
 
