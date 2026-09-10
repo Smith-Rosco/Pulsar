@@ -3025,4 +3025,28 @@ Open Settings anytime to customize your slots, or keep using the defaults — Pu
   <data name="Dialog.AddSlot.SubActions.ToggleExpand" xml:space="preserve">
     <value>Expand or collapse</value>
   </data>
+  <data name="Dialog.PluginAnalyticsDetail.Title" xml:space="preserve">
+    <value>Plugin Details</value>
+  </data>
+  <data name="Dialog.PluginAnalyticsDetail.Version" xml:space="preserve">
+    <value>v</value>
+  </data>
+  <data name="Dialog.PluginAnalyticsDetail.TrendTitle" xml:space="preserve">
+    <value>Last 7 Days</value>
+  </data>
+  <data name="Dialog.PluginAnalyticsDetail.TrendSummary" xml:space="preserve">
+    <value>Executions in last 7 days: {0}</value>
+  </data>
+  <data name="Dialog.PluginAnalyticsDetail.SlotTitle" xml:space="preserve">
+    <value>Slot Usage</value>
+  </data>
+  <data name="Dialog.PluginAnalyticsDetail.ModeTitle" xml:space="preserve">
+    <value>Mode Distribution</value>
+  </data>
+  <data name="Dialog.PluginAnalyticsDetail.RecommendationsTitle" xml:space="preserve">
+    <value>Recommendations</value>
+  </data>
+  <data name="Settings.Analytics.ViewDetails" xml:space="preserve">
+    <value>Details</value>
+  </data>
 </root>

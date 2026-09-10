@@ -11,6 +11,7 @@ using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pulsar.Native;
+using Pulsar.Core.Debug;
 using Pulsar.Services.Interfaces;
 using Pulsar.ViewModels;
 using Pulsar.Views;
@@ -32,12 +33,17 @@ namespace Pulsar.Services
     {
         private readonly ILogger<DebugCommandServer>? _logger;
         private readonly RadialMenuViewModel _menuViewModel;
+        private readonly DebugModeOptions _debugOptions;
         private CancellationTokenSource? _cts;
         private Task? _serverLoop;
 
-        public DebugCommandServer(RadialMenuViewModel menuViewModel, ILogger<DebugCommandServer>? logger = null)
+        public DebugCommandServer(
+            RadialMenuViewModel menuViewModel,
+            DebugModeOptions debugOptions,
+            ILogger<DebugCommandServer>? logger = null)
         {
             _menuViewModel = menuViewModel;
+            _debugOptions = debugOptions;
             _logger = logger;
         }
 
@@ -166,7 +172,7 @@ namespace Pulsar.Services
                     }
 
                     case "open-settings":
-                        _logger?.LogInformation("[DebugCommandServer] open-settings");
+                        _logger?.LogInformation("[DebugCommandServer] open-settings (lowInterference={LowInterference})", _debugOptions.LowInterference);
                         Application.Current?.Dispatcher?.Invoke(() =>
                         {
                             var app = Application.Current as App;
@@ -177,10 +183,52 @@ namespace Pulsar.Services
                                 return;
                             }
 
+                            if (_debugOptions.LowInterference)
+                            {
+                                // Low-interference E2E: make the window visible without
+                                // stealing foreground focus, so a workflow can run while
+                                // the user is in another full-screen app. ShowActivated=false
+                                // keeps the activation on the current window; the UIA tree
+                                // is still populated because WPF renders the window.
+                                window.ShowActivated = false;
+                                window.Show();
+                                return;
+                            }
+
                             window.Show();
                             window.Activate();
                         });
                         break;
+
+                    case "nav-settings":
+                    {
+                        // [E2E] Navigate the Settings window to a page id through the
+                        // same seam the mouse/keyboard nav handlers use. Needed because
+                        // the nav items are driven by PreviewMouseLeftButtonUp, which
+                        // UIA InvokePattern/SelectionItemPattern cannot trigger — so a
+                        // low-interference workflow cannot select a page by clicking.
+                        var pageId = TryGetString(root, "pageId");
+                        if (string.IsNullOrWhiteSpace(pageId))
+                        {
+                            _logger?.LogWarning("[DebugCommandServer] nav-settings: missing 'pageId'");
+                            break;
+                        }
+
+                        _logger?.LogInformation("[DebugCommandServer] nav-settings pageId={PageId}", pageId);
+                        Application.Current?.Dispatcher?.InvokeAsync(async () =>
+                        {
+                            var app = Application.Current as App;
+                            var window = app?.Services?.GetService<SettingsWindow>();
+                            if (window == null)
+                            {
+                                _logger?.LogWarning("[DebugCommandServer] nav-settings: SettingsWindow not resolvable from DI");
+                                return;
+                            }
+
+                            await window.NavigateToPageAsync(pageId).ConfigureAwait(true);
+                        });
+                        break;
+                    }
 
                     // [E2E] Deterministic input synthesis — exercises the same session
                     // entry points as the real adapters without registering global

@@ -154,6 +154,68 @@ namespace Pulsar.Tests.ViewModels
         }
 
         [Fact]
+        public async Task ViewDetails_OpensDetailDialog_ForPlugin()
+        {
+            var dialogServiceMock = new Mock<IDialogService>();
+            dialogServiceMock
+                .Setup(d => d.ShowCustomAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<PluginAnalyticsDetailViewModel>(),
+                    It.IsAny<DialogButtons>(),
+                    It.IsAny<DialogSizeConstraints>()))
+                .ReturnsAsync(DialogResult.Confirmed);
+
+            _registryMock.Setup(r => r.GetDescriptor(It.IsAny<string>())).Returns((PluginDescriptor?)null);
+
+            var vm = CreateViewModel(
+                new Dictionary<string, PluginUsageStats> { { "plugin.a", CreateStats("plugin.a", 10, 5) } },
+                dialogService: dialogServiceMock.Object);
+            await vm.LoadAsync();
+
+            await vm.ViewDetailsCommand.ExecuteAsync("plugin.a");
+
+            dialogServiceMock.Verify(
+                d => d.ShowCustomAsync(
+                    It.IsAny<string>(),
+                    It.Is<PluginAnalyticsDetailViewModel>(v => v.PluginId == "plugin.a"),
+                    It.IsAny<DialogButtons>(),
+                    It.IsAny<DialogSizeConstraints>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task ViewDetails_WithUnknownPluginId_DoesNotOpenDialog()
+        {
+            var dialogServiceMock = new Mock<IDialogService>();
+            var vm = CreateViewModel(
+                new Dictionary<string, PluginUsageStats> { { "plugin.a", CreateStats("plugin.a", 10, 5) } },
+                dialogService: dialogServiceMock.Object);
+            await vm.LoadAsync();
+
+            await vm.ViewDetailsCommand.ExecuteAsync("does.not.exist");
+
+            dialogServiceMock.Verify(
+                d => d.ShowCustomAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<object>(),
+                    It.IsAny<DialogButtons>(),
+                    It.IsAny<DialogSizeConstraints>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task ViewDetails_WithNoDialogService_DoesNotThrow()
+        {
+            var vm = CreateViewModel(
+                new Dictionary<string, PluginUsageStats> { { "plugin.a", CreateStats("plugin.a", 10, 5) } });
+            await vm.LoadAsync();
+
+            var act = () => vm.ViewDetailsCommand.ExecuteAsync("plugin.a");
+
+            await act.Should().NotThrowAsync();
+        }
+
+        [Fact]
         public async Task GoToPlugins_NavigatesShellToPluginsPage()
         {
             var prefsMock = new Mock<ILocalUiPreferencesService>();

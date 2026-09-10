@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -298,6 +299,18 @@ namespace Pulsar.Views
         private void OnTransientPageRegistered(SettingsPageRegistration registration)
         {
             RebuildNavigationPreservingSelection();
+        }
+
+        /// <summary>
+        /// [E2E] Navigates to a settings page through the same shell seam the
+        /// mouse/keyboard nav handlers use. Exposed for the debug command pipe:
+        /// the nav items are driven by <c>PreviewMouseLeftButtonUp</c>, which UIA
+        /// <c>InvokePattern</c>/<c>SelectionItemPattern</c> cannot trigger, so a
+        /// low-interference workflow cannot select a page by clicking it.
+        /// </summary>
+        public Task NavigateToPageAsync(string pageId)
+        {
+            return _shellViewModel.NavigateAsync(pageId, userInitiated: true);
         }
 
         private void OnTransientPageUnregistered(string pageId)

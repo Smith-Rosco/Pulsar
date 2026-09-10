@@ -20,6 +20,14 @@ namespace Pulsar.Core.Debug
         public const string UiDebugFlag = "--ui-debug";
         public const string UiDebugHooksFlag = "--ui-debug-hooks";
 
+        /// <summary>
+        /// <c>--ui-debug-low-interference</c> keeps the debug instance from
+        /// stealing foreground focus when the E2E driver opens its windows, so a
+        /// workflow can run while the user is in another full-screen app (e.g. a
+        /// game). Only meaningful together with <see cref="UiDebugFlag"/>.
+        /// </summary>
+        public const string UiDebugLowInterferenceFlag = "--ui-debug-low-interference";
+
         /// <summary>Production default: no debug isolation, no pipes.</summary>
         public static DebugModeOptions Disabled { get; } = new(isUiDebug: false);
 
@@ -31,6 +39,12 @@ namespace Pulsar.Core.Debug
         /// mouse-gesture hook stays off in every debug run.
         /// </summary>
         public bool EnableHotkeyHooks { get; }
+
+        /// <summary>
+        /// <c>--ui-debug-low-interference</c>: windows opened by debug commands
+        /// must not activate (no focus theft, no foreground switch).
+        /// </summary>
+        public bool LowInterference { get; }
 
         /// <summary>Isolated debug config directory (<c>%AppData%\Pulsar.Debug</c>).</summary>
         public string ConfigDirectory { get; }
@@ -47,10 +61,11 @@ namespace Pulsar.Core.Debug
         /// <summary>Named command pipe: <c>Pulsar.Debug.&lt;pid&gt;.cmd</c>.</summary>
         public string CommandPipeName { get; }
 
-        public DebugModeOptions(bool isUiDebug, bool enableHotkeyHooks = false)
+        public DebugModeOptions(bool isUiDebug, bool enableHotkeyHooks = false, bool lowInterference = false)
         {
             IsUiDebug = isUiDebug;
             EnableHotkeyHooks = enableHotkeyHooks;
+            LowInterference = lowInterference;
 
             var baseDirectory = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -70,8 +85,9 @@ namespace Pulsar.Core.Debug
         {
             var isUiDebug = Array.IndexOf(args, UiDebugFlag) >= 0;
             var enableHotkeyHooks = isUiDebug && Array.IndexOf(args, UiDebugHooksFlag) >= 0;
+            var lowInterference = isUiDebug && Array.IndexOf(args, UiDebugLowInterferenceFlag) >= 0;
             return isUiDebug
-                ? new DebugModeOptions(isUiDebug: true, enableHotkeyHooks)
+                ? new DebugModeOptions(isUiDebug: true, enableHotkeyHooks, lowInterference)
                 : Disabled;
         }
     }

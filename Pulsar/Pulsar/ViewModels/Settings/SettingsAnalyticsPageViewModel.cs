@@ -26,6 +26,7 @@ namespace Pulsar.ViewModels.Settings
         private readonly IPluginLogService? _logService;
         private readonly IDialogService? _dialogService;
         private readonly SettingsShellViewModel? _settingsShell;
+        private readonly Pulsar.Services.Interfaces.IPluginRegistry? _pluginRegistry;
 
         public ObservableCollection<AnalyticsItem> MostUsedPlugins { get; } = new();
         public ObservableCollection<SlotHeatmapItem> SlotHeatmap { get; } = new();
@@ -82,7 +83,8 @@ namespace Pulsar.ViewModels.Settings
             IPluginRecommendationEngine? recommendationEngine = null,
             IPluginLogService? logService = null,
             IDialogService? dialogService = null,
-            SettingsShellViewModel? settingsShell = null)
+            SettingsShellViewModel? settingsShell = null,
+            Pulsar.Services.Interfaces.IPluginRegistry? pluginRegistry = null)
         {
             _readModel = readModel;
             _runtimeOps = runtimeOps;
@@ -92,6 +94,7 @@ namespace Pulsar.ViewModels.Settings
             _logService = logService;
             _dialogService = dialogService;
             _settingsShell = settingsShell;
+            _pluginRegistry = pluginRegistry;
         }
 
         partial void OnTimeRangeChanged(AnalyticsTimeRange value)
@@ -195,6 +198,34 @@ namespace Pulsar.ViewModels.Settings
             var vm = new Pulsar.ViewModels.Dialogs.PluginLogViewerViewModel(_logService, pluginId, pluginName);
             await _dialogService.ShowCustomAsync(
                 string.Format(_loc?["Notification.PluginLogsTitleFormat"] ?? "Plugin Logs: {0}", pluginName),
+                vm,
+                Models.Enums.DialogButtons.Ok,
+                Models.DialogSizeConstraints.Large);
+        }
+
+        /// <summary>
+        /// 打开单插件使用详情对话框（分析页「下钻」）。数据来自已加载的内存快照，
+        /// 插件元数据与单插件推荐在对话框 VM 内补全。
+        /// </summary>
+        [RelayCommand]
+        private async Task ViewDetails(string pluginId)
+        {
+            if (_dialogService == null)
+            {
+                return;
+            }
+
+            var item = MostUsedPlugins.FirstOrDefault(p => p.PluginId == pluginId);
+            if (item == null)
+            {
+                return;
+            }
+
+            var vm = new Pulsar.ViewModels.Dialogs.PluginAnalyticsDetailViewModel(
+                item, _loc, _pluginRegistry, _recommendationEngine);
+
+            await _dialogService.ShowCustomAsync(
+                string.Format(_loc?["Dialog.PluginAnalyticsDetail.Title"] ?? "Plugin Details", item.DisplayName),
                 vm,
                 Models.Enums.DialogButtons.Ok,
                 Models.DialogSizeConstraints.Large);

@@ -17,6 +17,12 @@ namespace Pulsar.E2E.Driver
     /// directory (if present) is installed the same way, giving analytics-page
     /// workflows deterministic usage data; when absent, any leftover debug stats
     /// file is removed so empty-state workflows start clean.
+    ///
+    /// Low-interference mode: when <see cref="LaunchedApp"/> is requested with
+    /// <c>lowInterference: true</c> the debug instance is started with
+    /// <c>--ui-debug-low-interference</c>, which keeps debug-driven windows from
+    /// activating (no focus theft). Workflows can then run while the user is in
+    /// another full-screen app; clicks go through UIA InvokePattern.
     /// </summary>
     public sealed class AppLauncher
     {
@@ -30,9 +36,12 @@ namespace Pulsar.E2E.Driver
         {
             public Process Process { get; init; } = null!;
             public string ConfigDirectory { get; init; } = string.Empty;
+            public bool LowInterference { get; init; }
         }
 
         public LaunchedApp Launch(string exePath, string? fixturePath, string extraArguments, Action<string> log)
+            => Launch(exePath, fixturePath, extraArguments, lowInterference: false, log);
+        public LaunchedApp Launch(string exePath, string? fixturePath, string extraArguments, bool lowInterference, Action<string> log)
         {
             if (string.IsNullOrWhiteSpace(exePath))
             {
@@ -85,6 +94,10 @@ namespace Pulsar.E2E.Driver
             }
 
             var arguments = "--ui-debug";
+            if (lowInterference)
+            {
+                arguments += " " + "--ui-debug-low-interference";
+            }
             if (!string.IsNullOrWhiteSpace(extraArguments))
             {
                 arguments += " " + extraArguments;
@@ -113,8 +126,8 @@ namespace Pulsar.E2E.Driver
                     $"Pulsar debug instance exited early with code {process.ExitCode}. Check the log at {Path.Combine(debugConfigDir, "Logs")}.");
             }
 
-            log($"Pulsar debug instance running (PID {process.Id}), config dir: {debugConfigDir}");
-            return new LaunchedApp { Process = process, ConfigDirectory = debugConfigDir };
+            log($"Pulsar debug instance running (PID {process.Id}), config dir: {debugConfigDir}, lowInterference={lowInterference}");
+            return new LaunchedApp { Process = process, ConfigDirectory = debugConfigDir, LowInterference = lowInterference };
         }
 
         public static void Stop(LaunchedApp? app, Action<string> log)

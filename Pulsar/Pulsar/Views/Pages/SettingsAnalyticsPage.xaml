@@ -461,6 +461,12 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <ui:CardControl Margin="{StaticResource Pulsar.Gap.Bottom.MD}" Padding="{StaticResource Pulsar.Pad.H16V16}">
+                                <!-- 整行可点：打开插件详情（详情按钮是显式入口，整行点击是便捷路径）。 -->
+                                <ui:CardControl.InputBindings>
+                                    <MouseBinding MouseAction="LeftClick"
+                                                  Command="{Binding DataContext.ViewDetailsCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                  CommandParameter="{Binding PluginId}"/>
+                                </ui:CardControl.InputBindings>
                                 <ui:CardControl.Header>
                                 <Grid HorizontalAlignment="Stretch">
                                     <Grid.ColumnDefinitions>
@@ -581,16 +587,22 @@
                                         </StackPanel>
                                     </UniformGrid>
 
-                                    <!-- Bottom Row: Slot + Mode Summary + Sparkline -->
-                                    <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="{StaticResource Pulsar.Gap.Top.SM}">
-                                        <TextBlock Text="{Binding SlotBreakdown}"
-                                                   FontSize="{StaticResource Pulsar.Type.Caption}"
-                                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
-                                        <TextBlock Text="{Binding ModeSummary}"
-                                                   FontSize="{StaticResource Pulsar.Type.Caption}"
-                                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                                   Margin="{StaticResource Pulsar.Gap.Left.MD}"/>
-                                        <ItemsControl ItemsSource="{Binding TrendData}" Margin="{StaticResource Pulsar.Gap.Left.LG}">
+                                    <!-- Bottom Row: Slot + Mode Summary + Sparkline + 详情入口 -->
+                                    <Grid Grid.Row="2" Grid.Column="1" Margin="{StaticResource Pulsar.Gap.Top.SM}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                            <TextBlock Text="{Binding SlotBreakdown}"
+                                                       FontSize="{StaticResource Pulsar.Type.Caption}"
+                                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
+                                            <TextBlock Text="{Binding ModeSummary}"
+                                                       FontSize="{StaticResource Pulsar.Type.Caption}"
+                                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                       Margin="{StaticResource Pulsar.Gap.Left.MD}"/>
+                                            <ItemsControl ItemsSource="{Binding TrendData}" Margin="{StaticResource Pulsar.Gap.Left.LG}">
                                             <ItemsControl.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <StackPanel Orientation="Horizontal"/>
@@ -621,7 +633,17 @@
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
-                                    </StackPanel>
+                                        </StackPanel>
+
+                                        <ui:Button Grid.Column="1"
+                                                   Content="{lex:Locale Settings.Analytics.ViewDetails}"
+                                                   Style="{StaticResource PulsarSecondaryButtonStyle}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="{StaticResource Pulsar.Gap.Left.MD}"
+                                                   AutomationProperties.AutomationId="Pulsar.Settings.Analytics.DetailsButton"
+                                                   Command="{Binding DataContext.ViewDetailsCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                   CommandParameter="{Binding PluginId}"/>
+                                    </Grid>
                                 </Grid>
                                 </ui:CardControl.Header>
                             </ui:CardControl>

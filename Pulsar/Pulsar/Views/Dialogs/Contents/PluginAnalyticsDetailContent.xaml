@@ -1,0 +1,241 @@
+<UserControl
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:lex="clr-namespace:Pulsar.Core.Localization"
+             xmlns:converters="clr-namespace:Pulsar.Core.Converters"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="760">
+
+    <!--
+      插件使用详情（分析页「下钻」）对话框内容。
+      数据全部来自分析页内存快照，无新查询。所有用户可见字符串走 resx 双语；
+      图标字形由 VM 经 IconHelper.GetGlyph 归一化后以 TextBlock 渲染。
+    -->
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Pulsar;component/Styles/ButtonStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <converters:DoubleMultiplyConverter x:Key="DoubleMultiplyConverter"/>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel>
+
+            <!-- 头部：图标 + 名称/ID + 版本/作者 -->
+            <ui:CardControl Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
+                <ui:CardControl.Header>
+                    <Grid HorizontalAlignment="Stretch">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" Width="48" Height="48"
+                                CornerRadius="{StaticResource Pulsar.Radius.LG}"
+                                Margin="{StaticResource Pulsar.Gap.Right.LG}"
+                                VerticalAlignment="Center"
+                                Background="{DynamicResource ControlFillColorDisabledBrush}">
+                            <TextBlock Text="{Binding IconGlyph}"
+                                       FontSize="24"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                        </Border>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding DisplayName}"
+                                           FontWeight="SemiBold" FontSize="{StaticResource Pulsar.Type.Subtitle}"
+                                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                                <TextBlock Margin="{StaticResource Pulsar.Gap.Left.SM}"
+                                           FontSize="{StaticResource Pulsar.Type.Caption}"
+                                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                           VerticalAlignment="Center"
+                                           Text="{Binding PluginId, StringFormat='({0})'}"/>
+                            </StackPanel>
+                            <TextBlock FontSize="{StaticResource Pulsar.Type.Caption}"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                       Margin="{StaticResource Pulsar.Gap.Top.XS}">
+                                <Run Text="{lex:Locale Dialog.PluginAnalyticsDetail.Version}"/>
+                                <Run Text=" "/>
+                                <Run Text="{Binding VersionText, Mode=OneWay}"/>
+                                <Run Text="  ·  "/>
+                                <Run Text="{Binding AuthorText, Mode=OneWay}"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Grid>
+                </ui:CardControl.Header>
+            </ui:CardControl>
+
+            <!-- 描述 -->
+            <TextBlock Text="{Binding Description}"
+                       TextWrapping="Wrap"
+                       Margin="{StaticResource Pulsar.Gap.Bottom.MD}"
+                       FontSize="{StaticResource Pulsar.Type.Body}"
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+
+            <!-- 汇总度量：4 列 -->
+            <UniformGrid Columns="4" Margin="{StaticResource Pulsar.Gap.Bottom.MD}">
+                <StackPanel>
+                    <TextBlock Text="{Binding TotalFormatted}"
+                               FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="Bold"
+                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                    <TextBlock Text="{lex:Locale Settings.Analytics.Executions}"
+                               FontSize="{StaticResource Pulsar.Type.Caption}"
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock Text="{Binding SuccessRateFormatted}"
+                               FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="Bold"
+                               Foreground="{DynamicResource SystemFillColorSuccessBrush}"/>
+                    <TextBlock Text="{lex:Locale Settings.Analytics.SuccessRate}"
+                               FontSize="{StaticResource Pulsar.Type.Caption}"
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock Text="{Binding DurationFormatted}"
+                               FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="Bold"
+                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                    <TextBlock Text="{lex:Locale Settings.Analytics.AvgDuration}"
+                               FontSize="{StaticResource Pulsar.Type.Caption}"
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock Text="{Binding LastUsedFormatted}"
+                               FontSize="{StaticResource Pulsar.Type.Title}" FontWeight="Bold"
+                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                    <TextBlock Text="{lex:Locale Settings.Analytics.LastUsed}"
+                               FontSize="{StaticResource Pulsar.Type.Caption}"
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
+                </StackPanel>
+            </UniformGrid>
+
+            <!-- 7 天趋势（复用分析页迷你柱状的视觉，放大呈现） -->
+            <StackPanel Margin="{StaticResource Pulsar.Gap.Bottom.MD}"
+                        Visibility="{Binding HasTrend, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <TextBlock Text="{lex:Locale Dialog.PluginAnalyticsDetail.TrendTitle}"
+                           FontWeight="SemiBold"
+                           Margin="{StaticResource Pulsar.Gap.Bottom.SM}"
+                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                <ItemsControl ItemsSource="{Binding TrendData}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="{StaticResource Pulsar.Gap.Horizontal.XXS}">
+                                <Border Width="28" Height="72" CornerRadius="{StaticResource Pulsar.Radius.XS}"
+                                        Background="{DynamicResource ControlFillColorDisabledBrush}"
+                                        VerticalAlignment="Bottom">
+                                    <Border Width="28"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Bottom"
+                                            CornerRadius="{StaticResource Pulsar.Radius.XS}"
+                                            Background="{DynamicResource AccentFillColorDefaultBrush}">
+                                        <Border.Height>
+                                            <!-- 模型 BarHeight 基于 14px 迷你柱刻度（Count/MaxCount*14）；
+                                                 放大到 72px 图表即乘 5（70px 上限，留 2px 余量）。 -->
+                                            <Binding Path="BarHeight" Converter="{StaticResource DoubleMultiplyConverter}" ConverterParameter="5"/>
+                                        </Border.Height>
+                                    </Border>
+                                </Border>
+                                <TextBlock Text="{Binding Date}"
+                                           HorizontalAlignment="Center"
+                                           Margin="{StaticResource Pulsar.Gap.Top.XS}"
+                                           FontSize="{StaticResource Pulsar.Type.Caption}"
+                                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Text="{Binding TrendSummary}"
+                           Margin="{StaticResource Pulsar.Gap.Top.SM}"
+                           FontSize="{StaticResource Pulsar.Type.Caption}"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+            </StackPanel>
+
+            <!-- 槽位分布 -->
+            <StackPanel Margin="{StaticResource Pulsar.Gap.Bottom.MD}"
+                        Visibility="{Binding HasSlotUsage, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <TextBlock Text="{lex:Locale Dialog.PluginAnalyticsDetail.SlotTitle}"
+                           FontWeight="SemiBold"
+                           Margin="{StaticResource Pulsar.Gap.Bottom.SM}"
+                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                <ItemsControl ItemsSource="{Binding SlotUsage}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="{StaticResource Pulsar.Gap.Bottom.XS}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding SlotIndex, StringFormat='#{0}'}"
+                                           FontSize="{StaticResource Pulsar.Type.Body}"
+                                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding CountFormatted}"
+                                           FontSize="{StaticResource Pulsar.Type.Body}"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                <TextBlock Grid.Column="2"
+                                           Text="{Binding ShareFormatted}"
+                                           FontSize="{StaticResource Pulsar.Type.Body}"
+                                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <!-- 模式分布 -->
+            <StackPanel Margin="{StaticResource Pulsar.Gap.Bottom.MD}"
+                        Visibility="{Binding HasModeSplit, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <TextBlock Text="{lex:Locale Dialog.PluginAnalyticsDetail.ModeTitle}"
+                           FontWeight="SemiBold"
+                           Margin="{StaticResource Pulsar.Gap.Bottom.SM}"
+                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                <TextBlock Text="{Binding ModeSummary}"
+                           FontSize="{StaticResource Pulsar.Type.Body}"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+            </StackPanel>
+
+            <!-- 单插件推荐 -->
+            <StackPanel Visibility="{Binding HasRecommendations, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <TextBlock Text="{lex:Locale Dialog.PluginAnalyticsDetail.RecommendationsTitle}"
+                           FontWeight="SemiBold"
+                           Margin="{StaticResource Pulsar.Gap.Bottom.SM}"
+                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                <ItemsControl ItemsSource="{Binding Recommendations}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Margin="{StaticResource Pulsar.Gap.Bottom.SM}"
+                                    Padding="{StaticResource Pulsar.Pad.H12V8}"
+                                    CornerRadius="{StaticResource Pulsar.Radius.MD}"
+                                    Background="{DynamicResource ControlFillColorDisabledBrush}">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Title}"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                                    <TextBlock Text="{Binding Message}"
+                                               TextWrapping="Wrap"
+                                               Margin="{StaticResource Pulsar.Gap.Top.XS}"
+                                               FontSize="{StaticResource Pulsar.Type.Caption}"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -69,6 +69,14 @@ namespace Pulsar.E2E
             var options = new RunOptions();
             string? workflowPath = null;
 
+            // Boolean switches (no value) are handled before the paired-option
+            // loop, which steps two at a time and assumes every flag has a value.
+            if (args.Contains("--low-interference", StringComparer.OrdinalIgnoreCase))
+            {
+                options.LowInterference = true;
+                args = args.Where(a => !a.Equals("--low-interference", StringComparison.OrdinalIgnoreCase)).ToArray();
+            }
+
             for (int i = 0; i < args.Length; i += 2)
             {
                 switch (GetOption(args, i, "--workflow", "--app", "--fixture", "--artifacts", "--run-id", "--app-args"))
@@ -325,7 +333,7 @@ namespace Pulsar.E2E
         {
             Console.WriteLine(@"
 Usage:
-  Pulsar.E2E run --workflow <path> [--app <exe>] [--fixture <json>] [--artifacts <dir>] [--run-id <id>] [--app-args <args>]
+  Pulsar.E2E run --workflow <path> [--app <exe>] [--fixture <json>] [--artifacts <dir>] [--run-id <id>] [--app-args <args>] [--low-interference]
   Pulsar.E2E iterate --workflow <path> --max-iterations <N> --base-url <url> --model <id> [--api-key <key>] [--workspace <dir>]
   Pulsar.E2E occlusion --workflow <path> [--view <name>] [--baseline <path>] [--app <exe>] [--fixture <json>]
   Pulsar.E2E list-steps

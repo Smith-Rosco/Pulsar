@@ -38,6 +38,23 @@ namespace Pulsar.E2E.Driver
         /// <summary>Remembered for diagnostics; element search is desktop-wide.</summary>
         public int AttachedProcessId { get; private set; }
 
+        /// <summary>
+        /// Low-interference mode: clicks prefer the UIA InvokePattern (or
+        /// SelectionItemPattern for list/navigation items) over real SendInput.
+        /// Both patterns drive the control's automation peer directly, so no
+        /// physical mouse moves and no foreground activation is required — the
+        /// workflow can run while the user is in another full-screen app.
+        /// Falls back to a real mouse click when the element exposes no
+        /// InvokePattern (e.g. custom hit-test surfaces).
+        /// </summary>
+        public bool PreferInvokePattern { get; set; }
+
+        /// <summary>Number of clicks served via InvokePattern in this session.</summary>
+        public int InvokeClickCount { get; private set; }
+
+        /// <summary>Number of clicks that fell back to real SendInput.</summary>
+        public int PhysicalClickCount { get; private set; }
+
         public void Attach(int processId)
         {
             AttachedProcessId = processId;
@@ -109,16 +126,75 @@ namespace Pulsar.E2E.Driver
         /// Clicks the center of the element's bounding rectangle via FlaUI Mouse
         /// (real SendInput). Coordinates come from UIA bounds, never hardcoded
         /// pixels, which keeps clicks DPI-safe.
+        ///
+        /// In low-interference mode (<see cref="PreferInvokePattern"/>) the UIA
+        /// InvokePattern is used instead when the element supports it, so the
+        /// physical cursor never moves and no window is activated.
         /// </summary>
         public void ClickElement(string automationId, TimeSpan timeout)
         {
-            var info = WaitForElement(automationId, timeout)
+            var element = WaitForElementRaw(automationId, timeout)
                 ?? throw new UiDriverException($"Click failed: element '{automationId}' not found within {timeout.TotalSeconds:F1}s.");
 
+            if (PreferInvokePattern && TryInvoke(element))
+            {
+                InvokeClickCount++;
+                return;
+            }
+
+            var info = ToInfo(element, automationId);
             FlaUI.Core.Input.Mouse.MoveTo(
                 (int)Math.Round(info.Bounds.X + info.Bounds.Width / 2),
                 (int)Math.Round(info.Bounds.Y + info.Bounds.Height / 2));
             FlaUI.Core.Input.Mouse.Click();
+            PhysicalClickCount++;
+        }
+
+        /// <summary>
+        /// Drives the element through a UIA pattern that does not need the physical
+        /// cursor or foreground activation, returning false when no usable pattern
+        /// is available. Tries, in order:
+        ///
+        /// <list type="bullet">
+        /// <item><c>InvokePattern</c> — buttons, menu items, hyperlinks.</item>
+        /// <item><c>SelectionItemPattern</c> — list/navigation items
+        /// (<c>DataItem</c>/<c>ListItem</c> control types, e.g. Wpf.Ui
+        /// <c>NavigationViewItem</c>), whose activation semantics are "select",
+        /// not "invoke".</item>
+        /// </list>
+        ///
+        /// Never throws: a provider that advertises a pattern but fails at runtime
+        /// degrades to a real click.
+        /// </summary>
+        private static bool TryInvoke(AutomationElement element)
+        {
+            try
+            {
+                if (element.Patterns.Invoke.IsSupported)
+                {
+                    element.Patterns.Invoke.Pattern.Invoke();
+                    return true;
+                }
+            }
+            catch (Exception)
+            {
+                // Try the next pattern / fall through to the physical-click path.
+            }
+
+            try
+            {
+                if (element.Patterns.SelectionItem.IsSupported)
+                {
+                    element.Patterns.SelectionItem.Pattern.Select();
+                    return true;
+                }
+            }
+            catch (Exception)
+            {
+                // Fall through to the physical-click path.
+            }
+
+            return false;
         }
 
         /// <summary>

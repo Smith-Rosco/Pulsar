@@ -21,6 +21,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+<!--
+  下一条目请在 [Unreleased] 下累积；发布时整体收敛为带日期的版本段。
+-->
+
+### Added
+- **插件使用详情「下钻」对话框**（2026-09-10 用户批准计划）：分析页使用统计行的**整行点击**或行内**详情按钮**（`AutomationId=Pulsar.Settings.Analytics.DetailsButton`）打开单插件详情——头部（图标/名称/ID/版本/作者/描述/层级）、4 项汇总度量（执行次数/成功率/平均耗时/最近使用）、近 7 天趋势柱状图（复用分析页迷你柱视觉，`BarHeight ×5` 放大到 72px）、槽位分布（槽位号/次数/占比，按槽位号排序）、模式分布、单插件推荐。数据全部复用分析页已构建的内存快照（`AnalyticsItem`），无新查询、无副作用；插件静态元数据经 `IPluginRegistry.GetDescriptor` 补全，推荐经 `IPluginRecommendationEngine.GetRecommendationsForPlugin`（两者均为可选依赖，缺失时优雅降级隐藏对应区块）。新增 `PluginAnalyticsDetailViewModel` + `PluginAnalyticsDetailContent`（XAML 内容 + Host，注册于 `Themes/DialogTemplates.xaml`），9 个双语 resx 键。新增测试 21 例（详情 VM 18 + 分析页 VM 下钻命令 3）。全量 **1521/1521**（1500 + 21）。E2E `settings-analytics-detail-dark` 实测 **PASS 27.6s**（16 步，低干扰模式；UIA 树确认对话框全内容渲染）。
+
+## [1.13.1] - 2026-09-10
+
 ### Changed
 - **根环半径单一公式（ADR-030，Accepted）**：`CalculateOptimalLayout` 改用 `CalculateOptimalSlotSize(N)` 推导半径，幽灵半径路径（固定 50px 槽径）废除——N=10: 97.08→90.61、N=12: 115.91→100.46，N≤9 不变；运行时环视觉零变化，死区还原设计比率。pose snapshot 钉死值迁移 + 新增 `RadiusPaths_AreIdentical`（N=6..12 双路径恒等）。全量 1491/1491。真机 sanity 通过。→ `Docs/decisions/030-wheel-radius-single-formula.md`
 - **本地化资源治理收口**：resx 孤儿键全链清理——A 组 83 + B 组 6 = 89 键（2026-09-09）与父前缀嫌疑区 126 键（2026-09-10）先后双语删除，`Strings.resx` / `Strings.zh-CN.resx` 各 **1166 → 951**；3 处测试陈旧引用同步清理。全量 1484/1484 与基线一致，build 0 警告 0 错误。
@@ -36,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `pulsar-ui-runtime-verification` 技能沉淀（用户级 `~/.workbuddy/skills/` + 仓库 `.agents/skills/` 双副本，SKILL.md 头部 Mirror 声明）：8 步证据化工作流 + 追踪行格式契约 + `analyze-nav-trace.py` 签名分析脚本 + E2E 导航/窗口尺寸注入模板。`AGENTS.md` §4 路由表新增入口指针。
+- **E2E 低干扰模式（`--low-interference`，opt-in）**：工作流可在用户处于其他全屏应用（如游戏）时运行——点击改走 UIA `InvokePattern`（列表/导航项回退 `SelectionItemPattern`），不移动物理光标；`open-settings` 以 `ShowActivated=false` 显示，不抢前台焦点。新增调试命令 `nav-settings`（`SettingsWindow.NavigateToPageAsync` → 与鼠标/键盘处理器同一 `NavigateAsync` 汇聚点），因为导航项由 `PreviewMouseLeftButtonUp` 驱动、UIA 模式无法触发。新增测试 6 例（标志联动/顺序无关/单独无效）。低干扰 E2E `settings-analytics-data-dark` 实测 **PASS 24.0s**（14 步）。→ `Docs/lessons/E2E_LOW_INTERFERENCE_MODE.md`
 
 ## [1.13.0] - 2026-09-09
 

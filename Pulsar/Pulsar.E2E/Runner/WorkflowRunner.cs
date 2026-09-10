@@ -136,9 +136,16 @@ namespace Pulsar.E2E.Runner
                     var fixture = FirstNonEmpty(options.FixturePath, workflow.App.Fixture);
                     var args = FirstNonEmpty(options.AppArguments, workflow.App.Arguments);
 
-                    _launched = new AppLauncher().Launch(exePath, fixture, args, _log);
+                    _launched = new AppLauncher().Launch(exePath, fixture, args, options.LowInterference, _log);
                     stateClient.Start(_launched.Process.Id);
                     uia.Attach(_launched.Process.Id);
+                    // Low-interference: clicks drive UIA InvokePattern instead of a
+                    // physical cursor, and debug windows do not activate.
+                    uia.PreferInvokePattern = options.LowInterference;
+                    if (options.LowInterference)
+                    {
+                        _log("[low-interference] UIA InvokePattern clicks enabled; debug windows will not activate.");
+                    }
                     break;
                 }
 
@@ -438,6 +445,13 @@ namespace Pulsar.E2E.Runner
         public string? AppExePath { get; set; }
         public string? FixturePath { get; set; }
         public string? AppArguments { get; set; }
+
+        /// <summary>
+        /// Low-interference mode (<c>--low-interference</c>): debug windows are
+        /// shown without activation and clicks use UIA InvokePattern, so a
+        /// workflow can run while the user is in another full-screen app.
+        /// </summary>
+        public bool LowInterference { get; set; }
     }
 
     /// <summary>A step-level failure carrying its identity for diagnostics.</summary>

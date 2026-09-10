@@ -89,7 +89,7 @@ namespace Pulsar.Simulator
                 .ReturnsAsync(new FocusActivationResult { Success = true, VerificationPassed = true });
             services.AddSingleton(mockFocusManager.Object);
 
-            // Plugin foundation: localization, PKI stack, side-effect adapters, runtime.
+            // Plugin foundation: localization, SecretFill stack, side-effect adapters, runtime.
             // Single composition root shared with the WPF app; dry-run swaps every
             // side-effecting adapter for a logging no-op.
             var pluginDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Plugins");

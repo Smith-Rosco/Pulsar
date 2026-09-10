@@ -1,5 +1,5 @@
 {
-  "name": "settings-analytics-data-dark",
+  "name": "settings-analytics-detail-dark",
   "app": {
     "exePath": "",
     "fixture": "Fixtures/default-profiles-dark.json",
@@ -51,13 +51,6 @@
       "timeoutMs": 8000
     },
     {
-      "type": "assert",
-      "id": "assert-refresh-button",
-      "automationId": "Pulsar.Settings.Analytics.RefreshButton",
-      "expected": "visible",
-      "timeoutMs": 5000
-    },
-    {
       "type": "scroll",
       "id": "scroll-to-stats-list",
       "automationId": "Pulsar.Settings.Analytics.ScrollViewer",
@@ -65,14 +58,27 @@
       "timeoutMs": 5000
     },
     {
-      "type": "dump",
-      "id": "dump-analytics-tree",
-      "file": "analytics-uia-tree.txt"
+      "type": "assert",
+      "id": "assert-details-button",
+      "automationId": "Pulsar.Settings.Analytics.DetailsButton",
+      "expected": "visible",
+      "timeoutMs": 8000
     },
     {
-      "type": "screenshot",
-      "id": "screenshot-data-view",
-      "file": "analytics-data-dark.png"
+      "type": "click",
+      "id": "click-details-button",
+      "automationId": "Pulsar.Settings.Analytics.DetailsButton",
+      "timeoutMs": 8000
+    },
+    {
+      "type": "wait",
+      "id": "settle-detail-dialog",
+      "durationMs": 1200
+    },
+    {
+      "type": "dump",
+      "id": "dump-detail-tree",
+      "file": "analytics-detail-uia-tree.txt"
     },
     {
       "type": "wait",

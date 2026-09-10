@@ -37,6 +37,10 @@
         <contents:PluginLogViewerContentHost/>
     </DataTemplate>
 
+    <DataTemplate DataType="{x:Type dialogs:PluginAnalyticsDetailViewModel}">
+        <contents:PluginAnalyticsDetailContentHost/>
+    </DataTemplate>
+
     <DataTemplate DataType="{x:Type dialogs:ProcessPickerViewModel}">
         <contents:ProcessPickerContent/>
     </DataTemplate>
