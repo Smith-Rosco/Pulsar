@@ -142,6 +142,23 @@ Operational guide for agents working on the **Pulsar** codebase (.NET 8, WPF/Win
 - **Documentation**: update relevant docs on architectural changes.
 - **Debug via Logs**: add `ILogger` debug statements along the call chain first; locate from Serilog output (`%AppData%\Pulsar\Logs\pulsar-yyyyMMdd.log`) before guessing.
 
+### Delivery Gate (before any non-trivial hand-off)
+
+Two verifiable actions, both required on non-trivial changes (a fix, refactor, ADR, or claim). "Non-trivial" = touched >1 file or asserts a behavioral/perf claim. Skip for typos / one-line lookups.
+
+1. **Strongest counter-case (最强反方)** — before reporting "done", answer in the reply:
+   - How could this fix **fail**? Write the **strongest** version of that objection, not a strawman.
+   - What does the approach **assume implicitly**? Which single assumption, if false, breaks it all?
+   - What do the **tests not cover**? (existing suite's blind spot)
+   *A "done" report without these three is incomplete.*
+2. **Three-way tagging (三段标注)** — separate **fact / inference / assumption** in every claim:
+   - 【已验证】 measured this run — cite the command / count (e.g. `全量 1491/1491`).
+   - 【推断】 reasoned from evidence, not directly measured (state the evidence).
+   - 【假设】 plausible but unverified — say so, and hand over the repro/next step.
+   *Upgrades the existing "never fabricate test numbers" rule from a prohibition into a positive labeling action.*
+
+> Rationale: the other reasoning principles already live here by construction — first-principles = §2 invariants, ablation = ADR/lesson mechanism, Occam = ADR-022 slimming, critical thinking = `grilling`. Only these two were missing a mount point; both are checkable in the artifact.
+
 ---
 
 ## 9. Quick Commands
@@ -186,7 +203,7 @@ Multiple AI harnesses / agents work this repo in parallel. Rules to avoid cross-
 > **These two files are machine-consumed skill contracts, NOT reading material.** Written and read by the vendored skills under `.agents/skills/` (notably `setup-matt-pocock-skills`, `domain-modeling`, `grill-with-docs`, `improve-codebase-architecture`). Do not relocate or delete — paths are hardcoded; re-running `setup-matt-pocock-skills` recreates them.
 
 - **Issue tracker**: Issues and PRDs live as GitHub issues; see [`Docs/agents/issue-tracker.md`](./Docs/agents/issue-tracker.md) — `gh` CLI conventions for skill-driven issue operations.
-- **Domain docs**: single-context — `CONTEXT.md` + `docs/adr/` at the repo root; see [`Docs/agents/domain.md`](./Docs/agents/domain.md).
+- **Domain docs**: single-context — `CONTEXT.md` + `Docs/decisions/` at the repo root (**not** lowercase `docs/adr/`, which is the upstream multi-context default); see [`Docs/agents/domain.md`](./Docs/agents/domain.md).
 
 ---
 
