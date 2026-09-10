@@ -21,6 +21,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **根环半径单一公式（ADR-030，Accepted）**：`CalculateOptimalLayout` 改用 `CalculateOptimalSlotSize(N)` 推导半径，幽灵半径路径（固定 50px 槽径）废除——N=10: 97.08→90.61、N=12: 115.91→100.46，N≤9 不变；运行时环视觉零变化，死区还原设计比率。pose snapshot 钉死值迁移 + 新增 `RadiusPaths_AreIdentical`（N=6..12 双路径恒等）。全量 1491/1491。真机 sanity 通过。→ `Docs/decisions/030-wheel-radius-single-formula.md`
+- **本地化资源治理收口**：resx 孤儿键全链清理——A 组 83 + B 组 6 = 89 键（2026-09-09）与父前缀嫌疑区 126 键（2026-09-10）先后双语删除，`Strings.resx` / `Strings.zh-CN.resx` 各 **1166 → 951**；3 处测试陈旧引用同步清理。全量 1484/1484 与基线一致，build 0 警告 0 错误。
+
+### Fixed
+- **tab 指示器「切到第一个 tab 无动画」**（2026-09-10 用户报告）：根因 = 事件驱动的延迟重定位（DPI / 窗格开合 / 面板尺寸 / 导航项重建的公共入口）缺 `_isNavAnimating` 门——`InitializeNavIndicator` 的 `clearHeldAnimations:true` 把在跑的 stretch 动画整段摘掉，指示器 1 帧瞬移；「第一个 tab」是伪线索（真变量 = 哪次导航恰好带出布局事件）。同轮修次生缺陷：phase 1/2 改**显式 `From`**（原 `From=null` 隐式 origin 会被并发基础值写入改写 → 先跳后滑），顺带消除 `Height` 为 NaN 的取值崩溃通道。自驱动验证：`clearAnim=True animating=True` 3→0、零位移瞬态 2→0、守卫命中 36/280。全量 1492/1492。真机验收通过。→ `Docs/lessons/WPF_INDICATOR_ANIMATION_TORN_BY_LAYOUT_EVENT.md`
+- **slot 编辑 tab 内容溢出**（2026-09-10 用户报告）：根因 = 模态退役残迹——`SlotConfigurationDialogContent` / `AddSlotContent` 仍带 `MinWidth="760" MinHeight="520"`（模态时代固定尺寸），而 P3 模态退役后唯一宿主已是 transient tab 页；窗口 1000 − 导航窗格 250 − Frame Margin 48 = **≈702px < 760px** → 右侧状态徽标 / IconSelector 被静默裁掉。修复：两处根元素 `MinWidth/MinHeight` 删除，改为设计期孪生 `d:DesignWidth/d:DesignHeight`。新增回归守卫 `SettingsLayoutGuardTests.Tab_hosted_dialog_contents_do_not_pin_a_fixed_dialog_size`（自维护解析被承载集合 + 空集合即失败）。
+
+### Added
+- `pulsar-ui-runtime-verification` 技能沉淀（用户级 `~/.workbuddy/skills/` + 仓库 `.agents/skills/` 双副本，SKILL.md 头部 Mirror 声明）：8 步证据化工作流 + 追踪行格式契约 + `analyze-nav-trace.py` 签名分析脚本 + E2E 导航/窗口尺寸注入模板。`AGENTS.md` §4 路由表新增入口指针。
+
+## [1.13.0] - 2026-09-09
+
 ### Added
 - **设置窗口动态标签页（临时页）机制**（openspec `2026-09-08-dynamic-settings-tabs`，ADR-029，2026-09-08 审计通过）：
   - `SettingsPageCatalog` 支持运行时注册/注销临时页（`IsTransient`，插入语义分组末尾，事件驱动侧边栏增删）；`SettingsPageFactory` 由 `switch` 改为按 id 注册的构造器字典；新增 `ITransientPageService`（打开=注册+导航激活、关闭=守卫确认后回收、导航离开钩子）。
@@ -44,12 +57,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **openspec 在途变更收尾（2026-09-08）**：4 个 change（`in-app-auto-update` / `installer-and-portable-packaging` / `repositioning-narrative-rollout` / `user-manual-release-assets`）的任务状态据实勾选（真机验证/用户裁决取消/技术债治本逐条注明证据与 commit），repositioning 的 3.2/3.3（Demo 视频）按用户裁决标为取消；delta 同步至主 specs（新建 `app-update-service`、`app-packaging-distribution`，`plugin-display-identity` 追加叙事对齐需求）；`openspec validate --specs` 96/96、`--changes` 4/4 通过后全部归档。在途 change 清零。
+- **slot 编辑迁移至实体级 transient tab**（openspec `2026-09-09-unify-slot-editor-transient-pages`，P0–P3 全程）：P1 实体级 transient tab 迁移（tasks 2.1-2.7）、P2 新建向导入 tab + 子动作手风琴（tasks 3.1-3.6）、P3 slot 编辑模态退役（tasks 4.1-4.3）、归档（task 4.4，delivery both）。连带修复：临时页解析崩溃（补齐 3 个未定义 Pad 令牌）、二次崩溃（控件自带 Wpf.Ui ControlsDictionary）、子动作动作下拉双选吞选择、`PluginSlot.SubActions/CascadeLayoutStyle` 漏脏、子动作选应用后图标空白、级联 slot 子轮盘数字气泡标识、子菜单左键只选中不执行。
+- **轮盘面板 UX 轨 U1–U6**（真机验收通过）：U1 hover enter 300→120ms（`SlotOrb.HoverEnter/ReleaseDuration` 钉死）/ U2 磁吸上限 120→400px/s / U3 翻页 nudge BackEase→QuarticEase / U4 键盘扇区导航（←→↑↓ 选槽 + 双键对角 + Enter 执行 + 1-9 直达 + PgUp/PgDn 翻页，新增 `RadialKeyboardNavigator`）/ U5 标签激活展开 40→72 / U6 死注释清理 + flick-out 0.2→0.16s。新增 27 测试，全量 1388/1388。
+- **MenuSession 拆分 R1–R4 完成**（3609 → 2874 行）：R1 `WheelGeometry` 单一真相源（500 画布/250 中心/50 默认槽径）+ S1/ADR-023 测试债清偿；R2 `GestureInputRouter` 迁出右拖手势 claim/promote/replay 编排；R3 `SubMenuTransitionController` + `CenterIdentityPolicy` 迁出；R4 `MenuWatchdog` 迁出。全量 1427/1427。
+- **主题重构（ui-ux-pro-max 设计系统）**：`Theme.Dark/Light.xaml` 按「Code dark + run green」（Slate 色阶）重构——键名契约不变，语义组重排；Orb #2D2D2D→#334155、激活通道→Sky 系、深色危险 hover→#EF4444；`RadialThemeTokenSetTests` 钉死值同步；`Docs/design-system/pulsar/MASTER.md` 持久化。全量 1361/1361。
+- **应用图标定稿**：`build_radial_ico.py` 加 36px 圆角矩形遮罩，light/dark ico（7 尺寸帧）+ 256 masters + 根 `Pulsar.ico` 全部圆角透明；图标定稿为「径向菜单·无边框」，替换 `Assets/Icons` 与根 `Pulsar.ico`。
+- **架构审查 C4/C5 收口**：C4 draft-leak closure——editor session owns every draft write；C5 DI closure——tutorial orchestrator 去掉 service locator，flow 逻辑抽出。全量 1361/1361。
+- **publish 链路重构**：废止 legacy `.ps1` 脚本，收敛为单一 `scripts/publish.py`（10 子命令），`SKILL.md` 路由全部命令至此。
 
 ### Added
 - `Pulsar.Tests.UI.SettingsLayoutGuardTests`：三条静态 XAML 扫描守卫（禁止硬编码 White/Black 前景色；禁止引用 4.3.0 不存在的 `SystemFillColorAccent*` 令牌；禁止设置页用 `HorizontalAlignment="Left"` + `MaxWidth` 让面板按内容定宽），覆盖上述缺陷类、防止复发。
 - `Pulsar.Tests.Services.ThemeServiceTests` 新增 `ApplyTheme_ShouldCopyRuntimeAccentResourcesOntoElement`：断言 `ApplyTheme` 后 accent 填充/对比文字/色值已复制到元素本地资源（回归守卫：元素本地字典不得再遮蔽运行时桥接值）。
 - `Docs/lessons/WPF_SETTINGS_PANEL_WIDTH_CONTENT_DRIVEN.md`：视口宽度 vs 内容宽度的坑与修法（含与 `SettingsPluginsPage` 现有 `ViewportWidth` 绑定的对照）。
 - `Docs/lessons/WPF_FLUENT_ACCENT_TOKENS_UNRESOLVED.md` v1.3.0：v1.2.0 两主题令牌实测表之外，补记元素本地字典遮蔽根因与 CardControl 三列模板坑。
+- `Docs/lessons/WORKBUDDY_SANDBOX_STALE_GIT_VIEW.md`：沙箱投影致会话内 git 陈旧视图的全案记录与规避 playbook。
 
 ## [1.12.0] - 2026-09-08
 
